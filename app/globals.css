@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Smooth drag-ghost opacity so the original card fades while dragging */
+[data-dnd-dragging="true"] {
+  opacity: 0.4;
+}
