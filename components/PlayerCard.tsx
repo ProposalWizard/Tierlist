@@ -26,6 +26,13 @@ export default function PlayerCard({ player, isDragging = false }: PlayerCardPro
 
   const isActive = isDragging || isSortableDragging;
 
+  const initials = player.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div
       ref={setNodeRef}
@@ -33,39 +40,32 @@ export default function PlayerCard({ player, isDragging = false }: PlayerCardPro
       {...attributes}
       {...listeners}
       className={`
-        flex cursor-grab select-none flex-col items-center justify-center
-        gap-1 rounded-lg border border-gray-700 bg-gray-800 p-2
-        text-center shadow transition-colors
-        hover:border-gray-500 hover:bg-gray-700
+        w-[88px] flex-shrink-0 cursor-grab select-none rounded-lg border
+        border-gray-700 bg-gray-800 p-1.5 text-center shadow
+        transition-colors hover:border-gray-500 hover:bg-gray-700
         active:cursor-grabbing
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
       `}
     >
+      {/* Image — fills the card, large enough to be useful */}
       {player.image_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={player.image_url}
           alt={player.name}
-          className="h-10 w-10 rounded-full object-cover"
+          className="h-[72px] w-full rounded-md object-cover"
+          draggable={false}
         />
       ) : (
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-white">
-          {player.name
-            .split(" ")
-            .map((w) => w[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase()}
+        <div className="flex h-[72px] w-full items-center justify-center rounded-md bg-indigo-700 text-sm font-bold text-white">
+          {initials}
         </div>
       )}
 
-      <span className="text-xs font-semibold leading-tight text-white">
+      {/* Name label */}
+      <p className="mt-1 truncate text-[11px] font-medium leading-tight text-white">
         {player.name}
-      </span>
-
-      <span className="text-[10px] leading-none text-gray-400">
-        {[player.position, player.club].filter(Boolean).join(" · ")}
-      </span>
+      </p>
     </div>
   );
 }

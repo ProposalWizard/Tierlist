@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useLayoutEffect } from "react";
+import { useState, useCallback, useRef, useLayoutEffect, useId } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -19,59 +19,33 @@ import { SortableContext, arrayMove, rectSortingStrategy } from "@dnd-kit/sortab
 
 import TierRow from "./TierRow";
 import PlayerCard from "./PlayerCard";
-import {
-  TIERS,
-  type Tier,
-  type TierMap,
-  type TierlistPlayer,
-  type TierlistTopic,
-} from "@/lib/types";
-import type { SaveRankingPayload } from "@/lib/types";
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-interface TierlistBoardProps {
-  topic: TierlistTopic;
-  players: TierlistPlayer[];
-  existingRankings: { player_id: string; tier: Tier }[];
-  userId: string;
-}
+import { TIERS, type Tier, type TierMap, type TierlistPlayer } from "@/lib/types";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function buildInitialTierMap(
-  players: TierlistPlayer[],
-  existingRankings: { player_id: string; tier: Tier }[]
-): TierMap {
-  const map: TierMap = {
-    S: [],
-    A: [],
-    B: [],
-    C: [],
-    D: [],
-    unranked: players.map((p) => p.id),
-  };
-
-  for (const { player_id, tier } of existingRankings) {
-    map.unranked = map.unranked.filter((id) => id !== player_id);
-    map[tier].push(player_id);
-  }
-
-  return map;
-}
-
 const CONTAINER_IDS = new Set<string>([...TIERS, "unranked"]);
 
-// ── Unranked pool ─────────────────────────────────────────────────────────
+// ── Unranked pool (with "Add Images" button) ───────────────────────────────
 
 function UnrankedPool({
   players,
   activePlayerId,
+  onFilesAdded,
 }: {
   players: TierlistPlayer[];
   activePlayerId: string | null;
+  onFilesAdded: (files: FileList) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: "unranked" });
+  const inputId = useId();
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      onFilesAdded(e.target.files);
+      // reset so the same file can be re-added if desired
+      e.target.value = "";
+    }
+  }
 
   return (
     <div
@@ -82,10 +56,29 @@ function UnrankedPool({
           : "border-dashed border-gray-700 bg-gray-900/50"
       }`}
     >
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
-        Unranked Players — drag into a tier
-      </h3>
-      <div className="flex min-h-[60px] flex-wrap gap-2">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+          Unranked — drag into a tier
+        </h3>
+
+        {/* Hidden file input */}
+        <input
+          id={inputId}
+          type="file"
+          accept="image/*"
+          multiple
+          className="sr-only"
+          onChange={handleChange}
+        />
+        <label
+          htmlFor={inputId}
+          className="cursor-pointer rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-500 active:bg-indigo-700"
+        >
+          + Add Images
+        </label>
+      </div>
+
+      <div className="flex min-h-[88px] flex-wrap gap-2">
         <SortableContext
           items={players.map((p) => p.id)}
           strategy={rectSortingStrategy}
@@ -100,7 +93,7 @@ function UnrankedPool({
         </SortableContext>
         {players.length === 0 && (
           <span className="flex items-center text-xs text-gray-600 italic">
-            All players ranked!
+            Click &quot;+ Add Images&quot; to get started
           </span>
         )}
       </div>
@@ -110,26 +103,23 @@ function UnrankedPool({
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export default function TierlistBoard({
-  topic,
-  players,
-  existingRankings,
-}: TierlistBoardProps) {
-  const playerMap = Object.fromEntries(players.map((p) => [p.id, p]));
+export default function TierlistBoard() {
+  // All state is purely client-side — no DB queries needed
+  const [tierMap, setTierMap] = useState<TierMap>({
+    S: [],
+    A: [],
+    B: [],
+    C: [],
+    D: [],
+    unranked: [],
+  });
 
-  const [tierMap, setTierMap] = useState<TierMap>(() =>
-    buildInitialTierMap(players, existingRankings)
-  );
+  // Map of id → player object (includes blob URLs)
+  const [playerMap, setPlayerMap] = useState<Record<string, TierlistPlayer>>({});
+
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-
-  // Keep a ref to tierMap so the collision detection callback (stable ref)
-  // always sees the latest state without needing to be recreated.
+  // Stable ref so collision detection never goes stale
   const tierMapRef = useRef(tierMap);
   useLayoutEffect(() => {
     tierMapRef.current = tierMap;
@@ -139,7 +129,33 @@ export default function TierlistBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Find which container a player currently lives in
+  // ── Image upload ───────────────────────────────────────────────────────
+
+  function handleFilesAdded(files: FileList) {
+    const newPlayers: TierlistPlayer[] = Array.from(files).map((file) => ({
+      id: crypto.randomUUID(),
+      topic_id: "",
+      // Strip extension to use as display name
+      name: file.name.replace(/\.[^/.]+$/, ""),
+      position: null,
+      club: null,
+      image_url: URL.createObjectURL(file),
+      created_at: new Date().toISOString(),
+    }));
+
+    setPlayerMap((prev) => ({
+      ...prev,
+      ...Object.fromEntries(newPlayers.map((p) => [p.id, p])),
+    }));
+
+    setTierMap((prev) => ({
+      ...prev,
+      unranked: [...prev.unranked, ...newPlayers.map((p) => p.id)],
+    }));
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+
   const findContainer = useCallback(
     (id: string): Tier | "unranked" | undefined => {
       for (const key of [...TIERS, "unranked"] as Array<Tier | "unranked">) {
@@ -152,24 +168,15 @@ export default function TierlistBoard({
 
   // ── Collision detection ────────────────────────────────────────────────
   //
-  // Strategy:
-  //  1. Use pointerWithin to find which container the cursor is inside.
-  //  2. If that container has items, return the closest ITEM within it
-  //     (so useSortable can animate within-container reordering).
-  //  3. If the container is empty, return the container itself
-  //     (so an empty tier row is still a valid drop target).
-  //  4. Fall back to closestCenter when the cursor isn't inside any container.
-  //
-  // This correctly handles all four cases:
-  //  - drag unranked → tier           (cross-container, tier may be empty)
-  //  - drag tier → different tier     (cross-container)
-  //  - drag within tier to reorder    (within-container sort)
-  //  - drag within unranked to reorder (within-container sort)
+  // 1. pointerWithin to find the container the cursor is inside.
+  // 2. If that container has items, return the closest item within it
+  //    (so useSortable animates within-container sorting correctly).
+  // 3. If the container is empty, return the container itself.
+  // 4. Fall back to closestCenter.
 
   const collisionDetection: CollisionDetection = useCallback((args) => {
     const pointerCollisions = pointerWithin(args);
 
-    // Find the first collision that is a container (not a player card)
     const containerHit = pointerCollisions.find((c) =>
       CONTAINER_IDS.has(c.id as string)
     );
@@ -180,7 +187,6 @@ export default function TierlistBoard({
         tierMapRef.current[containerId as Tier | "unranked"] ?? [];
 
       if (itemIds.length > 0) {
-        // Return the closest item within this container so sorting works
         const closest = closestCenter({
           ...args,
           droppableContainers: args.droppableContainers.filter((c) =>
@@ -190,13 +196,11 @@ export default function TierlistBoard({
         if (closest.length > 0) return closest;
       }
 
-      // Container is empty — return the container itself as the target
       return [containerHit];
     }
 
-    // Cursor not inside any container — fall back to closest center overall
     return closestCenter(args);
-  }, []); // tierMapRef is a stable ref, no deps needed
+  }, []);
 
   // ── Drag handlers ──────────────────────────────────────────────────────
 
@@ -204,11 +208,7 @@ export default function TierlistBoard({
     setActiveId(active.id as string);
   }
 
-  /**
-   * onDragOver handles CROSS-container moves with live feedback.
-   * Within-container reordering is handled entirely by useSortable transforms
-   * and confirmed in onDragEnd.
-   */
+  /** Handles cross-container moves with live feedback. */
   function onDragOver({ active, over }: DragOverEvent) {
     if (!over) return;
 
@@ -220,17 +220,14 @@ export default function TierlistBoard({
       CONTAINER_IDS.has(overId) ? overId : findContainer(overId)
     ) as Tier | "unranked" | undefined;
 
-    // Skip if same container — useSortable handles the visual shifting itself
     if (!activeContainer || !overContainer || activeContainer === overContainer)
       return;
 
     setTierMap((prev) => {
       const activeItems = [...prev[activeContainer]];
       const overItems = [...prev[overContainer]];
-      const activeIndex = activeItems.indexOf(activeId);
       const overIndex = overItems.indexOf(overId);
 
-      // Insert before/after the hovered item, or at end if hovering the container
       const newIndex = CONTAINER_IDS.has(overId)
         ? overItems.length
         : overIndex >= 0
@@ -249,10 +246,7 @@ export default function TierlistBoard({
     });
   }
 
-  /**
-   * onDragEnd confirms within-container reordering.
-   * Cross-container moves were already committed in onDragOver.
-   */
+  /** Confirms within-container reordering on drop. */
   function onDragEnd({ active, over }: DragEndEvent) {
     setActiveId(null);
     if (!over) return;
@@ -268,7 +262,6 @@ export default function TierlistBoard({
     if (!activeContainer || !overContainer || activeContainer !== overContainer)
       return;
 
-    // Within-container reorder
     const items = tierMap[activeContainer];
     const oldIndex = items.indexOf(activeId);
     const newIndex = items.indexOf(overId);
@@ -281,45 +274,9 @@ export default function TierlistBoard({
     }
   }
 
-  // ── Save handler ──────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────
 
-  async function handleSave() {
-    setSaving(true);
-    setSaveMessage(null);
-
-    const rankings: SaveRankingPayload["rankings"] = [];
-    for (const tier of TIERS) {
-      for (const playerId of tierMap[tier]) {
-        rankings.push({ player_id: playerId, tier });
-      }
-    }
-
-    try {
-      const res = await fetch("/api/tierlist/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic_id: topic.id,
-          rankings,
-        } satisfies SaveRankingPayload),
-      });
-
-      if (!res.ok) {
-        const { error } = await res.json();
-        throw new Error(error ?? "Failed to save");
-      }
-
-      setSaveMessage({ type: "success", text: "Rankings saved!" });
-    } catch (err) {
-      setSaveMessage({
-        type: "error",
-        text: err instanceof Error ? err.message : "Something went wrong",
-      });
-    } finally {
-      setSaving(false);
-    }
-  }
-
+  const totalImages = Object.values(playerMap).length;
   const rankedCount = TIERS.reduce((sum, t) => sum + tierMap[t].length, 0);
 
   return (
@@ -343,45 +300,24 @@ export default function TierlistBoard({
         <UnrankedPool
           players={tierMap.unranked.map((id) => playerMap[id]).filter(Boolean)}
           activePlayerId={activeId}
+          onFilesAdded={handleFilesAdded}
         />
 
         <DragOverlay>
           {activeId && playerMap[activeId] ? (
-            <div className="rotate-2 scale-105 shadow-2xl opacity-95">
+            <div className="rotate-2 scale-105 opacity-95 shadow-2xl">
               <PlayerCard player={playerMap[activeId]} />
             </div>
           ) : null}
         </DragOverlay>
       </DndContext>
 
-      {/* Save section */}
-      <div className="flex items-center justify-between rounded-xl border border-gray-700 bg-gray-900 p-4">
-        <span className="text-sm text-gray-400">
-          {rankedCount}/{players.length} players ranked
-        </span>
-
-        <div className="flex items-center gap-3">
-          {saveMessage && (
-            <span
-              className={`text-sm ${
-                saveMessage.type === "success"
-                  ? "text-green-400"
-                  : "text-red-400"
-              }`}
-            >
-              {saveMessage.text}
-            </span>
-          )}
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {saving ? "Saving…" : "Save Rankings"}
-          </button>
-        </div>
-      </div>
+      {/* Status bar */}
+      {totalImages > 0 && (
+        <p className="text-right text-xs text-gray-500">
+          {rankedCount} / {totalImages} images ranked
+        </p>
+      )}
     </div>
   );
 }
