@@ -1,12 +1,11 @@
 "use client";
 
-import { useDraggable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { TierlistPlayer } from "@/lib/types";
 
 interface PlayerCardProps {
   player: TierlistPlayer;
-  /** True while this card is being actively dragged (overlay active) */
   isDragging?: boolean;
 }
 
@@ -16,14 +15,16 @@ export default function PlayerCard({ player, isDragging = false }: PlayerCardPro
     listeners,
     setNodeRef,
     transform,
-    isDragging: isCurrentlyDragging,
-  } = useDraggable({ id: player.id });
+    transition,
+    isDragging: isSortableDragging,
+  } = useSortable({ id: player.id });
 
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform) }
-    : undefined;
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
-  const isActive = isDragging || isCurrentlyDragging;
+  const isActive = isDragging || isSortableDragging;
 
   return (
     <div

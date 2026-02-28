@@ -1,6 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import PlayerCard from "./PlayerCard";
 import type { Tier, TierlistPlayer } from "@/lib/types";
 import { TIER_COLORS } from "@/lib/types";
@@ -12,7 +13,7 @@ interface TierRowProps {
 }
 
 export default function TierRow({ tier, players, activePlayerId }: TierRowProps) {
-  // The entire row is the droppable target — gives a large hit area
+  // Entire row is the droppable target for a large hit area
   const { setNodeRef, isOver } = useDroppable({ id: tier });
 
   const tierColor = TIER_COLORS[tier];
@@ -35,13 +36,18 @@ export default function TierRow({ tier, players, activePlayerId }: TierRowProps)
 
       {/* Player area */}
       <div className="flex flex-1 flex-wrap gap-2 p-2">
-        {players.map((player) => (
-          <PlayerCard
-            key={player.id}
-            player={player}
-            isDragging={activePlayerId === player.id}
-          />
-        ))}
+        <SortableContext
+          items={players.map((p) => p.id)}
+          strategy={rectSortingStrategy}
+        >
+          {players.map((player) => (
+            <PlayerCard
+              key={player.id}
+              player={player}
+              isDragging={activePlayerId === player.id}
+            />
+          ))}
+        </SortableContext>
         {players.length === 0 && (
           <span className="flex items-center text-xs text-gray-600 italic">
             Drop players here
