@@ -5,7 +5,16 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import PlayerCard from "./PlayerCard";
 import type { Tier, TierlistPlayer } from "@/lib/types";
-import { TIER_COLORS } from "@/lib/types";
+
+// Inline hex values so the colours are applied via style= and never depend
+// on Tailwind scanning lib/types.ts (which caused the dark/missing background).
+const TIER_BG: Record<Tier, string> = {
+  S: "#ff7f7f",
+  A: "#ffbf7f",
+  B: "#ffdf80",
+  C: "#bfff7f",
+  D: "#7fbfff",
+};
 
 interface TierRowProps {
   tier: Tier;
@@ -15,7 +24,6 @@ interface TierRowProps {
 
 export default function TierRow({ tier, players, activePlayerId }: TierRowProps) {
   const { setNodeRef, isOver } = useDroppable({ id: tier });
-  const tierColor = TIER_COLORS[tier];
 
   const [label, setLabel] = useState(tier as string);
 
@@ -30,7 +38,8 @@ export default function TierRow({ tier, players, activePlayerId }: TierRowProps)
     >
       {/* Tier label — always an input so it's always editable */}
       <div
-        className={`flex w-28 flex-shrink-0 items-center justify-center rounded-l-xl ${tierColor}`}
+        className="flex w-28 flex-shrink-0 items-center justify-center rounded-l-xl"
+        style={{ backgroundColor: TIER_BG[tier] }}
       >
         <input
           value={label}
