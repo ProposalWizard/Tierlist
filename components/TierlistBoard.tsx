@@ -1,43 +1,5 @@
 "use client";
 
-/**
- * components/TierlistBoard.tsx
- *
- * Main drag-and-drop tierlist board.
- *
- * Architecture:
- *  ┌──────────────────────────────────────────┐
- *  │  DndContext  (top-level drag orchestrator)│
- *  │  ┌──────────────────────────────────────┐│
- *  │  │  TierRow S  [droppable + sortable]   ││
- *  │  │  TierRow A  [droppable + sortable]   ││
- *  │  │  TierRow B  [droppable + sortable]   ││
- *  │  │  TierRow C  [droppable + sortable]   ││
- *  │  │  TierRow D  [droppable + sortable]   ││
- *  │  │  Unranked Pool  [droppable pool]     ││
- *  │  └──────────────────────────────────────┘│
- *  │  DragOverlay  (floating preview card)    │
- *  └──────────────────────────────────────────┘
- *
- * State management:
- *  tierMap: Record<Tier | "unranked", string[]>
- *    Maps each tier (and the unranked pool) to an array of player IDs.
- *    This is the single source of truth for where each player lives.
- *
- * Drag logic:
- *  onDragStart  → record the active player ID.
- *  onDragOver   → move the player to the hover container in real time
- *                 (provides live visual feedback).
- *  onDragEnd    → confirm the final placement; remove from old container.
- *
- * The UNIQUE constraint is enforced by the tierMap itself: a player ID
- * can only appear in one bucket at a time (we always remove before adding).
- *
- * Saving:
- *  The "Save Rankings" button calls POST /api/tierlist/save with the
- *  current tierMap (excluding "unranked" players).
- */
-
 import { useState, useCallback } from "react";
 import {
   DndContext,
@@ -45,14 +7,11 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  closestCenter,
+  useDroppable,
   type DragStartEvent,
-  type DragOverEvent,
   type DragEndEvent,
-  closestCorners,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
-import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 
 import TierRow from "./TierRow";
 import PlayerCard from "./PlayerCard";
@@ -64,7 +23,6 @@ import type { SaveRankingPayload } from "@/lib/types";
 interface TierlistBoardProps {
   topic: TierlistTopic;
   players: TierlistPlayer[];
-  /** Previously saved rankings from the DB (empty array if none) */
   existingRankings: { player_id: string; tier: Tier }[];
   userId: string;
 }
@@ -75,7 +33,6 @@ function buildInitialTierMap(
   players: TierlistPlayer[],
   existingRankings: { player_id: string; tier: Tier }[]
 ): TierMap {
-  // Start with all tiers empty and all players in "unranked"
   const map: TierMap = {
     S: [],
     A: [],
@@ -85,7 +42,6 @@ function buildInitialTierMap(
     unranked: players.map((p) => p.id),
   };
 
-  // Apply existing rankings, moving players out of "unranked"
   for (const { player_id, tier } of existingRankings) {
     map.unranked = map.unranked.filter((id) => id !== player_id);
     map[tier].push(player_id);
@@ -94,7 +50,7 @@ function buildInitialTierMap(
   return map;
 }
 
-// ── Unranked pool droppable component ─────────────────────────────────────
+// ── Unranked pool ─────────────────────────────────────────────────────────
 
 function UnrankedPool({
   players,
@@ -107,6 +63,7 @@ function UnrankedPool({
 
   return (
     <div
+      ref={setNodeRef}
       className={`rounded-xl border p-3 transition-colors ${
         isOver ? "border-indigo-400 bg-gray-800" : "border-dashed border-gray-700 bg-gray-900/50"
       }`}
@@ -114,19 +71,14 @@ function UnrankedPool({
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
         Unranked Players — drag into a tier
       </h3>
-      <div ref={setNodeRef} className="flex min-h-[60px] flex-wrap gap-2">
-        <SortableContext
-          items={players.map((p) => p.id)}
-          strategy={rectSortingStrategy}
-        >
-          {players.map((player) => (
-            <PlayerCard
-              key={player.id}
-              player={player}
-              isDragging={activePlayerId === player.id}
-            />
-          ))}
-        </SortableContext>
+      <div className="flex min-h-[60px] flex-wrap gap-2">
+        {players.map((player) => (
+          <PlayerCard
+            key={player.id}
+            player={player}
+            isDragging={activePlayerId === player.id}
+          />
+        ))}
         {players.length === 0 && (
           <span className="flex items-center text-xs text-gray-600 italic">
             All players ranked!
@@ -139,40 +91,35 @@ function UnrankedPool({
 
 // ── Main component ─────────────────────────────────────────────────────────
 
+const VALID_CONTAINERS = new Set<string>([...TIERS, "unranked"]);
+
 export default function TierlistBoard({
   topic,
   players,
   existingRankings,
   userId,
 }: TierlistBoardProps) {
-  // Build a quick lookup: player id → full player object
   const playerMap = Object.fromEntries(players.map((p) => [p.id, p]));
 
-  // The single source of truth for player placement
   const [tierMap, setTierMap] = useState<TierMap>(() =>
     buildInitialTierMap(players, existingRankings)
   );
 
-  // The player currently being dragged (for DragOverlay)
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // UI feedback for save operation
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
 
-  // ── DnD sensors ─────────────────────────────────────────────────────────
-  // PointerSensor requires a 5px movement before starting a drag
-  // to avoid triggering drag on accidental tiny taps/clicks.
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
     })
   );
 
-  // ── Find which container a player currently lives in ─────────────────────
+  // Find which container a player currently lives in
   const findContainer = useCallback(
     (playerId: string): Tier | "unranked" | undefined => {
       for (const key of [...TIERS, "unranked"] as Array<Tier | "unranked">) {
@@ -183,102 +130,36 @@ export default function TierlistBoard({
     [tierMap]
   );
 
-  // ── Drag handlers ─────────────────────────────────────────────────────────
+  // ── Drag handlers ──────────────────────────────────────────────────────
 
   function onDragStart({ active }: DragStartEvent) {
     setActiveId(active.id as string);
   }
 
-  /**
-   * onDragOver fires continuously while dragging.
-   * We update the tierMap here to give live visual feedback as the
-   * drag card hovers over a different tier row.
-   */
-  function onDragOver({ active, over }: DragOverEvent) {
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    const activeContainer = findContainer(activeId);
-    // The "over" target is either a container id or another player id
-    const overContainer =
-      (tierMap[overId as Tier | "unranked"] !== undefined
-        ? overId
-        : findContainer(overId)) as Tier | "unranked" | undefined;
-
-    if (
-      !activeContainer ||
-      !overContainer ||
-      activeContainer === overContainer
-    ) {
-      return;
-    }
-
-    setTierMap((prev) => {
-      const activeItems = [...prev[activeContainer]];
-      const overItems = [...prev[overContainer]];
-
-      const activeIndex = activeItems.indexOf(activeId);
-      const overIndex = overItems.indexOf(overId);
-
-      // Insert at appropriate position in the target container
-      let newIndex: number;
-      if (tierMap[overId as Tier | "unranked"] !== undefined) {
-        // Dropped directly onto a container – add to end
-        newIndex = overItems.length;
-      } else {
-        // Dropped on a player – insert before/after based on position
-        newIndex = overIndex >= 0 ? overIndex : overItems.length;
-      }
-
-      return {
-        ...prev,
-        [activeContainer]: activeItems.filter((id) => id !== activeId),
-        [overContainer]: [
-          ...overItems.slice(0, newIndex),
-          activeId,
-          ...overItems.slice(newIndex),
-        ],
-      };
-    });
-  }
-
-  /**
-   * onDragEnd fires once the user releases the drag.
-   * If dropped in the same container, handle reordering.
-   * If over nothing, revert (no-op – position unchanged from onDragOver).
-   */
   function onDragEnd({ active, over }: DragEndEvent) {
     setActiveId(null);
 
     if (!over) return;
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
+    const playerId = active.id as string;
+    const targetContainer = over.id as string;
 
-    const activeContainer = findContainer(activeId);
-    const overContainer =
-      (tierMap[overId as Tier | "unranked"] !== undefined
-        ? overId
-        : findContainer(overId)) as Tier | "unranked" | undefined;
+    // Only accept drops onto valid containers (tier rows + unranked pool)
+    if (!VALID_CONTAINERS.has(targetContainer)) return;
 
-    if (!activeContainer || !overContainer) return;
+    const sourceContainer = findContainer(playerId);
+    if (!sourceContainer || sourceContainer === targetContainer) return;
 
-    if (activeContainer === overContainer) {
-      // Reorder within the same container
-      const items = tierMap[activeContainer];
-      const oldIndex = items.indexOf(activeId);
-      const newIndex = items.indexOf(overId);
-
-      if (oldIndex !== newIndex) {
-        setTierMap((prev) => ({
-          ...prev,
-          [activeContainer]: arrayMove(prev[activeContainer], oldIndex, newIndex),
-        }));
-      }
-    }
-    // Cross-container movement was already handled in onDragOver
+    setTierMap((prev) => ({
+      ...prev,
+      [sourceContainer]: prev[sourceContainer as Tier | "unranked"].filter(
+        (id) => id !== playerId
+      ),
+      [targetContainer]: [
+        ...prev[targetContainer as Tier | "unranked"],
+        playerId,
+      ],
+    }));
   }
 
   // ── Save handler ─────────────────────────────────────────────────────────
@@ -287,7 +168,6 @@ export default function TierlistBoard({
     setSaving(true);
     setSaveMessage(null);
 
-    // Build the payload: only include players that are in a real tier
     const rankings: SaveRankingPayload["rankings"] = [];
     for (const tier of TIERS) {
       for (const playerId of tierMap[tier]) {
@@ -318,22 +198,16 @@ export default function TierlistBoard({
     }
   }
 
-  // ── Derived data for rendering ────────────────────────────────────────────
-
-  // How many players have been placed in a tier
   const rankedCount = TIERS.reduce((sum, t) => sum + tierMap[t].length, 0);
 
   return (
     <div className="space-y-3">
-      {/* ── DnD context wraps all interactive elements ─────────────────── */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={closestCenter}
         onDragStart={onDragStart}
-        onDragOver={onDragOver}
         onDragEnd={onDragEnd}
       >
-        {/* Tier rows S → D */}
         {TIERS.map((tier) => (
           <TierRow
             key={tier}
@@ -343,15 +217,11 @@ export default function TierlistBoard({
           />
         ))}
 
-        {/* Unranked pool below the tiers */}
         <UnrankedPool
           players={tierMap.unranked.map((id) => playerMap[id]).filter(Boolean)}
           activePlayerId={activeId}
         />
 
-        {/* DragOverlay renders a floating copy of the card being dragged.
-            This is the card the user "holds" – the original fades (via
-            the isDragging prop on PlayerCard). */}
         <DragOverlay>
           {activeId && playerMap[activeId] ? (
             <div className="rotate-2 scale-105 shadow-2xl opacity-95">
@@ -361,14 +231,13 @@ export default function TierlistBoard({
         </DragOverlay>
       </DndContext>
 
-      {/* ── Save section ───────────────────────────────────────────────── */}
+      {/* Save section */}
       <div className="flex items-center justify-between rounded-xl border border-gray-700 bg-gray-900 p-4">
         <span className="text-sm text-gray-400">
           {rankedCount}/{players.length} players ranked
         </span>
 
         <div className="flex items-center gap-3">
-          {/* Inline feedback message */}
           {saveMessage && (
             <span
               className={`text-sm ${

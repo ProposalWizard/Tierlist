@@ -8,8 +8,22 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Football Tierlist",
-  description: "Drag & drop your football player tier rankings",
+  title: {
+    default: "Football Tierlist",
+    template: "%s | Football Tierlist",
+  },
+  description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings — free forever.",
+  openGraph: {
+    type: "website",
+    siteName: "Football Tierlist",
+    title: "Football Tierlist",
+    description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Football Tierlist",
+    description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings.",
+  },
 };
 
 export default function RootLayout({
