@@ -40,24 +40,22 @@ export default function PlayerCard({ player, isDragging = false }: PlayerCardPro
       {...attributes}
       {...listeners}
       className={`
-        w-[88px] flex-shrink-0 cursor-grab select-none rounded-lg border
-        border-gray-700 bg-gray-800 p-1.5 text-center shadow
-        transition-colors hover:border-gray-500 hover:bg-gray-700
+        w-[88px] h-[88px] flex-shrink-0 cursor-grab select-none rounded-lg
+        border-2 border-white overflow-hidden shadow
         active:cursor-grabbing
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
       `}
     >
-      {/* Image — fills the card, large enough to be useful */}
       {player.image_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={player.image_url}
           alt={player.name}
-          className="h-[72px] w-full rounded-md object-cover"
+          className="h-full w-full object-cover"
           draggable={false}
         />
       ) : (
-        <div className="flex h-[72px] w-full items-center justify-center rounded-md bg-indigo-700 text-sm font-bold text-white">
+        <div className="flex h-full w-full items-center justify-center bg-indigo-700 text-sm font-bold text-white">
           {initials}
         </div>
       )}
