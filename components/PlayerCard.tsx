@@ -62,10 +62,6 @@ export default function PlayerCard({ player, isDragging = false }: PlayerCardPro
         </div>
       )}
 
-      {/* Name label */}
-      <p className="mt-1 truncate text-[11px] font-medium leading-tight text-white">
-        {player.name}
-      </p>
     </div>
   );
 }
