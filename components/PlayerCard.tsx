@@ -41,7 +41,7 @@ export default function PlayerCard({ player, isDragging = false }: PlayerCardPro
       {...listeners}
       className={`
         w-[88px] h-[88px] flex-shrink-0 cursor-grab select-none rounded-lg
-        border-2 border-white overflow-hidden shadow
+        border-2 border-black overflow-hidden shadow
         active:cursor-grabbing
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
       `}

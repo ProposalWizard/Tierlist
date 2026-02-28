@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import PlayerCard from "./PlayerCard";
@@ -13,25 +14,66 @@ interface TierRowProps {
 }
 
 export default function TierRow({ tier, players, activePlayerId }: TierRowProps) {
-  // Entire row is the droppable target for a large hit area
   const { setNodeRef, isOver } = useDroppable({ id: tier });
-
   const tierColor = TIER_COLORS[tier];
+
+  const [label, setLabel] = useState(tier as string);
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus and select all text when editing starts
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  function commitEdit() {
+    // If user cleared the label, revert to the tier letter
+    setLabel((v) => v.trim() || tier);
+    setEditing(false);
+  }
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-[80px] rounded-xl border transition-colors ${
+      className={`flex min-h-[100px] rounded-xl border transition-colors ${
         isOver
           ? "border-indigo-400 bg-gray-800"
           : "border-gray-700 bg-gray-900"
       }`}
     >
-      {/* Tier label */}
+      {/* Tier label — click to edit */}
       <div
-        className={`flex w-14 flex-shrink-0 items-center justify-center rounded-l-xl text-2xl font-black text-gray-900 ${tierColor}`}
+        className={`relative flex w-20 flex-shrink-0 items-center justify-center rounded-l-xl ${tierColor}`}
+        title="Click to rename"
       >
-        {tier}
+        {editing ? (
+          <input
+            ref={inputRef}
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitEdit();
+              if (e.key === "Escape") { setLabel(tier); setEditing(false); }
+            }}
+            // Stop pointer events reaching the DnD context so dragging isn't triggered
+            onPointerDown={(e) => e.stopPropagation()}
+            maxLength={12}
+            className="w-full bg-transparent text-center text-lg font-black text-gray-900 outline-none placeholder:text-gray-700"
+          />
+        ) : (
+          <button
+            onClick={() => setEditing(true)}
+            // Block pointer so DnD doesn't intercept the click
+            onPointerDown={(e) => e.stopPropagation()}
+            className="flex h-full w-full cursor-text items-center justify-center px-1 text-center text-xl font-black leading-tight text-gray-900 break-words hyphens-auto"
+          >
+            {label}
+          </button>
+        )}
       </div>
 
       {/* Player area */}
@@ -50,7 +92,7 @@ export default function TierRow({ tier, players, activePlayerId }: TierRowProps)
         </SortableContext>
         {players.length === 0 && (
           <span className="flex items-center text-xs text-gray-600 italic">
-            Drop players here
+            Drop images here
           </span>
         )}
       </div>
