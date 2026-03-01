@@ -23,8 +23,8 @@ export async function middleware(request: NextRequest) {
   // ── Route protection ─────────────────────────────────────────────────
   const { pathname } = request.nextUrl;
 
-  // Protect all /tierlist/* routes
-  if (pathname.startsWith("/tierlist")) {
+  // Protect /tierlist/* and /create routes
+  if (pathname.startsWith("/tierlist") || pathname.startsWith("/create")) {
     // Read the user from the refreshed cookie
     // (updateSession already called getUser internally, but we need to
     //  check the result here too)

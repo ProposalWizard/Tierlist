@@ -21,6 +21,11 @@ import TierRow from "./TierRow";
 import PlayerCard from "./PlayerCard";
 import { TIERS, type Tier, type TierMap, type TierlistPlayer } from "@/lib/types";
 
+interface TierlistBoardProps {
+  /** Pre-populated images for the unranked pool (e.g. from a saved tierlist) */
+  initialImages?: Array<{ id: string; name: string; image_url: string }>;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 const CONTAINER_IDS = new Set<string>([...TIERS, "unranked"]);
@@ -103,19 +108,33 @@ function UnrankedPool({
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export default function TierlistBoard() {
-  // All state is purely client-side — no DB queries needed
-  const [tierMap, setTierMap] = useState<TierMap>({
+export default function TierlistBoard({ initialImages }: TierlistBoardProps = {}) {
+  const [tierMap, setTierMap] = useState<TierMap>(() => ({
     S: [],
     A: [],
     B: [],
     C: [],
     D: [],
-    unranked: [],
-  });
+    unranked: initialImages?.map((img) => img.id) ?? [],
+  }));
 
-  // Map of id → player object (includes blob URLs)
-  const [playerMap, setPlayerMap] = useState<Record<string, TierlistPlayer>>({});
+  const [playerMap, setPlayerMap] = useState<Record<string, TierlistPlayer>>(() => {
+    if (!initialImages?.length) return {};
+    return Object.fromEntries(
+      initialImages.map((img) => [
+        img.id,
+        {
+          id: img.id,
+          topic_id: "",
+          name: img.name,
+          position: null,
+          club: null,
+          image_url: img.image_url,
+          created_at: "",
+        } satisfies TierlistPlayer,
+      ])
+    );
+  });
 
   const [activeId, setActiveId] = useState<string | null>(null);
 

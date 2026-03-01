@@ -65,6 +65,52 @@ export const TIER_COLORS: Record<Tier, string> = {
 export type TierMap = Record<Tier | "unranked", string[]>;
 
 // ---------------------------------------------------------------
+// User-created tierlists (new feature)
+// ---------------------------------------------------------------
+
+/** A user-created tierlist template (stored in DB) */
+export interface Tierlist {
+  id: string;
+  created_by: string;
+  title: string;
+  slug: string;
+  cover_image_url: string | null;
+  created_at: string;
+}
+
+/** An image belonging to a user-created tierlist */
+export interface TierlistImage {
+  id: string;
+  tierlist_id: string;
+  name: string;
+  image_url: string;
+  sort_order: number;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------
+// User-created tierlists (new feature: create / play flow)
+// ---------------------------------------------------------------
+
+export interface Tierlist {
+  id: string;
+  created_by: string;
+  title: string;
+  slug: string;
+  cover_image_url: string | null;
+  created_at: string;
+}
+
+export interface TierlistImage {
+  id: string;
+  tierlist_id: string;
+  name: string;
+  image_url: string;
+  sort_order: number;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------
 // API request / response shapes
 // ---------------------------------------------------------------
 

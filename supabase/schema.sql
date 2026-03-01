@@ -150,3 +150,82 @@ CREATE POLICY "rankings_update_own"
 CREATE POLICY "rankings_delete_own"
   ON public.tierlist_rankings FOR DELETE
   USING (auth.uid() = user_id);
+
+
+-- =============================================================
+-- 5. tierlists  (user-created playable tierlist templates)
+-- =============================================================
+-- IMPORTANT – Storage setup (do this in Supabase Dashboard first):
+--   Storage → New bucket → Name: "tierlist-images" → Public: ON
+--   This bucket stores the uploaded images for each tierlist.
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS public.tierlists (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title           TEXT        NOT NULL,
+  slug            TEXT        NOT NULL UNIQUE,
+  cover_image_url TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tierlists_created_by
+  ON public.tierlists (created_by);
+
+CREATE INDEX IF NOT EXISTS idx_tierlists_created_at
+  ON public.tierlists (created_at DESC);
+
+
+-- =============================================================
+-- 6. tierlist_images  (the images that belong to a tierlist)
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS public.tierlist_images (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  tierlist_id  UUID        NOT NULL REFERENCES public.tierlists(id) ON DELETE CASCADE,
+  name         TEXT        NOT NULL,
+  image_url    TEXT        NOT NULL,
+  sort_order   INTEGER     NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tierlist_images_tierlist_id
+  ON public.tierlist_images (tierlist_id);
+
+
+-- =============================================================
+-- RLS for tierlists + tierlist_images
+-- =============================================================
+
+ALTER TABLE public.tierlists       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tierlist_images ENABLE ROW LEVEL SECURITY;
+
+-- Anyone can view all tierlists (public gallery)
+CREATE POLICY "tierlists_select_public"
+  ON public.tierlists FOR SELECT
+  USING (true);
+
+-- Only the creator can insert
+CREATE POLICY "tierlists_insert_own"
+  ON public.tierlists FOR INSERT
+  WITH CHECK (auth.uid() = created_by);
+
+-- Only the creator can delete
+CREATE POLICY "tierlists_delete_own"
+  ON public.tierlists FOR DELETE
+  USING (auth.uid() = created_by);
+
+-- Anyone can view all images (public gallery)
+CREATE POLICY "tierlist_images_select_public"
+  ON public.tierlist_images FOR SELECT
+  USING (true);
+
+-- Only the tierlist owner can insert images
+CREATE POLICY "tierlist_images_insert_own"
+  ON public.tierlist_images FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.tierlists
+      WHERE id = tierlist_id AND created_by = auth.uid()
+    )
+  );
