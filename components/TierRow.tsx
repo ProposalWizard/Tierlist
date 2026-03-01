@@ -38,7 +38,7 @@ export default function TierRow({ tier, players, activePlayerId }: TierRowProps)
     >
       {/* Tier label — always an input so it's always editable */}
       <div
-        className="flex w-28 flex-shrink-0 items-center justify-center rounded-l-xl"
+        className="flex w-36 flex-shrink-0 items-center justify-center rounded-l-xl"
         style={{ backgroundColor: TIER_BG[tier] }}
       >
         <input
