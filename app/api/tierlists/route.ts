@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { title: string; category: string; images: { name: string; image_url: string }[] };
+  let body: { title: string; category: string; cover_image_url?: string; images: { name: string; image_url: string }[] };
   try {
     body = await request.json();
   } catch {
@@ -39,6 +39,7 @@ export async function POST(request: Request) {
   }
 
   const { title, category, images } = body;
+  const cover_image_url = body.cover_image_url ?? images[0]?.image_url ?? null;
 
   if (!title?.trim()) {
     return NextResponse.json({ error: "title is required" }, { status: 400 });
@@ -51,7 +52,6 @@ export async function POST(request: Request) {
   }
 
   const slug = `${slugify(title.trim())}-${Date.now().toString(36)}`;
-  const cover_image_url = images[0]?.image_url ?? null;
 
   const { data: tierlist, error: tlError } = await supabase
     .from("tierlists")
