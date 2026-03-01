@@ -10,8 +10,20 @@ interface ImageEntry {
   name: string;
 }
 
+const CATEGORIES = [
+  "Football",
+  "Basketball",
+  "Movies & TV",
+  "Music",
+  "Gaming",
+  "Food & Drink",
+  "Animals",
+  "Other",
+];
+
 export default function CreateTierlistForm() {
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState(CATEGORIES[0]);
   const [images, setImages] = useState<ImageEntry[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +86,7 @@ export default function CreateTierlistForm() {
       const res = await fetch("/api/tierlists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), images: uploadedImages }),
+        body: JSON.stringify({ title: title.trim(), category, images: uploadedImages }),
       });
 
       if (!res.ok) {
@@ -103,6 +115,22 @@ export default function CreateTierlistForm() {
           placeholder="e.g. Premier League Players"
           className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-2.5 text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
         />
+      </div>
+
+      {/* Category */}
+      <div>
+        <label className="mb-1 block text-sm font-semibold text-gray-300">
+          Category
+        </label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-2.5 text-white focus:border-indigo-500 focus:outline-none"
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
       </div>
 
       {/* Image upload */}

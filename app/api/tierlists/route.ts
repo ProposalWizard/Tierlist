@@ -31,14 +31,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { title: string; images: { name: string; image_url: string }[] };
+  let body: { title: string; category: string; images: { name: string; image_url: string }[] };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { title, images } = body;
+  const { title, category, images } = body;
 
   if (!title?.trim()) {
     return NextResponse.json({ error: "title is required" }, { status: 400 });
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
   const { data: tierlist, error: tlError } = await supabase
     .from("tierlists")
-    .insert({ created_by: user.id, title: title.trim(), slug, cover_image_url })
+    .insert({ created_by: user.id, title: title.trim(), category: category ?? "Other", slug, cover_image_url })
     .select("id, slug")
     .single();
 
