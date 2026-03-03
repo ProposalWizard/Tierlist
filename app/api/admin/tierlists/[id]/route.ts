@@ -94,7 +94,7 @@ export async function DELETE(_request: Request, { params }: { params: Params }) 
     ...(imgData ?? []).map((r: { image_url: string }) => r.image_url),
     ...(tlData?.cover_image_url ? [tlData.cover_image_url] : []),
   ];
-  const uniqueUrls = [...new Set(allUrls)];
+  const uniqueUrls = Array.from(new Set(allUrls));
 
   // Extract storage paths from public URLs
   const BUCKET_MARKER = "/object/public/tierlist-images/";
