@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/admin";
 import type { Tierlist } from "@/lib/types";
 
 type TierlistCard = Pick<Tierlist, "id" | "title" | "category" | "cover_image_url" | "created_at">;
@@ -16,6 +17,8 @@ export default async function HomePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const userIsAdmin = user ? await isAdmin(user.id) : false;
 
   const { data: tierlists } = await supabase
     .from("tierlists")
@@ -43,6 +46,14 @@ export default async function HomePage() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
+                {userIsAdmin && (
+                  <Link
+                    href="/admin"
+                    className="rounded-lg border border-indigo-700 px-3 py-2 text-xs font-semibold text-indigo-300 transition-colors hover:border-indigo-500 hover:text-white"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Link
                   href="/create"
                   className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"

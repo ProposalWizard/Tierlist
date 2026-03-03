@@ -229,3 +229,41 @@ CREATE POLICY "tierlist_images_insert_own"
       WHERE id = tierlist_id AND created_by = auth.uid()
     )
   );
+
+
+-- =============================================================
+-- 7. tierlists – add category column (if not already present)
+-- =============================================================
+-- Run this if you created the tierlists table before this column was added.
+ALTER TABLE public.tierlists
+  ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'Other';
+
+
+-- =============================================================
+-- 8. user_roles  (admin role management)
+-- =============================================================
+-- To grant yourself admin access, run this in the Supabase SQL Editor:
+--   INSERT INTO public.user_roles (user_id, is_admin)
+--   VALUES ('<your-user-uuid>', true)
+--   ON CONFLICT (user_id) DO UPDATE SET is_admin = true;
+--
+-- Find your user UUID in: Supabase Dashboard → Authentication → Users
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS public.user_roles (
+  user_id    UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  is_admin   BOOLEAN     NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+-- Authenticated users can read their own role
+-- (The app uses the service-role key server-side, so this is a
+--  belt-and-suspenders policy for direct client queries.)
+CREATE POLICY "user_roles_select_own"
+  ON public.user_roles FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- INSERT / UPDATE / DELETE are only allowed via the service-role key
+-- (used server-side in API routes). No client-facing policies needed.
