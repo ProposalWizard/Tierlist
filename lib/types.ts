@@ -65,6 +65,44 @@ export const TIER_COLORS: Record<Tier, string> = {
 export type TierMap = Record<Tier | "unranked", string[]>;
 
 // ---------------------------------------------------------------
+// Dynamic tier rows (used in the new editor/board)
+// ---------------------------------------------------------------
+
+/** A single tier row with a custom label and colour */
+export interface TierRowData {
+  id: string;
+  label: string;
+  color: string;
+}
+
+/** Default 5 tiers with the standard green→red colour scheme */
+export const DEFAULT_TIER_ROWS: TierRowData[] = [
+  { id: "tier-s", label: "S", color: "#4ade80" }, // green-400
+  { id: "tier-a", label: "A", color: "#86efac" }, // green-300
+  { id: "tier-b", label: "B", color: "#fde047" }, // yellow-300
+  { id: "tier-c", label: "C", color: "#fb923c" }, // orange-400
+  { id: "tier-d", label: "D", color: "#f87171" }, // red-400
+];
+
+/** Palette of colours available in the tier-row settings panel */
+export const TIER_COLOR_OPTIONS: string[] = [
+  "#f87171", // red-400
+  "#fb923c", // orange-400
+  "#fbbf24", // amber-400
+  "#fde047", // yellow-300
+  "#a3e635", // lime-400
+  "#4ade80", // green-400
+  "#34d399", // emerald-400
+  "#22d3ee", // cyan-400
+  "#60a5fa", // blue-400
+  "#818cf8", // indigo-400
+  "#c084fc", // purple-400
+  "#f472b6", // pink-400
+  "#94a3b8", // slate-400
+  "#e2e8f0", // slate-200
+];
+
+// ---------------------------------------------------------------
 // User-created tierlists (create / play flow)
 // ---------------------------------------------------------------
 
