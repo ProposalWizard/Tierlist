@@ -84,6 +84,23 @@ export const DEFAULT_TIER_ROWS: TierRowData[] = [
   { id: "tier-d", label: "D", color: "#f87171" }, // red-400
 ];
 
+// ---------------------------------------------------------------
+// Image display styles
+// ---------------------------------------------------------------
+
+export type ImageStyle = "square" | "landscape" | "portrait" | "circle" | "nocrop";
+
+export const IMAGE_STYLE_DIMS: Record<
+  ImageStyle,
+  { width: number; height: number; circle: boolean; contain: boolean }
+> = {
+  square:    { width: 108, height: 108, circle: false, contain: false },
+  landscape: { width: 160, height: 100, circle: false, contain: false },
+  portrait:  { width: 82,  height: 116, circle: false, contain: false },
+  circle:    { width: 108, height: 108, circle: true,  contain: false },
+  nocrop:    { width: 160, height: 108, circle: false, contain: true  },
+};
+
 /** Palette of colours available in the tier-row settings panel */
 export const TIER_COLOR_OPTIONS: string[] = [
   "#f87171", // red-400

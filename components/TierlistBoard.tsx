@@ -26,18 +26,30 @@ import { SortableContext, arrayMove, rectSortingStrategy } from "@dnd-kit/sortab
 import TierRow from "./TierRow";
 import PlayerCard from "./PlayerCard";
 import UploadTierlistModal from "./UploadTierlistModal";
+import ZoomOverlay from "./ZoomOverlay";
+import CropOverlay from "./CropOverlay";
 import {
   DEFAULT_TIER_ROWS,
+  IMAGE_STYLE_DIMS,
   type TierRowData,
   type TierlistPlayer,
+  type ImageStyle,
 } from "@/lib/types";
+
+// ── Style selector config ──────────────────────────────────────────────────
+
+const STYLE_OPTIONS: { key: ImageStyle; label: string }[] = [
+  { key: "square",    label: "Square"    },
+  { key: "landscape", label: "Landscape" },
+  { key: "portrait",  label: "Portrait"  },
+  { key: "circle",    label: "Circle"    },
+  { key: "nocrop",    label: "No Crop"   },
+];
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface TierlistBoardProps {
-  /** Pre-populated images (from a saved tierlist) */
   initialImages?: Array<{ id: string; name: string; image_url: string }>;
-  /** "create" mode shows Upload + Download buttons */
   mode?: "play" | "create";
 }
 
@@ -46,11 +58,21 @@ interface TierlistBoardProps {
 function UnrankedPool({
   players,
   activePlayerId,
+  imageStyle,
+  zoomMode,
+  cropMode,
   onFilesAdded,
+  onZoom,
+  onCrop,
 }: {
   players: TierlistPlayer[];
   activePlayerId: string | null;
+  imageStyle: ImageStyle;
+  zoomMode: boolean;
+  cropMode: boolean;
   onFilesAdded: (files: FileList) => void;
+  onZoom: (id: string) => void;
+  onCrop: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: "unranked" });
   const inputId = useId();
@@ -99,6 +121,11 @@ function UnrankedPool({
               key={player.id}
               player={player}
               isDragging={activePlayerId === player.id}
+              imageStyle={imageStyle}
+              zoomMode={zoomMode}
+              cropMode={cropMode}
+              onZoom={onZoom}
+              onCrop={onCrop}
             />
           ))}
         </SortableContext>
@@ -112,16 +139,26 @@ function UnrankedPool({
   );
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, data] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)![1];
+  const bytes = atob(data);
+  const buf = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+  return new Blob([buf], { type: mime });
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function TierlistBoard({
   initialImages,
   mode = "play",
 }: TierlistBoardProps) {
-  // Dynamic tier rows
+  // ── Tier state ───────────────────────────────────────────────────────────
   const [tiers, setTiers] = useState<TierRowData[]>(() => DEFAULT_TIER_ROWS);
 
-  // Map of tier-row-id / "unranked" → ordered player IDs
   const [tierMap, setTierMap] = useState<Record<string, string[]>>(() => {
     const map: Record<string, string[]> = {
       unranked: initialImages?.map((img) => img.id) ?? [],
@@ -130,7 +167,6 @@ export default function TierlistBoard({
     return map;
   });
 
-  // Player metadata
   const [playerMap, setPlayerMap] = useState<Record<string, TierlistPlayer>>(
     () => {
       if (!initialImages?.length) return {};
@@ -151,29 +187,25 @@ export default function TierlistBoard({
     }
   );
 
-  // File objects for locally-added images (needed for Supabase upload)
   const [fileMap, setFileMap] = useState<Record<string, File>>({});
 
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // ── UI state ─────────────────────────────────────────────────────────────
+  const [activeId, setActiveId]         = useState<string | null>(null);
+  const [imageStyle, setImageStyle]     = useState<ImageStyle>("square");
+  const [zoomMode, setZoomMode]         = useState(false);
+  const [cropMode, setCropMode]         = useState(false);
+  const [zoomedId, setZoomedId]         = useState<string | null>(null);
+  const [croppingId, setCroppingId]     = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloading, setIsDownloading]     = useState(false);
 
-  // Ref for the tiers-only section used for screenshot download
   const tiersRef = useRef<HTMLDivElement>(null);
-
-  // Keep a live ref to tierMap so collision detection never goes stale
   const tierMapRef = useRef(tierMap);
-  useLayoutEffect(() => {
-    tierMapRef.current = tierMap;
-  });
+  useLayoutEffect(() => { tierMapRef.current = tierMap; });
 
-  // Set of all valid droppable container IDs (updated each render)
   const containerIdsRef = useRef<Set<string>>(new Set());
   useLayoutEffect(() => {
-    containerIdsRef.current = new Set([
-      ...tiers.map((t) => t.id),
-      "unranked",
-    ]);
+    containerIdsRef.current = new Set([...tiers.map((t) => t.id), "unranked"]);
   });
 
   const sensors = useSensors(
@@ -185,21 +217,17 @@ export default function TierlistBoard({
   function handleFilesAdded(files: FileList) {
     const newPlayers: TierlistPlayer[] = [];
     const newFiles: Record<string, File> = {};
-
     Array.from(files).forEach((file) => {
       const id = crypto.randomUUID();
       newPlayers.push({
-        id,
-        topic_id: "",
+        id, topic_id: "",
         name: file.name.replace(/\.[^/.]+$/, ""),
-        position: null,
-        club: null,
+        position: null, club: null,
         image_url: URL.createObjectURL(file),
         created_at: new Date().toISOString(),
       });
       newFiles[id] = file;
     });
-
     setPlayerMap((prev) => ({
       ...prev,
       ...Object.fromEntries(newPlayers.map((p) => [p.id, p])),
@@ -230,6 +258,7 @@ export default function TierlistBoard({
   }
 
   function deleteTier(id: string) {
+    if (tiers.length <= 1) return; // minimum 1 row
     const orphans = tierMap[id] ?? [];
     setTiers((prev) => prev.filter((t) => t.id !== id));
     setTierMap((prev) => {
@@ -257,6 +286,28 @@ export default function TierlistBoard({
     setTiers((prev) => prev.map((t) => (t.id === id ? { ...t, color } : t)));
   }
 
+  // ── Zoom / crop mode toggles ─────────────────────────────────────────────
+
+  function toggleZoom() {
+    setZoomMode((v) => { if (!v) setCropMode(false); return !v; });
+  }
+  function toggleCrop() {
+    setCropMode((v) => { if (!v) setZoomMode(false); return !v; });
+  }
+
+  // ── Crop result handler ──────────────────────────────────────────────────
+
+  function handleCropResult(playerId: string, dataUrl: string) {
+    const blob = dataUrlToBlob(dataUrl);
+    const file = new File([blob], "cropped.png", { type: "image/png" });
+    setPlayerMap((prev) => ({
+      ...prev,
+      [playerId]: { ...prev[playerId], image_url: dataUrl },
+    }));
+    setFileMap((prev) => ({ ...prev, [playerId]: file }));
+    setCroppingId(null);
+  }
+
   // ── Download as image ────────────────────────────────────────────────────
 
   async function handleDownload() {
@@ -279,7 +330,7 @@ export default function TierlistBoard({
     }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // ── DnD helpers ──────────────────────────────────────────────────────────
 
   const findContainer = useCallback(
     (id: string): string | undefined => {
@@ -291,24 +342,13 @@ export default function TierlistBoard({
     [tierMap, tiers]
   );
 
-  // ── Collision detection ──────────────────────────────────────────────────
-  //
-  // 1. pointerWithin to find the container under the cursor.
-  // 2. If that container has items, return the closest item within it.
-  // 3. If empty, return the container itself.
-  // 4. Fall back to closestCenter.
-
   const collisionDetection: CollisionDetection = useCallback((args) => {
     const pointerCollisions = pointerWithin(args);
-
     const containerHit = pointerCollisions.find((c) =>
       containerIdsRef.current.has(c.id as string)
     );
-
     if (containerHit) {
-      const containerId = containerHit.id as string;
-      const itemIds = tierMapRef.current[containerId] ?? [];
-
+      const itemIds = tierMapRef.current[containerHit.id as string] ?? [];
       if (itemIds.length > 0) {
         const closest = closestCenter({
           ...args,
@@ -320,7 +360,6 @@ export default function TierlistBoard({
       }
       return [containerHit];
     }
-
     return closestCenter(args);
   }, []);
 
@@ -334,14 +373,11 @@ export default function TierlistBoard({
     if (!over) return;
     const aId = active.id as string;
     const oId = over.id as string;
-
     const activeContainer = findContainer(aId);
     const overContainer = (
       containerIdsRef.current.has(oId) ? oId : findContainer(oId)
     ) as string | undefined;
-
-    if (!activeContainer || !overContainer || activeContainer === overContainer)
-      return;
+    if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
     setTierMap((prev) => {
       const activeItems = [...prev[activeContainer]];
@@ -349,10 +385,7 @@ export default function TierlistBoard({
       const overIndex = overItems.indexOf(oId);
       const newIndex = containerIdsRef.current.has(oId)
         ? overItems.length
-        : overIndex >= 0
-        ? overIndex
-        : overItems.length;
-
+        : overIndex >= 0 ? overIndex : overItems.length;
       return {
         ...prev,
         [activeContainer]: activeItems.filter((id) => id !== aId),
@@ -370,19 +403,14 @@ export default function TierlistBoard({
     if (!over) return;
     const aId = active.id as string;
     const oId = over.id as string;
-
     const activeContainer = findContainer(aId);
     const overContainer = (
       containerIdsRef.current.has(oId) ? oId : findContainer(oId)
     ) as string | undefined;
-
-    if (!activeContainer || !overContainer || activeContainer !== overContainer)
-      return;
-
+    if (!activeContainer || !overContainer || activeContainer !== overContainer) return;
     const items = tierMap[activeContainer];
     const oldIndex = items.indexOf(aId);
     const newIndex = items.indexOf(oId);
-
     if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
       setTierMap((prev) => ({
         ...prev,
@@ -391,15 +419,10 @@ export default function TierlistBoard({
     }
   }
 
-  // ── Derived stats ────────────────────────────────────────────────────────
+  // ── Derived ──────────────────────────────────────────────────────────────
 
   const totalImages = Object.values(playerMap).length;
-  const rankedCount = tiers.reduce(
-    (sum, t) => sum + (tierMap[t.id]?.length ?? 0),
-    0
-  );
-
-  // All images for the upload modal (includes File ref if locally added)
+  const rankedCount = tiers.reduce((sum, t) => sum + (tierMap[t.id]?.length ?? 0), 0);
   const allImagesForUpload = Object.values(playerMap).map((p) => ({
     id: p.id,
     name: p.name,
@@ -410,91 +433,178 @@ export default function TierlistBoard({
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-3">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={collisionDetection}
-        onDragStart={onDragStart}
-        onDragOver={onDragOver}
-        onDragEnd={onDragEnd}
-      >
-        {/* Tier rows — wrapped for screenshot capture */}
-        <div ref={tiersRef} className="space-y-2 rounded-xl bg-gray-950 p-2">
-          {tiers.map((tier) => (
-            <TierRow
-              key={tier.id}
-              rowId={tier.id}
-              label={tier.label}
-              color={tier.color}
-              players={
-                (tierMap[tier.id] ?? [])
-                  .map((id) => playerMap[id])
-                  .filter(Boolean) as TierlistPlayer[]
-              }
-              activePlayerId={activeId}
-              onLabelChange={(label) => updateTierLabel(tier.id, label)}
-              onColorChange={(color) => updateTierColor(tier.id, color)}
-              onDelete={() => deleteTier(tier.id)}
-              onClear={() => clearTier(tier.id)}
-              onAddAbove={() => addTier(tier.id, "above")}
-              onAddBelow={() => addTier(tier.id, "below")}
-            />
-          ))}
-        </div>
+    <>
+      <div className="space-y-3">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={collisionDetection}
+          onDragStart={onDragStart}
+          onDragOver={onDragOver}
+          onDragEnd={onDragEnd}
+        >
+          {/* Tier rows — wrapped for screenshot */}
+          <div ref={tiersRef} className="space-y-2 rounded-xl bg-gray-950 p-2">
+            {tiers.map((tier) => (
+              <TierRow
+                key={tier.id}
+                rowId={tier.id}
+                label={tier.label}
+                color={tier.color}
+                players={
+                  (tierMap[tier.id] ?? [])
+                    .map((id) => playerMap[id])
+                    .filter(Boolean) as TierlistPlayer[]
+                }
+                activePlayerId={activeId}
+                isOnlyRow={tiers.length === 1}
+                imageStyle={imageStyle}
+                zoomMode={zoomMode}
+                cropMode={cropMode}
+                onLabelChange={(label) => updateTierLabel(tier.id, label)}
+                onColorChange={(color) => updateTierColor(tier.id, color)}
+                onDelete={() => deleteTier(tier.id)}
+                onClear={() => clearTier(tier.id)}
+                onAddAbove={() => addTier(tier.id, "above")}
+                onAddBelow={() => addTier(tier.id, "below")}
+                onZoom={setZoomedId}
+                onCrop={setCroppingId}
+              />
+            ))}
+          </div>
 
-        <UnrankedPool
-          players={
-            (tierMap.unranked ?? [])
-              .map((id) => playerMap[id])
-              .filter(Boolean) as TierlistPlayer[]
-          }
-          activePlayerId={activeId}
-          onFilesAdded={handleFilesAdded}
-        />
+          <UnrankedPool
+            players={
+              (tierMap.unranked ?? [])
+                .map((id) => playerMap[id])
+                .filter(Boolean) as TierlistPlayer[]
+            }
+            activePlayerId={activeId}
+            imageStyle={imageStyle}
+            zoomMode={zoomMode}
+            cropMode={cropMode}
+            onFilesAdded={handleFilesAdded}
+            onZoom={setZoomedId}
+            onCrop={setCroppingId}
+          />
 
-        <DragOverlay>
-          {activeId && playerMap[activeId] ? (
-            <div className="rotate-2 scale-105 opacity-95 shadow-2xl">
-              <PlayerCard player={playerMap[activeId]} />
+          <DragOverlay>
+            {activeId && playerMap[activeId] ? (
+              <div className="rotate-2 scale-105 opacity-95 shadow-2xl">
+                <PlayerCard
+                  player={playerMap[activeId]}
+                  imageStyle={imageStyle}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+
+        {/* Status bar */}
+        {totalImages > 0 && (
+          <p className="text-right text-xs text-gray-500">
+            {rankedCount} / {totalImages} images ranked
+          </p>
+        )}
+
+        {/* ── Toolbar ───────────────────────────────────────────────── */}
+        <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+
+            {/* Image style selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Style
+              </span>
+              <div className="flex gap-1">
+                {STYLE_OPTIONS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setImageStyle(key)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      imageStyle === key
+                        ? "bg-indigo-600 text-white"
+                        : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
 
-      {/* Status bar */}
-      {totalImages > 0 && (
-        <p className="text-right text-xs text-gray-500">
-          {rankedCount} / {totalImages} images ranked
-        </p>
-      )}
-
-      {/* Create-mode action buttons */}
-      {mode === "create" && (
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            onClick={handleDownload}
-            disabled={isDownloading || totalImages === 0}
-            className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {isDownloading ? "Generating…" : "⬇ Download as Image"}
-          </button>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            disabled={totalImages === 0}
-            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Upload Tierlist
-          </button>
+            {/* Zoom / Crop tools */}
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={toggleZoom}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  zoomMode
+                    ? "bg-sky-600 text-white"
+                    : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                }`}
+                title="Click an image to zoom in. Scroll to resize."
+              >
+                🔍 Zoom {zoomMode && <span className="text-sky-200">ON</span>}
+              </button>
+              <button
+                onClick={toggleCrop}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  cropMode
+                    ? "bg-amber-600 text-white"
+                    : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                }`}
+                title="Click an image to open the crop editor."
+              >
+                ✂ Crop {cropMode && <span className="text-amber-200">ON</span>}
+              </button>
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Upload modal */}
+        {/* Create-mode action buttons */}
+        {mode === "create" && (
+          <div className="flex items-center justify-end gap-3 pt-1">
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || totalImages === 0}
+              className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isDownloading ? "Generating…" : "⬇ Download as Image"}
+            </button>
+            <button
+              onClick={() => setShowUploadModal(true)}
+              disabled={totalImages === 0}
+              className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Upload Tierlist
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Overlays — rendered outside the board div to avoid z-index issues */}
       {showUploadModal && (
         <UploadTierlistModal
           images={allImagesForUpload}
           onClose={() => setShowUploadModal(false)}
         />
       )}
-    </div>
+
+      {zoomedId && playerMap[zoomedId] && (
+        <ZoomOverlay
+          imageUrl={playerMap[zoomedId].image_url ?? ""}
+          imageName={playerMap[zoomedId].name}
+          onClose={() => setZoomedId(null)}
+        />
+      )}
+
+      {croppingId && playerMap[croppingId] && (
+        <CropOverlay
+          imageUrl={playerMap[croppingId].image_url ?? ""}
+          imageName={playerMap[croppingId].name}
+          onCrop={(dataUrl) => handleCropResult(croppingId, dataUrl)}
+          onCancel={() => setCroppingId(null)}
+        />
+      )}
+    </>
   );
 }

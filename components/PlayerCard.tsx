@@ -2,14 +2,28 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { TierlistPlayer } from "@/lib/types";
+import type { TierlistPlayer, ImageStyle } from "@/lib/types";
+import { IMAGE_STYLE_DIMS } from "@/lib/types";
 
 interface PlayerCardProps {
   player: TierlistPlayer;
   isDragging?: boolean;
+  imageStyle?: ImageStyle;
+  zoomMode?: boolean;
+  cropMode?: boolean;
+  onZoom?: (id: string) => void;
+  onCrop?: (id: string) => void;
 }
 
-export default function PlayerCard({ player, isDragging = false }: PlayerCardProps) {
+export default function PlayerCard({
+  player,
+  isDragging = false,
+  imageStyle = "square",
+  zoomMode = false,
+  cropMode = false,
+  onZoom,
+  onCrop,
+}: PlayerCardProps) {
   const {
     attributes,
     listeners,
@@ -19,12 +33,15 @@ export default function PlayerCard({ player, isDragging = false }: PlayerCardPro
     isDragging: isSortableDragging,
   } = useSortable({ id: player.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
+  const dims = IMAGE_STYLE_DIMS[imageStyle];
   const isActive = isDragging || isSortableDragging;
+  const interactive = zoomMode || cropMode;
+
+  function handleClick(e: React.MouseEvent) {
+    if (isSortableDragging) return;
+    if (zoomMode && onZoom) { e.stopPropagation(); onZoom(player.id); return; }
+    if (cropMode && onCrop) { e.stopPropagation(); onCrop(player.id); return; }
+  }
 
   const initials = player.name
     .split(" ")
@@ -36,30 +53,47 @@ export default function PlayerCard({ player, isDragging = false }: PlayerCardPro
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        width: dims.width,
+        height: dims.height,
+        flexShrink: 0,
+      }}
       {...attributes}
       {...listeners}
+      onClick={handleClick}
       className={`
-        w-[88px] h-[88px] flex-shrink-0 cursor-grab select-none rounded-lg
-        border-2 border-black overflow-hidden shadow
-        active:cursor-grabbing
+        select-none overflow-hidden shadow border-2 border-black
+        ${dims.circle ? "rounded-full" : "rounded-lg"}
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
+        ${interactive
+          ? "cursor-pointer hover:ring-2 hover:ring-indigo-300 active:cursor-pointer"
+          : "cursor-grab active:cursor-grabbing"}
       `}
     >
       {player.image_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={player.image_url}
-          alt={player.name}
-          className="h-full w-full object-cover"
-          draggable={false}
+        /*
+         * Using a background-image div instead of <img> so that
+         * html2canvas correctly respects the cover/contain cropping
+         * when the user downloads the tierlist as an image.
+         */
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            backgroundImage: `url("${player.image_url}")`,
+            backgroundSize: dims.contain ? "contain" : "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundColor: dims.contain ? "#1f2937" : undefined,
+          }}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-indigo-700 text-sm font-bold text-white">
           {initials}
         </div>
       )}
-
     </div>
   );
 }
