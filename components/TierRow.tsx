@@ -79,7 +79,7 @@ export default function TierRow({
     >
       {/* ── Tier label ─────────────────────────────────────────────── */}
       <div
-        className="flex w-28 flex-shrink-0 items-center justify-center rounded-l-xl"
+        className="flex w-44 flex-shrink-0 items-center justify-center rounded-l-xl"
         style={{ backgroundColor: color }}
       >
         <input

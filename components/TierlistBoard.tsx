@@ -560,16 +560,16 @@ export default function TierlistBoard({
           </div>
         </div>
 
-        {/* Create-mode action buttons */}
-        {mode === "create" && (
-          <div className="flex items-center justify-end gap-3 pt-1">
-            <button
-              onClick={handleDownload}
-              disabled={isDownloading || totalImages === 0}
-              className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {isDownloading ? "Generating…" : "⬇ Download as Image"}
-            </button>
+        {/* Action buttons — download always, upload only in create mode */}
+        <div className="flex items-center justify-end gap-3 pt-1">
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading || totalImages === 0}
+            className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isDownloading ? "Generating…" : "⬇ Download as Image"}
+          </button>
+          {mode === "create" && (
             <button
               onClick={() => setShowUploadModal(true)}
               disabled={totalImages === 0}
@@ -577,8 +577,8 @@ export default function TierlistBoard({
             >
               Upload Tierlist
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Overlays — rendered outside the board div to avoid z-index issues */}
