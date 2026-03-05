@@ -17,6 +17,7 @@ interface TierRowProps {
   imageStyle: ImageStyle;
   zoomMode: boolean;
   cropMode: boolean;
+  labelMode: boolean;
   onLabelChange: (label: string) => void;
   onColorChange: (color: string) => void;
   onDelete: () => void;
@@ -25,6 +26,7 @@ interface TierRowProps {
   onAddBelow: () => void;
   onZoom: (id: string) => void;
   onCrop: (id: string) => void;
+  onLabel: (id: string) => void;
 }
 
 export default function TierRow({
@@ -37,6 +39,7 @@ export default function TierRow({
   imageStyle,
   zoomMode,
   cropMode,
+  labelMode,
   onLabelChange,
   onColorChange,
   onDelete,
@@ -45,6 +48,7 @@ export default function TierRow({
   onAddBelow,
   onZoom,
   onCrop,
+  onLabel,
 }: TierRowProps) {
   const { setNodeRef, isOver } = useDroppable({ id: rowId });
   const [localLabel, setLocalLabel] = useState(label);
@@ -110,8 +114,10 @@ export default function TierRow({
               imageStyle={imageStyle}
               zoomMode={zoomMode}
               cropMode={cropMode}
+              labelMode={labelMode}
               onZoom={onZoom}
               onCrop={onCrop}
+              onLabel={onLabel}
             />
           ))}
         </SortableContext>

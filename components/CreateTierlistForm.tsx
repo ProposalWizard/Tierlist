@@ -3,6 +3,7 @@
 import { useState, useId } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/imageUtils";
 
 interface ImageEntry {
   file: File;
@@ -47,12 +48,16 @@ export default function CreateTierlistForm() {
     (images.length > 0 ? images[effectiveCoverIdx]?.preview ?? images[0]?.preview : null) ??
     null;
 
-  function handleFiles(fileList: FileList) {
-    const entries: ImageEntry[] = Array.from(fileList).map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-      name: file.name.replace(/\.[^/.]+$/, ""),
-    }));
+  async function handleFiles(fileList: FileList) {
+    const entries: ImageEntry[] = [];
+    for (const file of Array.from(fileList)) {
+      const compressed = await compressImage(file).catch(() => file);
+      entries.push({
+        file: compressed,
+        preview: URL.createObjectURL(compressed),
+        name: file.name.replace(/\.[^/.]+$/, ""),
+      });
+    }
     setImages((prev) => [...prev, ...entries]);
   }
 
@@ -77,10 +82,11 @@ export default function CreateTierlistForm() {
     setCoverIdx(index);
   }
 
-  function handleCustomCoverFile(file: File) {
+  async function handleCustomCoverFile(file: File) {
+    const compressed = await compressImage(file).catch(() => file);
     setCustomCover((prev) => {
       if (prev) URL.revokeObjectURL(prev.preview);
-      return { file, preview: URL.createObjectURL(file) };
+      return { file: compressed, preview: URL.createObjectURL(compressed) };
     });
     setCoverIdx(null);
   }

@@ -11,8 +11,10 @@ interface PlayerCardProps {
   imageStyle?: ImageStyle;
   zoomMode?: boolean;
   cropMode?: boolean;
+  labelMode?: boolean;
   onZoom?: (id: string) => void;
   onCrop?: (id: string) => void;
+  onLabel?: (id: string) => void;
 }
 
 export default function PlayerCard({
@@ -21,8 +23,10 @@ export default function PlayerCard({
   imageStyle = "square",
   zoomMode = false,
   cropMode = false,
+  labelMode = false,
   onZoom,
   onCrop,
+  onLabel,
 }: PlayerCardProps) {
   const {
     attributes,
@@ -35,12 +39,13 @@ export default function PlayerCard({
 
   const dims = IMAGE_STYLE_DIMS[imageStyle];
   const isActive = isDragging || isSortableDragging;
-  const interactive = zoomMode || cropMode;
+  const interactive = zoomMode || cropMode || labelMode;
 
   function handleClick(e: React.MouseEvent) {
     if (isSortableDragging) return;
-    if (zoomMode && onZoom) { e.stopPropagation(); onZoom(player.id); return; }
-    if (cropMode && onCrop) { e.stopPropagation(); onCrop(player.id); return; }
+    if (zoomMode && onZoom)   { e.stopPropagation(); onZoom(player.id);  return; }
+    if (cropMode && onCrop)   { e.stopPropagation(); onCrop(player.id);  return; }
+    if (labelMode && onLabel) { e.stopPropagation(); onLabel(player.id); return; }
   }
 
   const initials = player.name
@@ -64,7 +69,7 @@ export default function PlayerCard({
       {...listeners}
       onClick={handleClick}
       className={`
-        select-none overflow-hidden shadow border-2 border-black
+        relative select-none overflow-hidden shadow border-2 border-black
         ${dims.circle ? "rounded-full" : "rounded-lg"}
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
         ${interactive
@@ -92,6 +97,15 @@ export default function PlayerCard({
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-indigo-700 text-sm font-bold text-white">
           {initials}
+        </div>
+      )}
+
+      {/* Label overlay at the bottom of the card */}
+      {player.label && !dims.circle && (
+        <div className="absolute bottom-0 left-0 right-0 bg-white px-0.5 py-px">
+          <span className="block truncate text-center text-[9px] font-semibold leading-tight text-black">
+            {player.label}
+          </span>
         </div>
       )}
     </div>
