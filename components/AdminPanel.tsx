@@ -1,19 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Tierlist } from "@/lib/types";
-
-const CATEGORIES = [
-  "Football",
-  "Basketball",
-  "Movies & TV",
-  "Music",
-  "Gaming",
-  "Food & Drink",
-  "Animals",
-  "Other",
-];
+import type { Tierlist, Category } from "@/lib/types";
 
 interface AdminImage {
   id: string;
@@ -43,11 +32,71 @@ export default function AdminPanel({
 }: {
   initialTierlists: Tierlist[];
 }) {
+  const [tab, setTab] = useState<"tierlists" | "categories">("tierlists");
   const [tierlists, setTierlists] = useState<Tierlist[]>(initialTierlists);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // ── Categories state ───────────────────────────────────────────────────────
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [catEditName, setCatEditName] = useState("");
+  const [newCatName, setNewCatName] = useState("");
+  const [catSaving, setCatSaving] = useState(false);
+  const [catError, setCatError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setCategories(data); })
+      .catch(() => {});
+  }, []);
+
+  async function saveCategoryName(id: string) {
+    if (!catEditName.trim()) return;
+    setCatSaving(true);
+    setCatError(null);
+    const res = await fetch(`/api/admin/categories/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: catEditName.trim() }),
+    });
+    setCatSaving(false);
+    if (res.ok) {
+      setCategories((prev) => prev.map((c) => c.id === id ? { ...c, name: catEditName.trim() } : c));
+      setEditingCatId(null);
+    } else {
+      const d = await res.json().catch(() => ({}));
+      setCatError(d.error ?? "Failed to save");
+    }
+  }
+
+  async function addCategory() {
+    if (!newCatName.trim()) return;
+    setCatSaving(true);
+    setCatError(null);
+    const res = await fetch(`/api/admin/categories/new`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newCatName.trim() }),
+    });
+    setCatSaving(false);
+    if (res.ok) {
+      const cat = await res.json();
+      setCategories((prev) => [...prev, cat]);
+      setNewCatName("");
+    } else {
+      const d = await res.json().catch(() => ({}));
+      setCatError(d.error ?? "Failed to add");
+    }
+  }
+
+  async function deleteCategory(id: string) {
+    const res = await fetch(`/api/admin/categories/${id}`, { method: "DELETE" });
+    if (res.ok) setCategories((prev) => prev.filter((c) => c.id !== id));
+  }
 
   // ── Open the edit form for a tierlist ──────────────────────────────────────
   async function openEdit(tl: Tierlist) {
@@ -260,6 +309,86 @@ export default function AdminPanel({
 
   return (
     <div>
+      {/* ── Tabs ───────────────────────────────────────────────────────── */}
+      <div className="mb-6 flex gap-2 border-b border-gray-800 pb-2">
+        <button
+          onClick={() => setTab("tierlists")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === "tierlists" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          Tierlists ({tierlists.length})
+        </button>
+        <button
+          onClick={() => setTab("categories")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === "categories" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          Categories ({categories.length})
+        </button>
+      </div>
+
+      {/* ── Categories tab ─────────────────────────────────────────────── */}
+      {tab === "categories" && (
+        <div className="space-y-3">
+          {catError && <p className="text-sm text-red-400">{catError}</p>}
+          {categories.map((cat) => (
+            <div key={cat.id} className="flex items-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-3">
+              {editingCatId === cat.id ? (
+                <>
+                  <input
+                    value={catEditName}
+                    onChange={(e) => setCatEditName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveCategoryName(cat.id); if (e.key === "Escape") setEditingCatId(null); }}
+                    className="flex-1 rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    autoFocus
+                  />
+                  <button onClick={() => saveCategoryName(cat.id)} disabled={catSaving}
+                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+                    {catSaving ? "…" : "Save"}
+                  </button>
+                  <button onClick={() => setEditingCatId(null)}
+                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-gray-400">
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm text-white">{cat.name}</span>
+                  <button onClick={() => { setEditingCatId(cat.id); setCatEditName(cat.name); }}
+                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-indigo-500 hover:text-white">
+                    Rename
+                  </button>
+                  <button onClick={() => deleteCategory(cat.id)}
+                    className="rounded-lg border border-red-900 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-500">
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+
+          {/* Add new category */}
+          <div className="flex items-center gap-3 rounded-xl border border-dashed border-gray-700 px-4 py-3">
+            <input
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") addCategory(); }}
+              placeholder="New category name…"
+              className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+            />
+            <button onClick={addCategory} disabled={catSaving || !newCatName.trim()}
+              className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-40">
+              Add
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tierlists tab ──────────────────────────────────────────────── */}
+      {tab === "tierlists" && (
+      <div>
       <p className="mb-4 text-sm text-gray-400">
         {tierlists.length} tierlist{tierlists.length !== 1 ? "s" : ""} total
       </p>
@@ -292,7 +421,8 @@ export default function AdminPanel({
                 <p className="truncate text-sm font-semibold text-white">{tl.title}</p>
                 <p className="text-xs text-gray-500">
                   {tl.category ?? "—"} ·{" "}
-                  {new Date(tl.created_at).toLocaleDateString()}
+                  {new Date(tl.created_at).toLocaleDateString()} ·{" "}
+                  👁 {(tl.view_count ?? 0).toLocaleString()}
                 </p>
               </div>
 
@@ -361,9 +491,9 @@ export default function AdminPanel({
                         }
                         className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
                       >
-                        {CATEGORIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
                           </option>
                         ))}
                       </select>
@@ -553,6 +683,8 @@ export default function AdminPanel({
             </div>
           </div>
         </div>
+      )}
+      </div>
       )}
     </div>
   );

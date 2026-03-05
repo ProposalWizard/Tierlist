@@ -1,19 +1,8 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, useId, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-
-const CATEGORIES = [
-  "Football",
-  "Basketball",
-  "Movies & TV",
-  "Music",
-  "Gaming",
-  "Food & Drink",
-  "Animals",
-  "Other",
-];
 
 interface ImageEntry {
   id: string;
@@ -29,7 +18,21 @@ interface Props {
 
 export default function UploadTierlistModal({ images, onClose }: Props) {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [category, setCategory] = useState("");
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const names: string[] = data.map((c: { name: string }) => c.name);
+          setCategories(names);
+          setCategory(names[0]);
+        }
+      })
+      .catch(() => {});
+  }, []);
   // Index into images[] chosen as the cover photo
   const [coverIdx, setCoverIdx] = useState(0);
   // Separately uploaded cover (takes priority over coverIdx)
@@ -167,7 +170,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
               onChange={(e) => setCategory(e.target.value)}
               className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-2.5 text-white focus:border-indigo-500 focus:outline-none"
             >
-              {CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>

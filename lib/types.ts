@@ -123,6 +123,24 @@ export const TIER_COLOR_OPTIONS: string[] = [
 // User-created tierlists (create / play flow)
 // ---------------------------------------------------------------
 
+/** Editable category stored in the categories table */
+export interface Category {
+  id: string;
+  name: string;
+  sort_order: number;
+}
+
+/** User profile (username, anonymous flag, login streak) */
+export interface UserProfile {
+  user_id: string;
+  username: string | null;
+  is_anonymous: boolean;
+  current_streak: number;
+  longest_streak: number;
+  last_active_date: string;
+  updated_at: string;
+}
+
 /** A user-created tierlist template (stored in DB) */
 export interface Tierlist {
   id: string;
@@ -131,6 +149,7 @@ export interface Tierlist {
   slug: string;
   category: string;
   cover_image_url: string | null;
+  view_count: number;
   created_at: string;
 }
 

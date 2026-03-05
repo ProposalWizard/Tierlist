@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   const code = searchParams.get("code");
   // Optional: a `next` param lets you deep-link post-login
-  const next = searchParams.get("next") ?? "/tierlist/premier-league-2024";
+  const next = searchParams.get("next") ?? "/";
 
   if (code) {
     const supabase = await createClient();
