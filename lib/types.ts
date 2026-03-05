@@ -24,6 +24,8 @@ export interface TierlistPlayer {
   club: string | null;
   image_url: string | null;
   created_at: string;
+  /** Client-side only: optional text label overlaid on the card */
+  label?: string;
 }
 
 export interface TierlistRanking {

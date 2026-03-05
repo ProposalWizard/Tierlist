@@ -28,6 +28,8 @@ import PlayerCard from "./PlayerCard";
 import UploadTierlistModal from "./UploadTierlistModal";
 import ZoomOverlay from "./ZoomOverlay";
 import CropOverlay from "./CropOverlay";
+import LabelOverlay from "./LabelOverlay";
+import { compressImage } from "@/lib/imageUtils";
 import {
   DEFAULT_TIER_ROWS,
   IMAGE_STYLE_DIMS,
@@ -61,18 +63,22 @@ function UnrankedPool({
   imageStyle,
   zoomMode,
   cropMode,
+  labelMode,
   onFilesAdded,
   onZoom,
   onCrop,
+  onLabel,
 }: {
   players: TierlistPlayer[];
   activePlayerId: string | null;
   imageStyle: ImageStyle;
   zoomMode: boolean;
   cropMode: boolean;
+  labelMode: boolean;
   onFilesAdded: (files: FileList) => void;
   onZoom: (id: string) => void;
   onCrop: (id: string) => void;
+  onLabel: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: "unranked" });
   const inputId = useId();
@@ -124,8 +130,10 @@ function UnrankedPool({
               imageStyle={imageStyle}
               zoomMode={zoomMode}
               cropMode={cropMode}
+              labelMode={labelMode}
               onZoom={onZoom}
               onCrop={onCrop}
+              onLabel={onLabel}
             />
           ))}
         </SortableContext>
@@ -194,8 +202,10 @@ export default function TierlistBoard({
   const [imageStyle, setImageStyle]     = useState<ImageStyle>("square");
   const [zoomMode, setZoomMode]         = useState(false);
   const [cropMode, setCropMode]         = useState(false);
+  const [labelMode, setLabelMode]       = useState(false);
   const [zoomedId, setZoomedId]         = useState<string | null>(null);
   const [croppingId, setCroppingId]     = useState<string | null>(null);
+  const [labelingId, setLabelingId]     = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDownloading, setIsDownloading]     = useState(false);
 
@@ -214,20 +224,21 @@ export default function TierlistBoard({
 
   // ── Image upload ─────────────────────────────────────────────────────────
 
-  function handleFilesAdded(files: FileList) {
+  async function handleFilesAdded(files: FileList) {
     const newPlayers: TierlistPlayer[] = [];
     const newFiles: Record<string, File> = {};
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
+      const compressed = await compressImage(file).catch(() => file);
       const id = crypto.randomUUID();
       newPlayers.push({
         id, topic_id: "",
         name: file.name.replace(/\.[^/.]+$/, ""),
         position: null, club: null,
-        image_url: URL.createObjectURL(file),
+        image_url: URL.createObjectURL(compressed),
         created_at: new Date().toISOString(),
       });
-      newFiles[id] = file;
-    });
+      newFiles[id] = compressed;
+    }
     setPlayerMap((prev) => ({
       ...prev,
       ...Object.fromEntries(newPlayers.map((p) => [p.id, p])),
@@ -289,13 +300,24 @@ export default function TierlistBoard({
   // ── Zoom / crop mode toggles ─────────────────────────────────────────────
 
   function toggleZoom() {
-    setZoomMode((v) => { if (!v) setCropMode(false); return !v; });
+    setZoomMode((v) => { if (!v) { setCropMode(false); setLabelMode(false); } return !v; });
   }
   function toggleCrop() {
-    setCropMode((v) => { if (!v) setZoomMode(false); return !v; });
+    setCropMode((v) => { if (!v) { setZoomMode(false); setLabelMode(false); } return !v; });
+  }
+  function toggleLabel() {
+    setLabelMode((v) => { if (!v) { setZoomMode(false); setCropMode(false); } return !v; });
   }
 
   // ── Crop result handler ──────────────────────────────────────────────────
+
+  function handleLabelResult(playerId: string, label: string) {
+    setPlayerMap((prev) => ({
+      ...prev,
+      [playerId]: { ...prev[playerId], label: label || undefined },
+    }));
+    setLabelingId(null);
+  }
 
   function handleCropResult(playerId: string, dataUrl: string) {
     const blob = dataUrlToBlob(dataUrl);
@@ -460,6 +482,7 @@ export default function TierlistBoard({
                 imageStyle={imageStyle}
                 zoomMode={zoomMode}
                 cropMode={cropMode}
+                labelMode={labelMode}
                 onLabelChange={(label) => updateTierLabel(tier.id, label)}
                 onColorChange={(color) => updateTierColor(tier.id, color)}
                 onDelete={() => deleteTier(tier.id)}
@@ -468,6 +491,7 @@ export default function TierlistBoard({
                 onAddBelow={() => addTier(tier.id, "below")}
                 onZoom={setZoomedId}
                 onCrop={setCroppingId}
+                onLabel={setLabelingId}
               />
             ))}
           </div>
@@ -482,9 +506,11 @@ export default function TierlistBoard({
             imageStyle={imageStyle}
             zoomMode={zoomMode}
             cropMode={cropMode}
+            labelMode={labelMode}
             onFilesAdded={handleFilesAdded}
             onZoom={setZoomedId}
             onCrop={setCroppingId}
+            onLabel={setLabelingId}
           />
 
           <DragOverlay>
@@ -556,6 +582,17 @@ export default function TierlistBoard({
               >
                 ✂ Crop {cropMode && <span className="text-amber-200">ON</span>}
               </button>
+              <button
+                onClick={toggleLabel}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  labelMode
+                    ? "bg-emerald-600 text-white"
+                    : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                }`}
+                title="Click an image to add a text label."
+              >
+                T Label {labelMode && <span className="text-emerald-200">ON</span>}
+              </button>
             </div>
           </div>
         </div>
@@ -603,6 +640,16 @@ export default function TierlistBoard({
           imageName={playerMap[croppingId].name}
           onCrop={(dataUrl) => handleCropResult(croppingId, dataUrl)}
           onCancel={() => setCroppingId(null)}
+        />
+      )}
+
+      {labelingId && playerMap[labelingId] && (
+        <LabelOverlay
+          imageUrl={playerMap[labelingId].image_url ?? ""}
+          imageName={playerMap[labelingId].name}
+          currentLabel={playerMap[labelingId].label ?? ""}
+          onSave={(label) => handleLabelResult(labelingId, label)}
+          onCancel={() => setLabelingId(null)}
         />
       )}
     </>
