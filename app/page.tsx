@@ -8,13 +8,14 @@ import { isAdmin } from "@/lib/admin";
 import type { Tierlist } from "@/lib/types";
 
 type TierlistCard = Pick<Tierlist, "id" | "title" | "category" | "cover_image_url" | "view_count" | "created_at">;
+type VotelistCard = { id: string; title: string; cover_image_url: string | null; created_at: string };
 
 export default async function HomePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const userIsAdmin = user ? await isAdmin(user.id) : false;
 
-  const [tierlistsResult, likesResult] = await Promise.all([
+  const [tierlistsResult, likesResult, votelistsResult] = await Promise.all([
     supabase
       .from("tierlists")
       .select("id, title, category, cover_image_url, view_count, created_at")
@@ -23,9 +24,16 @@ export default async function HomePage() {
     user
       ? supabase.from("tierlist_likes").select("tierlist_id").eq("user_id", user.id)
       : Promise.resolve({ data: [] }),
+    supabase
+      .from("vote_tierlists")
+      .select("id, title, cover_image_url, created_at")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .returns<VotelistCard[]>(),
   ]);
 
   const tierlists = tierlistsResult.data ?? [];
+  const votelists = votelistsResult.data ?? [];
   const likedIds = new Set(
     ((likesResult as { data: { tierlist_id: string }[] | null }).data ?? []).map((l) => l.tierlist_id)
   );
@@ -90,6 +98,54 @@ export default async function HomePage() {
           {user ? "+ Create a Tierlist" : "Sign in to create"}
         </Link>
       </div>
+
+      {/* ── Vote tierlists ───────────────────────────────────────────── */}
+      {votelists.length > 0 && (
+        <div className="border-b border-gray-800 bg-gray-900/50 px-4 py-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-4 flex items-center gap-3">
+              <h2 className="text-xl font-bold text-white">Vote</h2>
+              <span className="rounded-full border border-purple-700 bg-purple-900/40 px-2 py-0.5 text-xs font-semibold text-purple-300">
+                Community Polls
+              </span>
+            </div>
+            <p className="mb-5 text-sm text-gray-500">
+              Vote on where each player belongs — see how your picks compare to everyone else.
+            </p>
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              {votelists.map((vl) => (
+                <Link
+                  key={vl.id}
+                  href={`/vote/${vl.id}`}
+                  className="group flex-shrink-0 w-48 overflow-hidden rounded-xl border border-purple-800/50 bg-gray-900 transition-colors hover:border-purple-500"
+                >
+                  <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
+                    {vl.cover_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={vl.cover_image_url}
+                        alt={vl.title}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <span className="text-4xl">🗳️</span>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <div className="mb-1 inline-flex items-center rounded bg-purple-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-300">
+                      Vote
+                    </div>
+                    <p className="truncate text-sm font-semibold text-white">{vl.title}</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {new Date(vl.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Category rows ────────────────────────────────────────────── */}
       <main className="mx-auto max-w-7xl space-y-10 px-4 py-8">

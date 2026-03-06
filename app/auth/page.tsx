@@ -14,9 +14,9 @@ export default async function AuthPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Already logged in – go to the tierlist
+  // Already logged in – go to the home page
   if (user) {
-    redirect("/tierlist/premier-league-2024");
+    redirect("/");
   }
 
   return (

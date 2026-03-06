@@ -166,6 +166,48 @@ export interface TierlistImage {
 }
 
 // ---------------------------------------------------------------
+// Vote tierlists
+// ---------------------------------------------------------------
+
+/** A single tier option in a vote tierlist */
+export interface VoteTier {
+  label: string;
+  color: string; // hex color
+}
+
+/** A vote tierlist template stored in DB */
+export interface VoteTierlist {
+  id: string;
+  created_by: string | null;
+  title: string;
+  category: string;
+  cover_image_url: string | null;
+  description: string | null;
+  tiers: VoteTier[];
+  is_active: boolean;
+  created_at: string;
+}
+
+/** An image/item inside a vote tierlist */
+export interface VoteTierlistImage {
+  id: string;
+  vote_tierlist_id: string;
+  name: string;
+  image_url: string;
+  sort_order: number;
+  created_at: string;
+}
+
+/** Image enriched with vote counts, as returned by the page data fetch */
+export interface VoteImageWithCounts extends VoteTierlistImage {
+  /** Votes per tier label, e.g. { "S": 45, "A": 20 } */
+  vote_counts: Record<string, number>;
+  total_votes: number;
+  /** The current user's vote for this image, or null */
+  user_vote: string | null;
+}
+
+// ---------------------------------------------------------------
 // API request / response shapes
 // ---------------------------------------------------------------
 
