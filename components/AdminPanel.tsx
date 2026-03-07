@@ -73,13 +73,15 @@ export default function AdminPanel({
   const [newVoteCoverPreview, setNewVoteCoverPreview] = useState<string | null>(null);
   const [newVoteCreating, setNewVoteCreating] = useState(false);
   const [voteError, setVoteError] = useState<string | null>(null);
-  const [addImgName, setAddImgName] = useState<Record<string, string>>({});
-  const [addImgFile, setAddImgFile] = useState<Record<string, File | null>>({});
-  const [addImgPreview, setAddImgPreview] = useState<Record<string, string | null>>({});
+  const [addImgFiles, setAddImgFiles] = useState<Record<string, File[]>>({});
   const [addImgSaving, setAddImgSaving] = useState<Record<string, boolean>>({});
   const [togglingVoteId, setTogglingVoteId] = useState<string | null>(null);
   const [deleteVoteConfirmId, setDeleteVoteConfirmId] = useState<string | null>(null);
   const [deletingVote, setDeletingVote] = useState(false);
+  const [importingVoteId, setImportingVoteId] = useState<string | null>(null);
+  const [allTierlists, setAllTierlists] = useState<{ id: string; title: string }[]>([]);
+  const [importSourceId, setImportSourceId] = useState<string>("");
+  const [importLoading, setImportLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -350,11 +352,19 @@ export default function AdminPanel({
   async function handleExpandVote(id: string) {
     if (expandedVoteId === id) { setExpandedVoteId(null); return; }
     setExpandedVoteId(id);
-    if (voteImagesMap[id]) return;
-    const res = await fetch(`/api/admin/vote-tierlists/${id}/images`);
-    if (res.ok) {
-      const imgs = await res.json();
-      setVoteImagesMap((prev) => ({ ...prev, [id]: imgs }));
+    if (!voteImagesMap[id]) {
+      const res = await fetch(`/api/admin/vote-tierlists/${id}/images`);
+      if (res.ok) {
+        const imgs = await res.json();
+        setVoteImagesMap((prev) => ({ ...prev, [id]: imgs }));
+      }
+    }
+    if (!allTierlists.length) {
+      const res = await fetch("/api/admin/tierlists");
+      if (res.ok) {
+        const data = await res.json();
+        setAllTierlists(data);
+      }
     }
   }
 
@@ -421,45 +431,56 @@ export default function AdminPanel({
     }
   }
 
-  function handleAddImgFileChange(voteId: string, file: File) {
-    const preview = URL.createObjectURL(file);
-    setAddImgFile((prev) => ({ ...prev, [voteId]: file }));
-    if (addImgPreview[voteId]) URL.revokeObjectURL(addImgPreview[voteId]!);
-    setAddImgPreview((prev) => ({ ...prev, [voteId]: preview }));
-  }
-
-  async function handleAddImage(voteId: string) {
-    const file = addImgFile[voteId];
-    const name = addImgName[voteId]?.trim();
-    if (!file || !name) return;
+  async function handleAddImages(voteId: string) {
+    const files = addImgFiles[voteId] ?? [];
+    if (!files.length) return;
     setAddImgSaving((prev) => ({ ...prev, [voteId]: true }));
     try {
       const supabase = createClient();
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `vote-images/${crypto.randomUUID()}.${ext}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("tierlist-images")
-        .upload(path, file, { upsert: false });
-      if (uploadError) throw new Error(uploadError.message);
-      const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
-      const image_url = urlData.publicUrl;
-
-      const res = await fetch(`/api/admin/vote-tierlists/${voteId}/images`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, image_url }),
-      });
-      if (!res.ok) throw new Error("Failed to add image");
-      const newImg = await res.json();
-      setVoteImagesMap((prev) => ({ ...prev, [voteId]: [...(prev[voteId] ?? []), newImg] }));
-      setAddImgName((prev) => ({ ...prev, [voteId]: "" }));
-      if (addImgPreview[voteId]) URL.revokeObjectURL(addImgPreview[voteId]!);
-      setAddImgFile((prev) => ({ ...prev, [voteId]: null }));
-      setAddImgPreview((prev) => ({ ...prev, [voteId]: null }));
+      const newImgs = await Promise.all(
+        files.map(async (file) => {
+          const ext = file.name.split(".").pop() ?? "jpg";
+          const path = `vote-images/${crypto.randomUUID()}.${ext}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from("tierlist-images")
+            .upload(path, file, { upsert: false });
+          if (uploadError) throw new Error(uploadError.message);
+          const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
+          const res = await fetch(`/api/admin/vote-tierlists/${voteId}/images`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image_url: urlData.publicUrl }),
+          });
+          if (!res.ok) throw new Error("Failed to save image");
+          return res.json() as Promise<VoteImage>;
+        })
+      );
+      setVoteImagesMap((prev) => ({ ...prev, [voteId]: [...(prev[voteId] ?? []), ...newImgs] }));
+      setAddImgFiles((prev) => ({ ...prev, [voteId]: [] }));
     } catch (err) {
-      setVoteError(err instanceof Error ? err.message : "Failed to add image");
+      setVoteError(err instanceof Error ? err.message : "Failed to add images");
     }
     setAddImgSaving((prev) => ({ ...prev, [voteId]: false }));
+  }
+
+  async function handleImportFromTierlist(voteId: string) {
+    if (!importSourceId) return;
+    setImportLoading(true);
+    try {
+      const res = await fetch(`/api/admin/vote-tierlists/${voteId}/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source_tierlist_id: importSourceId }),
+      });
+      if (!res.ok) throw new Error("Import failed");
+      const { images } = await res.json() as { imported: number; images: VoteImage[] };
+      setVoteImagesMap((prev) => ({ ...prev, [voteId]: [...(prev[voteId] ?? []), ...(images ?? [])] }));
+      setImportingVoteId(null);
+      setImportSourceId("");
+    } catch (err) {
+      setVoteError(err instanceof Error ? err.message : "Import failed");
+    }
+    setImportLoading(false);
   }
 
   async function handleDeleteVoteImage(voteId: string, imageId: string) {
@@ -998,41 +1019,80 @@ export default function AdminPanel({
                       </div>
                     )}
 
-                    {/* Add image row */}
-                    <div className="flex items-end gap-2 rounded-xl border border-dashed border-gray-700 p-3">
-                      <div className="flex flex-col gap-1">
-                        <p className="text-xs text-gray-500">Add image</p>
-                        <input
-                          value={addImgName[vl.id] ?? ""}
-                          onChange={(e) => setAddImgName((prev) => ({ ...prev, [vl.id]: e.target.value }))}
-                          placeholder="Name…"
-                          className="w-40 rounded-lg border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
-                        />
+                    {/* Add images */}
+                    <div className="rounded-xl border border-dashed border-gray-700 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white flex-1 text-center">
+                          {(addImgFiles[vl.id]?.length ?? 0) > 0
+                            ? `${addImgFiles[vl.id].length} file${addImgFiles[vl.id].length === 1 ? "" : "s"} selected`
+                            : "Choose images"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="sr-only"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files ?? []);
+                              setAddImgFiles((p) => ({ ...p, [vl.id]: files }));
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <button
+                          onClick={() => handleAddImages(vl.id)}
+                          disabled={addImgSaving[vl.id] || !(addImgFiles[vl.id]?.length)}
+                          className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-40">
+                          {addImgSaving[vl.id] ? "Uploading…" : "Upload"}
+                        </button>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        {addImgPreview[vl.id] ? (
-                          <div className="relative">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={addImgPreview[vl.id]!} alt="preview" className="h-14 w-14 rounded-lg object-cover border border-gray-600" />
-                            <button onClick={() => { if (addImgPreview[vl.id]) URL.revokeObjectURL(addImgPreview[vl.id]!); setAddImgFile((p) => ({ ...p, [vl.id]: null })); setAddImgPreview((p) => ({ ...p, [vl.id]: null })); }}
-                              className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">×</button>
-                          </div>
-                        ) : (
-                          <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
-                            Choose image
-                            <input type="file" accept="image/*" className="sr-only"
-                              onChange={(e) => { const f = e.target.files?.[0]; if (f) { handleAddImgFileChange(vl.id, f); e.target.value = ""; } }}
-                            />
-                          </label>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleAddImage(vl.id)}
-                        disabled={addImgSaving[vl.id] || !addImgFile[vl.id] || !addImgName[vl.id]?.trim()}
-                        className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-40">
-                        {addImgSaving[vl.id] ? "…" : "Add"}
-                      </button>
+                      {/* Previews */}
+                      {(addImgFiles[vl.id]?.length ?? 0) > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {addImgFiles[vl.id].map((f, i) => (
+                            <div key={i} className="relative h-12 w-12 overflow-hidden rounded-lg border border-gray-600">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={URL.createObjectURL(f)} alt={f.name} className="h-full w-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Import from existing tierlist */}
+                    {importingVoteId === vl.id ? (
+                      <div className="rounded-xl border border-purple-800 bg-purple-950/30 p-3 space-y-2">
+                        <p className="text-xs font-semibold text-purple-300">Import images from tierlist</p>
+                        <select
+                          value={importSourceId}
+                          onChange={(e) => setImportSourceId(e.target.value)}
+                          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                        >
+                          <option value="">Select a tierlist…</option>
+                          {allTierlists.map((tl) => (
+                            <option key={tl.id} value={tl.id}>{tl.title}</option>
+                          ))}
+                        </select>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleImportFromTierlist(vl.id)}
+                            disabled={importLoading || !importSourceId}
+                            className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-40">
+                            {importLoading ? "Importing…" : "Import"}
+                          </button>
+                          <button
+                            onClick={() => { setImportingVoteId(null); setImportSourceId(""); }}
+                            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:text-white">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setImportingVoteId(vl.id)}
+                        className="w-full rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-purple-600 hover:text-purple-300 text-left">
+                        ↙ Import images from existing tierlist
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

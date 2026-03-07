@@ -44,8 +44,8 @@ export async function POST(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!body.name?.trim() || !body.image_url?.trim()) {
-    return NextResponse.json({ error: "name and image_url are required" }, { status: 400 });
+  if (!body.image_url?.trim()) {
+    return NextResponse.json({ error: "image_url is required" }, { status: 400 });
   }
 
   const service = createServiceClient();
@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
     .from("vote_tierlist_images")
     .insert({
       vote_tierlist_id: id,
-      name: body.name.trim(),
+      name: body.name?.trim() ?? "",
       image_url: body.image_url.trim(),
       sort_order: body.sort_order ?? (count ?? 0),
     })
