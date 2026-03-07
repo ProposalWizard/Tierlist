@@ -4,6 +4,21 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Tierlist, Category } from "@/lib/types";
 
+interface VotelistAdmin {
+  id: string;
+  title: string;
+  cover_image_url: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface VoteImage {
+  id: string;
+  name: string;
+  image_url: string;
+  sort_order: number;
+}
+
 interface AdminImage {
   id: string;
   name: string;
@@ -32,7 +47,7 @@ export default function AdminPanel({
 }: {
   initialTierlists: Tierlist[];
 }) {
-  const [tab, setTab] = useState<"tierlists" | "categories">("tierlists");
+  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists">("tierlists");
   const [tierlists, setTierlists] = useState<Tierlist[]>(initialTierlists);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState | null>(null);
@@ -46,6 +61,25 @@ export default function AdminPanel({
   const [newCatName, setNewCatName] = useState("");
   const [catSaving, setCatSaving] = useState(false);
   const [catError, setCatError] = useState<string | null>(null);
+
+  // ── Vote Tierlists state ───────────────────────────────────────────────────
+  const [votelists, setVotelists] = useState<VotelistAdmin[]>([]);
+  const [votelistsLoaded, setVotelistsLoaded] = useState(false);
+  const [expandedVoteId, setExpandedVoteId] = useState<string | null>(null);
+  const [voteImagesMap, setVoteImagesMap] = useState<Record<string, VoteImage[]>>({});
+  const [showCreateVote, setShowCreateVote] = useState(false);
+  const [newVoteTitle, setNewVoteTitle] = useState("");
+  const [newVoteCoverFile, setNewVoteCoverFile] = useState<File | null>(null);
+  const [newVoteCoverPreview, setNewVoteCoverPreview] = useState<string | null>(null);
+  const [newVoteCreating, setNewVoteCreating] = useState(false);
+  const [voteError, setVoteError] = useState<string | null>(null);
+  const [addImgName, setAddImgName] = useState<Record<string, string>>({});
+  const [addImgFile, setAddImgFile] = useState<Record<string, File | null>>({});
+  const [addImgPreview, setAddImgPreview] = useState<Record<string, string | null>>({});
+  const [addImgSaving, setAddImgSaving] = useState<Record<string, boolean>>({});
+  const [togglingVoteId, setTogglingVoteId] = useState<string | null>(null);
+  const [deleteVoteConfirmId, setDeleteVoteConfirmId] = useState<string | null>(null);
+  const [deletingVote, setDeletingVote] = useState(false);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -302,6 +336,142 @@ export default function AdminPanel({
     }
   }
 
+  // ── Vote Tierlists helpers ─────────────────────────────────────────────────
+  async function loadVotelists() {
+    if (votelistsLoaded) return;
+    const res = await fetch("/api/admin/vote-tierlists");
+    if (res.ok) {
+      const data = await res.json();
+      setVotelists(data);
+    }
+    setVotelistsLoaded(true);
+  }
+
+  async function handleExpandVote(id: string) {
+    if (expandedVoteId === id) { setExpandedVoteId(null); return; }
+    setExpandedVoteId(id);
+    if (voteImagesMap[id]) return;
+    const res = await fetch(`/api/admin/vote-tierlists/${id}/images`);
+    if (res.ok) {
+      const imgs = await res.json();
+      setVoteImagesMap((prev) => ({ ...prev, [id]: imgs }));
+    }
+  }
+
+  async function handleCreateVote() {
+    if (!newVoteTitle.trim()) return;
+    setNewVoteCreating(true);
+    setVoteError(null);
+    try {
+      let cover_image_url: string | null = null;
+      if (newVoteCoverFile) {
+        const supabase = createClient();
+        const ext = newVoteCoverFile.name.split(".").pop() ?? "jpg";
+        const path = `vote-covers/${crypto.randomUUID()}.${ext}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("tierlist-images")
+          .upload(path, newVoteCoverFile, { upsert: false });
+        if (uploadError) throw new Error(uploadError.message);
+        const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
+        cover_image_url = urlData.publicUrl;
+      }
+      const res = await fetch("/api/admin/vote-tierlists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newVoteTitle.trim(), cover_image_url }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "Failed to create");
+      }
+      const created = await res.json();
+      setVotelists((prev) => [created, ...prev]);
+      setNewVoteTitle("");
+      if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview);
+      setNewVoteCoverFile(null);
+      setNewVoteCoverPreview(null);
+      setShowCreateVote(false);
+    } catch (err) {
+      setVoteError(err instanceof Error ? err.message : "Something went wrong");
+    }
+    setNewVoteCreating(false);
+  }
+
+  async function handleToggleVoteActive(vl: VotelistAdmin) {
+    setTogglingVoteId(vl.id);
+    const res = await fetch(`/api/admin/vote-tierlists/${vl.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: !vl.is_active }),
+    });
+    if (res.ok) {
+      setVotelists((prev) => prev.map((v) => v.id === vl.id ? { ...v, is_active: !vl.is_active } : v));
+    }
+    setTogglingVoteId(null);
+  }
+
+  async function handleDeleteVote(id: string) {
+    setDeletingVote(true);
+    const res = await fetch(`/api/admin/vote-tierlists/${id}`, { method: "DELETE" });
+    setDeletingVote(false);
+    if (res.ok) {
+      setVotelists((prev) => prev.filter((v) => v.id !== id));
+      setDeleteVoteConfirmId(null);
+      if (expandedVoteId === id) setExpandedVoteId(null);
+    }
+  }
+
+  function handleAddImgFileChange(voteId: string, file: File) {
+    const preview = URL.createObjectURL(file);
+    setAddImgFile((prev) => ({ ...prev, [voteId]: file }));
+    if (addImgPreview[voteId]) URL.revokeObjectURL(addImgPreview[voteId]!);
+    setAddImgPreview((prev) => ({ ...prev, [voteId]: preview }));
+  }
+
+  async function handleAddImage(voteId: string) {
+    const file = addImgFile[voteId];
+    const name = addImgName[voteId]?.trim();
+    if (!file || !name) return;
+    setAddImgSaving((prev) => ({ ...prev, [voteId]: true }));
+    try {
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `vote-images/${crypto.randomUUID()}.${ext}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("tierlist-images")
+        .upload(path, file, { upsert: false });
+      if (uploadError) throw new Error(uploadError.message);
+      const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
+      const image_url = urlData.publicUrl;
+
+      const res = await fetch(`/api/admin/vote-tierlists/${voteId}/images`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, image_url }),
+      });
+      if (!res.ok) throw new Error("Failed to add image");
+      const newImg = await res.json();
+      setVoteImagesMap((prev) => ({ ...prev, [voteId]: [...(prev[voteId] ?? []), newImg] }));
+      setAddImgName((prev) => ({ ...prev, [voteId]: "" }));
+      if (addImgPreview[voteId]) URL.revokeObjectURL(addImgPreview[voteId]!);
+      setAddImgFile((prev) => ({ ...prev, [voteId]: null }));
+      setAddImgPreview((prev) => ({ ...prev, [voteId]: null }));
+    } catch (err) {
+      setVoteError(err instanceof Error ? err.message : "Failed to add image");
+    }
+    setAddImgSaving((prev) => ({ ...prev, [voteId]: false }));
+  }
+
+  async function handleDeleteVoteImage(voteId: string, imageId: string) {
+    const res = await fetch(`/api/admin/vote-tierlists/${voteId}/images/${imageId}`, { method: "DELETE" });
+    if (res.ok) {
+      setVoteImagesMap((prev) => ({
+        ...prev,
+        [voteId]: (prev[voteId] ?? []).filter((img) => img.id !== imageId),
+      }));
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────
@@ -326,6 +496,14 @@ export default function AdminPanel({
           }`}
         >
           Categories ({categories.length})
+        </button>
+        <button
+          onClick={() => { setTab("vote-tierlists"); loadVotelists(); }}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === "vote-tierlists" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          Vote Tierlists {votelistsLoaded ? `(${votelists.length})` : ""}
         </button>
       </div>
 
@@ -657,6 +835,204 @@ export default function AdminPanel({
       </div>
 
       {/* ── Delete confirmation modal ──────────────────────────────────────── */}
+      {/* ── Vote Tierlists tab ─────────────────────────────────────────── */}
+      {tab === "vote-tierlists" && (
+        <div>
+          {voteError && <p className="mb-3 text-sm text-red-400">{voteError}</p>}
+
+          {/* Create button / form */}
+          {!showCreateVote ? (
+            <button
+              onClick={() => setShowCreateVote(true)}
+              className="mb-5 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
+            >
+              + New Vote Tierlist
+            </button>
+          ) : (
+            <div className="mb-5 rounded-xl border border-purple-700 bg-gray-900 p-4 space-y-3">
+              <p className="text-sm font-semibold text-purple-300">New Vote Tierlist</p>
+              <input
+                value={newVoteTitle}
+                onChange={(e) => setNewVoteTitle(e.target.value)}
+                placeholder="Title…"
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+              />
+              {/* Cover image upload */}
+              <div className="flex items-center gap-3">
+                {newVoteCoverPreview ? (
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={newVoteCoverPreview} alt="cover" className="h-16 w-24 rounded-lg object-cover border border-gray-600" />
+                    <button
+                      onClick={() => { if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(null); setNewVoteCoverPreview(null); }}
+                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
+                    >×</button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                    Upload cover (optional)
+                    <input type="file" accept="image/*" className="sr-only"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) { const p = URL.createObjectURL(f); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(f); setNewVoteCoverPreview(p); e.target.value = ""; } }}
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleCreateVote} disabled={newVoteCreating || !newVoteTitle.trim()}
+                  className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-50">
+                  {newVoteCreating ? "Creating…" : "Create"}
+                </button>
+                <button onClick={() => { setShowCreateVote(false); setNewVoteTitle(""); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(null); setNewVoteCoverPreview(null); }}
+                  className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-300 hover:border-gray-400">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!votelistsLoaded && <p className="text-sm text-gray-500">Loading…</p>}
+          {votelistsLoaded && votelists.length === 0 && (
+            <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-gray-600">
+              No vote tierlists yet.
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {votelists.map((vl) => (
+              <div key={vl.id} className="overflow-hidden rounded-xl border border-gray-700 bg-gray-900">
+                {/* Row */}
+                <div className="flex items-center gap-3 p-4">
+                  <div className="h-12 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-gray-700 bg-gray-800 bg-cover bg-center"
+                    style={vl.cover_image_url ? { backgroundImage: `url("${vl.cover_image_url}")` } : {}}>
+                    {!vl.cover_image_url && <div className="flex h-full w-full items-center justify-center text-xl">🗳️</div>}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white">{vl.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-xs font-semibold ${vl.is_active ? "text-green-400" : "text-gray-500"}`}>
+                        {vl.is_active ? "Active" : "Inactive"}
+                      </span>
+                      <span className="text-xs text-gray-600">· {new Date(vl.created_at).toLocaleDateString()}</span>
+                      {voteImagesMap[vl.id] !== undefined && (
+                        <span className="text-xs text-gray-600">· {voteImagesMap[vl.id].length} images</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => handleExpandVote(vl.id)}
+                      className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                      {expandedVoteId === vl.id ? "Close" : "Manage"}
+                    </button>
+                    <button
+                      onClick={() => handleToggleVoteActive(vl)}
+                      disabled={togglingVoteId === vl.id}
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                        vl.is_active
+                          ? "border-yellow-800 text-yellow-400 hover:border-yellow-500"
+                          : "border-green-800 text-green-400 hover:border-green-500"
+                      }`}>
+                      {togglingVoteId === vl.id ? "…" : vl.is_active ? "Deactivate" : "Activate"}
+                    </button>
+                    <button
+                      onClick={() => setDeleteVoteConfirmId(vl.id)}
+                      className="rounded-lg border border-red-900 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-500">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded image management */}
+                {expandedVoteId === vl.id && (
+                  <div className="border-t border-gray-700/60 p-4 space-y-4">
+                    <p className="text-xs font-semibold text-gray-400">Images</p>
+                    {!(voteImagesMap[vl.id]) ? (
+                      <p className="text-sm text-gray-500">Loading…</p>
+                    ) : voteImagesMap[vl.id].length === 0 ? (
+                      <p className="text-xs italic text-gray-600">No images yet. Add some below.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {voteImagesMap[vl.id].map((img) => (
+                          <div key={img.id} className="group relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={img.image_url} alt={img.name}
+                              className="h-20 w-20 rounded-lg object-cover border-2 border-gray-700" />
+                            <button
+                              onClick={() => handleDeleteVoteImage(vl.id, img.id)}
+                              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                              ×
+                            </button>
+                            <p className="mt-0.5 max-w-[80px] truncate text-center text-[10px] text-gray-500">{img.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add image row */}
+                    <div className="flex items-end gap-2 rounded-xl border border-dashed border-gray-700 p-3">
+                      <div className="flex flex-col gap-1">
+                        <p className="text-xs text-gray-500">Add image</p>
+                        <input
+                          value={addImgName[vl.id] ?? ""}
+                          onChange={(e) => setAddImgName((prev) => ({ ...prev, [vl.id]: e.target.value }))}
+                          placeholder="Name…"
+                          className="w-40 rounded-lg border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {addImgPreview[vl.id] ? (
+                          <div className="relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={addImgPreview[vl.id]!} alt="preview" className="h-14 w-14 rounded-lg object-cover border border-gray-600" />
+                            <button onClick={() => { if (addImgPreview[vl.id]) URL.revokeObjectURL(addImgPreview[vl.id]!); setAddImgFile((p) => ({ ...p, [vl.id]: null })); setAddImgPreview((p) => ({ ...p, [vl.id]: null })); }}
+                              className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">×</button>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                            Choose image
+                            <input type="file" accept="image/*" className="sr-only"
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) { handleAddImgFileChange(vl.id, f); e.target.value = ""; } }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleAddImage(vl.id)}
+                        disabled={addImgSaving[vl.id] || !addImgFile[vl.id] || !addImgName[vl.id]?.trim()}
+                        className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-40">
+                        {addImgSaving[vl.id] ? "…" : "Add"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Delete vote tierlist modal */}
+          {deleteVoteConfirmId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+              <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
+                <h3 className="text-lg font-bold text-white">Delete Vote Tierlist?</h3>
+                <p className="mt-2 text-sm text-gray-400">
+                  This will permanently delete the vote tierlist, all its images, and all votes. This cannot be undone.
+                </p>
+                <div className="mt-5 flex gap-3">
+                  <button onClick={() => handleDeleteVote(deleteVoteConfirmId)} disabled={deletingVote}
+                    className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50">
+                    {deletingVote ? "Deleting…" : "Delete"}
+                  </button>
+                  <button onClick={() => setDeleteVoteConfirmId(null)} disabled={deletingVote}
+                    className="flex-1 rounded-lg border border-gray-600 py-2.5 text-sm font-semibold text-gray-300 hover:border-gray-400 disabled:opacity-50">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
