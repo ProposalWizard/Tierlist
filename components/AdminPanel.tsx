@@ -835,6 +835,36 @@ export default function AdminPanel({
       </div>
 
       {/* ── Delete confirmation modal ──────────────────────────────────────── */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-white">Delete Tierlist?</h3>
+            <p className="mt-2 text-sm text-gray-400">
+              This will permanently delete the tierlist, all its images, and the
+              associated storage files. This cannot be undone.
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => handleDeleteTierlist(deleteConfirmId)}
+                disabled={deleting}
+                className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={deleting}
+                className="flex-1 rounded-lg border border-gray-600 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-400 hover:text-white disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+      )}
+
       {/* ── Vote Tierlists tab ─────────────────────────────────────────── */}
       {tab === "vote-tierlists" && (
         <div>
@@ -1031,36 +1061,6 @@ export default function AdminPanel({
             </div>
           )}
         </div>
-      )}
-
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-white">Delete Tierlist?</h3>
-            <p className="mt-2 text-sm text-gray-400">
-              This will permanently delete the tierlist, all its images, and the
-              associated storage files. This cannot be undone.
-            </p>
-            <div className="mt-5 flex gap-3">
-              <button
-                onClick={() => handleDeleteTierlist(deleteConfirmId)}
-                disabled={deleting}
-                className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-50"
-              >
-                {deleting ? "Deleting…" : "Delete"}
-              </button>
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                disabled={deleting}
-                className="flex-1 rounded-lg border border-gray-600 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-400 hover:text-white disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      </div>
       )}
     </div>
   );
