@@ -8,7 +8,6 @@
  */
 
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import VoteBoard from "@/components/VoteBoard";
@@ -85,17 +84,6 @@ export default async function VotePage({
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* ── Nav ── */}
-      <nav className="sticky top-0 z-10 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" className="text-sm font-medium text-gray-400 transition-colors hover:text-white">
-            ← Back
-          </Link>
-          <span className="text-sm font-bold text-white">{tierlist.title}</span>
-          <div className="w-16" /> {/* spacer */}
-        </div>
-      </nav>
-
       {/* ── Header ── */}
       <div className="border-b border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 px-4 py-8 text-center">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-purple-700 bg-purple-900/30 px-3 py-1 text-xs font-semibold text-purple-300 mb-3">

@@ -6,6 +6,7 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
+import GlobalNav from "@/components/GlobalNav";
 
 export const metadata: Metadata = {
   title: {
@@ -34,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen`}>
+        <GlobalNav />
         {children}
       </body>
     </html>
