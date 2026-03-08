@@ -61,6 +61,9 @@ export default function AdminPanel({
   const [newCatName, setNewCatName] = useState("");
   const [catSaving, setCatSaving] = useState(false);
   const [catError, setCatError] = useState<string | null>(null);
+  // Category homepage ordering settings
+  const [catSettings, setCatSettings] = useState<Record<string, { sort_method: string; pinned_ids: string[] }>>({});
+  const [catSettingsSaving, setCatSettingsSaving] = useState<Record<string, boolean>>({});
 
   // ── Vote Tierlists state ───────────────────────────────────────────────────
   const [votelists, setVotelists] = useState<VotelistAdmin[]>([]);
@@ -88,7 +91,33 @@ export default function AdminPanel({
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setCategories(data); })
       .catch(() => {});
+    fetch("/api/admin/category-settings")
+      .then((r) => r.json())
+      .then((data: { category: string; sort_method: string; pinned_ids: string[] }[]) => {
+        if (Array.isArray(data)) {
+          const map: Record<string, { sort_method: string; pinned_ids: string[] }> = {};
+          for (const s of data) map[s.category] = { sort_method: s.sort_method, pinned_ids: s.pinned_ids ?? [] };
+          setCatSettings(map);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  async function saveCatSetting(catName: string, sortMethod: string, pinnedIds?: string[]) {
+    setCatSettingsSaving((prev) => ({ ...prev, [catName]: true }));
+    try {
+      const res = await fetch("/api/admin/category-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: catName, sort_method: sortMethod, pinned_ids: pinnedIds ?? catSettings[catName]?.pinned_ids ?? [] }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCatSettings((prev) => ({ ...prev, [catName]: { sort_method: data.sort_method, pinned_ids: data.pinned_ids ?? [] } }));
+      }
+    } catch { /* ignore */ }
+    setCatSettingsSaving((prev) => ({ ...prev, [catName]: false }));
+  }
 
   async function saveCategoryName(id: string) {
     if (!catEditName.trim()) return;
@@ -582,6 +611,60 @@ export default function AdminPanel({
               Add
             </button>
           </div>
+
+          {/* ── Homepage ordering per category ── */}
+          {categories.length > 0 && (
+            <div className="mt-6">
+              <h3 className="mb-3 text-sm font-bold text-white">Homepage Display Order</h3>
+              <p className="mb-4 text-xs text-gray-500">
+                Control how tierlists are ordered in each category on the homepage (max 6 shown).
+              </p>
+              <div className="space-y-2">
+                {categories.map((cat) => {
+                  const setting = catSettings[cat.name];
+                  const method = setting?.sort_method ?? "recent";
+                  const isSaving = catSettingsSaving[cat.name] ?? false;
+                  return (
+                    <div key={cat.id} className="rounded-xl border border-gray-700 bg-gray-900 px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex-1 text-sm font-semibold text-white">{cat.name}</span>
+                        <select
+                          value={method}
+                          onChange={(e) => saveCatSetting(cat.name, e.target.value)}
+                          disabled={isSaving}
+                          className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none disabled:opacity-50"
+                        >
+                          <option value="recent">Most recent</option>
+                          <option value="views">Highest views</option>
+                          <option value="likes">Most liked</option>
+                          <option value="manual">Manual (pin specific tierlists)</option>
+                        </select>
+                        {isSaving && <span className="text-xs text-gray-500">Saving…</span>}
+                      </div>
+                      {method === "manual" && (
+                        <div className="mt-2">
+                          <p className="mb-1 text-[10px] text-gray-500">
+                            Enter up to 6 tierlist IDs in order (find IDs in the Tierlists tab):
+                          </p>
+                          <textarea
+                            defaultValue={(setting?.pinned_ids ?? []).join("\n")}
+                            onBlur={(e) => {
+                              const ids = e.target.value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+                              saveCatSetting(cat.name, "manual", ids.slice(0, 6));
+                            }}
+                            placeholder={"paste-tierlist-id-1\npaste-tierlist-id-2\n…"}
+                            rows={4}
+                            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 font-mono text-[10px] text-gray-300 focus:border-indigo-500 focus:outline-none"
+                          />
+                          <p className="mt-1 text-[10px] text-gray-600">One ID per line. Blur/click away to save.</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
