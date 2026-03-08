@@ -84,6 +84,12 @@ export default function AdminPanel({
   const [importingVoteId, setImportingVoteId] = useState<string | null>(null);
   const [allTierlists, setAllTierlists] = useState<{ id: string; title: string }[]>([]);
   const [importSourceId, setImportSourceId] = useState<string>("");
+  // Vote tierlist rename
+  const [editingVoteTitleId, setEditingVoteTitleId] = useState<string | null>(null);
+  const [editVoteTitleValue, setEditVoteTitleValue] = useState("");
+  const [savingVoteTitle, setSavingVoteTitle] = useState(false);
+  // Manual pin picker search
+  const [pinPickerSearch, setPinPickerSearch] = useState<Record<string, string>>({});
   const [importLoading, setImportLoading] = useState(false);
 
   useEffect(() => {
@@ -449,6 +455,22 @@ export default function AdminPanel({
     setTogglingVoteId(null);
   }
 
+  async function handleSaveVoteTitle(id: string) {
+    const title = editVoteTitleValue.trim();
+    if (!title) return;
+    setSavingVoteTitle(true);
+    const res = await fetch(`/api/admin/vote-tierlists/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (res.ok) {
+      setVotelists((prev) => prev.map((v) => v.id === id ? { ...v, title } : v));
+      setEditingVoteTitleId(null);
+    }
+    setSavingVoteTitle(false);
+  }
+
   async function handleDeleteVote(id: string) {
     setDeletingVote(true);
     const res = await fetch(`/api/admin/vote-tierlists/${id}`, { method: "DELETE" });
@@ -641,24 +663,98 @@ export default function AdminPanel({
                         </select>
                         {isSaving && <span className="text-xs text-gray-500">Saving…</span>}
                       </div>
-                      {method === "manual" && (
-                        <div className="mt-2">
-                          <p className="mb-1 text-[10px] text-gray-500">
-                            Enter up to 6 tierlist IDs in order (find IDs in the Tierlists tab):
-                          </p>
-                          <textarea
-                            defaultValue={(setting?.pinned_ids ?? []).join("\n")}
-                            onBlur={(e) => {
-                              const ids = e.target.value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
-                              saveCatSetting(cat.name, "manual", ids.slice(0, 6));
-                            }}
-                            placeholder={"paste-tierlist-id-1\npaste-tierlist-id-2\n…"}
-                            rows={4}
-                            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 font-mono text-[10px] text-gray-300 focus:border-indigo-500 focus:outline-none"
-                          />
-                          <p className="mt-1 text-[10px] text-gray-600">One ID per line. Blur/click away to save.</p>
-                        </div>
-                      )}
+                      {method === "manual" && (() => {
+                        const pinnedIds = setting?.pinned_ids ?? [];
+                        const search = (pinPickerSearch[cat.name] ?? "").toLowerCase();
+                        const filtered = initialTierlists.filter((tl) =>
+                          tl.title.toLowerCase().includes(search)
+                        );
+                        return (
+                          <div className="mt-3">
+                            <p className="mb-2 text-[10px] text-gray-500">
+                              Select up to 6 tierlists to pin (in order). Click to add/remove.
+                            </p>
+                            {/* Pinned order */}
+                            {pinnedIds.length > 0 && (
+                              <div className="mb-2 flex flex-wrap gap-1.5">
+                                {pinnedIds.map((pid, idx) => {
+                                  const tl = initialTierlists.find((t) => t.id === pid);
+                                  return (
+                                    <span key={pid} className="flex items-center gap-1 rounded-full border border-indigo-600 bg-indigo-900/40 px-2 py-0.5 text-[10px] text-indigo-300">
+                                      <span className="font-bold text-indigo-400">{idx + 1}.</span>
+                                      {tl?.title ?? pid.slice(0, 8) + "…"}
+                                      <button
+                                        onClick={() => {
+                                          const next = pinnedIds.filter((id) => id !== pid);
+                                          saveCatSetting(cat.name, "manual", next);
+                                          setCatSettings((prev) => ({
+                                            ...prev,
+                                            [cat.name]: { sort_method: "manual", pinned_ids: next },
+                                          }));
+                                        }}
+                                        className="ml-0.5 text-indigo-400 hover:text-white"
+                                      >×</button>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {/* Search input */}
+                            <input
+                              type="text"
+                              value={pinPickerSearch[cat.name] ?? ""}
+                              onChange={(e) => setPinPickerSearch((prev) => ({ ...prev, [cat.name]: e.target.value }))}
+                              placeholder="Search tierlists…"
+                              className="mb-2 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 focus:border-indigo-500 focus:outline-none"
+                            />
+                            {/* Results */}
+                            <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800">
+                              {filtered.length === 0 ? (
+                                <p className="px-3 py-2 text-[10px] text-gray-600">No results.</p>
+                              ) : filtered.slice(0, 30).map((tl) => {
+                                const pinned = pinnedIds.includes(tl.id);
+                                const canAdd = !pinned && pinnedIds.length < 6;
+                                return (
+                                  <button
+                                    key={tl.id}
+                                    disabled={!pinned && !canAdd}
+                                    onClick={() => {
+                                      const next = pinned
+                                        ? pinnedIds.filter((id) => id !== tl.id)
+                                        : [...pinnedIds, tl.id];
+                                      saveCatSetting(cat.name, "manual", next);
+                                      setCatSettings((prev) => ({
+                                        ...prev,
+                                        [cat.name]: { sort_method: "manual", pinned_ids: next },
+                                      }));
+                                    }}
+                                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors ${
+                                      pinned
+                                        ? "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-900/50"
+                                        : canAdd
+                                        ? "text-gray-300 hover:bg-gray-700"
+                                        : "cursor-not-allowed text-gray-600"
+                                    }`}
+                                  >
+                                    <span className={`h-3.5 w-3.5 flex-shrink-0 rounded border text-[9px] flex items-center justify-center ${pinned ? "border-indigo-500 bg-indigo-600 text-white" : "border-gray-600"}`}>
+                                      {pinned && "✓"}
+                                    </span>
+                                    <span className="truncate">{tl.title}</span>
+                                    {pinned && (
+                                      <span className="ml-auto text-[9px] text-indigo-400">
+                                        #{pinnedIds.indexOf(tl.id) + 1}
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {pinnedIds.length >= 6 && (
+                              <p className="mt-1 text-[10px] text-yellow-600">Maximum 6 tierlists pinned.</p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -1041,7 +1137,34 @@ export default function AdminPanel({
                     {!vl.cover_image_url && <div className="flex h-full w-full items-center justify-center text-xl">🗳️</div>}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">{vl.title}</p>
+                    {editingVoteTitleId === vl.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={editVoteTitleValue}
+                          onChange={(e) => setEditVoteTitleValue(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleSaveVoteTitle(vl.id); if (e.key === "Escape") setEditingVoteTitleId(null); }}
+                          className="flex-1 rounded-lg border border-purple-600 bg-gray-800 px-2 py-1 text-sm text-white focus:outline-none"
+                          autoFocus
+                        />
+                        <button onClick={() => handleSaveVoteTitle(vl.id)} disabled={savingVoteTitle}
+                          className="rounded bg-purple-600 px-2 py-1 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-50">
+                          {savingVoteTitle ? "…" : "Save"}
+                        </button>
+                        <button onClick={() => setEditingVoteTitleId(null)}
+                          className="rounded border border-gray-600 px-2 py-1 text-xs text-gray-400 hover:text-white">
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setEditingVoteTitleId(vl.id); setEditVoteTitleValue(vl.title); }}
+                        className="group flex items-center gap-1.5 text-left"
+                        title="Click to rename"
+                      >
+                        <p className="truncate text-sm font-semibold text-white group-hover:text-purple-300">{vl.title}</p>
+                        <span className="text-[10px] text-gray-600 opacity-0 group-hover:opacity-100">✏️</span>
+                      </button>
+                    )}
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className={`text-xs font-semibold ${vl.is_active ? "text-green-400" : "text-gray-500"}`}>
                         {vl.is_active ? "Active" : "Inactive"}
