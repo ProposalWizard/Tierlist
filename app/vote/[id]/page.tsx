@@ -87,7 +87,7 @@ export default async function VotePage({
     <div className="min-h-screen bg-gray-950 text-white">
       {/* ── Nav ── */}
       <nav className="sticky top-0 z-10 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/" className="text-sm font-medium text-gray-400 transition-colors hover:text-white">
             ← Back
           </Link>
@@ -126,7 +126,7 @@ export default async function VotePage({
       </div>
 
       {/* ── Vote board ── */}
-      <main className="mx-auto max-w-3xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-6">
         {enrichedImages.length === 0 ? (
           <div className="py-24 text-center text-gray-500">
             No items to vote on yet.

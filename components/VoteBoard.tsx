@@ -3,20 +3,17 @@
 /**
  * components/VoteBoard.tsx
  *
- * The interactive voting UI for a vote tierlist.
- *
- * - Shows every image with its current vote-percentage breakdown.
- * - Lets the user click a tier to cast or change their vote.
- * - Works for both logged-in and anonymous users.
- *   Anonymous voters get a UUID stored in localStorage so their vote
- *   persists across page refreshes (and is difficult to repeat without
- *   clearing storage / using a different browser).
+ * Tierlist-style voting UI.
+ * - Tier rows show images the user has voted into them.
+ * - Unvoted images sit in the pool below.
+ * - Clicking any image opens a side panel with per-tier vote stats
+ *   and big coloured buttons to cast / change the vote.
+ * - Optimistic UI with server reconciliation.
  */
 
 import { useEffect, useRef, useState } from "react";
 import type { VoteImageWithCounts, VoteTier } from "@/lib/types";
 
-// ── localStorage key for the anonymous voter ID ──────────────────────────────
 const VOTER_ID_KEY = "vote_voter_id";
 
 function getOrCreateVoterId(): string {
@@ -29,18 +26,13 @@ function getOrCreateVoterId(): string {
   return id;
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface Props {
   votelistId: string;
   tiers: VoteTier[];
   initialImages: VoteImageWithCounts[];
-  /** Pre-filled for logged-in users (server-side); empty for anon users */
   initialUserVotes: Record<string, string>;
   isLoggedIn: boolean;
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function VoteBoard({
   votelistId,
@@ -52,31 +44,25 @@ export default function VoteBoard({
   const [images, setImages] = useState<VoteImageWithCounts[]>(initialImages);
   const [userVotes, setUserVotes] = useState<Record<string, string>>(initialUserVotes);
   const [pending, setPending] = useState<Record<string, boolean>>({});
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const voterIdRef = useRef<string>("");
 
-  // On mount: get/create anonymous voter ID, then fetch their existing votes
   useEffect(() => {
     voterIdRef.current = getOrCreateVoterId();
-
     if (!isLoggedIn && voterIdRef.current) {
-      fetch(
-        `/api/vote-tierlists/${votelistId}/my-votes?voter_id=${encodeURIComponent(voterIdRef.current)}`
-      )
+      fetch(`/api/vote-tierlists/${votelistId}/my-votes?voter_id=${encodeURIComponent(voterIdRef.current)}`)
         .then((r) => r.json())
         .then((votes: Record<string, string>) => {
           if (votes && typeof votes === "object" && !("error" in votes)) {
             setUserVotes(votes);
           }
         })
-        .catch(() => {/* silently ignore */});
+        .catch(() => {});
     }
   }, [votelistId, isLoggedIn]);
 
   async function castVote(imageId: string, tierLabel: string) {
-    // Don't double-submit
     if (pending[imageId]) return;
-
-    // Optimistic update
     const previousVote = userVotes[imageId] ?? null;
     const previousImages = images;
 
@@ -85,15 +71,12 @@ export default function VoteBoard({
       prev.map((img) => {
         if (img.id !== imageId) return img;
         const counts = { ...img.vote_counts };
-        // Remove previous vote count
         if (previousVote) counts[previousVote] = Math.max(0, (counts[previousVote] ?? 1) - 1);
-        // Add new vote count
         counts[tierLabel] = (counts[tierLabel] ?? 0) + 1;
         const total = Object.values(counts).reduce((a, b) => a + b, 0);
         return { ...img, vote_counts: counts, total_votes: total, user_vote: tierLabel };
       })
     );
-
     setPending((p) => ({ ...p, [imageId]: true }));
 
     try {
@@ -105,21 +88,16 @@ export default function VoteBoard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) throw new Error("vote failed");
 
-      // Replace with server counts to stay accurate
-      const { vote_counts, total_votes } = await res.json() as {
+      const { vote_counts, total_votes } = (await res.json()) as {
         vote_counts: Record<string, number>;
         total_votes: number;
       };
       setImages((prev) =>
-        prev.map((img) =>
-          img.id === imageId ? { ...img, vote_counts, total_votes } : img
-        )
+        prev.map((img) => (img.id === imageId ? { ...img, vote_counts, total_votes } : img))
       );
     } catch {
-      // Revert on failure
       setUserVotes((prev) => {
         const next = { ...prev };
         if (previousVote) next[imageId] = previousVote;
@@ -132,114 +110,178 @@ export default function VoteBoard({
     }
   }
 
-  return (
-    <div className="space-y-4">
-      {images.map((img) => {
-        const myVote = userVotes[img.id] ?? null;
-        const isPending = pending[img.id] ?? false;
+  const imagesByTier: Record<string, VoteImageWithCounts[]> = {};
+  for (const t of tiers) imagesByTier[t.label] = [];
+  const pool: VoteImageWithCounts[] = [];
 
-        return (
-          <ImageVoteCard
-            key={img.id}
-            image={img}
-            tiers={tiers}
-            myVote={myVote}
-            isPending={isPending}
-            onVote={(tierLabel) => castVote(img.id, tierLabel)}
-          />
-        );
-      })}
-    </div>
-  );
-}
+  for (const img of images) {
+    const vote = userVotes[img.id];
+    if (vote && imagesByTier[vote]) {
+      imagesByTier[vote].push(img);
+    } else {
+      pool.push(img);
+    }
+  }
 
-// ── ImageVoteCard ─────────────────────────────────────────────────────────────
-
-interface CardProps {
-  image: VoteImageWithCounts;
-  tiers: VoteTier[];
-  myVote: string | null;
-  isPending: boolean;
-  onVote: (tierLabel: string) => void;
-}
-
-function ImageVoteCard({ image, tiers, myVote, isPending, onVote }: CardProps) {
-  const totalVotes = image.total_votes;
+  const selectedImg = selectedId ? (images.find((i) => i.id === selectedId) ?? null) : null;
+  const votedCount = images.length - pool.length;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
-      <div className="flex gap-4 p-4">
-        {/* Image */}
-        <div className="flex-shrink-0">
-          <div
-            className="h-24 w-24 rounded-lg bg-gray-800 bg-cover bg-center"
-            style={{ backgroundImage: `url(${image.image_url})` }}
-            title={image.name}
-          />
+    <div className="flex gap-5 items-start">
+      {/* ── Tierlist ── */}
+      <div className="flex-1 min-w-0 overflow-hidden rounded-xl border border-gray-800">
+        {tiers.map((tier) => (
+          <div key={tier.label} className="flex min-h-[72px] border-b border-gray-800/60 last:border-b-0">
+            <div
+              className="flex w-14 flex-shrink-0 items-center justify-center text-xl font-black text-gray-900 select-none"
+              style={{ backgroundColor: tier.color }}
+            >
+              {tier.label}
+            </div>
+            <div className="flex flex-wrap items-start gap-1 p-1.5 bg-gray-900/60">
+              {imagesByTier[tier.label].map((img) => (
+                <button
+                  key={img.id}
+                  onClick={() => setSelectedId(img.id === selectedId ? null : img.id)}
+                  title={img.name || undefined}
+                  className={`overflow-hidden rounded transition-all ${
+                    selectedId === img.id
+                      ? "ring-2 ring-white"
+                      : "hover:ring-2 hover:ring-gray-400 opacity-90 hover:opacity-100"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.image_url} alt={img.name} className="h-16 w-16 object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Pool */}
+        <div className="bg-gray-900/30 p-3 border-t border-gray-800">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            {pool.length > 0 ? `${pool.length} remaining — click to vote` : `All ${images.length} voted ✓`}
+          </p>
+          {pool.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {pool.map((img) => (
+                <button
+                  key={img.id}
+                  onClick={() => setSelectedId(img.id === selectedId ? null : img.id)}
+                  title={img.name || undefined}
+                  className={`overflow-hidden rounded transition-all ${
+                    selectedId === img.id
+                      ? "ring-2 ring-white"
+                      : "hover:ring-2 hover:ring-gray-400 opacity-90 hover:opacity-100"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.image_url} alt={img.name} className="h-16 w-16 object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Side panel ── */}
+      <div className="w-60 flex-shrink-0 sticky top-20 space-y-3">
+        {/* Progress */}
+        <div className="rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-gray-500">Progress</span>
+            <span className="text-xs font-semibold text-white">{votedCount}/{images.length}</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-gray-800">
+            <div
+              className="h-full rounded-full bg-purple-500 transition-all duration-500"
+              style={{ width: images.length > 0 ? `${(votedCount / images.length) * 100}%` : "0%" }}
+            />
+          </div>
         </div>
 
-        {/* Name + vote bars */}
-        <div className="min-w-0 flex-1">
-          <p className="mb-3 font-semibold text-white">{image.name}</p>
+        {selectedImg ? (
+          <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedImg.image_url}
+              alt={selectedImg.name}
+              className="mb-3 w-full rounded-lg object-cover"
+              style={{ maxHeight: 160 }}
+            />
+            {selectedImg.name && (
+              <p className="mb-3 text-center text-sm font-semibold text-white truncate">
+                {selectedImg.name}
+              </p>
+            )}
 
-          <div className="space-y-2">
-            {tiers.map((tier) => {
-              const count = image.vote_counts[tier.label] ?? 0;
-              const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-              const isMyVote = myVote === tier.label;
+            {/* Stats */}
+            <div className="mb-4 space-y-1.5">
+              {tiers.map((tier) => {
+                const count = selectedImg.vote_counts[tier.label] ?? 0;
+                const total = selectedImg.total_votes;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                const isMyVote = userVotes[selectedImg.id] === tier.label;
+                return (
+                  <div key={tier.label} className="flex items-center gap-1.5">
+                    <span
+                      className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[10px] font-black text-gray-900"
+                      style={{ backgroundColor: tier.color }}
+                    >
+                      {tier.label}
+                    </span>
+                    <div className="relative flex-1 overflow-hidden rounded-full bg-gray-800" style={{ height: 6 }}>
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: tier.color, opacity: 0.85 }}
+                      />
+                    </div>
+                    <span className="w-8 flex-shrink-0 text-right text-[10px] text-gray-400">{pct}%</span>
+                    {isMyVote && <span className="text-[10px] text-white">✓</span>}
+                  </div>
+                );
+              })}
+              <p className="mt-1 text-right text-[10px] text-gray-600">
+                {selectedImg.total_votes === 0
+                  ? "No votes yet"
+                  : `${selectedImg.total_votes} vote${selectedImg.total_votes === 1 ? "" : "s"}`}
+              </p>
+            </div>
 
-              return (
-                <button
-                  key={tier.label}
-                  onClick={() => onVote(tier.label)}
-                  disabled={isPending}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left transition-all
-                    ${isMyVote
-                      ? "ring-2 ring-white/60"
-                      : "hover:bg-gray-800"}
-                    ${isPending ? "cursor-wait opacity-70" : "cursor-pointer"}
-                  `}
-                  style={{
-                    backgroundColor: isMyVote ? tier.color + "33" : undefined,
-                  }}
-                >
-                  {/* Tier label badge */}
-                  <span
-                    className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-xs font-bold text-gray-900"
+            {/* Vote buttons */}
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+              Your vote
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {tiers.map((tier) => {
+                const isMyVote = userVotes[selectedImg.id] === tier.label;
+                const isPending = pending[selectedImg.id] ?? false;
+                return (
+                  <button
+                    key={tier.label}
+                    onClick={() => castVote(selectedImg.id, tier.label)}
+                    disabled={isPending}
+                    className={`flex-1 min-w-[2rem] rounded-lg py-2.5 text-sm font-black text-gray-900 transition-all disabled:opacity-50 ${
+                      isMyVote
+                        ? "ring-2 ring-offset-1 ring-offset-gray-900 ring-white scale-95"
+                        : "hover:scale-105 hover:brightness-110"
+                    }`}
                     style={{ backgroundColor: tier.color }}
                   >
                     {tier.label}
-                  </span>
-
-                  {/* Progress bar */}
-                  <div className="relative flex-1 overflow-hidden rounded-full bg-gray-800" style={{ height: 8 }}>
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%`, backgroundColor: tier.color, opacity: 0.8 }}
-                    />
-                  </div>
-
-                  {/* Percentage */}
-                  <span className="w-9 flex-shrink-0 text-right text-xs text-gray-400">
-                    {pct}%
-                  </span>
-
-                  {/* Checkmark for user's vote */}
-                  <span className="w-4 flex-shrink-0 text-center text-xs text-white">
-                    {isMyVote ? "✓" : ""}
-                  </span>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-
-          {/* Vote count */}
-          <p className="mt-2 text-right text-xs text-gray-600">
-            {totalVotes === 0
-              ? "No votes yet — be the first!"
-              : `${totalVotes} vote${totalVotes === 1 ? "" : "s"}`}
-          </p>
-        </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-gray-800 p-6 text-center">
+            <p className="text-xs text-gray-600">
+              Click any image to see how others voted and cast your vote
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
