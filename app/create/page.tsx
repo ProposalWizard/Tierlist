@@ -8,7 +8,6 @@
  */
 
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import TierlistBoard from "@/components/TierlistBoard";
@@ -31,10 +30,7 @@ export default async function CreatePage() {
   return (
     <main className="min-h-screen bg-gray-950 p-4 md:p-8">
       <header className="mb-6">
-        <Link href="/" className="text-sm text-gray-400 transition-colors hover:text-white">
-          ← Back to Home
-        </Link>
-        <h1 className="mt-3 text-2xl font-bold text-white md:text-3xl">
+        <h1 className="text-2xl font-bold text-white md:text-3xl">
           Create New Tierlist
         </h1>
         <p className="mt-1 text-sm text-gray-400">

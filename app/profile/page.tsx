@@ -6,7 +6,6 @@
  */
 
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import ProfileClient from "./ProfileClient";
@@ -61,10 +60,7 @@ export default async function ProfilePage() {
   return (
     <main className="min-h-screen bg-gray-950 p-4 md:p-8">
       <header className="mb-8">
-        <Link href="/" className="text-sm text-gray-400 transition-colors hover:text-white">
-          ← Back to Home
-        </Link>
-        <h1 className="mt-3 text-2xl font-bold text-white md:text-3xl">My Profile</h1>
+        <h1 className="text-2xl font-bold text-white md:text-3xl">My Profile</h1>
       </header>
 
       <ProfileClient

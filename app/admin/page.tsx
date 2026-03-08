@@ -6,7 +6,6 @@
  */
 
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -37,10 +36,7 @@ export default async function AdminPage() {
   return (
     <main className="min-h-screen bg-gray-950 p-4 md:p-8">
       <header className="mb-8">
-        <Link href="/" className="text-sm text-gray-400 transition-colors hover:text-white">
-          ← Back to Home
-        </Link>
-        <div className="mt-3 flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white md:text-3xl">Admin Panel</h1>
           <span className="rounded-full bg-indigo-600 px-2.5 py-0.5 text-xs font-bold text-white">
             ADMIN

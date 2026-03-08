@@ -76,11 +76,7 @@ export default async function PlayPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-gray-950 p-4 md:p-8">
       <header className="mb-6">
-        <Link href="/" className="text-sm text-gray-400 transition-colors hover:text-white">
-          ← Back to Home
-        </Link>
-
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white md:text-3xl">{tierlist.title}</h1>
             <p className="mt-1 text-sm text-gray-400">
