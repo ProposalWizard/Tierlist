@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import VoteBoard from "@/components/VoteBoard";
+import LikeButton from "@/components/LikeButton";
 import type { VoteImageWithCounts, VoteTier } from "@/lib/types";
 
 export default async function VotePage({
@@ -54,19 +55,38 @@ export default async function VotePage({
     voteCounts[v.image_id][v.tier_label] = (voteCounts[v.image_id][v.tier_label] ?? 0) + 1;
   }
 
-  // ── Fetch logged-in user's existing votes (server-side) ───────────────────
+  // ── Fetch logged-in user's existing votes + like status (server-side) ───────
   let initialUserVotes: Record<string, string> = {};
-  if (user) {
-    const { data: myVotes } = await service
-      .from("vote_tierlist_votes")
-      .select("image_id, tier_label")
-      .eq("vote_tierlist_id", id)
-      .eq("voter_id", user.id);
+  let likeCount = 0;
+  let userHasLiked = false;
 
-    for (const v of myVotes ?? []) {
-      initialUserVotes[v.image_id] = v.tier_label;
-    }
+  const [myVotesResult, likesResult, myLikeResult] = await Promise.all([
+    user
+      ? service
+          .from("vote_tierlist_votes")
+          .select("image_id, tier_label")
+          .eq("vote_tierlist_id", id)
+          .eq("voter_id", user.id)
+      : Promise.resolve({ data: [] }),
+    service
+      .from("vote_tierlist_likes")
+      .select("*", { count: "exact", head: true })
+      .eq("vote_tierlist_id", id),
+    user
+      ? service
+          .from("vote_tierlist_likes")
+          .select("user_id")
+          .eq("vote_tierlist_id", id)
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  for (const v of (myVotesResult.data ?? []) as { image_id: string; tier_label: string }[]) {
+    initialUserVotes[v.image_id] = v.tier_label;
   }
+  likeCount = (likesResult as { count: number | null }).count ?? 0;
+  userHasLiked = !!(myLikeResult as { data: unknown }).data;
 
   // ── Build enriched image array ────────────────────────────────────────────
   const enrichedImages: VoteImageWithCounts[] = (images ?? []).map((img) => {
@@ -96,8 +116,17 @@ export default async function VotePage({
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">{tierlist.description}</p>
         )}
         <p className="mt-2 text-xs text-gray-600">
-          Click a tier to cast your vote. You can change it at any time.
+          Tap an image to cast your vote. You can change it at any time.
         </p>
+        <div className="mt-4 flex justify-center">
+          <LikeButton
+            tierlistId={id}
+            initialCount={likeCount}
+            initialLiked={userHasLiked}
+            isLoggedIn={!!user}
+            endpoint={`/api/vote-tierlists/${id}/like`}
+          />
+        </div>
 
         {/* Tier legend */}
         <div className="mt-4 flex flex-wrap justify-center gap-2">

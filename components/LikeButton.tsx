@@ -7,9 +7,10 @@ interface Props {
   initialCount: number;
   initialLiked: boolean;
   isLoggedIn: boolean;
+  endpoint?: string;
 }
 
-export default function LikeButton({ tierlistId, initialCount, initialLiked, isLoggedIn }: Props) {
+export default function LikeButton({ tierlistId, initialCount, initialLiked, isLoggedIn, endpoint }: Props) {
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,7 @@ export default function LikeButton({ tierlistId, initialCount, initialLiked, isL
     setLiked((v) => !v);
     setCount((v) => (liked ? v - 1 : v + 1));
 
-    const res = await fetch(`/api/tierlists/${tierlistId}/like`, { method: "POST" });
+    const res = await fetch(endpoint ?? `/api/tierlists/${tierlistId}/like`, { method: "POST" });
     if (res.ok) {
       const data = await res.json();
       setLiked(data.liked);
