@@ -64,10 +64,13 @@ function UnrankedPool({
   zoomMode,
   cropMode,
   labelMode,
+  removeMode,
+  selectedForRemoval,
   onFilesAdded,
   onZoom,
   onCrop,
   onLabel,
+  onToggleRemove,
 }: {
   players: TierlistPlayer[];
   activePlayerId: string | null;
@@ -75,10 +78,13 @@ function UnrankedPool({
   zoomMode: boolean;
   cropMode: boolean;
   labelMode: boolean;
+  removeMode: boolean;
+  selectedForRemoval: Set<string>;
   onFilesAdded: (files: FileList) => void;
   onZoom: (id: string) => void;
   onCrop: (id: string) => void;
   onLabel: (id: string) => void;
+  onToggleRemove: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: "unranked" });
   const inputId = useId();
@@ -131,9 +137,12 @@ function UnrankedPool({
               zoomMode={zoomMode}
               cropMode={cropMode}
               labelMode={labelMode}
+              removeMode={removeMode}
+              isSelectedForRemoval={selectedForRemoval.has(player.id)}
               onZoom={onZoom}
               onCrop={onCrop}
               onLabel={onLabel}
+              onToggleRemove={onToggleRemove}
             />
           ))}
         </SortableContext>
@@ -203,6 +212,8 @@ export default function TierlistBoard({
   const [zoomMode, setZoomMode]         = useState(false);
   const [cropMode, setCropMode]         = useState(false);
   const [labelMode, setLabelMode]       = useState(false);
+  const [removeMode, setRemoveMode]     = useState(false);
+  const [selectedForRemoval, setSelectedForRemoval] = useState<Set<string>>(new Set());
   const [zoomedId, setZoomedId]         = useState<string | null>(null);
   const [croppingId, setCroppingId]     = useState<string | null>(null);
   const [labelingId, setLabelingId]     = useState<string | null>(null);
@@ -297,16 +308,54 @@ export default function TierlistBoard({
     setTiers((prev) => prev.map((t) => (t.id === id ? { ...t, color } : t)));
   }
 
-  // ── Zoom / crop mode toggles ─────────────────────────────────────────────
+  // ── Mode toggles ─────────────────────────────────────────────────────────
+
+  function clearOtherModes() {
+    setZoomMode(false); setCropMode(false); setLabelMode(false);
+    setRemoveMode(false); setSelectedForRemoval(new Set());
+  }
 
   function toggleZoom() {
-    setZoomMode((v) => { if (!v) { setCropMode(false); setLabelMode(false); } return !v; });
+    setZoomMode((v) => { if (!v) clearOtherModes(); return !v; });
   }
   function toggleCrop() {
-    setCropMode((v) => { if (!v) { setZoomMode(false); setLabelMode(false); } return !v; });
+    setCropMode((v) => { if (!v) clearOtherModes(); return !v; });
   }
   function toggleLabel() {
-    setLabelMode((v) => { if (!v) { setZoomMode(false); setCropMode(false); } return !v; });
+    setLabelMode((v) => { if (!v) clearOtherModes(); return !v; });
+  }
+  function toggleRemove() {
+    setRemoveMode((v) => {
+      if (!v) clearOtherModes();
+      else setSelectedForRemoval(new Set());
+      return !v;
+    });
+  }
+
+  function toggleRemoveSelection(id: string) {
+    setSelectedForRemoval((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function deleteSelected() {
+    const toDelete = selectedForRemoval;
+    setPlayerMap((prev) => {
+      const next = { ...prev };
+      for (const id of toDelete) delete next[id];
+      return next;
+    });
+    setTierMap((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        next[key] = next[key].filter((id) => !toDelete.has(id));
+      }
+      return next;
+    });
+    setSelectedForRemoval(new Set());
+    setRemoveMode(false);
   }
 
   // ── Crop result handler ──────────────────────────────────────────────────
@@ -483,6 +532,8 @@ export default function TierlistBoard({
                 zoomMode={zoomMode}
                 cropMode={cropMode}
                 labelMode={labelMode}
+                removeMode={removeMode}
+                selectedForRemoval={selectedForRemoval}
                 onLabelChange={(label) => updateTierLabel(tier.id, label)}
                 onColorChange={(color) => updateTierColor(tier.id, color)}
                 onDelete={() => deleteTier(tier.id)}
@@ -492,6 +543,7 @@ export default function TierlistBoard({
                 onZoom={setZoomedId}
                 onCrop={setCroppingId}
                 onLabel={setLabelingId}
+                onToggleRemove={toggleRemoveSelection}
               />
             ))}
           </div>
@@ -507,10 +559,13 @@ export default function TierlistBoard({
             zoomMode={zoomMode}
             cropMode={cropMode}
             labelMode={labelMode}
+            removeMode={removeMode}
+            selectedForRemoval={selectedForRemoval}
             onFilesAdded={handleFilesAdded}
             onZoom={setZoomedId}
             onCrop={setCroppingId}
             onLabel={setLabelingId}
+            onToggleRemove={toggleRemoveSelection}
           />
 
           <DragOverlay>
@@ -526,11 +581,35 @@ export default function TierlistBoard({
         </DndContext>
 
         {/* Status bar */}
-        {totalImages > 0 && (
+        {removeMode ? (
+          <div className="flex items-center justify-between rounded-lg border border-red-900 bg-red-950/40 px-3 py-2 text-xs">
+            <span className="text-red-300">
+              {selectedForRemoval.size === 0
+                ? "Tap images to select them for removal"
+                : `${selectedForRemoval.size} image${selectedForRemoval.size === 1 ? "" : "s"} selected`}
+            </span>
+            <div className="flex items-center gap-2">
+              {selectedForRemoval.size > 0 && (
+                <button
+                  onClick={deleteSelected}
+                  className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-500"
+                >
+                  Delete {selectedForRemoval.size}
+                </button>
+              )}
+              <button
+                onClick={toggleRemove}
+                className="rounded-lg border border-red-800 px-3 py-1 text-xs text-red-400 hover:text-white"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : totalImages > 0 ? (
           <p className="text-right text-xs text-gray-500">
             {rankedCount} / {totalImages} images ranked
           </p>
-        )}
+        ) : null}
 
         {/* ── Toolbar ───────────────────────────────────────────────── */}
         <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
@@ -558,8 +637,8 @@ export default function TierlistBoard({
               </div>
             </div>
 
-            {/* Zoom / Crop tools */}
-            <div className="ml-auto flex items-center gap-2">
+            {/* Image tools */}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
               <button
                 onClick={toggleZoom}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
@@ -567,7 +646,7 @@ export default function TierlistBoard({
                     ? "bg-sky-600 text-white"
                     : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
                 }`}
-                title="Click an image to zoom in. Scroll to resize."
+                title="Click an image to zoom in."
               >
                 🔍 Zoom {zoomMode && <span className="text-sky-200">ON</span>}
               </button>
@@ -593,6 +672,25 @@ export default function TierlistBoard({
               >
                 T Label {labelMode && <span className="text-emerald-200">ON</span>}
               </button>
+              <button
+                onClick={toggleRemove}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  removeMode
+                    ? "bg-red-600 text-white"
+                    : "border border-gray-700 text-gray-400 hover:border-red-600 hover:text-red-400"
+                }`}
+                title="Select images to remove them."
+              >
+                🗑 Remove {removeMode && <span className="text-red-200">ON</span>}
+              </button>
+              {removeMode && selectedForRemoval.size > 0 && (
+                <button
+                  onClick={deleteSelected}
+                  className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-500 animate-pulse"
+                >
+                  Delete {selectedForRemoval.size} image{selectedForRemoval.size === 1 ? "" : "s"}
+                </button>
+              )}
             </div>
           </div>
         </div>

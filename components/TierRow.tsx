@@ -18,6 +18,8 @@ interface TierRowProps {
   zoomMode: boolean;
   cropMode: boolean;
   labelMode: boolean;
+  removeMode: boolean;
+  selectedForRemoval: Set<string>;
   onLabelChange: (label: string) => void;
   onColorChange: (color: string) => void;
   onDelete: () => void;
@@ -27,6 +29,7 @@ interface TierRowProps {
   onZoom: (id: string) => void;
   onCrop: (id: string) => void;
   onLabel: (id: string) => void;
+  onToggleRemove: (id: string) => void;
 }
 
 export default function TierRow({
@@ -40,6 +43,8 @@ export default function TierRow({
   zoomMode,
   cropMode,
   labelMode,
+  removeMode,
+  selectedForRemoval,
   onLabelChange,
   onColorChange,
   onDelete,
@@ -49,6 +54,7 @@ export default function TierRow({
   onZoom,
   onCrop,
   onLabel,
+  onToggleRemove,
 }: TierRowProps) {
   const { setNodeRef, isOver } = useDroppable({ id: rowId });
   const [localLabel, setLocalLabel] = useState(label);
@@ -115,9 +121,12 @@ export default function TierRow({
               zoomMode={zoomMode}
               cropMode={cropMode}
               labelMode={labelMode}
+              removeMode={removeMode}
+              isSelectedForRemoval={selectedForRemoval.has(player.id)}
               onZoom={onZoom}
               onCrop={onCrop}
               onLabel={onLabel}
+              onToggleRemove={onToggleRemove}
             />
           ))}
         </SortableContext>
