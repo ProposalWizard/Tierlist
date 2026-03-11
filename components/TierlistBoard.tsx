@@ -420,34 +420,17 @@ export default function TierlistBoard({
         scale: 2,
       });
 
-      const pageUrl = typeof window !== "undefined" ? window.location.href : "";
-      const isPlayPage = pageUrl.includes("/play/");
-      const tweetText = isPlayPage
-        ? "Check out my tierlist! Try it yourself:"
-        : "Just made my tierlist! Make yours:";
-      const tweetUrl = isPlayPage ? pageUrl : (typeof window !== "undefined" ? window.location.origin : "");
-
-      // Mobile: try Web Share API with file attachment
-      if (typeof navigator !== "undefined" && navigator.canShare) {
-        const blob = await new Promise<Blob>((resolve, reject) =>
-          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("blob failed"))), "image/png")
-        );
-        const file = new File([blob], "my-tierlist.png", { type: "image/png" });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], text: tweetText, url: tweetUrl });
-          return;
-        }
-      }
-
-      // Desktop: open X intent + download image for manual attachment
-      const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(tweetText + " ")}&url=${encodeURIComponent(tweetUrl)}`;
-      window.open(xUrl, "_blank", "noopener,noreferrer,width=600,height=400");
-
-      // Download the image so they can attach it to the tweet
+      // Download the tierlist image
       const link = document.createElement("a");
       link.download = "my-tierlist.png";
       link.href = canvas.toDataURL("image/png");
       link.click();
+
+      // Open Twitter intent in a new tab
+      const pageUrl = window.location.href;
+      const twitterUrl =
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent("Check out my tierlist!")}&url=${encodeURIComponent(pageUrl)}`;
+      window.open(twitterUrl, "_blank", "noopener,noreferrer");
     } finally {
       setIsSharing(false);
     }
