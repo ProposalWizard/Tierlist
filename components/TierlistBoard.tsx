@@ -344,16 +344,17 @@ export default function TierlistBoard({
   }
 
   function deleteSelected() {
-    const toDelete = selectedForRemoval;
+    const toDelete = Array.from(selectedForRemoval);
     setPlayerMap((prev) => {
       const next = { ...prev };
       for (const id of toDelete) delete next[id];
       return next;
     });
     setTierMap((prev) => {
+      const toDeleteSet = new Set(toDelete);
       const next = { ...prev };
       for (const key of Object.keys(next)) {
-        next[key] = next[key].filter((id) => !toDelete.has(id));
+        next[key] = next[key].filter((id) => !toDeleteSet.has(id));
       }
       return next;
     });
