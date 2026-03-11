@@ -7,6 +7,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import GlobalNav from "@/components/GlobalNav";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: {
@@ -34,9 +35,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen`}>
+      <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen flex flex-col`}>
         <GlobalNav />
-        {children}
+        <div className="flex-1">{children}</div>
+        <SiteFooter />
       </body>
     </html>
   );
