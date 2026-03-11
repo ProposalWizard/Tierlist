@@ -12,9 +12,12 @@ interface PlayerCardProps {
   zoomMode?: boolean;
   cropMode?: boolean;
   labelMode?: boolean;
+  removeMode?: boolean;
+  isSelectedForRemoval?: boolean;
   onZoom?: (id: string) => void;
   onCrop?: (id: string) => void;
   onLabel?: (id: string) => void;
+  onToggleRemove?: (id: string) => void;
 }
 
 export default function PlayerCard({
@@ -24,9 +27,12 @@ export default function PlayerCard({
   zoomMode = false,
   cropMode = false,
   labelMode = false,
+  removeMode = false,
+  isSelectedForRemoval = false,
   onZoom,
   onCrop,
   onLabel,
+  onToggleRemove,
 }: PlayerCardProps) {
   const {
     attributes,
@@ -39,13 +45,14 @@ export default function PlayerCard({
 
   const dims = IMAGE_STYLE_DIMS[imageStyle];
   const isActive = isDragging || isSortableDragging;
-  const interactive = zoomMode || cropMode || labelMode;
+  const anyMode = zoomMode || cropMode || labelMode || removeMode;
 
   function handleClick(e: React.MouseEvent) {
     if (isSortableDragging) return;
-    if (zoomMode && onZoom)   { e.stopPropagation(); onZoom(player.id);  return; }
-    if (cropMode && onCrop)   { e.stopPropagation(); onCrop(player.id);  return; }
-    if (labelMode && onLabel) { e.stopPropagation(); onLabel(player.id); return; }
+    if (removeMode && onToggleRemove) { e.stopPropagation(); onToggleRemove(player.id); return; }
+    if (zoomMode && onZoom)          { e.stopPropagation(); onZoom(player.id);           return; }
+    if (cropMode && onCrop)          { e.stopPropagation(); onCrop(player.id);           return; }
+    if (labelMode && onLabel)        { e.stopPropagation(); onLabel(player.id);          return; }
   }
 
   const initials = player.name
@@ -66,23 +73,23 @@ export default function PlayerCard({
         flexShrink: 0,
       }}
       {...attributes}
-      {...listeners}
+      {...(anyMode ? {} : listeners)}
       onClick={handleClick}
       className={`
-        relative select-none overflow-hidden shadow border-2 border-black
+        relative select-none overflow-hidden shadow border-2
         ${dims.circle ? "rounded-full" : "rounded-lg"}
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
-        ${interactive
-          ? "cursor-pointer hover:ring-2 hover:ring-indigo-300 active:cursor-pointer"
+        ${removeMode && isSelectedForRemoval
+          ? "border-red-500 ring-2 ring-red-500 ring-offset-1 ring-offset-gray-950"
+          : removeMode
+          ? "border-black hover:border-red-400"
+          : "border-black"}
+        ${anyMode
+          ? "cursor-pointer active:cursor-pointer"
           : "cursor-grab active:cursor-grabbing"}
       `}
     >
       {player.image_url ? (
-        /*
-         * Using a background-image div instead of <img> so that
-         * html2canvas correctly respects the cover/contain cropping
-         * when the user downloads the tierlist as an image.
-         */
         <div
           style={{
             width: "100%",
@@ -100,12 +107,28 @@ export default function PlayerCard({
         </div>
       )}
 
-      {/* Label overlay at the bottom of the card */}
+      {/* Label overlay */}
       {player.label && !dims.circle && (
         <div className="absolute bottom-0 left-0 right-0 bg-white px-0.5 py-px">
           <span className="block truncate text-center text-[9px] font-semibold leading-tight text-black">
             {player.label}
           </span>
+        </div>
+      )}
+
+      {/* Remove mode: selected checkmark overlay */}
+      {removeMode && isSelectedForRemoval && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-900/50">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-black text-white shadow">
+            ✓
+          </div>
+        </div>
+      )}
+
+      {/* Remove mode: hover hint (unselected) */}
+      {removeMode && !isSelectedForRemoval && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity hover:opacity-100 bg-red-900/20">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-red-400 bg-transparent" />
         </div>
       )}
     </div>

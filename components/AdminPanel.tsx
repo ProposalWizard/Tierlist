@@ -91,6 +91,10 @@ export default function AdminPanel({
   // Manual pin picker search
   const [pinPickerSearch, setPinPickerSearch] = useState<Record<string, string>>({});
   const [importLoading, setImportLoading] = useState(false);
+  // Vote tierlist cover photo editing
+  const [voteCoverFile, setVoteCoverFile] = useState<File | null>(null);
+  const [voteCoverPreview, setVoteCoverPreview] = useState<string | null>(null);
+  const [voteCoverUploading, setVoteCoverUploading] = useState(false);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -469,6 +473,36 @@ export default function AdminPanel({
       setEditingVoteTitleId(null);
     }
     setSavingVoteTitle(false);
+  }
+
+  async function handleVoteCoverUpload(voteId: string) {
+    if (!voteCoverFile) return;
+    setVoteCoverUploading(true);
+    try {
+      const supabase = createClient();
+      const ext = voteCoverFile.name.split(".").pop() ?? "jpg";
+      const path = `vote-covers/${crypto.randomUUID()}.${ext}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("tierlist-images")
+        .upload(path, voteCoverFile, { upsert: false });
+      if (uploadError) throw new Error(uploadError.message);
+      const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
+      const cover_image_url = urlData.publicUrl;
+      const res = await fetch(`/api/admin/vote-tierlists/${voteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cover_image_url }),
+      });
+      if (!res.ok) throw new Error("Failed to update cover");
+      setVotelists((prev) => prev.map((v) => v.id === voteId ? { ...v, cover_image_url } : v));
+      if (voteCoverPreview) URL.revokeObjectURL(voteCoverPreview);
+      setVoteCoverFile(null);
+      setVoteCoverPreview(null);
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setVoteCoverUploading(false);
+    }
   }
 
   async function handleDeleteVote(id: string) {
@@ -1202,6 +1236,53 @@ export default function AdminPanel({
                 {/* Expanded image management */}
                 {expandedVoteId === vl.id && (
                   <div className="border-t border-gray-700/60 p-4 space-y-4">
+
+                    {/* Cover photo */}
+                    <div>
+                      <p className="mb-2 text-xs font-semibold text-gray-400">Cover Photo</p>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {vl.cover_image_url && !voteCoverPreview && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={vl.cover_image_url} alt="current cover"
+                            className="h-16 w-24 rounded-lg object-cover border border-gray-700" />
+                        )}
+                        {voteCoverPreview ? (
+                          <div className="relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={voteCoverPreview} alt="new cover"
+                              className="h-16 w-24 rounded-lg object-cover border border-purple-600" />
+                            <button
+                              onClick={() => { if (voteCoverPreview) URL.revokeObjectURL(voteCoverPreview); setVoteCoverFile(null); setVoteCoverPreview(null); }}
+                              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                            {vl.cover_image_url ? "Change cover" : "Upload cover"}
+                            <input type="file" accept="image/*" className="sr-only"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) {
+                                  if (voteCoverPreview) URL.revokeObjectURL(voteCoverPreview);
+                                  setVoteCoverFile(f);
+                                  setVoteCoverPreview(URL.createObjectURL(f));
+                                  e.target.value = "";
+                                }
+                              }} />
+                          </label>
+                        )}
+                        {voteCoverFile && (
+                          <button
+                            onClick={() => handleVoteCoverUpload(vl.id)}
+                            disabled={voteCoverUploading}
+                            className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-50">
+                            {voteCoverUploading ? "Saving…" : "Save cover"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     <p className="text-xs font-semibold text-gray-400">Images</p>
                     {!(voteImagesMap[vl.id]) ? (
                       <p className="text-sm text-gray-500">Loading…</p>

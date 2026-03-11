@@ -64,10 +64,13 @@ function UnrankedPool({
   zoomMode,
   cropMode,
   labelMode,
+  removeMode,
+  selectedForRemoval,
   onFilesAdded,
   onZoom,
   onCrop,
   onLabel,
+  onToggleRemove,
 }: {
   players: TierlistPlayer[];
   activePlayerId: string | null;
@@ -75,10 +78,13 @@ function UnrankedPool({
   zoomMode: boolean;
   cropMode: boolean;
   labelMode: boolean;
+  removeMode: boolean;
+  selectedForRemoval: Set<string>;
   onFilesAdded: (files: FileList) => void;
   onZoom: (id: string) => void;
   onCrop: (id: string) => void;
   onLabel: (id: string) => void;
+  onToggleRemove: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: "unranked" });
   const inputId = useId();
@@ -131,9 +137,12 @@ function UnrankedPool({
               zoomMode={zoomMode}
               cropMode={cropMode}
               labelMode={labelMode}
+              removeMode={removeMode}
+              isSelectedForRemoval={selectedForRemoval.has(player.id)}
               onZoom={onZoom}
               onCrop={onCrop}
               onLabel={onLabel}
+              onToggleRemove={onToggleRemove}
             />
           ))}
         </SortableContext>
@@ -196,6 +205,7 @@ export default function TierlistBoard({
   );
 
   const [fileMap, setFileMap] = useState<Record<string, File>>({});
+  const [hasModified, setHasModified] = useState(false);
 
   // ── UI state ─────────────────────────────────────────────────────────────
   const [activeId, setActiveId]         = useState<string | null>(null);
@@ -203,11 +213,14 @@ export default function TierlistBoard({
   const [zoomMode, setZoomMode]         = useState(false);
   const [cropMode, setCropMode]         = useState(false);
   const [labelMode, setLabelMode]       = useState(false);
+  const [removeMode, setRemoveMode]     = useState(false);
+  const [selectedForRemoval, setSelectedForRemoval] = useState<Set<string>>(new Set());
   const [zoomedId, setZoomedId]         = useState<string | null>(null);
   const [croppingId, setCroppingId]     = useState<string | null>(null);
   const [labelingId, setLabelingId]     = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDownloading, setIsDownloading]     = useState(false);
+  const [isSharing, setIsSharing]             = useState(false);
 
   const tiersRef = useRef<HTMLDivElement>(null);
   const tierMapRef = useRef(tierMap);
@@ -248,6 +261,7 @@ export default function TierlistBoard({
       ...prev,
       unranked: [...prev.unranked, ...newPlayers.map((p) => p.id)],
     }));
+    setHasModified(true);
   }
 
   // ── Tier row management ──────────────────────────────────────────────────
@@ -297,16 +311,56 @@ export default function TierlistBoard({
     setTiers((prev) => prev.map((t) => (t.id === id ? { ...t, color } : t)));
   }
 
-  // ── Zoom / crop mode toggles ─────────────────────────────────────────────
+  // ── Mode toggles ─────────────────────────────────────────────────────────
+
+  function clearOtherModes() {
+    setZoomMode(false); setCropMode(false); setLabelMode(false);
+    setRemoveMode(false); setSelectedForRemoval(new Set());
+  }
 
   function toggleZoom() {
-    setZoomMode((v) => { if (!v) { setCropMode(false); setLabelMode(false); } return !v; });
+    setZoomMode((v) => { if (!v) clearOtherModes(); return !v; });
   }
   function toggleCrop() {
-    setCropMode((v) => { if (!v) { setZoomMode(false); setLabelMode(false); } return !v; });
+    setCropMode((v) => { if (!v) clearOtherModes(); return !v; });
   }
   function toggleLabel() {
-    setLabelMode((v) => { if (!v) { setZoomMode(false); setCropMode(false); } return !v; });
+    setLabelMode((v) => { if (!v) clearOtherModes(); return !v; });
+  }
+  function toggleRemove() {
+    setRemoveMode((v) => {
+      if (!v) clearOtherModes();
+      else setSelectedForRemoval(new Set());
+      return !v;
+    });
+  }
+
+  function toggleRemoveSelection(id: string) {
+    setSelectedForRemoval((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function deleteSelected() {
+    const toDelete = Array.from(selectedForRemoval);
+    setPlayerMap((prev) => {
+      const next = { ...prev };
+      for (const id of toDelete) delete next[id];
+      return next;
+    });
+    setTierMap((prev) => {
+      const toDeleteSet = new Set(toDelete);
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        next[key] = next[key].filter((id) => !toDeleteSet.has(id));
+      }
+      return next;
+    });
+    setSelectedForRemoval(new Set());
+    setRemoveMode(false);
+    setHasModified(true);
   }
 
   // ── Crop result handler ──────────────────────────────────────────────────
@@ -349,6 +403,53 @@ export default function TierlistBoard({
       link.click();
     } finally {
       setIsDownloading(false);
+    }
+  }
+
+  // ── Share on X ───────────────────────────────────────────────────────────
+
+  async function handleShareX() {
+    if (!tiersRef.current || isSharing) return;
+    setIsSharing(true);
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(tiersRef.current, {
+        backgroundColor: "#111827",
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+      });
+
+      const pageUrl = typeof window !== "undefined" ? window.location.href : "";
+      const isPlayPage = pageUrl.includes("/play/");
+      const tweetText = isPlayPage
+        ? "Check out my tierlist! Try it yourself:"
+        : "Just made my tierlist! Make yours:";
+      const tweetUrl = isPlayPage ? pageUrl : (typeof window !== "undefined" ? window.location.origin : "");
+
+      // Mobile: try Web Share API with file attachment
+      if (typeof navigator !== "undefined" && navigator.canShare) {
+        const blob = await new Promise<Blob>((resolve, reject) =>
+          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("blob failed"))), "image/png")
+        );
+        const file = new File([blob], "my-tierlist.png", { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text: tweetText, url: tweetUrl });
+          return;
+        }
+      }
+
+      // Desktop: open X intent + download image for manual attachment
+      const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(tweetText + " ")}&url=${encodeURIComponent(tweetUrl)}`;
+      window.open(xUrl, "_blank", "noopener,noreferrer,width=600,height=400");
+
+      // Download the image so they can attach it to the tweet
+      const link = document.createElement("a");
+      link.download = "my-tierlist.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } finally {
+      setIsSharing(false);
     }
   }
 
@@ -483,6 +584,8 @@ export default function TierlistBoard({
                 zoomMode={zoomMode}
                 cropMode={cropMode}
                 labelMode={labelMode}
+                removeMode={removeMode}
+                selectedForRemoval={selectedForRemoval}
                 onLabelChange={(label) => updateTierLabel(tier.id, label)}
                 onColorChange={(color) => updateTierColor(tier.id, color)}
                 onDelete={() => deleteTier(tier.id)}
@@ -492,6 +595,7 @@ export default function TierlistBoard({
                 onZoom={setZoomedId}
                 onCrop={setCroppingId}
                 onLabel={setLabelingId}
+                onToggleRemove={toggleRemoveSelection}
               />
             ))}
           </div>
@@ -507,10 +611,13 @@ export default function TierlistBoard({
             zoomMode={zoomMode}
             cropMode={cropMode}
             labelMode={labelMode}
+            removeMode={removeMode}
+            selectedForRemoval={selectedForRemoval}
             onFilesAdded={handleFilesAdded}
             onZoom={setZoomedId}
             onCrop={setCroppingId}
             onLabel={setLabelingId}
+            onToggleRemove={toggleRemoveSelection}
           />
 
           <DragOverlay>
@@ -526,11 +633,35 @@ export default function TierlistBoard({
         </DndContext>
 
         {/* Status bar */}
-        {totalImages > 0 && (
+        {removeMode ? (
+          <div className="flex items-center justify-between rounded-lg border border-red-900 bg-red-950/40 px-3 py-2 text-xs">
+            <span className="text-red-300">
+              {selectedForRemoval.size === 0
+                ? "Tap images to select them for removal"
+                : `${selectedForRemoval.size} image${selectedForRemoval.size === 1 ? "" : "s"} selected`}
+            </span>
+            <div className="flex items-center gap-2">
+              {selectedForRemoval.size > 0 && (
+                <button
+                  onClick={deleteSelected}
+                  className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-500"
+                >
+                  Delete {selectedForRemoval.size}
+                </button>
+              )}
+              <button
+                onClick={toggleRemove}
+                className="rounded-lg border border-red-800 px-3 py-1 text-xs text-red-400 hover:text-white"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : totalImages > 0 ? (
           <p className="text-right text-xs text-gray-500">
             {rankedCount} / {totalImages} images ranked
           </p>
-        )}
+        ) : null}
 
         {/* ── Toolbar ───────────────────────────────────────────────── */}
         <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
@@ -558,8 +689,8 @@ export default function TierlistBoard({
               </div>
             </div>
 
-            {/* Zoom / Crop tools */}
-            <div className="ml-auto flex items-center gap-2">
+            {/* Image tools */}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
               <button
                 onClick={toggleZoom}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
@@ -567,7 +698,7 @@ export default function TierlistBoard({
                     ? "bg-sky-600 text-white"
                     : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
                 }`}
-                title="Click an image to zoom in. Scroll to resize."
+                title="Click an image to zoom in."
               >
                 🔍 Zoom {zoomMode && <span className="text-sky-200">ON</span>}
               </button>
@@ -593,18 +724,44 @@ export default function TierlistBoard({
               >
                 T Label {labelMode && <span className="text-emerald-200">ON</span>}
               </button>
+              <button
+                onClick={toggleRemove}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  removeMode
+                    ? "bg-red-600 text-white"
+                    : "border border-gray-700 text-gray-400 hover:border-red-600 hover:text-red-400"
+                }`}
+                title="Select images to remove them."
+              >
+                🗑 Remove {removeMode && <span className="text-red-200">ON</span>}
+              </button>
+              {removeMode && selectedForRemoval.size > 0 && (
+                <button
+                  onClick={deleteSelected}
+                  className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-500 animate-pulse"
+                >
+                  Delete {selectedForRemoval.size} image{selectedForRemoval.size === 1 ? "" : "s"}
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Action buttons — download always, upload only in create mode */}
-        <div className="flex items-center justify-end gap-3 pt-1">
+        {/* Action buttons */}
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
           <button
             onClick={handleDownload}
             disabled={isDownloading || totalImages === 0}
             className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isDownloading ? "Generating…" : "⬇ Download as Image"}
+            {isDownloading ? "Generating…" : "⬇ Download"}
+          </button>
+          <button
+            onClick={handleShareX}
+            disabled={isSharing || totalImages === 0}
+            className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isSharing ? "Sharing…" : "𝕏 Share on X"}
           </button>
           {mode === "create" && (
             <button
@@ -613,6 +770,15 @@ export default function TierlistBoard({
               className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Upload Tierlist
+            </button>
+          )}
+          {mode === "play" && hasModified && (
+            <button
+              onClick={() => setShowUploadModal(true)}
+              disabled={totalImages === 0}
+              className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Save as New Tierlist
             </button>
           )}
         </div>
