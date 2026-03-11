@@ -11,7 +11,7 @@ export default function SiteFooter() {
           href="/legal"
           className="text-xs text-gray-500 transition-colors hover:text-gray-300"
         >
-          Privacy &amp; Terms
+          Privacy and Terms
         </Link>
       </div>
     </footer>
