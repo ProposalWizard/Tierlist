@@ -205,6 +205,7 @@ export default function TierlistBoard({
   );
 
   const [fileMap, setFileMap] = useState<Record<string, File>>({});
+  const [hasModified, setHasModified] = useState(false);
 
   // ── UI state ─────────────────────────────────────────────────────────────
   const [activeId, setActiveId]         = useState<string | null>(null);
@@ -219,6 +220,7 @@ export default function TierlistBoard({
   const [labelingId, setLabelingId]     = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDownloading, setIsDownloading]     = useState(false);
+  const [isSharing, setIsSharing]             = useState(false);
 
   const tiersRef = useRef<HTMLDivElement>(null);
   const tierMapRef = useRef(tierMap);
@@ -259,6 +261,7 @@ export default function TierlistBoard({
       ...prev,
       unranked: [...prev.unranked, ...newPlayers.map((p) => p.id)],
     }));
+    setHasModified(true);
   }
 
   // ── Tier row management ──────────────────────────────────────────────────
@@ -356,6 +359,7 @@ export default function TierlistBoard({
     });
     setSelectedForRemoval(new Set());
     setRemoveMode(false);
+    setHasModified(true);
   }
 
   // ── Crop result handler ──────────────────────────────────────────────────
@@ -398,6 +402,53 @@ export default function TierlistBoard({
       link.click();
     } finally {
       setIsDownloading(false);
+    }
+  }
+
+  // ── Share on X ───────────────────────────────────────────────────────────
+
+  async function handleShareX() {
+    if (!tiersRef.current || isSharing) return;
+    setIsSharing(true);
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(tiersRef.current, {
+        backgroundColor: "#111827",
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+      });
+
+      const pageUrl = typeof window !== "undefined" ? window.location.href : "";
+      const isPlayPage = pageUrl.includes("/play/");
+      const tweetText = isPlayPage
+        ? "Check out my tierlist! Try it yourself:"
+        : "Just made my tierlist! Make yours:";
+      const tweetUrl = isPlayPage ? pageUrl : (typeof window !== "undefined" ? window.location.origin : "");
+
+      // Mobile: try Web Share API with file attachment
+      if (typeof navigator !== "undefined" && navigator.canShare) {
+        const blob = await new Promise<Blob>((resolve, reject) =>
+          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("blob failed"))), "image/png")
+        );
+        const file = new File([blob], "my-tierlist.png", { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text: tweetText, url: tweetUrl });
+          return;
+        }
+      }
+
+      // Desktop: open X intent + download image for manual attachment
+      const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(tweetText + " ")}&url=${encodeURIComponent(tweetUrl)}`;
+      window.open(xUrl, "_blank", "noopener,noreferrer,width=600,height=400");
+
+      // Download the image so they can attach it to the tweet
+      const link = document.createElement("a");
+      link.download = "my-tierlist.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } finally {
+      setIsSharing(false);
     }
   }
 
@@ -695,14 +746,21 @@ export default function TierlistBoard({
           </div>
         </div>
 
-        {/* Action buttons — download always, upload only in create mode */}
-        <div className="flex items-center justify-end gap-3 pt-1">
+        {/* Action buttons */}
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
           <button
             onClick={handleDownload}
             disabled={isDownloading || totalImages === 0}
             className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isDownloading ? "Generating…" : "⬇ Download as Image"}
+            {isDownloading ? "Generating…" : "⬇ Download"}
+          </button>
+          <button
+            onClick={handleShareX}
+            disabled={isSharing || totalImages === 0}
+            className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isSharing ? "Sharing…" : "𝕏 Share on X"}
           </button>
           {mode === "create" && (
             <button
@@ -711,6 +769,15 @@ export default function TierlistBoard({
               className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Upload Tierlist
+            </button>
+          )}
+          {mode === "play" && hasModified && (
+            <button
+              onClick={() => setShowUploadModal(true)}
+              disabled={totalImages === 0}
+              className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Save as New Tierlist
             </button>
           )}
         </div>
