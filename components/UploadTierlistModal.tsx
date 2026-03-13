@@ -121,7 +121,9 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
       router.push("/");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      console.error("Upload error:", err);
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(message);
       setSaving(false);
     }
   }
@@ -277,7 +279,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
             disabled={saving}
             className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {saving ? "Uploading…" : "Upload Tierlist"}
+            {saving ? "Uploading images…" : "Upload Tierlist"}
           </button>
         </div>
       </div>

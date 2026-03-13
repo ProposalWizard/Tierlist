@@ -66,6 +66,7 @@ function UnrankedPool({
   labelMode,
   removeMode,
   selectedForRemoval,
+  isAddingImages,
   onFilesAdded,
   onZoom,
   onCrop,
@@ -80,6 +81,7 @@ function UnrankedPool({
   labelMode: boolean;
   removeMode: boolean;
   selectedForRemoval: Set<string>;
+  isAddingImages: boolean;
   onFilesAdded: (files: FileList) => void;
   onZoom: (id: string) => void;
   onCrop: (id: string) => void;
@@ -117,9 +119,11 @@ function UnrankedPool({
         />
         <label
           htmlFor={inputId}
-          className="cursor-pointer rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-500 active:bg-indigo-700"
+          className={`cursor-pointer rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-500 active:bg-indigo-700 ${
+            isAddingImages ? "pointer-events-none opacity-50" : ""
+          }`}
         >
-          + Add Images
+          {isAddingImages ? "Processing..." : "+ Add Images"}
         </label>
       </div>
 
@@ -156,7 +160,32 @@ function UnrankedPool({
   );
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────
+
+/** Maximum file size allowed for a single image (5 MB) */
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+/** Maximum number of image uploads allowed per minute */
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+/** Simple client-side rate limiter: tracks timestamps of recent uploads */
+const uploadTimestamps: number[] = [];
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  // Remove timestamps outside the window
+  while (uploadTimestamps.length > 0 && uploadTimestamps[0] < now - RATE_LIMIT_WINDOW_MS) {
+    uploadTimestamps.shift();
+  }
+  return uploadTimestamps.length >= RATE_LIMIT_MAX;
+}
+
+function recordUpload() {
+  uploadTimestamps.push(Date.now());
+}
 
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, data] = dataUrl.split(",");
@@ -221,6 +250,9 @@ export default function TierlistBoard({
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDownloading, setIsDownloading]     = useState(false);
   const [isSharing, setIsSharing]             = useState(false);
+  const [isAddingImages, setIsAddingImages]   = useState(false);
+  // User-facing error/success banner
+  const [boardError, setBoardError]           = useState<string | null>(null);
 
   const tiersRef = useRef<HTMLDivElement>(null);
   const tierMapRef = useRef(tierMap);
@@ -238,30 +270,69 @@ export default function TierlistBoard({
   // ── Image upload ─────────────────────────────────────────────────────────
 
   async function handleFilesAdded(files: FileList) {
-    const newPlayers: TierlistPlayer[] = [];
-    const newFiles: Record<string, File> = {};
-    for (const file of Array.from(files)) {
-      const compressed = await compressImage(file).catch(() => file);
-      const id = crypto.randomUUID();
-      newPlayers.push({
-        id, topic_id: "",
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        position: null, club: null,
-        image_url: URL.createObjectURL(compressed),
-        created_at: new Date().toISOString(),
-      });
-      newFiles[id] = compressed;
+    setBoardError(null);
+
+    // Rate limit check
+    if (isRateLimited()) {
+      setBoardError("Upload limit reached. Please wait a minute.");
+      return;
     }
-    setPlayerMap((prev) => ({
-      ...prev,
-      ...Object.fromEntries(newPlayers.map((p) => [p.id, p])),
-    }));
-    setFileMap((prev) => ({ ...prev, ...newFiles }));
-    setTierMap((prev) => ({
-      ...prev,
-      unranked: [...prev.unranked, ...newPlayers.map((p) => p.id)],
-    }));
-    setHasModified(true);
+
+    // Validate file sizes (5 MB max per file)
+    const validFiles: File[] = [];
+    const rejected: string[] = [];
+    for (const file of Array.from(files)) {
+      if (file.size > MAX_FILE_SIZE) {
+        rejected.push(file.name);
+      } else {
+        validFiles.push(file);
+      }
+    }
+
+    if (rejected.length > 0) {
+      setBoardError(
+        rejected.length === 1
+          ? `"${rejected[0]}" is too large. Maximum size is 5 MB.`
+          : `${rejected.length} image(s) exceeded the 5 MB size limit and were skipped.`
+      );
+    }
+
+    if (validFiles.length === 0) return;
+
+    setIsAddingImages(true);
+
+    try {
+      const newPlayers: TierlistPlayer[] = [];
+      const newFiles: Record<string, File> = {};
+      for (const file of validFiles) {
+        const compressed = await compressImage(file).catch(() => file);
+        const id = crypto.randomUUID();
+        newPlayers.push({
+          id, topic_id: "",
+          name: file.name.replace(/\.[^/.]+$/, ""),
+          position: null, club: null,
+          image_url: URL.createObjectURL(compressed),
+          created_at: new Date().toISOString(),
+        });
+        newFiles[id] = compressed;
+        recordUpload();
+      }
+      setPlayerMap((prev) => ({
+        ...prev,
+        ...Object.fromEntries(newPlayers.map((p) => [p.id, p])),
+      }));
+      setFileMap((prev) => ({ ...prev, ...newFiles }));
+      setTierMap((prev) => ({
+        ...prev,
+        unranked: [...prev.unranked, ...newPlayers.map((p) => p.id)],
+      }));
+      setHasModified(true);
+    } catch (err) {
+      console.error("Image upload error:", err);
+      setBoardError("Failed to process images. Please try again.");
+    } finally {
+      setIsAddingImages(false);
+    }
   }
 
   // ── Tier row management ──────────────────────────────────────────────────
@@ -389,6 +460,7 @@ export default function TierlistBoard({
   async function handleDownload() {
     if (!tiersRef.current || isDownloading) return;
     setIsDownloading(true);
+    setBoardError(null);
     try {
       const { default: html2canvas } = await import("html2canvas");
       const canvas = await html2canvas(tiersRef.current, {
@@ -401,6 +473,9 @@ export default function TierlistBoard({
       link.download = "tierlist.png";
       link.href = canvas.toDataURL("image/png");
       link.click();
+    } catch (err) {
+      console.error("Download error:", err);
+      setBoardError("Failed to generate tierlist image. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -411,6 +486,7 @@ export default function TierlistBoard({
   async function handleShareX() {
     if (!tiersRef.current || isSharing) return;
     setIsSharing(true);
+    setBoardError(null);
     try {
       const { default: html2canvas } = await import("html2canvas");
       const canvas = await html2canvas(tiersRef.current, {
@@ -431,6 +507,9 @@ export default function TierlistBoard({
       const twitterUrl =
         `https://twitter.com/intent/tweet?text=${encodeURIComponent("Check out my tierlist!")}&url=${encodeURIComponent(pageUrl)}`;
       window.open(twitterUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      console.error("Share error:", err);
+      setBoardError("Failed to generate tierlist image for sharing. Please try again.");
     } finally {
       setIsSharing(false);
     }
@@ -596,6 +675,7 @@ export default function TierlistBoard({
             labelMode={labelMode}
             removeMode={removeMode}
             selectedForRemoval={selectedForRemoval}
+            isAddingImages={isAddingImages}
             onFilesAdded={handleFilesAdded}
             onZoom={setZoomedId}
             onCrop={setCroppingId}
@@ -614,6 +694,19 @@ export default function TierlistBoard({
             ) : null}
           </DragOverlay>
         </DndContext>
+
+        {/* Error / info banner */}
+        {boardError && (
+          <div className="flex items-center justify-between rounded-lg border border-red-900 bg-red-950/40 px-3 py-2 text-xs text-red-300">
+            <span>{boardError}</span>
+            <button
+              onClick={() => setBoardError(null)}
+              className="ml-3 text-red-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Status bar */}
         {removeMode ? (
@@ -737,7 +830,7 @@ export default function TierlistBoard({
             disabled={isDownloading || totalImages === 0}
             className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isDownloading ? "Generating…" : "⬇ Download"}
+            {isDownloading ? "Generating tierlist image…" : "⬇ Download"}
           </button>
           <button
             onClick={handleShareX}
