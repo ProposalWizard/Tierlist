@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import ImageWithFallback from "@/components/ImageWithFallback";
 import type { Tierlist } from "@/lib/types";
 
 const MAX_PER_CATEGORY = 6;
@@ -124,8 +125,7 @@ export default async function HomePage() {
                 >
                   <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
                     {vl.cover_image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={vl.cover_image_url} alt={vl.title}
+                      <ImageWithFallback src={vl.cover_image_url} alt={vl.title}
                         className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                     ) : (
                       <span className="text-4xl">🗳️</span>
@@ -172,8 +172,7 @@ export default async function HomePage() {
                     className="group overflow-hidden rounded-xl border border-gray-700 bg-gray-900 transition-colors hover:border-indigo-500">
                     <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
                       {tl.cover_image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={tl.cover_image_url} alt={tl.title}
+                        <ImageWithFallback src={tl.cover_image_url} alt={tl.title}
                           className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                       ) : (
                         <span className="text-4xl">🏆</span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { TierlistPlayer, ImageStyle } from "@/lib/types";
@@ -34,6 +35,8 @@ export default function PlayerCard({
   onLabel,
   onToggleRemove,
 }: PlayerCardProps) {
+  const [imgFailed, setImgFailed] = useState(false);
+
   const {
     attributes,
     listeners,
@@ -89,21 +92,31 @@ export default function PlayerCard({
           : "cursor-grab active:cursor-grabbing"}
       `}
     >
-      {player.image_url ? (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            backgroundImage: `url("${player.image_url}")`,
-            backgroundSize: dims.contain ? "contain" : "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            backgroundColor: dims.contain ? "#1f2937" : undefined,
-          }}
-        />
+      {player.image_url && !imgFailed ? (
+        <>
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              backgroundImage: `url("${player.image_url}")`,
+              backgroundSize: dims.contain ? "contain" : "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundColor: dims.contain ? "#1f2937" : undefined,
+            }}
+          />
+          {/* Hidden img to detect broken images */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={player.image_url}
+            alt=""
+            className="sr-only"
+            onError={() => setImgFailed(true)}
+          />
+        </>
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-indigo-700 text-sm font-bold text-white">
-          {initials}
+        <div className="flex h-full w-full items-center justify-center bg-gray-800 text-[10px] text-gray-500">
+          {player.image_url ? "Image unavailable" : initials}
         </div>
       )}
 

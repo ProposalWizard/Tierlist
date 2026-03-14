@@ -1,3 +1,14 @@
+/** Allowed MIME types for image uploads */
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+/** Human-readable accept string for file inputs */
+export const ACCEPT_IMAGE_TYPES = ALLOWED_IMAGE_TYPES.join(",");
+
+/** Returns true if the file has an allowed image MIME type */
+export function isAllowedImageType(file: File): boolean {
+  return (ALLOWED_IMAGE_TYPES as readonly string[]).includes(file.type);
+}
+
 /**
  * Resizes an image so the longest side is at most 1200px,
  * then encodes it as WebP at 75% quality.
