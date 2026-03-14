@@ -66,8 +66,18 @@ export default function VoteBoard({
     }
   }, [votelistId, isLoggedIn]);
 
-  // Skip: advance to next unvoted image without casting a vote
+  // Skip: send this image to the back of the unranked pool, advance to next
   function skipImage(imageId: string) {
+    // Move the skipped image to the end of the images array
+    setImages((prev) => {
+      const idx = prev.findIndex((img) => img.id === imageId);
+      if (idx === -1) return prev;
+      const copy = [...prev];
+      const [removed] = copy.splice(idx, 1);
+      copy.push(removed);
+      return copy;
+    });
+
     const tierSet = new Set(tiers.map((t) => t.label));
     const remaining = images.filter((img) => {
       const v = userVotes[img.id];

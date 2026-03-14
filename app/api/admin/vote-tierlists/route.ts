@@ -25,7 +25,7 @@ export async function GET() {
   const service = createServiceClient();
   const { data, error } = await service
     .from("vote_tierlists")
-    .select("id, title, cover_image_url, is_active, created_at")
+    .select("id, title, category, cover_image_url, is_active, created_at")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  let body: { title?: string; cover_image_url?: string | null; tiers?: { label: string; color: string }[] };
+  let body: { title?: string; category?: string; cover_image_url?: string | null; tiers?: { label: string; color: string }[] };
   try {
     body = await request.json();
   } catch {
@@ -49,6 +49,7 @@ export async function POST(request: Request) {
 
   const insertData: Record<string, unknown> = {
     title: body.title.trim(),
+    category: body.category?.trim() || "General",
     cover_image_url: body.cover_image_url ?? null,
     created_by: user.id,
   };
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
   const { data, error } = await service
     .from("vote_tierlists")
     .insert(insertData)
-    .select("id, title, cover_image_url, is_active, created_at")
+    .select("id, title, category, cover_image_url, is_active, created_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
