@@ -14,6 +14,7 @@
  */
 
 import type { VoteTier } from "@/lib/types";
+import ImageWithFallback from "./ImageWithFallback";
 
 interface ImageData {
   id: string;
@@ -110,8 +111,7 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
               <div className="flex flex-wrap items-start gap-1 p-1.5 bg-gray-900/60 flex-1 min-w-0">
                 {items.map((img) => (
                   <div key={img.id} className="group relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <ImageWithFallback
                       src={img.image_url}
                       alt={img.name}
                       title={img.name}
@@ -146,8 +146,7 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
           <div className="flex flex-wrap gap-1">
             {unvoted.map((img) => (
               <div key={img.id} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <ImageWithFallback
                   src={img.image_url}
                   alt={img.name}
                   title={img.name}

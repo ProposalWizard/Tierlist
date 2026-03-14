@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
+import ImageWithFallback from "./ImageWithFallback";
 import type { Tierlist, Category, VoteTier } from "@/lib/types";
 import { TIER_COLOR_OPTIONS } from "@/lib/types";
 
@@ -982,7 +984,7 @@ export default function AdminPanel({
                             Upload new cover
                             <input
                               type="file"
-                              accept="image/*"
+                              accept={ACCEPT_IMAGE_TYPES}
                               className="sr-only"
                               onChange={(e) => {
                                 const f = e.target.files?.[0];
@@ -1061,8 +1063,7 @@ export default function AdminPanel({
                                     title="Set as cover"
                                     className="block focus:outline-none"
                                   >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
+                                    <ImageWithFallback
                                       src={img.image_url}
                                       alt={img.name}
                                       className={`h-20 w-20 rounded-lg object-cover border-2 transition-colors ${
@@ -1198,7 +1199,7 @@ export default function AdminPanel({
                 ) : (
                   <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
                     Upload cover (optional)
-                    <input type="file" accept="image/*" className="sr-only"
+                    <input type="file" accept={ACCEPT_IMAGE_TYPES} className="sr-only"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) { const p = URL.createObjectURL(f); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(f); setNewVoteCoverPreview(p); e.target.value = ""; } }}
                     />
                   </label>
@@ -1343,8 +1344,7 @@ export default function AdminPanel({
                       <p className="mb-2 text-xs font-semibold text-gray-400">Cover Photo</p>
                       <div className="flex flex-wrap items-center gap-3">
                         {vl.cover_image_url && !voteCoverPreview && (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={vl.cover_image_url} alt="current cover"
+                          <ImageWithFallback src={vl.cover_image_url} alt="current cover"
                             className="h-16 w-24 rounded-lg object-cover border border-gray-700" />
                         )}
                         {voteCoverPreview ? (
@@ -1361,7 +1361,7 @@ export default function AdminPanel({
                         ) : (
                           <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
                             {vl.cover_image_url ? "Change cover" : "Upload cover"}
-                            <input type="file" accept="image/*" className="sr-only"
+                            <input type="file" accept={ACCEPT_IMAGE_TYPES} className="sr-only"
                               onChange={(e) => {
                                 const f = e.target.files?.[0];
                                 if (f) {
@@ -1458,8 +1458,7 @@ export default function AdminPanel({
                       <div className="flex flex-wrap gap-2">
                         {voteImagesMap[vl.id].map((img) => (
                           <div key={img.id} className="group relative">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={img.image_url} alt={img.name}
+                            <ImageWithFallback src={img.image_url} alt={img.name}
                               className="h-20 w-20 rounded-lg object-cover border-2 border-gray-700" />
                             <button
                               onClick={() => handleDeleteVoteImage(vl.id, img.id)}
@@ -1481,7 +1480,7 @@ export default function AdminPanel({
                             : "Choose images"}
                           <input
                             type="file"
-                            accept="image/*"
+                            accept={ACCEPT_IMAGE_TYPES}
                             multiple
                             className="sr-only"
                             onChange={(e) => {

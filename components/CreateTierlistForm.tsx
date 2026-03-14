@@ -3,7 +3,7 @@
 import { useState, useId } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { compressImage } from "@/lib/imageUtils";
+import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
 
 interface ImageEntry {
   file: File;
@@ -49,8 +49,18 @@ export default function CreateTierlistForm() {
     null;
 
   async function handleFiles(fileList: FileList) {
+    // Validate file types before processing
+    const allowed = Array.from(fileList).filter((f) => {
+      if (!isAllowedImageType(f)) return false;
+      return true;
+    });
+    if (allowed.length < fileList.length) {
+      setError("Only JPG, PNG, or WEBP images are allowed.");
+    }
+    if (allowed.length === 0) return;
+
     const entries: ImageEntry[] = [];
-    for (const file of Array.from(fileList)) {
+    for (const file of allowed) {
       const compressed = await compressImage(file).catch(() => file);
       entries.push({
         file: compressed,
@@ -83,6 +93,10 @@ export default function CreateTierlistForm() {
   }
 
   async function handleCustomCoverFile(file: File) {
+    if (!isAllowedImageType(file)) {
+      setError("Only JPG, PNG, or WEBP images are allowed.");
+      return;
+    }
     const compressed = await compressImage(file).catch(() => file);
     setCustomCover((prev) => {
       if (prev) URL.revokeObjectURL(prev.preview);
@@ -114,8 +128,9 @@ export default function CreateTierlistForm() {
     try {
       const supabase = createClient();
 
-      // Upload all tierlist images
+      // Upload all tierlist images and track paths for cleanup
       const uploadedImages: { name: string; image_url: string }[] = [];
+      const uploadedPaths: string[] = [];
       for (const img of images) {
         const ext = img.file.name.split(".").pop() ?? "jpg";
         const path = `${crypto.randomUUID()}.${ext}`;
@@ -127,6 +142,14 @@ export default function CreateTierlistForm() {
           .from("tierlist-images")
           .getPublicUrl(uploadData.path);
         uploadedImages.push({ name: img.name, image_url: urlData.publicUrl });
+        uploadedPaths.push(uploadData.path);
+      }
+
+      // Track uploads for delayed cleanup (non-blocking)
+      if (uploadedPaths.length > 0) {
+        supabase.from("uploaded_images").insert(
+          uploadedPaths.map((p) => ({ storage_path: p, is_used: false }))
+        ).then(() => {});
       }
 
       // Determine cover_image_url
@@ -161,6 +184,14 @@ export default function CreateTierlistForm() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Failed to save tierlist");
+      }
+
+      // Mark uploaded images as used (non-blocking)
+      if (uploadedPaths.length > 0) {
+        supabase.from("uploaded_images")
+          .update({ is_used: true })
+          .in("storage_path", uploadedPaths)
+          .then(() => {});
       }
 
       router.push("/");
@@ -217,7 +248,7 @@ export default function CreateTierlistForm() {
           <input
             id={imagesInputId}
             type="file"
-            accept="image/*"
+            accept={ACCEPT_IMAGE_TYPES}
             multiple
             className="sr-only"
             onChange={(e) => {
@@ -321,7 +352,7 @@ export default function CreateTierlistForm() {
           <input
             id={coverInputId}
             type="file"
-            accept="image/*"
+            accept={ACCEPT_IMAGE_TYPES}
             className="sr-only"
             onChange={(e) => {
               const file = e.target.files?.[0];

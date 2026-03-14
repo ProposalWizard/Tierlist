@@ -7,6 +7,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import ImageWithFallback from "./ImageWithFallback";
 
 export interface FindTierlist {
   id: string;
@@ -126,8 +127,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
                 {/* Cover */}
                 <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
                   {item.cover_image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <ImageWithFallback
                       src={item.cover_image_url}
                       alt={item.title}
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"

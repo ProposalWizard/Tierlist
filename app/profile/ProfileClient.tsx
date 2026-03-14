@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import ImageWithFallback from "@/components/ImageWithFallback";
 import type { UserProfile } from "@/lib/types";
 
 interface TierlistSummary {
@@ -80,8 +81,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
             <Link href={`/play/${tl.id}`}>
               <div className="flex h-28 items-center justify-center overflow-hidden bg-gray-800">
                 {tl.cover_image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={tl.cover_image_url} alt={tl.title}
+                  <ImageWithFallback src={tl.cover_image_url} alt={tl.title}
                     className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                 ) : (
                   <span className="text-3xl">🏆</span>

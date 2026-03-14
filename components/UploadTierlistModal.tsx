@@ -3,6 +3,7 @@
 import { useState, useId, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
 
 interface ImageEntry {
   id: string;
@@ -47,6 +48,10 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
     customCover?.preview ?? images[coverIdx]?.image_url ?? null;
 
   function handleCustomCoverFile(file: File) {
+    if (!isAllowedImageType(file)) {
+      setError("Only JPG, PNG, or WEBP images are allowed.");
+      return;
+    }
     setCustomCover((prev) => {
       if (prev) URL.revokeObjectURL(prev.preview);
       return { file, preview: URL.createObjectURL(file) };
@@ -63,8 +68,10 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
     try {
       const supabase = createClient();
 
-      // Upload each image — re-use existing Supabase URLs, only upload new files
+      // Upload each image — re-use existing Supabase URLs, only upload new files.
+      // Track uploaded paths for delayed cleanup if the tierlist save fails.
       const uploadedImages: { name: string; image_url: string }[] = [];
+      const uploadedPaths: string[] = [];
       for (const img of images) {
         if (img.file) {
           // Locally added image — upload to Supabase Storage
@@ -78,10 +85,18 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
             .from("tierlist-images")
             .getPublicUrl(uploadData.path);
           uploadedImages.push({ name: img.name, image_url: urlData.publicUrl });
+          uploadedPaths.push(uploadData.path);
         } else {
           // Image already has a Supabase URL — use it directly
           uploadedImages.push({ name: img.name, image_url: img.image_url });
         }
+      }
+
+      // Track uploads for delayed cleanup (non-blocking)
+      if (uploadedPaths.length > 0) {
+        supabase.from("uploaded_images").insert(
+          uploadedPaths.map((p) => ({ storage_path: p, is_used: false }))
+        ).then(() => {});
       }
 
       // Determine cover image URL
@@ -116,6 +131,14 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Failed to upload tierlist");
+      }
+
+      // Mark uploaded images as used (non-blocking)
+      if (uploadedPaths.length > 0) {
+        supabase.from("uploaded_images")
+          .update({ is_used: true })
+          .in("storage_path", uploadedPaths)
+          .then(() => {});
       }
 
       router.push("/");
@@ -237,7 +260,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
               <input
                 id={coverInputId}
                 type="file"
-                accept="image/*"
+                accept={ACCEPT_IMAGE_TYPES}
                 className="sr-only"
                 onChange={(e) => {
                   const file = e.target.files?.[0];

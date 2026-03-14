@@ -29,7 +29,7 @@ import UploadTierlistModal from "./UploadTierlistModal";
 import ZoomOverlay from "./ZoomOverlay";
 import CropOverlay from "./CropOverlay";
 import LabelOverlay from "./LabelOverlay";
-import { compressImage } from "@/lib/imageUtils";
+import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
 import {
   DEFAULT_TIER_ROWS,
   IMAGE_STYLE_DIMS,
@@ -107,7 +107,7 @@ function UnrankedPool({
         <input
           id={inputId}
           type="file"
-          accept="image/*"
+          accept={ACCEPT_IMAGE_TYPES}
           multiple
           className="sr-only"
           onChange={(e) => {
@@ -278,22 +278,28 @@ export default function TierlistBoard({
       return;
     }
 
-    // Validate file sizes (5 MB max per file)
+    // Validate file types (JPG, PNG, WEBP only) and sizes (5 MB max)
     const validFiles: File[] = [];
-    const rejected: string[] = [];
+    const rejectedType: string[] = [];
+    const rejectedSize: string[] = [];
     for (const file of Array.from(files)) {
-      if (file.size > MAX_FILE_SIZE) {
-        rejected.push(file.name);
+      if (!isAllowedImageType(file)) {
+        rejectedType.push(file.name);
+      } else if (file.size > MAX_FILE_SIZE) {
+        rejectedSize.push(file.name);
       } else {
         validFiles.push(file);
       }
     }
 
-    if (rejected.length > 0) {
+    if (rejectedType.length > 0) {
+      setBoardError("Only JPG, PNG, or WEBP images are allowed.");
+      if (validFiles.length === 0) return;
+    } else if (rejectedSize.length > 0) {
       setBoardError(
-        rejected.length === 1
-          ? `"${rejected[0]}" is too large. Maximum size is 5 MB.`
-          : `${rejected.length} image(s) exceeded the 5 MB size limit and were skipped.`
+        rejectedSize.length === 1
+          ? `"${rejectedSize[0]}" is too large. Maximum size is 5 MB.`
+          : `${rejectedSize.length} image(s) exceeded the 5 MB size limit and were skipped.`
       );
     }
 

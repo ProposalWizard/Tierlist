@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { VoteImageWithCounts, VoteTier } from "@/lib/types";
 import CommunityVote from "./CommunityVote";
+import ImageWithFallback from "./ImageWithFallback";
 
 const VOTER_ID_KEY = "vote_voter_id";
 
@@ -199,8 +200,7 @@ export default function VoteBoard({
                         : "hover:ring-2 hover:ring-gray-400 opacity-90 hover:opacity-100"
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.image_url} alt={img.name} className="h-12 w-12 object-cover md:h-16 md:w-16" />
+                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-12 w-12 object-cover md:h-16 md:w-16" />
                   </button>
                 ))}
               </div>
@@ -225,8 +225,7 @@ export default function VoteBoard({
                         : "hover:ring-2 hover:ring-gray-400 opacity-90 hover:opacity-100"
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.image_url} alt={img.name} className="h-12 w-12 object-cover md:h-16 md:w-16" />
+                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-12 w-12 object-cover md:h-16 md:w-16" />
                   </button>
                 ))}
               </div>
@@ -252,8 +251,7 @@ export default function VoteBoard({
 
           {selectedImg ? (
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <ImageWithFallback
                 src={selectedImg.image_url}
                 alt={selectedImg.name}
                 className="mb-3 w-full rounded-lg object-cover"
@@ -359,8 +357,7 @@ export default function VoteBoard({
       {selectedImg && (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-gray-950/95 px-4 py-3 backdrop-blur md:hidden">
           <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <ImageWithFallback
               src={selectedImg.image_url}
               alt={selectedImg.name}
               className="h-11 w-11 flex-shrink-0 rounded-lg object-cover border border-gray-700"
