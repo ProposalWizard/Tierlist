@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Tierlist, Category } from "@/lib/types";
+import type { Tierlist, Category, VoteTier } from "@/lib/types";
+import { TIER_COLOR_OPTIONS } from "@/lib/types";
 
 interface VotelistAdmin {
   id: string;
@@ -40,6 +41,8 @@ interface EditState {
   loading: boolean;
   saving: boolean;
   error: string | null;
+  /** Linked vote tierlist ID (for cross-navigation) */
+  linked_vote_tierlist_id: string | null;
 }
 
 export default function AdminPanel({
@@ -95,6 +98,19 @@ export default function AdminPanel({
   const [voteCoverFile, setVoteCoverFile] = useState<File | null>(null);
   const [voteCoverPreview, setVoteCoverPreview] = useState<string | null>(null);
   const [voteCoverUploading, setVoteCoverUploading] = useState(false);
+  // Custom tiers for creating new vote tierlists
+  const DEFAULT_VOTE_TIERS: VoteTier[] = [
+    { label: "S", color: "#4ade80" },
+    { label: "A", color: "#86efac" },
+    { label: "B", color: "#fde047" },
+    { label: "C", color: "#fb923c" },
+    { label: "D", color: "#f87171" },
+  ];
+  const [newVoteTiers, setNewVoteTiers] = useState<VoteTier[]>(DEFAULT_VOTE_TIERS);
+  // Tier editing for existing vote tierlists
+  const [editingTiersId, setEditingTiersId] = useState<string | null>(null);
+  const [editTiers, setEditTiers] = useState<VoteTier[]>([]);
+  const [savingTiers, setSavingTiers] = useState(false);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -187,7 +203,15 @@ export default function AdminPanel({
       loading: true,
       saving: false,
       error: null,
+      linked_vote_tierlist_id: tl.linked_vote_tierlist_id ?? null,
     });
+    // Ensure vote tierlists are loaded for the linked tierlist picker
+    if (!votelistsLoaded) {
+      fetch("/api/admin/vote-tierlists")
+        .then((r) => r.json())
+        .then((data) => { if (Array.isArray(data)) { setVotelists(data); setVotelistsLoaded(true); } })
+        .catch(() => {});
+    }
 
     // Fetch images for this tierlist from Supabase (publicly readable)
     const supabase = createClient();
@@ -305,6 +329,7 @@ export default function AdminPanel({
           title: editState.title,
           category: editState.category,
           cover_image_url,
+          linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
         }),
       });
 
@@ -322,6 +347,7 @@ export default function AdminPanel({
                 title: editState.title,
                 category: editState.category,
                 cover_image_url: cover_image_url ?? tl.cover_image_url,
+                linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
               }
             : tl
         )
@@ -427,7 +453,7 @@ export default function AdminPanel({
       const res = await fetch("/api/admin/vote-tierlists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newVoteTitle.trim(), cover_image_url }),
+        body: JSON.stringify({ title: newVoteTitle.trim(), cover_image_url, tiers: newVoteTiers }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -439,6 +465,7 @@ export default function AdminPanel({
       if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview);
       setNewVoteCoverFile(null);
       setNewVoteCoverPreview(null);
+      setNewVoteTiers(DEFAULT_VOTE_TIERS);
       setShowCreateVote(false);
     } catch (err) {
       setVoteError(err instanceof Error ? err.message : "Something went wrong");
@@ -503,6 +530,18 @@ export default function AdminPanel({
     } finally {
       setVoteCoverUploading(false);
     }
+  }
+
+  async function handleSaveTiers(voteId: string) {
+    if (editTiers.length === 0) return;
+    setSavingTiers(true);
+    const res = await fetch(`/api/admin/vote-tierlists/${voteId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tiers: editTiers }),
+    });
+    if (res.ok) setEditingTiersId(null);
+    setSavingTiers(false);
   }
 
   async function handleDeleteVote(id: string) {
@@ -972,6 +1011,30 @@ export default function AdminPanel({
                       </div>
                     </div>
 
+                    {/* Linked Vote Tierlist */}
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-gray-400">
+                        Linked Vote Tierlist
+                      </label>
+                      <select
+                        value={editState.linked_vote_tierlist_id ?? ""}
+                        onChange={(e) =>
+                          setEditState((p) =>
+                            p ? { ...p, linked_vote_tierlist_id: e.target.value || null } : p
+                          )
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                      >
+                        <option value="">None</option>
+                        {votelists.map((vl) => (
+                          <option key={vl.id} value={vl.id}>{vl.title}</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-[10px] text-gray-600">
+                        Links this tierlist to a vote tierlist for cross-navigation.
+                      </p>
+                    </div>
+
                     {/* Images */}
                     <div>
                       <label className="mb-2 block text-xs font-semibold text-gray-400">
@@ -1141,12 +1204,50 @@ export default function AdminPanel({
                   </label>
                 )}
               </div>
+              {/* Tier editor */}
+              <div>
+                <p className="mb-1.5 text-xs font-semibold text-gray-400">Tiers</p>
+                <div className="space-y-1.5">
+                  {newVoteTiers.map((tier, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        value={tier.label}
+                        onChange={(e) => {
+                          const next = [...newVoteTiers];
+                          next[idx] = { ...next[idx], label: e.target.value };
+                          setNewVoteTiers(next);
+                        }}
+                        className="w-20 rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-white focus:border-purple-500 focus:outline-none"
+                        placeholder="Label"
+                      />
+                      <div className="flex gap-1">
+                        {TIER_COLOR_OPTIONS.map((c) => (
+                          <button key={c} type="button"
+                            onClick={() => { const next = [...newVoteTiers]; next[idx] = { ...next[idx], color: c }; setNewVoteTiers(next); }}
+                            className={`h-5 w-5 rounded-full border-2 transition-transform ${tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"}`}
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                      </div>
+                      {newVoteTiers.length > 1 && (
+                        <button onClick={() => setNewVoteTiers((prev) => prev.filter((_, i) => i !== idx))}
+                          className="text-xs text-red-400 hover:text-red-300">×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setNewVoteTiers((prev) => [...prev, { label: "New", color: "#94a3b8" }])}
+                  className="mt-1.5 text-xs text-purple-400 hover:text-purple-300">
+                  + Add tier
+                </button>
+              </div>
+
               <div className="flex gap-2">
                 <button onClick={handleCreateVote} disabled={newVoteCreating || !newVoteTitle.trim()}
                   className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-50">
                   {newVoteCreating ? "Creating…" : "Create"}
                 </button>
-                <button onClick={() => { setShowCreateVote(false); setNewVoteTitle(""); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(null); setNewVoteCoverPreview(null); }}
+                <button onClick={() => { setShowCreateVote(false); setNewVoteTitle(""); setNewVoteTiers(DEFAULT_VOTE_TIERS); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(null); setNewVoteCoverPreview(null); }}
                   className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-300 hover:border-gray-400">
                   Cancel
                 </button>
@@ -1281,6 +1382,71 @@ export default function AdminPanel({
                           </button>
                         )}
                       </div>
+                    </div>
+
+                    {/* Tier editing */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-xs font-semibold text-gray-400">Tiers</p>
+                        {editingTiersId !== vl.id ? (
+                          <button
+                            onClick={async () => {
+                              // Fetch current tiers from DB
+                              const supabase = createClient();
+                              const { data } = await supabase.from("vote_tierlists").select("tiers").eq("id", vl.id).single();
+                              const tiers = (data?.tiers as VoteTier[]) ?? DEFAULT_VOTE_TIERS;
+                              setEditTiers(tiers);
+                              setEditingTiersId(vl.id);
+                            }}
+                            className="text-[10px] text-purple-400 hover:text-purple-300"
+                          >
+                            Edit tiers
+                          </button>
+                        ) : (
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handleSaveTiers(vl.id)} disabled={savingTiers}
+                              className="text-[10px] text-green-400 hover:text-green-300 disabled:opacity-50">
+                              {savingTiers ? "Saving…" : "Save"}
+                            </button>
+                            <button onClick={() => setEditingTiersId(null)}
+                              className="text-[10px] text-gray-400 hover:text-white">Cancel</button>
+                          </div>
+                        )}
+                      </div>
+                      {editingTiersId === vl.id && (
+                        <div className="space-y-1.5 mb-3">
+                          {editTiers.map((tier, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <input
+                                value={tier.label}
+                                onChange={(e) => {
+                                  const next = [...editTiers];
+                                  next[idx] = { ...next[idx], label: e.target.value };
+                                  setEditTiers(next);
+                                }}
+                                className="w-20 rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-white focus:border-purple-500 focus:outline-none"
+                              />
+                              <div className="flex gap-1 flex-wrap">
+                                {TIER_COLOR_OPTIONS.map((c) => (
+                                  <button key={c} type="button"
+                                    onClick={() => { const next = [...editTiers]; next[idx] = { ...next[idx], color: c }; setEditTiers(next); }}
+                                    className={`h-4 w-4 rounded-full border-2 transition-transform ${tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"}`}
+                                    style={{ backgroundColor: c }}
+                                  />
+                                ))}
+                              </div>
+                              {editTiers.length > 1 && (
+                                <button onClick={() => setEditTiers((prev) => prev.filter((_, i) => i !== idx))}
+                                  className="text-xs text-red-400 hover:text-red-300">×</button>
+                              )}
+                            </div>
+                          ))}
+                          <button onClick={() => setEditTiers((prev) => [...prev, { label: "New", color: "#94a3b8" }])}
+                            className="text-xs text-purple-400 hover:text-purple-300">
+                            + Add tier
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <p className="text-xs font-semibold text-gray-400">Images</p>

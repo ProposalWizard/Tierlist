@@ -153,6 +153,8 @@ export interface Tierlist {
   cover_image_url: string | null;
   view_count: number;
   created_at: string;
+  /** UUID of the linked vote tierlist (null if none) */
+  linked_vote_tierlist_id: string | null;
 }
 
 /** An image belonging to a user-created tierlist */

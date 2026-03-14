@@ -14,7 +14,8 @@ import { isAdmin } from "@/lib/admin";
 import TierlistBoard from "@/components/TierlistBoard";
 import LikeButton from "@/components/LikeButton";
 import SaveTierlistButton from "@/components/SaveTierlistButton";
-import type { Tierlist, TierlistImage } from "@/lib/types";
+import PlayCommunityVote from "@/components/PlayCommunityVote";
+import type { Tierlist, TierlistImage, VoteTier } from "@/lib/types";
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -73,6 +74,46 @@ export default async function PlayPage({ params }: Props) {
   const userLiked = !!(likedRes as { data: unknown }).data;
   const userSaved = !!(savedRes as { data: unknown }).data;
 
+  // ── Fetch linked vote tierlist data (if any) ──────────────────────────────
+  let linkedVoteTierlist: { id: string; title: string; tiers: VoteTier[] } | null = null;
+  let linkedVoteImages: { id: string; name: string; image_url: string; vote_counts: Record<string, number>; total_votes: number }[] = [];
+
+  if (tierlist.linked_vote_tierlist_id) {
+    const { data: vt } = await service
+      .from("vote_tierlists")
+      .select("id, title, tiers")
+      .eq("id", tierlist.linked_vote_tierlist_id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (vt) {
+      linkedVoteTierlist = { id: vt.id, title: vt.title, tiers: vt.tiers as VoteTier[] };
+
+      // Fetch vote tierlist images and their vote counts
+      const [{ data: vtImages }, { data: vtVotes }] = await Promise.all([
+        service.from("vote_tierlist_images").select("id, name, image_url, sort_order").eq("vote_tierlist_id", vt.id).order("sort_order"),
+        service.from("vote_tierlist_votes").select("image_id, tier_label").eq("vote_tierlist_id", vt.id),
+      ]);
+
+      const counts: Record<string, Record<string, number>> = {};
+      for (const v of vtVotes ?? []) {
+        if (!counts[v.image_id]) counts[v.image_id] = {};
+        counts[v.image_id][v.tier_label] = (counts[v.image_id][v.tier_label] ?? 0) + 1;
+      }
+
+      linkedVoteImages = (vtImages ?? []).map((img) => {
+        const vc = counts[img.id] ?? {};
+        return {
+          id: img.id,
+          name: img.name,
+          image_url: img.image_url,
+          vote_counts: vc,
+          total_votes: Object.values(vc).reduce((a, b) => a + b, 0),
+        };
+      });
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gray-950 p-4 md:p-8">
       <header className="mb-6">
@@ -105,9 +146,27 @@ export default async function PlayPage({ params }: Props) {
                 isLoggedIn={!!user}
               />
             )}
+            {/* Link to vote tierlist if linked */}
+            {linkedVoteTierlist && (
+              <Link
+                href={`/vote/${linkedVoteTierlist.id}`}
+                className="rounded-lg border border-purple-700 bg-purple-900/30 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-800/40 transition-colors"
+              >
+                See Vote Tierlist
+              </Link>
+            )}
           </div>
         </div>
       </header>
+
+      {/* Community's Vote section for linked vote tierlist */}
+      {linkedVoteTierlist && linkedVoteImages.length > 0 && (
+        <PlayCommunityVote
+          tiers={linkedVoteTierlist.tiers}
+          images={linkedVoteImages}
+          votelistTitle={linkedVoteTierlist.title}
+        />
+      )}
 
       <TierlistBoard
         initialImages={images.map((img) => ({

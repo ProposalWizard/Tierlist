@@ -8,6 +8,7 @@
  */
 
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import VoteBoard from "@/components/VoteBoard";
@@ -88,6 +89,13 @@ export default async function VotePage({
   likeCount = (likesResult as { count: number | null }).count ?? 0;
   userHasLiked = !!(myLikeResult as { data: unknown }).data;
 
+  // ── Fetch linked regular tierlists ──────────────────────────────────────────
+  const { data: linkedTierlists } = await service
+    .from("tierlists")
+    .select("id, title")
+    .eq("linked_vote_tierlist_id", id)
+    .limit(5);
+
   // ── Build enriched image array ────────────────────────────────────────────
   const enrichedImages: VoteImageWithCounts[] = (images ?? []).map((img) => {
     const counts = voteCounts[img.id] ?? {};
@@ -118,7 +126,7 @@ export default async function VotePage({
         <p className="mt-2 text-xs text-gray-600">
           Tap an image to cast your vote. You can change it at any time.
         </p>
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4 flex flex-wrap justify-center gap-3">
           <LikeButton
             tierlistId={id}
             initialCount={likeCount}
@@ -126,6 +134,16 @@ export default async function VotePage({
             isLoggedIn={!!user}
             endpoint={`/api/vote-tierlists/${id}/like`}
           />
+          {/* Link to regular tierlist(s) if linked */}
+          {(linkedTierlists ?? []).map((lt) => (
+            <Link
+              key={lt.id}
+              href={`/play/${lt.id}`}
+              className="rounded-lg border border-indigo-700 bg-indigo-900/30 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-800/40 transition-colors"
+            >
+              See Regular Tierlist
+            </Link>
+          ))}
         </div>
 
         {/* Tier legend */}

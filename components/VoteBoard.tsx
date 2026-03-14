@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { VoteImageWithCounts, VoteTier } from "@/lib/types";
+import CommunityVote from "./CommunityVote";
 
 const VOTER_ID_KEY = "vote_voter_id";
 
@@ -47,6 +48,7 @@ export default function VoteBoard({
   const [userVotes, setUserVotes] = useState<Record<string, string>>(initialUserVotes);
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showCommunityVote, setShowCommunityVote] = useState(false);
   const voterIdRef = useRef<string>("");
 
   useEffect(() => {
@@ -62,6 +64,17 @@ export default function VoteBoard({
         .catch(() => {});
     }
   }, [votelistId, isLoggedIn]);
+
+  // Skip: advance to next unvoted image without casting a vote
+  function skipImage(imageId: string) {
+    const tierSet = new Set(tiers.map((t) => t.label));
+    const remaining = images.filter((img) => {
+      const v = userVotes[img.id];
+      return !v || !tierSet.has(v);
+    });
+    const next = remaining.find((img) => img.id !== imageId);
+    setSelectedId(next?.id ?? null);
+  }
 
   async function castVote(imageId: string, tierLabel: string) {
     if (pending[imageId]) return;
@@ -139,8 +152,29 @@ export default function VoteBoard({
   const selectedImg = selectedId ? (images.find((i) => i.id === selectedId) ?? null) : null;
   const votedCount = images.length - pool.length;
 
+  // ── Community's Vote view ────────────────────────────────────────────────
+  if (showCommunityVote) {
+    return (
+      <CommunityVote
+        tiers={tiers}
+        images={images}
+        onClose={() => setShowCommunityVote(false)}
+      />
+    );
+  }
+
   return (
     <>
+      {/* Community's Vote button */}
+      <div className="mb-4 flex justify-center">
+        <button
+          onClick={() => setShowCommunityVote(true)}
+          className="rounded-lg border border-purple-700 bg-purple-900/30 px-4 py-2 text-sm font-semibold text-purple-300 hover:bg-purple-800/40 transition-colors"
+        >
+          Community&apos;s Vote
+        </button>
+      </div>
+
       {/* ── Main layout: stack on mobile, side-by-side on desktop ── */}
       <div className="flex flex-col gap-4 md:flex-row md:gap-5 md:items-start">
         {/* ── Tierlist + pool ── */}
@@ -288,6 +322,13 @@ export default function VoteBoard({
                     </button>
                   );
                 })}
+                {/* Skip button — advance without voting */}
+                <button
+                  onClick={() => skipImage(selectedImg.id)}
+                  className="flex-1 min-w-[2rem] rounded-lg border border-gray-600 py-2.5 text-xs font-bold text-gray-400 transition-all hover:border-gray-400 hover:text-white"
+                >
+                  SKIP
+                </button>
               </div>
             </div>
           ) : (
@@ -334,7 +375,7 @@ export default function VoteBoard({
                   : "No votes yet"}
               </p>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {tiers.map((tier) => {
                 const isMyVote = userVotes[selectedImg.id] === tier.label;
                 const isPending = pending[selectedImg.id] ?? false;
@@ -343,7 +384,7 @@ export default function VoteBoard({
                     key={tier.label}
                     onClick={() => castVote(selectedImg.id, tier.label)}
                     disabled={isPending}
-                    className={`h-10 w-10 rounded-lg text-sm font-black text-gray-900 transition-all disabled:opacity-50 ${
+                    className={`h-9 min-w-[2.25rem] flex-shrink-0 rounded-lg text-xs font-black text-gray-900 transition-all disabled:opacity-50 ${
                       isMyVote ? "ring-2 ring-white scale-90" : "hover:brightness-110 active:scale-95"
                     }`}
                     style={{ backgroundColor: tier.color }}
@@ -352,9 +393,16 @@ export default function VoteBoard({
                   </button>
                 );
               })}
+              {/* Skip button */}
+              <button
+                onClick={() => skipImage(selectedImg.id)}
+                className="h-9 min-w-[2.25rem] flex-shrink-0 rounded-lg border border-gray-600 text-[10px] font-bold text-gray-400 active:scale-95"
+              >
+                SKIP
+              </button>
               <button
                 onClick={() => setSelectedId(null)}
-                className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
+                className="ml-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
               >
                 ✕
               </button>

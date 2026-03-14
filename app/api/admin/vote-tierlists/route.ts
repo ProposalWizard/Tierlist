@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  let body: { title?: string; cover_image_url?: string | null };
+  let body: { title?: string; cover_image_url?: string | null; tiers?: { label: string; color: string }[] };
   try {
     body = await request.json();
   } catch {
@@ -47,14 +47,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Title is required" }, { status: 400 });
   }
 
+  const insertData: Record<string, unknown> = {
+    title: body.title.trim(),
+    cover_image_url: body.cover_image_url ?? null,
+    created_by: user.id,
+  };
+  // Allow custom tiers on creation (otherwise DB default S/A/B/C/D is used)
+  if (body.tiers && Array.isArray(body.tiers) && body.tiers.length > 0) {
+    insertData.tiers = body.tiers;
+  }
+
   const service = createServiceClient();
   const { data, error } = await service
     .from("vote_tierlists")
-    .insert({
-      title: body.title.trim(),
-      cover_image_url: body.cover_image_url ?? null,
-      created_by: user.id,
-    })
+    .insert(insertData)
     .select("id, title, cover_image_url, is_active, created_at")
     .single();
 
