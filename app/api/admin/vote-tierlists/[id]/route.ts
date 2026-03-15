@@ -25,7 +25,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  let body: { title?: string; cover_image_url?: string | null; is_active?: boolean; tiers?: { label: string; color: string }[] };
+  let body: { title?: string; category?: string; cover_image_url?: string | null; is_active?: boolean; tiers?: { label: string; color: string }[] };
   try {
     body = await request.json();
   } catch {
@@ -34,6 +34,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
 
   const update: Record<string, unknown> = {};
   if (body.title !== undefined) update.title = body.title.trim();
+  if (body.category !== undefined) update.category = body.category.trim() || "General";
   if (body.cover_image_url !== undefined) update.cover_image_url = body.cover_image_url;
   if (body.is_active !== undefined) update.is_active = body.is_active;
   if (body.tiers !== undefined && Array.isArray(body.tiers) && body.tiers.length > 0) {

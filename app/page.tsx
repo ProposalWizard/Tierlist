@@ -1,5 +1,8 @@
 /**
  * app/page.tsx — Homepage
+ *
+ * Categories can contain both regular tierlists and vote tierlists.
+ * Vote tierlists show a "Vote" badge to distinguish them.
  */
 
 import Link from "next/link";
@@ -10,10 +13,16 @@ import type { Tierlist } from "@/lib/types";
 
 const MAX_PER_CATEGORY = 6;
 
-type TierlistCard = Pick<Tierlist, "id" | "title" | "category" | "cover_image_url" | "view_count" | "created_at"> & {
-  like_count?: number;
+type CategoryCard = {
+  id: string;
+  title: string;
+  category: string;
+  cover_image_url: string | null;
+  view_count: number;
+  created_at: string;
+  like_count: number;
+  is_vote: boolean;
 };
-type VotelistCard = { id: string; title: string; cover_image_url: string | null; created_at: string };
 type CategorySetting = { category: string; sort_method: string; pinned_ids: string[] };
 
 export default async function HomePage() {
@@ -25,25 +34,21 @@ export default async function HomePage() {
     service
       .from("tierlists")
       .select("id, title, category, cover_image_url, view_count, created_at")
-      .order("created_at", { ascending: false })
-      .returns<TierlistCard[]>(),
+      .order("created_at", { ascending: false }),
     user
       ? supabase.from("tierlist_likes").select("tierlist_id").eq("user_id", user.id)
       : Promise.resolve({ data: [] }),
     supabase
       .from("vote_tierlists")
-      .select("id, title, cover_image_url, created_at")
+      .select("id, title, category, cover_image_url, created_at")
       .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .returns<VotelistCard[]>(),
-    // Count likes per tierlist
+      .order("created_at", { ascending: false }),
     service.from("tierlist_likes").select("tierlist_id"),
-    // Category display settings (graceful fail if table not created yet)
     service.from("category_homepage_settings").select("category, sort_method, pinned_ids"),
   ]);
 
   const tierlists = tierlistsResult.data ?? [];
-  const votelists = votelistsResult.data ?? [];
+  const votelists = (votelistsResult.data ?? []) as { id: string; title: string; category: string; cover_image_url: string | null; created_at: string }[];
   const likedIds = new Set(
     ((likesResult as { data: { tierlist_id: string }[] | null }).data ?? []).map((l) => l.tierlist_id)
   );
@@ -60,12 +65,37 @@ export default async function HomePage() {
     settingsMap.set(s.category, s);
   }
 
-  // Group all tierlists by category
-  const categoryMap = new Map<string, TierlistCard[]>();
+  // Group ALL items (regular + vote) by category
+  const categoryMap = new Map<string, CategoryCard[]>();
+
   for (const tl of tierlists) {
     const cat = tl.category ?? "Other";
     if (!categoryMap.has(cat)) categoryMap.set(cat, []);
-    categoryMap.get(cat)!.push({ ...tl, like_count: likeCountMap.get(tl.id) ?? 0 });
+    categoryMap.get(cat)!.push({
+      id: tl.id,
+      title: tl.title,
+      category: cat,
+      cover_image_url: tl.cover_image_url,
+      view_count: tl.view_count ?? 0,
+      created_at: tl.created_at,
+      like_count: likeCountMap.get(tl.id) ?? 0,
+      is_vote: false,
+    });
+  }
+
+  for (const vl of votelists) {
+    const cat = vl.category ?? "Other";
+    if (!categoryMap.has(cat)) categoryMap.set(cat, []);
+    categoryMap.get(cat)!.push({
+      id: vl.id,
+      title: vl.title,
+      category: cat,
+      cover_image_url: vl.cover_image_url,
+      view_count: 0,
+      created_at: vl.created_at,
+      like_count: 0,
+      is_vote: true,
+    });
   }
 
   // Apply category ordering settings and slice to MAX_PER_CATEGORY
@@ -74,16 +104,19 @@ export default async function HomePage() {
     let sorted = [...items];
 
     if (setting?.sort_method === "views") {
-      sorted.sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0));
+      sorted.sort((a, b) => b.view_count - a.view_count);
     } else if (setting?.sort_method === "likes") {
-      sorted.sort((a, b) => (b.like_count ?? 0) - (a.like_count ?? 0));
+      sorted.sort((a, b) => b.like_count - a.like_count);
     } else if (setting?.sort_method === "manual" && setting.pinned_ids?.length) {
       const pinnedSet = new Map(setting.pinned_ids.map((id, i) => [id, i]));
       const pinned = sorted.filter((t) => pinnedSet.has(t.id)).sort((a, b) => pinnedSet.get(a.id)! - pinnedSet.get(b.id)!);
       const rest = sorted.filter((t) => !pinnedSet.has(t.id));
       sorted = [...pinned, ...rest];
     }
-    // default: recent (already ordered by created_at DESC from DB)
+    // default: recent — sort by created_at DESC
+    else {
+      sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
 
     return { cat, items: sorted, total: sorted.length, displayed: sorted.slice(0, MAX_PER_CATEGORY) };
   });
@@ -102,47 +135,6 @@ export default async function HomePage() {
           {user ? "+ Create a Tierlist" : "Sign in to create"}
         </Link>
       </div>
-
-      {/* ── Vote tierlists ── */}
-      {votelists.length > 0 && (
-        <div className="border-b border-gray-800 bg-gray-900/50 px-4 py-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-white">Vote</h2>
-              <span className="rounded-full border border-purple-700 bg-purple-900/40 px-2 py-0.5 text-xs font-semibold text-purple-300">
-                Community Polls
-              </span>
-            </div>
-            <p className="mb-5 text-sm text-gray-500">
-              Vote on where each player belongs — see how your picks compare to everyone else.
-            </p>
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {votelists.map((vl) => (
-                <Link
-                  key={vl.id}
-                  href={`/vote/${vl.id}`}
-                  className="group flex-shrink-0 w-48 overflow-hidden rounded-xl border border-purple-800/50 bg-gray-900 transition-colors hover:border-purple-500"
-                >
-                  <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
-                    {vl.cover_image_url ? (
-                      <ImageWithFallback src={vl.cover_image_url} alt={vl.title}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                    ) : (
-                      <span className="text-4xl">🗳️</span>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <div className="mb-1 inline-flex items-center rounded bg-purple-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-300">
-                      Live
-                    </div>
-                    <p className="truncate text-sm font-semibold text-white">{vl.title}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Category rows ── */}
       <main className="mx-auto max-w-7xl space-y-10 px-4 py-8">
@@ -167,23 +159,36 @@ export default async function HomePage() {
               </div>
 
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7">
-                {displayed.map((tl) => (
-                  <Link key={tl.id} href={`/play/${tl.id}`}
-                    className="group overflow-hidden rounded-xl border border-gray-700 bg-gray-900 transition-colors hover:border-indigo-500">
+                {displayed.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={item.is_vote ? `/vote/${item.id}` : `/play/${item.id}`}
+                    className={`group overflow-hidden rounded-xl border bg-gray-900 transition-colors ${
+                      item.is_vote
+                        ? "border-purple-800/50 hover:border-purple-500"
+                        : "border-gray-700 hover:border-indigo-500"
+                    }`}
+                  >
                     <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
-                      {tl.cover_image_url ? (
-                        <ImageWithFallback src={tl.cover_image_url} alt={tl.title}
+                      {item.cover_image_url ? (
+                        <ImageWithFallback src={item.cover_image_url} alt={item.title}
                           className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                       ) : (
-                        <span className="text-4xl">🏆</span>
+                        <span className="text-4xl">{item.is_vote ? "🗳️" : "🏆"}</span>
                       )}
                     </div>
                     <div className="p-2.5">
-                      <p className="truncate text-xs font-semibold text-white">{tl.title}</p>
+                      {item.is_vote && (
+                        <div className="mb-1 inline-flex items-center rounded bg-purple-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-300">
+                          Vote
+                        </div>
+                      )}
+                      <p className="truncate text-xs font-semibold text-white">{item.title}</p>
                       <div className="mt-1 flex items-center justify-between text-[10px] text-gray-500">
-                        <span title="Views">👁 {tl.view_count ?? 0}</span>
+                        {!item.is_vote && <span title="Views">👁 {item.view_count ?? 0}</span>}
+                        {item.is_vote && <span />}
                         <div className="flex items-center gap-1.5">
-                          {likedIds.has(tl.id) && <span className="text-red-400">♥</span>}
+                          {likedIds.has(item.id) && <span className="text-red-400">♥</span>}
                         </div>
                       </div>
                     </div>

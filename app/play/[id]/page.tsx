@@ -174,6 +174,7 @@ export default async function PlayPage({ params }: Props) {
           name: img.name,
           image_url: img.image_url,
         }))}
+        isAdmin={userIsAdmin}
       />
     </main>
   );

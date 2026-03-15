@@ -141,7 +141,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
                 <div className="p-2.5">
                   {item.is_live && (
                     <span className="mb-1 inline-flex items-center rounded bg-purple-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-300">
-                      Live
+                      Vote
                     </span>
                   )}
                   <p className="truncate text-xs font-semibold text-white">{item.title}</p>

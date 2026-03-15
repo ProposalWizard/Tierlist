@@ -5,6 +5,7 @@ import {
   useCallback,
   useRef,
   useLayoutEffect,
+  useEffect,
   useId,
 } from "react";
 import {
@@ -53,6 +54,7 @@ const STYLE_OPTIONS: { key: ImageStyle; label: string }[] = [
 interface TierlistBoardProps {
   initialImages?: Array<{ id: string; name: string; image_url: string }>;
   mode?: "play" | "create";
+  isAdmin?: boolean;
 }
 
 // ── Unranked pool ──────────────────────────────────────────────────────────
@@ -72,6 +74,10 @@ function UnrankedPool({
   onCrop,
   onLabel,
   onToggleRemove,
+  isMobile = false,
+  tapSelectedId = null,
+  onTapSelect,
+  onTapPlace,
 }: {
   players: TierlistPlayer[];
   activePlayerId: string | null;
@@ -87,6 +93,10 @@ function UnrankedPool({
   onCrop: (id: string) => void;
   onLabel: (id: string) => void;
   onToggleRemove: (id: string) => void;
+  isMobile?: boolean;
+  tapSelectedId?: string | null;
+  onTapSelect?: (id: string) => void;
+  onTapPlace?: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: "unranked" });
   const inputId = useId();
@@ -102,7 +112,7 @@ function UnrankedPool({
     >
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-          Unranked — drag into a tier
+          {isMobile ? "Unranked — tap image, then tap a tier" : "Unranked — drag into a tier"}
         </h3>
         <input
           id={inputId}
@@ -147,12 +157,15 @@ function UnrankedPool({
               onCrop={onCrop}
               onLabel={onLabel}
               onToggleRemove={onToggleRemove}
+              isMobile={isMobile}
+              isTapSelected={tapSelectedId === player.id}
+              onTapSelect={onTapSelect}
             />
           ))}
         </SortableContext>
         {players.length === 0 && (
           <span className="flex items-center text-xs text-gray-600 italic">
-            Click &quot;+ Add Images&quot; to get started
+            {isMobile ? "Tap \"+ Add Images\" to get started" : "Click \"+ Add Images\" to get started"}
           </span>
         )}
       </div>
@@ -166,7 +179,7 @@ function UnrankedPool({
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 /** Maximum number of image uploads allowed per minute */
-const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_MAX = 25;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -201,6 +214,7 @@ function dataUrlToBlob(dataUrl: string): Blob {
 export default function TierlistBoard({
   initialImages,
   mode = "play",
+  isAdmin: isAdminUser = false,
 }: TierlistBoardProps) {
   // ── Tier state ───────────────────────────────────────────────────────────
   const [tiers, setTiers] = useState<TierRowData[]>(() => DEFAULT_TIER_ROWS);
@@ -254,6 +268,35 @@ export default function TierlistBoard({
   // User-facing error/success banner
   const [boardError, setBoardError]           = useState<string | null>(null);
 
+  // ── Mobile tap-to-place ──────────────────────────────────────────────────
+  const [isMobile, setIsMobile] = useState(false);
+  const [tapSelectedId, setTapSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(pointer: coarse)");
+    setIsMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  function handleTapPlace(tierId: string) {
+    if (!tapSelectedId) return;
+    const fromContainer = Object.keys(tierMap).find((key) =>
+      tierMap[key]?.includes(tapSelectedId)
+    );
+    if (!fromContainer || fromContainer === tierId) {
+      setTapSelectedId(null);
+      return;
+    }
+    setTierMap((prev) => ({
+      ...prev,
+      [fromContainer]: prev[fromContainer].filter((id) => id !== tapSelectedId),
+      [tierId]: [...(prev[tierId] ?? []), tapSelectedId],
+    }));
+    setTapSelectedId(null);
+  }
+
   const tiersRef = useRef<HTMLDivElement>(null);
   const tierMapRef = useRef(tierMap);
   useLayoutEffect(() => { tierMapRef.current = tierMap; });
@@ -264,7 +307,10 @@ export default function TierlistBoard({
   });
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+      ...(isMobile ? { enabled: false } : {}),
+    })
   );
 
   // ── Image upload ─────────────────────────────────────────────────────────
@@ -272,8 +318,8 @@ export default function TierlistBoard({
   async function handleFilesAdded(files: FileList) {
     setBoardError(null);
 
-    // Rate limit check
-    if (isRateLimited()) {
+    // Rate limit check (admins are exempt)
+    if (!isAdminUser && isRateLimited()) {
       setBoardError("Upload limit reached. Please wait a minute.");
       return;
     }
@@ -293,7 +339,7 @@ export default function TierlistBoard({
     }
 
     if (rejectedType.length > 0) {
-      setBoardError("Only JPG, PNG, or WEBP images are allowed.");
+      setBoardError("Unsupported image format. Allowed: JPG, PNG, WEBP, GIF, SVG, BMP, AVIF.");
       if (validFiles.length === 0) return;
     } else if (rejectedSize.length > 0) {
       setBoardError(
@@ -633,6 +679,22 @@ export default function TierlistBoard({
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
         >
+          {/* Mobile tap-to-place instruction */}
+          {isMobile && tapSelectedId && playerMap[tapSelectedId] && (
+            <div className="flex items-center gap-2 rounded-lg border border-indigo-500/50 bg-indigo-950/40 px-3 py-2 text-xs text-indigo-300 md:hidden">
+              <span className="font-semibold">
+                &ldquo;{playerMap[tapSelectedId].name}&rdquo; selected
+              </span>
+              <span className="text-indigo-400">— tap a tier row to place it</span>
+              <button
+                onClick={() => setTapSelectedId(null)}
+                className="ml-auto text-indigo-400 hover:text-white"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           {/* Tier rows — wrapped for screenshot */}
           <div ref={tiersRef} className="space-y-2 rounded-xl bg-gray-950 p-2">
             {tiers.map((tier) => (
@@ -664,6 +726,10 @@ export default function TierlistBoard({
                 onCrop={setCroppingId}
                 onLabel={setLabelingId}
                 onToggleRemove={toggleRemoveSelection}
+                isMobile={isMobile}
+                tapSelectedId={tapSelectedId}
+                onTapSelect={(id) => setTapSelectedId(id === tapSelectedId ? null : id)}
+                onTapPlace={() => handleTapPlace(tier.id)}
               />
             ))}
           </div>
@@ -687,6 +753,10 @@ export default function TierlistBoard({
             onCrop={setCroppingId}
             onLabel={setLabelingId}
             onToggleRemove={toggleRemoveSelection}
+            isMobile={isMobile}
+            tapSelectedId={tapSelectedId}
+            onTapSelect={(id) => setTapSelectedId(id === tapSelectedId ? null : id)}
+            onTapPlace={() => handleTapPlace("unranked")}
           />
 
           <DragOverlay>

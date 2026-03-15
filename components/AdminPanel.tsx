@@ -10,6 +10,7 @@ import { TIER_COLOR_OPTIONS } from "@/lib/types";
 interface VotelistAdmin {
   id: string;
   title: string;
+  category: string;
   cover_image_url: string | null;
   is_active: boolean;
   created_at: string;
@@ -53,6 +54,12 @@ export default function AdminPanel({
   initialTierlists: Tierlist[];
 }) {
   const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists">("tierlists");
+  const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
+
+  function showSaveConfirmation(message: string) {
+    setSaveConfirmation(message);
+    setTimeout(() => setSaveConfirmation(null), 3000);
+  }
   const [tierlists, setTierlists] = useState<Tierlist[]>(initialTierlists);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState | null>(null);
@@ -77,6 +84,7 @@ export default function AdminPanel({
   const [voteImagesMap, setVoteImagesMap] = useState<Record<string, VoteImage[]>>({});
   const [showCreateVote, setShowCreateVote] = useState(false);
   const [newVoteTitle, setNewVoteTitle] = useState("");
+  const [newVoteCategory, setNewVoteCategory] = useState("");
   const [newVoteCoverFile, setNewVoteCoverFile] = useState<File | null>(null);
   const [newVoteCoverPreview, setNewVoteCoverPreview] = useState<string | null>(null);
   const [newVoteCreating, setNewVoteCreating] = useState(false);
@@ -93,8 +101,10 @@ export default function AdminPanel({
   const [editingVoteTitleId, setEditingVoteTitleId] = useState<string | null>(null);
   const [editVoteTitleValue, setEditVoteTitleValue] = useState("");
   const [savingVoteTitle, setSavingVoteTitle] = useState(false);
-  // Manual pin picker search
+  // Manual pin picker search (includes both regular + vote tierlists)
   const [pinPickerSearch, setPinPickerSearch] = useState<Record<string, string>>({});
+  // All items for pin picker: regular tierlists + vote tierlists combined
+  const [allPinItems, setAllPinItems] = useState<{ id: string; title: string; is_vote: boolean }[]>([]);
   const [importLoading, setImportLoading] = useState(false);
   // Vote tierlist cover photo editing
   const [voteCoverFile, setVoteCoverFile] = useState<File | null>(null);
@@ -114,6 +124,13 @@ export default function AdminPanel({
   const [editTiers, setEditTiers] = useState<VoteTier[]>([]);
   const [savingTiers, setSavingTiers] = useState(false);
 
+  // Build allPinItems whenever tierlists or votelists change
+  useEffect(() => {
+    const regular = initialTierlists.map((tl) => ({ id: tl.id, title: tl.title, is_vote: false }));
+    const vote = votelists.map((vl) => ({ id: vl.id, title: vl.title, is_vote: true }));
+    setAllPinItems([...regular, ...vote]);
+  }, [initialTierlists, votelists]);
+
   useEffect(() => {
     fetch("/api/categories")
       .then((r) => r.json())
@@ -129,6 +146,11 @@ export default function AdminPanel({
         }
       })
       .catch(() => {});
+    // Also load vote tierlists for pin picker
+    fetch("/api/admin/vote-tierlists")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) { setVotelists(data); setVotelistsLoaded(true); } })
+      .catch(() => {});
   }, []);
 
   async function saveCatSetting(catName: string, sortMethod: string, pinnedIds?: string[]) {
@@ -142,6 +164,7 @@ export default function AdminPanel({
       if (res.ok) {
         const data = await res.json();
         setCatSettings((prev) => ({ ...prev, [catName]: { sort_method: data.sort_method, pinned_ids: data.pinned_ids ?? [] } }));
+        showSaveConfirmation(`"${catName}" settings saved`);
       }
     } catch { /* ignore */ }
     setCatSettingsSaving((prev) => ({ ...prev, [catName]: false }));
@@ -160,6 +183,7 @@ export default function AdminPanel({
     if (res.ok) {
       setCategories((prev) => prev.map((c) => c.id === id ? { ...c, name: catEditName.trim() } : c));
       setEditingCatId(null);
+      showSaveConfirmation("Category renamed");
     } else {
       const d = await res.json().catch(() => ({}));
       setCatError(d.error ?? "Failed to save");
@@ -180,6 +204,7 @@ export default function AdminPanel({
       const cat = await res.json();
       setCategories((prev) => [...prev, cat]);
       setNewCatName("");
+      showSaveConfirmation("Category added");
     } else {
       const d = await res.json().catch(() => ({}));
       setCatError(d.error ?? "Failed to add");
@@ -356,6 +381,7 @@ export default function AdminPanel({
       );
 
       closeEdit();
+      showSaveConfirmation("Tierlist saved");
     } catch (err) {
       setEditState((p) =>
         p
@@ -455,7 +481,7 @@ export default function AdminPanel({
       const res = await fetch("/api/admin/vote-tierlists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newVoteTitle.trim(), cover_image_url, tiers: newVoteTiers }),
+        body: JSON.stringify({ title: newVoteTitle.trim(), category: newVoteCategory || "General", cover_image_url, tiers: newVoteTiers }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -464,11 +490,13 @@ export default function AdminPanel({
       const created = await res.json();
       setVotelists((prev) => [created, ...prev]);
       setNewVoteTitle("");
+      setNewVoteCategory("");
       if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview);
       setNewVoteCoverFile(null);
       setNewVoteCoverPreview(null);
       setNewVoteTiers(DEFAULT_VOTE_TIERS);
       setShowCreateVote(false);
+      showSaveConfirmation("Vote tierlist created");
     } catch (err) {
       setVoteError(err instanceof Error ? err.message : "Something went wrong");
     }
@@ -500,6 +528,7 @@ export default function AdminPanel({
     if (res.ok) {
       setVotelists((prev) => prev.map((v) => v.id === id ? { ...v, title } : v));
       setEditingVoteTitleId(null);
+      showSaveConfirmation("Vote tierlist renamed");
     }
     setSavingVoteTitle(false);
   }
@@ -527,6 +556,7 @@ export default function AdminPanel({
       if (voteCoverPreview) URL.revokeObjectURL(voteCoverPreview);
       setVoteCoverFile(null);
       setVoteCoverPreview(null);
+      showSaveConfirmation("Cover photo saved");
     } catch {
       // silently fail — user can retry
     } finally {
@@ -542,7 +572,10 @@ export default function AdminPanel({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tiers: editTiers }),
     });
-    if (res.ok) setEditingTiersId(null);
+    if (res.ok) {
+      setEditingTiersId(null);
+      showSaveConfirmation("Tiers saved");
+    }
     setSavingTiers(false);
   }
 
@@ -583,6 +616,7 @@ export default function AdminPanel({
       );
       setVoteImagesMap((prev) => ({ ...prev, [voteId]: [...(prev[voteId] ?? []), ...newImgs] }));
       setAddImgFiles((prev) => ({ ...prev, [voteId]: [] }));
+      showSaveConfirmation(`${newImgs.length} image${newImgs.length === 1 ? "" : "s"} uploaded`);
     } catch (err) {
       setVoteError(err instanceof Error ? err.message : "Failed to add images");
     }
@@ -603,6 +637,7 @@ export default function AdminPanel({
       setVoteImagesMap((prev) => ({ ...prev, [voteId]: [...(prev[voteId] ?? []), ...(images ?? [])] }));
       setImportingVoteId(null);
       setImportSourceId("");
+      showSaveConfirmation(`${images?.length ?? 0} images imported`);
     } catch (err) {
       setVoteError(err instanceof Error ? err.message : "Import failed");
     }
@@ -626,6 +661,13 @@ export default function AdminPanel({
 
   return (
     <div>
+      {/* ── Save confirmation toast ─────────────────────────────────── */}
+      {saveConfirmation && (
+        <div className="fixed top-4 right-4 z-50 animate-pulse rounded-lg border border-green-700 bg-green-900/90 px-4 py-3 text-sm font-semibold text-green-300 shadow-lg">
+          ✓ {saveConfirmation}
+        </div>
+      )}
+
       {/* ── Tabs ───────────────────────────────────────────────────────── */}
       <div className="mb-6 flex gap-2 border-b border-gray-800 pb-2">
         <button
@@ -741,23 +783,24 @@ export default function AdminPanel({
                       {method === "manual" && (() => {
                         const pinnedIds = setting?.pinned_ids ?? [];
                         const search = (pinPickerSearch[cat.name] ?? "").toLowerCase();
-                        const filtered = initialTierlists.filter((tl) =>
-                          tl.title.toLowerCase().includes(search)
+                        const filtered = allPinItems.filter((item) =>
+                          item.title.toLowerCase().includes(search)
                         );
                         return (
                           <div className="mt-3">
                             <p className="mb-2 text-[10px] text-gray-500">
-                              Select up to 6 tierlists to pin (in order). Click to add/remove.
+                              Select up to 6 tierlists to pin (in order). Click to add/remove. Vote tierlists are labelled.
                             </p>
                             {/* Pinned order */}
                             {pinnedIds.length > 0 && (
                               <div className="mb-2 flex flex-wrap gap-1.5">
                                 {pinnedIds.map((pid, idx) => {
-                                  const tl = initialTierlists.find((t) => t.id === pid);
+                                  const item = allPinItems.find((t) => t.id === pid);
                                   return (
-                                    <span key={pid} className="flex items-center gap-1 rounded-full border border-indigo-600 bg-indigo-900/40 px-2 py-0.5 text-[10px] text-indigo-300">
-                                      <span className="font-bold text-indigo-400">{idx + 1}.</span>
-                                      {tl?.title ?? pid.slice(0, 8) + "…"}
+                                    <span key={pid} className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] ${item?.is_vote ? "border-purple-600 bg-purple-900/40 text-purple-300" : "border-indigo-600 bg-indigo-900/40 text-indigo-300"}`}>
+                                      <span className={`font-bold ${item?.is_vote ? "text-purple-400" : "text-indigo-400"}`}>{idx + 1}.</span>
+                                      {item?.is_vote && <span className="rounded bg-purple-800/60 px-1 text-[8px] font-bold text-purple-300">Vote</span>}
+                                      {item?.title ?? pid.slice(0, 8) + "…"}
                                       <button
                                         onClick={() => {
                                           const next = pinnedIds.filter((id) => id !== pid);
@@ -767,7 +810,7 @@ export default function AdminPanel({
                                             [cat.name]: { sort_method: "manual", pinned_ids: next },
                                           }));
                                         }}
-                                        className="ml-0.5 text-indigo-400 hover:text-white"
+                                        className={`ml-0.5 hover:text-white ${item?.is_vote ? "text-purple-400" : "text-indigo-400"}`}
                                       >×</button>
                                     </span>
                                   );
@@ -779,24 +822,24 @@ export default function AdminPanel({
                               type="text"
                               value={pinPickerSearch[cat.name] ?? ""}
                               onChange={(e) => setPinPickerSearch((prev) => ({ ...prev, [cat.name]: e.target.value }))}
-                              placeholder="Search tierlists…"
+                              placeholder="Search tierlists and vote tierlists…"
                               className="mb-2 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 focus:border-indigo-500 focus:outline-none"
                             />
                             {/* Results */}
                             <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800">
                               {filtered.length === 0 ? (
                                 <p className="px-3 py-2 text-[10px] text-gray-600">No results.</p>
-                              ) : filtered.slice(0, 30).map((tl) => {
-                                const pinned = pinnedIds.includes(tl.id);
+                              ) : filtered.slice(0, 30).map((item) => {
+                                const pinned = pinnedIds.includes(item.id);
                                 const canAdd = !pinned && pinnedIds.length < 6;
                                 return (
                                   <button
-                                    key={tl.id}
+                                    key={item.id}
                                     disabled={!pinned && !canAdd}
                                     onClick={() => {
                                       const next = pinned
-                                        ? pinnedIds.filter((id) => id !== tl.id)
-                                        : [...pinnedIds, tl.id];
+                                        ? pinnedIds.filter((id) => id !== item.id)
+                                        : [...pinnedIds, item.id];
                                       saveCatSetting(cat.name, "manual", next);
                                       setCatSettings((prev) => ({
                                         ...prev,
@@ -814,10 +857,11 @@ export default function AdminPanel({
                                     <span className={`h-3.5 w-3.5 flex-shrink-0 rounded border text-[9px] flex items-center justify-center ${pinned ? "border-indigo-500 bg-indigo-600 text-white" : "border-gray-600"}`}>
                                       {pinned && "✓"}
                                     </span>
-                                    <span className="truncate">{tl.title}</span>
+                                    {item.is_vote && <span className="rounded bg-purple-800/60 px-1 py-0.5 text-[8px] font-bold text-purple-300 flex-shrink-0">Vote</span>}
+                                    <span className="truncate">{item.title}</span>
                                     {pinned && (
                                       <span className="ml-auto text-[9px] text-indigo-400">
-                                        #{pinnedIds.indexOf(tl.id) + 1}
+                                        #{pinnedIds.indexOf(item.id) + 1}
                                       </span>
                                     )}
                                   </button>
@@ -1185,6 +1229,17 @@ export default function AdminPanel({
                 placeholder="Title…"
                 className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
               />
+              {/* Category */}
+              <select
+                value={newVoteCategory}
+                onChange={(e) => setNewVoteCategory(e.target.value)}
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+              >
+                <option value="">General</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
               {/* Cover image upload */}
               <div className="flex items-center gap-3">
                 {newVoteCoverPreview ? (
@@ -1248,7 +1303,7 @@ export default function AdminPanel({
                   className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-50">
                   {newVoteCreating ? "Creating…" : "Create"}
                 </button>
-                <button onClick={() => { setShowCreateVote(false); setNewVoteTitle(""); setNewVoteTiers(DEFAULT_VOTE_TIERS); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(null); setNewVoteCoverPreview(null); }}
+                <button onClick={() => { setShowCreateVote(false); setNewVoteTitle(""); setNewVoteCategory(""); setNewVoteTiers(DEFAULT_VOTE_TIERS); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(null); setNewVoteCoverPreview(null); }}
                   className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-300 hover:border-gray-400">
                   Cancel
                 </button>
@@ -1382,6 +1437,32 @@ export default function AdminPanel({
                           </button>
                         )}
                       </div>
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <p className="mb-2 text-xs font-semibold text-gray-400">Category</p>
+                      <select
+                        value={vl.category ?? "General"}
+                        onChange={async (e) => {
+                          const category = e.target.value;
+                          const res = await fetch(`/api/admin/vote-tierlists/${vl.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ category }),
+                          });
+                          if (res.ok) {
+                            setVotelists((prev) => prev.map((v) => v.id === vl.id ? { ...v, category } : v));
+                            showSaveConfirmation("Category saved");
+                          }
+                        }}
+                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+                      >
+                        <option value="General">General</option>
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* Tier editing */}
