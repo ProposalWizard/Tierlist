@@ -162,6 +162,7 @@ export default function VoteBoard({
 
   const selectedImg = selectedId ? (images.find((i) => i.id === selectedId) ?? null) : null;
   const votedCount = images.length - pool.length;
+  const [showMobileStats, setShowMobileStats] = useState(false);
 
   // ── Community's Vote view ────────────────────────────────────────────────
   if (showCommunityVote) {
@@ -365,12 +366,13 @@ export default function VoteBoard({
 
       {/* ── Mobile fixed bottom vote bar ── */}
       {selectedImg && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-gray-950/95 px-4 py-3 backdrop-blur md:hidden">
-          <div className="flex items-center gap-3">
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-gray-950/95 px-3 py-2.5 backdrop-blur md:hidden">
+          {/* Top row: image info + stats toggle + close */}
+          <div className="flex items-center gap-2 mb-2">
             <ImageWithFallback
               src={selectedImg.image_url}
               alt={selectedImg.name}
-              className="h-11 w-11 flex-shrink-0 rounded-lg object-cover border border-gray-700"
+              className="h-10 w-10 flex-shrink-0 rounded-lg object-cover border border-gray-700"
             />
             <div className="min-w-0 flex-1">
               {selectedImg.name && (
@@ -382,38 +384,79 @@ export default function VoteBoard({
                   : "No votes yet"}
               </p>
             </div>
-            <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowMobileStats((v) => !v)}
+              className={`flex h-7 px-2 flex-shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors ${
+                showMobileStats
+                  ? "border-purple-500 bg-purple-900/40 text-purple-300"
+                  : "border-gray-700 text-gray-400"
+              }`}
+            >
+              Stats
+            </button>
+            <button
+              onClick={() => { setSelectedId(null); setShowMobileStats(false); }}
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Mobile stats panel (collapsible) */}
+          {showMobileStats && (
+            <div className="mb-2 space-y-1 rounded-lg border border-gray-800 bg-gray-900/80 p-2">
               {tiers.map((tier) => {
+                const count = selectedImg.vote_counts[tier.label] ?? 0;
+                const total = selectedImg.total_votes;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                 const isMyVote = userVotes[selectedImg.id] === tier.label;
-                const isPending = pending[selectedImg.id] ?? false;
                 return (
-                  <button
-                    key={tier.label}
-                    onClick={() => castVote(selectedImg.id, tier.label)}
-                    disabled={isPending}
-                    className={`h-9 min-w-[2.25rem] flex-shrink-0 rounded-lg text-xs font-black text-gray-900 transition-all disabled:opacity-50 ${
-                      isMyVote ? "ring-2 ring-white scale-90" : "hover:brightness-110 active:scale-95"
-                    }`}
-                    style={{ backgroundColor: tier.color }}
-                  >
-                    {tier.label}
-                  </button>
+                  <div key={tier.label} className="flex items-center gap-1.5">
+                    <span
+                      className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[10px] font-black text-gray-900"
+                      style={{ backgroundColor: tier.color }}
+                    >
+                      {tier.label}
+                    </span>
+                    <div className="relative flex-1 overflow-hidden rounded-full bg-gray-800" style={{ height: 6 }}>
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: tier.color, opacity: 0.85 }}
+                      />
+                    </div>
+                    <span className="w-8 flex-shrink-0 text-right text-[10px] text-gray-400">{pct}%</span>
+                    {isMyVote && <span className="text-[10px] text-white">✓</span>}
+                  </div>
                 );
               })}
-              {/* Skip button */}
-              <button
-                onClick={() => skipImage(selectedImg.id)}
-                className="h-9 min-w-[2.25rem] flex-shrink-0 rounded-lg border border-gray-600 text-[10px] font-bold text-gray-400 active:scale-95"
-              >
-                SKIP
-              </button>
-              <button
-                onClick={() => setSelectedId(null)}
-                className="ml-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
             </div>
+          )}
+
+          {/* Vote buttons grid */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {tiers.map((tier) => {
+              const isMyVote = userVotes[selectedImg.id] === tier.label;
+              const isPending = pending[selectedImg.id] ?? false;
+              return (
+                <button
+                  key={tier.label}
+                  onClick={() => castVote(selectedImg.id, tier.label)}
+                  disabled={isPending}
+                  className={`h-9 rounded-lg text-xs font-black text-gray-900 transition-all disabled:opacity-50 truncate px-1 ${
+                    isMyVote ? "ring-2 ring-white scale-95" : "active:scale-95"
+                  }`}
+                  style={{ backgroundColor: tier.color }}
+                >
+                  {tier.label}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => skipImage(selectedImg.id)}
+              className="h-9 rounded-lg border border-gray-600 text-[10px] font-bold text-gray-400 active:scale-95"
+            >
+              SKIP
+            </button>
           </div>
         </div>
       )}

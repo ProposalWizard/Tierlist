@@ -1,5 +1,5 @@
 /** Allowed MIME types for image uploads */
-export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml", "image/bmp", "image/avif"] as const;
 
 /** Human-readable accept string for file inputs */
 export const ACCEPT_IMAGE_TYPES = ALLOWED_IMAGE_TYPES.join(",");

@@ -30,6 +30,10 @@ interface TierRowProps {
   onCrop: (id: string) => void;
   onLabel: (id: string) => void;
   onToggleRemove: (id: string) => void;
+  isMobile?: boolean;
+  tapSelectedId?: string | null;
+  onTapSelect?: (id: string) => void;
+  onTapPlace?: () => void;
 }
 
 export default function TierRow({
@@ -55,6 +59,10 @@ export default function TierRow({
   onCrop,
   onLabel,
   onToggleRemove,
+  isMobile = false,
+  tapSelectedId = null,
+  onTapSelect,
+  onTapPlace,
 }: TierRowProps) {
   const { setNodeRef, isOver } = useDroppable({ id: rowId });
   const [localLabel, setLocalLabel] = useState(label);
@@ -83,13 +91,18 @@ export default function TierRow({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-[112px] rounded-xl border transition-colors ${
-        isOver ? "border-indigo-400 bg-gray-800" : "border-gray-700 bg-gray-900"
+      onClick={() => {
+        if (isMobile && tapSelectedId && onTapPlace) onTapPlace();
+      }}
+      className={`flex min-h-[80px] md:min-h-[112px] rounded-xl border transition-colors ${
+        isMobile && tapSelectedId
+          ? "border-indigo-400 bg-gray-800/60 cursor-pointer"
+          : isOver ? "border-indigo-400 bg-gray-800" : "border-gray-700 bg-gray-900"
       }`}
     >
       {/* ── Tier label ─────────────────────────────────────────────── */}
       <div
-        className="flex w-44 flex-shrink-0 items-center justify-center rounded-l-xl"
+        className="flex w-14 flex-shrink-0 items-center justify-center rounded-l-xl md:w-44"
         style={{ backgroundColor: color }}
       >
         <input
@@ -102,7 +115,7 @@ export default function TierRow({
           }}
           maxLength={14}
           title="Click to rename this tier"
-          className="w-full cursor-text bg-transparent px-2 text-center text-xl font-black text-white outline-none [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]"
+          className="w-full cursor-text bg-transparent px-1 text-center text-sm font-black text-white outline-none [text-shadow:0_1px_3px_rgba(0,0,0,0.6)] md:px-2 md:text-xl"
         />
       </div>
 
@@ -127,12 +140,17 @@ export default function TierRow({
               onCrop={onCrop}
               onLabel={onLabel}
               onToggleRemove={onToggleRemove}
+              isMobile={isMobile}
+              isTapSelected={tapSelectedId === player.id}
+              onTapSelect={onTapSelect}
             />
           ))}
         </SortableContext>
         {players.length === 0 && (
-          <span className="flex items-center text-xs text-gray-600 italic">
-            Drop images here
+          <span className={`flex items-center text-xs italic ${
+            isMobile && tapSelectedId ? "text-indigo-400 font-semibold" : "text-gray-600"
+          }`}>
+            {isMobile && tapSelectedId ? "Tap here to place" : isMobile ? "Tap an image, then tap here" : "Drop images here"}
           </span>
         )}
       </div>

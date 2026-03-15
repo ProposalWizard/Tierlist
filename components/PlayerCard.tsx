@@ -19,6 +19,9 @@ interface PlayerCardProps {
   onCrop?: (id: string) => void;
   onLabel?: (id: string) => void;
   onToggleRemove?: (id: string) => void;
+  isMobile?: boolean;
+  isTapSelected?: boolean;
+  onTapSelect?: (id: string) => void;
 }
 
 export default function PlayerCard({
@@ -34,6 +37,9 @@ export default function PlayerCard({
   onCrop,
   onLabel,
   onToggleRemove,
+  isMobile = false,
+  isTapSelected = false,
+  onTapSelect,
 }: PlayerCardProps) {
   const [imgFailed, setImgFailed] = useState(false);
 
@@ -56,6 +62,7 @@ export default function PlayerCard({
     if (zoomMode && onZoom)          { e.stopPropagation(); onZoom(player.id);           return; }
     if (cropMode && onCrop)          { e.stopPropagation(); onCrop(player.id);           return; }
     if (labelMode && onLabel)        { e.stopPropagation(); onLabel(player.id);          return; }
+    if (isMobile && onTapSelect && !anyMode) { e.stopPropagation(); onTapSelect(player.id); return; }
   }
 
   const initials = player.name
@@ -82,13 +89,17 @@ export default function PlayerCard({
         relative select-none overflow-hidden shadow border-2
         ${dims.circle ? "rounded-full" : "rounded-lg"}
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
-        ${removeMode && isSelectedForRemoval
+        ${isTapSelected
+          ? "border-indigo-400 ring-2 ring-indigo-400 ring-offset-1 ring-offset-gray-950"
+          : removeMode && isSelectedForRemoval
           ? "border-red-500 ring-2 ring-red-500 ring-offset-1 ring-offset-gray-950"
           : removeMode
           ? "border-black hover:border-red-400"
           : "border-black"}
         ${anyMode
           ? "cursor-pointer active:cursor-pointer"
+          : isMobile
+          ? "cursor-pointer"
           : "cursor-grab active:cursor-grabbing"}
       `}
     >

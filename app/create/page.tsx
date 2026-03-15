@@ -10,6 +10,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/admin";
 import TierlistBoard from "@/components/TierlistBoard";
 
 export const metadata: Metadata = {
@@ -27,6 +28,8 @@ export default async function CreatePage() {
     redirect("/auth?next=/create");
   }
 
+  const userIsAdmin = await isAdmin(user.id);
+
   return (
     <main className="min-h-screen bg-gray-950 p-4 md:p-8">
       <header className="mb-6">
@@ -40,7 +43,7 @@ export default async function CreatePage() {
         </p>
       </header>
 
-      <TierlistBoard mode="create" />
+      <TierlistBoard mode="create" isAdmin={userIsAdmin} />
     </main>
   );
 }
