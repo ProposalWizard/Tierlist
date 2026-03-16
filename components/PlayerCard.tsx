@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { TierlistPlayer, ImageStyle } from "@/lib/types";
-import { IMAGE_STYLE_DIMS } from "@/lib/types";
+import { IMAGE_STYLE_DIMS, IMAGE_STYLE_DIMS_MOBILE } from "@/lib/types";
 
 interface PlayerCardProps {
   player: TierlistPlayer;
@@ -52,7 +52,7 @@ export default function PlayerCard({
     isDragging: isSortableDragging,
   } = useSortable({ id: player.id });
 
-  const dims = IMAGE_STYLE_DIMS[imageStyle];
+  const dims = isMobile ? IMAGE_STYLE_DIMS_MOBILE[imageStyle] : IMAGE_STYLE_DIMS[imageStyle];
   const isActive = isDragging || isSortableDragging;
   const anyMode = zoomMode || cropMode || labelMode || removeMode;
 
@@ -86,8 +86,8 @@ export default function PlayerCard({
       {...(anyMode ? {} : listeners)}
       onClick={handleClick}
       className={`
-        relative select-none overflow-hidden shadow border-2
-        ${dims.circle ? "rounded-full" : "rounded-lg"}
+        relative select-none overflow-hidden shadow border
+        ${dims.circle ? "rounded-full" : "rounded-md md:rounded-lg"}
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
         ${isTapSelected
           ? "border-indigo-400 ring-2 ring-indigo-400 ring-offset-1 ring-offset-gray-950"

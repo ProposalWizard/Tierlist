@@ -194,10 +194,12 @@ export default function VoteBoard({
           {tiers.map((tier) => (
             <div key={tier.label} className="flex min-h-[64px] border-b border-gray-800/60 last:border-b-0">
               <div
-                className="flex w-10 flex-shrink-0 items-center justify-center text-base font-black text-gray-900 select-none md:w-14 md:text-xl"
+                className="flex w-[72px] flex-shrink-0 items-center justify-center text-[11px] font-black text-gray-900 select-none leading-tight p-0.5 md:w-14 md:text-xl md:p-0"
                 style={{ backgroundColor: tier.color }}
               >
-                {tier.label}
+                <span className="break-words text-center overflow-hidden" style={{ display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical" as const }}>
+                  {tier.label}
+                </span>
               </div>
               <div className="flex flex-wrap items-start gap-1 p-1.5 bg-gray-900/60">
                 {imagesByTier[tier.label].map((img) => (
@@ -211,7 +213,7 @@ export default function VoteBoard({
                         : "hover:ring-2 hover:ring-gray-400 opacity-90 hover:opacity-100"
                     }`}
                   >
-                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-12 w-12 object-cover md:h-16 md:w-16" />
+                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-14 w-14 object-cover md:h-[68px] md:w-[68px]" />
                   </button>
                 ))}
               </div>
@@ -236,7 +238,7 @@ export default function VoteBoard({
                         : "hover:ring-2 hover:ring-gray-400 opacity-90 hover:opacity-100"
                     }`}
                   >
-                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-12 w-12 object-cover md:h-16 md:w-16" />
+                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-14 w-14 object-cover md:h-[68px] md:w-[68px]" />
                   </button>
                 ))}
               </div>
