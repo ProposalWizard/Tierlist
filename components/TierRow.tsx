@@ -33,7 +33,6 @@ interface TierRowProps {
   isMobile?: boolean;
   tapSelectedId?: string | null;
   onTapSelect?: (id: string) => void;
-  onTapPlace?: () => void;
 }
 
 export default function TierRow({
@@ -62,7 +61,6 @@ export default function TierRow({
   isMobile = false,
   tapSelectedId = null,
   onTapSelect,
-  onTapPlace,
 }: TierRowProps) {
   const { setNodeRef, isOver } = useDroppable({ id: rowId });
   const [localLabel, setLocalLabel] = useState(label);
@@ -91,36 +89,40 @@ export default function TierRow({
   return (
     <div
       ref={setNodeRef}
-      onClick={() => {
-        if (isMobile && tapSelectedId && onTapPlace) onTapPlace();
-      }}
-      className={`flex min-h-[80px] md:min-h-[112px] rounded-xl border transition-colors ${
-        isMobile && tapSelectedId
-          ? "border-indigo-400 bg-gray-800/60 cursor-pointer"
-          : isOver ? "border-indigo-400 bg-gray-800" : "border-gray-700 bg-gray-900"
+      className={`flex min-h-[48px] md:min-h-[112px] rounded-none md:rounded-xl border transition-colors ${
+        isOver ? "border-indigo-400 bg-gray-800" : "border-gray-700 bg-gray-900"
       }`}
     >
       {/* ── Tier label ─────────────────────────────────────────────── */}
       <div
-        className="flex w-14 flex-shrink-0 items-center justify-center rounded-l-xl md:w-44"
+        className="flex w-[72px] flex-shrink-0 items-center justify-center rounded-none md:rounded-l-xl md:w-44 p-0.5 md:p-0"
         style={{ backgroundColor: color }}
       >
-        <input
-          value={localLabel}
-          onChange={(e) => setLocalLabel(e.target.value)}
-          onBlur={commitLabel}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-            if (e.key === "Escape") { setLocalLabel(label); e.currentTarget.blur(); }
-          }}
-          maxLength={14}
-          title="Click to rename this tier"
-          className="w-full cursor-text bg-transparent px-1 text-center text-sm font-black text-white outline-none [text-shadow:0_1px_3px_rgba(0,0,0,0.6)] md:px-2 md:text-xl"
-        />
+        {isMobile ? (
+          <span
+            className="w-full text-center text-[11px] font-black leading-tight text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6)] break-words overflow-hidden"
+            style={{ display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical" as const }}
+          >
+            {localLabel}
+          </span>
+        ) : (
+          <input
+            value={localLabel}
+            onChange={(e) => setLocalLabel(e.target.value)}
+            onBlur={commitLabel}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") { setLocalLabel(label); e.currentTarget.blur(); }
+            }}
+            maxLength={14}
+            title="Click to rename this tier"
+            className="w-full cursor-text bg-transparent px-2 text-center text-xl font-black text-white outline-none [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]"
+          />
+        )}
       </div>
 
       {/* ── Player area ────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-wrap content-start gap-2 p-2">
+      <div className="flex flex-1 flex-wrap content-start gap-[3px] p-[3px] md:gap-2 md:p-2">
         <SortableContext
           items={players.map((p) => p.id)}
           strategy={rectSortingStrategy}
@@ -146,17 +148,15 @@ export default function TierRow({
             />
           ))}
         </SortableContext>
-        {players.length === 0 && (
-          <span className={`flex items-center text-xs italic ${
-            isMobile && tapSelectedId ? "text-indigo-400 font-semibold" : "text-gray-600"
-          }`}>
-            {isMobile && tapSelectedId ? "Tap here to place" : isMobile ? "Tap an image, then tap here" : "Drop images here"}
+        {players.length === 0 && !isMobile && (
+          <span className="flex items-center text-xs text-gray-600 italic">
+            Drop images here
           </span>
         )}
       </div>
 
-      {/* ── Settings button + dropdown ──────────────────────────────── */}
-      <div className="relative flex flex-shrink-0 items-start p-1.5" ref={settingsRef}>
+      {/* ── Settings button + dropdown (desktop only) ──────────────── */}
+      <div className={`relative flex-shrink-0 items-start p-1.5 ${isMobile ? "hidden" : "flex"}`} ref={settingsRef}>
         <button
           onClick={() => setShowSettings((v) => !v)}
           className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-colors ${

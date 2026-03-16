@@ -77,7 +77,6 @@ function UnrankedPool({
   isMobile = false,
   tapSelectedId = null,
   onTapSelect,
-  onTapPlace,
 }: {
   players: TierlistPlayer[];
   activePlayerId: string | null;
@@ -96,7 +95,6 @@ function UnrankedPool({
   isMobile?: boolean;
   tapSelectedId?: string | null;
   onTapSelect?: (id: string) => void;
-  onTapPlace?: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: "unranked" });
   const inputId = useId();
@@ -137,7 +135,7 @@ function UnrankedPool({
         </label>
       </div>
 
-      <div className="flex min-h-[88px] flex-wrap gap-2">
+      <div className="flex min-h-[60px] md:min-h-[88px] flex-wrap gap-[3px] md:gap-2">
         <SortableContext
           items={players.map((p) => p.id)}
           strategy={rectSortingStrategy}
@@ -280,21 +278,23 @@ export default function TierlistBoard({
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  function handleTapPlace(tierId: string) {
+  /** Move the tap-selected image to the given tier (mobile bottom bar) */
+  function handleMobilePlace(tierId: string) {
     if (!tapSelectedId) return;
     const fromContainer = Object.keys(tierMap).find((key) =>
       tierMap[key]?.includes(tapSelectedId)
     );
-    if (!fromContainer || fromContainer === tierId) {
-      setTapSelectedId(null);
-      return;
-    }
+    if (!fromContainer) { setTapSelectedId(null); return; }
+    if (fromContainer === tierId) { setTapSelectedId(null); return; }
     setTierMap((prev) => ({
       ...prev,
       [fromContainer]: prev[fromContainer].filter((id) => id !== tapSelectedId),
       [tierId]: [...(prev[tierId] ?? []), tapSelectedId],
     }));
-    setTapSelectedId(null);
+
+    // Auto-advance: select the next unranked image
+    const unrankedIds = tierMap.unranked.filter((id) => id !== tapSelectedId);
+    setTapSelectedId(unrankedIds.length > 0 ? unrankedIds[0] : null);
   }
 
   const tiersRef = useRef<HTMLDivElement>(null);
@@ -679,24 +679,8 @@ export default function TierlistBoard({
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
         >
-          {/* Mobile tap-to-place instruction */}
-          {isMobile && tapSelectedId && playerMap[tapSelectedId] && (
-            <div className="flex items-center gap-2 rounded-lg border border-indigo-500/50 bg-indigo-950/40 px-3 py-2 text-xs text-indigo-300 md:hidden">
-              <span className="font-semibold">
-                &ldquo;{playerMap[tapSelectedId].name}&rdquo; selected
-              </span>
-              <span className="text-indigo-400">— tap a tier row to place it</span>
-              <button
-                onClick={() => setTapSelectedId(null)}
-                className="ml-auto text-indigo-400 hover:text-white"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-
           {/* Tier rows — wrapped for screenshot */}
-          <div ref={tiersRef} className="space-y-2 rounded-xl bg-gray-950 p-2">
+          <div ref={tiersRef} className="space-y-0 md:space-y-2 rounded-none md:rounded-xl bg-gray-950 p-0 md:p-2">
             {tiers.map((tier) => (
               <TierRow
                 key={tier.id}
@@ -729,7 +713,6 @@ export default function TierlistBoard({
                 isMobile={isMobile}
                 tapSelectedId={tapSelectedId}
                 onTapSelect={(id) => setTapSelectedId(id === tapSelectedId ? null : id)}
-                onTapPlace={() => handleTapPlace(tier.id)}
               />
             ))}
           </div>
@@ -756,7 +739,6 @@ export default function TierlistBoard({
             isMobile={isMobile}
             tapSelectedId={tapSelectedId}
             onTapSelect={(id) => setTapSelectedId(id === tapSelectedId ? null : id)}
-            onTapPlace={() => handleTapPlace("unranked")}
           />
 
           <DragOverlay>
@@ -770,6 +752,50 @@ export default function TierlistBoard({
             ) : null}
           </DragOverlay>
         </DndContext>
+
+        {/* ── Mobile bottom placement bar ── */}
+        {isMobile && tapSelectedId && playerMap[tapSelectedId] && (
+          <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-gray-950/95 px-3 py-2.5 backdrop-blur md:hidden">
+            {/* Image info + close */}
+            <div className="flex items-center gap-2 mb-2">
+              <div
+                className="h-10 w-10 flex-shrink-0 rounded-lg border border-gray-700 bg-gray-800"
+                style={{
+                  backgroundImage: `url("${playerMap[tapSelectedId].image_url}")`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-white">
+                  {playerMap[tapSelectedId].name}
+                </p>
+              </div>
+              <button
+                onClick={() => setTapSelectedId(null)}
+                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            {/* Tier buttons grid */}
+            <div className="grid grid-cols-4 gap-1.5">
+              {tiers.map((tier) => (
+                <button
+                  key={tier.id}
+                  onClick={() => handleMobilePlace(tier.id)}
+                  className="h-9 rounded-lg text-xs font-black text-gray-900 transition-all truncate px-1 active:scale-95"
+                  style={{ backgroundColor: tier.color }}
+                >
+                  {tier.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Spacer for mobile bottom bar */}
+        {isMobile && tapSelectedId && <div className="h-28 md:hidden" />}
 
         {/* Error / info banner */}
         {boardError && (

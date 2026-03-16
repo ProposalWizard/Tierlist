@@ -103,6 +103,18 @@ export const IMAGE_STYLE_DIMS: Record<
   nocrop:    { width: 160, height: 108, circle: false, contain: true  },
 };
 
+/** Mobile-specific smaller image dimensions for tier rows */
+export const IMAGE_STYLE_DIMS_MOBILE: Record<
+  ImageStyle,
+  { width: number; height: number; circle: boolean; contain: boolean }
+> = {
+  square:    { width: 60, height: 60, circle: false, contain: false },
+  landscape: { width: 88, height: 56, circle: false, contain: false },
+  portrait:  { width: 48, height: 66, circle: false, contain: false },
+  circle:    { width: 60, height: 60, circle: true,  contain: false },
+  nocrop:    { width: 88, height: 60, circle: false, contain: true  },
+};
+
 /** Palette of colours available in the tier-row settings panel */
 export const TIER_COLOR_OPTIONS: string[] = [
   "#f87171", // red-400
