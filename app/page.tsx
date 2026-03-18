@@ -30,10 +30,10 @@ export default async function HomePage() {
   const service = createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [tierlistsResult, likesResult, votelistsResult, allLikesResult, categorySettingsResult] = await Promise.all([
+  const [tierlistsResult, likesResult, votelistsResult, allLikesResult, categorySettingsResult, categoriesResult] = await Promise.all([
     service
       .from("tierlists")
-      .select("id, title, category, cover_image_url, view_count, created_at")
+      .select("id, title, category, additional_categories, cover_image_url, view_count, created_at")
       .order("created_at", { ascending: false }),
     user
       ? supabase.from("tierlist_likes").select("tierlist_id").eq("user_id", user.id)
@@ -45,6 +45,7 @@ export default async function HomePage() {
       .order("created_at", { ascending: false }),
     service.from("tierlist_likes").select("tierlist_id"),
     service.from("category_homepage_settings").select("category, sort_method, pinned_ids"),
+    service.from("categories").select("name, sort_order").order("sort_order", { ascending: true }),
   ]);
 
   const tierlists = tierlistsResult.data ?? [];
@@ -70,8 +71,7 @@ export default async function HomePage() {
 
   for (const tl of tierlists) {
     const cat = tl.category ?? "Other";
-    if (!categoryMap.has(cat)) categoryMap.set(cat, []);
-    categoryMap.get(cat)!.push({
+    const card: CategoryCard = {
       id: tl.id,
       title: tl.title,
       category: cat,
@@ -80,7 +80,18 @@ export default async function HomePage() {
       created_at: tl.created_at,
       like_count: likeCountMap.get(tl.id) ?? 0,
       is_vote: false,
-    });
+    };
+    if (!categoryMap.has(cat)) categoryMap.set(cat, []);
+    categoryMap.get(cat)!.push(card);
+
+    // Also add to additional categories
+    const extraCats = (tl as typeof tl & { additional_categories?: string[] }).additional_categories ?? [];
+    for (const extraCat of extraCats) {
+      if (extraCat && extraCat !== cat) {
+        if (!categoryMap.has(extraCat)) categoryMap.set(extraCat, []);
+        categoryMap.get(extraCat)!.push({ ...card, category: extraCat });
+      }
+    }
   }
 
   for (const vl of votelists) {
@@ -98,8 +109,14 @@ export default async function HomePage() {
     });
   }
 
+  // Build category sort order from DB categories
+  const dbCategories = (categoriesResult.data ?? []) as { name: string; sort_order: number }[];
+  const catSortOrder = new Map(dbCategories.map((c, i) => [c.name, c.sort_order ?? i]));
+
   // Apply category ordering settings and slice to MAX_PER_CATEGORY
-  const categories = Array.from(categoryMap.entries()).map(([cat, items]) => {
+  const categories = Array.from(categoryMap.entries())
+    .sort((a, b) => (catSortOrder.get(a[0]) ?? 999) - (catSortOrder.get(b[0]) ?? 999))
+    .map(([cat, items]) => {
     const setting = settingsMap.get(cat);
     let sorted = [...items];
 

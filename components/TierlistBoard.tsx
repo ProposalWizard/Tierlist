@@ -271,11 +271,12 @@ export default function TierlistBoard({
   const [tapSelectedId, setTapSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
-    const mql = window.matchMedia("(pointer: coarse)");
-    setIsMobile(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
+    function check() {
+      setIsMobile(window.innerWidth < 768);
+    }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   /** Move the tap-selected image to the given tier (mobile bottom bar) */
@@ -306,12 +307,11 @@ export default function TierlistBoard({
     containerIdsRef.current = new Set([...tiers.map((t) => t.id), "unranked"]);
   });
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-      ...(isMobile ? { enabled: false } : {}),
-    })
+  const desktopSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
+  const emptySensors = useSensors();
+  const sensors = isMobile ? emptySensors : desktopSensors;
 
   // ── Image upload ─────────────────────────────────────────────────────────
 
@@ -660,12 +660,20 @@ export default function TierlistBoard({
 
   const totalImages = Object.values(playerMap).length;
   const rankedCount = tiers.reduce((sum, t) => sum + (tierMap[t.id]?.length ?? 0), 0);
-  const allImagesForUpload = Object.values(playerMap).map((p) => ({
-    id: p.id,
-    name: p.name,
-    image_url: p.image_url ?? "",
-    file: fileMap[p.id],
-  }));
+  // Preserve visual order: tier rows first (top to bottom), then unranked
+  const orderedIds = [
+    ...tiers.flatMap((t) => tierMap[t.id] ?? []),
+    ...(tierMap.unranked ?? []),
+  ];
+  const allImagesForUpload = orderedIds
+    .map((id) => playerMap[id])
+    .filter(Boolean)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      image_url: p.image_url ?? "",
+      file: fileMap[p.id],
+    }));
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -741,12 +749,18 @@ export default function TierlistBoard({
             onTapSelect={(id) => setTapSelectedId(id === tapSelectedId ? null : id)}
           />
 
+          {/* Zoom hint */}
+          <p className="text-center text-xs text-gray-600 italic">
+            Use the Zoom Feature to see Full Size Images
+          </p>
+
           <DragOverlay>
             {activeId && playerMap[activeId] ? (
-              <div className="rotate-2 scale-105 opacity-95 shadow-2xl">
+              <div className="opacity-90 shadow-2xl">
                 <PlayerCard
                   player={playerMap[activeId]}
                   imageStyle={imageStyle}
+                  isMobile={isMobile}
                 />
               </div>
             ) : null}

@@ -37,6 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     category?: string;
     cover_image_url?: string | null;
     linked_vote_tierlist_id?: string | null;
+    additional_categories?: string[];
   };
   try {
     body = await request.json();
@@ -51,6 +52,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     update.cover_image_url = body.cover_image_url;
   if (body.linked_vote_tierlist_id !== undefined)
     update.linked_vote_tierlist_id = body.linked_vote_tierlist_id;
+  if (body.additional_categories !== undefined)
+    update.additional_categories = body.additional_categories;
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

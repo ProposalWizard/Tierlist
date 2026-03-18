@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useId, useEffect } from "react";
+import { useState, useId, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
+import CropOverlay from "./CropOverlay";
 
 interface ImageEntry {
   id: string;
@@ -40,12 +41,27 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
   const [customCover, setCustomCover] = useState<{ file: File; preview: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCrop, setShowCrop] = useState(false);
 
   const router = useRouter();
   const coverInputId = useId();
 
   const coverPreviewUrl: string | null =
     customCover?.preview ?? images[coverIdx]?.image_url ?? null;
+
+  const handleCoverCrop = useCallback((croppedDataUrl: string) => {
+    // Convert data URL to File for upload
+    fetch(croppedDataUrl)
+      .then((r) => r.blob())
+      .then((blob) => {
+        const file = new File([blob], "cover-cropped.png", { type: "image/png" });
+        setCustomCover((prev) => {
+          if (prev) URL.revokeObjectURL(prev.preview);
+          return { file, preview: croppedDataUrl };
+        });
+        setShowCrop(false);
+      });
+  }, []);
 
   function handleCustomCoverFile(file: File) {
     if (!isAllowedImageType(file)) {
@@ -249,8 +265,17 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
               </div>
             )}
 
-            {/* Upload custom cover */}
-            <div className="flex items-center gap-3">
+            {/* Upload custom cover + crop */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {coverPreviewUrl && (
+                <button
+                  type="button"
+                  onClick={() => setShowCrop(true)}
+                  className="rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white"
+                >
+                  Crop Cover
+                </button>
+              )}
               <label
                 htmlFor={coverInputId}
                 className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white"
@@ -306,6 +331,16 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Cover crop overlay */}
+      {showCrop && coverPreviewUrl && (
+        <CropOverlay
+          imageUrl={coverPreviewUrl}
+          imageName="Cover Photo"
+          onCrop={handleCoverCrop}
+          onCancel={() => setShowCrop(false)}
+        />
+      )}
     </div>
   );
 }

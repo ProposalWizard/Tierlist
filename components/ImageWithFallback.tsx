@@ -42,6 +42,8 @@ export default function ImageWithFallback({
       alt={alt}
       className={className}
       style={style}
+      loading="lazy"
+      decoding="async"
       onError={() => setFailed(true)}
     />
   );

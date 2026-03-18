@@ -65,3 +65,52 @@ export async function DELETE(_request: Request, { params }: { params: Params }) 
 
   return NextResponse.json({ ok: true });
 }
+
+// ─── PATCH ────────────────────────────────────────────────────────────────────
+
+export async function PATCH(request: Request, { params }: { params: Params }) {
+  const { id, imageId } = await params;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await isAdmin(user.id))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let body: { sort_order?: number; name?: string; image_url?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const update: Record<string, unknown> = {};
+  if (body.sort_order !== undefined) update.sort_order = body.sort_order;
+  if (body.name !== undefined) update.name = body.name;
+  if (body.image_url !== undefined) update.image_url = body.image_url;
+
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+  }
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("tierlist_images")
+    .update(update)
+    .eq("id", imageId)
+    .eq("tierlist_id", id);
+
+  if (error) {
+    console.error("[PATCH /api/admin/tierlists/images]", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

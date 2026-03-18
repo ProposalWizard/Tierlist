@@ -21,7 +21,7 @@ export default async function FindPage({
   const [tierlistsRes, votelistsRes, likesCountRes, myLikesRes, profilesRes] = await Promise.all([
     service
       .from("tierlists")
-      .select("id, title, category, cover_image_url, view_count, created_at, created_by")
+      .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, created_by")
       .order("created_at", { ascending: false }),
     service
       .from("vote_tierlists")
@@ -60,6 +60,7 @@ export default async function FindPage({
     id: tl.id,
     title: tl.title,
     category: tl.category,
+    additional_categories: (tl as typeof tl & { additional_categories?: string[] }).additional_categories ?? [],
     cover_image_url: tl.cover_image_url,
     view_count: tl.view_count ?? 0,
     like_count: likeCountMap.get(tl.id) ?? 0,
@@ -87,6 +88,11 @@ export default async function FindPage({
   const categorySet = new Set<string>();
   for (const item of allItems) {
     if (item.category) categorySet.add(item.category);
+    if (!item.is_live) {
+      for (const extra of (item as typeof item & { additional_categories?: string[] }).additional_categories ?? []) {
+        if (extra) categorySet.add(extra);
+      }
+    }
   }
   const categories = Array.from(categorySet).sort();
 
