@@ -4,10 +4,17 @@
  * Sets global font, meta tags, and imports Tailwind CSS.
  */
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import GlobalNav from "@/components/GlobalNav";
 import SiteFooter from "@/components/SiteFooter";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: {

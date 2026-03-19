@@ -86,7 +86,7 @@ export default function PlayerCard({
       {...(anyMode ? {} : listeners)}
       onClick={handleClick}
       className={`
-        relative select-none overflow-hidden shadow border
+        relative select-none overflow-hidden shadow ${isMobile ? "border" : "border-2"}
         ${dims.circle ? "rounded-full" : "rounded-md md:rounded-lg"}
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
         ${isTapSelected

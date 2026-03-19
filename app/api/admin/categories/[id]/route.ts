@@ -13,11 +13,23 @@ export async function PATCH(req: Request, { params }: Props) {
   if (!user || !(await isAdmin(user.id)))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { name } = await req.json();
-  if (!name?.trim())
-    return NextResponse.json({ error: "Name required" }, { status: 400 });
+  const body = await req.json();
+  const { name, sort_order } = body as { name?: string; sort_order?: number };
+
+  if (!name?.trim() && sort_order === undefined)
+    return NextResponse.json({ error: "Name or sort_order required" }, { status: 400 });
 
   const service = createServiceClient();
+
+  // Handle sort_order update (no rename needed)
+  if (sort_order !== undefined && !name?.trim()) {
+    const { error } = await service
+      .from("categories")
+      .update({ sort_order })
+      .eq("id", id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
 
   // Get old name so we can update tierlists too
   const { data: old } = await service
@@ -28,10 +40,14 @@ export async function PATCH(req: Request, { params }: Props) {
 
   if (!old) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Build update object
+  const update: Record<string, unknown> = { name: name!.trim() };
+  if (sort_order !== undefined) update.sort_order = sort_order;
+
   // Rename the category
   const { error } = await service
     .from("categories")
-    .update({ name: name.trim() })
+    .update(update)
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -39,7 +55,7 @@ export async function PATCH(req: Request, { params }: Props) {
   // Update all tierlists that used the old category name
   await service
     .from("tierlists")
-    .update({ category: name.trim() })
+    .update({ category: name!.trim() })
     .eq("category", old.name);
 
   return NextResponse.json({ ok: true });

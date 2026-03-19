@@ -116,7 +116,7 @@ export default function TierRow({
             }}
             maxLength={14}
             title="Click to rename this tier"
-            className="w-full cursor-text bg-transparent px-2 text-center text-xl font-black text-white outline-none [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]"
+            className="w-full cursor-text bg-transparent px-2 text-center text-2xl font-black text-white outline-none [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]"
           />
         )}
       </div>

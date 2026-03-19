@@ -46,6 +46,8 @@ interface EditState {
   error: string | null;
   /** Linked vote tierlist ID (for cross-navigation) */
   linked_vote_tierlist_id: string | null;
+  /** Additional categories this tierlist should appear in */
+  additional_categories: string[];
 }
 
 export default function AdminPanel({
@@ -216,6 +218,41 @@ export default function AdminPanel({
     if (res.ok) setCategories((prev) => prev.filter((c) => c.id !== id));
   }
 
+  async function moveCategory(id: string, direction: "up" | "down") {
+    const idx = categories.findIndex((c) => c.id === id);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= categories.length) return;
+
+    const newCategories = [...categories];
+    const temp = newCategories[idx];
+    newCategories[idx] = newCategories[swapIdx];
+    newCategories[swapIdx] = temp;
+    setCategories(newCategories);
+
+    // Update sort_order for both swapped categories
+    const sortA = idx;
+    const sortB = swapIdx;
+    try {
+      await Promise.all([
+        fetch(`/api/admin/categories/${newCategories[idx].id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sort_order: idx }),
+        }),
+        fetch(`/api/admin/categories/${newCategories[swapIdx].id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sort_order: swapIdx }),
+        }),
+      ]);
+      showSaveConfirmation("Category order updated");
+    } catch {
+      // Revert on failure
+      setCategories(categories);
+    }
+  }
+
   // ── Open the edit form for a tierlist ──────────────────────────────────────
   async function openEdit(tl: Tierlist) {
     setEditingId(tl.id);
@@ -231,6 +268,7 @@ export default function AdminPanel({
       saving: false,
       error: null,
       linked_vote_tierlist_id: tl.linked_vote_tierlist_id ?? null,
+      additional_categories: (tl as Tierlist & { additional_categories?: string[] }).additional_categories ?? [],
     });
     // Ensure vote tierlists are loaded for the linked tierlist picker
     if (!votelistsLoaded) {
@@ -357,6 +395,7 @@ export default function AdminPanel({
           category: editState.category,
           cover_image_url,
           linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
+          additional_categories: editState.additional_categories,
         }),
       });
 
@@ -364,6 +403,14 @@ export default function AdminPanel({
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Failed to save");
       }
+
+      // Update image sort orders (batch)
+      const sortUpdates = editState.images.map((img, i) => ({ id: img.id, sort_order: i }));
+      await fetch(`/api/admin/tierlists/${tierlistId}/images/reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images: sortUpdates }),
+      });
 
       // Update the local list so the row shows the new values immediately
       setTierlists((prev) =>
@@ -375,6 +422,7 @@ export default function AdminPanel({
                 category: editState.category,
                 cover_image_url: cover_image_url ?? tl.cover_image_url,
                 linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
+                additional_categories: editState.additional_categories,
               }
             : tl
         )
@@ -723,6 +771,22 @@ export default function AdminPanel({
               ) : (
                 <>
                   <span className="flex-1 text-sm text-white">{cat.name}</span>
+                  <button
+                    onClick={() => moveCategory(cat.id, "up")}
+                    disabled={categories.indexOf(cat) === 0}
+                    className="rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-gray-300 hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => moveCategory(cat.id, "down")}
+                    disabled={categories.indexOf(cat) === categories.length - 1}
+                    className="rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-gray-300 hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
                   <button onClick={() => { setEditingCatId(cat.id); setCatEditName(cat.name); }}
                     className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-indigo-500 hover:text-white">
                     Rename
@@ -915,7 +979,12 @@ export default function AdminPanel({
 
               {/* Title + meta */}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">{tl.title}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate text-sm font-semibold text-white">{tl.title}</p>
+                  {((tl as Tierlist & { additional_categories?: string[] }).additional_categories?.length ?? 0) > 0 && (
+                    <span className="flex-shrink-0 text-yellow-400 text-sm" title={`Also in: ${(tl as Tierlist & { additional_categories?: string[] }).additional_categories!.join(", ")}`}>★</span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">
                   {tl.category ?? "—"} ·{" "}
                   {new Date(tl.created_at).toLocaleDateString()} ·{" "}
@@ -994,6 +1063,58 @@ export default function AdminPanel({
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                    {/* Additional Categories */}
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-gray-400">
+                        Additional Categories
+                      </label>
+                      <p className="mb-2 text-[10px] text-gray-500">
+                        Select extra categories this tierlist should also appear in (besides the primary one above).
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {categories
+                          .filter((c) => c.name !== editState.category)
+                          .map((c) => {
+                            const checked = editState.additional_categories.includes(c.name);
+                            return (
+                              <label
+                                key={c.id}
+                                className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                  checked
+                                    ? "border-indigo-500 bg-indigo-900/40 text-indigo-300"
+                                    : "border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-300"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() =>
+                                    setEditState((p) => {
+                                      if (!p) return p;
+                                      const next = checked
+                                        ? p.additional_categories.filter((n) => n !== c.name)
+                                        : [...p.additional_categories, c.name];
+                                      return { ...p, additional_categories: next };
+                                    })
+                                  }
+                                  className="sr-only"
+                                />
+                                <span
+                                  className={`flex h-3.5 w-3.5 items-center justify-center rounded border text-[9px] ${
+                                    checked
+                                      ? "border-indigo-500 bg-indigo-600 text-white"
+                                      : "border-gray-600"
+                                  }`}
+                                >
+                                  {checked && "✓"}
+                                </span>
+                                {c.name}
+                              </label>
+                            );
+                          })}
+                      </div>
                     </div>
 
                     {/* Cover Photo */}
@@ -1133,7 +1254,46 @@ export default function AdminPanel({
                                   >
                                     ×
                                   </button>
-                                  <p className="mt-0.5 max-w-[80px] truncate text-center text-[10px] text-gray-500">
+                                  {/* Reorder arrows */}
+                                  <div className="flex justify-center gap-0.5 mt-0.5">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditState((prev) => {
+                                          if (!prev) return prev;
+                                          const idx = prev.images.findIndex((i) => i.id === img.id);
+                                          if (idx <= 0) return prev;
+                                          const newImages = [...prev.images];
+                                          [newImages[idx - 1], newImages[idx]] = [newImages[idx], newImages[idx - 1]];
+                                          return { ...prev, images: newImages };
+                                        });
+                                      }}
+                                      disabled={editState.images.indexOf(img) === 0}
+                                      className="rounded px-1 text-[10px] text-gray-400 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                                      title="Move left"
+                                    >
+                                      ←
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditState((prev) => {
+                                          if (!prev) return prev;
+                                          const idx = prev.images.findIndex((i) => i.id === img.id);
+                                          if (idx < 0 || idx >= prev.images.length - 1) return prev;
+                                          const newImages = [...prev.images];
+                                          [newImages[idx], newImages[idx + 1]] = [newImages[idx + 1], newImages[idx]];
+                                          return { ...prev, images: newImages };
+                                        });
+                                      }}
+                                      disabled={editState.images.indexOf(img) === editState.images.length - 1}
+                                      className="rounded px-1 text-[10px] text-gray-400 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                                      title="Move right"
+                                    >
+                                      →
+                                    </button>
+                                  </div>
+                                  <p className="max-w-[80px] truncate text-center text-[10px] text-gray-500">
                                     {img.name}
                                   </p>
                                 </div>
@@ -1437,6 +1597,47 @@ export default function AdminPanel({
                           </button>
                         )}
                       </div>
+                      {/* Pick cover from existing images */}
+                      {voteImagesMap[vl.id] && voteImagesMap[vl.id].length > 0 && (
+                        <div className="mt-2">
+                          <p className="mb-1.5 text-[10px] text-gray-500">Or pick from existing images:</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {voteImagesMap[vl.id].map((img) => (
+                              <button
+                                key={img.id}
+                                onClick={async () => {
+                                  const res = await fetch(`/api/admin/vote-tierlists/${vl.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ cover_image_url: img.image_url }),
+                                  });
+                                  if (res.ok) {
+                                    setVotelists((prev) => prev.map((v) => v.id === vl.id ? { ...v, cover_image_url: img.image_url } : v));
+                                    showSaveConfirmation("Cover photo updated");
+                                  }
+                                }}
+                                className={`relative rounded-lg border-2 transition-colors ${
+                                  vl.cover_image_url === img.image_url
+                                    ? "border-purple-400"
+                                    : "border-gray-700 hover:border-gray-500"
+                                }`}
+                                title={`Set "${img.name}" as cover`}
+                              >
+                                <ImageWithFallback
+                                  src={img.image_url}
+                                  alt={img.name}
+                                  className="h-12 w-12 rounded-md object-cover"
+                                />
+                                {vl.cover_image_url === img.image_url && (
+                                  <span className="absolute left-0.5 top-0.5 rounded-full bg-purple-500 px-1 py-0.5 text-[8px] font-bold leading-none text-white">
+                                    Cover
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Category */}

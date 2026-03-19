@@ -13,6 +13,7 @@ export interface FindTierlist {
   id: string;
   title: string;
   category: string | null;
+  additional_categories?: string[];
   cover_image_url: string | null;
   view_count: number;
   like_count: number;
@@ -50,7 +51,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
     const q = query.trim().toLowerCase();
     return items.filter((item) => {
       const matchesQuery = !q || item.title.toLowerCase().includes(q);
-      const matchesCategory = !selectedCategory || item.category === selectedCategory;
+      const matchesCategory = !selectedCategory || item.category === selectedCategory || (!item.is_live && (item as FindTierlist).additional_categories?.includes(selectedCategory));
       return matchesQuery && matchesCategory;
     });
   }, [items, query, selectedCategory]);
