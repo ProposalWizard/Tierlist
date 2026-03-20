@@ -33,21 +33,10 @@ import LabelOverlay from "./LabelOverlay";
 import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
 import {
   DEFAULT_TIER_ROWS,
-  IMAGE_STYLE_DIMS,
   type TierRowData,
   type TierlistPlayer,
   type ImageStyle,
 } from "@/lib/types";
-
-// ── Style selector config ──────────────────────────────────────────────────
-
-const STYLE_OPTIONS: { key: ImageStyle; label: string }[] = [
-  { key: "square",    label: "Square"    },
-  { key: "landscape", label: "Landscape" },
-  { key: "portrait",  label: "Portrait"  },
-  { key: "circle",    label: "Circle"    },
-  { key: "nocrop",    label: "No Crop"   },
-];
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -250,7 +239,7 @@ export default function TierlistBoard({
 
   // ── UI state ─────────────────────────────────────────────────────────────
   const [activeId, setActiveId]         = useState<string | null>(null);
-  const [imageStyle, setImageStyle]     = useState<ImageStyle>("square");
+  const imageStyle: ImageStyle          = "square";
   const [zoomMode, setZoomMode]         = useState(false);
   const [cropMode, setCropMode]         = useState(false);
   const [labelMode, setLabelMode]       = useState(false);
@@ -436,26 +425,30 @@ export default function TierlistBoard({
 
   // ── Mode toggles ─────────────────────────────────────────────────────────
 
-  function clearOtherModes() {
-    setZoomMode(false); setCropMode(false); setLabelMode(false);
-    setRemoveMode(false); setSelectedForRemoval(new Set());
+  function setExclusiveMode(mode: "zoom" | "crop" | "label" | "remove" | null) {
+    setZoomMode(mode === "zoom");
+    setCropMode(mode === "crop");
+    setLabelMode(mode === "label");
+    setRemoveMode(mode === "remove");
+    if (mode !== "remove") setSelectedForRemoval(new Set());
   }
 
   function toggleZoom() {
-    setZoomMode((v) => { if (!v) clearOtherModes(); return !v; });
+    setExclusiveMode(zoomMode ? null : "zoom");
   }
   function toggleCrop() {
-    setCropMode((v) => { if (!v) clearOtherModes(); return !v; });
+    setExclusiveMode(cropMode ? null : "crop");
   }
   function toggleLabel() {
-    setLabelMode((v) => { if (!v) clearOtherModes(); return !v; });
+    setExclusiveMode(labelMode ? null : "label");
   }
   function toggleRemove() {
-    setRemoveMode((v) => {
-      if (!v) clearOtherModes();
-      else setSelectedForRemoval(new Set());
-      return !v;
-    });
+    if (removeMode) {
+      setSelectedForRemoval(new Set());
+      setExclusiveMode(null);
+    } else {
+      setExclusiveMode("remove");
+    }
   }
 
   function toggleRemoveSelection(id: string) {
@@ -858,31 +851,8 @@ export default function TierlistBoard({
         {/* ── Toolbar ───────────────────────────────────────────────── */}
         <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-
-            {/* Image style selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Style
-              </span>
-              <div className="flex gap-1">
-                {STYLE_OPTIONS.map(({ key, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => setImageStyle(key)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      imageStyle === key
-                        ? "bg-indigo-600 text-white"
-                        : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Image tools */}
-            <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={toggleZoom}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${

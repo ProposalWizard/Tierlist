@@ -43,6 +43,8 @@ export default function PlayerCard({
 }: PlayerCardProps) {
   const [imgFailed, setImgFailed] = useState(false);
 
+  const anyMode = zoomMode || cropMode || labelMode || removeMode;
+
   const {
     attributes,
     listeners,
@@ -50,11 +52,10 @@ export default function PlayerCard({
     transform,
     transition,
     isDragging: isSortableDragging,
-  } = useSortable({ id: player.id });
+  } = useSortable({ id: player.id, disabled: anyMode });
 
   const dims = isMobile ? IMAGE_STYLE_DIMS_MOBILE[imageStyle] : IMAGE_STYLE_DIMS[imageStyle];
   const isActive = isDragging || isSortableDragging;
-  const anyMode = zoomMode || cropMode || labelMode || removeMode;
 
   function handleClick(e: React.MouseEvent) {
     if (isSortableDragging) return;
@@ -83,7 +84,7 @@ export default function PlayerCard({
         flexShrink: 0,
       }}
       {...attributes}
-      {...(anyMode ? {} : listeners)}
+      {...listeners}
       onClick={handleClick}
       className={`
         relative select-none overflow-hidden shadow ${isMobile ? "border" : "border-2"}
