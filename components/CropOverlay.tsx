@@ -7,13 +7,16 @@ interface Props {
   imageName: string;
   onCrop: (croppedDataUrl: string) => void;
   onCancel: () => void;
+  /** Aspect ratio width:height. Default 1 (square). E.g. 3/2 for landscape. */
+  aspectRatio?: number;
 }
 
 /**
- * Square crop overlay — the user drags the image behind a fixed square window.
+ * Crop overlay — the user drags the image behind a fixed crop window.
  * Supports pinch/scroll zoom and touch drag.
+ * Supports configurable aspect ratio (default: square).
  */
-export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: Props) {
+export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel, aspectRatio = 1 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,8 +28,10 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
 
-  // Size of the square crop window
-  const CROP_SIZE = 280;
+  // Crop window dimensions based on aspect ratio
+  const CROP_BASE = 280;
+  const CROP_W = aspectRatio >= 1 ? CROP_BASE : Math.round(CROP_BASE * aspectRatio);
+  const CROP_H = aspectRatio >= 1 ? Math.round(CROP_BASE / aspectRatio) : CROP_BASE;
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -36,14 +41,21 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
     return () => window.removeEventListener("keydown", onKey);
   }, [onCancel]);
 
+  // Prevent background scroll when overlay is open
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = original; };
+  }, []);
+
   // Load the image to get natural dimensions
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
-      // Set initial zoom so image covers the crop square
-      const minScale = CROP_SIZE / Math.min(img.naturalWidth, img.naturalHeight);
+      // Set initial zoom so image covers the crop window
+      const minScale = Math.max(CROP_W / img.naturalWidth, CROP_H / img.naturalHeight);
       setZoom(Math.max(minScale, 1));
       setOffset({ x: 0, y: 0 });
     };
@@ -52,7 +64,7 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
       const img2 = new Image();
       img2.onload = () => {
         setNaturalSize({ w: img2.naturalWidth, h: img2.naturalHeight });
-        const minScale = CROP_SIZE / Math.min(img2.naturalWidth, img2.naturalHeight);
+        const minScale = Math.max(CROP_W / img2.naturalWidth, CROP_H / img2.naturalHeight);
         setZoom(Math.max(minScale, 1));
         setOffset({ x: 0, y: 0 });
       };
@@ -60,25 +72,23 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
       img2.src = imageUrl;
     };
     img.src = imageUrl;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageUrl]);
 
-  // Clamp offset so image always covers the crop square
+  // Clamp offset so image always covers the crop window
   const clampOffset = useCallback(
     (ox: number, oy: number, z: number) => {
       if (!naturalSize) return { x: ox, y: oy };
       const imgW = naturalSize.w * z;
       const imgH = naturalSize.h * z;
-      // Image center is at (CROP_SIZE/2 + ox, CROP_SIZE/2 + oy)
-      // Image left edge = CROP_SIZE/2 + ox - imgW/2 must be <= 0
-      // Image right edge = CROP_SIZE/2 + ox + imgW/2 must be >= CROP_SIZE
-      const maxX = Math.max(0, (imgW - CROP_SIZE) / 2);
-      const maxY = Math.max(0, (imgH - CROP_SIZE) / 2);
+      const maxX = Math.max(0, (imgW - CROP_W) / 2);
+      const maxY = Math.max(0, (imgH - CROP_H) / 2);
       return {
         x: Math.min(maxX, Math.max(-maxX, ox)),
         y: Math.min(maxY, Math.max(-maxY, oy)),
       };
     },
-    [naturalSize]
+    [naturalSize, CROP_W, CROP_H]
   );
 
   // Mouse/touch drag handlers
@@ -100,42 +110,47 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
     setDragging(false);
   }
 
-  // Scroll to zoom
-  function onWheel(e: React.WheelEvent) {
-    e.preventDefault();
-    if (!naturalSize) return;
-    const minScale = CROP_SIZE / Math.min(naturalSize.w, naturalSize.h);
-    const newZoom = Math.max(minScale, Math.min(zoom - e.deltaY * 0.002, 5));
-    setZoom(newZoom);
-    setOffset((prev) => clampOffset(prev.x, prev.y, newZoom));
-  }
+  // Scroll to zoom — uses native event listener with passive:false to properly prevent scroll
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !naturalSize) return;
+    function handleWheel(e: WheelEvent) {
+      e.preventDefault();
+      if (!naturalSize) return;
+      const minScale = Math.max(CROP_W / naturalSize.w, CROP_H / naturalSize.h);
+      setZoom((prevZoom) => {
+        const newZoom = Math.max(minScale, Math.min(prevZoom - e.deltaY * 0.002, 5));
+        setOffset((prev) => clampOffset(prev.x, prev.y, newZoom));
+        return newZoom;
+      });
+    }
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [naturalSize, CROP_W, CROP_H, clampOffset]);
 
   function applyCrop() {
     if (!naturalSize) return;
     setApplying(true);
 
     const canvas = document.createElement("canvas");
-    canvas.width = CROP_SIZE;
-    canvas.height = CROP_SIZE;
+    canvas.width = CROP_W;
+    canvas.height = CROP_H;
     const ctx = canvas.getContext("2d")!;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      // Calculate source rect in natural image coords
       const imgW = naturalSize.w * zoom;
       const imgH = naturalSize.h * zoom;
-      const imgLeft = CROP_SIZE / 2 + offset.x - imgW / 2;
-      const imgTop = CROP_SIZE / 2 + offset.y - imgH / 2;
+      const imgLeft = CROP_W / 2 + offset.x - imgW / 2;
+      const imgTop = CROP_H / 2 + offset.y - imgH / 2;
 
-      // The crop window is (0,0)→(CROP_SIZE,CROP_SIZE) in display coords
-      // Source in natural: sx = (0 - imgLeft) / zoom, etc.
       const sx = (0 - imgLeft) / zoom;
       const sy = (0 - imgTop) / zoom;
-      const sw = CROP_SIZE / zoom;
-      const sh = CROP_SIZE / zoom;
+      const sw = CROP_W / zoom;
+      const sh = CROP_H / zoom;
 
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_SIZE, CROP_SIZE);
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_W, CROP_H);
       try {
         onCrop(canvas.toDataURL("image/png"));
       } catch {
@@ -149,13 +164,13 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
       img2.onload = () => {
         const imgW = naturalSize.w * zoom;
         const imgH = naturalSize.h * zoom;
-        const imgLeft = CROP_SIZE / 2 + offset.x - imgW / 2;
-        const imgTop = CROP_SIZE / 2 + offset.y - imgH / 2;
+        const imgLeft = CROP_W / 2 + offset.x - imgW / 2;
+        const imgTop = CROP_H / 2 + offset.y - imgH / 2;
         const sx = (0 - imgLeft) / zoom;
         const sy = (0 - imgTop) / zoom;
-        const sw = CROP_SIZE / zoom;
-        const sh = CROP_SIZE / zoom;
-        ctx.drawImage(img2, sx, sy, sw, sh, 0, 0, CROP_SIZE, CROP_SIZE);
+        const sw = CROP_W / zoom;
+        const sh = CROP_H / zoom;
+        ctx.drawImage(img2, sx, sy, sw, sh, 0, 0, CROP_W, CROP_H);
         try {
           onCrop(canvas.toDataURL("image/png"));
         } catch {
@@ -192,14 +207,14 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
         <p className="mb-3 max-w-md text-center text-sm text-red-400">{error}</p>
       )}
 
-      {/* Crop area — fixed square with movable image behind */}
+      {/* Crop area — fixed window with movable image behind */}
       {naturalSize && (
         <div
           ref={containerRef}
           className="relative overflow-hidden rounded-xl border-2 border-white/30"
           style={{
-            width: CROP_SIZE,
-            height: CROP_SIZE,
+            width: CROP_W,
+            height: CROP_H,
             cursor: dragging ? "grabbing" : "grab",
             touchAction: "none",
           }}
@@ -207,7 +222,6 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          onWheel={onWheel}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -219,8 +233,8 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
               position: "absolute",
               width: naturalSize.w * zoom,
               height: naturalSize.h * zoom,
-              left: CROP_SIZE / 2 + offset.x - (naturalSize.w * zoom) / 2,
-              top: CROP_SIZE / 2 + offset.y - (naturalSize.h * zoom) / 2,
+              left: CROP_W / 2 + offset.x - (naturalSize.w * zoom) / 2,
+              top: CROP_H / 2 + offset.y - (naturalSize.h * zoom) / 2,
               maxWidth: "none",
             }}
           />
@@ -249,7 +263,7 @@ export default function CropOverlay({ imageUrl, imageName, onCrop, onCancel }: P
           <span className="text-xs text-gray-500">Zoom</span>
           <input
             type="range"
-            min={CROP_SIZE / Math.min(naturalSize.w, naturalSize.h)}
+            min={Math.max(CROP_W / naturalSize.w, CROP_H / naturalSize.h)}
             max={5}
             step={0.01}
             value={zoom}
