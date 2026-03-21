@@ -122,6 +122,7 @@ export const TIER_COLOR_OPTIONS: string[] = [
   "#fbbf24", // amber-400
   "#fde047", // yellow-300
   "#a3e635", // lime-400
+  "#86efac", // green-300
   "#4ade80", // green-400
   "#34d399", // emerald-400
   "#22d3ee", // cyan-400

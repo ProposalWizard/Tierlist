@@ -42,7 +42,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen flex flex-col`}>
+      <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen flex flex-col overflow-x-hidden`}>
         <GlobalNav />
         <div className="flex-1">{children}</div>
         <SiteFooter />
