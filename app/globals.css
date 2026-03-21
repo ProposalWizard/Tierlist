@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent horizontal overflow on mobile */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 /* Smooth drag-ghost opacity so the original card fades while dragging */
 [data-dnd-dragging="true"] {
   opacity: 0.4;

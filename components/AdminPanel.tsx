@@ -123,7 +123,7 @@ export default function AdminPanel({
   // Custom tiers for creating new vote tierlists
   const DEFAULT_VOTE_TIERS: VoteTier[] = [
     { label: "S", color: "#4ade80" },
-    { label: "A", color: "#a3e635" },
+    { label: "A", color: "#86efac" },
     { label: "B", color: "#fde047" },
     { label: "C", color: "#fb923c" },
     { label: "D", color: "#f87171" },

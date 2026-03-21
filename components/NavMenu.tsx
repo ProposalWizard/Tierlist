@@ -82,7 +82,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
       {/* Mobile dropdown */}
       {open && (
         <div
-          className="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-gray-800 bg-gray-950 shadow-xl md:hidden"
+          className="absolute right-0 top-full z-50 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-800 bg-gray-950 shadow-xl md:hidden"
           onClick={() => setOpen(false)}
         >
           <div className="flex flex-col py-2">

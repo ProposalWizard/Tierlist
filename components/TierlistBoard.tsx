@@ -849,10 +849,10 @@ export default function TierlistBoard({
         ) : null}
 
         {/* ── Toolbar ───────────────────────────────────────────────── */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900 px-2 py-2 md:px-4 md:py-3">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
             {/* Image tools */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
               <button
                 onClick={toggleZoom}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
@@ -910,18 +910,18 @@ export default function TierlistBoard({
         </div>
 
         {/* Action buttons */}
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
+        <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3 pt-1">
           <button
             onClick={handleDownload}
             disabled={isDownloading || totalImages === 0}
-            className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl border border-gray-700 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isDownloading ? "Generating tierlist image…" : "⬇ Download"}
+            {isDownloading ? "Generating…" : "⬇ Download"}
           </button>
           <button
             onClick={handleShareX}
             disabled={isSharing || totalImages === 0}
-            className="rounded-xl border border-gray-700 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl border border-gray-700 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSharing ? "Sharing…" : "𝕏 Share on X"}
           </button>
@@ -929,7 +929,7 @@ export default function TierlistBoard({
             <button
               onClick={() => setShowUploadModal(true)}
               disabled={totalImages === 0}
-              className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-xl bg-indigo-600 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Upload Tierlist
             </button>
@@ -938,7 +938,7 @@ export default function TierlistBoard({
             <button
               onClick={() => setShowUploadModal(true)}
               disabled={totalImages === 0}
-              className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-xl bg-indigo-600 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Save as New Tierlist
             </button>

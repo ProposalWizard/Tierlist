@@ -168,7 +168,7 @@ export default function TierRow({
         </button>
 
         {showSettings && (
-          <div className="absolute right-0 top-10 z-50 w-52 rounded-xl border border-gray-700 bg-gray-900 p-3 shadow-2xl">
+          <div className="absolute right-0 top-10 z-50 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-700 bg-gray-900 p-3 shadow-2xl">
             {/* Colour picker */}
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               Colour
