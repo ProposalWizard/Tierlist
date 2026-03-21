@@ -242,7 +242,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                   className="flex h-36 items-center justify-center overflow-hidden bg-gray-800"
                 >
                   <img src={img.image_url} alt={img.tierlist_title ?? "Saved tierlist"}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                    className="h-full w-full object-contain transition-transform group-hover:scale-105" />
                 </div>
                 <div className="p-2">
                   {img.tierlist_title && (
