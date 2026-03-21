@@ -14,15 +14,23 @@ interface TierlistSummary {
   view_count?: number;
 }
 
+interface SavedProfileImage {
+  id: string;
+  image_url: string;
+  tierlist_title: string | null;
+  created_at: string;
+}
+
 interface Props {
   userEmail: string;
   profile: UserProfile | null;
   created: TierlistSummary[];
   liked: TierlistSummary[];
   saved: TierlistSummary[];
+  savedImages: SavedProfileImage[];
 }
 
-export default function ProfileClient({ userEmail, profile, created, liked, saved }: Props) {
+export default function ProfileClient({ userEmail, profile, created, liked, saved, savedImages }: Props) {
   // ── Username / anonymous settings ──────────────────────────────────────────
   const [username, setUsername]     = useState(profile?.username ?? "");
   const [isAnon, setIsAnon]         = useState(profile?.is_anonymous ?? false);
@@ -33,6 +41,12 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
   const [createdList, setCreated]   = useState(created);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId]   = useState<string | null>(null);
+
+  // ── Saved profile images ─────────────────────────────────────────────────
+  const [profileImages, setProfileImages] = useState(savedImages);
+  const [viewingImage, setViewingImage]   = useState<SavedProfileImage | null>(null);
+  const [confirmDeleteImageId, setConfirmDeleteImageId] = useState<string | null>(null);
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
 
   const streak  = profile?.current_streak ?? 1;
   const longest = profile?.longest_streak ?? 1;
@@ -49,6 +63,14 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
     setSaving(false);
     if (res.ok) setProfileMsg({ ok: true,  text: "Saved!" });
     else        setProfileMsg({ ok: false, text: data.error ?? "Something went wrong" });
+  }
+
+  async function deleteProfileImage(id: string) {
+    setDeletingImageId(id);
+    const res = await fetch(`/api/profile/images/${id}`, { method: "DELETE" });
+    setDeletingImageId(null);
+    setConfirmDeleteImageId(null);
+    if (res.ok) setProfileImages((prev) => prev.filter((img) => img.id !== id));
   }
 
   async function deleteTierlist(id: string) {
@@ -192,23 +214,117 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
         <TierlistGrid items={createdList} showDelete emptyMsg="You haven't created any tierlists yet." />
       </section>
 
-      {/* ── Saved Tierlists ──────────────────────────────────────────────── */}
+      {/* ── Bookmarked Tierlists ──────────────────────────────────────────── */}
       <section>
         <h2 className="mb-4 text-lg font-bold text-white">
-          Saved Tierlists
+          Bookmarked Tierlists
           <span className="ml-2 text-sm font-normal text-gray-500">({saved.length})</span>
         </h2>
-        <TierlistGrid items={saved} emptyMsg="You haven't saved any tierlists yet." />
+        <TierlistGrid items={saved} emptyMsg="You haven't bookmarked any tierlists yet." />
       </section>
 
-      {/* ── Liked Tierlists ──────────────────────────────────────────────── */}
+      {/* ── Saved Tierlist Images ──────────────────────────────────────────── */}
       <section>
         <h2 className="mb-4 text-lg font-bold text-white">
-          Liked Tierlists
-          <span className="ml-2 text-sm font-normal text-gray-500">({liked.length})</span>
+          Saved Images
+          <span className="ml-2 text-sm font-normal text-gray-500">({profileImages.length})</span>
         </h2>
-        <TierlistGrid items={liked} emptyMsg="You haven't liked any tierlists yet." />
+        {profileImages.length === 0 ? (
+          <p className="py-8 text-center text-sm italic text-gray-600">
+            You haven&apos;t saved any tierlist images yet. Use the &quot;Save to Profile&quot; button when playing a tierlist.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            {profileImages.map((img) => (
+              <div key={img.id} className="group relative overflow-hidden rounded-xl border border-gray-700 bg-gray-900 cursor-pointer">
+                <div
+                  onClick={() => setViewingImage(img)}
+                  className="flex h-36 items-center justify-center overflow-hidden bg-gray-800"
+                >
+                  <img src={img.image_url} alt={img.tierlist_title ?? "Saved tierlist"}
+                    className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                </div>
+                <div className="p-2">
+                  {img.tierlist_title && (
+                    <p className="truncate text-xs font-semibold text-white">{img.tierlist_title}</p>
+                  )}
+                  <p className="text-[10px] text-gray-500">{new Date(img.created_at).toLocaleDateString()}</p>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteImageId(img.id); }}
+                  className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  title="Delete"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
+
+      {/* ── Full-size image viewer ─────────────────────────────────────────── */}
+      {viewingImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setViewingImage(null)}
+        >
+          <div className="relative max-h-[90vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={viewingImage.image_url}
+              alt={viewingImage.tierlist_title ?? "Saved tierlist"}
+              className="max-h-[85vh] max-w-full rounded-lg object-contain"
+            />
+            <div className="mt-3 flex items-center justify-between">
+              {viewingImage.tierlist_title && (
+                <p className="text-sm font-semibold text-white">{viewingImage.tierlist_title}</p>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <button
+                  onClick={() => { setConfirmDeleteImageId(viewingImage.id); setViewingImage(null); }}
+                  className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => setViewingImage(null)}
+                  className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-gray-400 hover:text-white"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete saved image confirmation modal ──────────────────────────── */}
+      {confirmDeleteImageId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-white">Delete this saved image?</h3>
+            <p className="mt-2 text-sm text-gray-400">
+              This permanently removes the image from your profile. This cannot be undone.
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => deleteProfileImage(confirmDeleteImageId)}
+                disabled={!!deletingImageId}
+                className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {deletingImageId ? "Deleting…" : "Delete"}
+              </button>
+              <button
+                onClick={() => setConfirmDeleteImageId(null)}
+                disabled={!!deletingImageId}
+                className="flex-1 rounded-lg border border-gray-600 py-2.5 text-sm font-semibold text-gray-300 hover:border-gray-400 hover:text-white disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Delete confirmation modal ─────────────────────────────────────── */}
       {confirmId && (

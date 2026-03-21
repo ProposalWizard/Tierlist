@@ -175,6 +175,9 @@ export default async function PlayPage({ params }: Props) {
           image_url: img.image_url,
         }))}
         isAdmin={userIsAdmin}
+        tierlistId={id}
+        tierlistTitle={tierlist.title}
+        isLoggedIn={!!user}
       />
     </main>
   );

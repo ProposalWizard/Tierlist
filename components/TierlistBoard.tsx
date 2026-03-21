@@ -44,6 +44,10 @@ interface TierlistBoardProps {
   initialImages?: Array<{ id: string; name: string; image_url: string }>;
   mode?: "play" | "create";
   isAdmin?: boolean;
+  /** For Save to Profile feature */
+  tierlistId?: string;
+  tierlistTitle?: string;
+  isLoggedIn?: boolean;
 }
 
 // ── Unranked pool ──────────────────────────────────────────────────────────
@@ -202,6 +206,9 @@ export default function TierlistBoard({
   initialImages,
   mode = "play",
   isAdmin: isAdminUser = false,
+  tierlistId,
+  tierlistTitle,
+  isLoggedIn = false,
 }: TierlistBoardProps) {
   // ── Tier state ───────────────────────────────────────────────────────────
   const [tiers, setTiers] = useState<TierRowData[]>(() => DEFAULT_TIER_ROWS);
@@ -251,6 +258,8 @@ export default function TierlistBoard({
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDownloading, setIsDownloading]     = useState(false);
   const [isSharing, setIsSharing]             = useState(false);
+  const [isSavingToProfile, setIsSavingToProfile] = useState(false);
+  const [savedToProfile, setSavedToProfile]       = useState(false);
   const [isAddingImages, setIsAddingImages]   = useState(false);
   // User-facing error/success banner
   const [boardError, setBoardError]           = useState<string | null>(null);
@@ -557,6 +566,45 @@ export default function TierlistBoard({
       setBoardError("Failed to generate tierlist image for sharing. Please try again.");
     } finally {
       setIsSharing(false);
+    }
+  }
+
+  // ── Save to Profile ─────────────────────────────────────────────────────
+
+  async function handleSaveToProfile() {
+    if (!tiersRef.current || isSavingToProfile || !isLoggedIn) return;
+    setIsSavingToProfile(true);
+    setBoardError(null);
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(tiersRef.current, {
+        backgroundColor: "#111827",
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+      });
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Failed to create blob"))), "image/png");
+      });
+
+      const formData = new FormData();
+      formData.append("image", blob, "tierlist.png");
+      if (tierlistTitle) formData.append("tierlist_title", tierlistTitle);
+      if (tierlistId) formData.append("tierlist_id", tierlistId);
+
+      const res = await fetch("/api/profile/images", { method: "POST", body: formData });
+      if (res.ok) {
+        setSavedToProfile(true);
+        setTimeout(() => setSavedToProfile(false), 3000);
+      } else {
+        setBoardError("Failed to save image to profile. Please try again.");
+      }
+    } catch (err) {
+      console.error("Save to profile error:", err);
+      setBoardError("Failed to save image to profile. Please try again.");
+    } finally {
+      setIsSavingToProfile(false);
     }
   }
 
@@ -925,6 +973,19 @@ export default function TierlistBoard({
           >
             {isSharing ? "Sharing…" : "𝕏 Share on X"}
           </button>
+          {mode === "play" && isLoggedIn && (
+            <button
+              onClick={handleSaveToProfile}
+              disabled={isSavingToProfile || savedToProfile || totalImages === 0}
+              className={`rounded-xl px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                savedToProfile
+                  ? "border border-green-500 bg-green-500/10 text-green-400"
+                  : "border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white"
+              }`}
+            >
+              {isSavingToProfile ? "Saving…" : savedToProfile ? "✓ Saved to Profile" : "💾 Save to Profile"}
+            </button>
+          )}
           {mode === "create" && (
             <button
               onClick={() => setShowUploadModal(true)}

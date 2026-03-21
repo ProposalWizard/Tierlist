@@ -31,7 +31,7 @@ export default function SaveTierlistButton({ tierlistId, initialSaved, isLoggedI
     <button
       onClick={toggle}
       disabled={!isLoggedIn || loading}
-      title={isLoggedIn ? (saved ? "Remove from saved" : "Save to profile") : "Sign in to save"}
+      title={isLoggedIn ? (saved ? "Remove bookmark" : "Bookmark this tierlist") : "Sign in to bookmark"}
       className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${
         saved
           ? "border-indigo-500 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20"
@@ -39,7 +39,7 @@ export default function SaveTierlistButton({ tierlistId, initialSaved, isLoggedI
       } disabled:cursor-not-allowed disabled:opacity-50`}
     >
       <span>{saved ? "🔖" : "🔖"}</span>
-      <span>{saved ? "Saved" : "Save"}</span>
+      <span>{saved ? "Bookmarked" : "Bookmark"}</span>
     </button>
   );
 }
