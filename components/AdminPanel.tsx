@@ -114,8 +114,10 @@ export default function AdminPanel({
   // All items for pin picker: regular tierlists + vote tierlists combined
   const [allPinItems, setAllPinItems] = useState<{ id: string; title: string; is_vote: boolean }[]>([]);
   const [importLoading, setImportLoading] = useState(false);
-  // Admin image cropping
-  const [adminCropImage, setAdminCropImage] = useState<{ tierlistId: string; imageId: string; imageUrl: string; imageName: string } | null>(null);
+  // Admin image cropping (works for both regular and vote tierlists)
+  const [adminCropImage, setAdminCropImage] = useState<{ tierlistId: string; imageId: string; imageUrl: string; imageName: string; isVote?: boolean } | null>(null);
+  // Admin cover photo cropping
+  const [adminCoverCrop, setAdminCoverCrop] = useState<{ imageUrl: string; tierlistId: string; isVote?: boolean } | null>(null);
   // Vote tierlist cover photo editing
   const [voteCoverFile, setVoteCoverFile] = useState<File | null>(null);
   const [voteCoverPreview, setVoteCoverPreview] = useState<string | null>(null);
@@ -753,9 +755,8 @@ export default function AdminPanel({
   // ── Admin crop result handler ───────────────────────────────────────────────
   async function handleAdminCropResult(croppedDataUrl: string) {
     if (!adminCropImage) return;
-    const { tierlistId, imageId } = adminCropImage;
+    const { tierlistId, imageId, isVote } = adminCropImage;
     try {
-      // Convert data URL to blob and upload to storage
       const resp = await fetch(croppedDataUrl);
       const blob = await resp.blob();
       const file = new File([blob], "cropped.png", { type: "image/png" });
@@ -767,27 +768,96 @@ export default function AdminPanel({
       if (uploadError) throw new Error(uploadError.message);
       const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
       const newUrl = urlData.publicUrl;
-      // Update the image URL in the database
-      await fetch(`/api/admin/tierlists/${tierlistId}/images/${imageId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_url: newUrl }),
-      });
-      // Update local state
-      setEditState((prev) => {
-        if (!prev) return prev;
-        return {
+
+      if (isVote) {
+        // Update vote tierlist image
+        await fetch(`/api/admin/vote-tierlists/${tierlistId}/images/${imageId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_url: newUrl }),
+        });
+        setVoteImagesMap((prev) => ({
           ...prev,
-          images: prev.images.map((img) =>
+          [tierlistId]: (prev[tierlistId] ?? []).map((img) =>
             img.id === imageId ? { ...img, image_url: newUrl } : img
           ),
-        };
-      });
+        }));
+      } else {
+        // Update regular tierlist image
+        await fetch(`/api/admin/tierlists/${tierlistId}/images/${imageId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_url: newUrl }),
+        });
+        setEditState((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            images: prev.images.map((img) =>
+              img.id === imageId ? { ...img, image_url: newUrl } : img
+            ),
+          };
+        });
+      }
       showSaveConfirmation("Image cropped");
     } catch (err) {
       console.error("Crop upload error:", err);
     }
     setAdminCropImage(null);
+  }
+
+  // ── Admin cover crop result handler ─────────────────────────────────────────
+  async function handleAdminCoverCropResult(croppedDataUrl: string) {
+    if (!adminCoverCrop) return;
+    const { tierlistId, isVote } = adminCoverCrop;
+    try {
+      const resp = await fetch(croppedDataUrl);
+      const blob = await resp.blob();
+      const file = new File([blob], "cover-cropped.png", { type: "image/png" });
+      const supabase = createClient();
+      const path = `cover-crops/${crypto.randomUUID()}.png`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("tierlist-images")
+        .upload(path, file, { upsert: false });
+      if (uploadError) throw new Error(uploadError.message);
+      const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
+      const newUrl = urlData.publicUrl;
+
+      if (isVote) {
+        const res = await fetch(`/api/admin/vote-tierlists/${tierlistId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cover_image_url: newUrl }),
+        });
+        if (res.ok) {
+          setVotelists((prev) => prev.map((v) => v.id === tierlistId ? { ...v, cover_image_url: newUrl } : v));
+          showSaveConfirmation("Cover photo cropped & saved");
+        }
+      } else {
+        // Regular tierlist — update editState cover
+        setEditState((prev) => {
+          if (!prev) return prev;
+          if (prev.customCoverPreview) URL.revokeObjectURL(prev.customCoverPreview);
+          return {
+            ...prev,
+            cover_image_url: newUrl,
+            customCoverFile: null,
+            customCoverPreview: null,
+            selectedCoverImageId: null,
+          };
+        });
+        // Save to DB
+        await fetch(`/api/admin/tierlists/${tierlistId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cover_image_url: newUrl }),
+        });
+        showSaveConfirmation("Cover photo cropped & saved");
+      }
+    } catch (err) {
+      console.error("Cover crop error:", err);
+    }
+    setAdminCoverCrop(null);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1211,22 +1281,20 @@ export default function AdminPanel({
                         Cover Photo
                       </label>
                       <div className="flex gap-4 items-start">
-                        {/* Preview — matches homepage card dimensions (h-32 w-full) */}
+                        {/* Preview — matches homepage card dimensions exactly */}
                         <div className="flex-shrink-0">
                           <p className="mb-1 text-[10px] text-gray-500">Homepage preview</p>
                           <div
-                            className={`h-32 w-48 rounded-xl border-2 bg-cover bg-center bg-no-repeat transition-colors ${
+                            className={`h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
                               editCoverPreview
                                 ? "border-indigo-500"
                                 : "border-gray-700 bg-gray-800"
                             }`}
-                            style={
-                              editCoverPreview
-                                ? { backgroundImage: `url("${editCoverPreview}")` }
-                                : {}
-                            }
                           >
-                            {!editCoverPreview && (
+                            {editCoverPreview ? (
+                              <ImageWithFallback src={editCoverPreview} alt="cover preview"
+                                className="h-full w-full object-cover" />
+                            ) : (
                               <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-600">
                                 No cover
                               </div>
@@ -1251,6 +1319,14 @@ export default function AdminPanel({
                               }}
                             />
                           </label>
+                          {editCoverPreview && (
+                            <button
+                              onClick={() => setAdminCoverCrop({ imageUrl: editCoverPreview, tierlistId: tl.id })}
+                              className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white"
+                            >
+                              Crop cover
+                            </button>
+                          )}
                           {editState.customCoverPreview && (
                             <button
                               onClick={removeCustomCover}
@@ -1553,10 +1629,16 @@ export default function AdminPanel({
                     </div>
                   ))}
                 </div>
-                <button onClick={() => setNewVoteTiers((prev) => [...prev, { label: "New", color: "#94a3b8" }])}
-                  className="mt-1.5 text-xs text-purple-400 hover:text-purple-300">
-                  + Add tier
-                </button>
+                <div className="mt-1.5 flex gap-3">
+                  <button onClick={() => setNewVoteTiers((prev) => [{ label: "New", color: "#94a3b8" }, ...prev])}
+                    className="text-xs text-purple-400 hover:text-purple-300">
+                    + Add tier to top
+                  </button>
+                  <button onClick={() => setNewVoteTiers((prev) => [...prev, { label: "New", color: "#94a3b8" }])}
+                    className="text-xs text-purple-400 hover:text-purple-300">
+                    + Add tier to bottom
+                  </button>
+                </div>
               </div>
 
               {/* Images section */}
@@ -1733,45 +1815,60 @@ export default function AdminPanel({
                     {/* Cover photo */}
                     <div>
                       <p className="mb-2 text-xs font-semibold text-gray-400">Cover Photo</p>
-                      <div className="flex flex-wrap items-center gap-3">
-                        {vl.cover_image_url && !voteCoverPreview && (
-                          <ImageWithFallback src={vl.cover_image_url} alt="current cover"
-                            className="h-16 w-24 rounded-lg object-cover border border-gray-700" />
-                        )}
-                        {voteCoverPreview ? (
-                          <div className="relative">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={voteCoverPreview} alt="new cover"
-                              className="h-16 w-24 rounded-lg object-cover border border-purple-600" />
-                            <button
-                              onClick={() => { if (voteCoverPreview) URL.revokeObjectURL(voteCoverPreview); setVoteCoverFile(null); setVoteCoverPreview(null); }}
-                              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
-                              ×
-                            </button>
+                      <div className="flex gap-4 items-start">
+                        {/* Preview — matches homepage card dimensions */}
+                        <div className="flex-shrink-0">
+                          <p className="mb-1 text-[10px] text-gray-500">Homepage preview</p>
+                          <div className={`h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
+                            (voteCoverPreview || vl.cover_image_url) ? "border-purple-500" : "border-gray-700 bg-gray-800"
+                          }`}>
+                            {(voteCoverPreview || vl.cover_image_url) ? (
+                              <ImageWithFallback src={voteCoverPreview || vl.cover_image_url!} alt="cover preview"
+                                className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-600">No cover</div>
+                            )}
                           </div>
-                        ) : (
-                          <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
-                            {vl.cover_image_url ? "Change cover" : "Upload cover"}
-                            <input type="file" accept={ACCEPT_IMAGE_TYPES} className="sr-only"
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) {
-                                  if (voteCoverPreview) URL.revokeObjectURL(voteCoverPreview);
-                                  setVoteCoverFile(f);
-                                  setVoteCoverPreview(URL.createObjectURL(f));
-                                  e.target.value = "";
-                                }
-                              }} />
-                          </label>
-                        )}
-                        {voteCoverFile && (
-                          <button
-                            onClick={() => handleVoteCoverUpload(vl.id)}
-                            disabled={voteCoverUploading}
-                            className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-50">
-                            {voteCoverUploading ? "Saving…" : "Save cover"}
-                          </button>
-                        )}
+                        </div>
+                        {/* Controls */}
+                        <div className="flex flex-col gap-2 pt-1">
+                          {voteCoverPreview ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleVoteCoverUpload(vl.id)}
+                                disabled={voteCoverUploading}
+                                className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-50">
+                                {voteCoverUploading ? "Saving…" : "Save cover"}
+                              </button>
+                              <button
+                                onClick={() => { if (voteCoverPreview) URL.revokeObjectURL(voteCoverPreview); setVoteCoverFile(null); setVoteCoverPreview(null); }}
+                                className="text-xs text-red-400 hover:text-red-300">
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                              {vl.cover_image_url ? "Upload new cover" : "Upload cover"}
+                              <input type="file" accept={ACCEPT_IMAGE_TYPES} className="sr-only"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) {
+                                    if (voteCoverPreview) URL.revokeObjectURL(voteCoverPreview);
+                                    setVoteCoverFile(f);
+                                    setVoteCoverPreview(URL.createObjectURL(f));
+                                    e.target.value = "";
+                                  }
+                                }} />
+                            </label>
+                          )}
+                          {vl.cover_image_url && (
+                            <button
+                              onClick={() => setAdminCoverCrop({ imageUrl: vl.cover_image_url!, tierlistId: vl.id, isVote: true })}
+                              className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-purple-500 hover:text-white">
+                              Crop cover
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {/* Pick cover from existing images */}
                       {voteImagesMap[vl.id] && voteImagesMap[vl.id].length > 0 && (
@@ -1899,34 +1996,94 @@ export default function AdminPanel({
                               )}
                             </div>
                           ))}
-                          <button onClick={() => setEditTiers((prev) => [...prev, { label: "New", color: "#94a3b8" }])}
-                            className="text-xs text-purple-400 hover:text-purple-300">
-                            + Add tier
-                          </button>
+                          <div className="flex gap-3">
+                            <button onClick={() => setEditTiers((prev) => [{ label: "New", color: "#94a3b8" }, ...prev])}
+                              className="text-xs text-purple-400 hover:text-purple-300">
+                              + Add tier to top
+                            </button>
+                            <button onClick={() => setEditTiers((prev) => [...prev, { label: "New", color: "#94a3b8" }])}
+                              className="text-xs text-purple-400 hover:text-purple-300">
+                              + Add tier to bottom
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    <p className="text-xs font-semibold text-gray-400">Images</p>
+                    <p className="text-xs font-semibold text-gray-400">Images ({voteImagesMap[vl.id]?.length ?? 0})</p>
                     {!(voteImagesMap[vl.id]) ? (
                       <p className="text-sm text-gray-500">Loading…</p>
                     ) : voteImagesMap[vl.id].length === 0 ? (
                       <p className="text-xs italic text-gray-600">No images yet. Add some below.</p>
                     ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {voteImagesMap[vl.id].map((img) => (
-                          <div key={img.id} className="group relative">
-                            <ImageWithFallback src={img.image_url} alt={img.name}
-                              className="h-20 w-20 rounded-lg object-cover border-2 border-gray-700" />
-                            <button
-                              onClick={() => handleDeleteVoteImage(vl.id, img.id)}
-                              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
-                              ×
-                            </button>
-                            <p className="mt-0.5 max-w-[80px] truncate text-center text-[10px] text-gray-500">{img.name}</p>
-                          </div>
-                        ))}
-                      </div>
+                      <>
+                        <div className="flex flex-wrap gap-2 rounded-xl border border-gray-700 bg-gray-950/50 p-3">
+                          {voteImagesMap[vl.id].map((img, imgIdx) => (
+                            <div key={img.id} className="group relative">
+                              <ImageWithFallback src={img.image_url} alt={img.name}
+                                className="h-20 w-20 rounded-lg object-cover border-2 border-gray-700" />
+                              <button
+                                onClick={() => handleDeleteVoteImage(vl.id, img.id)}
+                                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                ×
+                              </button>
+                              {/* Reorder arrows + crop */}
+                              <div className="flex justify-center gap-1 mt-1">
+                                <button
+                                  onClick={() => {
+                                    const imgs = [...voteImagesMap[vl.id]];
+                                    if (imgIdx <= 0) return;
+                                    [imgs[imgIdx - 1], imgs[imgIdx]] = [imgs[imgIdx], imgs[imgIdx - 1]];
+                                    setVoteImagesMap((prev) => ({ ...prev, [vl.id]: imgs }));
+                                    // Persist reorder
+                                    fetch(`/api/admin/vote-tierlists/${vl.id}/images/reorder`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ images: imgs.map((im, i) => ({ id: im.id, sort_order: i })) }),
+                                    });
+                                  }}
+                                  disabled={imgIdx === 0}
+                                  className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                                  title="Move left"
+                                >
+                                  ←
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setAdminCropImage({ tierlistId: vl.id, imageId: img.id, imageUrl: img.image_url, imageName: img.name, isVote: true });
+                                  }}
+                                  className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300"
+                                  title="Crop image"
+                                >
+                                  ✂
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const imgs = [...voteImagesMap[vl.id]];
+                                    if (imgIdx >= imgs.length - 1) return;
+                                    [imgs[imgIdx], imgs[imgIdx + 1]] = [imgs[imgIdx + 1], imgs[imgIdx]];
+                                    setVoteImagesMap((prev) => ({ ...prev, [vl.id]: imgs }));
+                                    fetch(`/api/admin/vote-tierlists/${vl.id}/images/reorder`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ images: imgs.map((im, i) => ({ id: im.id, sort_order: i })) }),
+                                    });
+                                  }}
+                                  disabled={imgIdx === voteImagesMap[vl.id].length - 1}
+                                  className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                                  title="Move right"
+                                >
+                                  →
+                                </button>
+                              </div>
+                              <p className="mt-0.5 max-w-[80px] truncate text-center text-[10px] text-gray-500">{img.name}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="mt-1.5 text-xs text-gray-600">
+                          Hover and click × to remove · ✂ to crop · arrows to reorder
+                        </p>
+                      </>
                     )}
 
                     {/* Add images */}
@@ -2032,13 +2189,23 @@ export default function AdminPanel({
           )}
         </div>
       )}
-      {/* Admin crop overlay */}
+      {/* Admin image crop overlay */}
       {adminCropImage && (
         <CropOverlay
           imageUrl={adminCropImage.imageUrl}
           imageName={adminCropImage.imageName}
           onCrop={handleAdminCropResult}
           onCancel={() => setAdminCropImage(null)}
+        />
+      )}
+      {/* Admin cover crop overlay (landscape 3:2) */}
+      {adminCoverCrop && (
+        <CropOverlay
+          imageUrl={adminCoverCrop.imageUrl}
+          imageName="Cover Photo"
+          aspectRatio={3 / 2}
+          onCrop={handleAdminCoverCropResult}
+          onCancel={() => setAdminCoverCrop(null)}
         />
       )}
     </div>

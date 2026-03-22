@@ -223,16 +223,18 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
               Cover Photo
             </label>
 
-            {/* Preview — matches homepage card dimensions */}
+            {/* Preview — matches homepage card dimensions exactly */}
             <p className="mb-1 text-[10px] text-gray-500">This is how it will look on the homepage</p>
             <div
-              className={`mb-3 h-32 w-full rounded-xl border-2 bg-cover bg-center bg-no-repeat transition-colors ${
+              className={`mb-3 h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
                 coverPreviewUrl ? "border-indigo-500" : "border-gray-700 bg-gray-800"
               }`}
-              style={coverPreviewUrl ? { backgroundImage: `url("${coverPreviewUrl}")` } : {}}
             >
-              {!coverPreviewUrl && (
-                <div className="flex h-full items-center justify-center text-xs italic text-gray-500">
+              {coverPreviewUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={coverPreviewUrl} alt="Cover preview" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-500">
                   No cover selected
                 </div>
               )}
@@ -338,6 +340,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
         <CropOverlay
           imageUrl={coverPreviewUrl}
           imageName="Cover Photo"
+          aspectRatio={3 / 2}
           onCrop={handleCoverCrop}
           onCancel={() => setShowCrop(false)}
         />
