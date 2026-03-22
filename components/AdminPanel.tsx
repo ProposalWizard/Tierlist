@@ -7,6 +7,21 @@ import ImageWithFallback from "./ImageWithFallback";
 import CropOverlay from "./CropOverlay";
 import type { Tierlist, Category, VoteTier } from "@/lib/types";
 import { TIER_COLOR_OPTIONS } from "@/lib/types";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface VotelistAdmin {
   id: string;
@@ -53,12 +68,36 @@ interface EditState {
   additional_categories: string[];
 }
 
+/** Small sortable wrapper used for drag-and-drop image reordering in admin. */
+function SortableImageCard({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: "grab",
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+}
+
 export default function AdminPanel({
   initialTierlists,
 }: {
   initialTierlists: Tierlist[];
 }) {
   const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists">("tierlists");
+  const adminDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
 
   function showSaveConfirmation(message: string) {
@@ -1380,105 +1419,90 @@ export default function AdminPanel({
                         </p>
                       ) : (
                         <>
-                          <div className="flex flex-wrap gap-2 rounded-xl border border-gray-700 bg-gray-950/50 p-3">
-                            {editState.images.map((img) => {
-                              const isCover =
-                                !editState.customCoverPreview &&
-                                (editState.selectedCoverImageId === img.id ||
-                                  (!editState.selectedCoverImageId &&
-                                    img.image_url === editState.cover_image_url));
-                              return (
-                                <div key={img.id} className="group relative">
-                                  <button
-                                    type="button"
-                                    onClick={() => selectImageAsCover(img.id)}
-                                    title="Set as cover"
-                                    className="block focus:outline-none"
-                                  >
-                                    <ImageWithFallback
-                                      src={img.image_url}
-                                      alt={img.name}
-                                      className={`h-20 w-20 rounded-lg object-cover border-2 transition-colors ${
-                                        isCover
-                                          ? "border-indigo-400"
-                                          : "border-gray-700 hover:border-gray-500"
-                                      }`}
-                                    />
-                                    {isCover && (
-                                      <span className="absolute left-1 top-1 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
-                                        Cover
-                                      </span>
-                                    )}
-                                  </button>
-                                  {/* Remove image button */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteImage(tl.id, img.id);
-                                    }}
-                                    title="Remove image"
-                                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
-                                  >
-                                    ×
-                                  </button>
-                                  {/* Reorder arrows + crop */}
-                                  <div className="flex justify-center gap-1 mt-1">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditState((prev) => {
-                                          if (!prev) return prev;
-                                          const idx = prev.images.findIndex((i) => i.id === img.id);
-                                          if (idx <= 0) return prev;
-                                          const newImages = [...prev.images];
-                                          [newImages[idx - 1], newImages[idx]] = [newImages[idx], newImages[idx - 1]];
-                                          return { ...prev, images: newImages };
-                                        });
-                                      }}
-                                      disabled={editState.images.indexOf(img) === 0}
-                                      className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
-                                      title="Move left"
-                                    >
-                                      ←
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setAdminCropImage({ tierlistId: tl.id, imageId: img.id, imageUrl: img.image_url, imageName: img.name });
-                                      }}
-                                      className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300"
-                                      title="Crop image"
-                                    >
-                                      ✂
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditState((prev) => {
-                                          if (!prev) return prev;
-                                          const idx = prev.images.findIndex((i) => i.id === img.id);
-                                          if (idx < 0 || idx >= prev.images.length - 1) return prev;
-                                          const newImages = [...prev.images];
-                                          [newImages[idx], newImages[idx + 1]] = [newImages[idx + 1], newImages[idx]];
-                                          return { ...prev, images: newImages };
-                                        });
-                                      }}
-                                      disabled={editState.images.indexOf(img) === editState.images.length - 1}
-                                      className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
-                                      title="Move right"
-                                    >
-                                      →
-                                    </button>
-                                  </div>
-                                  <p className="max-w-[80px] truncate text-center text-[10px] text-gray-500">
-                                    {img.name}
-                                  </p>
-                                </div>
-                              );
-                            })}
-                          </div>
+                          <DndContext
+                            sensors={adminDndSensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(event: DragEndEvent) => {
+                              const { active, over } = event;
+                              if (over && active.id !== over.id) {
+                                setEditState((prev) => {
+                                  if (!prev) return prev;
+                                  const oldIdx = prev.images.findIndex((i) => i.id === active.id);
+                                  const newIdx = prev.images.findIndex((i) => i.id === over.id);
+                                  if (oldIdx === -1 || newIdx === -1) return prev;
+                                  return { ...prev, images: arrayMove(prev.images, oldIdx, newIdx) };
+                                });
+                              }
+                            }}
+                          >
+                            <SortableContext items={editState.images.map((i) => i.id)} strategy={rectSortingStrategy}>
+                              <div className="flex flex-wrap gap-2 rounded-xl border border-gray-700 bg-gray-950/50 p-3">
+                                {editState.images.map((img) => {
+                                  const isCover =
+                                    !editState.customCoverPreview &&
+                                    (editState.selectedCoverImageId === img.id ||
+                                      (!editState.selectedCoverImageId &&
+                                        img.image_url === editState.cover_image_url));
+                                  return (
+                                    <SortableImageCard key={img.id} id={img.id}>
+                                      <div className="group relative">
+                                        <button
+                                          type="button"
+                                          onClick={() => selectImageAsCover(img.id)}
+                                          title="Set as cover"
+                                          className="block focus:outline-none"
+                                        >
+                                          <ImageWithFallback
+                                            src={img.image_url}
+                                            alt={img.name}
+                                            className={`h-20 w-20 rounded-lg object-cover border-2 transition-colors ${
+                                              isCover
+                                                ? "border-indigo-400"
+                                                : "border-gray-700 hover:border-gray-500"
+                                            }`}
+                                          />
+                                          {isCover && (
+                                            <span className="absolute left-1 top-1 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                                              Cover
+                                            </span>
+                                          )}
+                                        </button>
+                                        {/* Remove image button */}
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteImage(tl.id, img.id);
+                                          }}
+                                          title="Remove image"
+                                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                        >
+                                          ×
+                                        </button>
+                                        {/* Crop button */}
+                                        <div className="flex justify-center gap-1 mt-1">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setAdminCropImage({ tierlistId: tl.id, imageId: img.id, imageUrl: img.image_url, imageName: img.name });
+                                            }}
+                                            className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300"
+                                            title="Crop image"
+                                          >
+                                            ✂
+                                          </button>
+                                        </div>
+                                        <p className="max-w-[80px] truncate text-center text-[10px] text-gray-500">
+                                          {img.name}
+                                        </p>
+                                      </div>
+                                    </SortableImageCard>
+                                  );
+                                })}
+                              </div>
+                            </SortableContext>
+                          </DndContext>
                           <p className="mt-1.5 text-xs text-gray-600">
-                            Click to set as cover · hover and click × to remove
+                            Drag to reorder · click to set as cover · hover × to remove
                           </p>
                         </>
                       )}
@@ -2017,71 +2041,59 @@ export default function AdminPanel({
                       <p className="text-xs italic text-gray-600">No images yet. Add some below.</p>
                     ) : (
                       <>
-                        <div className="flex flex-wrap gap-2 rounded-xl border border-gray-700 bg-gray-950/50 p-3">
-                          {voteImagesMap[vl.id].map((img, imgIdx) => (
-                            <div key={img.id} className="group relative">
-                              <ImageWithFallback src={img.image_url} alt={img.name}
-                                className="h-20 w-20 rounded-lg object-cover border-2 border-gray-700" />
-                              <button
-                                onClick={() => handleDeleteVoteImage(vl.id, img.id)}
-                                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
-                                ×
-                              </button>
-                              {/* Reorder arrows + crop */}
-                              <div className="flex justify-center gap-1 mt-1">
-                                <button
-                                  onClick={() => {
-                                    const imgs = [...voteImagesMap[vl.id]];
-                                    if (imgIdx <= 0) return;
-                                    [imgs[imgIdx - 1], imgs[imgIdx]] = [imgs[imgIdx], imgs[imgIdx - 1]];
-                                    setVoteImagesMap((prev) => ({ ...prev, [vl.id]: imgs }));
-                                    // Persist reorder
-                                    fetch(`/api/admin/vote-tierlists/${vl.id}/images/reorder`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ images: imgs.map((im, i) => ({ id: im.id, sort_order: i })) }),
-                                    });
-                                  }}
-                                  disabled={imgIdx === 0}
-                                  className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
-                                  title="Move left"
-                                >
-                                  ←
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setAdminCropImage({ tierlistId: vl.id, imageId: img.id, imageUrl: img.image_url, imageName: img.name, isVote: true });
-                                  }}
-                                  className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300"
-                                  title="Crop image"
-                                >
-                                  ✂
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    const imgs = [...voteImagesMap[vl.id]];
-                                    if (imgIdx >= imgs.length - 1) return;
-                                    [imgs[imgIdx], imgs[imgIdx + 1]] = [imgs[imgIdx + 1], imgs[imgIdx]];
-                                    setVoteImagesMap((prev) => ({ ...prev, [vl.id]: imgs }));
-                                    fetch(`/api/admin/vote-tierlists/${vl.id}/images/reorder`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ images: imgs.map((im, i) => ({ id: im.id, sort_order: i })) }),
-                                    });
-                                  }}
-                                  disabled={imgIdx === voteImagesMap[vl.id].length - 1}
-                                  className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
-                                  title="Move right"
-                                >
-                                  →
-                                </button>
-                              </div>
-                              <p className="mt-0.5 max-w-[80px] truncate text-center text-[10px] text-gray-500">{img.name}</p>
+                        <DndContext
+                          sensors={adminDndSensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(event: DragEndEvent) => {
+                            const { active, over } = event;
+                            if (over && active.id !== over.id) {
+                              const imgs = [...voteImagesMap[vl.id]];
+                              const oldIdx = imgs.findIndex((i) => i.id === active.id);
+                              const newIdx = imgs.findIndex((i) => i.id === over.id);
+                              if (oldIdx === -1 || newIdx === -1) return;
+                              const reordered = arrayMove(imgs, oldIdx, newIdx);
+                              setVoteImagesMap((prev) => ({ ...prev, [vl.id]: reordered }));
+                              fetch(`/api/admin/vote-tierlists/${vl.id}/images/reorder`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ images: reordered.map((im, i) => ({ id: im.id, sort_order: i })) }),
+                              });
+                            }
+                          }}
+                        >
+                          <SortableContext items={voteImagesMap[vl.id].map((i) => i.id)} strategy={rectSortingStrategy}>
+                            <div className="flex flex-wrap gap-2 rounded-xl border border-gray-700 bg-gray-950/50 p-3">
+                              {voteImagesMap[vl.id].map((img) => (
+                                <SortableImageCard key={img.id} id={img.id}>
+                                  <div className="group relative">
+                                    <ImageWithFallback src={img.image_url} alt={img.name}
+                                      className="h-20 w-20 rounded-lg object-cover border-2 border-gray-700" />
+                                    <button
+                                      onClick={() => handleDeleteVoteImage(vl.id, img.id)}
+                                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                      ×
+                                    </button>
+                                    {/* Crop button */}
+                                    <div className="flex justify-center gap-1 mt-1">
+                                      <button
+                                        onClick={() => {
+                                          setAdminCropImage({ tierlistId: vl.id, imageId: img.id, imageUrl: img.image_url, imageName: img.name, isVote: true });
+                                        }}
+                                        className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300"
+                                        title="Crop image"
+                                      >
+                                        ✂
+                                      </button>
+                                    </div>
+                                    <p className="mt-0.5 max-w-[80px] truncate text-center text-[10px] text-gray-500">{img.name}</p>
+                                  </div>
+                                </SortableImageCard>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          </SortableContext>
+                        </DndContext>
                         <p className="mt-1.5 text-xs text-gray-600">
-                          Hover and click × to remove · ✂ to crop · arrows to reorder
+                          Drag to reorder · hover × to remove · ✂ to crop
                         </p>
                       </>
                     )}
