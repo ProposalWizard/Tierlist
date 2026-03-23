@@ -66,6 +66,8 @@ interface EditState {
   linked_vote_tierlist_id: string | null;
   /** Additional categories this tierlist should appear in */
   additional_categories: string[];
+  /** Custom tier rows (labels + colors) */
+  tiers: VoteTier[];
 }
 
 /** Small sortable wrapper used for drag-and-drop image reordering in admin. */
@@ -319,6 +321,13 @@ export default function AdminPanel({
       error: null,
       linked_vote_tierlist_id: tl.linked_vote_tierlist_id ?? null,
       additional_categories: (tl as Tierlist & { additional_categories?: string[] }).additional_categories ?? [],
+      tiers: (tl.tiers as VoteTier[] | undefined) ?? [
+        { label: "S", color: "#4ade80" },
+        { label: "A", color: "#86efac" },
+        { label: "B", color: "#fde047" },
+        { label: "C", color: "#fb923c" },
+        { label: "D", color: "#f87171" },
+      ],
     });
     // Ensure vote tierlists are loaded for the linked tierlist picker
     if (!votelistsLoaded) {
@@ -446,6 +455,7 @@ export default function AdminPanel({
           cover_image_url,
           linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
           additional_categories: editState.additional_categories,
+          tiers: editState.tiers,
         }),
       });
 
@@ -482,6 +492,7 @@ export default function AdminPanel({
                 cover_image_url: cover_image_url ?? tl.cover_image_url,
                 linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
                 additional_categories: editState.additional_categories,
+                tiers: editState.tiers,
               }
             : tl
         )
@@ -545,7 +556,7 @@ export default function AdminPanel({
   }
 
   async function handleExpandVote(id: string) {
-    if (expandedVoteId === id) { setExpandedVoteId(null); return; }
+    if (expandedVoteId === id) { setExpandedVoteId(null); setEditingTiersId(null); return; }
     setExpandedVoteId(id);
     if (!voteImagesMap[id]) {
       const res = await fetch(`/api/admin/vote-tierlists/${id}/images`);
@@ -554,6 +565,12 @@ export default function AdminPanel({
         setVoteImagesMap((prev) => ({ ...prev, [id]: imgs }));
       }
     }
+    // Auto-load tiers for editing
+    const supabase = createClient();
+    const { data } = await supabase.from("vote_tierlists").select("tiers").eq("id", id).single();
+    const tiers = (data?.tiers as VoteTier[]) ?? DEFAULT_VOTE_TIERS;
+    setEditTiers(tiers);
+    setEditingTiersId(id);
     if (!allTierlists.length) {
       const res = await fetch("/api/admin/tierlists");
       if (res.ok) {
@@ -1408,6 +1425,84 @@ export default function AdminPanel({
                       </p>
                     </div>
 
+                    {/* Tiers */}
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-gray-400">Tiers</label>
+                      <div className="space-y-1.5">
+                        {editState.tiers.map((tier, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <input
+                              value={tier.label}
+                              onChange={(e) =>
+                                setEditState((p) => {
+                                  if (!p) return p;
+                                  const next = [...p.tiers];
+                                  next[idx] = { ...next[idx], label: e.target.value };
+                                  return { ...p, tiers: next };
+                                })
+                              }
+                              className="w-20 rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                              placeholder="Label"
+                            />
+                            <div className="flex gap-1">
+                              {TIER_COLOR_OPTIONS.map((c) => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  onClick={() =>
+                                    setEditState((p) => {
+                                      if (!p) return p;
+                                      const next = [...p.tiers];
+                                      next[idx] = { ...next[idx], color: c };
+                                      return { ...p, tiers: next };
+                                    })
+                                  }
+                                  className={`h-5 w-5 rounded-full border-2 transition-transform ${
+                                    tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"
+                                  }`}
+                                  style={{ backgroundColor: c }}
+                                />
+                              ))}
+                            </div>
+                            {editState.tiers.length > 1 && (
+                              <button
+                                onClick={() =>
+                                  setEditState((p) =>
+                                    p ? { ...p, tiers: p.tiers.filter((_, i) => i !== idx) } : p
+                                  )
+                                }
+                                className="text-xs text-red-400 hover:text-red-300"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-1.5 flex gap-3">
+                        <button
+                          onClick={() =>
+                            setEditState((p) =>
+                              p ? { ...p, tiers: [{ label: "New", color: "#94a3b8" }, ...p.tiers] } : p
+                            )
+                          }
+                          className="text-xs text-indigo-400 hover:text-indigo-300"
+                        >
+                          + Add tier to top
+                        </button>
+                        <button
+                          onClick={() =>
+                            setEditState((p) =>
+                              p ? { ...p, tiers: [...p.tiers, { label: "New", color: "#94a3b8" }] } : p
+                            )
+                          }
+                          className="text-xs text-indigo-400 hover:text-indigo-300"
+                        >
+                          + Add tier to bottom
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Images */}
                     <div>
                       <label className="mb-2 block text-xs font-semibold text-gray-400">
@@ -1963,34 +2058,14 @@ export default function AdminPanel({
                       </select>
                     </div>
 
-                    {/* Tier editing */}
+                    {/* Tier editing (always visible when expanded) */}
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <p className="text-xs font-semibold text-gray-400">Tiers</p>
-                        {editingTiersId !== vl.id ? (
-                          <button
-                            onClick={async () => {
-                              // Fetch current tiers from DB
-                              const supabase = createClient();
-                              const { data } = await supabase.from("vote_tierlists").select("tiers").eq("id", vl.id).single();
-                              const tiers = (data?.tiers as VoteTier[]) ?? DEFAULT_VOTE_TIERS;
-                              setEditTiers(tiers);
-                              setEditingTiersId(vl.id);
-                            }}
-                            className="text-[10px] text-purple-400 hover:text-purple-300"
-                          >
-                            Edit tiers
-                          </button>
-                        ) : (
-                          <div className="flex gap-1.5">
-                            <button onClick={() => handleSaveTiers(vl.id)} disabled={savingTiers}
-                              className="text-[10px] text-green-400 hover:text-green-300 disabled:opacity-50">
-                              {savingTiers ? "Saving…" : "Save"}
-                            </button>
-                            <button onClick={() => setEditingTiersId(null)}
-                              className="text-[10px] text-gray-400 hover:text-white">Cancel</button>
-                          </div>
-                        )}
+                        <button onClick={() => handleSaveTiers(vl.id)} disabled={savingTiers || editingTiersId !== vl.id}
+                          className="text-[10px] text-green-400 hover:text-green-300 disabled:opacity-50">
+                          {savingTiers ? "Saving…" : "Save tiers"}
+                        </button>
                       </div>
                       {editingTiersId === vl.id && (
                         <div className="space-y-1.5 mb-3">
@@ -2009,7 +2084,7 @@ export default function AdminPanel({
                                 {TIER_COLOR_OPTIONS.map((c) => (
                                   <button key={c} type="button"
                                     onClick={() => { const next = [...editTiers]; next[idx] = { ...next[idx], color: c }; setEditTiers(next); }}
-                                    className={`h-4 w-4 rounded-full border-2 transition-transform ${tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"}`}
+                                    className={`h-5 w-5 rounded-full border-2 transition-transform ${tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"}`}
                                     style={{ backgroundColor: c }}
                                   />
                                 ))}
