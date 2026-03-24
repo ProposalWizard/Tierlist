@@ -48,6 +48,8 @@ interface TierlistBoardProps {
   tierlistId?: string;
   tierlistTitle?: string;
   isLoggedIn?: boolean;
+  /** Custom tier rows from DB — overrides the default S/A/B/C/D tiers */
+  initialTiers?: Array<{ label: string; color: string }>;
 }
 
 // ── Unranked pool ──────────────────────────────────────────────────────────
@@ -209,9 +211,19 @@ export default function TierlistBoard({
   tierlistId,
   tierlistTitle,
   isLoggedIn = false,
+  initialTiers,
 }: TierlistBoardProps) {
   // ── Tier state ───────────────────────────────────────────────────────────
-  const [tiers, setTiers] = useState<TierRowData[]>(() => DEFAULT_TIER_ROWS);
+  const [tiers, setTiers] = useState<TierRowData[]>(() => {
+    if (initialTiers && initialTiers.length > 0) {
+      return initialTiers.map((t, i) => ({
+        id: `tier-${i}`,
+        label: t.label,
+        color: t.color,
+      }));
+    }
+    return DEFAULT_TIER_ROWS;
+  });
 
   const [tierMap, setTierMap] = useState<Record<string, string[]>>(() => {
     const map: Record<string, string[]> = {

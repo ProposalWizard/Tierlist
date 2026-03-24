@@ -178,6 +178,7 @@ export default async function PlayPage({ params }: Props) {
         tierlistId={id}
         tierlistTitle={tierlist.title}
         isLoggedIn={!!user}
+        initialTiers={tierlist.tiers as VoteTier[] | undefined}
       />
     </main>
   );

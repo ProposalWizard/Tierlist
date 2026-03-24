@@ -170,6 +170,8 @@ export interface Tierlist {
   linked_vote_tierlist_id: string | null;
   /** Additional categories this tierlist appears in */
   additional_categories?: string[];
+  /** Custom tier rows (labels + colors), defaults to S/A/B/C/D */
+  tiers?: VoteTier[];
 }
 
 /** An image belonging to a user-created tierlist */
