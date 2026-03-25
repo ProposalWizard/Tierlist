@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * app/not-found.tsx
  * Custom 404 page shown whenever notFound() is called or a route doesn't exist.

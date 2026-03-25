@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * app/api/tierlist/[topic]/route.ts
  *

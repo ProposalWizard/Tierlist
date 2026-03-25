@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * Admin API – batch update image sort orders
  *

@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * GET /api/admin/tierlists
  * Returns all tierlists for admin use (e.g. for import picker).

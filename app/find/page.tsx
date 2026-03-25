@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * app/find/page.tsx — Find a Tierlist page
  * Shows all tierlists + vote tierlists with search & category filter.

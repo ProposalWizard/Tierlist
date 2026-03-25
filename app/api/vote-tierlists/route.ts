@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * GET /api/vote-tierlists
  * Returns all active vote tierlists for the homepage.

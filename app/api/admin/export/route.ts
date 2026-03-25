@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * Admin API – Export full backup of all tierlists + vote tierlists
  *

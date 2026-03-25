@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * app/create/page.tsx
  *

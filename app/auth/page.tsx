@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * app/auth/page.tsx
  * Server Component wrapper for the auth page.

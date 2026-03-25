@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * app/auth/callback/route.ts
  *

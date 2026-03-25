@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * GET  /api/admin/category-settings  — fetch all category settings
  * POST /api/admin/category-settings  — upsert settings for a category

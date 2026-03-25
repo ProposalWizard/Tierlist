@@ -1,4 +1,3 @@
-export const runtime = "edge";
 /**
  * app/api/auth/signout/route.ts
  *
