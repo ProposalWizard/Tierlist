@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * GET /api/vote-tierlists/[id]/my-votes?voter_id=<uuid>
  *

@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * Admin API – vote tierlists list & create
  *

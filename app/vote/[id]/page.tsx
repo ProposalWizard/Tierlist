@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * app/vote/[id]/page.tsx
  *

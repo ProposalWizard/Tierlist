@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * Admin API – batch update vote tierlist image sort orders
  *

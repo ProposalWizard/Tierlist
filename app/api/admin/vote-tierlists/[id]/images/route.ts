@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * POST /api/admin/vote-tierlists/[id]/images
  * Adds a new image to a vote tierlist.

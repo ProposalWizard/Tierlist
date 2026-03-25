@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * app/legal/page.tsx — Privacy Policy & Terms of Use
  */

@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * POST /api/admin/vote-tierlists/[id]/import
  * Imports images from an existing regular tierlist into a vote tierlist.

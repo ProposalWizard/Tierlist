@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * DELETE /api/admin/vote-tierlists/[id]/images/[imageId]
  * Removes a single image from a vote tierlist.

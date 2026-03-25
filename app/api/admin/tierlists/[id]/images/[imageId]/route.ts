@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /**
  * Admin API – remove a single image from a tierlist
  *
