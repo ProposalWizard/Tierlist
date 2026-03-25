@@ -1,7 +1,7 @@
 # Football Tierlist Website — Project Documentation
 
 > This file exists so context is never lost between sessions.
-> Last updated: March 2026
+> Last updated: 25 March 2026
 
 ---
 
@@ -85,7 +85,8 @@ This tierlist tool is planned to become part of a **larger football games platfo
 │           ├── tierlists/...       # CRUD for tierlists (admin only)
 │           ├── categories/...      # CRUD for categories (admin only)
 │           ├── category-settings/route.ts  # Homepage sort settings
-│           └── vote-tierlists/...  # CRUD for vote tierlists (admin only)
+│           ├── vote-tierlists/...  # CRUD for vote tierlists (admin only)
+│           └── export/route.ts     # GET: full JSON backup of all data
 ├── components/
 │   ├── TierlistBoard.tsx     # Main drag-and-drop board (play + create modes)
 │   ├── TierRow.tsx           # Single tier row (label, color, settings, players)
@@ -103,7 +104,9 @@ This tierlist tool is planned to become part of a **larger football games platfo
 │   ├── AuthForm.tsx          # Auth form component
 │   ├── ZoomOverlay.tsx       # Full-screen image zoom
 │   ├── CropOverlay.tsx       # Image crop editor
-│   └── LabelOverlay.tsx      # Add text label to image
+│   ├── LabelOverlay.tsx      # Add text label to image
+│   ├── PlayCommunityVote.tsx # Community vote results shown on play page
+│   └── ImageWithFallback.tsx # Image component with fallback handling
 ├── lib/
 │   ├── types.ts              # All TypeScript interfaces + constants
 │   ├── admin.ts              # Admin role check helper
@@ -120,7 +123,13 @@ This tierlist tool is planned to become part of a **larger football games platfo
 │   └── migrations/
 │       ├── 002_more_topics.sql
 │       ├── vote_tierlist_likes.sql
-│       └── category_settings.sql
+│       ├── category_settings.sql
+│       ├── linked_tierlists.sql
+│       ├── additional_categories.sql
+│       ├── saved_profile_images.sql
+│       ├── feedback.sql
+│       ├── image_cleanup.sql
+│       └── tierlist_tiers.sql        # Adds tiers JSONB column to tierlists table (PENDING — not yet run)
 ├── middleware.ts             # Next.js middleware — session refresh + route protection
 ├── package.json
 ├── next.config.mjs
@@ -137,7 +146,7 @@ This tierlist tool is planned to become part of a **larger football games platfo
 
 | Table | Purpose |
 |-------|---------|
-| `tierlists` | User-created tierlist templates (title, slug, category, cover_image_url, view_count, created_by) |
+| `tierlists` | User-created tierlist templates (title, slug, category, cover_image_url, view_count, created_by, linked_vote_tierlist_id, additional_categories, tiers JSONB*) |
 | `tierlist_images` | Images belonging to a tierlist (name, image_url, sort_order) |
 | `tierlist_topics` | Legacy: predefined ranking topics (e.g. "Premier League 2024/25") |
 | `tierlist_players` | Legacy: players belonging to a topic |
@@ -276,10 +285,11 @@ This tierlist tool is planned to become part of a **larger football games platfo
 Accessible to users with `is_admin = true` in `user_roles` table.
 
 ### Features
-- **Tierlists tab**: View all tierlists, edit title/category/cover, manage images, delete
+- **Tierlists tab**: View all tierlists, edit title/category/cover/tiers, manage images (drag-and-drop reorder), delete
 - **Categories tab**: Add/edit/delete/reorder categories
-- **Vote Tierlists tab**: Create/edit vote tierlists, bulk upload images, import from regular tierlists
+- **Vote Tierlists tab**: Create/edit vote tierlists, edit tiers (always visible when expanded), bulk upload images, import from regular tierlists, drag-and-drop image reorder
 - **Category Settings**: Set homepage sort method per category (recent/views/likes/manual), pin tierlists
+- **Export Backup**: Downloads a JSON file with all tierlists, vote tierlists, images, and categories
 
 ---
 
@@ -327,9 +337,34 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - [x] Vote tierlist likes
 - [x] Admin panel (tierlists, categories, vote tierlists, category settings)
 - [x] Admin: bulk image upload, import from regular tierlists
+- [x] Admin: drag-and-drop image reordering (replaced arrow buttons) for both tierlist types
+- [x] Admin: tier editing (labels, colors, add/remove) for both regular and vote tierlists
+- [x] Admin: export backup (JSON download of all data)
+- [x] Admin: linked vote tierlist picker on regular tierlists
+- [x] Admin: additional categories (multi-select) on regular tierlists
+- [x] Admin: cover photo crop for both tierlist types
+- [x] Custom tiers saved to DB and loaded on play page (requires `tierlist_tiers.sql` migration)
 - [x] Persistent global nav bar
 - [x] Legal page (Privacy Policy & Terms of Use)
 - [x] Site footer
+- [x] Save to Profile feature (screenshot saved to user's profile)
+
+---
+
+## Pending Migrations / Known Issues
+
+> **IMPORTANT**: Check these before making changes that touch these features.
+
+| Migration File | Status | What It Does |
+|----------------|--------|-------------|
+| `tierlist_tiers.sql` | **NOT YET RUN** | Adds `tiers` JSONB column to `tierlists` table. Until run, custom tiers for regular tierlists won't persist. The code handles this gracefully (falls back to default S/A/B/C/D). |
+
+### Critical Gotchas
+
+1. **Never add columns to the admin page's initial `select()` query that don't exist in the DB yet** — Supabase returns an error (not empty results) when selecting a non-existent column, which causes the entire query to fail silently and show 0 tierlists. The admin page (`app/admin/page.tsx`) only selects: `id, title, category, cover_image_url, created_at, created_by, slug`. Extra data (tiers, images, etc.) is fetched lazily when opening the edit form.
+2. **Supabase Storage structure** — All images are in the `tierlist-images` bucket as flat files with UUID filenames (plus subfolders: `cover-crops/`, `profile-saves/`, `vote-covers/`). There is no per-tierlist folder organization. Image URLs are stored in DB tables (`tierlist_images`, `vote_tierlist_images`).
+3. **Image uploads** — Images are compressed client-side to WebP (1200px max, 75% quality) before upload. File names are random UUIDs. Uploaded via Supabase Storage JS client.
+4. **Admin panel component (`AdminPanel.tsx`)** — ~2200 lines, contains both regular tierlist and vote tierlist management. Uses `@dnd-kit` for image reordering. Regular tierlists use a centralized `EditState` with batch save; vote tierlists use inline per-field saves (except tiers which have their own save button).
 
 ---
 
@@ -343,13 +378,31 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - [ ] **Player ratings** — Future game mode
 - [ ] **Homepage redesign** — As more game modes are added, homepage needs to feature all games
 - [ ] **SEO / Open Graph images** — Dynamic OG images for shared tierlists
-- [ ] **Image deletion from Storage** — When tierlists are deleted, orphaned images remain in Supabase Storage
+- [ ] **Image deletion from Storage** — When tierlists are deleted, orphaned images remain in Supabase Storage (admin delete handler does attempt cleanup, but some orphans may remain)
+- [ ] **Storage organization** — All images are flat in the bucket root with UUID names; could be organized into per-tierlist folders for clarity (would require migrating existing URLs)
 - [ ] **Rate limiting** — No rate limiting on API routes currently
 - [ ] **Error boundaries** — No React error boundaries
 - [ ] **Loading states** — Some pages could use skeleton loaders
 - [ ] **Tierlist editing** — Can only create new, cannot edit existing tierlists after publishing
 - [ ] **Sort/filter on homepage** — Users can only browse by category, no sort controls
 - [ ] **PWA support** — Could be installable as a mobile app
+- [ ] **Run `tierlist_tiers.sql` migration** — Needed to enable custom tier persistence for regular tierlists
+
+---
+
+## Recent Session Changes (25 March 2026)
+
+These changes were made in the most recent session and may need follow-up:
+
+1. **Admin image reordering** — Replaced arrow buttons (← →) with `@dnd-kit` drag-and-drop for both regular and vote tierlist image grids in admin. Crop button (✂) kept. Uses `PointerSensor` with 5px activation distance so clicks still work.
+
+2. **Tier editing in admin** — Added tier editing UI (labels, colors, add/remove rows) to regular tierlist admin edit form (saved via "Save Changes" button). Vote tierlist tier editing is now always visible when expanded (removed the "Edit tiers" toggle — tiers auto-load on expand).
+
+3. **Custom tiers for regular tierlists** — Added `tiers` JSONB column migration (`tierlist_tiers.sql` — NOT YET RUN on DB), updated admin PATCH API to accept `tiers`, added `initialTiers` prop to `TierlistBoard`, play page passes saved tiers. Falls back to default S/A/B/C/D if column doesn't exist.
+
+4. **Admin tierlists disappearing bug** — Adding `tiers` to the admin page `select()` query broke the page because the column doesn't exist yet. Fixed by removing it from the query and fetching tiers lazily in `openEdit()`.
+
+5. **Export backup** — New `GET /api/admin/export` endpoint returns a JSON file with all tierlists (with images grouped inline), vote tierlists (with images), and categories. "Export Backup" button added to admin panel tab bar.
 
 ---
 
