@@ -29,7 +29,7 @@ export default async function AdminPage() {
   const service = createServiceClient();
   const { data: tierlists } = await service
     .from("tierlists")
-    .select("id, title, category, cover_image_url, created_at, created_by, slug, tiers")
+    .select("id, title, category, cover_image_url, created_at, created_by, slug")
     .order("created_at", { ascending: false })
     .returns<Tierlist[]>();
 

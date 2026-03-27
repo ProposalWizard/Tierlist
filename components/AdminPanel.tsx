@@ -305,6 +305,14 @@ export default function AdminPanel({
   }
 
   // ── Open the edit form for a tierlist ──────────────────────────────────────
+  const DEFAULT_TIERS: VoteTier[] = [
+    { label: "S", color: "#4ade80" },
+    { label: "A", color: "#86efac" },
+    { label: "B", color: "#fde047" },
+    { label: "C", color: "#fb923c" },
+    { label: "D", color: "#f87171" },
+  ];
+
   async function openEdit(tl: Tierlist) {
     setEditingId(tl.id);
     setEditState({
@@ -321,13 +329,7 @@ export default function AdminPanel({
       error: null,
       linked_vote_tierlist_id: tl.linked_vote_tierlist_id ?? null,
       additional_categories: (tl as Tierlist & { additional_categories?: string[] }).additional_categories ?? [],
-      tiers: (tl.tiers as VoteTier[] | undefined) ?? [
-        { label: "S", color: "#4ade80" },
-        { label: "A", color: "#86efac" },
-        { label: "B", color: "#fde047" },
-        { label: "C", color: "#fb923c" },
-        { label: "D", color: "#f87171" },
-      ],
+      tiers: (tl.tiers as VoteTier[] | undefined) ?? DEFAULT_TIERS,
     });
     // Ensure vote tierlists are loaded for the linked tierlist picker
     if (!votelistsLoaded) {
@@ -337,23 +339,33 @@ export default function AdminPanel({
         .catch(() => {});
     }
 
-    // Fetch images for this tierlist from Supabase (publicly readable)
+    // Fetch images + tiers for this tierlist from Supabase
     const supabase = createClient();
-    const { data: images } = await supabase
-      .from("tierlist_images")
-      .select("id, name, image_url, sort_order")
-      .eq("tierlist_id", tl.id)
-      .order("sort_order");
+    const [{ data: images }, { data: tlData }] = await Promise.all([
+      supabase
+        .from("tierlist_images")
+        .select("id, name, image_url, sort_order")
+        .eq("tierlist_id", tl.id)
+        .order("sort_order"),
+      supabase
+        .from("tierlists")
+        .select("tiers")
+        .eq("id", tl.id)
+        .single(),
+    ]);
 
     setEditState((prev) => {
       if (!prev) return prev;
       // Pre-select whichever image is already the cover
       const selectedCoverImageId =
         images?.find((img) => img.image_url === tl.cover_image_url)?.id ?? null;
+      // Use tiers from DB if available (column may not exist yet)
+      const tiers = (tlData?.tiers as VoteTier[] | undefined) ?? prev.tiers;
       return {
         ...prev,
         images: (images as AdminImage[]) ?? [],
         selectedCoverImageId,
+        tiers,
         loading: false,
       };
     });
@@ -931,7 +943,7 @@ export default function AdminPanel({
       )}
 
       {/* ── Tabs ───────────────────────────────────────────────────────── */}
-      <div className="mb-6 flex gap-2 border-b border-gray-800 pb-2">
+      <div className="mb-6 flex items-center gap-2 border-b border-gray-800 pb-2">
         <button
           onClick={() => setTab("tierlists")}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
@@ -956,6 +968,29 @@ export default function AdminPanel({
         >
           Vote Tierlists {votelistsLoaded ? `(${votelists.length})` : ""}
         </button>
+        <div className="ml-auto">
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/admin/export");
+                if (!res.ok) throw new Error("Export failed");
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `tierlist-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showSaveConfirmation("Backup downloaded");
+              } catch {
+                showSaveConfirmation("Export failed");
+              }
+            }}
+            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
+          >
+            Export Backup
+          </button>
+        </div>
       </div>
 
       {/* ── Categories tab ─────────────────────────────────────────────── */}
