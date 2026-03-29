@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
+import { processImage } from "@/lib/faceDetection";
 import ImageWithFallback from "./ImageWithFallback";
 import CropOverlay from "./CropOverlay";
 import type { Tierlist, Category, VoteTier } from "@/lib/types";
@@ -622,15 +623,16 @@ export default function AdminPanel({
       const created = await res.json();
       const createdId = created.id;
 
-      // Upload images if any were added
+      // Upload images if any were added (with face detection)
       if (newVoteImageFiles.length > 0) {
         await Promise.all(
           newVoteImageFiles.map(async (file) => {
-            const ext = file.name.split(".").pop() ?? "jpg";
+            const processed = await processImage(file).catch(() => file);
+            const ext = "webp";
             const path = `vote-images/${crypto.randomUUID()}.${ext}`;
             const { data: uploadData, error: uploadError } = await supabase.storage
               .from("tierlist-images")
-              .upload(path, file, { upsert: false });
+              .upload(path, processed, { upsert: false });
             if (uploadError) throw new Error(uploadError.message);
             const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
             await fetch(`/api/admin/vote-tierlists/${createdId}/images`, {
@@ -764,11 +766,12 @@ export default function AdminPanel({
       const supabase = createClient();
       const newImgs = await Promise.all(
         files.map(async (file) => {
-          const ext = file.name.split(".").pop() ?? "jpg";
+          const processed = await processImage(file).catch(() => file);
+          const ext = "webp";
           const path = `vote-images/${crypto.randomUUID()}.${ext}`;
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from("tierlist-images")
-            .upload(path, file, { upsert: false });
+            .upload(path, processed, { upsert: false });
           if (uploadError) throw new Error(uploadError.message);
           const { data: urlData } = supabase.storage.from("tierlist-images").getPublicUrl(uploadData.path);
           const res = await fetch(`/api/admin/vote-tierlists/${voteId}/images`, {

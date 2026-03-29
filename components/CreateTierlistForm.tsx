@@ -4,6 +4,7 @@ import { useState, useId } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
+import { processImage } from "@/lib/faceDetection";
 
 interface ImageEntry {
   file: File;
@@ -62,9 +63,11 @@ export default function CreateTierlistForm() {
     const entries: ImageEntry[] = [];
     for (const file of allowed) {
       const compressed = await compressImage(file).catch(() => file);
+      // Face-detect and crop around face if found
+      const processed = await processImage(compressed).catch(() => compressed);
       entries.push({
-        file: compressed,
-        preview: URL.createObjectURL(compressed),
+        file: processed,
+        preview: URL.createObjectURL(processed),
         name: file.name.replace(/\.[^/.]+$/, ""),
       });
     }

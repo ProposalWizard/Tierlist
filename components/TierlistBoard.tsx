@@ -31,6 +31,7 @@ import ZoomOverlay from "./ZoomOverlay";
 import CropOverlay from "./CropOverlay";
 import LabelOverlay from "./LabelOverlay";
 import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
+import { processImage } from "@/lib/faceDetection";
 import {
   DEFAULT_TIER_ROWS,
   type TierRowData,
@@ -368,15 +369,17 @@ export default function TierlistBoard({
       const newFiles: Record<string, File> = {};
       for (const file of validFiles) {
         const compressed = await compressImage(file).catch(() => file);
+        // Face-detect and crop around face if found
+        const processed = await processImage(compressed).catch(() => compressed);
         const id = crypto.randomUUID();
         newPlayers.push({
           id, topic_id: "",
           name: file.name.replace(/\.[^/.]+$/, ""),
           position: null, club: null,
-          image_url: URL.createObjectURL(compressed),
+          image_url: URL.createObjectURL(processed),
           created_at: new Date().toISOString(),
         });
-        newFiles[id] = compressed;
+        newFiles[id] = processed;
         recordUpload();
       }
       setPlayerMap((prev) => ({
