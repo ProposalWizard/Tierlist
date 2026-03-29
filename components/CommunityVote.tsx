@@ -35,6 +35,10 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
   const tierIndex: Record<string, number> = {};
   tiers.forEach((t, i) => { tierIndex[t.label] = i; });
 
+  // Dynamic tier label column width based on longest label
+  const maxLabelLen = Math.min(Math.max(...tiers.map((t) => t.label.length), 1), 10);
+  const tierLabelWidth = maxLabelLen <= 2 ? 56 : Math.min(40 + maxLabelLen * 10, 140);
+
   // Compute average tier position for each image and bucket them
   const buckets: Record<string, ImageData[]> = {};
   for (const t of tiers) buckets[t.label] = [];
@@ -100,10 +104,10 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
           return (
             <div key={tier.label} className="flex min-h-[64px] border-b border-gray-800/60 last:border-b-0">
               <div
-                className="flex w-14 flex-shrink-0 flex-col items-center justify-center text-base font-black text-gray-900 select-none md:w-20 md:text-xl"
-                style={{ backgroundColor: tier.color }}
+                className="flex flex-shrink-0 flex-col items-center justify-center font-black text-gray-900 select-none px-1.5"
+                style={{ backgroundColor: tier.color, width: tierLabelWidth, fontSize: maxLabelLen <= 2 ? "1.1rem" : "clamp(10px, 1.2vw, 14px)" }}
               >
-                <span>{tier.label}</span>
+                <span className="text-center">{tier.label}</span>
                 <span className="text-[9px] font-semibold opacity-70">
                   {items.length}
                 </span>
