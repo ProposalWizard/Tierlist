@@ -164,6 +164,10 @@ export default function VoteBoard({
   const votedCount = images.length - pool.length;
   const [showMobileStats, setShowMobileStats] = useState(false);
 
+  // Compute tier label column width based on longest label (up to ~10 chars)
+  const maxLabelLen = Math.min(Math.max(...tiers.map((t) => t.label.length), 1), 10);
+  const tierLabelWidth = maxLabelLen <= 2 ? 56 : Math.min(40 + maxLabelLen * 10, 140);
+
   // ── Community's Vote view ────────────────────────────────────────────────
   if (showCommunityVote) {
     return (
@@ -194,10 +198,10 @@ export default function VoteBoard({
           {tiers.map((tier) => (
             <div key={tier.label} className="flex min-h-[64px] border-b border-gray-800/60 last:border-b-0">
               <div
-                className="flex w-[72px] flex-shrink-0 items-center justify-center text-[11px] font-black text-gray-900 select-none leading-tight p-0.5 md:w-14 md:text-xl md:p-0"
-                style={{ backgroundColor: tier.color }}
+                className="flex flex-shrink-0 items-center justify-center font-black text-gray-900 select-none leading-tight px-1.5 py-0.5"
+                style={{ backgroundColor: tier.color, width: tierLabelWidth, fontSize: maxLabelLen <= 2 ? undefined : "clamp(10px, 1.2vw, 14px)" }}
               >
-                <span className="break-words text-center overflow-hidden" style={{ display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical" as const }}>
+                <span className="text-center" style={{ fontSize: maxLabelLen <= 2 ? "1.1rem" : undefined }}>
                   {tier.label}
                 </span>
               </div>
@@ -270,12 +274,6 @@ export default function VoteBoard({
                 className="mb-3 w-full rounded-lg object-cover"
                 style={{ maxHeight: 160 }}
               />
-              {selectedImg.name && (
-                <p className="mb-3 text-center text-sm font-semibold text-white truncate">
-                  {selectedImg.name}
-                </p>
-              )}
-
               {/* Stats */}
               <div className="mb-4 space-y-1.5">
                 {tiers.map((tier) => {
@@ -286,8 +284,8 @@ export default function VoteBoard({
                   return (
                     <div key={tier.label} className="flex items-center gap-1.5">
                       <span
-                        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[10px] font-black text-gray-900"
-                        style={{ backgroundColor: tier.color }}
+                        className="flex h-5 flex-shrink-0 items-center justify-center rounded px-1 text-[9px] font-black text-gray-900 truncate"
+                        style={{ backgroundColor: tier.color, minWidth: 20, maxWidth: 60 }}
                       >
                         {tier.label}
                       </span>
@@ -313,7 +311,7 @@ export default function VoteBoard({
               <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
                 Your vote
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(tiers.length, 3)}, 1fr)` }}>
                 {tiers.map((tier) => {
                   const isMyVote = userVotes[selectedImg.id] === tier.label;
                   const isPending = pending[selectedImg.id] ?? false;
@@ -322,7 +320,7 @@ export default function VoteBoard({
                       key={tier.label}
                       onClick={() => castVote(selectedImg.id, tier.label)}
                       disabled={isPending}
-                      className={`flex-1 min-w-[2rem] rounded-lg py-2.5 text-sm font-black text-gray-900 transition-all disabled:opacity-50 ${
+                      className={`rounded-lg py-2 text-xs font-black text-gray-900 transition-all disabled:opacity-50 truncate px-1 ${
                         isMyVote
                           ? "ring-2 ring-offset-1 ring-offset-gray-900 ring-white scale-95"
                           : "hover:scale-105 hover:brightness-110"
@@ -333,14 +331,14 @@ export default function VoteBoard({
                     </button>
                   );
                 })}
-                {/* Skip button — advance without voting */}
-                <button
-                  onClick={() => skipImage(selectedImg.id)}
-                  className="flex-1 min-w-[2rem] rounded-lg border border-gray-600 py-2.5 text-xs font-bold text-gray-400 transition-all hover:border-gray-400 hover:text-white"
-                >
-                  SKIP
-                </button>
               </div>
+              {/* Skip button — advance without voting */}
+              <button
+                onClick={() => skipImage(selectedImg.id)}
+                className="w-full mt-1.5 rounded-lg border border-gray-600 py-2 text-xs font-bold text-gray-400 transition-all hover:border-gray-400 hover:text-white"
+              >
+                SKIP
+              </button>
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-gray-800 p-6 text-center">
@@ -377,9 +375,6 @@ export default function VoteBoard({
               className="h-10 w-10 flex-shrink-0 rounded-lg object-cover border border-gray-700"
             />
             <div className="min-w-0 flex-1">
-              {selectedImg.name && (
-                <p className="truncate text-xs font-semibold text-white">{selectedImg.name}</p>
-              )}
               <p className="text-[10px] text-gray-500">
                 {selectedImg.total_votes > 0
                   ? `${selectedImg.total_votes} vote${selectedImg.total_votes === 1 ? "" : "s"}`
@@ -415,8 +410,8 @@ export default function VoteBoard({
                 return (
                   <div key={tier.label} className="flex items-center gap-1.5">
                     <span
-                      className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[10px] font-black text-gray-900"
-                      style={{ backgroundColor: tier.color }}
+                      className="flex h-5 flex-shrink-0 items-center justify-center rounded px-1 text-[9px] font-black text-gray-900 truncate"
+                      style={{ backgroundColor: tier.color, minWidth: 20, maxWidth: 60 }}
                     >
                       {tier.label}
                     </span>
@@ -435,7 +430,7 @@ export default function VoteBoard({
           )}
 
           {/* Vote buttons grid */}
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(tiers.length, 3)}, 1fr)` }}>
             {tiers.map((tier) => {
               const isMyVote = userVotes[selectedImg.id] === tier.label;
               const isPending = pending[selectedImg.id] ?? false;
