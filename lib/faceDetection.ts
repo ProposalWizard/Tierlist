@@ -99,7 +99,7 @@ function cropToFile(
 
 export async function processImage(file: File): Promise<File> {
   try {
-    console.log("=== 🧠 PROCESSING IMAGE ===");
+    console.log("🔥 PROCESS IMAGE FUNCTION CALLED");
 
     await ensureModelsLoaded();
 
