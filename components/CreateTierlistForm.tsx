@@ -1,3 +1,5 @@
+console.log("🚨 CREATE PAGE IS RUNNING");
+
 "use client";
 
 import { useState, useId } from "react";
