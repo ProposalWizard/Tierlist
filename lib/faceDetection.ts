@@ -108,58 +108,62 @@ export async function processImage(file: File): Promise<File> {
     const { canvas, scale } = resizeToCanvas(img, 512);
 
     console.log("🔍 Running face detection...");
-
     const detection = await faceapi.detectSingleFace(
       canvas,
       new faceapi.TinyFaceDetectorOptions({
         inputSize: 512,
-        scoreThreshold: 0.2,
+        scoreThreshold: 0.15,
       })
     );
 
     console.log("📊 Detection result:", detection);
 
+    // ❌ No face → return original
     if (!detection) {
-      console.log("❌ No face detected — using original image");
+      console.log("❌ No face detected — returning original");
       return file;
     }
 
-    console.log("✅ Face detected — cropping");
+    console.log("✅ Face detected — repositioning crop");
 
+    // Map face box back to original image
     const box = detection.box;
-
     const origX = box.x / scale;
     const origY = box.y / scale;
     const origW = box.width / scale;
     const origH = box.height / scale;
 
-    const padX = origW * 0.6;
-    const padY = origH * 0.6;
+    // ✅ KEEP ORIGINAL ZOOM (square crop)
+    const size = Math.min(img.naturalWidth, img.naturalHeight);
 
-    const cropX = Math.max(0, Math.round(origX - padX));
-    const cropY = Math.max(0, Math.round(origY - padY));
-    const cropRight = Math.min(
-      img.naturalWidth,
-      Math.round(origX + origW + padX)
+    // Face center
+    const centerX = origX + origW / 2;
+    const centerY = origY + origH / 2;
+
+    // Slight upward bias so face sits nicely
+    const offsetX = centerX - size / 2;
+    const offsetY = centerY - size * 0.4;
+
+    // Clamp crop inside image
+    const cropX = Math.max(
+      0,
+      Math.min(img.naturalWidth - size, Math.round(offsetX))
     );
-    const cropBottom = Math.min(
-      img.naturalHeight,
-      Math.round(origY + origH + padY)
+
+    const cropY = Math.max(
+      0,
+      Math.min(img.naturalHeight - size, Math.round(offsetY))
     );
 
-    const cropW = cropRight - cropX;
-    const cropH = cropBottom - cropY;
-
-    if (cropW < 20 || cropH < 20) {
-      console.log("⚠️ Crop too small — using original");
-      return file;
-    }
+    const cropW = size;
+    const cropH = size;
 
     const name = file.name.replace(/\.[^/.]+$/, ".webp");
 
     return await cropToFile(img, cropX, cropY, cropW, cropH, name);
+
   } catch (err) {
-    console.error("💥 Face processing failed:", err);
+    console.log("⚠️ Face processing failed:", err);
     return file;
   }
 }
