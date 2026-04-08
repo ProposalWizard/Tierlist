@@ -66,6 +66,37 @@ function resizeToCanvas(
   return { canvas, scale };
 }
 
+function cropToFile(
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  cropW: number,
+  cropH: number,
+  fileName: string
+): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = cropW;
+    canvas.height = cropH;
+
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, x, y, cropW, cropH, 0, 0, cropW, cropH);
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Failed to crop image"));
+          return;
+        }
+
+        resolve(new File([blob], fileName, { type: "image/webp" }));
+      },
+      "image/webp",
+      0.9
+    );
+  });
+}
+
 export async function processImage(file: File): Promise<File> {
   try {
     console.log("🔥 PROCESS IMAGE FUNCTION CALLED");
@@ -73,10 +104,10 @@ export async function processImage(file: File): Promise<File> {
     await ensureModelsLoaded();
 
     const img = await loadImageFromFile(file);
+
     const { canvas, scale } = resizeToCanvas(img, 512);
 
     console.log("🔍 Running face detection...");
-
     const detection = await faceapi.detectSingleFace(
       canvas,
       new faceapi.TinyFaceDetectorOptions({
@@ -85,30 +116,61 @@ export async function processImage(file: File): Promise<File> {
       })
     );
 
+    console.log("📊 Detection result:", detection);
+
+    // ❌ No face → return original
     if (!detection) {
-      console.log("❌ No face detected");
+      console.log("❌ No face detected — returning original");
       return file;
     }
 
-    console.log("✅ Face detected");
+    console.log("✅ Face detected — repositioning crop");
 
+    // Map face box back to original image
     const box = detection.box;
+    const origX = box.x / scale;
+    const origY = box.y / scale;
+    const origW = box.width / scale;
+    const origH = box.height / scale;
 
-    const centerX = (box.x + box.width / 2) / scale;
-    const centerY = (box.y + box.height / 2) / scale;
+    // ✅ KEEP ORIGINAL ZOOM (square crop)
+    const size = Math.min(img.naturalWidth, img.naturalHeight);
 
-    // ✅ attach face data (NO cropping)
-    (file as any).__face = {
-      centerX,
-      centerY,
-      width: img.naturalWidth,
-      height: img.naturalHeight,
-    };
+    // Face center
+    const centerX = origX + origW / 2;
+    const centerY = origY + origH / 2;
 
-    return file;
+    // Slight upward bias so face sits nicely
+    const offsetX = centerX - size / 2;
+    const offsetY = centerY - size * 0.4;
 
+    // Clamp crop inside image
+    const cropX = Math.max(
+      0,
+      Math.min(img.naturalWidth - size, Math.round(offsetX))
+    );
+
+    const cropY = Math.max(
+      0,
+      Math.min(img.naturalHeight - size, Math.round(offsetY))
+    );
+
+    const cropW = size;
+    const cropH = size;
+
+    const name = file.name.replace(/\.[^/.]+$/, ".webp");
+
+    // Attach face data instead of cropping
+(file as any).__face = {
+  centerX: origX + origW / 2,
+  centerY: origY + origH / 2,
+  width: img.naturalWidth,
+  height: img.naturalHeight,
+};
+
+return file;
   } catch (err) {
-    console.log("⚠️ Face detection failed:", err);
+    console.log("⚠️ Face processing failed:", err);
     return file;
   }
 }
