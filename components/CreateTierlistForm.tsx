@@ -287,16 +287,13 @@ export default function CreateTierlistForm() {
   return (
     <div className="w-[88px] h-[88px] overflow-hidden rounded-lg">
       <img
-        src={img.preview}
-        alt="uploaded"
-        className="w-full h-full object-cover"
-        style={{
-          objectPosition: face
-            ? `${(face.centerX / face.width) * 100}% ${(face.centerY / face.height) * 100}%`
-            : "50% 50%",
-        }}
-      />
-    </div>
+  src={img.preview}
+  alt="uploaded"
+  className="w-full h-full object-cover"
+  style={{
+    objectPosition: "0% 0%",
+  }}
+/>
   );
 })()}
                       {isCover && (
