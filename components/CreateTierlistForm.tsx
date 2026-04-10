@@ -282,12 +282,8 @@ export default function CreateTierlistForm() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       // Attach face data instead of cropping
-(file as any).__face = {
-  centerX: origX + origW / 2,
-  centerY: origY + origH / 2,
-  width: img.naturalWidth,
-  height: img.naturalHeight,
-};
+// DO NOTHING HERE
+// Face data should already be attached in processImage
 
 return file;
                       {isCover && (
