@@ -280,12 +280,25 @@ export default function CreateTierlistForm() {
                       className="block focus:outline-none"
                       title="Set as cover photo"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      // Attach face data instead of cropping
-// DO NOTHING HERE
-// Face data should already be attached in processImage
+                     {/* eslint-disable-next-line @next/next/no-img-element */}
+{(() => {
+  const face = (img.file as File & { __face?: any }).__face;
 
-return file;
+  return (
+    <div className="w-[88px] h-[88px] overflow-hidden rounded-lg">
+      <img
+        src={img.preview}
+        alt="uploaded"
+        className="w-full h-full object-cover"
+        style={{
+          objectPosition: face
+            ? `${(face.centerX / face.width) * 100}% ${(face.centerY / face.height) * 100}%`
+            : "50% 50%",
+        }}
+      />
+    </div>
+  );
+})()}
                       {isCover && (
                         <span className="absolute left-1 top-1 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
                           Cover
