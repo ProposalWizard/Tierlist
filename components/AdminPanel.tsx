@@ -623,11 +623,11 @@ export default function AdminPanel({
       const created = await res.json();
       const createdId = created.id;
 
-      // Upload images if any were added (with face detection)
+      // Upload images if any were added
       if (newVoteImageFiles.length > 0) {
         await Promise.all(
           newVoteImageFiles.map(async (file) => {
-            const processed = await processImage(file).catch(() => file);
+            const { file: processed } = await processImage(file).catch(() => ({ file, faceCenter: null }));
             const ext = "webp";
             const path = `vote-images/${crypto.randomUUID()}.${ext}`;
             const { data: uploadData, error: uploadError } = await supabase.storage
@@ -766,7 +766,7 @@ export default function AdminPanel({
       const supabase = createClient();
       const newImgs = await Promise.all(
         files.map(async (file) => {
-          const processed = await processImage(file).catch(() => file);
+          const { file: processed } = await processImage(file).catch(() => ({ file, faceCenter: null }));
           const ext = "webp";
           const path = `vote-images/${crypto.randomUUID()}.${ext}`;
           const { data: uploadData, error: uploadError } = await supabase.storage

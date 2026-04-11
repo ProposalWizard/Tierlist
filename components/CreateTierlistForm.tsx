@@ -1,5 +1,3 @@
-console.log("🚨 CREATE PAGE IS RUNNING");
-
 "use client";
 
 import { useState, useId } from "react";
@@ -65,8 +63,8 @@ export default function CreateTierlistForm() {
     const entries: ImageEntry[] = [];
     for (const file of allowed) {
       const compressed = await compressImage(file).catch(() => file);
-      // Face-detect and crop around face if found
-      const processed = await processImage(compressed).catch(() => compressed);
+      // Face detection runs non-destructively — file is unchanged
+      const { file: processed } = await processImage(compressed).catch(() => ({ file: compressed, faceCenter: null }));
       entries.push({
         file: processed,
         preview: URL.createObjectURL(processed),
@@ -280,22 +278,12 @@ export default function CreateTierlistForm() {
                       className="block focus:outline-none"
                       title="Set as cover photo"
                     >
-                     {/* eslint-disable-next-line @next/next/no-img-element */}
-{(() => {
-  const face = (img.file as File & { __face?: any }).__face;
-
-  return (
-    <div className="w-[88px] h-[88px] overflow-hidden rounded-lg">
-      <img
-  src={img.preview}
-  alt="uploaded"
-  className="w-full h-full object-cover"
-  style={{
-    objectPosition: "0% 0%",
-  }}
-/>
-  );
-})()}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.preview}
+                        alt="uploaded"
+                        className="h-[88px] w-[88px] rounded-lg object-cover"
+                      />
                       {isCover && (
                         <span className="absolute left-1 top-1 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
                           Cover

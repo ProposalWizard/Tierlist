@@ -112,7 +112,9 @@ export default function PlayerCard({
               height: "100%",
               backgroundImage: `url("${player.image_url}")`,
               backgroundSize: dims.contain ? "contain" : "cover",
-              backgroundPosition: "center",
+              backgroundPosition: player.faceCenter
+                ? `${player.faceCenter.x}% ${player.faceCenter.y}%`
+                : "center",
               backgroundRepeat: "no-repeat",
               backgroundColor: dims.contain ? "#1f2937" : undefined,
             }}

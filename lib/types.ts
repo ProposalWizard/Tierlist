@@ -26,6 +26,8 @@ export interface TierlistPlayer {
   created_at: string;
   /** Client-side only: optional text label overlaid on the card */
   label?: string;
+  /** Client-side only: face center as percentage for smart thumbnail centering */
+  faceCenter?: { x: number; y: number } | null;
 }
 
 export interface TierlistRanking {

@@ -31,7 +31,7 @@ import ZoomOverlay from "./ZoomOverlay";
 import CropOverlay from "./CropOverlay";
 import LabelOverlay from "./LabelOverlay";
 import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
-import { processImage } from "@/lib/faceDetection";
+import { processImage, detectFaceFromUrl } from "@/lib/faceDetection";
 import {
   DEFAULT_TIER_ROWS,
   type TierRowData,
@@ -290,6 +290,27 @@ export default function TierlistBoard({
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // Run face detection on pre-loaded images (play page) to set smart centering
+  useEffect(() => {
+    if (!initialImages?.length) return;
+    let cancelled = false;
+    (async () => {
+      for (const img of initialImages) {
+        if (cancelled) break;
+        const fc = await detectFaceFromUrl(img.image_url).catch(() => null);
+        if (cancelled) break;
+        if (fc) {
+          setPlayerMap((prev) => {
+            const existing = prev[img.id];
+            if (!existing) return prev;
+            return { ...prev, [img.id]: { ...existing, faceCenter: fc } };
+          });
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [initialImages]);
+
   /** Move the tap-selected image to the given tier (mobile bottom bar) */
   function handleMobilePlace(tierId: string) {
     if (!tapSelectedId) return;
@@ -369,17 +390,18 @@ export default function TierlistBoard({
       const newFiles: Record<string, File> = {};
       for (const file of validFiles) {
         const compressed = await compressImage(file).catch(() => file);
-        // Face-detect and crop around face if found
-        const processed = await processImage(compressed).catch(() => compressed);
+        // Detect face position (non-destructive — file is NOT modified)
+        const { file: original, faceCenter } = await processImage(compressed).catch(() => ({ file: compressed, faceCenter: null }));
         const id = crypto.randomUUID();
         newPlayers.push({
           id, topic_id: "",
           name: file.name.replace(/\.[^/.]+$/, ""),
           position: null, club: null,
-          image_url: URL.createObjectURL(processed),
+          image_url: URL.createObjectURL(original),
           created_at: new Date().toISOString(),
+          faceCenter,
         });
-        newFiles[id] = processed;
+        newFiles[id] = original;
         recordUpload();
       }
       setPlayerMap((prev) => ({
