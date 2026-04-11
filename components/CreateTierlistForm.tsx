@@ -281,12 +281,8 @@ export default function CreateTierlistForm() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={img.preview}
-                        alt={img.name}
-                        className={`h-[88px] w-[88px] rounded-lg object-cover border-2 transition-colors ${
-                          isCover
-                            ? "border-indigo-400"
-                            : "border-black hover:border-gray-500"
-                        }`}
+                        alt="uploaded"
+                        className="h-[88px] w-[88px] rounded-lg object-cover"
                       />
                       {isCover && (
                         <span className="absolute left-1 top-1 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
