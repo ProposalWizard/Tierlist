@@ -31,7 +31,7 @@ import ZoomOverlay from "./ZoomOverlay";
 import CropOverlay from "./CropOverlay";
 import LabelOverlay from "./LabelOverlay";
 import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
-import { processImage, detectFaceFromUrl } from "@/lib/faceDetection";
+import { processImage, detectFaceFromUrl, getCachedFace } from "@/lib/faceDetection";
 import {
   DEFAULT_TIER_ROWS,
   type TierRowData,
@@ -290,13 +290,38 @@ export default function TierlistBoard({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Run face detection on pre-loaded images (play page) to set smart centering
+  // Apply cached face positions SYNCHRONOUSLY before first paint so revisits
+  // don't flash the default centering before settling on the detected one.
+  // useLayoutEffect blocks the browser paint until state updates have committed.
+  useLayoutEffect(() => {
+    if (!initialImages?.length) return;
+    const updates: Array<{ id: string; fc: { x: number; y: number } }> = [];
+    for (const img of initialImages) {
+      const cached = getCachedFace(img.image_url);
+      if (cached) updates.push({ id: img.id, fc: cached });
+    }
+    if (updates.length === 0) return;
+    setPlayerMap((prev) => {
+      const next = { ...prev };
+      for (const { id, fc } of updates) {
+        const existing = next[id];
+        if (existing) next[id] = { ...existing, faceCenter: fc };
+      }
+      return next;
+    });
+  }, [initialImages]);
+
+  // Detect faces for any images not yet cached (first-time visits). Results
+  // get written to localStorage inside detectFaceFromUrl so subsequent visits
+  // apply via the useLayoutEffect above with no flash.
   useEffect(() => {
     if (!initialImages?.length) return;
     let cancelled = false;
     (async () => {
       for (const img of initialImages) {
         if (cancelled) break;
+        // Skip images already handled by the synchronous cache pass.
+        if (getCachedFace(img.image_url)) continue;
         const fc = await detectFaceFromUrl(img.image_url).catch(() => null);
         if (cancelled) break;
         if (fc) {
