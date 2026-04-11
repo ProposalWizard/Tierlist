@@ -4,12 +4,13 @@ import { useState, useId } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
-import { processImage } from "@/lib/faceDetection";
+import { processImage, type FaceCenter } from "@/lib/faceDetection";
 
 interface ImageEntry {
   file: File;
   preview: string;
   name: string;
+  faceCenter: FaceCenter | null;
 }
 
 interface CustomCover {
@@ -64,11 +65,14 @@ export default function CreateTierlistForm() {
     for (const file of allowed) {
       const compressed = await compressImage(file).catch(() => file);
       // Face detection runs non-destructively — file is unchanged
-      const { file: processed } = await processImage(compressed).catch(() => ({ file: compressed, faceCenter: null }));
+      const { file: processed, faceCenter } = await processImage(compressed).catch(
+        () => ({ file: compressed, faceCenter: null })
+      );
       entries.push({
         file: processed,
         preview: URL.createObjectURL(processed),
         name: file.name.replace(/\.[^/.]+$/, ""),
+        faceCenter,
       });
     }
     setImages((prev) => [...prev, ...entries]);
@@ -132,7 +136,11 @@ export default function CreateTierlistForm() {
       const supabase = createClient();
 
       // Upload all tierlist images and track paths for cleanup
-      const uploadedImages: { name: string; image_url: string }[] = [];
+      const uploadedImages: {
+        name: string;
+        image_url: string;
+        face_center: FaceCenter | null;
+      }[] = [];
       const uploadedPaths: string[] = [];
       for (const img of images) {
         const ext = img.file.name.split(".").pop() ?? "jpg";
@@ -144,7 +152,11 @@ export default function CreateTierlistForm() {
         const { data: urlData } = supabase.storage
           .from("tierlist-images")
           .getPublicUrl(uploadData.path);
-        uploadedImages.push({ name: img.name, image_url: urlData.publicUrl });
+        uploadedImages.push({
+          name: img.name,
+          image_url: urlData.publicUrl,
+          face_center: img.faceCenter,
+        });
         uploadedPaths.push(uploadData.path);
       }
 

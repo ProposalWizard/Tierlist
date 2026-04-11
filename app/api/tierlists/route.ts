@@ -31,7 +31,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { title: string; category: string; cover_image_url?: string; images: { name: string; image_url: string }[] };
+  let body: {
+    title: string;
+    category: string;
+    cover_image_url?: string;
+    images: {
+      name: string;
+      image_url: string;
+      face_center?: { x: number; y: number } | null;
+    }[];
+  };
   try {
     body = await request.json();
   } catch {
@@ -69,6 +78,7 @@ export async function POST(request: Request) {
     name: img.name,
     image_url: img.image_url,
     sort_order: i,
+    face_center: img.face_center ?? null,
   }));
 
   const { error: imgError } = await supabase.from("tierlist_images").insert(imageRows);

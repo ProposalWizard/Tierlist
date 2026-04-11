@@ -11,6 +11,7 @@ interface ImageEntry {
   name: string;
   image_url: string; // blob URL or existing Supabase URL
   file?: File;       // present only for locally-added images
+  face_center?: { x: number; y: number } | null;
 }
 
 interface Props {
@@ -86,7 +87,11 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
 
       // Upload each image — re-use existing Supabase URLs, only upload new files.
       // Track uploaded paths for delayed cleanup if the tierlist save fails.
-      const uploadedImages: { name: string; image_url: string }[] = [];
+      const uploadedImages: {
+        name: string;
+        image_url: string;
+        face_center: { x: number; y: number } | null;
+      }[] = [];
       const uploadedPaths: string[] = [];
       for (const img of images) {
         if (img.file) {
@@ -100,11 +105,19 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
           const { data: urlData } = supabase.storage
             .from("tierlist-images")
             .getPublicUrl(uploadData.path);
-          uploadedImages.push({ name: img.name, image_url: urlData.publicUrl });
+          uploadedImages.push({
+            name: img.name,
+            image_url: urlData.publicUrl,
+            face_center: img.face_center ?? null,
+          });
           uploadedPaths.push(uploadData.path);
         } else {
           // Image already has a Supabase URL — use it directly
-          uploadedImages.push({ name: img.name, image_url: img.image_url });
+          uploadedImages.push({
+            name: img.name,
+            image_url: img.image_url,
+            face_center: img.face_center ?? null,
+          });
         }
       }
 
