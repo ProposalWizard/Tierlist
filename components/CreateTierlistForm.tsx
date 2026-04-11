@@ -63,8 +63,8 @@ export default function CreateTierlistForm() {
     const entries: ImageEntry[] = [];
     for (const file of allowed) {
       const compressed = await compressImage(file).catch(() => file);
-      // Face-detect and crop around face if found
-      const processed = await processImage(compressed).catch(() => compressed);
+      // Face detection runs non-destructively — file is unchanged
+      const { file: processed } = await processImage(compressed).catch(() => ({ file: compressed, faceCenter: null }));
       entries.push({
         file: processed,
         preview: URL.createObjectURL(processed),

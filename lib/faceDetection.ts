@@ -1,9 +1,12 @@
 /**
  * lib/faceDetection.ts
  *
- * Client-side face detection using face-api.js (TinyFaceDetector).
- * Detects a face in an image and crops around it with padding.
- * If no face is found, the original image is returned unchanged.
+ * NON-DESTRUCTIVE client-side face detection using face-api.js (TinyFaceDetector).
+ *
+ * Instead of cropping the image, this returns the face center as a percentage
+ * (0-100 for both x and y). The calling code uses this to set CSS
+ * `background-position` so thumbnails are centered on the face, while the
+ * original image is preserved for zoom and manual crop.
  *
  * Models must be placed in /public/models/:
  *   - tiny_face_detector_model-weights_manifest.json
@@ -11,6 +14,18 @@
  */
 
 import * as faceapi from "face-api.js";
+
+/** Face center as a percentage of the image dimensions (0–100). */
+export interface FaceCenter {
+  x: number; // percentage from left
+  y: number; // percentage from top
+}
+
+/** Result of processImage: the original file + optional face position. */
+export interface ProcessedImage {
+  file: File;
+  faceCenter: FaceCenter | null;
+}
 
 // Track whether models have been loaded to avoid reloading
 let modelsLoaded = false;
@@ -22,8 +37,6 @@ let modelsLoading: Promise<void> | null = null;
  */
 async function ensureModelsLoaded(): Promise<void> {
   if (modelsLoaded) return;
-
-  // If already loading, wait for that promise
   if (modelsLoading) {
     await modelsLoading;
     return;
@@ -39,21 +52,15 @@ async function ensureModelsLoaded(): Promise<void> {
 }
 
 /**
- * Load a File into an HTMLImageElement.
+ * Load a File (or Blob URL) into an HTMLImageElement.
  */
-function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Failed to load image for face detection"));
-    };
-    img.src = url;
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load image for face detection"));
+    img.src = src;
   });
 }
 
@@ -85,103 +92,84 @@ function resizeToCanvas(
 }
 
 /**
- * Crop a region from the original image and return it as a WebP File.
+ * Detect a face in a File and return its center as a percentage.
+ * The file is NEVER modified — only analysed.
  *
- * @param img       The full-resolution source image
- * @param x         Crop region x (in original image coords)
- * @param y         Crop region y
- * @param cropW     Crop region width
- * @param cropH     Crop region height
- * @param fileName  Output file name
+ * @returns ProcessedImage with the original file and face position (or null)
  */
-function cropToFile(
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  cropW: number,
-  cropH: number,
-  fileName: string
-): Promise<File> {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = cropW;
-    canvas.height = cropH;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, x, y, cropW, cropH, 0, 0, cropW, cropH);
-
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          reject(new Error("Failed to crop image"));
-          return;
-        }
-        resolve(new File([blob], fileName, { type: "image/webp" }));
-      },
-      "image/webp",
-      0.85
-    );
-  });
-}
-
-/**
- * processImage — Main entry point.
- *
- * 1. Loads the image
- * 2. Resizes to 512px max for fast face detection
- * 3. Detects a single face using TinyFaceDetector
- * 4. If found: crops around the face with ~50% padding, returns cropped File
- * 5. If not found: returns the original file unchanged
- *
- * @param file  The image File from a file input
- * @returns     A File — either face-cropped or the original
- */
-export async function processImage(file: File): Promise<File> {
+export async function processImage(file: File): Promise<ProcessedImage> {
   try {
-    // Load the face detection model (no-op if already loaded)
+    if (typeof window === "undefined") return { file, faceCenter: null };
+
     await ensureModelsLoaded();
 
-    // Load the full-resolution image
-    const img = await loadImageFromFile(file);
+    const url = URL.createObjectURL(file);
+    let img: HTMLImageElement;
+    try {
+      img = await loadImage(url);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
 
     // Resize to 512px max for fast detection
     const { canvas, scale } = resizeToCanvas(img, 512);
 
-    // Run face detection on the resized canvas
     const detection = await faceapi.detectSingleFace(
       canvas,
       new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
     );
 
-    // No face found — return the original file as-is
-    if (!detection) return file;
+    if (!detection) return { file, faceCenter: null };
 
-    // Map the detected face box back to original image coordinates
+    // Map detected box back to original image coordinates
     const box = detection.box;
-    const origX = box.x / scale;
-    const origY = box.y / scale;
-    const origW = box.width / scale;
-    const origH = box.height / scale;
+    const centerX = (box.x + box.width / 2) / scale;
+    const centerY = (box.y + box.height / 2) / scale;
 
-    // Add ~50% padding around the face
-    const padX = origW * 0.5;
-    const padY = origH * 0.5;
+    // Convert to percentage of original image dimensions
+    const faceCenter: FaceCenter = {
+      x: Math.round((centerX / img.naturalWidth) * 100),
+      y: Math.round((centerY / img.naturalHeight) * 100),
+    };
 
-    // Calculate crop region, clamped to image bounds
-    const cropX = Math.max(0, Math.round(origX - padX));
-    const cropY = Math.max(0, Math.round(origY - padY));
-    const cropRight = Math.min(img.naturalWidth, Math.round(origX + origW + padX));
-    const cropBottom = Math.min(img.naturalHeight, Math.round(origY + origH + padY));
-    const cropW = cropRight - cropX;
-    const cropH = cropBottom - cropY;
-
-    // Sanity check: crop must be a reasonable size
-    if (cropW < 20 || cropH < 20) return file;
-
-    // Crop from the original full-res image
-    const name = file.name.replace(/\.[^/.]+$/, ".webp");
-    return await cropToFile(img, cropX, cropY, cropW, cropH, name);
+    return { file, faceCenter };
   } catch {
-    // If anything fails, return the original file safely
-    return file;
+    // If anything fails, return the original file with no face data
+    return { file, faceCenter: null };
+  }
+}
+
+/**
+ * Detect a face in an image loaded from a URL (e.g. from Supabase Storage).
+ * Used on the play page to face-center images that are already uploaded.
+ *
+ * @returns FaceCenter or null
+ */
+export async function detectFaceFromUrl(imageUrl: string): Promise<FaceCenter | null> {
+  try {
+    if (typeof window === "undefined") return null;
+
+    await ensureModelsLoaded();
+
+    const img = await loadImage(imageUrl);
+    const { canvas, scale } = resizeToCanvas(img, 512);
+
+    const detection = await faceapi.detectSingleFace(
+      canvas,
+      new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
+    );
+
+    if (!detection) return null;
+
+    const box = detection.box;
+    const centerX = (box.x + box.width / 2) / scale;
+    const centerY = (box.y + box.height / 2) / scale;
+
+    return {
+      x: Math.round((centerX / img.naturalWidth) * 100),
+      y: Math.round((centerY / img.naturalHeight) * 100),
+    };
+  } catch {
+    return null;
   }
 }
