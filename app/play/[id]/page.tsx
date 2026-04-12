@@ -173,6 +173,7 @@ export default async function PlayPage({ params }: Props) {
           id: img.id,
           name: img.name,
           image_url: img.image_url,
+          face_center: img.face_center ?? null,
         }))}
         isAdmin={userIsAdmin}
         tierlistId={id}

@@ -42,7 +42,13 @@ import {
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface TierlistBoardProps {
-  initialImages?: Array<{ id: string; name: string; image_url: string }>;
+  initialImages?: Array<{
+    id: string;
+    name: string;
+    image_url: string;
+    /** Server-provided face position (0–100 percentages). Null if not yet detected. */
+    face_center?: { x: number; y: number } | null;
+  }>;
   mode?: "play" | "create";
   isAdmin?: boolean;
   /** For Save to Profile feature */
@@ -247,6 +253,10 @@ export default function TierlistBoard({
             position: null,
             club: null,
             image_url: img.image_url,
+            // SSR-provided face centre — renders correctly on first paint,
+            // no flash, no client-side detection needed for images that
+            // already have a persisted face_center in the database.
+            faceCenter: img.face_center ?? undefined,
             created_at: "",
           } satisfies TierlistPlayer,
         ])
@@ -290,22 +300,40 @@ export default function TierlistBoard({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Run face detection on pre-loaded images (play page) to set smart centering
+  // Lazy backfill: for images that don't yet have a persisted face_center
+  // in the DB (pre-existing rows from before this feature shipped), run
+  // detection client-side once, then POST the result to the backfill
+  // endpoint so every subsequent visitor gets it instantly from SSR.
+  //
+  // Images WITH a face_center from SSR skip this entirely — zero flash,
+  // zero work, the position is already in the rendered HTML.
   useEffect(() => {
     if (!initialImages?.length) return;
+    const missing = initialImages.filter((img) => !img.face_center);
+    if (missing.length === 0) return;
+
     let cancelled = false;
     (async () => {
-      for (const img of initialImages) {
+      for (const img of missing) {
         if (cancelled) break;
         const fc = await detectFaceFromUrl(img.image_url).catch(() => null);
         if (cancelled) break;
-        if (fc) {
-          setPlayerMap((prev) => {
-            const existing = prev[img.id];
-            if (!existing) return prev;
-            return { ...prev, [img.id]: { ...existing, faceCenter: fc } };
-          });
-        }
+        if (!fc) continue;
+
+        // Update local state so the current visitor sees the new position.
+        setPlayerMap((prev) => {
+          const existing = prev[img.id];
+          if (!existing) return prev;
+          return { ...prev, [img.id]: { ...existing, faceCenter: fc } };
+        });
+
+        // Persist to DB so future visitors get it via SSR with no flash.
+        // Fire-and-forget — failure just means we'll retry next visit.
+        fetch(`/api/tierlist-images/${img.id}/face-center`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ face_center: fc }),
+        }).catch(() => {});
       }
     })();
     return () => { cancelled = true; };
@@ -751,6 +779,7 @@ export default function TierlistBoard({
       name: p.name,
       image_url: p.image_url ?? "",
       file: fileMap[p.id],
+      face_center: p.faceCenter ?? null,
     }));
 
   // ── Render ───────────────────────────────────────────────────────────────

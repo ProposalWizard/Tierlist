@@ -184,6 +184,8 @@ export interface TierlistImage {
   image_url: string;
   sort_order: number;
   created_at: string;
+  /** Detected face position as percentages (0-100) for background-position. Null if not yet detected. */
+  face_center: { x: number; y: number } | null;
 }
 
 // ---------------------------------------------------------------
