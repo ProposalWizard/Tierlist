@@ -39,6 +39,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     linked_vote_tierlist_id?: string | null;
     additional_categories?: string[];
     tiers?: { label: string; color: string }[];
+    face_detection_enabled?: boolean;
   };
   try {
     body = await request.json();
@@ -57,6 +58,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     update.additional_categories = body.additional_categories;
   if (body.tiers !== undefined && Array.isArray(body.tiers) && body.tiers.length > 0)
     update.tiers = body.tiers;
+  if (body.face_detection_enabled !== undefined)
+    update.face_detection_enabled = body.face_detection_enabled;
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

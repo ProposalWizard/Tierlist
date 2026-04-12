@@ -25,7 +25,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  let body: { title?: string; category?: string; cover_image_url?: string | null; is_active?: boolean; tiers?: { label: string; color: string }[] };
+  let body: { title?: string; category?: string; cover_image_url?: string | null; is_active?: boolean; tiers?: { label: string; color: string }[]; face_detection_enabled?: boolean };
   try {
     body = await request.json();
   } catch {
@@ -40,6 +40,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.tiers !== undefined && Array.isArray(body.tiers) && body.tiers.length > 0) {
     update.tiers = body.tiers;
   }
+  if (body.face_detection_enabled !== undefined)
+    update.face_detection_enabled = body.face_detection_enabled;
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

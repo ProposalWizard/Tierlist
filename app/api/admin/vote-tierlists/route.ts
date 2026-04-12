@@ -25,7 +25,7 @@ export async function GET() {
   const service = createServiceClient();
   const { data, error } = await service
     .from("vote_tierlists")
-    .select("id, title, category, cover_image_url, is_active, created_at")
+    .select("id, title, category, cover_image_url, is_active, created_at, face_detection_enabled")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
   const { data, error } = await service
     .from("vote_tierlists")
     .insert(insertData)
-    .select("id, title, category, cover_image_url, is_active, created_at")
+    .select("id, title, category, cover_image_url, is_active, created_at, face_detection_enabled")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

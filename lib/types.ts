@@ -174,6 +174,8 @@ export interface Tierlist {
   additional_categories?: string[];
   /** Custom tier rows (labels + colors), defaults to S/A/B/C/D */
   tiers?: VoteTier[];
+  /** Whether face detection auto-centering is enabled (default true) */
+  face_detection_enabled?: boolean;
 }
 
 /** An image belonging to a user-created tierlist */
@@ -209,6 +211,8 @@ export interface VoteTierlist {
   tiers: VoteTier[];
   is_active: boolean;
   created_at: string;
+  /** Whether face detection auto-centering is enabled (default false for vote tierlists) */
+  face_detection_enabled?: boolean;
 }
 
 /** An image/item inside a vote tierlist */
@@ -219,6 +223,8 @@ export interface VoteTierlistImage {
   image_url: string;
   sort_order: number;
   created_at: string;
+  /** Detected face position as percentages (0-100) for object-position. Null if not yet detected. */
+  face_center: { x: number; y: number } | null;
 }
 
 /** Image enriched with vote counts, as returned by the page data fetch */

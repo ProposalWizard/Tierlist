@@ -180,6 +180,7 @@ export default async function PlayPage({ params }: Props) {
         tierlistTitle={tierlist.title}
         isLoggedIn={!!user}
         initialTiers={tierlist.tiers as VoteTier[] | undefined}
+        faceDetectionEnabled={tierlist.face_detection_enabled !== false}
       />
     </main>
   );

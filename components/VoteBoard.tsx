@@ -36,6 +36,7 @@ interface Props {
   initialImages: VoteImageWithCounts[];
   initialUserVotes: Record<string, string>;
   isLoggedIn: boolean;
+  faceDetectionEnabled?: boolean;
 }
 
 export default function VoteBoard({
@@ -44,7 +45,14 @@ export default function VoteBoard({
   initialImages,
   initialUserVotes,
   isLoggedIn,
+  faceDetectionEnabled = false,
 }: Props) {
+  /** Compute object-position style for a vote image when face detection is on. */
+  function faceStyle(img: VoteImageWithCounts): React.CSSProperties | undefined {
+    if (!faceDetectionEnabled || !img.face_center) return undefined;
+    return { objectPosition: `${img.face_center.x}% ${img.face_center.y}%` };
+  }
+
   const [images, setImages] = useState<VoteImageWithCounts[]>(initialImages);
   const [userVotes, setUserVotes] = useState<Record<string, string>>(initialUserVotes);
   const [pending, setPending] = useState<Record<string, boolean>>({});
@@ -217,7 +225,7 @@ export default function VoteBoard({
                         : "hover:ring-2 hover:ring-gray-400 opacity-90 hover:opacity-100"
                     }`}
                   >
-                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-14 w-14 object-cover md:h-[68px] md:w-[68px]" />
+                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-14 w-14 object-cover md:h-[68px] md:w-[68px]" style={faceStyle(img)} />
                   </button>
                 ))}
               </div>
@@ -242,7 +250,7 @@ export default function VoteBoard({
                         : "hover:ring-2 hover:ring-gray-400 opacity-90 hover:opacity-100"
                     }`}
                   >
-                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-14 w-14 object-cover md:h-[68px] md:w-[68px]" />
+                    <ImageWithFallback src={img.image_url} alt={img.name} className="h-14 w-14 object-cover md:h-[68px] md:w-[68px]" style={faceStyle(img)} />
                   </button>
                 ))}
               </div>
@@ -272,7 +280,7 @@ export default function VoteBoard({
                 src={selectedImg.image_url}
                 alt={selectedImg.name}
                 className="mb-3 w-full rounded-lg object-cover"
-                style={{ maxHeight: 160 }}
+                style={{ maxHeight: 160, ...faceStyle(selectedImg) }}
               />
               {/* Stats */}
               <div className="mb-4 space-y-1.5">
@@ -373,6 +381,7 @@ export default function VoteBoard({
               src={selectedImg.image_url}
               alt={selectedImg.name}
               className="h-10 w-10 flex-shrink-0 rounded-lg object-cover border border-gray-700"
+              style={faceStyle(selectedImg)}
             />
             <div className="min-w-0 flex-1">
               <p className="text-[10px] text-gray-500">
