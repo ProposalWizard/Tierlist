@@ -21,19 +21,24 @@ interface Props { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase.from("tierlists").select("title").eq("id", id)
+  const service = createServiceClient();
+  const { data } = await service.from("tierlists").select("title").eq("id", id)
     .single<Pick<Tierlist, "title">>();
   return { title: data?.title ?? "Play Tierlist" };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function PlayPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
+  const service = createServiceClient();
 
+  // Use service client for public data reads (bypasses RLS / auth-state
+  // differences) and cookie client only for auth + user-specific queries.
   const [tierlistResult, imagesResult, { data: { user } }] = await Promise.all([
-    supabase.from("tierlists").select("*").eq("id", id).single<Tierlist>(),
-    supabase.from("tierlist_images").select("*").eq("tierlist_id", id)
+    service.from("tierlists").select("*").eq("id", id).single<Tierlist>(),
+    service.from("tierlist_images").select("*").eq("tierlist_id", id)
       .order("sort_order", { ascending: true }).returns<TierlistImage[]>(),
     supabase.auth.getUser(),
   ]);
@@ -48,7 +53,6 @@ export default async function PlayPage({ params }: Props) {
   await supabase.rpc("increment_view_count", { p_id: id });
 
   // Creator display name (from user_profiles via service role)
-  const service = createServiceClient();
   const { data: creatorProfile } = await service
     .from("user_profiles")
     .select("username, is_anonymous")

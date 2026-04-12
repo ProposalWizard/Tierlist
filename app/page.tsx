@@ -11,6 +11,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { Tierlist } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 const MAX_PER_CATEGORY = 6;
 
 type CategoryCard = {

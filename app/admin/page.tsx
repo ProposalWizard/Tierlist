@@ -14,6 +14,7 @@ import AdminPanel from "@/components/AdminPanel";
 import type { Tierlist } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Admin" };
+export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   // Auth check
