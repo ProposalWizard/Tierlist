@@ -37,6 +37,14 @@ export async function createClient() {
           }
         },
       },
+      // Disable Next.js Data Cache for Supabase requests.
+      // Without this, fetch() responses are cached by URL (ignoring auth
+      // headers), so authenticated and anonymous users can receive each
+      // other's stale data.
+      global: {
+        fetch: (input, init) =>
+          fetch(input, { ...init, cache: "no-store" }),
+      },
     }
   );
 }

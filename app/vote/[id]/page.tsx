@@ -15,6 +15,8 @@ import VoteBoard from "@/components/VoteBoard";
 import LikeButton from "@/components/LikeButton";
 import type { VoteImageWithCounts, VoteTier } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function VotePage({
   params,
 }: {
@@ -26,8 +28,8 @@ export default async function VotePage({
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // ── Fetch tierlist ────────────────────────────────────────────────────────
-  const { data: tierlist } = await supabase
+  // ── Fetch tierlist (service client bypasses RLS / auth-state differences) ─
+  const { data: tierlist } = await service
     .from("vote_tierlists")
     .select("id, title, category, cover_image_url, description, tiers, is_active, face_detection_enabled")
     .eq("id", id)
@@ -36,8 +38,8 @@ export default async function VotePage({
 
   if (!tierlist) notFound();
 
-  // ── Fetch images ──────────────────────────────────────────────────────────
-  const { data: images } = await supabase
+  // ── Fetch images (service client for consistent results) ─────────────────
+  const { data: images } = await service
     .from("vote_tierlist_images")
     .select("id, vote_tierlist_id, name, image_url, sort_order, created_at, face_center")
     .eq("vote_tierlist_id", id)
