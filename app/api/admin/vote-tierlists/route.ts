@@ -23,9 +23,11 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const service = createServiceClient();
+  // Use select("*") to avoid failing if optional columns (like
+  // face_detection_enabled) haven't been added to the DB yet.
   const { data, error } = await service
     .from("vote_tierlists")
-    .select("id, title, category, cover_image_url, is_active, created_at, face_detection_enabled")
+    .select("*")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
   const { data, error } = await service
     .from("vote_tierlists")
     .insert(insertData)
-    .select("id, title, category, cover_image_url, is_active, created_at, face_detection_enabled")
+    .select("*")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

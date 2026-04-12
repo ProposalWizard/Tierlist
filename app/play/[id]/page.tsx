@@ -119,7 +119,7 @@ export default async function PlayPage({ params }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 p-4 md:p-8">
+    <main className="min-h-screen bg-gray-950 p-4 md:p-8" data-v="2026-04-12a">
       <header className="mb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -186,6 +186,15 @@ export default async function PlayPage({ params }: Props) {
         initialTiers={tierlist.tiers as VoteTier[] | undefined}
         faceDetectionEnabled={tierlist.face_detection_enabled !== false}
       />
+
+      {/* Debug: face detection status – remove after verifying deployment */}
+      {userIsAdmin && (
+        <p className="mt-4 text-center text-[10px] text-gray-700">
+          fd:{tierlist.face_detection_enabled !== false ? "on" : "off"} |
+          fc:{images.filter(i => i.face_center).length}/{images.length} |
+          auth:{user ? "y" : "n"} | v:2026-04-12a
+        </p>
+      )}
     </main>
   );
 }
