@@ -354,7 +354,7 @@ export default function AdminPanel({
         .order("sort_order"),
       supabase
         .from("tierlists")
-        .select("tiers, face_detection_enabled")
+        .select("*")
         .eq("id", tl.id)
         .single(),
     ]);
