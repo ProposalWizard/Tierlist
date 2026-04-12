@@ -54,7 +54,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { image_url?: string; name?: string; sort_order?: number };
+  let body: { image_url?: string; name?: string; sort_order?: number; face_center?: { x: number; y: number } | null };
   try {
     body = await request.json();
   } catch {
@@ -65,6 +65,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.image_url !== undefined) update.image_url = body.image_url;
   if (body.name !== undefined) update.name = body.name;
   if (body.sort_order !== undefined) update.sort_order = body.sort_order;
+  if (body.face_center !== undefined) update.face_center = body.face_center;
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

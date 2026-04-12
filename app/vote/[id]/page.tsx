@@ -29,7 +29,7 @@ export default async function VotePage({
   // ── Fetch tierlist ────────────────────────────────────────────────────────
   const { data: tierlist } = await supabase
     .from("vote_tierlists")
-    .select("id, title, category, cover_image_url, description, tiers, is_active")
+    .select("id, title, category, cover_image_url, description, tiers, is_active, face_detection_enabled")
     .eq("id", id)
     .eq("is_active", true)
     .single();
@@ -39,7 +39,7 @@ export default async function VotePage({
   // ── Fetch images ──────────────────────────────────────────────────────────
   const { data: images } = await supabase
     .from("vote_tierlist_images")
-    .select("id, vote_tierlist_id, name, image_url, sort_order, created_at")
+    .select("id, vote_tierlist_id, name, image_url, sort_order, created_at, face_center")
     .eq("vote_tierlist_id", id)
     .order("sort_order");
 
@@ -173,6 +173,7 @@ export default async function VotePage({
             initialImages={enrichedImages}
             initialUserVotes={initialUserVotes}
             isLoggedIn={!!user}
+            faceDetectionEnabled={tierlist.face_detection_enabled === true}
           />
         )}
       </main>

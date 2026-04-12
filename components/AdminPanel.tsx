@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
-import { processImage } from "@/lib/faceDetection";
+import { processImage, detectFaceFromUrl, type FaceCenter } from "@/lib/faceDetection";
 import ImageWithFallback from "./ImageWithFallback";
 import CropOverlay from "./CropOverlay";
 import type { Tierlist, Category, VoteTier } from "@/lib/types";
@@ -31,6 +31,7 @@ interface VotelistAdmin {
   cover_image_url: string | null;
   is_active: boolean;
   created_at: string;
+  face_detection_enabled?: boolean;
 }
 
 interface VoteImage {
@@ -69,6 +70,8 @@ interface EditState {
   additional_categories: string[];
   /** Custom tier rows (labels + colors) */
   tiers: VoteTier[];
+  /** Whether face detection auto-centering is enabled */
+  face_detection_enabled: boolean;
 }
 
 /** Small sortable wrapper used for drag-and-drop image reordering in admin. */
@@ -331,6 +334,7 @@ export default function AdminPanel({
       linked_vote_tierlist_id: tl.linked_vote_tierlist_id ?? null,
       additional_categories: (tl as Tierlist & { additional_categories?: string[] }).additional_categories ?? [],
       tiers: (tl.tiers as VoteTier[] | undefined) ?? DEFAULT_TIERS,
+      face_detection_enabled: tl.face_detection_enabled !== false,
     });
     // Ensure vote tierlists are loaded for the linked tierlist picker
     if (!votelistsLoaded) {
@@ -350,7 +354,7 @@ export default function AdminPanel({
         .order("sort_order"),
       supabase
         .from("tierlists")
-        .select("tiers")
+        .select("*")
         .eq("id", tl.id)
         .single(),
     ]);
@@ -362,11 +366,14 @@ export default function AdminPanel({
         images?.find((img) => img.image_url === tl.cover_image_url)?.id ?? null;
       // Use tiers from DB if available (column may not exist yet)
       const tiers = (tlData?.tiers as VoteTier[] | undefined) ?? prev.tiers;
+      // Use face_detection_enabled from DB if available
+      const fde = tlData?.face_detection_enabled;
       return {
         ...prev,
         images: (images as AdminImage[]) ?? [],
         selectedCoverImageId,
         tiers,
+        face_detection_enabled: fde !== undefined ? (fde as boolean) : prev.face_detection_enabled,
         loading: false,
       };
     });
@@ -469,6 +476,7 @@ export default function AdminPanel({
           linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
           additional_categories: editState.additional_categories,
           tiers: editState.tiers,
+          face_detection_enabled: editState.face_detection_enabled,
         }),
       });
 
@@ -506,6 +514,7 @@ export default function AdminPanel({
                 linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
                 additional_categories: editState.additional_categories,
                 tiers: editState.tiers,
+                face_detection_enabled: editState.face_detection_enabled,
               }
             : tl
         )
@@ -764,9 +773,14 @@ export default function AdminPanel({
     setAddImgSaving((prev) => ({ ...prev, [voteId]: true }));
     try {
       const supabase = createClient();
+      // Check if this vote tierlist has face detection enabled
+      const vl = votelists.find((v) => v.id === voteId);
+      const faceEnabled = vl?.face_detection_enabled ?? false;
       const newImgs = await Promise.all(
         files.map(async (file) => {
-          const { file: processed } = await processImage(file).catch(() => ({ file, faceCenter: null }));
+          const { file: processed, faceCenter } = await processImage(file).catch(
+            () => ({ file, faceCenter: null as FaceCenter | null })
+          );
           const ext = "webp";
           const path = `vote-images/${crypto.randomUUID()}.${ext}`;
           const { data: uploadData, error: uploadError } = await supabase.storage
@@ -777,7 +791,10 @@ export default function AdminPanel({
           const res = await fetch(`/api/admin/vote-tierlists/${voteId}/images`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ image_url: urlData.publicUrl }),
+            body: JSON.stringify({
+              image_url: urlData.publicUrl,
+              face_center: faceEnabled ? faceCenter : null,
+            }),
           });
           if (!res.ok) throw new Error("Failed to save image");
           return res.json() as Promise<VoteImage>;
@@ -1641,6 +1658,26 @@ export default function AdminPanel({
                       )}
                     </div>
 
+                    {/* Face Detection Toggle */}
+                    <div className="flex items-center gap-3">
+                      <label className="relative inline-flex cursor-pointer items-center">
+                        <input
+                          type="checkbox"
+                          checked={editState.face_detection_enabled}
+                          onChange={(e) =>
+                            setEditState((p) =>
+                              p ? { ...p, face_detection_enabled: e.target.checked } : p
+                            )
+                          }
+                          className="peer sr-only"
+                        />
+                        <div className="h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-gray-400 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:translate-x-full peer-checked:after:bg-white" />
+                      </label>
+                      <span className="text-xs text-gray-300">
+                        Face detection {editState.face_detection_enabled ? "ON" : "OFF"}
+                      </span>
+                    </div>
+
                     {/* Error */}
                     {editState.error && (
                       <p className="text-sm text-red-400">{editState.error}</p>
@@ -2094,6 +2131,60 @@ export default function AdminPanel({
                           <option key={c.id} value={c.name}>{c.name}</option>
                         ))}
                       </select>
+                    </div>
+
+                    {/* Face Detection Toggle */}
+                    <div className="flex items-center gap-3">
+                      <label className="relative inline-flex cursor-pointer items-center">
+                        <input
+                          type="checkbox"
+                          checked={vl.face_detection_enabled ?? false}
+                          onChange={async (e) => {
+                            const enabled = e.target.checked;
+                            const res = await fetch(`/api/admin/vote-tierlists/${vl.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ face_detection_enabled: enabled }),
+                            });
+                            if (res.ok) {
+                              setVotelists((prev) =>
+                                prev.map((v) => v.id === vl.id ? { ...v, face_detection_enabled: enabled } : v)
+                              );
+                              showSaveConfirmation(enabled ? "Face detection enabled" : "Face detection disabled");
+                            }
+                          }}
+                          className="peer sr-only"
+                        />
+                        <div className="h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-gray-400 after:transition-all peer-checked:bg-purple-600 peer-checked:after:translate-x-full peer-checked:after:bg-white" />
+                      </label>
+                      <span className="text-xs text-gray-300">
+                        Face detection {(vl.face_detection_enabled ?? false) ? "ON" : "OFF"}
+                      </span>
+                      {(vl.face_detection_enabled ?? false) && (voteImagesMap[vl.id]?.length ?? 0) > 0 && (
+                        <button
+                          onClick={async () => {
+                            const imgs = voteImagesMap[vl.id] ?? [];
+                            if (imgs.length === 0) return;
+                            showSaveConfirmation("Running face detection…");
+                            let updated = 0;
+                            for (const img of imgs) {
+                              const fc = await detectFaceFromUrl(img.image_url).catch(() => null);
+                              if (!fc) continue;
+                              // Save face_center to DB via the vote image PATCH endpoint
+                              await fetch(`/api/admin/vote-tierlists/${vl.id}/images/${img.id}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ face_center: fc }),
+                              }).catch(() => {});
+                              updated++;
+                            }
+                            showSaveConfirmation(`Detected faces for ${updated}/${imgs.length} images`);
+                          }}
+                          className="text-[10px] text-purple-400 hover:text-purple-300"
+                        >
+                          Run detection on all images
+                        </button>
+                      )}
                     </div>
 
                     {/* Tier editing (always visible when expanded) */}

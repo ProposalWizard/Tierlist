@@ -37,7 +37,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { name?: string; image_url?: string; sort_order?: number };
+  let body: { name?: string; image_url?: string; sort_order?: number; face_center?: { x: number; y: number } | null };
   try {
     body = await request.json();
   } catch {
@@ -63,8 +63,9 @@ export async function POST(request: Request, { params }: { params: Params }) {
       name: body.name?.trim() ?? "",
       image_url: body.image_url.trim(),
       sort_order: body.sort_order ?? (count ?? 0),
+      face_center: body.face_center ?? null,
     })
-    .select("id, name, image_url, sort_order")
+    .select("id, name, image_url, sort_order, face_center")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

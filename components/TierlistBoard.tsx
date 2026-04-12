@@ -57,6 +57,8 @@ interface TierlistBoardProps {
   isLoggedIn?: boolean;
   /** Custom tier rows from DB — overrides the default S/A/B/C/D tiers */
   initialTiers?: Array<{ label: string; color: string }>;
+  /** Whether face detection positioning is enabled for this tierlist (default true) */
+  faceDetectionEnabled?: boolean;
 }
 
 // ── Unranked pool ──────────────────────────────────────────────────────────
@@ -219,6 +221,7 @@ export default function TierlistBoard({
   tierlistTitle,
   isLoggedIn = false,
   initialTiers,
+  faceDetectionEnabled = true,
 }: TierlistBoardProps) {
   // ── Tier state ───────────────────────────────────────────────────────────
   const [tiers, setTiers] = useState<TierRowData[]>(() => {
@@ -256,7 +259,8 @@ export default function TierlistBoard({
             // SSR-provided face centre — renders correctly on first paint,
             // no flash, no client-side detection needed for images that
             // already have a persisted face_center in the database.
-            faceCenter: img.face_center ?? undefined,
+            // Only applied when face detection is enabled for this tierlist.
+            faceCenter: faceDetectionEnabled ? (img.face_center ?? undefined) : undefined,
             created_at: "",
           } satisfies TierlistPlayer,
         ])
@@ -307,7 +311,9 @@ export default function TierlistBoard({
   //
   // Images WITH a face_center from SSR skip this entirely — zero flash,
   // zero work, the position is already in the rendered HTML.
+  // Skipped entirely when face detection is disabled for this tierlist.
   useEffect(() => {
+    if (!faceDetectionEnabled) return;
     if (!initialImages?.length) return;
     const missing = initialImages.filter((img) => !img.face_center);
     if (missing.length === 0) return;
