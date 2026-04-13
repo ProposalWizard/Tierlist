@@ -3,6 +3,19 @@ const nextConfig = {
   images: {
     remotePatterns: [],
   },
+  // face-api.js depends on node-fetch (which needs 'encoding') and
+  // references 'fs' for model loading.  Neither is needed at build
+  // time or on the server — face detection runs purely client-side.
+  // Tell webpack to replace these with empty stubs so the build
+  // doesn't fail on Vercel.
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      encoding: false,
+    };
+    return config;
+  },
   // Prevent Vercel CDN / browser from caching dynamic pages.
   // Ensures logged-in and logged-out users always get fresh data.
   async headers() {
