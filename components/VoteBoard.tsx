@@ -276,12 +276,17 @@ export default function VoteBoard({
 
           {selectedImg ? (
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <ImageWithFallback
-                src={selectedImg.image_url}
-                alt={selectedImg.name}
-                className="mb-3 w-full rounded-lg object-cover"
-                style={{ maxHeight: 160, ...faceStyle(selectedImg) }}
-              />
+              {/* Use aspect-square so the image fills the panel the same way
+                  as the small thumbnails below (which are also square), just
+                  bigger — avoids the landscape crop that was zooming into faces. */}
+              <div className="mb-3 aspect-square w-full overflow-hidden rounded-lg">
+                <ImageWithFallback
+                  src={selectedImg.image_url}
+                  alt={selectedImg.name}
+                  className="h-full w-full object-cover"
+                  style={faceStyle(selectedImg)}
+                />
+              </div>
               {/* Stats */}
               <div className="mb-4 space-y-1.5">
                 {tiers.map((tier) => {

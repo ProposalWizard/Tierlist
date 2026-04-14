@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: Params }) {
   const service = createServiceClient();
   const { data, error } = await service
     .from("vote_tierlist_images")
-    .select("id, name, image_url, sort_order")
+    .select("id, name, image_url, sort_order, face_center")
     .eq("vote_tierlist_id", id)
     .order("sort_order");
 
