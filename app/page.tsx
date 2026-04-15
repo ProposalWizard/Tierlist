@@ -144,7 +144,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gray-950 text-white">
       {/* ── Hero ── */}
       <div className="border-b border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 px-4 py-12 text-center">
-        <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">Tierlist Maker</h1>
+        <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">Knowitball Tierlists</h1>
         <p className="mx-auto mt-3 max-w-md text-gray-400">
           Pick a tierlist and drag the images into tiers.
           {!user && " Sign in to create your own."}

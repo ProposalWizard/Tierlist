@@ -10,7 +10,7 @@ export default function SiteFooter() {
         </div>
         <div className="flex items-center justify-between">
           <p className="text-xs text-gray-600">
-            &copy; {new Date().getFullYear()} Tierlist Maker
+            &copy; {new Date().getFullYear()} Knowitball Tierlists
           </p>
           <Link
             href="/legal"

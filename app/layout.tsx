@@ -18,19 +18,19 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Football Tierlist",
-    template: "%s | Football Tierlist",
+    default: "Knowitball Tierlists",
+    template: "%s | Knowitball Tierlists",
   },
   description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings — free forever.",
   openGraph: {
     type: "website",
-    siteName: "Football Tierlist",
-    title: "Football Tierlist",
+    siteName: "Knowitball Tierlists",
+    title: "Knowitball Tierlists",
     description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings.",
   },
   twitter: {
     card: "summary",
-    title: "Football Tierlist",
+    title: "Knowitball Tierlists",
     description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings.",
   },
 };
