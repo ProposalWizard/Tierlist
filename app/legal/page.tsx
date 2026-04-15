@@ -250,10 +250,10 @@ export default function LegalPage() {
               to request removal of copyrighted material, please contact:
             </p>
             <a
-              href="mailto:contact@yourwebsite.com"
+              href="mailto:knowitballcontact@gmail.com"
               className="text-indigo-400 hover:text-indigo-300 hover:underline"
             >
-              contact@yourwebsite.com
+              knowitballcontact@gmail.com
             </a>
           </section>
 

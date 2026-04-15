@@ -18,7 +18,7 @@ export default function NotFound() {
           href="/"
           className="inline-block rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
         >
-          Go back to Tierlist Maker
+          Go back to Knowitball Tierlists
         </Link>
       </div>
     </main>
