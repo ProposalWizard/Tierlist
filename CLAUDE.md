@@ -299,7 +299,7 @@ Accessible to users with `is_admin = true` in `user_roles` table.
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...  (server-side only, not in example but required)
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 ```
 
 ---
@@ -348,6 +348,12 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - [x] Legal page (Privacy Policy & Terms of Use)
 - [x] Site footer
 - [x] Save to Profile feature (screenshot saved to user's profile)
+- [x] Face detection (face-api.js TinyFaceDetector) for auto-centering player images (both regular and vote tierlists)
+- [x] Admin: face detection on/off toggle per tierlist (auto-runs detection on all images when toggled on and saved)
+- [x] Admin: vote tierlist batch save (all changes stage locally until Save Changes — covers cover photo, tiers, images, category, face detection, crop, reorder, import)
+- [x] Rebranded to "Knowitball Tierlists" (nav, homepage, footer, 404, metadata)
+- [x] Contact email: knowitballcontact@gmail.com (legal page)
+- [x] Custom domain: knowitball.co.uk (Hostinger registrar → Vercel hosting)
 
 ---
 
@@ -357,14 +363,16 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 | Migration File | Status | What It Does |
 |----------------|--------|-------------|
-| `tierlist_tiers.sql` | **NOT YET RUN** | Adds `tiers` JSONB column to `tierlists` table. Until run, custom tiers for regular tierlists won't persist. The code handles this gracefully (falls back to default S/A/B/C/D). |
+| `tierlist_tiers.sql` | **RUN** | Adds `tiers` JSONB column to `tierlists` table. Migration was applied April 2026. Custom tiers for regular tierlists now persist to DB. |
 
 ### Critical Gotchas
 
 1. **Never add columns to the admin page's initial `select()` query that don't exist in the DB yet** — Supabase returns an error (not empty results) when selecting a non-existent column, which causes the entire query to fail silently and show 0 tierlists. The admin page (`app/admin/page.tsx`) only selects: `id, title, category, cover_image_url, created_at, created_by, slug`. Extra data (tiers, images, etc.) is fetched lazily when opening the edit form.
 2. **Supabase Storage structure** — All images are in the `tierlist-images` bucket as flat files with UUID filenames (plus subfolders: `cover-crops/`, `profile-saves/`, `vote-covers/`). There is no per-tierlist folder organization. Image URLs are stored in DB tables (`tierlist_images`, `vote_tierlist_images`).
 3. **Image uploads** — Images are compressed client-side to WebP (1200px max, 75% quality) before upload. File names are random UUIDs. Uploaded via Supabase Storage JS client.
-4. **Admin panel component (`AdminPanel.tsx`)** — ~2200 lines, contains both regular tierlist and vote tierlist management. Uses `@dnd-kit` for image reordering. Regular tierlists use a centralized `EditState` with batch save; vote tierlists use inline per-field saves (except tiers which have their own save button).
+4. **Admin panel component (`AdminPanel.tsx`)** — ~2650 lines, contains both regular tierlist and vote tierlist management. Uses `@dnd-kit` for image reordering. Both regular tierlists and vote tierlists use a centralized batch-save pattern (`EditState` for regular, `VoteEditState` for vote) — no changes persist to DB until the user clicks Save Changes.
+5. **`NEXT_PUBLIC_SUPABASE_URL` must ALWAYS point to the Supabase project URL** (e.g. `https://cagkgfketucousksgtbk.supabase.co`), NEVER the app/Vercel URL. Setting it to the app URL causes `MIDDLEWARE_INVOCATION_FAILED` (500 on every page).
+6. **Supabase OAuth redirect URLs** — Must include `https://knowitball.co.uk/**` (production wildcard) and optionally the Vercel preview wildcard. The **Site URL** in Supabase Auth config must also be `https://knowitball.co.uk`.
 
 ---
 
@@ -386,23 +394,47 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - [ ] **Tierlist editing** — Can only create new, cannot edit existing tierlists after publishing
 - [ ] **Sort/filter on homepage** — Users can only browse by category, no sort controls
 - [ ] **PWA support** — Could be installable as a mobile app
-- [ ] **Run `tierlist_tiers.sql` migration** — Needed to enable custom tier persistence for regular tierlists
+- [x] ~~**Run `tierlist_tiers.sql` migration**~~ — Done (April 2026)
 
 ---
 
-## Recent Session Changes (25 March 2026)
+## Recent Session Changes
 
-These changes were made in the most recent session and may need follow-up:
+### Session: 25 March 2026
 
 1. **Admin image reordering** — Replaced arrow buttons (← →) with `@dnd-kit` drag-and-drop for both regular and vote tierlist image grids in admin. Crop button (✂) kept. Uses `PointerSensor` with 5px activation distance so clicks still work.
 
 2. **Tier editing in admin** — Added tier editing UI (labels, colors, add/remove rows) to regular tierlist admin edit form (saved via "Save Changes" button). Vote tierlist tier editing is now always visible when expanded (removed the "Edit tiers" toggle — tiers auto-load on expand).
 
-3. **Custom tiers for regular tierlists** — Added `tiers` JSONB column migration (`tierlist_tiers.sql` — NOT YET RUN on DB), updated admin PATCH API to accept `tiers`, added `initialTiers` prop to `TierlistBoard`, play page passes saved tiers. Falls back to default S/A/B/C/D if column doesn't exist.
+3. **Custom tiers for regular tierlists** — Added `tiers` JSONB column migration (`tierlist_tiers.sql`), updated admin PATCH API to accept `tiers`, added `initialTiers` prop to `TierlistBoard`, play page passes saved tiers. Falls back to default S/A/B/C/D if column doesn't exist.
 
-4. **Admin tierlists disappearing bug** — Adding `tiers` to the admin page `select()` query broke the page because the column doesn't exist yet. Fixed by removing it from the query and fetching tiers lazily in `openEdit()`.
+4. **Admin tierlists disappearing bug** — Adding `tiers` to the admin page `select()` query broke the page because the column didn't exist yet. Fixed by removing it from the query and fetching tiers lazily in `openEdit()`.
 
 5. **Export backup** — New `GET /api/admin/export` endpoint returns a JSON file with all tierlists (with images grouped inline), vote tierlists (with images), and categories. "Export Backup" button added to admin panel tab bar.
+
+### Session: ~11 April 2026
+
+1. **Face detection** — Added `face-api.js` (TinyFaceDetector) for client-side face detection. New `lib/faceDetection.ts` with `processImage()` (for uploads) and `detectFaceFromUrl()` (for existing images). Returns `FaceCenter { x, y }` as percentages. Results cached in localStorage. Positions bias upward by 50% of face-box height to keep the full head visible in cover-crop thumbnails.
+
+2. **Face detection toggle** — Added `face_detection_enabled` column to both `tierlists` and `vote_tierlists` tables. Admin panel shows on/off toggle per tierlist. When toggled on, face detection runs on image upload (regular tierlists) or on save (vote tierlists).
+
+3. **face-api.js webpack fallbacks** — Added `fs: false` and `encoding: false` webpack fallbacks in `next.config.mjs` because face-api.js imports node-only modules that aren't needed client-side.
+
+4. **`tierlist_tiers.sql` migration applied** — User ran the migration in Supabase SQL Editor. Custom tiers now persist for regular tierlists.
+
+### Session: 16 April 2026
+
+1. **Vote panel image sizing fix** — `components/VoteBoard.tsx`: Changed the selected-player thumbnail in the vote side-panel from a max-height container with `object-cover` (which cropped landscape images badly) to an `aspect-square` container matching the thumbnail grid below. Now shows the same framing, just bigger.
+
+2. **Admin vote tierlist batch save** — Major refactor of `components/AdminPanel.tsx`. The vote tierlist editor now uses a `VoteEditState` pattern where ALL changes (cover photo upload/pick/crop, tier labels/colors/add/remove, image add/crop/delete/reorder, face-detection toggle, category, import-from-tierlist) stage to local React state. Nothing persists to the DB until the user clicks "Save Changes". Unsaved changes show a yellow indicator. Closing with unsaved changes prompts a confirmation dialog. The comprehensive `handleSaveVoteEdit()` function handles: cover upload, image deletions, new image uploads (with face detection), staged crops, imports, scalar field PATCH, reorder, and auto face detection when newly toggled on.
+
+3. **Face detection "Run detection" button removed** — The separate "Run detection on all images" button next to the face detection toggle was removed. Now, toggling face detection ON and clicking Save automatically runs detection on every image that doesn't have a `face_center` yet.
+
+4. **Crop handlers updated for batch save** — `handleAdminCropResult` and `handleAdminCoverCropResult` now stage crops in `voteEditState` (as `pendingCropDataUrl` / `customCoverCropDataUrl`) instead of uploading immediately. Only uploaded when Save is clicked. Regular tierlist crop handlers remain unchanged (legacy immediate-upload flow).
+
+5. **Rebranding** — All user-facing "Tierlist Maker" text changed to "Knowitball Tierlists" (homepage hero, nav, footer, 404 page, browser tab title, Open Graph + Twitter meta tags). Contact email on legal page changed to `knowitballcontact@gmail.com`.
+
+6. **Custom domain** — `knowitball.co.uk` connected via Hostinger DNS → Vercel. Supabase Site URL and redirect URLs updated for the new domain.
 
 ---
 
@@ -419,6 +451,15 @@ npm run lint   # Run ESLint
 
 ## Deployment
 
-- Hosted on **Netlify** with `@netlify/plugin-nextjs`
-- Auto-deploys from the git repository
+- Hosted on **Vercel** (migrated from Netlify)
+- Auto-deploys from the GitHub repository on merge to main
+- Custom domain: **knowitball.co.uk** (DNS at Hostinger → Vercel)
 - Supabase project provides the database + auth + storage backend
+- **Supabase project URL**: `https://cagkgfketucousksgtbk.supabase.co`
+
+### Branding
+
+- Site name: **Knowitball Tierlists** (part of future "KnowItBall" platform)
+- Contact email: **knowitballcontact@gmail.com**
+- Domain: **knowitball.co.uk**
+- Registrar: **Hostinger**
