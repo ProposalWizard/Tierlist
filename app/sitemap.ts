@@ -1,0 +1,59 @@
+/**
+ * app/sitemap.ts
+ *
+ * Next.js 14 auto-generates /sitemap.xml from this file.
+ * Google Search Console uses it to discover every page on the site.
+ *
+ * Includes:
+ *  - Static routes (home, find, legal)
+ *  - Every published tierlist (/play/[id])
+ *  - Every active vote tierlist (/vote/[id])
+ *
+ * Excluded on purpose:
+ *  - /auth, /create, /profile — user-specific or auth-gated
+ *  - /admin — admin-only, must never be indexed
+ *  - /api/* — API routes aren't pages
+ */
+
+import type { MetadataRoute } from "next";
+import { createServiceClient } from "@/lib/supabase/service";
+
+const BASE_URL = "https://knowitball.co.uk";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const service = createServiceClient();
+
+  // Static, always-indexable pages
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: BASE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
+    { url: `${BASE_URL}/find`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
+    { url: `${BASE_URL}/legal`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
+  ];
+
+  // Every tierlist
+  const { data: tierlists } = await service
+    .from("tierlists")
+    .select("id, created_at");
+
+  const tierlistRoutes: MetadataRoute.Sitemap = (tierlists ?? []).map((tl) => ({
+    url: `${BASE_URL}/play/${tl.id}`,
+    lastModified: tl.created_at ? new Date(tl.created_at) : new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  // Every active vote tierlist
+  const { data: voteTierlists } = await service
+    .from("vote_tierlists")
+    .select("id, created_at, is_active")
+    .eq("is_active", true);
+
+  const voteRoutes: MetadataRoute.Sitemap = (voteTierlists ?? []).map((vl) => ({
+    url: `${BASE_URL}/vote/${vl.id}`,
+    lastModified: vl.created_at ? new Date(vl.created_at) : new Date(),
+    changeFrequency: "daily" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...tierlistRoutes, ...voteRoutes];
+}
