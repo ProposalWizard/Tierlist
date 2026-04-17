@@ -13,7 +13,10 @@ import { isAdmin } from "@/lib/admin";
 import AdminPanel from "@/components/AdminPanel";
 import type { Tierlist } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Admin" };
+export const metadata: Metadata = {
+  title: "Admin",
+  robots: { index: false, follow: false },
+};
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {

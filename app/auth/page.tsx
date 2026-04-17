@@ -5,8 +5,15 @@
  */
 
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import AuthForm from "@/components/AuthForm";
+
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Sign in to Knowitball Tierlists to create, save, and share your football tier rankings.",
+  robots: { index: false, follow: false },
+};
 
 export default async function AuthPage() {
   const supabase = await createClient();

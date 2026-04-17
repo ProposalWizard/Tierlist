@@ -5,11 +5,30 @@
  * Vote tierlists show a "Vote" badge to distinguish them.
  */
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { Tierlist } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "Knowitball Tierlists — Football Tier Rankings & Votes",
+  description:
+    "Create and share football tierlists. Drag players into S, A, B, C, D tiers, vote on community rankings, and download your results.",
+  openGraph: {
+    title: "Knowitball Tierlists — Football Tier Rankings & Votes",
+    description:
+      "Create and share football tierlists. Drag players into tiers, vote on community rankings, and download your results.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Knowitball Tierlists — Football Tier Rankings & Votes",
+    description:
+      "Create and share football tierlists. Drag players into tiers, vote on community rankings, and download your results.",
+  },
+  alternates: { canonical: "/" },
+};
 
 export const dynamic = "force-dynamic";
 

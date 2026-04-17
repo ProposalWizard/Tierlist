@@ -20,6 +20,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://knowitball.co.uk"),
   title: {
     default: "Knowitball Tierlists",
     template: "%s | Knowitball Tierlists",

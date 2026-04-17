@@ -22,9 +22,35 @@ interface Props { params: Promise<{ id: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const service = createServiceClient();
-  const { data } = await service.from("tierlists").select("title").eq("id", id)
-    .single<Pick<Tierlist, "title">>();
-  return { title: data?.title ?? "Play Tierlist" };
+  const { data } = await service
+    .from("tierlists")
+    .select("title, cover_image_url, category")
+    .eq("id", id)
+    .single<Pick<Tierlist, "title" | "cover_image_url" | "category">>();
+
+  const title = data?.title ?? "Play Tierlist";
+  const description = data
+    ? `Play the ${data.title} tierlist. Drag and drop players into S, A, B, C, D tiers and share your ranking.`
+    : "Play this football tierlist. Drag and drop players into tiers and share your ranking.";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      ...(data?.cover_image_url && {
+        images: [{ url: data.cover_image_url, width: 1200, height: 630, alt: title }],
+      }),
+    },
+    twitter: {
+      card: data?.cover_image_url ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(data?.cover_image_url && { images: [data.cover_image_url] }),
+    },
+    alternates: { canonical: `/play/${id}` },
+  };
 }
 
 export const dynamic = "force-dynamic";

@@ -15,7 +15,8 @@ import TierlistBoard from "@/components/TierlistBoard";
 
 export const metadata: Metadata = {
   title: "Create Tierlist",
-  description: "Build your tierlist, then upload it for others to play.",
+  description: "Build your own football tierlist. Add player images, customise tiers, then publish it for the community to play.",
+  robots: { index: false, follow: false },
 };
 
 export default async function CreatePage() {
