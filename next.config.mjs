@@ -19,10 +19,22 @@ const nextConfig = {
   // Prevent Vercel CDN / browser from caching dynamic pages.
   // Ensures logged-in and logged-out users always get fresh data.
   async headers() {
+    const securityHeaders = [
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+    ];
+
     return [
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
       {
         source: "/play/:id*",
         headers: [
+          ...securityHeaders,
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
           { key: "CDN-Cache-Control", value: "no-store" },
           { key: "Vercel-CDN-Cache-Control", value: "no-store" },
@@ -31,6 +43,7 @@ const nextConfig = {
       {
         source: "/vote/:id*",
         headers: [
+          ...securityHeaders,
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
           { key: "CDN-Cache-Control", value: "no-store" },
           { key: "Vercel-CDN-Cache-Control", value: "no-store" },
@@ -39,6 +52,7 @@ const nextConfig = {
       {
         source: "/admin",
         headers: [
+          ...securityHeaders,
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
           { key: "CDN-Cache-Control", value: "no-store" },
           { key: "Vercel-CDN-Cache-Control", value: "no-store" },

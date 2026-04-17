@@ -9,19 +9,53 @@
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import VoteBoard from "@/components/VoteBoard";
 import LikeButton from "@/components/LikeButton";
 import type { VoteImageWithCounts, VoteTier } from "@/lib/types";
 
+interface Props { params: Promise<{ id: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const service = createServiceClient();
+  const { data } = await service
+    .from("vote_tierlists")
+    .select("title, cover_image_url, category")
+    .eq("id", id)
+    .eq("is_active", true)
+    .single();
+
+  const title = data?.title ? `Vote: ${data.title}` : "Vote Tierlist";
+  const description = data
+    ? `Vote on the ${data.title} tierlist. Pick where each player belongs and see how the community ranked them.`
+    : "Vote on this community tierlist. Pick where each player belongs and see the results.";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      ...(data?.cover_image_url && {
+        images: [{ url: data.cover_image_url, width: 1200, height: 630, alt: title }],
+      }),
+    },
+    twitter: {
+      card: data?.cover_image_url ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(data?.cover_image_url && { images: [data.cover_image_url] }),
+    },
+    alternates: { canonical: `/vote/${id}` },
+  };
+}
+
 export const dynamic = "force-dynamic";
 
-export default async function VotePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function VotePage({ params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
   const service = createServiceClient();

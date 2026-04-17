@@ -3,7 +3,26 @@
  * Shows all tierlists + vote tierlists with search & category filter.
  */
 
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Find a Tierlist",
+  description:
+    "Browse and search all football tierlists and community vote rankings. Filter by category to find the tierlist you want to play.",
+  openGraph: {
+    title: "Find a Tierlist",
+    description:
+      "Browse and search all football tierlists and community vote rankings.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Find a Tierlist",
+    description:
+      "Browse and search all football tierlists and community vote rankings.",
+  },
+  alternates: { canonical: "/find" },
+};
 import { createServiceClient } from "@/lib/supabase/service";
 import FindSearch, { type FindItem } from "@/components/FindSearch";
 

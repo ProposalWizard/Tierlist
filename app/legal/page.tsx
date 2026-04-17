@@ -6,7 +6,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Privacy & Terms",
-  description: "Privacy Policy and Terms of Use for this website.",
+  description: "Privacy Policy and Terms of Use for Knowitball Tierlists.",
+  alternates: { canonical: "/legal" },
 };
 
 export default function LegalPage() {

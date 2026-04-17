@@ -10,7 +10,11 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import ProfileClient from "./ProfileClient";
 
-export const metadata: Metadata = { title: "Profile" };
+export const metadata: Metadata = {
+  title: "Profile",
+  description: "View your created tierlists, saved rankings, likes, and login streak.",
+  robots: { index: false, follow: false },
+};
 
 export default async function ProfilePage() {
   const supabase = await createClient();
