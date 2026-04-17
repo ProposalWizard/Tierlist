@@ -5,9 +5,12 @@
  */
 
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import GlobalNav from "@/components/GlobalNav";
 import SiteFooter from "@/components/SiteFooter";
+
+const GA_ID = "G-ZEGDB8YDZZ";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -42,6 +45,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
+        </Script>
+      </head>
       <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen flex flex-col overflow-x-hidden`}>
         <GlobalNav />
         <div className="flex-1">{children}</div>
