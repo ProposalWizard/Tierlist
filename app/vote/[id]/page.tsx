@@ -12,9 +12,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import LikeButton from "@/components/LikeButton";
-const VoteBoard = dynamic(() => import("@/components/VoteBoard"), { ssr: false });
+const VoteBoard = nextDynamic(() => import("@/components/VoteBoard"), { ssr: false });
 import type { VoteImageWithCounts, VoteTier } from "@/lib/types";
 
 interface Props { params: Promise<{ id: string }> }

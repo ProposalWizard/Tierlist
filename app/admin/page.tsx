@@ -10,8 +10,8 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
-import dynamic from "next/dynamic";
-const AdminPanel = dynamic(() => import("@/components/AdminPanel"), { ssr: false });
+import nextDynamic from "next/dynamic";
+const AdminPanel = nextDynamic(() => import("@/components/AdminPanel"), { ssr: false });
 import type { Tierlist } from "@/lib/types";
 
 export const metadata: Metadata = {
