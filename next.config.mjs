@@ -3,6 +3,9 @@ const nextConfig = {
   images: {
     remotePatterns: [],
   },
+  experimental: {
+    optimizePackageImports: ["@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities", "@supabase/supabase-js"],
+  },
   // face-api.js depends on node-fetch (which needs 'encoding') and
   // references 'fs' for model loading.  Neither is needed at build
   // time or on the server — face detection runs purely client-side.
