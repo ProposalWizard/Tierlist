@@ -11,10 +11,11 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
-import TierlistBoard from "@/components/TierlistBoard";
+import nextDynamic from "next/dynamic";
 import LikeButton from "@/components/LikeButton";
 import SaveTierlistButton from "@/components/SaveTierlistButton";
-import PlayCommunityVote from "@/components/PlayCommunityVote";
+const TierlistBoard = nextDynamic(() => import("@/components/TierlistBoard"), { ssr: false });
+const PlayCommunityVote = nextDynamic(() => import("@/components/PlayCommunityVote"), { ssr: false });
 import type { Tierlist, TierlistImage, VoteTier } from "@/lib/types";
 
 interface Props { params: Promise<{ id: string }> }

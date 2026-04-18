@@ -21,7 +21,15 @@
  *   - tiny_face_detector_model-shard1
  */
 
-import * as faceapi from "face-api.js";
+type FaceApi = typeof import("face-api.js");
+let faceapi: FaceApi | null = null;
+
+async function getFaceApi(): Promise<FaceApi> {
+  if (!faceapi) {
+    faceapi = await import("face-api.js");
+  }
+  return faceapi;
+}
 
 /** Target background-position as a percentage of the image dimensions (0–100). */
 export interface FaceCenter {
@@ -89,8 +97,8 @@ async function ensureModelsLoaded(): Promise<void> {
     return;
   }
 
-  modelsLoading = faceapi.nets.tinyFaceDetector
-    .loadFromUri("/models")
+  modelsLoading = getFaceApi()
+    .then((api) => api.nets.tinyFaceDetector.loadFromUri("/models"))
     .then(() => {
       modelsLoaded = true;
     });
@@ -185,9 +193,10 @@ export async function processImage(file: File): Promise<ProcessedImage> {
     // Resize to 512px max for fast detection
     const { canvas, scale } = resizeToCanvas(img, 512);
 
-    const detection = await faceapi.detectSingleFace(
+    const api = await getFaceApi();
+    const detection = await api.detectSingleFace(
       canvas,
-      new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
+      new api.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
     );
 
     if (!detection) return { file, faceCenter: null };
@@ -227,9 +236,10 @@ export async function detectFaceFromUrl(imageUrl: string): Promise<FaceCenter | 
     const img = await loadImage(imageUrl);
     const { canvas, scale } = resizeToCanvas(img, 512);
 
-    const detection = await faceapi.detectSingleFace(
+    const api = await getFaceApi();
+    const detection = await api.detectSingleFace(
       canvas,
-      new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
+      new api.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
     );
 
     if (!detection) return null;

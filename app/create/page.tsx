@@ -11,7 +11,8 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
-import TierlistBoard from "@/components/TierlistBoard";
+import dynamic from "next/dynamic";
+const TierlistBoard = dynamic(() => import("@/components/TierlistBoard"), { ssr: false });
 
 export const metadata: Metadata = {
   title: "Create Tierlist",
