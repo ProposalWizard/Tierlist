@@ -76,8 +76,8 @@ export default async function PlayPage({ params }: Props) {
   const images       = imagesResult.data ?? [];
   const userIsAdmin  = user ? await isAdmin(user.id) : false;
 
-  // Increment view count
-  await supabase.rpc("increment_view_count", { p_id: id });
+  // Increment view count (fire-and-forget, don't block page render)
+  supabase.rpc("increment_view_count", { p_id: id });
 
   // Creator display name (from user_profiles via service role)
   const { data: creatorProfile } = await service

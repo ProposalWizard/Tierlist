@@ -4,7 +4,6 @@
  */
 
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Find a Tierlist",
@@ -26,18 +25,17 @@ export const metadata: Metadata = {
 import { createServiceClient } from "@/lib/supabase/service";
 import FindSearch, { type FindItem } from "@/components/FindSearch";
 
+export const revalidate = 30;
+
 export default async function FindPage({
   searchParams,
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
   const { category: initialCategory } = await searchParams;
-  const supabase = await createClient();
   const service = createServiceClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  // Fetch everything in parallel
-  const [tierlistsRes, votelistsRes, likesCountRes, myLikesRes, profilesRes] = await Promise.all([
+  const [tierlistsRes, votelistsRes, likesCountRes, profilesRes] = await Promise.all([
     service
       .from("tierlists")
       .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, created_by")
@@ -47,13 +45,7 @@ export default async function FindPage({
       .select("id, title, category, cover_image_url, created_at, created_by")
       .eq("is_active", true)
       .order("created_at", { ascending: false }),
-    // Count likes per tierlist
     service.from("tierlist_likes").select("tierlist_id"),
-    // Current user's liked IDs
-    user
-      ? service.from("tierlist_likes").select("tierlist_id").eq("user_id", user.id)
-      : Promise.resolve({ data: [] }),
-    // Creator usernames
     service.from("user_profiles").select("user_id, username"),
   ]);
 
@@ -69,10 +61,7 @@ export default async function FindPage({
     if (p.username) creatorMap.set(p.user_id, p.username);
   }
 
-  // Current user's liked IDs
-  const likedIds = new Set(
-    ((myLikesRes as { data: { tierlist_id: string }[] | null }).data ?? []).map((l) => l.tierlist_id)
-  );
+  const likedIds = new Set<string>();
 
   // Build unified list
   const tierlists: FindItem[] = (tierlistsRes.data ?? []).map((tl) => ({

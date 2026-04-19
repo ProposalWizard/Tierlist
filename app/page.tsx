@@ -7,7 +7,6 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { Tierlist } from "@/lib/types";
@@ -30,7 +29,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 const MAX_PER_CATEGORY = 6;
 
@@ -47,19 +46,14 @@ type CategoryCard = {
 type CategorySetting = { category: string; sort_method: string; pinned_ids: string[] };
 
 export default async function HomePage() {
-  const supabase = await createClient();
   const service = createServiceClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  const [tierlistsResult, likesResult, votelistsResult, allLikesResult, categorySettingsResult, categoriesResult] = await Promise.all([
+  const [tierlistsResult, votelistsResult, allLikesResult, categorySettingsResult, categoriesResult] = await Promise.all([
     service
       .from("tierlists")
       .select("id, title, category, additional_categories, cover_image_url, view_count, created_at")
       .order("created_at", { ascending: false }),
-    user
-      ? supabase.from("tierlist_likes").select("tierlist_id").eq("user_id", user.id)
-      : Promise.resolve({ data: [] }),
-    supabase
+    service
       .from("vote_tierlists")
       .select("id, title, category, cover_image_url, created_at")
       .eq("is_active", true)
@@ -71,9 +65,6 @@ export default async function HomePage() {
 
   const tierlists = tierlistsResult.data ?? [];
   const votelists = (votelistsResult.data ?? []) as { id: string; title: string; category: string; cover_image_url: string | null; created_at: string }[];
-  const likedIds = new Set(
-    ((likesResult as { data: { tierlist_id: string }[] | null }).data ?? []).map((l) => l.tierlist_id)
-  );
 
   // Build like counts
   const likeCountMap = new Map<string, number>();
@@ -166,11 +157,10 @@ export default async function HomePage() {
         <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">Knowitball Tierlists</h1>
         <p className="mx-auto mt-3 max-w-md text-gray-400">
           Pick a tierlist and drag the images into tiers.
-          {!user && " Sign in to create your own."}
         </p>
-        <Link href={user ? "/create" : "/auth"}
+        <Link href="/create"
           className="mt-6 inline-block rounded-xl bg-indigo-600 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500">
-          {user ? "+ Create a Tierlist" : "Sign in to create"}
+          + Create a Tierlist
         </Link>
       </div>
 
@@ -225,9 +215,7 @@ export default async function HomePage() {
                       <div className="mt-1 flex items-center justify-between text-[10px] text-gray-500">
                         {!item.is_vote && <span title="Views">👁 {item.view_count ?? 0}</span>}
                         {item.is_vote && <span />}
-                        <div className="flex items-center gap-1.5">
-                          {likedIds.has(item.id) && <span className="text-red-400">♥</span>}
-                        </div>
+                        {item.like_count > 0 && <span>♥ {item.like_count}</span>}
                       </div>
                     </div>
                   </Link>
@@ -250,9 +238,9 @@ export default async function HomePage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <p className="mb-4 text-gray-500">No tierlists yet. Be the first to create one!</p>
-            <Link href={user ? "/create" : "/auth"}
+            <Link href="/create"
               className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500">
-              {user ? "Create your first tierlist" : "Sign in to create"}
+              Create your first tierlist
             </Link>
           </div>
         )}
