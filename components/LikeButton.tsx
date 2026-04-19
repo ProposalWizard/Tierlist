@@ -1,24 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Props {
   tierlistId: string;
-  initialCount: number;
-  initialLiked: boolean;
-  isLoggedIn: boolean;
+  initialCount?: number;
+  initialLiked?: boolean;
+  isLoggedIn?: boolean;
   endpoint?: string;
 }
 
-export default function LikeButton({ tierlistId, initialCount, initialLiked, isLoggedIn, endpoint }: Props) {
+export default function LikeButton({ tierlistId, initialCount = 0, initialLiked = false, isLoggedIn = false, endpoint }: Props) {
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
+  const [authed, setAuthed] = useState(isLoggedIn);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    fetch(endpoint ?? `/api/tierlists/${tierlistId}/like`)
+      .then((r) => r.json())
+      .then((data) => {
+        setLiked(data.liked);
+        setCount(data.count);
+        setAuthed(data.isLoggedIn);
+      })
+      .catch(() => {});
+  }, [tierlistId, endpoint]);
+
   async function toggle() {
-    if (!isLoggedIn || loading) return;
+    if (!authed || loading) return;
     setLoading(true);
-    // Optimistic update
     setLiked((v) => !v);
     setCount((v) => (liked ? v - 1 : v + 1));
 
@@ -28,7 +39,6 @@ export default function LikeButton({ tierlistId, initialCount, initialLiked, isL
       setLiked(data.liked);
       setCount(data.count);
     } else {
-      // Revert
       setLiked((v) => !v);
       setCount((v) => (liked ? v + 1 : v - 1));
     }
@@ -38,8 +48,8 @@ export default function LikeButton({ tierlistId, initialCount, initialLiked, isL
   return (
     <button
       onClick={toggle}
-      disabled={!isLoggedIn || loading}
-      title={isLoggedIn ? (liked ? "Unlike" : "Like") : "Sign in to like"}
+      disabled={!authed || loading}
+      title={authed ? (liked ? "Unlike" : "Like") : "Sign in to like"}
       className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${
         liked
           ? "border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20"

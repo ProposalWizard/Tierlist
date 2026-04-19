@@ -62,17 +62,16 @@ export default function VoteBoard({
 
   useEffect(() => {
     voterIdRef.current = getOrCreateVoterId();
-    if (!isLoggedIn && voterIdRef.current) {
-      fetch(`/api/vote-tierlists/${votelistId}/my-votes?voter_id=${encodeURIComponent(voterIdRef.current)}`)
-        .then((r) => r.json())
-        .then((votes: Record<string, string>) => {
-          if (votes && typeof votes === "object" && !("error" in votes)) {
-            setUserVotes(votes);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [votelistId, isLoggedIn]);
+    const url = `/api/vote-tierlists/${votelistId}/my-votes${voterIdRef.current ? `?voter_id=${encodeURIComponent(voterIdRef.current)}` : ""}`;
+    fetch(url)
+      .then((r) => r.json())
+      .then((votes: Record<string, string>) => {
+        if (votes && typeof votes === "object" && !("error" in votes)) {
+          setUserVotes(votes);
+        }
+      })
+      .catch(() => {});
+  }, [votelistId]);
 
   // Skip: send this image to the back of the unranked pool, advance to next
   function skipImage(imageId: string) {

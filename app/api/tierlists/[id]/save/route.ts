@@ -3,6 +3,23 @@ import { NextResponse } from "next/server";
 
 interface Props { params: Promise<{ id: string }> }
 
+export async function GET(_req: Request, { params }: Props) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return NextResponse.json({ saved: false, isLoggedIn: false });
+
+  const { data } = await supabase
+    .from("saved_tierlists")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .eq("tierlist_id", id)
+    .maybeSingle();
+
+  return NextResponse.json({ saved: !!data, isLoggedIn: true });
+}
+
 // POST /api/tierlists/[id]/save — toggle bookmark for current user
 export async function POST(_req: Request, { params }: Props) {
   const { id } = await params;
