@@ -37,9 +37,18 @@ export default async function BlindRankingsPage() {
       </div>
 
       <main className="mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-6 text-center">
+          <Link
+            href="/blind-rankings/create"
+            className="inline-block rounded-xl bg-amber-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-500"
+          >
+            + Create Blind Ranking
+          </Link>
+        </div>
+
         {items.length === 0 ? (
           <div className="py-24 text-center text-gray-500">
-            No blind rankings available yet. Check back soon!
+            No blind rankings available yet. Create one above!
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -47,22 +56,33 @@ export default async function BlindRankingsPage() {
               <Link
                 key={r.id}
                 href={`/blind-rankings/${r.id}`}
-                className="group rounded-xl border border-gray-800 bg-gray-900 p-5 transition-colors hover:border-amber-700 hover:bg-gray-800/50"
+                className="group overflow-hidden rounded-xl border border-gray-800 bg-gray-900 transition-colors hover:border-amber-700 hover:bg-gray-800/50"
               >
-                <h2 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
-                  {r.title}
-                </h2>
-                {r.description && (
-                  <p className="mt-1 text-sm text-gray-400 line-clamp-2">{r.description}</p>
+                {r.cover_image_url && (
+                  <div className="aspect-[3/2] overflow-hidden">
+                    <img
+                      src={r.cover_image_url}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  </div>
                 )}
-                <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
-                  <span>{r.num_slots} slots</span>
-                  {r.category && <span>{r.category}</span>}
-                </div>
-                <div className="mt-3">
-                  <span className="rounded-lg bg-amber-600/20 border border-amber-700/50 px-3 py-1 text-xs font-semibold text-amber-400">
-                    Play
-                  </span>
+                <div className="p-5">
+                  <h2 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                    {r.title}
+                  </h2>
+                  {r.description && (
+                    <p className="mt-1 text-sm text-gray-400 line-clamp-2">{r.description}</p>
+                  )}
+                  <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
+                    <span>{r.num_slots} slots</span>
+                    {r.category && <span>{r.category}</span>}
+                  </div>
+                  <div className="mt-3">
+                    <span className="rounded-lg bg-amber-600/20 border border-amber-700/50 px-3 py-1 text-xs font-semibold text-amber-400">
+                      Play
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}

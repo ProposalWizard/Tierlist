@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import type { BlindRankingImage } from "@/lib/types";
+
+function displayName(img: BlindRankingImage): string {
+  return img.name?.trim() || "???";
+}
 
 interface Props {
   rankingId: string;
@@ -116,11 +120,11 @@ export default function BlindRankingBoard({ title, numSlots, images }: Props) {
                   <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg">
                     <img
                       src={player.image_url}
-                      alt={player.name}
+                      alt={displayName(player)}
                       className="h-full w-full object-cover"
                     />
                   </div>
-                  <span className="text-sm font-semibold text-white">{player.name}</span>
+                  <span className="text-sm font-semibold text-white">{displayName(player)}</span>
                 </>
               )}
             </div>
@@ -165,12 +169,12 @@ export default function BlindRankingBoard({ title, numSlots, images }: Props) {
                 <div className="aspect-square overflow-hidden">
                   <img
                     src={currentPlayer.image_url}
-                    alt={currentPlayer.name}
+                    alt={displayName(currentPlayer)}
                     className="h-full w-full object-cover"
                   />
                 </div>
                 <div className="px-3 py-3 text-center">
-                  <p className="text-sm font-bold text-white">{currentPlayer.name}</p>
+                  <p className="text-sm font-bold text-white">{displayName(currentPlayer)}</p>
                   <p className="mt-1 text-[10px] text-gray-500">Tap a slot to place</p>
                 </div>
               </div>
@@ -215,7 +219,7 @@ export default function BlindRankingBoard({ title, numSlots, images }: Props) {
                   </>
                 ) : (
                   <span className={`text-sm ${isHovered ? "text-amber-300" : "text-gray-600"}`}>
-                    {isHovered && currentPlayer ? `Place ${currentPlayer.name} here` : "Empty"}
+                    {isHovered && currentPlayer ? `Place ${displayName(currentPlayer)} here` : "Empty"}
                   </span>
                 )}
               </button>
