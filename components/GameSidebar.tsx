@@ -13,13 +13,21 @@ interface GameLink {
 }
 
 const GAMES: GameLink[] = [
-  { name: "Home", description: "Browse all games & tierlists", href: "/" },
-  { name: "Tierlists", description: "Create & play drag-and-drop tierlists", href: "/find" },
-  { name: "Create Tierlist", description: "Build your own tierlist", href: "/create" },
+  { name: "Home", description: "Browse all games", href: "/home", comingSoon: true },
+  { name: "Tierlists", description: "Create & play drag-and-drop tierlists", href: "/" },
   { name: "Combined XI", description: "Build your dream starting 11", href: "/combined-xi", comingSoon: true },
+  { name: "Squad Builder", description: "Build and share your squad", href: "/squad-builder", comingSoon: true },
+  { name: "Team of the Week", description: "Pick your weekly best 11", href: "/team-of-the-week", comingSoon: true },
   { name: "Blind Rankings", description: "Rank players without seeing names", href: "/blind-rankings", comingSoon: true },
-  { name: "Match Predictions", description: "Predict match results", href: "/predictions", comingSoon: true },
   { name: "Player Ratings", description: "Rate and compare players", href: "/ratings", comingSoon: true },
+  { name: "Match Predictions", description: "Predict match results", href: "/predictions", comingSoon: true },
+  { name: "Tenable", description: "Football trivia challenge", href: "/tenable", comingSoon: true },
+  { name: "Winner Stays On", description: "Pick the winner each round", href: "/winner-stays-on", comingSoon: true },
+  { name: "Guess the 11", description: "Guess the starting lineup", href: "/guess-the-11", comingSoon: true },
+  { name: "Higher or Lower", description: "Compare player stats", href: "/higher-or-lower", comingSoon: true },
+  { name: "501 Game", description: "Football darts-style challenge", href: "/501", comingSoon: true },
+  { name: "Spot the Fake Stats", description: "Find the made-up statistic", href: "/spot-the-fake", comingSoon: true },
+  { name: "Football Tic Tac Toe", description: "Football-themed tic tac toe", href: "/tic-tac-toe", comingSoon: true },
 ];
 
 export default function GameSidebar() {
