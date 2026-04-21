@@ -40,11 +40,16 @@ export default function GameSidebar() {
 
   useEffect(() => {
     if (open) {
+      document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
     } else {
+      document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
   return (
@@ -69,7 +74,7 @@ export default function GameSidebar() {
 
           {/* Sidebar */}
           <div
-            className={`fixed left-0 top-0 z-[70] flex h-full w-72 flex-col bg-gray-950 border-r border-gray-800 shadow-2xl transition-transform duration-300 ease-in-out overscroll-contain ${open ? "translate-x-0" : "-translate-x-full"}`}
+            className={`fixed left-0 top-0 z-[70] flex h-full w-72 flex-col bg-gray-950 border-r border-gray-800 shadow-2xl transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "-translate-x-full"}`}
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">
@@ -88,7 +93,7 @@ export default function GameSidebar() {
             </div>
 
             {/* Game list */}
-            <nav className="flex-1 overflow-y-auto py-2">
+            <nav className="flex-1 overflow-y-auto overscroll-contain py-2">
               {GAMES.map((game) => {
                 const isActive = pathname === game.href || (game.href !== "/" && pathname.startsWith(game.href));
 
