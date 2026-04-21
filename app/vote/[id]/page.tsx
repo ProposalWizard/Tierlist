@@ -10,7 +10,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import nextDynamic from "next/dynamic";
 import LikeButton from "@/components/LikeButton";
@@ -54,16 +53,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function VotePage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createClient();
   const service = createServiceClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // ── Fetch tierlist (service client bypasses RLS / auth-state differences) ─
   const { data: tierlist } = await service
     .from("vote_tierlists")
     .select("id, title, category, cover_image_url, description, tiers, is_active, face_detection_enabled")
@@ -93,39 +88,6 @@ export default async function VotePage({ params }: Props) {
     voteCounts[v.image_id][v.tier_label] = (voteCounts[v.image_id][v.tier_label] ?? 0) + 1;
   }
 
-  // ── Fetch logged-in user's existing votes + like status (server-side) ───────
-  let initialUserVotes: Record<string, string> = {};
-  let likeCount = 0;
-  let userHasLiked = false;
-
-  const [myVotesResult, likesResult, myLikeResult] = await Promise.all([
-    user
-      ? service
-          .from("vote_tierlist_votes")
-          .select("image_id, tier_label")
-          .eq("vote_tierlist_id", id)
-          .eq("voter_id", user.id)
-      : Promise.resolve({ data: [] }),
-    service
-      .from("vote_tierlist_likes")
-      .select("*", { count: "exact", head: true })
-      .eq("vote_tierlist_id", id),
-    user
-      ? service
-          .from("vote_tierlist_likes")
-          .select("user_id")
-          .eq("vote_tierlist_id", id)
-          .eq("user_id", user.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
-
-  for (const v of (myVotesResult.data ?? []) as { image_id: string; tier_label: string }[]) {
-    initialUserVotes[v.image_id] = v.tier_label;
-  }
-  likeCount = (likesResult as { count: number | null }).count ?? 0;
-  userHasLiked = !!(myLikeResult as { data: unknown }).data;
-
   // ── Fetch linked regular tierlists ──────────────────────────────────────────
   const { data: linkedTierlists } = await service
     .from("tierlists")
@@ -141,7 +103,7 @@ export default async function VotePage({ params }: Props) {
       ...img,
       vote_counts: counts,
       total_votes: total,
-      user_vote: initialUserVotes[img.id] ?? null,
+      user_vote: null,
     };
   });
 
@@ -166,9 +128,6 @@ export default async function VotePage({ params }: Props) {
         <div className="mt-4 flex flex-wrap justify-center gap-3">
           <LikeButton
             tierlistId={id}
-            initialCount={likeCount}
-            initialLiked={userHasLiked}
-            isLoggedIn={!!user}
             endpoint={`/api/vote-tierlists/${id}/like`}
           />
           {/* Link to regular tierlist(s) if linked */}
@@ -208,8 +167,8 @@ export default async function VotePage({ params }: Props) {
             votelistId={id}
             tiers={tiers}
             initialImages={enrichedImages}
-            initialUserVotes={initialUserVotes}
-            isLoggedIn={!!user}
+            initialUserVotes={{}}
+            isLoggedIn={false}
             faceDetectionEnabled={tierlist.face_detection_enabled === true}
           />
         )}
