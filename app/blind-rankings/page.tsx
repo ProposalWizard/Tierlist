@@ -1,0 +1,74 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+import { createServiceClient } from "@/lib/supabase/service";
+import type { BlindRanking } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "Blind Rankings",
+  description: "Rank players without knowing who's coming next. Can you build the perfect ranking going in blind?",
+  alternates: { canonical: "/blind-rankings" },
+};
+
+export const revalidate = 60;
+
+export default async function BlindRankingsPage() {
+  const service = createServiceClient();
+
+  const { data: rankings } = await service
+    .from("blind_rankings")
+    .select("id, title, description, category, cover_image_url, num_slots, is_active, created_by, created_at")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  const items: BlindRanking[] = rankings ?? [];
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white">
+      <div className="border-b border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 px-4 py-10 text-center">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-amber-700 bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-300 mb-3">
+          Blind Rankings
+        </div>
+        <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
+          Blind Rankings
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-sm text-gray-400">
+          Players appear one at a time. Rank them without knowing who&apos;s coming next!
+        </p>
+      </div>
+
+      <main className="mx-auto max-w-4xl px-4 py-8">
+        {items.length === 0 ? (
+          <div className="py-24 text-center text-gray-500">
+            No blind rankings available yet. Check back soon!
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((r) => (
+              <Link
+                key={r.id}
+                href={`/blind-rankings/${r.id}`}
+                className="group rounded-xl border border-gray-800 bg-gray-900 p-5 transition-colors hover:border-amber-700 hover:bg-gray-800/50"
+              >
+                <h2 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                  {r.title}
+                </h2>
+                {r.description && (
+                  <p className="mt-1 text-sm text-gray-400 line-clamp-2">{r.description}</p>
+                )}
+                <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
+                  <span>{r.num_slots} slots</span>
+                  {r.category && <span>{r.category}</span>}
+                </div>
+                <div className="mt-3">
+                  <span className="rounded-lg bg-amber-600/20 border border-amber-700/50 px-3 py-1 text-xs font-semibold text-amber-400">
+                    Play
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

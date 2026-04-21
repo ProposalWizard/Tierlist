@@ -8,6 +8,7 @@
  *  - Static routes (home, find, legal)
  *  - Every published tierlist (/play/[id])
  *  - Every active vote tierlist (/vote/[id])
+ *  - Every active blind ranking (/blind-rankings/[id])
  *
  * Excluded on purpose:
  *  - /auth, /create, /profile — user-specific or auth-gated
@@ -55,5 +56,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...tierlistRoutes, ...voteRoutes];
+  // Every active blind ranking
+  const { data: blindRankings } = await service
+    .from("blind_rankings")
+    .select("id, created_at")
+    .eq("is_active", true);
+
+  const blindRoutes: MetadataRoute.Sitemap = (blindRankings ?? []).map((br) => ({
+    url: `${BASE_URL}/blind-rankings/${br.id}`,
+    lastModified: br.created_at ? new Date(br.created_at) : new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...tierlistRoutes, ...voteRoutes, ...blindRoutes];
 }
