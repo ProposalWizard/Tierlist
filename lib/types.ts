@@ -254,3 +254,30 @@ export interface TopicPageData {
   /** Existing rankings for the authenticated user (empty if none saved yet) */
   existing_rankings: Pick<TierlistRanking, "player_id" | "tier">[];
 }
+
+// ---------------------------------------------------------------
+// Blind Rankings
+// ---------------------------------------------------------------
+
+/** A blind ranking game template */
+export interface BlindRanking {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  cover_image_url: string | null;
+  num_slots: number;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+/** An image/player in the blind ranking bank */
+export interface BlindRankingImage {
+  id: string;
+  blind_ranking_id: string;
+  name: string;
+  image_url: string;
+  sort_order: number;
+  created_at: string;
+}

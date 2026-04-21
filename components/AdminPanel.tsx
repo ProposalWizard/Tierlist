@@ -23,6 +23,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import BlindRankingsAdmin from "./BlindRankingsAdmin";
 
 interface VotelistAdmin {
   id: string;
@@ -144,7 +145,7 @@ export default function AdminPanel({
 }: {
   initialTierlists: Tierlist[];
 }) {
-  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists">("tierlists");
+  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings">("tierlists");
   const adminDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
 
@@ -1176,6 +1177,14 @@ export default function AdminPanel({
           }`}
         >
           Vote Tierlists {votelistsLoaded ? `(${votelists.length})` : ""}
+        </button>
+        <button
+          onClick={() => setTab("blind-rankings")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === "blind-rankings" ? "bg-amber-600 text-white" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          Blind Rankings
         </button>
         <div className="ml-auto">
           <button
@@ -2633,6 +2642,11 @@ export default function AdminPanel({
           )}
         </div>
       )}
+      {/* ── Blind Rankings tab ──────────────────────────────────────── */}
+      {tab === "blind-rankings" && (
+        <BlindRankingsAdmin />
+      )}
+
       {/* Admin image crop overlay */}
       {adminCropImage && (
         <CropOverlay

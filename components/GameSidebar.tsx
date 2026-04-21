@@ -18,7 +18,7 @@ const GAMES: GameLink[] = [
   { name: "Combined XI", description: "Build your dream starting 11", href: "/combined-xi", comingSoon: true },
   { name: "Squad Builder", description: "Build and share your squad", href: "/squad-builder", comingSoon: true },
   { name: "Team of the Week", description: "Pick your weekly best 11", href: "/team-of-the-week", comingSoon: true },
-  { name: "Blind Rankings", description: "Rank players without seeing names", href: "/blind-rankings", comingSoon: true },
+  { name: "Blind Rankings", description: "Rank players without knowing who's next", href: "/blind-rankings" },
   { name: "Player Ratings", description: "Rate and compare players", href: "/ratings", comingSoon: true },
   { name: "Match Predictions", description: "Predict match results", href: "/predictions", comingSoon: true },
   { name: "Tenable", description: "Football trivia challenge", href: "/tenable", comingSoon: true },
