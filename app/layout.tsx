@@ -22,8 +22,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://knowitball.co.uk"),
   title: {
-    default: "Knowitball Tierlists",
-    template: "%s | Knowitball Tierlists",
+    default: "Knowitball",
+    template: "%s | Knowitball",
   },
   description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings — free forever.",
   openGraph: {
