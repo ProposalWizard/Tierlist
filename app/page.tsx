@@ -200,7 +200,7 @@ export default async function HomePage() {
                     <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
                       {item.cover_image_url ? (
                         <ImageWithFallback src={item.cover_image_url} alt={item.title}
-                          className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                          className="h-full w-full object-contain transition-transform group-hover:scale-105" />
                       ) : (
                         <span className="text-4xl">{item.is_vote ? "🗳️" : "🏆"}</span>
                       )}

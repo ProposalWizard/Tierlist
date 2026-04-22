@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Props {
   tierlistId: string;
@@ -15,11 +15,14 @@ export default function LikeButton({ tierlistId, initialCount = 0, initialLiked 
   const [count, setCount] = useState(initialCount);
   const [authed, setAuthed] = useState(isLoggedIn);
   const [loading, setLoading] = useState(false);
+  const toggleInFlight = useRef(false);
 
   useEffect(() => {
-    fetch(endpoint ?? `/api/tierlists/${tierlistId}/like`)
+    const url = endpoint ?? `/api/tierlists/${tierlistId}/like`;
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
+        if (toggleInFlight.current) return;
         setLiked(data.liked);
         setCount(data.count);
         setAuthed(data.isLoggedIn);
@@ -29,6 +32,7 @@ export default function LikeButton({ tierlistId, initialCount = 0, initialLiked 
 
   async function toggle() {
     if (!authed || loading) return;
+    toggleInFlight.current = true;
     setLoading(true);
     setLiked((v) => !v);
     setCount((v) => (liked ? v - 1 : v + 1));
@@ -43,6 +47,7 @@ export default function LikeButton({ tierlistId, initialCount = 0, initialLiked 
       setCount((v) => (liked ? v + 1 : v - 1));
     }
     setLoading(false);
+    toggleInFlight.current = false;
   }
 
   return (
