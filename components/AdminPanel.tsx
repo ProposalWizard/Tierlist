@@ -89,6 +89,7 @@ interface AdminImage {
   name: string;
   image_url: string;
   sort_order: number;
+  face_center?: FaceCenter | null;
 }
 
 interface StagedAdminImage {
@@ -394,7 +395,7 @@ export default function AdminPanel({
     const [{ data: images }, { data: tlData }] = await Promise.all([
       supabase
         .from("tierlist_images")
-        .select("id, name, image_url, sort_order")
+        .select("id, name, image_url, sort_order, face_center")
         .eq("tierlist_id", tl.id)
         .order("sort_order"),
       supabase
@@ -1856,14 +1857,20 @@ export default function AdminPanel({
                                           title="Set as cover"
                                           className="block focus:outline-none"
                                         >
-                                          <ImageWithFallback
-                                            src={img.image_url}
-                                            alt={img.name}
-                                            className={`h-20 w-20 rounded-lg object-cover border-2 transition-colors ${
+                                          <div
+                                            className={`h-20 w-20 rounded-lg border-2 transition-colors ${
                                               isCover
                                                 ? "border-indigo-400"
                                                 : "border-gray-700 hover:border-gray-500"
                                             }`}
+                                            style={{
+                                              backgroundImage: `url("${img.image_url}")`,
+                                              backgroundSize: "cover",
+                                              backgroundPosition: editState.face_detection_enabled && img.face_center
+                                                ? `${img.face_center.x}% ${img.face_center.y}%`
+                                                : "center",
+                                              backgroundRepeat: "no-repeat",
+                                            }}
                                           />
                                           {isCover && (
                                             <span className="absolute left-1 top-1 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
