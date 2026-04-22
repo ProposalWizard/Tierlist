@@ -56,6 +56,7 @@ export async function PATCH(request: Request, { params }: Props) {
   if (body.name !== undefined) updates.name = body.name;
   if (body.image_url !== undefined) updates.image_url = body.image_url;
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order;
+  if (body.face_center !== undefined) updates.face_center = body.face_center;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

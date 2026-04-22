@@ -89,6 +89,14 @@ interface AdminImage {
   name: string;
   image_url: string;
   sort_order: number;
+  face_center?: FaceCenter | null;
+}
+
+interface StagedAdminImage {
+  tempId: string;
+  file: File;
+  preview: string;
+  name: string;
 }
 
 interface EditState {
@@ -104,6 +112,8 @@ interface EditState {
   images: AdminImage[];
   /** Image IDs staged for deletion (only deleted on Save) */
   pendingDeleteImageIds: string[];
+  /** New images staged for upload on Save */
+  stagedNewImages: StagedAdminImage[];
   loading: boolean;
   saving: boolean;
   error: string | null;
@@ -363,6 +373,7 @@ export default function AdminPanel({
       customCoverPreview: null,
       images: [],
       pendingDeleteImageIds: [],
+      stagedNewImages: [],
       loading: true,
       saving: false,
       error: null,
@@ -384,7 +395,7 @@ export default function AdminPanel({
     const [{ data: images }, { data: tlData }] = await Promise.all([
       supabase
         .from("tierlist_images")
-        .select("id, name, image_url, sort_order")
+        .select("id, name, image_url, sort_order, face_center")
         .eq("tierlist_id", tl.id)
         .order("sort_order"),
       supabase
@@ -419,6 +430,7 @@ export default function AdminPanel({
     if (editState?.customCoverPreview) {
       URL.revokeObjectURL(editState.customCoverPreview);
     }
+    editState?.stagedNewImages.forEach((i) => URL.revokeObjectURL(i.preview));
     setEditingId(null);
     setEditState(null);
   }
@@ -527,6 +539,28 @@ export default function AdminPanel({
             fetch(`/api/admin/tierlists/${tierlistId}/images/${imageId}`, { method: "DELETE" })
           )
         );
+      }
+
+      // Upload staged new images
+      if (editState.stagedNewImages.length > 0) {
+        const supabaseForImages = editState.customCoverFile ? createClient() : (cover_image_url ? createClient() : createClient());
+        for (const staged of editState.stagedNewImages) {
+          const { compressImage } = await import("@/lib/imageUtils");
+          const compressed = await compressImage(staged.file);
+          const path = `${crypto.randomUUID()}.webp`;
+          const { error: upErr } = await supabaseForImages.storage
+            .from("tierlist-images")
+            .upload(path, compressed, { contentType: "image/webp" });
+          if (upErr) continue;
+          const { data: urlData } = supabaseForImages.storage
+            .from("tierlist-images")
+            .getPublicUrl(path);
+          await fetch(`/api/admin/tierlists/${tierlistId}/images`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: staged.name, image_url: urlData.publicUrl }),
+          });
+        }
       }
 
       // Update image sort orders (batch)
@@ -1758,10 +1792,33 @@ export default function AdminPanel({
 
                     {/* Images */}
                     <div>
-                      <label className="mb-2 block text-xs font-semibold text-gray-400">
-                        Images ({editState.images.length})
-                      </label>
-                      {editState.images.length === 0 ? (
+                      <div className="mb-2 flex items-center justify-between">
+                        <label className="block text-xs font-semibold text-gray-400">
+                          Images ({editState.images.length + editState.stagedNewImages.length})
+                        </label>
+                        <label className="cursor-pointer rounded-lg border border-indigo-700 bg-indigo-900/30 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-800/40 transition-colors">
+                          + Add Images
+                          <input
+                            type="file"
+                            multiple
+                            accept={ACCEPT_IMAGE_TYPES}
+                            className="hidden"
+                            onChange={(e) => {
+                              const files = e.target.files;
+                              if (!files) return;
+                              const newStaged: StagedAdminImage[] = Array.from(files).map((file) => ({
+                                tempId: crypto.randomUUID(),
+                                file,
+                                preview: URL.createObjectURL(file),
+                                name: file.name.replace(/\.[^.]+$/, ""),
+                              }));
+                              setEditState((p) => p ? { ...p, stagedNewImages: [...p.stagedNewImages, ...newStaged] } : p);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      </div>
+                      {editState.images.length === 0 && editState.stagedNewImages.length === 0 ? (
                         <p className="text-xs italic text-gray-600">
                           No images in this tierlist.
                         </p>
@@ -1800,14 +1857,20 @@ export default function AdminPanel({
                                           title="Set as cover"
                                           className="block focus:outline-none"
                                         >
-                                          <ImageWithFallback
-                                            src={img.image_url}
-                                            alt={img.name}
-                                            className={`h-20 w-20 rounded-lg object-cover border-2 transition-colors ${
+                                          <div
+                                            className={`h-20 w-20 rounded-lg border-2 transition-colors ${
                                               isCover
                                                 ? "border-indigo-400"
                                                 : "border-gray-700 hover:border-gray-500"
                                             }`}
+                                            style={{
+                                              backgroundImage: `url("${img.image_url}")`,
+                                              backgroundSize: "cover",
+                                              backgroundPosition: editState.face_detection_enabled && img.face_center
+                                                ? `${img.face_center.x}% ${img.face_center.y}%`
+                                                : "center",
+                                              backgroundRepeat: "no-repeat",
+                                            }}
                                           />
                                           {isCover && (
                                             <span className="absolute left-1 top-1 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
@@ -1846,6 +1909,36 @@ export default function AdminPanel({
                                     </SortableImageCard>
                                   );
                                 })}
+                                {/* Staged new images */}
+                                {editState.stagedNewImages.map((img) => (
+                                  <div key={img.tempId} className="group relative">
+                                    <img
+                                      src={img.preview}
+                                      alt={img.name}
+                                      className="h-20 w-20 rounded-lg object-cover border-2 border-amber-700/50"
+                                    />
+                                    <span className="absolute left-1 top-1 rounded bg-amber-600/80 px-1 text-[9px] font-bold text-white">
+                                      NEW
+                                    </span>
+                                    <button
+                                      onClick={() => {
+                                        setEditState((p) => {
+                                          if (!p) return p;
+                                          const target = p.stagedNewImages.find((i) => i.tempId === img.tempId);
+                                          if (target) URL.revokeObjectURL(target.preview);
+                                          return { ...p, stagedNewImages: p.stagedNewImages.filter((i) => i.tempId !== img.tempId) };
+                                        });
+                                      }}
+                                      title="Remove"
+                                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                    >
+                                      ×
+                                    </button>
+                                    <p className="max-w-[80px] truncate text-center text-[10px] text-gray-500 mt-1">
+                                      {img.name}
+                                    </p>
+                                  </div>
+                                ))}
                               </div>
                             </SortableContext>
                           </DndContext>

@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: Props) {
   const service = createServiceClient();
   const { data, error } = await service
     .from("blind_ranking_images")
-    .select("id, name, image_url, sort_order")
+    .select("id, name, image_url, sort_order, face_center")
     .eq("blind_ranking_id", id)
     .order("sort_order");
 
@@ -34,7 +34,7 @@ export async function POST(request: Request, { params }: Props) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  let body: { name?: string; image_url?: string; sort_order?: number };
+  let body: { name?: string; image_url?: string; sort_order?: number; face_center?: { x: number; y: number } | null };
   try {
     body = await request.json();
   } catch {
@@ -56,14 +56,17 @@ export async function POST(request: Request, { params }: Props) {
     sortOrder = count ?? 0;
   }
 
+  const insertData: Record<string, unknown> = {
+    blind_ranking_id: id,
+    name: body.name.trim(),
+    image_url: body.image_url.trim(),
+    sort_order: sortOrder,
+  };
+  if (body.face_center) insertData.face_center = body.face_center;
+
   const { data, error } = await service
     .from("blind_ranking_images")
-    .insert({
-      blind_ranking_id: id,
-      name: body.name.trim(),
-      image_url: body.image_url.trim(),
-      sort_order: sortOrder,
-    })
+    .insert(insertData)
     .select("*")
     .single();
 

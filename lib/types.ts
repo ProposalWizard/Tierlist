@@ -268,6 +268,8 @@ export interface BlindRanking {
   cover_image_url: string | null;
   num_slots: number;
   is_active: boolean;
+  face_detection_enabled?: boolean;
+  view_count?: number;
   created_by: string;
   created_at: string;
 }
@@ -279,5 +281,6 @@ export interface BlindRankingImage {
   name: string;
   image_url: string;
   sort_order: number;
+  face_center: { x: number; y: number } | null;
   created_at: string;
 }
