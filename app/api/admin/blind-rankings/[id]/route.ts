@@ -32,6 +32,7 @@ export async function PATCH(request: Request, { params }: Props) {
   if (body.num_slots !== undefined) updates.num_slots = body.num_slots;
   if (body.cover_image_url !== undefined) updates.cover_image_url = body.cover_image_url;
   if (body.is_active !== undefined) updates.is_active = body.is_active;
+  if (body.face_detection_enabled !== undefined) updates.face_detection_enabled = body.face_detection_enabled;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

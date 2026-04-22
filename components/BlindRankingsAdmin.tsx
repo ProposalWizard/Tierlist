@@ -3,13 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
+import { processImage, detectFaceFromUrl } from "@/lib/faceDetection";
 import type { BlindRanking, BlindRankingImage } from "@/lib/types";
+import CropOverlay from "@/components/CropOverlay";
 
 interface StagedNewImage {
   tempId: string;
   file: File;
   preview: string;
   name: string;
+  pendingCropDataUrl?: string;
 }
 
 interface EditState {
@@ -19,28 +22,18 @@ interface EditState {
   category: string;
   num_slots: number;
   is_active: boolean;
+  face_detection_enabled: boolean;
   cover_image_url: string | null;
   newCoverFile: File | null;
   newCoverPreview: string | null;
+  pendingCoverCropDataUrl: string | null;
   existingImages: BlindRankingImage[];
   nameChanges: Record<string, string>;
   pendingDeleteIds: string[];
+  pendingCrops: Record<string, string>;
   stagedImages: StagedNewImage[];
   loading: boolean;
   dirty: boolean;
-}
-
-function isDirtyCheck(es: EditState, original: BlindRanking): boolean {
-  if (es.title !== original.title) return true;
-  if ((es.description || "") !== (original.description || "")) return true;
-  if (es.category !== (original.category || "General")) return true;
-  if (es.num_slots !== original.num_slots) return true;
-  if (es.is_active !== original.is_active) return true;
-  if (es.newCoverFile) return true;
-  if (es.stagedImages.length > 0) return true;
-  if (es.pendingDeleteIds.length > 0) return true;
-  if (Object.keys(es.nameChanges).length > 0) return true;
-  return false;
 }
 
 export default function BlindRankingsAdmin() {
@@ -52,6 +45,7 @@ export default function BlindRankingsAdmin() {
   const [editState, setEditState] = useState<EditState | null>(null);
   const [toast, setToast] = useState("");
   const coverRef = useRef<HTMLInputElement>(null);
+  const [cropTarget, setCropTarget] = useState<{ imageUrl: string; imageName: string; type: "image" | "cover" | "staged"; id: string; aspectRatio?: number } | null>(null);
 
   function showToast(msg: string) {
     setToast(msg);
@@ -104,12 +98,15 @@ export default function BlindRankingsAdmin() {
       category: ranking.category ?? "General",
       num_slots: ranking.num_slots,
       is_active: ranking.is_active,
+      face_detection_enabled: ranking.face_detection_enabled ?? false,
       cover_image_url: ranking.cover_image_url,
       newCoverFile: null,
       newCoverPreview: null,
+      pendingCoverCropDataUrl: null,
       existingImages: images,
       nameChanges: {},
       pendingDeleteIds: [],
+      pendingCrops: {},
       stagedImages: [],
       loading: false,
       dirty: false,
@@ -158,8 +155,37 @@ export default function BlindRankingsAdmin() {
     setEditState((s) => {
       if (!s) return s;
       if (s.newCoverPreview) URL.revokeObjectURL(s.newCoverPreview);
-      return { ...s, newCoverFile: file, newCoverPreview: URL.createObjectURL(file), dirty: true };
+      return { ...s, newCoverFile: file, newCoverPreview: URL.createObjectURL(file), pendingCoverCropDataUrl: null, dirty: true };
     });
+  }
+
+  function handleCropResult(croppedDataUrl: string) {
+    if (!cropTarget || !editState) return;
+
+    if (cropTarget.type === "cover") {
+      setEditState((s) => s && { ...s, pendingCoverCropDataUrl: croppedDataUrl, dirty: true });
+    } else if (cropTarget.type === "image") {
+      setEditState((s) => s && {
+        ...s,
+        pendingCrops: { ...s.pendingCrops, [cropTarget.id]: croppedDataUrl },
+        dirty: true,
+      });
+    } else if (cropTarget.type === "staged") {
+      setEditState((s) => s && {
+        ...s,
+        stagedImages: s.stagedImages.map((i) =>
+          i.tempId === cropTarget.id ? { ...i, pendingCropDataUrl: croppedDataUrl } : i
+        ),
+        dirty: true,
+      });
+    }
+    setCropTarget(null);
+  }
+
+  async function dataUrlToFile(dataUrl: string): Promise<File> {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], `cropped-${crypto.randomUUID()}.png`, { type: "image/png" });
   }
 
   async function handleSave() {
@@ -171,7 +197,18 @@ export default function BlindRankingsAdmin() {
 
       // 1. Upload cover if changed
       let coverUrl = editState.cover_image_url;
-      if (editState.newCoverFile) {
+      if (editState.pendingCoverCropDataUrl) {
+        const file = await dataUrlToFile(editState.pendingCoverCropDataUrl);
+        const compressed = await compressImage(file);
+        const path = `blind-rankings/covers/${crypto.randomUUID()}.webp`;
+        const { error } = await supabase.storage
+          .from("tierlist-images")
+          .upload(path, compressed, { contentType: "image/webp" });
+        if (!error) {
+          const { data } = supabase.storage.from("tierlist-images").getPublicUrl(path);
+          coverUrl = data.publicUrl;
+        }
+      } else if (editState.newCoverFile) {
         const compressed = await compressImage(editState.newCoverFile);
         const path = `blind-rankings/covers/${crypto.randomUUID()}.webp`;
         const { error } = await supabase.storage
@@ -190,9 +227,23 @@ export default function BlindRankingsAdmin() {
         });
       }
 
-      // 3. Upload staged new images
+      // 3. Upload staged new images (with face detection if enabled)
       for (const staged of editState.stagedImages) {
-        const compressed = await compressImage(staged.file);
+        let fileToUpload: File;
+        let faceCenter: { x: number; y: number } | null = null;
+
+        if (staged.pendingCropDataUrl) {
+          fileToUpload = await dataUrlToFile(staged.pendingCropDataUrl);
+        } else {
+          fileToUpload = staged.file;
+        }
+
+        if (editState.face_detection_enabled) {
+          const result = await processImage(fileToUpload);
+          faceCenter = result.faceCenter;
+        }
+
+        const compressed = await compressImage(fileToUpload);
         const path = `blind-rankings/${crypto.randomUUID()}.webp`;
         const { error } = await supabase.storage
           .from("tierlist-images")
@@ -202,11 +253,33 @@ export default function BlindRankingsAdmin() {
         await fetch(`/api/admin/blind-rankings/${editState.id}/images`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: staged.name, image_url: data.publicUrl }),
+          body: JSON.stringify({ name: staged.name, image_url: data.publicUrl, face_center: faceCenter }),
         });
       }
 
-      // 4. Save name changes for existing images
+      // 4. Upload cropped existing images
+      for (const [imageId, cropDataUrl] of Object.entries(editState.pendingCrops)) {
+        const file = await dataUrlToFile(cropDataUrl);
+        const compressed = await compressImage(file);
+        const path = `blind-rankings/${crypto.randomUUID()}.webp`;
+        const { error } = await supabase.storage
+          .from("tierlist-images")
+          .upload(path, compressed, { contentType: "image/webp" });
+        if (error) continue;
+        const { data } = supabase.storage.from("tierlist-images").getPublicUrl(path);
+        const patchBody: Record<string, unknown> = { image_url: data.publicUrl };
+        if (editState.face_detection_enabled) {
+          const fc = await detectFaceFromUrl(data.publicUrl);
+          if (fc) patchBody.face_center = fc;
+        }
+        await fetch(`/api/admin/blind-rankings/${editState.id}/images/${imageId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patchBody),
+        });
+      }
+
+      // 5. Save name changes for existing images
       for (const [imageId, newName] of Object.entries(editState.nameChanges)) {
         await fetch(`/api/admin/blind-rankings/${editState.id}/images/${imageId}`, {
           method: "PATCH",
@@ -215,7 +288,24 @@ export default function BlindRankingsAdmin() {
         });
       }
 
-      // 5. PATCH the ranking metadata
+      // 6. Run face detection on existing images if toggled on and they lack face_center
+      if (editState.face_detection_enabled) {
+        const needsDetection = editState.existingImages.filter(
+          (img) => !img.face_center && !editState.pendingDeleteIds.includes(img.id) && !editState.pendingCrops[img.id]
+        );
+        for (const img of needsDetection) {
+          const fc = await detectFaceFromUrl(img.image_url);
+          if (fc) {
+            await fetch(`/api/admin/blind-rankings/${editState.id}/images/${img.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ face_center: fc }),
+            });
+          }
+        }
+      }
+
+      // 7. PATCH the ranking metadata
       await fetch(`/api/admin/blind-rankings/${editState.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -225,6 +315,7 @@ export default function BlindRankingsAdmin() {
           category: editState.category,
           num_slots: editState.num_slots,
           is_active: editState.is_active,
+          face_detection_enabled: editState.face_detection_enabled,
           cover_image_url: coverUrl,
         }),
       });
@@ -233,14 +324,30 @@ export default function BlindRankingsAdmin() {
       editState.stagedImages.forEach((i) => URL.revokeObjectURL(i.preview));
       if (editState.newCoverPreview) URL.revokeObjectURL(editState.newCoverPreview);
 
-      // Reload
+      // Reload and re-open edit (without dirty check since we just saved)
       await loadRankings();
-      const updatedRanking = rankings.find((r) => r.id === editState.id);
-      if (updatedRanking) {
-        await openEdit({ ...updatedRanking, title: editState.title, description: editState.description || null, category: editState.category, num_slots: editState.num_slots, is_active: editState.is_active, cover_image_url: coverUrl });
-      } else {
-        setEditState(null);
-      }
+      const imgRes = await fetch(`/api/admin/blind-rankings/${editState.id}/images`);
+      const freshImages: BlindRankingImage[] = imgRes.ok ? await imgRes.json() : [];
+      setEditState({
+        id: editState.id,
+        title: editState.title,
+        description: editState.description,
+        category: editState.category,
+        num_slots: editState.num_slots,
+        is_active: editState.is_active,
+        face_detection_enabled: editState.face_detection_enabled,
+        cover_image_url: coverUrl,
+        newCoverFile: null,
+        newCoverPreview: null,
+        pendingCoverCropDataUrl: null,
+        existingImages: freshImages,
+        nameChanges: {},
+        pendingDeleteIds: [],
+        pendingCrops: {},
+        stagedImages: [],
+        loading: false,
+        dirty: false,
+      });
       showToast("All changes saved");
     } catch {
       showToast("Save failed");
@@ -265,6 +372,16 @@ export default function BlindRankingsAdmin() {
         <div className="fixed top-4 right-4 z-50 animate-pulse rounded-lg border border-green-700 bg-green-900/90 px-4 py-3 text-sm font-semibold text-green-300 shadow-lg">
           {toast}
         </div>
+      )}
+
+      {cropTarget && (
+        <CropOverlay
+          imageUrl={cropTarget.imageUrl}
+          imageName={cropTarget.imageName}
+          aspectRatio={cropTarget.aspectRatio}
+          onCrop={handleCropResult}
+          onCancel={() => setCropTarget(null)}
+        />
       )}
 
       {/* Create new */}
@@ -313,6 +430,9 @@ export default function BlindRankingsAdmin() {
               <div>
                 <span className="font-semibold text-white">{r.title}</span>
                 <span className="ml-3 text-xs text-gray-500">{r.num_slots} slots</span>
+                {typeof r.view_count === "number" && r.view_count > 0 && (
+                  <span className="ml-2 text-xs text-gray-600">{r.view_count} views</span>
+                )}
                 {!r.is_active && (
                   <span className="ml-2 rounded bg-red-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
                     Inactive
@@ -390,19 +510,30 @@ export default function BlindRankingsAdmin() {
               {/* Cover image */}
               <div>
                 <label className="mb-1 block text-xs font-semibold text-gray-400">Cover Image</label>
-                {(editState.newCoverPreview || editState.cover_image_url) ? (
+                {(editState.pendingCoverCropDataUrl || editState.newCoverPreview || editState.cover_image_url) ? (
                   <div className="relative inline-block">
                     <img
-                      src={editState.newCoverPreview || editState.cover_image_url!}
+                      src={editState.pendingCoverCropDataUrl || editState.newCoverPreview || editState.cover_image_url!}
                       alt="Cover"
                       className="h-24 w-36 rounded-lg object-cover border border-gray-700"
                     />
-                    <button
-                      onClick={() => { coverRef.current?.click(); }}
-                      className="absolute bottom-1 right-1 rounded bg-gray-800/80 px-2 py-0.5 text-[10px] text-gray-300 hover:text-white"
-                    >
-                      Change
-                    </button>
+                    <div className="absolute bottom-1 right-1 flex gap-1">
+                      <button
+                        onClick={() => {
+                          const src = editState.newCoverPreview || editState.cover_image_url;
+                          if (src) setCropTarget({ imageUrl: src, imageName: "Cover", type: "cover", id: "cover", aspectRatio: 3 / 2 });
+                        }}
+                        className="rounded bg-gray-800/80 px-2 py-0.5 text-[10px] text-gray-300 hover:text-white"
+                      >
+                        Crop
+                      </button>
+                      <button
+                        onClick={() => { coverRef.current?.click(); }}
+                        className="rounded bg-gray-800/80 px-2 py-0.5 text-[10px] text-gray-300 hover:text-white"
+                      >
+                        Change
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -421,7 +552,7 @@ export default function BlindRankingsAdmin() {
                 />
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
                 <label className="flex items-center gap-2 text-sm text-gray-300">
                   <input
                     type="checkbox"
@@ -430,6 +561,15 @@ export default function BlindRankingsAdmin() {
                     className="rounded"
                   />
                   Active
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={editState.face_detection_enabled}
+                    onChange={(e) => { setEditState((s) => s && { ...s, face_detection_enabled: e.target.checked }); markDirty(); }}
+                    className="rounded"
+                  />
+                  Face Detection
                 </label>
               </div>
 
@@ -461,7 +601,14 @@ export default function BlindRankingsAdmin() {
                     {visibleExistingImages.map((img) => (
                       <div key={img.id} className="group relative rounded-lg border border-gray-700 bg-gray-800 overflow-hidden">
                         <div className="aspect-square overflow-hidden">
-                          <img src={img.image_url} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={editState.pendingCrops[img.id] || img.image_url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            style={editState.face_detection_enabled && img.face_center && !editState.pendingCrops[img.id]
+                              ? { objectPosition: `${img.face_center.x}% ${img.face_center.y}%` }
+                              : {}}
+                          />
                         </div>
                         <div className="px-2 py-1.5">
                           <input
@@ -478,19 +625,31 @@ export default function BlindRankingsAdmin() {
                             className="w-full bg-transparent text-[11px] text-gray-300 placeholder-gray-600 focus:text-white focus:outline-none truncate"
                           />
                         </div>
-                        <button
-                          onClick={() => stageDeleteExisting(img.id)}
-                          className="absolute top-1 right-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white"
-                        >
-                          x
-                        </button>
+                        <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
+                          <button
+                            onClick={() => setCropTarget({ imageUrl: img.image_url, imageName: img.name, type: "image", id: img.id })}
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] text-white"
+                            title="Crop"
+                          >
+                            ✂
+                          </button>
+                          <button
+                            onClick={() => stageDeleteExisting(img.id)}
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white"
+                          >
+                            x
+                          </button>
+                        </div>
+                        {editState.pendingCrops[img.id] && (
+                          <span className="absolute top-1 left-1 rounded bg-indigo-600/80 px-1 text-[9px] font-bold text-white">CROPPED</span>
+                        )}
                       </div>
                     ))}
                     {/* Staged new images */}
                     {editState.stagedImages.map((img) => (
                       <div key={img.tempId} className="group relative rounded-lg border border-amber-700/50 bg-gray-800 overflow-hidden">
                         <div className="aspect-square overflow-hidden">
-                          <img src={img.preview} alt="" className="h-full w-full object-cover" />
+                          <img src={img.pendingCropDataUrl || img.preview} alt="" className="h-full w-full object-cover" />
                         </div>
                         <div className="px-2 py-1.5">
                           <input
@@ -507,12 +666,21 @@ export default function BlindRankingsAdmin() {
                           />
                         </div>
                         <span className="absolute top-1 left-1 rounded bg-amber-600/80 px-1 text-[9px] font-bold text-white">NEW</span>
-                        <button
-                          onClick={() => removeStagedImage(img.tempId)}
-                          className="absolute top-1 right-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white"
-                        >
-                          x
-                        </button>
+                        <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
+                          <button
+                            onClick={() => setCropTarget({ imageUrl: img.preview, imageName: img.name || "New image", type: "staged", id: img.tempId })}
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] text-white"
+                            title="Crop"
+                          >
+                            ✂
+                          </button>
+                          <button
+                            onClick={() => removeStagedImage(img.tempId)}
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white"
+                          >
+                            x
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

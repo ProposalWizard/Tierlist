@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import nextDynamic from "next/dynamic";
 import type { BlindRankingImage } from "@/lib/types";
+import LikeButton from "@/components/LikeButton";
 
 const BlindRankingBoard = nextDynamic(() => import("@/components/BlindRankingBoard"), { ssr: false });
 
@@ -50,16 +51,19 @@ export default async function BlindRankingPage({ params }: Props) {
 
   const { data: ranking } = await service
     .from("blind_rankings")
-    .select("id, title, description, num_slots, is_active")
+    .select("id, title, description, num_slots, is_active, face_detection_enabled, view_count")
     .eq("id", id)
     .eq("is_active", true)
     .single();
 
   if (!ranking) notFound();
 
+  // Increment view count
+  try { await service.rpc("increment_blind_ranking_view_count", { p_id: id }); } catch { /* ignore */ }
+
   const { data: images } = await service
     .from("blind_ranking_images")
-    .select("id, blind_ranking_id, name, image_url, sort_order, created_at")
+    .select("id, blind_ranking_id, name, image_url, sort_order, face_center, created_at")
     .eq("blind_ranking_id", id)
     .order("sort_order");
 
@@ -87,14 +91,30 @@ export default async function BlindRankingPage({ params }: Props) {
         {ranking.description && (
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">{ranking.description}</p>
         )}
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <LikeButton
+            tierlistId={id}
+            endpoint={`/api/blind-rankings/${id}/like`}
+          />
+          {typeof ranking.view_count === "number" && (
+            <span className="flex items-center gap-1.5 text-sm text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              {ranking.view_count}
+            </span>
+          )}
+        </div>
       </div>
 
-      <main className="mx-auto max-w-4xl px-4 py-6">
+      <main className="mx-auto max-w-5xl px-4 py-6">
         <BlindRankingBoard
           rankingId={id}
           title={ranking.title}
           numSlots={ranking.num_slots}
           images={bankImages}
+          faceDetectionEnabled={ranking.face_detection_enabled ?? false}
         />
       </main>
     </div>

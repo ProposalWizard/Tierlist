@@ -4,12 +4,14 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/imageUtils";
+import CropOverlay from "@/components/CropOverlay";
 
 interface StagedImage {
   tempId: string;
   file: File;
   preview: string;
   name: string;
+  pendingCropDataUrl?: string;
 }
 
 export default function CreateBlindRanking() {
@@ -23,8 +25,10 @@ export default function CreateBlindRanking() {
   const [images, setImages] = useState<StagedImage[]>([]);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverCropDataUrl, setCoverCropDataUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [cropTarget, setCropTarget] = useState<{ imageUrl: string; imageName: string; type: "image" | "cover"; id: string; aspectRatio?: number } | null>(null);
 
   function addImages(files: FileList) {
     const newImages: StagedImage[] = Array.from(files).map((file) => ({
@@ -52,12 +56,32 @@ export default function CreateBlindRanking() {
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
+    setCoverCropDataUrl(null);
   }
 
   function removeCover() {
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCoverFile(null);
     setCoverPreview(null);
+    setCoverCropDataUrl(null);
+  }
+
+  function handleCropResult(croppedDataUrl: string) {
+    if (!cropTarget) return;
+    if (cropTarget.type === "cover") {
+      setCoverCropDataUrl(croppedDataUrl);
+    } else {
+      setImages((prev) =>
+        prev.map((i) => i.tempId === cropTarget.id ? { ...i, pendingCropDataUrl: croppedDataUrl } : i)
+      );
+    }
+    setCropTarget(null);
+  }
+
+  async function dataUrlToFile(dataUrl: string): Promise<File> {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], `cropped-${crypto.randomUUID()}.png`, { type: "image/png" });
   }
 
   async function handleSubmit() {
@@ -70,8 +94,14 @@ export default function CreateBlindRanking() {
       const supabase = createClient();
 
       let coverUrl: string | null = null;
-      if (coverFile) {
-        const compressed = await compressImage(coverFile);
+      if (coverFile || coverCropDataUrl) {
+        let fileToUpload: File;
+        if (coverCropDataUrl) {
+          fileToUpload = await dataUrlToFile(coverCropDataUrl);
+        } else {
+          fileToUpload = coverFile!;
+        }
+        const compressed = await compressImage(fileToUpload);
         const path = `blind-rankings/covers/${crypto.randomUUID()}.webp`;
         const { error: upErr } = await supabase.storage
           .from("tierlist-images")
@@ -84,7 +114,13 @@ export default function CreateBlindRanking() {
 
       const uploadedImages: { image_url: string; name: string }[] = [];
       for (const img of images) {
-        const compressed = await compressImage(img.file);
+        let fileToUpload: File;
+        if (img.pendingCropDataUrl) {
+          fileToUpload = await dataUrlToFile(img.pendingCropDataUrl);
+        } else {
+          fileToUpload = img.file;
+        }
+        const compressed = await compressImage(fileToUpload);
         const path = `blind-rankings/${crypto.randomUUID()}.webp`;
         const { error: upErr } = await supabase.storage
           .from("tierlist-images")
@@ -123,6 +159,16 @@ export default function CreateBlindRanking() {
 
   return (
     <div className="space-y-6">
+      {cropTarget && (
+        <CropOverlay
+          imageUrl={cropTarget.imageUrl}
+          imageName={cropTarget.imageName}
+          aspectRatio={cropTarget.aspectRatio}
+          onCrop={handleCropResult}
+          onCancel={() => setCropTarget(null)}
+        />
+      )}
+
       {/* Title */}
       <div>
         <label className="mb-1.5 block text-sm font-semibold text-gray-300">Title *</label>
@@ -167,7 +213,15 @@ export default function CreateBlindRanking() {
         <label className="mb-1.5 block text-sm font-semibold text-gray-300">Cover Image <span className="text-gray-600">(optional)</span></label>
         {coverPreview ? (
           <div className="relative inline-block">
-            <img src={coverPreview} alt="Cover" className="h-32 w-48 rounded-xl object-cover border border-gray-700" />
+            <img src={coverCropDataUrl || coverPreview} alt="Cover" className="h-32 w-48 rounded-xl object-cover border border-gray-700" />
+            <div className="absolute bottom-1 right-1 flex gap-1">
+              <button
+                onClick={() => setCropTarget({ imageUrl: coverPreview, imageName: "Cover", type: "cover", id: "cover", aspectRatio: 3 / 2 })}
+                className="rounded bg-gray-800/80 px-2 py-0.5 text-xs text-gray-300 hover:text-white"
+              >
+                Crop
+              </button>
+            </div>
             <button
               onClick={removeCover}
               className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white"
@@ -227,7 +281,7 @@ export default function CreateBlindRanking() {
             {images.map((img) => (
               <div key={img.tempId} className="group relative rounded-xl border border-gray-700 bg-gray-900 overflow-hidden">
                 <div className="aspect-square overflow-hidden">
-                  <img src={img.preview} alt="" className="h-full w-full object-cover" />
+                  <img src={img.pendingCropDataUrl || img.preview} alt="" className="h-full w-full object-cover" />
                 </div>
                 <div className="px-2 py-2">
                   <input
@@ -237,12 +291,24 @@ export default function CreateBlindRanking() {
                     className="w-full bg-transparent text-xs text-gray-300 placeholder-gray-600 focus:text-white focus:outline-none"
                   />
                 </div>
-                <button
-                  onClick={() => removeImage(img.tempId)}
-                  className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-600/90 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  x
-                </button>
+                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => setCropTarget({ imageUrl: img.preview, imageName: img.name || "Image", type: "image", id: img.tempId })}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600/90 text-xs text-white"
+                    title="Crop"
+                  >
+                    ✂
+                  </button>
+                  <button
+                    onClick={() => removeImage(img.tempId)}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600/90 text-xs text-white"
+                  >
+                    x
+                  </button>
+                </div>
+                {img.pendingCropDataUrl && (
+                  <span className="absolute top-1.5 left-1.5 rounded bg-indigo-600/80 px-1.5 py-0.5 text-[9px] font-bold text-white">CROPPED</span>
+                )}
               </div>
             ))}
           </div>
