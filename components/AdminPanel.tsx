@@ -2516,7 +2516,8 @@ export default function AdminPanel({
                                       title={`Set "${img.name}" as cover`}
                                     >
                                       <ImageWithFallback src={img.image_url} alt={img.name}
-                                        className="h-12 w-12 rounded-md object-cover" />
+                                        className="h-12 w-12 rounded-md object-cover"
+                                        style={voteEditState.face_detection_enabled && img.face_center ? { objectPosition: `${img.face_center.x}% ${img.face_center.y}%` } : undefined} />
                                       {(isSelected || isCurrentCover) && (
                                         <span className="absolute left-0.5 top-0.5 rounded-full bg-purple-500 px-1 py-0.5 text-[8px] font-bold leading-none text-white">
                                           {isSelected ? "Pending" : "Cover"}
@@ -2667,7 +2668,8 @@ export default function AdminPanel({
                                       <SortableImageCard key={img.id} id={img.id}>
                                         <div className="group relative">
                                           <ImageWithFallback src={displayUrl} alt={img.name}
-                                            className={`h-20 w-20 rounded-lg object-cover border-2 ${borderClass}`} />
+                                            className={`h-20 w-20 rounded-lg object-cover border-2 ${borderClass}`}
+                                            style={voteEditState.face_detection_enabled && img.face_center ? { objectPosition: `${img.face_center.x}% ${img.face_center.y}%` } : undefined} />
                                           <button
                                             onClick={() => {
                                               setVoteEditState((p) => {
