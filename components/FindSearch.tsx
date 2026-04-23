@@ -126,24 +126,15 @@ export default function FindSearch({ items, categories, initialCategory, likedId
                 }`}
               >
                 {/* Cover */}
-                <div className="relative h-32 overflow-hidden bg-gray-800">
+                <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
                   {item.cover_image_url ? (
-                    <>
-                      <ImageWithFallback
-                        src={item.cover_image_url}
-                        alt=""
-                        className="absolute inset-0 h-full w-full object-cover scale-110 blur-xl opacity-60"
-                      />
-                      <ImageWithFallback
-                        src={item.cover_image_url}
-                        alt={item.title}
-                        className="relative h-full w-full object-contain transition-transform group-hover:scale-105"
-                      />
-                    </>
+                    <ImageWithFallback
+                      src={item.cover_image_url}
+                      alt={item.title}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <span className="text-4xl">{item.is_live ? "🗳️" : "🏆"}</span>
-                    </div>
+                    <span className="text-4xl">{item.is_live ? "🗳️" : "🏆"}</span>
                   )}
                 </div>
 
