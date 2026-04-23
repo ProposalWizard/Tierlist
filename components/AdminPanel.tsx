@@ -78,6 +78,8 @@ interface VoteEditState {
   pendingDeleteImageIds: string[];
   /** Import from another tierlist, staged for save */
   pendingImportSourceId: string | null;
+  /** Original names when the editor was opened — used to detect name edits on save */
+  initialNames: Record<string, string>;
   loading: boolean;
   saving: boolean;
   error: string | null;
@@ -225,6 +227,10 @@ export default function AdminPanel({
   // Batch edit state for the expanded vote tierlist editor.
   // All changes within the "Manage" panel stage here; only persist on Save Changes.
   const [voteEditState, setVoteEditState] = useState<VoteEditState | null>(null);
+  // Convert regular tierlist to vote tierlist
+  const [showConvertPicker, setShowConvertPicker] = useState(false);
+  const [convertSourceId, setConvertSourceId] = useState("");
+  const [converting, setConverting] = useState(false);
 
   // Build allPinItems whenever tierlists or votelists change
   useEffect(() => {
@@ -669,6 +675,7 @@ export default function AdminPanel({
       images: [],
       pendingDeleteImageIds: [],
       pendingImportSourceId: null,
+      initialNames: {},
       loading: true,
       saving: false,
       error: null,
@@ -690,9 +697,11 @@ export default function AdminPanel({
       sort_order: i.sort_order,
       face_center: i.face_center ?? null,
     }));
+    const nameMap: Record<string, string> = {};
+    for (const i of imgs) nameMap[i.id] = i.name;
     setVoteImagesMap((prev) => ({ ...prev, [id]: imgs }));
     setVoteEditState((prev) => prev && prev.voteId === id
-      ? { ...prev, images: editImgs, tiers, loading: false }
+      ? { ...prev, images: editImgs, tiers, initialNames: nameMap, loading: false }
       : prev);
 
     if (!allTierlists.length) {
@@ -791,6 +800,7 @@ export default function AdminPanel({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              name: img.name || "",
               image_url: publicUrl,
               face_center: snapshot.face_detection_enabled ? faceCenter : null,
             }),
@@ -884,7 +894,20 @@ export default function AdminPanel({
         });
       }
 
-      // 7. If face detection was newly turned ON, run detection on any
+      // 7. Persist name changes for existing images
+      for (const img of finalImages) {
+        if (img.isNew) continue;
+        const origName = snapshot.initialNames[img.id];
+        if (origName !== undefined && img.name !== origName) {
+          await fetch(`/api/admin/vote-tierlists/${voteId}/images/${img.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: img.name }),
+          }).catch(() => {});
+        }
+      }
+
+      // 8. If face detection was newly turned ON, run detection on any
       //    image that doesn't already have a face_center (sync — takes a while
       //    for large lists, but no more than running the old "Run detection"
       //    button).
@@ -1009,6 +1032,63 @@ export default function AdminPanel({
       setVoteError(err instanceof Error ? err.message : "Something went wrong");
     }
     setNewVoteCreating(false);
+  }
+
+  async function handleConvertToVote() {
+    if (!convertSourceId) return;
+    setConverting(true);
+    setVoteError(null);
+    try {
+      const supabase = createClient();
+      const source = tierlists.find((t) => t.id === convertSourceId);
+      if (!source) throw new Error("Tierlist not found");
+
+      const { data: fullData } = await supabase
+        .from("tierlists")
+        .select("title, category, cover_image_url, tiers, face_detection_enabled")
+        .eq("id", convertSourceId)
+        .single();
+      if (!fullData) throw new Error("Could not load tierlist details");
+
+      const res = await fetch("/api/admin/vote-tierlists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: fullData.title,
+          category: fullData.category || "General",
+          cover_image_url: fullData.cover_image_url ?? null,
+          tiers: fullData.tiers ?? undefined,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "Failed to create vote tierlist");
+      }
+      const created = await res.json();
+
+      await fetch(`/api/admin/vote-tierlists/${created.id}/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source_tierlist_id: convertSourceId }),
+      });
+
+      if (fullData.face_detection_enabled) {
+        await fetch(`/api/admin/vote-tierlists/${created.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ face_detection_enabled: true }),
+        });
+        created.face_detection_enabled = true;
+      }
+
+      setVotelists((prev) => [created, ...prev]);
+      setShowConvertPicker(false);
+      setConvertSourceId("");
+      showSaveConfirmation(`Converted "${fullData.title}" to vote tierlist`);
+    } catch (err) {
+      setVoteError(err instanceof Error ? err.message : "Conversion failed");
+    }
+    setConverting(false);
   }
 
   async function handleToggleVoteActive(vl: VotelistAdmin) {
@@ -2034,14 +2114,62 @@ export default function AdminPanel({
         <div>
           {voteError && <p className="mb-3 text-sm text-red-400">{voteError}</p>}
 
-          {/* Create button / form */}
+          {/* Create / Convert buttons */}
           {!showCreateVote ? (
-            <button
-              onClick={() => setShowCreateVote(true)}
-              className="mb-5 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
-            >
-              + New Vote Tierlist
-            </button>
+            <div className="mb-5 flex flex-wrap items-start gap-3">
+              <button
+                onClick={() => setShowCreateVote(true)}
+                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
+              >
+                + New Vote Tierlist
+              </button>
+              {!showConvertPicker ? (
+                <button
+                  onClick={() => {
+                    setShowConvertPicker(true);
+                    if (!allTierlists.length) {
+                      fetch("/api/admin/tierlists").then((r) => r.json()).then((data) => { if (Array.isArray(data)) setAllTierlists(data); }).catch(() => {});
+                    }
+                  }}
+                  className="rounded-lg border border-purple-700 px-4 py-2 text-sm font-semibold text-purple-300 hover:border-purple-500 hover:text-white"
+                >
+                  Convert from Tierlist
+                </button>
+              ) : (
+                <div className="flex-1 min-w-[250px] rounded-xl border border-purple-700 bg-gray-900 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-purple-300">Convert Regular Tierlist to Vote Tierlist</p>
+                  <select
+                    value={convertSourceId}
+                    onChange={(e) => setConvertSourceId(e.target.value)}
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+                  >
+                    <option value="">Select a tierlist…</option>
+                    {allTierlists.map((tl) => (
+                      <option key={tl.id} value={tl.id}>{tl.title}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-gray-500">
+                    Creates a new vote tierlist with the same title, category, cover, tiers, and images. The original tierlist is kept.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleConvertToVote}
+                      disabled={!convertSourceId || converting}
+                      className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-40"
+                    >
+                      {converting ? "Converting…" : "Convert"}
+                    </button>
+                    <button
+                      onClick={() => { setShowConvertPicker(false); setConvertSourceId(""); }}
+                      disabled={converting}
+                      className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:text-white disabled:opacity-40"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="mb-5 rounded-xl border border-purple-700 bg-gray-900 p-4 space-y-3">
               <p className="text-sm font-semibold text-purple-300">New Vote Tierlist</p>
@@ -2571,9 +2699,20 @@ export default function AdminPanel({
                                               </button>
                                             </div>
                                           )}
-                                          <p className="mt-0.5 max-w-[80px] truncate text-center text-[10px] text-gray-500">
-                                            {img.isNew ? "(new)" : img.pendingCropDataUrl ? "(cropped)" : img.name}
-                                          </p>
+                                          <input
+                                            value={img.name}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              setVoteEditState((p) => {
+                                                if (!p) return p;
+                                                return { ...p, images: p.images.map((i) => i.id === img.id ? { ...i, name: val } : i), isDirty: true };
+                                              });
+                                            }}
+                                            placeholder="Name"
+                                            className="mt-0.5 w-20 rounded border border-transparent bg-transparent px-0.5 text-center text-[10px] text-gray-400 placeholder-gray-600 hover:border-gray-600 focus:border-purple-500 focus:bg-gray-800 focus:outline-none"
+                                            onClick={(e) => e.stopPropagation()}
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                          />
                                         </div>
                                       </SortableImageCard>
                                     );
@@ -2601,7 +2740,7 @@ export default function AdminPanel({
                                 if (files.length === 0) return;
                                 const newEntries: VoteEditImage[] = files.map((file) => ({
                                   id: `temp-${crypto.randomUUID()}`,
-                                  name: file.name,
+                                  name: "",
                                   image_url: URL.createObjectURL(file),
                                   sort_order: 0,
                                   face_center: null,

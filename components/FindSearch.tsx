@@ -131,7 +131,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
                     <ImageWithFallback
                       src={item.cover_image_url}
                       alt={item.title}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      className="h-full w-full object-contain transition-transform group-hover:scale-105"
                     />
                   ) : (
                     <span className="text-4xl">{item.is_live ? "🗳️" : "🏆"}</span>
