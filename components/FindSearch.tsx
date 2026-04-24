@@ -119,14 +119,14 @@ export default function FindSearch({ items, categories, initialCategory, likedId
               <Link
                 key={item.id}
                 href={href}
-                className={`group overflow-hidden rounded-xl border bg-gray-900 transition-colors ${
+                className={`group relative overflow-hidden rounded-xl border bg-gray-900 transition-colors ${
                   item.is_live
                     ? "border-purple-800/50 hover:border-purple-500"
                     : "border-gray-700 hover:border-indigo-500"
                 }`}
               >
                 {/* Cover */}
-                <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
+                <div className="relative flex h-32 items-center justify-center overflow-hidden bg-gray-800">
                   {item.cover_image_url ? (
                     <ImageWithFallback
                       src={item.cover_image_url}
@@ -136,15 +136,15 @@ export default function FindSearch({ items, categories, initialCategory, likedId
                   ) : (
                     <span className="text-4xl">{item.is_live ? "🗳️" : "🏆"}</span>
                   )}
+                  {item.is_live && (
+                    <span className="absolute left-0 top-2 rounded-r-md bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-md">
+                      Vote
+                    </span>
+                  )}
                 </div>
 
                 {/* Info */}
                 <div className="p-2.5">
-                  {item.is_live && (
-                    <span className="mb-1 inline-flex items-center rounded bg-purple-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-300">
-                      Vote
-                    </span>
-                  )}
                   <p className="truncate text-xs font-semibold text-white">{item.title}</p>
                   {item.category && (
                     <p className="mt-0.5 truncate text-[10px] text-gray-500">{item.category}</p>
@@ -155,8 +155,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
                   <div className="mt-1.5 flex items-center justify-between text-[10px] text-gray-500">
                     <span>{new Date(item.created_at).toLocaleDateString()}</span>
                     <div className="flex items-center gap-2">
-                      {isLiked && <span className="text-red-400">♥ {item.like_count}</span>}
-                      {!isLiked && item.like_count > 0 && <span>♥ {item.like_count}</span>}
+                      {item.like_count > 0 && <span className="text-red-400">❤ {item.like_count}</span>}
                       <span title="Views">👁 {item.view_count ?? 0}</span>
                     </div>
                   </div>

@@ -49,7 +49,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
 
   const newImages = sourceImages.map((img, i) => ({
     blind_ranking_id: id,
-    name: img.name || "Player",
+    name: "",
     image_url: img.image_url,
     sort_order: offset + i,
     face_center: img.face_center ?? null,

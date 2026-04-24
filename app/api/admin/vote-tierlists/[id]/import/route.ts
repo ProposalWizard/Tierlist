@@ -51,7 +51,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
 
   const newImages = sourceImages.map((img, i) => ({
     vote_tierlist_id: id,
-    name: img.name ?? "",
+    name: "",
     image_url: img.image_url,
     sort_order: offset + i,
   }));
