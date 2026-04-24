@@ -1081,6 +1081,16 @@ export default function AdminPanel({
         created.face_detection_enabled = true;
       }
 
+      // Auto-link the regular tierlist to the new vote tierlist
+      await fetch(`/api/admin/tierlists/${convertSourceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linked_vote_tierlist_id: created.id }),
+      }).catch(() => {});
+      setTierlists((prev) =>
+        prev.map((t) => t.id === convertSourceId ? { ...t, linked_vote_tierlist_id: created.id } : t)
+      );
+
       setVotelists((prev) => [created, ...prev]);
       setShowConvertPicker(false);
       setConvertSourceId("");

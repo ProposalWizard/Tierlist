@@ -278,9 +278,6 @@ export default function VoteBoard({
                   style={faceStyle(selectedImg)}
                 />
               </div>
-              {selectedImg.name && (
-                <p className="mb-3 text-center text-sm font-semibold text-white truncate">{selectedImg.name}</p>
-              )}
               {/* Stats */}
               <div className="mb-4 space-y-2">
                 {tiers.map((tier) => {
@@ -381,9 +378,6 @@ export default function VoteBoard({
               style={faceStyle(selectedImg)}
             />
             <div className="min-w-0 flex-1">
-              {selectedImg.name && (
-                <p className="text-xs font-semibold text-white truncate">{selectedImg.name}</p>
-              )}
               <p className="text-[10px] text-gray-500">
                 {selectedImg.total_votes > 0
                   ? `${selectedImg.total_votes} vote${selectedImg.total_votes === 1 ? "" : "s"}`
