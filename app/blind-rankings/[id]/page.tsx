@@ -61,11 +61,15 @@ export default async function BlindRankingPage({ params }: Props) {
   // Increment view count
   try { await service.rpc("increment_blind_ranking_view_count", { p_id: id }); } catch { /* ignore */ }
 
-  const { data: images } = await service
+  const { data: images, error: imagesError } = await service
     .from("blind_ranking_images")
     .select("id, blind_ranking_id, name, image_url, sort_order, face_center, created_at")
     .eq("blind_ranking_id", id)
     .order("sort_order");
+
+  if (imagesError) {
+    console.error("Failed to load blind ranking images:", imagesError.message);
+  }
 
   const bankImages: BlindRankingImage[] = images ?? [];
 
