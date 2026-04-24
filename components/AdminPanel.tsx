@@ -119,9 +119,8 @@ interface EditState {
   loading: boolean;
   saving: boolean;
   error: string | null;
-  /** Linked vote tierlist ID (for cross-navigation) */
   linked_vote_tierlist_id: string | null;
-  /** Additional categories this tierlist should appear in */
+  linked_blind_ranking_id: string | null;
   additional_categories: string[];
   /** Custom tier rows (labels + colors) */
   tiers: VoteTier[];
@@ -231,6 +230,12 @@ export default function AdminPanel({
   const [showConvertPicker, setShowConvertPicker] = useState(false);
   const [convertSourceId, setConvertSourceId] = useState("");
   const [converting, setConverting] = useState(false);
+  // Convert regular tierlist to blind ranking
+  const [showConvertBlindPicker, setShowConvertBlindPicker] = useState(false);
+  const [convertBlindSourceId, setConvertBlindSourceId] = useState("");
+  const [convertingBlind, setConvertingBlind] = useState(false);
+  // Blind rankings list for linking picker
+  const [blindRankingsForPicker, setBlindRankingsForPicker] = useState<{ id: string; title: string }[]>([]);
 
   // Build allPinItems whenever tierlists or votelists change
   useEffect(() => {
@@ -384,15 +389,22 @@ export default function AdminPanel({
       saving: false,
       error: null,
       linked_vote_tierlist_id: tl.linked_vote_tierlist_id ?? null,
+      linked_blind_ranking_id: (tl as Tierlist & { linked_blind_ranking_id?: string | null }).linked_blind_ranking_id ?? null,
       additional_categories: (tl as Tierlist & { additional_categories?: string[] }).additional_categories ?? [],
       tiers: (tl.tiers as VoteTier[] | undefined) ?? DEFAULT_TIERS,
       face_detection_enabled: tl.face_detection_enabled !== false,
     });
-    // Ensure vote tierlists are loaded for the linked tierlist picker
+    // Ensure vote tierlists and blind rankings are loaded for pickers
     if (!votelistsLoaded) {
       fetch("/api/admin/vote-tierlists")
         .then((r) => r.json())
         .then((data) => { if (Array.isArray(data)) { setVotelists(data); setVotelistsLoaded(true); } })
+        .catch(() => {});
+    }
+    if (!blindRankingsForPicker.length) {
+      fetch("/api/admin/blind-rankings")
+        .then((r) => r.json())
+        .then((data) => { if (Array.isArray(data)) setBlindRankingsForPicker(data); })
         .catch(() => {});
     }
 
@@ -420,12 +432,19 @@ export default function AdminPanel({
       const tiers = (tlData?.tiers as VoteTier[] | undefined) ?? prev.tiers;
       // Use face_detection_enabled from DB if available
       const fde = tlData?.face_detection_enabled;
+      // Initial list from admin page doesn't include these columns; pull from full fetch
+      const linkedVote = (tlData as { linked_vote_tierlist_id?: string | null } | null)?.linked_vote_tierlist_id;
+      const linkedBlind = (tlData as { linked_blind_ranking_id?: string | null } | null)?.linked_blind_ranking_id;
+      const additional = (tlData as { additional_categories?: string[] } | null)?.additional_categories;
       return {
         ...prev,
         images: (images as AdminImage[]) ?? [],
         selectedCoverImageId,
         tiers,
         face_detection_enabled: fde !== undefined ? (fde as boolean) : prev.face_detection_enabled,
+        linked_vote_tierlist_id: linkedVote !== undefined ? linkedVote : prev.linked_vote_tierlist_id,
+        linked_blind_ranking_id: linkedBlind !== undefined ? linkedBlind : prev.linked_blind_ranking_id,
+        additional_categories: additional !== undefined ? additional : prev.additional_categories,
         loading: false,
       };
     });
@@ -527,6 +546,7 @@ export default function AdminPanel({
           category: editState.category,
           cover_image_url,
           linked_vote_tierlist_id: editState.linked_vote_tierlist_id,
+          linked_blind_ranking_id: editState.linked_blind_ranking_id,
           additional_categories: editState.additional_categories,
           tiers: editState.tiers,
           face_detection_enabled: editState.face_detection_enabled,
@@ -1099,6 +1119,71 @@ export default function AdminPanel({
       setVoteError(err instanceof Error ? err.message : "Conversion failed");
     }
     setConverting(false);
+  }
+
+  async function handleConvertToBlind() {
+    if (!convertBlindSourceId) return;
+    setConvertingBlind(true);
+    try {
+      const supabase = createClient();
+      const source = tierlists.find((t) => t.id === convertBlindSourceId);
+      if (!source) throw new Error("Tierlist not found");
+
+      const { data: fullData } = await supabase
+        .from("tierlists")
+        .select("title, category, cover_image_url, face_detection_enabled")
+        .eq("id", convertBlindSourceId)
+        .single();
+      if (!fullData) throw new Error("Could not load tierlist details");
+
+      const res = await fetch("/api/admin/blind-rankings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: fullData.title,
+          category: fullData.category || "General",
+          cover_image_url: fullData.cover_image_url ?? null,
+          num_slots: 10,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "Failed to create blind ranking");
+      }
+      const created = await res.json();
+
+      await fetch(`/api/admin/blind-rankings/${created.id}/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source_tierlist_id: convertBlindSourceId }),
+      });
+
+      if (fullData.face_detection_enabled) {
+        await fetch(`/api/admin/blind-rankings/${created.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ face_detection_enabled: true }),
+        });
+      }
+
+      // Auto-link the regular tierlist to the new blind ranking
+      await fetch(`/api/admin/tierlists/${convertBlindSourceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linked_blind_ranking_id: created.id }),
+      }).catch(() => {});
+      setTierlists((prev) =>
+        prev.map((t) => t.id === convertBlindSourceId ? { ...t, linked_blind_ranking_id: created.id } : t)
+      );
+      setBlindRankingsForPicker((prev) => [{ id: created.id, title: created.title }, ...prev]);
+
+      setShowConvertBlindPicker(false);
+      setConvertBlindSourceId("");
+      showSaveConfirmation(`Converted "${fullData.title}" to blind ranking`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Conversion failed");
+    }
+    setConvertingBlind(false);
   }
 
   async function handleToggleVoteActive(vl: VotelistAdmin) {
@@ -1793,12 +1878,48 @@ export default function AdminPanel({
                         className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
                       >
                         <option value="">None</option>
+                        {editState.linked_vote_tierlist_id &&
+                          !votelists.some((vl) => vl.id === editState.linked_vote_tierlist_id) && (
+                            <option value={editState.linked_vote_tierlist_id}>
+                              (currently linked — loading…)
+                            </option>
+                          )}
                         {votelists.map((vl) => (
                           <option key={vl.id} value={vl.id}>{vl.title}</option>
                         ))}
                       </select>
                       <p className="mt-1 text-[10px] text-gray-600">
                         Links this tierlist to a vote tierlist for cross-navigation.
+                      </p>
+                    </div>
+
+                    {/* Linked Blind Ranking */}
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-gray-400">
+                        Linked Blind Ranking
+                      </label>
+                      <select
+                        value={editState.linked_blind_ranking_id ?? ""}
+                        onChange={(e) =>
+                          setEditState((p) =>
+                            p ? { ...p, linked_blind_ranking_id: e.target.value || null } : p
+                          )
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-none"
+                      >
+                        <option value="">None</option>
+                        {editState.linked_blind_ranking_id &&
+                          !blindRankingsForPicker.some((br) => br.id === editState.linked_blind_ranking_id) && (
+                            <option value={editState.linked_blind_ranking_id}>
+                              (currently linked — loading…)
+                            </option>
+                          )}
+                        {blindRankingsForPicker.map((br) => (
+                          <option key={br.id} value={br.id}>{br.title}</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-[10px] text-gray-600">
+                        Adds a &ldquo;Blind Rank This&rdquo; button on the play page that links to this blind ranking.
                       </p>
                     </div>
 
@@ -2888,7 +3009,55 @@ export default function AdminPanel({
       )}
       {/* ── Blind Rankings tab ──────────────────────────────────────── */}
       {tab === "blind-rankings" && (
-        <BlindRankingsAdmin />
+        <div className="space-y-5">
+          {!showConvertBlindPicker ? (
+            <button
+              onClick={() => {
+                setShowConvertBlindPicker(true);
+                if (!allTierlists.length) {
+                  fetch("/api/admin/tierlists").then((r) => r.json()).then((data) => { if (Array.isArray(data)) setAllTierlists(data); }).catch(() => {});
+                }
+              }}
+              className="rounded-lg border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-300 hover:border-amber-500 hover:text-white"
+            >
+              Convert Tierlist to Blind Ranking
+            </button>
+          ) : (
+            <div className="rounded-xl border border-amber-700 bg-gray-900 p-3 space-y-2 max-w-md">
+              <p className="text-xs font-semibold text-amber-300">Convert Regular Tierlist to Blind Ranking</p>
+              <select
+                value={convertBlindSourceId}
+                onChange={(e) => setConvertBlindSourceId(e.target.value)}
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-none"
+              >
+                <option value="">Select a tierlist…</option>
+                {allTierlists.map((tl) => (
+                  <option key={tl.id} value={tl.id}>{tl.title}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-gray-500">
+                Creates a new blind ranking with 10 slots, copying the title, category, cover, images, and face detection setting. The original tierlist is kept and auto-linked. If you want more or fewer slots, edit the blind ranking after creating it.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleConvertToBlind}
+                  disabled={!convertBlindSourceId || convertingBlind}
+                  className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-40"
+                >
+                  {convertingBlind ? "Converting…" : "Convert"}
+                </button>
+                <button
+                  onClick={() => { setShowConvertBlindPicker(false); setConvertBlindSourceId(""); }}
+                  disabled={convertingBlind}
+                  className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:text-white disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          <BlindRankingsAdmin />
+        </div>
       )}
 
       {/* Admin image crop overlay */}

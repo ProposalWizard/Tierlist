@@ -168,13 +168,10 @@ export interface Tierlist {
   cover_image_url: string | null;
   view_count: number;
   created_at: string;
-  /** UUID of the linked vote tierlist (null if none) */
   linked_vote_tierlist_id: string | null;
-  /** Additional categories this tierlist appears in */
+  linked_blind_ranking_id: string | null;
   additional_categories?: string[];
-  /** Custom tier rows (labels + colors), defaults to S/A/B/C/D */
   tiers?: VoteTier[];
-  /** Whether face detection auto-centering is enabled (default true) */
   face_detection_enabled?: boolean;
 }
 

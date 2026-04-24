@@ -269,17 +269,17 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
                 className={`flex w-full items-center gap-4 rounded-xl border px-5 py-3.5 text-left transition-all ${
                   isEmpty
                     ? isHovered
-                      ? "border-amber-500 bg-amber-500/10 cursor-pointer scale-[1.02] shadow-lg shadow-amber-500/5"
-                      : "border-gray-800 bg-gray-900/50 hover:border-gray-700 cursor-pointer"
-                    : "border-gray-800 bg-gray-900 cursor-default"
+                      ? `${getMedalBorder(i)} bg-amber-500/5 cursor-pointer scale-[1.02] shadow-lg`
+                      : `${getMedalBorder(i)} bg-gray-900/50 hover:bg-gray-900 cursor-pointer`
+                    : `${getMedalBorder(i)} bg-gray-900 cursor-default`
                 }`}
               >
-                <span className={`w-9 text-center text-lg font-black ${isEmpty ? (isHovered ? "text-amber-400" : "text-gray-600") : "text-amber-400"}`}>
-                  {i + 1}
-                </span>
+                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${getMedalColor(i)} shadow-md`}>
+                  <span className="text-base font-black text-white drop-shadow">{i + 1}</span>
+                </div>
                 {player ? (
                   <>
-                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg">
+                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border-2 border-gray-700">
                       <img
                         src={player.image_url}
                         alt={player.name}
