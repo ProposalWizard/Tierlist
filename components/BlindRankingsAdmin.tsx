@@ -90,7 +90,14 @@ export default function BlindRankingsAdmin() {
   async function openEdit(ranking: BlindRanking) {
     if (editState?.dirty && !confirm("You have unsaved changes. Discard them?")) return;
     const res = await fetch(`/api/admin/blind-rankings/${ranking.id}/images`);
-    const images: BlindRankingImage[] = res.ok ? await res.json() : [];
+    let images: BlindRankingImage[] = [];
+    if (res.ok) {
+      images = await res.json();
+    } else {
+      const errBody = await res.text().catch(() => "");
+      console.error(`Failed to load blind ranking images (${res.status}):`, errBody);
+      showToast(`Failed to load images: ${res.status}`);
+    }
     setEditState({
       id: ranking.id,
       title: ranking.title,
