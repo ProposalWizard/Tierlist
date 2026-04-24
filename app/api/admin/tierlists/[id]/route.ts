@@ -37,6 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     category?: string;
     cover_image_url?: string | null;
     linked_vote_tierlist_id?: string | null;
+    linked_blind_ranking_id?: string | null;
     additional_categories?: string[];
     tiers?: { label: string; color: string }[];
     face_detection_enabled?: boolean;
@@ -54,6 +55,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     update.cover_image_url = body.cover_image_url;
   if (body.linked_vote_tierlist_id !== undefined)
     update.linked_vote_tierlist_id = body.linked_vote_tierlist_id;
+  if (body.linked_blind_ranking_id !== undefined)
+    update.linked_blind_ranking_id = body.linked_blind_ranking_id;
   if (body.additional_categories !== undefined)
     update.additional_categories = body.additional_categories;
   if (body.tiers !== undefined && Array.isArray(body.tiers) && body.tiers.length > 0)

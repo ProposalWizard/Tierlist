@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import nextDynamic from "next/dynamic";
@@ -71,6 +72,20 @@ export default async function BlindRankingPage({ params }: Props) {
     console.error("Failed to load blind ranking images:", imagesError.message);
   }
 
+  // Reverse lookup: find the tierlist (if any) that's linked to this blind ranking
+  let linkedTierlistId: string | null = null;
+  try {
+    const { data: linked } = await service
+      .from("tierlists")
+      .select("id")
+      .eq("linked_blind_ranking_id", id)
+      .limit(1)
+      .maybeSingle();
+    if (linked) linkedTierlistId = linked.id;
+  } catch {
+    /* column may not exist yet before migration */
+  }
+
   const bankImages: BlindRankingImage[] = images ?? [];
 
   if (bankImages.length < ranking.num_slots) {
@@ -95,7 +110,7 @@ export default async function BlindRankingPage({ params }: Props) {
         {ranking.description && (
           <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">{ranking.description}</p>
         )}
-        <div className="mt-4 flex items-center justify-center gap-4">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
           <LikeButton
             tierlistId={id}
             endpoint={`/api/blind-rankings/${id}/like`}
@@ -108,6 +123,14 @@ export default async function BlindRankingPage({ params }: Props) {
               </svg>
               {ranking.view_count}
             </span>
+          )}
+          {linkedTierlistId && (
+            <Link
+              href={`/play/${linkedTierlistId}`}
+              className="rounded-lg border border-indigo-700 bg-indigo-900/30 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-800/40 transition-colors"
+            >
+              See Full Tierlist
+            </Link>
           )}
         </div>
       </div>

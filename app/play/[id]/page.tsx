@@ -80,6 +80,18 @@ export default async function PlayPage({ params }: Props) {
     creatorProfile?.is_anonymous ? "Anonymous"
     : (creatorProfile?.username ?? "Anonymous");
 
+  // ── Fetch linked blind ranking (if any) ───────────────────────────────────
+  let linkedBlindRankingId: string | null = null;
+  if (tierlist.linked_blind_ranking_id) {
+    const { data: br } = await service
+      .from("blind_rankings")
+      .select("id")
+      .eq("id", tierlist.linked_blind_ranking_id)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (br) linkedBlindRankingId = br.id;
+  }
+
   // ── Fetch linked vote tierlist data (if any) ──────────────────────────────
   let linkedVoteTierlist: { id: string; title: string; tiers: VoteTier[] } | null = null;
   let linkedVoteImages: { id: string; name: string; image_url: string; vote_counts: Record<string, number>; total_votes: number }[] = [];
@@ -144,6 +156,14 @@ export default async function PlayPage({ params }: Props) {
                 See Vote Tierlist
               </Link>
             )}
+            {linkedBlindRankingId && (
+              <Link
+                href={`/blind-rankings/${linkedBlindRankingId}`}
+                className="rounded-lg border border-amber-700 bg-amber-900/30 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-800/40 transition-colors"
+              >
+                Blind Rank This
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -153,6 +173,7 @@ export default async function PlayPage({ params }: Props) {
           tiers={linkedVoteTierlist.tiers}
           images={linkedVoteImages}
           votelistTitle={linkedVoteTierlist.title}
+          votelistId={linkedVoteTierlist.id}
         />
       )}
 
