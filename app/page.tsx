@@ -191,31 +191,31 @@ export default async function HomePage() {
                   <Link
                     key={item.id}
                     href={item.is_vote ? `/vote/${item.id}` : `/play/${item.id}`}
-                    className={`group overflow-hidden rounded-xl border bg-gray-900 transition-colors ${
+                    className={`group relative overflow-hidden rounded-xl border bg-gray-900 transition-colors ${
                       item.is_vote
                         ? "border-purple-800/50 hover:border-purple-500"
                         : "border-gray-700 hover:border-indigo-500"
                     }`}
                   >
-                    <div className="flex h-32 items-center justify-center overflow-hidden bg-gray-800">
+                    <div className="relative flex h-32 items-center justify-center overflow-hidden bg-gray-800">
                       {item.cover_image_url ? (
                         <ImageWithFallback src={item.cover_image_url} alt={item.title}
                           className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                       ) : (
                         <span className="text-4xl">{item.is_vote ? "🗳️" : "🏆"}</span>
                       )}
+                      {item.is_vote && (
+                        <span className="absolute left-0 top-2 rounded-r-md bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-md">
+                          Vote
+                        </span>
+                      )}
                     </div>
                     <div className="p-2.5">
-                      {item.is_vote && (
-                        <div className="mb-1 inline-flex items-center rounded bg-purple-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-300">
-                          Vote
-                        </div>
-                      )}
                       <p className="truncate text-xs font-semibold text-white">{item.title}</p>
                       <div className="mt-1 flex items-center justify-between text-[10px] text-gray-500">
-                        {!item.is_vote && <span title="Views">👁 {item.view_count ?? 0}</span>}
-                        {item.is_vote && <span />}
-                        {item.like_count > 0 && <span>♥ {item.like_count}</span>}
+                        {!item.is_vote && item.view_count > 0 && <span title="Views">👁 {item.view_count}</span>}
+                        {(item.is_vote || !item.view_count) && <span />}
+                        {item.like_count > 0 && <span className="text-red-400">❤ {item.like_count}</span>}
                       </div>
                     </div>
                   </Link>

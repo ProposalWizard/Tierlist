@@ -14,13 +14,21 @@ export const revalidate = 60;
 export default async function BlindRankingsPage() {
   const service = createServiceClient();
 
-  const { data: rankings } = await service
-    .from("blind_rankings")
-    .select("id, title, description, category, cover_image_url, num_slots, is_active, created_by, created_at")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+  const [{ data: rankings }, { data: allLikes }] = await Promise.all([
+    service
+      .from("blind_rankings")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false }),
+    service.from("blind_ranking_likes").select("blind_ranking_id"),
+  ]);
 
   const items: BlindRanking[] = rankings ?? [];
+
+  const likeCountMap = new Map<string, number>();
+  for (const like of (allLikes ?? [])) {
+    likeCountMap.set(like.blind_ranking_id, (likeCountMap.get(like.blind_ranking_id) ?? 0) + 1);
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -77,6 +85,12 @@ export default async function BlindRankingsPage() {
                   <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
                     <span>{r.num_slots} slots</span>
                     {r.category && <span>{r.category}</span>}
+                    {typeof r.view_count === "number" && r.view_count > 0 && (
+                      <span>👁 {r.view_count}</span>
+                    )}
+                    {(likeCountMap.get(r.id) ?? 0) > 0 && (
+                      <span className="text-red-400">❤ {likeCountMap.get(r.id)}</span>
+                    )}
                   </div>
                   <div className="mt-3">
                     <span className="rounded-lg bg-amber-600/20 border border-amber-700/50 px-3 py-1 text-xs font-semibold text-amber-400">
