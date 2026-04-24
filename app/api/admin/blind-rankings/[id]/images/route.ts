@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: Props) {
   const service = createServiceClient();
   const { data, error } = await service
     .from("blind_ranking_images")
-    .select("id, name, image_url, sort_order, face_center")
+    .select("*")
     .eq("blind_ranking_id", id)
     .order("sort_order");
 

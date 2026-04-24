@@ -51,7 +51,7 @@ export default async function BlindRankingPage({ params }: Props) {
 
   const { data: ranking } = await service
     .from("blind_rankings")
-    .select("id, title, description, num_slots, is_active, face_detection_enabled, view_count")
+    .select("*")
     .eq("id", id)
     .eq("is_active", true)
     .single();
@@ -63,7 +63,7 @@ export default async function BlindRankingPage({ params }: Props) {
 
   const { data: images, error: imagesError } = await service
     .from("blind_ranking_images")
-    .select("id, blind_ranking_id, name, image_url, sort_order, face_center, created_at")
+    .select("*")
     .eq("blind_ranking_id", id)
     .order("sort_order");
 
