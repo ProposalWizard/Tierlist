@@ -105,26 +105,37 @@ export async function DELETE(_request: Request, { params }: { params: Params }) 
     service.from("tierlist_images").select("image_url").eq("tierlist_id", id),
   ]);
 
-  const allUrls = [
+  const allUrls = Array.from(new Set([
     ...(imgData ?? []).map((r: { image_url: string }) => r.image_url),
     ...(tlData?.cover_image_url ? [tlData.cover_image_url] : []),
-  ];
-  const uniqueUrls = Array.from(new Set(allUrls));
+  ]));
 
-  // Extract storage paths from public URLs
-  const BUCKET_MARKER = "/object/public/tierlist-images/";
-  const storagePaths = uniqueUrls
-    .map((url) => {
-      const idx = url.indexOf(BUCKET_MARKER);
-      return idx !== -1
-        ? decodeURIComponent(url.slice(idx + BUCKET_MARKER.length))
-        : null;
-    })
-    .filter(Boolean) as string[];
+  // Only delete storage files that aren't referenced by any other table
+  if (allUrls.length > 0) {
+    const [{ data: usedInVote }, { data: usedInBlind }, { data: usedInOtherTl }] = await Promise.all([
+      service.from("vote_tierlist_images").select("image_url").in("image_url", allUrls),
+      service.from("blind_ranking_images").select("image_url").in("image_url", allUrls),
+      service.from("tierlist_images").select("image_url").in("image_url", allUrls).neq("tierlist_id", id),
+    ]);
 
-  // Best-effort storage cleanup (don't fail the whole operation if this errors)
-  if (storagePaths.length > 0) {
-    await service.storage.from("tierlist-images").remove(storagePaths);
+    const referencedUrls = new Set([
+      ...(usedInVote ?? []).map((r) => r.image_url),
+      ...(usedInBlind ?? []).map((r) => r.image_url),
+      ...(usedInOtherTl ?? []).map((r) => r.image_url),
+    ]);
+
+    const BUCKET_MARKER = "/object/public/tierlist-images/";
+    const safeToDelete = allUrls
+      .filter((url) => !referencedUrls.has(url))
+      .map((url) => {
+        const idx = url.indexOf(BUCKET_MARKER);
+        return idx !== -1 ? decodeURIComponent(url.slice(idx + BUCKET_MARKER.length)) : null;
+      })
+      .filter(Boolean) as string[];
+
+    if (safeToDelete.length > 0) {
+      await service.storage.from("tierlist-images").remove(safeToDelete);
+    }
   }
 
   // Delete the tierlist row — tierlist_images cascade-deletes automatically
