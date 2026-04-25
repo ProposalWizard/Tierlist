@@ -62,16 +62,34 @@ export async function DELETE(_request: Request, { params }: Props) {
     .select("image_url")
     .eq("blind_ranking_id", id);
 
-  const BUCKET_MARKER = "/object/public/tierlist-images/";
-  const filePaths = (images ?? [])
-    .map((img) => {
-      const idx = img.image_url.indexOf(BUCKET_MARKER);
-      return idx >= 0 ? decodeURIComponent(img.image_url.slice(idx + BUCKET_MARKER.length)) : null;
-    })
-    .filter(Boolean) as string[];
+  const imageUrls = (images ?? []).map((img) => img.image_url);
 
-  if (filePaths.length > 0) {
-    await service.storage.from("tierlist-images").remove(filePaths);
+  // Only delete storage files that aren't referenced by any other table
+  if (imageUrls.length > 0) {
+    const [{ data: usedInTierlists }, { data: usedInVote }, { data: usedInOtherBlind }] = await Promise.all([
+      service.from("tierlist_images").select("image_url").in("image_url", imageUrls),
+      service.from("vote_tierlist_images").select("image_url").in("image_url", imageUrls),
+      service.from("blind_ranking_images").select("image_url").in("image_url", imageUrls).neq("blind_ranking_id", id),
+    ]);
+
+    const referencedUrls = new Set([
+      ...(usedInTierlists ?? []).map((r) => r.image_url),
+      ...(usedInVote ?? []).map((r) => r.image_url),
+      ...(usedInOtherBlind ?? []).map((r) => r.image_url),
+    ]);
+
+    const BUCKET_MARKER = "/object/public/tierlist-images/";
+    const safeToDelete = imageUrls
+      .filter((url) => !referencedUrls.has(url))
+      .map((url) => {
+        const idx = url.indexOf(BUCKET_MARKER);
+        return idx >= 0 ? decodeURIComponent(url.slice(idx + BUCKET_MARKER.length)) : null;
+      })
+      .filter(Boolean) as string[];
+
+    if (safeToDelete.length > 0) {
+      await service.storage.from("tierlist-images").remove(safeToDelete);
+    }
   }
 
   const { error } = await service.from("blind_rankings").delete().eq("id", id);

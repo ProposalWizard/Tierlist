@@ -394,19 +394,15 @@ export default function AdminPanel({
       tiers: (tl.tiers as VoteTier[] | undefined) ?? DEFAULT_TIERS,
       face_detection_enabled: tl.face_detection_enabled !== false,
     });
-    // Ensure vote tierlists and blind rankings are loaded for pickers
-    if (!votelistsLoaded) {
-      fetch("/api/admin/vote-tierlists")
-        .then((r) => r.json())
-        .then((data) => { if (Array.isArray(data)) { setVotelists(data); setVotelistsLoaded(true); } })
-        .catch(() => {});
-    }
-    if (!blindRankingsForPicker.length) {
-      fetch("/api/admin/blind-rankings")
-        .then((r) => r.json())
-        .then((data) => { if (Array.isArray(data)) setBlindRankingsForPicker(data); })
-        .catch(() => {});
-    }
+    // Always refresh vote tierlists and blind rankings for pickers (avoid stale data)
+    fetch("/api/admin/vote-tierlists")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) { setVotelists(data); setVotelistsLoaded(true); } })
+      .catch(() => {});
+    fetch("/api/admin/blind-rankings")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setBlindRankingsForPicker(data); })
+      .catch(() => {});
 
     // Fetch images + tiers for this tierlist from Supabase
     const supabase = createClient();
