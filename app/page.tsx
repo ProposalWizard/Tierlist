@@ -186,18 +186,18 @@ export default async function HomePage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7">
+              <div className="flex flex-wrap gap-3">
                 {displayed.map((item) => (
                   <Link
                     key={item.id}
                     href={item.is_vote ? `/vote/${item.id}` : `/play/${item.id}`}
-                    className={`group relative overflow-hidden rounded-xl border bg-gray-900 transition-colors ${
+                    className={`group relative w-[calc(33.333%-8px)] sm:w-[calc(25%-9px)] md:w-[calc(16.666%-10px)] lg:w-[calc(14.285%-10.3px)] overflow-hidden rounded-xl border bg-gray-900 transition-colors ${
                       item.is_vote
                         ? "border-purple-800/50 hover:border-purple-500"
                         : "border-gray-700 hover:border-indigo-500"
                     }`}
                   >
-                    <div className="relative flex h-32 items-center justify-center overflow-hidden bg-gray-800">
+                    <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gray-800">
                       {item.cover_image_url ? (
                         <ImageWithFallback src={item.cover_image_url} alt={item.title}
                           className="h-full w-full object-cover transition-transform group-hover:scale-105" />
@@ -210,9 +210,9 @@ export default async function HomePage() {
                         </span>
                       )}
                     </div>
-                    <div className="p-2.5">
+                    <div className="p-2">
                       <p className="truncate text-xs font-semibold text-white">{item.title}</p>
-                      <div className="mt-1 flex items-center justify-between text-[10px] text-gray-500">
+                      <div className="mt-0.5 flex items-center justify-between text-[10px] text-gray-500">
                         {!item.is_vote && item.view_count > 0 && <span title="Views">👁 {item.view_count}</span>}
                         {(item.is_vote || !item.view_count) && <span />}
                         {item.like_count > 0 && <span className="text-red-400">❤ {item.like_count}</span>}
@@ -225,7 +225,7 @@ export default async function HomePage() {
                 {total > MAX_PER_CATEGORY && (
                   <Link
                     href={`/find?category=${encodeURIComponent(cat)}`}
-                    className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-700 bg-gray-900/50 p-4 text-center transition-colors hover:border-indigo-500 hover:bg-gray-900"
+                    className="flex w-[calc(33.333%-8px)] sm:w-[calc(25%-9px)] md:w-[calc(16.666%-10px)] lg:w-[calc(14.285%-10.3px)] flex-col items-center justify-center rounded-xl border border-dashed border-gray-700 bg-gray-900/50 p-4 text-center transition-colors hover:border-indigo-500 hover:bg-gray-900"
                   >
                     <span className="text-2xl">→</span>
                     <p className="mt-2 text-xs font-semibold text-gray-400">View More</p>
