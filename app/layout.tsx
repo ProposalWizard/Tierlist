@@ -6,11 +6,19 @@
 
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Cinzel } from "next/font/google";
 import "./globals.css";
 import GlobalNav from "@/components/GlobalNav";
 import SiteFooter from "@/components/SiteFooter";
 
 const GA_ID = "G-ZEGDB8YDZZ";
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["600", "700", "900"],
+  variable: "--font-cinzel",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -45,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={cinzel.variable}>
       <head>
         <link rel="dns-prefetch" href="https://cagkgfketucousksgtbk.supabase.co" />
         <link rel="preconnect" href="https://cagkgfketucousksgtbk.supabase.co" crossOrigin="anonymous" />
