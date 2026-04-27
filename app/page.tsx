@@ -213,8 +213,7 @@ export default async function HomePage() {
                     <div className="p-2">
                       <p className="truncate text-xs font-semibold text-white">{item.title}</p>
                       <div className="mt-0.5 flex items-center justify-between text-[10px] text-gray-500">
-                        {!item.is_vote && item.view_count > 0 && <span title="Views">👁 {item.view_count}</span>}
-                        {(item.is_vote || !item.view_count) && <span />}
+                        {!item.is_vote ? <span title="Views">👁 {item.view_count}</span> : <span />}
                         {item.like_count > 0 && <span className="text-red-400">❤ {item.like_count}</span>}
                       </div>
                     </div>

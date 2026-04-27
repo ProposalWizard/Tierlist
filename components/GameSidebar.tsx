@@ -27,7 +27,7 @@ const GAMES: GameLink[] = [
   { name: "Higher or Lower", description: "Compare player stats", href: "/higher-or-lower", comingSoon: true },
   { name: "501 Game", description: "Football darts-style challenge", href: "/501", comingSoon: true },
   { name: "Spot the Fake Stats", description: "Find the made-up statistic", href: "/spot-the-fake", comingSoon: true },
-  { name: "Football Tic Tac Toe", description: "Football-themed tic tac toe", href: "/tic-tac-toe", comingSoon: true },
+  { name: "Football Tic Tac Toe", description: "Football-themed tic tac toe", href: "/tic-tac-toe" },
 ];
 
 export default function GameSidebar() {

@@ -281,3 +281,33 @@ export interface BlindRankingImage {
   face_center: { x: number; y: number } | null;
   created_at: string;
 }
+
+/* ── Tic Tac Toe ── */
+
+export interface TicTacToeAnswer {
+  name: string;
+  points: number;
+  aliases?: string[];
+}
+
+export interface TicTacToeSquareData {
+  type: "normal" | "custom";
+  conditions: [string, string];
+  answers: TicTacToeAnswer[];
+  maxScore: number;
+}
+
+export interface TicTacToePuzzle {
+  id: string;
+  title: string;
+  difficulty: "easy" | "medium" | "extreme";
+  row_labels: [string, string, string];
+  col_labels: [string, string, string];
+  grid: TicTacToeSquareData[][];
+  three_in_a_row_bonus: number;
+  is_daily: boolean;
+  daily_date: string | null;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+}
