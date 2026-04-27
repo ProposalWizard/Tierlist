@@ -56,20 +56,12 @@ function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
   return false;
 }
 
-function getTop3Score(found: TicTacToeAnswer[]): number {
-  return found
-    .map((a) => a.points)
-    .sort((a, b) => b - a)
-    .slice(0, 3)
-    .reduce((s, p) => s + p, 0);
+function getScore(found: TicTacToeAnswer[]): number {
+  return found.reduce((s, a) => s + a.points, 0);
 }
 
 function getMaxScore(square: TicTacToeSquareData): number {
-  return square.answers
-    .map((a) => a.points)
-    .sort((a, b) => b - a)
-    .slice(0, 3)
-    .reduce((s, p) => s + p, 0);
+  return square.answers.reduce((s, a) => s + a.points, 0);
 }
 
 function checkThreeInARow(guesses: Map<string, TicTacToeAnswer[]>): boolean {
@@ -119,7 +111,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
 
   const totalCurrentScore = (() => {
     let total = 0;
-    gameState.guesses.forEach((found) => { total += getTop3Score(found); });
+    gameState.guesses.forEach((found) => { total += getScore(found); });
     if (gameState.bonusAwarded) total += puzzle.three_in_a_row_bonus;
     return total;
   })();
@@ -240,7 +232,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
             {row.map((square, c) => {
               const key = squareKey(r, c);
               const found = gameState.guesses.get(key) ?? [];
-              const sqScore = getTop3Score(found);
+              const sqScore = getScore(found);
               const sqMax = getMaxScore(square);
               const isSelected = selectedSquare?.r === r && selectedSquare?.c === c;
               const isCustom = square.type === "custom";
@@ -328,7 +320,7 @@ function SquarePanel({
   inputRef: React.RefObject<HTMLInputElement>;
   onClose: () => void;
 }) {
-  const sqScore = getTop3Score(found);
+  const sqScore = getScore(found);
   const sqMax = getMaxScore(square);
 
   return (
@@ -343,7 +335,6 @@ function SquarePanel({
 
       <div className="mb-3 text-xs text-gray-400">
         Score: <span className="font-bold text-white">{sqScore}</span> / {sqMax}
-        <span className="ml-2 text-gray-600">(top 3 answers count)</span>
       </div>
 
       {/* Input */}
@@ -382,17 +373,12 @@ function SquarePanel({
           <p className="text-xs font-bold text-gray-400 uppercase">Found ({found.length})</p>
           {found
             .sort((a, b) => b.points - a.points)
-            .map((a, i) => {
-              const isTop3 = i < 3;
-              return (
-                <div key={a.name} className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
-                  isTop3 ? "bg-green-900/30 text-green-300" : "bg-gray-800 text-gray-500"
-                }`}>
-                  <span>{a.name}</span>
-                  <span className="font-bold">{a.points} pts{!isTop3 ? " (overflow)" : ""}</span>
-                </div>
-              );
-            })}
+            .map((a) => (
+              <div key={a.name} className="flex items-center justify-between rounded-lg bg-green-900/30 px-3 py-1.5 text-sm text-green-300">
+                <span>{a.name}</span>
+                <span className="font-bold">{a.points} pts</span>
+              </div>
+            ))}
         </div>
       )}
     </div>
@@ -447,7 +433,7 @@ function ResultsScreen({
       let row = "";
       for (let c = 0; c < 3; c++) {
         const found = gameState.guesses.get(squareKey(r, c)) ?? [];
-        const sqScore = getTop3Score(found);
+        const sqScore = getScore(found);
         const sqMax = getMaxScore(puzzle.grid[r][c]);
         if (found.length === 0) row += "⬛";
         else if (sqScore >= sqMax) row += "🟩";
