@@ -5,6 +5,7 @@ import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/li
 
 interface GameState {
   guesses: Map<string, TicTacToeAnswer[]>; // key = "row-col"
+  usedPlayers: Set<string>; // player names already guessed in any square
   scores: Map<string, number>;
   bonusAwarded: boolean;
   finished: boolean;
@@ -55,20 +56,12 @@ function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
   return false;
 }
 
-function getTop3Score(found: TicTacToeAnswer[]): number {
-  return found
-    .map((a) => a.points)
-    .sort((a, b) => b - a)
-    .slice(0, 3)
-    .reduce((s, p) => s + p, 0);
+function getScore(found: TicTacToeAnswer[]): number {
+  return found.reduce((s, a) => s + a.points, 0);
 }
 
 function getMaxScore(square: TicTacToeSquareData): number {
-  return square.answers
-    .map((a) => a.points)
-    .sort((a, b) => b - a)
-    .slice(0, 3)
-    .reduce((s, p) => s + p, 0);
+  return square.answers.reduce((s, a) => s + a.points, 0);
 }
 
 function checkThreeInARow(guesses: Map<string, TicTacToeAnswer[]>): boolean {
@@ -90,6 +83,7 @@ interface Props {
 export default function TicTacToeGame({ puzzle }: Props) {
   const [gameState, setGameState] = useState<GameState>({
     guesses: new Map(),
+    usedPlayers: new Set(),
     scores: new Map(),
     bonusAwarded: false,
     finished: false,
@@ -117,7 +111,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
 
   const totalCurrentScore = (() => {
     let total = 0;
-    gameState.guesses.forEach((found) => { total += getTop3Score(found); });
+    gameState.guesses.forEach((found) => { total += getScore(found); });
     if (gameState.bonusAwarded) total += puzzle.three_in_a_row_bonus;
     return total;
   })();
@@ -143,10 +137,15 @@ export default function TicTacToeGame({ puzzle }: Props) {
       setFeedback({ text: "Not a valid answer", type: "wrong" });
     } else if (currentGuesses.some((g) => g.name === match.name)) {
       setFeedback({ text: "Already found!", type: "duplicate" });
+    } else if (gameState.usedPlayers.has(match.name)) {
+      setFeedback({ text: `${match.name} was already used in another square!`, type: "duplicate" });
     } else {
       const newGuesses = new Map(gameState.guesses);
       const newFound = [...currentGuesses, match];
       newGuesses.set(key, newFound);
+
+      const newUsed = new Set(gameState.usedPlayers);
+      newUsed.add(match.name);
 
       let bonusAwarded = gameState.bonusAwarded;
       if (!bonusAwarded && checkThreeInARow(newGuesses)) {
@@ -156,6 +155,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
       setGameState({
         ...gameState,
         guesses: newGuesses,
+        usedPlayers: newUsed,
         bonusAwarded,
       });
       setFeedback({ text: `${match.name} — ${match.points} pts!`, type: "correct" });
@@ -179,7 +179,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
         totalCurrentScore={totalCurrentScore}
         totalMaxScore={totalMaxScore}
         onPlayAgain={() => {
-          setGameState({ guesses: new Map(), scores: new Map(), bonusAwarded: false, finished: false });
+          setGameState({ guesses: new Map(), usedPlayers: new Set(), scores: new Map(), bonusAwarded: false, finished: false });
           setSelectedSquare(null);
         }}
       />
@@ -187,10 +187,10 @@ export default function TicTacToeGame({ puzzle }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <div className="mx-auto max-w-4xl px-4 py-6">
       {/* Header */}
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-black text-white md:text-3xl">{puzzle.title}</h1>
+        <h1 className="text-2xl font-black text-white md:text-4xl">{puzzle.title}</h1>
         <div className="mt-2 flex items-center justify-center gap-4 text-sm text-gray-400">
           <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${
             puzzle.difficulty === "easy" ? "bg-green-900/50 text-green-400" :
@@ -211,10 +211,10 @@ export default function TicTacToeGame({ puzzle }: Props) {
       {/* Grid */}
       <div className="mb-6">
         {/* Column labels */}
-        <div className="grid grid-cols-[60px_1fr_1fr_1fr] gap-1">
+        <div className="grid grid-cols-[60px_1fr_1fr_1fr] gap-1.5 md:grid-cols-[100px_1fr_1fr_1fr] md:gap-2">
           <div />
           {puzzle.col_labels.map((label, c) => (
-            <div key={c} className="flex items-end justify-center rounded-t-lg bg-gray-800/50 px-1 py-2 text-center text-xs font-bold text-gray-300 min-h-[48px]">
+            <div key={c} className="flex items-end justify-center rounded-t-lg bg-gray-800/50 px-2 py-2 text-center text-xs font-bold text-gray-300 min-h-[48px] md:text-sm md:min-h-[56px] md:py-3">
               {label}
             </div>
           ))}
@@ -222,9 +222,9 @@ export default function TicTacToeGame({ puzzle }: Props) {
 
         {/* Rows */}
         {puzzle.grid.map((row, r) => (
-          <div key={r} className="grid grid-cols-[60px_1fr_1fr_1fr] gap-1 mt-1">
+          <div key={r} className="grid grid-cols-[60px_1fr_1fr_1fr] gap-1.5 mt-1.5 md:grid-cols-[100px_1fr_1fr_1fr] md:gap-2 md:mt-2">
             {/* Row label */}
-            <div className="flex items-center justify-center rounded-l-lg bg-gray-800/50 px-1 py-2 text-center text-xs font-bold text-gray-300">
+            <div className="flex items-center justify-center rounded-l-lg bg-gray-800/50 px-2 py-2 text-center text-xs font-bold text-gray-300 md:text-sm md:px-3">
               {puzzle.row_labels[r]}
             </div>
 
@@ -232,7 +232,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
             {row.map((square, c) => {
               const key = squareKey(r, c);
               const found = gameState.guesses.get(key) ?? [];
-              const sqScore = getTop3Score(found);
+              const sqScore = getScore(found);
               const sqMax = getMaxScore(square);
               const isSelected = selectedSquare?.r === r && selectedSquare?.c === c;
               const isCustom = square.type === "custom";
@@ -245,7 +245,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                     setInputValue("");
                     setFeedback(null);
                   }}
-                  className={`relative flex flex-col items-center justify-center rounded-lg border p-2 transition-all min-h-[80px] md:min-h-[100px] ${
+                  className={`relative flex flex-col items-center justify-center rounded-lg border p-2 transition-all min-h-[80px] md:min-h-[140px] md:p-3 ${
                     isSelected
                       ? "border-indigo-500 bg-indigo-900/30 ring-2 ring-indigo-500/50"
                       : found.length > 0
@@ -258,11 +258,11 @@ export default function TicTacToeGame({ puzzle }: Props) {
                   )}
                   {found.length > 0 ? (
                     <>
-                      <span className="text-lg font-black text-green-400">{found.length}</span>
-                      <span className="text-[10px] text-gray-400">{sqScore}/{sqMax}</span>
+                      <span className="text-lg font-black text-green-400 md:text-2xl">{found.length}</span>
+                      <span className="text-[10px] text-gray-400 md:text-xs">{sqScore}/{sqMax}</span>
                     </>
                   ) : (
-                    <span className="text-[10px] text-gray-500 text-center leading-tight">
+                    <span className="text-[10px] text-gray-500 text-center leading-tight md:text-xs">
                       {square.conditions.join(" + ")}
                     </span>
                   )}
@@ -320,7 +320,7 @@ function SquarePanel({
   inputRef: React.RefObject<HTMLInputElement>;
   onClose: () => void;
 }) {
-  const sqScore = getTop3Score(found);
+  const sqScore = getScore(found);
   const sqMax = getMaxScore(square);
 
   return (
@@ -335,7 +335,6 @@ function SquarePanel({
 
       <div className="mb-3 text-xs text-gray-400">
         Score: <span className="font-bold text-white">{sqScore}</span> / {sqMax}
-        <span className="ml-2 text-gray-600">(top 3 answers count)</span>
       </div>
 
       {/* Input */}
@@ -374,17 +373,12 @@ function SquarePanel({
           <p className="text-xs font-bold text-gray-400 uppercase">Found ({found.length})</p>
           {found
             .sort((a, b) => b.points - a.points)
-            .map((a, i) => {
-              const isTop3 = i < 3;
-              return (
-                <div key={a.name} className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
-                  isTop3 ? "bg-green-900/30 text-green-300" : "bg-gray-800 text-gray-500"
-                }`}>
-                  <span>{a.name}</span>
-                  <span className="font-bold">{a.points} pts{!isTop3 ? " (overflow)" : ""}</span>
-                </div>
-              );
-            })}
+            .map((a) => (
+              <div key={a.name} className="flex items-center justify-between rounded-lg bg-green-900/30 px-3 py-1.5 text-sm text-green-300">
+                <span>{a.name}</span>
+                <span className="font-bold">{a.points} pts</span>
+              </div>
+            ))}
         </div>
       )}
     </div>
@@ -439,7 +433,7 @@ function ResultsScreen({
       let row = "";
       for (let c = 0; c < 3; c++) {
         const found = gameState.guesses.get(squareKey(r, c)) ?? [];
-        const sqScore = getTop3Score(found);
+        const sqScore = getScore(found);
         const sqMax = getMaxScore(puzzle.grid[r][c]);
         if (found.length === 0) row += "⬛";
         else if (sqScore >= sqMax) row += "🟩";

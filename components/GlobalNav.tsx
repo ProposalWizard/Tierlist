@@ -21,10 +21,10 @@ export default async function GlobalNav() {
 
   return (
     <nav className="relative sticky top-0 z-50 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+      <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
           <GameSidebar />
-          <Link href="/" className="text-lg font-bold tracking-tight text-white">
+          <Link href="/home" className="text-lg font-bold tracking-tight text-white">
             Knowitball
           </Link>
         </div>

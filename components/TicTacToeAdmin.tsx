@@ -22,11 +22,7 @@ function emptyGrid(): TicTacToeSquareData[][] {
 }
 
 function calcMaxScore(answers: TicTacToeAnswer[]): number {
-  return answers
-    .map((a) => a.points)
-    .sort((a, b) => b - a)
-    .slice(0, 3)
-    .reduce((s, p) => s + p, 0);
+  return answers.reduce((s, a) => s + a.points, 0);
 }
 
 export default function TicTacToeAdmin() {
@@ -475,7 +471,7 @@ function CellEditor({
       <div>
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-gray-400">Answers ({answers.length})</label>
-          <span className="text-xs text-gray-500">Max score (top 3): {calcMaxScore(answers)}</span>
+          <span className="text-xs text-gray-500">Max score: {calcMaxScore(answers)}</span>
         </div>
 
         {answers.length > 0 && (
