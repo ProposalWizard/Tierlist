@@ -19,6 +19,9 @@ const config: Config = {
           d: "#7fbfff", // blue for D tier
         },
       },
+      fontFamily: {
+        display: ["var(--font-cinzel)", "serif"],
+      },
     },
   },
   plugins: [],
