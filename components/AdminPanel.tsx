@@ -24,6 +24,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import BlindRankingsAdmin from "./BlindRankingsAdmin";
+import TicTacToeAdmin from "./TicTacToeAdmin";
 
 interface VotelistAdmin {
   id: string;
@@ -156,7 +157,7 @@ export default function AdminPanel({
 }: {
   initialTierlists: Tierlist[];
 }) {
-  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings">("tierlists");
+  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings" | "tictactoe">("tierlists");
   const adminDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
 
@@ -1390,6 +1391,14 @@ export default function AdminPanel({
           }`}
         >
           Blind Rankings
+        </button>
+        <button
+          onClick={() => setTab("tictactoe")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === "tictactoe" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          Tic Tac Toe
         </button>
         <div className="ml-auto">
           <button
@@ -3065,6 +3074,9 @@ export default function AdminPanel({
           onCancel={() => setAdminCropImage(null)}
         />
       )}
+      {/* ── Tic Tac Toe tab ─────────────────────────────────────── */}
+      {tab === "tictactoe" && <TicTacToeAdmin />}
+
       {/* Admin cover crop overlay (landscape 3:2) */}
       {adminCoverCrop && (
         <CropOverlay
