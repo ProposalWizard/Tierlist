@@ -236,6 +236,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
               const sqMax = getMaxScore(square);
               const isSelected = selectedSquare?.r === r && selectedSquare?.c === c;
               const isCustom = square.type === "custom";
+              const totalAnswers = square.answers.length;
 
               return (
                 <button
@@ -245,7 +246,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                     setInputValue("");
                     setFeedback(null);
                   }}
-                  className={`relative flex flex-col items-center justify-center rounded-lg border p-2 transition-all min-h-[80px] md:min-h-[140px] md:p-3 ${
+                  className={`relative flex flex-col items-start justify-between rounded-lg border p-1.5 transition-all min-h-[80px] md:min-h-[140px] md:p-2.5 text-left ${
                     isSelected
                       ? "border-indigo-500 bg-indigo-900/30 ring-2 ring-indigo-500/50"
                       : found.length > 0
@@ -253,19 +254,54 @@ export default function TicTacToeGame({ puzzle }: Props) {
                       : "border-gray-700 bg-gray-900 hover:border-gray-500"
                   }`}
                 >
+                  {/* Top: custom conditions only */}
                   {isCustom && (
-                    <span className="absolute right-1 top-1 text-[8px] font-bold text-amber-500">★</span>
+                    <div className="w-full mb-auto">
+                      <span className="text-[8px] leading-tight text-amber-400 md:text-[10px]">
+                        ★ {square.conditions[0]} + {square.conditions[1]}
+                      </span>
+                    </div>
                   )}
-                  {found.length > 0 ? (
-                    <>
-                      <span className="text-lg font-black text-green-400 md:text-2xl">{found.length}</span>
-                      <span className="text-[10px] text-gray-400 md:text-xs">{sqScore}/{sqMax}</span>
-                    </>
-                  ) : (
-                    <span className="text-[10px] text-gray-500 text-center leading-tight md:text-xs">
-                      {square.conditions.join(" + ")}
+
+                  {/* Middle: found player chips or placeholder */}
+                  <div className="flex-1 flex flex-col justify-center w-full gap-0.5">
+                    {found.length > 0 ? (
+                      <>
+                        {/* Mobile: show count + names abbreviated */}
+                        <div className="flex flex-wrap gap-0.5 md:hidden">
+                          {found.slice(0, 3).map((a) => (
+                            <span key={a.name} className="rounded bg-green-900/50 px-1 py-0.5 text-[7px] font-semibold text-green-300 truncate max-w-full">
+                              {a.name.split(" ").pop()} {a.points}
+                            </span>
+                          ))}
+                          {found.length > 3 && (
+                            <span className="text-[7px] text-gray-500">+{found.length - 3}</span>
+                          )}
+                        </div>
+                        {/* Desktop: show all found players */}
+                        <div className="hidden md:flex flex-wrap gap-1">
+                          {found.map((a) => (
+                            <span key={a.name} className="rounded bg-green-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-green-300">
+                              {a.name.split(" ").pop()} <span className="text-green-500">{a.points}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-[9px] text-gray-500 text-center w-full md:text-xs">
+                        {totalAnswers} player{totalAnswers !== 1 ? "s" : ""} · {sqMax} pts
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bottom: score */}
+                  <div className="w-full text-right mt-auto">
+                    <span className={`text-[9px] font-bold md:text-[11px] ${
+                      found.length > 0 ? "text-green-400" : "text-gray-600"
+                    }`}>
+                      {sqScore}/{sqMax}
                     </span>
-                  )}
+                  </div>
                 </button>
               );
             })}
@@ -273,9 +309,9 @@ export default function TicTacToeGame({ puzzle }: Props) {
         ))}
       </div>
 
-      {/* Input panel */}
+      {/* Modal for guessing */}
       {selectedSquare && (
-        <SquarePanel
+        <SquareModal
           square={puzzle.grid[selectedSquare.r][selectedSquare.c]}
           found={gameState.guesses.get(squareKey(selectedSquare.r, selectedSquare.c)) ?? []}
           inputValue={inputValue}
@@ -300,8 +336,8 @@ export default function TicTacToeGame({ puzzle }: Props) {
   );
 }
 
-/* ── Square detail panel ── */
-function SquarePanel({
+/* ── Square modal (centered overlay) ── */
+function SquareModal({
   square,
   found,
   inputValue,
@@ -324,63 +360,77 @@ function SquarePanel({
   const sqMax = getMaxScore(square);
 
   return (
-    <div className="rounded-xl border border-gray-700 bg-gray-900 p-4">
-      <div className="mb-3 flex items-start justify-between">
-        <div>
-          <p className="text-sm font-bold text-white">{square.conditions[0]}</p>
-          <p className="text-sm font-bold text-indigo-400">+ {square.conditions[1]}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70" />
+
+      {/* Modal */}
+      <div
+        className="relative w-full max-w-md rounded-2xl border border-gray-700 bg-gray-900 p-5 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <p className="text-base font-bold text-white">{square.conditions[0]}</p>
+            <p className="text-base font-bold text-indigo-400">+ {square.conditions[1]}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-white text-xl leading-none">&times;</button>
         </div>
-        <button onClick={onClose} className="text-gray-500 hover:text-white text-lg">&times;</button>
-      </div>
 
-      <div className="mb-3 text-xs text-gray-400">
-        Score: <span className="font-bold text-white">{sqScore}</span> / {sqMax}
-      </div>
-
-      {/* Input */}
-      <div className="mb-3 flex gap-2">
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") onGuess(); }}
-          placeholder="Type a player name..."
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
-        />
-        <button
-          onClick={onGuess}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500"
-        >
-          Guess
-        </button>
-      </div>
-
-      {/* Feedback */}
-      {feedback && (
-        <p className={`mb-3 text-sm font-semibold ${
-          feedback.type === "correct" ? "text-green-400" :
-          feedback.type === "duplicate" ? "text-yellow-400" :
-          "text-red-400"
-        }`}>
-          {feedback.text}
-        </p>
-      )}
-
-      {/* Found answers */}
-      {found.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs font-bold text-gray-400 uppercase">Found ({found.length})</p>
-          {found
-            .sort((a, b) => b.points - a.points)
-            .map((a) => (
-              <div key={a.name} className="flex items-center justify-between rounded-lg bg-green-900/30 px-3 py-1.5 text-sm text-green-300">
-                <span>{a.name}</span>
-                <span className="font-bold">{a.points} pts</span>
-              </div>
-            ))}
+        <div className="mb-4 flex items-center justify-between text-sm text-gray-400">
+          <span>
+            Score: <span className="font-bold text-white">{sqScore}</span> / {sqMax}
+          </span>
+          <span>
+            Found: <span className="font-bold text-white">{found.length}</span> / {square.answers.length}
+          </span>
         </div>
-      )}
+
+        {/* Input */}
+        <div className="mb-4 flex gap-2">
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") onGuess(); }}
+            placeholder="Type a player name..."
+            className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+          />
+          <button
+            onClick={onGuess}
+            className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500"
+          >
+            Guess
+          </button>
+        </div>
+
+        {/* Feedback */}
+        {feedback && (
+          <p className={`mb-3 text-sm font-semibold ${
+            feedback.type === "correct" ? "text-green-400" :
+            feedback.type === "duplicate" ? "text-yellow-400" :
+            "text-red-400"
+          }`}>
+            {feedback.text}
+          </p>
+        )}
+
+        {/* Found answers */}
+        {found.length > 0 && (
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            <p className="text-xs font-bold text-gray-400 uppercase">Found ({found.length})</p>
+            {[...found]
+              .sort((a, b) => b.points - a.points)
+              .map((a) => (
+                <div key={a.name} className="flex items-center justify-between rounded-lg bg-green-900/30 px-3 py-1.5 text-sm text-green-300">
+                  <span>{a.name}</span>
+                  <span className="font-bold">{a.points} pts</span>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
