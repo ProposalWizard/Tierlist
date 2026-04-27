@@ -24,7 +24,7 @@ export default async function GlobalNav() {
       <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
           <GameSidebar />
-          <Link href="/" className="text-lg font-bold tracking-tight text-white">
+          <Link href="/home" className="text-lg font-bold tracking-tight text-white">
             Knowitball
           </Link>
         </div>
