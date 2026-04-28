@@ -17,6 +17,7 @@ interface GameState {
   playerScores: [number, number];
   playerBonusAwarded: [boolean, boolean];
   playerSquares: [Set<string>, Set<string>];
+  squareOwner: Map<string, 0 | 1>;
 }
 
 function makeInitialState(names: [string, string] = ["Player 1", "Player 2"]): GameState {
@@ -30,6 +31,7 @@ function makeInitialState(names: [string, string] = ["Player 1", "Player 2"]): G
     playerScores: [0, 0],
     playerBonusAwarded: [false, false],
     playerSquares: [new Set<string>(), new Set<string>()],
+    squareOwner: new Map(),
   };
 }
 
@@ -66,10 +68,14 @@ function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
       if (levenshtein(inp, target) <= maxDist) return true;
     }
     const parts = target.split(" ");
-    if (parts.length > 1) {
-      const lastName = parts[parts.length - 1];
-      if (lastName.length >= 4 && inp.length >= 4) {
-        if (levenshtein(inp, lastName) <= 1) return true;
+    for (let i = 1; i < parts.length; i++) {
+      const suffix = parts.slice(i).join(" ");
+      if (suffix.length >= 3) {
+        if (suffix === inp) return true;
+        if (suffix.length >= 4 && inp.length >= 4) {
+          const maxDist = suffix.length <= 5 ? 1 : 2;
+          if (levenshtein(inp, suffix) <= maxDist) return true;
+        }
       }
     }
   }
@@ -204,32 +210,32 @@ function TwoPlayerScoreboard({
   const cp = gameState.currentPlayer;
 
   return (
-    <div className="aspect-square rounded-md bg-gray-900 border border-gray-700 flex flex-col justify-between p-1.5 md:p-2.5 overflow-hidden">
-      <div className={`rounded px-1 py-0.5 transition-all md:px-2 md:py-1 ${cp === 0 ? "bg-indigo-600" : "bg-gray-800"}`}>
-        <p className="text-[7px] font-bold uppercase tracking-wide text-gray-300 truncate md:text-[10px]">
+    <div className="aspect-square rounded-md bg-gray-900 border border-gray-700 flex flex-col justify-between p-2 md:p-3 overflow-hidden">
+      <div className={`rounded-md px-2 py-1.5 transition-all md:px-3 md:py-2 ${cp === 0 ? "bg-green-600" : "bg-gray-800"}`}>
+        <p className="text-[9px] font-bold uppercase tracking-wide text-gray-200 truncate md:text-xs">
           {p1}
         </p>
-        <p className={`font-display text-sm font-black leading-none md:text-xl ${cp === 0 ? "text-white" : "text-gray-400"}`}>
+        <p className={`font-display text-lg font-black leading-tight md:text-2xl ${cp === 0 ? "text-white" : "text-gray-400"}`}>
           {s1}
         </p>
         {gameState.playerBonusAwarded[0] && (
-          <p className="text-[6px] font-bold text-yellow-400 md:text-[8px]">+{bonusValue} TTT!</p>
+          <p className="text-[8px] font-bold text-yellow-300 md:text-[10px]">+{bonusValue} TTT!</p>
         )}
       </div>
 
-      <p className="text-center text-[6px] font-bold uppercase tracking-wider text-gray-600 md:text-[8px]">
+      <p className="text-center text-[8px] font-bold uppercase tracking-wider text-gray-500 md:text-[10px]">
         {cp === 0 ? p1 : p2}&apos;s turn
       </p>
 
-      <div className={`rounded px-1 py-0.5 transition-all md:px-2 md:py-1 ${cp === 1 ? "bg-purple-600" : "bg-gray-800"}`}>
-        <p className="text-[7px] font-bold uppercase tracking-wide text-gray-300 truncate md:text-[10px]">
+      <div className={`rounded-md px-2 py-1.5 transition-all md:px-3 md:py-2 ${cp === 1 ? "bg-yellow-500" : "bg-gray-800"}`}>
+        <p className={`text-[9px] font-bold uppercase tracking-wide truncate md:text-xs ${cp === 1 ? "text-yellow-900" : "text-gray-200"}`}>
           {p2}
         </p>
-        <p className={`font-display text-sm font-black leading-none md:text-xl ${cp === 1 ? "text-white" : "text-gray-400"}`}>
+        <p className={`font-display text-lg font-black leading-tight md:text-2xl ${cp === 1 ? "text-yellow-900" : "text-gray-400"}`}>
           {s2}
         </p>
         {gameState.playerBonusAwarded[1] && (
-          <p className="text-[6px] font-bold text-yellow-400 md:text-[8px]">+{bonusValue} TTT!</p>
+          <p className="text-[8px] font-bold text-yellow-900 md:text-[10px]">+{bonusValue} TTT!</p>
         )}
       </div>
     </div>
@@ -292,32 +298,18 @@ export default function TicTacToeGame({ puzzle }: Props) {
     setInputValue("");
 
     if (!match) {
-      setFeedback({ text: "Not a valid answer", type: "wrong" });
+      setFeedback({ text: "Incorrect! Try Again!", type: "wrong" });
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
-      feedbackTimer.current = setTimeout(() => {
-        setFeedback(null);
-        if (is2P) {
-          setSelectedSquare(null);
-          setGameState((s) => ({ ...s, currentPlayer: s.currentPlayer === 0 ? 1 : 0 }));
-        }
-      }, 1500);
+      feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
     } else if (currentGuesses.some((g) => g.name === match.name)) {
-      // Already found in this square — don't switch turns
       setFeedback({ text: "Already found in this square!", type: "duplicate" });
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
       feedbackTimer.current = setTimeout(() => setFeedback(null), 1500);
     } else if (gameState.usedPlayers.has(match.name)) {
       setFeedback({ text: `${match.name} already used in another square!`, type: "duplicate" });
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
-      feedbackTimer.current = setTimeout(() => {
-        setFeedback(null);
-        if (is2P) {
-          setSelectedSquare(null);
-          setGameState((s) => ({ ...s, currentPlayer: s.currentPlayer === 0 ? 1 : 0 }));
-        }
-      }, 1500);
+      feedbackTimer.current = setTimeout(() => setFeedback(null), 1500);
     } else {
-      // Correct guess
       const newGuesses = new Map(gameState.guesses);
       newGuesses.set(key, [...currentGuesses, match]);
       const newUsed = new Set(gameState.usedPlayers);
@@ -328,6 +320,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
         if (!bonusAwarded && checkThreeInARow(newGuesses)) bonusAwarded = true;
         setGameState({ ...gameState, guesses: newGuesses, usedPlayers: newUsed, bonusAwarded });
         setFeedback({ text: `${match.name} — ${match.points} pts!`, type: "correct" });
+        setSelectedSquare(null);
         if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
         feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
       } else {
@@ -350,6 +343,9 @@ export default function TicTacToeGame({ puzzle }: Props) {
           newScores[cp] += puzzle.three_in_a_row_bonus;
         }
 
+        const newOwner = new Map(gameState.squareOwner);
+        if (!newOwner.has(key)) newOwner.set(key, cp);
+
         setGameState({
           ...gameState,
           guesses: newGuesses,
@@ -357,14 +353,11 @@ export default function TicTacToeGame({ puzzle }: Props) {
           playerScores: newScores,
           playerSquares: newPlayerSquares,
           playerBonusAwarded: newPlayerBonusAwarded,
+          squareOwner: newOwner,
+          currentPlayer: cp === 0 ? 1 : 0,
         });
-        setFeedback({ text: `${match.name} — ${match.points} pts!`, type: "correct" });
+        setSelectedSquare(null);
         if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
-        feedbackTimer.current = setTimeout(() => {
-          setFeedback(null);
-          setSelectedSquare(null);
-          setGameState((s) => ({ ...s, currentPlayer: s.currentPlayer === 0 ? 1 : 0 }));
-        }, 1500);
       }
     }
   }, [selectedSquare, inputValue, puzzle, gameState, mode]);
@@ -447,16 +440,16 @@ export default function TicTacToeGame({ puzzle }: Props) {
       {/* Grid */}
       <div className="mb-6">
         {/* Column labels row */}
-        <div className="grid grid-cols-[60px_1fr_1fr_1fr] gap-1.5 md:grid-cols-[110px_1fr_1fr_1fr] md:gap-2">
+        <div className="grid grid-cols-4 gap-1.5 md:gap-2">
           {mode === "2player" ? (
             <TwoPlayerScoreboard gameState={gameState} bonusValue={puzzle.three_in_a_row_bonus} />
           ) : (
-            <div />
+            <div className="aspect-square" />
           )}
           {puzzle.col_labels.map((label, c) => (
             <div
               key={c}
-              className="flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[11px] font-bold uppercase tracking-tight text-gray-200 min-h-[56px] md:text-sm md:min-h-[72px] md:px-3 md:py-3 md:tracking-wide"
+              className="aspect-square flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide"
             >
               {label}
             </div>
@@ -467,9 +460,9 @@ export default function TicTacToeGame({ puzzle }: Props) {
         {puzzle.grid.map((row, r) => (
           <div
             key={r}
-            className="grid grid-cols-[60px_1fr_1fr_1fr] gap-1.5 mt-1.5 md:grid-cols-[110px_1fr_1fr_1fr] md:gap-2 md:mt-2"
+            className="grid grid-cols-4 gap-1.5 mt-1.5 md:gap-2 md:mt-2"
           >
-            <div className="flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[11px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+            <div className="aspect-square flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
               {puzzle.row_labels[r]}
             </div>
 
@@ -481,13 +474,20 @@ export default function TicTacToeGame({ puzzle }: Props) {
               const isSelected = selectedSquare?.r === r && selectedSquare?.c === c;
               const isCustom = square.type === "custom";
               const isFilled = found.length > 0;
+              const owner = gameState.squareOwner.get(key);
+              const isP2Square = mode === "2player" && owner === 1;
 
-              // Dynamic available count/max — exclude players already used in other squares
               const availableAnswers = square.answers.filter(
                 (a) => !gameState.usedPlayers.has(a.name)
               );
               const availableCount = availableAnswers.length;
               const availableMax = availableAnswers.reduce((s, a) => s + a.points, 0);
+
+              const filledBg = isP2Square
+                ? "bg-yellow-400 hover:bg-yellow-300"
+                : "bg-green-500 hover:bg-green-400";
+              const filledBorder = isP2Square ? "border-yellow-600/50" : "border-green-700/50";
+              const filledTextDark = isP2Square ? "text-yellow-900" : "text-green-900";
 
               return (
                 <button
@@ -498,18 +498,18 @@ export default function TicTacToeGame({ puzzle }: Props) {
                     setFeedback(null);
                   }}
                   className={`group relative aspect-square flex flex-col rounded-md p-2 transition-all md:p-3 text-left overflow-hidden ${
-                    isFilled ? "bg-green-500 hover:bg-green-400" : "bg-white hover:bg-gray-100"
+                    isFilled ? filledBg : "bg-white hover:bg-gray-100"
                   } ${isSelected ? "ring-4 ring-indigo-500" : ""}`}
                 >
                   {isCustom && (
                     <div
                       className={`w-full text-center pb-1 mb-1 border-b ${
-                        isFilled ? "border-green-700/50" : "border-gray-300"
+                        isFilled ? filledBorder : "border-gray-300"
                       }`}
                     >
                       <p
                         className={`text-[8px] font-bold leading-tight md:text-[10px] ${
-                          isFilled ? "text-green-900" : "text-gray-700"
+                          isFilled ? filledTextDark : "text-gray-700"
                         }`}
                       >
                         {square.conditions[0]} + {square.conditions[1]}
@@ -526,11 +526,11 @@ export default function TicTacToeGame({ puzzle }: Props) {
                             className="text-[10px] font-bold leading-tight text-gray-900 truncate md:text-sm"
                           >
                             {a.name}{" "}
-                            <span className="font-black text-green-900">{a.points}</span>
+                            <span className={`font-black ${filledTextDark}`}>{a.points}</span>
                           </p>
                         ))}
                         {found.length > 5 && (
-                          <p className="text-[9px] font-bold text-green-900 md:text-xs">
+                          <p className={`text-[9px] font-bold md:text-xs ${filledTextDark}`}>
                             +{found.length - 5} more
                           </p>
                         )}
@@ -550,7 +550,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                   <div className="w-full text-center mt-1">
                     <p
                       className={`font-display text-xs font-black md:text-sm ${
-                        isFilled ? "text-green-900" : "text-gray-400"
+                        isFilled ? filledTextDark : "text-gray-400"
                       }`}
                     >
                       {isFilled ? `${sqScore} / ${sqMax}` : `${availableMax} pts`}
@@ -688,12 +688,12 @@ function SquareModal({
 
         {feedback && (
           <p
-            className={`mb-3 text-sm font-bold ${
+            className={`mb-3 font-black ${
               feedback.type === "correct"
-                ? "text-green-600"
+                ? "text-base text-green-600"
                 : feedback.type === "duplicate"
-                ? "text-yellow-600"
-                : "text-red-600"
+                ? "text-sm text-yellow-600"
+                : "text-lg text-red-600 uppercase tracking-wide"
             }`}
           >
             {feedback.text}

@@ -209,7 +209,7 @@ export default function CreateTierlistForm() {
           .then(() => {});
       }
 
-      router.push("/");
+      router.push("/tierlists");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

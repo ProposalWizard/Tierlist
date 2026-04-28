@@ -33,10 +33,10 @@ export default async function TierlistPage() {
       <header className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <Link
-            href="/"
+            href="/tierlists"
             className="text-sm text-gray-400 hover:text-white transition-colors"
           >
-            ← Home
+            ← Tierlists
           </Link>
 
           <div className="flex items-center gap-3 text-sm text-gray-400">
