@@ -298,9 +298,17 @@ export default function TicTacToeGame({ puzzle }: Props) {
     setInputValue("");
 
     if (!match) {
-      setFeedback({ text: "Incorrect! Try Again!", type: "wrong" });
-      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
-      feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
+      if (is2P) {
+        setFeedback({ text: "Incorrect!", type: "wrong" });
+        setSelectedSquare(null);
+        setGameState((s) => ({ ...s, currentPlayer: s.currentPlayer === 0 ? 1 : 0 }));
+        if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+        feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
+      } else {
+        setFeedback({ text: "Incorrect! Try Again!", type: "wrong" });
+        if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+        feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
+      }
     } else if (currentGuesses.some((g) => g.name === match.name)) {
       setFeedback({ text: "Already found in this square!", type: "duplicate" });
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
@@ -430,9 +438,16 @@ export default function TicTacToeGame({ puzzle }: Props) {
             +{puzzle.three_in_a_row_bonus} Three-in-a-row bonus!
           </p>
         )}
-        {mode === "2player" && (
+        {mode === "2player" && !feedback && (
           <p className="mt-2 text-sm font-bold text-indigo-300">
             {gameState.playerNames[gameState.currentPlayer]}&apos;s turn — pick a square
+          </p>
+        )}
+        {feedback && !selectedSquare && (
+          <p className={`mt-3 text-xl font-black uppercase tracking-wide ${
+            feedback.type === "correct" ? "text-green-400" : "text-red-500"
+          }`}>
+            {feedback.text}
           </p>
         )}
       </div>
