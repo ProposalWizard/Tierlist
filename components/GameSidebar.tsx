@@ -13,8 +13,8 @@ interface GameLink {
 }
 
 const GAMES: GameLink[] = [
-  { name: "Home", description: "Browse all games", href: "/home" },
-  { name: "Tierlists", description: "Create & play drag-and-drop tierlists", href: "/" },
+  { name: "Home", description: "Browse all games", href: "/" },
+  { name: "Tierlists", description: "Create & play drag-and-drop tierlists", href: "/tierlists" },
   { name: "Combined XI", description: "Build your dream starting 11", href: "/combined-xi", comingSoon: true },
   { name: "Squad Builder", description: "Build and share your squad", href: "/squad-builder", comingSoon: true },
   { name: "Team of the Week", description: "Pick your weekly best 11", href: "/team-of-the-week", comingSoon: true },

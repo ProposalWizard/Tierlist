@@ -4,10 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const TIERLIST_PATHS = ["/", "/find", "/play", "/vote", "/create"];
+const TIERLIST_PATHS = ["/tierlists", "/find", "/play", "/vote", "/create"];
 
 function isTierlistPage(path: string) {
-  return TIERLIST_PATHS.some((p) => path === p || (p !== "/" && path.startsWith(p + "/")));
+  return TIERLIST_PATHS.some((p) => path === p || path.startsWith(p + "/"));
 }
 
 interface Props {

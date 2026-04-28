@@ -170,7 +170,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
           .then(() => {});
       }
 
-      router.push("/");
+      router.push("/tierlists");
       router.refresh();
     } catch (err) {
       console.error("Upload error:", err);
