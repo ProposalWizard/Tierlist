@@ -255,6 +255,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
     text: string;
     type: "correct" | "wrong" | "duplicate";
   } | null>(null);
+  const [hintSquare, setHintSquare] = useState<{ r: number; c: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null!);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -504,19 +505,21 @@ export default function TicTacToeGame({ puzzle }: Props) {
               const filledBorder = isP2Square ? "border-yellow-600/50" : "border-green-700/50";
               const filledTextDark = isP2Square ? "text-yellow-900" : "text-green-900";
 
+              const hasHint = !!square.hint;
+
               return (
-                <button
-                  key={c}
-                  onClick={() => {
-                    setSelectedSquare({ r, c });
-                    setInputValue("");
-                    setFeedback(null);
-                  }}
-                  className={`group relative aspect-square flex flex-col rounded-md p-2 transition-all md:p-3 text-left overflow-hidden ${
-                    isFilled ? filledBg : "bg-white hover:bg-gray-100"
-                  } ${isSelected ? "ring-4 ring-indigo-500" : ""}`}
-                >
-                  {isCustom && (
+                <div key={c} className="relative aspect-square">
+                  <button
+                    onClick={() => {
+                      setSelectedSquare({ r, c });
+                      setInputValue("");
+                      setFeedback(null);
+                    }}
+                    className={`group relative w-full h-full flex flex-col rounded-md p-2 transition-all md:p-3 text-left overflow-hidden ${
+                      isFilled ? filledBg : "bg-white hover:bg-gray-100"
+                    } ${isSelected ? "ring-4 ring-indigo-500" : ""}`}
+                  >
+                    {isCustom && (
                     <div
                       className={`w-full text-center pb-1 mb-1 border-b ${
                         isFilled ? filledBorder : "border-gray-300"
@@ -571,7 +574,21 @@ export default function TicTacToeGame({ puzzle }: Props) {
                       {isFilled ? `${sqScore} / ${sqMax}` : `${availableMax} pts`}
                     </p>
                   </div>
-                </button>
+                  </button>
+
+                  {hasHint && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHintSquare({ r, c });
+                      }}
+                      className="absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white shadow-md hover:bg-indigo-500 transition-colors md:h-6 md:w-6 md:text-xs"
+                      aria-label="Show hint"
+                    >
+                      ?
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -594,6 +611,44 @@ export default function TicTacToeGame({ puzzle }: Props) {
           usedPlayers={gameState.usedPlayers}
         />
       )}
+
+      {/* Hint popup */}
+      {hintSquare && (() => {
+        const sq = puzzle.grid[hintSquare.r][hintSquare.c];
+        const hintText = sq.hint ?? "";
+        const isImage = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i.test(hintText);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setHintSquare(null)}>
+            <div className="absolute inset-0 bg-black/70" />
+            <div
+              className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold text-gray-900">
+                  Hint: {sq.conditions[0]} + {sq.conditions[1]}
+                </p>
+                <button
+                  onClick={() => setHintSquare(null)}
+                  className="text-gray-400 hover:text-gray-900 text-2xl leading-none"
+                >
+                  &times;
+                </button>
+              </div>
+              {isImage ? (
+                <img
+                  src={hintText}
+                  alt="Hint"
+                  className="w-full rounded-lg"
+                />
+              ) : (
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{hintText}</p>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Finish button */}
       <div className="mt-6 flex justify-center gap-3">

@@ -316,6 +316,7 @@ export interface TicTacToeSquareData {
   conditions: [string, string];
   answers: TicTacToeAnswer[];
   maxScore: number;
+  hint?: string;
 }
 
 export interface TicTacToePuzzle {

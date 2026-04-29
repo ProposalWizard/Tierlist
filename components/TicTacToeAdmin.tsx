@@ -410,6 +410,7 @@ function CellEditor({
   const [cond1, setCond1] = useState(square.conditions[0] || rowLabel);
   const [cond2, setCond2] = useState(square.conditions[1] || colLabel);
   const [answers, setAnswers] = useState<TicTacToeAnswer[]>([...square.answers]);
+  const [hint, setHint] = useState(square.hint ?? "");
   const [newName, setNewName] = useState("");
   const [newPoints, setNewPoints] = useState(3);
   const [newAliases, setNewAliases] = useState("");
@@ -434,6 +435,7 @@ function CellEditor({
       conditions: [isCustom ? cond1 : rowLabel, isCustom ? cond2 : colLabel] as [string, string],
       answers,
       maxScore: calcMaxScore(answers),
+      hint: hint.trim() || undefined,
     });
   };
 
@@ -465,6 +467,17 @@ function CellEditor({
             onChange={(e) => setCond2(e.target.value)}
             className={`mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white ${!isCustom ? "opacity-50" : ""}`} />
         </div>
+      </div>
+
+      {/* Hint */}
+      <div>
+        <label className="text-xs font-bold text-gray-400">Hint (optional — text, stat, or image URL)</label>
+        <input value={hint} onChange={(e) => setHint(e.target.value)}
+          placeholder="e.g. a stat, clue, or https://... image URL"
+          className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+        {hint.trim() && (
+          <p className="mt-1 text-[10px] text-emerald-400">Hint set — players will see a help button on this square</p>
+        )}
       </div>
 
       {/* Answers */}
