@@ -16,6 +16,7 @@ interface PuzzleRow {
   difficulty: string;
   is_daily: boolean;
   daily_date: string | null;
+  category: string | null;
   created_at: string;
 }
 
@@ -24,14 +25,15 @@ export default async function TicTacToeListPage() {
 
   const { data: puzzles } = await service
     .from("tictactoe_puzzles")
-    .select("id, title, difficulty, is_daily, daily_date, created_at")
+    .select("id, title, difficulty, is_daily, daily_date, category, created_at")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  const items: PuzzleRow[] = puzzles ?? [];
+  const items: PuzzleRow[] = (puzzles ?? []) as PuzzleRow[];
 
   const daily = items.find((p) => p.is_daily);
-  const others = items.filter((p) => !p.is_daily);
+  const official = items.filter((p) => !p.is_daily && p.category !== "User Created");
+  const userCreated = items.filter((p) => p.category === "User Created");
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -45,6 +47,12 @@ export default async function TicTacToeListPage() {
         <p className="mx-auto mt-3 max-w-md text-sm text-gray-400">
           Name players that match two conditions per square. Score points for rare answers!
         </p>
+        <Link
+          href="/tic-tac-toe/create"
+          className="mt-5 inline-block rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
+        >
+          + Create Your Own
+        </Link>
       </div>
 
       <main className="mx-auto max-w-4xl px-4 py-8">
@@ -63,7 +71,7 @@ export default async function TicTacToeListPage() {
                   daily.difficulty === "medium" ? "bg-yellow-900/50 text-yellow-400" :
                   "bg-red-900/50 text-red-400"
                 }`}>{daily.difficulty}</span>
-                {daily.daily_date && <span>📅 {daily.daily_date}</span>}
+                {daily.daily_date && <span>{daily.daily_date}</span>}
               </div>
               <div className="mt-3">
                 <span className="rounded-lg bg-amber-600/20 border border-amber-700/50 px-4 py-1.5 text-sm font-bold text-amber-400">
@@ -74,42 +82,75 @@ export default async function TicTacToeListPage() {
           </div>
         )}
 
-        {/* All puzzles */}
-        {others.length === 0 && !daily ? (
-          <div className="py-24 text-center text-gray-500">
-            No puzzles available yet. Check back soon!
+        {/* Official puzzles */}
+        {official.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-3 text-sm font-bold uppercase text-gray-400">All Puzzles</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {official.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/tic-tac-toe/${p.id}`}
+                  className="group rounded-xl border border-gray-800 bg-gray-900 p-5 transition-colors hover:border-indigo-600 hover:bg-gray-800/50"
+                >
+                  <h3 className="font-bold text-white group-hover:text-indigo-300">{p.title}</h3>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+                    <span className={`rounded-full px-2 py-0.5 font-bold ${
+                      p.difficulty === "easy" ? "bg-green-900/50 text-green-400" :
+                      p.difficulty === "medium" ? "bg-yellow-900/50 text-yellow-400" :
+                      "bg-red-900/50 text-red-400"
+                    }`}>{p.difficulty}</span>
+                  </div>
+                  <div className="mt-3">
+                    <span className="rounded-lg bg-indigo-600/20 border border-indigo-700/50 px-3 py-1 text-xs font-semibold text-indigo-400">
+                      Play
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        ) : (
-          <>
-            {others.length > 0 && (
-              <>
-                <h2 className="mb-3 text-sm font-bold uppercase text-gray-400">All Puzzles</h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {others.map((p) => (
-                    <Link
-                      key={p.id}
-                      href={`/tic-tac-toe/${p.id}`}
-                      className="group rounded-xl border border-gray-800 bg-gray-900 p-5 transition-colors hover:border-indigo-600 hover:bg-gray-800/50"
-                    >
-                      <h3 className="font-bold text-white group-hover:text-indigo-300">{p.title}</h3>
-                      <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                        <span className={`rounded-full px-2 py-0.5 font-bold ${
-                          p.difficulty === "easy" ? "bg-green-900/50 text-green-400" :
-                          p.difficulty === "medium" ? "bg-yellow-900/50 text-yellow-400" :
-                          "bg-red-900/50 text-red-400"
-                        }`}>{p.difficulty}</span>
-                      </div>
-                      <div className="mt-3">
-                        <span className="rounded-lg bg-indigo-600/20 border border-indigo-700/50 px-3 py-1 text-xs font-semibold text-indigo-400">
-                          Play
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </>
-            )}
-          </>
+        )}
+
+        {/* User-created puzzles */}
+        {userCreated.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-3 text-sm font-bold uppercase text-purple-400">User Created</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {userCreated.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/tic-tac-toe/${p.id}`}
+                  className="group rounded-xl border border-purple-800/50 bg-gray-900 p-5 transition-colors hover:border-purple-600 hover:bg-gray-800/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-white group-hover:text-purple-300">{p.title}</h3>
+                    <span className="rounded bg-purple-900/50 px-1.5 py-0.5 text-[10px] font-bold text-purple-400">
+                      Community
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+                    <span className={`rounded-full px-2 py-0.5 font-bold ${
+                      p.difficulty === "easy" ? "bg-green-900/50 text-green-400" :
+                      p.difficulty === "medium" ? "bg-yellow-900/50 text-yellow-400" :
+                      "bg-red-900/50 text-red-400"
+                    }`}>{p.difficulty}</span>
+                  </div>
+                  <div className="mt-3">
+                    <span className="rounded-lg bg-purple-600/20 border border-purple-700/50 px-3 py-1 text-xs font-semibold text-purple-400">
+                      Play
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {items.length === 0 && (
+          <div className="py-24 text-center text-gray-500">
+            No puzzles available yet. Be the first to create one!
+          </div>
         )}
       </main>
     </div>
