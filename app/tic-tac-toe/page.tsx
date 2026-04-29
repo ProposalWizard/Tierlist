@@ -25,15 +25,16 @@ export default async function TicTacToeListPage() {
 
   const { data: puzzles } = await service
     .from("tictactoe_puzzles")
-    .select("id, title, difficulty, is_daily, daily_date, category, created_at")
+    .select("id, title, difficulty, is_daily, daily_date, created_at")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
   const items: PuzzleRow[] = (puzzles ?? []) as PuzzleRow[];
 
   const daily = items.find((p) => p.is_daily);
-  const official = items.filter((p) => !p.is_daily && p.category !== "User Created");
-  const userCreated = items.filter((p) => p.category === "User Created");
+  // category column may not exist until migration is run — filter safely
+  const official = items.filter((p) => !p.is_daily && (p.category ?? null) !== "User Created");
+  const userCreated = items.filter((p) => (p.category ?? null) === "User Created");
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">

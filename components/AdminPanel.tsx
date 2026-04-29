@@ -25,6 +25,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import BlindRankingsAdmin from "./BlindRankingsAdmin";
 import TicTacToeAdmin from "./TicTacToeAdmin";
+import TenableAdmin from "./TenableAdmin";
 
 interface VotelistAdmin {
   id: string;
@@ -157,7 +158,7 @@ export default function AdminPanel({
 }: {
   initialTierlists: Tierlist[];
 }) {
-  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings" | "tictactoe">("tierlists");
+  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings" | "tictactoe" | "tenable">("tierlists");
   const adminDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
 
@@ -1399,6 +1400,14 @@ export default function AdminPanel({
           }`}
         >
           Tic Tac Toe
+        </button>
+        <button
+          onClick={() => setTab("tenable")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === "tenable" ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          Tenable
         </button>
         <div className="ml-auto">
           <button
@@ -3076,6 +3085,9 @@ export default function AdminPanel({
       )}
       {/* ── Tic Tac Toe tab ─────────────────────────────────────── */}
       {tab === "tictactoe" && <TicTacToeAdmin />}
+
+      {/* ── Tenable tab ──────────────────────────────────────────── */}
+      {tab === "tenable" && <TenableAdmin />}
 
       {/* Admin cover crop overlay (landscape 3:2) */}
       {adminCoverCrop && (

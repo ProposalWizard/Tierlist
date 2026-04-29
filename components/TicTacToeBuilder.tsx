@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 interface Answer {
   name: string;
   points: number;
-  aliases: string;
 }
 
 interface SquareState {
@@ -31,10 +30,8 @@ export default function TicTacToeBuilder() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Answer editing state for the currently open cell
   const [newName, setNewName] = useState("");
   const [newPoints, setNewPoints] = useState(3);
-  const [newAliases, setNewAliases] = useState("");
 
   function addAnswer() {
     if (!editingCell || !newName.trim()) return;
@@ -43,12 +40,10 @@ export default function TicTacToeBuilder() {
     newGrid[r][c].answers.push({
       name: newName.trim(),
       points: newPoints,
-      aliases: newAliases.trim(),
     });
     setGrid(newGrid);
     setNewName("");
     setNewPoints(3);
-    setNewAliases("");
   }
 
   function removeAnswer(r: number, c: number, idx: number) {
@@ -96,7 +91,6 @@ export default function TicTacToeBuilder() {
         answers: sq.answers.map((a) => ({
           name: a.name,
           points: a.points,
-          ...(a.aliases ? { aliases: a.aliases.split(",").map((s) => s.trim()).filter(Boolean) } : {}),
         })),
         maxScore: sq.answers.reduce((s, a) => s + a.points, 0),
       }))
@@ -263,7 +257,6 @@ export default function TicTacToeBuilder() {
                         setEditingCell({ r, c });
                         setNewName("");
                         setNewPoints(3);
-                        setNewAliases("");
                       }}
                       className={`aspect-square rounded-md p-2 text-left transition-all overflow-hidden ${
                         sq.answers.length > 0
@@ -301,14 +294,14 @@ export default function TicTacToeBuilder() {
             </div>
 
             {/* Add answer form */}
-            <div className="grid grid-cols-[1fr_70px] gap-2 mb-2 sm:grid-cols-[1fr_70px_1fr]">
+            <div className="flex gap-2 mb-2">
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") addAnswer(); }}
                 placeholder="Player name"
-                className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+                className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
               />
               <input
                 type="number"
@@ -317,15 +310,7 @@ export default function TicTacToeBuilder() {
                 min={1}
                 max={10}
                 placeholder="Pts"
-                className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white text-center focus:border-indigo-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                value={newAliases}
-                onChange={(e) => setNewAliases(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") addAnswer(); }}
-                placeholder="Aliases (comma-sep, optional)"
-                className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none col-span-2 sm:col-span-1"
+                className="w-[70px] rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white text-center focus:border-indigo-500 focus:outline-none"
               />
             </div>
             <button
@@ -347,9 +332,6 @@ export default function TicTacToeBuilder() {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-white">{a.name}</span>
                       <span className="font-display font-black text-indigo-400">{a.points} pts</span>
-                      {a.aliases && (
-                        <span className="text-[10px] text-gray-500">({a.aliases})</span>
-                      )}
                     </div>
                     <button
                       onClick={() => removeAnswer(ec.r, ec.c, i)}
