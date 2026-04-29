@@ -282,6 +282,27 @@ export interface BlindRankingImage {
   created_at: string;
 }
 
+/* ── Tenable ── */
+
+export interface TenableAnswer {
+  position: number;
+  name: string;
+  aliases?: string[];
+}
+
+export interface TenablePuzzle {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  answers: TenableAnswer[];
+  is_ordered: boolean;
+  daily_date: string | null;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+}
+
 /* ── Tic Tac Toe ── */
 
 export interface TicTacToeAnswer {

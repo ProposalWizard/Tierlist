@@ -26,10 +26,11 @@ interface GameMode {
 export default async function HomePage() {
   const service = createServiceClient();
 
-  const [tierlistRes, blindRes, tttRes] = await Promise.all([
+  const [tierlistRes, blindRes, tttRes, tenableRes] = await Promise.all([
     service.from("tierlists").select("id", { count: "exact", head: true }),
     service.from("blind_rankings").select("id", { count: "exact", head: true }).eq("is_active", true),
     service.from("tictactoe_puzzles").select("id", { count: "exact", head: true }).eq("is_active", true),
+    service.from("tenable_puzzles").select("id", { count: "exact", head: true }).eq("is_active", true),
   ]);
 
   const games: GameMode[] = [
@@ -66,6 +67,17 @@ export default async function HomePage() {
       icon: "❌⭕",
       stat: `${tttRes.count ?? 0} puzzles`,
     },
+    {
+      name: "Tenable",
+      description: "Guess all 10 answers before you lose your 3 lives. A new challenge every day!",
+      href: "/tenable",
+      color: "from-emerald-600/20 to-gray-900",
+      borderColor: "border-emerald-800/50",
+      hoverBorder: "hover:border-emerald-500",
+      badgeClass: "bg-emerald-900/50 text-emerald-300 border-emerald-700",
+      icon: "🧠",
+      stat: `${tenableRes.count ?? 0} challenges`,
+    },
   ];
 
   return (
@@ -82,7 +94,7 @@ export default async function HomePage() {
 
       {/* Game cards */}
       <main className="mx-auto max-w-4xl px-4 py-10">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {games.map((game) => (
             <Link
               key={game.href}
