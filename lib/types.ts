@@ -330,6 +330,18 @@ export interface TicTacToePuzzle {
   is_daily: boolean;
   daily_date: string | null;
   is_active: boolean;
+  info?: string | null;
+  display_order?: number;
   created_by: string;
   created_at: string;
+}
+
+export interface TicTacToeScore {
+  id: string;
+  user_id: string;
+  puzzle_id: string;
+  score: number;
+  max_score: number;
+  hints_used: number;
+  completed_at: string;
 }

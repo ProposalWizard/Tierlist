@@ -53,6 +53,8 @@ export async function POST(request: Request) {
       is_daily: body.is_daily ?? false,
       daily_date: body.daily_date ?? null,
       is_active: body.is_active ?? true,
+      info: body.info ?? null,
+      display_order: body.display_order ?? 0,
       created_by: user.id,
     })
     .select("*")

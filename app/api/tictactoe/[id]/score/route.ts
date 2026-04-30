@@ -1,0 +1,70 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ score: null });
+
+  const { id } = await params;
+  const service = createServiceClient();
+  const { data } = await service
+    .from("tictactoe_scores")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("puzzle_id", id)
+    .maybeSingle();
+
+  return NextResponse.json({ score: data ?? null });
+}
+
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: "Sign in to save scores" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const score = Number(body.score) || 0;
+  const maxScore = Number(body.max_score) || 0;
+  const hintsUsed = Number(body.hints_used) || 0;
+
+  const service = createServiceClient();
+
+  const { data: existing } = await service
+    .from("tictactoe_scores")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("puzzle_id", id)
+    .maybeSingle();
+
+  if (existing) {
+    return NextResponse.json({ saved: false, reason: "already_completed" });
+  }
+
+  const { error } = await service
+    .from("tictactoe_scores")
+    .insert({
+      user_id: user.id,
+      puzzle_id: id,
+      score,
+      max_score: maxScore,
+      hints_used: hintsUsed,
+    });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ saved: true });
+}

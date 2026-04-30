@@ -43,6 +43,8 @@ export default function TicTacToeAdmin() {
   const [isDaily, setIsDaily] = useState(false);
   const [dailyDate, setDailyDate] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [info, setInfo] = useState("");
+  const [displayOrder, setDisplayOrder] = useState(0);
   const [editingCell, setEditingCell] = useState<{ r: number; c: number } | null>(null);
 
   const loadPuzzles = useCallback(async () => {
@@ -65,6 +67,8 @@ export default function TicTacToeAdmin() {
     setIsDaily(false);
     setDailyDate("");
     setIsActive(true);
+    setInfo("");
+    setDisplayOrder(0);
     setEditingCell(null);
   };
 
@@ -87,6 +91,8 @@ export default function TicTacToeAdmin() {
       setIsDaily(p.is_daily);
       setDailyDate(p.daily_date ?? "");
       setIsActive(p.is_active);
+      setInfo(p.info ?? "");
+      setDisplayOrder(p.display_order ?? 0);
       setEditing(id);
       setEditingCell(null);
     } catch (e) {
@@ -130,6 +136,8 @@ export default function TicTacToeAdmin() {
       is_daily: isDaily,
       daily_date: isDaily && dailyDate ? dailyDate : null,
       is_active: isActive,
+      info: info.trim() || null,
+      display_order: displayOrder,
     };
 
     try {
@@ -246,12 +254,28 @@ export default function TicTacToeAdmin() {
         </div>
 
         {isDaily && (
-          <div>
-            <label className="text-xs font-bold text-gray-400">Daily Date</label>
-            <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-400">Daily Date</label>
+              <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-400">Display Order</label>
+              <input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value))}
+                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+            </div>
           </div>
         )}
+
+        {/* Extra information (puzzle-level) */}
+        <div>
+          <label className="text-xs font-bold text-gray-400">Extra Information (text or image URL — shown via button during play)</label>
+          <textarea value={info} onChange={(e) => setInfo(e.target.value)}
+            placeholder="e.g. league table image URL, list of stats, context clues..."
+            rows={3}
+            className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 resize-y" />
+        </div>
 
         {/* Row + Column labels */}
         <div>
