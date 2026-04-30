@@ -51,6 +51,8 @@ export async function PATCH(request: Request, { params }: Props) {
   if (body.is_daily !== undefined) updates.is_daily = body.is_daily;
   if (body.daily_date !== undefined) updates.daily_date = body.daily_date;
   if (body.is_active !== undefined) updates.is_active = body.is_active;
+  if (body.info !== undefined) updates.info = body.info;
+  if (body.display_order !== undefined) updates.display_order = body.display_order;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

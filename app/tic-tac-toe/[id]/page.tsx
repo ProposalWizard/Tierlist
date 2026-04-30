@@ -47,6 +47,8 @@ export default async function TicTacToePlayPage({ params }: Props) {
     is_daily: data.is_daily,
     daily_date: data.daily_date,
     is_active: data.is_active,
+    info: data.info ?? null,
+    display_order: data.display_order ?? 0,
     created_by: data.created_by,
     created_at: data.created_at,
   };

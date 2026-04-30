@@ -80,8 +80,14 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!anim && !gameOver) {
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }, [anim, gameOver]);
+
   const getLowestUnrevealed = useCallback(() => {
-    for (let i = 10; i >= 1; i--) {
+    for (let i = 1; i <= 10; i++) {
       if (!revealed.has(i)) return i;
     }
     return 1;

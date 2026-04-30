@@ -48,12 +48,20 @@ export default async function TicTacToeListPage() {
         <p className="mx-auto mt-3 max-w-md text-sm text-gray-400">
           Name players that match two conditions per square. Score points for rare answers!
         </p>
-        <Link
-          href="/tic-tac-toe/create"
-          className="mt-5 inline-block rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
-        >
-          + Create Your Own
-        </Link>
+        <div className="mt-5 flex items-center justify-center gap-3">
+          <Link
+            href="/tic-tac-toe/daily"
+            className="rounded-xl border border-amber-700 bg-amber-900/30 px-6 py-2.5 text-sm font-bold text-amber-300 transition-colors hover:bg-amber-900/50"
+          >
+            Daily Challenges
+          </Link>
+          <Link
+            href="/tic-tac-toe/create"
+            className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
+          >
+            + Create Your Own
+          </Link>
+        </div>
       </div>
 
       <main className="mx-auto max-w-4xl px-4 py-8">

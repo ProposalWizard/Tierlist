@@ -255,6 +255,11 @@ export default function TicTacToeGame({ puzzle }: Props) {
     text: string;
     type: "correct" | "wrong" | "duplicate";
   } | null>(null);
+  const [hintSquare, setHintSquare] = useState<{ r: number; c: number } | null>(null);
+  const [revealedHints, setRevealedHints] = useState<Set<string>>(new Set());
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [showInfo, setShowInfo] = useState(false);
+  const [scoreSaved, setScoreSaved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null!);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -370,7 +375,34 @@ export default function TicTacToeGame({ puzzle }: Props) {
     }
   }, [selectedSquare, inputValue, puzzle, gameState, mode]);
 
+  const saveScore = useCallback(async (finalScore: number, maxScore: number) => {
+    if (scoreSaved) return;
+    setScoreSaved(true);
+    try {
+      await fetch(`/api/tictactoe/${puzzle.id}/score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          score: finalScore,
+          max_score: maxScore,
+          hints_used: hintsUsed,
+        }),
+      });
+    } catch { /* silent — score saving is best-effort */ }
+  }, [puzzle.id, hintsUsed, scoreSaved]);
+
   const handleFinish = () => {
+    const is2P = mode === "2player";
+    let finalScore: number;
+    if (is2P) {
+      const [s1, s2] = gameState.playerScores;
+      finalScore = s1 + s2;
+      const bonusCount = (gameState.playerBonusAwarded[0] ? 1 : 0) + (gameState.playerBonusAwarded[1] ? 1 : 0);
+      if (bonusCount > 1) finalScore -= puzzle.three_in_a_row_bonus;
+    } else {
+      finalScore = soloCurrentScore;
+    }
+    saveScore(finalScore, totalMaxScore);
     setGameState((s) => ({ ...s, finished: true }));
     setSelectedSquare(null);
   };
@@ -395,10 +427,14 @@ export default function TicTacToeGame({ puzzle }: Props) {
         mode={mode}
         soloCurrentScore={soloCurrentScore}
         totalMaxScore={totalMaxScore}
+        hintsUsed={hintsUsed}
         onPlayAgain={() => {
           setMode(null);
           setGameState(makeInitialState());
           setSelectedSquare(null);
+          setHintsUsed(0);
+          setRevealedHints(new Set());
+          setScoreSaved(false);
         }}
       />
     );
@@ -423,6 +459,14 @@ export default function TicTacToeGame({ puzzle }: Props) {
           >
             {puzzle.difficulty}
           </span>
+          {puzzle.info && (
+            <button
+              onClick={() => setShowInfo(true)}
+              className="rounded-full border border-cyan-700 bg-cyan-900/30 px-3 py-1 text-xs font-bold text-cyan-300 hover:bg-cyan-900/50 transition-colors"
+            >
+              Extra Info
+            </button>
+          )}
           {mode === "solo" ? (
             <span className="font-display text-lg font-bold text-white">
               {soloCurrentScore} <span className="text-gray-500">/</span> {totalMaxScore}
@@ -436,6 +480,11 @@ export default function TicTacToeGame({ puzzle }: Props) {
         {mode === "solo" && gameState.bonusAwarded && (
           <p className="mt-2 text-xs font-bold text-green-400 uppercase tracking-wider">
             +{puzzle.three_in_a_row_bonus} Three-in-a-row bonus!
+          </p>
+        )}
+        {hintsUsed > 0 && (
+          <p className="mt-1 text-xs font-bold text-amber-400">
+            Hints used: {hintsUsed}
           </p>
         )}
         {mode === "2player" && !feedback && (
@@ -504,19 +553,21 @@ export default function TicTacToeGame({ puzzle }: Props) {
               const filledBorder = isP2Square ? "border-yellow-600/50" : "border-green-700/50";
               const filledTextDark = isP2Square ? "text-yellow-900" : "text-green-900";
 
+              const hasHint = !!square.hint;
+
               return (
-                <button
-                  key={c}
-                  onClick={() => {
-                    setSelectedSquare({ r, c });
-                    setInputValue("");
-                    setFeedback(null);
-                  }}
-                  className={`group relative aspect-square flex flex-col rounded-md p-2 transition-all md:p-3 text-left overflow-hidden ${
-                    isFilled ? filledBg : "bg-white hover:bg-gray-100"
-                  } ${isSelected ? "ring-4 ring-indigo-500" : ""}`}
-                >
-                  {isCustom && (
+                <div key={c} className="relative aspect-square">
+                  <button
+                    onClick={() => {
+                      setSelectedSquare({ r, c });
+                      setInputValue("");
+                      setFeedback(null);
+                    }}
+                    className={`group relative w-full h-full flex flex-col rounded-md p-2 transition-all md:p-3 text-left overflow-hidden ${
+                      isFilled ? filledBg : "bg-white hover:bg-gray-100"
+                    } ${isSelected ? "ring-4 ring-indigo-500" : ""}`}
+                  >
+                    {isCustom && (
                     <div
                       className={`w-full text-center pb-1 mb-1 border-b ${
                         isFilled ? filledBorder : "border-gray-300"
@@ -571,7 +622,30 @@ export default function TicTacToeGame({ puzzle }: Props) {
                       {isFilled ? `${sqScore} / ${sqMax}` : `${availableMax} pts`}
                     </p>
                   </div>
-                </button>
+                  </button>
+
+                  {hasHint && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const hKey = squareKey(r, c);
+                        if (!revealedHints.has(hKey)) {
+                          setRevealedHints((prev) => new Set(prev).add(hKey));
+                          setHintsUsed((prev) => prev + 1);
+                        }
+                        setHintSquare({ r, c });
+                      }}
+                      className={`absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-md transition-colors md:h-6 md:w-6 md:text-xs ${
+                        revealedHints.has(squareKey(r, c))
+                          ? "bg-amber-500 hover:bg-amber-400"
+                          : "bg-indigo-600 hover:bg-indigo-500"
+                      }`}
+                      aria-label="Use hint"
+                    >
+                      ?
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -595,13 +669,76 @@ export default function TicTacToeGame({ puzzle }: Props) {
         />
       )}
 
+      {/* Puzzle-level info popup */}
+      {showInfo && puzzle.info && (() => {
+        const infoText = puzzle.info;
+        const isImage = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i.test(infoText);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowInfo(false)}>
+            <div className="absolute inset-0 bg-black/70" />
+            <div
+              className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold text-gray-900">Extra Information</p>
+                <button onClick={() => setShowInfo(false)} className="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
+              </div>
+              {isImage ? (
+                <img src={infoText} alt="Extra information" className="w-full rounded-lg" />
+              ) : (
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{infoText}</p>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Hint popup */}
+      {hintSquare && (() => {
+        const sq = puzzle.grid[hintSquare.r][hintSquare.c];
+        const hintText = sq.hint ?? "";
+        const isImage = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i.test(hintText);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setHintSquare(null)}>
+            <div className="absolute inset-0 bg-black/70" />
+            <div
+              className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold text-gray-900">
+                  Hint: {sq.conditions[0]} + {sq.conditions[1]}
+                </p>
+                <button
+                  onClick={() => setHintSquare(null)}
+                  className="text-gray-400 hover:text-gray-900 text-2xl leading-none"
+                >
+                  &times;
+                </button>
+              </div>
+              {isImage ? (
+                <img
+                  src={hintText}
+                  alt="Hint"
+                  className="w-full rounded-lg"
+                />
+              ) : (
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{hintText}</p>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Finish button */}
       <div className="mt-6 flex justify-center gap-3">
         <button
           onClick={handleFinish}
           className="rounded-xl bg-indigo-600 px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-indigo-500 md:text-base"
         >
-          {allSquaresFilled ? "View Results" : "Finish Early"}
+          {allSquaresFilled ? "View Results" : "Give Up and See Results"}
         </button>
       </div>
     </div>
@@ -745,6 +882,7 @@ function ResultsScreen({
   mode,
   soloCurrentScore,
   totalMaxScore,
+  hintsUsed,
   onPlayAgain,
 }: {
   puzzle: TicTacToePuzzle;
@@ -752,6 +890,7 @@ function ResultsScreen({
   mode: GameMode;
   soloCurrentScore: number;
   totalMaxScore: number;
+  hintsUsed: number;
   onPlayAgain: () => void;
 }) {
   const is2P = mode === "2player";
@@ -864,7 +1003,7 @@ function ResultsScreen({
           </>
         )}
 
-        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+        <div className={`mt-4 grid gap-4 text-sm ${hintsUsed > 0 ? "grid-cols-3" : "grid-cols-2"}`}>
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">{squaresCompleted}/9</p>
             <p className="text-gray-500">Squares</p>
@@ -881,6 +1020,12 @@ function ResultsScreen({
             </p>
             <p className="text-gray-500">3-in-a-row</p>
           </div>
+          {hintsUsed > 0 && (
+            <div className="rounded-lg bg-gray-800 p-3">
+              <p className="text-2xl font-black text-amber-400">{hintsUsed}</p>
+              <p className="text-gray-500">Hints</p>
+            </div>
+          )}
         </div>
 
         <div className="mt-4 rounded-lg bg-gray-800 p-3">
