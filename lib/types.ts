@@ -317,6 +317,7 @@ export interface TicTacToeSquareData {
   answers: TicTacToeAnswer[];
   maxScore: number;
   hint?: string;
+  info?: string;
 }
 
 export interface TicTacToePuzzle {
@@ -332,6 +333,10 @@ export interface TicTacToePuzzle {
   is_active: boolean;
   info?: string | null;
   display_order?: number;
+  label_extras?: {
+    rows: Array<{ info?: string; hint?: string } | null>;
+    cols: Array<{ info?: string; hint?: string } | null>;
+  } | null;
   created_by: string;
   created_at: string;
 }

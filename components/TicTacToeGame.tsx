@@ -255,10 +255,9 @@ export default function TicTacToeGame({ puzzle }: Props) {
     text: string;
     type: "correct" | "wrong" | "duplicate";
   } | null>(null);
-  const [hintSquare, setHintSquare] = useState<{ r: number; c: number } | null>(null);
+  const [popup, setPopup] = useState<{ text: string; title: string; isHint: boolean } | null>(null);
   const [revealedHints, setRevealedHints] = useState<Set<string>>(new Set());
   const [hintsUsed, setHintsUsed] = useState(0);
-  const [showInfo, setShowInfo] = useState(false);
   const [scoreSaved, setScoreSaved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null!);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -434,6 +433,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
           setSelectedSquare(null);
           setHintsUsed(0);
           setRevealedHints(new Set());
+          setPopup(null);
           setScoreSaved(false);
         }}
       />
@@ -459,14 +459,6 @@ export default function TicTacToeGame({ puzzle }: Props) {
           >
             {puzzle.difficulty}
           </span>
-          {puzzle.info && (
-            <button
-              onClick={() => setShowInfo(true)}
-              className="rounded-full border border-cyan-700 bg-cyan-900/30 px-3 py-1 text-xs font-bold text-cyan-300 hover:bg-cyan-900/50 transition-colors"
-            >
-              Extra Info
-            </button>
-          )}
           {mode === "solo" ? (
             <span className="font-display text-lg font-bold text-white">
               {soloCurrentScore} <span className="text-gray-500">/</span> {totalMaxScore}
@@ -510,14 +502,47 @@ export default function TicTacToeGame({ puzzle }: Props) {
           ) : (
             <div className="aspect-square" />
           )}
-          {puzzle.col_labels.map((label, c) => (
-            <div
-              key={c}
-              className="aspect-square flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide"
-            >
-              {label}
-            </div>
-          ))}
+          {puzzle.col_labels.map((label, c) => {
+            const colExtra = puzzle.label_extras?.cols?.[c];
+            const colHasInfo = !!colExtra?.info;
+            const colHasHint = !!colExtra?.hint;
+            return (
+              <div key={c} className="relative aspect-square">
+                <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+                  {label}
+                </div>
+                {colHasInfo && (
+                  <button
+                    onClick={() => setPopup({ text: colExtra!.info!, title: `Info: ${label}`, isHint: false })}
+                    className="absolute top-1 left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white shadow-md hover:bg-cyan-500 transition-colors md:h-6 md:w-6 md:text-xs"
+                    aria-label="Show info"
+                  >
+                    i
+                  </button>
+                )}
+                {colHasHint && (
+                  <button
+                    onClick={() => {
+                      const hKey = `col-${c}`;
+                      if (!revealedHints.has(hKey)) {
+                        setRevealedHints((prev) => new Set(prev).add(hKey));
+                        setHintsUsed((prev) => prev + 1);
+                      }
+                      setPopup({ text: colExtra!.hint!, title: `Hint: ${label}`, isHint: true });
+                    }}
+                    className={`absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-md transition-colors md:h-6 md:w-6 md:text-xs ${
+                      revealedHints.has(`col-${c}`)
+                        ? "bg-amber-500 hover:bg-amber-400"
+                        : "bg-indigo-600 hover:bg-indigo-500"
+                    }`}
+                    aria-label="Use hint"
+                  >
+                    ?
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Rows */}
@@ -526,9 +551,47 @@ export default function TicTacToeGame({ puzzle }: Props) {
             key={r}
             className="grid grid-cols-4 gap-1.5 mt-1.5 md:gap-2 md:mt-2"
           >
-            <div className="aspect-square flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
-              {puzzle.row_labels[r]}
-            </div>
+            {(() => {
+              const rowExtra = puzzle.label_extras?.rows?.[r];
+              const rowHasInfo = !!rowExtra?.info;
+              const rowHasHint = !!rowExtra?.hint;
+              return (
+                <div className="relative aspect-square">
+                  <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+                    {puzzle.row_labels[r]}
+                  </div>
+                  {rowHasInfo && (
+                    <button
+                      onClick={() => setPopup({ text: rowExtra!.info!, title: `Info: ${puzzle.row_labels[r]}`, isHint: false })}
+                      className="absolute top-1 left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white shadow-md hover:bg-cyan-500 transition-colors md:h-6 md:w-6 md:text-xs"
+                      aria-label="Show info"
+                    >
+                      i
+                    </button>
+                  )}
+                  {rowHasHint && (
+                    <button
+                      onClick={() => {
+                        const hKey = `row-${r}`;
+                        if (!revealedHints.has(hKey)) {
+                          setRevealedHints((prev) => new Set(prev).add(hKey));
+                          setHintsUsed((prev) => prev + 1);
+                        }
+                        setPopup({ text: rowExtra!.hint!, title: `Hint: ${puzzle.row_labels[r]}`, isHint: true });
+                      }}
+                      className={`absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-md transition-colors md:h-6 md:w-6 md:text-xs ${
+                        revealedHints.has(`row-${r}`)
+                          ? "bg-amber-500 hover:bg-amber-400"
+                          : "bg-indigo-600 hover:bg-indigo-500"
+                      }`}
+                      aria-label="Use hint"
+                    >
+                      ?
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             {row.map((square, c) => {
               const key = squareKey(r, c);
@@ -624,19 +687,33 @@ export default function TicTacToeGame({ puzzle }: Props) {
                   </div>
                   </button>
 
+                  {/* Info button */}
+                  {square.info && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPopup({ text: square.info!, title: `Info: ${square.conditions[0]} + ${square.conditions[1]}`, isHint: false });
+                      }}
+                      className="absolute top-1 left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white shadow-md hover:bg-cyan-500 transition-colors md:h-6 md:w-6 md:text-xs"
+                      aria-label="Show info"
+                    >
+                      i
+                    </button>
+                  )}
+                  {/* Hint button */}
                   {hasHint && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        const hKey = squareKey(r, c);
+                        const hKey = `sq-${squareKey(r, c)}`;
                         if (!revealedHints.has(hKey)) {
                           setRevealedHints((prev) => new Set(prev).add(hKey));
                           setHintsUsed((prev) => prev + 1);
                         }
-                        setHintSquare({ r, c });
+                        setPopup({ text: square.hint!, title: `Hint: ${square.conditions[0]} + ${square.conditions[1]}`, isHint: true });
                       }}
                       className={`absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-md transition-colors md:h-6 md:w-6 md:text-xs ${
-                        revealedHints.has(squareKey(r, c))
+                        revealedHints.has(`sq-${squareKey(r, c)}`)
                           ? "bg-amber-500 hover:bg-amber-400"
                           : "bg-indigo-600 hover:bg-indigo-500"
                       }`}
@@ -669,63 +746,21 @@ export default function TicTacToeGame({ puzzle }: Props) {
         />
       )}
 
-      {/* Puzzle-level info popup */}
-      {showInfo && puzzle.info && (() => {
-        const infoText = puzzle.info;
-        const isImage = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i.test(infoText);
+      {/* Info/Hint popup */}
+      {popup && (() => {
+        const isImage = /^https?:\/\/.+/i.test(popup.text) && /\.(jpg|jpeg|png|gif|webp|svg|avif)/i.test(popup.text);
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowInfo(false)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setPopup(null)}>
             <div className="absolute inset-0 bg-black/70" />
-            <div
-              className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-gray-900">Extra Information</p>
-                <button onClick={() => setShowInfo(false)} className="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
+                <p className="text-sm font-bold text-gray-900">{popup.title}</p>
+                <button onClick={() => setPopup(null)} className="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
               </div>
               {isImage ? (
-                <img src={infoText} alt="Extra information" className="w-full rounded-lg" />
+                <img src={popup.text} alt={popup.isHint ? "Hint" : "Info"} className="w-full rounded-lg" />
               ) : (
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{infoText}</p>
-              )}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Hint popup */}
-      {hintSquare && (() => {
-        const sq = puzzle.grid[hintSquare.r][hintSquare.c];
-        const hintText = sq.hint ?? "";
-        const isImage = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i.test(hintText);
-
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setHintSquare(null)}>
-            <div className="absolute inset-0 bg-black/70" />
-            <div
-              className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-gray-900">
-                  Hint: {sq.conditions[0]} + {sq.conditions[1]}
-                </p>
-                <button
-                  onClick={() => setHintSquare(null)}
-                  className="text-gray-400 hover:text-gray-900 text-2xl leading-none"
-                >
-                  &times;
-                </button>
-              </div>
-              {isImage ? (
-                <img
-                  src={hintText}
-                  alt="Hint"
-                  className="w-full rounded-lg"
-                />
-              ) : (
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{hintText}</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{popup.text}</p>
               )}
             </div>
           </div>
