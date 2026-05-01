@@ -311,6 +311,13 @@ export interface TicTacToeAnswer {
   aliases?: string[];
 }
 
+export type CustomSquareType =
+  | "and"
+  | "replace_left"
+  | "replace_above"
+  | "or_replace_left"
+  | "or_replace_above";
+
 export interface TicTacToeSquareData {
   type: "normal" | "custom";
   conditions: [string, string];
@@ -318,7 +325,37 @@ export interface TicTacToeSquareData {
   maxScore: number;
   hint?: string;
   info?: string;
+  customType?: CustomSquareType;
+  customText?: string;
 }
+
+export function computeCustomConditions(
+  customType: CustomSquareType,
+  customText: string,
+  rowLabel: string,
+  colLabel: string,
+): [string, string] {
+  switch (customType) {
+    case "and":
+      return [`${rowLabel} + ${colLabel}`, customText];
+    case "replace_left":
+      return [customText, colLabel];
+    case "replace_above":
+      return [rowLabel, customText];
+    case "or_replace_left":
+      return [`${rowLabel} or ${customText}`, colLabel];
+    case "or_replace_above":
+      return [rowLabel, `${colLabel} or ${customText}`];
+  }
+}
+
+export const CUSTOM_SQUARE_LABELS: Record<CustomSquareType, string> = {
+  and: "And",
+  replace_left: "Replace Left Requirement",
+  replace_above: "Replace Above Requirement",
+  or_replace_left: "Or Replace Left Requirement",
+  or_replace_above: "Or Replace Above Requirement",
+};
 
 export interface TicTacToePuzzle {
   id: string;

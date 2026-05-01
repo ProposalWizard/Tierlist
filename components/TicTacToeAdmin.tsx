@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/lib/types";
+import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer, CustomSquareType } from "@/lib/types";
+import { computeCustomConditions, CUSTOM_SQUARE_LABELS } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
 import CropOverlay from "./CropOverlay";
@@ -206,12 +207,12 @@ export default function TicTacToeAdmin() {
   const handleSave = async () => {
     if (!title.trim()) { setError("Title is required"); return; }
 
-    // Validate grid: every square needs conditions and at least one answer
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         const sq = grid[r][c];
-        if (!sq.conditions[0] && !sq.conditions[1] && sq.type === "normal") {
-          // Auto-fill from row/col labels
+        if (sq.type === "custom" && sq.customType && sq.customText) {
+          sq.conditions = computeCustomConditions(sq.customType, sq.customText, rowLabels[r], colLabels[c]);
+        } else if (sq.type === "normal") {
           sq.conditions = [rowLabels[r], colLabels[c]];
         }
         if (!sq.conditions[0] || !sq.conditions[1]) {
@@ -455,14 +456,20 @@ export default function TicTacToeAdmin() {
           <div className="mt-2 grid grid-cols-3 gap-2">
             {grid.map((row, r) =>
               row.map((sq, c) => {
-                const conds = sq.type === "custom"
-                  ? sq.conditions
-                  : [rowLabels[r] || `Row ${r + 1}`, colLabels[c] || `Col ${c + 1}`];
+                const rl = rowLabels[r] || `Row ${r + 1}`;
+                const cl = colLabels[c] || `Col ${c + 1}`;
+                const conds = sq.type === "custom" && sq.customType && sq.customText
+                  ? computeCustomConditions(sq.customType, sq.customText, rl, cl)
+                  : [rl, cl];
                 return (
                   <button
                     key={`${r}-${c}`}
                     onClick={() => {
-                      if (sq.type === "normal") {
+                      if (sq.type === "custom" && sq.customType && sq.customText) {
+                        updateSquare(r, c, {
+                          conditions: computeCustomConditions(sq.customType, sq.customText, rowLabels[r], colLabels[c]),
+                        });
+                      } else if (sq.type === "normal") {
                         updateSquare(r, c, { conditions: [rowLabels[r], colLabels[c]] });
                       }
                       setEditingCell({ r, c });
@@ -479,7 +486,9 @@ export default function TicTacToeAdmin() {
                       {sq.answers.length} answer{sq.answers.length !== 1 ? "s" : ""}
                     </p>
                     {sq.type === "custom" && (
-                      <span className="text-[8px] font-bold text-amber-500">★ Custom</span>
+                      <span className="text-[8px] font-bold text-amber-500">
+                        ★ {CUSTOM_SQUARE_LABELS[sq.customType ?? "and"]}
+                      </span>
                     )}
                   </button>
                 );
@@ -589,8 +598,8 @@ function CellEditor({
   onCropRequest: (url: string, onComplete: (url: string) => void) => void;
 }) {
   const [isCustom, setIsCustom] = useState(square.type === "custom");
-  const [cond1, setCond1] = useState(square.conditions[0] || rowLabel);
-  const [cond2, setCond2] = useState(square.conditions[1] || colLabel);
+  const [customType, setCustomType] = useState<CustomSquareType>(square.customType ?? "and");
+  const [customText, setCustomText] = useState(square.customText ?? "");
   const [answers, setAnswers] = useState<TicTacToeAnswer[]>([...square.answers]);
   const [hint, setHint] = useState(square.hint ?? "");
   const [sqInfo, setSqInfo] = useState(square.info ?? "");
@@ -613,13 +622,18 @@ function CellEditor({
   };
 
   const save = () => {
+    const conditions: [string, string] = isCustom
+      ? computeCustomConditions(customType, customText, rowLabel, colLabel)
+      : [rowLabel, colLabel];
     onSave({
       type: isCustom ? "custom" : "normal",
-      conditions: [isCustom ? cond1 : rowLabel, isCustom ? cond2 : colLabel] as [string, string],
+      conditions,
       answers,
       maxScore: calcMaxScore(answers),
       hint: hint.trim() || undefined,
       info: sqInfo.trim() || undefined,
+      customType: isCustom ? customType : undefined,
+      customText: isCustom ? customText : undefined,
     });
   };
 
@@ -633,25 +647,43 @@ function CellEditor({
       <label className="flex items-center gap-2 text-sm text-gray-300">
         <input type="checkbox" checked={isCustom} onChange={(e) => {
           setIsCustom(e.target.checked);
-          if (!e.target.checked) { setCond1(rowLabel); setCond2(colLabel); }
         }} />
-        Custom conditions (override row/col)
+        Custom requirement
       </label>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-bold text-gray-400">Condition 1</label>
-          <input value={isCustom ? cond1 : rowLabel} readOnly={!isCustom}
-            onChange={(e) => setCond1(e.target.value)}
-            className={`mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white ${!isCustom ? "opacity-50" : ""}`} />
+      {isCustom && (
+        <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/50 p-3">
+          <div>
+            <label className="text-xs font-bold text-gray-400">Type</label>
+            <select value={customType} onChange={(e) => setCustomType(e.target.value as CustomSquareType)}
+              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white">
+              {(Object.keys(CUSTOM_SQUARE_LABELS) as CustomSquareType[]).map((t) => (
+                <option key={t} value={t}>{CUSTOM_SQUARE_LABELS[t]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-400">Custom requirement</label>
+            <input value={customText} onChange={(e) => setCustomText(e.target.value)}
+              placeholder="e.g. Scored in Bayern 8-2 Barcelona"
+              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+          </div>
+          <div className="rounded-lg bg-gray-900 px-3 py-2">
+            <p className="text-[10px] font-bold text-gray-500 mb-1">Preview:</p>
+            <p className="text-xs text-indigo-300">
+              {computeCustomConditions(customType, customText || "...", rowLabel, colLabel).join(" + ")}
+            </p>
+          </div>
         </div>
-        <div>
-          <label className="text-xs font-bold text-gray-400">Condition 2</label>
-          <input value={isCustom ? cond2 : colLabel} readOnly={!isCustom}
-            onChange={(e) => setCond2(e.target.value)}
-            className={`mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white ${!isCustom ? "opacity-50" : ""}`} />
+      )}
+
+      {!isCustom && (
+        <div className="rounded-lg bg-gray-800/30 px-3 py-2">
+          <p className="text-xs text-gray-500">
+            <span className="text-gray-400">{rowLabel}</span> + <span className="text-indigo-400">{colLabel}</span>
+          </p>
         </div>
-      </div>
+      )}
 
       {/* Info & Hint */}
       <div className="grid grid-cols-2 gap-3">
