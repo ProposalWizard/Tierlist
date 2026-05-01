@@ -348,5 +348,6 @@ export interface TicTacToeScore {
   score: number;
   max_score: number;
   hints_used: number;
+  time_seconds: number | null;
   completed_at: string;
 }

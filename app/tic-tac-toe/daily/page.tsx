@@ -23,6 +23,7 @@ interface ScoreRow {
   score: number;
   max_score: number;
   hints_used: number;
+  time_seconds: number | null;
 }
 
 export default async function DailyTicTacToePage() {
@@ -45,7 +46,7 @@ export default async function DailyTicTacToePage() {
     const puzzleIds = items.map((p) => p.id);
     const { data: scoreData } = await service
       .from("tictactoe_scores")
-      .select("puzzle_id, score, max_score, hints_used")
+      .select("puzzle_id, score, max_score, hints_used, time_seconds")
       .eq("user_id", user.id)
       .in("puzzle_id", puzzleIds);
     scores = (scoreData ?? []) as ScoreRow[];
@@ -141,6 +142,13 @@ export default async function DailyTicTacToePage() {
                         </p>
                         <div className="flex items-center justify-end gap-2">
                           <span className="text-xs font-bold text-gray-500">{pct}%</span>
+                          {userScore.time_seconds != null && (
+                            <span className="text-xs font-mono font-bold text-indigo-400">
+                              {userScore.time_seconds >= 3600
+                                ? `${Math.floor(userScore.time_seconds / 3600)}:${String(Math.floor((userScore.time_seconds % 3600) / 60)).padStart(2, "0")}:${String(userScore.time_seconds % 60).padStart(2, "0")}`
+                                : `${Math.floor(userScore.time_seconds / 60)}:${String(userScore.time_seconds % 60).padStart(2, "0")}`}
+                            </span>
+                          )}
                           {userScore.hints_used > 0 && (
                             <span className="text-xs font-bold text-amber-400">
                               {userScore.hints_used} hint{userScore.hints_used !== 1 ? "s" : ""}

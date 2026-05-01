@@ -107,6 +107,15 @@ function checkThreeInARow(guesses: Map<string, TicTacToeAnswer[]>): boolean {
   return checkThreeInARowForSquares(squares);
 }
 
+function formatTime(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 /* ── Mode Selection ── */
 function ModeSelection({
   puzzle,
@@ -197,13 +206,54 @@ function ModeSelection({
   );
 }
 
+/* ── Solo Scoreboard (top-left corner) ── */
+function SoloScoreboard({
+  score,
+  maxScore,
+  bonusAwarded,
+  bonusValue,
+  hintsUsed,
+  elapsed,
+}: {
+  score: number;
+  maxScore: number;
+  bonusAwarded: boolean;
+  bonusValue: number;
+  hintsUsed: number;
+  elapsed: number;
+}) {
+  return (
+    <div className="aspect-square rounded-md bg-gray-900 border border-gray-700 flex flex-col items-center justify-center p-1.5 md:p-2.5 overflow-hidden gap-0.5">
+      <p className="font-display text-xl font-black text-white leading-tight md:text-3xl">
+        {score}
+      </p>
+      <p className="text-[9px] font-bold text-gray-400 leading-tight md:text-xs">
+        / {maxScore}
+      </p>
+      {bonusAwarded && (
+        <p className="text-[7px] font-bold text-green-400 leading-tight md:text-[9px]">+{bonusValue} TTT!</p>
+      )}
+      <p className="text-[10px] font-mono font-bold text-indigo-400 leading-tight md:text-xs">
+        {formatTime(elapsed)}
+      </p>
+      {hintsUsed > 0 && (
+        <p className="text-[7px] font-bold text-amber-400 leading-tight md:text-[9px]">
+          {hintsUsed} hint{hintsUsed !== 1 ? "s" : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ── 2P Scoreboard (top-left corner) ── */
 function TwoPlayerScoreboard({
   gameState,
   bonusValue,
+  playerTimers,
 }: {
   gameState: GameState;
   bonusValue: number;
+  playerTimers: [number, number];
 }) {
   const [p1, p2] = gameState.playerNames;
   const [s1, s2] = gameState.playerScores;
@@ -211,13 +261,14 @@ function TwoPlayerScoreboard({
 
   return (
     <div className="aspect-square rounded-md bg-gray-900 border border-gray-700 flex flex-col justify-between p-2 md:p-3 overflow-hidden">
-      <div className={`rounded-md px-2 py-1.5 transition-all md:px-3 md:py-2 ${cp === 0 ? "bg-green-600" : "bg-gray-800"}`}>
+      <div className={`rounded-md px-2 py-1 transition-all md:px-3 md:py-1.5 ${cp === 0 ? "bg-green-600" : "bg-gray-800"}`}>
         <p className="text-[9px] font-bold uppercase tracking-wide text-gray-200 truncate md:text-xs">
           {p1}
         </p>
-        <p className={`font-display text-lg font-black leading-tight md:text-2xl ${cp === 0 ? "text-white" : "text-gray-400"}`}>
+        <p className={`font-display text-base font-black leading-tight md:text-xl ${cp === 0 ? "text-white" : "text-gray-400"}`}>
           {s1}
         </p>
+        <p className="text-[8px] font-mono font-bold text-gray-300/70 md:text-[10px]">{formatTime(playerTimers[0])}</p>
         {gameState.playerBonusAwarded[0] && (
           <p className="text-[8px] font-bold text-yellow-300 md:text-[10px]">+{bonusValue} TTT!</p>
         )}
@@ -227,13 +278,14 @@ function TwoPlayerScoreboard({
         {cp === 0 ? p1 : p2}&apos;s turn
       </p>
 
-      <div className={`rounded-md px-2 py-1.5 transition-all md:px-3 md:py-2 ${cp === 1 ? "bg-yellow-500" : "bg-gray-800"}`}>
+      <div className={`rounded-md px-2 py-1 transition-all md:px-3 md:py-1.5 ${cp === 1 ? "bg-yellow-500" : "bg-gray-800"}`}>
         <p className={`text-[9px] font-bold uppercase tracking-wide truncate md:text-xs ${cp === 1 ? "text-yellow-900" : "text-gray-200"}`}>
           {p2}
         </p>
-        <p className={`font-display text-lg font-black leading-tight md:text-2xl ${cp === 1 ? "text-yellow-900" : "text-gray-400"}`}>
+        <p className={`font-display text-base font-black leading-tight md:text-xl ${cp === 1 ? "text-yellow-900" : "text-gray-400"}`}>
           {s2}
         </p>
+        <p className={`text-[8px] font-mono font-bold md:text-[10px] ${cp === 1 ? "text-yellow-800/70" : "text-gray-300/70"}`}>{formatTime(playerTimers[1])}</p>
         {gameState.playerBonusAwarded[1] && (
           <p className="text-[8px] font-bold text-yellow-900 md:text-[10px]">+{bonusValue} TTT!</p>
         )}
@@ -262,9 +314,42 @@ export default function TicTacToeGame({ puzzle }: Props) {
   const inputRef = useRef<HTMLInputElement>(null!);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>();
 
+  // Timer state
+  const [soloTimer, setSoloTimer] = useState(0);
+  const [playerTimers, setPlayerTimers] = useState<[number, number]>([0, 0]);
+  const lastTickRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  // Ref to always read the latest gameState (avoids stale closures in handleGuess)
+  const gameStateRef = useRef(gameState);
+  gameStateRef.current = gameState;
+
   useEffect(() => {
     if (selectedSquare && inputRef.current) inputRef.current.focus();
   }, [selectedSquare]);
+
+  // Timer effect
+  useEffect(() => {
+    if (!mode || gameState.finished) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+    const cp = gameState.currentPlayer;
+    lastTickRef.current = Date.now();
+    timerRef.current = setInterval(() => {
+      const now = Date.now();
+      const delta = now - lastTickRef.current;
+      lastTickRef.current = now;
+      if (mode === "solo") {
+        setSoloTimer(prev => prev + delta);
+      } else {
+        setPlayerTimers(prev =>
+          cp === 0 ? [prev[0] + delta, prev[1]] : [prev[0], prev[1] + delta]
+        );
+      }
+    }, 100);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [mode, gameState.finished, gameState.currentPlayer]);
 
   const totalMaxScore = (() => {
     let total = 0;
@@ -295,7 +380,8 @@ export default function TicTacToeGame({ puzzle }: Props) {
     const { r, c } = selectedSquare;
     const key = squareKey(r, c);
     const square = puzzle.grid[r][c];
-    const currentGuesses = gameState.guesses.get(key) ?? [];
+    const gs = gameStateRef.current;
+    const currentGuesses = gs.guesses.get(key) ?? [];
     const is2P = mode === "2player";
 
     const match = square.answers.find((a) => fuzzyMatch(inputValue, a));
@@ -305,7 +391,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
       if (is2P) {
         setFeedback({ text: "Incorrect!", type: "wrong" });
         setSelectedSquare(null);
-        setGameState((s) => ({ ...s, currentPlayer: s.currentPlayer === 0 ? 1 : 0 }));
+        setGameState(s => ({ ...s, currentPlayer: s.currentPlayer === 0 ? 1 : 0 }));
         if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
         feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
       } else {
@@ -317,49 +403,49 @@ export default function TicTacToeGame({ puzzle }: Props) {
       setFeedback({ text: "Already found in this square!", type: "duplicate" });
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
       feedbackTimer.current = setTimeout(() => setFeedback(null), 1500);
-    } else if (gameState.usedPlayers.has(match.name)) {
+    } else if (gs.usedPlayers.has(match.name)) {
       setFeedback({ text: `${match.name} already used in another square!`, type: "duplicate" });
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
       feedbackTimer.current = setTimeout(() => setFeedback(null), 1500);
     } else {
-      const newGuesses = new Map(gameState.guesses);
+      const newGuesses = new Map(gs.guesses);
       newGuesses.set(key, [...currentGuesses, match]);
-      const newUsed = new Set(gameState.usedPlayers);
+      const newUsed = new Set(gs.usedPlayers);
       newUsed.add(match.name);
 
       if (!is2P) {
-        let bonusAwarded = gameState.bonusAwarded;
+        let bonusAwarded = gs.bonusAwarded;
         if (!bonusAwarded && checkThreeInARow(newGuesses)) bonusAwarded = true;
-        setGameState({ ...gameState, guesses: newGuesses, usedPlayers: newUsed, bonusAwarded });
+        setGameState(prev => ({ ...prev, guesses: newGuesses, usedPlayers: newUsed, bonusAwarded }));
         setFeedback({ text: `${match.name} — ${match.points} pts!`, type: "correct" });
         setSelectedSquare(null);
         if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
         feedbackTimer.current = setTimeout(() => setFeedback(null), 2000);
       } else {
-        const cp = gameState.currentPlayer;
-        const newScores: [number, number] = [gameState.playerScores[0], gameState.playerScores[1]];
+        const cp = gs.currentPlayer;
+        const newScores: [number, number] = [gs.playerScores[0], gs.playerScores[1]];
         newScores[cp] += match.points;
 
         const newPlayerSquares: [Set<string>, Set<string>] = [
-          new Set(gameState.playerSquares[0]),
-          new Set(gameState.playerSquares[1]),
+          new Set(gs.playerSquares[0]),
+          new Set(gs.playerSquares[1]),
         ];
         newPlayerSquares[cp].add(key);
 
         const newPlayerBonusAwarded: [boolean, boolean] = [
-          gameState.playerBonusAwarded[0],
-          gameState.playerBonusAwarded[1],
+          gs.playerBonusAwarded[0],
+          gs.playerBonusAwarded[1],
         ];
         if (!newPlayerBonusAwarded[cp] && checkThreeInARowForSquares(newPlayerSquares[cp])) {
           newPlayerBonusAwarded[cp] = true;
           newScores[cp] += puzzle.three_in_a_row_bonus;
         }
 
-        const newOwner = new Map(gameState.squareOwner);
+        const newOwner = new Map(gs.squareOwner);
         if (!newOwner.has(key)) newOwner.set(key, cp);
 
-        setGameState({
-          ...gameState,
+        setGameState(prev => ({
+          ...prev,
           guesses: newGuesses,
           usedPlayers: newUsed,
           playerScores: newScores,
@@ -367,14 +453,14 @@ export default function TicTacToeGame({ puzzle }: Props) {
           playerBonusAwarded: newPlayerBonusAwarded,
           squareOwner: newOwner,
           currentPlayer: cp === 0 ? 1 : 0,
-        });
+        }));
         setSelectedSquare(null);
         if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
       }
     }
-  }, [selectedSquare, inputValue, puzzle, gameState, mode]);
+  }, [selectedSquare, inputValue, puzzle, mode]);
 
-  const saveScore = useCallback(async (finalScore: number, maxScore: number) => {
+  const saveScore = useCallback(async (finalScore: number, maxScore: number, timeSeconds: number) => {
     if (scoreSaved) return;
     setScoreSaved(true);
     try {
@@ -385,6 +471,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
           score: finalScore,
           max_score: maxScore,
           hints_used: hintsUsed,
+          time_seconds: timeSeconds,
         }),
       });
     } catch { /* silent — score saving is best-effort */ }
@@ -393,15 +480,18 @@ export default function TicTacToeGame({ puzzle }: Props) {
   const handleFinish = () => {
     const is2P = mode === "2player";
     let finalScore: number;
+    let timeSeconds: number;
     if (is2P) {
       const [s1, s2] = gameState.playerScores;
       finalScore = s1 + s2;
       const bonusCount = (gameState.playerBonusAwarded[0] ? 1 : 0) + (gameState.playerBonusAwarded[1] ? 1 : 0);
       if (bonusCount > 1) finalScore -= puzzle.three_in_a_row_bonus;
+      timeSeconds = Math.round((playerTimers[0] + playerTimers[1]) / 1000);
     } else {
       finalScore = soloCurrentScore;
+      timeSeconds = Math.round(soloTimer / 1000);
     }
-    saveScore(finalScore, totalMaxScore);
+    saveScore(finalScore, totalMaxScore, timeSeconds);
     setGameState((s) => ({ ...s, finished: true }));
     setSelectedSquare(null);
   };
@@ -413,12 +503,15 @@ export default function TicTacToeGame({ puzzle }: Props) {
         onStart={(m, names) => {
           setMode(m);
           setGameState(makeInitialState(m === "2player" ? names : ["Player 1", "Player 2"]));
+          setSoloTimer(0);
+          setPlayerTimers([0, 0]);
         }}
       />
     );
   }
 
   if (gameState.finished) {
+    const finalTime = mode === "solo" ? soloTimer : playerTimers[0] + playerTimers[1];
     return (
       <ResultsScreen
         puzzle={puzzle}
@@ -427,6 +520,8 @@ export default function TicTacToeGame({ puzzle }: Props) {
         soloCurrentScore={soloCurrentScore}
         totalMaxScore={totalMaxScore}
         hintsUsed={hintsUsed}
+        elapsed={finalTime}
+        playerTimers={mode === "2player" ? playerTimers : undefined}
         onPlayAgain={() => {
           setMode(null);
           setGameState(makeInitialState());
@@ -435,6 +530,8 @@ export default function TicTacToeGame({ puzzle }: Props) {
           setRevealedHints(new Set());
           setPopup(null);
           setScoreSaved(false);
+          setSoloTimer(0);
+          setPlayerTimers([0, 0]);
         }}
       />
     );
@@ -459,26 +556,12 @@ export default function TicTacToeGame({ puzzle }: Props) {
           >
             {puzzle.difficulty}
           </span>
-          {mode === "solo" ? (
-            <span className="font-display text-lg font-bold text-white">
-              {soloCurrentScore} <span className="text-gray-500">/</span> {totalMaxScore}
-            </span>
-          ) : (
+          {mode === "2player" && (
             <span className="text-xs font-bold uppercase tracking-wider text-purple-400">
               2 Player
             </span>
           )}
         </div>
-        {mode === "solo" && gameState.bonusAwarded && (
-          <p className="mt-2 text-xs font-bold text-green-400 uppercase tracking-wider">
-            +{puzzle.three_in_a_row_bonus} Three-in-a-row bonus!
-          </p>
-        )}
-        {hintsUsed > 0 && (
-          <p className="mt-1 text-xs font-bold text-amber-400">
-            Hints used: {hintsUsed}
-          </p>
-        )}
         {mode === "2player" && !feedback && (
           <p className="mt-2 text-sm font-bold text-indigo-300">
             {gameState.playerNames[gameState.currentPlayer]}&apos;s turn — pick a square
@@ -498,9 +581,16 @@ export default function TicTacToeGame({ puzzle }: Props) {
         {/* Column labels row */}
         <div className="grid grid-cols-4 gap-1.5 md:gap-2">
           {mode === "2player" ? (
-            <TwoPlayerScoreboard gameState={gameState} bonusValue={puzzle.three_in_a_row_bonus} />
+            <TwoPlayerScoreboard gameState={gameState} bonusValue={puzzle.three_in_a_row_bonus} playerTimers={playerTimers} />
           ) : (
-            <div className="aspect-square" />
+            <SoloScoreboard
+              score={soloCurrentScore}
+              maxScore={totalMaxScore}
+              bonusAwarded={gameState.bonusAwarded}
+              bonusValue={puzzle.three_in_a_row_bonus}
+              hintsUsed={hintsUsed}
+              elapsed={soloTimer}
+            />
           )}
           {puzzle.col_labels.map((label, c) => {
             const colExtra = puzzle.label_extras?.cols?.[c];
@@ -752,15 +842,15 @@ export default function TicTacToeGame({ puzzle }: Props) {
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setPopup(null)}>
             <div className="absolute inset-0 bg-black/70" />
-            <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-gray-900">{popup.title}</p>
+            <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-lg font-black text-gray-900">{popup.title}</p>
                 <button onClick={() => setPopup(null)} className="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
               </div>
               {isImage ? (
                 <img src={popup.text} alt={popup.isHint ? "Hint" : "Info"} className="w-full rounded-lg" />
               ) : (
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{popup.text}</p>
+                <p className="text-base font-semibold text-gray-800 whitespace-pre-wrap leading-relaxed">{popup.text}</p>
               )}
             </div>
           </div>
@@ -918,6 +1008,8 @@ function ResultsScreen({
   soloCurrentScore,
   totalMaxScore,
   hintsUsed,
+  elapsed,
+  playerTimers,
   onPlayAgain,
 }: {
   puzzle: TicTacToePuzzle;
@@ -926,6 +1018,8 @@ function ResultsScreen({
   soloCurrentScore: number;
   totalMaxScore: number;
   hintsUsed: number;
+  elapsed: number;
+  playerTimers?: [number, number];
   onPlayAgain: () => void;
 }) {
   const is2P = mode === "2player";
@@ -975,7 +1069,7 @@ function ResultsScreen({
 
   const shareText = is2P
     ? `Football Tic Tac Toe — ${puzzle.title}\n${n1}: ${s1}pts${gameState.playerBonusAwarded[0] ? " (TTT!)" : ""}\n${n2}: ${s2}pts${gameState.playerBonusAwarded[1] ? " (TTT!)" : ""}\n${emojiGrid}`
-    : `Football Tic Tac Toe — ${puzzle.title}\n${soloCurrentScore}/${totalMaxScore} (${pct}%)\n${emojiGrid}`;
+    : `Football Tic Tac Toe — ${puzzle.title}\n${soloCurrentScore}/${totalMaxScore} (${pct}%) in ${formatTime(elapsed)}\n${emojiGrid}`;
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8 text-center">
@@ -1003,6 +1097,9 @@ function ResultsScreen({
               >
                 {s1}
               </p>
+              {playerTimers && (
+                <p className="text-xs font-mono font-bold text-gray-500 mt-1">{formatTime(playerTimers[0])}</p>
+              )}
               {gameState.playerBonusAwarded[0] && (
                 <p className="text-xs font-bold text-yellow-400 mt-1">
                   +{puzzle.three_in_a_row_bonus} TTT Bonus!
@@ -1022,6 +1119,9 @@ function ResultsScreen({
               >
                 {s2}
               </p>
+              {playerTimers && (
+                <p className="text-xs font-mono font-bold text-gray-500 mt-1">{formatTime(playerTimers[1])}</p>
+              )}
               {gameState.playerBonusAwarded[1] && (
                 <p className="text-xs font-bold text-yellow-400 mt-1">
                   +{puzzle.three_in_a_row_bonus} TTT Bonus!
@@ -1038,7 +1138,7 @@ function ResultsScreen({
           </>
         )}
 
-        <div className={`mt-4 grid gap-4 text-sm ${hintsUsed > 0 ? "grid-cols-3" : "grid-cols-2"}`}>
+        <div className="mt-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">{squaresCompleted}/9</p>
             <p className="text-gray-500">Squares</p>
@@ -1054,6 +1154,10 @@ function ResultsScreen({
                 : "No"}
             </p>
             <p className="text-gray-500">3-in-a-row</p>
+          </div>
+          <div className="rounded-lg bg-gray-800 p-3">
+            <p className="text-2xl font-black text-indigo-400 font-mono">{formatTime(elapsed)}</p>
+            <p className="text-gray-500">Time</p>
           </div>
           {hintsUsed > 0 && (
             <div className="rounded-lg bg-gray-800 p-3">

@@ -321,7 +321,7 @@ export default function TicTacToeAdmin() {
           <CropOverlay
             imageUrl={cropTarget.imageUrl}
             imageName="Image"
-            aspectRatio={16 / 9}
+            freeform
             onCancel={() => setCropTarget(null)}
             onCrop={async (blob) => {
               try {
@@ -503,7 +503,7 @@ export default function TicTacToeAdmin() {
           <CropOverlay
             imageUrl={cropTarget.imageUrl}
             imageName="Image"
-            aspectRatio={16 / 9}
+            freeform
             onCancel={() => setCropTarget(null)}
             onCrop={async (blob) => {
               try {

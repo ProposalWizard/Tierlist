@@ -38,6 +38,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const score = Number(body.score) || 0;
   const maxScore = Number(body.max_score) || 0;
   const hintsUsed = Number(body.hints_used) || 0;
+  const timeSeconds = body.time_seconds != null ? Number(body.time_seconds) : null;
 
   const service = createServiceClient();
 
@@ -52,15 +53,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ saved: false, reason: "already_completed" });
   }
 
+  const insertData: Record<string, unknown> = {
+    user_id: user.id,
+    puzzle_id: id,
+    score,
+    max_score: maxScore,
+    hints_used: hintsUsed,
+  };
+  if (timeSeconds != null) insertData.time_seconds = timeSeconds;
+
   const { error } = await service
     .from("tictactoe_scores")
-    .insert({
-      user_id: user.id,
-      puzzle_id: id,
-      score,
-      max_score: maxScore,
-      hints_used: hintsUsed,
-    });
+    .insert(insertData);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
