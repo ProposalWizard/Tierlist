@@ -19,34 +19,37 @@ function levenshtein(a: string, b: string): number {
 function fuzzyMatch(input: string, answer: TenableAnswer): boolean {
   const inp = input.toLowerCase().trim();
   if (!inp) return false;
-  const target = answer.name.toLowerCase();
 
-  if (target === inp) return true;
-  if (target.length >= 4 && inp.length >= 4) {
-    const maxDist = target.length <= 5 ? 1 : 2;
-    if (levenshtein(inp, target) <= maxDist) return true;
-  }
-
-  const parts = target.split(" ");
-  for (let i = 1; i < parts.length; i++) {
-    const suffix = parts.slice(i).join(" ");
-    if (suffix.length >= 3) {
-      if (suffix === inp) return true;
-      if (suffix.length >= 4 && inp.length >= 4) {
-        const maxDist = suffix.length <= 5 ? 1 : 2;
-        if (levenshtein(inp, suffix) <= maxDist) return true;
+  const tryMatch = (candidate: string): boolean => {
+    const target = candidate.toLowerCase();
+    if (target === inp) return true;
+    if (target.length >= 4 && inp.length >= 4) {
+      const maxDist = target.length <= 5 ? 1 : 2;
+      if (levenshtein(inp, target) <= maxDist) return true;
+    }
+    const parts = target.split(" ");
+    for (let i = 1; i < parts.length; i++) {
+      const suffix = parts.slice(i).join(" ");
+      if (suffix.length >= 3) {
+        if (suffix === inp) return true;
+        if (suffix.length >= 4 && inp.length >= 4) {
+          const maxDist = suffix.length <= 5 ? 1 : 2;
+          if (levenshtein(inp, suffix) <= maxDist) return true;
+        }
       }
     }
-  }
+    return false;
+  };
+
+  if (tryMatch(answer.name)) return true;
+
+  // If the name contains " - ", also try matching just the part before it
+  const sepIdx = answer.name.indexOf(" - ");
+  if (sepIdx > 0 && tryMatch(answer.name.slice(0, sepIdx))) return true;
 
   if (answer.aliases) {
     for (const alias of answer.aliases) {
-      const a = alias.toLowerCase();
-      if (a === inp) return true;
-      if (a.length >= 4 && inp.length >= 4) {
-        const maxDist = a.length <= 5 ? 1 : 2;
-        if (levenshtein(inp, a) <= maxDist) return true;
-      }
+      if (tryMatch(alias)) return true;
     }
   }
 
