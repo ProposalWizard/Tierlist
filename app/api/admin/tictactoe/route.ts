@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       is_active: body.is_active ?? true,
       info: body.info ?? null,
       display_order: body.display_order ?? 0,
+      label_extras: body.label_extras ?? null,
       created_by: user.id,
     })
     .select("*")

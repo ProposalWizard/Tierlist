@@ -2,6 +2,85 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
+import { ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
+import CropOverlay from "./CropOverlay";
+
+async function uploadImage(file: File): Promise<string> {
+  const { compressImage } = await import("@/lib/imageUtils");
+  const compressed = await compressImage(file);
+  const supabase = createClient();
+  const path = `ttt-extras/${crypto.randomUUID()}.webp`;
+  const { data, error } = await supabase.storage
+    .from("tierlist-images")
+    .upload(path, compressed, { upsert: false });
+  if (error) throw error;
+  const { data: urlData } = supabase.storage
+    .from("tierlist-images")
+    .getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
+
+function isImageUrl(s: string): boolean {
+  return /^https?:\/\/.+/i.test(s) && /\.(jpg|jpeg|png|gif|webp|svg|avif)/i.test(s);
+}
+
+function ImageField({
+  label,
+  value,
+  onChange,
+  onCropRequest,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onCropRequest: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      onChange(url);
+    } catch { /* ignore */ }
+    setUploading(false);
+    e.target.value = "";
+  };
+
+  return (
+    <div>
+      <label className="text-xs font-bold text-gray-400">{label}</label>
+      <div className="mt-1 flex gap-1.5">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Text or image URL"
+          className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+        />
+        <label className={`cursor-pointer rounded-lg bg-gray-700 px-2.5 py-2 text-xs font-bold text-gray-300 hover:bg-gray-600 ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+          {uploading ? "..." : "Upload"}
+          <input type="file" accept={ACCEPT_IMAGE_TYPES} onChange={handleFile} className="hidden" />
+        </label>
+        {isImageUrl(value) && (
+          <button
+            type="button"
+            onClick={() => onCropRequest(value)}
+            className="rounded-lg bg-gray-700 px-2.5 py-2 text-xs font-bold text-gray-300 hover:bg-gray-600"
+          >
+            Crop
+          </button>
+        )}
+      </div>
+      {isImageUrl(value) && (
+        <img src={value} alt="" className="mt-2 max-h-24 rounded-lg border border-gray-700" />
+      )}
+    </div>
+  );
+}
 
 interface PuzzleListItem {
   id: string;
@@ -45,7 +124,15 @@ export default function TicTacToeAdmin() {
   const [isActive, setIsActive] = useState(true);
   const [info, setInfo] = useState("");
   const [displayOrder, setDisplayOrder] = useState(0);
+  const [labelExtras, setLabelExtras] = useState<{
+    rows: Array<{ info: string; hint: string }>;
+    cols: Array<{ info: string; hint: string }>;
+  }>({
+    rows: [{ info: "", hint: "" }, { info: "", hint: "" }, { info: "", hint: "" }],
+    cols: [{ info: "", hint: "" }, { info: "", hint: "" }, { info: "", hint: "" }],
+  });
   const [editingCell, setEditingCell] = useState<{ r: number; c: number } | null>(null);
+  const [cropTarget, setCropTarget] = useState<{ imageUrl: string; onComplete: (url: string) => void } | null>(null);
 
   const loadPuzzles = useCallback(async () => {
     try {
@@ -69,7 +156,12 @@ export default function TicTacToeAdmin() {
     setIsActive(true);
     setInfo("");
     setDisplayOrder(0);
+    setLabelExtras({
+      rows: [{ info: "", hint: "" }, { info: "", hint: "" }, { info: "", hint: "" }],
+      cols: [{ info: "", hint: "" }, { info: "", hint: "" }, { info: "", hint: "" }],
+    });
     setEditingCell(null);
+    setCropTarget(null);
   };
 
   const openNew = () => {
@@ -93,6 +185,17 @@ export default function TicTacToeAdmin() {
       setIsActive(p.is_active);
       setInfo(p.info ?? "");
       setDisplayOrder(p.display_order ?? 0);
+      const le = p.label_extras as { rows?: Array<{ info?: string; hint?: string } | null>; cols?: Array<{ info?: string; hint?: string } | null> } | null;
+      setLabelExtras({
+        rows: Array.from({ length: 3 }, (_, i) => ({
+          info: le?.rows?.[i]?.info ?? "",
+          hint: le?.rows?.[i]?.hint ?? "",
+        })),
+        cols: Array.from({ length: 3 }, (_, i) => ({
+          info: le?.cols?.[i]?.info ?? "",
+          hint: le?.cols?.[i]?.hint ?? "",
+        })),
+      });
       setEditing(id);
       setEditingCell(null);
     } catch (e) {
@@ -138,6 +241,14 @@ export default function TicTacToeAdmin() {
       is_active: isActive,
       info: info.trim() || null,
       display_order: displayOrder,
+      label_extras: {
+        rows: labelExtras.rows.map((r) =>
+          r.info || r.hint ? { info: r.info || undefined, hint: r.hint || undefined } : null
+        ),
+        cols: labelExtras.cols.map((c) =>
+          c.info || c.hint ? { info: c.info || undefined, hint: c.hint || undefined } : null
+        ),
+      },
     };
 
     try {
@@ -194,16 +305,35 @@ export default function TicTacToeAdmin() {
     const { r, c } = editingCell;
     const sq = grid[r][c];
     return (
-      <CellEditor
-        square={sq}
-        rowLabel={rowLabels[r]}
-        colLabel={colLabels[c]}
-        onSave={(updated) => {
-          updateSquare(r, c, updated);
-          setEditingCell(null);
-        }}
-        onCancel={() => setEditingCell(null)}
-      />
+      <>
+        <CellEditor
+          square={sq}
+          rowLabel={rowLabels[r]}
+          colLabel={colLabels[c]}
+          onSave={(updated) => {
+            updateSquare(r, c, updated);
+            setEditingCell(null);
+          }}
+          onCancel={() => setEditingCell(null)}
+          onCropRequest={(url, onComplete) => setCropTarget({ imageUrl: url, onComplete })}
+        />
+        {cropTarget && (
+          <CropOverlay
+            imageUrl={cropTarget.imageUrl}
+            imageName="Image"
+            aspectRatio={16 / 9}
+            onCancel={() => setCropTarget(null)}
+            onCrop={async (blob) => {
+              try {
+                const file = new File([blob], "cropped.webp", { type: "image/webp" });
+                const url = await uploadImage(file);
+                cropTarget.onComplete(url);
+              } catch { /* ignore */ }
+              setCropTarget(null);
+            }}
+          />
+        )}
+      </>
     );
   }
 
@@ -268,43 +398,52 @@ export default function TicTacToeAdmin() {
           </div>
         )}
 
-        {/* Extra information (puzzle-level) */}
-        <div>
-          <label className="text-xs font-bold text-gray-400">Extra Information (text or image URL — shown via button during play)</label>
-          <textarea value={info} onChange={(e) => setInfo(e.target.value)}
-            placeholder="e.g. league table image URL, list of stats, context clues..."
-            rows={3}
-            className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 resize-y" />
-        </div>
-
-        {/* Row + Column labels */}
+        {/* Row Labels + Extras */}
         <div>
           <label className="text-xs font-bold text-gray-400">Row Labels (left side)</label>
-          <div className="mt-1 flex gap-2">
-            {rowLabels.map((l, i) => (
-              <input key={i} value={l} onChange={(e) => {
+          {rowLabels.map((l, i) => (
+            <div key={i} className="mt-2 rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
+              <input value={l} onChange={(e) => {
                 const n = [...rowLabels] as [string, string, string];
                 n[i] = e.target.value;
                 setRowLabels(n);
               }}
               placeholder={`Row ${i + 1}`}
-              className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
-            ))}
-          </div>
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+              <div className="grid grid-cols-2 gap-2">
+                <ImageField label="Info" value={labelExtras.rows[i].info} onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => {
+                  setLabelExtras((prev) => { const next = { ...prev, rows: [...prev.rows] }; next.rows[i] = { ...next.rows[i], info: cropped }; return next; });
+                } })} onChange={(v) => setLabelExtras((prev) => { const next = { ...prev, rows: [...prev.rows] }; next.rows[i] = { ...next.rows[i], info: v }; return next; })} />
+                <ImageField label="Hint" value={labelExtras.rows[i].hint} onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => {
+                  setLabelExtras((prev) => { const next = { ...prev, rows: [...prev.rows] }; next.rows[i] = { ...next.rows[i], hint: cropped }; return next; });
+                } })} onChange={(v) => setLabelExtras((prev) => { const next = { ...prev, rows: [...prev.rows] }; next.rows[i] = { ...next.rows[i], hint: v }; return next; })} />
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* Column Labels + Extras */}
         <div>
           <label className="text-xs font-bold text-gray-400">Column Labels (top)</label>
-          <div className="mt-1 flex gap-2">
-            {colLabels.map((l, i) => (
-              <input key={i} value={l} onChange={(e) => {
+          {colLabels.map((l, i) => (
+            <div key={i} className="mt-2 rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
+              <input value={l} onChange={(e) => {
                 const n = [...colLabels] as [string, string, string];
                 n[i] = e.target.value;
                 setColLabels(n);
               }}
               placeholder={`Col ${i + 1}`}
-              className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
-            ))}
-          </div>
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+              <div className="grid grid-cols-2 gap-2">
+                <ImageField label="Info" value={labelExtras.cols[i].info} onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => {
+                  setLabelExtras((prev) => { const next = { ...prev, cols: [...prev.cols] }; next.cols[i] = { ...next.cols[i], info: cropped }; return next; });
+                } })} onChange={(v) => setLabelExtras((prev) => { const next = { ...prev, cols: [...prev.cols] }; next.cols[i] = { ...next.cols[i], info: v }; return next; })} />
+                <ImageField label="Hint" value={labelExtras.cols[i].hint} onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => {
+                  setLabelExtras((prev) => { const next = { ...prev, cols: [...prev.cols] }; next.cols[i] = { ...next.cols[i], hint: cropped }; return next; });
+                } })} onChange={(v) => setLabelExtras((prev) => { const next = { ...prev, cols: [...prev.cols] }; next.cols[i] = { ...next.cols[i], hint: v }; return next; })} />
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Grid editor */}
@@ -359,6 +498,23 @@ export default function TicTacToeAdmin() {
             Cancel
           </button>
         </div>
+
+        {cropTarget && (
+          <CropOverlay
+            imageUrl={cropTarget.imageUrl}
+            imageName="Image"
+            aspectRatio={16 / 9}
+            onCancel={() => setCropTarget(null)}
+            onCrop={async (blob) => {
+              try {
+                const file = new File([blob], "cropped.webp", { type: "image/webp" });
+                const url = await uploadImage(file);
+                cropTarget.onComplete(url);
+              } catch { /* ignore */ }
+              setCropTarget(null);
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -423,18 +579,21 @@ function CellEditor({
   colLabel,
   onSave,
   onCancel,
+  onCropRequest,
 }: {
   square: TicTacToeSquareData;
   rowLabel: string;
   colLabel: string;
   onSave: (sq: Partial<TicTacToeSquareData>) => void;
   onCancel: () => void;
+  onCropRequest: (url: string, onComplete: (url: string) => void) => void;
 }) {
   const [isCustom, setIsCustom] = useState(square.type === "custom");
   const [cond1, setCond1] = useState(square.conditions[0] || rowLabel);
   const [cond2, setCond2] = useState(square.conditions[1] || colLabel);
   const [answers, setAnswers] = useState<TicTacToeAnswer[]>([...square.answers]);
   const [hint, setHint] = useState(square.hint ?? "");
+  const [sqInfo, setSqInfo] = useState(square.info ?? "");
   const [newName, setNewName] = useState("");
   const [newPoints, setNewPoints] = useState(3);
   const [newAliases, setNewAliases] = useState("");
@@ -460,6 +619,7 @@ function CellEditor({
       answers,
       maxScore: calcMaxScore(answers),
       hint: hint.trim() || undefined,
+      info: sqInfo.trim() || undefined,
     });
   };
 
@@ -493,15 +653,12 @@ function CellEditor({
         </div>
       </div>
 
-      {/* Hint */}
-      <div>
-        <label className="text-xs font-bold text-gray-400">Hint (optional — text, stat, or image URL)</label>
-        <input value={hint} onChange={(e) => setHint(e.target.value)}
-          placeholder="e.g. a stat, clue, or https://... image URL"
-          className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
-        {hint.trim() && (
-          <p className="mt-1 text-[10px] text-emerald-400">Hint set — players will see a help button on this square</p>
-        )}
+      {/* Info & Hint */}
+      <div className="grid grid-cols-2 gap-3">
+        <ImageField label="Info (context, no penalty)" value={sqInfo} onChange={setSqInfo}
+          onCropRequest={(url) => onCropRequest(url, (cropped) => setSqInfo(cropped))} />
+        <ImageField label="Hint (guided help, tracked)" value={hint} onChange={setHint}
+          onCropRequest={(url) => onCropRequest(url, (cropped) => setHint(cropped))} />
       </div>
 
       {/* Answers */}
