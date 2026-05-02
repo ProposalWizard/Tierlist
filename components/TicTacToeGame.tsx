@@ -786,7 +786,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                         e.stopPropagation();
                         setPopup({ text: square.info!, title: `Info: ${square.conditions[0]} + ${square.conditions[1]}`, isHint: false });
                       }}
-                      className="absolute top-1 left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white shadow-md hover:bg-cyan-500 transition-colors md:h-6 md:w-6 md:text-xs"
+                      className="absolute bottom-1 left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white shadow-md hover:bg-cyan-500 transition-colors md:h-6 md:w-6 md:text-xs"
                       aria-label="Show info"
                     >
                       i
@@ -804,7 +804,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                         }
                         setPopup({ text: square.hint!, title: `Hint: ${square.conditions[0]} + ${square.conditions[1]}`, isHint: true });
                       }}
-                      className={`absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-md transition-colors md:h-6 md:w-6 md:text-xs ${
+                      className={`absolute bottom-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-md transition-colors md:h-6 md:w-6 md:text-xs ${
                         revealedHints.has(`sq-${squareKey(r, c)}`)
                           ? "bg-amber-500 hover:bg-amber-400"
                           : "bg-indigo-600 hover:bg-indigo-500"
