@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/lib/types";
+import { CUSTOM_SQUARE_LABELS } from "@/lib/types";
 
 type GameMode = "solo" | "2player";
 
@@ -730,7 +731,9 @@ export default function TicTacToeGame({ puzzle }: Props) {
                           isFilled ? filledTextDark : "text-gray-700"
                         }`}
                       >
-                        {square.conditions[0]} + {square.conditions[1]}
+                        {square.customType
+                          ? `${CUSTOM_SQUARE_LABELS[square.customType]} - ${square.customText}`
+                          : `${square.conditions[0]} + ${square.conditions[1]}`}
                       </p>
                     </div>
                   )}
@@ -916,10 +919,19 @@ function SquareModal({
 
         <div className="mb-4 flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-base font-bold text-gray-900 md:text-lg">{square.conditions[0]}</p>
-            <p className="text-sm font-semibold text-gray-600 md:text-base">
-              + {square.conditions[1]}
-            </p>
+            {square.customType ? (
+              <>
+                <p className="text-sm font-bold text-indigo-600 md:text-base">{CUSTOM_SQUARE_LABELS[square.customType]}</p>
+                <p className="text-base font-bold text-gray-900 md:text-lg">{square.customText}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-bold text-gray-900 md:text-lg">{square.conditions[0]}</p>
+                <p className="text-sm font-semibold text-gray-600 md:text-base">
+                  + {square.conditions[1]}
+                </p>
+              </>
+            )}
           </div>
           <button
             onClick={onClose}
