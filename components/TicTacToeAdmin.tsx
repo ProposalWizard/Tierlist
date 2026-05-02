@@ -22,6 +22,15 @@ async function uploadImage(file: File): Promise<string> {
   return urlData.publicUrl;
 }
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, b64] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] ?? "image/png";
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
 function isImageUrl(s: string): boolean {
   return /^https?:\/\/.+/i.test(s) && /\.(jpg|jpeg|png|gif|webp|svg|avif)/i.test(s);
 }
@@ -324,8 +333,9 @@ export default function TicTacToeAdmin() {
             imageName="Image"
             freeform
             onCancel={() => setCropTarget(null)}
-            onCrop={async (blob) => {
+            onCrop={async (dataUrl) => {
               try {
+                const blob = dataUrlToBlob(dataUrl);
                 const file = new File([blob], "cropped.webp", { type: "image/webp" });
                 const url = await uploadImage(file);
                 cropTarget.onComplete(url);
@@ -514,8 +524,9 @@ export default function TicTacToeAdmin() {
             imageName="Image"
             freeform
             onCancel={() => setCropTarget(null)}
-            onCrop={async (blob) => {
+            onCrop={async (dataUrl) => {
               try {
+                const blob = dataUrlToBlob(dataUrl);
                 const file = new File([blob], "cropped.webp", { type: "image/webp" });
                 const url = await uploadImage(file);
                 cropTarget.onComplete(url);

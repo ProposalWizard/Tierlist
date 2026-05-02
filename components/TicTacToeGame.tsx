@@ -687,7 +687,6 @@ export default function TicTacToeGame({ puzzle }: Props) {
               const key = squareKey(r, c);
               const found = gameState.guesses.get(key) ?? [];
               const sqScore = getScore(found);
-              const sqMax = getMaxScore(square);
               const isSelected = selectedSquare?.r === r && selectedSquare?.c === c;
               const isCustom = square.type === "custom";
               const isFilled = found.length > 0;
@@ -772,7 +771,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                         isFilled ? filledTextDark : "text-gray-400"
                       }`}
                     >
-                      {isFilled ? `${sqScore} / ${sqMax}` : `${availableMax} pts`}
+                      {isFilled ? `${sqScore} / ${sqScore + availableMax}` : `${availableMax} pts`}
                     </p>
                   </div>
                   </button>
@@ -897,7 +896,6 @@ function SquareModal({
   usedPlayers: Set<string>;
 }) {
   const sqScore = getScore(found);
-  const sqMax = getMaxScore(square);
   const availableAnswers = square.answers.filter((a) => !usedPlayers.has(a.name));
   const availableCount = availableAnswers.length;
   const availableMax = availableAnswers.reduce((s, a) => s + a.points, 0);
@@ -934,7 +932,7 @@ function SquareModal({
         <div className="mb-4 flex items-center justify-between rounded-lg bg-gray-100 px-3 py-2 text-sm">
           <span className="text-gray-600">
             Score: <span className="font-display font-black text-gray-900">{sqScore}</span>{" "}
-            <span className="text-gray-400">/</span> {sqMax}
+            <span className="text-gray-400">/</span> {sqScore + availableMax}
           </span>
           <span className="text-gray-600">
             Available:{" "}
