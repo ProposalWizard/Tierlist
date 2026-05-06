@@ -38,6 +38,18 @@ function fuzzyMatch(input: string, answer: TenableAnswer): boolean {
         }
       }
     }
+    const hyphenParts = target.split(/[\s-]+/);
+    if (hyphenParts.length > parts.length) {
+      for (const hp of hyphenParts) {
+        if (hp.length >= 3) {
+          if (hp === inp) return true;
+          if (hp.length >= 4 && inp.length >= 4) {
+            const maxDist = hp.length <= 5 ? 1 : 2;
+            if (levenshtein(inp, hp) <= maxDist) return true;
+          }
+        }
+      }
+    }
     return false;
   };
 

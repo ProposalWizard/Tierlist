@@ -57,7 +57,7 @@ function levenshtein(a: string, b: string): number {
 }
 
 function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
-  const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9 ]/g, "");
+  const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9 \-]/g, "");
   const inp = norm(input);
   if (!inp) return false;
   const names = [answer.name, ...(answer.aliases ?? [])];
@@ -76,6 +76,18 @@ function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
         if (suffix.length >= 4 && inp.length >= 4) {
           const maxDist = suffix.length <= 5 ? 1 : 2;
           if (levenshtein(inp, suffix) <= maxDist) return true;
+        }
+      }
+    }
+    const hyphenParts = target.split(/[\s-]+/);
+    if (hyphenParts.length > parts.length) {
+      for (const hp of hyphenParts) {
+        if (hp.length >= 3) {
+          if (hp === inp) return true;
+          if (hp.length >= 4 && inp.length >= 4) {
+            const maxDist = hp.length <= 5 ? 1 : 2;
+            if (levenshtein(inp, hp) <= maxDist) return true;
+          }
         }
       }
     }
