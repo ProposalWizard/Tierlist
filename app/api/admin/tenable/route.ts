@@ -41,8 +41,11 @@ export async function POST(request: Request) {
   }
 
   const answers = body.answers as { position: number; name: string; aliases?: string[] }[];
-  if (!Array.isArray(answers) || answers.length !== 10) {
-    return NextResponse.json({ error: "Exactly 10 answers are required" }, { status: 400 });
+  if (!Array.isArray(answers) || answers.length < 10) {
+    return NextResponse.json({ error: "At least 10 answers are required" }, { status: 400 });
+  }
+  if (body.is_ordered && answers.length !== 10) {
+    return NextResponse.json({ error: "Ordered puzzles must have exactly 10 answers" }, { status: 400 });
   }
 
   const service = createServiceClient();

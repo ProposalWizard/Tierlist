@@ -30,6 +30,8 @@ export default function TenableAdmin() {
   const [answers, setAnswers] = useState<TenableAnswer[]>(
     Array.from({ length: 10 }, (_, i) => ({ position: i + 1, name: "", aliases: [] }))
   );
+  const [bulkText, setBulkText] = useState("");
+  const [showBulk, setShowBulk] = useState(false);
 
   const loadPuzzles = useCallback(async () => {
     try {
@@ -51,6 +53,8 @@ export default function TenableAdmin() {
     setAnswers(
       Array.from({ length: 10 }, (_, i) => ({ position: i + 1, name: "", aliases: [] }))
     );
+    setBulkText("");
+    setShowBulk(false);
   };
 
   const openNew = () => {
@@ -71,11 +75,15 @@ export default function TenableAdmin() {
       setDailyDate(p.daily_date ?? "");
       setIsActive(p.is_active ?? true);
 
-      const ans: TenableAnswer[] = Array.from({ length: 10 }, (_, i) => {
-        const existing = (p.answers as TenableAnswer[])?.find((a) => a.position === i + 1);
-        return existing ?? { position: i + 1, name: "", aliases: [] };
+      const existing = (p.answers as TenableAnswer[]) ?? [];
+      const count = Math.max(existing.length, 10);
+      const ans: TenableAnswer[] = Array.from({ length: count }, (_, i) => {
+        const found = existing.find((a) => a.position === i + 1);
+        return found ?? { position: i + 1, name: "", aliases: [] };
       });
       setAnswers(ans);
+      setShowBulk(false);
+      setBulkText("");
 
       setEditing(id);
       setError("");
@@ -89,9 +97,13 @@ export default function TenableAdmin() {
     if (!title.trim()) { setError("Title is required"); return; }
     if (!category.trim()) { setError("Category is required"); return; }
 
-    const emptyAnswers = answers.filter((a) => !a.name.trim());
-    if (emptyAnswers.length > 0) {
-      setError(`Answer${emptyAnswers.length > 1 ? "s" : ""} ${emptyAnswers.map((a) => a.position).join(", ")} need a name`);
+    const filledAnswers = answers.filter((a) => a.name.trim());
+    if (filledAnswers.length < 10) {
+      setError("At least 10 answers are required");
+      return;
+    }
+    if (isOrdered && filledAnswers.length !== 10) {
+      setError("Ordered puzzles must have exactly 10 answers");
       return;
     }
 
@@ -104,7 +116,7 @@ export default function TenableAdmin() {
       is_ordered: isOrdered,
       daily_date: dailyDate || null,
       is_active: isActive,
-      answers: answers.map((a) => ({
+      answers: filledAnswers.map((a) => ({
         position: a.position,
         name: a.name.trim(),
         ...(a.aliases && a.aliases.length > 0
@@ -157,11 +169,59 @@ export default function TenableAdmin() {
     );
   };
 
+  const addAnswerSlot = () => {
+    const nextPos = answers.length + 1;
+    setAnswers((prev) => [...prev, { position: nextPos, name: "", aliases: [] }]);
+  };
+
+  const removeAnswerSlot = (position: number) => {
+    setAnswers((prev) => {
+      const filtered = prev.filter((a) => a.position !== position);
+      return filtered.map((a, i) => ({ ...a, position: i + 1 }));
+    });
+  };
+
+  const handleBulkPaste = () => {
+    const lines = bulkText
+      .split(/\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const names: string[] = [];
+    for (const line of lines) {
+      const parts = line.split(/\s{2,}|\t/).map((s) => s.trim()).filter(Boolean);
+      for (const part of parts) {
+        if (/^[a-zA-ZÀ-ÿ\s\-'.]+$/.test(part) && part.length >= 2) {
+          names.push(part);
+        }
+      }
+    }
+
+    if (names.length === 0) {
+      setError("No names found in the pasted text");
+      return;
+    }
+
+    const count = Math.max(names.length, 10);
+    const newAnswers: TenableAnswer[] = Array.from({ length: count }, (_, i) => ({
+      position: i + 1,
+      name: names[i] ?? "",
+      aliases: [],
+    }));
+    setAnswers(newAnswers);
+    setBulkText("");
+    setShowBulk(false);
+    setError("");
+    setConfirmation(`Parsed ${names.length} name${names.length !== 1 ? "s" : ""}`);
+    setTimeout(() => setConfirmation(""), 3000);
+  };
+
   if (loading) {
     return <p className="py-8 text-center text-gray-500">Loading...</p>;
   }
 
   if (editing) {
+    const filledCount = answers.filter((a) => a.name.trim()).length;
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -220,7 +280,12 @@ export default function TenableAdmin() {
             <input
               type="checkbox"
               checked={isOrdered}
-              onChange={(e) => setIsOrdered(e.target.checked)}
+              onChange={(e) => {
+                setIsOrdered(e.target.checked);
+                if (e.target.checked && answers.length > 10) {
+                  setAnswers((prev) => prev.slice(0, 10));
+                }
+              }}
               className="rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500"
             />
             Answers are ordered (1 = best, 10 = 10th)
@@ -247,11 +312,46 @@ export default function TenableAdmin() {
           </div>
         </div>
 
-        {/* 10 answers */}
+        {/* Bulk paste */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-            Answers (1 = top, 10 = bottom)
-          </label>
+          <button
+            onClick={() => setShowBulk(!showBulk)}
+            className="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+          >
+            {showBulk ? "Hide bulk paste" : "Bulk paste names"}
+          </button>
+          {showBulk && (
+            <div className="mt-2 space-y-2">
+              <textarea
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                placeholder={"Paste a list of names (one per line or separated by tabs/spaces):\n\nFederico Bernadeschi\nDouglas Costa\nCarlo Cudicini\n..."}
+                rows={6}
+                className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none font-mono"
+              />
+              <button
+                onClick={handleBulkPaste}
+                disabled={!bulkText.trim()}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-40 transition-colors"
+              >
+                Parse &amp; fill slots
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Answers */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Answers ({filledCount} filled{!isOrdered && filledCount > 10 ? ` — ${filledCount - 10} bonus` : ""})
+            </label>
+            {!isOrdered && (
+              <span className="text-[10px] text-gray-500">
+                Unordered — can have more than 10 answers
+              </span>
+            )}
+          </div>
           <div className="space-y-2">
             {answers.map((a) => (
               <div key={a.position} className="flex items-center gap-2">
@@ -270,9 +370,25 @@ export default function TenableAdmin() {
                   placeholder="Aliases (comma-separated)"
                   className="w-48 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
+                {!isOrdered && answers.length > 10 && (
+                  <button
+                    onClick={() => removeAnswerSlot(a.position)}
+                    className="text-red-400 hover:text-red-300 text-xs font-bold px-1"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             ))}
           </div>
+          {!isOrdered && (
+            <button
+              onClick={addAnswerSlot}
+              className="mt-2 rounded-lg border border-dashed border-gray-700 px-4 py-2 text-xs font-bold text-gray-400 hover:border-emerald-600 hover:text-emerald-400 transition-colors w-full"
+            >
+              + Add answer slot
+            </button>
+          )}
         </div>
 
         {error && (

@@ -84,10 +84,17 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
   const [anim, setAnim] = useState<AnimState | null>(null);
   const [showIncorrectFlash, setShowIncorrectFlash] = useState(false);
   const [flashPosition, setFlashPosition] = useState<number | null>(null);
+  const [guessedNames, setGuessedNames] = useState<Set<string>>(new Set());
+  const [slotNames, setSlotNames] = useState<Map<number, string>>(new Map());
+  const [pendingSlotName, setPendingSlotName] = useState<{ pos: number; name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const answers = puzzle.answers;
+  const hasBank = !puzzle.is_ordered && answers.length > 10;
+  const displaySlots = hasBank
+    ? Array.from({ length: 10 }, (_, i) => ({ position: i + 1, name: "" }))
+    : answers.filter((a) => a.position >= 1 && a.position <= 10);
 
   useEffect(() => {
     return () => {
@@ -129,6 +136,10 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
           if (isCorrect) {
             animTimerRef.current = setTimeout(() => {
               setRevealed((prev) => new Set(prev).add(targetPos));
+              if (pendingSlotName) {
+                setSlotNames((prev) => new Map(prev).set(pendingSlotName.pos, pendingSlotName.name));
+                setPendingSlotName(null);
+              }
               setAnim(null);
               const newRevealed = new Set(revealed).add(targetPos);
               if (newRevealed.size === 10) {
@@ -144,6 +155,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             animTimerRef.current = setTimeout(() => {
               setShowIncorrectFlash(false);
               setFlashPosition(null);
+              setPendingSlotName(null);
               setAnim(null);
               setLives((prev) => {
                 const next = prev - 1;
@@ -160,25 +172,39 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
 
       animTimerRef.current = setTimeout(step, 300);
     },
-    [revealed]
+    [revealed, pendingSlotName]
   );
 
   const handleGuess = useCallback(() => {
     if (gameOver || anim || !guess.trim()) return;
 
-    const matchedAnswer = answers.find(
-      (a) => !revealed.has(a.position) && fuzzyMatch(guess, a)
-    );
-
-    if (matchedAnswer) {
-      setGuess("");
-      runAnimation(matchedAnswer.position, true);
+    if (hasBank) {
+      const matchedAnswer = answers.find(
+        (a) => !guessedNames.has(a.name) && fuzzyMatch(guess, a)
+      );
+      if (matchedAnswer) {
+        setGuess("");
+        setGuessedNames((prev) => new Set(prev).add(matchedAnswer.name));
+        const targetSlot = getLowestUnrevealed();
+        setPendingSlotName({ pos: targetSlot, name: matchedAnswer.name });
+        runAnimation(targetSlot, true);
+      } else {
+        setGuess("");
+        runAnimation(getLowestUnrevealed(), false);
+      }
     } else {
-      setGuess("");
-      const lowestUnrevealed = getLowestUnrevealed();
-      runAnimation(lowestUnrevealed, false);
+      const matchedAnswer = answers.find(
+        (a) => !revealed.has(a.position) && fuzzyMatch(guess, a)
+      );
+      if (matchedAnswer) {
+        setGuess("");
+        runAnimation(matchedAnswer.position, true);
+      } else {
+        setGuess("");
+        runAnimation(getLowestUnrevealed(), false);
+      }
     }
-  }, [gameOver, anim, guess, answers, revealed, runAnimation, getLowestUnrevealed]);
+  }, [gameOver, anim, guess, answers, revealed, guessedNames, hasBank, runAnimation, getLowestUnrevealed]);
 
   const handlePlayAgain = () => {
     setGuess("");
@@ -189,6 +215,9 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
     setAnim(null);
     setShowIncorrectFlash(false);
     setFlashPosition(null);
+    setGuessedNames(new Set());
+    setSlotNames(new Map());
+    setPendingSlotName(null);
     inputRef.current?.focus();
   };
 
@@ -217,26 +246,33 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
         <div className="text-center mb-4">
           <span className="text-2xl font-black text-white">{score}</span>
           <span className="text-lg text-gray-500"> / 10</span>
+          {hasBank && (
+            <span className="ml-2 text-xs text-gray-600">({answers.length} in bank)</span>
+          )}
         </div>
 
         {/* Answer grid */}
         <div className="space-y-1.5 mb-6">
-          {answers.map((answer) => {
-            const isRevealed = revealed.has(answer.position);
-            const isAnimHighlight = anim && !anim.done && anim.currentPos === answer.position && !isRevealed;
-            const isAnimTarget = anim?.done && anim.targetPos === answer.position;
-            const isIncorrectFlash = showIncorrectFlash && flashPosition === answer.position;
-            const isGameOverReveal = gameOver && !isRevealed;
+          {displaySlots.map((slot) => {
+            const pos = slot.position;
+            const isRevealed = revealed.has(pos);
+            const isAnimHighlight = anim && !anim.done && anim.currentPos === pos && !isRevealed;
+            const isAnimTarget = anim?.done && anim.targetPos === pos;
+            const isIncorrectFlash = showIncorrectFlash && flashPosition === pos;
+
+            const displayName = hasBank
+              ? (slotNames.get(pos) || (pendingSlotName?.pos === pos ? pendingSlotName.name : ""))
+              : slot.name;
 
             let bgClass = "bg-gray-800";
             let textContent: React.ReactNode = (
-              <span className="text-lg font-black text-gray-500">{answer.position}</span>
+              <span className="text-lg font-black text-gray-500">{pos}</span>
             );
 
             if (isRevealed) {
               bgClass = "bg-green-600";
               textContent = (
-                <span className="text-lg font-black text-white">{answer.name}</span>
+                <span className="text-lg font-black text-white">{displayName}</span>
               );
             } else if (isIncorrectFlash) {
               bgClass = "bg-red-600 animate-pulse";
@@ -246,26 +282,28 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             } else if (isAnimTarget && anim?.isCorrect) {
               bgClass = "bg-green-500 animate-pulse";
               textContent = (
-                <span className="text-lg font-black text-white">{answer.name}</span>
+                <span className="text-lg font-black text-white">{displayName}</span>
               );
             } else if (isAnimHighlight) {
               bgClass = "bg-gray-600";
               textContent = (
-                <span className="text-lg font-black text-gray-300">{answer.position}</span>
+                <span className="text-lg font-black text-gray-300">{pos}</span>
               );
-            } else if (isGameOverReveal) {
+            } else if (gameOver && !isRevealed) {
               bgClass = "bg-gray-800/60";
-              textContent = (
-                <div className="flex items-center justify-between w-full px-2">
-                  <span className="text-lg font-black text-gray-500">{answer.position}</span>
-                  <span className="text-sm font-semibold text-gray-500">{answer.name}</span>
-                </div>
-              );
+              if (!hasBank) {
+                textContent = (
+                  <div className="flex items-center justify-between w-full px-2">
+                    <span className="text-lg font-black text-gray-500">{pos}</span>
+                    <span className="text-sm font-semibold text-gray-500">{slot.name}</span>
+                  </div>
+                );
+              }
             }
 
             return (
               <div
-                key={answer.position}
+                key={pos}
                 className={`flex h-14 items-center justify-center rounded-lg transition-all duration-200 ${bgClass}`}
               >
                 {textContent}
@@ -273,6 +311,24 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             );
           })}
         </div>
+
+        {/* Show remaining answers from bank on game over */}
+        {gameOver && hasBank && !won && (
+          <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-4">
+            <p className="text-xs font-bold text-gray-400 mb-2">
+              Remaining answers ({answers.length - guessedNames.size} of {answers.length}):
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {answers
+                .filter((a) => !guessedNames.has(a.name))
+                .map((a) => (
+                  <span key={a.name} className="rounded-full bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-400">
+                    {a.name}
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* Category / description */}
         <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-4">
