@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/lib/types";
+import { CUSTOM_SQUARE_LABELS } from "@/lib/types";
 
 type GameMode = "solo" | "2player";
 
@@ -56,7 +57,7 @@ function levenshtein(a: string, b: string): number {
 }
 
 function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
-  const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9 ]/g, "");
+  const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9 \-]/g, "");
   const inp = norm(input);
   if (!inp) return false;
   const names = [answer.name, ...(answer.aliases ?? [])];
@@ -75,6 +76,18 @@ function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
         if (suffix.length >= 4 && inp.length >= 4) {
           const maxDist = suffix.length <= 5 ? 1 : 2;
           if (levenshtein(inp, suffix) <= maxDist) return true;
+        }
+      }
+    }
+    const hyphenParts = target.split(/[\s-]+/);
+    if (hyphenParts.length > parts.length) {
+      for (const hp of hyphenParts) {
+        if (hp.length >= 3) {
+          if (hp === inp) return true;
+          if (hp.length >= 4 && inp.length >= 4) {
+            const maxDist = hp.length <= 5 ? 1 : 2;
+            if (levenshtein(inp, hp) <= maxDist) return true;
+          }
         }
       }
     }
@@ -730,7 +743,9 @@ export default function TicTacToeGame({ puzzle }: Props) {
                           isFilled ? filledTextDark : "text-gray-700"
                         }`}
                       >
-                        {square.conditions[0]} + {square.conditions[1]}
+                        {square.customType
+                          ? `${CUSTOM_SQUARE_LABELS[square.customType]} - ${square.customText}`
+                          : `${square.conditions[0]} + ${square.conditions[1]}`}
                       </p>
                     </div>
                   )}
@@ -783,7 +798,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                         e.stopPropagation();
                         setPopup({ text: square.info!, title: `Info: ${square.conditions[0]} + ${square.conditions[1]}`, isHint: false });
                       }}
-                      className="absolute top-1 left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white shadow-md hover:bg-cyan-500 transition-colors md:h-6 md:w-6 md:text-xs"
+                      className="absolute bottom-1 left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white shadow-md hover:bg-cyan-500 transition-colors md:h-6 md:w-6 md:text-xs"
                       aria-label="Show info"
                     >
                       i
@@ -801,7 +816,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                         }
                         setPopup({ text: square.hint!, title: `Hint: ${square.conditions[0]} + ${square.conditions[1]}`, isHint: true });
                       }}
-                      className={`absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-md transition-colors md:h-6 md:w-6 md:text-xs ${
+                      className={`absolute bottom-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-md transition-colors md:h-6 md:w-6 md:text-xs ${
                         revealedHints.has(`sq-${squareKey(r, c)}`)
                           ? "bg-amber-500 hover:bg-amber-400"
                           : "bg-indigo-600 hover:bg-indigo-500"
@@ -916,10 +931,19 @@ function SquareModal({
 
         <div className="mb-4 flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-base font-bold text-gray-900 md:text-lg">{square.conditions[0]}</p>
-            <p className="text-sm font-semibold text-gray-600 md:text-base">
-              + {square.conditions[1]}
-            </p>
+            {square.customType ? (
+              <>
+                <p className="text-sm font-bold text-indigo-600 md:text-base">{CUSTOM_SQUARE_LABELS[square.customType]}</p>
+                <p className="text-base font-bold text-gray-900 md:text-lg">{square.customText}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-bold text-gray-900 md:text-lg">{square.conditions[0]}</p>
+                <p className="text-sm font-semibold text-gray-600 md:text-base">
+                  + {square.conditions[1]}
+                </p>
+              </>
+            )}
           </div>
           <button
             onClick={onClose}
