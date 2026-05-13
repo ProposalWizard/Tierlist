@@ -58,19 +58,11 @@ export default async function TenableListPage() {
               className="group block overflow-hidden rounded-xl border border-emerald-700/50 bg-gradient-to-r from-emerald-900/20 to-gray-900 p-6 transition-colors hover:border-emerald-600"
             >
               <h3 className="text-xl font-black text-white group-hover:text-emerald-300">{daily.title}</h3>
-              <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
-                <span className="rounded-full bg-emerald-900/50 px-2 py-0.5 font-bold text-emerald-400">
-                  {daily.category}
-                </span>
-                <span>{daily.daily_date}</span>
-                {daily.is_ordered && (
-                  <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-bold text-gray-400">
-                    Ordered
-                  </span>
-                )}
-              </div>
+              {daily.daily_date && (
+                <p className="mt-1 text-xs text-gray-500">{daily.daily_date}</p>
+              )}
               <div className="mt-3">
-                <span className="rounded-lg bg-emerald-600/20 border border-emerald-700/50 px-4 py-1.5 text-sm font-bold text-emerald-400">
+                <span className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-white">
                   Play Now
                 </span>
               </div>
@@ -89,25 +81,17 @@ export default async function TenableListPage() {
                 <Link
                   key={p.id}
                   href={`/tenable/${p.id}`}
-                  className="group rounded-xl border border-gray-800 bg-gray-900 p-5 transition-colors hover:border-emerald-600 hover:bg-gray-800/50"
+                  className="group flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-5 transition-colors hover:border-emerald-600 hover:bg-gray-800/50"
                 >
-                  <h3 className="font-bold text-white group-hover:text-emerald-300">{p.title}</h3>
-                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                    <span className="rounded-full bg-emerald-900/50 px-2 py-0.5 font-bold text-emerald-400">
-                      {p.category}
-                    </span>
-                    {p.daily_date && <span>{p.daily_date}</span>}
-                    {p.is_ordered && (
-                      <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-bold text-gray-400">
-                        Ordered
-                      </span>
+                  <div>
+                    <h3 className="font-bold text-white group-hover:text-emerald-300">{p.title}</h3>
+                    {p.daily_date && (
+                      <p className="mt-1 text-xs text-gray-500">{p.daily_date}</p>
                     )}
                   </div>
-                  <div className="mt-3">
-                    <span className="rounded-lg bg-emerald-600/20 border border-emerald-700/50 px-3 py-1 text-xs font-semibold text-emerald-400">
-                      Play
-                    </span>
-                  </div>
+                  <span className="shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-700/50 px-4 py-1.5 text-xs font-bold text-emerald-400 group-hover:bg-emerald-600/30">
+                    Play
+                  </span>
                 </Link>
               ))}
             </div>
