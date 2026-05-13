@@ -170,7 +170,7 @@ function SquareEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-gray-900 border border-gray-700 p-5 shadow-2xl"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-gray-900 border border-gray-700 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -207,12 +207,23 @@ function SquareEditor({
 
         {/* Answer list */}
         {answers.length > 0 && (
-          <div className="mb-4 space-y-1 max-h-40 overflow-y-auto">
-            {answers.sort((a, b) => b.points - a.points).map((a) => (
+          <div className="mb-4 space-y-1 max-h-60 overflow-y-auto">
+            {[...answers].sort((a, b) => b.points - a.points).map((a, idx) => (
               <div key={a.name} className="flex items-center justify-between rounded-lg bg-gray-800 px-3 py-1.5 text-sm">
                 <span className="text-white truncate">{a.name}</span>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="font-bold text-indigo-400">{a.points}pt</span>
+                  <select
+                    value={a.points}
+                    onChange={(e) => {
+                      const pts = Number(e.target.value);
+                      setAnswers(answers.map((x) => x.name === a.name ? { ...x, points: pts } : x));
+                    }}
+                    className="w-14 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs font-bold text-indigo-300"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                      <option key={p} value={p}>{p}pt</option>
+                    ))}
+                  </select>
                   <button onClick={() => setAnswers(answers.filter((x) => x.name !== a.name))}
                     className="text-red-400 hover:text-red-300 text-xs">✕</button>
                 </div>
@@ -220,6 +231,35 @@ function SquareEditor({
             ))}
           </div>
         )}
+
+        {/* Bulk paste */}
+        <details className="mb-4">
+          <summary className="cursor-pointer text-xs font-bold text-gray-400 hover:text-gray-300">Bulk paste answers</summary>
+          <div className="mt-2">
+            <textarea
+              placeholder="Paste names (one per line)..."
+              rows={4}
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+              onKeyDown={(e) => e.stopPropagation()}
+              onBlur={(e) => {
+                const text = e.target.value.trim();
+                if (!text) return;
+                const names = text.split("\n").map((s) => s.trim()).filter(Boolean);
+                const existing = new Set(answers.map((a) => a.name.toLowerCase()));
+                const newAnswers = [...answers];
+                for (const name of names) {
+                  if (!existing.has(name.toLowerCase())) {
+                    newAnswers.push({ name, points: 3 });
+                    existing.add(name.toLowerCase());
+                  }
+                }
+                setAnswers(newAnswers);
+                e.target.value = "";
+              }}
+            />
+            <p className="mt-1 text-[10px] text-gray-500">One name per line. Click outside to add all (default 3pts each).</p>
+          </div>
+        </details>
 
         {/* Custom square toggle */}
         <div className="mb-3 space-y-2">
@@ -290,7 +330,7 @@ function LabelEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative w-full max-w-md rounded-2xl bg-gray-900 border border-gray-700 p-5 shadow-2xl"
+        className="relative w-full max-w-xl rounded-2xl bg-gray-900 border border-gray-700 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
