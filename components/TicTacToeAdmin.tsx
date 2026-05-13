@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer, CustomSquareType } from "@/lib/types";
 import { computeCustomConditions, CUSTOM_SQUARE_LABELS } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -22,6 +22,10 @@ async function uploadImage(file: File): Promise<string> {
   return urlData.publicUrl;
 }
 
+function isImageUrl(s: string): boolean {
+  return /^https?:\/\/.+/i.test(s) && /\.(jpg|jpeg|png|gif|webp|svg|avif)/i.test(s);
+}
+
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, b64] = dataUrl.split(",");
   const mime = header.match(/:(.*?);/)?.[1] ?? "image/png";
@@ -29,10 +33,6 @@ function dataUrlToBlob(dataUrl: string): Blob {
   const arr = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
   return new Blob([arr], { type: mime });
-}
-
-function isImageUrl(s: string): boolean {
-  return /^https?:\/\/.+/i.test(s) && /\.(jpg|jpeg|png|gif|webp|svg|avif)/i.test(s);
 }
 
 function ImageField({
@@ -47,19 +47,17 @@ function ImageField({
   onCropRequest: (url: string) => void;
 }) {
   const [uploading, setUploading] = useState(false);
-
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const f = e.target.files?.[0];
+    if (!f) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file);
+      const url = await uploadImage(f);
       onChange(url);
     } catch { /* ignore */ }
     setUploading(false);
     e.target.value = "";
   };
-
   return (
     <div>
       <label className="text-xs font-bold text-gray-400">{label}</label>
@@ -114,15 +112,227 @@ function calcMaxScore(answers: TicTacToeAnswer[]): number {
   return answers.reduce((s, a) => s + a.points, 0);
 }
 
+/* ── Inline Square Editor (modal overlay) ── */
+function SquareEditor({
+  square,
+  rowLabel,
+  colLabel,
+  onSave,
+  onClose,
+  onCropRequest,
+}: {
+  square: TicTacToeSquareData;
+  rowLabel: string;
+  colLabel: string;
+  onSave: (sq: Partial<TicTacToeSquareData>) => void;
+  onClose: () => void;
+  onCropRequest: (url: string, onComplete: (url: string) => void) => void;
+}) {
+  const [isCustom, setIsCustom] = useState(square.type === "custom");
+  const [customType, setCustomType] = useState<CustomSquareType>(square.customType ?? "and");
+  const [customText, setCustomText] = useState(square.customText ?? "");
+  const [answers, setAnswers] = useState<TicTacToeAnswer[]>([...square.answers]);
+  const [hint, setHint] = useState(square.hint ?? "");
+  const [sqInfo, setSqInfo] = useState(square.info ?? "");
+  const [newName, setNewName] = useState("");
+  const [newPoints, setNewPoints] = useState(3);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, []);
+
+  const addAnswer = () => {
+    const name = newName.trim();
+    if (!name) return;
+    if (answers.some((a) => a.name.toLowerCase() === name.toLowerCase())) return;
+    setAnswers([...answers, { name, points: newPoints }]);
+    setNewName("");
+  };
+
+  const save = () => {
+    const conditions: [string, string] = isCustom
+      ? computeCustomConditions(customType, customText, rowLabel, colLabel)
+      : [rowLabel, colLabel];
+    onSave({
+      type: isCustom ? "custom" : "normal",
+      conditions,
+      answers,
+      maxScore: calcMaxScore(answers),
+      hint: hint.trim() || undefined,
+      info: sqInfo.trim() || undefined,
+      customType: isCustom ? customType : undefined,
+      customText: isCustom ? customText : undefined,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70" />
+      <div
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-gray-900 border border-gray-700 p-5 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm font-bold text-white">{rowLabel || "Row"} + {colLabel || "Col"}</p>
+            <p className="text-xs text-gray-500">{answers.length} answer{answers.length !== 1 ? "s" : ""} · {calcMaxScore(answers)} pts</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">&times;</button>
+        </div>
+
+        {/* Quick answer input */}
+        <div className="mb-4">
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addAnswer(); } }}
+              placeholder="Type answer, press Enter..."
+              className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+            />
+            <select
+              value={newPoints}
+              onChange={(e) => setNewPoints(Number(e.target.value))}
+              className="w-16 rounded-lg border border-gray-700 bg-gray-800 px-1 py-2 text-sm text-white"
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                <option key={p} value={p}>{p}pt</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Answer list */}
+        {answers.length > 0 && (
+          <div className="mb-4 space-y-1 max-h-40 overflow-y-auto">
+            {answers.sort((a, b) => b.points - a.points).map((a) => (
+              <div key={a.name} className="flex items-center justify-between rounded-lg bg-gray-800 px-3 py-1.5 text-sm">
+                <span className="text-white truncate">{a.name}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-bold text-indigo-400">{a.points}pt</span>
+                  <button onClick={() => setAnswers(answers.filter((x) => x.name !== a.name))}
+                    className="text-red-400 hover:text-red-300 text-xs">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Custom square toggle */}
+        <div className="mb-3 space-y-2">
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            <input type="checkbox" checked={isCustom} onChange={(e) => setIsCustom(e.target.checked)} />
+            Custom requirement
+          </label>
+          {isCustom && (
+            <div className="space-y-2 rounded-lg border border-gray-700 bg-gray-800/50 p-3">
+              <select value={customType} onChange={(e) => setCustomType(e.target.value as CustomSquareType)}
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white">
+                {(Object.keys(CUSTOM_SQUARE_LABELS) as CustomSquareType[]).map((t) => (
+                  <option key={t} value={t}>{CUSTOM_SQUARE_LABELS[t]}</option>
+                ))}
+              </select>
+              <input value={customText} onChange={(e) => setCustomText(e.target.value)}
+                placeholder="e.g. Scored in Bayern 8-2 Barcelona"
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white placeholder-gray-500" />
+            </div>
+          )}
+        </div>
+
+        {/* Info & Hint */}
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <ImageField label="Info" value={sqInfo} onChange={setSqInfo}
+            onCropRequest={(url) => onCropRequest(url, (cropped) => setSqInfo(cropped))} />
+          <ImageField label="Hint" value={hint} onChange={setHint}
+            onCropRequest={(url) => onCropRequest(url, (cropped) => setHint(cropped))} />
+        </div>
+
+        <button onClick={save}
+          className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">
+          Save Square
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Label Editor (modal overlay) ── */
+function LabelEditor({
+  label,
+  index,
+  type,
+  extras,
+  onSave,
+  onClose,
+  onCropRequest,
+}: {
+  label: string;
+  index: number;
+  type: "row" | "col";
+  extras: { info: string; hint: string };
+  onSave: (label: string, extras: { info: string; hint: string }) => void;
+  onClose: () => void;
+  onCropRequest: (url: string, onComplete: (url: string) => void) => void;
+}) {
+  const [value, setValue] = useState(label);
+  const [info, setInfo] = useState(extras.info);
+  const [hint, setHint] = useState(extras.hint);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70" />
+      <div
+        className="relative w-full max-w-md rounded-2xl bg-gray-900 border border-gray-700 p-5 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-bold text-white">{type === "row" ? "Row" : "Column"} {index + 1}</p>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">&times;</button>
+        </div>
+
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { onSave(value, { info, hint }); } }}
+          placeholder={`${type === "row" ? "Row" : "Column"} label...`}
+          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none mb-3"
+        />
+
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <ImageField label="Info" value={info} onChange={setInfo}
+            onCropRequest={(url) => onCropRequest(url, (cropped) => setInfo(cropped))} />
+          <ImageField label="Hint" value={hint} onChange={setHint}
+            onCropRequest={(url) => onCropRequest(url, (cropped) => setHint(cropped))} />
+        </div>
+
+        <button onClick={() => onSave(value, { info, hint })}
+          className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Admin ── */
 export default function TicTacToeAdmin() {
   const [puzzles, setPuzzles] = useState<PuzzleListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<string | null>(null); // puzzle id or "new"
+  const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmation, setConfirmation] = useState("");
 
-  // Edit form state
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "extreme">("medium");
   const [rowLabels, setRowLabels] = useState<[string, string, string]>(["", "", ""]);
@@ -141,7 +351,9 @@ export default function TicTacToeAdmin() {
     rows: [{ info: "", hint: "" }, { info: "", hint: "" }, { info: "", hint: "" }],
     cols: [{ info: "", hint: "" }, { info: "", hint: "" }, { info: "", hint: "" }],
   });
-  const [editingCell, setEditingCell] = useState<{ r: number; c: number } | null>(null);
+
+  const [editingSquare, setEditingSquare] = useState<{ r: number; c: number } | null>(null);
+  const [editingLabel, setEditingLabel] = useState<{ type: "row" | "col"; index: number } | null>(null);
   const [cropTarget, setCropTarget] = useState<{ imageUrl: string; onComplete: (url: string) => void } | null>(null);
 
   const loadPuzzles = useCallback(async () => {
@@ -155,67 +367,46 @@ export default function TicTacToeAdmin() {
   useEffect(() => { loadPuzzles(); }, [loadPuzzles]);
 
   const resetForm = () => {
-    setTitle("");
-    setDifficulty("medium");
-    setRowLabels(["", "", ""]);
-    setColLabels(["", "", ""]);
-    setGrid(emptyGrid());
-    setBonus(10);
-    setIsDaily(false);
-    setDailyDate("");
-    setIsActive(true);
-    setInfo("");
-    setDisplayOrder(0);
+    setTitle(""); setDifficulty("medium");
+    setRowLabels(["", "", ""]); setColLabels(["", "", ""]);
+    setGrid(emptyGrid()); setBonus(10);
+    setIsDaily(false); setDailyDate(""); setIsActive(true);
+    setInfo(""); setDisplayOrder(0);
     setLabelExtras({
       rows: [{ info: "", hint: "" }, { info: "", hint: "" }, { info: "", hint: "" }],
       cols: [{ info: "", hint: "" }, { info: "", hint: "" }, { info: "", hint: "" }],
     });
-    setEditingCell(null);
-    setCropTarget(null);
+    setEditingSquare(null); setEditingLabel(null); setCropTarget(null);
   };
 
-  const openNew = () => {
-    resetForm();
-    setEditing("new");
-  };
+  const openNew = () => { resetForm(); setEditing("new"); setError(""); };
 
   const openEdit = async (id: string) => {
     try {
       const res = await fetch(`/api/admin/tictactoe/${id}`);
       if (!res.ok) throw new Error("Failed to load puzzle");
       const p: TicTacToePuzzle = await res.json();
-      setTitle(p.title);
-      setDifficulty(p.difficulty);
-      setRowLabels(p.row_labels);
-      setColLabels(p.col_labels);
-      setGrid(p.grid);
-      setBonus(p.three_in_a_row_bonus);
-      setIsDaily(p.is_daily);
-      setDailyDate(p.daily_date ?? "");
-      setIsActive(p.is_active);
-      setInfo(p.info ?? "");
+      setTitle(p.title); setDifficulty(p.difficulty);
+      setRowLabels(p.row_labels); setColLabels(p.col_labels);
+      setGrid(p.grid); setBonus(p.three_in_a_row_bonus);
+      setIsDaily(p.is_daily); setDailyDate(p.daily_date ?? "");
+      setIsActive(p.is_active); setInfo(p.info ?? "");
       setDisplayOrder(p.display_order ?? 0);
       const le = p.label_extras as { rows?: Array<{ info?: string; hint?: string } | null>; cols?: Array<{ info?: string; hint?: string } | null> } | null;
       setLabelExtras({
         rows: Array.from({ length: 3 }, (_, i) => ({
-          info: le?.rows?.[i]?.info ?? "",
-          hint: le?.rows?.[i]?.hint ?? "",
+          info: le?.rows?.[i]?.info ?? "", hint: le?.rows?.[i]?.hint ?? "",
         })),
         cols: Array.from({ length: 3 }, (_, i) => ({
-          info: le?.cols?.[i]?.info ?? "",
-          hint: le?.cols?.[i]?.hint ?? "",
+          info: le?.cols?.[i]?.info ?? "", hint: le?.cols?.[i]?.hint ?? "",
         })),
       });
-      setEditing(id);
-      setEditingCell(null);
-    } catch (e) {
-      setError(String(e));
-    }
+      setEditing(id); setEditingSquare(null); setEditingLabel(null); setError("");
+    } catch (e) { setError(String(e)); }
   };
 
   const handleSave = async () => {
     if (!title.trim()) { setError("Title is required"); return; }
-
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         const sq = grid[r][c];
@@ -225,57 +416,33 @@ export default function TicTacToeAdmin() {
           sq.conditions = [rowLabels[r], colLabels[c]];
         }
         if (!sq.conditions[0] || !sq.conditions[1]) {
-          setError(`Square (${r + 1},${c + 1}) needs two conditions`);
-          return;
+          setError(`Square (${r + 1},${c + 1}) needs two conditions`); return;
         }
         if (sq.answers.length === 0) {
-          setError(`Square (${r + 1},${c + 1}) needs at least one answer`);
-          return;
+          setError(`Square (${r + 1},${c + 1}) needs at least one answer`); return;
         }
         sq.maxScore = calcMaxScore(sq.answers);
       }
     }
-
-    setSaving(true);
-    setError("");
-
+    setSaving(true); setError("");
     const body = {
-      title: title.trim(),
-      difficulty,
-      row_labels: rowLabels,
-      col_labels: colLabels,
-      grid,
-      three_in_a_row_bonus: bonus,
-      is_daily: isDaily,
+      title: title.trim(), difficulty, row_labels: rowLabels, col_labels: colLabels,
+      grid, three_in_a_row_bonus: bonus, is_daily: isDaily,
       daily_date: isDaily && dailyDate ? dailyDate : null,
-      is_active: isActive,
-      info: info.trim() || null,
-      display_order: displayOrder,
+      is_active: isActive, info: info.trim() || null, display_order: displayOrder,
       label_extras: {
-        rows: labelExtras.rows.map((r) =>
-          r.info || r.hint ? { info: r.info || undefined, hint: r.hint || undefined } : null
-        ),
-        cols: labelExtras.cols.map((c) =>
-          c.info || c.hint ? { info: c.info || undefined, hint: c.hint || undefined } : null
-        ),
+        rows: labelExtras.rows.map((r) => r.info || r.hint ? { info: r.info || undefined, hint: r.hint || undefined } : null),
+        cols: labelExtras.cols.map((c) => c.info || c.hint ? { info: c.info || undefined, hint: c.hint || undefined } : null),
       },
     };
-
     try {
       const url = editing === "new" ? "/api/admin/tictactoe" : `/api/admin/tictactoe/${editing}`;
       const method = editing === "new" ? "POST" : "PATCH";
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Save failed");
-      }
-      setConfirmation("Puzzle saved!");
-      setTimeout(() => setConfirmation(""), 3000);
-      setEditing(null);
-      loadPuzzles();
-    } catch (e) {
-      setError(String(e));
-    }
+      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.error ?? "Save failed"); }
+      setConfirmation("Puzzle saved!"); setTimeout(() => setConfirmation(""), 3000);
+      setEditing(null); loadPuzzles();
+    } catch (e) { setError(String(e)); }
     setSaving(false);
   };
 
@@ -283,10 +450,7 @@ export default function TicTacToeAdmin() {
     if (!confirm("Delete this puzzle?")) return;
     try {
       const res = await fetch(`/api/admin/tictactoe/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setPuzzles((p) => p.filter((x) => x.id !== id));
-        if (editing === id) setEditing(null);
-      }
+      if (res.ok) { setPuzzles((p) => p.filter((x) => x.id !== id)); if (editing === id) setEditing(null); }
     } catch { /* ignore */ }
   };
 
@@ -298,57 +462,16 @@ export default function TicTacToeAdmin() {
     });
   };
 
-  // Total possible score for the current grid
   const totalPossibleScore = (() => {
     let total = 0;
-    for (let r = 0; r < 3; r++)
-      for (let c = 0; c < 3; c++)
-        total += calcMaxScore(grid[r][c].answers);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) total += calcMaxScore(grid[r][c].answers);
     total += bonus;
     return total;
   })();
 
   if (loading) return <p className="text-gray-500 py-8 text-center">Loading puzzles...</p>;
 
-  // Cell editor modal
-  if (editingCell && editing) {
-    const { r, c } = editingCell;
-    const sq = grid[r][c];
-    return (
-      <>
-        <CellEditor
-          square={sq}
-          rowLabel={rowLabels[r]}
-          colLabel={colLabels[c]}
-          onSave={(updated) => {
-            updateSquare(r, c, updated);
-            setEditingCell(null);
-          }}
-          onCancel={() => setEditingCell(null)}
-          onCropRequest={(url, onComplete) => setCropTarget({ imageUrl: url, onComplete })}
-        />
-        {cropTarget && (
-          <CropOverlay
-            imageUrl={cropTarget.imageUrl}
-            imageName="Image"
-            freeform
-            onCancel={() => setCropTarget(null)}
-            onCrop={async (dataUrl) => {
-              try {
-                const blob = dataUrlToBlob(dataUrl);
-                const file = new File([blob], "cropped.webp", { type: "image/webp" });
-                const url = await uploadImage(file);
-                cropTarget.onComplete(url);
-              } catch { /* ignore */ }
-              setCropTarget(null);
-            }}
-          />
-        )}
-      </>
-    );
-  }
-
-  // Puzzle editor form
+  /* ── Visual Grid Editor ── */
   if (editing) {
     return (
       <div className="space-y-4">
@@ -357,167 +480,205 @@ export default function TicTacToeAdmin() {
           <button onClick={() => setEditing(null)} className="text-sm text-gray-400 hover:text-white">Cancel</button>
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-400 bg-red-900/20 rounded-lg px-3 py-2">{error}</p>}
+        {confirmation && <p className="text-sm text-green-400 bg-green-900/20 rounded-lg px-3 py-2">{confirmation}</p>}
 
+        {/* Top bar: title + settings */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-bold text-gray-400">Title</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)}
               className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
           </div>
-          <div>
-            <label className="text-xs font-bold text-gray-400">Difficulty</label>
-            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white">
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="extreme">Extreme</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold text-gray-400">3-in-a-row Bonus</label>
-            <input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
-          </div>
-          <div className="flex items-end gap-4">
-            <label className="flex items-center gap-2 text-sm text-gray-300">
-              <input type="checkbox" checked={isDaily} onChange={(e) => setIsDaily(e.target.checked)} />
-              Daily puzzle
-            </label>
-            <label className="flex items-center gap-2 text-sm text-gray-300">
-              <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-              Active
-            </label>
-          </div>
-        </div>
-
-        {isDaily && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-xs font-bold text-gray-400">Daily Date</label>
-              <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+              <label className="text-xs font-bold text-gray-400">Difficulty</label>
+              <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
+                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="extreme">Extreme</option>
+              </select>
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-400">Display Order</label>
+              <label className="text-xs font-bold text-gray-400">Bonus</label>
+              <input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))}
+                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-400">Order</label>
               <input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
+                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white" />
             </div>
           </div>
-        )}
-
-        {/* Row Labels + Extras */}
-        <div>
-          <label className="text-xs font-bold text-gray-400">Row Labels (left side)</label>
-          {rowLabels.map((l, i) => (
-            <div key={i} className="mt-2 rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
-              <input value={l} onChange={(e) => {
-                const n = [...rowLabels] as [string, string, string];
-                n[i] = e.target.value;
-                setRowLabels(n);
-              }}
-              placeholder={`Row ${i + 1}`}
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
-              <div className="grid grid-cols-2 gap-2">
-                <ImageField label="Info" value={labelExtras.rows[i].info} onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => {
-                  setLabelExtras((prev) => { const next = { ...prev, rows: [...prev.rows] }; next.rows[i] = { ...next.rows[i], info: cropped }; return next; });
-                } })} onChange={(v) => setLabelExtras((prev) => { const next = { ...prev, rows: [...prev.rows] }; next.rows[i] = { ...next.rows[i], info: v }; return next; })} />
-                <ImageField label="Hint" value={labelExtras.rows[i].hint} onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => {
-                  setLabelExtras((prev) => { const next = { ...prev, rows: [...prev.rows] }; next.rows[i] = { ...next.rows[i], hint: cropped }; return next; });
-                } })} onChange={(v) => setLabelExtras((prev) => { const next = { ...prev, rows: [...prev.rows] }; next.rows[i] = { ...next.rows[i], hint: v }; return next; })} />
-              </div>
-            </div>
-          ))}
         </div>
 
-        {/* Column Labels + Extras */}
-        <div>
-          <label className="text-xs font-bold text-gray-400">Column Labels (top)</label>
-          {colLabels.map((l, i) => (
-            <div key={i} className="mt-2 rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
-              <input value={l} onChange={(e) => {
-                const n = [...colLabels] as [string, string, string];
-                n[i] = e.target.value;
-                setColLabels(n);
-              }}
-              placeholder={`Col ${i + 1}`}
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
-              <div className="grid grid-cols-2 gap-2">
-                <ImageField label="Info" value={labelExtras.cols[i].info} onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => {
-                  setLabelExtras((prev) => { const next = { ...prev, cols: [...prev.cols] }; next.cols[i] = { ...next.cols[i], info: cropped }; return next; });
-                } })} onChange={(v) => setLabelExtras((prev) => { const next = { ...prev, cols: [...prev.cols] }; next.cols[i] = { ...next.cols[i], info: v }; return next; })} />
-                <ImageField label="Hint" value={labelExtras.cols[i].hint} onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => {
-                  setLabelExtras((prev) => { const next = { ...prev, cols: [...prev.cols] }; next.cols[i] = { ...next.cols[i], hint: cropped }; return next; });
-                } })} onChange={(v) => setLabelExtras((prev) => { const next = { ...prev, cols: [...prev.cols] }; next.cols[i] = { ...next.cols[i], hint: v }; return next; })} />
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            <input type="checkbox" checked={isDaily} onChange={(e) => setIsDaily(e.target.checked)} /> Daily
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} /> Active
+          </label>
+          {isDaily && (
+            <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)}
+              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white" />
+          )}
+          <span className="text-xs text-gray-500 ml-auto">Total: {totalPossibleScore} pts</span>
         </div>
 
-        {/* Grid editor */}
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-gray-400">Grid (click to edit each square)</label>
-            <span className="text-xs text-gray-500">Total possible: {totalPossibleScore} pts</span>
-          </div>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {grid.map((row, r) =>
-              row.map((sq, c) => {
-                const rl = rowLabels[r] || `Row ${r + 1}`;
-                const cl = colLabels[c] || `Col ${c + 1}`;
-                const conds = sq.type === "custom" && sq.customType && sq.customText
-                  ? computeCustomConditions(sq.customType, sq.customText, rl, cl)
-                  : [rl, cl];
+        {/* Info */}
+        <ImageField label="Puzzle Info (shown on info button)" value={info} onChange={setInfo}
+          onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => setInfo(cropped) })} />
+
+        {/* ── THE VISUAL GRID ── */}
+        <div className="grid grid-cols-4 gap-1.5">
+          {/* Top-left empty cell */}
+          <div className="aspect-square rounded-lg bg-gray-900" />
+
+          {/* Column labels (top row) */}
+          {colLabels.map((cl, c) => (
+            <button
+              key={`col-${c}`}
+              onClick={() => setEditingLabel({ type: "col", index: c })}
+              className={`aspect-square rounded-lg border p-2 flex flex-col items-center justify-center text-center transition-colors ${
+                cl ? "border-gray-600 bg-gray-800" : "border-dashed border-gray-700 bg-gray-900"
+              } hover:border-indigo-500`}
+            >
+              {cl ? (
+                <p className="text-[11px] font-black text-white leading-tight break-words">{cl}</p>
+              ) : (
+                <p className="text-[10px] text-gray-600">Col {c + 1}<br/>Click to set</p>
+              )}
+              {(labelExtras.cols[c].info || labelExtras.cols[c].hint) && (
+                <div className="flex gap-1 mt-1">
+                  {labelExtras.cols[c].info && <span className="w-3 h-3 rounded-full bg-cyan-600 text-[7px] font-black text-white flex items-center justify-center">i</span>}
+                  {labelExtras.cols[c].hint && <span className="w-3 h-3 rounded-full bg-indigo-600 text-[7px] font-black text-white flex items-center justify-center">?</span>}
+                </div>
+              )}
+            </button>
+          ))}
+
+          {/* Rows */}
+          {grid.map((row, r) => (
+            <>
+              {/* Row label */}
+              <button
+                key={`row-${r}`}
+                onClick={() => setEditingLabel({ type: "row", index: r })}
+                className={`aspect-square rounded-lg border p-2 flex flex-col items-center justify-center text-center transition-colors ${
+                  rowLabels[r] ? "border-gray-600 bg-gray-800" : "border-dashed border-gray-700 bg-gray-900"
+                } hover:border-indigo-500`}
+              >
+                {rowLabels[r] ? (
+                  <p className="text-[11px] font-black text-white leading-tight break-words">{rowLabels[r]}</p>
+                ) : (
+                  <p className="text-[10px] text-gray-600">Row {r + 1}<br/>Click to set</p>
+                )}
+                {(labelExtras.rows[r].info || labelExtras.rows[r].hint) && (
+                  <div className="flex gap-1 mt-1">
+                    {labelExtras.rows[r].info && <span className="w-3 h-3 rounded-full bg-cyan-600 text-[7px] font-black text-white flex items-center justify-center">i</span>}
+                    {labelExtras.rows[r].hint && <span className="w-3 h-3 rounded-full bg-indigo-600 text-[7px] font-black text-white flex items-center justify-center">?</span>}
+                  </div>
+                )}
+              </button>
+
+              {/* Grid squares */}
+              {row.map((sq, c) => {
+                const hasAnswers = sq.answers.length > 0;
                 return (
                   <button
-                    key={`${r}-${c}`}
-                    onClick={() => {
-                      if (sq.type === "custom" && sq.customType && sq.customText) {
-                        updateSquare(r, c, {
-                          conditions: computeCustomConditions(sq.customType, sq.customText, rowLabels[r], colLabels[c]),
-                        });
-                      } else if (sq.type === "normal") {
-                        updateSquare(r, c, { conditions: [rowLabels[r], colLabels[c]] });
-                      }
-                      setEditingCell({ r, c });
-                    }}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      sq.answers.length > 0
+                    key={`sq-${r}-${c}`}
+                    onClick={() => setEditingSquare({ r, c })}
+                    className={`aspect-square rounded-lg border p-2 flex flex-col items-center justify-center text-center transition-colors ${
+                      hasAnswers
                         ? "border-green-700/50 bg-green-900/20"
-                        : "border-gray-700 bg-gray-800"
+                        : "border-dashed border-gray-700 bg-gray-900"
                     } hover:border-indigo-500`}
                   >
-                    <p className="text-[10px] text-gray-400 truncate">{conds[0]}</p>
-                    <p className="text-[10px] text-indigo-400 truncate">+ {conds[1]}</p>
-                    <p className="mt-1 text-xs font-bold text-white">
-                      {sq.answers.length} answer{sq.answers.length !== 1 ? "s" : ""}
-                    </p>
-                    {sq.type === "custom" && (
-                      <span className="text-[8px] font-bold text-amber-500">
-                        ★ {CUSTOM_SQUARE_LABELS[sq.customType ?? "and"]}
-                      </span>
+                    {hasAnswers ? (
+                      <>
+                        <p className="text-lg font-black text-white">{sq.answers.length}</p>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase">
+                          {sq.answers.length === 1 ? "answer" : "answers"}
+                        </p>
+                        <p className="text-[10px] font-bold text-indigo-400 mt-0.5">{calcMaxScore(sq.answers)} pts</p>
+                        {sq.type === "custom" && (
+                          <span className="text-[7px] font-bold text-amber-500 mt-0.5">★ Custom</span>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-gray-600">Click to<br/>add answers</p>
                     )}
                   </button>
                 );
-              })
-            )}
-          </div>
+              })}
+            </>
+          ))}
         </div>
 
+        {/* Save / Cancel */}
         <div className="flex gap-3 pt-2">
           <button onClick={handleSave} disabled={saving}
-            className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50">
+            className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50">
             {saving ? "Saving..." : "Save Puzzle"}
           </button>
           <button onClick={() => setEditing(null)}
-            className="rounded-lg border border-gray-600 px-5 py-2 text-sm text-gray-300 hover:text-white">
+            className="rounded-lg border border-gray-600 px-5 py-2.5 text-sm text-gray-300 hover:text-white">
             Cancel
           </button>
         </div>
 
+        {/* Square editor overlay */}
+        {editingSquare && (
+          <SquareEditor
+            square={grid[editingSquare.r][editingSquare.c]}
+            rowLabel={rowLabels[editingSquare.r]}
+            colLabel={colLabels[editingSquare.c]}
+            onSave={(updated) => {
+              updateSquare(editingSquare.r, editingSquare.c, updated);
+              setEditingSquare(null);
+            }}
+            onClose={() => setEditingSquare(null)}
+            onCropRequest={(url, onComplete) => setCropTarget({ imageUrl: url, onComplete })}
+          />
+        )}
+
+        {/* Label editor overlay */}
+        {editingLabel && (
+          <LabelEditor
+            label={editingLabel.type === "row" ? rowLabels[editingLabel.index] : colLabels[editingLabel.index]}
+            index={editingLabel.index}
+            type={editingLabel.type}
+            extras={editingLabel.type === "row" ? labelExtras.rows[editingLabel.index] : labelExtras.cols[editingLabel.index]}
+            onSave={(newLabel, newExtras) => {
+              if (editingLabel.type === "row") {
+                const n = [...rowLabels] as [string, string, string];
+                n[editingLabel.index] = newLabel;
+                setRowLabels(n);
+                setLabelExtras((prev) => {
+                  const next = { ...prev, rows: [...prev.rows] };
+                  next.rows[editingLabel.index] = newExtras;
+                  return next;
+                });
+              } else {
+                const n = [...colLabels] as [string, string, string];
+                n[editingLabel.index] = newLabel;
+                setColLabels(n);
+                setLabelExtras((prev) => {
+                  const next = { ...prev, cols: [...prev.cols] };
+                  next.cols[editingLabel.index] = newExtras;
+                  return next;
+                });
+              }
+              setEditingLabel(null);
+            }}
+            onClose={() => setEditingLabel(null)}
+            onCropRequest={(url, onComplete) => setCropTarget({ imageUrl: url, onComplete })}
+          />
+        )}
+
+        {/* Crop overlay */}
         {cropTarget && (
           <CropOverlay
             imageUrl={cropTarget.imageUrl}
@@ -539,7 +700,7 @@ export default function TicTacToeAdmin() {
     );
   }
 
-  // Puzzle list
+  /* ── Puzzle list ── */
   return (
     <div className="space-y-4">
       {confirmation && (
@@ -588,179 +749,6 @@ export default function TicTacToeAdmin() {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-/* ── Cell editor ── */
-function CellEditor({
-  square,
-  rowLabel,
-  colLabel,
-  onSave,
-  onCancel,
-  onCropRequest,
-}: {
-  square: TicTacToeSquareData;
-  rowLabel: string;
-  colLabel: string;
-  onSave: (sq: Partial<TicTacToeSquareData>) => void;
-  onCancel: () => void;
-  onCropRequest: (url: string, onComplete: (url: string) => void) => void;
-}) {
-  const [isCustom, setIsCustom] = useState(square.type === "custom");
-  const [customType, setCustomType] = useState<CustomSquareType>(square.customType ?? "and");
-  const [customText, setCustomText] = useState(square.customText ?? "");
-  const [answers, setAnswers] = useState<TicTacToeAnswer[]>([...square.answers]);
-  const [hint, setHint] = useState(square.hint ?? "");
-  const [sqInfo, setSqInfo] = useState(square.info ?? "");
-  const [newName, setNewName] = useState("");
-  const [newPoints, setNewPoints] = useState(3);
-  const [newAliases, setNewAliases] = useState("");
-
-  const addAnswer = () => {
-    if (!newName.trim()) return;
-    if (answers.some((a) => a.name.toLowerCase() === newName.trim().toLowerCase())) return;
-    const aliases = newAliases.split(",").map((a) => a.trim()).filter(Boolean);
-    setAnswers([...answers, { name: newName.trim(), points: newPoints, aliases: aliases.length > 0 ? aliases : undefined }]);
-    setNewName("");
-    setNewPoints(3);
-    setNewAliases("");
-  };
-
-  const removeAnswer = (name: string) => {
-    setAnswers(answers.filter((a) => a.name !== name));
-  };
-
-  const save = () => {
-    const conditions: [string, string] = isCustom
-      ? computeCustomConditions(customType, customText, rowLabel, colLabel)
-      : [rowLabel, colLabel];
-    onSave({
-      type: isCustom ? "custom" : "normal",
-      conditions,
-      answers,
-      maxScore: calcMaxScore(answers),
-      hint: hint.trim() || undefined,
-      info: sqInfo.trim() || undefined,
-      customType: isCustom ? customType : undefined,
-      customText: isCustom ? customText : undefined,
-    });
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-white">Edit Square</h3>
-        <button onClick={onCancel} className="text-sm text-gray-400 hover:text-white">Back</button>
-      </div>
-
-      <label className="flex items-center gap-2 text-sm text-gray-300">
-        <input type="checkbox" checked={isCustom} onChange={(e) => {
-          setIsCustom(e.target.checked);
-        }} />
-        Custom requirement
-      </label>
-
-      {isCustom && (
-        <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/50 p-3">
-          <div>
-            <label className="text-xs font-bold text-gray-400">Type</label>
-            <select value={customType} onChange={(e) => setCustomType(e.target.value as CustomSquareType)}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white">
-              {(Object.keys(CUSTOM_SQUARE_LABELS) as CustomSquareType[]).map((t) => (
-                <option key={t} value={t}>{CUSTOM_SQUARE_LABELS[t]}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-400">Custom requirement</label>
-            <input value={customText} onChange={(e) => setCustomText(e.target.value)}
-              placeholder="e.g. Scored in Bayern 8-2 Barcelona"
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
-          </div>
-          <div className="rounded-lg bg-gray-900 px-3 py-2">
-            <p className="text-[10px] font-bold text-gray-500 mb-1">Preview:</p>
-            <p className="text-xs text-indigo-300">
-              {computeCustomConditions(customType, customText || "...", rowLabel, colLabel).join(" + ")}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!isCustom && (
-        <div className="rounded-lg bg-gray-800/30 px-3 py-2">
-          <p className="text-xs text-gray-500">
-            <span className="text-gray-400">{rowLabel}</span> + <span className="text-indigo-400">{colLabel}</span>
-          </p>
-        </div>
-      )}
-
-      {/* Info & Hint */}
-      <div className="grid grid-cols-2 gap-3">
-        <ImageField label="Info (context, no penalty)" value={sqInfo} onChange={setSqInfo}
-          onCropRequest={(url) => onCropRequest(url, (cropped) => setSqInfo(cropped))} />
-        <ImageField label="Hint (guided help, tracked)" value={hint} onChange={setHint}
-          onCropRequest={(url) => onCropRequest(url, (cropped) => setHint(cropped))} />
-      </div>
-
-      {/* Answers */}
-      <div>
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-gray-400">Answers ({answers.length})</label>
-          <span className="text-xs text-gray-500">Max score: {calcMaxScore(answers)}</span>
-        </div>
-
-        {answers.length > 0 && (
-          <div className="mt-2 space-y-1">
-            {answers.sort((a, b) => b.points - a.points).map((a) => (
-              <div key={a.name} className="flex items-center justify-between rounded-lg bg-gray-800 px-3 py-2 text-sm">
-                <div>
-                  <span className="text-white">{a.name}</span>
-                  {a.aliases && a.aliases.length > 0 && (
-                    <span className="ml-2 text-[10px] text-gray-500">({a.aliases.join(", ")})</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-indigo-400">{a.points} pts</span>
-                  <button onClick={() => removeAnswer(a.name)} className="text-red-400 hover:text-red-300 text-xs">✕</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Add answer form */}
-        <div className="mt-3 rounded-lg border border-gray-700 bg-gray-800/50 p-3">
-          <div className="flex gap-2">
-            <input value={newName} onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") addAnswer(); }}
-              placeholder="Player name" className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
-            <select value={newPoints} onChange={(e) => setNewPoints(Number(e.target.value))}
-              className="w-20 rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white">
-              {[1, 2, 3, 4, 5, 6, 7].map((p) => <option key={p} value={p}>{p} pts</option>)}
-            </select>
-            <button onClick={addAnswer}
-              className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-bold text-white hover:bg-indigo-500">
-              Add
-            </button>
-          </div>
-          <input value={newAliases} onChange={(e) => setNewAliases(e.target.value)}
-            placeholder="Aliases (comma separated, optional)"
-            className="mt-2 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-white" />
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        <button onClick={save}
-          className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-bold text-white hover:bg-indigo-500">
-          Save Square
-        </button>
-        <button onClick={onCancel}
-          className="rounded-lg border border-gray-600 px-5 py-2 text-sm text-gray-300 hover:text-white">
-          Cancel
-        </button>
-      </div>
     </div>
   );
 }

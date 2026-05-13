@@ -30,6 +30,7 @@ export default function TenableAdmin() {
   const [answers, setAnswers] = useState<TenableAnswer[]>(
     Array.from({ length: 10 }, (_, i) => ({ position: i + 1, name: "", aliases: [] }))
   );
+  const [aliasStrings, setAliasStrings] = useState<Record<number, string>>({});
   const [bulkText, setBulkText] = useState("");
   const [showBulk, setShowBulk] = useState(false);
 
@@ -55,6 +56,7 @@ export default function TenableAdmin() {
     );
     setBulkText("");
     setShowBulk(false);
+    setAliasStrings({});
   };
 
   const openNew = () => {
@@ -82,6 +84,11 @@ export default function TenableAdmin() {
         return found ?? { position: i + 1, name: "", aliases: [] };
       });
       setAnswers(ans);
+      const aStrings: Record<number, string> = {};
+      for (const a of ans) {
+        if (a.aliases && a.aliases.length > 0) aStrings[a.position] = a.aliases.join(", ");
+      }
+      setAliasStrings(aStrings);
       setShowBulk(false);
       setBulkText("");
 
@@ -116,13 +123,15 @@ export default function TenableAdmin() {
       is_ordered: isOrdered,
       daily_date: dailyDate || null,
       is_active: isActive,
-      answers: filledAnswers.map((a) => ({
-        position: a.position,
-        name: a.name.trim(),
-        ...(a.aliases && a.aliases.length > 0
-          ? { aliases: a.aliases.map((al) => al.trim()).filter(Boolean) }
-          : {}),
-      })),
+      answers: filledAnswers.map((a) => {
+        const raw = aliasStrings[a.position] ?? "";
+        const aliases = raw.split(",").map((s) => s.trim()).filter(Boolean);
+        return {
+          position: a.position,
+          name: a.name.trim(),
+          ...(aliases.length > 0 ? { aliases } : {}),
+        };
+      }),
     };
 
     try {
@@ -159,14 +168,14 @@ export default function TenableAdmin() {
     } catch { /* ignore */ }
   };
 
-  const updateAnswer = (position: number, field: "name" | "aliases", value: string) => {
+  const updateAnswerName = (position: number, value: string) => {
     setAnswers((prev) =>
-      prev.map((a) => {
-        if (a.position !== position) return a;
-        if (field === "name") return { ...a, name: value };
-        return { ...a, aliases: value.split(",").map((s) => s.trim()) };
-      })
+      prev.map((a) => a.position === position ? { ...a, name: value } : a)
     );
+  };
+
+  const updateAliasString = (position: number, value: string) => {
+    setAliasStrings((prev) => ({ ...prev, [position]: value }));
   };
 
   const addAnswerSlot = () => {
@@ -209,6 +218,7 @@ export default function TenableAdmin() {
       aliases: [],
     }));
     setAnswers(newAnswers);
+    setAliasStrings({});
     setBulkText("");
     setShowBulk(false);
     setError("");
@@ -359,14 +369,14 @@ export default function TenableAdmin() {
                 <input
                   type="text"
                   value={a.name}
-                  onChange={(e) => updateAnswer(a.position, "name", e.target.value)}
+                  onChange={(e) => updateAnswerName(a.position, e.target.value)}
                   placeholder={`Answer ${a.position}`}
                   className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
                 <input
                   type="text"
-                  value={a.aliases?.join(", ") ?? ""}
-                  onChange={(e) => updateAnswer(a.position, "aliases", e.target.value)}
+                  value={aliasStrings[a.position] ?? ""}
+                  onChange={(e) => updateAliasString(a.position, e.target.value)}
                   placeholder="Aliases (comma-separated)"
                   className="w-48 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
