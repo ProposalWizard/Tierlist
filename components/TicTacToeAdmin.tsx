@@ -131,11 +131,12 @@ function SquareEditor({
   const [isCustom, setIsCustom] = useState(square.type === "custom");
   const [customType, setCustomType] = useState<CustomSquareType>(square.customType ?? "and");
   const [customText, setCustomText] = useState(square.customText ?? "");
-  const [answers, setAnswers] = useState<TicTacToeAnswer[]>([...square.answers]);
+  const [answers, setAnswers] = useState<TicTacToeAnswer[]>(square.answers.map((a) => ({ ...a, aliases: a.aliases ? [...a.aliases] : undefined })));
   const [hint, setHint] = useState(square.hint ?? "");
   const [sqInfo, setSqInfo] = useState(square.info ?? "");
   const [newName, setNewName] = useState("");
   const [newPoints, setNewPoints] = useState(3);
+  const [expandedAlias, setExpandedAlias] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -154,11 +155,15 @@ function SquareEditor({
     const conditions: [string, string] = isCustom
       ? computeCustomConditions(customType, customText, rowLabel, colLabel)
       : [rowLabel, colLabel];
+    const cleanedAnswers = answers.map((a) => {
+      const cleaned = (a.aliases ?? []).map((s) => s.trim()).filter(Boolean);
+      return { name: a.name.trim(), points: a.points, ...(cleaned.length > 0 ? { aliases: cleaned } : {}) };
+    }).filter((a) => a.name);
     onSave({
       type: isCustom ? "custom" : "normal",
       conditions,
-      answers,
-      maxScore: calcMaxScore(answers),
+      answers: cleanedAnswers,
+      maxScore: calcMaxScore(cleanedAnswers),
       hint: hint.trim() || undefined,
       info: sqInfo.trim() || undefined,
       customType: isCustom ? customType : undefined,
@@ -170,7 +175,7 @@ function SquareEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-gray-900 border border-gray-700 p-6 shadow-2xl"
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-gray-900 border border-gray-700 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -207,26 +212,64 @@ function SquareEditor({
 
         {/* Answer list */}
         {answers.length > 0 && (
-          <div className="mb-4 space-y-1 max-h-60 overflow-y-auto">
-            {[...answers].sort((a, b) => b.points - a.points).map((a, idx) => (
-              <div key={a.name} className="flex items-center justify-between rounded-lg bg-gray-800 px-3 py-1.5 text-sm">
-                <span className="text-white truncate">{a.name}</span>
-                <div className="flex items-center gap-2 shrink-0">
+          <div className="mb-4 space-y-1.5 max-h-[50vh] overflow-y-auto">
+            {[...answers].sort((a, b) => b.points - a.points).map((a) => (
+              <div key={a.name} className="rounded-lg bg-gray-800 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={a.name}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAnswers(answers.map((x) => x === a ? { ...x, name: val } : x));
+                    }}
+                    className="flex-1 min-w-0 rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  />
                   <select
                     value={a.points}
                     onChange={(e) => {
                       const pts = Number(e.target.value);
-                      setAnswers(answers.map((x) => x.name === a.name ? { ...x, points: pts } : x));
+                      setAnswers(answers.map((x) => x === a ? { ...x, points: pts } : x));
                     }}
-                    className="w-14 rounded border border-gray-600 bg-gray-700 px-1 py-0.5 text-xs font-bold text-indigo-300"
+                    className="w-14 rounded border border-gray-600 bg-gray-700 px-1 py-1 text-xs font-bold text-indigo-300"
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
                       <option key={p} value={p}>{p}pt</option>
                     ))}
                   </select>
-                  <button onClick={() => setAnswers(answers.filter((x) => x.name !== a.name))}
-                    className="text-red-400 hover:text-red-300 text-xs">✕</button>
+                  <button
+                    onClick={() => setExpandedAlias(expandedAlias === a.name ? null : a.name)}
+                    className={`rounded px-2 py-1 text-[10px] font-bold transition-colors ${
+                      expandedAlias === a.name || (a.aliases && a.aliases.length > 0)
+                        ? "bg-amber-700/40 text-amber-300"
+                        : "bg-gray-700 text-gray-400 hover:text-gray-300"
+                    }`}
+                    title="Aliases"
+                  >
+                    {a.aliases && a.aliases.length > 0 ? `${a.aliases.length} alias${a.aliases.length > 1 ? "es" : ""}` : "Aliases"}
+                  </button>
+                  <button onClick={() => setAnswers(answers.filter((x) => x !== a))}
+                    className="text-red-400 hover:text-red-300 text-sm font-bold">✕</button>
                 </div>
+                {expandedAlias === a.name && (
+                  <div className="mt-2 pl-1">
+                    <input
+                      type="text"
+                      value={(a.aliases ?? []).join(", ")}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const aliases = raw === "" ? [] : raw.split(",").map((s) => s.trimStart());
+                        setAnswers(answers.map((x) => x === a ? { ...x, aliases: aliases.length > 0 ? aliases : undefined } : x));
+                      }}
+                      onBlur={(e) => {
+                        const cleaned = (a.aliases ?? []).map((s) => s.trim()).filter(Boolean);
+                        setAnswers(answers.map((x) => x === a ? { ...x, aliases: cleaned.length > 0 ? cleaned : undefined } : x));
+                      }}
+                      placeholder="Comma-separated alternate names, e.g. Mo Salah, M Salah"
+                      className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -330,7 +373,7 @@ function LabelEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative w-full max-w-xl rounded-2xl bg-gray-900 border border-gray-700 p-6 shadow-2xl"
+        className="relative w-full max-w-2xl rounded-2xl bg-gray-900 border border-gray-700 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
