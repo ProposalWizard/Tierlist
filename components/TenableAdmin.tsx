@@ -102,7 +102,6 @@ export default function TenableAdmin() {
   const handleSave = async () => {
     setError("");
     if (!title.trim()) { setError("Title is required"); return; }
-    if (!category.trim()) { setError("Category is required"); return; }
 
     const filledAnswers = answers.filter((a) => a.name.trim());
     if (filledAnswers.length < 10) {
