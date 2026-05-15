@@ -50,6 +50,22 @@ function fuzzyMatch(input: string, answer: TenableAnswer): boolean {
         }
       }
     }
+    // Surname matching: if input has multiple words, check if any input word
+    // fuzzy-matches the surname (last word) of the answer
+    if (parts.length >= 2) {
+      const surname = parts[parts.length - 1];
+      const inpWords = inp.split(/[\s-]+/);
+      if (inpWords.length >= 2 && surname.length >= 3) {
+        for (const w of inpWords) {
+          if (w.length < 3) continue;
+          if (w === surname) return true;
+          if (w.length >= 4 && surname.length >= 4) {
+            const maxDist = surname.length <= 5 ? 1 : 2;
+            if (levenshtein(w, surname) <= maxDist) return true;
+          }
+        }
+      }
+    }
     return false;
   };
 
