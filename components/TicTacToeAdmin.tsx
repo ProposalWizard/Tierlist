@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer, CustomSquareType } from "@/lib/types";
 import { computeCustomConditions, CUSTOM_SQUARE_LABELS } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -615,89 +615,90 @@ export default function TicTacToeAdmin() {
           onCropRequest={(url) => setCropTarget({ imageUrl: url, onComplete: (cropped) => setInfo(cropped) })} />
 
         {/* ── THE VISUAL GRID ── */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {/* Top-left empty cell */}
-          <div className="aspect-square rounded-lg bg-gray-900" />
+        <div className="mx-auto max-w-xl">
+          <div className="grid grid-cols-4 gap-0 border-2 border-gray-600 rounded-xl overflow-hidden">
+            {/* Top-left empty cell */}
+            <div className="bg-gray-900 border-b-2 border-r-2 border-gray-600 p-2" />
 
-          {/* Column labels (top row) */}
-          {colLabels.map((cl, c) => (
-            <button
-              key={`col-${c}`}
-              onClick={() => setEditingLabel({ type: "col", index: c })}
-              className={`aspect-square rounded-lg border p-2 flex flex-col items-center justify-center text-center transition-colors ${
-                cl ? "border-gray-600 bg-gray-800" : "border-dashed border-gray-700 bg-gray-900"
-              } hover:border-indigo-500`}
-            >
-              {cl ? (
-                <p className="text-[11px] font-black text-white leading-tight break-words">{cl}</p>
-              ) : (
-                <p className="text-[10px] text-gray-600">Col {c + 1}<br/>Click to set</p>
-              )}
-              {(labelExtras.cols[c].info || labelExtras.cols[c].hint) && (
-                <div className="flex gap-1 mt-1">
-                  {labelExtras.cols[c].info && <span className="w-3 h-3 rounded-full bg-cyan-600 text-[7px] font-black text-white flex items-center justify-center">i</span>}
-                  {labelExtras.cols[c].hint && <span className="w-3 h-3 rounded-full bg-indigo-600 text-[7px] font-black text-white flex items-center justify-center">?</span>}
-                </div>
-              )}
-            </button>
-          ))}
-
-          {/* Rows */}
-          {grid.map((row, r) => (
-            <>
-              {/* Row label */}
+            {/* Column labels (top row) */}
+            {colLabels.map((cl, c) => (
               <button
-                key={`row-${r}`}
-                onClick={() => setEditingLabel({ type: "row", index: r })}
-                className={`aspect-square rounded-lg border p-2 flex flex-col items-center justify-center text-center transition-colors ${
-                  rowLabels[r] ? "border-gray-600 bg-gray-800" : "border-dashed border-gray-700 bg-gray-900"
-                } hover:border-indigo-500`}
+                key={`col-${c}`}
+                onClick={() => setEditingLabel({ type: "col", index: c })}
+                className={`p-2 h-16 flex flex-col items-center justify-center text-center transition-colors border-b-2 border-gray-600 ${c < 2 ? "border-r-2" : ""} ${
+                  cl ? "bg-gray-800" : "bg-gray-900"
+                } hover:bg-gray-700`}
               >
-                {rowLabels[r] ? (
-                  <p className="text-[11px] font-black text-white leading-tight break-words">{rowLabels[r]}</p>
+                {cl ? (
+                  <p className="text-[10px] font-black text-white leading-tight break-words line-clamp-3">{cl}</p>
                 ) : (
-                  <p className="text-[10px] text-gray-600">Row {r + 1}<br/>Click to set</p>
+                  <p className="text-[9px] text-gray-600">Col {c + 1}</p>
                 )}
-                {(labelExtras.rows[r].info || labelExtras.rows[r].hint) && (
-                  <div className="flex gap-1 mt-1">
-                    {labelExtras.rows[r].info && <span className="w-3 h-3 rounded-full bg-cyan-600 text-[7px] font-black text-white flex items-center justify-center">i</span>}
-                    {labelExtras.rows[r].hint && <span className="w-3 h-3 rounded-full bg-indigo-600 text-[7px] font-black text-white flex items-center justify-center">?</span>}
+                {(labelExtras.cols[c].info || labelExtras.cols[c].hint) && (
+                  <div className="flex gap-0.5 mt-0.5">
+                    {labelExtras.cols[c].info && <span className="w-2.5 h-2.5 rounded-full bg-cyan-600 text-[6px] font-black text-white flex items-center justify-center">i</span>}
+                    {labelExtras.cols[c].hint && <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 text-[6px] font-black text-white flex items-center justify-center">?</span>}
                   </div>
                 )}
               </button>
+            ))}
 
-              {/* Grid squares */}
-              {row.map((sq, c) => {
-                const hasAnswers = sq.answers.length > 0;
-                return (
-                  <button
-                    key={`sq-${r}-${c}`}
-                    onClick={() => setEditingSquare({ r, c })}
-                    className={`aspect-square rounded-lg border p-2 flex flex-col items-center justify-center text-center transition-colors ${
-                      hasAnswers
-                        ? "border-green-700/50 bg-green-900/20"
-                        : "border-dashed border-gray-700 bg-gray-900"
-                    } hover:border-indigo-500`}
-                  >
-                    {hasAnswers ? (
-                      <>
-                        <p className="text-lg font-black text-white">{sq.answers.length}</p>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase">
-                          {sq.answers.length === 1 ? "answer" : "answers"}
-                        </p>
-                        <p className="text-[10px] font-bold text-indigo-400 mt-0.5">{calcMaxScore(sq.answers)} pts</p>
-                        {sq.type === "custom" && (
-                          <span className="text-[7px] font-bold text-amber-500 mt-0.5">★ Custom</span>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-[10px] text-gray-600">Click to<br/>add answers</p>
-                    )}
-                  </button>
-                );
-              })}
-            </>
-          ))}
+            {/* Rows */}
+            {grid.map((row, r) => (
+              <React.Fragment key={`row-${r}`}>
+                {/* Row label */}
+                <button
+                  onClick={() => setEditingLabel({ type: "row", index: r })}
+                  className={`p-2 h-16 flex flex-col items-center justify-center text-center transition-colors border-r-2 border-gray-600 ${r < 2 ? "border-b-2" : ""} ${
+                    rowLabels[r] ? "bg-gray-800" : "bg-gray-900"
+                  } hover:bg-gray-700`}
+                >
+                  {rowLabels[r] ? (
+                    <p className="text-[10px] font-black text-white leading-tight break-words line-clamp-3">{rowLabels[r]}</p>
+                  ) : (
+                    <p className="text-[9px] text-gray-600">Row {r + 1}</p>
+                  )}
+                  {(labelExtras.rows[r].info || labelExtras.rows[r].hint) && (
+                    <div className="flex gap-0.5 mt-0.5">
+                      {labelExtras.rows[r].info && <span className="w-2.5 h-2.5 rounded-full bg-cyan-600 text-[6px] font-black text-white flex items-center justify-center">i</span>}
+                      {labelExtras.rows[r].hint && <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 text-[6px] font-black text-white flex items-center justify-center">?</span>}
+                    </div>
+                  )}
+                </button>
+
+                {/* Grid squares */}
+                {row.map((sq, c) => {
+                  const hasAnswers = sq.answers.length > 0;
+                  return (
+                    <button
+                      key={`sq-${r}-${c}`}
+                      onClick={() => setEditingSquare({ r, c })}
+                      className={`h-16 p-1 flex flex-col items-center justify-center text-center transition-colors ${
+                        c < 2 ? "border-r-2 border-gray-600" : ""
+                      } ${r < 2 ? "border-b-2 border-gray-600" : ""} ${
+                        hasAnswers
+                          ? "bg-green-900/20"
+                          : "bg-gray-900"
+                      } hover:bg-gray-700`}
+                    >
+                      {hasAnswers ? (
+                        <>
+                          <p className="text-sm font-black text-white leading-none">{sq.answers.length}</p>
+                          <p className="text-[8px] text-gray-400">{sq.answers.length === 1 ? "answer" : "answers"}</p>
+                          <p className="text-[8px] font-bold text-indigo-400">{calcMaxScore(sq.answers)}pts</p>
+                          {sq.type === "custom" && (
+                            <span className="text-[7px] font-bold text-amber-500">★</span>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-[9px] text-gray-600">+</p>
+                      )}
+                    </button>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
         {/* Save / Cancel */}
