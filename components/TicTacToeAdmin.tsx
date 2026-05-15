@@ -155,7 +155,7 @@ function SquareEditor({
     const conditions: [string, string] = isCustom
       ? computeCustomConditions(customType, customText, rowLabel, colLabel)
       : [rowLabel, colLabel];
-    const cleanedAnswers = answers.map((a) => {
+    const cleanedAnswers = [...answers].sort((a, b) => b.points - a.points).map((a) => {
       const cleaned = (a.aliases ?? []).map((s) => s.trim()).filter(Boolean);
       return { name: a.name.trim(), points: a.points, ...(cleaned.length > 0 ? { aliases: cleaned } : {}) };
     }).filter((a) => a.name);
@@ -213,7 +213,7 @@ function SquareEditor({
         {/* Answer list */}
         {answers.length > 0 && (
           <div className="mb-4 space-y-1.5 max-h-[50vh] overflow-y-auto">
-            {[...answers].sort((a, b) => b.points - a.points).map((a) => (
+            {answers.map((a) => (
               <div key={a.name} className="rounded-lg bg-gray-800 px-3 py-2">
                 <div className="flex items-center gap-2">
                   <input
