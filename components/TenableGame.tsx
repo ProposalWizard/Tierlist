@@ -89,6 +89,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
   const [pendingSlotName, setPendingSlotName] = useState<{ pos: number; name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSlotNameRef = useRef<{ pos: number; name: string } | null>(null);
 
   const answers = puzzle.answers;
   const hasBank = !puzzle.is_ordered && answers.length > 10;
@@ -135,19 +136,22 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
 
           if (isCorrect) {
             animTimerRef.current = setTimeout(() => {
-              setRevealed((prev) => new Set(prev).add(targetPos));
-              if (pendingSlotName) {
-                setSlotNames((prev) => new Map(prev).set(pendingSlotName.pos, pendingSlotName.name));
+              const pending = pendingSlotNameRef.current;
+              if (pending) {
+                setSlotNames((prev) => new Map(prev).set(pending.pos, pending.name));
                 setPendingSlotName(null);
+                pendingSlotNameRef.current = null;
               }
+              setRevealed((prev) => {
+                const next = new Set(prev).add(targetPos);
+                if (next.size === 10) {
+                  setWon(true);
+                  setGameOver(true);
+                }
+                return next;
+              });
               setAnim(null);
-              const newRevealed = new Set(revealed).add(targetPos);
-              if (newRevealed.size === 10) {
-                setWon(true);
-                setGameOver(true);
-              } else {
-                inputRef.current?.focus();
-              }
+              inputRef.current?.focus();
             }, 800);
           } else {
             setShowIncorrectFlash(true);
@@ -156,6 +160,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
               setShowIncorrectFlash(false);
               setFlashPosition(null);
               setPendingSlotName(null);
+              pendingSlotNameRef.current = null;
               setAnim(null);
               setLives((prev) => {
                 const next = prev - 1;
@@ -172,7 +177,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
 
       animTimerRef.current = setTimeout(step, 300);
     },
-    [revealed, pendingSlotName]
+    [revealed]
   );
 
   const handleGuess = useCallback(() => {
@@ -186,7 +191,9 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
         setGuess("");
         setGuessedNames((prev) => new Set(prev).add(matchedAnswer.name));
         const targetSlot = getLowestUnrevealed();
-        setPendingSlotName({ pos: targetSlot, name: matchedAnswer.name });
+        const pending = { pos: targetSlot, name: matchedAnswer.name };
+        setPendingSlotName(pending);
+        pendingSlotNameRef.current = pending;
         runAnimation(targetSlot, true);
       } else {
         setGuess("");
@@ -218,6 +225,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
     setGuessedNames(new Set());
     setSlotNames(new Map());
     setPendingSlotName(null);
+    pendingSlotNameRef.current = null;
     inputRef.current?.focus();
   };
 
@@ -330,13 +338,12 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
           </div>
         )}
 
-        {/* Category / description */}
-        <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <p className="text-sm font-bold text-white">{puzzle.category}</p>
-          {puzzle.description && (
-            <p className="mt-1 text-xs text-gray-400 italic">{puzzle.description}</p>
-          )}
-        </div>
+        {/* Description */}
+        {puzzle.description && (
+          <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-4">
+            <p className="text-xs text-gray-400 italic">{puzzle.description}</p>
+          </div>
+        )}
 
         {/* Input or game over */}
         {gameOver ? (
