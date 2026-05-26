@@ -1,181 +1,278 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
 /* ── Types ── */
 
-interface League {
-  league: { id: number; name: string; type: string; logo: string };
-  country: { name: string; flag: string | null };
-  seasons: { year: number; current: boolean }[];
+interface CompetitionResult {
+  id: string;
+  name: string;
+  title?: string;
+  countryName?: string;
+  country?: string;
 }
 
-interface Team {
-  team: { id: number; name: string; logo: string; country: string; founded: number | null };
-  venue: { name: string | null; city: string | null; capacity: number | null };
+interface ClubResult {
+  id: string;
+  name: string;
+  image?: string;
 }
 
 interface SquadPlayer {
-  id: number;
+  id: string;
   name: string;
-  age: number | null;
-  number: number | null;
   position: string;
-  photo: string;
+  dateOfBirth: string;
+  nationality: string[];
+  height: string | null;
+  foot: string | null;
+  joinedOn: string;
+  signedFrom: string | null;
+  marketValue: string | null;
+  imageURL?: string;
 }
 
-interface PlayerStats {
-  player: { id: number; name: string; firstname: string; lastname: string; age: number; nationality: string; photo: string; birth: { date: string; country: string } };
-  statistics: { team: { id: number; name: string }; games: { appearences: number | null; minutes: number | null; position: string }; goals: { total: number | null; assists: number | null } }[];
+interface PlayerProfile {
+  id: string;
+  name: string;
+  fullName: string;
+  imageURL: string;
+  dateOfBirth: string;
+  placeOfBirth: { city: string; country: string } | null;
+  age: number;
+  height: string | null;
+  citizenship: string[];
+  position: { main: string; other: string[] };
+  foot: string | null;
+  club: { id: string; name: string; joined: string; contractExpires: string } | null;
+  marketValue: string | null;
 }
 
-/* ── Popular leagues for quick access ── */
-const POPULAR_LEAGUES = [
-  { id: 39, name: "Premier League", country: "England" },
-  { id: 140, name: "La Liga", country: "Spain" },
-  { id: 135, name: "Serie A", country: "Italy" },
-  { id: 78, name: "Bundesliga", country: "Germany" },
-  { id: 61, name: "Ligue 1", country: "France" },
-  { id: 2, name: "Champions League", country: "Europe" },
-  { id: 94, name: "Primeira Liga", country: "Portugal" },
-  { id: 88, name: "Eredivisie", country: "Netherlands" },
-  { id: 203, name: "Super Lig", country: "Turkey" },
-  { id: 253, name: "MLS", country: "USA" },
+interface Transfer {
+  id: string;
+  from: { clubID: string; clubName: string };
+  to: { clubID: string; clubName: string };
+  date: string;
+  fee: string | null;
+  season: string;
+}
+
+interface PlayerStat {
+  competitionID: string;
+  clubID: string;
+  seasonID: string;
+  competitionName: string;
+  appearances: string | null;
+  goals: string | null;
+  assists: string | null;
+  yellowCards: string | null;
+  redCards: string | null;
+  minutesPlayed: string | null;
+}
+
+interface Achievement {
+  title: string;
+  count?: number | string;
+  details?: string[];
+}
+
+/* ── Quick-access competitions (Transfermarkt IDs) ── */
+const POPULAR = [
+  { id: "GB1", name: "Premier League" },
+  { id: "ES1", name: "La Liga" },
+  { id: "IT1", name: "Serie A" },
+  { id: "L1", name: "Bundesliga" },
+  { id: "FR1", name: "Ligue 1" },
+  { id: "CL", name: "Champions League" },
+  { id: "PO1", name: "Primeira Liga" },
+  { id: "NL1", name: "Eredivisie" },
+  { id: "SC1", name: "Scottish Premiership" },
+  { id: "MLS1", name: "MLS" },
 ];
 
+const POSITION_ORDER = ["Goalkeeper", "Defender", "Midfielder", "Midfield", "Attack", "Forward", "Striker"];
+function posGroup(pos: string): string {
+  const p = pos.toLowerCase();
+  if (p.includes("keeper")) return "Goalkeepers";
+  if (p.includes("back") || p.includes("defen")) return "Defenders";
+  if (p.includes("mid")) return "Midfielders";
+  return "Forwards";
+}
+
+function Img({ src, alt, size = 40 }: { src?: string | null; alt: string; size?: number }) {
+  if (!src) return <div className={`bg-gray-800 rounded-full`} style={{ width: size, height: size }} />;
+  return <Image src={src} alt={alt} width={size} height={size} className="rounded-full object-cover" style={{ width: size, height: size }} unoptimized />;
+}
+
 export default function FootballDataPage() {
-  /* ── State ── */
-  const [view, setView] = useState<"leagues" | "teams" | "players">("leagues");
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [squad, setSquad] = useState<SquadPlayer[]>([]);
-  const [playerStats, setPlayerStats] = useState<PlayerStats[]>([]);
+  const [view, setView] = useState<"home" | "clubs" | "squad" | "player">("home");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedLeague, setSelectedLeague] = useState<{ id: number; name: string; country: string } | null>(null);
-  const [selectedTeam, setSelectedTeam] = useState<{ id: number; name: string; logo: string } | null>(null);
-  const [season, setSeason] = useState("2024");
-  const [leagueSearch, setLeagueSearch] = useState("");
-  const [teamSearch, setTeamSearch] = useState("");
-  const [playerSearch, setPlayerSearch] = useState("");
+  // Search
+  const [searchType, setSearchType] = useState<"player" | "club" | "competition">("player");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  /* ── Fetch leagues ── */
-  const loadLeagues = async () => {
-    if (leagues.length > 0) return;
+  // Data
+  const [competitions, setCompetitions] = useState<CompetitionResult[]>([]);
+  const [clubs, setClubs] = useState<ClubResult[]>([]);
+  const [squadPlayers, setSquadPlayers] = useState<SquadPlayer[]>([]);
+  const [playerDetail, setPlayerDetail] = useState<{
+    profile: PlayerProfile;
+    transfers: { transfers: Transfer[] } | null;
+    stats: { stats: PlayerStat[] } | null;
+    achievements: { achievements: Achievement[] } | null;
+  } | null>(null);
+
+  // Context
+  const [selectedCompetition, setSelectedCompetition] = useState<{ id: string; name: string } | null>(null);
+  const [selectedClub, setSelectedClub] = useState<{ id: string; name: string } | null>(null);
+  const [playerFilter, setPlayerFilter] = useState("");
+
+  /* ── Helpers ── */
+  const api = async (url: string) => {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    return json;
+  };
+
+  /* ── Actions ── */
+  const loadCompetitionClubs = async (compId: string, compName: string) => {
+    setSelectedCompetition({ id: compId, name: compName });
+    setSelectedClub(null);
+    setView("clubs");
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/football/leagues");
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
-      setLeagues(json.leagues);
+      const data = await api(`/api/admin/football/teams?competition=${compId}`);
+      setClubs(data.clubs ?? []);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load leagues");
+      setError(e instanceof Error ? e.message : "Failed");
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    loadLeagues();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Fetch teams ── */
-  const loadTeams = async (leagueId: number, leagueName: string, country: string) => {
-    setSelectedLeague({ id: leagueId, name: leagueName, country });
-    setSelectedTeam(null);
-    setSquad([]);
-    setPlayerStats([]);
-    setView("teams");
+  const loadClubSquad = async (clubId: string, clubName: string) => {
+    setSelectedClub({ id: clubId, name: clubName });
+    setView("squad");
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/football/teams?league=${leagueId}&season=${season}`);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
-      setTeams(json.teams);
+      const data = await api(`/api/admin/football/players?club=${clubId}`);
+      setSquadPlayers(data.players ?? []);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load teams");
+      setError(e instanceof Error ? e.message : "Failed");
     }
     setLoading(false);
   };
 
-  /* ── Fetch players ── */
-  const loadPlayers = async (teamId: number, teamName: string, logo: string) => {
-    setSelectedTeam({ id: teamId, name: teamName, logo });
-    setView("players");
+  const loadPlayerDetail = async (playerId: string) => {
+    setView("player");
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/football/players?team=${teamId}&season=${season}`);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
-      const squadData = json.squad?.[0]?.players ?? [];
-      setSquad(squadData);
-      setPlayerStats(json.stats ?? []);
+      const data = await api(`/api/admin/football/players?player=${playerId}&detail=full`);
+      setPlayerDetail(data);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load players");
+      setError(e instanceof Error ? e.message : "Failed");
     }
     setLoading(false);
   };
 
-  /* ── Filtered data ── */
-  const filteredLeagues = useMemo(() => {
-    if (!leagueSearch.trim()) return leagues;
-    const q = leagueSearch.toLowerCase();
-    return leagues.filter(
-      (l) =>
-        l.league.name.toLowerCase().includes(q) ||
-        l.country.name.toLowerCase().includes(q)
-    );
-  }, [leagues, leagueSearch]);
-
-  const filteredTeams = useMemo(() => {
-    if (!teamSearch.trim()) return teams;
-    const q = teamSearch.toLowerCase();
-    return teams.filter((t) => t.team.name.toLowerCase().includes(q));
-  }, [teams, teamSearch]);
-
-  const statsMap = useMemo(() => {
-    const m = new Map<number, PlayerStats>();
-    for (const s of playerStats) m.set(s.player.id, s);
-    return m;
-  }, [playerStats]);
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      if (searchType === "player") {
+        const data = await api(`/api/admin/football/players?q=${encodeURIComponent(searchQuery)}`);
+        const results = data.results ?? [];
+        if (results.length === 1) {
+          await loadPlayerDetail(results[0].id);
+          return;
+        }
+        setCompetitions([]);
+        setClubs([]);
+        setSquadPlayers(results.map((r: Record<string, unknown>) => ({
+          id: r.id,
+          name: r.name ?? r.playerName,
+          position: (r.position as string) ?? "",
+          dateOfBirth: (r.dateOfBirth as string) ?? "",
+          nationality: Array.isArray(r.nationality) ? r.nationality : [],
+          height: null,
+          foot: null,
+          joinedOn: "",
+          signedFrom: null,
+          marketValue: (r.marketValue as string) ?? null,
+          imageURL: null,
+        })));
+        setView("squad");
+        setSelectedClub({ id: "", name: `Search: "${searchQuery}"` });
+        setSelectedCompetition(null);
+      } else if (searchType === "club") {
+        const data = await api(`/api/admin/football/teams?q=${encodeURIComponent(searchQuery)}`);
+        setClubs(data.clubs ?? []);
+        setView("clubs");
+        setSelectedCompetition({ id: "", name: `Search: "${searchQuery}"` });
+      } else {
+        const data = await api(`/api/admin/football/leagues?q=${encodeURIComponent(searchQuery)}`);
+        setCompetitions(data.results ?? []);
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Search failed");
+    }
+    setLoading(false);
+  };
 
   const filteredSquad = useMemo(() => {
-    if (!playerSearch.trim()) return squad;
-    const q = playerSearch.toLowerCase();
-    return squad.filter((p) => p.name.toLowerCase().includes(q));
-  }, [squad, playerSearch]);
+    if (!playerFilter.trim()) return squadPlayers;
+    const q = playerFilter.toLowerCase();
+    return squadPlayers.filter((p) => p.name.toLowerCase().includes(q));
+  }, [squadPlayers, playerFilter]);
+
+  const groupedSquad = useMemo(() => {
+    const groups: Record<string, SquadPlayer[]> = {};
+    for (const p of filteredSquad) {
+      const g = posGroup(p.position);
+      (groups[g] ??= []).push(p);
+    }
+    return groups;
+  }, [filteredSquad]);
 
   /* ── Breadcrumb ── */
-  const breadcrumb = (
-    <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
+  const crumbs = (
+    <div className="flex items-center gap-2 text-sm text-gray-400 mb-6 flex-wrap">
       <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
       <span>/</span>
-      <button
-        onClick={() => { setView("leagues"); setSelectedLeague(null); setSelectedTeam(null); }}
-        className={`transition-colors ${view === "leagues" ? "text-white font-bold" : "hover:text-white"}`}
-      >
+      <button onClick={() => { setView("home"); setSelectedCompetition(null); setSelectedClub(null); setPlayerDetail(null); }}
+        className={`transition-colors ${view === "home" ? "text-white font-bold" : "hover:text-white"}`}>
         Football Data
       </button>
-      {selectedLeague && (
+      {selectedCompetition && (
         <>
           <span>/</span>
-          <button
-            onClick={() => { setView("teams"); setSelectedTeam(null); }}
-            className={`transition-colors ${view === "teams" ? "text-white font-bold" : "hover:text-white"}`}
-          >
-            {selectedLeague.name}
+          <button onClick={() => { setView("clubs"); setSelectedClub(null); setPlayerDetail(null); }}
+            className={`transition-colors ${view === "clubs" ? "text-white font-bold" : "hover:text-white"}`}>
+            {selectedCompetition.name}
           </button>
         </>
       )}
-      {selectedTeam && (
+      {selectedClub && (
         <>
           <span>/</span>
-          <span className="text-white font-bold">{selectedTeam.name}</span>
+          <button onClick={() => { setView("squad"); setPlayerDetail(null); }}
+            className={`transition-colors ${view === "squad" ? "text-white font-bold" : "hover:text-white"}`}>
+            {selectedClub.name}
+          </button>
+        </>
+      )}
+      {view === "player" && playerDetail && (
+        <>
+          <span>/</span>
+          <span className="text-white font-bold">{playerDetail.profile.name}</span>
         </>
       )}
     </div>
@@ -184,7 +281,7 @@ export default function FootballDataPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        {breadcrumb}
+        {crumbs}
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 px-4 py-2 text-sm text-red-300">
@@ -192,140 +289,108 @@ export default function FootballDataPage() {
           </div>
         )}
 
-        {/* ════════ LEAGUES VIEW ════════ */}
-        {view === "leagues" && (
+        {/* ════════ HOME ════════ */}
+        {view === "home" && (
           <>
             <div className="mb-6">
               <h1 className="text-2xl font-black">Football Data</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Browse leagues, teams, and players from API-Football. Uses {leagues.length > 0 ? "cached" : "live"} data.
+                Browse players, clubs, and competitions from Transfermarkt. Full career histories, transfers, and stats.
               </p>
             </div>
 
-            {/* Quick access */}
+            {/* Search bar */}
+            <div className="mb-6 flex gap-2">
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value as "player" | "club" | "competition")}
+                className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2.5 text-sm text-white focus:border-indigo-600 focus:outline-none"
+              >
+                <option value="player">Player</option>
+                <option value="club">Club</option>
+                <option value="competition">Competition</option>
+              </select>
+              <input
+                type="text"
+                placeholder={`Search ${searchType}s...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none"
+              />
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
+              >
+                {loading ? "..." : "Search"}
+              </button>
+            </div>
+
+            {/* Popular competitions */}
             <div className="mb-6">
               <h2 className="mb-3 text-xs font-bold uppercase text-gray-500">Popular Leagues</h2>
               <div className="flex flex-wrap gap-2">
-                {POPULAR_LEAGUES.map((l) => (
+                {POPULAR.map((c) => (
                   <button
-                    key={l.id}
-                    onClick={() => loadTeams(l.id, l.name, l.country)}
+                    key={c.id}
+                    onClick={() => loadCompetitionClubs(c.id, c.name)}
                     className="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-bold text-white transition-colors hover:border-indigo-600 hover:bg-gray-800"
                   >
-                    {l.name}
+                    {c.name}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Search all leagues */}
-            <div className="mb-4">
-              <h2 className="mb-3 text-xs font-bold uppercase text-gray-500">All Leagues ({filteredLeagues.length})</h2>
-              <input
-                type="text"
-                placeholder="Search leagues or countries..."
-                value={leagueSearch}
-                onChange={(e) => setLeagueSearch(e.target.value)}
-                className="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none"
-              />
-            </div>
-
-            {loading ? (
-              <div className="py-12 text-center text-gray-500">Loading leagues...</div>
-            ) : (
-              <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-gray-800">
-                {filteredLeagues.map((l) => (
-                  <button
-                    key={l.league.id}
-                    onClick={() => loadTeams(l.league.id, l.league.name, l.country.name)}
-                    className="flex w-full items-center gap-3 border-b border-gray-800 px-4 py-3 text-left transition-colors hover:bg-gray-900 last:border-0"
-                  >
-                    {l.league.logo && (
-                      <Image src={l.league.logo} alt="" width={24} height={24} className="h-6 w-6 object-contain" unoptimized />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-white truncate">{l.league.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {l.country.name} · {l.league.type}
-                      </p>
-                    </div>
-                    <span className="text-xs text-gray-600">{l.league.id}</span>
-                  </button>
-                ))}
+            {/* Competition search results */}
+            {competitions.length > 0 && (
+              <div className="mt-4">
+                <h2 className="mb-3 text-xs font-bold uppercase text-gray-500">Competition Results</h2>
+                <div className="space-y-1 rounded-xl border border-gray-800 overflow-hidden">
+                  {competitions.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => loadCompetitionClubs(c.id, c.name || c.title || c.id)}
+                      className="flex w-full items-center gap-3 border-b border-gray-800 px-4 py-3 text-left transition-colors hover:bg-gray-900 last:border-0"
+                    >
+                      <div className="flex-1">
+                        <p className="font-bold text-white">{c.name || c.title}</p>
+                        {(c.countryName || c.country) && (
+                          <p className="text-xs text-gray-500">{c.countryName || c.country}</p>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-600">{c.id}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-
-            {/* Season selector */}
-            <div className="mt-4 flex items-center gap-2">
-              <label className="text-xs font-bold text-gray-500">Season:</label>
-              <select
-                value={season}
-                onChange={(e) => setSeason(e.target.value)}
-                className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white focus:border-indigo-600 focus:outline-none"
-              >
-                {[2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015].map((y) => (
-                  <option key={y} value={String(y)}>{y}/{y + 1}</option>
-                ))}
-              </select>
-            </div>
           </>
         )}
 
-        {/* ════════ TEAMS VIEW ════════ */}
-        {view === "teams" && (
+        {/* ════════ CLUBS ════════ */}
+        {view === "clubs" && (
           <>
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-black">{selectedLeague?.name}</h1>
-                <p className="text-sm text-gray-500">{selectedLeague?.country} · {season}/{Number(season) + 1} · {teams.length} teams</p>
-              </div>
-              <select
-                value={season}
-                onChange={(e) => {
-                  setSeason(e.target.value);
-                  if (selectedLeague) loadTeams(selectedLeague.id, selectedLeague.name, selectedLeague.country);
-                }}
-                className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-white focus:border-indigo-600 focus:outline-none"
-              >
-                {[2024, 2023, 2022, 2021, 2020].map((y) => (
-                  <option key={y} value={String(y)}>{y}/{y + 1}</option>
-                ))}
-              </select>
+            <div className="mb-6">
+              <h1 className="text-2xl font-black">{selectedCompetition?.name}</h1>
+              <p className="text-sm text-gray-500">{clubs.length} clubs</p>
             </div>
 
-            <input
-              type="text"
-              placeholder="Search teams..."
-              value={teamSearch}
-              onChange={(e) => setTeamSearch(e.target.value)}
-              className="mb-4 w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none"
-            />
-
             {loading ? (
-              <div className="py-12 text-center text-gray-500">Loading teams...</div>
+              <div className="py-12 text-center text-gray-500">Loading clubs...</div>
+            ) : clubs.length === 0 ? (
+              <div className="py-12 text-center text-gray-500">No clubs found.</div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredTeams.map((t) => (
+                {clubs.map((c) => (
                   <button
-                    key={t.team.id}
-                    onClick={() => loadPlayers(t.team.id, t.team.name, t.team.logo)}
+                    key={c.id}
+                    onClick={() => loadClubSquad(c.id, c.name)}
                     className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 text-left transition-colors hover:border-indigo-600 hover:bg-gray-800/50"
                   >
-                    {t.team.logo && (
-                      <Image src={t.team.logo} alt="" width={40} height={40} className="h-10 w-10 object-contain" unoptimized />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-white truncate">{t.team.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {t.team.country}
-                        {t.team.founded ? ` · Est. ${t.team.founded}` : ""}
-                      </p>
-                      {t.venue.name && (
-                        <p className="text-xs text-gray-600 truncate">
-                          {t.venue.name}{t.venue.capacity ? ` (${t.venue.capacity.toLocaleString()})` : ""}
-                        </p>
-                      )}
-                    </div>
+                    <Img src={c.image} alt={c.name} size={40} />
+                    <p className="font-bold text-white truncate flex-1">{c.name}</p>
                   </button>
                 ))}
               </div>
@@ -333,97 +398,290 @@ export default function FootballDataPage() {
           </>
         )}
 
-        {/* ════════ PLAYERS VIEW ════════ */}
-        {view === "players" && (
+        {/* ════════ SQUAD ════════ */}
+        {view === "squad" && (
           <>
-            <div className="mb-6 flex items-center gap-3">
-              {selectedTeam?.logo && (
-                <Image src={selectedTeam.logo} alt="" width={40} height={40} className="h-10 w-10 object-contain" unoptimized />
-              )}
-              <div>
-                <h1 className="text-2xl font-black">{selectedTeam?.name}</h1>
-                <p className="text-sm text-gray-500">
-                  {squad.length} players · {season}/{Number(season) + 1}
-                </p>
-              </div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-black">{selectedClub?.name}</h1>
+              <p className="text-sm text-gray-500">{squadPlayers.length} players</p>
             </div>
 
             <input
               type="text"
-              placeholder="Search players..."
-              value={playerSearch}
-              onChange={(e) => setPlayerSearch(e.target.value)}
+              placeholder="Filter players..."
+              value={playerFilter}
+              onChange={(e) => setPlayerFilter(e.target.value)}
               className="mb-4 w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none"
             />
 
             {loading ? (
-              <div className="py-12 text-center text-gray-500">Loading players...</div>
-            ) : filteredSquad.length === 0 ? (
+              <div className="py-12 text-center text-gray-500">Loading squad...</div>
+            ) : Object.keys(groupedSquad).length === 0 ? (
               <div className="py-12 text-center text-gray-500">No players found.</div>
             ) : (
-              <div className="space-y-1">
-                {/* Group by position */}
-                {(["Goalkeeper", "Defender", "Midfielder", "Attacker"] as const).map((pos) => {
-                  const group = filteredSquad.filter((p) => p.position === pos);
-                  if (group.length === 0) return null;
-                  return (
-                    <div key={pos} className="mb-4">
-                      <h3 className="mb-2 text-xs font-bold uppercase text-gray-500">{pos}s ({group.length})</h3>
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {group.map((p) => {
-                          const stats = statsMap.get(p.id);
-                          return (
-                            <div
-                              key={p.id}
-                              className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 p-3 transition-colors hover:border-gray-700"
-                            >
-                              {p.photo && (
-                                <Image src={p.photo} alt="" width={48} height={48} className="h-12 w-12 rounded-full object-cover" unoptimized />
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <p className="font-bold text-white truncate">
-                                  {p.number != null && <span className="text-gray-600 mr-1">#{p.number}</span>}
-                                  {p.name}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <span>{p.position}</span>
-                                  {p.age && <span>· {p.age}y</span>}
-                                  {stats?.player.nationality && (
-                                    <span>· {stats.player.nationality}</span>
-                                  )}
-                                </div>
-                                {stats?.statistics?.[0] && (
-                                  <div className="mt-0.5 flex gap-3 text-xs">
-                                    {stats.statistics[0].games.appearences != null && (
-                                      <span className="text-gray-400">
-                                        <span className="text-white font-bold">{stats.statistics[0].games.appearences}</span> apps
-                                      </span>
-                                    )}
-                                    {stats.statistics[0].goals.total != null && stats.statistics[0].goals.total > 0 && (
-                                      <span className="text-gray-400">
-                                        <span className="text-green-400 font-bold">{stats.statistics[0].goals.total}</span> goals
-                                      </span>
-                                    )}
-                                    {stats.statistics[0].goals.assists != null && stats.statistics[0].goals.assists > 0 && (
-                                      <span className="text-gray-400">
-                                        <span className="text-blue-400 font-bold">{stats.statistics[0].goals.assists}</span> assists
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              Object.entries(groupedSquad).map(([group, players]) => (
+                <div key={group} className="mb-6">
+                  <h3 className="mb-2 text-xs font-bold uppercase text-gray-500">
+                    {group} ({players.length})
+                  </h3>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {players.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => loadPlayerDetail(p.id)}
+                        className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 p-3 text-left transition-colors hover:border-indigo-600 hover:bg-gray-800/50"
+                      >
+                        <Img src={p.imageURL} alt={p.name} size={44} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-white truncate">{p.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>{p.position}</span>
+                            {p.nationality?.length > 0 && <span>· {p.nationality[0]}</span>}
+                          </div>
+                          {p.marketValue && (
+                            <p className="text-xs font-bold text-green-400">{p.marketValue}</p>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </>
+        )}
+
+        {/* ════════ PLAYER DETAIL ════════ */}
+        {view === "player" && (
+          <>
+            {loading ? (
+              <div className="py-12 text-center text-gray-500">Loading player...</div>
+            ) : !playerDetail ? (
+              <div className="py-12 text-center text-gray-500">Player not found.</div>
+            ) : (
+              <PlayerDetailView
+                data={playerDetail}
+                onClubClick={(clubId, clubName) => loadClubSquad(clubId, clubName)}
+              />
             )}
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── Player Detail Component ── */
+
+function PlayerDetailView({
+  data,
+  onClubClick,
+}: {
+  data: {
+    profile: PlayerProfile;
+    transfers: { transfers: Transfer[] } | null;
+    stats: { stats: PlayerStat[] } | null;
+    achievements: { achievements: Achievement[] } | null;
+  };
+  onClubClick: (id: string, name: string) => void;
+}) {
+  const { profile, transfers, stats, achievements } = data;
+  const [tab, setTab] = useState<"career" | "stats" | "trophies">("career");
+
+  const transferList = transfers?.transfers ?? [];
+  const statList = stats?.stats ?? [];
+  const achievementList = achievements?.achievements ?? [];
+
+  // Build career clubs from transfers
+  const careerClubs = useMemo(() => {
+    const clubs: { id: string; name: string; from: string; to: string; fee: string | null }[] = [];
+    for (const t of transferList) {
+      clubs.push({
+        id: t.to.clubID,
+        name: t.to.clubName,
+        from: t.date,
+        to: "",
+        fee: t.fee,
+      });
+    }
+    return clubs;
+  }, [transferList]);
+
+  // Group stats by season
+  const statsBySeason = useMemo(() => {
+    const map = new Map<string, PlayerStat[]>();
+    for (const s of statList) {
+      const key = s.seasonID;
+      const arr = map.get(key) ?? [];
+      arr.push(s);
+      map.set(key, arr);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
+  }, [statList]);
+
+  return (
+    <div>
+      {/* Header card */}
+      <div className="mb-6 flex items-start gap-4 rounded-xl border border-gray-800 bg-gray-900 p-6">
+        <Img src={profile.imageURL} alt={profile.name} size={80} />
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl font-black">{profile.name}</h1>
+          {profile.fullName !== profile.name && (
+            <p className="text-sm text-gray-500">{profile.fullName}</p>
+          )}
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
+            <span>{profile.position?.main}</span>
+            {profile.age && <span>{profile.age} years old</span>}
+            {profile.citizenship?.length > 0 && <span>{profile.citizenship.join(", ")}</span>}
+            {profile.height && <span>{profile.height}</span>}
+            {profile.foot && <span>{profile.foot} foot</span>}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {profile.club && (
+              <button
+                onClick={() => onClubClick(profile.club!.id, profile.club!.name)}
+                className="font-bold text-indigo-400 hover:text-indigo-300"
+              >
+                {profile.club.name}
+              </button>
+            )}
+            {profile.marketValue && (
+              <span className="font-bold text-green-400">{profile.marketValue}</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="mb-4 flex gap-1 rounded-lg border border-gray-800 bg-gray-900 p-1">
+        {(["career", "stats", "trophies"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-bold transition-colors ${
+              tab === t
+                ? "bg-indigo-600 text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {t === "career" ? `Career (${transferList.length})` : t === "stats" ? `Stats (${statsBySeason.length})` : `Trophies (${achievementList.length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Career / Transfers */}
+      {tab === "career" && (
+        <div className="space-y-1">
+          {transferList.length === 0 ? (
+            <p className="py-8 text-center text-gray-500">No transfer history found.</p>
+          ) : (
+            transferList.map((t, i) => (
+              <div
+                key={`${t.id}-${i}`}
+                className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 text-sm">
+                    <button
+                      onClick={() => onClubClick(t.from.clubID, t.from.clubName)}
+                      className="font-bold text-white hover:text-indigo-400 truncate"
+                    >
+                      {t.from.clubName}
+                    </button>
+                    <span className="text-gray-600">→</span>
+                    <button
+                      onClick={() => onClubClick(t.to.clubID, t.to.clubName)}
+                      className="font-bold text-white hover:text-indigo-400 truncate"
+                    >
+                      {t.to.clubName}
+                    </button>
+                  </div>
+                  <div className="flex gap-3 text-xs text-gray-500 mt-0.5">
+                    <span>{t.date}</span>
+                    <span>{t.season}</span>
+                  </div>
+                </div>
+                {t.fee && (
+                  <span className={`shrink-0 text-sm font-bold ${
+                    t.fee.toLowerCase().includes("loan") ? "text-amber-400" :
+                    t.fee === "free transfer" || t.fee === "Free transfer" ? "text-gray-400" :
+                    "text-green-400"
+                  }`}>
+                    {t.fee}
+                  </span>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Stats */}
+      {tab === "stats" && (
+        <div className="space-y-4">
+          {statsBySeason.length === 0 ? (
+            <p className="py-8 text-center text-gray-500">No stats found.</p>
+          ) : (
+            statsBySeason.map(([season, seasonStats]) => (
+              <div key={season}>
+                <h3 className="mb-2 text-sm font-bold text-gray-400">{season}</h3>
+                <div className="overflow-x-auto rounded-lg border border-gray-800">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-800 bg-gray-900 text-xs text-gray-500">
+                        <th className="px-3 py-2 text-left font-bold">Competition</th>
+                        <th className="px-3 py-2 text-center font-bold">Apps</th>
+                        <th className="px-3 py-2 text-center font-bold">Goals</th>
+                        <th className="px-3 py-2 text-center font-bold">Assists</th>
+                        <th className="px-3 py-2 text-center font-bold">Mins</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seasonStats.map((s, i) => (
+                        <tr key={i} className="border-b border-gray-800/50 last:border-0">
+                          <td className="px-3 py-2 text-white">{s.competitionName}</td>
+                          <td className="px-3 py-2 text-center text-gray-300">{s.appearances ?? "-"}</td>
+                          <td className="px-3 py-2 text-center font-bold text-green-400">{s.goals ?? "-"}</td>
+                          <td className="px-3 py-2 text-center text-blue-400">{s.assists ?? "-"}</td>
+                          <td className="px-3 py-2 text-center text-gray-500 font-mono text-xs">{s.minutesPlayed ?? "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Trophies */}
+      {tab === "trophies" && (
+        <div className="space-y-2">
+          {achievementList.length === 0 ? (
+            <p className="py-8 text-center text-gray-500">No trophies found.</p>
+          ) : (
+            achievementList.map((a, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-white">{a.title}</p>
+                  {a.count && (
+                    <span className="rounded-full bg-amber-900/50 px-2 py-0.5 text-xs font-bold text-amber-400">
+                      x{a.count}
+                    </span>
+                  )}
+                </div>
+                {a.details && a.details.length > 0 && (
+                  <p className="mt-1 text-xs text-gray-500">{a.details.join(", ")}</p>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

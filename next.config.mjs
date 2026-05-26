@@ -3,6 +3,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "media.api-sports.io" },
+      { protocol: "https", hostname: "img.a.transfermarkt.technology" },
+      { protocol: "https", hostname: "**.tmssl.akamaized.net" },
     ],
   },
   experimental: {
