@@ -537,6 +537,35 @@ export default function TicTacToeAdmin() {
     } catch { /* ignore */ }
   };
 
+  const downloadJson = (data: unknown, filename: string) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportPuzzle = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/tictactoe/${id}`);
+      if (!res.ok) throw new Error("Failed to load puzzle");
+      const data = await res.json();
+      const slug = (data.title || "puzzle").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      downloadJson(data, `ttt-${slug}.json`);
+    } catch { setError("Failed to export puzzle"); }
+  };
+
+  const exportAll = async () => {
+    try {
+      const results = await Promise.all(
+        puzzles.map((p) => fetch(`/api/admin/tictactoe/${p.id}`).then((r) => r.json()))
+      );
+      downloadJson(results, `ttt-all-puzzles.json`);
+    } catch { setError("Failed to export puzzles"); }
+  };
+
   const updateSquare = (r: number, c: number, update: Partial<TicTacToeSquareData>) => {
     setGrid((g) => {
       const newGrid = g.map((row) => row.map((sq) => ({ ...sq })));
@@ -795,10 +824,18 @@ export default function TicTacToeAdmin() {
 
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-white">Tic Tac Toe Puzzles ({puzzles.length})</h3>
-        <button onClick={openNew}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500">
-          + New Puzzle
-        </button>
+        <div className="flex gap-2">
+          {puzzles.length > 0 && (
+            <button onClick={exportAll}
+              className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-bold text-gray-300 hover:text-white hover:border-gray-500">
+              Export All
+            </button>
+          )}
+          <button onClick={openNew}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500">
+            + New Puzzle
+          </button>
+        </div>
       </div>
 
       {puzzles.length === 0 ? (
@@ -820,6 +857,10 @@ export default function TicTacToeAdmin() {
                 </div>
               </div>
               <div className="flex gap-2">
+                <button onClick={() => exportPuzzle(p.id)}
+                  className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-gray-300 hover:bg-gray-700">
+                  Export
+                </button>
                 <button onClick={() => openEdit(p.id)}
                   className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-700">
                   Edit
