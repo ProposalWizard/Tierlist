@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
-import { tmFetch } from "@/lib/transfermarkt";
+import { apiFetch } from "@/lib/apiFootball";
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -11,62 +11,71 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const clubId = searchParams.get("club");
+  const teamId = searchParams.get("team");
   const playerId = searchParams.get("player");
-  const playerQuery = searchParams.get("q");
-  const seasonId = searchParams.get("season");
+  const search = searchParams.get("q");
+  const season = searchParams.get("season") ?? "2024";
   const detail = searchParams.get("detail");
 
   // Search players by name
-  if (playerQuery) {
+  if (search) {
     try {
-      const data = await tmFetch(`/players/search/${encodeURIComponent(playerQuery)}`);
-      return NextResponse.json(data);
+      const { data, errors } = await apiFetch("/players", { search, league: "39", season });
+      if (errors.length > 0) {
+        return NextResponse.json({ error: errors.join(", ") }, { status: 502 });
+      }
+      return NextResponse.json({ players: data });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   }
 
-  // Get single player details
+  // Get single player details (career, transfers, trophies)
   if (playerId) {
     try {
-      const profile = await tmFetch(`/players/${playerId}/profile`);
+      const result: Record<string, unknown> = {};
 
-      let transfers = null;
-      let stats = null;
-      let achievements = null;
+      // Career clubs
+      const { data: careerData } = await apiFetch("/players/teams", { player: playerId });
+      result.career = careerData;
 
       if (detail === "full" || detail === "transfers") {
-        transfers = await tmFetch(`/players/${playerId}/transfers`);
+        const { data: transferData } = await apiFetch("/transfers", { player: playerId });
+        result.transfers = transferData;
       }
+
+      if (detail === "full" || detail === "trophies") {
+        const { data: trophyData } = await apiFetch("/trophies", { player: playerId });
+        result.trophies = trophyData;
+      }
+
       if (detail === "full" || detail === "stats") {
-        stats = await tmFetch(`/players/${playerId}/stats`);
-      }
-      if (detail === "full" || detail === "achievements") {
-        achievements = await tmFetch(`/players/${playerId}/achievements`);
+        // Get stats for the most recent seasons available
+        const { data: statsData } = await apiFetch("/players", { id: playerId, season });
+        result.stats = statsData;
       }
 
-      return NextResponse.json({ profile, transfers, stats, achievements });
+      return NextResponse.json(result);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   }
 
-  // Get club squad
-  if (clubId) {
+  // Get team squad
+  if (teamId) {
     try {
-      const url = seasonId
-        ? `/clubs/${clubId}/players?season_id=${seasonId}`
-        : `/clubs/${clubId}/players`;
-      const data = await tmFetch(url);
-      return NextResponse.json(data);
+      const { data: squadData, errors } = await apiFetch("/players/squads", { team: teamId });
+      if (errors.length > 0) {
+        return NextResponse.json({ error: errors.join(", ") }, { status: 502 });
+      }
+      return NextResponse.json({ squad: squadData });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   }
 
-  return NextResponse.json({ error: "Provide club, player, or q param" }, { status: 400 });
+  return NextResponse.json({ error: "Provide team, player, or q param" }, { status: 400 });
 }
