@@ -1,16 +1,30 @@
-const WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql";
+const SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
+const SEARCH_ENDPOINT = "https://www.wikidata.org/w/api.php";
+const UA = "Knowitball/1.0 (knowitballcontact@gmail.com)";
 
 type SparqlValue = { value: string };
 type SparqlRow = Record<string, SparqlValue | undefined>;
 
 async function sparql(query: string): Promise<SparqlRow[]> {
-  const url = `${WIKIDATA_ENDPOINT}?format=json&query=${encodeURIComponent(query)}`;
+  const url = `${SPARQL_ENDPOINT}?format=json&query=${encodeURIComponent(query)}`;
   const res = await fetch(url, {
-    headers: { "User-Agent": "Knowitball/1.0 (knowitballcontact@gmail.com)", Accept: "application/sparql-results+json" },
+    headers: { "User-Agent": UA, Accept: "application/sparql-results+json" },
   });
   if (!res.ok) throw new Error(`Wikidata ${res.status}: ${res.statusText}`);
   const json = await res.json();
   return (json.results?.bindings ?? []) as SparqlRow[];
+}
+
+async function entitySearch(query: string, limit = 30): Promise<{ id: string; label: string; description: string }[]> {
+  const url = `${SEARCH_ENDPOINT}?action=wbsearchentities&search=${encodeURIComponent(query)}&language=en&limit=${limit}&format=json&origin=*`;
+  const res = await fetch(url, { headers: { "User-Agent": UA } });
+  if (!res.ok) throw new Error(`Wikidata search ${res.status}`);
+  const json = await res.json();
+  return (json.search ?? []).map((s: Record<string, string>) => ({
+    id: s.id,
+    label: s.label ?? "",
+    description: s.description ?? "",
+  }));
 }
 
 export interface WikiPlayer {
@@ -39,23 +53,25 @@ export interface WikiClub {
 
 /* ── Search players by name ── */
 export async function searchPlayers(name: string): Promise<WikiPlayer[]> {
+  const candidates = await entitySearch(name, 50);
+  if (candidates.length === 0) return [];
+
+  const idOrder = candidates.map((c) => c.id);
+  const ids = candidates.map((c) => `wd:${c.id}`).join(" ");
   const q = `
-    SELECT DISTINCT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image WHERE {
-      ?player wdt:P106 wd:Q937857 ;
-              rdfs:label ?label .
-      FILTER(LANG(?label) = "en")
-      FILTER(CONTAINS(LCASE(?label), "${name.toLowerCase().replace(/"/g, "")}"))
+    SELECT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image WHERE {
+      VALUES ?player { ${ids} }
+      ?player wdt:P106 wd:Q937857 .
       OPTIONAL { ?player wdt:P27 ?nationality }
       OPTIONAL { ?player wdt:P413 ?position }
       OPTIONAL { ?player wdt:P569 ?dob }
       OPTIONAL { ?player wdt:P18 ?image }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
     }
-    LIMIT 30
   `;
   const rows = await sparql(q);
   const seen = new Set<string>();
-  return rows
+  const unsorted = rows
     .map((r) => {
       const id = r.player?.value?.split("/").pop() ?? "";
       if (seen.has(id)) return null;
@@ -70,6 +86,8 @@ export async function searchPlayers(name: string): Promise<WikiPlayer[]> {
       };
     })
     .filter(Boolean) as WikiPlayer[];
+  unsorted.sort((a, b) => idOrder.indexOf(a.id) - idOrder.indexOf(b.id));
+  return unsorted;
 }
 
 /* ── Get player career (all clubs with dates) ── */
@@ -77,9 +95,7 @@ export async function getPlayerCareer(playerId: string): Promise<{ player: WikiP
   const q = `
     SELECT ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image
            ?teamLabel ?team ?startDate ?endDate WHERE {
-      wd:${playerId} wdt:P106 wd:Q937857 ;
-                      rdfs:label ?pLabel .
-      FILTER(LANG(?pLabel) = "en")
+      wd:${playerId} wdt:P106 wd:Q937857 .
       OPTIONAL { wd:${playerId} wdt:P27 ?nationality }
       OPTIONAL { wd:${playerId} wdt:P413 ?position }
       OPTIONAL { wd:${playerId} wdt:P569 ?dob }
@@ -128,22 +144,24 @@ export async function getPlayerCareer(playerId: string): Promise<{ player: WikiP
 
 /* ── Search clubs by name ── */
 export async function searchClubs(name: string): Promise<WikiClub[]> {
+  const candidates = await entitySearch(name, 30);
+  if (candidates.length === 0) return [];
+
+  const idOrder = candidates.map((c) => c.id);
+  const ids = candidates.map((c) => `wd:${c.id}`).join(" ");
   const q = `
-    SELECT DISTINCT ?club ?clubLabel ?countryLabel ?leagueLabel ?image WHERE {
-      ?club wdt:P31/wdt:P279* wd:Q476028 ;
-            rdfs:label ?label .
-      FILTER(LANG(?label) = "en")
-      FILTER(CONTAINS(LCASE(?label), "${name.toLowerCase().replace(/"/g, "")}"))
+    SELECT ?club ?clubLabel ?countryLabel ?leagueLabel ?image WHERE {
+      VALUES ?club { ${ids} }
+      ?club wdt:P31/wdt:P279* wd:Q476028 .
       OPTIONAL { ?club wdt:P17 ?country }
       OPTIONAL { ?club wdt:P118 ?league }
       OPTIONAL { ?club wdt:P18 ?image }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
     }
-    LIMIT 30
   `;
   const rows = await sparql(q);
   const seen = new Set<string>();
-  return rows
+  const unsorted = rows
     .map((r) => {
       const id = r.club?.value?.split("/").pop() ?? "";
       if (seen.has(id)) return null;
@@ -157,6 +175,8 @@ export async function searchClubs(name: string): Promise<WikiClub[]> {
       };
     })
     .filter(Boolean) as WikiClub[];
+  unsorted.sort((a, b) => idOrder.indexOf(a.id) - idOrder.indexOf(b.id));
+  return unsorted;
 }
 
 /* ── Get club squad (current players) ── */
