@@ -11,9 +11,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
-import nextDynamic from "next/dynamic";
 import LikeButton from "@/components/LikeButton";
-const VoteBoard = nextDynamic(() => import("@/components/VoteBoard"), { ssr: false });
+import VoteBoardLoader from "./VoteBoardLoader";
 import type { VoteImageWithCounts, VoteTier } from "@/lib/types";
 
 interface Props { params: Promise<{ id: string }> }
@@ -163,7 +162,7 @@ export default async function VotePage({ params }: Props) {
             No items to vote on yet.
           </div>
         ) : (
-          <VoteBoard
+          <VoteBoardLoader
             votelistId={id}
             tiers={tiers}
             initialImages={enrichedImages}

@@ -10,8 +10,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
-import nextDynamic from "next/dynamic";
-const AdminPanel = nextDynamic(() => import("@/components/AdminPanel"), { ssr: false });
+import AdminPanelLoader from "./AdminPanelLoader";
 import type { Tierlist } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -52,7 +51,7 @@ export default async function AdminPage() {
         </p>
       </header>
 
-      <AdminPanel initialTierlists={tierlists ?? []} />
+      <AdminPanelLoader initialTierlists={tierlists ?? []} />
     </main>
   );
 }

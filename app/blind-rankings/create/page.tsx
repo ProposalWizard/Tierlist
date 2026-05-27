@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import nextDynamic from "next/dynamic";
-
-const CreateBlindRanking = nextDynamic(() => import("@/components/CreateBlindRanking"), { ssr: false });
+import CreateBlindRankingLoader from "./CreateBlindRankingLoader";
 
 export const metadata: Metadata = {
   title: "Create Blind Ranking",
@@ -31,7 +29,7 @@ export default async function CreateBlindRankingPage() {
       </div>
 
       <main className="mx-auto max-w-2xl px-4 py-8">
-        <CreateBlindRanking />
+        <CreateBlindRankingLoader />
       </main>
     </div>
   );

@@ -9,11 +9,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
-import nextDynamic from "next/dynamic";
 import LikeButton from "@/components/LikeButton";
 import SaveTierlistButton from "@/components/SaveTierlistButton";
-const TierlistBoard = nextDynamic(() => import("@/components/TierlistBoard"), { ssr: false });
-const PlayCommunityVote = nextDynamic(() => import("@/components/PlayCommunityVote"), { ssr: false });
+import TierlistBoardLoader from "./TierlistBoardLoader";
+import PlayCommunityVoteLoader from "./PlayCommunityVoteLoader";
 import type { Tierlist, TierlistImage, VoteTier } from "@/lib/types";
 
 interface Props { params: Promise<{ id: string }> }
@@ -169,7 +168,7 @@ export default async function PlayPage({ params }: Props) {
       </header>
 
       {linkedVoteTierlist && linkedVoteImages.length > 0 && (
-        <PlayCommunityVote
+        <PlayCommunityVoteLoader
           tiers={linkedVoteTierlist.tiers}
           images={linkedVoteImages}
           votelistTitle={linkedVoteTierlist.title}
@@ -177,7 +176,7 @@ export default async function PlayPage({ params }: Props) {
         />
       )}
 
-      <TierlistBoard
+      <TierlistBoardLoader
         initialImages={images.map((img) => ({
           id: img.id,
           name: img.name,
