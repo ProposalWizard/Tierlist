@@ -229,6 +229,53 @@ export async function getClubSquad(clubId: string): Promise<{ club: WikiClub; pl
   return { club, players };
 }
 
+/* ── Find players who played for both clubs ── */
+export async function findPlayersForBothClubs(
+  clubId1: string,
+  clubId2: string,
+): Promise<{ club1: string; club2: string; players: WikiPlayer[] }> {
+  const q = `
+    SELECT DISTINCT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image
+           ?club1Label ?club2Label WHERE {
+      ?player wdt:P106 wd:Q937857 ;
+              p:P54 ?mem1 ;
+              p:P54 ?mem2 .
+      ?mem1 ps:P54 wd:${clubId1} .
+      ?mem2 ps:P54 wd:${clubId2} .
+      BIND(wd:${clubId1} AS ?club1)
+      BIND(wd:${clubId2} AS ?club2)
+      OPTIONAL { ?player wdt:P27 ?nationality }
+      OPTIONAL { ?player wdt:P413 ?position }
+      OPTIONAL { ?player wdt:P569 ?dob }
+      OPTIONAL { ?player wdt:P18 ?image }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+    }
+    ORDER BY ?playerLabel
+  `;
+  const rows = await sparql(q);
+
+  const club1 = rows[0]?.club1Label?.value ?? clubId1;
+  const club2 = rows[0]?.club2Label?.value ?? clubId2;
+
+  const seen = new Set<string>();
+  const players: WikiPlayer[] = [];
+  for (const row of rows) {
+    const id = row.player?.value?.split("/").pop() ?? "";
+    if (seen.has(id)) continue;
+    seen.add(id);
+    players.push({
+      id,
+      name: row.playerLabel?.value ?? "",
+      nationality: row.nationalityLabel?.value ?? "",
+      position: row.positionLabel?.value ?? "",
+      dob: row.dob?.value?.slice(0, 10) ?? "",
+      image: row.image?.value ?? null,
+    });
+  }
+
+  return { club1, club2, players };
+}
+
 /* ── Get all players who played for a club (historical) ── */
 export async function getClubHistory(clubId: string): Promise<{ club: WikiClub; players: (WikiPlayer & { startDate: string | null; endDate: string | null })[] }> {
   const q = `
