@@ -56,6 +56,7 @@ export async function searchPlayers(name: string): Promise<WikiPlayer[]> {
   const candidates = await entitySearch(name, 50);
   if (candidates.length === 0) return [];
 
+  const idOrder = candidates.map((c) => c.id);
   const ids = candidates.map((c) => `wd:${c.id}`).join(" ");
   const q = `
     SELECT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image WHERE {
@@ -70,7 +71,7 @@ export async function searchPlayers(name: string): Promise<WikiPlayer[]> {
   `;
   const rows = await sparql(q);
   const seen = new Set<string>();
-  return rows
+  const unsorted = rows
     .map((r) => {
       const id = r.player?.value?.split("/").pop() ?? "";
       if (seen.has(id)) return null;
@@ -85,6 +86,8 @@ export async function searchPlayers(name: string): Promise<WikiPlayer[]> {
       };
     })
     .filter(Boolean) as WikiPlayer[];
+  unsorted.sort((a, b) => idOrder.indexOf(a.id) - idOrder.indexOf(b.id));
+  return unsorted;
 }
 
 /* ── Get player career (all clubs with dates) ── */
@@ -144,6 +147,7 @@ export async function searchClubs(name: string): Promise<WikiClub[]> {
   const candidates = await entitySearch(name, 30);
   if (candidates.length === 0) return [];
 
+  const idOrder = candidates.map((c) => c.id);
   const ids = candidates.map((c) => `wd:${c.id}`).join(" ");
   const q = `
     SELECT ?club ?clubLabel ?countryLabel ?leagueLabel ?image WHERE {
@@ -157,7 +161,7 @@ export async function searchClubs(name: string): Promise<WikiClub[]> {
   `;
   const rows = await sparql(q);
   const seen = new Set<string>();
-  return rows
+  const unsorted = rows
     .map((r) => {
       const id = r.club?.value?.split("/").pop() ?? "";
       if (seen.has(id)) return null;
@@ -171,6 +175,8 @@ export async function searchClubs(name: string): Promise<WikiClub[]> {
       };
     })
     .filter(Boolean) as WikiClub[];
+  unsorted.sort((a, b) => idOrder.indexOf(a.id) - idOrder.indexOf(b.id));
+  return unsorted;
 }
 
 /* ── Get club squad (current players) ── */
