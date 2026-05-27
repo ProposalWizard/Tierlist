@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { TenablePuzzle } from "@/lib/types";
-
-const TenableGame = dynamic(() => import("@/components/TenableGame"), { ssr: false });
+import TenableGameLoader from "./TenableGameLoader";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -40,7 +38,7 @@ export default async function TenablePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <TenableGame puzzle={puzzle} />
+      <TenableGameLoader puzzle={puzzle} />
     </div>
   );
 }

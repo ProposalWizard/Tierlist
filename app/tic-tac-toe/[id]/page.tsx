@@ -2,9 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { TicTacToePuzzle } from "@/lib/types";
-import dynamic from "next/dynamic";
-
-const TicTacToeGame = dynamic(() => import("@/components/TicTacToeGame"), { ssr: false });
+import TicTacToeGameLoader from "./TicTacToeGameLoader";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -56,7 +54,7 @@ export default async function TicTacToePlayPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <TicTacToeGame puzzle={puzzle} />
+      <TicTacToeGameLoader puzzle={puzzle} />
     </div>
   );
 }

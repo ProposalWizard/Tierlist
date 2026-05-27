@@ -11,8 +11,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
-import dynamic from "next/dynamic";
-const TierlistBoard = dynamic(() => import("@/components/TierlistBoard"), { ssr: false });
+import TierlistBoardLoader from "./TierlistBoardLoader";
 
 export const metadata: Metadata = {
   title: "Create Tierlist",
@@ -45,7 +44,7 @@ export default async function CreatePage() {
         </p>
       </header>
 
-      <TierlistBoard mode="create" isAdmin={userIsAdmin} />
+      <TierlistBoardLoader mode="create" isAdmin={userIsAdmin} />
     </main>
   );
 }

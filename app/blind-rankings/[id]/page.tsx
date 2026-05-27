@@ -2,11 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
-import nextDynamic from "next/dynamic";
 import type { BlindRankingImage } from "@/lib/types";
 import LikeButton from "@/components/LikeButton";
-
-const BlindRankingBoard = nextDynamic(() => import("@/components/BlindRankingBoard"), { ssr: false });
+import BlindRankingBoardLoader from "./BlindRankingBoardLoader";
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -136,7 +134,7 @@ export default async function BlindRankingPage({ params }: Props) {
       </div>
 
       <main className="mx-auto max-w-5xl px-4 py-6">
-        <BlindRankingBoard
+        <BlindRankingBoardLoader
           rankingId={id}
           title={ranking.title}
           numSlots={ranking.num_slots}
