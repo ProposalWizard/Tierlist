@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
-import { apiFetch } from "@/lib/apiFootball";
+import { getClubSquad, getClubHistory } from "@/lib/wikidata";
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -11,19 +11,20 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const leagueId = searchParams.get("league");
-  const season = searchParams.get("season") ?? "2024";
+  const clubId = searchParams.get("club");
+  const history = searchParams.get("history") === "true";
 
-  if (!leagueId) {
-    return NextResponse.json({ error: "league param required" }, { status: 400 });
+  if (!clubId) {
+    return NextResponse.json({ error: "club param required" }, { status: 400 });
   }
 
   try {
-    const { data, errors } = await apiFetch("/teams", { league: leagueId, season });
-    if (errors.length > 0) {
-      return NextResponse.json({ error: errors.join(", ") }, { status: 502 });
+    if (history) {
+      const data = await getClubHistory(clubId);
+      return NextResponse.json(data);
     }
-    return NextResponse.json({ teams: data });
+    const data = await getClubSquad(clubId);
+    return NextResponse.json(data);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
