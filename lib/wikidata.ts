@@ -1,13 +1,16 @@
 const WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql";
 
-async function sparql<T = Record<string, unknown>>(query: string): Promise<T[]> {
+type SparqlValue = { value: string };
+type SparqlRow = Record<string, SparqlValue | undefined>;
+
+async function sparql(query: string): Promise<SparqlRow[]> {
   const url = `${WIKIDATA_ENDPOINT}?format=json&query=${encodeURIComponent(query)}`;
   const res = await fetch(url, {
     headers: { "User-Agent": "Knowitball/1.0 (knowitballcontact@gmail.com)", Accept: "application/sparql-results+json" },
   });
   if (!res.ok) throw new Error(`Wikidata ${res.status}: ${res.statusText}`);
   const json = await res.json();
-  return (json.results?.bindings ?? []) as T[];
+  return (json.results?.bindings ?? []) as SparqlRow[];
 }
 
 export interface WikiPlayer {
@@ -53,7 +56,7 @@ export async function searchPlayers(name: string): Promise<WikiPlayer[]> {
   const rows = await sparql(q);
   const seen = new Set<string>();
   return rows
-    .map((r: Record<string, Record<string, string>>) => {
+    .map((r) => {
       const id = r.player?.value?.split("/").pop() ?? "";
       if (seen.has(id)) return null;
       seen.add(id);
@@ -94,7 +97,7 @@ export async function getPlayerCareer(playerId: string): Promise<{ player: WikiP
   const rows = await sparql(q);
   if (rows.length === 0) throw new Error("Player not found");
 
-  const first = rows[0] as Record<string, Record<string, string>>;
+  const first = rows[0];
   const player: WikiPlayer = {
     id: playerId,
     name: first.playerLabel?.value ?? "",
@@ -106,8 +109,7 @@ export async function getPlayerCareer(playerId: string): Promise<{ player: WikiP
 
   const seen = new Set<string>();
   const career: WikiCareerEntry[] = [];
-  for (const r of rows) {
-    const row = r as Record<string, Record<string, string>>;
+  for (const row of rows) {
     const teamUri = row.team?.value;
     if (!teamUri) continue;
     const key = `${teamUri}-${row.startDate?.value ?? ""}`;
@@ -142,7 +144,7 @@ export async function searchClubs(name: string): Promise<WikiClub[]> {
   const rows = await sparql(q);
   const seen = new Set<string>();
   return rows
-    .map((r: Record<string, Record<string, string>>) => {
+    .map((r) => {
       const id = r.club?.value?.split("/").pop() ?? "";
       if (seen.has(id)) return null;
       seen.add(id);
@@ -179,7 +181,7 @@ export async function getClubSquad(clubId: string): Promise<{ club: WikiClub; pl
   `;
   const rows = await sparql(q);
 
-  const first = rows[0] as Record<string, Record<string, string>> | undefined;
+  const first = rows[0];
   const club: WikiClub = {
     id: clubId,
     name: first?.clubLabel?.value ?? clubId,
@@ -190,8 +192,7 @@ export async function getClubSquad(clubId: string): Promise<{ club: WikiClub; pl
 
   const seen = new Set<string>();
   const players: WikiPlayer[] = [];
-  for (const r of rows) {
-    const row = r as Record<string, Record<string, string>>;
+  for (const row of rows) {
     const id = row.player?.value?.split("/").pop() ?? "";
     if (seen.has(id)) continue;
     seen.add(id);
@@ -232,7 +233,7 @@ export async function getClubHistory(clubId: string): Promise<{ club: WikiClub; 
   `;
   const rows = await sparql(q);
 
-  const first = rows[0] as Record<string, Record<string, string>> | undefined;
+  const first = rows[0];
   const club: WikiClub = {
     id: clubId,
     name: first?.clubLabel?.value ?? clubId,
@@ -243,8 +244,7 @@ export async function getClubHistory(clubId: string): Promise<{ club: WikiClub; 
 
   const seen = new Set<string>();
   const players: (WikiPlayer & { startDate: string | null; endDate: string | null })[] = [];
-  for (const r of rows) {
-    const row = r as Record<string, Record<string, string>>;
+  for (const row of rows) {
     const id = row.player?.value?.split("/").pop() ?? "";
     const key = `${id}-${row.startDate?.value ?? ""}`;
     if (seen.has(key)) continue;
