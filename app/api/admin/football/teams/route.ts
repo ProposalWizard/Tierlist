@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
-import { tmFetch } from "@/lib/transfermarkt";
+import { getClubSquad, getClubHistory } from "@/lib/wikidata";
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -11,29 +11,19 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const competitionId = searchParams.get("competition");
-  const seasonId = searchParams.get("season");
-  const clubQuery = searchParams.get("q");
+  const clubId = searchParams.get("club");
+  const history = searchParams.get("history") === "true";
 
-  if (clubQuery) {
-    try {
-      const data = await tmFetch(`/clubs/search/${encodeURIComponent(clubQuery)}`);
-      return NextResponse.json(data);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      return NextResponse.json({ error: msg }, { status: 500 });
-    }
-  }
-
-  if (!competitionId) {
-    return NextResponse.json({ error: "competition or q param required" }, { status: 400 });
+  if (!clubId) {
+    return NextResponse.json({ error: "club param required" }, { status: 400 });
   }
 
   try {
-    const url = seasonId
-      ? `/competitions/${competitionId}/clubs?season_id=${seasonId}`
-      : `/competitions/${competitionId}/clubs`;
-    const data = await tmFetch(url);
+    if (history) {
+      const data = await getClubHistory(clubId);
+      return NextResponse.json(data);
+    }
+    const data = await getClubSquad(clubId);
     return NextResponse.json(data);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";

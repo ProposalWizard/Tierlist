@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
-import { tmFetch } from "@/lib/transfermarkt";
+import { searchClubs } from "@/lib/wikidata";
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -18,8 +18,8 @@ export async function GET(req: Request) {
   }
 
   try {
-    const data = await tmFetch(`/competitions/search/${encodeURIComponent(query)}`);
-    return NextResponse.json(data);
+    const clubs = await searchClubs(query);
+    return NextResponse.json({ clubs });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
