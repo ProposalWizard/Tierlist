@@ -19,7 +19,7 @@ async function sparql(query: string): Promise<SparqlRow[]> {
       return (json.results?.bindings ?? []) as SparqlRow[];
     }
     lastErr = new Error(`Wikidata ${res.status}: ${res.statusText}`);
-    if (res.status !== 429 && res.status !== 503) throw lastErr;
+    if (res.status !== 429 && res.status !== 502 && res.status !== 503) throw lastErr;
     if (attempt < delays.length) await new Promise((r) => setTimeout(r, delays[attempt]));
   }
   throw lastErr!;
@@ -246,8 +246,7 @@ export async function findPlayersForBothClubs(
 ): Promise<{ club1: string; club2: string; players: WikiPlayer[] }> {
   const idsQuery = (clubId: string) => `
     SELECT DISTINCT ?player WHERE {
-      ?player wdt:P106 wd:Q937857 ;
-              p:P54/ps:P54 wd:${clubId} .
+      ?player p:P54/ps:P54 wd:${clubId} .
     }
   `;
 
@@ -276,6 +275,7 @@ export async function findPlayersForBothClubs(
   const detailQ = `
     SELECT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image WHERE {
       VALUES ?player { ${values} }
+      ?player wdt:P106 wd:Q937857 .
       OPTIONAL { ?player wdt:P27 ?nationality }
       OPTIONAL { ?player wdt:P413 ?position }
       OPTIONAL { ?player wdt:P569 ?dob }
@@ -338,11 +338,12 @@ export async function buildTTTGrid(
   });
 
   const clubPlayers: Record<string, Set<string>> = {};
-  for (const id of uniqueIds) {
+  for (let i = 0; i < uniqueIds.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 500));
+    const id = uniqueIds[i];
     const q = `
       SELECT DISTINCT ?player WHERE {
-        ?player wdt:P106 wd:Q937857 ;
-                p:P54/ps:P54 wd:${id} .
+        ?player p:P54/ps:P54 wd:${id} .
       }
     `;
     const rows = await sparql(q);
@@ -368,6 +369,7 @@ export async function buildTTTGrid(
     const detailQ = `
       SELECT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image WHERE {
         VALUES ?player { ${values} }
+        ?player wdt:P106 wd:Q937857 .
         OPTIONAL { ?player wdt:P27 ?nationality }
         OPTIONAL { ?player wdt:P413 ?position }
         OPTIONAL { ?player wdt:P569 ?dob }
