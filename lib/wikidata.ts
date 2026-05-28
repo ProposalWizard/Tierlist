@@ -234,6 +234,13 @@ export async function findPlayersForBothClubs(
   clubId1: string,
   clubId2: string,
 ): Promise<{ club1: string; club2: string; players: WikiPlayer[] }> {
+  const idsQuery = (clubId: string) => `
+    SELECT DISTINCT ?player WHERE {
+      ?player wdt:P106 wd:Q937857 ;
+              p:P54/ps:P54 wd:${clubId} .
+    }
+  `;
+
   const nameQ = `
     SELECT ?c1Label ?c2Label WHERE {
       BIND(wd:${clubId1} AS ?c1)
@@ -242,15 +249,25 @@ export async function findPlayersForBothClubs(
     } LIMIT 1
   `;
 
-  const playerQ = `
-    SELECT DISTINCT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image WHERE {
-      {
-        SELECT DISTINCT ?player WHERE {
-          ?player p:P54/ps:P54 wd:${clubId1} ;
-                  p:P54/ps:P54 wd:${clubId2} .
-        }
-      }
-      ?player wdt:P106 wd:Q937857 .
+  const [rows1, rows2, nameRows] = await Promise.all([
+    sparql(idsQuery(clubId1)),
+    sparql(idsQuery(clubId2)),
+    sparql(nameQ),
+  ]);
+
+  const club1 = nameRows[0]?.c1Label?.value ?? clubId1;
+  const club2 = nameRows[0]?.c2Label?.value ?? clubId2;
+
+  const ids1 = new Set(rows1.map((r) => r.player?.value?.split("/").pop() ?? ""));
+  const ids2 = new Set(rows2.map((r) => r.player?.value?.split("/").pop() ?? ""));
+  const common = Array.from(ids1).filter((id) => ids2.has(id));
+
+  if (common.length === 0) return { club1, club2, players: [] };
+
+  const values = common.map((id) => `wd:${id}`).join(" ");
+  const detailQ = `
+    SELECT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image WHERE {
+      VALUES ?player { ${values} }
       OPTIONAL { ?player wdt:P27 ?nationality }
       OPTIONAL { ?player wdt:P413 ?position }
       OPTIONAL { ?player wdt:P569 ?dob }
@@ -259,18 +276,11 @@ export async function findPlayersForBothClubs(
     }
     ORDER BY ?playerLabel
   `;
-
-  const [nameRows, playerRows] = await Promise.all([
-    sparql(nameQ),
-    sparql(playerQ),
-  ]);
-
-  const club1 = nameRows[0]?.c1Label?.value ?? clubId1;
-  const club2 = nameRows[0]?.c2Label?.value ?? clubId2;
+  const detailRows = await sparql(detailQ);
 
   const seen = new Set<string>();
   const players: WikiPlayer[] = [];
-  for (const row of playerRows) {
+  for (const row of detailRows) {
     const id = row.player?.value?.split("/").pop() ?? "";
     if (seen.has(id)) continue;
     seen.add(id);
