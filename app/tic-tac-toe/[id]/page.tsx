@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { TicTacToePuzzle } from "@/lib/types";
 import TicTacToeGameLoader from "./TicTacToeGameLoader";
+import EasyTTTGameLoader from "./EasyTTTGameLoader";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -51,6 +52,10 @@ export default async function TicTacToePlayPage({ params }: Props) {
     created_by: data.created_by,
     created_at: data.created_at,
   };
+
+  if (puzzle.difficulty === "easy") {
+    return <EasyTTTGameLoader puzzle={puzzle} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
