@@ -108,18 +108,20 @@ export default function FootballDataPage() {
   const [playerProfile, setPlayerProfile] = useState<Player | null>(null);
   const [playerCareer, setPlayerCareer] = useState<CareerEntry[]>([]);
 
-  // TTT Helper
-  const [club1Query, setClub1Query] = useState("");
-  const [club2Query, setClub2Query] = useState("");
-  const [club1Results, setClub1Results] = useState<Club[]>([]);
-  const [club2Results, setClub2Results] = useState<Club[]>([]);
-  const [club1Selected, setClub1Selected] = useState<Club | null>(null);
-  const [club2Selected, setClub2Selected] = useState<Club | null>(null);
-  const [crossResults, setCrossResults] = useState<Player[]>([]);
-  const [crossClubNames, setCrossClubNames] = useState<{ club1: string; club2: string } | null>(null);
-  const [crossLoading, setCrossLoading] = useState(false);
-  const [club1Searching, setClub1Searching] = useState(false);
-  const [club2Searching, setClub2Searching] = useState(false);
+  // TTT Grid Builder
+  const emptySlots = (): (Club | null)[] => [null, null, null];
+  const emptyQueries = (): string[] => ["", "", ""];
+  const emptyResults = (): Club[][] => [[], [], []];
+  const [gridRows, setGridRows] = useState<(Club | null)[]>(emptySlots);
+  const [gridCols, setGridCols] = useState<(Club | null)[]>(emptySlots);
+  const [gridRowQueries, setGridRowQueries] = useState<string[]>(emptyQueries);
+  const [gridColQueries, setGridColQueries] = useState<string[]>(emptyQueries);
+  const [gridRowResults, setGridRowResults] = useState<Club[][]>(emptyResults);
+  const [gridColResults, setGridColResults] = useState<Club[][]>(emptyResults);
+  const [gridCells, setGridCells] = useState<Player[][] | null>(null);
+  const [gridClubNames, setGridClubNames] = useState<{ rows: string[]; cols: string[] } | null>(null);
+  const [gridLoading, setGridLoading] = useState(false);
+  const [gridSearching, setGridSearching] = useState<Record<string, boolean>>({});
 
   /* ── API calls ── */
 
@@ -189,45 +191,69 @@ export default function FootballDataPage() {
     setLoading(false);
   };
 
-  /* ── TTT Helper: club search ── */
-  const searchClubFor = async (slot: 1 | 2) => {
-    const q = (slot === 1 ? club1Query : club2Query).trim();
+  /* ── TTT Grid Builder ── */
+  const searchGridClub = async (type: "row" | "col", idx: number) => {
+    const queries = type === "row" ? gridRowQueries : gridColQueries;
+    const q = queries[idx]?.trim();
     if (!q) return;
-    if (slot === 1) setClub1Searching(true); else setClub2Searching(true);
+    const key = `${type}-${idx}`;
+    setGridSearching((prev) => ({ ...prev, [key]: true }));
     try {
       const res = await fetch(`/api/admin/football/leagues?q=${encodeURIComponent(q)}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
-      if (slot === 1) setClub1Results(json.clubs ?? []);
-      else setClub2Results(json.clubs ?? []);
+      const setter = type === "row" ? setGridRowResults : setGridColResults;
+      setter((prev) => { const next = [...prev]; next[idx] = json.clubs ?? []; return next; });
     } catch {
       // silently fail
     }
-    if (slot === 1) setClub1Searching(false); else setClub2Searching(false);
+    setGridSearching((prev) => ({ ...prev, [key]: false }));
   };
 
-  const selectClub = (slot: 1 | 2, club: Club) => {
-    setCrossResults([]); setCrossClubNames(null);
-    if (slot === 1) { setClub1Selected(club); setClub1Results([]); setClub1Query(club.name); }
-    else { setClub2Selected(club); setClub2Results([]); setClub2Query(club.name); }
+  const selectGridClub = (type: "row" | "col", idx: number, club: Club) => {
+    setGridCells(null); setGridClubNames(null);
+    if (type === "row") {
+      setGridRows((prev) => { const next = [...prev]; next[idx] = club; return next; });
+      setGridRowQueries((prev) => { const next = [...prev]; next[idx] = club.name; return next; });
+      setGridRowResults((prev) => { const next = [...prev]; next[idx] = []; return next; });
+    } else {
+      setGridCols((prev) => { const next = [...prev]; next[idx] = club; return next; });
+      setGridColQueries((prev) => { const next = [...prev]; next[idx] = club.name; return next; });
+      setGridColResults((prev) => { const next = [...prev]; next[idx] = []; return next; });
+    }
   };
 
-  const findCrossPlayers = async () => {
-    if (!club1Selected || !club2Selected) return;
-    setCrossLoading(true);
-    setCrossResults([]);
-    setCrossClubNames(null);
+  const clearGridClub = (type: "row" | "col", idx: number) => {
+    setGridCells(null); setGridClubNames(null);
+    if (type === "row") {
+      setGridRows((prev) => { const next = [...prev]; next[idx] = null; return next; });
+      setGridRowQueries((prev) => { const next = [...prev]; next[idx] = ""; return next; });
+    } else {
+      setGridCols((prev) => { const next = [...prev]; next[idx] = null; return next; });
+      setGridColQueries((prev) => { const next = [...prev]; next[idx] = ""; return next; });
+    }
+  };
+
+  const allGridClubsSelected = gridRows.every(Boolean) && gridCols.every(Boolean);
+
+  const generateGrid = async () => {
+    if (!allGridClubsSelected) return;
+    setGridLoading(true);
+    setGridCells(null);
+    setGridClubNames(null);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/football/crossclub?club1=${club1Selected.id}&club2=${club2Selected.id}`);
+      const rowParams = gridRows.map((c) => `row=${c!.id}`).join("&");
+      const colParams = gridCols.map((c) => `col=${c!.id}`).join("&");
+      const res = await fetch(`/api/admin/football/ttt-grid?${rowParams}&${colParams}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
-      setCrossResults(json.players ?? []);
-      setCrossClubNames({ club1: json.club1, club2: json.club2 });
+      setGridCells(json.cells ?? []);
+      setGridClubNames({ rows: json.rowClubs, cols: json.colClubs });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Cross-club search failed");
+      setError(e instanceof Error ? e.message : "Grid generation failed");
     }
-    setCrossLoading(false);
+    setGridLoading(false);
   };
 
   /* ── Breadcrumb ── */
@@ -290,139 +316,174 @@ export default function FootballDataPage() {
           <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 px-4 py-2 text-sm text-red-300">{error}</div>
         )}
 
-        {/* ════════ TTT HELPER ════════ */}
+        {/* ════════ TTT GRID BUILDER ════════ */}
         {tab === "helper" && (
           <>
             <div className="mb-6">
-              <h1 className="text-2xl font-black">TTT Helper</h1>
+              <h1 className="text-2xl font-black">TTT Grid Builder</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Select two clubs to find every player who has played for both. Useful for building Tic Tac Toe puzzles.
+                Set 3 row clubs and 3 column clubs, then generate a full grid of answers.
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 mb-6">
-              {/* Club 1 */}
+            {/* Club selectors */}
+            <div className="mb-6 grid gap-6 lg:grid-cols-2">
+              {/* Row clubs */}
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Club 1</label>
-                {club1Selected ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-indigo-600 bg-indigo-900/20 px-4 py-3">
-                    <Img src={club1Selected.image} alt={club1Selected.name} size={28} />
-                    <span className="font-bold text-white flex-1 truncate">{club1Selected.name}</span>
-                    <button onClick={() => { setClub1Selected(null); setClub1Query(""); setCrossResults([]); setCrossClubNames(null); }}
-                      className="text-gray-400 hover:text-white text-lg">&times;</button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <div className="flex gap-2">
-                      <input type="text" placeholder="Search club..." value={club1Query}
-                        onChange={(e) => setClub1Query(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && searchClubFor(1)}
-                        className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none" />
-                      <button onClick={() => searchClubFor(1)} disabled={club1Searching}
-                        className="rounded-lg bg-gray-800 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 disabled:opacity-50">
-                        {club1Searching ? "..." : "Search"}
-                      </button>
+                <h3 className="mb-3 text-xs font-bold uppercase text-gray-500">Row Clubs</h3>
+                <div className="space-y-2">
+                  {[0, 1, 2].map((idx) => (
+                    <div key={`row-${idx}`}>
+                      {gridRows[idx] ? (
+                        <div className="flex items-center gap-2 rounded-lg border border-indigo-600 bg-indigo-900/20 px-3 py-2">
+                          <Img src={gridRows[idx]!.image} alt={gridRows[idx]!.name} size={24} />
+                          <span className="font-bold text-white flex-1 truncate text-sm">{gridRows[idx]!.name}</span>
+                          <button onClick={() => clearGridClub("row", idx)} className="text-gray-400 hover:text-white">&times;</button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <div className="flex gap-2">
+                            <input type="text" placeholder={`Row ${idx + 1} club...`}
+                              value={gridRowQueries[idx]}
+                              onChange={(e) => setGridRowQueries((prev) => { const n = [...prev]; n[idx] = e.target.value; return n; })}
+                              onKeyDown={(e) => e.key === "Enter" && searchGridClub("row", idx)}
+                              className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none" />
+                            <button onClick={() => searchGridClub("row", idx)} disabled={!!gridSearching[`row-${idx}`]}
+                              className="rounded-lg bg-gray-800 px-3 py-2 text-xs text-gray-300 hover:bg-gray-700 disabled:opacity-50">
+                              {gridSearching[`row-${idx}`] ? "..." : "Search"}
+                            </button>
+                          </div>
+                          {gridRowResults[idx]?.length > 0 && (
+                            <div className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-lg border border-gray-700 bg-gray-900 shadow-xl">
+                              {gridRowResults[idx].map((c) => (
+                                <button key={c.id} onClick={() => selectGridClub("row", idx, c)}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-800">
+                                  <Img src={c.image} alt={c.name} size={20} />
+                                  <span className="text-white truncate">{c.name}</span>
+                                  <span className="text-xs text-gray-500 ml-auto shrink-0">{c.country}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {club1Results.length > 0 && (
-                      <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-700 bg-gray-900 shadow-xl">
-                        {club1Results.map((c) => (
-                          <button key={c.id} onClick={() => selectClub(1, c)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-800">
-                            <Img src={c.image} alt={c.name} size={24} />
-                            <span className="text-white truncate">{c.name}</span>
-                            <span className="text-xs text-gray-500 ml-auto shrink-0">{c.country}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
 
-              {/* Club 2 */}
+              {/* Column clubs */}
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Club 2</label>
-                {club2Selected ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-indigo-600 bg-indigo-900/20 px-4 py-3">
-                    <Img src={club2Selected.image} alt={club2Selected.name} size={28} />
-                    <span className="font-bold text-white flex-1 truncate">{club2Selected.name}</span>
-                    <button onClick={() => { setClub2Selected(null); setClub2Query(""); setCrossResults([]); setCrossClubNames(null); }}
-                      className="text-gray-400 hover:text-white text-lg">&times;</button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <div className="flex gap-2">
-                      <input type="text" placeholder="Search club..." value={club2Query}
-                        onChange={(e) => setClub2Query(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && searchClubFor(2)}
-                        className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none" />
-                      <button onClick={() => searchClubFor(2)} disabled={club2Searching}
-                        className="rounded-lg bg-gray-800 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 disabled:opacity-50">
-                        {club2Searching ? "..." : "Search"}
-                      </button>
+                <h3 className="mb-3 text-xs font-bold uppercase text-gray-500">Column Clubs</h3>
+                <div className="space-y-2">
+                  {[0, 1, 2].map((idx) => (
+                    <div key={`col-${idx}`}>
+                      {gridCols[idx] ? (
+                        <div className="flex items-center gap-2 rounded-lg border border-indigo-600 bg-indigo-900/20 px-3 py-2">
+                          <Img src={gridCols[idx]!.image} alt={gridCols[idx]!.name} size={24} />
+                          <span className="font-bold text-white flex-1 truncate text-sm">{gridCols[idx]!.name}</span>
+                          <button onClick={() => clearGridClub("col", idx)} className="text-gray-400 hover:text-white">&times;</button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <div className="flex gap-2">
+                            <input type="text" placeholder={`Column ${idx + 1} club...`}
+                              value={gridColQueries[idx]}
+                              onChange={(e) => setGridColQueries((prev) => { const n = [...prev]; n[idx] = e.target.value; return n; })}
+                              onKeyDown={(e) => e.key === "Enter" && searchGridClub("col", idx)}
+                              className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none" />
+                            <button onClick={() => searchGridClub("col", idx)} disabled={!!gridSearching[`col-${idx}`]}
+                              className="rounded-lg bg-gray-800 px-3 py-2 text-xs text-gray-300 hover:bg-gray-700 disabled:opacity-50">
+                              {gridSearching[`col-${idx}`] ? "..." : "Search"}
+                            </button>
+                          </div>
+                          {gridColResults[idx]?.length > 0 && (
+                            <div className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-lg border border-gray-700 bg-gray-900 shadow-xl">
+                              {gridColResults[idx].map((c) => (
+                                <button key={c.id} onClick={() => selectGridClub("col", idx, c)}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-800">
+                                  <Img src={c.image} alt={c.name} size={20} />
+                                  <span className="text-white truncate">{c.name}</span>
+                                  <span className="text-xs text-gray-500 ml-auto shrink-0">{c.country}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {club2Results.length > 0 && (
-                      <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-700 bg-gray-900 shadow-xl">
-                        {club2Results.map((c) => (
-                          <button key={c.id} onClick={() => selectClub(2, c)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-800">
-                            <Img src={c.image} alt={c.name} size={24} />
-                            <span className="text-white truncate">{c.name}</span>
-                            <span className="text-xs text-gray-500 ml-auto shrink-0">{c.country}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Find button */}
-            <button onClick={findCrossPlayers}
-              disabled={!club1Selected || !club2Selected || crossLoading}
-              className="mb-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors md:w-auto md:px-8">
-              {crossLoading ? "Searching Wikidata..." : "Find Players"}
+            {/* Generate button */}
+            <button onClick={generateGrid}
+              disabled={!allGridClubsSelected || gridLoading}
+              className="mb-8 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors md:w-auto md:px-8">
+              {gridLoading ? "Generating grid..." : "Generate Grid"}
             </button>
 
-            {/* Results */}
-            {crossLoading && (
-              <div className="py-12 text-center text-gray-500">Searching for players who played for both clubs...</div>
+            {gridLoading && (
+              <div className="py-12 text-center text-gray-500">
+                Querying Wikidata for all 6 clubs and finding intersections...
+                <br />
+                <span className="text-xs">This may take 15-30 seconds.</span>
+              </div>
             )}
 
-            {!crossLoading && crossClubNames && (
-              <div>
-                <div className="mb-4 flex items-center gap-2">
-                  <h2 className="text-lg font-black text-white">
-                    {crossClubNames.club1} &amp; {crossClubNames.club2}
-                  </h2>
-                  <span className="rounded-full bg-gray-800 px-2.5 py-0.5 text-xs font-bold text-gray-300">
-                    {crossResults.length} player{crossResults.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-
-                {crossResults.length === 0 ? (
-                  <div className="rounded-xl border border-gray-800 bg-gray-900 py-12 text-center text-gray-500">
-                    No players found who played for both clubs in Wikidata.
-                  </div>
-                ) : (
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {crossResults.map((p) => (
-                      <button key={p.id} onClick={() => { setTab("browse"); loadPlayer(p.id); }}
-                        className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 p-3 text-left transition-colors hover:border-indigo-600 hover:bg-gray-800/50">
-                        <Img src={p.image} alt={p.name} size={44} />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-white truncate">{p.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            {p.position && <span>{p.position}</span>}
-                            {p.nationality && <span>· {p.nationality}</span>}
-                            {p.dob && <span>· {calcAge(p.dob)}y</span>}
-                          </div>
-                        </div>
-                      </button>
+            {/* Results grid */}
+            {!gridLoading && gridCells && gridClubNames && (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="p-2" />
+                      {gridClubNames.cols.map((name, ci) => (
+                        <th key={ci} className="p-2 text-center text-xs font-bold uppercase text-indigo-400 min-w-[180px]">
+                          {name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gridClubNames.rows.map((rowName, ri) => (
+                      <tr key={ri}>
+                        <td className="p-2 text-right text-xs font-bold uppercase text-indigo-400 whitespace-nowrap align-top pt-4">
+                          {rowName}
+                        </td>
+                        {[0, 1, 2].map((ci) => {
+                          const cellPlayers = gridCells[ri * 3 + ci] ?? [];
+                          return (
+                            <td key={ci} className="p-1 align-top">
+                              <div className="rounded-lg border border-gray-800 bg-gray-900 p-2 min-h-[80px]">
+                                {cellPlayers.length === 0 ? (
+                                  <div className="flex items-center justify-center h-[80px] text-xs text-gray-600">
+                                    No players
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <div className="text-[10px] font-bold text-gray-500 mb-1">
+                                      {cellPlayers.length} player{cellPlayers.length !== 1 ? "s" : ""}
+                                    </div>
+                                    {cellPlayers.map((p) => (
+                                      <button key={p.id}
+                                        onClick={() => { setTab("browse"); loadPlayer(p.id); }}
+                                        className="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left hover:bg-gray-800 transition-colors">
+                                        <Img src={p.image} alt={p.name} size={20} />
+                                        <span className="text-xs text-white truncate">{p.name}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
                     ))}
-                  </div>
-                )}
+                  </tbody>
+                </table>
               </div>
             )}
           </>
