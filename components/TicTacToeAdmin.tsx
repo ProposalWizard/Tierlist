@@ -6,6 +6,7 @@ import { computeCustomConditions, CUSTOM_SQUARE_LABELS } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
 import CropOverlay from "./CropOverlay";
+import EasyTTTBuilder from "./EasyTTTBuilder";
 
 async function uploadImage(file: File): Promise<string> {
   const { compressImage } = await import("@/lib/imageUtils");
@@ -415,6 +416,7 @@ export default function TicTacToeAdmin() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [showEasyBuilder, setShowEasyBuilder] = useState(false);
 
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "extreme">("medium");
@@ -582,6 +584,11 @@ export default function TicTacToeAdmin() {
   })();
 
   if (loading) return <p className="text-gray-500 py-8 text-center">Loading puzzles...</p>;
+
+  /* ── Easy TTT Builder ── */
+  if (showEasyBuilder) {
+    return <EasyTTTBuilder onBack={() => { setShowEasyBuilder(false); loadPuzzles(); }} />;
+  }
 
   /* ── Visual Grid Editor ── */
   if (editing) {
@@ -831,6 +838,10 @@ export default function TicTacToeAdmin() {
               Export All
             </button>
           )}
+          <button onClick={() => setShowEasyBuilder(true)}
+            className="rounded-lg border border-green-700 bg-green-900/30 px-4 py-2 text-sm font-bold text-green-400 hover:bg-green-900/50">
+            + Easy TTT
+          </button>
           <button onClick={openNew}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500">
             + New Puzzle
