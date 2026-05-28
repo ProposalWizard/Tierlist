@@ -305,6 +305,103 @@ export async function findPlayersForBothClubs(
   return { club1, club2, players };
 }
 
+/* ── Build a full TTT grid from row + column clubs ── */
+export interface TTTGridResult {
+  rowClubs: string[];
+  colClubs: string[];
+  cells: WikiPlayer[][];
+}
+
+export async function buildTTTGrid(
+  rowIds: string[],
+  colIds: string[],
+): Promise<TTTGridResult> {
+  const allIdsArr = rowIds.concat(colIds);
+  const uniqueIds: string[] = [];
+  const seen = new Set<string>();
+  for (const id of allIdsArr) {
+    if (!seen.has(id)) { seen.add(id); uniqueIds.push(id); }
+  }
+
+  const nameBinds = uniqueIds.map((id, i) => `BIND(wd:${id} AS ?c${i})`).join("\n      ");
+  const nameSelects = uniqueIds.map((_, i) => `?c${i}Label`).join(" ");
+  const nameQ = `
+    SELECT ${nameSelects} WHERE {
+      ${nameBinds}
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+    } LIMIT 1
+  `;
+  const nameRows = await sparql(nameQ);
+  const clubNames: Record<string, string> = {};
+  uniqueIds.forEach((id, i) => {
+    clubNames[id] = nameRows[0]?.[`c${i}Label`]?.value ?? id;
+  });
+
+  const clubPlayers: Record<string, Set<string>> = {};
+  for (const id of uniqueIds) {
+    const q = `
+      SELECT DISTINCT ?player WHERE {
+        ?player wdt:P106 wd:Q937857 ;
+                p:P54/ps:P54 wd:${id} .
+      }
+    `;
+    const rows = await sparql(q);
+    clubPlayers[id] = new Set(rows.map((r) => r.player?.value?.split("/").pop() ?? ""));
+  }
+
+  const allCommon = new Set<string>();
+  const cellIds: string[][] = [];
+  for (const rowId of rowIds) {
+    for (const colId of colIds) {
+      const common = Array.from(clubPlayers[rowId] ?? new Set()).filter(
+        (id) => clubPlayers[colId]?.has(id),
+      );
+      cellIds.push(common);
+      common.forEach((id) => allCommon.add(id));
+    }
+  }
+
+  const playerDetails: Record<string, WikiPlayer> = {};
+  const allCommonArr = Array.from(allCommon);
+  if (allCommonArr.length > 0) {
+    const values = allCommonArr.map((id) => `wd:${id}`).join(" ");
+    const detailQ = `
+      SELECT ?player ?playerLabel ?nationalityLabel ?positionLabel ?dob ?image WHERE {
+        VALUES ?player { ${values} }
+        OPTIONAL { ?player wdt:P27 ?nationality }
+        OPTIONAL { ?player wdt:P413 ?position }
+        OPTIONAL { ?player wdt:P569 ?dob }
+        OPTIONAL { ?player wdt:P18 ?image }
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+      }
+      ORDER BY ?playerLabel
+    `;
+    const detailRows = await sparql(detailQ);
+    for (const row of detailRows) {
+      const id = row.player?.value?.split("/").pop() ?? "";
+      if (playerDetails[id]) continue;
+      playerDetails[id] = {
+        id,
+        name: row.playerLabel?.value ?? "",
+        nationality: row.nationalityLabel?.value ?? "",
+        position: row.positionLabel?.value ?? "",
+        dob: row.dob?.value?.slice(0, 10) ?? "",
+        image: row.image?.value ?? null,
+      };
+    }
+  }
+
+  const cells = cellIds.map((ids) =>
+    ids.map((id) => playerDetails[id]).filter(Boolean),
+  );
+
+  return {
+    rowClubs: rowIds.map((id) => clubNames[id]),
+    colClubs: colIds.map((id) => clubNames[id]),
+    cells,
+  };
+}
+
 /* ── Get all players who played for a club (historical) ── */
 export async function getClubHistory(clubId: string): Promise<{ club: WikiClub; players: (WikiPlayer & { startDate: string | null; endDate: string | null })[] }> {
   const q = `
