@@ -7,12 +7,22 @@ type SparqlRow = Record<string, SparqlValue | undefined>;
 
 async function sparql(query: string): Promise<SparqlRow[]> {
   const url = `${SPARQL_ENDPOINT}?format=json&query=${encodeURIComponent(query)}`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": UA, Accept: "application/sparql-results+json" },
-  });
-  if (!res.ok) throw new Error(`Wikidata ${res.status}: ${res.statusText}`);
-  const json = await res.json();
-  return (json.results?.bindings ?? []) as SparqlRow[];
+  const delays = [2000, 4000, 8000];
+  let lastErr: Error | null = null;
+
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    const res = await fetch(url, {
+      headers: { "User-Agent": UA, Accept: "application/sparql-results+json" },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      return (json.results?.bindings ?? []) as SparqlRow[];
+    }
+    lastErr = new Error(`Wikidata ${res.status}: ${res.statusText}`);
+    if (res.status !== 429 && res.status !== 503) throw lastErr;
+    if (attempt < delays.length) await new Promise((r) => setTimeout(r, delays[attempt]));
+  }
+  throw lastErr!;
 }
 
 async function entitySearch(query: string, limit = 30): Promise<{ id: string; label: string; description: string }[]> {
@@ -249,11 +259,9 @@ export async function findPlayersForBothClubs(
     } LIMIT 1
   `;
 
-  const [rows1, rows2, nameRows] = await Promise.all([
-    sparql(idsQuery(clubId1)),
-    sparql(idsQuery(clubId2)),
-    sparql(nameQ),
-  ]);
+  const nameRows = await sparql(nameQ);
+  const rows1 = await sparql(idsQuery(clubId1));
+  const rows2 = await sparql(idsQuery(clubId2));
 
   const club1 = nameRows[0]?.c1Label?.value ?? clubId1;
   const club2 = nameRows[0]?.c2Label?.value ?? clubId2;
