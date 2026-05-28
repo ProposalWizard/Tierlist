@@ -207,12 +207,14 @@ export default function FootballDataPage() {
   };
 
   const selectClub = (slot: 1 | 2, club: Club) => {
+    setCrossResults([]); setCrossClubNames(null);
     if (slot === 1) { setClub1Selected(club); setClub1Results([]); setClub1Query(club.name); }
     else { setClub2Selected(club); setClub2Results([]); setClub2Query(club.name); }
   };
 
   const selectPopularClub = (slot: 1 | 2, id: string, name: string) => {
     const club: Club = { id, name, country: "", league: null, image: null };
+    setCrossResults([]); setCrossClubNames(null);
     if (slot === 1) { setClub1Selected(club); setClub1Query(name); setClub1Results([]); }
     else { setClub2Selected(club); setClub2Query(name); setClub2Results([]); }
   };
