@@ -212,13 +212,6 @@ export default function FootballDataPage() {
     else { setClub2Selected(club); setClub2Results([]); setClub2Query(club.name); }
   };
 
-  const selectPopularClub = (slot: 1 | 2, id: string, name: string) => {
-    const club: Club = { id, name, country: "", league: null, image: null };
-    setCrossResults([]); setCrossClubNames(null);
-    if (slot === 1) { setClub1Selected(club); setClub1Query(name); setClub1Results([]); }
-    else { setClub2Selected(club); setClub2Query(name); setClub2Results([]); }
-  };
-
   const findCrossPlayers = async () => {
     if (!club1Selected || !club2Selected) return;
     setCrossLoading(true);
@@ -344,16 +337,6 @@ export default function FootballDataPage() {
                     )}
                   </div>
                 )}
-                {!club1Selected && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {POPULAR.slice(0, 8).map((c) => (
-                      <button key={c.id} onClick={() => selectPopularClub(1, c.id, c.name)}
-                        className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-400 hover:border-gray-500 hover:text-white">
-                        {c.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Club 2 */}
@@ -390,16 +373,6 @@ export default function FootballDataPage() {
                         ))}
                       </div>
                     )}
-                  </div>
-                )}
-                {!club2Selected && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {POPULAR.slice(0, 8).map((c) => (
-                      <button key={c.id} onClick={() => selectPopularClub(2, c.id, c.name)}
-                        className="rounded border border-gray-700 px-2 py-1 text-xs text-gray-400 hover:border-gray-500 hover:text-white">
-                        {c.name}
-                      </button>
-                    ))}
                   </div>
                 )}
               </div>
