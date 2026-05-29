@@ -50,6 +50,12 @@ export default async function TicTacToeListPage() {
         </p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <Link
+            href="/tic-tac-toe/easy"
+            className="rounded-xl border border-green-700 bg-green-900/30 px-6 py-2.5 text-sm font-bold text-green-300 transition-colors hover:bg-green-900/50"
+          >
+            Easy Mode
+          </Link>
+          <Link
             href="/tic-tac-toe/daily"
             className="rounded-xl border border-amber-700 bg-amber-900/30 px-6 py-2.5 text-sm font-bold text-amber-300 transition-colors hover:bg-amber-900/50"
           >
