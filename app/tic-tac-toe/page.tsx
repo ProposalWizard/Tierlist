@@ -51,7 +51,7 @@ export default function TicTacToeMainPage() {
             className="group block w-full rounded-2xl border-2 border-gray-700 bg-gradient-to-r from-gray-800/50 to-gray-800/20 p-6 transition-all hover:border-gray-500 hover:from-gray-800/70 hover:to-gray-800/40"
           >
             <div className="text-2xl font-black text-gray-300 group-hover:text-white">
-              Past Dailies
+              Daily Archive
             </div>
             <p className="mt-1 text-sm text-gray-500">
               Browse the archive and see your stats

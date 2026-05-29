@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = {
-  title: "Past Dailies — Football Tic Tac Toe",
+  title: "Daily Archive — Football Tic Tac Toe",
   description:
     "Browse all past daily Football Tic Tac Toe puzzles and see your stats.",
   alternates: { canonical: "/tic-tac-toe/archive" },
@@ -202,7 +202,7 @@ export default async function ArchivePage() {
           &larr; Back to Tic Tac Toe
         </Link>
         <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
-          Past Dailies
+          Daily Archive
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
           Every daily challenge so far. How many have you completed?
