@@ -5,9 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = {
-  title: "Puzzle Archive — Football Tic Tac Toe",
+  title: "Past Dailies — Football Tic Tac Toe",
   description:
-    "Browse all Football Tic Tac Toe puzzles, track your scores, and see your stats.",
+    "Browse all past daily Football Tic Tac Toe puzzles and see your stats.",
   alternates: { canonical: "/tic-tac-toe/archive" },
 };
 
@@ -135,7 +135,8 @@ export default async function ArchivePage() {
       "id, title, difficulty, is_daily, daily_date, created_at, row_labels, col_labels"
     )
     .eq("is_active", true)
-    .order("created_at", { ascending: true });
+    .eq("is_daily", true)
+    .order("daily_date", { ascending: false });
 
   const items: PuzzleRow[] = (puzzles ?? []) as PuzzleRow[];
 
@@ -201,10 +202,10 @@ export default async function ArchivePage() {
           &larr; Back to Tic Tac Toe
         </Link>
         <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
-          Puzzle Archive
+          Past Dailies
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
-          The number of stars indicates the difficulty.
+          Every daily challenge so far. How many have you completed?
         </p>
       </div>
 
