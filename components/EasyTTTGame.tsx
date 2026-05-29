@@ -22,7 +22,15 @@ function levenshtein(a: string, b: string): number {
 }
 
 function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
-  const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9 \-]/g, "");
+  const norm = (s: string) =>
+    s.toLowerCase().trim()
+      .replace(/ß/g, "ss")
+      .replace(/ø/g, "o")
+      .replace(/æ/g, "ae")
+      .replace(/đ/g, "d")
+      .replace(/ł/g, "l")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9 \-]/g, "");
   const inp = norm(input);
   if (!inp) return false;
   const names = [answer.name, ...(answer.aliases ?? [])];
@@ -317,9 +325,9 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
 
     return (
       <div className="min-h-screen bg-gray-950 text-white px-4 py-8">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-lg">
           {mode === "multi" ? (
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <h1 className="text-3xl font-black mb-2">
                 {winner !== null ? (
                   <span className={playerTextColors[winner]}>{playerNames[winner]} Wins!</span>
@@ -327,8 +335,8 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
               </h1>
             </div>
           ) : (
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-black mb-4">Time&apos;s Up!</h1>
+            <div className="text-center mb-6">
+              <h1 className="text-3xl font-black mb-4">{timerOption !== 0 ? "Time's Up!" : "Game Over!"}</h1>
               <div className="flex items-center justify-center gap-6 text-center">
                 <div>
                   <div className="text-3xl font-black text-green-400">{squaresWithCorrect}/9</div>
@@ -347,56 +355,58 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
           )}
 
           {/* Reveal grid */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th className="p-1 w-24" />
-                  {puzzle.col_labels.map((label, ci) => (
-                    <th key={ci} className="p-1 text-center text-xs font-bold text-indigo-400 uppercase">{label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[0, 1, 2].map((ri) => (
-                  <tr key={ri}>
-                    <td className="p-1 text-right text-xs font-bold text-indigo-400 uppercase whitespace-nowrap">{puzzle.row_labels[ri]}</td>
-                    {[0, 1, 2].map((ci) => {
-                      const sq = puzzle.grid[ri][ci];
-                      const key = squareKey(ri, ci);
-                      const found = foundAnswers.get(key) ?? [];
-                      const owner = squareOwner.get(key);
-                      return (
-                        <td key={ci} className="p-1 align-top">
-                          <div className={`rounded-lg border p-2 min-h-[60px] text-xs ${
-                            mode === "multi" && owner !== undefined
-                              ? `${playerColors[owner]} border-transparent`
-                              : found.length >= sq.answers.length
-                              ? "bg-amber-900/50 border-amber-700"
-                              : "bg-gray-900 border-gray-800"
-                          }`}>
-                            {sq.answers.map((a) => (
-                              <div key={a.name} className={`py-0.5 ${
-                                found.includes(a.name) || (mode === "multi" && owner !== undefined)
-                                  ? "text-white font-bold"
-                                  : "text-gray-500"
-                              }`}>
-                                {found.includes(a.name) || (mode === "multi" && owner !== undefined)
-                                  ? a.name
-                                  : a.name}
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mb-6">
+            <div className="grid grid-cols-4 gap-1.5 md:gap-2">
+              <div className="aspect-square" />
+              {puzzle.col_labels.map((label, ci) => (
+                <div key={ci} className="aspect-square">
+                  <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {[0, 1, 2].map((ri) => (
+              <div key={ri} className="grid grid-cols-4 gap-1.5 mt-1.5 md:gap-2 md:mt-2">
+                <div className="aspect-square">
+                  <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+                    {puzzle.row_labels[ri]}
+                  </div>
+                </div>
+                {[0, 1, 2].map((ci) => {
+                  const sq = puzzle.grid[ri][ci];
+                  const key = squareKey(ri, ci);
+                  const found = foundAnswers.get(key) ?? [];
+                  const owner = squareOwner.get(key);
+                  return (
+                    <div key={ci} className="aspect-square">
+                      <div className={`w-full h-full rounded-md p-1.5 flex flex-col items-center justify-center overflow-hidden ${
+                        mode === "multi" && owner !== undefined
+                          ? `${playerColors[owner]}`
+                          : found.length >= sq.answers.length
+                          ? "bg-amber-900/50"
+                          : "bg-gray-800/70"
+                      }`}>
+                        <div className="w-full space-y-0 overflow-hidden">
+                          {sq.answers.map((a) => (
+                            <p key={a.name} className={`text-[8px] leading-tight truncate md:text-[10px] ${
+                              found.includes(a.name) || (mode === "multi" && owner !== undefined)
+                                ? "text-white font-bold"
+                                : "text-gray-500"
+                            }`}>
+                              {a.name}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
-          <div className="mt-8 text-center">
+          <div className="text-center">
             <a href="/tic-tac-toe/easy"
               className="rounded-xl bg-green-600 px-8 py-3 text-sm font-bold text-white hover:bg-green-500 inline-block">
               Play Again
@@ -410,145 +420,182 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
   // ── Game Board ──
   return (
     <div className="min-h-screen bg-gray-950 text-white px-4 py-6">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-lg">
 
-        {/* Header bar */}
-        <div className="mb-4 flex items-center justify-between">
-          {mode === "solo" ? (
-            <>
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-gray-400">
-                  <span className="font-bold text-green-400">{squaresWithCorrect}</span>/9 squares
-                </div>
-                <div className="text-sm text-gray-400">
-                  <span className="font-bold text-indigo-400">{totalFound}</span>/{totalAnswers} players
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {timerOption !== 0 ? (
-                  <div className={`text-xl font-black tabular-nums ${timeLeft <= 30 ? "text-red-400" : "text-white"}`}>
-                    {formatTime(timeLeft)}
-                  </div>
-                ) : (
-                  <button onClick={finishSoloGame}
-                    className="rounded-lg border border-gray-600 px-4 py-1.5 text-xs font-bold text-gray-300 hover:text-white hover:border-gray-400">
-                    Finish &amp; Reveal
-                  </button>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-between w-full">
-              <div className={`text-lg font-black ${playerTextColors[currentPlayer]}`}>
-                {playerNames[currentPlayer]}&apos;s Turn
-              </div>
-              {feedback && (
-                <div className={`text-sm font-bold ${feedback.ok ? "text-green-400" : "text-red-400"}`}>
-                  {feedback.msg}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Feedback for solo */}
-        {mode === "solo" && feedback && (
+        {/* Feedback */}
+        {feedback && (
           <div className={`mb-3 text-center text-sm font-bold ${feedback.ok ? "text-green-400" : "text-red-400"}`}>
             {feedback.msg}
           </div>
         )}
 
         {/* Grid */}
-        <div className="overflow-x-auto mb-4">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="p-1 w-20" />
-                {puzzle.col_labels.map((label, ci) => (
-                  <th key={ci} className="p-1 text-center text-[11px] font-bold text-indigo-400 uppercase leading-tight">
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[0, 1, 2].map((ri) => (
-                <tr key={ri}>
-                  <td className="p-1 text-right text-[11px] font-bold text-indigo-400 uppercase whitespace-nowrap leading-tight">
-                    {puzzle.row_labels[ri]}
-                  </td>
-                  {[0, 1, 2].map((ci) => {
-                    const key = squareKey(ri, ci);
-                    const sq = puzzle.grid[ri][ci];
-                    const isSelected = selectedSquare === key;
+        <div className="mb-4">
+          {/* Column labels row */}
+          <div className="grid grid-cols-4 gap-1.5 md:gap-2">
+            {/* Top-left scoreboard cell */}
+            <div className="aspect-square">
+              <div className="w-full h-full flex flex-col items-center justify-center rounded-md bg-gray-800/70 p-1">
+                {mode === "solo" ? (
+                  <>
+                    <div className="text-center">
+                      <div className="text-[10px] text-gray-400 md:text-xs">
+                        <span className="font-bold text-green-400">{squaresWithCorrect}</span>/9
+                      </div>
+                      <div className="text-[8px] text-gray-500 md:text-[10px]">Squares</div>
+                    </div>
+                    <div className="text-center mt-0.5">
+                      <div className="text-[10px] text-gray-400 md:text-xs">
+                        <span className="font-bold text-indigo-400">{totalFound}</span>/{totalAnswers}
+                      </div>
+                      <div className="text-[8px] text-gray-500 md:text-[10px]">Players</div>
+                    </div>
+                    {timerOption !== 0 ? (
+                      <div className={`text-sm font-black tabular-nums mt-0.5 md:text-base ${timeLeft <= 30 ? "text-red-400" : "text-white"}`}>
+                        {formatTime(timeLeft)}
+                      </div>
+                    ) : (
+                      <button onClick={finishSoloGame}
+                        className="mt-1 rounded bg-gray-700 px-2 py-0.5 text-[8px] font-bold text-gray-300 hover:text-white hover:bg-gray-600 md:text-[10px]">
+                        Finish
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center">
+                    <div className={`text-xs font-black md:text-sm ${playerTextColors[currentPlayer]}`}>
+                      {playerNames[currentPlayer]}
+                    </div>
+                    <div className="text-[8px] text-gray-500 md:text-[10px]">
+                      {currentPlayer === 0 ? "Green" : "Red"}&apos;s Turn
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            {puzzle.col_labels.map((label, c) => (
+              <div key={c} className="aspect-square">
+                <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
 
-                    if (mode === "multi") {
-                      const owner = squareOwner.get(key);
-                      const isOwned = owner !== undefined;
-                      return (
-                        <td key={ci} className="p-1">
-                          <button
-                            onClick={() => handleSquareClick(ri, ci)}
-                            disabled={isOwned}
-                            className={`w-full rounded-lg border p-3 min-h-[80px] flex items-center justify-center text-center transition-colors ${
-                              isOwned
-                                ? `${playerColors[owner]} border-transparent`
-                                : isSelected
-                                ? "border-indigo-500 bg-indigo-900/30"
-                                : "border-gray-700 bg-gray-900 hover:border-gray-500"
-                            }`}
-                          >
-                            {isOwned ? (
-                              <span className="text-sm font-bold text-white">
-                                {sq.answers.find((a) => {
-                                  const f = foundAnswers.get(key);
-                                  return f?.includes(a.name);
-                                })?.name ?? sq.answers[0]?.name}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-gray-500">Click to guess</span>
-                            )}
-                          </button>
-                        </td>
-                      );
-                    }
+          {/* Rows */}
+          {[0, 1, 2].map((ri) => (
+            <div key={ri} className="grid grid-cols-4 gap-1.5 mt-1.5 md:gap-2 md:mt-2">
+              {/* Row label */}
+              <div className="aspect-square">
+                <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+                  {puzzle.row_labels[ri]}
+                </div>
+              </div>
 
-                    // Single player
-                    const found = foundAnswers.get(key) ?? [];
-                    const allFound = found.length >= sq.answers.length;
-                    return (
-                      <td key={ci} className="p-1">
-                        <button
-                          onClick={() => handleSquareClick(ri, ci)}
-                          disabled={allFound}
-                          className={`w-full rounded-lg border p-2 min-h-[80px] text-left transition-colors ${
-                            allFound
-                              ? "bg-amber-900/40 border-amber-700"
-                              : isSelected
-                              ? "border-indigo-500 bg-indigo-900/30"
-                              : found.length > 0
-                              ? "border-green-800 bg-green-900/20 hover:border-green-600"
-                              : "border-gray-700 bg-gray-900 hover:border-gray-500"
-                          }`}
-                        >
-                          <div className="text-[10px] text-gray-500 mb-1">
-                            {found.length}/{sq.answers.length}
+              {/* Game squares */}
+              {[0, 1, 2].map((ci) => {
+                const key = squareKey(ri, ci);
+                const sq = puzzle.grid[ri][ci];
+                const isSelected = selectedSquare === key;
+
+                if (mode === "multi") {
+                  const owner = squareOwner.get(key);
+                  const isOwned = owner !== undefined;
+                  return (
+                    <div key={ci} className="aspect-square">
+                      <button
+                        onClick={() => handleSquareClick(ri, ci)}
+                        disabled={isOwned}
+                        className={`w-full h-full flex flex-col items-center justify-center rounded-md p-1.5 transition-all overflow-hidden ${
+                          isOwned
+                            ? `${playerColors[owner]}`
+                            : isSelected
+                            ? "bg-indigo-900/50 ring-2 ring-indigo-500"
+                            : "bg-gray-800/70 hover:bg-gray-700/70"
+                        }`}
+                      >
+                        {isOwned ? (
+                          <span className="text-[10px] font-bold text-white md:text-sm">
+                            {sq.answers.find((a) => {
+                              const f = foundAnswers.get(key);
+                              return f?.includes(a.name);
+                            })?.name ?? sq.answers[0]?.name}
+                          </span>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-base font-black text-gray-300 md:text-2xl">
+                              {sq.answers.length}
+                            </p>
+                            <p className="text-[8px] font-bold uppercase tracking-wider text-gray-500 md:text-[10px]">
+                              Player{sq.answers.length !== 1 ? "s" : ""}
+                            </p>
                           </div>
-                          {found.length > 0 && (
-                            <div className="space-y-0.5">
-                              {found.map((name) => (
-                                <div key={name} className="text-[11px] text-green-400 truncate">{name}</div>
-                              ))}
-                            </div>
-                          )}
-                        </button>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        )}
+                      </button>
+                    </div>
+                  );
+                }
+
+                // Single player
+                const found = foundAnswers.get(key) ?? [];
+                const allFound = found.length >= sq.answers.length;
+                return (
+                  <div key={ci} className="aspect-square">
+                    <button
+                      onClick={() => handleSquareClick(ri, ci)}
+                      disabled={allFound}
+                      className={`w-full h-full flex flex-col rounded-md p-1.5 transition-all overflow-hidden ${
+                        allFound
+                          ? "bg-amber-500 hover:bg-amber-400"
+                          : isSelected
+                          ? "bg-indigo-900/50 ring-2 ring-indigo-500"
+                          : found.length > 0
+                          ? "bg-green-500 hover:bg-green-400"
+                          : "bg-white hover:bg-gray-100"
+                      } ${isSelected ? "" : ""}`}
+                    >
+                      <div className="flex-1 flex flex-col items-center justify-center w-full overflow-hidden">
+                        {found.length > 0 ? (
+                          <div className="w-full space-y-0 overflow-hidden text-center">
+                            {found.slice(0, 4).map((name) => (
+                              <p key={name} className={`text-[8px] font-bold leading-tight truncate md:text-[11px] ${
+                                allFound ? "text-amber-900" : "text-green-900"
+                              }`}>
+                                {name}
+                              </p>
+                            ))}
+                            {found.length > 4 && (
+                              <p className={`text-[7px] font-bold md:text-[9px] ${
+                                allFound ? "text-amber-900" : "text-green-900"
+                              }`}>
+                                +{found.length - 4} more
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-base font-black text-gray-900 md:text-2xl">
+                              {sq.answers.length}
+                            </p>
+                            <p className="text-[8px] font-bold uppercase tracking-wider text-gray-500 md:text-[10px]">
+                              Player{sq.answers.length !== 1 ? "s" : ""}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="w-full text-center">
+                        <span className={`text-[8px] font-bold md:text-[10px] ${
+                          allFound ? "text-amber-800" : found.length > 0 ? "text-green-800" : "text-gray-400"
+                        }`}>
+                          {found.length}/{sq.answers.length}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         {/* Input area */}
