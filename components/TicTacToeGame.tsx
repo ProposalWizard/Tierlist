@@ -57,7 +57,15 @@ function levenshtein(a: string, b: string): number {
 }
 
 function fuzzyMatch(input: string, answer: TicTacToeAnswer): boolean {
-  const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9 \-]/g, "");
+  const norm = (s: string) =>
+    s.toLowerCase().trim()
+      .replace(/ß/g, "ss")
+      .replace(/ø/g, "o")
+      .replace(/æ/g, "ae")
+      .replace(/đ/g, "d")
+      .replace(/ł/g, "l")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9 \-]/g, "");
   const inp = norm(input);
   if (!inp) return false;
   const names = [answer.name, ...(answer.aliases ?? [])];
