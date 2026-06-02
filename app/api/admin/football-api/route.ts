@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
   try {
     const res = await fetch(upstreamUrl.toString(), {
       headers: {
+        "Content-Type": "application/json",
         "x-rapidapi-host": "free-api-live-football-data.p.rapidapi.com",
         "x-rapidapi-key": apiKey,
       },
