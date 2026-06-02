@@ -65,12 +65,16 @@ export async function GET(request: NextRequest) {
       body = await res.text();
     }
 
-    return NextResponse.json(
-      { status: res.status, data: body },
-      { status: res.ok ? 200 : 502 }
-    );
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: `Upstream ${res.status}: ${typeof body === "string" ? body : JSON.stringify(body)}`, upstream_status: res.status, data: body },
+        { status: 200 }
+      );
+    }
+
+    return NextResponse.json({ status: res.status, data: body });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Upstream request failed";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: message }, { status: 200 });
   }
 }
