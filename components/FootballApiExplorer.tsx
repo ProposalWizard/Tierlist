@@ -174,7 +174,7 @@ const ENDPOINT_GROUPS: EndpointGroup[] = [
 
 /* ── API helper ── */
 
-async function apiCall(endpoint: string, params?: Record<string, string>): Promise<{ data: unknown; time: number }> {
+async function apiCall(endpoint: string, params?: Record<string, string>): Promise<{ data: unknown; time: number; error?: string }> {
   const qp = new URLSearchParams({ endpoint });
   if (params) {
     for (const [k, v] of Object.entries(params)) {
@@ -185,7 +185,9 @@ async function apiCall(endpoint: string, params?: Record<string, string>): Promi
   const res = await fetch(`/api/admin/football-api?${qp.toString()}`);
   const json = await res.json();
   const time = Math.round(performance.now() - start);
-  if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+  if (json.error) {
+    return { data: json.data ?? null, time, error: json.error };
+  }
   return { data: json.data, time };
 }
 
@@ -240,8 +242,12 @@ export default function FootballApiExplorer() {
     setDetail(null);
     try {
       const endpoint = searchType === "players" ? "football-search-all-players" : "football-search-teams";
-      const { data } = await apiCall(endpoint, { search: searchQuery });
-      const d = data as { response?: { suggestions?: unknown[] } };
+      const result = await apiCall(endpoint, { search: searchQuery });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      const d = result.data as { response?: { suggestions?: unknown[] } };
       const items = d?.response?.suggestions ?? d?.response ?? [];
       setSearchResults(Array.isArray(items) ? items as (SearchPlayer | SearchTeam)[] : []);
     } catch (err: unknown) {
@@ -257,8 +263,12 @@ export default function FootballApiExplorer() {
     try {
       const endpoint = type === "player" ? "football-get-player-detail" : "football-get-team-detail";
       const paramKey = type === "player" ? "playerId" : "teamId";
-      const { data, time } = await apiCall(endpoint, { [paramKey]: id });
-      setDetail({ json: JSON.stringify(data, null, 2), title: `${name} (${type} #${id})`, time });
+      const result = await apiCall(endpoint, { [paramKey]: id });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setDetail({ json: JSON.stringify(result.data, null, 2), title: `${name} (${type} #${id})`, time: result.time });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load detail");
     }
@@ -285,9 +295,15 @@ export default function FootballApiExplorer() {
       }
     }
     try {
-      const { data, time } = await apiCall(ep.path, params);
-      setEpResponse(JSON.stringify(data, null, 2));
-      setEpTime(time);
+      const result = await apiCall(ep.path, params);
+      if (result.error) {
+        setError(result.error);
+        if (result.data) setEpResponse(JSON.stringify(result.data, null, 2));
+        setEpTime(result.time);
+      } else {
+        setEpResponse(JSON.stringify(result.data, null, 2));
+        setEpTime(result.time);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Request failed");
     }
@@ -307,9 +323,15 @@ export default function FootballApiExplorer() {
       if (cp.key.trim() && cp.value.trim()) params[cp.key.trim()] = cp.value.trim();
     }
     try {
-      const { data, time } = await apiCall(customPath.trim(), params);
-      setCustomResponse(JSON.stringify(data, null, 2));
-      setCustomTime(time);
+      const result = await apiCall(customPath.trim(), params);
+      if (result.error) {
+        setError(result.error);
+        if (result.data) setCustomResponse(JSON.stringify(result.data, null, 2));
+        setCustomTime(result.time);
+      } else {
+        setCustomResponse(JSON.stringify(result.data, null, 2));
+        setCustomTime(result.time);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Request failed");
     }
