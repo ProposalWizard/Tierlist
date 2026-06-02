@@ -408,11 +408,14 @@ export default function FootballApiExplorer() {
           {/* Results */}
           {searchResults.length > 0 && (
             <div className="mb-4 space-y-1">
-              <p className="text-xs font-bold text-gray-500 uppercase mb-2">{searchResults.length} results</p>
+              <p className="text-xs font-bold text-gray-500 uppercase mb-2">{searchResults.length} results — click a row to view full detail</p>
               {searchResults.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => handleViewDetail(searchType === "players" ? "player" : "team", item.id, item.name)}
+                  onClick={() => {
+                    handleViewDetail(searchType === "players" ? "player" : "team", item.id, item.name);
+                    setTimeout(() => document.getElementById("detail-section")?.scrollIntoView({ behavior: "smooth" }), 100);
+                  }}
                   className="w-full flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-left hover:border-indigo-600 hover:bg-gray-800/50 transition-colors"
                 >
                   <div>
@@ -421,25 +424,34 @@ export default function FootballApiExplorer() {
                       <span className="ml-2 text-xs text-gray-500">{item.teamName}</span>
                     )}
                   </div>
-                  <span className="text-[10px] text-gray-600">ID: {item.id}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-600">ID: {item.id}</span>
+                    <span className="text-xs text-indigo-400 font-bold">View →</span>
+                  </div>
                 </button>
               ))}
             </div>
           )}
 
           {/* Detail view */}
-          {detailLoading && <p className="text-sm text-gray-400">Loading detail...</p>}
-          {detail && (
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-bold text-indigo-400">{detail.title}</span>
-                <span className="text-xs text-gray-500">{detail.time}ms</span>
+          <div id="detail-section">
+            {detailLoading && (
+              <div className="rounded-lg border border-indigo-700/50 bg-indigo-900/20 p-4 text-center">
+                <p className="text-sm text-indigo-300 font-bold">Loading player detail...</p>
               </div>
-              <pre className="max-h-[500px] overflow-auto rounded-lg border border-gray-800 bg-gray-900 p-4 text-xs text-green-300 whitespace-pre-wrap break-words">
-                {detail.json}
-              </pre>
-            </div>
-          )}
+            )}
+            {detail && (
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-bold text-indigo-400">{detail.title}</span>
+                  <span className="text-xs text-gray-500">{detail.time}ms</span>
+                </div>
+                <pre className="max-h-[600px] overflow-auto rounded-lg border border-gray-800 bg-gray-900 p-4 text-xs text-green-300 whitespace-pre-wrap break-words">
+                  {detail.json}
+                </pre>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
