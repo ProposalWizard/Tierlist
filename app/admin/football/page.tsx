@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import FootballApiExplorer from "@/components/FootballApiExplorer";
 
 /* ── Types matching Wikidata responses ── */
 
@@ -87,7 +86,7 @@ function calcAge(dob: string): number | null {
 }
 
 export default function FootballDataPage() {
-  const [tab, setTab] = useState<"browse" | "helper" | "explorer">("browse");
+  const [tab, setTab] = useState<"browse" | "helper">("browse");
   const [view, setView] = useState<"home" | "squad" | "player">("home");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -311,10 +310,6 @@ export default function FootballDataPage() {
             className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "helper" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"}`}>
             TTT Helper
           </button>
-          <button onClick={() => setTab("explorer")}
-            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "explorer" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"}`}>
-            API Explorer
-          </button>
         </div>
 
         {error && (
@@ -495,7 +490,6 @@ export default function FootballDataPage() {
         )}
 
         {/* ════════ API EXPLORER ════════ */}
-        {tab === "explorer" && <FootballApiExplorer />}
 
         {/* ════════ HOME ════════ */}
         {tab === "browse" && view === "home" && (
