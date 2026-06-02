@@ -28,40 +28,39 @@ const ENDPOINT_GROUPS: EndpointGroup[] = [
   {
     category: "Search",
     endpoints: [
-      { label: "Search All", path: "football-search-all", params: [{ name: "search", label: "Query", placeholder: "e.g. Messi", required: true }] },
-      { label: "Search Players", path: "football-search-players", params: [{ name: "search", label: "Query", placeholder: "e.g. Ronaldo", required: true }] },
-      { label: "Search Teams", path: "football-search-teams", params: [{ name: "search", label: "Query", placeholder: "e.g. Arsenal", required: true }] },
-      { label: "Search Leagues", path: "football-search-leagues", params: [{ name: "search", label: "Query", placeholder: "e.g. Premier League", required: true }] },
-      { label: "Search Matches", path: "football-search-matches", params: [{ name: "search", label: "Query", placeholder: "e.g. Arsenal vs Chelsea", required: true }] },
-      { label: "Search All Players (alt)", path: "football-search-all-players", params: [{ name: "search", label: "Query", placeholder: "e.g. Messi", required: true }] },
+      { label: "Search Players", path: "football-players-search", params: [{ name: "search", label: "Query", placeholder: "e.g. Messi", required: true }] },
+      { label: "Search Teams", path: "football-teams-search", params: [{ name: "search", label: "Query", placeholder: "e.g. Arsenal", required: true }] },
+      { label: "Search Leagues", path: "football-leagues-search", params: [{ name: "search", label: "Query", placeholder: "e.g. Premier League", required: true }] },
+      { label: "Search Matches", path: "football-matches-search", params: [{ name: "search", label: "Query", placeholder: "e.g. Arsenal vs Chelsea", required: true }] },
+      { label: "Search All", path: "football-all-search", params: [{ name: "search", label: "Query", placeholder: "e.g. Messi", required: true }] },
     ],
   },
   {
     category: "Players",
     endpoints: [
-      { label: "Player Detail", path: "football-get-player-detail", params: [{ name: "playerId", label: "Player ID", placeholder: "e.g. 30981", required: true }] },
-      { label: "Player Image", path: "football-get-player-image", params: [{ name: "playerId", label: "Player ID", placeholder: "e.g. 30981", required: true }] },
-      { label: "Players by Team", path: "football-get-all-players-by-team", params: [{ name: "teamId", label: "Team ID", placeholder: "e.g. 9825", required: true }] },
+      { label: "Player Detail", path: "football-get-player-detail", params: [{ name: "playerid", label: "Player ID", placeholder: "e.g. 30981", required: true }] },
+      { label: "Player Image", path: "football-get-player-image", params: [{ name: "playerid", label: "Player ID", placeholder: "e.g. 30981", required: true }] },
+      { label: "Players by Team", path: "football-get-list-player", params: [{ name: "teamid", label: "Team ID", placeholder: "e.g. 8650", required: true }] },
     ],
   },
   {
     category: "Teams",
     endpoints: [
-      { label: "Team Detail", path: "football-get-team-detail", params: [{ name: "teamId", label: "Team ID", placeholder: "e.g. 9825", required: true }] },
-      { label: "Team Logo", path: "football-get-team-logo", params: [{ name: "teamId", label: "Team ID", placeholder: "e.g. 9825", required: true }] },
-      { label: "All Teams by League", path: "football-get-all-teams-by-league", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
-      { label: "Home Teams by League", path: "football-get-home-teams-by-league", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
-      { label: "Away Teams by League", path: "football-get-away-teams-by-league", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Team Detail", path: "football-league-team", params: [{ name: "teamid", label: "Team ID", placeholder: "e.g. 8650", required: true }] },
+      { label: "Team Logo", path: "football-get-team-logo", params: [{ name: "teamid", label: "Team ID", placeholder: "e.g. 8650", required: true }] },
+      { label: "All Teams by League", path: "football-get-list-all-team", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Home Teams by League", path: "football-get-list-home-team", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Away Teams by League", path: "football-get-list-away-team", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
     ],
   },
   {
     category: "Leagues",
     endpoints: [
-      { label: "Popular Leagues", path: "football-get-popular-leagues", params: [] },
+      { label: "Popular Leagues", path: "football-popular-leagues", params: [] },
       { label: "All Leagues", path: "football-get-all-leagues", params: [] },
-      { label: "All Leagues with Countries", path: "football-get-all-leagues-with-countries", params: [] },
-      { label: "League Detail", path: "football-get-league-detail", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
-      { label: "League Logo", path: "football-get-league-logo", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "All Leagues with Countries", path: "football-get-all-leagues-countries", params: [] },
+      { label: "League Detail", path: "football-get-league-detail", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "League Logo", path: "football-get-league-logo", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
     ],
   },
   {
@@ -69,95 +68,95 @@ const ENDPOINT_GROUPS: EndpointGroup[] = [
     endpoints: [
       { label: "All Transfers", path: "football-get-all-transfers", params: [] },
       { label: "Top Transfers", path: "football-get-top-transfers", params: [] },
-      { label: "Top Market Value Transfers", path: "football-get-top-market-value-transfers", params: [] },
-      { label: "Transfers by League", path: "football-get-transfers-by-league", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
-      { label: "Team Contract Extensions", path: "football-get-team-contract-extensions", params: [{ name: "teamId", label: "Team ID", placeholder: "e.g. 9825", required: true }] },
-      { label: "Team Players In", path: "football-get-team-players-in-transfers", params: [{ name: "teamId", label: "Team ID", placeholder: "e.g. 9825", required: true }] },
-      { label: "Team Players Out", path: "football-get-team-players-out-transfers", params: [{ name: "teamId", label: "Team ID", placeholder: "e.g. 9825", required: true }] },
+      { label: "Top Market Value", path: "football-get-top-market-value-transfers", params: [] },
+      { label: "Transfers by League", path: "football-get-transfers-league", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Team Contract Extensions", path: "football-get-team-contract-extension", params: [{ name: "teamid", label: "Team ID", placeholder: "e.g. 8650", required: true }] },
+      { label: "Team Players In", path: "football-get-team-players-in", params: [{ name: "teamid", label: "Team ID", placeholder: "e.g. 8650", required: true }] },
+      { label: "Team Players Out", path: "football-get-team-players-out", params: [{ name: "teamid", label: "Team ID", placeholder: "e.g. 8650", required: true }] },
     ],
   },
   {
     category: "Standings",
     endpoints: [
-      { label: "Standings All", path: "football-get-standing-all", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
-      { label: "Standings Home", path: "football-get-standing-home", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
-      { label: "Standings Away", path: "football-get-standing-away", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Standings All", path: "football-get-standing-all", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Standings Home", path: "football-get-standing-home", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Standings Away", path: "football-get-standing-away", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
     ],
   },
   {
     category: "Top Players",
     endpoints: [
-      { label: "Top Assists", path: "football-get-top-players-assists", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
-      { label: "Top Goals", path: "football-get-top-players-goals", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
-      { label: "Top Rating", path: "football-get-top-players-rating", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Top Assists", path: "football-get-top-assists", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Top Goals", path: "football-get-top-goals", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Top Rating", path: "football-get-top-rating", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
     ],
   },
   {
     category: "Fixtures / Matches",
     endpoints: [
       { label: "Livescores", path: "football-get-all-livescores", params: [] },
-      { label: "Matches by Date", path: "football-get-matches-by-date", params: [{ name: "date", label: "Date", placeholder: "e.g. 2026-06-02" }] },
-      { label: "League Matches by Date", path: "football-get-league-matches-by-date", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }, { name: "date", label: "Date", placeholder: "e.g. 2026-06-02" }] },
-      { label: "All Matches by League", path: "football-get-all-matches-by-league", params: [{ name: "leagueId", label: "League ID", placeholder: "e.g. 47", required: true }] },
+      { label: "Matches by Date", path: "football-get-matches-by-date", params: [{ name: "date", label: "Date", placeholder: "e.g. 20260602" }] },
+      { label: "League Matches by Date", path: "football-get-league-matches-by-date", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }, { name: "date", label: "Date", placeholder: "e.g. 20260602" }] },
+      { label: "All Matches by League", path: "football-get-all-matches-league", params: [{ name: "leagueid", label: "League ID", placeholder: "e.g. 47", required: true }] },
     ],
   },
   {
     category: "Match Detail",
     endpoints: [
-      { label: "Match Detail", path: "football-get-match-detail", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Match Score", path: "football-get-match-score", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Match Status", path: "football-get-match-status", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Match Highlights", path: "football-get-match-highlights", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Match Location", path: "football-get-match-location", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Match All Stats", path: "football-get-match-all-stats", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Match 1st Half Stats", path: "football-get-match-firsthalf-stats", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Match 2nd Half Stats", path: "football-get-match-secondhalf-stats", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Match Referee", path: "football-get-match-referee", params: [{ name: "eventId", label: "Event ID", required: true }] },
+      { label: "Match Detail", path: "football-get-event-detail", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Match Score", path: "football-get-event-score", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Match Status", path: "football-get-event-status", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Match Highlights", path: "football-get-event-highlights", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Match Location", path: "football-get-event-location", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Match All Stats", path: "football-get-event-all-stats", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Match 1st Half Stats", path: "football-get-event-firsthalf-stats", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Match 2nd Half Stats", path: "football-get-event-secondhalf-stats", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Match Referee", path: "football-get-event-referee", params: [{ name: "eventid", label: "Event ID", required: true }] },
     ],
   },
   {
     category: "Odds",
     endpoints: [
-      { label: "Odds by Event", path: "football-get-odds-by-event", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Odds Poll by Event", path: "football-get-odds-poll-by-event", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Odds Vote Result", path: "football-get-odds-vote-result-by-event", params: [{ name: "eventId", label: "Event ID", required: true }] },
+      { label: "Odds by Event", path: "football-get-event-odds", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Odds Poll", path: "football-get-event-odds-poll", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Odds Vote Result", path: "football-get-event-odds-vote", params: [{ name: "eventid", label: "Event ID", required: true }] },
     ],
   },
   {
     category: "Lineups",
     endpoints: [
-      { label: "Home Lineup", path: "football-get-lineup-home", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Away Lineup", path: "football-get-lineup-away", params: [{ name: "eventId", label: "Event ID", required: true }] },
+      { label: "Home Lineup", path: "football-get-event-lineup-home", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Away Lineup", path: "football-get-event-lineup-away", params: [{ name: "eventid", label: "Event ID", required: true }] },
     ],
   },
   {
     category: "Head to Head",
     endpoints: [
-      { label: "H2H by Event", path: "football-get-head-to-head", params: [{ name: "eventId", label: "Event ID", required: true }] },
+      { label: "H2H by Event", path: "football-get-event-head-to-head", params: [{ name: "eventid", label: "Event ID", required: true }] },
     ],
   },
   {
     category: "Rounds",
     endpoints: [
-      { label: "Rounds All", path: "football-get-all-rounds", params: [{ name: "leagueId", label: "League ID", required: true }] },
-      { label: "Round Detail", path: "football-get-round-detail", params: [{ name: "roundId", label: "Round ID", required: true }] },
-      { label: "Rounds Players", path: "football-get-rounds-players", params: [{ name: "leagueId", label: "League ID", required: true }] },
+      { label: "Rounds All", path: "football-get-all-rounds", params: [{ name: "leagueid", label: "League ID", required: true }] },
+      { label: "Round Detail", path: "football-get-round-detail", params: [{ name: "roundid", label: "Round ID", required: true }] },
+      { label: "Rounds Players", path: "football-get-rounds-players", params: [{ name: "leagueid", label: "League ID", required: true }] },
     ],
   },
   {
     category: "Trophies",
     endpoints: [
-      { label: "Trophies All Seasons", path: "football-get-trophies-all-seasons", params: [{ name: "leagueId", label: "League ID", required: true }] },
-      { label: "Trophies Detail", path: "football-get-trophies-detail", params: [{ name: "leagueId", label: "League ID", required: true }] },
+      { label: "Trophies All Seasons", path: "football-get-trophies-all-seasons", params: [{ name: "leagueid", label: "League ID", required: true }] },
+      { label: "Trophies Detail", path: "football-get-trophies-detail", params: [{ name: "leagueid", label: "League ID", required: true }] },
     ],
   },
   {
     category: "News",
     endpoints: [
       { label: "Trending News", path: "football-get-trending-news", params: [] },
-      { label: "News by League", path: "football-get-news-league", params: [{ name: "leagueId", label: "League ID", required: true }] },
-      { label: "News by Team", path: "football-get-news-team", params: [{ name: "teamId", label: "Team ID", required: true }] },
-      { label: "News by Player", path: "football-get-news-player", params: [{ name: "playerId", label: "Player ID", required: true }] },
+      { label: "News by League", path: "football-get-news-league", params: [{ name: "leagueid", label: "League ID", required: true }] },
+      { label: "News by Team", path: "football-get-news-team", params: [{ name: "teamid", label: "Team ID", required: true }] },
+      { label: "News by Player", path: "football-get-news-player", params: [{ name: "playerid", label: "Player ID", required: true }] },
     ],
   },
   {
@@ -165,9 +164,9 @@ const ENDPOINT_GROUPS: EndpointGroup[] = [
     endpoints: [
       { label: "All Countries", path: "football-get-all-countries", params: [] },
       { label: "All Seasons", path: "football-get-all-seasons", params: [] },
-      { label: "Statistics by Event", path: "football-get-statistics-event", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Statistics 1st Half", path: "football-get-statistics-firsthalf", params: [{ name: "eventId", label: "Event ID", required: true }] },
-      { label: "Statistics 2nd Half", path: "football-get-statistics-secondhalf", params: [{ name: "eventId", label: "Event ID", required: true }] },
+      { label: "Statistics by Event", path: "football-get-event-statistics", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Statistics 1st Half", path: "football-get-event-statistics-firsthalf", params: [{ name: "eventid", label: "Event ID", required: true }] },
+      { label: "Statistics 2nd Half", path: "football-get-event-statistics-secondhalf", params: [{ name: "eventid", label: "Event ID", required: true }] },
     ],
   },
 ];
@@ -241,7 +240,7 @@ export default function FootballApiExplorer() {
     setSearchResults([]);
     setDetail(null);
     try {
-      const endpoint = searchType === "players" ? "football-search-all-players" : "football-search-teams";
+      const endpoint = searchType === "players" ? "football-players-search" : "football-teams-search";
       const result = await apiCall(endpoint, { search: searchQuery });
       if (result.error) {
         setError(result.error);
@@ -261,8 +260,8 @@ export default function FootballApiExplorer() {
     setError(null);
     setDetail(null);
     try {
-      const endpoint = type === "player" ? "football-get-player-detail" : "football-get-team-detail";
-      const paramKey = type === "player" ? "playerId" : "teamId";
+      const endpoint = type === "player" ? "football-get-player-detail" : "football-league-team";
+      const paramKey = type === "player" ? "playerid" : "teamid";
       const result = await apiCall(endpoint, { [paramKey]: id });
       if (result.error) {
         setError(result.error);
