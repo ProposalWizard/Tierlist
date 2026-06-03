@@ -36,12 +36,16 @@ function val(row: Record<string, { value: string } | undefined>, key: string): s
 }
 
 // Phase 1: Fast player import — names + DOB only (no OPTIONALs)
-export async function fetchPlayersByYear(year: number) {
+// half=1 → months 1-6, half=2 → months 7-12
+export async function fetchPlayersByYear(year: number, half: 1 | 2) {
+  const monthFilter = half === 1
+    ? `&& MONTH(?dob) <= 6`
+    : `&& MONTH(?dob) > 6`;
   const query = `
     SELECT ?player ?playerLabel ?dob WHERE {
       ?player wdt:P106 wd:Q937857 .
       ?player wdt:P569 ?dob .
-      FILTER(YEAR(?dob) = ${year})
+      FILTER(YEAR(?dob) = ${year} ${monthFilter})
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
     }
   `;

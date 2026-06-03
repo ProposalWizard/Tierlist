@@ -65,7 +65,8 @@ export async function POST(req: NextRequest) {
     switch (step) {
       case "players": {
         const year = body.year as number;
-        const { players, rawRows } = await fetchPlayersByYear(year);
+        const half = (body.half as 1 | 2) ?? 1;
+        const { players, rawRows } = await fetchPlayersByYear(year, half);
 
         if (players.length > 0) {
           await upsertChunked(
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        return NextResponse.json({ step: "players", year, imported: players.length, rawRows });
+        return NextResponse.json({ step: "players", year, half, imported: players.length, rawRows });
       }
 
       case "players-no-dob": {
