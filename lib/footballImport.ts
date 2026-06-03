@@ -1,42 +1,29 @@
 const SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
 const UA = "Knowitball/1.0 (knowitballcontact@gmail.com)";
 
-const RETRY_DELAYS = [3000, 6000, 12000];
-
 async function runSparql(query: string): Promise<Record<string, { value: string } | undefined>[]> {
-  let lastErr: Error | null = null;
+  const res = await fetch(SPARQL_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/sparql-results+json",
+      "User-Agent": UA,
+    },
+    body: `query=${encodeURIComponent(query)}`,
+  });
 
-  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
-    const res = await fetch(SPARQL_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/sparql-results+json",
-        "User-Agent": UA,
-      },
-      body: `query=${encodeURIComponent(query)}`,
-    });
-
-    if (res.ok) {
-      const text = await res.text();
-      try {
-        const json = JSON.parse(text);
-        return json.results?.bindings ?? [];
-      } catch {
-        throw new Error(`SPARQL returned non-JSON: ${text.slice(0, 200)}`);
-      }
-    }
-
+  if (!res.ok) {
     const text = await res.text();
-    lastErr = new Error(`SPARQL ${res.status}: ${text.slice(0, 200)}`);
-
-    if (res.status !== 429 && res.status !== 502 && res.status !== 503) throw lastErr;
-    if (attempt < RETRY_DELAYS.length) {
-      await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
-    }
+    throw new Error(`SPARQL ${res.status}: ${text.slice(0, 200)}`);
   }
 
-  throw lastErr!;
+  const text = await res.text();
+  try {
+    const json = JSON.parse(text);
+    return json.results?.bindings ?? [];
+  } catch {
+    throw new Error(`SPARQL returned non-JSON: ${text.slice(0, 200)}`);
+  }
 }
 
 function extractId(uri: string | undefined): string | null {
@@ -48,45 +35,88 @@ function val(row: Record<string, { value: string } | undefined>, key: string): s
   return row?.[key]?.value ?? null;
 }
 
+// Phase 1: Fast player import — names + DOB only (no OPTIONALs)
 export async function fetchPlayersByYear(year: number) {
   const query = `
-    SELECT ?player ?playerLabel ?dob ?nationality ?nationalityLabel ?positionLabel ?image WHERE {
+    SELECT ?player ?playerLabel ?dob WHERE {
       ?player wdt:P106 wd:Q937857 .
       ?player wdt:P569 ?dob .
       FILTER(YEAR(?dob) = ${year})
-      OPTIONAL { ?player wdt:P27 ?nationality }
-      OPTIONAL { ?player wdt:P413 ?position }
-      OPTIONAL { ?player wdt:P18 ?image }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
     }
   `;
 
   const rows = await runSparql(query);
-  return deduplicatePlayerRows(rows);
+
+  const players = new Map<string, {
+    wikidata_id: string;
+    name: string;
+    date_of_birth: string | null;
+  }>();
+
+  for (const row of rows) {
+    const pid = extractId(val(row, "player") ?? undefined);
+    if (!pid || players.has(pid)) continue;
+    players.set(pid, {
+      wikidata_id: pid,
+      name: val(row, "playerLabel") ?? pid,
+      date_of_birth: val(row, "dob")?.slice(0, 10) ?? null,
+    });
+  }
+
+  return { players: Array.from(players.values()), rawRows: rows.length };
 }
 
 export async function fetchPlayersNoDob() {
   const query = `
-    SELECT ?player ?playerLabel ?nationality ?nationalityLabel ?positionLabel ?image WHERE {
+    SELECT ?player ?playerLabel WHERE {
       ?player wdt:P106 wd:Q937857 .
       FILTER NOT EXISTS { ?player wdt:P569 ?anyDob }
-      OPTIONAL { ?player wdt:P27 ?nationality }
-      OPTIONAL { ?player wdt:P413 ?position }
-      OPTIONAL { ?player wdt:P18 ?image }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
     }
     LIMIT 10000
   `;
 
   const rows = await runSparql(query);
-  return deduplicatePlayerRows(rows);
-}
 
-function deduplicatePlayerRows(rows: Record<string, { value: string } | undefined>[]) {
   const players = new Map<string, {
     wikidata_id: string;
     name: string;
     date_of_birth: string | null;
+  }>();
+
+  for (const row of rows) {
+    const pid = extractId(val(row, "player") ?? undefined);
+    if (!pid || players.has(pid)) continue;
+    players.set(pid, {
+      wikidata_id: pid,
+      name: val(row, "playerLabel") ?? pid,
+      date_of_birth: null,
+    });
+  }
+
+  return { players: Array.from(players.values()), rawRows: rows.length };
+}
+
+// Phase 2: Enrich players with nationality, position, image (VALUES-based)
+export async function fetchPlayerDetails(playerIds: string[]) {
+  if (playerIds.length === 0) return { details: [], countries: [] };
+
+  const values = playerIds.map((id) => `wd:${id}`).join(" ");
+  const query = `
+    SELECT ?player ?nationality ?nationalityLabel ?positionLabel ?image WHERE {
+      VALUES ?player { ${values} }
+      OPTIONAL { ?player wdt:P27 ?nationality }
+      OPTIONAL { ?player wdt:P413 ?position }
+      OPTIONAL { ?player wdt:P18 ?image }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+    }
+  `;
+
+  const rows = await runSparql(query);
+
+  const details = new Map<string, {
+    wikidata_id: string;
     country_id: string | null;
     position: string | null;
     image_url: string | null;
@@ -95,7 +125,7 @@ function deduplicatePlayerRows(rows: Record<string, { value: string } | undefine
 
   for (const row of rows) {
     const pid = extractId(val(row, "player") ?? undefined);
-    if (!pid || players.has(pid)) continue;
+    if (!pid || details.has(pid)) continue;
 
     const cid = extractId(val(row, "nationality") ?? undefined);
     const cname = val(row, "nationalityLabel");
@@ -103,10 +133,8 @@ function deduplicatePlayerRows(rows: Record<string, { value: string } | undefine
       countries.set(cid, { wikidata_id: cid, name: cname });
     }
 
-    players.set(pid, {
+    details.set(pid, {
       wikidata_id: pid,
-      name: val(row, "playerLabel") ?? pid,
-      date_of_birth: val(row, "dob")?.slice(0, 10) ?? null,
       country_id: cid,
       position: val(row, "positionLabel"),
       image_url: val(row, "image"),
@@ -114,12 +142,12 @@ function deduplicatePlayerRows(rows: Record<string, { value: string } | undefine
   }
 
   return {
-    players: Array.from(players.values()),
+    details: Array.from(details.values()),
     countries: Array.from(countries.values()),
-    rawRows: rows.length,
   };
 }
 
+// Phase 3: Careers for specific players (VALUES-based)
 export async function fetchCareersForPlayers(playerIds: string[]) {
   if (playerIds.length === 0) return { careers: [], clubs: [] };
 

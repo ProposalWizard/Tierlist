@@ -5,6 +5,7 @@ import { isAdmin } from "@/lib/admin";
 import {
   fetchPlayersByYear,
   fetchPlayersNoDob,
+  fetchPlayerDetails,
   fetchCareersForPlayers,
   fetchCountryFlags,
   fetchClubDetails,
@@ -64,11 +65,8 @@ export async function POST(req: NextRequest) {
     switch (step) {
       case "players": {
         const year = body.year as number;
-        const { players, countries, rawRows } = await fetchPlayersByYear(year);
+        const { players, rawRows } = await fetchPlayersByYear(year);
 
-        if (countries.length > 0) {
-          await upsertChunked(service, "football_countries", countries, "wikidata_id");
-        }
         if (players.length > 0) {
           await upsertChunked(
             service,
@@ -78,20 +76,12 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        return NextResponse.json({
-          step: "players",
-          year,
-          imported: players.length,
-          rawRows,
-        });
+        return NextResponse.json({ step: "players", year, imported: players.length, rawRows });
       }
 
       case "players-no-dob": {
-        const { players, countries, rawRows } = await fetchPlayersNoDob();
+        const { players, rawRows } = await fetchPlayersNoDob();
 
-        if (countries.length > 0) {
-          await upsertChunked(service, "football_countries", countries, "wikidata_id");
-        }
         if (players.length > 0) {
           await upsertChunked(
             service,
@@ -101,10 +91,47 @@ export async function POST(req: NextRequest) {
           );
         }
 
+        return NextResponse.json({ step: "players-no-dob", imported: players.length, rawRows });
+      }
+
+      case "player-details": {
+        const offset = (body.offset as number) ?? 0;
+        const batchSize = 200;
+
+        const { data: playerRows } = await service
+          .from("football_players")
+          .select("wikidata_id")
+          .order("wikidata_id")
+          .range(offset, offset + batchSize - 1);
+
+        if (!playerRows || playerRows.length === 0) {
+          return NextResponse.json({ step: "player-details", imported: 0, hasMore: false });
+        }
+
+        const ids = playerRows.map((r: { wikidata_id: string }) => r.wikidata_id);
+        const { details, countries } = await fetchPlayerDetails(ids);
+
+        if (countries.length > 0) {
+          await upsertChunked(service, "football_countries", countries, "wikidata_id");
+        }
+
+        if (details.length > 0) {
+          await upsertChunked(
+            service,
+            "football_players",
+            details.map((d) => ({ ...d, updated_at: new Date().toISOString() })),
+            "wikidata_id"
+          );
+        }
+
+        const hasMore = playerRows.length === batchSize;
+
         return NextResponse.json({
-          step: "players-no-dob",
-          imported: players.length,
-          rawRows,
+          step: "player-details",
+          imported: details.length,
+          countriesFound: countries.length,
+          hasMore,
+          nextOffset: hasMore ? offset + batchSize : null,
         });
       }
 

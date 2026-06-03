@@ -128,114 +128,139 @@ export default function FootballDataPage() {
     const START_YEAR = 1920;
     const END_YEAR = 2010;
     const totalYears = END_YEAR - START_YEAR + 1;
+    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    const callWithRetry = async (body: Record<string, unknown>, retries = 3): Promise<Record<string, unknown>> => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const res = await fetch("/api/admin/football/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const json = await res.json();
+          if (!res.ok) {
+            if (attempt < retries) {
+              const wait = (attempt + 1) * 5000;
+              addLog(`Retry ${attempt + 1}/${retries} after error, waiting ${wait / 1000}s...`);
+              await delay(wait);
+              continue;
+            }
+            throw new Error(json.error ?? "Request failed");
+          }
+          return json;
+        } catch (e: unknown) {
+          if (attempt < retries) {
+            const wait = (attempt + 1) * 5000;
+            addLog(`Retry ${attempt + 1}/${retries} after error, waiting ${wait / 1000}s...`);
+            await delay(wait);
+            continue;
+          }
+          throw e;
+        }
+      }
+      throw new Error("Max retries exceeded");
+    };
 
     try {
-      // Phase 1: Players by birth year
+      // Phase 1: Players by birth year (fast — names + DOB only)
       setImportPhase("Importing players...");
-      addLog("Starting player import (year by year)");
+      addLog("Phase 1: Player names + DOB (year by year)");
       let totalPlayers = 0;
-      const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
       for (let year = START_YEAR; year <= END_YEAR; year++) {
         setImportPhase(`Importing players born ${year}...`);
-        const res = await fetch("/api/admin/football/import", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step: "players", year }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error);
-        totalPlayers += json.imported;
-        if (json.imported > 0) {
-          addLog(`${year}: +${json.imported} players (total: ${totalPlayers})`);
+        const json = await callWithRetry({ step: "players", year });
+        const imported = json.imported as number;
+        totalPlayers += imported;
+        if (imported > 0) {
+          addLog(`${year}: +${imported} players (total: ${totalPlayers})`);
         }
-        setImportProgress(Math.round(((year - START_YEAR) / totalYears) * 20));
-        await delay(1500);
+        setImportProgress(Math.round(((year - START_YEAR) / totalYears) * 15));
+        await delay(2000);
       }
 
       // Players without DOB
       setImportPhase("Importing players without birth date...");
       addLog("Fetching players without DOB");
-      {
-        const res = await fetch("/api/admin/football/import", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step: "players-no-dob" }),
-        });
-        const json = await res.json();
-        if (!res.ok) {
-          addLog(`Warning: no-DOB query failed (${json.error}) — skipping`);
-        } else {
-          totalPlayers += json.imported;
-          addLog(`No-DOB: +${json.imported} players (total: ${totalPlayers})`);
-        }
+      try {
+        const json = await callWithRetry({ step: "players-no-dob" });
+        totalPlayers += json.imported as number;
+        addLog(`No-DOB: +${json.imported} players (total: ${totalPlayers})`);
+      } catch {
+        addLog("Warning: no-DOB query failed — skipping");
       }
-      addLog(`Player import complete: ${totalPlayers} players`);
-      setImportProgress(25);
+      addLog(`Phase 1 complete: ${totalPlayers} players`);
+      setImportProgress(15);
 
-      // Phase 2: Careers (batched by player IDs from our DB)
-      setImportPhase("Importing career records...");
-      addLog("Starting career import (100 players per batch)");
+      // Phase 2: Enrich players with nationality, position, image
+      setImportPhase("Enriching player details...");
+      addLog("Phase 2: Player details (nationality, position, image)");
       let offset = 0;
-      let totalCareers = 0;
       let batch = 1;
+      let totalEnriched = 0;
+      while (true) {
+        setImportPhase(`Enriching player details (batch ${batch})...`);
+        const json = await callWithRetry({ step: "player-details", offset });
+        totalEnriched += json.imported as number;
+        if ((json.imported as number) > 0) {
+          addLog(`Details batch ${batch}: +${json.imported} enriched`);
+        }
+        batch++;
+        setImportProgress(15 + Math.min(15, Math.round((batch / (totalPlayers / 200)) * 15)));
+        if (!json.hasMore || json.nextOffset == null) break;
+        offset = json.nextOffset as number;
+        await delay(2000);
+      }
+      addLog(`Phase 2 complete: ${totalEnriched} players enriched`);
+      setImportProgress(30);
+
+      // Phase 3: Careers
+      setImportPhase("Importing career records...");
+      addLog("Phase 3: Career records (100 players per batch)");
+      offset = 0;
+      let totalCareers = 0;
+      batch = 1;
       while (true) {
         setImportPhase(`Importing careers (batch ${batch})...`);
-        const res = await fetch("/api/admin/football/import", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step: "careers", offset }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error);
-        totalCareers += json.imported;
-        if (json.imported > 0) {
+        const json = await callWithRetry({ step: "careers", offset });
+        totalCareers += json.imported as number;
+        if ((json.imported as number) > 0) {
           addLog(`Careers batch ${batch}: +${json.imported} (total: ${totalCareers})`);
         }
         batch++;
-        setImportProgress(25 + Math.min(35, Math.round((batch / (totalPlayers / 100)) * 35)));
+        setImportProgress(30 + Math.min(40, Math.round((batch / (totalPlayers / 100)) * 40)));
         if (!json.hasMore || json.nextOffset == null) break;
-        offset = json.nextOffset;
-        await delay(1500);
+        offset = json.nextOffset as number;
+        await delay(2000);
       }
-      addLog(`Career import complete: ${totalCareers} records`);
-      setImportProgress(60);
+      addLog(`Phase 3 complete: ${totalCareers} career records`);
+      setImportProgress(70);
 
-      // Phase 3: Country flags
+      // Phase 4: Country flags
       setImportPhase("Fetching country flags...");
-      addLog("Fetching country flags");
+      addLog("Phase 4: Country flags");
       {
-        const res = await fetch("/api/admin/football/import", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step: "flags" }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error);
+        const json = await callWithRetry({ step: "flags" });
         addLog(`Flags imported: ${json.imported}`);
       }
-      setImportProgress(80);
+      setImportProgress(85);
 
-      // Phase 4: Club details
+      // Phase 5: Club details
       setImportPhase("Enriching club details...");
-      addLog("Fetching club details (country, league, image)");
+      addLog("Phase 5: Club details (country, league, image)");
       offset = 0;
       let totalClubDetails = 0;
       batch = 1;
       while (true) {
-        const res = await fetch("/api/admin/football/import", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step: "club-details", offset }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error);
-        totalClubDetails += json.imported;
+        const json = await callWithRetry({ step: "club-details", offset });
+        totalClubDetails += json.imported as number;
         addLog(`Club details batch ${batch}: +${json.imported}`);
         batch++;
         if (!json.hasMore || json.nextOffset == null) break;
-        offset = json.nextOffset;
+        offset = json.nextOffset as number;
+        await delay(2000);
       }
-      addLog(`Club details complete: ${totalClubDetails}`);
+      addLog(`Phase 5 complete: ${totalClubDetails} clubs enriched`);
       setImportProgress(100);
 
       setImportPhase("Import complete!");
