@@ -85,11 +85,158 @@ function calcAge(dob: string): number | null {
   return age;
 }
 
+interface ImportLog {
+  message: string;
+  time: string;
+}
+
 export default function FootballDataPage() {
-  const [tab, setTab] = useState<"browse" | "helper">("browse");
+  const [tab, setTab] = useState<"browse" | "helper" | "database">("browse");
   const [view, setView] = useState<"home" | "squad" | "player">("home");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Database tab state
+  const [dbStats, setDbStats] = useState<{ players: number; clubs: number; careers: number; countries: number } | null>(null);
+  const [dbLoading, setDbLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importPhase, setImportPhase] = useState("");
+  const [importProgress, setImportProgress] = useState(0);
+  const [importLogs, setImportLogs] = useState<ImportLog[]>([]);
+
+  const addLog = (message: string) => {
+    setImportLogs((prev) => [...prev, { message, time: new Date().toLocaleTimeString() }]);
+  };
+
+  const loadDbStats = async () => {
+    setDbLoading(true);
+    try {
+      const res = await fetch("/api/admin/football/import");
+      const json = await res.json();
+      if (res.ok) setDbStats(json);
+    } catch {
+      // ignore
+    }
+    setDbLoading(false);
+  };
+
+  const runImport = async () => {
+    setImporting(true);
+    setImportLogs([]);
+    setImportProgress(0);
+
+    try {
+      // Phase 1: Players
+      setImportPhase("Importing players...");
+      addLog("Starting player import from Wikidata");
+      let offset = 0;
+      let totalPlayers = 0;
+      let batch = 1;
+      while (true) {
+        const res = await fetch("/api/admin/football/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step: "players", offset }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error);
+        totalPlayers += json.imported;
+        addLog(`Players batch ${batch}: +${json.imported} (total: ${totalPlayers})`);
+        batch++;
+        if (!json.hasMore || json.nextOffset == null) break;
+        offset = json.nextOffset;
+      }
+      addLog(`Player import complete: ${totalPlayers} players`);
+      setImportProgress(25);
+
+      // Phase 2: Careers
+      setImportPhase("Importing career records...");
+      addLog("Starting career import");
+      offset = 0;
+      let totalCareers = 0;
+      batch = 1;
+      while (true) {
+        const res = await fetch("/api/admin/football/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step: "careers", offset }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error);
+        totalCareers += json.imported;
+        addLog(`Careers batch ${batch}: +${json.imported} (total: ${totalCareers})`);
+        batch++;
+        if (!json.hasMore || json.nextOffset == null) break;
+        offset = json.nextOffset;
+      }
+      addLog(`Career import complete: ${totalCareers} records`);
+      setImportProgress(60);
+
+      // Phase 3: Country flags
+      setImportPhase("Fetching country flags...");
+      addLog("Fetching country flags");
+      {
+        const res = await fetch("/api/admin/football/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step: "flags" }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error);
+        addLog(`Flags imported: ${json.imported}`);
+      }
+      setImportProgress(80);
+
+      // Phase 4: Club details
+      setImportPhase("Enriching club details...");
+      addLog("Fetching club details (country, league, image)");
+      offset = 0;
+      let totalClubDetails = 0;
+      batch = 1;
+      while (true) {
+        const res = await fetch("/api/admin/football/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step: "club-details", offset }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error);
+        totalClubDetails += json.imported;
+        addLog(`Club details batch ${batch}: +${json.imported}`);
+        batch++;
+        if (!json.hasMore || json.nextOffset == null) break;
+        offset = json.nextOffset;
+      }
+      addLog(`Club details complete: ${totalClubDetails}`);
+      setImportProgress(100);
+
+      setImportPhase("Import complete!");
+      addLog("All phases complete");
+      loadDbStats();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Import failed";
+      setImportPhase(`Error: ${msg}`);
+      addLog(`ERROR: ${msg}`);
+    }
+
+    setImporting(false);
+  };
+
+  const clearDatabase = async () => {
+    if (!confirm("Delete ALL football data? This cannot be undone.")) return;
+    try {
+      const res = await fetch("/api/admin/football/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ step: "clear" }),
+      });
+      if (!res.ok) throw new Error("Clear failed");
+      addLog("Database cleared");
+      loadDbStats();
+    } catch {
+      addLog("Failed to clear database");
+    }
+  };
 
   // Search
   const [searchType, setSearchType] = useState<"player" | "club">("player");
@@ -309,6 +456,10 @@ export default function FootballDataPage() {
           <button onClick={() => setTab("helper")}
             className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "helper" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"}`}>
             TTT Helper
+          </button>
+          <button onClick={() => { setTab("database"); if (!dbStats) loadDbStats(); }}
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "database" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"}`}>
+            Database
           </button>
         </div>
 
@@ -716,6 +867,97 @@ export default function FootballDataPage() {
                 </div>
               </>
             )}
+          </>
+        )}
+
+        {/* ════════ DATABASE TAB ════════ */}
+        {tab === "database" && (
+          <>
+            <div className="mb-6">
+              <h1 className="text-2xl font-black">Football Database</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Import player and club data from Wikidata into your own database for instant search.
+              </p>
+            </div>
+
+            {/* Stats */}
+            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {(["players", "clubs", "careers", "countries"] as const).map((key) => (
+                <div key={key} className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-center">
+                  <p className="text-2xl font-black text-white">
+                    {dbLoading ? "..." : dbStats ? dbStats[key].toLocaleString() : "—"}
+                  </p>
+                  <p className="mt-1 text-xs font-bold uppercase text-gray-500">{key}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="mb-6 flex flex-wrap gap-3">
+              <button
+                onClick={loadDbStats}
+                disabled={dbLoading}
+                className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm font-bold text-gray-300 hover:bg-gray-700 disabled:opacity-50"
+              >
+                Refresh Stats
+              </button>
+              <button
+                onClick={runImport}
+                disabled={importing}
+                className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
+              >
+                {importing ? "Importing..." : "Import from Wikidata"}
+              </button>
+              <button
+                onClick={clearDatabase}
+                disabled={importing}
+                className="rounded-lg border border-red-700 bg-red-900/30 px-4 py-2 text-sm font-bold text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+              >
+                Clear All Data
+              </button>
+            </div>
+
+            {/* Progress */}
+            {(importing || importPhase) && (
+              <div className="mb-6">
+                <div className="mb-2 flex items-center justify-between text-sm">
+                  <span className="font-bold text-gray-300">{importPhase}</span>
+                  <span className="font-mono text-gray-500">{importProgress}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-gray-800">
+                  <div
+                    className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                    style={{ width: `${importProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Logs */}
+            {importLogs.length > 0 && (
+              <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+                <h3 className="mb-3 text-xs font-bold uppercase text-gray-500">Import Log</h3>
+                <div className="max-h-64 overflow-y-auto space-y-1 font-mono text-xs">
+                  {importLogs.map((log, i) => (
+                    <div key={i} className={`${log.message.startsWith("ERROR") ? "text-red-400" : "text-gray-400"}`}>
+                      <span className="text-gray-600">[{log.time}]</span> {log.message}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-sm text-gray-500">
+              <p className="font-bold text-gray-400 mb-2">How it works</p>
+              <ul className="space-y-1 list-disc list-inside">
+                <li>Phase 1: Downloads all footballers from Wikidata (name, DOB, nationality, position, photo)</li>
+                <li>Phase 2: Downloads career records (which clubs each player played for, with dates)</li>
+                <li>Phase 3: Fetches country flag images</li>
+                <li>Phase 4: Enriches clubs with country, league, and crest image</li>
+                <li>Full import takes ~10-15 minutes. Data is upserted so re-running refreshes everything.</li>
+              </ul>
+            </div>
           </>
         )}
       </div>
