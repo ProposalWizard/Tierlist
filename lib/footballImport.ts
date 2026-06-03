@@ -14,11 +14,16 @@ async function runSparql(query: string): Promise<Record<string, { value: string 
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`SPARQL ${res.status}: ${text.slice(0, 300)}`);
+    throw new Error(`SPARQL ${res.status}: ${text.slice(0, 200)}`);
   }
 
-  const json = await res.json();
-  return json.results?.bindings ?? [];
+  const text = await res.text();
+  try {
+    const json = JSON.parse(text);
+    return json.results?.bindings ?? [];
+  } catch {
+    throw new Error(`SPARQL returned non-JSON: ${text.slice(0, 200)}`);
+  }
 }
 
 function extractId(uri: string | undefined): string | null {
@@ -30,23 +35,41 @@ function val(row: Record<string, { value: string } | undefined>, key: string): s
   return row?.[key]?.value ?? null;
 }
 
-export async function fetchPlayerBatch(offset: number, limit: number = 2000) {
+export async function fetchPlayersByYear(year: number) {
   const query = `
     SELECT ?player ?playerLabel ?dob ?nationality ?nationalityLabel ?positionLabel ?image WHERE {
       ?player wdt:P106 wd:Q937857 .
-      OPTIONAL { ?player wdt:P569 ?dob }
+      ?player wdt:P569 ?dob .
+      FILTER(YEAR(?dob) = ${year})
       OPTIONAL { ?player wdt:P27 ?nationality }
       OPTIONAL { ?player wdt:P413 ?position }
       OPTIONAL { ?player wdt:P18 ?image }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
     }
-    ORDER BY ?player
-    LIMIT ${limit}
-    OFFSET ${offset}
   `;
 
   const rows = await runSparql(query);
+  return deduplicatePlayerRows(rows);
+}
 
+export async function fetchPlayersNoDob() {
+  const query = `
+    SELECT ?player ?playerLabel ?nationality ?nationalityLabel ?positionLabel ?image WHERE {
+      ?player wdt:P106 wd:Q937857 .
+      FILTER NOT EXISTS { ?player wdt:P569 ?anyDob }
+      OPTIONAL { ?player wdt:P27 ?nationality }
+      OPTIONAL { ?player wdt:P413 ?position }
+      OPTIONAL { ?player wdt:P18 ?image }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+    }
+    LIMIT 10000
+  `;
+
+  const rows = await runSparql(query);
+  return deduplicatePlayerRows(rows);
+}
+
+function deduplicatePlayerRows(rows: Record<string, { value: string } | undefined>[]) {
   const players = new Map<string, {
     wikidata_id: string;
     name: string;
@@ -81,23 +104,22 @@ export async function fetchPlayerBatch(offset: number, limit: number = 2000) {
     players: Array.from(players.values()),
     countries: Array.from(countries.values()),
     rawRows: rows.length,
-    hasMore: rows.length >= limit,
   };
 }
 
-export async function fetchCareerBatch(offset: number, limit: number = 3000) {
+export async function fetchCareersForPlayers(playerIds: string[]) {
+  if (playerIds.length === 0) return { careers: [], clubs: [] };
+
+  const values = playerIds.map((id) => `wd:${id}`).join(" ");
   const query = `
     SELECT ?player ?club ?clubLabel ?startDate ?endDate WHERE {
-      ?player wdt:P106 wd:Q937857 .
+      VALUES ?player { ${values} }
       ?player p:P54 ?membership .
       ?membership ps:P54 ?club .
       OPTIONAL { ?membership pq:P580 ?startDate }
       OPTIONAL { ?membership pq:P582 ?endDate }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
     }
-    ORDER BY ?player ?club
-    LIMIT ${limit}
-    OFFSET ${offset}
   `;
 
   const rows = await runSparql(query);
@@ -132,8 +154,6 @@ export async function fetchCareerBatch(offset: number, limit: number = 3000) {
   return {
     careers,
     clubs: Array.from(clubs.values()),
-    rawRows: rows.length,
-    hasMore: rows.length >= limit,
   };
 }
 

@@ -125,37 +125,59 @@ export default function FootballDataPage() {
     setImportLogs([]);
     setImportProgress(0);
 
+    const START_YEAR = 1920;
+    const END_YEAR = 2010;
+    const totalYears = END_YEAR - START_YEAR + 1;
+
     try {
-      // Phase 1: Players
+      // Phase 1: Players by birth year
       setImportPhase("Importing players...");
-      addLog("Starting player import from Wikidata");
-      let offset = 0;
+      addLog("Starting player import (year by year)");
       let totalPlayers = 0;
-      let batch = 1;
-      while (true) {
+      for (let year = START_YEAR; year <= END_YEAR; year++) {
+        setImportPhase(`Importing players born ${year}...`);
         const res = await fetch("/api/admin/football/import", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step: "players", offset }),
+          body: JSON.stringify({ step: "players", year }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
         totalPlayers += json.imported;
-        addLog(`Players batch ${batch}: +${json.imported} (total: ${totalPlayers})`);
-        batch++;
-        if (!json.hasMore || json.nextOffset == null) break;
-        offset = json.nextOffset;
+        if (json.imported > 0) {
+          addLog(`${year}: +${json.imported} players (total: ${totalPlayers})`);
+        }
+        setImportProgress(Math.round(((year - START_YEAR) / totalYears) * 20));
+      }
+
+      // Players without DOB
+      setImportPhase("Importing players without birth date...");
+      addLog("Fetching players without DOB");
+      {
+        const res = await fetch("/api/admin/football/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step: "players-no-dob" }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          addLog(`Warning: no-DOB query failed (${json.error}) — skipping`);
+        } else {
+          totalPlayers += json.imported;
+          addLog(`No-DOB: +${json.imported} players (total: ${totalPlayers})`);
+        }
       }
       addLog(`Player import complete: ${totalPlayers} players`);
       setImportProgress(25);
 
-      // Phase 2: Careers
+      // Phase 2: Careers (batched by player IDs from our DB)
       setImportPhase("Importing career records...");
-      addLog("Starting career import");
-      offset = 0;
+      addLog("Starting career import (100 players per batch)");
+      let offset = 0;
       let totalCareers = 0;
-      batch = 1;
+      let batch = 1;
       while (true) {
+        setImportPhase(`Importing careers (batch ${batch})...`);
         const res = await fetch("/api/admin/football/import", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -164,8 +186,11 @@ export default function FootballDataPage() {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
         totalCareers += json.imported;
-        addLog(`Careers batch ${batch}: +${json.imported} (total: ${totalCareers})`);
+        if (json.imported > 0) {
+          addLog(`Careers batch ${batch}: +${json.imported} (total: ${totalCareers})`);
+        }
         batch++;
+        setImportProgress(25 + Math.min(35, Math.round((batch / (totalPlayers / 100)) * 35)));
         if (!json.hasMore || json.nextOffset == null) break;
         offset = json.nextOffset;
       }
