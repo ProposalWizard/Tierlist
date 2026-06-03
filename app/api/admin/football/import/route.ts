@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
 import {
-  fetchPlayerBatch,
-  fetchCareerBatch,
+  fetchPlayersByYear,
+  fetchPlayersNoDob,
+  fetchCareersForPlayers,
   fetchCountryFlags,
   fetchClubDetails,
 } from "@/lib/footballImport";
@@ -39,78 +40,106 @@ export async function GET() {
   });
 }
 
+async function upsertChunked(
+  service: ReturnType<typeof createServiceClient>,
+  table: string,
+  rows: Record<string, unknown>[],
+  onConflict: string,
+  chunkSize = 500
+) {
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    await service.from(table).upsert(rows.slice(i, i + chunkSize), { onConflict });
+  }
+}
+
 export async function POST(req: NextRequest) {
   const user = await adminGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { step, offset = 0 } = await req.json();
+  const body = await req.json();
+  const { step } = body;
   const service = createServiceClient();
 
   try {
     switch (step) {
       case "players": {
-        const { players, countries, rawRows, hasMore } = await fetchPlayerBatch(offset);
+        const year = body.year as number;
+        const { players, countries, rawRows } = await fetchPlayersByYear(year);
 
         if (countries.length > 0) {
-          for (let i = 0; i < countries.length; i += 500) {
-            await service.from("football_countries").upsert(
-              countries.slice(i, i + 500),
-              { onConflict: "wikidata_id" }
-            );
-          }
+          await upsertChunked(service, "football_countries", countries, "wikidata_id");
         }
-
         if (players.length > 0) {
-          for (let i = 0; i < players.length; i += 500) {
-            await service.from("football_players").upsert(
-              players.slice(i, i + 500).map((p) => ({
-                ...p,
-                updated_at: new Date().toISOString(),
-              })),
-              { onConflict: "wikidata_id" }
-            );
-          }
+          await upsertChunked(
+            service,
+            "football_players",
+            players.map((p) => ({ ...p, updated_at: new Date().toISOString() })),
+            "wikidata_id"
+          );
         }
 
         return NextResponse.json({
           step: "players",
+          year,
           imported: players.length,
           rawRows,
-          hasMore,
-          nextOffset: hasMore ? offset + 2000 : null,
+        });
+      }
+
+      case "players-no-dob": {
+        const { players, countries, rawRows } = await fetchPlayersNoDob();
+
+        if (countries.length > 0) {
+          await upsertChunked(service, "football_countries", countries, "wikidata_id");
+        }
+        if (players.length > 0) {
+          await upsertChunked(
+            service,
+            "football_players",
+            players.map((p) => ({ ...p, updated_at: new Date().toISOString() })),
+            "wikidata_id"
+          );
+        }
+
+        return NextResponse.json({
+          step: "players-no-dob",
+          imported: players.length,
+          rawRows,
         });
       }
 
       case "careers": {
-        const { careers, clubs, rawRows, hasMore } = await fetchCareerBatch(offset);
+        const offset = (body.offset as number) ?? 0;
+        const batchSize = 100;
+
+        const { data: playerRows } = await service
+          .from("football_players")
+          .select("wikidata_id")
+          .order("wikidata_id")
+          .range(offset, offset + batchSize - 1);
+
+        if (!playerRows || playerRows.length === 0) {
+          return NextResponse.json({ step: "careers", imported: 0, hasMore: false });
+        }
+
+        const ids = playerRows.map((r: { wikidata_id: string }) => r.wikidata_id);
+        const { careers, clubs } = await fetchCareersForPlayers(ids);
 
         if (clubs.length > 0) {
-          for (let i = 0; i < clubs.length; i += 500) {
-            await service.from("football_clubs").upsert(
-              clubs.slice(i, i + 500),
-              { onConflict: "wikidata_id" }
-            );
-          }
+          await upsertChunked(service, "football_clubs", clubs, "wikidata_id");
+        }
+        if (careers.length > 0) {
+          await upsertChunked(service, "football_careers", careers, "player_id,club_id,start_date");
         }
 
-        let careerCount = 0;
-        if (careers.length > 0) {
-          for (let i = 0; i < careers.length; i += 500) {
-            const { error } = await service.from("football_careers").upsert(
-              careers.slice(i, i + 500),
-              { onConflict: "player_id,club_id,start_date" }
-            );
-            if (!error) careerCount += Math.min(500, careers.length - i);
-          }
-        }
+        const hasMore = playerRows.length === batchSize;
 
         return NextResponse.json({
           step: "careers",
-          imported: careerCount,
+          imported: careers.length,
           clubsFound: clubs.length,
-          rawRows,
           hasMore,
-          nextOffset: hasMore ? offset + 3000 : null,
+          nextOffset: hasMore ? offset + batchSize : null,
         });
       }
 
@@ -121,7 +150,6 @@ export async function POST(req: NextRequest) {
 
         const ids = (countryRows ?? []).map((c: { wikidata_id: string }) => c.wikidata_id);
 
-        // Batch flag queries in groups of 200 to avoid SPARQL timeout
         let totalFlags = 0;
         for (let i = 0; i < ids.length; i += 200) {
           const batch = ids.slice(i, i + 200);
@@ -131,12 +159,7 @@ export async function POST(req: NextRequest) {
             .map((f) => ({ wikidata_id: f.wikidata_id, flag_url: f.flag_url }));
 
           if (updates.length > 0) {
-            for (let j = 0; j < updates.length; j += 500) {
-              await service.from("football_countries").upsert(
-                updates.slice(j, j + 500),
-                { onConflict: "wikidata_id" }
-              );
-            }
+            await upsertChunked(service, "football_countries", updates, "wikidata_id");
             totalFlags += updates.length;
           }
         }
@@ -145,9 +168,12 @@ export async function POST(req: NextRequest) {
       }
 
       case "club-details": {
+        const offset = (body.offset as number) ?? 0;
+
         const { data: clubRows } = await service
           .from("football_clubs")
           .select("wikidata_id")
+          .order("wikidata_id")
           .range(offset, offset + 199);
 
         if (!clubRows || clubRows.length === 0) {
@@ -158,22 +184,21 @@ export async function POST(req: NextRequest) {
         const details = await fetchClubDetails(ids);
 
         if (details.length > 0) {
-          for (let i = 0; i < details.length; i += 500) {
-            await service.from("football_clubs").upsert(
-              details.slice(i, i + 500).map((d) => ({
-                ...d,
-                updated_at: new Date().toISOString(),
-              })),
-              { onConflict: "wikidata_id" }
-            );
-          }
+          await upsertChunked(
+            service,
+            "football_clubs",
+            details.map((d) => ({ ...d, updated_at: new Date().toISOString() })),
+            "wikidata_id"
+          );
         }
+
+        const hasMore = clubRows.length === 200;
 
         return NextResponse.json({
           step: "club-details",
           imported: details.length,
-          hasMore: clubRows.length === 200,
-          nextOffset: clubRows.length === 200 ? offset + 200 : null,
+          hasMore,
+          nextOffset: hasMore ? offset + 200 : null,
         });
       }
 
