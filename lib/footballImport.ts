@@ -1,29 +1,42 @@
 const SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
 const UA = "Knowitball/1.0 (knowitballcontact@gmail.com)";
 
+const RETRY_DELAYS = [3000, 6000, 12000];
+
 async function runSparql(query: string): Promise<Record<string, { value: string } | undefined>[]> {
-  const res = await fetch(SPARQL_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/sparql-results+json",
-      "User-Agent": UA,
-    },
-    body: `query=${encodeURIComponent(query)}`,
-  });
+  let lastErr: Error | null = null;
 
-  if (!res.ok) {
+  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+    const res = await fetch(SPARQL_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/sparql-results+json",
+        "User-Agent": UA,
+      },
+      body: `query=${encodeURIComponent(query)}`,
+    });
+
+    if (res.ok) {
+      const text = await res.text();
+      try {
+        const json = JSON.parse(text);
+        return json.results?.bindings ?? [];
+      } catch {
+        throw new Error(`SPARQL returned non-JSON: ${text.slice(0, 200)}`);
+      }
+    }
+
     const text = await res.text();
-    throw new Error(`SPARQL ${res.status}: ${text.slice(0, 200)}`);
+    lastErr = new Error(`SPARQL ${res.status}: ${text.slice(0, 200)}`);
+
+    if (res.status !== 429 && res.status !== 502 && res.status !== 503) throw lastErr;
+    if (attempt < RETRY_DELAYS.length) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
+    }
   }
 
-  const text = await res.text();
-  try {
-    const json = JSON.parse(text);
-    return json.results?.bindings ?? [];
-  } catch {
-    throw new Error(`SPARQL returned non-JSON: ${text.slice(0, 200)}`);
-  }
+  throw lastErr!;
 }
 
 function extractId(uri: string | undefined): string | null {

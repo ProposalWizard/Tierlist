@@ -134,6 +134,7 @@ export default function FootballDataPage() {
       setImportPhase("Importing players...");
       addLog("Starting player import (year by year)");
       let totalPlayers = 0;
+      const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
       for (let year = START_YEAR; year <= END_YEAR; year++) {
         setImportPhase(`Importing players born ${year}...`);
         const res = await fetch("/api/admin/football/import", {
@@ -148,6 +149,7 @@ export default function FootballDataPage() {
           addLog(`${year}: +${json.imported} players (total: ${totalPlayers})`);
         }
         setImportProgress(Math.round(((year - START_YEAR) / totalYears) * 20));
+        await delay(1500);
       }
 
       // Players without DOB
@@ -193,6 +195,7 @@ export default function FootballDataPage() {
         setImportProgress(25 + Math.min(35, Math.round((batch / (totalPlayers / 100)) * 35)));
         if (!json.hasMore || json.nextOffset == null) break;
         offset = json.nextOffset;
+        await delay(1500);
       }
       addLog(`Career import complete: ${totalCareers} records`);
       setImportProgress(60);
