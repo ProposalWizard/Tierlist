@@ -103,6 +103,7 @@ export default function FootballDataPage() {
   const [importPhase, setImportPhase] = useState("");
   const [importProgress, setImportProgress] = useState(0);
   const [importLogs, setImportLogs] = useState<ImportLog[]>([]);
+  const [startYear, setStartYear] = useState(1920);
 
   const addLog = (message: string) => {
     setImportLogs((prev) => [...prev, { message, time: new Date().toLocaleTimeString() }]);
@@ -125,9 +126,8 @@ export default function FootballDataPage() {
     setImportLogs([]);
     setImportProgress(0);
 
-    const START_YEAR = 1920;
     const END_YEAR = 2010;
-    const totalYears = END_YEAR - START_YEAR + 1;
+    const totalSteps = (END_YEAR - startYear + 1) * 2; // 2 halves per year
     const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     const callWithRetry = async (body: Record<string, unknown>, retries = 3): Promise<Record<string, unknown>> => {
@@ -163,20 +163,24 @@ export default function FootballDataPage() {
     };
 
     try {
-      // Phase 1: Players by birth year (fast — names + DOB only)
+      // Phase 1: Players by birth year (split into H1/H2 halves)
       setImportPhase("Importing players...");
-      addLog("Phase 1: Player names + DOB (year by year)");
+      addLog(`Phase 1: Player names + DOB (${startYear}-${END_YEAR}, half-year batches)`);
       let totalPlayers = 0;
-      for (let year = START_YEAR; year <= END_YEAR; year++) {
-        setImportPhase(`Importing players born ${year}...`);
-        const json = await callWithRetry({ step: "players", year });
-        const imported = json.imported as number;
-        totalPlayers += imported;
-        if (imported > 0) {
-          addLog(`${year}: +${imported} players (total: ${totalPlayers})`);
+      let stepsDone = 0;
+      for (let year = startYear; year <= END_YEAR; year++) {
+        for (const half of [1, 2] as const) {
+          setImportPhase(`Importing players born ${year} H${half}...`);
+          const json = await callWithRetry({ step: "players", year, half });
+          const imported = json.imported as number;
+          totalPlayers += imported;
+          if (imported > 0) {
+            addLog(`${year} H${half}: +${imported} players (total: ${totalPlayers})`);
+          }
+          stepsDone++;
+          setImportProgress(Math.round((stepsDone / totalSteps) * 15));
+          await delay(2000);
         }
-        setImportProgress(Math.round(((year - START_YEAR) / totalYears) * 15));
-        await delay(2000);
       }
 
       // Players without DOB
@@ -946,7 +950,7 @@ export default function FootballDataPage() {
             </div>
 
             {/* Actions */}
-            <div className="mb-6 flex flex-wrap gap-3">
+            <div className="mb-6 flex flex-wrap items-center gap-3">
               <button
                 onClick={loadDbStats}
                 disabled={dbLoading}
@@ -954,12 +958,24 @@ export default function FootballDataPage() {
               >
                 Refresh Stats
               </button>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-500">Start year:</label>
+                <input
+                  type="number"
+                  min={1920}
+                  max={2010}
+                  value={startYear}
+                  onChange={(e) => setStartYear(Number(e.target.value))}
+                  disabled={importing}
+                  className="w-20 rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm font-mono text-white disabled:opacity-50"
+                />
+              </div>
               <button
                 onClick={runImport}
                 disabled={importing}
                 className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
               >
-                {importing ? "Importing..." : "Import from Wikidata"}
+                {importing ? "Importing..." : startYear > 1920 ? `Resume from ${startYear}` : "Import from Wikidata"}
               </button>
               <button
                 onClick={clearDatabase}
