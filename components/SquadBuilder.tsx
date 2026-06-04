@@ -1,0 +1,811 @@
+"use client";
+
+import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
+import html2canvas from "html2canvas";
+
+/* ─── Types ─── */
+
+interface DBPlayer {
+  id: string;
+  name: string;
+  nationality: string;
+  position: string;
+  image: string | null;
+}
+
+interface PlayerSlot {
+  idx: number;
+  x: number;
+  y: number;
+  label: string;
+  customName: string;
+  dbPlayer: DBPlayer | null;
+}
+
+interface FormationPos {
+  x: number;
+  y: number;
+  label: string;
+}
+
+/* ─── Formations ─── */
+
+const FORMATIONS: Record<string, FormationPos[]> = {
+  "4-4-2": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 15, y: 72, label: "LB" },
+    { x: 38, y: 75, label: "CB" },
+    { x: 62, y: 75, label: "CB" },
+    { x: 85, y: 72, label: "RB" },
+    { x: 15, y: 48, label: "LM" },
+    { x: 38, y: 50, label: "CM" },
+    { x: 62, y: 50, label: "CM" },
+    { x: 85, y: 48, label: "RM" },
+    { x: 38, y: 22, label: "ST" },
+    { x: 62, y: 22, label: "ST" },
+  ],
+  "4-3-3": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 15, y: 72, label: "LB" },
+    { x: 38, y: 75, label: "CB" },
+    { x: 62, y: 75, label: "CB" },
+    { x: 85, y: 72, label: "RB" },
+    { x: 25, y: 48, label: "CM" },
+    { x: 50, y: 45, label: "CM" },
+    { x: 75, y: 48, label: "CM" },
+    { x: 18, y: 22, label: "LW" },
+    { x: 50, y: 17, label: "ST" },
+    { x: 82, y: 22, label: "RW" },
+  ],
+  "4-2-3-1": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 15, y: 72, label: "LB" },
+    { x: 38, y: 75, label: "CB" },
+    { x: 62, y: 75, label: "CB" },
+    { x: 85, y: 72, label: "RB" },
+    { x: 35, y: 55, label: "CDM" },
+    { x: 65, y: 55, label: "CDM" },
+    { x: 18, y: 35, label: "LAM" },
+    { x: 50, y: 32, label: "CAM" },
+    { x: 82, y: 35, label: "RAM" },
+    { x: 50, y: 15, label: "ST" },
+  ],
+  "4-1-4-1": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 15, y: 72, label: "LB" },
+    { x: 38, y: 75, label: "CB" },
+    { x: 62, y: 75, label: "CB" },
+    { x: 85, y: 72, label: "RB" },
+    { x: 50, y: 58, label: "CDM" },
+    { x: 12, y: 40, label: "LM" },
+    { x: 37, y: 42, label: "CM" },
+    { x: 63, y: 42, label: "CM" },
+    { x: 88, y: 40, label: "RM" },
+    { x: 50, y: 17, label: "ST" },
+  ],
+  "4-5-1": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 15, y: 72, label: "LB" },
+    { x: 38, y: 75, label: "CB" },
+    { x: 62, y: 75, label: "CB" },
+    { x: 85, y: 72, label: "RB" },
+    { x: 10, y: 45, label: "LM" },
+    { x: 30, y: 48, label: "CM" },
+    { x: 50, y: 45, label: "CM" },
+    { x: 70, y: 48, label: "CM" },
+    { x: 90, y: 45, label: "RM" },
+    { x: 50, y: 17, label: "ST" },
+  ],
+  "4-4-1-1": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 15, y: 72, label: "LB" },
+    { x: 38, y: 75, label: "CB" },
+    { x: 62, y: 75, label: "CB" },
+    { x: 85, y: 72, label: "RB" },
+    { x: 15, y: 50, label: "LM" },
+    { x: 38, y: 52, label: "CM" },
+    { x: 62, y: 52, label: "CM" },
+    { x: 85, y: 50, label: "RM" },
+    { x: 50, y: 32, label: "CAM" },
+    { x: 50, y: 16, label: "ST" },
+  ],
+  "3-5-2": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 20, y: 75, label: "CB" },
+    { x: 50, y: 75, label: "CB" },
+    { x: 80, y: 75, label: "CB" },
+    { x: 8, y: 48, label: "LWB" },
+    { x: 30, y: 50, label: "CM" },
+    { x: 50, y: 47, label: "CM" },
+    { x: 70, y: 50, label: "CM" },
+    { x: 92, y: 48, label: "RWB" },
+    { x: 35, y: 22, label: "ST" },
+    { x: 65, y: 22, label: "ST" },
+  ],
+  "3-4-3": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 20, y: 75, label: "CB" },
+    { x: 50, y: 75, label: "CB" },
+    { x: 80, y: 75, label: "CB" },
+    { x: 12, y: 48, label: "LM" },
+    { x: 37, y: 50, label: "CM" },
+    { x: 63, y: 50, label: "CM" },
+    { x: 88, y: 48, label: "RM" },
+    { x: 18, y: 22, label: "LW" },
+    { x: 50, y: 17, label: "ST" },
+    { x: 82, y: 22, label: "RW" },
+  ],
+  "3-4-2-1": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 20, y: 75, label: "CB" },
+    { x: 50, y: 75, label: "CB" },
+    { x: 80, y: 75, label: "CB" },
+    { x: 12, y: 50, label: "LM" },
+    { x: 37, y: 52, label: "CM" },
+    { x: 63, y: 52, label: "CM" },
+    { x: 88, y: 50, label: "RM" },
+    { x: 32, y: 32, label: "AM" },
+    { x: 68, y: 32, label: "AM" },
+    { x: 50, y: 15, label: "ST" },
+  ],
+  "5-3-2": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 8, y: 68, label: "LWB" },
+    { x: 27, y: 75, label: "CB" },
+    { x: 50, y: 75, label: "CB" },
+    { x: 73, y: 75, label: "CB" },
+    { x: 92, y: 68, label: "RWB" },
+    { x: 25, y: 48, label: "CM" },
+    { x: 50, y: 45, label: "CM" },
+    { x: 75, y: 48, label: "CM" },
+    { x: 35, y: 22, label: "ST" },
+    { x: 65, y: 22, label: "ST" },
+  ],
+  "5-4-1": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 8, y: 68, label: "LWB" },
+    { x: 27, y: 75, label: "CB" },
+    { x: 50, y: 75, label: "CB" },
+    { x: 73, y: 75, label: "CB" },
+    { x: 92, y: 68, label: "RWB" },
+    { x: 12, y: 45, label: "LM" },
+    { x: 37, y: 48, label: "CM" },
+    { x: 63, y: 48, label: "CM" },
+    { x: 88, y: 45, label: "RM" },
+    { x: 50, y: 17, label: "ST" },
+  ],
+  "4-1-2-1-2": [
+    { x: 50, y: 90, label: "GK" },
+    { x: 15, y: 72, label: "LB" },
+    { x: 38, y: 75, label: "CB" },
+    { x: 62, y: 75, label: "CB" },
+    { x: 85, y: 72, label: "RB" },
+    { x: 50, y: 58, label: "CDM" },
+    { x: 25, y: 45, label: "CM" },
+    { x: 75, y: 45, label: "CM" },
+    { x: 50, y: 32, label: "CAM" },
+    { x: 35, y: 18, label: "ST" },
+    { x: 65, y: 18, label: "ST" },
+  ],
+};
+
+const FORMATION_NAMES = Object.keys(FORMATIONS);
+
+/* ─── Helpers ─── */
+
+function buildSlots(f: string): PlayerSlot[] {
+  return (FORMATIONS[f] ?? FORMATIONS["4-4-2"]).map((pos, i) => ({
+    idx: i,
+    x: pos.x,
+    y: pos.y,
+    label: pos.label,
+    customName: "",
+    dbPlayer: null,
+  }));
+}
+
+function displayName(p: PlayerSlot): string {
+  if (p.dbPlayer) return p.dbPlayer.name;
+  if (p.customName) return p.customName;
+  return p.label;
+}
+
+/* ─── Component ─── */
+
+export default function SquadBuilder() {
+  const [formation, setFormation] = useState("4-4-2");
+  const [players, setPlayers] = useState<PlayerSlot[]>(() => buildSlots("4-4-2"));
+  const [title, setTitle] = useState("MY SQUAD");
+  const [subtitle, setSubtitle] = useState("");
+  const [mainColor, setMainColor] = useState("#10b981");
+  const [selected, setSelected] = useState<number | null>(null);
+  const [editInput, setEditInput] = useState("");
+  const [searchResults, setSearchResults] = useState<DBPlayer[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingSubtitle, setEditingSubtitle] = useState(false);
+
+  const pitchRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragInfo = useRef<{
+    idx: number;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+  } | null>(null);
+
+  /* ─── Formation change ─── */
+
+  const changeFormation = (f: string) => {
+    setFormation(f);
+    const positions = FORMATIONS[f] ?? FORMATIONS["4-4-2"];
+    setPlayers((prev) =>
+      prev.map((p, i) => ({
+        ...p,
+        x: positions[i]?.x ?? p.x,
+        y: positions[i]?.y ?? p.y,
+        label: positions[i]?.label ?? p.label,
+      }))
+    );
+    setSelected(null);
+  };
+
+  const resetPositions = () => {
+    const positions = FORMATIONS[formation] ?? FORMATIONS["4-4-2"];
+    setPlayers((prev) =>
+      prev.map((p, i) => ({
+        ...p,
+        x: positions[i]?.x ?? p.x,
+        y: positions[i]?.y ?? p.y,
+      }))
+    );
+  };
+
+  const clearAll = () => {
+    setPlayers(buildSlots(formation));
+    setSelected(null);
+    setTitle("MY SQUAD");
+    setSubtitle("");
+  };
+
+  /* ─── Drag handling ─── */
+
+  const handlePointerDown = (e: React.PointerEvent, idx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragInfo.current = {
+      idx,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: players[idx].x,
+      origY: players[idx].y,
+    };
+  };
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragInfo.current || !pitchRef.current) return;
+      const rect = pitchRef.current.getBoundingClientRect();
+      const dx = ((e.clientX - dragInfo.current.startX) / rect.width) * 100;
+      const dy = ((e.clientY - dragInfo.current.startY) / rect.height) * 100;
+      const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
+      const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
+
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
+        )
+      );
+    },
+    []
+  );
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragInfo.current) return;
+    const dx = Math.abs(e.clientX - dragInfo.current.startX);
+    const dy = Math.abs(e.clientY - dragInfo.current.startY);
+    const clickedIdx = dragInfo.current.idx;
+    dragInfo.current = null;
+
+    if (dx < 5 && dy < 5) {
+      setSelected((prev) => (prev === clickedIdx ? null : clickedIdx));
+    }
+  }, []);
+
+  /* ─── Player editing / search ─── */
+
+  useEffect(() => {
+    if (selected !== null) {
+      const p = players[selected];
+      setEditInput(p.dbPlayer?.name ?? p.customName);
+      setSearchResults([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
+
+  const searchPlayers = async (q: string) => {
+    if (q.length < 2) return;
+    setSearchLoading(true);
+    try {
+      const res = await fetch(
+        `/api/football/search?q=${encodeURIComponent(q)}`
+      );
+      const json = await res.json();
+      if (res.ok) setSearchResults(json.players ?? []);
+    } catch {
+      // ignore
+    }
+    setSearchLoading(false);
+  };
+
+  const onEditInputChange = (value: string) => {
+    setEditInput(value);
+    if (selected !== null) {
+      setPlayers((prev) =>
+        prev.map((p, i) =>
+          i === selected ? { ...p, customName: value, dbPlayer: null } : p
+        )
+      );
+    }
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (value.trim().length >= 2) {
+      searchTimer.current = setTimeout(() => searchPlayers(value.trim()), 300);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const selectDbPlayer = (player: DBPlayer) => {
+    if (selected === null) return;
+    setPlayers((prev) =>
+      prev.map((p, i) =>
+        i === selected
+          ? { ...p, dbPlayer: player, customName: player.name }
+          : p
+      )
+    );
+    setEditInput(player.name);
+    setSearchResults([]);
+  };
+
+  const clearSlot = () => {
+    if (selected === null) return;
+    setPlayers((prev) =>
+      prev.map((p, i) =>
+        i === selected ? { ...p, dbPlayer: null, customName: "" } : p
+      )
+    );
+    setEditInput("");
+  };
+
+  /* ─── Download ─── */
+
+  const handleDownload = async () => {
+    if (!canvasRef.current) return;
+    try {
+      const canvas = await html2canvas(canvasRef.current, {
+        backgroundColor: "#0f1923",
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
+      const link = document.createElement("a");
+      link.download = "squad.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleShare = async () => {
+    await handleDownload();
+    const url = window.location.href;
+    window.open(
+      `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
+      "_blank"
+    );
+  };
+
+  /* ─── Deselect on pitch background click ─── */
+  const handlePitchClick = () => {
+    setSelected(null);
+  };
+
+  const selectedPlayer = selected !== null ? players[selected] : null;
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white">
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        {/* ─── Controls ─── */}
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <select
+            value={formation}
+            onChange={(e) => changeFormation(e.target.value)}
+            className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm font-bold text-white focus:border-emerald-500 focus:outline-none"
+          >
+            {FORMATION_NAMES.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500">Color</label>
+            <input
+              type="color"
+              value={mainColor}
+              onChange={(e) => setMainColor(e.target.value)}
+              className="h-8 w-8 cursor-pointer rounded border border-gray-700 bg-transparent"
+            />
+          </div>
+
+          <button
+            onClick={resetPositions}
+            className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+          >
+            Reset Positions
+          </button>
+
+          <button
+            onClick={clearAll}
+            className="rounded-lg border border-red-800 bg-red-900/20 px-3 py-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors"
+          >
+            Clear All
+          </button>
+
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={handleDownload}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500 transition-colors"
+            >
+              Download
+            </button>
+            <button
+              onClick={handleShare}
+              className="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-bold text-gray-300 hover:text-white transition-colors"
+            >
+              Share on X
+            </button>
+          </div>
+        </div>
+
+        {/* ─── Canvas area (captured for download) ─── */}
+        <div
+          ref={canvasRef}
+          className="rounded-2xl p-4 sm:p-6"
+          style={{ backgroundColor: "#0f1923" }}
+        >
+          {/* Title */}
+          <div className="mb-3 text-center">
+            {editingTitle ? (
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={() => setEditingTitle(false)}
+                onKeyDown={(e) => e.key === "Enter" && setEditingTitle(false)}
+                autoFocus
+                className="w-full bg-transparent text-center text-2xl font-black uppercase text-white outline-none border-b border-gray-600"
+              />
+            ) : (
+              <h2
+                onClick={() => setEditingTitle(true)}
+                className="cursor-pointer text-2xl font-black uppercase tracking-wide text-white hover:text-gray-300 transition-colors"
+              >
+                {title || "Click to add title"}
+              </h2>
+            )}
+            {editingSubtitle ? (
+              <input
+                type="text"
+                value={subtitle}
+                onChange={(e) => setSubtitle(e.target.value)}
+                onBlur={() => setEditingSubtitle(false)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && setEditingSubtitle(false)
+                }
+                autoFocus
+                className="mt-1 w-full bg-transparent text-center text-sm text-gray-400 outline-none border-b border-gray-700"
+                placeholder="Subtitle..."
+              />
+            ) : (
+              <p
+                onClick={() => setEditingSubtitle(true)}
+                className="mt-1 cursor-pointer text-sm text-gray-500 hover:text-gray-400 transition-colors"
+              >
+                {subtitle || "Click to add subtitle"}
+              </p>
+            )}
+            <p
+              className="mt-1 text-xs font-bold tracking-widest"
+              style={{ color: mainColor }}
+            >
+              {formation}
+            </p>
+          </div>
+
+          {/* Pitch */}
+          <div
+            ref={pitchRef}
+            className="relative mx-auto overflow-hidden rounded-xl border-2 select-none"
+            style={{
+              aspectRatio: "2 / 3",
+              borderColor: "rgba(255,255,255,0.15)",
+              background: `repeating-linear-gradient(
+                to bottom,
+                #15532c 0%,
+                #15532c 8.33%,
+                #196435 8.33%,
+                #196435 16.66%
+              )`,
+              touchAction: "none",
+            }}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onClick={handlePitchClick}
+          >
+            {/* ─── Field markings ─── */}
+
+            {/* Halfway line */}
+            <div className="absolute left-0 right-0 top-1/2 h-px bg-white/20" />
+
+            {/* Center circle */}
+            <div
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20"
+              style={{ width: "28%", aspectRatio: "1" }}
+            />
+
+            {/* Center spot */}
+            <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/25" />
+
+            {/* Top penalty area */}
+            <div className="absolute left-[18%] right-[18%] top-0 border-b border-l border-r border-white/20" style={{ height: "17%" }} />
+
+            {/* Top goal area */}
+            <div className="absolute left-[32%] right-[32%] top-0 border-b border-l border-r border-white/20" style={{ height: "6%" }} />
+
+            {/* Top penalty spot */}
+            <div className="absolute left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-white/25" style={{ top: "12%" }} />
+
+            {/* Top penalty arc */}
+            <div
+              className="pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-full border border-white/20"
+              style={{ top: "8%", width: "18%", height: "18%", clipPath: "inset(50% 0 0 0)" }}
+            />
+
+            {/* Bottom penalty area */}
+            <div className="absolute bottom-0 left-[18%] right-[18%] border-l border-r border-t border-white/20" style={{ height: "17%" }} />
+
+            {/* Bottom goal area */}
+            <div className="absolute bottom-0 left-[32%] right-[32%] border-l border-r border-t border-white/20" style={{ height: "6%" }} />
+
+            {/* Bottom penalty spot */}
+            <div className="absolute left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-white/25" style={{ bottom: "12%" }} />
+
+            {/* Bottom penalty arc */}
+            <div
+              className="pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-full border border-white/20"
+              style={{ bottom: "8%", width: "18%", height: "18%", clipPath: "inset(0 0 50% 0)" }}
+            />
+
+            {/* ─── Player circles ─── */}
+            {players.map((p) => (
+              <div
+                key={p.idx}
+                className="absolute flex flex-col items-center"
+                style={{
+                  left: `${p.x}%`,
+                  top: `${p.y}%`,
+                  transform: "translate(-50%, -50%)",
+                  zIndex: selected === p.idx ? 20 : 10,
+                  cursor: "grab",
+                }}
+                onPointerDown={(e) => handlePointerDown(e, p.idx)}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Circle */}
+                <div
+                  className="flex items-center justify-center rounded-full border-2 overflow-hidden transition-shadow"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    backgroundColor: p.dbPlayer?.image ? "transparent" : mainColor,
+                    borderColor: selected === p.idx ? "#fff" : "rgba(255,255,255,0.5)",
+                    boxShadow:
+                      selected === p.idx
+                        ? `0 0 16px ${mainColor}, 0 0 0 3px ${mainColor}`
+                        : `0 0 8px ${mainColor}60`,
+                  }}
+                >
+                  {p.dbPlayer?.image ? (
+                    <Image
+                      src={p.dbPlayer.image}
+                      alt={p.dbPlayer.name}
+                      width={44}
+                      height={44}
+                      className="h-full w-full object-cover"
+                      unoptimized
+                      draggable={false}
+                    />
+                  ) : (
+                    <span className="text-xs font-black text-white select-none">
+                      {p.customName
+                        ? p.customName
+                            .split(" ")
+                            .map((w) => w[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 3)
+                        : p.label}
+                    </span>
+                  )}
+                </div>
+
+                {/* Name label */}
+                <span
+                  className="mt-0.5 max-w-[72px] truncate text-center text-[10px] font-bold leading-tight text-white drop-shadow-md select-none"
+                  style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
+                >
+                  {displayName(p)}
+                </span>
+
+                {/* Nationality badge */}
+                {p.dbPlayer?.nationality && (
+                  <span
+                    className="text-[8px] font-medium leading-none text-gray-300 select-none"
+                    style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8)" }}
+                  >
+                    {p.dbPlayer.nationality}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Watermark */}
+          <p className="mt-2 text-right text-[10px] text-gray-600">
+            knowitball.co.uk
+          </p>
+        </div>
+
+        {/* ─── Edit Panel ─── */}
+        {selectedPlayer && (
+          <div className="mt-4 rounded-xl border border-gray-800 bg-gray-900 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black text-white"
+                  style={{ backgroundColor: mainColor }}
+                >
+                  {selectedPlayer.label}
+                </span>
+                <span className="text-sm font-bold text-gray-300">
+                  Edit Player — {selectedPlayer.label}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-gray-500 hover:text-white transition-colors text-lg"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                value={editInput}
+                onChange={(e) => onEditInputChange(e.target.value)}
+                placeholder="Type a name or search database..."
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                autoFocus
+              />
+              {searchLoading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                  ...
+                </div>
+              )}
+
+              {/* Autocomplete dropdown */}
+              {searchResults.length > 0 && (
+                <div className="absolute z-30 mt-1 w-full max-h-60 overflow-y-auto rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
+                  {searchResults.map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => selectDbPlayer(r)}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800 border-b border-gray-800/50 last:border-0"
+                    >
+                      {r.image ? (
+                        <Image
+                          src={r.image}
+                          alt={r.name}
+                          width={32}
+                          height={32}
+                          className="h-8 w-8 rounded-full object-cover shrink-0"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-gray-700 shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-white truncate">
+                          {r.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {r.position}
+                          {r.nationality ? ` · ${r.nationality}` : ""}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Current assignment info */}
+            {selectedPlayer.dbPlayer && (
+              <div className="mt-3 flex items-center gap-3 rounded-lg bg-gray-800/50 px-3 py-2">
+                {selectedPlayer.dbPlayer.image ? (
+                  <Image
+                    src={selectedPlayer.dbPlayer.image}
+                    alt={selectedPlayer.dbPlayer.name}
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 rounded-full object-cover shrink-0"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-gray-700 shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">
+                    {selectedPlayer.dbPlayer.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {selectedPlayer.dbPlayer.position}
+                    {selectedPlayer.dbPlayer.nationality
+                      ? ` · ${selectedPlayer.dbPlayer.nationality}`
+                      : ""}
+                  </p>
+                </div>
+                <button
+                  onClick={clearSlot}
+                  className="shrink-0 rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+
+            {!selectedPlayer.dbPlayer && selectedPlayer.customName && (
+              <div className="mt-3 flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2">
+                <span className="text-sm text-gray-300">
+                  Custom name: <span className="font-bold text-white">{selectedPlayer.customName}</span>
+                </span>
+                <button
+                  onClick={clearSlot}
+                  className="shrink-0 rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── Instructions ─── */}
+        {!selectedPlayer && (
+          <div className="mt-4 text-center text-sm text-gray-600">
+            Drag players to reposition them. Click a player to edit their name or assign from the database.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

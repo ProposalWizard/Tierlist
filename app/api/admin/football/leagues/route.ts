@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
-import { searchClubs } from "@/lib/wikidata";
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -18,7 +18,21 @@ export async function GET(req: Request) {
   }
 
   try {
-    const clubs = await searchClubs(query);
+    const service = createServiceClient();
+    const { data } = await service
+      .from("football_clubs")
+      .select("wikidata_id, name, country, league, image_url")
+      .ilike("name", `%${query}%`)
+      .limit(20);
+
+    const clubs = (data ?? []).map((c: Record<string, unknown>) => ({
+      id: c.wikidata_id as string,
+      name: c.name as string,
+      country: (c.country as string) ?? "",
+      league: (c.league as string) ?? null,
+      image: (c.image_url as string) ?? null,
+    }));
+
     return NextResponse.json({ clubs });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
