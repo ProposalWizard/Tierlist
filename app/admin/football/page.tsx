@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -302,6 +302,54 @@ export default function FootballDataPage() {
   // Results
   const [playerResults, setPlayerResults] = useState<Player[]>([]);
   const [clubResults, setClubResults] = useState<Club[]>([]);
+
+  // Autocomplete
+  const [acResults, setAcResults] = useState<(Player | Club)[]>([]);
+  const [acOpen, setAcOpen] = useState(false);
+  const [acLoading, setAcLoading] = useState(false);
+  const acRef = useRef<HTMLDivElement>(null);
+  const acTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const runAutocomplete = useCallback(async (q: string, type: "player" | "club") => {
+    if (q.length < 2) { setAcResults([]); setAcOpen(false); return; }
+    setAcLoading(true);
+    try {
+      const endpoint = type === "player"
+        ? `/api/admin/football/players?q=${encodeURIComponent(q)}`
+        : `/api/admin/football/leagues?q=${encodeURIComponent(q)}`;
+      const res = await fetch(endpoint);
+      const json = await res.json();
+      if (res.ok) {
+        const results = type === "player" ? (json.players ?? []) : (json.clubs ?? []);
+        setAcResults(results);
+        setAcOpen(results.length > 0);
+      }
+    } catch {
+      // ignore
+    }
+    setAcLoading(false);
+  }, []);
+
+  const onSearchInput = (value: string) => {
+    setSearchQuery(value);
+    if (acTimer.current) clearTimeout(acTimer.current);
+    if (value.trim().length < 2) {
+      setAcResults([]);
+      setAcOpen(false);
+      return;
+    }
+    acTimer.current = setTimeout(() => runAutocomplete(value.trim(), searchType), 300);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (acRef.current && !acRef.current.contains(e.target as Node)) {
+        setAcOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Squad view
   const [squadClub, setSquadClub] = useState<Club | null>(null);
@@ -709,22 +757,72 @@ export default function FootballDataPage() {
               </p>
             </div>
 
-            {/* Search */}
-            <div className="mb-6">
-              <div className="flex gap-2">
-                <select value={searchType} onChange={(e) => setSearchType(e.target.value as "player" | "club")}
-                  className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2.5 text-sm text-white focus:border-indigo-600 focus:outline-none">
-                  <option value="player">Player</option>
-                  <option value="club">Club</option>
-                </select>
-                <input type="text" placeholder={`Search ${searchType}s...`}
-                  value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none" />
-                <button onClick={handleSearch} disabled={loading}
-                  className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50">
-                  {loading ? "..." : "Search"}
-                </button>
+            {/* Search with autocomplete */}
+            <div className="mb-6" ref={acRef}>
+              <div className="relative">
+                <div className="flex gap-2">
+                  <select value={searchType} onChange={(e) => {
+                    setSearchType(e.target.value as "player" | "club");
+                    setAcResults([]); setAcOpen(false);
+                    if (searchQuery.trim().length >= 2) {
+                      if (acTimer.current) clearTimeout(acTimer.current);
+                      acTimer.current = setTimeout(() => runAutocomplete(searchQuery.trim(), e.target.value as "player" | "club"), 300);
+                    }
+                  }}
+                    className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2.5 text-sm text-white focus:border-indigo-600 focus:outline-none">
+                    <option value="player">Player</option>
+                    <option value="club">Club</option>
+                  </select>
+                  <input type="text" placeholder={`Search ${searchType}s...`}
+                    value={searchQuery}
+                    onChange={(e) => onSearchInput(e.target.value)}
+                    onFocus={() => { if (acResults.length > 0) setAcOpen(true); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { setAcOpen(false); handleSearch(); }
+                      if (e.key === "Escape") setAcOpen(false);
+                    }}
+                    className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-indigo-600 focus:outline-none" />
+                  <button onClick={() => { setAcOpen(false); handleSearch(); }} disabled={loading}
+                    className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50">
+                    {loading ? "..." : "Search"}
+                  </button>
+                </div>
+
+                {/* Autocomplete dropdown */}
+                {acOpen && (
+                  <div className="absolute z-20 mt-1 w-full max-h-80 overflow-y-auto rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
+                    {acLoading && acResults.length === 0 && (
+                      <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+                    )}
+                    {searchType === "player" ? (
+                      (acResults as Player[]).map((p) => (
+                        <button key={p.id} onClick={() => { setAcOpen(false); setSearchQuery(p.name); loadPlayer(p.id); }}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800 border-b border-gray-800/50 last:border-0">
+                          <Img src={p.image} alt={p.name} size={32} />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-white text-sm truncate">{p.name}</p>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              {p.position && <span>{p.position}</span>}
+                              {p.nationality && <span>· {p.nationality}</span>}
+                              {p.dob && <span>· {calcAge(p.dob)}y</span>}
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      (acResults as Club[]).map((c) => (
+                        <button key={c.id} onClick={() => { setAcOpen(false); setSearchQuery(c.name); loadSquad(c.id, c.name); }}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800 border-b border-gray-800/50 last:border-0">
+                          <Img src={c.image} alt={c.name} size={32} />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-white text-sm truncate">{c.name}</p>
+                            <p className="text-xs text-gray-500">{c.country}{c.league ? ` · ${c.league}` : ""}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
