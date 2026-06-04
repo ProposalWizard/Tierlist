@@ -271,12 +271,49 @@ export default function SquadBuilder() {
     setSubtitle("");
   };
 
-  /* ─── Drag handling ─── */
+  /* ─── Drag handling (global listeners for reliability) ─── */
+
+  const onGlobalPointerMove = useCallback((e: PointerEvent) => {
+    if (!dragInfo.current || !pitchRef.current) return;
+    e.preventDefault();
+    const rect = pitchRef.current.getBoundingClientRect();
+    const dx = ((e.clientX - dragInfo.current.startX) / rect.width) * 100;
+    const dy = ((e.clientY - dragInfo.current.startY) / rect.height) * 100;
+    const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
+    const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
+
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
+      )
+    );
+  }, []);
+
+  const onGlobalPointerUp = useCallback((e: PointerEvent) => {
+    if (!dragInfo.current) return;
+    const dx = Math.abs(e.clientX - dragInfo.current.startX);
+    const dy = Math.abs(e.clientY - dragInfo.current.startY);
+    const clickedIdx = dragInfo.current.idx;
+    dragInfo.current = null;
+
+    window.removeEventListener("pointermove", onGlobalPointerMove);
+    window.removeEventListener("pointerup", onGlobalPointerUp);
+
+    if (dx < 5 && dy < 5) {
+      setSelected((prev) => (prev === clickedIdx ? null : clickedIdx));
+    }
+  }, [onGlobalPointerMove]);
+
+  useEffect(() => {
+    return () => {
+      window.removeEventListener("pointermove", onGlobalPointerMove);
+      window.removeEventListener("pointerup", onGlobalPointerUp);
+    };
+  }, [onGlobalPointerMove, onGlobalPointerUp]);
 
   const handlePointerDown = (e: React.PointerEvent, idx: number) => {
     e.preventDefault();
     e.stopPropagation();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
     dragInfo.current = {
       idx,
       startX: e.clientX,
@@ -284,37 +321,9 @@ export default function SquadBuilder() {
       origX: players[idx].x,
       origY: players[idx].y,
     };
+    window.addEventListener("pointermove", onGlobalPointerMove);
+    window.addEventListener("pointerup", onGlobalPointerUp);
   };
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!dragInfo.current || !pitchRef.current) return;
-      const rect = pitchRef.current.getBoundingClientRect();
-      const dx = ((e.clientX - dragInfo.current.startX) / rect.width) * 100;
-      const dy = ((e.clientY - dragInfo.current.startY) / rect.height) * 100;
-      const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
-      const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
-
-      setPlayers((prev) =>
-        prev.map((p) =>
-          p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
-        )
-      );
-    },
-    []
-  );
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!dragInfo.current) return;
-    const dx = Math.abs(e.clientX - dragInfo.current.startX);
-    const dy = Math.abs(e.clientY - dragInfo.current.startY);
-    const clickedIdx = dragInfo.current.idx;
-    dragInfo.current = null;
-
-    if (dx < 5 && dy < 5) {
-      setSelected((prev) => (prev === clickedIdx ? null : clickedIdx));
-    }
-  }, []);
 
   /* ─── Player editing / search ─── */
 
@@ -546,8 +555,6 @@ export default function SquadBuilder() {
               )`,
               touchAction: "none",
             }}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
             onClick={handlePitchClick}
           >
             {/* ─── Field markings ─── */}
@@ -605,43 +612,48 @@ export default function SquadBuilder() {
                   transform: "translate(-50%, -50%)",
                   zIndex: selected === p.idx ? 20 : 10,
                   cursor: "grab",
+                  touchAction: "none",
+                  width: "16%",
                 }}
                 onPointerDown={(e) => handlePointerDown(e, p.idx)}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Circle */}
+                {/* Circle / Player image */}
                 <div
-                  className="flex items-center justify-center rounded-full border-2 overflow-hidden transition-shadow"
+                  className="relative mx-auto flex items-center justify-center rounded-full overflow-hidden"
                   style={{
-                    width: 44,
-                    height: 44,
-                    backgroundColor: p.dbPlayer?.image ? "transparent" : mainColor,
-                    borderColor: selected === p.idx ? "#fff" : "rgba(255,255,255,0.5)",
+                    width: "100%",
+                    aspectRatio: "1",
+                    backgroundColor: p.dbPlayer?.image ? "#1a1a2e" : mainColor,
+                    border: selected === p.idx
+                      ? `3px solid #fff`
+                      : `2px solid rgba(255,255,255,0.4)`,
                     boxShadow:
                       selected === p.idx
                         ? `0 0 16px ${mainColor}, 0 0 0 3px ${mainColor}`
-                        : `0 0 8px ${mainColor}60`,
+                        : `0 2px 8px rgba(0,0,0,0.4)`,
                   }}
                 >
                   {p.dbPlayer?.image ? (
                     <Image
                       src={p.dbPlayer.image}
                       alt={p.dbPlayer.name}
-                      width={44}
-                      height={44}
+                      width={120}
+                      height={120}
                       className="h-full w-full object-cover"
                       unoptimized
                       draggable={false}
                     />
                   ) : (
-                    <span className="text-xs font-black text-white select-none">
+                    <span className="text-sm font-black text-white select-none sm:text-base">
                       {p.customName
                         ? p.customName
-                            .split(" ")
+                            .split(/\s+/)
+                            .filter(Boolean)
                             .map((w) => w[0])
                             .join("")
                             .toUpperCase()
-                            .slice(0, 3)
+                            .slice(0, 3) || p.label
                         : p.label}
                     </span>
                   )}
@@ -649,21 +661,11 @@ export default function SquadBuilder() {
 
                 {/* Name label */}
                 <span
-                  className="mt-0.5 max-w-[72px] truncate text-center text-[10px] font-bold leading-tight text-white drop-shadow-md select-none"
-                  style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
+                  className="mt-1 w-full truncate text-center text-xs font-bold leading-tight text-white select-none sm:text-sm"
+                  style={{ textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}
                 >
                   {displayName(p)}
                 </span>
-
-                {/* Nationality badge */}
-                {p.dbPlayer?.nationality && (
-                  <span
-                    className="text-[8px] font-medium leading-none text-gray-300 select-none"
-                    style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8)" }}
-                  >
-                    {p.dbPlayer.nationality}
-                  </span>
-                )}
               </div>
             ))}
           </div>
