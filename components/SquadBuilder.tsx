@@ -613,36 +613,39 @@ export default function SquadBuilder() {
                   zIndex: selected === p.idx ? 20 : 10,
                   cursor: "grab",
                   touchAction: "none",
+                  width: "16%",
                 }}
                 onPointerDown={(e) => handlePointerDown(e, p.idx)}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Circle */}
+                {/* Circle / Player image */}
                 <div
-                  className="flex items-center justify-center rounded-full border-2 overflow-hidden transition-shadow"
+                  className="relative mx-auto flex items-center justify-center rounded-full overflow-hidden"
                   style={{
-                    width: 44,
-                    height: 44,
-                    backgroundColor: p.dbPlayer?.image ? "transparent" : mainColor,
-                    borderColor: selected === p.idx ? "#fff" : "rgba(255,255,255,0.5)",
+                    width: "100%",
+                    aspectRatio: "1",
+                    backgroundColor: p.dbPlayer?.image ? "#1a1a2e" : mainColor,
+                    border: selected === p.idx
+                      ? `3px solid #fff`
+                      : `2px solid rgba(255,255,255,0.4)`,
                     boxShadow:
                       selected === p.idx
                         ? `0 0 16px ${mainColor}, 0 0 0 3px ${mainColor}`
-                        : `0 0 8px ${mainColor}60`,
+                        : `0 2px 8px rgba(0,0,0,0.4)`,
                   }}
                 >
                   {p.dbPlayer?.image ? (
                     <Image
                       src={p.dbPlayer.image}
                       alt={p.dbPlayer.name}
-                      width={44}
-                      height={44}
+                      width={120}
+                      height={120}
                       className="h-full w-full object-cover"
                       unoptimized
                       draggable={false}
                     />
                   ) : (
-                    <span className="text-xs font-black text-white select-none">
+                    <span className="text-sm font-black text-white select-none sm:text-base">
                       {p.customName
                         ? p.customName
                             .split(/\s+/)
@@ -658,21 +661,11 @@ export default function SquadBuilder() {
 
                 {/* Name label */}
                 <span
-                  className="mt-0.5 max-w-[72px] truncate text-center text-[10px] font-bold leading-tight text-white drop-shadow-md select-none"
-                  style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
+                  className="mt-1 w-full truncate text-center text-xs font-bold leading-tight text-white select-none sm:text-sm"
+                  style={{ textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}
                 >
                   {displayName(p)}
                 </span>
-
-                {/* Nationality badge */}
-                {p.dbPlayer?.nationality && (
-                  <span
-                    className="text-[8px] font-medium leading-none text-gray-300 select-none"
-                    style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8)" }}
-                  >
-                    {p.dbPlayer.nationality}
-                  </span>
-                )}
               </div>
             ))}
           </div>
