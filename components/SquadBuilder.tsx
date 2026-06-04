@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import html2canvas from "html2canvas";
 
 /* ─── Types ─── */
 
@@ -271,59 +270,73 @@ export default function SquadBuilder() {
     setSubtitle("");
   };
 
-  /* ─── Drag handling (global listeners for reliability) ─── */
+  /* ─── Drag handling (mouse + touch, via useEffect) ─── */
 
-  const onGlobalPointerMove = useCallback((e: PointerEvent) => {
-    if (!dragInfo.current || !pitchRef.current) return;
-    e.preventDefault();
-    const rect = pitchRef.current.getBoundingClientRect();
-    const dx = ((e.clientX - dragInfo.current.startX) / rect.width) * 100;
-    const dy = ((e.clientY - dragInfo.current.startY) / rect.height) * 100;
-    const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
-    const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
+  const [isDragging, setIsDragging] = useState(false);
 
-    setPlayers((prev) =>
-      prev.map((p) =>
-        p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
-      )
-    );
-  }, []);
-
-  const onGlobalPointerUp = useCallback((e: PointerEvent) => {
-    if (!dragInfo.current) return;
-    const dx = Math.abs(e.clientX - dragInfo.current.startX);
-    const dy = Math.abs(e.clientY - dragInfo.current.startY);
-    const clickedIdx = dragInfo.current.idx;
-    dragInfo.current = null;
-
-    window.removeEventListener("pointermove", onGlobalPointerMove);
-    window.removeEventListener("pointerup", onGlobalPointerUp);
-
-    if (dx < 5 && dy < 5) {
-      setSelected((prev) => (prev === clickedIdx ? null : clickedIdx));
-    }
-  }, [onGlobalPointerMove]);
-
-  useEffect(() => {
-    return () => {
-      window.removeEventListener("pointermove", onGlobalPointerMove);
-      window.removeEventListener("pointerup", onGlobalPointerUp);
-    };
-  }, [onGlobalPointerMove, onGlobalPointerUp]);
-
-  const handlePointerDown = (e: React.PointerEvent, idx: number) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const startDrag = (idx: number, clientX: number, clientY: number) => {
     dragInfo.current = {
       idx,
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: clientX,
+      startY: clientY,
       origX: players[idx].x,
       origY: players[idx].y,
     };
-    window.addEventListener("pointermove", onGlobalPointerMove);
-    window.addEventListener("pointerup", onGlobalPointerUp);
+    setIsDragging(true);
   };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const onMove = (cx: number, cy: number) => {
+      if (!dragInfo.current || !pitchRef.current) return;
+      const rect = pitchRef.current.getBoundingClientRect();
+      const dx = ((cx - dragInfo.current.startX) / rect.width) * 100;
+      const dy = ((cy - dragInfo.current.startY) / rect.height) * 100;
+      const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
+      const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
+        )
+      );
+    };
+
+    const onEnd = (cx: number, cy: number) => {
+      if (!dragInfo.current) return;
+      const dx = Math.abs(cx - dragInfo.current.startX);
+      const dy = Math.abs(cy - dragInfo.current.startY);
+      const clickedIdx = dragInfo.current.idx;
+      dragInfo.current = null;
+      setIsDragging(false);
+      if (dx < 5 && dy < 5) {
+        setSelected((prev) => (prev === clickedIdx ? null : clickedIdx));
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY);
+    const handleMouseUp = (e: MouseEvent) => onEnd(e.clientX, e.clientY);
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      onMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      onEnd(t.clientX, t.clientY);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isDragging]);
 
   /* ─── Player editing / search ─── */
 
@@ -396,6 +409,7 @@ export default function SquadBuilder() {
   const handleDownload = async () => {
     if (!canvasRef.current) return;
     try {
+      const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(canvasRef.current, {
         backgroundColor: "#0f1923",
         scale: 2,
@@ -615,7 +629,8 @@ export default function SquadBuilder() {
                   touchAction: "none",
                   width: "16%",
                 }}
-                onPointerDown={(e) => handlePointerDown(e, p.idx)}
+                onMouseDown={(e) => { e.preventDefault(); startDrag(p.idx, e.clientX, e.clientY); }}
+                onTouchStart={(e) => { e.preventDefault(); startDrag(p.idx, e.touches[0].clientX, e.touches[0].clientY); }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Circle / Player image */}
