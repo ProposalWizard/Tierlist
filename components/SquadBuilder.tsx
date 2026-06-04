@@ -271,12 +271,49 @@ export default function SquadBuilder() {
     setSubtitle("");
   };
 
-  /* ─── Drag handling ─── */
+  /* ─── Drag handling (global listeners for reliability) ─── */
+
+  const onGlobalPointerMove = useCallback((e: PointerEvent) => {
+    if (!dragInfo.current || !pitchRef.current) return;
+    e.preventDefault();
+    const rect = pitchRef.current.getBoundingClientRect();
+    const dx = ((e.clientX - dragInfo.current.startX) / rect.width) * 100;
+    const dy = ((e.clientY - dragInfo.current.startY) / rect.height) * 100;
+    const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
+    const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
+
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
+      )
+    );
+  }, []);
+
+  const onGlobalPointerUp = useCallback((e: PointerEvent) => {
+    if (!dragInfo.current) return;
+    const dx = Math.abs(e.clientX - dragInfo.current.startX);
+    const dy = Math.abs(e.clientY - dragInfo.current.startY);
+    const clickedIdx = dragInfo.current.idx;
+    dragInfo.current = null;
+
+    window.removeEventListener("pointermove", onGlobalPointerMove);
+    window.removeEventListener("pointerup", onGlobalPointerUp);
+
+    if (dx < 5 && dy < 5) {
+      setSelected((prev) => (prev === clickedIdx ? null : clickedIdx));
+    }
+  }, [onGlobalPointerMove]);
+
+  useEffect(() => {
+    return () => {
+      window.removeEventListener("pointermove", onGlobalPointerMove);
+      window.removeEventListener("pointerup", onGlobalPointerUp);
+    };
+  }, [onGlobalPointerMove, onGlobalPointerUp]);
 
   const handlePointerDown = (e: React.PointerEvent, idx: number) => {
     e.preventDefault();
     e.stopPropagation();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
     dragInfo.current = {
       idx,
       startX: e.clientX,
@@ -284,37 +321,9 @@ export default function SquadBuilder() {
       origX: players[idx].x,
       origY: players[idx].y,
     };
+    window.addEventListener("pointermove", onGlobalPointerMove);
+    window.addEventListener("pointerup", onGlobalPointerUp);
   };
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!dragInfo.current || !pitchRef.current) return;
-      const rect = pitchRef.current.getBoundingClientRect();
-      const dx = ((e.clientX - dragInfo.current.startX) / rect.width) * 100;
-      const dy = ((e.clientY - dragInfo.current.startY) / rect.height) * 100;
-      const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
-      const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
-
-      setPlayers((prev) =>
-        prev.map((p) =>
-          p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
-        )
-      );
-    },
-    []
-  );
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!dragInfo.current) return;
-    const dx = Math.abs(e.clientX - dragInfo.current.startX);
-    const dy = Math.abs(e.clientY - dragInfo.current.startY);
-    const clickedIdx = dragInfo.current.idx;
-    dragInfo.current = null;
-
-    if (dx < 5 && dy < 5) {
-      setSelected((prev) => (prev === clickedIdx ? null : clickedIdx));
-    }
-  }, []);
 
   /* ─── Player editing / search ─── */
 
@@ -546,8 +555,6 @@ export default function SquadBuilder() {
               )`,
               touchAction: "none",
             }}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
             onClick={handlePitchClick}
           >
             {/* ─── Field markings ─── */}
@@ -605,6 +612,7 @@ export default function SquadBuilder() {
                   transform: "translate(-50%, -50%)",
                   zIndex: selected === p.idx ? 20 : 10,
                   cursor: "grab",
+                  touchAction: "none",
                 }}
                 onPointerDown={(e) => handlePointerDown(e, p.idx)}
                 onClick={(e) => e.stopPropagation()}
@@ -637,11 +645,12 @@ export default function SquadBuilder() {
                     <span className="text-xs font-black text-white select-none">
                       {p.customName
                         ? p.customName
-                            .split(" ")
+                            .split(/\s+/)
+                            .filter(Boolean)
                             .map((w) => w[0])
                             .join("")
                             .toUpperCase()
-                            .slice(0, 3)
+                            .slice(0, 3) || p.label
                         : p.label}
                     </span>
                   )}
