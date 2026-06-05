@@ -23,41 +23,18 @@ export async function GET(req: NextRequest) {
   const careerCounts = new Map<string, number>();
   const activePlayerIds = new Set<string>();
 
-  interface CareerRow { player_id: string; club_id: string; start_date: string; end_date: string | null }
-  const allCareers: CareerRow[] = [];
-
   for (let i = 0; i < playerIds.length; i += 200) {
     const chunk = playerIds.slice(i, i + 200);
     const { data: careers } = await supabase
       .from("football_careers")
-      .select("player_id, club_id, start_date, end_date")
+      .select("player_id, start_date, end_date")
       .in("player_id", chunk)
       .limit(5000);
-    for (const c of (careers ?? []) as CareerRow[]) {
+    for (const c of careers ?? []) {
       careerCounts.set(c.player_id, (careerCounts.get(c.player_id) ?? 0) + 1);
-      allCareers.push(c);
-    }
-  }
-
-  if (activeOnly && allCareers.length > 0) {
-    const clubIds = Array.from(new Set(allCareers.map((c) => c.club_id)));
-    const clubsWithLeague = new Set<string>();
-    for (let i = 0; i < clubIds.length; i += 200) {
-      const chunk = clubIds.slice(i, i + 200);
-      const { data: clubs } = await supabase
-        .from("football_clubs")
-        .select("wikidata_id, league")
-        .in("wikidata_id", chunk);
-      for (const cl of clubs ?? []) {
-        if (cl.league) clubsWithLeague.add(cl.wikidata_id);
-      }
-    }
-
-    for (const c of allCareers) {
-      if (!clubsWithLeague.has(c.club_id)) continue;
-      if (c.end_date && c.end_date >= "2026") {
+      if (c.end_date && c.end_date >= "2024") {
         activePlayerIds.add(c.player_id);
-      } else if (!c.end_date && c.start_date && c.start_date >= "2020") {
+      } else if (!c.end_date && c.start_date && c.start_date >= "2010") {
         activePlayerIds.add(c.player_id);
       }
     }
