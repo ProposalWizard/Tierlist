@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 
 /* ─── Types ─── */
 
@@ -709,10 +710,13 @@ export default function SquadBuilder() {
                   }}
                 >
                   {p.dbPlayer?.image ? (
-                    <img
+                    <Image
                       src={p.dbPlayer.image}
                       alt={p.dbPlayer.name}
+                      width={200}
+                      height={200}
                       className="absolute inset-0 h-full w-full object-cover"
+                      unoptimized
                       draggable={false}
                     />
                   ) : (
@@ -829,10 +833,13 @@ export default function SquadBuilder() {
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-800 border-b border-gray-800/50 last:border-0"
                     >
                       {r.image ? (
-                        <img
+                        <Image
                           src={r.image}
                           alt={r.name}
+                          width={32}
+                          height={32}
                           className="h-8 w-8 rounded-full object-cover shrink-0"
+                          unoptimized
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-gray-700 shrink-0" />
@@ -857,10 +864,13 @@ export default function SquadBuilder() {
             {selectedPlayer.dbPlayer && (
               <div className="mt-3 flex items-center gap-3 rounded-lg bg-gray-800/50 px-3 py-2">
                 {selectedPlayer.dbPlayer.image ? (
-                  <img
+                  <Image
                     src={selectedPlayer.dbPlayer.image}
                     alt={selectedPlayer.dbPlayer.name}
+                    width={36}
+                    height={36}
                     className="h-9 w-9 rounded-full object-cover shrink-0"
+                    unoptimized
                   />
                 ) : (
                   <div className="h-9 w-9 rounded-full bg-gray-700 shrink-0" />
