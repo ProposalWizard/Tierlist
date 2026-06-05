@@ -32,9 +32,11 @@ export async function GET(req: NextRequest) {
       .limit(5000);
     for (const c of careers ?? []) {
       careerCounts.set(c.player_id, (careerCounts.get(c.player_id) ?? 0) + 1);
-      if (c.end_date && c.end_date >= "2024") {
+      const started = c.start_date ?? "";
+      const ended = c.end_date ?? "";
+      if (ended >= "2026") {
         activePlayerIds.add(c.player_id);
-      } else if (!c.end_date && c.start_date && c.start_date >= "2010") {
+      } else if (!ended && started >= "2000") {
         activePlayerIds.add(c.player_id);
       }
     }
