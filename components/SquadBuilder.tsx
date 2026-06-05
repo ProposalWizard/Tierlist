@@ -224,6 +224,7 @@ export default function SquadBuilder() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingSubtitle, setEditingSubtitle] = useState(false);
+  const [allTime, setAllTime] = useState(false);
 
   const pitchRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -290,15 +291,14 @@ export default function SquadBuilder() {
 
     const onMove = (cx: number, cy: number) => {
       if (!dragInfo.current || !pitchRef.current) return;
+      const { idx, startX, startY, origX, origY } = dragInfo.current;
       const rect = pitchRef.current.getBoundingClientRect();
-      const dx = ((cx - dragInfo.current.startX) / rect.width) * 100;
-      const dy = ((cy - dragInfo.current.startY) / rect.height) * 100;
-      const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
-      const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
+      const dx = ((cx - startX) / rect.width) * 100;
+      const dy = ((cy - startY) / rect.height) * 100;
+      const newX = Math.max(4, Math.min(96, origX + dx));
+      const newY = Math.max(4, Math.min(96, origY + dy));
       setPlayers((prev) =>
-        prev.map((p) =>
-          p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
-        )
+        prev.map((p) => (p.idx === idx ? { ...p, x: newX, y: newY } : p))
       );
     };
 
@@ -349,12 +349,13 @@ export default function SquadBuilder() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
-  const searchPlayers = async (q: string) => {
+  const searchPlayers = async (q: string, includeAllTime?: boolean) => {
     if (q.length < 2) return;
     setSearchLoading(true);
     try {
+      const active = (includeAllTime ?? allTime) ? "" : "&active=1";
       const res = await fetch(
-        `/api/football/search?q=${encodeURIComponent(q)}`
+        `/api/football/search?q=${encodeURIComponent(q)}${active}`
       );
       const json = await res.json();
       if (res.ok) setSearchResults(json.players ?? []);
@@ -653,9 +654,9 @@ export default function SquadBuilder() {
                     <Image
                       src={p.dbPlayer.image}
                       alt={p.dbPlayer.name}
-                      width={120}
-                      height={120}
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="20vw"
+                      className="object-cover"
                       unoptimized
                       draggable={false}
                     />
@@ -714,12 +715,45 @@ export default function SquadBuilder() {
               </button>
             </div>
 
+            <div className="mb-3 flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (allTime) {
+                    setAllTime(false);
+                    if (editInput.trim().length >= 2) searchPlayers(editInput.trim(), false);
+                  }
+                }}
+                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                  !allTime
+                    ? "bg-emerald-600 text-white"
+                    : "bg-gray-800 text-gray-400 hover:text-white"
+                }`}
+              >
+                Current
+              </button>
+              <button
+                onClick={() => {
+                  if (!allTime) {
+                    setAllTime(true);
+                    if (editInput.trim().length >= 2) searchPlayers(editInput.trim(), true);
+                  }
+                }}
+                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                  allTime
+                    ? "bg-emerald-600 text-white"
+                    : "bg-gray-800 text-gray-400 hover:text-white"
+                }`}
+              >
+                All-Time
+              </button>
+            </div>
+
             <div className="relative">
               <input
                 type="text"
                 value={editInput}
                 onChange={(e) => onEditInputChange(e.target.value)}
-                placeholder="Type a name or search database..."
+                placeholder={allTime ? "Search all players..." : "Search current players..."}
                 className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 autoFocus
               />

@@ -1,3 +1,4 @@
+import ClientErrorBoundary from "@/components/ClientErrorBoundary";
 import SquadBuilder from "@/components/SquadBuilder";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function SquadBuilderPage() {
-  return <SquadBuilder />;
+  return (
+    <ClientErrorBoundary>
+      <SquadBuilder />
+    </ClientErrorBoundary>
+  );
 }
