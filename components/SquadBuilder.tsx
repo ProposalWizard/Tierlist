@@ -27,6 +27,65 @@ interface FormationPos {
   label: string;
 }
 
+/* ─── Country → flag emoji ─── */
+
+const ISO: Record<string, string> = {
+  Afghanistan:"AF",Albania:"AL",Algeria:"DZ",Andorra:"AD",Angola:"AO",
+  "Antigua and Barbuda":"AG",Argentina:"AR",Armenia:"AM",Australia:"AU",
+  Austria:"AT",Azerbaijan:"AZ",Bahrain:"BH",Bangladesh:"BD",Barbados:"BB",
+  Belarus:"BY",Belgium:"BE",Benin:"BJ",Bolivia:"BO",
+  "Bosnia and Herzegovina":"BA",Botswana:"BW",Brazil:"BR",Bulgaria:"BG",
+  "Burkina Faso":"BF",Burundi:"BI","Cabo Verde":"CV",Cameroon:"CM",
+  Canada:"CA","Central African Republic":"CF",Chad:"TD",Chile:"CL",
+  China:"CN",Colombia:"CO",Comoros:"KM",
+  "Democratic Republic of the Congo":"CD","Republic of the Congo":"CG",
+  Congo:"CG","Costa Rica":"CR",Croatia:"HR",Cuba:"CU",Curaçao:"CW",
+  Cyprus:"CY","Czech Republic":"CZ",Czechia:"CZ",Denmark:"DK",
+  "Dominican Republic":"DO",Ecuador:"EC",Egypt:"EG","El Salvador":"SV",
+  England:"GB-ENG",
+  "Equatorial Guinea":"GQ",Eritrea:"ER",Estonia:"EE",Ethiopia:"ET",
+  "Faroe Islands":"FO",Fiji:"FJ",Finland:"FI",France:"FR",Gabon:"GA",
+  Gambia:"GM",Georgia:"GE",Germany:"DE",Ghana:"GH",Greece:"GR",
+  Grenada:"GD",Guatemala:"GT",Guinea:"GN","Guinea-Bissau":"GW",
+  Guyana:"GY",Haiti:"HT",Honduras:"HN",Hungary:"HU",Iceland:"IS",
+  India:"IN",Indonesia:"ID",Iran:"IR",Iraq:"IQ",Ireland:"IE",
+  Israel:"IL",Italy:"IT",Jamaica:"JM",Japan:"JP",Jordan:"JO",
+  Kazakhstan:"KZ",Kenya:"KE",Kosovo:"XK","South Korea":"KR",
+  Korea:"KR",Kuwait:"KW",Kyrgyzstan:"KG",Latvia:"LV",Lebanon:"LB",
+  Liberia:"LR",Libya:"LY",Liechtenstein:"LI",Lithuania:"LT",
+  Luxembourg:"LU",Madagascar:"MG",Malawi:"MW",Malaysia:"MY",
+  Maldives:"MV",Mali:"ML",Malta:"MT",Mauritania:"MR",Mauritius:"MU",
+  Mexico:"MX",Moldova:"MD",Monaco:"MC",Mongolia:"MN",Montenegro:"ME",
+  Morocco:"MA",Mozambique:"MZ",Myanmar:"MM",Namibia:"NA",Nepal:"NP",
+  Netherlands:"NL","New Zealand":"NZ",Nicaragua:"NI",Niger:"NE",
+  Nigeria:"NG","North Macedonia":"MK",Norway:"NO",Oman:"OM",
+  Pakistan:"PK",Palestine:"PS",Panama:"PA",Paraguay:"PY",Peru:"PE",
+  Philippines:"PH",Poland:"PL",Portugal:"PT",Qatar:"QA",Romania:"RO",
+  Russia:"RU",Rwanda:"RW","Saudi Arabia":"SA",Scotland:"GB-SCT",
+  Senegal:"SN",Serbia:"SR",
+  "Sierra Leone":"SL",Singapore:"SG",Slovakia:"SK",Slovenia:"SI",
+  Somalia:"SO","South Africa":"ZA","South Sudan":"SS",Spain:"ES",
+  "Sri Lanka":"LK",Sudan:"SD",Suriname:"SR",Sweden:"SE",
+  Switzerland:"CH",Syria:"SY",Taiwan:"TW",Tajikistan:"TJ",Tanzania:"TZ",
+  Thailand:"TH",Togo:"TG","Trinidad and Tobago":"TT",Tunisia:"TN",
+  Turkey:"TR",Turkmenistan:"TM",Uganda:"UG",Ukraine:"UA",
+  "United Arab Emirates":"AE","United Kingdom":"GB",
+  "United States of America":"US","United States":"US",Uruguay:"UY",
+  Uzbekistan:"UZ",Venezuela:"VE",Vietnam:"VN",Wales:"GB-WLS",
+  Yemen:"YE",Zambia:"ZM",Zimbabwe:"ZW",
+  "Ivory Coast":"CI","Côte d'Ivoire":"CI","Cape Verde":"CV",
+  "North Korea":"KP","DR Congo":"CD",
+};
+
+function countryFlag(name: string): string {
+  const code = ISO[name];
+  if (!code) return "";
+  const base = code.replace(/-.*/, "");
+  return String.fromCodePoint(
+    ...base.split("").map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)
+  );
+}
+
 /* ─── Formations ─── */
 
 const FORMATIONS: Record<string, FormationPos[]> = {
@@ -676,6 +735,7 @@ export default function SquadBuilder() {
                   className="mt-1 w-full truncate text-center text-xs font-bold leading-tight text-white select-none sm:text-sm"
                   style={{ textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}
                 >
+                  {p.dbPlayer ? `${countryFlag(p.dbPlayer.nationality)} ` : ""}
                   {displayName(p)}
                 </span>
               </div>
@@ -779,6 +839,7 @@ export default function SquadBuilder() {
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-white truncate">
+                          {countryFlag(r.nationality)}{" "}
                           {r.name}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -811,7 +872,7 @@ export default function SquadBuilder() {
                   <p className="text-xs text-gray-500">
                     {selectedPlayer.dbPlayer.position}
                     {selectedPlayer.dbPlayer.nationality
-                      ? ` · ${selectedPlayer.dbPlayer.nationality}`
+                      ? ` · ${countryFlag(selectedPlayer.dbPlayer.nationality)} ${selectedPlayer.dbPlayer.nationality}`
                       : ""}
                   </p>
                 </div>
