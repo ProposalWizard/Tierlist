@@ -290,15 +290,14 @@ export default function SquadBuilder() {
 
     const onMove = (cx: number, cy: number) => {
       if (!dragInfo.current || !pitchRef.current) return;
+      const { idx, startX, startY, origX, origY } = dragInfo.current;
       const rect = pitchRef.current.getBoundingClientRect();
-      const dx = ((cx - dragInfo.current.startX) / rect.width) * 100;
-      const dy = ((cy - dragInfo.current.startY) / rect.height) * 100;
-      const newX = Math.max(4, Math.min(96, dragInfo.current.origX + dx));
-      const newY = Math.max(4, Math.min(96, dragInfo.current.origY + dy));
+      const dx = ((cx - startX) / rect.width) * 100;
+      const dy = ((cy - startY) / rect.height) * 100;
+      const newX = Math.max(4, Math.min(96, origX + dx));
+      const newY = Math.max(4, Math.min(96, origY + dy));
       setPlayers((prev) =>
-        prev.map((p) =>
-          p.idx === dragInfo.current!.idx ? { ...p, x: newX, y: newY } : p
-        )
+        prev.map((p) => (p.idx === idx ? { ...p, x: newX, y: newY } : p))
       );
     };
 
