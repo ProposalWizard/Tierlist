@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ players: [] });
   }
 
+  const activeOnly = req.nextUrl.searchParams.get("active") === "1";
   const supabase = await createClient();
 
   const { data } = await supabase
@@ -20,20 +21,29 @@ export async function GET(req: NextRequest) {
 
   const playerIds = rows.map((p) => p.wikidata_id);
   const careerCounts = new Map<string, number>();
+  const activePlayerIds = new Set<string>();
   for (let i = 0; i < playerIds.length; i += 200) {
     const chunk = playerIds.slice(i, i + 200);
     const { data: careers } = await supabase
       .from("football_careers")
-      .select("player_id")
+      .select("player_id, end_date")
       .in("player_id", chunk)
       .limit(5000);
     for (const c of careers ?? []) {
       careerCounts.set(c.player_id, (careerCounts.get(c.player_id) ?? 0) + 1);
+      if (!c.end_date || c.end_date >= "2026") {
+        activePlayerIds.add(c.player_id);
+      }
     }
   }
 
+  const filteredRows = activeOnly
+    ? rows.filter((p) => activePlayerIds.has(p.wikidata_id))
+    : rows;
+  if (filteredRows.length === 0) return NextResponse.json({ players: [] });
+
   const qLower = q.toLowerCase().trim();
-  const ranked = rows
+  const ranked = filteredRows
     .map((p) => {
       let score = 0;
       const name = (p.name as string).toLowerCase();

@@ -353,7 +353,7 @@ export default function SquadBuilder() {
     setSearchLoading(true);
     try {
       const res = await fetch(
-        `/api/football/search?q=${encodeURIComponent(q)}`
+        `/api/football/search?q=${encodeURIComponent(q)}&active=1`
       );
       const json = await res.json();
       if (res.ok) setSearchResults(json.players ?? []);
@@ -652,9 +652,9 @@ export default function SquadBuilder() {
                     <Image
                       src={p.dbPlayer.image}
                       alt={p.dbPlayer.name}
-                      width={120}
-                      height={120}
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="20vw"
+                      className="object-cover"
                       unoptimized
                       draggable={false}
                     />
