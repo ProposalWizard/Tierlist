@@ -26,12 +26,14 @@ export async function GET(req: NextRequest) {
     const chunk = playerIds.slice(i, i + 200);
     const { data: careers } = await supabase
       .from("football_careers")
-      .select("player_id, end_date")
+      .select("player_id, start_date, end_date")
       .in("player_id", chunk)
       .limit(5000);
     for (const c of careers ?? []) {
       careerCounts.set(c.player_id, (careerCounts.get(c.player_id) ?? 0) + 1);
-      if (!c.end_date || c.end_date >= "2026") {
+      if (c.end_date && c.end_date >= "2026") {
+        activePlayerIds.add(c.player_id);
+      } else if (!c.end_date && c.start_date && c.start_date >= "2020") {
         activePlayerIds.add(c.player_id);
       }
     }
