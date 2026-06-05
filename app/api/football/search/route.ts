@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+const ACCENT_GROUPS: Record<string, string> = {
+  a: "[aàáâãäåæ]", c: "[cçćč]", d: "[dđð]", e: "[eèéêëě]",
+  i: "[iìíîï]", l: "[lł]", n: "[nñń]", o: "[oòóôõöø]",
+  r: "[rř]", s: "[sšśş]", t: "[tť]", u: "[uùúûüů]",
+  y: "[yýÿ]", z: "[zžźż]",
+};
+
+function toAccentRegex(q: string): string {
+  return q
+    .split("")
+    .map((ch) => {
+      if (/[.*+?^${}()|[\]\\]/.test(ch)) return `\\${ch}`;
+      const base = ch.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+      return ACCENT_GROUPS[base] ?? ch;
+    })
+    .join("");
+}
+
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q");
   if (!q || q.length < 2) {
@@ -10,10 +32,11 @@ export async function GET(req: NextRequest) {
   const activeOnly = req.nextUrl.searchParams.get("active") === "1";
   const supabase = await createClient();
 
+  const pattern = `.*${toAccentRegex(q)}.*`;
   const { data } = await supabase
     .from("football_players")
     .select("wikidata_id, name, date_of_birth, country_id, position, image_url")
-    .ilike("name", `%${q}%`)
+    .filter("name", "~*", pattern)
     .limit(200);
 
   const rows = data ?? [];
@@ -70,17 +93,17 @@ export async function GET(req: NextRequest) {
     : rows;
   if (filteredRows.length === 0) return NextResponse.json({ players: [] });
 
-  const qLower = q.toLowerCase().trim();
+  const qNorm = stripAccents(q.trim());
   const ranked = filteredRows
     .map((p) => {
       let score = 0;
-      const name = (p.name as string).toLowerCase();
+      const name = stripAccents(p.name as string);
       const nameWords = name.split(/\s+/);
 
-      if (name === qLower) score = 10000;
-      else if (nameWords.includes(qLower)) score = 5000;
-      else if (name.startsWith(qLower)) score = 3000;
-      else if (nameWords.some((w) => w.startsWith(qLower))) score = 2000;
+      if (name === qNorm) score = 10000;
+      else if (nameWords.includes(qNorm)) score = 5000;
+      else if (name.startsWith(qNorm)) score = 3000;
+      else if (nameWords.some((w) => w.startsWith(qNorm))) score = 2000;
       else score = 1000;
 
       score += Math.min(200, (careerCounts.get(p.wikidata_id) ?? 0) * 25);
