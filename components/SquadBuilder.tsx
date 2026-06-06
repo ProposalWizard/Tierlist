@@ -417,9 +417,9 @@ export default function SquadBuilder() {
         `/api/football/search?q=${encodeURIComponent(q)}${active}`
       );
       const json = await res.json();
-      if (res.ok) setSearchResults(json.players ?? []);
+      setSearchResults(json.players ?? []);
     } catch {
-      // ignore
+      setSearchResults([]);
     }
     setSearchLoading(false);
   };
@@ -716,7 +716,6 @@ export default function SquadBuilder() {
                       width={200}
                       height={200}
                       className="absolute inset-0 h-full w-full object-cover"
-                      unoptimized
                       draggable={false}
                     />
                   ) : (
@@ -839,7 +838,6 @@ export default function SquadBuilder() {
                           width={32}
                           height={32}
                           className="h-8 w-8 rounded-full object-cover shrink-0"
-                          unoptimized
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-gray-700 shrink-0" />
@@ -870,7 +868,6 @@ export default function SquadBuilder() {
                     width={36}
                     height={36}
                     className="h-9 w-9 rounded-full object-cover shrink-0"
-                    unoptimized
                   />
                 ) : (
                   <div className="h-9 w-9 rounded-full bg-gray-700 shrink-0" />
