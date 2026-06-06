@@ -1,24 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const ACCENT_GROUPS: Record<string, string> = {
-  a: "[aàáâãäåæ]", c: "[cçćč]", d: "[dđð]", e: "[eèéêëě]",
-  i: "[iìíîï]", l: "[lł]", n: "[nñń]", o: "[oòóôõöø]",
-  r: "[rř]", s: "[sšśş]", t: "[tť]", u: "[uùúûüů]",
-  y: "[yýÿ]", z: "[zžźż]",
-};
-
-function toAccentRegex(q: string): string {
-  return q
-    .split("")
-    .map((ch) => {
-      if (/[.*+?^${}()|[\]\\]/.test(ch)) return `\\${ch}`;
-      const base = ch.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-      return ACCENT_GROUPS[base] ?? ch;
-    })
-    .join("");
-}
-
 function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
@@ -32,14 +14,23 @@ export async function GET(req: NextRequest) {
   const activeOnly = req.nextUrl.searchParams.get("active") === "1";
   const supabase = await createClient();
 
-  const pattern = `.*${toAccentRegex(q)}.*`;
-  const { data } = await supabase
-    .from("football_players")
-    .select("wikidata_id, name, date_of_birth, country_id, position, image_url")
-    .filter("name", "~*", pattern)
-    .limit(200);
+  const cols = "wikidata_id, name, date_of_birth, country_id, position, image_url";
+  const qStripped = stripAccents(q);
 
-  const rows = data ?? [];
+  const { data: d1 } = await supabase
+    .from("football_players").select(cols).ilike("name", `%${q}%`).limit(200);
+
+  const { data: d2 } = await supabase
+    .from("football_players").select(cols).ilike("name", `%${qStripped}%`).limit(200);
+
+  const seen = new Set<string>();
+  const rows: typeof d1 & {} = [];
+  for (const r of [...(d1 ?? []), ...(d2 ?? [])]) {
+    if (seen.has(r.wikidata_id)) continue;
+    seen.add(r.wikidata_id);
+    if (stripAccents(r.name as string).includes(qStripped)) rows.push(r);
+  }
+
   if (rows.length === 0) return NextResponse.json({ players: [] });
 
   const playerIds = rows.map((p) => p.wikidata_id);
