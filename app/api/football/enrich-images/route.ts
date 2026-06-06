@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
-import { fetchPlayerDetails } from "@/lib/footballImport";
+import { fetchFootballersWithImagesByYear } from "@/lib/footballImport";
 
 export const maxDuration = 60;
 
@@ -13,46 +13,60 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { offset = 0 } = await req.json().catch(() => ({ offset: 0 }));
-  const batchSize = 150;
+  const { year } = await req.json().catch(() => ({ year: 2000 }));
   const service = createServiceClient();
 
-  // Get players without images who have position data (enriched players only)
-  const { data: players } = await service
-    .from("football_players")
-    .select("wikidata_id")
-    .is("image_url", null)
-    .not("position", "is", null)
-    .order("wikidata_id")
-    .range(offset, offset + batchSize - 1);
+  // Ask Wikidata: "give me all footballers born in {year} who have images"
+  const wikidataResults = await fetchFootballersWithImagesByYear(year);
 
-  const ids = (players ?? []).map((r: { wikidata_id: string }) => r.wikidata_id);
-  if (ids.length === 0) {
-    return NextResponse.json({ done: true, checked: 0, found: 0, offset });
+  if (wikidataResults.length === 0) {
+    return NextResponse.json({
+      year,
+      wikidataFound: 0,
+      matched: 0,
+      updated: 0,
+    });
   }
 
-  const { details } = await fetchPlayerDetails(ids);
-  const withImages = details.filter((d) => d.image_url);
+  // Match against our database — only update players we actually have
+  const wikidataIds = wikidataResults.map((r) => r.wikidata_id);
+  const imageMap = new Map(wikidataResults.map((r) => [r.wikidata_id, r.image_url]));
 
-  if (withImages.length > 0) {
-    for (let i = 0; i < withImages.length; i += 500) {
-      await service.from("football_players").upsert(
-        withImages.slice(i, i + 500).map((d) => ({
-          wikidata_id: d.wikidata_id,
-          image_url: d.image_url,
-          updated_at: new Date().toISOString(),
-        })),
-        { onConflict: "wikidata_id" }
-      );
+  // Find which of these players exist in our DB
+  const matchedIds: string[] = [];
+  for (let i = 0; i < wikidataIds.length; i += 200) {
+    const chunk = wikidataIds.slice(i, i + 200);
+    const { data: existing } = await service
+      .from("football_players")
+      .select("wikidata_id")
+      .in("wikidata_id", chunk);
+    for (const row of existing ?? []) {
+      matchedIds.push(row.wikidata_id);
     }
   }
 
-  const hasMore = ids.length === batchSize;
+  // Update image_url for matched players
+  let updated = 0;
+  if (matchedIds.length > 0) {
+    const updates = matchedIds.map((id) => ({
+      wikidata_id: id,
+      image_url: imageMap.get(id)!,
+      updated_at: new Date().toISOString(),
+    }));
+
+    for (let i = 0; i < updates.length; i += 500) {
+      await service.from("football_players").upsert(
+        updates.slice(i, i + 500),
+        { onConflict: "wikidata_id" }
+      );
+    }
+    updated = matchedIds.length;
+  }
+
   return NextResponse.json({
-    done: !hasMore,
-    checked: ids.length,
-    found: withImages.length,
-    offset,
-    nextOffset: hasMore ? offset + batchSize : null,
+    year,
+    wikidataFound: wikidataResults.length,
+    matched: matchedIds.length,
+    updated,
   });
 }
