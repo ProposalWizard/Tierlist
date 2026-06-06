@@ -46,8 +46,10 @@ export default function EnrichImagesPage() {
         setTotalWikidata((prev) => prev + data.wikidataFound);
         setTotalMatched((prev) => prev + data.updated);
 
-        if (data.updated > 0) {
-          addLog(`  ✓ Wikidata: ${data.wikidataFound} with images → ${data.matched} in our DB → ${data.updated} updated`);
+        if (data.errors?.length) {
+          addLog(`  ✗ DB errors: ${data.errors.join("; ")}`);
+        } else if (data.updated > 0) {
+          addLog(`  ✓ Wikidata: ${data.wikidataFound} with images → ${data.matched} in our DB → ${data.updated} saved`);
         } else if (data.wikidataFound > 0) {
           addLog(`  · Wikidata: ${data.wikidataFound} with images → 0 matched our DB`);
         } else {
