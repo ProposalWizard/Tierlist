@@ -230,6 +230,70 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      case "enrich-images": {
+        const offset = (body.offset as number) ?? 0;
+        const batchSize = 150;
+
+        // Find active/popular players who don't have images yet
+        // Join with careers to find players with recent activity, ordered by career count (popularity proxy)
+        const { data: candidates } = await service
+          .rpc("get_players_needing_images", { batch_offset: offset, batch_limit: batchSize });
+
+        // Fallback: if the RPC doesn't exist, query directly
+        let playerIds: string[];
+        if (candidates && candidates.length > 0) {
+          playerIds = candidates.map((r: { wikidata_id: string }) => r.wikidata_id);
+        } else if (offset === 0 && !candidates) {
+          // RPC doesn't exist — use direct query: players without images, with careers, ordered by career count
+          const { data: fallback } = await service
+            .from("football_players")
+            .select("wikidata_id")
+            .is("image_url", null)
+            .not("position", "is", null)
+            .order("wikidata_id")
+            .range(offset, offset + batchSize - 1);
+          playerIds = (fallback ?? []).map((r: { wikidata_id: string }) => r.wikidata_id);
+        } else {
+          const { data: fallback } = await service
+            .from("football_players")
+            .select("wikidata_id")
+            .is("image_url", null)
+            .not("position", "is", null)
+            .order("wikidata_id")
+            .range(offset, offset + batchSize - 1);
+          playerIds = (fallback ?? []).map((r: { wikidata_id: string }) => r.wikidata_id);
+        }
+
+        if (playerIds.length === 0) {
+          return NextResponse.json({ step: "enrich-images", enriched: 0, hasMore: false });
+        }
+
+        const { details } = await fetchPlayerDetails(playerIds);
+        const withImages = details.filter((d) => d.image_url);
+
+        if (withImages.length > 0) {
+          await upsertChunked(
+            service,
+            "football_players",
+            withImages.map((d) => ({
+              wikidata_id: d.wikidata_id,
+              image_url: d.image_url,
+              updated_at: new Date().toISOString(),
+            })),
+            "wikidata_id"
+          );
+        }
+
+        const hasMore = playerIds.length === batchSize;
+        return NextResponse.json({
+          step: "enrich-images",
+          checked: playerIds.length,
+          foundImages: withImages.length,
+          hasMore,
+          nextOffset: hasMore ? offset + batchSize : null,
+        });
+      }
+
       case "clear": {
         await service.from("football_careers").delete().neq("id", 0);
         await service.from("football_players").delete().neq("wikidata_id", "");
