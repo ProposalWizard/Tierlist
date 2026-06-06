@@ -69,14 +69,25 @@ export async function GET(req: Request) {
       const countryIds = Array.from(new Set(ranked.map((p) => p.country_id).filter(Boolean))) as string[];
       const countryMap = await getCountryMap(service, countryIds);
 
-      const players = ranked.map((p) => ({
-        id: p.wikidata_id,
-        name: p.name,
-        nationality: countryMap.get(p.country_id ?? "") ?? "",
-        position: p.position ?? "",
-        dob: p.date_of_birth ?? "",
-        image: p.image_url ?? null,
-      }));
+      const players = ranked.map((p) => {
+        let image = p.image_url ?? null;
+        if (image) {
+          const fileMatch = image.match(/Special:FilePath\/(.+)$/);
+          if (fileMatch) {
+            image = `https://commons.wikimedia.org/w/thumb.php?f=${encodeURIComponent(decodeURIComponent(fileMatch[1]))}&w=200`;
+          } else if (image.startsWith("http://")) {
+            image = image.replace("http://", "https://");
+          }
+        }
+        return {
+          id: p.wikidata_id,
+          name: p.name,
+          nationality: countryMap.get(p.country_id ?? "") ?? "",
+          position: p.position ?? "",
+          dob: p.date_of_birth ?? "",
+          image,
+        };
+      });
 
       return NextResponse.json({ players });
     } catch (e: unknown) {
@@ -99,13 +110,22 @@ export async function GET(req: Request) {
 
       const countryMap = await getCountryMap(service, playerRow.country_id ? [playerRow.country_id] : []);
 
+      let playerImage = playerRow.image_url ?? null;
+      if (playerImage) {
+        const fileMatch = playerImage.match(/Special:FilePath\/(.+)$/);
+        if (fileMatch) {
+          playerImage = `https://commons.wikimedia.org/w/thumb.php?f=${encodeURIComponent(decodeURIComponent(fileMatch[1]))}&w=200`;
+        } else if (playerImage.startsWith("http://")) {
+          playerImage = playerImage.replace("http://", "https://");
+        }
+      }
       const player = {
         id: playerRow.wikidata_id,
         name: playerRow.name,
         nationality: countryMap.get(playerRow.country_id ?? "") ?? "",
         position: playerRow.position ?? "",
         dob: playerRow.date_of_birth ?? "",
-        image: playerRow.image_url ?? null,
+        image: playerImage,
       };
 
       const { data: careerRows } = await service

@@ -136,7 +136,15 @@ export async function GET(req: NextRequest) {
 
   const players = ranked.map((p) => {
     let image = p.image_url ?? null;
-    if (image && image.startsWith("http://")) image = image.replace("http://", "https://");
+    if (image) {
+      // Convert Special:FilePath URLs to direct Wikimedia thumbnail URLs
+      const fileMatch = image.match(/Special:FilePath\/(.+)$/);
+      if (fileMatch) {
+        image = `https://commons.wikimedia.org/w/thumb.php?f=${encodeURIComponent(decodeURIComponent(fileMatch[1]))}&w=200`;
+      } else if (image.startsWith("http://")) {
+        image = image.replace("http://", "https://");
+      }
+    }
     return {
       id: p.wikidata_id,
       name: p.name,
