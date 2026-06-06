@@ -134,13 +134,17 @@ export async function GET(req: NextRequest) {
     for (const c of countries ?? []) countryMap.set(c.wikidata_id, c.name);
   }
 
-  const players = ranked.map((p) => ({
-    id: p.wikidata_id,
-    name: p.name,
-    nationality: countryMap.get(p.country_id ?? "") ?? "",
-    position: p.position ?? "",
-    image: p.image_url ?? null,
-  }));
+  const players = ranked.map((p) => {
+    let image = p.image_url ?? null;
+    if (image && image.startsWith("http://")) image = image.replace("http://", "https://");
+    return {
+      id: p.wikidata_id,
+      name: p.name,
+      nationality: countryMap.get(p.country_id ?? "") ?? "",
+      position: p.position ?? "",
+      image,
+    };
+  });
 
   return NextResponse.json({ players });
 }
