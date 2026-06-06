@@ -723,6 +723,7 @@ export default function SquadBuilder() {
                       height={200}
                       className="absolute inset-0 h-full w-full object-cover"
                       draggable={false}
+                      unoptimized
                     />
                   ) : (
                     <span className="text-sm font-black text-white select-none sm:text-base">
@@ -844,6 +845,7 @@ export default function SquadBuilder() {
                           width={32}
                           height={32}
                           className="h-8 w-8 rounded-full object-cover shrink-0"
+                          unoptimized
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-gray-700 shrink-0" />
@@ -874,6 +876,7 @@ export default function SquadBuilder() {
                     width={36}
                     height={36}
                     className="h-9 w-9 rounded-full object-cover shrink-0"
+                    unoptimized
                   />
                 ) : (
                   <div className="h-9 w-9 rounded-full bg-gray-700 shrink-0" />

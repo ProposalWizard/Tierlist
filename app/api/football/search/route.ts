@@ -134,13 +134,25 @@ export async function GET(req: NextRequest) {
     for (const c of countries ?? []) countryMap.set(c.wikidata_id, c.name);
   }
 
-  const players = ranked.map((p) => ({
-    id: p.wikidata_id,
-    name: p.name,
-    nationality: countryMap.get(p.country_id ?? "") ?? "",
-    position: p.position ?? "",
-    image: p.image_url ?? null,
-  }));
+  const players = ranked.map((p) => {
+    let image = p.image_url ?? null;
+    if (image) {
+      // Convert Special:FilePath URLs to direct Wikimedia thumbnail URLs
+      const fileMatch = image.match(/Special:FilePath\/(.+)$/);
+      if (fileMatch) {
+        image = `https://commons.wikimedia.org/w/thumb.php?f=${encodeURIComponent(decodeURIComponent(fileMatch[1]))}&w=200`;
+      } else if (image.startsWith("http://")) {
+        image = image.replace("http://", "https://");
+      }
+    }
+    return {
+      id: p.wikidata_id,
+      name: p.name,
+      nationality: countryMap.get(p.country_id ?? "") ?? "",
+      position: p.position ?? "",
+      image,
+    };
+  });
 
   return NextResponse.json({ players });
 }
