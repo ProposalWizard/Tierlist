@@ -3,6 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
+let _html2canvas: typeof import("html2canvas").default | null = null;
+async function getHtml2Canvas() {
+  if (!_html2canvas) _html2canvas = (await import("html2canvas")).default;
+  return _html2canvas;
+}
+
 /* ─── Types ─── */
 
 interface DBPlayer {
@@ -469,7 +475,7 @@ export default function SquadBuilder() {
   const handleDownload = async () => {
     if (!canvasRef.current) return;
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      const html2canvas = await getHtml2Canvas();
       const canvas = await html2canvas(canvasRef.current, {
         backgroundColor: "#0f1923",
         scale: 2,

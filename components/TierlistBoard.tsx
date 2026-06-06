@@ -32,6 +32,12 @@ import CropOverlay from "./CropOverlay";
 import LabelOverlay from "./LabelOverlay";
 import { compressImage, isAllowedImageType, ACCEPT_IMAGE_TYPES } from "@/lib/imageUtils";
 import { processImage, detectFaceFromUrl } from "@/lib/faceDetection";
+
+let _html2canvas: typeof import("html2canvas").default | null = null;
+async function getHtml2Canvas() {
+  if (!_html2canvas) _html2canvas = (await import("html2canvas")).default;
+  return _html2canvas;
+}
 import {
   DEFAULT_TIER_ROWS,
   type TierRowData,
@@ -587,7 +593,7 @@ export default function TierlistBoard({
     setIsDownloading(true);
     setBoardError(null);
     try {
-      const { default: html2canvas } = await import("html2canvas");
+      const html2canvas = await getHtml2Canvas();
       const canvas = await html2canvas(tiersRef.current, {
         backgroundColor: "#111827",
         useCORS: true,
@@ -613,7 +619,7 @@ export default function TierlistBoard({
     setIsSharing(true);
     setBoardError(null);
     try {
-      const { default: html2canvas } = await import("html2canvas");
+      const html2canvas = await getHtml2Canvas();
       const canvas = await html2canvas(tiersRef.current, {
         backgroundColor: "#111827",
         useCORS: true,
@@ -647,7 +653,7 @@ export default function TierlistBoard({
     setIsSavingToProfile(true);
     setBoardError(null);
     try {
-      const { default: html2canvas } = await import("html2canvas");
+      const html2canvas = await getHtml2Canvas();
       const canvas = await html2canvas(tiersRef.current, {
         backgroundColor: "#111827",
         useCORS: true,
