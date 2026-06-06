@@ -178,6 +178,32 @@ export async function fetchPlayerImages(playerIds: string[]): Promise<{ wikidata
   return results;
 }
 
+// Reverse lookup: ask Wikidata for all footballers born in a given year who have images
+export async function fetchFootballersWithImagesByYear(year: number): Promise<{ wikidata_id: string; image_url: string }[]> {
+  const query = `
+    SELECT ?player ?image WHERE {
+      ?player wdt:P106 wd:Q937857 .
+      ?player wdt:P18 ?image .
+      ?player wdt:P569 ?dob .
+      FILTER(YEAR(?dob) = ${year})
+    }
+  `;
+
+  const rows = await runSparql(query);
+  const seen = new Set<string>();
+  const results: { wikidata_id: string; image_url: string }[] = [];
+
+  for (const row of rows) {
+    const pid = extractId(val(row, "player") ?? undefined);
+    const img = val(row, "image");
+    if (!pid || !img || seen.has(pid)) continue;
+    seen.add(pid);
+    results.push({ wikidata_id: pid, image_url: img });
+  }
+
+  return results;
+}
+
 // Phase 3: Careers for specific players (VALUES-based)
 export async function fetchCareersForPlayers(playerIds: string[]) {
   if (playerIds.length === 0) return { careers: [], clubs: [] };

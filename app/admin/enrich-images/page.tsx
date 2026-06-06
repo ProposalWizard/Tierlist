@@ -2,11 +2,15 @@
 
 import { useState, useRef } from "react";
 
+const START_YEAR = 1960;
+const END_YEAR = 2008;
+
 export default function EnrichImagesPage() {
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<string[]>([]);
-  const [totalChecked, setTotalChecked] = useState(0);
-  const [totalFound, setTotalFound] = useState(0);
+  const [totalMatched, setTotalMatched] = useState(0);
+  const [totalWikidata, setTotalWikidata] = useState(0);
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
   const stopRef = useRef(false);
 
   const addLog = (msg: string) => setLog((prev) => [...prev, msg]);
@@ -15,60 +19,69 @@ export default function EnrichImagesPage() {
     setRunning(true);
     stopRef.current = false;
     setLog([]);
-    setTotalChecked(0);
-    setTotalFound(0);
+    setTotalMatched(0);
+    setTotalWikidata(0);
 
-    let offset = 0;
-    let batchNum = 0;
+    addLog(`Scanning Wikidata for footballers with images (${START_YEAR}–${END_YEAR})...`);
 
-    while (!stopRef.current) {
-      batchNum++;
-      addLog(`Batch ${batchNum}: checking players ${offset}–${offset + 149}...`);
+    for (let year = START_YEAR; year <= END_YEAR; year++) {
+      if (stopRef.current) break;
+      setCurrentYear(year);
+      addLog(`Year ${year}...`);
 
       try {
         const res = await fetch("/api/football/enrich-images", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ offset }),
+          body: JSON.stringify({ year }),
         });
 
         if (!res.ok) {
           const err = await res.text();
-          addLog(`Error: ${err}`);
-          break;
+          addLog(`  ✗ Error: ${err}`);
+          continue;
         }
 
         const data = await res.json();
-        setTotalChecked((prev) => prev + data.checked);
-        setTotalFound((prev) => prev + data.found);
-        const extra = data.note ? ` (${data.note})` : "";
-        addLog(`  → Checked ${data.checked}, found ${data.found} images${extra}`);
+        setTotalWikidata((prev) => prev + data.wikidataFound);
+        setTotalMatched((prev) => prev + data.updated);
 
-        if (data.done) {
-          addLog("✅ Done! All players with career data have been checked.");
-          break;
+        if (data.updated > 0) {
+          addLog(`  ✓ Wikidata: ${data.wikidataFound} with images → ${data.matched} in our DB → ${data.updated} updated`);
+        } else if (data.wikidataFound > 0) {
+          addLog(`  · Wikidata: ${data.wikidataFound} with images → 0 matched our DB`);
+        } else {
+          addLog(`  · No footballers with images found for ${year}`);
         }
 
-        offset = data.nextOffset;
-
-        // Small delay to avoid hammering Wikidata
-        await new Promise((r) => setTimeout(r, 1000));
+        // Small delay between years to be nice to Wikidata
+        await new Promise((r) => setTimeout(r, 500));
       } catch (err) {
-        addLog(`Network error: ${err}. Retrying in 5s...`);
-        await new Promise((r) => setTimeout(r, 5000));
+        addLog(`  ✗ Network error for ${year}: ${err}. Continuing...`);
+        await new Promise((r) => setTimeout(r, 3000));
       }
     }
 
-    if (stopRef.current) addLog("⏹ Stopped by user.");
+    if (stopRef.current) {
+      addLog("⏹ Stopped by user.");
+    } else {
+      addLog("✅ Done! All years checked.");
+    }
+    setCurrentYear(null);
     setRunning(false);
   };
+
+  const progress = currentYear
+    ? Math.round(((currentYear - START_YEAR) / (END_YEAR - START_YEAR)) * 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
       <h1 className="text-2xl font-bold mb-2">Enrich Player Images</h1>
       <p className="text-gray-400 mb-6 max-w-xl">
-        Fetches images from Wikidata for players with career data who don&apos;t have one yet.
-        Uses a fast image-only query. Leave this page open — it auto-continues.
+        Queries Wikidata for all footballers with images (by birth year), then
+        matches them to players in our database. Much faster than checking
+        players one-by-one.
       </p>
 
       <div className="flex gap-3 mb-6">
@@ -89,23 +102,40 @@ export default function EnrichImagesPage() {
         )}
       </div>
 
+      {running && (
+        <div className="mb-4 max-w-md">
+          <div className="flex justify-between text-xs text-gray-400 mb-1">
+            <span>Year {currentYear}</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-gray-800 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-indigo-600 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex gap-8 text-sm">
         <div>
-          <span className="text-gray-500">Players checked:</span>{" "}
-          <span className="font-bold text-white">{totalChecked.toLocaleString()}</span>
+          <span className="text-gray-500">Found on Wikidata:</span>{" "}
+          <span className="font-bold text-white">{totalWikidata.toLocaleString()}</span>
         </div>
         <div>
-          <span className="text-gray-500">Images found:</span>{" "}
-          <span className="font-bold text-emerald-400">{totalFound.toLocaleString()}</span>
+          <span className="text-gray-500">Matched &amp; saved:</span>{" "}
+          <span className="font-bold text-emerald-400">{totalMatched.toLocaleString()}</span>
         </div>
       </div>
 
-      <div className="max-w-2xl rounded-lg bg-gray-900 border border-gray-800 p-4 font-mono text-xs max-h-96 overflow-y-auto">
+      <div className="max-w-2xl rounded-lg bg-gray-900 border border-gray-800 p-4 font-mono text-xs max-h-[500px] overflow-y-auto">
         {log.length === 0 ? (
           <p className="text-gray-600">Click &quot;Start Enrichment&quot; to begin...</p>
         ) : (
           log.map((line, i) => (
-            <div key={i} className="py-0.5 text-gray-300">{line}</div>
+            <div key={i} className={`py-0.5 ${line.includes("✓") ? "text-emerald-400" : line.includes("✗") ? "text-red-400" : "text-gray-400"}`}>
+              {line}
+            </div>
           ))
         )}
       </div>
