@@ -5,6 +5,15 @@ function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
+interface PlayerRow {
+  wikidata_id: string;
+  name: string;
+  date_of_birth: string | null;
+  country_id: string | null;
+  position: string | null;
+  image_url: string | null;
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q");
   if (!q || q.length < 2) {
@@ -15,49 +24,39 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const cols = "wikidata_id, name, date_of_birth, country_id, position, image_url";
   const qStripped = stripAccents(q);
-  const needsAccentQuery = qStripped !== q.toLowerCase();
 
-  const queries: Promise<{ data: Record<string, unknown>[] | null }>[] = [
+  const [r1, r2] = await Promise.all([
     supabase.from("football_players").select(cols).ilike("name", `%${q}%`).limit(200),
-  ];
-  if (needsAccentQuery) {
-    queries.push(
-      supabase.from("football_players").select(cols).ilike("name", `%${qStripped}%`).limit(200)
-    );
-  }
+    qStripped !== q.toLowerCase()
+      ? supabase.from("football_players").select(cols).ilike("name", `%${qStripped}%`).limit(200)
+      : Promise.resolve({ data: null }),
+  ]);
 
-  const results = await Promise.all(queries);
   const seen = new Set<string>();
-  const rows: Record<string, unknown>[] = [];
-  for (const res of results) {
-    for (const r of res.data ?? []) {
-      const id = r.wikidata_id as string;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      if (stripAccents(r.name as string).includes(qStripped)) rows.push(r);
-    }
+  const rows: PlayerRow[] = [];
+  for (const r of [...((r1.data ?? []) as PlayerRow[]), ...((r2.data ?? []) as PlayerRow[])]) {
+    if (seen.has(r.wikidata_id)) continue;
+    seen.add(r.wikidata_id);
+    if (stripAccents(r.name).includes(qStripped)) rows.push(r);
   }
 
   if (rows.length === 0) return NextResponse.json({ players: [] });
 
-  const playerIds = rows.map((p) => p.wikidata_id as string);
+  const playerIds = rows.map((p) => p.wikidata_id);
   const careerCounts = new Map<string, number>();
 
-  const careerChunks: Promise<{ data: Record<string, unknown>[] | null }>[] = [];
-  for (let i = 0; i < playerIds.length; i += 200) {
-    const chunk = playerIds.slice(i, i + 200);
-    careerChunks.push(
-      supabase.from("football_careers").select("player_id, club_id, end_date")
-        .in("player_id", chunk).limit(5000)
-    );
-  }
-
-  const careerResults = await Promise.all(careerChunks);
+  const careerResults = await Promise.all(
+    Array.from({ length: Math.ceil(playerIds.length / 200) }, (_, i) => {
+      const chunk = playerIds.slice(i * 200, i * 200 + 200);
+      return supabase.from("football_careers").select("player_id, club_id, end_date")
+        .in("player_id", chunk).limit(5000);
+    })
+  );
 
   interface CareerRow { player_id: string; club_id: string; end_date: string | null }
   const allCareers: CareerRow[] = [];
   for (const res of careerResults) {
-    for (const c of (res.data ?? []) as CareerRow[]) {
+    for (const c of (res.data ?? []) as unknown as CareerRow[]) {
       careerCounts.set(c.player_id, (careerCounts.get(c.player_id) ?? 0) + 1);
       allCareers.push(c);
     }
@@ -68,18 +67,16 @@ export async function GET(req: NextRequest) {
     const clubIds = Array.from(new Set(allCareers.map((c) => c.club_id)));
     const nationalTeamIds = new Set<string>();
 
-    const clubChunks: Promise<{ data: Record<string, unknown>[] | null }>[] = [];
-    for (let i = 0; i < clubIds.length; i += 200) {
-      const chunk = clubIds.slice(i, i + 200);
-      clubChunks.push(
-        supabase.from("football_clubs").select("wikidata_id, name").in("wikidata_id", chunk)
-      );
-    }
-    const clubResults = await Promise.all(clubChunks);
+    const clubResults = await Promise.all(
+      Array.from({ length: Math.ceil(clubIds.length / 200) }, (_, i) => {
+        const chunk = clubIds.slice(i * 200, i * 200 + 200);
+        return supabase.from("football_clubs").select("wikidata_id, name").in("wikidata_id", chunk);
+      })
+    );
     for (const res of clubResults) {
-      for (const cl of res.data ?? []) {
-        if ((cl.name as string).toLowerCase().includes("national")) {
-          nationalTeamIds.add(cl.wikidata_id as string);
+      for (const cl of (res.data ?? []) as { wikidata_id: string; name: string }[]) {
+        if (cl.name.toLowerCase().includes("national")) {
+          nationalTeamIds.add(cl.wikidata_id);
         }
       }
     }
@@ -95,7 +92,7 @@ export async function GET(req: NextRequest) {
   }
 
   const filteredRows = activeOnly
-    ? rows.filter((p) => activePlayerIds.has(p.wikidata_id as string))
+    ? rows.filter((p) => activePlayerIds.has(p.wikidata_id))
     : rows;
   if (filteredRows.length === 0) return NextResponse.json({ players: [] });
 
@@ -103,26 +100,26 @@ export async function GET(req: NextRequest) {
   const ranked = filteredRows
     .map((p) => {
       let score = 0;
-      const name = stripAccents(p.name as string);
+      const name = stripAccents(p.name);
       const nameWords = name.split(/\s+/);
 
       if (name === qNorm) score = 10000;
       else if (nameWords.includes(qNorm)) score = 5000;
       else if (name.startsWith(qNorm)) score = 3000;
-      else if (nameWords.some((w: string) => w.startsWith(qNorm))) score = 2000;
+      else if (nameWords.some((w) => w.startsWith(qNorm))) score = 2000;
       else score = 1000;
 
-      score += Math.min(200, (careerCounts.get(p.wikidata_id as string) ?? 0) * 25);
+      score += Math.min(200, (careerCounts.get(p.wikidata_id) ?? 0) * 25);
       if (p.image_url) score += 50;
       if (p.date_of_birth) {
-        const year = parseInt((p.date_of_birth as string).substring(0, 4));
+        const year = parseInt(p.date_of_birth.substring(0, 4));
         if (!isNaN(year) && year > 1960)
           score += Math.min(30, (year - 1960) / 2);
       }
 
       return { ...p, _score: score };
     })
-    .sort((a, b) => (b._score as number) - (a._score as number))
+    .sort((a, b) => b._score - a._score)
     .slice(0, 15);
 
   const countryIds = Array.from(
@@ -138,11 +135,11 @@ export async function GET(req: NextRequest) {
   }
 
   const players = ranked.map((p) => ({
-    id: p.wikidata_id as string,
-    name: p.name as string,
-    nationality: countryMap.get((p.country_id as string) ?? "") ?? "",
-    position: (p.position as string) ?? "",
-    image: (p.image_url as string) ?? null,
+    id: p.wikidata_id,
+    name: p.name,
+    nationality: countryMap.get(p.country_id ?? "") ?? "",
+    position: p.position ?? "",
+    image: p.image_url ?? null,
   }));
 
   return NextResponse.json({ players });
