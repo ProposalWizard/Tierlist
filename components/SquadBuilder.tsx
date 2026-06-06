@@ -832,12 +832,6 @@ export default function SquadBuilder() {
               {/* Autocomplete dropdown */}
               {searchResults.length > 0 && (
                 <div className="absolute z-30 mt-1 w-full max-h-60 overflow-y-auto rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
-                  <div className="px-3 py-1 text-[10px] text-gray-600 border-b border-gray-800/50">
-                    {searchResults.filter(r => r.image).length}/{searchResults.length} have images
-                    {searchResults.find(r => r.image) && (
-                      <span className="ml-1 truncate">{searchResults.find(r => r.image)!.image!.substring(0, 60)}…</span>
-                    )}
-                  </div>
                   {searchResults.map((r) => (
                     <button
                       key={r.id}
