@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 
-const START_YEAR = 1960;
+const START_YEAR = 1980;
 const END_YEAR = 2008;
 
 export default function EnrichImagesPage() {
