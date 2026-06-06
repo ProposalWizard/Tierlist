@@ -151,6 +151,33 @@ export async function fetchPlayerDetails(playerIds: string[]) {
   };
 }
 
+// Image-only fetch: fast query that skips OPTIONAL (only returns players WITH images)
+export async function fetchPlayerImages(playerIds: string[]): Promise<{ wikidata_id: string; image_url: string }[]> {
+  if (playerIds.length === 0) return [];
+
+  const values = playerIds.map((id) => `wd:${id}`).join(" ");
+  const query = `
+    SELECT ?player ?image WHERE {
+      VALUES ?player { ${values} }
+      ?player wdt:P18 ?image .
+    }
+  `;
+
+  const rows = await runSparql(query);
+  const seen = new Set<string>();
+  const results: { wikidata_id: string; image_url: string }[] = [];
+
+  for (const row of rows) {
+    const pid = extractId(val(row, "player") ?? undefined);
+    const img = val(row, "image");
+    if (!pid || !img || seen.has(pid)) continue;
+    seen.add(pid);
+    results.push({ wikidata_id: pid, image_url: img });
+  }
+
+  return results;
+}
+
 // Phase 3: Careers for specific players (VALUES-based)
 export async function fetchCareersForPlayers(playerIds: string[]) {
   if (playerIds.length === 0) return { careers: [], clubs: [] };

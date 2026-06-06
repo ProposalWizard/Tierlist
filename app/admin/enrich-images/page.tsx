@@ -41,17 +41,18 @@ export default function EnrichImagesPage() {
         const data = await res.json();
         setTotalChecked((prev) => prev + data.checked);
         setTotalFound((prev) => prev + data.found);
-        addLog(`  → Checked ${data.checked}, found ${data.found} images`);
+        const extra = data.note ? ` (${data.note})` : "";
+        addLog(`  → Checked ${data.checked}, found ${data.found} images${extra}`);
 
         if (data.done) {
-          addLog("✅ Done! No more players to check.");
+          addLog("✅ Done! All players with career data have been checked.");
           break;
         }
 
         offset = data.nextOffset;
 
         // Small delay to avoid hammering Wikidata
-        await new Promise((r) => setTimeout(r, 1500));
+        await new Promise((r) => setTimeout(r, 1000));
       } catch (err) {
         addLog(`Network error: ${err}. Retrying in 5s...`);
         await new Promise((r) => setTimeout(r, 5000));
@@ -66,8 +67,8 @@ export default function EnrichImagesPage() {
     <div className="min-h-screen bg-gray-950 text-white p-8">
       <h1 className="text-2xl font-bold mb-2">Enrich Player Images</h1>
       <p className="text-gray-400 mb-6 max-w-xl">
-        Fetches images from Wikidata for players who don&apos;t have one yet.
-        Processes 150 players per batch. Leave this page open — it auto-continues.
+        Fetches images from Wikidata for players with career data who don&apos;t have one yet.
+        Uses a fast image-only query. Leave this page open — it auto-continues.
       </p>
 
       <div className="flex gap-3 mb-6">
