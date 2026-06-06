@@ -66,7 +66,6 @@ export default async function HomePage() {
   const tierlists = tierlistsResult.data ?? [];
   const votelists = (votelistsResult.data ?? []) as { id: string; title: string; category: string; cover_image_url: string | null; created_at: string }[];
 
-  // Build like counts
   const likeCountMap = new Map<string, number>();
   for (const like of (allLikesResult.data ?? [])) {
     likeCountMap.set(like.tierlist_id, (likeCountMap.get(like.tierlist_id) ?? 0) + 1);

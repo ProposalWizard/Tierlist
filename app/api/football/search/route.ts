@@ -1,26 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const ACCENT_GROUPS: Record<string, string> = {
-  a: "[aàáâãäåæ]", c: "[cçćč]", d: "[dđð]", e: "[eèéêëě]",
-  i: "[iìíîï]", l: "[lł]", n: "[nñń]", o: "[oòóôõöø]",
-  r: "[rř]", s: "[sšśş]", t: "[tť]", u: "[uùúûüů]",
-  y: "[yýÿ]", z: "[zžźż]",
-};
-
-function toAccentRegex(q: string): string {
-  return q
-    .split("")
-    .map((ch) => {
-      if (/[.*+?^${}()|[\]\\]/.test(ch)) return `\\${ch}`;
-      const base = ch.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-      return ACCENT_GROUPS[base] ?? ch;
-    })
-    .join("");
-}
-
 function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+interface PlayerRow {
+  wikidata_id: string;
+  name: string;
+  date_of_birth: string | null;
+  country_id: string | null;
+  position: string | null;
+  image_url: string | null;
 }
 
 export async function GET(req: NextRequest) {
@@ -31,48 +22,60 @@ export async function GET(req: NextRequest) {
 
   const activeOnly = req.nextUrl.searchParams.get("active") === "1";
   const supabase = await createClient();
+  const cols = "wikidata_id, name, date_of_birth, country_id, position, image_url";
+  const qStripped = stripAccents(q);
 
-  const pattern = `.*${toAccentRegex(q)}.*`;
-  const { data } = await supabase
-    .from("football_players")
-    .select("wikidata_id, name, date_of_birth, country_id, position, image_url")
-    .filter("name", "~*", pattern)
-    .limit(200);
+  const [r1, r2] = await Promise.all([
+    supabase.from("football_players").select(cols).ilike("name", `%${q}%`).limit(200),
+    qStripped !== q.toLowerCase()
+      ? supabase.from("football_players").select(cols).ilike("name", `%${qStripped}%`).limit(200)
+      : Promise.resolve({ data: null }),
+  ]);
 
-  const rows = data ?? [];
+  const seen = new Set<string>();
+  const rows: PlayerRow[] = [];
+  for (const r of [...((r1.data ?? []) as PlayerRow[]), ...((r2.data ?? []) as PlayerRow[])]) {
+    if (seen.has(r.wikidata_id)) continue;
+    seen.add(r.wikidata_id);
+    if (stripAccents(r.name).includes(qStripped)) rows.push(r);
+  }
+
   if (rows.length === 0) return NextResponse.json({ players: [] });
 
   const playerIds = rows.map((p) => p.wikidata_id);
   const careerCounts = new Map<string, number>();
-  const activePlayerIds = new Set<string>();
+
+  const careerResults = await Promise.all(
+    Array.from({ length: Math.ceil(playerIds.length / 200) }, (_, i) => {
+      const chunk = playerIds.slice(i * 200, i * 200 + 200);
+      return supabase.from("football_careers").select("player_id, club_id, end_date")
+        .in("player_id", chunk).limit(5000);
+    })
+  );
 
   interface CareerRow { player_id: string; club_id: string; end_date: string | null }
   const allCareers: CareerRow[] = [];
-
-  for (let i = 0; i < playerIds.length; i += 200) {
-    const chunk = playerIds.slice(i, i + 200);
-    const { data: careers } = await supabase
-      .from("football_careers")
-      .select("player_id, club_id, end_date")
-      .in("player_id", chunk)
-      .limit(5000);
-    for (const c of (careers ?? []) as CareerRow[]) {
+  for (const res of careerResults) {
+    for (const c of (res.data ?? []) as unknown as CareerRow[]) {
       careerCounts.set(c.player_id, (careerCounts.get(c.player_id) ?? 0) + 1);
       allCareers.push(c);
     }
   }
 
+  const activePlayerIds = new Set<string>();
   if (activeOnly && allCareers.length > 0) {
     const clubIds = Array.from(new Set(allCareers.map((c) => c.club_id)));
     const nationalTeamIds = new Set<string>();
-    for (let i = 0; i < clubIds.length; i += 200) {
-      const chunk = clubIds.slice(i, i + 200);
-      const { data: clubs } = await supabase
-        .from("football_clubs")
-        .select("wikidata_id, name")
-        .in("wikidata_id", chunk);
-      for (const cl of clubs ?? []) {
-        if ((cl.name as string).toLowerCase().includes("national")) {
+
+    const clubResults = await Promise.all(
+      Array.from({ length: Math.ceil(clubIds.length / 200) }, (_, i) => {
+        const chunk = clubIds.slice(i * 200, i * 200 + 200);
+        return supabase.from("football_clubs").select("wikidata_id, name").in("wikidata_id", chunk);
+      })
+    );
+    for (const res of clubResults) {
+      for (const cl of (res.data ?? []) as { wikidata_id: string; name: string }[]) {
+        if (cl.name.toLowerCase().includes("national")) {
           nationalTeamIds.add(cl.wikidata_id);
         }
       }
@@ -97,7 +100,7 @@ export async function GET(req: NextRequest) {
   const ranked = filteredRows
     .map((p) => {
       let score = 0;
-      const name = stripAccents(p.name as string);
+      const name = stripAccents(p.name);
       const nameWords = name.split(/\s+/);
 
       if (name === qNorm) score = 10000;

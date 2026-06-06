@@ -68,67 +68,55 @@ export default async function PlayPage({ params }: Props) {
   const tierlist = tierlistResult.data;
   const images   = imagesResult.data ?? [];
 
-  // Creator display name
-  const { data: creatorProfile } = await service
-    .from("user_profiles")
-    .select("username, is_anonymous")
-    .eq("user_id", tierlist.created_by)
-    .maybeSingle();
+  // Fetch creator profile, linked blind ranking, and linked vote tierlist in parallel
+  const [creatorProfileResult, linkedBrResult, linkedVtResult] = await Promise.all([
+    service.from("user_profiles").select("username, is_anonymous")
+      .eq("user_id", tierlist.created_by).maybeSingle(),
+    tierlist.linked_blind_ranking_id
+      ? service.from("blind_rankings").select("id")
+          .eq("id", tierlist.linked_blind_ranking_id).eq("is_active", true).maybeSingle()
+      : Promise.resolve({ data: null }),
+    tierlist.linked_vote_tierlist_id
+      ? service.from("vote_tierlists").select("id, title, tiers")
+          .eq("id", tierlist.linked_vote_tierlist_id).eq("is_active", true).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
+  const creatorProfile = creatorProfileResult.data;
   const creatorName =
     creatorProfile?.is_anonymous ? "Anonymous"
     : (creatorProfile?.username ?? "Anonymous");
 
-  // ── Fetch linked blind ranking (if any) ───────────────────────────────────
-  let linkedBlindRankingId: string | null = null;
-  if (tierlist.linked_blind_ranking_id) {
-    const { data: br } = await service
-      .from("blind_rankings")
-      .select("id")
-      .eq("id", tierlist.linked_blind_ranking_id)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (br) linkedBlindRankingId = br.id;
-  }
+  const linkedBlindRankingId = linkedBrResult.data?.id ?? null;
 
-  // ── Fetch linked vote tierlist data (if any) ──────────────────────────────
   let linkedVoteTierlist: { id: string; title: string; tiers: VoteTier[] } | null = null;
   let linkedVoteImages: { id: string; name: string; image_url: string; vote_counts: Record<string, number>; total_votes: number }[] = [];
 
-  if (tierlist.linked_vote_tierlist_id) {
-    const { data: vt } = await service
-      .from("vote_tierlists")
-      .select("id, title, tiers")
-      .eq("id", tierlist.linked_vote_tierlist_id)
-      .eq("is_active", true)
-      .maybeSingle();
+  if (linkedVtResult.data) {
+    const vt = linkedVtResult.data;
+    linkedVoteTierlist = { id: vt.id, title: vt.title, tiers: vt.tiers as VoteTier[] };
 
-    if (vt) {
-      linkedVoteTierlist = { id: vt.id, title: vt.title, tiers: vt.tiers as VoteTier[] };
+    const [{ data: vtImages }, { data: vtVotes }] = await Promise.all([
+      service.from("vote_tierlist_images").select("id, name, image_url, sort_order").eq("vote_tierlist_id", vt.id).order("sort_order"),
+      service.from("vote_tierlist_votes").select("image_id, tier_label").eq("vote_tierlist_id", vt.id),
+    ]);
 
-      // Fetch vote tierlist images and their vote counts
-      const [{ data: vtImages }, { data: vtVotes }] = await Promise.all([
-        service.from("vote_tierlist_images").select("id, name, image_url, sort_order").eq("vote_tierlist_id", vt.id).order("sort_order"),
-        service.from("vote_tierlist_votes").select("image_id, tier_label").eq("vote_tierlist_id", vt.id),
-      ]);
-
-      const counts: Record<string, Record<string, number>> = {};
-      for (const v of vtVotes ?? []) {
-        if (!counts[v.image_id]) counts[v.image_id] = {};
-        counts[v.image_id][v.tier_label] = (counts[v.image_id][v.tier_label] ?? 0) + 1;
-      }
-
-      linkedVoteImages = (vtImages ?? []).map((img) => {
-        const vc = counts[img.id] ?? {};
-        return {
-          id: img.id,
-          name: img.name,
-          image_url: img.image_url,
-          vote_counts: vc,
-          total_votes: Object.values(vc).reduce((a, b) => a + b, 0),
-        };
-      });
+    const counts: Record<string, Record<string, number>> = {};
+    for (const v of vtVotes ?? []) {
+      if (!counts[v.image_id]) counts[v.image_id] = {};
+      counts[v.image_id][v.tier_label] = (counts[v.image_id][v.tier_label] ?? 0) + 1;
     }
+
+    linkedVoteImages = (vtImages ?? []).map((img) => {
+      const vc = counts[img.id] ?? {};
+      return {
+        id: img.id,
+        name: img.name,
+        image_url: img.image_url,
+        vote_counts: vc,
+        total_votes: Object.values(vc).reduce((a, b) => a + b, 0),
+      };
+    });
   }
 
   return (

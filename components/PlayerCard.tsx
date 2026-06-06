@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { TierlistPlayer, ImageStyle } from "@/lib/types";
@@ -24,7 +24,7 @@ interface PlayerCardProps {
   onTapSelect?: (id: string) => void;
 }
 
-export default function PlayerCard({
+export default memo(function PlayerCard({
   player,
   isDragging = false,
   imageStyle = "square",
@@ -160,4 +160,4 @@ export default function PlayerCard({
       )}
     </div>
   );
-}
+})
