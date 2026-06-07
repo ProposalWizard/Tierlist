@@ -65,14 +65,14 @@ export async function POST() {
   }
 
   // Compute scores: big club = 500, national team = 300
-  const allPlayerIds = new Set([...bigClubPlayers, ...nationalTeamPlayers]);
+  const allPlayerIds = new Set(Array.from(bigClubPlayers).concat(Array.from(nationalTeamPlayers)));
   const scores = new Map<string, number>();
-  for (const id of allPlayerIds) {
+  allPlayerIds.forEach((id) => {
     let score = 0;
     if (bigClubPlayers.has(id)) score += 500;
     if (nationalTeamPlayers.has(id)) score += 300;
     scores.set(id, score);
-  }
+  });
 
   // Update in batches (need name for NOT NULL constraint)
   let updated = 0;
