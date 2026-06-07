@@ -16,57 +16,57 @@ export async function POST(req: NextRequest) {
   const { year } = await req.json().catch(() => ({ year: 2000 }));
   const service = createServiceClient();
 
-  // Ask Wikidata: "give me all footballers born in {year} who have images"
   const wikidataResults = await fetchFootballersWithImagesByYear(year);
 
   if (wikidataResults.length === 0) {
-    return NextResponse.json({
-      year,
-      wikidataFound: 0,
-      matched: 0,
-      updated: 0,
-    });
+    return NextResponse.json({ year, wikidataFound: 0, matched: 0, updated: 0 });
   }
 
-  // Match against our database — only update players we actually have
   const wikidataIds = wikidataResults.map((r) => r.wikidata_id);
   const imageMap = new Map(wikidataResults.map((r) => [r.wikidata_id, r.image_url]));
 
-  // Find which of these players exist in our DB
-  const matchedIds: string[] = [];
+  // Find which players exist in our DB — include name to satisfy NOT NULL on upsert
+  const matchedPlayers: { wikidata_id: string; name: string }[] = [];
   for (let i = 0; i < wikidataIds.length; i += 200) {
     const chunk = wikidataIds.slice(i, i + 200);
     const { data: existing } = await service
       .from("football_players")
-      .select("wikidata_id")
+      .select("wikidata_id, name")
       .in("wikidata_id", chunk);
     for (const row of existing ?? []) {
-      matchedIds.push(row.wikidata_id);
+      matchedPlayers.push({ wikidata_id: row.wikidata_id, name: row.name });
     }
   }
 
-  // Update image_url for matched players
   let updated = 0;
-  if (matchedIds.length > 0) {
-    const updates = matchedIds.map((id) => ({
-      wikidata_id: id,
-      image_url: imageMap.get(id)!,
+  let errors: string[] = [];
+
+  if (matchedPlayers.length > 0) {
+    const updates = matchedPlayers.map((p) => ({
+      wikidata_id: p.wikidata_id,
+      name: p.name,
+      image_url: imageMap.get(p.wikidata_id)!,
       updated_at: new Date().toISOString(),
     }));
 
     for (let i = 0; i < updates.length; i += 500) {
-      await service.from("football_players").upsert(
+      const { error } = await service.from("football_players").upsert(
         updates.slice(i, i + 500),
         { onConflict: "wikidata_id" }
       );
+      if (error) {
+        errors.push(error.message);
+      } else {
+        updated += updates.slice(i, i + 500).length;
+      }
     }
-    updated = matchedIds.length;
   }
 
   return NextResponse.json({
     year,
     wikidataFound: wikidataResults.length,
-    matched: matchedIds.length,
+    matched: matchedPlayers.length,
     updated,
+    ...(errors.length > 0 ? { errors } : {}),
   });
 }
