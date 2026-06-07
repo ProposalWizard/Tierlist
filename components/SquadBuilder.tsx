@@ -441,7 +441,7 @@ export default function SquadBuilder() {
     }
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (value.trim().length >= 2) {
-      searchTimer.current = setTimeout(() => searchPlayers(value.trim()), 300);
+      searchTimer.current = setTimeout(() => searchPlayers(value.trim()), 150);
     } else {
       setSearchResults([]);
     }
