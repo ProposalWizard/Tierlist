@@ -12,7 +12,6 @@ interface PlayerRow {
   country_id: string | null;
   position: string | null;
   image_url: string | null;
-  popularity: number | null;
 }
 
 // Cache national team IDs in memory (refreshed every 10 minutes)
@@ -41,7 +40,7 @@ export async function GET(req: NextRequest) {
 
   const activeOnly = req.nextUrl.searchParams.get("active") === "1";
   const supabase = await createClient();
-  const cols = "wikidata_id, name, date_of_birth, country_id, position, image_url, popularity";
+  const cols = "wikidata_id, name, date_of_birth, country_id, position, image_url";
   const qStripped = stripAccents(q);
 
   // 1. Search players — single query, reduced limit
@@ -98,7 +97,23 @@ export async function GET(req: NextRequest) {
     : rows;
   if (filteredRows.length === 0) return NextResponse.json({ players: [] });
 
-  // 3. Rank and pick top 15
+  // 3. Fetch popularity scores for candidates (safe if column doesn't exist yet)
+  const popMap = new Map<string, number>();
+  const candidateIds = filteredRows.map((p) => p.wikidata_id);
+  try {
+    const { data: popData } = await supabase
+      .from("football_players")
+      .select("wikidata_id, popularity")
+      .in("wikidata_id", candidateIds)
+      .not("popularity", "eq", 0);
+    for (const p of popData ?? []) {
+      popMap.set(p.wikidata_id, p.popularity ?? 0);
+    }
+  } catch {
+    // Column doesn't exist yet — skip
+  }
+
+  // 4. Rank and pick top 15
   const qNorm = stripAccents(q.trim());
   const ranked = filteredRows
     .map((p) => {
@@ -112,7 +127,7 @@ export async function GET(req: NextRequest) {
       else if (nameWords.some((w) => w.startsWith(qNorm))) score = 2000;
       else score = 1000;
 
-      score += p.popularity ?? 0;
+      score += popMap.get(p.wikidata_id) ?? 0;
       if (p.image_url) score += 100;
       if (p.date_of_birth) {
         const year = parseInt(p.date_of_birth.substring(0, 4));
