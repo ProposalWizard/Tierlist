@@ -5,106 +5,129 @@ import { isAdmin } from "@/lib/admin";
 
 export const maxDuration = 60;
 
-const BIG_CLUBS = new Set([
-  "Q9141",   // Manchester United
-  "Q18656",  // Arsenal
-  "Q9616",   // Liverpool
-  "Q9609",   // Chelsea
-  "Q50602",  // Manchester City
-  "Q19794",  // Tottenham
-  "Q8682",   // Real Madrid
-  "Q7156",   // Barcelona
-  "Q8687",   // Bayern Munich
-  "Q3400",   // Juventus
-  "Q3740",   // Inter Milan
-  "Q12460",  // AC Milan
-  "Q483020", // PSG
-  "Q12303",  // Borussia Dortmund
-  "Q19588",  // Aston Villa
-  "Q8701",   // Atletico Madrid
-  "Q485625", // RB Leipzig
-  "Q10444",  // Napoli
-]);
+const SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
+const UA = "Knowitball/1.0 (knowitballcontact@gmail.com)";
 
-export async function POST() {
+const BIG_CLUBS: [string, string][] = [
+  ["Q9141", "Manchester United"],
+  ["Q18656", "Arsenal"],
+  ["Q9616", "Liverpool"],
+  ["Q9609", "Chelsea"],
+  ["Q50602", "Manchester City"],
+  ["Q19794", "Tottenham"],
+  ["Q8682", "Real Madrid"],
+  ["Q7156", "Barcelona"],
+  ["Q8687", "Bayern Munich"],
+  ["Q3400", "Juventus"],
+  ["Q3740", "Inter Milan"],
+  ["Q12460", "AC Milan"],
+  ["Q483020", "PSG"],
+  ["Q12303", "Borussia Dortmund"],
+  ["Q19588", "Aston Villa"],
+  ["Q8701", "Atletico Madrid"],
+  ["Q485625", "RB Leipzig"],
+  ["Q10444", "Napoli"],
+];
+
+async function runSparql(query: string): Promise<Record<string, { value: string } | undefined>[]> {
+  const res = await fetch(SPARQL_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/sparql-results+json",
+      "User-Agent": UA,
+    },
+    body: `query=${encodeURIComponent(query)}`,
+  });
+  if (!res.ok) throw new Error(`SPARQL ${res.status}`);
+  const json = JSON.parse(await res.text());
+  return json.results?.bindings ?? [];
+}
+
+function extractId(uri: string | undefined): string | null {
+  if (!uri) return null;
+  return uri.split("/").pop() ?? null;
+}
+
+export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !(await isAdmin(user.id))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { clubIndex = 0 } = await req.json().catch(() => ({ clubIndex: 0 }));
   const service = createServiceClient();
 
-  // Find national team club IDs
-  const { data: ntClubs } = await service
-    .from("football_clubs")
-    .select("wikidata_id, name")
-    .ilike("name", "%national%");
-  const nationalTeamIds = new Set((ntClubs ?? []).map((c) => c.wikidata_id));
-
-  // Single pass through all careers
-  const bigClubPlayers = new Set<string>();
-  const nationalTeamPlayers = new Set<string>();
-  let offset = 0;
-
-  while (true) {
-    const { data: careers } = await service
-      .from("football_careers")
-      .select("player_id, club_id")
-      .range(offset, offset + 4999);
-
-    if (!careers || careers.length === 0) break;
-
-    for (const c of careers) {
-      if (BIG_CLUBS.has(c.club_id)) bigClubPlayers.add(c.player_id);
-      if (nationalTeamIds.has(c.club_id)) nationalTeamPlayers.add(c.player_id);
-    }
-
-    if (careers.length < 5000) break;
-    offset += 5000;
+  if (clubIndex >= BIG_CLUBS.length) {
+    return NextResponse.json({ done: true, clubIndex });
   }
 
-  // Compute scores: big club = 500, national team = 300
-  const allPlayerIds = new Set(Array.from(bigClubPlayers).concat(Array.from(nationalTeamPlayers)));
-  const scores = new Map<string, number>();
-  allPlayerIds.forEach((id) => {
-    let score = 0;
-    if (bigClubPlayers.has(id)) score += 500;
-    if (nationalTeamPlayers.has(id)) score += 300;
-    scores.set(id, score);
-  });
+  const [clubId, clubName] = BIG_CLUBS[clubIndex];
 
-  // Update in batches (need name for NOT NULL constraint)
+  // Ask Wikidata: "who played for this club?"
+  const query = `
+    SELECT DISTINCT ?player WHERE {
+      ?player wdt:P54 wd:${clubId} .
+      ?player wdt:P106 wd:Q937857 .
+    }
+  `;
+
+  const rows = await runSparql(query);
+  const playerIds = rows
+    .map((r) => extractId(r.player?.value))
+    .filter((id): id is string => id !== null);
+
+  if (playerIds.length === 0) {
+    return NextResponse.json({
+      clubIndex,
+      club: clubName,
+      wikidataPlayers: 0,
+      matched: 0,
+      updated: 0,
+      hasMore: clubIndex + 1 < BIG_CLUBS.length,
+      nextClubIndex: clubIndex + 1,
+    });
+  }
+
+  // Match against our DB and update popularity
+  let matched = 0;
   let updated = 0;
-  const ids = Array.from(scores.keys());
 
-  for (let i = 0; i < ids.length; i += 200) {
-    const chunk = ids.slice(i, i + 200);
-    const { data: players } = await service
+  for (let i = 0; i < playerIds.length; i += 200) {
+    const chunk = playerIds.slice(i, i + 200);
+    const { data: existing } = await service
       .from("football_players")
-      .select("wikidata_id, name")
+      .select("wikidata_id, name, popularity")
       .in("wikidata_id", chunk);
 
-    if (!players || players.length === 0) continue;
+    if (!existing || existing.length === 0) continue;
+    matched += existing.length;
 
-    const rows = players.map((p) => ({
-      wikidata_id: p.wikidata_id,
-      name: p.name,
-      popularity: scores.get(p.wikidata_id) ?? 0,
-    }));
+    // Only update players who don't already have the big club bonus
+    const toUpdate = existing
+      .filter((p) => (p.popularity ?? 0) < 500)
+      .map((p) => ({
+        wikidata_id: p.wikidata_id,
+        name: p.name,
+        popularity: Math.max((p.popularity ?? 0) + 500, 500),
+      }));
 
-    const { error } = await service
-      .from("football_players")
-      .upsert(rows, { onConflict: "wikidata_id" });
-
-    if (!error) updated += rows.length;
+    if (toUpdate.length > 0) {
+      const { error } = await service
+        .from("football_players")
+        .upsert(toUpdate, { onConflict: "wikidata_id" });
+      if (!error) updated += toUpdate.length;
+    }
   }
 
   return NextResponse.json({
-    bigClubPlayers: bigClubPlayers.size,
-    nationalTeamPlayers: nationalTeamPlayers.size,
-    both: Array.from(bigClubPlayers).filter((id) => nationalTeamPlayers.has(id)).length,
-    totalScored: scores.size,
+    clubIndex,
+    club: clubName,
+    wikidataPlayers: playerIds.length,
+    matched,
     updated,
+    hasMore: clubIndex + 1 < BIG_CLUBS.length,
+    nextClubIndex: clubIndex + 1,
   });
 }
