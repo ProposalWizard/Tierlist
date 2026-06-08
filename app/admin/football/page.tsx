@@ -34,24 +34,26 @@ interface Club {
 
 /* ── Popular clubs (Wikidata IDs) ── */
 const POPULAR_CLUBS = [
-  { id: "Q9141", name: "Manchester United" },
-  { id: "Q18656", name: "Arsenal" },
-  { id: "Q9616", name: "Liverpool" },
-  { id: "Q9609", name: "Chelsea" },
+  { id: "Q18656", name: "Manchester United" },
+  { id: "Q9617", name: "Arsenal" },
+  { id: "Q1130849", name: "Liverpool" },
+  { id: "Q9616", name: "Chelsea" },
   { id: "Q50602", name: "Manchester City" },
-  { id: "Q19794", name: "Tottenham" },
+  { id: "Q18741", name: "Tottenham" },
   { id: "Q8682", name: "Real Madrid" },
   { id: "Q7156", name: "Barcelona" },
   { id: "Q8687", name: "Bayern Munich" },
-  { id: "Q3400", name: "Juventus" },
-  { id: "Q3740", name: "Inter Milan" },
-  { id: "Q12460", name: "AC Milan" },
+  { id: "Q1422", name: "Juventus" },
+  { id: "Q631", name: "Inter Milan" },
+  { id: "Q1543", name: "AC Milan" },
   { id: "Q483020", name: "PSG" },
-  { id: "Q8682", name: "Real Madrid" },
-  { id: "Q12303", name: "Borussia Dortmund" },
+  { id: "Q41420", name: "Borussia Dortmund" },
+  { id: "Q18711", name: "Aston Villa" },
+  { id: "Q8701", name: "Atletico Madrid" },
+  { id: "Q702455", name: "RB Leipzig" },
+  { id: "Q2641", name: "Napoli" },
 ];
-// Remove duplicate
-const POPULAR = POPULAR_CLUBS.filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i);
+const POPULAR = POPULAR_CLUBS;
 
 function Img({ src, alt, size = 40 }: { src?: string | null; alt: string; size?: number }) {
   if (!src) return <div className="rounded-full bg-gray-800 shrink-0" style={{ width: size, height: size }} />;

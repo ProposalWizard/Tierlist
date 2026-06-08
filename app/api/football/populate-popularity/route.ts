@@ -9,24 +9,24 @@ const SPARQL_ENDPOINT = "https://query.wikidata.org/sparql";
 const UA = "Knowitball/1.0 (knowitballcontact@gmail.com)";
 
 const BIG_CLUBS: [string, string][] = [
-  ["Q9141", "Manchester United"],
-  ["Q18656", "Arsenal"],
-  ["Q9616", "Liverpool"],
-  ["Q9609", "Chelsea"],
+  ["Q18656", "Manchester United"],
+  ["Q9617", "Arsenal"],
+  ["Q1130849", "Liverpool"],
+  ["Q9616", "Chelsea"],
   ["Q50602", "Manchester City"],
-  ["Q19794", "Tottenham"],
+  ["Q18741", "Tottenham"],
   ["Q8682", "Real Madrid"],
   ["Q7156", "Barcelona"],
   ["Q8687", "Bayern Munich"],
-  ["Q3400", "Juventus"],
-  ["Q3740", "Inter Milan"],
-  ["Q12460", "AC Milan"],
+  ["Q1422", "Juventus"],
+  ["Q631", "Inter Milan"],
+  ["Q1543", "AC Milan"],
   ["Q483020", "PSG"],
-  ["Q12303", "Borussia Dortmund"],
-  ["Q19588", "Aston Villa"],
+  ["Q41420", "Borussia Dortmund"],
+  ["Q18711", "Aston Villa"],
   ["Q8701", "Atletico Madrid"],
-  ["Q485625", "RB Leipzig"],
-  ["Q10444", "Napoli"],
+  ["Q702455", "RB Leipzig"],
+  ["Q2641", "Napoli"],
 ];
 
 async function runSparql(query: string): Promise<Record<string, { value: string } | undefined>[]> {
