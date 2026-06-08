@@ -43,11 +43,12 @@ export async function GET(req: NextRequest) {
   const cols = "wikidata_id, name, date_of_birth, country_id, position, image_url";
   const qStripped = stripAccents(q);
 
-  // 1. Search players — single query, reduced limit
+  // 1. Search players — order by popularity so famous players come first
   const { data: r1Data } = await supabase
     .from("football_players")
     .select(cols)
     .ilike("name", `%${q}%`)
+    .order("popularity", { ascending: false, nullsFirst: false })
     .limit(80);
 
   // Merge with accent-stripped search only if different
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
       .from("football_players")
       .select(cols)
       .ilike("name", `%${qStripped}%`)
+      .order("popularity", { ascending: false, nullsFirst: false })
       .limit(80);
     r2Data = (data ?? []) as PlayerRow[];
   }
