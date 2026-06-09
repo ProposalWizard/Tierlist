@@ -201,6 +201,28 @@ export default function DraftResult({ players, onNewRun }: Props) {
           </div>
         </div>
 
+        {/* Form Guide */}
+        <div className="bg-gray-900 rounded-xl p-3 mb-3 border border-gray-800/50">
+          <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">Form</div>
+          <div className="flex gap-[3px] flex-wrap">
+            {season.matches.map((m, i) => (
+              <div
+                key={i}
+                className={`w-5 h-5 rounded text-[9px] font-black flex items-center justify-center ${
+                  m.result === "W"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : m.result === "D"
+                      ? "bg-yellow-500/20 text-yellow-400"
+                      : "bg-red-500/20 text-red-400"
+                }`}
+                title={`MW${i + 1}: ${m.result} ${m.goalsFor}-${m.goalsAgainst} vs ${m.opponent}`}
+              >
+                {m.result}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-2 mb-6">
           <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
             <div className="text-3xl font-black text-white">{season.teamRecord.points}</div>

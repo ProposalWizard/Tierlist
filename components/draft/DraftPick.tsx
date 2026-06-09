@@ -522,7 +522,18 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
               </div>
 
               <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
-                {spinResult.roster.map((player) => {
+                {[...spinResult.roster]
+                  .sort((a, b) => {
+                    const aCompat = currentSlot?.compatiblePositions.some((cp) =>
+                      a.positions.split(",").map((p) => p.trim()).includes(cp)
+                    ) ? 1 : 0;
+                    const bCompat = currentSlot?.compatiblePositions.some((cp) =>
+                      b.positions.split(",").map((p) => p.trim()).includes(cp)
+                    ) ? 1 : 0;
+                    if (bCompat !== aCompat) return bCompat - aCompat;
+                    return b.overall - a.overall;
+                  })
+                  .map((player) => {
                   const playerPositions = player.positions.split(",").map((p) => p.trim());
                   const isCompatible = currentSlot?.compatiblePositions.some((cp) =>
                     playerPositions.includes(cp)
