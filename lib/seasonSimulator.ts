@@ -58,8 +58,10 @@ export interface SeasonResult {
     playerOfSeason: { name: string; goals: number; assists: number };
   };
   biggestWin: { opponent: string; score: string };
+  worstDefeat: { opponent: string; score: string };
   highestScoring: { opponent: string; score: string };
   longestWinStreak: number;
+  longestUnbeatenRun: number;
   projectedFinish: number;
   actualFinish: number;
   performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED';
@@ -477,10 +479,11 @@ export function simulateSeason(
     playerOfSeason: { name: pots.name, goals: pots.goals, assists: pots.assists },
   };
 
-  // Biggest win (largest GD in your favor)
-  let biggestWin = matches[0];
-  let biggestWinGd = matches[0].goalsFor - matches[0].goalsAgainst;
-  for (const m of matches) {
+  // Biggest win (largest GD in your favor, must be a win)
+  const winsOnly = matches.filter((m) => m.result === 'W');
+  let biggestWin = winsOnly.length > 0 ? winsOnly[0] : matches[0];
+  let biggestWinGd = biggestWin.goalsFor - biggestWin.goalsAgainst;
+  for (const m of winsOnly) {
     const gd = m.goalsFor - m.goalsAgainst;
     if (gd > biggestWinGd || (gd === biggestWinGd && m.goalsFor > biggestWin.goalsFor)) {
       biggestWin = m;
@@ -499,6 +502,18 @@ export function simulateSeason(
     }
   }
 
+  // Worst defeat (largest GD against, must be a loss)
+  const lossesOnly = matches.filter((m) => m.result === 'L');
+  let worstDefeat = lossesOnly.length > 0 ? lossesOnly[0] : matches[0];
+  let worstDefeatGd = worstDefeat.goalsAgainst - worstDefeat.goalsFor;
+  for (const m of lossesOnly) {
+    const gd = m.goalsAgainst - m.goalsFor;
+    if (gd > worstDefeatGd || (gd === worstDefeatGd && m.goalsAgainst > worstDefeat.goalsAgainst)) {
+      worstDefeat = m;
+      worstDefeatGd = gd;
+    }
+  }
+
   // Longest win streak
   let longestWinStreak = 0;
   let currentStreak = 0;
@@ -508,6 +523,18 @@ export function simulateSeason(
       longestWinStreak = Math.max(longestWinStreak, currentStreak);
     } else {
       currentStreak = 0;
+    }
+  }
+
+  // Longest unbeaten run
+  let longestUnbeatenRun = 0;
+  let unbeatenStreak = 0;
+  for (const m of matches) {
+    if (m.result !== 'L') {
+      unbeatenStreak++;
+      longestUnbeatenRun = Math.max(longestUnbeatenRun, unbeatenStreak);
+    } else {
+      unbeatenStreak = 0;
     }
   }
 
@@ -523,8 +550,10 @@ export function simulateSeason(
     teamRecord,
     awards,
     biggestWin: { opponent: biggestWin.opponent, score: formatScore(biggestWin) },
+    worstDefeat: { opponent: worstDefeat.opponent, score: formatScore(worstDefeat) },
     highestScoring: { opponent: highestScoring.opponent, score: formatScore(highestScoring) },
     longestWinStreak,
+    longestUnbeatenRun,
     projectedFinish,
     actualFinish,
     performance,

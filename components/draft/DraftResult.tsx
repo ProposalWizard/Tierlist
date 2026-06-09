@@ -50,12 +50,20 @@ export default function DraftResult({ players, onNewRun }: Props) {
       link.download = `pl-draft-${ordinal(season.actualFinish)}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
+
+      const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
+      const text = `PL Draft: Finished ${ordinal(season.actualFinish)} with ${season.teamRecord.points}pts (${avgOvr} avg OVR) — ${season.performance.toLowerCase()}! 🏆`;
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+        "_blank"
+      );
     } catch (err) {
       console.error("Share screenshot failed:", err);
     } finally {
       setSharing(false);
     }
-  }, [sharing, season.actualFinish]);
+  }, [sharing, season.actualFinish, season.teamRecord.points, season.performance, players]);
 
   const getLeaguePositionStyle = (pos: number, isPlayer: boolean) => {
     if (isPlayer) return "";
@@ -151,6 +159,31 @@ export default function DraftResult({ players, onNewRun }: Props) {
             <p className="text-gray-500 text-sm">{msg.sub}</p>
           </div>
         )}
+
+        {/* Your XI */}
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+            Your XI
+          </h3>
+          <div className="space-y-0.5">
+            {players.map((p, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm py-1 px-1">
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
+                  {p.assignedPosition}
+                </span>
+                <span className="flex-1 ml-1 font-medium">{p.name}</span>
+                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
+            <span>Average OVR</span>
+            <span className="font-bold text-white">
+              {Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length)}
+            </span>
+          </div>
+        </div>
 
         {/* Record */}
         <div className="grid grid-cols-3 gap-2 mb-3">
@@ -260,22 +293,38 @@ export default function DraftResult({ players, onNewRun }: Props) {
         </div>
 
         {/* Extra stats */}
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800/50">
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
             <div className="text-2xl font-black">{season.awards.goldenGlove.cleanSheets}</div>
             <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Clean Sheets</div>
           </div>
-          <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800/50">
+          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
             <div className="text-2xl font-black">{season.longestWinStreak}</div>
             <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Win Streak</div>
           </div>
+          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+            <div className="text-2xl font-black">{season.longestUnbeatenRun}</div>
+            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Unbeaten Run</div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mb-6">
+        <div className="grid grid-cols-3 gap-2 mb-6">
           <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
             <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Biggest Win</div>
             <div className="font-bold text-emerald-400 text-sm mt-0.5">
-              {season.biggestWin.score} vs {season.biggestWin.opponent}
+              {season.teamRecord.wins > 0
+                ? <>{season.biggestWin.score} vs {season.biggestWin.opponent}</>
+                : <span className="text-gray-600">No wins</span>
+              }
+            </div>
+          </div>
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
+            <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Worst Defeat</div>
+            <div className="font-bold text-red-400 text-sm mt-0.5">
+              {season.teamRecord.losses > 0
+                ? <>{season.worstDefeat.score} vs {season.worstDefeat.opponent}</>
+                : <span className="text-emerald-400">Undefeated!</span>
+              }
             </div>
           </div>
           <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">

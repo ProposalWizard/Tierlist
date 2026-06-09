@@ -36,18 +36,34 @@ export default function DraftPick({ settings, onComplete }: Props) {
   const [usedClubYears, setUsedClubYears] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [availableClubs, setAvailableClubs] = useState<{ name: string; seasons: number[] }[] | null>(null);
+  const [clubsLoading, setClubsLoading] = useState(true);
   const [spinItems, setSpinItems] = useState<{ club: string; year: number }[]>([]);
   const [spinAnimating, setSpinAnimating] = useState(false);
   const spinContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const loadClubs = useCallback(() => {
+    setClubsLoading(true);
+    setError(null);
     fetch("/api/draft/clubs")
       .then((r) => r.json())
       .then((d) => {
-        if (d.clubs) setAvailableClubs(d.clubs);
+        if (d.clubs && d.clubs.length > 0) {
+          setAvailableClubs(d.clubs);
+        } else if (d.error) {
+          setError(`Failed to load clubs: ${d.error}`);
+        } else {
+          setError("No Premier League clubs found in the database. Import player data first.");
+        }
       })
-      .catch(() => {});
+      .catch((e) => {
+        setError(`Failed to load clubs: ${e.message}`);
+      })
+      .finally(() => setClubsLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadClubs();
+  }, [loadClubs]);
 
   const getRandomClubYear = useCallback((): { club: string; year: number } | null => {
     if (!availableClubs || availableClubs.length === 0) return null;
@@ -345,20 +361,29 @@ export default function DraftPick({ settings, onComplete }: Props) {
                   Spin to get a random Premier League club & season
                 </p>
               </div>
-              <button
-                onClick={handleSpin}
-                disabled={!availableClubs}
-                className="group relative px-16 py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-700 rounded-2xl text-xl font-extrabold transition-all duration-300 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-105 active:scale-95"
-              >
-                {availableClubs ? (
-                  <span className="flex items-center gap-3">
-                    <svg className="w-6 h-6 transition-transform group-hover:rotate-180 duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                    SPIN
-                  </span>
-                ) : (
-                  "Loading clubs..."
-                )}
-              </button>
+              {!availableClubs && !clubsLoading && error ? (
+                <button
+                  onClick={loadClubs}
+                  className="px-10 py-4 bg-red-800 hover:bg-red-700 rounded-2xl text-lg font-extrabold transition-all"
+                >
+                  Retry Loading Clubs
+                </button>
+              ) : (
+                <button
+                  onClick={handleSpin}
+                  disabled={!availableClubs || clubsLoading}
+                  className="group relative px-16 py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-700 rounded-2xl text-xl font-extrabold transition-all duration-300 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-105 active:scale-95"
+                >
+                  {availableClubs ? (
+                    <span className="flex items-center gap-3">
+                      <svg className="w-6 h-6 transition-transform group-hover:rotate-180 duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                      SPIN
+                    </span>
+                  ) : (
+                    "Loading clubs..."
+                  )}
+                </button>
+              )}
             </div>
           )}
 

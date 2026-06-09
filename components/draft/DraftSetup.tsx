@@ -12,16 +12,6 @@ export default function DraftSetup({ onStart }: Props) {
   const [eraStart, setEraStart] = useState(2007);
   const [eraEnd, setEraEnd] = useState(2026);
 
-  const formationShape: Record<string, string> = {
-    "4-4-2": "  o   o\no o o o\no o o o\n   o",
-    "4-3-3": " o o o\n  o o\n   o\no o o o\n   o",
-    "4-2-3-1": "   o\n o o o\n  o o\no o o o\n   o",
-    "3-5-2": "  o o\no o o o o\n o o o\n   o",
-    "3-4-3": " o o o\no o o o\n o o o\n   o",
-    "4-1-4-1": "   o\no o o o\n   o\no o o o\n   o",
-    "5-3-2": "  o o\n o o o\no o o o o\n   o",
-  };
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="max-w-lg w-full">
@@ -154,10 +144,18 @@ export default function DraftSetup({ onStart }: Props) {
           </div>
         </div>
 
+        {/* Era validation warning */}
+        {eraStart > eraEnd && (
+          <div className="mb-4 bg-red-900/20 border border-red-800/50 rounded-lg p-3 text-sm text-red-400 text-center">
+            Start year must be before or equal to end year
+          </div>
+        )}
+
         {/* Start Button */}
         <button
-          onClick={() => onStart({ formation, eraStart, eraEnd })}
-          className="group relative w-full py-4 rounded-xl text-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98]"
+          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd) })}
+          disabled={eraStart > eraEnd}
+          className="group relative w-full py-4 rounded-xl text-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98] disabled:from-gray-700 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed"
         >
           <span className="relative z-10 flex items-center justify-center gap-2">
             Start Draft
