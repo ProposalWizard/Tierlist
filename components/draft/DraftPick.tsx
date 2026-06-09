@@ -23,9 +23,10 @@ interface SpinResult {
 interface Props {
   settings: DraftSettings;
   onComplete: (players: DraftPlayer[]) => void;
+  onBack?: () => void;
 }
 
-export default function DraftPick({ settings, onComplete }: Props) {
+export default function DraftPick({ settings, onComplete, onBack }: Props) {
   const formation = FORMATIONS.find((f) => f.name === settings.formation) ?? FORMATIONS[0];
   const [pickedPlayers, setPickedPlayers] = useState<DraftPlayer[]>([]);
   const [currentSlotIndex, setCurrentSlotIndex] = useState(0);
@@ -226,12 +227,23 @@ export default function DraftPick({ settings, onComplete }: Props) {
       {/* Header with progress */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight">
-              <span className="text-white">PL</span>{" "}
-              <span className="text-emerald-400">DRAFT</span>
-            </h1>
-            <p className="text-gray-500 text-xs">{settings.formation}</p>
+          <div className="flex items-center gap-3">
+            {onBack && pickedPlayers.length === 0 && (
+              <button
+                onClick={onBack}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition"
+                aria-label="Back to setup"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+            )}
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight">
+                <span className="text-white">PL</span>{" "}
+                <span className="text-emerald-400">DRAFT</span>
+              </h1>
+              <p className="text-gray-500 text-xs">{settings.formation}</p>
+            </div>
           </div>
           <div className="text-right">
             <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
@@ -266,9 +278,9 @@ export default function DraftPick({ settings, onComplete }: Props) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Pitch with picked players */}
-        <div className="lg:col-span-1">
-          <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden border border-emerald-800/40">
+        {/* Left: Pitch with picked players — on mobile, show below the action area */}
+        <div className="lg:col-span-1 order-2 lg:order-1">
+          <div className="relative w-full aspect-[4/3] lg:aspect-[3/4] max-h-[50vh] lg:max-h-none mx-auto rounded-xl overflow-hidden border border-emerald-800/40">
             {/* Pitch gradient background */}
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/80 via-emerald-900/40 to-emerald-950/80" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/20 via-transparent to-transparent" />
@@ -317,30 +329,48 @@ export default function DraftPick({ settings, onComplete }: Props) {
             })}
           </div>
 
-          {/* Picked list */}
-          <div className="mt-4 space-y-1">
-            {pickedPlayers.map((p, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 text-sm bg-gray-900/80 border border-gray-800/50 rounded-lg px-3 py-1.5 hover:bg-gray-800/80 transition"
-              >
-                <span
-                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(
-                    p.assignedPosition
-                  )} text-white`}
+          {/* Picked list — compact on mobile, full on desktop */}
+          {pickedPlayers.length > 0 && (
+            <div className="mt-3 hidden lg:block space-y-1">
+              {pickedPlayers.map((p, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 text-sm bg-gray-900/80 border border-gray-800/50 rounded-lg px-3 py-1.5 hover:bg-gray-800/80 transition"
                 >
-                  {p.assignedPosition}
-                </span>
-                <span className="flex-1 truncate font-medium">{p.name}</span>
-                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
-                <span className="font-extrabold text-emerald-400 text-sm">{p.overall}</span>
-              </div>
-            ))}
-          </div>
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(
+                      p.assignedPosition
+                    )} text-white`}
+                  >
+                    {p.assignedPosition}
+                  </span>
+                  <span className="flex-1 truncate font-medium">{p.name}</span>
+                  <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                  <span className="font-extrabold text-emerald-400 text-sm">{p.overall}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {pickedPlayers.length > 0 && (
+            <div className="mt-3 lg:hidden flex gap-1.5 overflow-x-auto pb-1">
+              {pickedPlayers.map((p, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-1.5 text-xs bg-gray-900/80 border border-gray-800/50 rounded-lg px-2 py-1 shrink-0"
+                >
+                  <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
+                    {p.assignedPosition}
+                  </span>
+                  <span className="font-medium">{p.name.split(" ").pop()}</span>
+                  <span className="font-extrabold text-emerald-400">{p.overall}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Right: Spin & Pick */}
-        <div className="lg:col-span-2">
+        {/* Right: Spin & Pick — on mobile, show first */}
+        <div className="lg:col-span-2 order-1 lg:order-2">
           {error && (
             <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-3 mb-4 text-sm text-red-400">
               {error}

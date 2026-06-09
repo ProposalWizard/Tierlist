@@ -50,7 +50,7 @@ export default function DraftPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       {phase === "setup" && <DraftSetup onStart={handleStartDraft} />}
       {phase === "draft" && settings && (
-        <DraftPick settings={settings} onComplete={handleDraftComplete} />
+        <DraftPick settings={settings} onComplete={handleDraftComplete} onBack={handleNewRun} />
       )}
       {phase === "result" && players.length > 0 && (
         <DraftResult players={players} onNewRun={handleNewRun} />
