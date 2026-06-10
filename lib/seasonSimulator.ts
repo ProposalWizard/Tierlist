@@ -1,3 +1,28 @@
+export interface PlayerAttributes {
+  pace: number;
+  shooting: number;
+  passing: number;
+  dribbling: number;
+  defending: number;
+  physical: number;
+  finishing: number;
+  positioning: number;
+  crossing: number;
+  vision: number;
+  longShots: number;
+  shortPassing: number;
+  longPassing: number;
+  heading: number;
+  interceptions: number;
+  standingTackle: number;
+  marking: number;
+  reactions: number;
+  sprintSpeed: number;
+  gkDiving: number;
+  gkPositioning: number;
+  gkReflexes: number;
+}
+
 export interface DraftPlayer {
   name: string;
   overall: number;
@@ -5,6 +30,7 @@ export interface DraftPlayer {
   club: string;
   clubYear: string;
   assignedPosition: string;
+  attrs?: PlayerAttributes;
 }
 
 export interface MatchResult {
@@ -24,6 +50,7 @@ export interface PlayerStats {
   assists: number;
   cleanSheets: number;
   appearances: number;
+  avgRating: number;
 }
 
 export interface LeagueTeam {
@@ -113,44 +140,185 @@ function classifyPosition(pos: string): PositionRole {
   const p = pos.toUpperCase().trim();
   if (p === 'GK') return 'GK';
   if (['CB', 'RB', 'LB', 'RWB', 'LWB', 'SW'].includes(p)) return 'DEF';
-  if (['CDM', 'CM', 'CAM', 'RM', 'LM', 'DM'].includes(p)) return 'MID';
+  if (['CDM', 'CM', 'CAM', 'RM', 'LM', 'DM', 'RAM', 'LAM'].includes(p)) return 'MID';
   return 'ATT';
 }
 
-// Scoring weight by role — how likely a player in this role is to score
-const GOAL_WEIGHTS: Record<PositionRole, number> = {
-  ATT: 10,
-  MID: 3,
-  DEF: 0.5,
-  GK: 0.02,
-};
+// --- Position fitness ---
 
-// Assist weight by role
-const ASSIST_WEIGHTS: Record<PositionRole, number> = {
-  ATT: 5,
-  MID: 8,
-  DEF: 2,
-  GK: 0.1,
-};
+function positionFitness(player: DraftPlayer): number {
+  const assigned = player.assignedPosition.toUpperCase().trim();
+  const natural = player.positions.split(',').map(p => p.trim().toUpperCase());
 
-// --- Helpers ---
+  if (natural.includes(assigned)) return 1.0;
+
+  const assignedRole = classifyPosition(assigned);
+  if (natural.some(p => classifyPosition(p) === assignedRole)) return 0.92;
+
+  const adjacent: Record<PositionRole, PositionRole[]> = {
+    ATT: ['MID'],
+    MID: ['ATT', 'DEF'],
+    DEF: ['MID'],
+    GK: [],
+  };
+  if (natural.some(p => adjacent[assignedRole]?.includes(classifyPosition(p)))) return 0.78;
+
+  return 0.6;
+}
+
+// --- Attribute helpers ---
+
+function hasAttrs(p: DraftPlayer): p is DraftPlayer & { attrs: PlayerAttributes } {
+  if (!p.attrs) return false;
+  const a = p.attrs;
+  return (a.shooting > 0 || a.passing > 0 || a.defending > 0 || a.pace > 0);
+}
+
+function playerAttackRating(p: DraftPlayer, fitness: number): number {
+  if (hasAttrs(p)) {
+    const a = p.attrs;
+    const fin = a.finishing || a.shooting;
+    const pos = a.positioning || a.shooting * 0.8;
+    return (a.shooting * 0.25 + fin * 0.20 + pos * 0.15 + a.pace * 0.15 + a.dribbling * 0.15 + a.physical * 0.10) * fitness;
+  }
+  return p.overall * fitness;
+}
+
+function playerMidfieldRating(p: DraftPlayer, fitness: number): number {
+  if (hasAttrs(p)) {
+    const a = p.attrs;
+    const sp = a.shortPassing || a.passing;
+    const vis = a.vision || a.passing * 0.8;
+    return (a.passing * 0.25 + sp * 0.15 + vis * 0.15 + a.dribbling * 0.15 + a.shooting * 0.10 + a.defending * 0.10 + a.physical * 0.10) * fitness;
+  }
+  return p.overall * fitness;
+}
+
+function playerDefenseRating(p: DraftPlayer, fitness: number): number {
+  if (hasAttrs(p)) {
+    const a = p.attrs;
+    const tackle = a.standingTackle || a.defending;
+    const mark = a.marking || a.defending * 0.9;
+    const intc = a.interceptions || a.defending * 0.85;
+    return (a.defending * 0.20 + tackle * 0.15 + mark * 0.15 + intc * 0.15 + a.physical * 0.15 + a.pace * 0.10 + a.reactions * 0.10) * fitness;
+  }
+  return p.overall * fitness;
+}
+
+function playerGkRating(p: DraftPlayer, fitness: number): number {
+  if (hasAttrs(p)) {
+    const a = p.attrs;
+    if (a.gkDiving > 0 || a.gkReflexes > 0 || a.gkPositioning > 0) {
+      return (a.gkDiving * 0.30 + a.gkReflexes * 0.30 + a.gkPositioning * 0.25 + (a.reactions || p.overall) * 0.15) * fitness;
+    }
+  }
+  return p.overall * fitness;
+}
+
+// --- Team phase ratings ---
+
+interface PhaseRatings {
+  attack: number;
+  midfield: number;
+  defense: number;
+  gk: number;
+  teamStrength: number;
+}
+
+function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
+  const byRole: Record<PositionRole, DraftPlayer[]> = { GK: [], DEF: [], MID: [], ATT: [] };
+  for (const p of players) {
+    byRole[classifyPosition(p.assignedPosition)].push(p);
+  }
+
+  const avgRating = (arr: number[]) =>
+    arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 70;
+
+  const attackRatings = byRole.ATT.map(p => playerAttackRating(p, positionFitness(p)));
+  const midAttackContrib = byRole.MID.map(p => playerAttackRating(p, positionFitness(p)) * 0.4);
+  const attack = avgRating([...attackRatings, ...midAttackContrib]);
+
+  const midRatings = byRole.MID.map(p => playerMidfieldRating(p, positionFitness(p)));
+  const midfield = avgRating(midRatings);
+
+  const defRatings = byRole.DEF.map(p => playerDefenseRating(p, positionFitness(p)));
+  const midDefContrib = byRole.MID.map(p => playerDefenseRating(p, positionFitness(p)) * 0.3);
+  const defense = avgRating([...defRatings, ...midDefContrib]);
+
+  const gkPlayers = byRole.GK;
+  const gk = gkPlayers.length > 0
+    ? avgRating(gkPlayers.map(p => playerGkRating(p, positionFitness(p))))
+    : 65;
+
+  const teamStrength = attack * 0.30 + midfield * 0.28 + defense * 0.27 + gk * 0.15;
+
+  return { attack, midfield, defense, gk, teamStrength };
+}
+
+// --- Goal scoring weights based on attributes ---
+
+function goalScoringWeight(p: DraftPlayer): number {
+  const role = classifyPosition(p.assignedPosition);
+  const fit = positionFitness(p);
+
+  if (hasAttrs(p)) {
+    const a = p.attrs;
+    const fin = a.finishing || a.shooting;
+    const pos = a.positioning || a.shooting * 0.7;
+    const head = a.heading || p.overall * 0.5;
+
+    switch (role) {
+      case 'ATT':
+        return (fin * 3 + pos * 2 + a.shooting * 1.5 + head * 0.8 + a.pace * 0.5) * fit / 80;
+      case 'MID':
+        return ((a.longShots || a.shooting * 0.7) * 1.5 + a.shooting * 1 + pos * 0.5 + head * 0.3) * fit / 250;
+      case 'DEF':
+        return (head * 1.2 + a.shooting * 0.3 + a.physical * 0.2) * fit / 600;
+      case 'GK':
+        return 0.02;
+    }
+  }
+
+  const ratingFactor = 0.5 + (p.overall / 99) * 0.5;
+  const roleWeights: Record<PositionRole, number> = { ATT: 10, MID: 3, DEF: 0.5, GK: 0.02 };
+  return roleWeights[role] * ratingFactor * fit;
+}
+
+function assistWeight(p: DraftPlayer): number {
+  const role = classifyPosition(p.assignedPosition);
+  const fit = positionFitness(p);
+
+  if (hasAttrs(p)) {
+    const a = p.attrs;
+    const vis = a.vision || a.passing * 0.8;
+    const cross = a.crossing || a.passing * 0.7;
+    const sp = a.shortPassing || a.passing;
+    const lp = a.longPassing || a.passing * 0.7;
+
+    const baseW = (vis * 2 + cross * 1.5 + sp * 1 + lp * 0.5) / 5;
+    const roleMult: Record<PositionRole, number> = { ATT: 0.7, MID: 1.3, DEF: 0.4, GK: 0.02 };
+    return baseW * roleMult[role] * fit / 10;
+  }
+
+  const ratingFactor = 0.5 + (p.overall / 99) * 0.5;
+  const roleWeights: Record<PositionRole, number> = { ATT: 5, MID: 8, DEF: 2, GK: 0.1 };
+  return roleWeights[role] * ratingFactor * fit;
+}
+
+// --- Weighted pick ---
 
 function weightedPick(
   players: DraftPlayer[],
-  weights: Record<PositionRole, number>,
+  weightFn: (p: DraftPlayer) => number,
   rng: () => number,
 ): DraftPlayer {
-  const playerWeights = players.map((p) => {
-    const role = classifyPosition(p.assignedPosition);
-    // Boost higher-rated players slightly
-    const ratingFactor = 0.5 + (p.overall / 99) * 0.5;
-    return weights[role] * ratingFactor;
-  });
+  const weights = players.map(weightFn);
+  const total = weights.reduce((a, b) => a + b, 0);
+  if (total <= 0) return players[Math.floor(rng() * players.length)];
 
-  const total = playerWeights.reduce((a, b) => a + b, 0);
   let r = rng() * total;
   for (let i = 0; i < players.length; i++) {
-    r -= playerWeights[i];
+    r -= weights[i];
     if (r <= 0) return players[i];
   }
   return players[players.length - 1];
@@ -172,26 +340,25 @@ function poisson(lambda: number, rng: () => number): number {
   return k - 1;
 }
 
-// --- Match simulation ---
+// --- Expected goals using phase ratings ---
 
-/**
- * Converts a strength difference into expected goals.
- * A team with +10 strength advantage at home might expect ~2.2 goals,
- * while the weaker team might expect ~0.8.
- *
- * Base expected goals: 1.3 per team (PL average ~1.35 per team).
- * Each point of strength difference shifts ~0.04 expected goals.
- */
-function expectedGoals(teamStrength: number, opponentStrength: number): number {
-  const diff = teamStrength - opponentStrength;
+function computeExpectedGoals(
+  attackPower: number,
+  midfieldPower: number,
+  oppDefensePower: number,
+): number {
+  const offensiveStrength = attackPower * 0.55 + midfieldPower * 0.45;
+  const diff = offensiveStrength - oppDefensePower;
   const base = 1.3;
   const xg = base + diff * 0.04;
-  return Math.max(0.15, xg);
+  return Math.max(0.15, Math.min(4.5, xg));
 }
+
+// --- Match simulation ---
 
 function simulateMatch(
   players: DraftPlayer[],
-  teamStrength: number,
+  ratings: PhaseRatings,
   opponent: { name: string; strength: number },
   isHome: boolean,
   rng: () => number,
@@ -199,11 +366,19 @@ function simulateMatch(
   const homeBonus = isHome ? HOME_ADVANTAGE : 0;
   const awayPenalty = isHome ? 0 : HOME_ADVANTAGE;
 
-  const myEffective = teamStrength + homeBonus;
-  const oppEffective = opponent.strength + awayPenalty;
+  const myAttack = ratings.attack + homeBonus * 0.6;
+  const myMidfield = ratings.midfield + homeBonus * 0.4;
+  const myDefense = ratings.defense + homeBonus * 0.3;
+  const myGk = ratings.gk;
 
-  const myXg = expectedGoals(myEffective, oppEffective);
-  const oppXg = expectedGoals(oppEffective, myEffective);
+  const oppStrength = opponent.strength + awayPenalty;
+  const oppDefPower = oppStrength;
+  const oppAtkPower = oppStrength;
+
+  const myXg = computeExpectedGoals(myAttack, myMidfield, oppDefPower);
+
+  const ourDefensivePower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
+  const oppXg = computeExpectedGoals(oppAtkPower, oppStrength * 0.95, ourDefensivePower);
 
   const goalsFor = poisson(myXg, rng);
   const goalsAgainst = poisson(oppXg, rng);
@@ -213,14 +388,13 @@ function simulateMatch(
 
   for (let i = 0; i < goalsFor; i++) {
     const minute = randomMinute(rng);
-    const scorer = weightedPick(players, GOAL_WEIGHTS, rng);
+    const scorer = weightedPick(players, goalScoringWeight, rng);
     goalScorers.push({ player: scorer.name, minute });
 
-    // 75% chance of an assist on each goal
     if (rng() < 0.75) {
-      const eligibleAssisters = players.filter((p) => p.name !== scorer.name);
-      if (eligibleAssisters.length > 0) {
-        const assister = weightedPick(eligibleAssisters, ASSIST_WEIGHTS, rng);
+      const eligible = players.filter(p => p.name !== scorer.name);
+      if (eligible.length > 0) {
+        const assister = weightedPick(eligible, assistWeight, rng);
         assistProviders.push({ player: assister.name, minute });
       }
     }
@@ -234,15 +408,7 @@ function simulateMatch(
   else if (goalsFor < goalsAgainst) result = 'L';
   else result = 'D';
 
-  return {
-    opponent: opponent.name,
-    isHome,
-    goalsFor,
-    goalsAgainst,
-    goalScorers,
-    assistProviders,
-    result,
-  };
+  return { opponent: opponent.name, isHome, goalsFor, goalsAgainst, goalScorers, assistProviders, result };
 }
 
 // --- Neutral match simulation (for the rest of the league) ---
@@ -252,11 +418,11 @@ function simulateNeutralMatch(
   away: { name: string; strength: number },
   rng: () => number,
 ): { homeGoals: number; awayGoals: number } {
-  const homeEffective = home.strength + HOME_ADVANTAGE;
-  const awayEffective = away.strength;
+  const homeEff = home.strength + HOME_ADVANTAGE;
+  const awayEff = away.strength;
 
-  const homeXg = expectedGoals(homeEffective, awayEffective);
-  const awayXg = expectedGoals(awayEffective, homeEffective);
+  const homeXg = computeExpectedGoals(homeEff, homeEff * 0.95, awayEff);
+  const awayXg = computeExpectedGoals(awayEff, awayEff * 0.95, homeEff);
 
   return {
     homeGoals: poisson(homeXg, rng),
@@ -294,7 +460,6 @@ function simulateLeague(
     };
   }
 
-  // Record player team's matches
   for (const match of playerMatches) {
     const pt = table[playerTeamName];
     pt.played++;
@@ -313,7 +478,6 @@ function simulateLeague(
     else { ot.lost++; }
   }
 
-  // Simulate matches between all other teams (home and away)
   for (let i = 0; i < opponents.length; i++) {
     for (let j = 0; j < opponents.length; j++) {
       if (i === j) continue;
@@ -340,7 +504,6 @@ function simulateLeague(
     }
   }
 
-  // Calculate GD and sort
   const sorted = Object.values(table);
   for (const t of sorted) {
     t.goalDifference = t.goalsFor - t.goalsAgainst;
@@ -363,8 +526,32 @@ function calculateProjectedFinish(
   allTeams: { name: string; strength: number }[],
 ): number {
   const sorted = [...allTeams].sort((a, b) => b.strength - a.strength);
-  const idx = sorted.findIndex((t) => t.strength <= teamStrength);
+  const idx = sorted.findIndex(t => t.strength <= teamStrength);
   return idx === -1 ? sorted.length : idx + 1;
+}
+
+// --- Match rating for a player (used for avg rating stat) ---
+
+function matchRating(
+  player: DraftPlayer,
+  match: MatchResult,
+  rng: () => number,
+): number {
+  const role = classifyPosition(player.assignedPosition);
+  let base = 6.0 + (rng() * 1.5 - 0.5);
+
+  const scored = match.goalScorers.filter(g => g.player === player.name).length;
+  const assisted = match.assistProviders.filter(a => a.player === player.name).length;
+  base += scored * 1.0 + assisted * 0.6;
+
+  if (match.goalsAgainst === 0 && (role === 'GK' || role === 'DEF')) {
+    base += 0.8;
+  }
+
+  if (match.result === 'W') base += 0.3;
+  else if (match.result === 'L') base -= 0.3;
+
+  return Math.max(4.0, Math.min(10.0, Math.round(base * 10) / 10));
 }
 
 // --- Main export ---
@@ -380,17 +567,15 @@ export function simulateSeason(
     ? otherTeams
     : DEFAULT_PL_TEAMS;
 
-  const teamStrength = Math.round(
-    players.reduce((sum, p) => sum + p.overall, 0) / players.length,
-  );
+  const ratings = computePhaseRatings(players);
 
   const playerTeamName = 'Your Team';
 
   // Simulate 38 matches (home and away vs each opponent)
   const matches: MatchResult[] = [];
   for (const opp of opponents) {
-    matches.push(simulateMatch(players, teamStrength, opp, true, rng));
-    matches.push(simulateMatch(players, teamStrength, opp, false, rng));
+    matches.push(simulateMatch(players, ratings, opp, true, rng));
+    matches.push(simulateMatch(players, ratings, opp, false, rng));
   }
 
   // Shuffle match order to feel like a real season schedule
@@ -409,21 +594,40 @@ export function simulateSeason(
       assists: 0,
       cleanSheets: 0,
       appearances: 38,
+      avgRating: 0,
     };
   }
 
-  const gk = players.find((p) => classifyPosition(p.assignedPosition) === 'GK');
+  const gk = players.find(p => classifyPosition(p.assignedPosition) === 'GK');
+  const defenders = players.filter(p => classifyPosition(p.assignedPosition) === 'DEF');
 
-  for (const match of matches) {
-    for (const gs of match.goalScorers) {
+  const playerRatings: Record<string, number[]> = {};
+  for (const p of players) playerRatings[p.name] = [];
+
+  for (const m of matches) {
+    for (const gs of m.goalScorers) {
       if (statsMap[gs.player]) statsMap[gs.player].goals++;
     }
-    for (const ap of match.assistProviders) {
+    for (const ap of m.assistProviders) {
       if (statsMap[ap.player]) statsMap[ap.player].assists++;
     }
-    if (gk && match.goalsAgainst === 0) {
-      statsMap[gk.name].cleanSheets++;
+    if (m.goalsAgainst === 0) {
+      if (gk) statsMap[gk.name].cleanSheets++;
+      for (const def of defenders) {
+        statsMap[def.name].cleanSheets++;
+      }
     }
+
+    for (const p of players) {
+      playerRatings[p.name].push(matchRating(p, m, rng));
+    }
+  }
+
+  for (const p of players) {
+    const ratings = playerRatings[p.name];
+    statsMap[p.name].avgRating = ratings.length > 0
+      ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+      : 6.0;
   }
 
   const playerStats = Object.values(statsMap).sort(
@@ -431,9 +635,9 @@ export function simulateSeason(
   );
 
   // Team record
-  const wins = matches.filter((m) => m.result === 'W').length;
-  const draws = matches.filter((m) => m.result === 'D').length;
-  const losses = matches.filter((m) => m.result === 'L').length;
+  const wins = matches.filter(m => m.result === 'W').length;
+  const draws = matches.filter(m => m.result === 'D').length;
+  const losses = matches.filter(m => m.result === 'L').length;
   const goalsFor = matches.reduce((s, m) => s + m.goalsFor, 0);
   const goalsAgainst = matches.reduce((s, m) => s + m.goalsAgainst, 0);
   const points = wins * 3 + draws;
@@ -443,21 +647,20 @@ export function simulateSeason(
   // League table
   const leagueTable = simulateLeague(
     playerTeamName,
-    teamStrength,
+    ratings.teamStrength,
     opponents,
     matches,
     rng,
   );
 
-  const actualFinish = leagueTable.findIndex((t) => t.isPlayer) + 1;
+  const actualFinish = leagueTable.findIndex(t => t.isPlayer) + 1;
 
   const allTeamsForProjection = [
-    { name: playerTeamName, strength: teamStrength },
+    { name: playerTeamName, strength: ratings.teamStrength },
     ...opponents,
   ];
-  const projectedFinish = calculateProjectedFinish(teamStrength, allTeamsForProjection);
+  const projectedFinish = calculateProjectedFinish(ratings.teamStrength, allTeamsForProjection);
 
-  // Performance assessment
   const diff = projectedFinish - actualFinish;
   let performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED';
   if (diff >= 3) performance = 'OVERPERFORMED';
@@ -479,8 +682,8 @@ export function simulateSeason(
     playerOfSeason: { name: pots.name, goals: pots.goals, assists: pots.assists },
   };
 
-  // Biggest win (largest GD in your favor, must be a win)
-  const winsOnly = matches.filter((m) => m.result === 'W');
+  // Biggest win
+  const winsOnly = matches.filter(m => m.result === 'W');
   let biggestWin = winsOnly.length > 0 ? winsOnly[0] : matches[0];
   let biggestWinGd = biggestWin.goalsFor - biggestWin.goalsAgainst;
   for (const m of winsOnly) {
@@ -491,7 +694,7 @@ export function simulateSeason(
     }
   }
 
-  // Highest-scoring game (most total goals)
+  // Highest-scoring game
   let highestScoring = matches[0];
   let highestTotal = matches[0].goalsFor + matches[0].goalsAgainst;
   for (const m of matches) {
@@ -502,8 +705,8 @@ export function simulateSeason(
     }
   }
 
-  // Worst defeat (largest GD against, must be a loss)
-  const lossesOnly = matches.filter((m) => m.result === 'L');
+  // Worst defeat
+  const lossesOnly = matches.filter(m => m.result === 'L');
   let worstDefeat = lossesOnly.length > 0 ? lossesOnly[0] : matches[0];
   let worstDefeatGd = worstDefeat.goalsAgainst - worstDefeat.goalsFor;
   for (const m of lossesOnly) {

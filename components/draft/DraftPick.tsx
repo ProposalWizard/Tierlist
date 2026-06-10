@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { FORMATIONS, getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftSettings, DraftPlayer } from "@/app/draft/page";
+import type { PlayerAttributes } from "@/lib/seasonSimulator";
 
 interface RosterPlayer {
   sofifa_id: string;
@@ -12,6 +13,28 @@ interface RosterPlayer {
   age: number;
   image_url: string | null;
   nationality: string;
+  pace: number;
+  shooting: number;
+  passing: number;
+  dribbling: number;
+  defending: number;
+  physical: number;
+  finishing: number;
+  positioning: number;
+  crossing: number;
+  vision: number;
+  longShots: number;
+  shortPassing: number;
+  longPassing: number;
+  heading: number;
+  interceptions: number;
+  standingTackle: number;
+  marking: number;
+  reactions: number;
+  sprintSpeed: number;
+  gkDiving: number;
+  gkPositioning: number;
+  gkReflexes: number;
 }
 
 interface SpinResult {
@@ -24,6 +47,52 @@ interface Props {
   settings: DraftSettings;
   onComplete: (players: DraftPlayer[]) => void;
   onBack?: () => void;
+}
+
+function classifyPos(pos: string): "GK" | "DEF" | "MID" | "ATT" {
+  const p = pos.toUpperCase().trim();
+  if (p === "GK") return "GK";
+  if (["CB", "RB", "LB", "RWB", "LWB", "SW"].includes(p)) return "DEF";
+  if (["CDM", "CM", "CAM", "RM", "LM", "DM", "RAM", "LAM"].includes(p)) return "MID";
+  return "ATT";
+}
+
+function keyStatForSlot(slotLabel: string): { label: string; pick: (p: RosterPlayer) => number }[] {
+  const role = classifyPos(slotLabel);
+  switch (role) {
+    case "GK":
+      return [
+        { label: "DIV", pick: (p) => p.gkDiving || p.overall },
+        { label: "REF", pick: (p) => p.gkReflexes || p.overall },
+        { label: "POS", pick: (p) => p.gkPositioning || p.overall },
+      ];
+    case "DEF":
+      return [
+        { label: "DEF", pick: (p) => p.defending },
+        { label: "PHY", pick: (p) => p.physical },
+        { label: "PAC", pick: (p) => p.pace },
+      ];
+    case "MID":
+      return [
+        { label: "PAS", pick: (p) => p.passing },
+        { label: "DRI", pick: (p) => p.dribbling },
+        { label: "SHO", pick: (p) => p.shooting },
+      ];
+    case "ATT":
+      return [
+        { label: "SHO", pick: (p) => p.shooting },
+        { label: "PAC", pick: (p) => p.pace },
+        { label: "DRI", pick: (p) => p.dribbling },
+      ];
+  }
+}
+
+function statColor(val: number): string {
+  if (val >= 85) return "text-emerald-400";
+  if (val >= 75) return "text-yellow-400";
+  if (val >= 60) return "text-orange-400";
+  if (val > 0) return "text-gray-500";
+  return "text-gray-700";
 }
 
 export default function DraftPick({ settings, onComplete, onBack }: Props) {
@@ -95,7 +164,6 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
 
   const generateSpinItems = useCallback((target: { club: string; year: number }): { club: string; year: number }[] => {
     const items: { club: string; year: number }[] = [];
-    // Generate 24 random items, then place target at the end
     for (let i = 0; i < 24; i++) {
       const rand = getRandomClubYear();
       if (rand) {
@@ -126,14 +194,12 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
     setSpinAnimating(false);
     setSpinDisplay(items[0]);
 
-    // Start the CSS transition after a frame
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setSpinAnimating(true);
       });
     });
 
-    // After the animation ends, show the reveal
     setTimeout(() => {
       setSpinDisplay(target);
       setPhase("reveal");
@@ -147,7 +213,6 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
     setSpinAnimating(false);
     setPhase("spin");
     setSpinning(false);
-    // Immediately trigger a new spin
     setTimeout(() => {
       handleSpin();
     }, 50);
@@ -161,7 +226,6 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
       const data = await res.json();
       if (data.roster && data.roster.length > 0) {
         setSpinResult({ club, year, roster: data.roster });
-        // Phase stays as "reveal" until user clicks "View Roster"
       } else {
         setError(`No players found for ${club} ${year}`);
         setPhase("spin");
@@ -183,6 +247,31 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
         .toUpperCase()
         .slice(0, 3);
 
+      const attrs: PlayerAttributes = {
+        pace: player.pace,
+        shooting: player.shooting,
+        passing: player.passing,
+        dribbling: player.dribbling,
+        defending: player.defending,
+        physical: player.physical,
+        finishing: player.finishing,
+        positioning: player.positioning,
+        crossing: player.crossing,
+        vision: player.vision,
+        longShots: player.longShots,
+        shortPassing: player.shortPassing,
+        longPassing: player.longPassing,
+        heading: player.heading,
+        interceptions: player.interceptions,
+        standingTackle: player.standingTackle,
+        marking: player.marking,
+        reactions: player.reactions,
+        sprintSpeed: player.sprintSpeed,
+        gkDiving: player.gkDiving,
+        gkPositioning: player.gkPositioning,
+        gkReflexes: player.gkReflexes,
+      };
+
       const drafted: DraftPlayer = {
         name: player.name,
         overall: player.overall,
@@ -193,6 +282,7 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
         sofifa_id: player.sofifa_id,
         image_url: player.image_url,
         nationality: player.nationality,
+        attrs,
       };
 
       const newPicked = [...pickedPlayers, drafted];
@@ -221,6 +311,7 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
   );
 
   const currentSlot = formation.slots[currentSlotIndex];
+  const keyStats = currentSlot ? keyStatForSlot(currentSlot.label) : [];
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -521,6 +612,17 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
                 </p>
               </div>
 
+              {/* Stat column headers */}
+              {keyStats.length > 0 && keyStats[0].pick(spinResult.roster[0] ?? {} as RosterPlayer) > 0 && (
+                <div className="flex items-center justify-end gap-0 pr-1 mb-1">
+                  {keyStats.map((ks) => (
+                    <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-600 uppercase">
+                      {ks.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
                 {[...spinResult.roster]
                   .sort((a, b) => {
@@ -541,6 +643,7 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
                   const alreadyPicked = pickedPlayers.some(
                     (p) => p.sofifa_id === player.sofifa_id
                   );
+                  const hasStats = player.pace > 0 || player.shooting > 0;
 
                   return (
                     <button
@@ -587,10 +690,18 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
                           </span>
                         ))}
                       </div>
-                      {isCompatible && !alreadyPicked && (
-                        <span className="text-[10px] font-bold text-emerald-400 tracking-wider uppercase shrink-0">
-                          FIT
-                        </span>
+                      {/* Key stats for this position */}
+                      {hasStats && (
+                        <div className="flex gap-0 shrink-0">
+                          {keyStats.map((ks) => {
+                            const val = ks.pick(player);
+                            return (
+                              <span key={ks.label} className={`w-9 text-center text-[11px] font-bold tabular-nums ${statColor(val)}`}>
+                                {val > 0 ? val : "-"}
+                              </span>
+                            );
+                          })}
+                        </div>
                       )}
                     </button>
                   );

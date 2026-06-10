@@ -292,6 +292,7 @@ export default function DraftResult({ players, onNewRun }: Props) {
             <span className="w-8 text-center">G</span>
             <span className="w-8 text-center">A</span>
             <span className="w-8 text-center">CS</span>
+            <span className="w-9 text-center">AVG</span>
           </div>
           <div className="space-y-0.5">
             {season.playerStats.map((ps, i) => (
@@ -308,6 +309,13 @@ export default function DraftResult({ players, onNewRun }: Props) {
                 </span>
                 <span className={`w-8 text-center font-bold ${ps.cleanSheets > 0 ? "text-emerald-400" : "text-gray-700"}`}>
                   {ps.cleanSheets > 0 ? ps.cleanSheets : "-"}
+                </span>
+                <span className={`w-9 text-center text-xs font-bold ${
+                  ps.avgRating >= 7.5 ? "text-emerald-400" :
+                  ps.avgRating >= 7.0 ? "text-yellow-400" :
+                  ps.avgRating >= 6.5 ? "text-orange-400" : "text-gray-500"
+                }`}>
+                  {ps.avgRating.toFixed(1)}
                 </span>
               </div>
             ))}

@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import DraftSetup from "@/components/draft/DraftSetup";
 import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
+import type { PlayerAttributes } from "@/lib/seasonSimulator";
 
 export interface DraftSettings {
   formation: string;
@@ -20,6 +21,7 @@ export interface DraftPlayer {
   sofifa_id: string;
   image_url: string | null;
   nationality: string;
+  attrs?: PlayerAttributes;
 }
 
 type GamePhase = "setup" | "draft" | "result";
