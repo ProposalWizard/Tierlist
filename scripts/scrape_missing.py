@@ -1,10 +1,12 @@
 """
-Scrape Premier League players from SoFIFA (all editions 07-26).
+Scrape ALL SoFIFA players across every FIFA edition (07-26).
 
-The PL Draft game only uses Premier League clubs/players, so by default this
-filters to the Premier League only (~500-700 players per edition, ~10 pages)
-instead of scraping all ~19,000 players (~300 pages). That's roughly 30x
-faster and triggers far fewer captchas.
+Captures, for every player in every edition:
+  - identity: sofifa_id, name, positions, nationality, age, overall, potential
+  - club + league (the columns that were silently missing before)
+  - EVERY stat column SoFIFA exposes (pulled dynamically from the page so
+    nothing is left out)
+  - face image URL at high resolution, specific to that FIFA edition
 
 Run from your Windows desktop:
   pip install playwright beautifulsoup4 playwright-stealth
@@ -14,9 +16,10 @@ Single tab, Next button navigation. Stealth + persistent cookies
 reduce captchas. Solve Cloudflare once if shown — cookie persists.
 
 Flags:
-  --force         Re-scrape all editions, even complete ones
-  --year=YYYY     Scrape only that edition
-  --all-leagues   Scrape every league (old behavior, ~300 pages/edition)
+  --force            Re-scrape all editions, even complete ones
+  --year=YYYY        Scrape only that edition
+  --pl-only          Scrape only the Premier League (fast, ~10 pages/edition)
+  --download-faces   Also download face images to sofifa_data/faces/
 """
 
 import asyncio
@@ -49,6 +52,8 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 PROFILE_DIR = OUTPUT_DIR / ".browser_profile"
 PROFILE_DIR.mkdir(exist_ok=True)
 
+FACES_DIR = OUTPUT_DIR / "faces"
+
 ALL_YEARS = list(range(2026, 2006, -1))
 
 VERSION_CODES = {
@@ -59,13 +64,15 @@ VERSION_CODES = {
     2010: "100001", 2009: "090001", 2008: "080001", 2007: "070001",
 }
 
-# Premier League league ID on SoFIFA (the "Premier League (England)" league).
+# Premier League league ID on SoFIFA (only used with --pl-only).
 PL_LEAGUE_ID = "13"
 
-# Column IDs for the showCol[] URL parameter.
-# "tm" = Team/Club, "lg" = League — these were missing before, causing
-# club and league to be None for all scraped players.
-COLUMNS = [
+# Seed column IDs for the showCol[] URL parameter. This is expanded at runtime
+# with every column SoFIFA actually offers (see discover_columns), so the seed
+# list just guarantees the important ones are present from the first request.
+# "tm" = Team/Club, "lg" = League — these were missing before, which is why
+# club and league came back None for all players.
+SEED_COLUMNS = [
     "pi", "ae", "oa", "pt", "tm", "lg",
     "pac", "sho", "pas", "dri", "def", "phy",
     "sm", "ir", "wf", "aw", "dw", "a/w", "d/w", "bs", "tp",
@@ -78,12 +85,20 @@ COLUMNS = [
     "tt", "vl", "rl",
 ]
 
+# Expanded at runtime to the full set of columns SoFIFA offers.
+ACTIVE_COLUMNS = list(SEED_COLUMNS)
+
+# Column IDs that map to the club / league fields. These get extended at
+# runtime by matching the dropdown's display names (so we adapt even if SoFIFA
+# renames the column ID).
+CLUB_COL_IDS = {"tm", "team", "club"}
+LEAGUE_COL_IDS = {"lg", "league"}
+
 BASE_URL = "https://sofifa.com/players"
 
 
-def build_url(year: int, col_ids: list[str] | None = None,
-              league_id: str | None = PL_LEAGUE_ID) -> str:
-    cols = col_ids or COLUMNS
+def build_url(year: int, league_id: str | None) -> str:
+    cols = ACTIVE_COLUMNS
     vc = VERSION_CODES.get(year, "")
     col_str = ",".join(cols)
     show_col = "".join(f"&showCol%5B%5D={c}" for c in cols)
@@ -91,25 +106,40 @@ def build_url(year: int, col_ids: list[str] | None = None,
     return f"{BASE_URL}?type=all{lg}&r={vc}&set=true&col={col_str}{show_col}"
 
 
+def upscale_face_url(url: str | None) -> str | None:
+    """SoFIFA face URLs end in _NN.png (size). Bump to a larger version."""
+    if not url:
+        return url
+    return re.sub(r"_(\d+)\.png", "_180.png", url)
+
+
 # ── Column discovery ─────────────────────────────────────────────────────────
 
 
 async def discover_columns(page) -> dict[str, str]:
-    """Read showCol dropdown from the page. Returns {col_id: display_name}."""
+    """Read the showCol dropdown. Returns {col_id: display_name} and updates
+    ACTIVE_COLUMNS / CLUB_COL_IDS / LEAGUE_COL_IDS in place."""
     options = await page.query_selector_all('select[name="showCol[]"] option')
-    cols = {}
+    cols: dict[str, str] = {}
     for opt in options:
         value = await opt.get_attribute("value")
         text = (await opt.inner_text()).strip()
-        if value and text:
-            cols[value] = text
+        if not value or not text:
+            continue
+        cols[value] = text
+
+        # Add to the active column set so every column gets rendered + scraped
+        if value not in ACTIVE_COLUMNS:
+            ACTIVE_COLUMNS.append(value)
+
+        # Auto-classify club / league columns by their display name
+        lower = text.lower()
+        if "team" in lower or "club" in lower:
+            CLUB_COL_IDS.add(value)
+        if "league" in lower:
+            LEAGUE_COL_IDS.add(value)
+
     return cols
-
-
-# Column IDs that map to the "club" field
-CLUB_COL_IDS = {"tm", "team", "club"}
-# Column IDs that map to the "league" field
-LEAGUE_COL_IDS = {"lg", "league"}
 
 
 # ── HTML parsing ─────────────────────────────────────────────────────────────
@@ -130,8 +160,8 @@ def _build_header_map(table) -> list[str]:
 
 
 def _extract_pi_cell(td, player: dict):
-    """Extract positions, nationality from player info cell.
-    Also tries to find club/league links as a fallback."""
+    """Positions + nationality from the player info cell, plus a club/league
+    link fallback."""
     pos_spans = td.select("span.pos")
     if not pos_spans:
         pos_spans = td.select("span[class*='pos']")
@@ -144,7 +174,6 @@ def _extract_pi_cell(td, player: dict):
     if flag:
         player["nationality"] = flag.get("title", "")
 
-    # Try multiple selectors for club (fallback — main extraction is from tm column)
     if not player.get("club"):
         club_link = (
             td.select_one('a[href*="/team/"]') or
@@ -154,7 +183,6 @@ def _extract_pi_cell(td, player: dict):
         if club_link:
             player["club"] = club_link.get_text(strip=True)
 
-    # Try multiple selectors for league (fallback)
     if not player.get("league"):
         league_link = (
             td.select_one('a[href*="/league/"]') or
@@ -166,7 +194,6 @@ def _extract_pi_cell(td, player: dict):
 
 
 def _cell_text(td) -> str:
-    """Get text from a cell, preferring link text if present."""
     link = td.select_one("a")
     if link:
         return link.get_text(strip=True)
@@ -224,7 +251,6 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
         if not name_link:
             continue
 
-        # Diagnostic dump of first row
         if dump_first and row_idx == 0:
             tds = row.select("td")
             print("\n  ─── HTML DIAGNOSTIC: First player row ───")
@@ -257,7 +283,8 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
         if not img:
             img = row.select_one("img[src*='sofifa']")
         if img:
-            player["image_url"] = img.get("data-src") or img.get("src", "")
+            raw = img.get("data-src") or img.get("src", "")
+            player["image_url"] = upscale_face_url(raw)
 
         tds = row.select("td")
         for idx, td in enumerate(tds):
@@ -274,12 +301,12 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
             if col_id:
                 _extract_td_value(col_id, td, player)
 
-        # Fallback: scan ALL cells for team/league links if still missing
+        # Fallback: scan all cells for team/league links if still missing
         if not player.get("club"):
             for td in tds:
                 for a in td.select("a"):
-                    href_val = a.get("href", "")
-                    if "/team/" in href_val or "/club/" in href_val:
+                    h = a.get("href", "")
+                    if "/team/" in h or "/club/" in h:
                         player["club"] = a.get_text(strip=True)
                         break
                 if player.get("club"):
@@ -288,8 +315,8 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
         if not player.get("league"):
             for td in tds:
                 for a in td.select("a"):
-                    href_val = a.get("href", "")
-                    if "/league/" in href_val or "lg=" in href_val:
+                    h = a.get("href", "")
+                    if "/league/" in h or "lg=" in h:
                         player["league"] = a.get_text(strip=True)
                         break
                 if player.get("league"):
@@ -334,21 +361,43 @@ async def wait_for_players(page, timeout: int = 180) -> bool:
     return False
 
 
+# ── Face downloading (optional) ──────────────────────────────────────────────
+
+
+async def download_face(context, url: str, year: int, sofifa_id: str) -> bool:
+    """Download one face image to faces/<year>/<sofifa_id>.png."""
+    if not url:
+        return False
+    dest_dir = FACES_DIR / str(year)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / f"{sofifa_id}.png"
+    if dest.exists():
+        return True
+    try:
+        resp = await context.request.get(url)
+        if resp.ok:
+            dest.write_bytes(await resp.body())
+            return True
+    except Exception:
+        pass
+    return False
+
+
 # ── Scraping ─────────────────────────────────────────────────────────────────
 
 
-async def scrape_edition(page, year: int, league_id: str | None,
-                         is_first: bool = False) -> list[dict]:
+async def scrape_edition(page, context, year: int, league_id: str | None,
+                         is_first: bool, download_faces: bool) -> list[dict]:
     label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
 
-    url = build_url(year, league_id=league_id)
-    await page.goto(url, wait_until="commit")
+    await page.goto(build_url(year, league_id), wait_until="commit")
 
     if not await wait_for_players(page):
         print(f"  Could not load {label}, skipping...")
         return []
 
-    # Discover available columns on first edition
+    # On the first edition, discover the full column list and reload so every
+    # column is rendered into the table.
     if is_first:
         disc = await discover_columns(page)
         if disc:
@@ -359,20 +408,14 @@ async def scrape_edition(page, year: int, league_id: str | None,
                     marker = " ← CLUB"
                 elif cid in LEAGUE_COL_IDS:
                     marker = " ← LEAGUE"
-                elif cid not in COLUMNS:
-                    marker = " (not in our COLUMNS list)"
                 print(f"    {cid:6s} = {cname}{marker}")
-
-            found_club = any(cid in CLUB_COL_IDS for cid in disc)
-            found_league = any(cid in LEAGUE_COL_IDS for cid in disc)
-            if not found_club:
-                print("\n  ⚠ No known club column ID found in dropdown!")
-                print("    Look for a column that means 'Team' or 'Club' above.")
-            if not found_league:
-                print("\n  ⚠ No known league column ID found in dropdown!")
-                print("    Look for a column that means 'League' above.")
+            print(f"\n  Scraping {len(ACTIVE_COLUMNS)} columns total.")
+            # Reload with the full column set
+            print("  Reloading with full column set...")
+            await page.goto(build_url(year, league_id), wait_until="commit")
+            await wait_for_players(page)
         else:
-            print("  Could not discover columns from dropdown.")
+            print("  Could not discover columns — using seed list.")
 
     all_players = []
     page_num = 1
@@ -387,22 +430,24 @@ async def scrape_edition(page, year: int, league_id: str | None,
 
         all_players.extend(players)
 
+        if download_faces:
+            for p in players:
+                await download_face(context, p.get("image_url"), year, p.get("sofifa_id"))
+
         if page_num == 1:
             first = players[0]
             attr_keys = sorted(k for k in first if k.startswith("attr_"))
             clubs_found = sum(1 for p in players if p.get("club"))
             leagues_found = sum(1 for p in players if p.get("league"))
+            faces_found = sum(1 for p in players if p.get("image_url"))
             print(f"  Page 1: {len(players)} players")
             print(f"  >>> {first.get('name')} | club={first.get('club')!r} | league={first.get('league')!r}")
-            print(f"  >>> {len(attr_keys)} attrs: {attr_keys[:8]}...")
-            print(f"  >>> Club data: {clubs_found}/{len(players)} | League data: {leagues_found}/{len(players)}")
-            if league_id:
-                leagues = {p.get("league") for p in players if p.get("league")}
-                print(f"  >>> League filter active — leagues seen: {leagues}")
+            print(f"  >>> {len(attr_keys)} attrs: {attr_keys[:10]}...")
+            print(f"  >>> Club: {clubs_found}/{len(players)} | League: {leagues_found}/{len(players)} | Faces: {faces_found}/{len(players)}")
+            print(f"  >>> Face URL: {first.get('image_url')}")
             if clubs_found == 0:
                 print(f"  ⚠ WARNING: No club data found on page 1!")
-                print(f"    Check the DIAGNOSTIC output above to find the right column.")
-                print(f"    The club column may use a different ID than 'tm'.")
+                print(f"    Check the DIAGNOSTIC output above and paste it to fix the column.")
             if len(attr_keys) < 5:
                 print(f"  ⚠ WARNING: Very few attributes found!")
         elif page_num % 10 == 0:
@@ -437,7 +482,8 @@ async def scrape_edition(page, year: int, league_id: str | None,
     if all_players:
         clubs = sum(1 for p in all_players if p.get("club"))
         leagues = sum(1 for p in all_players if p.get("league"))
-        print(f"  CLUBS: {clubs}/{len(all_players)} | LEAGUES: {leagues}/{len(all_players)}")
+        faces = sum(1 for p in all_players if p.get("image_url"))
+        print(f"  CLUBS: {clubs}/{len(all_players)} | LEAGUES: {leagues}/{len(all_players)} | FACES: {faces}/{len(all_players)}")
     return all_players
 
 
@@ -450,18 +496,24 @@ def min_players(league_id: str | None) -> int:
 
 
 def file_is_complete(filepath: Path, league_id: str | None) -> bool:
+    """Complete = enough players, real attributes, club data, AND face URLs.
+    Anything missing forces a re-scrape so we never end up half-done again."""
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
         if not isinstance(data, list) or len(data) < min_players(league_id):
             return False
-        first = data[0]
-        attr_keys = [k for k in first.keys() if k.startswith("attr_")]
-        if len(attr_keys) < 5:
+        sample = data[:100]
+        # Attributes present
+        if not any(
+            len([k for k in p.keys() if k.startswith("attr_")]) >= 5 for p in sample
+        ):
             return False
-        # Verify club data exists (check first 100 players)
-        clubs_present = sum(1 for p in data[:100] if p.get("club"))
-        if clubs_present < 10:
+        # Club data present
+        if sum(1 for p in sample if p.get("club")) < 10:
+            return False
+        # Face URLs present
+        if sum(1 for p in sample if p.get("image_url")) < 10:
             return False
         return True
     except Exception:
@@ -473,10 +525,10 @@ def file_is_complete(filepath: Path, league_id: str | None) -> bool:
 
 async def main():
     force = "--force" in sys.argv
-    all_leagues = "--all-leagues" in sys.argv
-    league_id = None if all_leagues else PL_LEAGUE_ID
+    pl_only = "--pl-only" in sys.argv
+    download_faces = "--download-faces" in sys.argv
+    league_id = PL_LEAGUE_ID if pl_only else None
 
-    # Allow --year=YYYY to scrape a single edition
     single_year = None
     for arg in sys.argv[1:]:
         if arg.startswith("--year="):
@@ -484,10 +536,10 @@ async def main():
 
     years = [single_year] if single_year else ALL_YEARS
 
-    mode = "ALL LEAGUES" if all_leagues else f"PREMIER LEAGUE ONLY (lg={PL_LEAGUE_ID})"
+    mode = f"PREMIER LEAGUE ONLY (lg={PL_LEAGUE_ID})" if pl_only else "ALL LEAGUES & CLUBS"
     print(f"Mode: {mode}")
-    if not all_leagues:
-        print("(Use --all-leagues to scrape every league — far slower.)")
+    if download_faces:
+        print(f"Downloading face images to: {FACES_DIR}")
     print()
 
     already_done = []
@@ -495,21 +547,19 @@ async def main():
     still_needed = []
     for year in years:
         filepath = OUTPUT_DIR / f"fifa_{year}.json"
-        if filepath.exists():
-            size = filepath.stat().st_size
-            if size > 1000:
-                if force or not file_is_complete(filepath, league_id):
-                    incomplete.append(year)
-                else:
-                    already_done.append(year)
-                continue
+        if filepath.exists() and filepath.stat().st_size > 1000:
+            if force or not file_is_complete(filepath, league_id):
+                incomplete.append(year)
+            else:
+                already_done.append(year)
+            continue
         still_needed.append(year)
 
     if incomplete:
-        print(f"Incomplete (missing club data or wrong size, will re-scrape): {', '.join(str(y) for y in incomplete)}")
+        print(f"Incomplete (missing club/face/attrs or wrong size, will re-scrape): {', '.join(str(y) for y in incomplete)}")
         still_needed = incomplete + still_needed
     if already_done:
-        print(f"Complete (right size, attrs, club data): {', '.join(str(y) for y in already_done)}")
+        print(f"Complete (players + attrs + club + league + faces): {', '.join(str(y) for y in already_done)}")
     if not still_needed:
         print("All editions complete!")
         return
@@ -545,7 +595,10 @@ async def main():
                 print(f"  Pausing {delay:.1f}s...")
                 await asyncio.sleep(delay)
 
-            players = await scrape_edition(page, year, league_id, is_first=(idx == 0))
+            players = await scrape_edition(
+                page, context, year, league_id,
+                is_first=(idx == 0), download_faces=download_faces,
+            )
 
             if players:
                 filepath = OUTPUT_DIR / f"fifa_{year}.json"
