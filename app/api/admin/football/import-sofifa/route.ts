@@ -40,10 +40,25 @@ export async function POST(req: NextRequest) {
 
   const service = createServiceClient();
   let saved = 0;
+  let skipped = 0;
+  let failed = 0;
   const chunkSize = 200;
 
-  for (let i = 0; i < players.length; i += chunkSize) {
-    const chunk = players.slice(i, i + chunkSize);
+  // Filter out invalid players before upserting
+  const validPlayers = players.filter((p) => {
+    if (!p.sofifa_id || String(p.sofifa_id).trim() === "") {
+      skipped++;
+      return false;
+    }
+    if (!p.name || String(p.name).trim() === "") {
+      skipped++;
+      return false;
+    }
+    return true;
+  });
+
+  for (let i = 0; i < validPlayers.length; i += chunkSize) {
+    const chunk = validPlayers.slice(i, i + chunkSize);
     const rows = chunk.map((p) => ({
       sofifa_id: p.sofifa_id,
       fifa_year: year,
@@ -64,8 +79,35 @@ export async function POST(req: NextRequest) {
       .from("sofifa_players")
       .upsert(rows, { onConflict: "sofifa_id,fifa_year" });
 
-    if (!error) saved += chunk.length;
+    if (!error) {
+      saved += chunk.length;
+    } else {
+      // Chunk failed — fall back to inserting one by one
+      console.error(
+        `[import-sofifa] Chunk upsert failed (rows ${i}–${i + chunk.length - 1}): ${error.message}`
+      );
+      for (const row of rows) {
+        const { error: rowError } = await service
+          .from("sofifa_players")
+          .upsert([row], { onConflict: "sofifa_id,fifa_year" });
+
+        if (!rowError) {
+          saved++;
+        } else {
+          failed++;
+          console.error(
+            `[import-sofifa] Row failed (sofifa_id=${row.sofifa_id}, name=${row.name}): ${rowError.message}`
+          );
+        }
+      }
+    }
   }
 
-  return NextResponse.json({ saved, total: players.length });
+  return NextResponse.json({
+    saved,
+    total: players.length,
+    skipped,
+    failed,
+    validCount: validPlayers.length,
+  });
 }

@@ -75,28 +75,35 @@ export default function ScrapeSofifaPage() {
   async function handleFileImport() {
     const file = fileRef.current?.files?.[0];
     if (!file) return;
-    setStatus(`Reading ${file.name}...`);
+    setStatus(`Reading ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)...`);
 
-    const text = await file.text();
     let players: Record<string, unknown>[];
 
-    if (file.name.endsWith(".json")) {
-      players = JSON.parse(text);
-    } else {
-      const lines = text.split("\n").filter((l) => l.trim());
-      if (lines.length < 2) {
-        setStatus("CSV file appears empty");
-        return;
-      }
-      const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
-      players = lines.slice(1).map((line) => {
-        const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
-        const obj: Record<string, string> = {};
-        headers.forEach((h, i) => {
-          obj[h] = vals[i] ?? "";
+    try {
+      const text = await file.text();
+      setStatus(`Parsing ${file.name}...`);
+
+      if (file.name.endsWith(".json")) {
+        players = JSON.parse(text);
+      } else {
+        const lines = text.split("\n").filter((l) => l.trim());
+        if (lines.length < 2) {
+          setStatus("CSV file appears empty");
+          return;
+        }
+        const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+        players = lines.slice(1).map((line) => {
+          const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+          const obj: Record<string, string> = {};
+          headers.forEach((h, i) => {
+            obj[h] = vals[i] ?? "";
+          });
+          return obj;
         });
-        return obj;
-      });
+      }
+    } catch (e) {
+      setStatus(`Failed to parse file: ${(e as Error).message}`);
+      return;
     }
 
     const yy = String(importYear % 100).padStart(2, "0");
@@ -121,22 +128,39 @@ export default function ScrapeSofifaPage() {
     setStatus(`Importing ${mapped.length} players for ${edition}...`);
 
     const BATCH = 500;
-    let total = 0;
+    let totalSaved = 0;
+    let totalFailed = 0;
+    let totalSkipped = 0;
     for (let i = 0; i < mapped.length; i += BATCH) {
       const batch = mapped.slice(i, i + BATCH);
-      const res = await fetch("/api/admin/football/import-sofifa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ players: batch, year: importYear, edition }),
-      });
-      const data = await res.json();
-      total += data.saved ?? 0;
+      try {
+        const res = await fetch("/api/admin/football/import-sofifa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ players: batch, year: importYear, edition }),
+        });
+        const data = await res.json();
+        totalSaved += data.saved ?? 0;
+        totalFailed += data.failed ?? 0;
+        totalSkipped += data.skipped ?? 0;
+      } catch (e) {
+        totalFailed += batch.length;
+        console.error(`Batch ${i}–${i + batch.length} request failed:`, e);
+      }
+      const progress = Math.min(i + BATCH, mapped.length);
       setStatus(
-        `Imported ${total}/${mapped.length} players for ${edition}...`
+        `Progress: ${progress.toLocaleString()}/${mapped.length.toLocaleString()} sent | ` +
+        `${totalSaved.toLocaleString()} saved` +
+        (totalFailed > 0 ? ` | ${totalFailed.toLocaleString()} failed` : "") +
+        (totalSkipped > 0 ? ` | ${totalSkipped.toLocaleString()} skipped` : "")
       );
     }
 
-    setStatus(`Done! Imported ${total} players for ${edition}.`);
+    setStatus(
+      `Done! ${totalSaved.toLocaleString()} saved out of ${mapped.length.toLocaleString()} players for ${edition}` +
+      (totalFailed > 0 ? ` (${totalFailed.toLocaleString()} failed)` : "") +
+      (totalSkipped > 0 ? ` (${totalSkipped.toLocaleString()} skipped — no name/id)` : "")
+    );
   }
 
   async function loadStats() {

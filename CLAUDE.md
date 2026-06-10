@@ -270,6 +270,39 @@ This tierlist tool is planned to become part of a **larger football games platfo
 
 ---
 
+## PL Draft Game (`/draft`)
+
+A Premier League draft game inspired by 38-0/82-0.com. Player picks a formation, spins for a random PL club + FIFA edition (07–26), picks one player from that club's FIFA roster for the current slot, repeats until an XI is built, then a 38-match season is simulated.
+
+### Files
+- `app/draft/page.tsx` — phase state machine (setup → draft → result) + localStorage progress persistence (key `pl-draft-progress`, Resume/Discard banner on setup)
+- `app/draft/layout.tsx` — metadata
+- `components/draft/DraftSetup.tsx` — formation picker (7 formations), era range selector
+- `components/draft/DraftPick.tsx` — slot-machine spin animation, roster picker (compatible positions sorted first, position-relevant key stats shown), re-spin, back button
+- `components/draft/DraftResult.tsx` — season results: league table, form guide, match results, awards, squad stats, share-as-image (html2canvas + Twitter intent)
+- `components/draft/formations.ts` — formation definitions with slot coordinates + compatible positions
+- `lib/seasonSimulator.ts` — deterministic season sim (seeded mulberry32 PRNG, Poisson goals)
+
+### Season simulation (attribute-based)
+- Team strength = separate **attack/midfield/defense/GK phase ratings** computed from FIFA attributes (`attrs` on `DraftPlayer`), not a flat OVR average
+- Goal scorers weighted by finishing/positioning/shooting; assists by vision/crossing/passing
+- **Position fitness**: natural position 100%, same role 92%, adjacent role 78%, else 60%
+- Defenders + GK earn clean sheets; per-match player ratings (4.0–10.0) → season average
+- Falls back to OVR-only when attributes are missing (e.g. data not yet imported)
+
+### Data pipeline (SoFIFA)
+- `sofifa_players` table — all FIFA editions 07–26, one row per player per edition, detailed stats in `attributes` JSONB (keys like `attr_sho`, `attr_pac`, `attr_fi`...)
+- SoFIFA blocks server-side scraping (Cloudflare). Scraping is done locally via `scripts/scrape_missing.py` (Playwright, visible browser, manual captcha solve, Next-button pagination within an edition). Output JSON files are imported at `/admin/football/scrape` (admin page → `POST /api/admin/football/import-sofifa`)
+- `GET /api/draft/clubs` — distinct PL club/season pairs. Tries `get_pl_club_seasons()` RPC, falls back to paginated query. League match is **anchored** (`Premier League%`, `English Premier League%`, `Barclays Premier League%`) to avoid matching Scottish/Russian Premier Leagues
+- `GET /api/draft/roster?club=X&year=Y` — club roster with 22 attributes extracted from JSONB
+
+### Data status (June 2026)
+- Scraped to JSON (user's machine, `OneDrive\Desktop\sofifa_data\`): FC 26, FC 25, FC 24, FIFA 23, FIFA 22
+- Still scraping: FIFA 21 down to FIFA 07
+- DB: FC 26 partially imported (~12.6k of 26.8k — re-import needed after import-route fix)
+
+---
+
 ## Authentication
 
 - **Google OAuth** via Supabase Auth
@@ -364,6 +397,8 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 | Migration File | Status | What It Does |
 |----------------|--------|-------------|
 | `tierlist_tiers.sql` | **RUN** | Adds `tiers` JSONB column to `tierlists` table. Migration was applied April 2026. Custom tiers for regular tierlists now persist to DB. |
+| `sofifa_data.sql` | **RUN** | Creates `sofifa_players` table (sofifa_id, fifa_year, name, positions, club, league, overall, potential, age, image_url, attributes JSONB). Unique on (sofifa_id, fifa_year). |
+| `draft_club_seasons.sql` | **PENDING** | Adds `get_pl_club_seasons()` SQL function — fast DISTINCT club/season lookup for the PL Draft clubs API. The API works without it (paginated fallback) but is slower. Run in Supabase SQL Editor. |
 
 ### Critical Gotchas
 
@@ -389,7 +424,7 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 - [ ] **Image deletion from Storage** — When tierlists are deleted, orphaned images remain in Supabase Storage (admin delete handler does attempt cleanup, but some orphans may remain)
 - [ ] **Storage organization** — All images are flat in the bucket root with UUID names; could be organized into per-tierlist folders for clarity (would require migrating existing URLs)
 - [ ] **Rate limiting** — No rate limiting on API routes currently
-- [ ] **Error boundaries** — No React error boundaries
+- [x] ~~**Error boundaries**~~ — Done (June 2026): `app/error.tsx` + `app/global-error.tsx`
 - [ ] **Loading states** — Some pages could use skeleton loaders
 - [ ] **Tierlist editing** — Can only create new, cannot edit existing tierlists after publishing
 - [ ] **Sort/filter on homepage** — Users can only browse by category, no sort controls
@@ -399,6 +434,16 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 ---
 
 ## Recent Session Changes
+
+### Session: ~June 2026
+
+1. **PL Draft game built** — Full game at `/draft` (see "PL Draft Game" section above). Linked from `GameSidebar`.
+2. **SoFIFA scraping pipeline** — `scripts/scrape_missing.py` for local Playwright scraping of FIFA 07–21; import via `/admin/football/scrape`. Scraper detection now counts player links (≥10) instead of relying on a `table.table` selector that no longer matches.
+3. **Attribute-based simulation** — `lib/seasonSimulator.ts` rewritten to use real FIFA attributes for phase ratings, scorer/assister weighting, position fitness, and per-match player ratings. Roster API extracts 22 attributes from JSONB.
+4. **Draft progress persistence** — picks save to localStorage after each pick; Resume/Discard banner on setup screen.
+5. **Error boundaries added** — `app/error.tsx`, `app/global-error.tsx`.
+6. **PL league filter fix** — clubs API patterns anchored so Scottish/Russian "Premier League" clubs are excluded (would have appeared once FIFA 07–13 data imported). New optional `draft_club_seasons.sql` migration adds a fast RPC.
+7. **Import route hardening** — row-by-row fallback when chunk upserts fail; FC 26 needs re-import (earlier bug saved only ~half).
 
 ### Session: 25 March 2026
 
