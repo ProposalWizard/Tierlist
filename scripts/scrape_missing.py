@@ -48,31 +48,35 @@ def build_url(year: int, offset: int = 0) -> str:
     return url
 
 
-def wait_for_table(page, timeout_ms=180000):
-    """Wait for the actual player data table to appear. Gives 3 minutes for captcha."""
-    print("  Waiting for player table to load (solve captcha if shown)...")
+def count_player_links(page) -> int:
+    try:
+        return len(page.query_selector_all('a[href*="/player/"]'))
+    except Exception:
+        return 0
+
+
+def wait_for_players(page, timeout_ms=180000):
+    """Wait until the page shows a real roster (10+ player links).
+    Gives up to 3 minutes for the user to solve the captcha."""
+    print("  Waiting for players page (solve captcha if shown)...")
     deadline = time.time() + (timeout_ms / 1000)
+    last_count = -1
 
     while time.time() < deadline:
-        try:
-            # Wait for the table with player rows to appear
-            page.wait_for_selector('table.table tbody tr', timeout=5000)
-            # Double-check there are actual player links inside the table
-            player_links = page.query_selector_all('table.table tbody tr a[href*="/player/"]')
-            if player_links and len(player_links) > 0:
-                # Let the page fully settle after captcha
-                time.sleep(3)
-                # Check again after settling — make sure we didn't get redirected
-                player_links2 = page.query_selector_all('table.table tbody tr a[href*="/player/"]')
-                if player_links2 and len(player_links2) > 0:
-                    print(f"  Table loaded with {len(player_links2)} player rows.")
-                    return True
-                else:
-                    print("  Table disappeared after settling, waiting...")
-        except PlaywrightTimeout:
-            pass
-        except Exception as e:
-            print(f"  Waiting... ({e})")
+        count = count_player_links(page)
+        if count != last_count:
+            print(f"  ...seeing {count} player links on page")
+            last_count = count
+
+        if count >= 10:
+            # Real roster found — let the page settle, then confirm it's still there
+            time.sleep(3)
+            count2 = count_player_links(page)
+            if count2 >= 10:
+                print(f"  Players page ready ({count2} player links).")
+                return True
+            print("  Page changed after settling (probably captcha), waiting...")
+            last_count = -1
 
         time.sleep(2)
 
@@ -85,11 +89,20 @@ def parse_page(page) -> list[dict]:
 
     html = page.content()
     soup = BeautifulSoup(html, "html.parser")
+
+    # Find the table containing player rows — don't rely on a specific class
     table = soup.select_one("table.table")
+    if not table:
+        for t in soup.select("table"):
+            if t.select_one('a[href*="/player/"]'):
+                table = t
+                break
     if not table:
         return []
 
     rows = table.select("tbody tr")
+    if not rows:
+        rows = table.select("tr")
     if not rows:
         return []
 
@@ -167,7 +180,7 @@ def scrape_edition(page, year: int) -> list[dict]:
     url = build_url(year)
     page.goto(url, wait_until="commit")
 
-    if not wait_for_table(page, timeout_ms=180000):
+    if not wait_for_players(page, timeout_ms=180000):
         print(f"  Could not load {'FC' if year >= 2024 else 'FIFA'} {str(year % 100).zfill(2)}, skipping...")
         return []
 
@@ -178,7 +191,7 @@ def scrape_edition(page, year: int) -> list[dict]:
         players_on_page = parse_page(page)
 
         if not players_on_page:
-            print(f"  Page {page_num}: no players found, stopping.")
+            print(f"  Page {page_num}: no players parsed, stopping.")
             break
 
         all_players.extend(players_on_page)
@@ -205,8 +218,7 @@ def scrape_edition(page, year: int) -> list[dict]:
                 break
 
             next_btn.click()
-            # Wait for the table to reload with new data
-            page.wait_for_selector('table.table tbody tr a[href*="/player/"]', timeout=15000)
+            page.wait_for_selector('a[href*="/player/"]', timeout=15000)
             time.sleep(1)
             page_num += 1
         except Exception as e:
