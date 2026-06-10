@@ -4,7 +4,7 @@ Run from your Windows desktop:
   python scrape_missing.py
 
 The browser will open — solve the Cloudflare captcha when prompted.
-The script waits up to 120 seconds for you to solve it (double the previous timeout).
+The script waits up to 3 minutes for you to solve it.
 """
 
 import json, os, time
@@ -14,7 +14,6 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 OUTPUT_DIR = Path.home() / "Desktop" / "sofifa_data"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Only the years that got skipped
 MISSING_YEARS = list(range(2021, 2006, -1))  # 2021 down to 2007
 
 VERSION_CODES = {
@@ -49,13 +48,113 @@ def build_url(year: int, offset: int = 0) -> str:
     return url
 
 
-def wait_for_page_ready(page, timeout_ms=120000):
-    """Wait for player links to appear, giving user time to solve captcha."""
-    try:
-        page.wait_for_selector('a[href*="/player/"]', timeout=timeout_ms)
-        return True
-    except PlaywrightTimeout:
-        return False
+def wait_for_table(page, timeout_ms=180000):
+    """Wait for the actual player data table to appear. Gives 3 minutes for captcha."""
+    print("  Waiting for player table to load (solve captcha if shown)...")
+    deadline = time.time() + (timeout_ms / 1000)
+
+    while time.time() < deadline:
+        try:
+            # Wait for the table with player rows to appear
+            page.wait_for_selector('table.table tbody tr', timeout=5000)
+            # Double-check there are actual player links inside the table
+            player_links = page.query_selector_all('table.table tbody tr a[href*="/player/"]')
+            if player_links and len(player_links) > 0:
+                # Let the page fully settle after captcha
+                time.sleep(3)
+                # Check again after settling — make sure we didn't get redirected
+                player_links2 = page.query_selector_all('table.table tbody tr a[href*="/player/"]')
+                if player_links2 and len(player_links2) > 0:
+                    print(f"  Table loaded with {len(player_links2)} player rows.")
+                    return True
+                else:
+                    print("  Table disappeared after settling, waiting...")
+        except PlaywrightTimeout:
+            pass
+        except Exception as e:
+            print(f"  Waiting... ({e})")
+
+        time.sleep(2)
+
+    return False
+
+
+def parse_page(page) -> list[dict]:
+    """Parse player data from the current page."""
+    from bs4 import BeautifulSoup
+
+    html = page.content()
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.select_one("table.table")
+    if not table:
+        return []
+
+    rows = table.select("tbody tr")
+    if not rows:
+        return []
+
+    players = []
+    for row in rows:
+        player: dict = {}
+
+        name_link = row.select_one('a[href*="/player/"]')
+        if not name_link:
+            continue
+
+        href = name_link.get("href", "")
+        sofifa_id = ""
+        parts = href.split("/")
+        for i, part in enumerate(parts):
+            if part == "player" and i + 1 < len(parts):
+                sofifa_id = parts[i + 1]
+                break
+
+        player["sofifa_id"] = sofifa_id
+        player["name"] = name_link.get_text(strip=True)
+
+        img = row.select_one("img[data-src]")
+        if img:
+            player["image_url"] = img["data-src"]
+
+        tds = row.select("td")
+        for td in tds:
+            col_class = td.get("class", [])
+            for cls in col_class:
+                if cls.startswith("col-"):
+                    col_name = cls[4:]
+
+                    if col_name == "ae":
+                        player["age"] = td.get_text(strip=True)
+                    elif col_name == "oa":
+                        player["overall"] = td.get_text(strip=True)
+                    elif col_name == "pt":
+                        player["potential"] = td.get_text(strip=True)
+                    elif col_name == "pi":
+                        pos_spans = td.select("span.pos")
+                        if pos_spans:
+                            player["positions"] = ",".join(
+                                s.get_text(strip=True) for s in pos_spans
+                            )
+                        flag = td.select_one("img.flag")
+                        if flag:
+                            player["nationality"] = flag.get("title", "")
+                        club_links = td.select('a[href*="/team/"]')
+                        if club_links:
+                            player["club"] = club_links[0].get_text(strip=True)
+                        league_links = td.select('a[href*="/league/"]')
+                        if not league_links:
+                            league_links = td.select('a[href*="/players?lg="]')
+                        if league_links:
+                            player["league"] = league_links[0].get_text(strip=True)
+                    else:
+                        val = td.get_text(strip=True)
+                        if val:
+                            player[f"attr_{col_name}"] = val
+
+        if player.get("sofifa_id") and player.get("name"):
+            players.append(player)
+
+    return players
 
 
 def scrape_edition(page, year: int) -> list[dict]:
@@ -66,10 +165,9 @@ def scrape_edition(page, year: int) -> list[dict]:
         return []
 
     url = build_url(year)
-    print(f"  Loading first page (solve captcha if shown)...")
     page.goto(url, wait_until="commit")
 
-    if not wait_for_page_ready(page, timeout_ms=120000):
+    if not wait_for_table(page, timeout_ms=180000):
         print(f"  Could not load {'FC' if year >= 2024 else 'FIFA'} {str(year % 100).zfill(2)}, skipping...")
         return []
 
@@ -77,99 +175,23 @@ def scrape_edition(page, year: int) -> list[dict]:
     page_num = 1
 
     while True:
-        html = page.content()
+        players_on_page = parse_page(page)
 
-        # Parse player rows from table
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html, "html.parser")
-        table = soup.select_one("table.table")
-        if not table:
+        if not players_on_page:
+            print(f"  Page {page_num}: no players found, stopping.")
             break
 
-        rows = table.select("tbody tr")
-        if not rows:
-            break
+        all_players.extend(players_on_page)
 
-        for row in rows:
-            player: dict = {}
+        if page_num % 5 == 0 or page_num == 1:
+            print(f"  Page {page_num}: {len(players_on_page)} players (total: {len(all_players)})")
 
-            # Player link and ID
-            name_link = row.select_one('a[href*="/player/"]')
-            if not name_link:
-                continue
-
-            href = name_link.get("href", "")
-            sofifa_id = ""
-            parts = href.split("/")
-            for i, part in enumerate(parts):
-                if part == "player" and i + 1 < len(parts):
-                    sofifa_id = parts[i + 1]
-                    break
-
-            player["sofifa_id"] = sofifa_id
-            player["name"] = name_link.get_text(strip=True)
-
-            # Image
-            img = row.select_one("img[data-src]")
-            if img:
-                player["image_url"] = img["data-src"]
-
-            # Get all td cells
-            tds = row.select("td")
-            for td in tds:
-                col_class = td.get("class", [])
-                for cls in col_class:
-                    if cls.startswith("col-"):
-                        col_name = cls[4:]  # strip "col-"
-
-                        if col_name == "ae":
-                            player["age"] = td.get_text(strip=True)
-                        elif col_name == "oa":
-                            player["overall"] = td.get_text(strip=True)
-                        elif col_name == "pt":
-                            player["potential"] = td.get_text(strip=True)
-                        elif col_name == "pi":
-                            # Player info cell — extract positions, nationality, club
-                            pos_spans = td.select("span.pos")
-                            if pos_spans:
-                                player["positions"] = ",".join(
-                                    s.get_text(strip=True) for s in pos_spans
-                                )
-
-                            # Nationality from flag image
-                            flag = td.select_one("img.flag")
-                            if flag:
-                                player["nationality"] = flag.get("title", "")
-
-                            # Club
-                            club_links = td.select('a[href*="/team/"]')
-                            if club_links:
-                                player["club"] = club_links[0].get_text(strip=True)
-
-                            # League
-                            league_links = td.select('a[href*="/league/"]')
-                            if not league_links:
-                                league_links = td.select('a[href*="/players?lg="]')
-                            if league_links:
-                                player["league"] = league_links[0].get_text(strip=True)
-                        else:
-                            val = td.get_text(strip=True)
-                            if val:
-                                player[f"attr_{col_name}"] = val
-
-            if player.get("sofifa_id") and player.get("name"):
-                all_players.append(player)
-
-        if page_num % 5 == 0:
-            print(f"  Page {page_num}, {len(all_players)} players...")
-
-        # Try clicking Next button instead of navigating to new URL
+        # Try clicking Next button
         try:
             next_btn = page.query_selector('a.bp3-button[rel="next"]')
             if not next_btn:
                 next_btn = page.query_selector('a[rel="next"]')
             if not next_btn:
-                # Try pagination links
                 pag_links = page.query_selector_all(".pagination a")
                 next_btn = None
                 for link in pag_links:
@@ -179,28 +201,29 @@ def scrape_edition(page, year: int) -> list[dict]:
                         break
 
             if not next_btn:
+                print(f"  No more pages. Total: {len(all_players)} players.")
                 break
 
             next_btn.click()
-            # Wait for the table to update
-            page.wait_for_selector('a[href*="/player/"]', timeout=15000)
-            time.sleep(0.5)
+            # Wait for the table to reload with new data
+            page.wait_for_selector('table.table tbody tr a[href*="/player/"]', timeout=15000)
+            time.sleep(1)
             page_num += 1
-        except Exception:
+        except Exception as e:
+            print(f"  Pagination stopped: {e}")
             break
 
     return all_players
 
 
 def main():
-    # Check which years are already scraped
     already_done = []
     still_needed = []
     for year in MISSING_YEARS:
         filepath = OUTPUT_DIR / f"fifa_{year}.json"
         if filepath.exists():
             size = filepath.stat().st_size
-            if size > 1000:  # more than 1KB means it has real data
+            if size > 1000:
                 already_done.append(year)
                 continue
         still_needed.append(year)
@@ -224,7 +247,9 @@ def main():
 
         for year in still_needed:
             label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
-            print(f"\nScraping {label} (year {year})...")
+            print(f"\n{'='*50}")
+            print(f"Scraping {label} (year {year})...")
+            print(f"{'='*50}")
 
             players = scrape_edition(page, year)
 
@@ -232,11 +257,10 @@ def main():
                 filepath = OUTPUT_DIR / f"fifa_{year}.json"
                 with open(filepath, "w", encoding="utf-8") as f:
                     json.dump(players, f, ensure_ascii=False, indent=2)
-                print(f"  Saved {len(players)} players to {filepath.name}")
+                print(f"  SAVED {len(players)} players to {filepath.name}")
             else:
                 print(f"  No players scraped for {label}")
-                print(f"  >>> If captcha appeared, solve it and the script will retry on the next edition.")
-                print(f"  >>> Or restart the script — it skips already-completed years.")
+                print(f"  >>> Restart the script — it skips already-completed years.")
 
         browser.close()
 
