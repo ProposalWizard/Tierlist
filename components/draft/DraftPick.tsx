@@ -644,16 +644,19 @@ export default function DraftPick({
                 {[...spinResult.roster]
                   .sort((a, b) => {
                     const aCompat = currentSlot?.compatiblePositions.some((cp) =>
-                      a.positions.split(",").map((p) => p.trim()).includes(cp)
+                      (a.positions || "").split(",").map((p) => p.trim()).includes(cp)
                     ) ? 1 : 0;
                     const bCompat = currentSlot?.compatiblePositions.some((cp) =>
-                      b.positions.split(",").map((p) => p.trim()).includes(cp)
+                      (b.positions || "").split(",").map((p) => p.trim()).includes(cp)
                     ) ? 1 : 0;
                     if (bCompat !== aCompat) return bCompat - aCompat;
                     return b.overall - a.overall;
                   })
                   .map((player) => {
-                  const playerPositions = player.positions.split(",").map((p) => p.trim());
+                  const playerPositions = (player.positions || "")
+                    .split(",")
+                    .map((p) => p.trim())
+                    .filter(Boolean);
                   const isCompatible = currentSlot?.compatiblePositions.some((cp) =>
                     playerPositions.includes(cp)
                   );
