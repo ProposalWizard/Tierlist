@@ -20,6 +20,7 @@ export default function ScrapeSofifaPage() {
   const [versions, setVersions] = useState<string[] | null>(null);
   const [columnCount, setColumnCount] = useState(0);
   const [importYear, setImportYear] = useState(2020);
+  const [replaceAll, setReplaceAll] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
   const [dbStats, setDbStats] = useState<
     { fifa_year: number; count: number }[] | null
@@ -131,18 +132,25 @@ export default function ScrapeSofifaPage() {
     let totalSaved = 0;
     let totalFailed = 0;
     let totalSkipped = 0;
+    let totalDeleted = 0;
     for (let i = 0; i < mapped.length; i += BATCH) {
       const batch = mapped.slice(i, i + BATCH);
       try {
         const res = await fetch("/api/admin/football/import-sofifa", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ players: batch, year: importYear, edition }),
+          body: JSON.stringify({
+            players: batch,
+            year: importYear,
+            edition,
+            replaceAll: replaceAll && i === 0,
+          }),
         });
         const data = await res.json();
         totalSaved += data.saved ?? 0;
         totalFailed += data.failed ?? 0;
         totalSkipped += data.skipped ?? 0;
+        totalDeleted += data.deleted ?? 0;
       } catch (e) {
         totalFailed += batch.length;
         console.error(`Batch ${i}–${i + batch.length} request failed:`, e);
@@ -158,6 +166,7 @@ export default function ScrapeSofifaPage() {
 
     setStatus(
       `Done! ${totalSaved.toLocaleString()} saved out of ${mapped.length.toLocaleString()} players for ${edition}` +
+      (totalDeleted > 0 ? ` (cleared ${totalDeleted.toLocaleString()} old rows first)` : "") +
       (totalFailed > 0 ? ` (${totalFailed.toLocaleString()} failed)` : "") +
       (totalSkipped > 0 ? ` (${totalSkipped.toLocaleString()} skipped — no name/id)` : "")
     );
@@ -300,7 +309,7 @@ export default function ScrapeSofifaPage() {
           If SoFIFA blocks server requests, scrape using Google Colab or the
           Python scraper, then upload the CSV/JSON here.
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <select
             value={importYear}
             onChange={(e) => setImportYear(Number(e.target.value))}
@@ -318,6 +327,15 @@ export default function ScrapeSofifaPage() {
             accept=".csv,.json"
             className="text-sm text-gray-400"
           />
+          <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={replaceAll}
+              onChange={(e) => setReplaceAll(e.target.checked)}
+              className="accent-red-500"
+            />
+            Clean import (delete old data first)
+          </label>
           <button
             onClick={handleFileImport}
             className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 text-sm font-medium"
