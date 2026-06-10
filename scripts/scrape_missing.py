@@ -1,18 +1,30 @@
 """
 Scrape ONLY the missing FIFA editions (07-21) from SoFIFA.
 Run from your Windows desktop:
+  pip install playwright playwright-stealth
   python scrape_missing.py
 
-The browser will open — solve the Cloudflare captcha when prompted.
-The script waits up to 3 minutes for you to solve it.
+Uses stealth mode + persistent browser profile to minimise CAPTCHAs.
+You should only need to solve Cloudflare once (if at all) — the
+clearance cookie is saved and reused across editions and future runs.
 """
 
-import json, os, time
+import json, os, time, random
 from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 
+try:
+    from playwright_stealth import stealth_sync
+except ImportError:
+    stealth_sync = None
+    print("WARNING: playwright-stealth not installed. CAPTCHAs will be more frequent.")
+    print("  Install it:  pip install playwright-stealth\n")
+
 OUTPUT_DIR = Path.home() / "Desktop" / "sofifa_data"
 OUTPUT_DIR.mkdir(exist_ok=True)
+
+PROFILE_DIR = OUTPUT_DIR / ".browser_profile"
+PROFILE_DIR.mkdir(exist_ok=True)
 
 MISSING_YEARS = list(range(2021, 2006, -1))  # 2021 down to 2007
 
@@ -277,7 +289,7 @@ def scrape_edition(page, year: int) -> list[dict]:
 
             next_btn.click()
             page.wait_for_selector('a[href*="/player/"]', timeout=15000)
-            time.sleep(1)
+            time.sleep(random.uniform(0.8, 2.0))
             page_num += 1
         except Exception as e:
             print(f"  Pagination stopped: {e}")
@@ -333,17 +345,36 @@ def main():
     print()
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=False)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        # Persistent context keeps cookies (including cf_clearance) between runs
+        context = pw.chromium.launch_persistent_context(
+            str(PROFILE_DIR),
+            headless=False,
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            viewport={"width": 1440, "height": 900},
+            locale="en-GB",
+            timezone_id="Europe/London",
+            args=[
+                "--disable-blink-features=AutomationControlled",
+            ],
         )
-        page = context.new_page()
 
-        for year in still_needed:
+        page = context.pages[0] if context.pages else context.new_page()
+
+        if stealth_sync:
+            stealth_sync(page)
+            print("Stealth mode active — CAPTCHA frequency should be reduced.\n")
+
+        for idx, year in enumerate(still_needed):
             label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
             print(f"\n{'='*50}")
-            print(f"Scraping {label} (year {year})...")
+            print(f"Scraping {label} (year {year})... [{idx+1}/{len(still_needed)}]")
             print(f"{'='*50}")
+
+            # Human-like pause between editions to avoid re-triggering Cloudflare
+            if idx > 0:
+                delay = random.uniform(3, 6)
+                print(f"  Waiting {delay:.1f}s before next edition...")
+                time.sleep(delay)
 
             players = scrape_edition(page, year)
 
@@ -356,7 +387,7 @@ def main():
                 print(f"  No players scraped for {label}")
                 print(f"  >>> Restart the script — it skips already-completed years.")
 
-        browser.close()
+        context.close()
 
     print("\nDONE!")
     print(f"Check {OUTPUT_DIR} for JSON files")
