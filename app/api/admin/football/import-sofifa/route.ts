@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { players, year, edition } = body as {
+  const { players, year, edition, replaceAll } = body as {
     players: {
       sofifa_id: string;
       name: string;
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     }[];
     year: number;
     edition: string;
+    replaceAll?: boolean;
   };
 
   if (!players || !Array.isArray(players) || !year || !edition) {
@@ -39,6 +40,22 @@ export async function POST(req: NextRequest) {
   }
 
   const service = createServiceClient();
+
+  let deleted = 0;
+  if (replaceAll) {
+    const { count, error: delError } = await service
+      .from("sofifa_players")
+      .delete({ count: "exact" })
+      .eq("fifa_year", year);
+    if (delError) {
+      return NextResponse.json(
+        { error: `Failed to clear year ${year}: ${delError.message}` },
+        { status: 500 }
+      );
+    }
+    deleted = count ?? 0;
+  }
+
   let saved = 0;
   let skipped = 0;
   let failed = 0;
@@ -108,6 +125,7 @@ export async function POST(req: NextRequest) {
     total: players.length,
     skipped,
     failed,
+    deleted,
     validCount: validPlayers.length,
   });
 }
