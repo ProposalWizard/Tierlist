@@ -47,6 +47,9 @@ interface Props {
   settings: DraftSettings;
   onComplete: (players: DraftPlayer[]) => void;
   onBack?: () => void;
+  initialPicked?: DraftPlayer[];
+  initialUsedClubYears?: string[];
+  onProgress?: (picked: DraftPlayer[], usedClubYears: string[]) => void;
 }
 
 function classifyPos(pos: string): "GK" | "DEF" | "MID" | "ATT" {
@@ -95,15 +98,24 @@ function statColor(val: number): string {
   return "text-gray-700";
 }
 
-export default function DraftPick({ settings, onComplete, onBack }: Props) {
+export default function DraftPick({
+  settings,
+  onComplete,
+  onBack,
+  initialPicked,
+  initialUsedClubYears,
+  onProgress,
+}: Props) {
   const formation = FORMATIONS.find((f) => f.name === settings.formation) ?? FORMATIONS[0];
-  const [pickedPlayers, setPickedPlayers] = useState<DraftPlayer[]>([]);
-  const [currentSlotIndex, setCurrentSlotIndex] = useState(0);
+  const [pickedPlayers, setPickedPlayers] = useState<DraftPlayer[]>(initialPicked ?? []);
+  const [currentSlotIndex, setCurrentSlotIndex] = useState(initialPicked?.length ?? 0);
   const [phase, setPhase] = useState<"spin" | "spinning" | "reveal" | "pick">("spin");
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [spinDisplay, setSpinDisplay] = useState<{ club: string; year: number } | null>(null);
-  const [usedClubYears, setUsedClubYears] = useState<Set<string>>(new Set());
+  const [usedClubYears, setUsedClubYears] = useState<Set<string>>(
+    new Set(initialUsedClubYears ?? [])
+  );
   const [error, setError] = useState<string | null>(null);
   const [availableClubs, setAvailableClubs] = useState<{ name: string; seasons: number[] }[] | null>(null);
   const [clubsLoading, setClubsLoading] = useState(true);
@@ -286,14 +298,17 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
       };
 
       const newPicked = [...pickedPlayers, drafted];
+      const newUsed = [
+        ...Array.from(usedClubYears),
+        `${spinResult!.club}-${spinResult!.year}`,
+      ];
       setPickedPlayers(newPicked);
-      setUsedClubYears(
-        (prev) => new Set([...Array.from(prev), `${spinResult!.club}-${spinResult!.year}`])
-      );
+      setUsedClubYears(new Set(newUsed));
 
       if (newPicked.length >= 11) {
         onComplete(newPicked);
       } else {
+        onProgress?.(newPicked, newUsed);
         setCurrentSlotIndex(currentSlotIndex + 1);
         setSpinResult(null);
         setSpinDisplay(null);
@@ -305,8 +320,10 @@ export default function DraftPick({ settings, onComplete, onBack }: Props) {
       currentSlotIndex,
       formation.slots,
       onComplete,
+      onProgress,
       pickedPlayers,
       spinResult,
+      usedClubYears,
     ]
   );
 
