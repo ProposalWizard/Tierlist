@@ -391,13 +391,17 @@ async def scrape_edition(page, year: int) -> list[dict]:
 # ── File checking ────────────────────────────────────────────────────────────
 
 
-def file_has_attributes(filepath: Path) -> bool:
+MIN_PLAYERS = 5000  # every FIFA edition has well over 5000 players
+
+
+def file_is_complete(filepath: Path) -> bool:
+    """A file is complete if it has plenty of players AND detailed attributes."""
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
-        if not data:
+        if not isinstance(data, list) or len(data) < MIN_PLAYERS:
             return False
-        first = data[0] if isinstance(data, list) else data
+        first = data[0]
         attr_keys = [k for k in first.keys() if k.startswith("attr_")]
         return len(attr_keys) >= 5
     except Exception:
@@ -418,7 +422,7 @@ async def main():
         if filepath.exists():
             size = filepath.stat().st_size
             if size > 1000:
-                if force or not file_has_attributes(filepath):
+                if force or not file_is_complete(filepath):
                     incomplete.append(year)
                 else:
                     already_done.append(year)
@@ -429,9 +433,9 @@ async def main():
         print(f"Incomplete data (will re-scrape): {', '.join(str(y) for y in incomplete)}")
         still_needed = incomplete + still_needed
     if already_done:
-        print(f"Already scraped with full attributes: {', '.join(str(y) for y in already_done)}")
+        print(f"Complete (full attributes + {MIN_PLAYERS}+ players): {', '.join(str(y) for y in already_done)}")
     if not still_needed:
-        print("All editions already scraped with full attributes!")
+        print("All editions complete!")
         return
 
     print(f"Need to scrape: {', '.join(str(y) for y in still_needed)}")
