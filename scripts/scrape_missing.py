@@ -1,22 +1,22 @@
 """
-Scrape ONLY the missing FIFA editions (07-21) from SoFIFA.
+Scrape missing FIFA editions (07-21) from SoFIFA — parallel tabs.
 Run from your Windows desktop:
-  pip install playwright playwright-stealth
+  pip install playwright playwright-stealth beautifulsoup4
   python scrape_missing.py
 
-Uses stealth mode + persistent browser profile to minimise CAPTCHAs.
-You should only need to solve Cloudflare once (if at all) — the
-clearance cookie is saved and reused across editions and future runs.
+Uses 3 parallel browser tabs + stealth + persistent cookies.
+Solve the Cloudflare captcha ONCE (if shown) — all tabs share the cookie.
 """
 
-import json, os, time, random
+import asyncio
+import json, os, random, re, sys, time
 from pathlib import Path
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+from playwright.async_api import async_playwright
 
 try:
-    from playwright_stealth import stealth_sync
+    from playwright_stealth import stealth_async
 except ImportError:
-    stealth_sync = None
+    stealth_async = None
     print("WARNING: playwright-stealth not installed. CAPTCHAs will be more frequent.")
     print("  Install it:  pip install playwright-stealth\n")
 
@@ -27,6 +27,9 @@ PROFILE_DIR = OUTPUT_DIR / ".browser_profile"
 PROFILE_DIR.mkdir(exist_ok=True)
 
 MISSING_YEARS = list(range(2021, 2006, -1))  # 2021 down to 2007
+
+NUM_TABS = 3     # parallel tabs per edition
+PAGE_SIZE = 60   # SoFIFA players per page
 
 VERSION_CODES = {
     2026: "240034", 2025: "240007", 2024: "230054", 2023: "230017",
@@ -61,43 +64,10 @@ def build_url(year: int, offset: int = 0) -> str:
     return url
 
 
-def count_player_links(page) -> int:
-    try:
-        return len(page.query_selector_all('a[href*="/player/"]'))
-    except Exception:
-        return 0
-
-
-def wait_for_players(page, timeout_ms=180000):
-    """Wait until the page shows a real roster (10+ player links).
-    Gives up to 3 minutes for the user to solve the captcha."""
-    print("  Waiting for players page (solve captcha if shown)...")
-    deadline = time.time() + (timeout_ms / 1000)
-    last_count = -1
-
-    while time.time() < deadline:
-        count = count_player_links(page)
-        if count != last_count:
-            print(f"  ...seeing {count} player links on page")
-            last_count = count
-
-        if count >= 10:
-            # Real roster found — let the page settle, then confirm it's still there
-            time.sleep(3)
-            count2 = count_player_links(page)
-            if count2 >= 10:
-                print(f"  Players page ready ({count2} player links).")
-                return True
-            print("  Page changed after settling (probably captcha), waiting...")
-            last_count = -1
-
-        time.sleep(2)
-
-    return False
+# ── HTML parsing (sync — BeautifulSoup, no async needed) ─────────────────────
 
 
 def _get_col_id(th) -> str:
-    """Extract column ID from a <th> element via class or data attribute."""
     for cls in th.get("class", []):
         if cls.startswith("col-"):
             return cls[4:]
@@ -105,7 +75,6 @@ def _get_col_id(th) -> str:
 
 
 def _build_header_map(table) -> list[str]:
-    """Build a list of column IDs from the table header row."""
     header_row = table.select_one("thead tr")
     if not header_row:
         return []
@@ -113,7 +82,6 @@ def _build_header_map(table) -> list[str]:
 
 
 def _extract_pi_cell(td, player: dict):
-    """Extract player info from the pi (player info) cell."""
     pos_spans = td.select("span.pos")
     if not pos_spans:
         pos_spans = td.select("span[class*='pos']")
@@ -138,7 +106,6 @@ def _extract_pi_cell(td, player: dict):
 
 
 def _extract_td_value(col_id: str, td, player: dict):
-    """Extract value from a <td> based on its column ID."""
     if col_id == "ae":
         player["age"] = td.get_text(strip=True)
     elif col_id == "oa":
@@ -153,14 +120,12 @@ def _extract_td_value(col_id: str, td, player: dict):
             player[f"attr_{col_id}"] = val
 
 
-def parse_page(page) -> list[dict]:
-    """Parse player data from the current page."""
+def parse_html(html: str) -> list[dict]:
+    """Parse player rows from an HTML string. Returns list of player dicts."""
     from bs4 import BeautifulSoup
 
-    html = page.content()
     soup = BeautifulSoup(html, "html.parser")
 
-    # Find the table containing player rows
     table = soup.select_one("table.table")
     if not table:
         for t in soup.select("table"):
@@ -170,7 +135,6 @@ def parse_page(page) -> list[dict]:
     if not table:
         return []
 
-    # Build column ID list from headers for index-based extraction
     header_ids = _build_header_map(table)
 
     rows = table.select("tbody tr")
@@ -206,18 +170,13 @@ def parse_page(page) -> list[dict]:
 
         tds = row.select("td")
         for idx, td in enumerate(tds):
-            # Method 1: CSS class on the <td> (works on newer editions)
             col_id = ""
             for cls in td.get("class", []):
                 if cls.startswith("col-"):
                     col_id = cls[4:]
                     break
-
-            # Method 2: data-col attribute
             if not col_id:
                 col_id = td.get("data-col", "")
-
-            # Method 3: index-based mapping from table headers
             if not col_id and idx < len(header_ids):
                 col_id = header_ids[idx]
 
@@ -230,76 +189,171 @@ def parse_page(page) -> list[dict]:
     return players
 
 
-def scrape_edition(page, year: int) -> list[dict]:
-    """Scrape all pages for a single FIFA edition using Next button navigation."""
-    vc = VERSION_CODES.get(year)
-    if not vc:
-        print(f"  No version code for {year}, skipping...")
+def detect_total_players(html: str) -> int | None:
+    """Try to extract total player count from pagination text (e.g. '1 - 60 of 18,827')."""
+    m = re.search(r"of\s+([\d,]+)", html)
+    if m:
+        return int(m.group(1).replace(",", ""))
+    return None
+
+
+# ── Async browser helpers ────────────────────────────────────────────────────
+
+
+async def count_links(page) -> int:
+    try:
+        return len(await page.query_selector_all('a[href*="/player/"]'))
+    except Exception:
+        return 0
+
+
+async def wait_for_players(page, timeout: int = 180) -> bool:
+    """Wait for real player content. Handles Cloudflare captcha (user solves it)."""
+    print("  Waiting for players page (solve captcha if shown)...")
+    deadline = time.time() + timeout
+    last_count = -1
+
+    while time.time() < deadline:
+        count = await count_links(page)
+        if count != last_count:
+            print(f"  ...seeing {count} player links")
+            last_count = count
+
+        if count >= 10:
+            await asyncio.sleep(3)
+            if await count_links(page) >= 10:
+                print(f"  Players page ready.")
+                return True
+            print("  Page changed after settling, waiting...")
+            last_count = -1
+
+        await asyncio.sleep(2)
+
+    return False
+
+
+async def navigate_and_parse(page, url: str) -> list[dict]:
+    """Navigate to URL, wait for content, parse. Returns [] on failure."""
+    try:
+        await page.goto(url, wait_until="commit")
+    except Exception:
         return []
 
-    url = build_url(year)
-    page.goto(url, wait_until="commit")
+    await asyncio.sleep(random.uniform(0.3, 0.8))
 
-    if not wait_for_players(page, timeout_ms=180000):
-        print(f"  Could not load {'FC' if year >= 2024 else 'FIFA'} {str(year % 100).zfill(2)}, skipping...")
-        return []
-
-    all_players = []
-    page_num = 1
-
-    while True:
-        players_on_page = parse_page(page)
-
-        if not players_on_page:
-            print(f"  Page {page_num}: no players parsed, stopping.")
+    # Quick check: any player links?
+    for _ in range(3):
+        if await count_links(page) >= 1:
             break
+        await asyncio.sleep(1.5)
+    else:
+        return []
 
-        all_players.extend(players_on_page)
+    html = await page.content()
+    return parse_html(html)
 
-        if page_num == 1:
-            # Show first player's keys so we can verify attributes are captured
-            first = players_on_page[0]
-            attr_keys = [k for k in first.keys() if k.startswith("attr_")]
-            print(f"  Page 1: {len(players_on_page)} players (total: {len(all_players)})")
-            print(f"  >>> First player: {first.get('name')} | Keys: {sorted(first.keys())}")
-            print(f"  >>> Attribute keys ({len(attr_keys)}): {sorted(attr_keys)}")
-            if len(attr_keys) < 5:
-                print(f"  !!! WARNING: Very few attributes found — HTML structure may not match parser.")
-                print(f"  !!! Full first player data: {json.dumps(first, indent=2)}")
-        elif page_num % 5 == 0:
-            print(f"  Page {page_num}: {len(players_on_page)} players (total: {len(all_players)})")
 
-        # Try clicking Next button
+# ── Workers ──────────────────────────────────────────────────────────────────
+
+
+async def worker(tab, offsets: list[int], year: int, progress: dict) -> list[dict]:
+    """Scrape a sequential chunk of offsets. Stops on first empty page."""
+    results = []
+    for offset in offsets:
+        url = build_url(year, offset)
+        players = await navigate_and_parse(tab, url)
+        if not players:
+            break
+        results.extend(players)
+        progress["done"] += 1
+        if progress["done"] % 10 == 0:
+            total = progress["total"]
+            print(f"  Progress: {progress['done']}/{total} pages | {progress['players'] + len(results)} players")
+    progress["players"] += len(results)
+    return results
+
+
+async def scrape_edition(context, year: int) -> list[dict]:
+    """Scrape one FIFA edition using parallel tabs."""
+    label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
+
+    main_page = context.pages[0] if context.pages else await context.new_page()
+
+    url = build_url(year, 0)
+    await main_page.goto(url, wait_until="commit")
+
+    if not await wait_for_players(main_page):
+        print(f"  Could not load {label}, skipping...")
+        return []
+
+    html = await main_page.content()
+    first_batch = parse_html(html)
+    if not first_batch:
+        print("  Page 1: no players parsed.")
+        return []
+
+    # Diagnostic: verify attributes are captured
+    first = first_batch[0]
+    attr_keys = sorted(k for k in first if k.startswith("attr_"))
+    print(f"  Page 1: {len(first_batch)} players")
+    print(f"  >>> {first.get('name')} | {len(attr_keys)} attrs: {attr_keys[:8]}...")
+    if len(attr_keys) < 5:
+        print(f"  !!! WARNING: Very few attributes — HTML may not match parser.")
+        print(f"  !!! Data: {json.dumps(first, indent=2)}")
+
+    # Determine how many pages to scrape
+    total_players = detect_total_players(html)
+    if total_players:
+        max_offset = total_players
+        est_pages = total_players // PAGE_SIZE + 1
+        print(f"  Detected {total_players} total players (~{est_pages} pages)")
+    else:
+        max_offset = 25000
+        print(f"  Could not detect total — will paginate up to offset {max_offset}")
+
+    offsets = list(range(PAGE_SIZE, max_offset, PAGE_SIZE))
+    if not offsets:
+        return first_batch
+
+    # Create worker tabs
+    num_workers = min(NUM_TABS, len(offsets))
+    tabs = []
+    for _ in range(num_workers):
+        p = await context.new_page()
+        if stealth_async:
+            await stealth_async(p)
+        tabs.append(p)
+
+    # Split offsets into sequential chunks (preserves order, workers stop at end of data)
+    chunk_size = (len(offsets) + num_workers - 1) // num_workers
+    chunks = [offsets[i * chunk_size:(i + 1) * chunk_size] for i in range(num_workers)]
+
+    progress = {"done": 1, "total": len(offsets) + 1, "players": len(first_batch)}
+
+    print(f"  Scraping with {num_workers} parallel tabs...")
+    tasks = [worker(tabs[i], chunks[i], year, progress) for i in range(num_workers) if chunks[i]]
+    results = await asyncio.gather(*tasks)
+
+    # Merge in order (chunks are sequential, so this preserves overall order)
+    all_players = list(first_batch)
+    for r in results:
+        all_players.extend(r)
+
+    # Cleanup worker tabs
+    for tab in tabs:
         try:
-            next_btn = page.query_selector('a.bp3-button[rel="next"]')
-            if not next_btn:
-                next_btn = page.query_selector('a[rel="next"]')
-            if not next_btn:
-                pag_links = page.query_selector_all(".pagination a")
-                next_btn = None
-                for link in pag_links:
-                    text = link.inner_text().strip()
-                    if text == "Next" or text == "›" or text == "»":
-                        next_btn = link
-                        break
+            await tab.close()
+        except Exception:
+            pass
 
-            if not next_btn:
-                print(f"  No more pages. Total: {len(all_players)} players.")
-                break
-
-            next_btn.click()
-            page.wait_for_selector('a[href*="/player/"]', timeout=15000)
-            time.sleep(random.uniform(0.8, 2.0))
-            page_num += 1
-        except Exception as e:
-            print(f"  Pagination stopped: {e}")
-            break
-
+    print(f"  TOTAL: {len(all_players)} players for {label}")
     return all_players
 
 
+# ── File checking ────────────────────────────────────────────────────────────
+
+
 def file_has_attributes(filepath: Path) -> bool:
-    """Check if a JSON file contains detailed attributes (not just basic fields)."""
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -312,8 +366,10 @@ def file_has_attributes(filepath: Path) -> bool:
         return False
 
 
-def main():
-    import sys
+# ── Main ─────────────────────────────────────────────────────────────────────
+
+
+async def main():
     force = "--force" in sys.argv
 
     already_done = []
@@ -342,57 +398,53 @@ def main():
 
     print(f"Need to scrape: {', '.join(str(y) for y in still_needed)}")
     print(f"Output directory: {OUTPUT_DIR}")
+    print(f"Parallel tabs: {NUM_TABS}")
     print()
 
-    with sync_playwright() as pw:
-        # Persistent context keeps cookies (including cf_clearance) between runs
-        context = pw.chromium.launch_persistent_context(
+    async with async_playwright() as pw:
+        context = await pw.chromium.launch_persistent_context(
             str(PROFILE_DIR),
             headless=False,
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
             viewport={"width": 1440, "height": 900},
             locale="en-GB",
             timezone_id="Europe/London",
-            args=[
-                "--disable-blink-features=AutomationControlled",
-            ],
+            args=["--disable-blink-features=AutomationControlled"],
         )
 
-        page = context.pages[0] if context.pages else context.new_page()
-
-        if stealth_sync:
-            stealth_sync(page)
-            print("Stealth mode active — CAPTCHA frequency should be reduced.\n")
+        main_page = context.pages[0] if context.pages else await context.new_page()
+        if stealth_async:
+            await stealth_async(main_page)
+            print("Stealth mode active.\n")
 
         for idx, year in enumerate(still_needed):
             label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
-            print(f"\n{'='*50}")
-            print(f"Scraping {label} (year {year})... [{idx+1}/{len(still_needed)}]")
-            print(f"{'='*50}")
+            print(f"\n{'=' * 50}")
+            print(f"Scraping {label} (year {year})... [{idx + 1}/{len(still_needed)}]")
+            print(f"{'=' * 50}")
 
-            # Human-like pause between editions to avoid re-triggering Cloudflare
             if idx > 0:
-                delay = random.uniform(3, 6)
-                print(f"  Waiting {delay:.1f}s before next edition...")
-                time.sleep(delay)
+                delay = random.uniform(2, 4)
+                print(f"  Pausing {delay:.1f}s between editions...")
+                await asyncio.sleep(delay)
 
-            players = scrape_edition(page, year)
+            players = await scrape_edition(context, year)
 
             if players:
                 filepath = OUTPUT_DIR / f"fifa_{year}.json"
                 with open(filepath, "w", encoding="utf-8") as f:
                     json.dump(players, f, ensure_ascii=False, indent=2)
-                print(f"  SAVED {len(players)} players to {filepath.name}")
+                print(f"  SAVED {len(players)} players → {filepath.name}")
             else:
                 print(f"  No players scraped for {label}")
-                print(f"  >>> Restart the script — it skips already-completed years.")
+                print(f"  >>> Restart the script — it skips completed years.")
 
-        context.close()
+        await context.close()
 
     print("\nDONE!")
-    print(f"Check {OUTPUT_DIR} for JSON files")
-    print("Import each file at: https://knowitball.co.uk/admin/football/scrape")
+    print(f"Files: {OUTPUT_DIR}")
+    print("Import at: https://knowitball.co.uk/admin/football/scrape")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
