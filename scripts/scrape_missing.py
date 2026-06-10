@@ -1,5 +1,11 @@
 """
-Scrape FIFA editions from SoFIFA (07-26).
+Scrape Premier League players from SoFIFA (all editions 07-26).
+
+The PL Draft game only uses Premier League clubs/players, so by default this
+filters to the Premier League only (~500-700 players per edition, ~10 pages)
+instead of scraping all ~19,000 players (~300 pages). That's roughly 30x
+faster and triggers far fewer captchas.
+
 Run from your Windows desktop:
   pip install playwright beautifulsoup4 playwright-stealth
   python scrape_missing.py
@@ -8,8 +14,9 @@ Single tab, Next button navigation. Stealth + persistent cookies
 reduce captchas. Solve Cloudflare once if shown — cookie persists.
 
 Flags:
-  --force     Re-scrape all editions, even complete ones
-  --year=YYYY Scrape only that edition
+  --force         Re-scrape all editions, even complete ones
+  --year=YYYY     Scrape only that edition
+  --all-leagues   Scrape every league (old behavior, ~300 pages/edition)
 """
 
 import asyncio
@@ -32,7 +39,12 @@ except ImportError:
         print("  pip install playwright-stealth\n")
 
 OUTPUT_DIR = Path.home() / "Desktop" / "sofifa_data"
-OUTPUT_DIR.mkdir(exist_ok=True)
+# Fall back to OneDrive Desktop if the plain Desktop doesn't exist
+if not OUTPUT_DIR.parent.exists():
+    alt = Path.home() / "OneDrive" / "Desktop" / "sofifa_data"
+    if alt.parent.exists():
+        OUTPUT_DIR = alt
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 PROFILE_DIR = OUTPUT_DIR / ".browser_profile"
 PROFILE_DIR.mkdir(exist_ok=True)
@@ -46,6 +58,9 @@ VERSION_CODES = {
     2014: "140052", 2013: "130034", 2012: "120002", 2011: "110003",
     2010: "100001", 2009: "090001", 2008: "080001", 2007: "070001",
 }
+
+# Premier League league ID on SoFIFA (the "Premier League (England)" league).
+PL_LEAGUE_ID = "13"
 
 # Column IDs for the showCol[] URL parameter.
 # "tm" = Team/Club, "lg" = League — these were missing before, causing
@@ -66,12 +81,14 @@ COLUMNS = [
 BASE_URL = "https://sofifa.com/players"
 
 
-def build_url(year: int, col_ids: list[str] | None = None) -> str:
+def build_url(year: int, col_ids: list[str] | None = None,
+              league_id: str | None = PL_LEAGUE_ID) -> str:
     cols = col_ids or COLUMNS
     vc = VERSION_CODES.get(year, "")
     col_str = ",".join(cols)
     show_col = "".join(f"&showCol%5B%5D={c}" for c in cols)
-    return f"{BASE_URL}?type=all&r={vc}&set=true&col={col_str}{show_col}"
+    lg = f"&lg%5B%5D={league_id}" if league_id else ""
+    return f"{BASE_URL}?type=all{lg}&r={vc}&set=true&col={col_str}{show_col}"
 
 
 # ── Column discovery ─────────────────────────────────────────────────────────
@@ -320,10 +337,11 @@ async def wait_for_players(page, timeout: int = 180) -> bool:
 # ── Scraping ─────────────────────────────────────────────────────────────────
 
 
-async def scrape_edition(page, year: int, is_first: bool = False) -> list[dict]:
+async def scrape_edition(page, year: int, league_id: str | None,
+                         is_first: bool = False) -> list[dict]:
     label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
 
-    url = build_url(year)
+    url = build_url(year, league_id=league_id)
     await page.goto(url, wait_until="commit")
 
     if not await wait_for_players(page):
@@ -345,7 +363,6 @@ async def scrape_edition(page, year: int, is_first: bool = False) -> list[dict]:
                     marker = " (not in our COLUMNS list)"
                 print(f"    {cid:6s} = {cname}{marker}")
 
-            # Check for club/league columns with unexpected IDs
             found_club = any(cid in CLUB_COL_IDS for cid in disc)
             found_league = any(cid in LEAGUE_COL_IDS for cid in disc)
             if not found_club:
@@ -379,6 +396,9 @@ async def scrape_edition(page, year: int, is_first: bool = False) -> list[dict]:
             print(f"  >>> {first.get('name')} | club={first.get('club')!r} | league={first.get('league')!r}")
             print(f"  >>> {len(attr_keys)} attrs: {attr_keys[:8]}...")
             print(f"  >>> Club data: {clubs_found}/{len(players)} | League data: {leagues_found}/{len(players)}")
+            if league_id:
+                leagues = {p.get("league") for p in players if p.get("league")}
+                print(f"  >>> League filter active — leagues seen: {leagues}")
             if clubs_found == 0:
                 print(f"  ⚠ WARNING: No club data found on page 1!")
                 print(f"    Check the DIAGNOSTIC output above to find the right column.")
@@ -424,14 +444,16 @@ async def scrape_edition(page, year: int, is_first: bool = False) -> list[dict]:
 # ── File checking ────────────────────────────────────────────────────────────
 
 
-MIN_PLAYERS = 5000
+def min_players(league_id: str | None) -> int:
+    # PL-only editions have ~500-700 players; all-league editions ~17,000+.
+    return 300 if league_id else 5000
 
 
-def file_is_complete(filepath: Path) -> bool:
+def file_is_complete(filepath: Path, league_id: str | None) -> bool:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
-        if not isinstance(data, list) or len(data) < MIN_PLAYERS:
+        if not isinstance(data, list) or len(data) < min_players(league_id):
             return False
         first = data[0]
         attr_keys = [k for k in first.keys() if k.startswith("attr_")]
@@ -451,6 +473,8 @@ def file_is_complete(filepath: Path) -> bool:
 
 async def main():
     force = "--force" in sys.argv
+    all_leagues = "--all-leagues" in sys.argv
+    league_id = None if all_leagues else PL_LEAGUE_ID
 
     # Allow --year=YYYY to scrape a single edition
     single_year = None
@@ -460,6 +484,12 @@ async def main():
 
     years = [single_year] if single_year else ALL_YEARS
 
+    mode = "ALL LEAGUES" if all_leagues else f"PREMIER LEAGUE ONLY (lg={PL_LEAGUE_ID})"
+    print(f"Mode: {mode}")
+    if not all_leagues:
+        print("(Use --all-leagues to scrape every league — far slower.)")
+    print()
+
     already_done = []
     incomplete = []
     still_needed = []
@@ -468,7 +498,7 @@ async def main():
         if filepath.exists():
             size = filepath.stat().st_size
             if size > 1000:
-                if force or not file_is_complete(filepath):
+                if force or not file_is_complete(filepath, league_id):
                     incomplete.append(year)
                 else:
                     already_done.append(year)
@@ -476,10 +506,10 @@ async def main():
         still_needed.append(year)
 
     if incomplete:
-        print(f"Incomplete (missing attrs or club data, will re-scrape): {', '.join(str(y) for y in incomplete)}")
+        print(f"Incomplete (missing club data or wrong size, will re-scrape): {', '.join(str(y) for y in incomplete)}")
         still_needed = incomplete + still_needed
     if already_done:
-        print(f"Complete ({MIN_PLAYERS}+ players, attrs, club data): {', '.join(str(y) for y in already_done)}")
+        print(f"Complete (right size, attrs, club data): {', '.join(str(y) for y in already_done)}")
     if not still_needed:
         print("All editions complete!")
         return
@@ -515,7 +545,7 @@ async def main():
                 print(f"  Pausing {delay:.1f}s...")
                 await asyncio.sleep(delay)
 
-            players = await scrape_edition(page, year, is_first=(idx == 0))
+            players = await scrape_edition(page, year, league_id, is_first=(idx == 0))
 
             if players:
                 filepath = OUTPUT_DIR / f"fifa_{year}.json"
