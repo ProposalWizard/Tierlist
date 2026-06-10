@@ -14,12 +14,23 @@ import json, os, random, re, sys, time
 from pathlib import Path
 from playwright.async_api import async_playwright
 
+# playwright-stealth changed its API in v2.0 — support both versions
+stealth_async = None
 try:
-    from playwright_stealth import stealth_async
+    # v1.x API
+    from playwright_stealth import stealth_async  # type: ignore
 except ImportError:
-    stealth_async = None
-    print("NOTE: playwright-stealth not installed (optional, reduces CAPTCHAs).")
-    print("  pip install playwright-stealth\n")
+    try:
+        # v2.x API
+        from playwright_stealth import Stealth
+
+        _stealth = Stealth()
+
+        async def stealth_async(page):
+            await _stealth.apply_stealth_async(page)
+    except ImportError:
+        print("NOTE: playwright-stealth not installed (optional, reduces CAPTCHAs).")
+        print("  pip install playwright-stealth\n")
 
 OUTPUT_DIR = Path.home() / "Desktop" / "sofifa_data"
 OUTPUT_DIR.mkdir(exist_ok=True)
