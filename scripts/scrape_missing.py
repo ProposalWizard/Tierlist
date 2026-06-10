@@ -107,10 +107,12 @@ def build_url(year: int, league_id: str | None) -> str:
 
 
 def upscale_face_url(url: str | None) -> str | None:
-    """SoFIFA face URLs end in _NN.png (size). Bump to a larger version."""
+    """SoFIFA face URLs end in _NN.png (size). Normalise to 120px — the
+    largest variant that exists reliably across ALL editions (older FIFA
+    editions don't always have the 180px version, which would 404)."""
     if not url:
         return url
-    return re.sub(r"_(\d+)\.png", "_180.png", url)
+    return re.sub(r"_(\d+)\.png", "_120.png", url)
 
 
 # ── Column discovery ─────────────────────────────────────────────────────────
