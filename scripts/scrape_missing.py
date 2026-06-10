@@ -1,12 +1,12 @@
 """
-Scrape missing FIFA editions (07-21) from SoFIFA.
+Scrape missing FIFA editions (07-21) from SoFIFA — parallel tabs + fallback.
 Run from your Windows desktop:
-  pip install playwright beautifulsoup4
-  pip install playwright-stealth   (optional — reduces CAPTCHAs)
+  pip install playwright beautifulsoup4 playwright-stealth
   python scrape_missing.py
 
-Uses stealth mode + persistent browser profile to minimise CAPTCHAs.
-Solve Cloudflare once per run (if shown) — the cookie persists.
+3 parallel tabs share a work queue. Any pages a worker tab fails to load
+are retried on the main tab, so data is always complete even if
+Cloudflare blocks some workers. Solve the captcha once if shown.
 """
 
 import asyncio
@@ -40,6 +40,7 @@ PROFILE_DIR.mkdir(exist_ok=True)
 
 MISSING_YEARS = list(range(2021, 2006, -1))  # 2021 down to 2007
 
+NUM_TABS = 3     # parallel tabs per edition
 PAGE_SIZE = 60   # SoFIFA players per page
 
 VERSION_CODES = {
@@ -237,46 +238,75 @@ async def wait_for_players(page, timeout: int = 180) -> bool:
     return False
 
 
-async def try_next_button(page) -> bool:
-    """Click the Next pagination button. Returns True if clicked."""
+async def fetch_offset(page, year: int, offset: int, patient: bool = False) -> list[dict] | None:
+    """Load one offset page and parse it. Returns None if page failed to load."""
+    url = build_url(year, offset)
     try:
-        next_btn = await page.query_selector('a.bp3-button[rel="next"]')
-        if not next_btn:
-            next_btn = await page.query_selector('a[rel="next"]')
-        if not next_btn:
-            pag_links = await page.query_selector_all(".pagination a")
-            for link in pag_links:
-                text = (await link.inner_text()).strip()
-                if text in ("Next", "›", "»"):
-                    next_btn = link
-                    break
-
-        if not next_btn:
-            return False
-
-        await next_btn.click()
-        await page.wait_for_selector('a[href*="/player/"]', timeout=15000)
-        await asyncio.sleep(random.uniform(0.5, 1.0))
-        return True
+        await page.goto(url, wait_until="commit")
     except Exception:
-        return False
+        return None
+
+    await asyncio.sleep(random.uniform(0.3, 0.7))
+
+    tries = 8 if patient else 4
+    for _ in range(tries):
+        if await count_links(page) >= 1:
+            html = await page.content()
+            return parse_html(html)
+        await asyncio.sleep(1.5)
+
+    return None  # page never loaded players (blocked or empty)
 
 
-# ── Main scraping logic ──────────────────────────────────────────────────────
+# ── Parallel scraping with shared queue ──────────────────────────────────────
 
 
-async def scrape_edition(page, year: int) -> list[dict]:
+async def queue_worker(
+    tab, year: int, queue: list[int], results: dict, failed: list[int], progress: dict, worker_id: int
+):
+    """Pull offsets from the shared queue. After 3 consecutive failures, give up
+    (remaining offsets stay in the queue for other workers / fallback)."""
+    consecutive_fails = 0
+
+    while queue:
+        offset = queue.pop(0)
+        players = await fetch_offset(tab, year, offset)
+
+        if players is None:
+            # Page didn't load — probably Cloudflare challenge on this tab
+            failed.append(offset)
+            consecutive_fails += 1
+            if consecutive_fails >= 3:
+                print(f"  Tab {worker_id}: blocked (3 fails) — stopping this tab.")
+                return
+            continue
+
+        consecutive_fails = 0
+
+        if not players:
+            # Page loaded but no players — past the end of data
+            progress["end_seen"] = True
+            return
+
+        results[offset] = players
+        progress["done"] += 1
+        progress["players"] += len(players)
+
+        if progress["done"] % 15 == 0:
+            print(f"  {progress['done']}/{progress['total']} pages | {progress['players']} players")
+
+
+async def scrape_edition(context, main_page, year: int) -> list[dict]:
     label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
 
-    # Load page 1
-    url = build_url(year, 0)
-    await page.goto(url, wait_until="commit")
+    # ── Page 1 on the main tab (handles captcha) ──
+    await main_page.goto(build_url(year, 0), wait_until="commit")
 
-    if not await wait_for_players(page):
+    if not await wait_for_players(main_page):
         print(f"  Could not load {label}, skipping...")
         return []
 
-    html = await page.content()
+    html = await main_page.content()
     first_batch = parse_html(html)
     if not first_batch:
         print("  Page 1: no players parsed.")
@@ -292,97 +322,80 @@ async def scrape_edition(page, year: int) -> list[dict]:
         print(f"  !!! {json.dumps(first, indent=2)}")
 
     total_players = detect_total_players(html)
+    max_offset = total_players if total_players else 25000
+    if total_players:
+        print(f"  Detected ~{total_players} total players")
 
-    all_players = list(first_batch)
+    offsets = list(range(PAGE_SIZE, max_offset, PAGE_SIZE))
+    if not offsets:
+        return first_batch
 
-    # ── Try direct offset navigation (faster than Next button) ──
-    test_url = build_url(year, PAGE_SIZE)
-    await page.goto(test_url, wait_until="commit")
-    await asyncio.sleep(random.uniform(0.5, 1.0))
+    # ── Parallel phase: shared queue, N tabs ──
+    queue = list(offsets)
+    results: dict[int, list[dict]] = {0: first_batch}
+    failed: list[int] = []
+    progress = {"done": 1, "total": len(offsets) + 1, "players": len(first_batch), "end_seen": False}
 
-    # Wait up to 10s for players to appear
-    offset_works = False
-    for _ in range(5):
-        if await count_links(page) >= 1:
-            offset_works = True
-            break
-        await asyncio.sleep(2)
+    num_workers = min(NUM_TABS, len(offsets))
+    tabs = [main_page]
+    for _ in range(num_workers - 1):
+        t = await context.new_page()
+        if stealth_async:
+            await stealth_async(t)
+        tabs.append(t)
 
-    if offset_works:
-        # Direct offsets work — fast mode
-        html = await page.content()
-        page2 = parse_html(html)
-        if page2:
-            all_players.extend(page2)
+    print(f"  Scraping with {len(tabs)} parallel tabs...")
+    await asyncio.gather(
+        *(queue_worker(tabs[i], year, queue, results, failed, progress, i + 1) for i in range(len(tabs)))
+    )
 
-        max_offset = total_players if total_players else 25000
-        est_pages = max_offset // PAGE_SIZE + 1
-        print(f"  Using direct offset navigation ({est_pages} est. pages)...")
-
-        offset = PAGE_SIZE * 2
-        page_num = 3
-        empty_streak = 0
-
-        while offset < max_offset:
-            url = build_url(year, offset)
-            await page.goto(url, wait_until="commit")
-            await asyncio.sleep(random.uniform(0.3, 0.8))
-
-            # Wait for content
-            got_players = False
-            for _ in range(4):
-                if await count_links(page) >= 1:
-                    got_players = True
-                    break
-                await asyncio.sleep(1.5)
-
-            if got_players:
-                html = await page.content()
-                players = parse_html(html)
-                if players:
-                    all_players.extend(players)
-                    empty_streak = 0
-                else:
-                    empty_streak += 1
-            else:
-                empty_streak += 1
-
-            if empty_streak >= 3:
-                break
-
-            if page_num % 10 == 0:
-                print(f"  Page {page_num}: {len(all_players)} players so far...")
-
-            offset += PAGE_SIZE
-            page_num += 1
-
+    # ── Fallback phase: retry failed + leftover offsets on the main tab ──
+    leftovers = sorted(set(failed) | set(queue))
+    # Don't retry offsets past the detected end of data
+    if results:
+        max_done = max(results.keys())
     else:
-        # Direct offsets blocked — fall back to Next button clicking
-        print(f"  Direct offsets blocked. Using Next button navigation...")
-        if total_players:
-            print(f"  ~{total_players} players expected")
+        max_done = 0
 
-        # Go back to page 1
-        await page.goto(build_url(year, 0), wait_until="commit")
-        await wait_for_players(page)
+    if leftovers and not progress["end_seen"]:
+        print(f"  Retrying {len(leftovers)} failed/remaining pages on main tab...")
+        for offset in leftovers:
+            players = await fetch_offset(main_page, year, offset, patient=True)
+            if players is None:
+                # Main tab blocked too — wait for captcha solve and retry once
+                print("  Main tab blocked — waiting for captcha...")
+                await main_page.goto(build_url(year, offset), wait_until="commit")
+                if await wait_for_players(main_page, timeout=120):
+                    html = await main_page.content()
+                    players = parse_html(html)
+                else:
+                    print(f"  Skipping offset {offset} (could not load).")
+                    continue
+            if players:
+                results[offset] = players
+                progress["players"] += len(players)
+    elif leftovers:
+        # End of data was seen — only retry offsets below the highest successful one
+        retry = [o for o in leftovers if o < max_done]
+        if retry:
+            print(f"  Retrying {len(retry)} gap pages on main tab...")
+            for offset in retry:
+                players = await fetch_offset(main_page, year, offset, patient=True)
+                if players:
+                    results[offset] = players
+                    progress["players"] += len(players)
 
-        page_num = 2
-        while True:
-            clicked = await try_next_button(page)
-            if not clicked:
-                break
+    # Close worker tabs (keep main)
+    for t in tabs[1:]:
+        try:
+            await t.close()
+        except Exception:
+            pass
 
-            html = await page.content()
-            players = parse_html(html)
-            if not players:
-                break
-
-            all_players.extend(players)
-
-            if page_num % 10 == 0:
-                print(f"  Page {page_num}: {len(all_players)} players so far...")
-
-            page_num += 1
+    # ── Merge in offset order ──
+    all_players = []
+    for offset in sorted(results.keys()):
+        all_players.extend(results[offset])
 
     print(f"  TOTAL: {len(all_players)} players for {label}")
     return all_players
@@ -440,6 +453,7 @@ async def main():
 
     print(f"Need to scrape: {', '.join(str(y) for y in still_needed)}")
     print(f"Output directory: {OUTPUT_DIR}")
+    print(f"Parallel tabs: {NUM_TABS}")
     print()
 
     async with async_playwright() as pw:
@@ -453,9 +467,9 @@ async def main():
             args=["--disable-blink-features=AutomationControlled"],
         )
 
-        page = context.pages[0] if context.pages else await context.new_page()
+        main_page = context.pages[0] if context.pages else await context.new_page()
         if stealth_async:
-            await stealth_async(page)
+            await stealth_async(main_page)
             print("Stealth mode active.\n")
 
         for idx, year in enumerate(still_needed):
@@ -469,7 +483,7 @@ async def main():
                 print(f"  Pausing {delay:.1f}s...")
                 await asyncio.sleep(delay)
 
-            players = await scrape_edition(page, year)
+            players = await scrape_edition(context, main_page, year)
 
             if players:
                 filepath = OUTPUT_DIR / f"fifa_{year}.json"
