@@ -42,7 +42,8 @@ BASE_URL = "https://sofifa.com/players"
 def build_url(year: int, offset: int = 0) -> str:
     vc = VERSION_CODES.get(year, "")
     col_str = ",".join(COLUMNS)
-    url = f"{BASE_URL}?type=all&r={vc}&set=true&col={col_str}&showCol%5B%5D=pi&showCol%5B%5D=ae&showCol%5B%5D=oa&showCol%5B%5D=pt"
+    show_col = "".join(f"&showCol%5B%5D={c}" for c in COLUMNS)
+    url = f"{BASE_URL}?type=all&r={vc}&set=true&col={col_str}{show_col}"
     if offset > 0:
         url += f"&offset={offset}"
     return url
@@ -83,6 +84,63 @@ def wait_for_players(page, timeout_ms=180000):
     return False
 
 
+def _get_col_id(th) -> str:
+    """Extract column ID from a <th> element via class or data attribute."""
+    for cls in th.get("class", []):
+        if cls.startswith("col-"):
+            return cls[4:]
+    return th.get("data-col", "")
+
+
+def _build_header_map(table) -> list[str]:
+    """Build a list of column IDs from the table header row."""
+    header_row = table.select_one("thead tr")
+    if not header_row:
+        return []
+    return [_get_col_id(th) for th in header_row.select("th")]
+
+
+def _extract_pi_cell(td, player: dict):
+    """Extract player info from the pi (player info) cell."""
+    pos_spans = td.select("span.pos")
+    if not pos_spans:
+        pos_spans = td.select("span[class*='pos']")
+    if pos_spans:
+        player["positions"] = ",".join(s.get_text(strip=True) for s in pos_spans)
+
+    flag = td.select_one("img.flag")
+    if not flag:
+        flag = td.select_one("img[title]")
+    if flag:
+        player["nationality"] = flag.get("title", "")
+
+    club_links = td.select('a[href*="/team/"]')
+    if club_links:
+        player["club"] = club_links[0].get_text(strip=True)
+
+    league_links = td.select('a[href*="/league/"]')
+    if not league_links:
+        league_links = td.select('a[href*="/players?lg="]')
+    if league_links:
+        player["league"] = league_links[0].get_text(strip=True)
+
+
+def _extract_td_value(col_id: str, td, player: dict):
+    """Extract value from a <td> based on its column ID."""
+    if col_id == "ae":
+        player["age"] = td.get_text(strip=True)
+    elif col_id == "oa":
+        player["overall"] = td.get_text(strip=True)
+    elif col_id == "pt":
+        player["potential"] = td.get_text(strip=True)
+    elif col_id == "pi":
+        _extract_pi_cell(td, player)
+    elif col_id:
+        val = td.get_text(strip=True)
+        if val:
+            player[f"attr_{col_id}"] = val
+
+
 def parse_page(page) -> list[dict]:
     """Parse player data from the current page."""
     from bs4 import BeautifulSoup
@@ -90,7 +148,7 @@ def parse_page(page) -> list[dict]:
     html = page.content()
     soup = BeautifulSoup(html, "html.parser")
 
-    # Find the table containing player rows — don't rely on a specific class
+    # Find the table containing player rows
     table = soup.select_one("table.table")
     if not table:
         for t in soup.select("table"):
@@ -99,6 +157,9 @@ def parse_page(page) -> list[dict]:
                 break
     if not table:
         return []
+
+    # Build column ID list from headers for index-based extraction
+    header_ids = _build_header_map(table)
 
     rows = table.select("tbody tr")
     if not rows:
@@ -126,43 +187,30 @@ def parse_page(page) -> list[dict]:
         player["name"] = name_link.get_text(strip=True)
 
         img = row.select_one("img[data-src]")
+        if not img:
+            img = row.select_one("img[src*='sofifa']")
         if img:
-            player["image_url"] = img["data-src"]
+            player["image_url"] = img.get("data-src") or img.get("src", "")
 
         tds = row.select("td")
-        for td in tds:
-            col_class = td.get("class", [])
-            for cls in col_class:
+        for idx, td in enumerate(tds):
+            # Method 1: CSS class on the <td> (works on newer editions)
+            col_id = ""
+            for cls in td.get("class", []):
                 if cls.startswith("col-"):
-                    col_name = cls[4:]
+                    col_id = cls[4:]
+                    break
 
-                    if col_name == "ae":
-                        player["age"] = td.get_text(strip=True)
-                    elif col_name == "oa":
-                        player["overall"] = td.get_text(strip=True)
-                    elif col_name == "pt":
-                        player["potential"] = td.get_text(strip=True)
-                    elif col_name == "pi":
-                        pos_spans = td.select("span.pos")
-                        if pos_spans:
-                            player["positions"] = ",".join(
-                                s.get_text(strip=True) for s in pos_spans
-                            )
-                        flag = td.select_one("img.flag")
-                        if flag:
-                            player["nationality"] = flag.get("title", "")
-                        club_links = td.select('a[href*="/team/"]')
-                        if club_links:
-                            player["club"] = club_links[0].get_text(strip=True)
-                        league_links = td.select('a[href*="/league/"]')
-                        if not league_links:
-                            league_links = td.select('a[href*="/players?lg="]')
-                        if league_links:
-                            player["league"] = league_links[0].get_text(strip=True)
-                    else:
-                        val = td.get_text(strip=True)
-                        if val:
-                            player[f"attr_{col_name}"] = val
+            # Method 2: data-col attribute
+            if not col_id:
+                col_id = td.get("data-col", "")
+
+            # Method 3: index-based mapping from table headers
+            if not col_id and idx < len(header_ids):
+                col_id = header_ids[idx]
+
+            if col_id:
+                _extract_td_value(col_id, td, player)
 
         if player.get("sofifa_id") and player.get("name"):
             players.append(player)
@@ -196,7 +244,17 @@ def scrape_edition(page, year: int) -> list[dict]:
 
         all_players.extend(players_on_page)
 
-        if page_num % 5 == 0 or page_num == 1:
+        if page_num == 1:
+            # Show first player's keys so we can verify attributes are captured
+            first = players_on_page[0]
+            attr_keys = [k for k in first.keys() if k.startswith("attr_")]
+            print(f"  Page 1: {len(players_on_page)} players (total: {len(all_players)})")
+            print(f"  >>> First player: {first.get('name')} | Keys: {sorted(first.keys())}")
+            print(f"  >>> Attribute keys ({len(attr_keys)}): {sorted(attr_keys)}")
+            if len(attr_keys) < 5:
+                print(f"  !!! WARNING: Very few attributes found — HTML structure may not match parser.")
+                print(f"  !!! Full first player data: {json.dumps(first, indent=2)}")
+        elif page_num % 5 == 0:
             print(f"  Page {page_num}: {len(players_on_page)} players (total: {len(all_players)})")
 
         # Try clicking Next button
@@ -228,22 +286,46 @@ def scrape_edition(page, year: int) -> list[dict]:
     return all_players
 
 
+def file_has_attributes(filepath: Path) -> bool:
+    """Check if a JSON file contains detailed attributes (not just basic fields)."""
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not data:
+            return False
+        first = data[0] if isinstance(data, list) else data
+        attr_keys = [k for k in first.keys() if k.startswith("attr_")]
+        return len(attr_keys) >= 5
+    except Exception:
+        return False
+
+
 def main():
+    import sys
+    force = "--force" in sys.argv
+
     already_done = []
+    incomplete = []
     still_needed = []
     for year in MISSING_YEARS:
         filepath = OUTPUT_DIR / f"fifa_{year}.json"
         if filepath.exists():
             size = filepath.stat().st_size
             if size > 1000:
-                already_done.append(year)
+                if force or not file_has_attributes(filepath):
+                    incomplete.append(year)
+                else:
+                    already_done.append(year)
                 continue
         still_needed.append(year)
 
+    if incomplete:
+        print(f"Incomplete data (will re-scrape): {', '.join(str(y) for y in incomplete)}")
+        still_needed = incomplete + still_needed
     if already_done:
-        print(f"Already scraped: {', '.join(str(y) for y in already_done)}")
+        print(f"Already scraped with full attributes: {', '.join(str(y) for y in already_done)}")
     if not still_needed:
-        print("All editions already scraped!")
+        print("All editions already scraped with full attributes!")
         return
 
     print(f"Need to scrape: {', '.join(str(y) for y in still_needed)}")
