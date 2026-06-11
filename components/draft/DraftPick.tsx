@@ -611,18 +611,18 @@ export default function DraftPick({
                 </div>
               )}
 
-              {/* Stat column headers */}
-              {spinResult && keyStats.length > 0 && keyStats[0].pick(spinResult.roster[0] ?? {} as RosterPlayer) > 0 && (
-                <div className="flex items-center justify-end gap-0 pr-5 mb-1">
-                  {keyStats.map((ks) => (
-                    <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-600 uppercase">
-                      {ks.label}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {spinResult && <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
+              {spinResult && <div className="max-h-[60vh] overflow-y-auto">
+                {/* Stat column headers — inside scroll container so they align with values */}
+                {keyStats.length > 0 && spinResult.roster[0] && keyStats[0].pick(spinResult.roster[0]) > 0 && (
+                  <div className="flex items-center justify-end gap-0 pr-1 mb-1 sticky top-0 bg-gray-950 z-10 py-1">
+                    {keyStats.map((ks) => (
+                      <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-600 uppercase">
+                        {ks.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="space-y-1">
                 {[...spinResult.roster]
                   .sort((a, b) => {
                     const aCompat = currentSlot?.compatiblePositions.some((cp) =>
@@ -717,6 +717,7 @@ export default function DraftPick({
                     </button>
                   );
                 })}
+              </div>
               </div>}
             </div>
           )}
