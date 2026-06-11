@@ -9,6 +9,30 @@ export const maxDuration = 30;
 // Premier Leagues, so we anchor the patterns to the start of the name.
 const PL_FILTER = "league.ilike.Premier League%,league.ilike.English Premier League%,league.ilike.Barclays Premier League%";
 
+// SoFIFA gives Russia's and Ukraine's top divisions the SAME name ("Premier
+// League") as England's, so the filter above also catches their clubs. None of
+// these are English, and this set is closed (the Russian league left FIFA after
+// 2022; Ukraine only ever has these two), so a name denylist is reliable here.
+const NON_ENGLISH_PL_CLUBS = new Set(
+  [
+    // Ukrainian Premier League
+    "Dynamo Kyiv", "Shakhtar Donetsk",
+    // Russian Premier League
+    "Akhmat Grozny", "Alaniya", "Arsenal Tula", "FC Amkar Perm",
+    "FC Anzhi Makhachkala", "FC Dynamo Moscow", "FC Khimki", "FC Krasnodar",
+    "FC Kuban Krasnodar", "FC Lokomotiv", "FC Moscow", "FC Orenburg",
+    "FC Rostov", "FC Tom Tomsk", "FC Tosno", "FC Ufa", "FC Ural Yekaterinburg",
+    "FC Volga Nizhny Novgorod", "Mordovia Saransk", "PFC CSKA",
+    "PFC Krylia Sovetov Samara", "Rubin Kazan", "SKA Khabarovsk",
+    "Saturn Ramenskoye", "Spartak Moscow", "Spartak Nalchik", "Torpedo Moscow",
+    "Zenit",
+  ].map((c) => c.toLowerCase())
+);
+
+function isEnglishPLClub(club: string): boolean {
+  return !NON_ENGLISH_PL_CLUBS.has(club.trim().toLowerCase());
+}
+
 export async function GET() {
   const supabase = createServiceClient();
 
@@ -21,7 +45,7 @@ export async function GET() {
 
   if (!rpcError && Array.isArray(rpcData)) {
     for (const row of rpcData as { club: string; fifa_year: number }[]) {
-      if (!row.club) continue;
+      if (!row.club || !isEnglishPLClub(row.club)) continue;
       if (!clubMap.has(row.club)) clubMap.set(row.club, new Set());
       clubMap.get(row.club)!.add(row.fifa_year);
     }
@@ -43,7 +67,7 @@ export async function GET() {
       }
 
       for (const row of data ?? []) {
-        if (!row.club) continue;
+        if (!row.club || !isEnglishPLClub(row.club)) continue;
         if (!clubMap.has(row.club)) clubMap.set(row.club, new Set());
         clubMap.get(row.club)!.add(row.fifa_year);
       }

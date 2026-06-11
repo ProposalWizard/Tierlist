@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { FORMATIONS, getPositionColor, getPositionTextColor } from "./formations";
+import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftSettings, DraftPlayer } from "@/app/draft/page";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
 
@@ -678,6 +679,15 @@ export default function DraftPick({
                             : "bg-gray-900/50 hover:bg-gray-800/80 border border-transparent hover:border-gray-700/50"
                       }`}
                     >
+                      {/* Face thumbnail (falls back to an empty circle if missing) */}
+                      {player.image_url && (
+                        <ImageWithFallback
+                          src={player.image_url}
+                          alt={player.name}
+                          fallbackText=""
+                          className="w-9 h-9 rounded-full bg-gray-800 object-cover shrink-0"
+                        />
+                      )}
                       {/* OVR badge */}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-sm shrink-0 ${
                         player.overall >= 85

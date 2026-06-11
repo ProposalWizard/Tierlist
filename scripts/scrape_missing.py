@@ -86,19 +86,33 @@ SEED_COLUMNS = [
 ACTIVE_COLUMNS = list(SEED_COLUMNS)
 COLUMNS_DISCOVERED = False
 
+# Filled at runtime by reading SoFIFA's own edition dropdown (see
+# discover_versions). This is AUTHORITATIVE — the hardcoded VERSION_CODES above
+# were wrong for several editions (they pulled the wrong season's roster), so we
+# always prefer codes read live from the site.
+DISCOVERED_CODES: dict[int, str] = {}
+VERSIONS_DISCOVERED = False
+
+
+def code_for_year(year: int) -> str:
+    """Prefer the code discovered live from SoFIFA; fall back to the hardcoded
+    table only if discovery hasn't run / didn't find this edition."""
+    return DISCOVERED_CODES.get(year) or VERSION_CODES.get(year, "")
+
+
 BASE_URL = "https://sofifa.com/players"
 TEAMS_URL = "https://sofifa.com/teams"
 
 
 def build_url(year: int) -> str:
-    vc = VERSION_CODES.get(year, "")
+    vc = code_for_year(year)
     col_str = ",".join(ACTIVE_COLUMNS)
     show_col = "".join(f"&showCol%5B%5D={c}" for c in ACTIVE_COLUMNS)
     return f"{BASE_URL}?type=all&r={vc}&set=true&col={col_str}{show_col}"
 
 
 def teams_url(year: int) -> str:
-    vc = VERSION_CODES.get(year, "")
+    vc = code_for_year(year)
     return f"{TEAMS_URL}?type=club&r={vc}&set=true"
 
 
@@ -111,6 +125,35 @@ def upscale_face_url(url: str | None) -> str | None:
 
 
 # ── Column discovery ─────────────────────────────────────────────────────────
+
+
+async def discover_versions(page) -> dict[int, str]:
+    """Read SoFIFA's edition dropdown so each year maps to the REAL roster code.
+
+    The dropdown lists every edition, e.g. "EA SPORTS FC 26", "FIFA 23", each
+    with an ?r=NNNNNN value. We map the edition label -> calendar year and keep
+    the FIRST (latest) code seen per edition. This replaces the unreliable
+    hardcoded table that was pulling the wrong season's data.
+    """
+    options = await page.query_selector_all('select[name="version"] option')
+    for opt in options:
+        value = await opt.get_attribute("value") or ""
+        text = ((await opt.inner_text()) or "").strip()
+        m = re.search(r"r=(\d+)", value)
+        if not m:
+            continue
+        code = m.group(1)
+
+        # "EA SPORTS FC 26" -> 2026 ;  "FIFA 23" -> 2023 ;  "FIFA 07" -> 2007
+        em = re.search(r"\bFC\s*0?(\d{1,2})\b", text, re.I)
+        if not em:
+            em = re.search(r"\bFIFA\s*0?(\d{1,2})\b", text, re.I)
+        if not em:
+            continue
+        year = 2000 + int(em.group(1))
+        if year not in DISCOVERED_CODES:
+            DISCOVERED_CODES[year] = code
+    return DISCOVERED_CODES
 
 
 async def discover_columns(page) -> dict[str, str]:
@@ -438,23 +481,50 @@ def apply_leagues(players: list[dict], club_league: dict[str, str]) -> int:
 # ── Player scraping ────────────────────────────────────────────────────────────
 
 
+async def ensure_discovery(page) -> None:
+    """One-time: read SoFIFA's edition + column dropdowns from the default
+    players page, so every edition uses the correct roster code and full columns."""
+    global COLUMNS_DISCOVERED, VERSIONS_DISCOVERED
+    if COLUMNS_DISCOVERED and VERSIONS_DISCOVERED:
+        return
+
+    await page.goto(BASE_URL, wait_until="commit")
+    if not await wait_for(page, 'a[href*="/player/"]', "players page"):
+        return
+
+    if not VERSIONS_DISCOVERED:
+        await discover_versions(page)
+        VERSIONS_DISCOVERED = True
+        if DISCOVERED_CODES:
+            sample = ", ".join(
+                f"{y}={DISCOVERED_CODES[y]}" for y in sorted(DISCOVERED_CODES, reverse=True)[:5]
+            )
+            print(f"  Discovered version codes for {len(DISCOVERED_CODES)} editions (e.g. {sample}).")
+        else:
+            print("  ⚠ Could not read the edition dropdown — falling back to hardcoded codes.")
+
+    if not COLUMNS_DISCOVERED:
+        disc = await discover_columns(page)
+        if disc:
+            print(f"  Discovered {len(disc)} columns; scraping {len(ACTIVE_COLUMNS)} total.")
+        COLUMNS_DISCOVERED = True
+
+
 async def scrape_players(page, context, year: int, download_faces: bool) -> list[dict]:
-    global COLUMNS_DISCOVERED
     label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
+
+    await ensure_discovery(page)
+
+    vc = code_for_year(year)
+    if not vc:
+        print(f"  ⚠ No version code for {label} — cannot scrape safely, skipping.")
+        return []
+    print(f"  Using roster code r={vc} for {label}.")
 
     await page.goto(build_url(year), wait_until="commit")
     if not await wait_for(page, 'a[href*="/player/"]', "players page"):
         print(f"  Could not load {label}, skipping...")
         return []
-
-    if not COLUMNS_DISCOVERED:
-        disc = await discover_columns(page)
-        if disc:
-            print(f"\n  Discovered {len(disc)} columns; scraping {len(ACTIVE_COLUMNS)} total.")
-            print("  Reloading with full column set...")
-            await page.goto(build_url(year), wait_until="commit")
-            await wait_for(page, 'a[href*="/player/"]', "players page")
-        COLUMNS_DISCOVERED = True
 
     all_players: list[dict] = []
     page_num = 1
@@ -534,12 +604,15 @@ async def main():
     force = "--force" in sys.argv
     download_faces = "--download-faces" in sys.argv
 
-    single_year = None
-    for arg in sys.argv[1:]:
-        if arg.startswith("--year="):
-            single_year = int(arg.split("=")[1])
+    # Allow multiple --year= args; explicitly requesting a year always
+    # re-scrapes it (so the 4 mislabelled editions can be redone without
+    # --force re-doing all 20).
+    requested_years = [
+        int(arg.split("=")[1]) for arg in sys.argv[1:] if arg.startswith("--year=")
+    ]
 
-    years = [single_year] if single_year else ALL_YEARS
+    years = requested_years if requested_years else ALL_YEARS
+    force_years = force or bool(requested_years)
 
     print("Mode: ALL LEAGUES & CLUBS")
     if download_faces:
@@ -552,7 +625,7 @@ async def main():
     for year in years:
         fp = OUTPUT_DIR / f"fifa_{year}.json"
         data = _load(fp) if fp.exists() and fp.stat().st_size > 1000 else None
-        if data is not None and players_complete(data) and not force:
+        if data is not None and players_complete(data) and not force_years:
             if has_league(data):
                 done.append(year)
             else:
