@@ -391,7 +391,7 @@ async def wait_for(page, selector: str, what: str, timeout: int = 180) -> bool:
     return False
 
 
-async def click_next(page, ready_selector: str) -> bool:
+async def click_next(page, ready_selector: str, expected_r: str | None = None) -> bool:
     next_btn = await page.query_selector('a.bp3-button[rel="next"]')
     if not next_btn:
         next_btn = await page.query_selector('a[rel="next"]')
@@ -407,6 +407,12 @@ async def click_next(page, ready_selector: str) -> bool:
         await next_btn.click()
         await page.wait_for_selector(ready_selector, timeout=15000)
         await asyncio.sleep(random.uniform(0.5, 1.0))
+        if expected_r:
+            url = page.url
+            if f"r={expected_r}" not in url:
+                print(f"  ⚠ VERSION DRIFT: expected r={expected_r} but URL is: {url[:120]}")
+                print(f"  Stopping pagination — SoFIFA dropped the version filter.")
+                return False
         return True
     except Exception as e:
         print(f"  Pagination stopped: {e}")
@@ -527,6 +533,7 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
         return []
 
     all_players: list[dict] = []
+    seen_ids: set[str] = set()
     page_num = 1
     while True:
         html = await page.content()
@@ -534,7 +541,17 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
         if not players:
             print(f"  Page {page_num}: no players parsed, stopping.")
             break
-        all_players.extend(players)
+
+        dupes = sum(1 for p in players if p.get("sofifa_id") in seen_ids)
+        if dupes > len(players) // 2:
+            print(f"  ⚠ Page {page_num}: {dupes}/{len(players)} players already seen — pagination looped. Stopping.")
+            break
+
+        for p in players:
+            pid = p.get("sofifa_id")
+            if pid and pid not in seen_ids:
+                seen_ids.add(pid)
+                all_players.append(p)
 
         if download_faces:
             for p in players:
@@ -551,14 +568,14 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
             if clubs == 0:
                 print("  ⚠ WARNING: No club data — paste the HTML DIAGNOSTIC above.")
         elif page_num % 10 == 0:
-            print(f"  Page {page_num}: {len(all_players)} players so far...")
+            print(f"  Page {page_num}: {len(all_players)} unique players so far...")
 
-        if not await click_next(page, 'a[href*="/player/"]'):
-            print(f"  No more pages. Total: {len(all_players)} players.")
+        if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
+            print(f"  No more pages. Total: {len(all_players)} unique players.")
             break
         page_num += 1
 
-    print(f"  TOTAL: {len(all_players)} players for {label}")
+    print(f"  TOTAL: {len(all_players)} unique players for {label}")
     return all_players
 
 
