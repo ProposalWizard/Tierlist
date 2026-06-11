@@ -391,7 +391,7 @@ async def wait_for(page, selector: str, what: str, timeout: int = 180) -> bool:
     return False
 
 
-async def click_next(page, ready_selector: str) -> bool:
+async def click_next(page, ready_selector: str, expected_r: str | None = None) -> bool:
     next_btn = await page.query_selector('a.bp3-button[rel="next"]')
     if not next_btn:
         next_btn = await page.query_selector('a[rel="next"]')
@@ -407,6 +407,12 @@ async def click_next(page, ready_selector: str) -> bool:
         await next_btn.click()
         await page.wait_for_selector(ready_selector, timeout=15000)
         await asyncio.sleep(random.uniform(0.5, 1.0))
+        if expected_r:
+            url = page.url
+            if f"r={expected_r}" not in url:
+                print(f"  ⚠ VERSION DRIFT: expected r={expected_r} but URL is: {url[:120]}")
+                print(f"  Stopping pagination — SoFIFA dropped the version filter.")
+                return False
         return True
     except Exception as e:
         print(f"  Pagination stopped: {e}")
@@ -526,6 +532,8 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
         print(f"  Could not load {label}, skipping...")
         return []
 
+    MAX_PLAYERS_PER_EDITION = 35000
+
     all_players: list[dict] = []
     page_num = 1
     while True:
@@ -553,7 +561,11 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
         elif page_num % 10 == 0:
             print(f"  Page {page_num}: {len(all_players)} players so far...")
 
-        if not await click_next(page, 'a[href*="/player/"]'):
+        if len(all_players) >= MAX_PLAYERS_PER_EDITION:
+            print(f"  ⚠ Safety cap reached ({MAX_PLAYERS_PER_EDITION} players). Stopping.")
+            break
+
+        if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
             print(f"  No more pages. Total: {len(all_players)} players.")
             break
         page_num += 1
