@@ -532,9 +532,8 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
         print(f"  Could not load {label}, skipping...")
         return []
 
-    MAX_PLAYERS_PER_EDITION = 35000
-
     all_players: list[dict] = []
+    seen_ids: set[str] = set()
     page_num = 1
     while True:
         html = await page.content()
@@ -542,7 +541,17 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
         if not players:
             print(f"  Page {page_num}: no players parsed, stopping.")
             break
-        all_players.extend(players)
+
+        dupes = sum(1 for p in players if p.get("sofifa_id") in seen_ids)
+        if dupes > len(players) // 2:
+            print(f"  ⚠ Page {page_num}: {dupes}/{len(players)} players already seen — pagination looped. Stopping.")
+            break
+
+        for p in players:
+            pid = p.get("sofifa_id")
+            if pid and pid not in seen_ids:
+                seen_ids.add(pid)
+                all_players.append(p)
 
         if download_faces:
             for p in players:
@@ -559,18 +568,14 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
             if clubs == 0:
                 print("  ⚠ WARNING: No club data — paste the HTML DIAGNOSTIC above.")
         elif page_num % 10 == 0:
-            print(f"  Page {page_num}: {len(all_players)} players so far...")
-
-        if len(all_players) >= MAX_PLAYERS_PER_EDITION:
-            print(f"  ⚠ Safety cap reached ({MAX_PLAYERS_PER_EDITION} players). Stopping.")
-            break
+            print(f"  Page {page_num}: {len(all_players)} unique players so far...")
 
         if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
-            print(f"  No more pages. Total: {len(all_players)} players.")
+            print(f"  No more pages. Total: {len(all_players)} unique players.")
             break
         page_num += 1
 
-    print(f"  TOTAL: {len(all_players)} players for {label}")
+    print(f"  TOTAL: {len(all_players)} unique players for {label}")
     return all_players
 
 
