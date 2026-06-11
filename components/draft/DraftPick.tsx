@@ -215,7 +215,7 @@ export default function DraftPick({
 
     setTimeout(() => {
       setSpinDisplay(target);
-      setPhase("reveal");
+      setPhase("pick");
       fetchRoster(target.club, target.year);
     }, 3000);
   }, [getRandomClubYear, generateSpinItems]);
@@ -570,54 +570,14 @@ export default function DraftPick({
             </div>
           )}
 
-          {phase === "reveal" && spinDisplay && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="text-center mb-8 animate-[fadeScaleIn_0.5s_ease-out]"
-                style={{ animation: "fadeScaleIn 0.5s ease-out" }}
-              >
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-900/30 border border-emerald-700/40 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="text-xs font-bold text-emerald-400 tracking-widest uppercase">Result</span>
-                </div>
-                <h2 className="text-4xl font-black text-white mb-2 tracking-tight">
-                  {spinDisplay.club}
-                </h2>
-                <p className="text-2xl font-bold text-emerald-400">
-                  {spinDisplay.year >= 2024 ? "FC" : "FIFA"}{" "}
-                  {String(spinDisplay.year % 100).padStart(2, "0")}
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={handleRespin}
-                  disabled={spinning}
-                  className="px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95 text-gray-300"
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                    Re-spin
-                  </span>
-                </button>
-                <button
-                  onClick={() => { if (spinResult) setPhase("pick"); }}
-                  disabled={!spinResult}
-                  className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-700 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-900/40"
-                >
-                  {spinResult ? "View Roster" : "Loading..."}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {phase === "pick" && spinResult && (
+          {phase === "pick" && spinDisplay && (
             <div>
               <div className="text-center mb-5">
                 <div className="flex items-center justify-center gap-3 mb-2">
-                  <h2 className="text-2xl font-extrabold tracking-tight">{spinResult.club}</h2>
+                  <h2 className="text-2xl font-extrabold tracking-tight">{spinDisplay.club}</h2>
                   <span className="px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 text-sm font-bold">
-                    {spinResult.year >= 2024 ? "FC" : "FIFA"}{" "}
-                    {String(spinResult.year % 100).padStart(2, "0")}
+                    {spinDisplay.year >= 2024 ? "FC" : "FIFA"}{" "}
+                    {String(spinDisplay.year % 100).padStart(2, "0")}
                   </span>
                 </div>
                 <p className="text-gray-500 text-sm">
@@ -630,9 +590,30 @@ export default function DraftPick({
                 </p>
               </div>
 
+              {/* Re-spin button */}
+              <div className="flex justify-center mb-4">
+                <button
+                  onClick={handleRespin}
+                  disabled={spinning}
+                  className="px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-lg font-bold text-sm transition-all hover:scale-105 active:scale-95 text-gray-300"
+                >
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    Re-spin
+                  </span>
+                </button>
+              </div>
+
+              {!spinResult && (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-gray-500 text-sm">Loading roster...</p>
+                </div>
+              )}
+
               {/* Stat column headers */}
-              {keyStats.length > 0 && keyStats[0].pick(spinResult.roster[0] ?? {} as RosterPlayer) > 0 && (
-                <div className="flex items-center justify-end gap-0 pr-1 mb-1">
+              {spinResult && keyStats.length > 0 && keyStats[0].pick(spinResult.roster[0] ?? {} as RosterPlayer) > 0 && (
+                <div className="flex items-center justify-end gap-0 pr-5 mb-1">
                   {keyStats.map((ks) => (
                     <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-600 uppercase">
                       {ks.label}
@@ -641,7 +622,7 @@ export default function DraftPick({
                 </div>
               )}
 
-              <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
+              {spinResult && <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
                 {[...spinResult.roster]
                   .sort((a, b) => {
                     const aCompat = currentSlot?.compatiblePositions.some((cp) =>
@@ -736,7 +717,7 @@ export default function DraftPick({
                     </button>
                   );
                 })}
-              </div>
+              </div>}
             </div>
           )}
         </div>

@@ -234,16 +234,16 @@ function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
   const avgRating = (arr: number[]) =>
     arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 70;
 
-  const attackRatings = byRole.ATT.map(p => playerAttackRating(p, positionFitness(p)));
-  const midAttackContrib = byRole.MID.map(p => playerAttackRating(p, positionFitness(p)) * 0.4);
-  const attack = avgRating([...attackRatings, ...midAttackContrib]);
+  const attackBase = avgRating(byRole.ATT.map(p => playerAttackRating(p, positionFitness(p))));
+  const midAttackBoost = avgRating(byRole.MID.map(p => playerAttackRating(p, positionFitness(p))));
+  const attack = attackBase * 0.7 + midAttackBoost * 0.3;
 
   const midRatings = byRole.MID.map(p => playerMidfieldRating(p, positionFitness(p)));
   const midfield = avgRating(midRatings);
 
-  const defRatings = byRole.DEF.map(p => playerDefenseRating(p, positionFitness(p)));
-  const midDefContrib = byRole.MID.map(p => playerDefenseRating(p, positionFitness(p)) * 0.3);
-  const defense = avgRating([...defRatings, ...midDefContrib]);
+  const defenseBase = avgRating(byRole.DEF.map(p => playerDefenseRating(p, positionFitness(p))));
+  const midDefBoost = avgRating(byRole.MID.map(p => playerDefenseRating(p, positionFitness(p))));
+  const defense = defenseBase * 0.7 + midDefBoost * 0.3;
 
   const gkPlayers = byRole.GK;
   const gk = gkPlayers.length > 0
