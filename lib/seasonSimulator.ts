@@ -235,6 +235,37 @@ export interface PhaseRatings {
 function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
   const byRole: Record<PositionRole, DraftPlayer[]> = { GK: [], DEF: [], MID: [], ATT: [] };
 
+  // Defensive coercion: force overall and all attrs to numbers.
+  // After JSON.parse (e.g. localStorage resume), values may arrive as strings.
+  for (const p of players) {
+    p.overall = Number(p.overall) || 0;
+    if (p.attrs) {
+      const a = p.attrs;
+      a.pace = Number(a.pace) || 0;
+      a.shooting = Number(a.shooting) || 0;
+      a.passing = Number(a.passing) || 0;
+      a.dribbling = Number(a.dribbling) || 0;
+      a.defending = Number(a.defending) || 0;
+      a.physical = Number(a.physical) || 0;
+      a.finishing = Number(a.finishing) || 0;
+      a.positioning = Number(a.positioning) || 0;
+      a.crossing = Number(a.crossing) || 0;
+      a.vision = Number(a.vision) || 0;
+      a.longShots = Number(a.longShots) || 0;
+      a.shortPassing = Number(a.shortPassing) || 0;
+      a.longPassing = Number(a.longPassing) || 0;
+      a.heading = Number(a.heading) || 0;
+      a.interceptions = Number(a.interceptions) || 0;
+      a.standingTackle = Number(a.standingTackle) || 0;
+      a.marking = Number(a.marking) || 0;
+      a.reactions = Number(a.reactions) || 0;
+      a.sprintSpeed = Number(a.sprintSpeed) || 0;
+      a.gkDiving = Number(a.gkDiving) || 0;
+      a.gkPositioning = Number(a.gkPositioning) || 0;
+      a.gkReflexes = Number(a.gkReflexes) || 0;
+    }
+  }
+
   // Safety: estimate OVR from attributes if missing
   for (const p of players) {
     if (p.overall === 0 && p.attrs) {
@@ -585,6 +616,32 @@ export function simulateSeason(
   players: DraftPlayer[],
   otherTeams?: { name: string; strength: number }[],
 ): SeasonResult {
+  // --- [DRAFT-SIM] Debug logging ---
+  const p0 = players[0];
+  if (p0) {
+    console.log('[DRAFT-SIM] First player:', {
+      name: p0.name,
+      overall: p0.overall,
+      typeofOverall: typeof p0.overall,
+      assignedPosition: p0.assignedPosition,
+      positions: p0.positions,
+      hasAttrs: !!p0.attrs,
+      attrsSummary: p0.attrs ? {
+        pace: p0.attrs.pace,
+        shooting: p0.attrs.shooting,
+        passing: p0.attrs.passing,
+        defending: p0.attrs.defending,
+        typeofPace: typeof p0.attrs.pace,
+      } : null,
+    });
+  }
+  console.log('[DRAFT-SIM] All players OVR:', players.map(p => ({
+    name: p.name,
+    overall: p.overall,
+    typeofOverall: typeof p.overall,
+  })));
+  // --- end debug ---
+
   const seed = players.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42);
   const rng = createRng(seed);
 
@@ -594,12 +651,43 @@ export function simulateSeason(
 
   const ratings = computePhaseRatings(players);
 
+  // --- [DRAFT-SIM] Phase ratings ---
+  console.log('[DRAFT-SIM] Phase ratings:', {
+    attack: ratings.attack,
+    midfield: ratings.midfield,
+    defense: ratings.defense,
+    gk: ratings.gk,
+    teamStrength: ratings.teamStrength,
+  });
+
   const playerTeamName = 'Your Team';
 
   // Simulate 38 matches (home and away vs each opponent)
   const matches: MatchResult[] = [];
   for (const opp of opponents) {
-    matches.push(simulateMatch(players, ratings, opp, true, rng));
+    const homeMatch = simulateMatch(players, ratings, opp, true, rng);
+    matches.push(homeMatch);
+
+    // --- [DRAFT-SIM] Log first match ---
+    if (matches.length === 1) {
+      const myAttack = ratings.attack + HOME_ADVANTAGE * 0.6;
+      const myMidfield = ratings.midfield + HOME_ADVANTAGE * 0.4;
+      const myDefense = ratings.defense + HOME_ADVANTAGE * 0.3;
+      const myGk = ratings.gk;
+      const oppDefPower = opp.strength;
+      const myXg = computeExpectedGoals(myAttack, myMidfield, oppDefPower);
+      const ourDefensivePower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
+      const oppXg = computeExpectedGoals(opp.strength, opp.strength * 0.95, ourDefensivePower);
+      console.log('[DRAFT-SIM] First match (home vs ' + opp.name + '):', {
+        goalsFor: homeMatch.goalsFor,
+        goalsAgainst: homeMatch.goalsAgainst,
+        result: homeMatch.result,
+        myXg,
+        oppXg,
+        oppStrength: opp.strength,
+      });
+    }
+
     matches.push(simulateMatch(players, ratings, opp, false, rng));
   }
 
