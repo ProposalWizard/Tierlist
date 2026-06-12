@@ -25,6 +25,7 @@ const NON_ENGLISH_PL_CLUBS = new Set(
     "FC Volga Nizhny Novgorod", "Mordovia Saransk", "PFC CSKA",
     "PFC Krylia Sovetov Samara", "Rubin Kazan", "SKA Khabarovsk",
     "Saturn Ramenskoye", "Spartak Moscow", "Spartak Nalchik", "Torpedo Moscow",
+    "FC Sibir Novosibirsk",
     "Zenit",
   ].map((c) => c.toLowerCase())
 );

@@ -78,6 +78,16 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  // Safety net: estimate OVR from attributes if all other sources returned 0
+  for (const player of roster) {
+    if (player.overall === 0) {
+      const mainStats = [player.pace, player.shooting, player.passing, player.dribbling, player.defending, player.physical].filter(v => v > 0);
+      if (mainStats.length >= 3) {
+        player.overall = Math.round(mainStats.reduce((a, b) => a + b, 0) / mainStats.length);
+      }
+    }
+  }
+
   return NextResponse.json(
     { club, year, roster },
     {
