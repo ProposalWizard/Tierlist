@@ -43,6 +43,7 @@ export default function ImageWithFallback({
       className={className}
       style={style}
       loading="lazy"
+      referrerPolicy="no-referrer"
       decoding="async"
       onError={() => setFailed(true)}
     />

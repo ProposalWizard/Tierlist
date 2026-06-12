@@ -151,28 +151,29 @@ export default function DraftPick({
   const getRandomClubYear = useCallback((): { club: string; year: number } | null => {
     if (!availableClubs || availableClubs.length === 0) return null;
 
-    const validClubs = availableClubs.filter((c) => {
-      const validSeasons = c.seasons.filter(
-        (y) => y >= settings.eraStart && y <= settings.eraEnd
-      );
-      return validSeasons.some(
-        (y) => !usedClubYears.has(`${c.name}-${y}`)
-      );
-    });
+    // Build all valid (club, year) pairs
+    const allPairs: { club: string; year: number }[] = [];
+    for (const c of availableClubs) {
+      for (const y of c.seasons) {
+        if (y >= settings.eraStart && y <= settings.eraEnd && !usedClubYears.has(`${c.name}-${y}`)) {
+          allPairs.push({ club: c.name, year: y });
+        }
+      }
+    }
 
-    if (validClubs.length === 0) return null;
+    if (allPairs.length === 0) return null;
 
-    const club = validClubs[Math.floor(Math.random() * validClubs.length)];
-    const validSeasons = club.seasons.filter(
-      (y) =>
-        y >= settings.eraStart &&
-        y <= settings.eraEnd &&
-        !usedClubYears.has(`${club.name}-${y}`)
-    );
+    // Group by year for balanced selection: pick a year first, then a club
+    const byYear = new Map<number, { club: string; year: number }[]>();
+    for (const pair of allPairs) {
+      if (!byYear.has(pair.year)) byYear.set(pair.year, []);
+      byYear.get(pair.year)!.push(pair);
+    }
 
-    if (validSeasons.length === 0) return null;
-    const year = validSeasons[Math.floor(Math.random() * validSeasons.length)];
-    return { club: club.name, year };
+    const years = Array.from(byYear.keys());
+    const year = years[Math.floor(Math.random() * years.length)];
+    const clubsForYear = byYear.get(year)!;
+    return clubsForYear[Math.floor(Math.random() * clubsForYear.length)];
   }, [availableClubs, settings.eraStart, settings.eraEnd, usedClubYears]);
 
   const generateSpinItems = useCallback((target: { club: string; year: number }): { club: string; year: number }[] => {
@@ -586,7 +587,9 @@ export default function DraftPick({
                     {currentSlot?.label}
                   </span>
                   {" "}&middot;{" "}
-                  <span className="text-emerald-500/60 font-medium">compatible positions highlighted</span>
+                  <span className="text-emerald-500/60 font-medium">
+                    compatible: {currentSlot?.compatiblePositions.join(", ")}
+                  </span>
                 </p>
               </div>
 

@@ -227,6 +227,22 @@ interface PhaseRatings {
 
 function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
   const byRole: Record<PositionRole, DraftPlayer[]> = { GK: [], DEF: [], MID: [], ATT: [] };
+
+  // Safety: estimate OVR from attributes if missing
+  for (const p of players) {
+    if (p.overall === 0 && p.attrs) {
+      const a = p.attrs;
+      const main = [a.pace, a.shooting, a.passing, a.dribbling, a.defending, a.physical].filter(v => v > 0);
+      if (main.length >= 3) {
+        p.overall = Math.round(main.reduce((s, v) => s + v, 0) / main.length);
+      } else if (p.overall === 0) {
+        p.overall = 70;
+      }
+    } else if (p.overall === 0) {
+      p.overall = 70;
+    }
+  }
+
   for (const p of players) {
     byRole[classifyPosition(p.assignedPosition)].push(p);
   }
