@@ -92,6 +92,7 @@ export interface SeasonResult {
   projectedFinish: number;
   actualFinish: number;
   performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED';
+  phaseRatings: PhaseRatings;
 }
 
 // --- Seeded PRNG (mulberry32) ---
@@ -174,17 +175,15 @@ function hasAttrs(p: DraftPlayer): p is DraftPlayer & { attrs: PlayerAttributes 
   return (a.shooting > 0 || a.passing > 0 || a.defending > 0 || a.pace > 0);
 }
 
-// Use OVR as fallback for any missing (0) stat so incomplete data doesn't
-// drag weighted averages to unrealistic lows.
-function s(val: number, ovr: number): number { return val > 0 ? val : ovr; }
+function statOr(val: number, ovr: number): number { return val > 0 ? val : ovr; }
 
 function playerAttackRating(p: DraftPlayer, fitness: number): number {
   if (hasAttrs(p)) {
     const a = p.attrs;
     const o = p.overall;
-    const fin = s(a.finishing, o) || s(a.shooting, o);
-    const pos = s(a.positioning, o) || o * 0.8;
-    return (s(a.shooting, o) * 0.25 + fin * 0.20 + pos * 0.15 + s(a.pace, o) * 0.15 + s(a.dribbling, o) * 0.15 + s(a.physical, o) * 0.10) * fitness;
+    const fin = statOr(a.finishing, o) || statOr(a.shooting, o);
+    const pos = statOr(a.positioning, o) || o * 0.8;
+    return (statOr(a.shooting, o) * 0.25 + fin * 0.20 + pos * 0.15 + statOr(a.pace, o) * 0.15 + statOr(a.dribbling, o) * 0.15 + statOr(a.physical, o) * 0.10) * fitness;
   }
   return p.overall * fitness;
 }
@@ -193,9 +192,9 @@ function playerMidfieldRating(p: DraftPlayer, fitness: number): number {
   if (hasAttrs(p)) {
     const a = p.attrs;
     const o = p.overall;
-    const sp = s(a.shortPassing, o) || s(a.passing, o);
-    const vis = s(a.vision, o) || s(a.passing, o) * 0.8;
-    return (s(a.passing, o) * 0.25 + sp * 0.15 + vis * 0.15 + s(a.dribbling, o) * 0.15 + s(a.shooting, o) * 0.10 + s(a.defending, o) * 0.10 + s(a.physical, o) * 0.10) * fitness;
+    const sp = statOr(a.shortPassing, o) || statOr(a.passing, o);
+    const vis = statOr(a.vision, o) || statOr(a.passing, o) * 0.8;
+    return (statOr(a.passing, o) * 0.25 + sp * 0.15 + vis * 0.15 + statOr(a.dribbling, o) * 0.15 + statOr(a.shooting, o) * 0.10 + statOr(a.defending, o) * 0.10 + statOr(a.physical, o) * 0.10) * fitness;
   }
   return p.overall * fitness;
 }
@@ -204,10 +203,10 @@ function playerDefenseRating(p: DraftPlayer, fitness: number): number {
   if (hasAttrs(p)) {
     const a = p.attrs;
     const o = p.overall;
-    const tackle = s(a.standingTackle, o) || s(a.defending, o);
-    const mark = s(a.marking, o) || s(a.defending, o) * 0.9;
-    const intc = s(a.interceptions, o) || s(a.defending, o) * 0.85;
-    return (s(a.defending, o) * 0.20 + tackle * 0.15 + mark * 0.15 + intc * 0.15 + s(a.physical, o) * 0.15 + s(a.pace, o) * 0.10 + s(a.reactions, o) * 0.10) * fitness;
+    const tackle = statOr(a.standingTackle, o) || statOr(a.defending, o);
+    const mark = statOr(a.marking, o) || statOr(a.defending, o) * 0.9;
+    const intc = statOr(a.interceptions, o) || statOr(a.defending, o) * 0.85;
+    return (statOr(a.defending, o) * 0.20 + tackle * 0.15 + mark * 0.15 + intc * 0.15 + statOr(a.physical, o) * 0.15 + statOr(a.pace, o) * 0.10 + statOr(a.reactions, o) * 0.10) * fitness;
   }
   return p.overall * fitness;
 }
@@ -217,7 +216,7 @@ function playerGkRating(p: DraftPlayer, fitness: number): number {
     const a = p.attrs;
     const o = p.overall;
     if (a.gkDiving > 0 || a.gkReflexes > 0 || a.gkPositioning > 0) {
-      return (s(a.gkDiving, o) * 0.30 + s(a.gkReflexes, o) * 0.30 + s(a.gkPositioning, o) * 0.25 + s(a.reactions, o) * 0.15) * fitness;
+      return (statOr(a.gkDiving, o) * 0.30 + statOr(a.gkReflexes, o) * 0.30 + statOr(a.gkPositioning, o) * 0.25 + statOr(a.reactions, o) * 0.15) * fitness;
     }
   }
   return p.overall * fitness;
@@ -225,7 +224,7 @@ function playerGkRating(p: DraftPlayer, fitness: number): number {
 
 // --- Team phase ratings ---
 
-interface PhaseRatings {
+export interface PhaseRatings {
   attack: number;
   midfield: number;
   defense: number;
@@ -288,17 +287,17 @@ function goalScoringWeight(p: DraftPlayer): number {
   if (hasAttrs(p)) {
     const a = p.attrs;
     const o = p.overall;
-    const fin = s(a.finishing, o) || s(a.shooting, o);
-    const pos = s(a.positioning, o) || o * 0.7;
-    const head = s(a.heading, o) || o * 0.5;
+    const fin = statOr(a.finishing, o) || statOr(a.shooting, o);
+    const pos = statOr(a.positioning, o) || o * 0.7;
+    const head = statOr(a.heading, o) || o * 0.5;
 
     switch (role) {
       case 'ATT':
-        return (fin * 3 + pos * 2 + s(a.shooting, o) * 1.5 + head * 0.8 + s(a.pace, o) * 0.5) * fit / 80;
+        return (fin * 3 + pos * 2 + statOr(a.shooting, o) * 1.5 + head * 0.8 + statOr(a.pace, o) * 0.5) * fit / 80;
       case 'MID':
-        return ((s(a.longShots, o) || s(a.shooting, o) * 0.7) * 1.5 + s(a.shooting, o) * 1 + pos * 0.5 + head * 0.3) * fit / 250;
+        return ((statOr(a.longShots, o) || statOr(a.shooting, o) * 0.7) * 1.5 + statOr(a.shooting, o) * 1 + pos * 0.5 + head * 0.3) * fit / 250;
       case 'DEF':
-        return (head * 1.2 + s(a.shooting, o) * 0.3 + s(a.physical, o) * 0.2) * fit / 600;
+        return (head * 1.2 + statOr(a.shooting, o) * 0.3 + statOr(a.physical, o) * 0.2) * fit / 600;
       case 'GK':
         return 0.02;
     }
@@ -316,10 +315,10 @@ function assistWeight(p: DraftPlayer): number {
   if (hasAttrs(p)) {
     const a = p.attrs;
     const o = p.overall;
-    const vis = s(a.vision, o) || s(a.passing, o) * 0.8;
-    const cross = s(a.crossing, o) || s(a.passing, o) * 0.7;
-    const sp = s(a.shortPassing, o) || s(a.passing, o);
-    const lp = s(a.longPassing, o) || s(a.passing, o) * 0.7;
+    const vis = statOr(a.vision, o) || statOr(a.passing, o) * 0.8;
+    const cross = statOr(a.crossing, o) || statOr(a.passing, o) * 0.7;
+    const sp = statOr(a.shortPassing, o) || statOr(a.passing, o);
+    const lp = statOr(a.longPassing, o) || statOr(a.passing, o) * 0.7;
 
     const baseW = (vis * 2 + cross * 1.5 + sp * 1 + lp * 0.5) / 5;
     const roleMult: Record<PositionRole, number> = { ATT: 0.7, MID: 1.3, DEF: 0.4, GK: 0.02 };
@@ -786,5 +785,6 @@ export function simulateSeason(
     projectedFinish,
     actualFinish,
     performance,
+    phaseRatings: ratings,
   };
 }

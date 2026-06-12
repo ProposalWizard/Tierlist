@@ -180,8 +180,20 @@ export default function DraftResult({ players, onNewRun }: Props) {
           <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
             <span>Average OVR</span>
             <span className="font-bold text-white">
-              {Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length)}
+              {Math.round(players.reduce((acc, p) => acc + p.overall, 0) / players.length)}
             </span>
+          </div>
+          <div className="mt-1 flex justify-between text-xs text-gray-500">
+            <span>Team Strength</span>
+            <span className="font-bold text-emerald-400">
+              {Math.round(season.phaseRatings.teamStrength)}
+            </span>
+          </div>
+          <div className="mt-1 flex gap-3 text-[10px] text-gray-600 justify-end">
+            <span>ATK {Math.round(season.phaseRatings.attack)}</span>
+            <span>MID {Math.round(season.phaseRatings.midfield)}</span>
+            <span>DEF {Math.round(season.phaseRatings.defense)}</span>
+            <span>GK {Math.round(season.phaseRatings.gk)}</span>
           </div>
         </div>
 
