@@ -62,33 +62,58 @@ function classifyPos(pos: string): "GK" | "DEF" | "MID" | "ATT" {
 }
 
 function keyStatForSlot(slotLabel: string): { label: string; pick: (p: RosterPlayer) => number }[] {
-  const role = classifyPos(slotLabel);
-  switch (role) {
-    case "GK":
-      return [
-        { label: "DIV", pick: (p) => p.gkDiving || p.overall },
-        { label: "REF", pick: (p) => p.gkReflexes || p.overall },
-        { label: "POS", pick: (p) => p.gkPositioning || p.overall },
-      ];
-    case "DEF":
-      return [
-        { label: "DEF", pick: (p) => p.defending },
-        { label: "PHY", pick: (p) => p.physical },
-        { label: "PAC", pick: (p) => p.pace },
-      ];
-    case "MID":
-      return [
-        { label: "PAS", pick: (p) => p.passing },
-        { label: "DRI", pick: (p) => p.dribbling },
-        { label: "SHO", pick: (p) => p.shooting },
-      ];
-    case "ATT":
-      return [
-        { label: "SHO", pick: (p) => p.shooting },
-        { label: "PAC", pick: (p) => p.pace },
-        { label: "DRI", pick: (p) => p.dribbling },
-      ];
-  }
+  const s = slotLabel.toUpperCase().trim();
+
+  if (s === "GK") return [
+    { label: "DIV", pick: (p) => p.gkDiving || p.overall },
+    { label: "REF", pick: (p) => p.gkReflexes || p.overall },
+    { label: "POS", pick: (p) => p.gkPositioning || p.overall },
+  ];
+  if (s === "CB") return [
+    { label: "DEF", pick: (p) => p.defending },
+    { label: "HEAD", pick: (p) => p.heading },
+    { label: "PHY", pick: (p) => p.physical },
+  ];
+  if (s === "RB" || s === "LB" || s === "RWB" || s === "LWB") return [
+    { label: "CRS", pick: (p) => p.crossing },
+    { label: "PAC", pick: (p) => p.pace },
+    { label: "DEF", pick: (p) => p.defending },
+  ];
+  if (s === "CDM") return [
+    { label: "INT", pick: (p) => p.interceptions },
+    { label: "TAC", pick: (p) => p.standingTackle },
+    { label: "PAS", pick: (p) => p.passing },
+  ];
+  if (s === "CAM" || s === "RAM" || s === "LAM") return [
+    { label: "VIS", pick: (p) => p.vision },
+    { label: "DRI", pick: (p) => p.dribbling },
+    { label: "SHO", pick: (p) => p.shooting },
+  ];
+  if (s === "CM") return [
+    { label: "PAS", pick: (p) => p.passing },
+    { label: "DRI", pick: (p) => p.dribbling },
+    { label: "SHO", pick: (p) => p.shooting },
+  ];
+  if (s === "RM" || s === "LM") return [
+    { label: "CRS", pick: (p) => p.crossing },
+    { label: "PAC", pick: (p) => p.pace },
+    { label: "DRI", pick: (p) => p.dribbling },
+  ];
+  if (s === "RW" || s === "LW") return [
+    { label: "PAC", pick: (p) => p.pace },
+    { label: "DRI", pick: (p) => p.dribbling },
+    { label: "SHO", pick: (p) => p.shooting },
+  ];
+  if (s === "ST" || s === "CF") return [
+    { label: "FIN", pick: (p) => p.finishing },
+    { label: "SHO", pick: (p) => p.shooting },
+    { label: "PAC", pick: (p) => p.pace },
+  ];
+  return [
+    { label: "SHO", pick: (p) => p.shooting },
+    { label: "PAS", pick: (p) => p.passing },
+    { label: "PAC", pick: (p) => p.pace },
+  ];
 }
 
 function statColor(val: number): string {
@@ -615,14 +640,20 @@ export default function DraftPick({
               )}
 
               {spinResult && <div className="max-h-[60vh] overflow-y-auto">
-                {/* Stat column headers — inside scroll container so they align with values */}
-                {keyStats.length > 0 && spinResult.roster[0] && keyStats[0].pick(spinResult.roster[0]) > 0 && (
-                  <div className="flex items-center justify-end gap-0 pr-1 mb-1 sticky top-0 bg-gray-950 z-10 py-1">
-                    {keyStats.map((ks) => (
-                      <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-600 uppercase">
-                        {ks.label}
-                      </span>
-                    ))}
+                {/* Stat column headers — mirrors player row layout for alignment */}
+                {keyStats.length > 0 && (
+                  <div className="flex items-center gap-3 px-4 mb-1 sticky top-0 bg-gray-950 z-10 py-1">
+                    <div className="w-9 shrink-0" />
+                    <div className="w-10 shrink-0" />
+                    <div className="flex-1 min-w-0" />
+                    <div className="shrink-0" />
+                    <div className="flex gap-0 shrink-0">
+                      {keyStats.map((ks) => (
+                        <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-600 uppercase">
+                          {ks.label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <div className="space-y-1">
@@ -663,14 +694,16 @@ export default function DraftPick({
                             : "bg-gray-900/50 hover:bg-gray-800/80 border border-transparent hover:border-gray-700/50"
                       }`}
                     >
-                      {/* Face thumbnail (falls back to an empty circle if missing) */}
-                      {player.image_url && (
+                      {/* Face thumbnail — always rendered for layout consistency */}
+                      {player.image_url ? (
                         <ImageWithFallback
                           src={player.image_url}
                           alt={player.name}
                           fallbackText=""
                           className="w-9 h-9 rounded-full bg-gray-800 object-cover shrink-0"
                         />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gray-800 shrink-0" />
                       )}
                       {/* OVR badge */}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-sm shrink-0 ${
