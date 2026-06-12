@@ -24,6 +24,10 @@ Flags:
   --force            Re-scrape all editions, even complete ones
   --year=YYYY        Scrape only that edition
   --download-faces   Also download face images to sofifa_data/faces/
+  --patch-positions  Fast mode: only scrape positions, patch into existing JSON.
+                     Skips league map + face downloads. ~300 pages per edition.
+  --league=ID        Filter to one league (use with --patch-positions for speed).
+                     Premier League = 13. Cuts pages from ~300 to ~10.
 """
 
 import asyncio
@@ -623,6 +627,141 @@ def has_league(data) -> bool:
     return sum(1 for p in sample if p.get("league")) >= 10
 
 
+# ── Fast position-only scrape ────────────────────────────────────────────────
+
+
+def _positions_url(year: int, league_id: str | None = None) -> str:
+    vc = code_for_year(year)
+    url = f"{BASE_URL}?type=all&r={vc}&set=true&showCol%5B%5D=pi"
+    if league_id:
+        url += f"&lg%5B%5D={league_id}"
+    return url
+
+
+def _extract_positions_only(html: str) -> dict[str, str]:
+    """Parse a list page and return {sofifa_id: positions} for players that have positions."""
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+
+    table = soup.select_one("table.table")
+    if not table:
+        for t in soup.select("table"):
+            if t.select_one('a[href*="/player/"]'):
+                table = t
+                break
+    if not table:
+        return {}
+
+    results: dict[str, str] = {}
+    for row in table.select("tbody tr") or table.select("tr"):
+        name_link = row.select_one('a[href*="/player/"]')
+        if not name_link:
+            continue
+
+        href = name_link.get("href", "")
+        sofifa_id = ""
+        parts = href.split("/")
+        for i, part in enumerate(parts):
+            if part == "player" and i + 1 < len(parts):
+                sofifa_id = parts[i + 1]
+                break
+        if not sofifa_id:
+            continue
+
+        player: dict = {}
+        for td in row.select("td"):
+            col_id = ""
+            for cls in td.get("class", []):
+                if cls.startswith("col-"):
+                    col_id = cls[4:]
+                    break
+            if not col_id:
+                col_id = td.get("data-col", "")
+            if col_id == "pi":
+                _extract_pi_cell(td, player)
+                break
+
+        if player.get("positions"):
+            results[sofifa_id] = player["positions"]
+
+    return results
+
+
+async def patch_positions(page, years: list[int], league_id: str | None = None):
+    """Scrape only positions and patch into existing JSON files."""
+    await ensure_discovery(page)
+
+    for idx, year in enumerate(years):
+        label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
+        fp = OUTPUT_DIR / f"fifa_{year}.json"
+        existing = _load(fp)
+        if not existing:
+            print(f"\n  {fp.name}: no existing data — run a full scrape first, skipping")
+            continue
+
+        existing_count = len(existing)
+        already_have = sum(1 for p in existing if p.get("positions"))
+        if already_have == existing_count:
+            print(f"\n  {fp.name}: all {existing_count} players already have positions ✓")
+            continue
+
+        print(f"\n{'=' * 50}")
+        print(f"Patching positions for {label} ({already_have}/{existing_count} already have positions)")
+        print(f"{'=' * 50}")
+
+        if idx > 0:
+            await asyncio.sleep(random.uniform(2, 4))
+
+        vc = code_for_year(year)
+        if not vc:
+            print(f"  ⚠ No version code for {label}, skipping")
+            continue
+
+        url = _positions_url(year, league_id)
+        await page.goto(url, wait_until="commit")
+        if not await wait_for(page, 'a[href*="/player/"]', "players page"):
+            print(f"  Could not load {label}, skipping")
+            continue
+
+        all_positions: dict[str, str] = {}
+        page_num = 1
+        while True:
+            html = await page.content()
+            batch = _extract_positions_only(html)
+            if not batch:
+                print(f"  Page {page_num}: no positions found, stopping.")
+                break
+
+            new_in_batch = sum(1 for sid in batch if sid not in all_positions)
+            if new_in_batch == 0:
+                print(f"  Page {page_num}: all duplicates, stopping.")
+                break
+
+            all_positions.update(batch)
+
+            if page_num == 1 or page_num % 5 == 0:
+                print(f"  Page {page_num}: {len(batch)} players with positions (total: {len(all_positions)})")
+
+            if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
+                break
+            page_num += 1
+
+        # Patch into existing data
+        lookup = {str(p.get("sofifa_id", "")): p for p in existing}
+        patched = 0
+        for sid, pos in all_positions.items():
+            if sid in lookup and not lookup[sid].get("positions"):
+                lookup[sid]["positions"] = pos
+                patched += 1
+
+        with open(fp, "w", encoding="utf-8") as f:
+            json.dump(existing, f, ensure_ascii=False, indent=2)
+        print(f"  Patched {patched} players. Scraped {len(all_positions)} positions across {page_num} pages.")
+        print(f"  SAVED -> {fp.name}")
+
+    print("\nDone! Re-import patched files at: https://knowitball.co.uk/admin/football/scrape")
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
@@ -639,6 +778,31 @@ async def main():
 
     years = requested_years if requested_years else ALL_YEARS
     force_years = force or bool(requested_years)
+
+    patch_pos = "--patch-positions" in sys.argv
+    league_arg = next((arg.split("=")[1] for arg in sys.argv[1:] if arg.startswith("--league=")), None)
+
+    if patch_pos:
+        print(f"Mode: PATCH POSITIONS ONLY" + (f" (league filter: {league_arg})" if league_arg else ""))
+        print(f"Output directory: {OUTPUT_DIR}\n")
+
+        async with async_playwright() as pw:
+            context = await pw.chromium.launch_persistent_context(
+                str(PROFILE_DIR),
+                headless=False,
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                viewport={"width": 1440, "height": 900},
+                locale="en-GB",
+                timezone_id="Europe/London",
+                args=["--disable-blink-features=AutomationControlled"],
+            )
+            page = context.pages[0] if context.pages else await context.new_page()
+            if stealth_async:
+                await stealth_async(page)
+
+            await patch_positions(page, years, league_id=league_arg)
+            await context.close()
+        return
 
     print("Mode: ALL LEAGUES & CLUBS")
     if download_faces:
