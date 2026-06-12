@@ -8,6 +8,34 @@ function parseAttr(val: unknown): number {
   return 0;
 }
 
+function inferPositions(p: {
+  pace: number; shooting: number; passing: number; dribbling: number;
+  defending: number; physical: number; gkDiving: number; gkReflexes: number;
+  crossing: number; finishing: number; interceptions: number;
+  standingTackle: number; vision: number; marking: number;
+}): string {
+  if (p.gkDiving > 50 || p.gkReflexes > 50) return "GK";
+
+  const def = p.defending || 0;
+  const sho = p.shooting || 0;
+  const pac = p.pace || 0;
+  const pas = p.passing || 0;
+  const dri = p.dribbling || 0;
+  const fin = p.finishing || 0;
+
+  if (def >= 75 && sho <= 60 && pac < 78) return "CB";
+  if (def >= 70 && pac >= 78 && sho <= 65) return "RB,LB";
+  if (def >= 70 && pas >= 70 && sho <= 65) return "CDM";
+  if (pac >= 82 && dri >= 75 && def < 55 && pac > sho) return "RW,LW";
+  if (fin >= 75 && sho >= 70 && def < 50) return "ST";
+  if (pas >= 75 && dri >= 73 && sho >= 68) return "CAM";
+  if (pas >= 68 && def >= 50 && sho >= 55) return "CM";
+  if (pac >= 78 && dri >= 70 && def < 60) return "RM,LM";
+  if (def >= 65) return "CB";
+  if (sho >= 65) return "ST";
+  return "CM";
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const club = searchParams.get("club");
@@ -90,6 +118,13 @@ export async function GET(request: NextRequest) {
       if (mainStats.length >= 3) {
         player.overall = Math.round(mainStats.reduce((a, b) => a + b, 0) / mainStats.length);
       }
+    }
+  }
+
+  // Infer positions from stats when not stored in DB
+  for (const player of roster) {
+    if (!player.positions) {
+      player.positions = inferPositions(player);
     }
   }
 
