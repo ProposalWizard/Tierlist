@@ -192,6 +192,15 @@ def _extract_pi_cell(td, player: dict):
     pos_spans = td.select("span.pos")
     if not pos_spans:
         pos_spans = td.select("span[class*='pos']")
+    if not pos_spans:
+        pos_spans = td.select("a[rel='nofollow'] span")
+    if not pos_spans:
+        # Fallback: any short text spans that look like position codes
+        for span in td.select("span"):
+            txt = span.get_text(strip=True)
+            if txt in ("GK","CB","RB","LB","RWB","LWB","CDM","CM","CAM",
+                        "RM","LM","RW","LW","ST","CF","SW","DM","RAM","LAM"):
+                pos_spans.append(span)
     if pos_spans:
         player["positions"] = ",".join(s.get_text(strip=True) for s in pos_spans)
 
