@@ -192,6 +192,12 @@ def _build_header_map(table) -> list[str]:
     return [_get_col_id(th) for th in header_row.select("th")]
 
 
+POSITION_CODES = {"GK","CB","RB","LB","RWB","LWB","CDM","CM","CAM",
+                  "RM","LM","RW","LW","ST","CF","SW","DM","RAM","LAM",
+                  "RCM","LCM","RDM","LDM","RCB","LCB","RS","LS","RF","LF",
+                  "RAR","LAR","RWF","LWF"}
+
+
 def _extract_pi_cell(td, player: dict):
     pos_spans = td.select("span.pos")
     if not pos_spans:
@@ -199,12 +205,18 @@ def _extract_pi_cell(td, player: dict):
     if not pos_spans:
         pos_spans = td.select("a[rel='nofollow'] span")
     if not pos_spans:
-        # Fallback: any short text spans that look like position codes
-        for span in td.select("span"):
-            txt = span.get_text(strip=True)
-            if txt in ("GK","CB","RB","LB","RWB","LWB","CDM","CM","CAM",
-                        "RM","LM","RW","LW","ST","CF","SW","DM","RAM","LAM"):
-                pos_spans.append(span)
+        # Fallback: any short text element (span, a, div) that looks like a position code
+        for el in td.select("span, a, div"):
+            txt = el.get_text(strip=True)
+            if txt in POSITION_CODES:
+                pos_spans.append(el)
+    if not pos_spans:
+        # Last resort: regex scan the cell's full text for position codes
+        full_text = td.get_text(" ", strip=True)
+        found = [w for w in re.split(r"[\s,]+", full_text) if w in POSITION_CODES]
+        if found:
+            player["positions"] = ",".join(found)
+            return
     if pos_spans:
         player["positions"] = ",".join(s.get_text(strip=True) for s in pos_spans)
 
@@ -638,7 +650,7 @@ def _positions_url(year: int, league_id: str | None = None) -> str:
     return url
 
 
-def _extract_positions_only(html: str) -> dict[str, str]:
+def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, str]:
     """Parse a list page and return {sofifa_id: positions} for players that have positions."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html, "html.parser")
@@ -653,10 +665,25 @@ def _extract_positions_only(html: str) -> dict[str, str]:
         return {}
 
     results: dict[str, str] = {}
+    dumped = False
     for row in table.select("tbody tr") or table.select("tr"):
         name_link = row.select_one('a[href*="/player/"]')
         if not name_link:
             continue
+
+        # Dump first row HTML so we can debug selectors
+        if dump_first and not dumped:
+            dumped = True
+            print("\n  ─── POSITION DIAGNOSTIC: First player row ───")
+            tds = row.select("td")
+            for i, td in enumerate(tds):
+                cls = td.get("class", [])
+                dc = td.get("data-col", "")
+                # Show inner HTML (first 300 chars)
+                inner = str(td)[:300]
+                print(f"  TD[{i}] class={cls} data-col='{dc}'")
+                print(f"    HTML: {inner}")
+            print("  ─── END DIAGNOSTIC ───\n")
 
         href = name_link.get("href", "")
         sofifa_id = ""
@@ -669,6 +696,7 @@ def _extract_positions_only(html: str) -> dict[str, str]:
             continue
 
         player: dict = {}
+        # First try: find the pi column specifically
         for td in row.select("td"):
             col_id = ""
             for cls in td.get("class", []):
@@ -680,6 +708,13 @@ def _extract_positions_only(html: str) -> dict[str, str]:
             if col_id == "pi":
                 _extract_pi_cell(td, player)
                 break
+
+        # Fallback: search ALL tds for position-like spans if pi column didn't yield positions
+        if not player.get("positions"):
+            for td in row.select("td"):
+                _extract_pi_cell(td, player)
+                if player.get("positions"):
+                    break
 
         if player.get("positions"):
             results[sofifa_id] = player["positions"]
@@ -727,7 +762,7 @@ async def patch_positions(page, years: list[int], league_id: str | None = None):
         page_num = 1
         while True:
             html = await page.content()
-            batch = _extract_positions_only(html)
+            batch = _extract_positions_only(html, dump_first=(page_num == 1))
             if not batch:
                 print(f"  Page {page_num}: no positions found, stopping.")
                 break
