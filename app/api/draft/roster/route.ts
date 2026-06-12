@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 function parseAttr(val: unknown): number {
   if (typeof val === "number") return val;
+  // parseInt handles "83 +2" / "83 -1" style values — returns the first number only
   if (typeof val === "string") return parseInt(val, 10) || 0;
   return 0;
 }
@@ -42,12 +43,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // OVR source by edition:
+  //   FC 26: DB `overall` column is set, attributes JSONB has `overall` key
+  //   Non-FC26: DB `overall` is often NULL, use `attr_sort` from JSONB
+  //     (attr_sort may include "+/-" suffix like "83 +2" — parseInt strips it)
   const roster = (data ?? []).map((p) => {
     const a = (p.attributes as Record<string, unknown>) ?? {};
     return {
       sofifa_id: p.sofifa_id,
       name: p.name || (a.name as string) || "",
-      overall: p.overall || parseAttr(a.overall) || parseAttr(a.attr_oa) || parseAttr(a.attr_sort) || 0,
+      overall: p.overall || parseAttr(a.overall) || parseAttr(a.attr_sort) || parseAttr(a.attr_oa) || 0,
       potential: p.potential || parseAttr(a.potential) || parseAttr(a.attr_pt) || 0,
       positions: p.positions || (a.positions as string) || (a.player_positions as string) || "",
       age: p.age || parseAttr(a.age) || parseAttr(a.attr_ae) || 0,
@@ -78,7 +83,7 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  // Safety net: estimate OVR from attributes if all other sources returned 0
+  // Safety net: estimate OVR from face stats if all other sources returned 0
   for (const player of roster) {
     if (player.overall === 0) {
       const mainStats = [player.pace, player.shooting, player.passing, player.dribbling, player.defending, player.physical].filter(v => v > 0);
@@ -87,6 +92,9 @@ export async function GET(request: NextRequest) {
       }
     }
   }
+
+  // Re-sort by resolved overall (DB sort may put NULL-overall players at bottom)
+  roster.sort((a, b) => b.overall - a.overall);
 
   return NextResponse.json(
     { club, year, roster },
