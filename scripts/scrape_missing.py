@@ -24,9 +24,6 @@ Flags:
   --force            Re-scrape all editions, even complete ones
   --year=YYYY        Scrape only that edition
   --download-faces   Also download face images to sofifa_data/faces/
-  --infer-positions  Patch positions into existing JSON files using stat-based
-                     inference. No browser needed — runs locally in seconds.
-                     Combine with --year=YYYY to target specific editions.
 """
 
 import asyncio
@@ -626,89 +623,6 @@ def has_league(data) -> bool:
     return sum(1 for p in sample if p.get("league")) >= 10
 
 
-# ── Offline position inference (no browser needed) ──────────────────────────
-
-
-def _parse_int(val) -> int:
-    if isinstance(val, int):
-        return val
-    if isinstance(val, str):
-        return int(val.split()[0]) if val.strip() else 0
-    return 0
-
-
-def infer_position_from_stats(p: dict) -> str:
-    pac = _parse_int(p.get("attr_pac", 0))
-    sho = _parse_int(p.get("attr_sho", 0))
-    pas = _parse_int(p.get("attr_pas", 0))
-    dri = _parse_int(p.get("attr_dri", 0))
-    defe = _parse_int(p.get("attr_def", 0))
-    gd = _parse_int(p.get("attr_gd", 0)) or _parse_int(p.get("attr_div", 0))
-    gr = _parse_int(p.get("attr_gr", 0)) or _parse_int(p.get("attr_ref", 0))
-    fin = _parse_int(p.get("attr_fi", 0))
-    cr = _parse_int(p.get("attr_cr", 0))
-    vi = _parse_int(p.get("attr_vi", 0))
-    ins = _parse_int(p.get("attr_in", 0))
-    st = _parse_int(p.get("attr_st", 0))
-    ma = _parse_int(p.get("attr_ma", 0))
-
-    if gd > 50 or gr > 50:
-        return "GK"
-    if defe >= 75 and sho <= 60 and pac < 78:
-        return "CB"
-    if defe >= 70 and pac >= 78 and sho <= 65:
-        return "RB,LB"
-    if defe >= 70 and pas >= 70 and sho <= 65:
-        return "CDM"
-    if pac >= 82 and dri >= 75 and defe < 55 and pac > sho:
-        return "RW,LW"
-    if fin >= 75 and sho >= 70 and defe < 50:
-        return "ST"
-    if pas >= 75 and dri >= 73 and sho >= 68:
-        return "CAM"
-    if pas >= 68 and defe >= 50 and sho >= 55:
-        return "CM"
-    if pac >= 78 and dri >= 70 and defe < 60:
-        return "RM,LM"
-    if defe >= 65:
-        return "CB"
-    if sho >= 65:
-        return "ST"
-    return "CM"
-
-
-def run_infer_positions(years: list[int]):
-    """Patch positions into existing JSON files using stat-based inference.
-    No browser needed — runs locally in seconds."""
-    print("=== INFER POSITIONS (offline, no browser) ===\n")
-    for year in years:
-        fp = OUTPUT_DIR / f"fifa_{year}.json"
-        data = _load(fp)
-        if not data:
-            print(f"  {fp.name}: not found or empty, skipping")
-            continue
-
-        missing = 0
-        patched = 0
-        for p in data:
-            if not p.get("positions"):
-                missing += 1
-                pos = infer_position_from_stats(p)
-                if pos:
-                    p["positions"] = pos
-                    patched += 1
-
-        if missing == 0:
-            print(f"  {fp.name}: all {len(data)} players already have positions ✓")
-            continue
-
-        with open(fp, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"  {fp.name}: patched {patched}/{missing} missing positions ({len(data)} total players)")
-
-    print("\nDone! Re-import patched files at: https://knowitball.co.uk/admin/football/scrape")
-
-
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
@@ -725,11 +639,6 @@ async def main():
 
     years = requested_years if requested_years else ALL_YEARS
     force_years = force or bool(requested_years)
-
-    # Fast offline mode: infer positions from stats, no browser needed
-    if "--infer-positions" in sys.argv:
-        run_infer_positions(years)
-        return
 
     print("Mode: ALL LEAGUES & CLUBS")
     if download_faces:
