@@ -72,9 +72,9 @@ export async function GET(request: NextRequest) {
       marking: parseAttr(a.attr_ma) || parseAttr(a.marking),
       reactions: parseAttr(a.attr_re) || parseAttr(a.reactions),
       sprintSpeed: parseAttr(a.attr_sp) || parseAttr(a.sprintSpeed),
-      gkDiving: parseAttr(a.attr_gd) || parseAttr(a.gkDiving),
-      gkPositioning: parseAttr(a.attr_gp) || parseAttr(a.gkPositioning),
-      gkReflexes: parseAttr(a.attr_gr) || parseAttr(a.gkReflexes),
+      gkDiving: parseAttr(a.attr_gd) || parseAttr(a.attr_div) || parseAttr(a.gkDiving),
+      gkPositioning: parseAttr(a.attr_gp) || parseAttr(a.attr_pos) || parseAttr(a.gkPositioning),
+      gkReflexes: parseAttr(a.attr_gr) || parseAttr(a.attr_ref) || parseAttr(a.gkReflexes),
     };
   });
 
