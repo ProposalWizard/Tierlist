@@ -47,9 +47,9 @@ export async function GET(request: NextRequest) {
     return {
       sofifa_id: p.sofifa_id,
       name: p.name || (a.name as string) || "",
-      overall: p.overall || parseAttr(a.overall) || parseAttr(a.attr_oa) || 0,
+      overall: p.overall || parseAttr(a.overall) || parseAttr(a.attr_oa) || parseAttr(a.attr_sort) || 0,
       potential: p.potential || parseAttr(a.potential) || parseAttr(a.attr_pt) || 0,
-      positions: p.positions || (a.positions as string) || "",
+      positions: p.positions || (a.positions as string) || (a.player_positions as string) || "",
       age: p.age || parseAttr(a.age) || parseAttr(a.attr_ae) || 0,
       image_url: p.image_url || (a.image_url as string) || null,
       nationality: p.nationality || (a.nationality as string) || "",
