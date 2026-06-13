@@ -158,15 +158,25 @@ function positionFitness(player: DraftPlayer): number {
   const assignedRole = classifyPosition(assigned);
   if (natural.some(p => classifyPosition(p) === assignedRole)) return 0.92;
 
+  const mediumPairs: [string[], string[]][] = [
+    [['LB', 'LWB'], ['LM']],
+    [['RB', 'RWB'], ['RM']],
+    [['CDM', 'DM'], ['CB']],
+  ];
+  for (const [groupA, groupB] of mediumPairs) {
+    if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.77;
+    if (groupB.includes(assigned) && natural.some(p => groupA.includes(p))) return 0.77;
+  }
+
   const adjacent: Record<PositionRole, PositionRole[]> = {
     ATT: ['MID'],
     MID: ['ATT', 'DEF'],
     DEF: ['MID'],
     GK: [],
   };
-  if (natural.some(p => adjacent[assignedRole]?.includes(classifyPosition(p)))) return 0.78;
+  if (natural.some(p => adjacent[assignedRole]?.includes(classifyPosition(p)))) return 0.70;
 
-  return 0.6;
+  return 0.4;
 }
 
 // --- Attribute helpers ---

@@ -5,6 +5,25 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 export const maxDuration = 300;
 
+const REMOVE_POSITIONS = new Set(['RAM', 'LAM', 'RF', 'LF', 'SW']);
+
+function cleanPositions(raw: string | undefined): string | null {
+  if (!raw) return null;
+  const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
+  const cleaned: string[] = [];
+  let hasST = parts.some(p => p.toUpperCase() === 'ST');
+  for (const p of parts) {
+    const upper = p.toUpperCase();
+    if (REMOVE_POSITIONS.has(upper)) continue;
+    if (upper === 'CF') {
+      if (!hasST) { cleaned.push('ST'); hasST = true; }
+      continue;
+    }
+    cleaned.push(p);
+  }
+  return cleaned.join(',') || null;
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -81,7 +100,7 @@ export async function POST(req: NextRequest) {
       fifa_year: year,
       fifa_edition: edition,
       name: p.name,
-      positions: p.positions || null,
+      positions: cleanPositions(p.positions),
       nationality: p.nationality || null,
       club: p.club || null,
       league: p.league || null,
