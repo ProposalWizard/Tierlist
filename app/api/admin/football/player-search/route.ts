@@ -32,7 +32,7 @@ function generateAccentVariants(q: string): string[] {
     }
   }
 
-  return [...variants];
+  return Array.from(variants);
 }
 
 export async function GET(req: NextRequest) {
