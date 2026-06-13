@@ -152,7 +152,7 @@ export default function PlayerSearchPage() {
       }
       group.editions.push(p);
     }
-    for (const g of map.values()) {
+    for (const g of Array.from(map.values())) {
       g.editions.sort((a, b) => b.fifa_year - a.fifa_year);
     }
     return Array.from(map.values());
