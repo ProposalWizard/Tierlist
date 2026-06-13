@@ -396,6 +396,12 @@ export default function PlayerSearchPage() {
                             {/* Expanded attributes */}
                             {isExpanded && (
                               <div className="border-t border-gray-700 bg-gray-900/60 px-6 py-4">
+                                <div className="mb-3 flex items-baseline gap-2">
+                                  <span className="text-xs font-bold uppercase text-gray-500">Positions</span>
+                                  <span className="text-sm font-bold text-yellow-400">
+                                    {p.positions || (p.attributes as Record<string, unknown>)?.positions as string || "--"}
+                                  </span>
+                                </div>
                                 <h4 className="mb-3 text-xs font-bold uppercase text-gray-500">
                                   All Attributes ({p.attributes ? Object.keys(p.attributes).length : 0} keys)
                                 </h4>
