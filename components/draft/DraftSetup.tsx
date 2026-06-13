@@ -12,6 +12,7 @@ export default function DraftSetup({ onStart }: Props) {
   const [eraStart, setEraStart] = useState(2007);
   const [eraEnd, setEraEnd] = useState(2026);
   const [mode, setMode] = useState<"normal" | "prime">("normal");
+  const [draftOrder, setDraftOrder] = useState<"position-first" | "club-first">("position-first");
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -143,6 +144,45 @@ export default function DraftSetup({ onStart }: Props) {
           </div>
         </div>
 
+        {/* Draft Order */}
+        <div className="mb-8">
+          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+            Draft Order
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setDraftOrder("position-first")}
+              className={`relative py-3 px-4 rounded-lg text-left transition-all duration-200 ${
+                draftOrder === "position-first"
+                  ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
+                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
+              }`}
+            >
+              <div className={`text-sm font-bold ${draftOrder === "position-first" ? "text-white" : "text-gray-400"}`}>
+                Position First
+              </div>
+              <div className={`text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-emerald-200/70" : "text-gray-600"}`}>
+                Fill each position slot in order
+              </div>
+            </button>
+            <button
+              onClick={() => setDraftOrder("club-first")}
+              className={`relative py-3 px-4 rounded-lg text-left transition-all duration-200 ${
+                draftOrder === "club-first"
+                  ? "bg-sky-600 ring-2 ring-sky-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-sky-900/50"
+                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
+              }`}
+            >
+              <div className={`text-sm font-bold ${draftOrder === "club-first" ? "text-white" : "text-gray-400"}`}>
+                Club First
+              </div>
+              <div className={`text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-sky-200/70" : "text-gray-600"}`}>
+                Pick a player, then choose their position
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* Formation Preview */}
         <div className="mb-8">
           <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
@@ -193,7 +233,7 @@ export default function DraftSetup({ onStart }: Props) {
 
         {/* Start Button */}
         <button
-          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode })}
+          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder })}
           disabled={eraStart > eraEnd}
           className="group relative w-full py-4 rounded-xl text-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98] disabled:from-gray-700 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed"
         >
