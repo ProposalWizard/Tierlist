@@ -392,7 +392,10 @@ export default function DraftPick({
   const clubFirstStats: { label: string; pick: (p: RosterPlayer) => number }[] = [
     { label: "PAC", pick: (p) => p.pace },
     { label: "SHO", pick: (p) => p.shooting },
+    { label: "PAS", pick: (p) => p.passing },
+    { label: "DRI", pick: (p) => p.dribbling },
     { label: "DEF", pick: (p) => p.defending },
+    { label: "PHY", pick: (p) => p.physical },
   ];
   const displayStats = isClubFirst ? clubFirstStats : keyStats;
 
@@ -495,9 +498,7 @@ export default function DraftPick({
               const pendingPositions = pendingPlayer
                 ? (pendingPlayer.positions || "").split(",").map((p) => p.trim())
                 : [];
-              const isNaturalFit = isAssignable && slot.compatiblePositions.some(
-                (cp) => pendingPositions.includes(cp)
-              );
+              const isNaturalFit = isAssignable && pendingPositions.includes(slot.label);
               return (
                 <div
                   key={i}
@@ -761,7 +762,8 @@ export default function DraftPick({
                   const alreadyPicked = pickedPlayers.some(
                     (p) => p.sofifa_id === player.sofifa_id
                   );
-                  const hasStats = player.pace > 0 || player.shooting > 0;
+                  const isGk = playerPositions.includes("GK") && (player.gkDiving > 0 || player.gkReflexes > 0);
+                  const hasStats = isClubFirst ? !isGk && (player.pace > 0 || player.shooting > 0) : player.pace > 0 || player.shooting > 0;
 
                   return (
                     <button
@@ -872,7 +874,7 @@ export default function DraftPick({
                   if (filledSlots.has(i)) return null;
 
                   const pendingPositions = (pendingPlayer.positions || "").split(",").map((p) => p.trim());
-                  const isNatural = slot.compatiblePositions.some((cp) => pendingPositions.includes(cp));
+                  const isNatural = pendingPositions.includes(slot.label);
 
                   return (
                     <button

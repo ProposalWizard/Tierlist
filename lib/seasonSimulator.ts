@@ -378,9 +378,10 @@ function goalScoringWeight(p: DraftPlayer): number {
   if (hasAttrs(p)) {
     const a = p.attrs;
     const o = p.overall;
-    const fin = statOr(a.finishing, o) || statOr(a.shooting, o);
-    const pos = statOr(a.positioning, o) || o * 0.7;
-    const head = statOr(a.heading, o) || o * 0.5;
+    const sho = statOr(a.shooting, o);
+    const fin = a.finishing > 0 ? a.finishing : sho;
+    const pos = a.positioning > 0 ? a.positioning : sho * 0.7;
+    const head = a.heading > 0 ? a.heading : o * 0.5;
 
     switch (role) {
       case 'ATT':
@@ -406,10 +407,11 @@ function assistWeight(p: DraftPlayer): number {
   if (hasAttrs(p)) {
     const a = p.attrs;
     const o = p.overall;
-    const vis = statOr(a.vision, o) || statOr(a.passing, o) * 0.8;
-    const cross = statOr(a.crossing, o) || statOr(a.passing, o) * 0.7;
-    const sp = statOr(a.shortPassing, o) || statOr(a.passing, o);
-    const lp = statOr(a.longPassing, o) || statOr(a.passing, o) * 0.7;
+    const pas = statOr(a.passing, o);
+    const vis = a.vision > 0 ? a.vision : pas * 0.8;
+    const cross = a.crossing > 0 ? a.crossing : pas * 0.7;
+    const sp = a.shortPassing > 0 ? a.shortPassing : pas;
+    const lp = a.longPassing > 0 ? a.longPassing : pas * 0.7;
 
     const baseW = (vis * 2 + cross * 1.5 + sp * 1 + lp * 0.5) / 5;
     const roleMult: Record<PositionRole, number> = { ATT: 0.7, MID: 1.3, DEF: 0.4, GK: 0.02 };
@@ -654,18 +656,19 @@ function matchRating(
   rng: () => number,
 ): number {
   const role = classifyPosition(player.assignedPosition);
-  let base = 6.0 + (rng() * 1.5 - 0.5);
+  const ovrBonus = (player.overall - 75) * 0.015;
+  let base = 6.5 + ovrBonus + (rng() * 0.8 - 0.4);
 
   const scored = match.goalScorers.filter(g => g.player === player.name).length;
   const assisted = match.assistProviders.filter(a => a.player === player.name).length;
-  base += scored * 1.0 + assisted * 0.6;
+  base += scored * 1.0 + assisted * 0.5;
 
   if (match.goalsAgainst === 0 && (role === 'GK' || role === 'DEF')) {
-    base += 0.8;
+    base += 0.5;
   }
 
-  if (match.result === 'W') base += 0.3;
-  else if (match.result === 'L') base -= 0.3;
+  if (match.result === 'W') base += 0.2;
+  else if (match.result === 'L') base -= 0.2;
 
   return Math.max(4.0, Math.min(10.0, Math.round(base * 10) / 10));
 }
