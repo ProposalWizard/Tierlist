@@ -232,54 +232,57 @@ function playerContributions(p: DraftPlayer, fitness: number): { attack: number;
   const sho = statOr(a.shooting, o);
   const dri = statOr(a.dribbling, o);
 
+  // 50% key stats, 50% overall
+  const blend = (statAvg: number) => (statAvg * 0.5 + o * 0.5) * fitness;
+
   if (pos === 'GK') {
     return { attack: 0, defense: o * fitness };
   }
   if (pos === 'CB') {
-    return { attack: 0, defense: ((def + phy + pac) / 3) * fitness };
+    return { attack: 0, defense: blend((def + phy + pac) / 3) };
   }
   if (['RB', 'LB', 'RWB', 'LWB'].includes(pos)) {
     return {
-      attack: ((crs + pac) / 2) * fitness,
-      defense: ((def + pac) / 2) * fitness,
+      attack: blend((crs + pac) / 2),
+      defense: blend((def + pac) / 2),
     };
   }
   if (['CDM', 'DM'].includes(pos)) {
     return {
-      attack: pas * fitness,
-      defense: ((def + phy) / 2) * fitness,
+      attack: blend(pas),
+      defense: blend((def + phy) / 2),
     };
   }
   if (pos === 'CM') {
     return {
-      attack: ((pas + sho) / 2) * fitness,
-      defense: def * fitness,
+      attack: blend((pas + sho) / 2),
+      defense: blend(def),
     };
   }
   if (pos === 'CAM') {
     return {
-      attack: ((pas + dri + sho) / 3) * fitness,
+      attack: blend((pas + dri + sho) / 3),
       defense: 0,
     };
   }
   if (['RM', 'LM'].includes(pos)) {
     return {
-      attack: ((pac + dri) / 2) * fitness,
-      defense: ((pac + def) / 2) * fitness,
+      attack: blend((pac + dri) / 2),
+      defense: blend((pac + def) / 2),
     };
   }
   if (['ST', 'RW', 'LW'].includes(pos)) {
     return {
-      attack: ((sho + dri + phy) / 3) * fitness,
+      attack: blend((sho + dri + phy) / 3),
       defense: 0,
     };
   }
 
   // Fallback
   const role = classifyPosition(pos);
-  if (role === 'ATT') return { attack: ((sho + dri + phy) / 3) * fitness, defense: 0 };
-  if (role === 'DEF') return { attack: 0, defense: ((def + phy + pac) / 3) * fitness };
-  return { attack: ((pas + sho) / 2) * fitness, defense: def * fitness };
+  if (role === 'ATT') return { attack: blend((sho + dri + phy) / 3), defense: 0 };
+  if (role === 'DEF') return { attack: 0, defense: blend((def + phy + pac) / 3) };
+  return { attack: blend((pas + sho) / 2), defense: blend(def) };
 }
 
 // --- Team phase ratings ---
