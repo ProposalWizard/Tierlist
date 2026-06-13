@@ -98,7 +98,8 @@ export default function PlayerSearchPage() {
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
+  const [expandedEdition, setExpandedEdition] = useState<string | null>(null);
 
   const handleSearch = async () => {
     const q = nameQuery.trim();
@@ -108,7 +109,8 @@ export default function PlayerSearchPage() {
     setError(null);
     setPlayers([]);
     setCount(null);
-    setExpandedId(null);
+    setExpandedPlayer(null);
+    setExpandedEdition(null);
 
     try {
       const params = new URLSearchParams({ q, limit: "200" });
@@ -134,10 +136,27 @@ export default function PlayerSearchPage() {
     if (e.key === "Enter") handleSearch();
   };
 
-  const toggleExpand = (sofifaId: string, fifaYear: number) => {
-    const key = `${sofifaId}-${fifaYear}`;
-    setExpandedId((prev) => (prev === key ? null : key));
-  };
+  interface PlayerGroup {
+    sofifa_id: string;
+    name: string;
+    editions: SofifaPlayer[];
+  }
+
+  const grouped: PlayerGroup[] = (() => {
+    const map = new Map<string, PlayerGroup>();
+    for (const p of players) {
+      let group = map.get(p.sofifa_id);
+      if (!group) {
+        group = { sofifa_id: p.sofifa_id, name: p.name, editions: [] };
+        map.set(p.sofifa_id, group);
+      }
+      group.editions.push(p);
+    }
+    for (const g of Array.from(map.values())) {
+      g.editions.sort((a, b) => b.fifa_year - a.fifa_year);
+    }
+    return Array.from(map.values());
+  })();
 
   const renderAttributes = (attrs: Record<string, unknown>) => {
     const entries = Object.entries(attrs)
@@ -301,7 +320,9 @@ export default function PlayerSearchPage() {
           <>
             <div className="mb-4 text-sm text-gray-400">
               <span className="font-bold text-white">{count}</span> result
-              {count !== 1 ? "s" : ""} found
+              {count !== 1 ? "s" : ""} across{" "}
+              <span className="font-bold text-white">{grouped.length}</span> player
+              {grouped.length !== 1 ? "s" : ""}
               {count === 200 && (
                 <span className="text-yellow-400 ml-2">
                   (limit reached -- narrow your search for more specific results)
@@ -309,118 +330,115 @@ export default function PlayerSearchPage() {
               )}
             </div>
 
-            {players.length === 0 ? (
+            {grouped.length === 0 ? (
               <div className="py-12 text-center text-gray-500">
                 No players match your search criteria.
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-gray-800">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-800 bg-gray-900">
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase text-gray-500">
-                        Player
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold uppercase text-gray-500">
-                        Edition
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold uppercase text-gray-500">
-                        Club
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold uppercase text-gray-500">
-                        Positions
-                      </th>
-                      <th className="px-3 py-3 text-center text-xs font-bold uppercase text-gray-500">
-                        OVR
-                      </th>
-                      <th className="px-3 py-3 text-center text-xs font-bold uppercase text-gray-500">
-                        POT
-                      </th>
-                      <th className="px-3 py-3 text-center text-xs font-bold uppercase text-gray-500">
-                        Age
-                      </th>
-                      <th className="px-3 py-3 text-center text-xs font-bold uppercase text-gray-500 w-10">
-                        {/* expand toggle */}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {players.map((p) => {
-                      const rowKey = `${p.sofifa_id}-${p.fifa_year}`;
-                      const isExpanded = expandedId === rowKey;
-                      return (
-                        <tr key={rowKey} className="group">
-                          {/* Main row */}
-                          <td
-                            colSpan={8}
-                            className="p-0 border-b border-gray-800/50"
-                          >
-                            <button
-                              onClick={() =>
-                                toggleExpand(p.sofifa_id, p.fifa_year)
-                              }
-                              className={`w-full text-left transition-colors ${
-                                isExpanded
-                                  ? "bg-gray-800/80"
-                                  : "hover:bg-gray-900/80"
-                              }`}
-                            >
-                              <div className="flex items-center">
-                                <div className="flex-1 px-4 py-3 font-bold text-white truncate min-w-[160px]">
-                                  {p.name}
-                                </div>
-                                <div className="px-3 py-3 text-gray-300 min-w-[80px]">
-                                  {yearLabel(p.fifa_year)}
-                                </div>
-                                <div className="px-3 py-3 text-gray-300 truncate min-w-[140px] max-w-[200px]">
-                                  {p.club ?? "--"}
-                                </div>
-                                <div className="px-3 py-3 text-gray-400 min-w-[100px]">
-                                  {p.positions ?? "--"}
-                                </div>
-                                <div className="px-3 py-3 text-center font-bold text-emerald-400 min-w-[50px]">
-                                  {p.overall ?? "--"}
-                                </div>
-                                <div className="px-3 py-3 text-center text-gray-300 min-w-[50px]">
-                                  {p.potential ?? "--"}
-                                </div>
-                                <div className="px-3 py-3 text-center text-gray-400 min-w-[50px]">
-                                  {p.age ?? "--"}
-                                </div>
-                                <div className="px-3 py-3 text-center text-gray-500 min-w-[40px]">
-                                  {isExpanded ? "▲" : "▼"}
-                                </div>
-                              </div>
-                            </button>
+              <div className="space-y-3">
+                {grouped.map((group) => {
+                  const isOpen = expandedPlayer === group.sofifa_id;
+                  const bestOvr = Math.max(...group.editions.map(e => e.overall ?? 0));
+                  const editionRange = `${yearLabel(group.editions[group.editions.length - 1].fifa_year)} – ${yearLabel(group.editions[0].fifa_year)}`;
+                  return (
+                    <div key={group.sofifa_id} className="rounded-xl border border-gray-800 overflow-hidden">
+                      <button
+                        onClick={() => setExpandedPlayer(isOpen ? null : group.sofifa_id)}
+                        className={`w-full text-left px-5 py-3.5 flex items-center gap-4 transition-colors ${
+                          isOpen ? "bg-gray-800" : "bg-gray-900 hover:bg-gray-850"
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <span className="font-bold text-white text-base">{group.name}</span>
+                          <span className="ml-3 text-xs text-gray-500">ID: {group.sofifa_id}</span>
+                        </div>
+                        <div className="text-sm text-gray-400">{editionRange}</div>
+                        <div className="px-2 py-0.5 rounded bg-emerald-900/50 text-emerald-400 text-sm font-bold">
+                          Peak {bestOvr}
+                        </div>
+                        <div className="text-sm text-gray-400 font-medium">
+                          {group.editions.length} edition{group.editions.length !== 1 ? "s" : ""}
+                        </div>
+                        <div className="text-gray-500">{isOpen ? "▲" : "▼"}</div>
+                      </button>
 
-                            {/* Expanded attributes */}
-                            {isExpanded && (
-                              <div className="border-t border-gray-700 bg-gray-900/60 px-6 py-4">
-                                <div className="mb-3 flex items-baseline gap-2">
-                                  <span className="text-xs font-bold uppercase text-gray-500">Positions</span>
-                                  <span className="text-sm font-bold text-yellow-400">
-                                    {p.positions || (p.attributes as Record<string, unknown>)?.positions as string || "--"}
-                                  </span>
-                                </div>
-                                <h4 className="mb-3 text-xs font-bold uppercase text-gray-500">
-                                  All Attributes ({p.attributes ? Object.keys(p.attributes).length : 0} keys)
-                                </h4>
-                                {p.attributes &&
-                                Object.keys(p.attributes).length > 0 ? (
-                                  renderAttributes(p.attributes)
-                                ) : (
-                                  <p className="text-sm text-gray-500">
-                                    No attributes stored for this player.
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      {isOpen && (
+                        <div className="border-t border-gray-800">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-gray-900/80 border-b border-gray-800/50">
+                                <th className="px-5 py-2 text-left text-xs font-bold uppercase text-gray-500">Edition</th>
+                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-gray-500">Club</th>
+                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-gray-500">Positions</th>
+                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">OVR</th>
+                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">POT</th>
+                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Age</th>
+                                <th className="px-3 py-2 w-10"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.editions.map((p) => {
+                                const edKey = `${p.sofifa_id}-${p.fifa_year}`;
+                                const edExpanded = expandedEdition === edKey;
+                                return (
+                                  <tr key={edKey} className="border-b border-gray-800/30">
+                                    <td colSpan={7} className="p-0">
+                                      <button
+                                        onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
+                                        className={`w-full text-left transition-colors ${
+                                          edExpanded ? "bg-gray-800/60" : "hover:bg-gray-900/60"
+                                        }`}
+                                      >
+                                        <div className="flex items-center">
+                                          <div className="px-5 py-2.5 text-gray-300 min-w-[100px] font-medium">
+                                            {yearLabel(p.fifa_year)}
+                                          </div>
+                                          <div className="px-3 py-2.5 text-gray-300 truncate min-w-[140px] max-w-[220px]">
+                                            {p.club ?? "--"}
+                                          </div>
+                                          <div className="px-3 py-2.5 text-yellow-400 min-w-[100px]">
+                                            {p.positions ?? "--"}
+                                          </div>
+                                          <div className="px-3 py-2.5 text-center font-bold text-emerald-400 min-w-[50px]">
+                                            {p.overall ?? "--"}
+                                          </div>
+                                          <div className="px-3 py-2.5 text-center text-gray-300 min-w-[50px]">
+                                            {p.potential ?? "--"}
+                                          </div>
+                                          <div className="px-3 py-2.5 text-center text-gray-400 min-w-[50px]">
+                                            {p.age ?? "--"}
+                                          </div>
+                                          <div className="px-3 py-2.5 text-center text-gray-600 min-w-[40px]">
+                                            {edExpanded ? "▲" : "▼"}
+                                          </div>
+                                        </div>
+                                      </button>
+
+                                      {edExpanded && (
+                                        <div className="border-t border-gray-700 bg-gray-900/40 px-6 py-4">
+                                          <h4 className="mb-3 text-xs font-bold uppercase text-gray-500">
+                                            All Attributes ({p.attributes ? Object.keys(p.attributes).length : 0} keys)
+                                          </h4>
+                                          {p.attributes && Object.keys(p.attributes).length > 0 ? (
+                                            renderAttributes(p.attributes)
+                                          ) : (
+                                            <p className="text-sm text-gray-500">
+                                              No attributes stored for this player.
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
