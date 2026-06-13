@@ -75,7 +75,7 @@ VERSION_CODES = {
 # Seed column IDs for showCol[]. Expanded at runtime with every column SoFIFA
 # offers (see discover_columns), so nothing is left out.
 SEED_COLUMNS = [
-    "pi", "ae", "oa", "pt",
+    "pi", "ae", "oa", "pt", "sort",
     "pac", "sho", "pas", "dri", "def", "phy",
     "sm", "ir", "wf", "aw", "dw", "a/w", "d/w", "bs", "tp",
     "cr", "fi", "he", "lo", "sh", "vo",

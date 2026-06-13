@@ -3,6 +3,38 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
 
+const ACCENT_MAP: Record<string, string[]> = {
+  a: ["à", "á", "â", "ã", "ä", "å"],
+  c: ["ç", "č", "ć"],
+  d: ["ð", "đ"],
+  e: ["è", "é", "ê", "ë", "ě"],
+  i: ["ì", "í", "î", "ï"],
+  l: ["ł"],
+  n: ["ñ", "ń"],
+  o: ["ò", "ó", "ô", "õ", "ö", "ø"],
+  r: ["ř"],
+  s: ["š", "ś", "ş"],
+  u: ["ù", "ú", "û", "ü"],
+  y: ["ý", "ÿ"],
+  z: ["ž", "ź", "ż"],
+};
+
+function generateAccentVariants(q: string): string[] {
+  const lower = q.toLowerCase();
+  const variants = new Set<string>([q]);
+
+  for (let i = 0; i < lower.length; i++) {
+    const ch = lower[i];
+    const accented = ACCENT_MAP[ch];
+    if (!accented) continue;
+    for (const acc of accented) {
+      variants.add(q.slice(0, i) + acc + q.slice(i + 1));
+    }
+  }
+
+  return [...variants];
+}
+
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const {
@@ -36,10 +68,13 @@ export async function GET(req: NextRequest) {
   const service = createServiceClient();
 
   try {
+    const variants = generateAccentVariants(q);
+    const orFilter = variants.map((v) => `name.ilike.%${v}%`).join(",");
+
     let query = service
       .from("sofifa_players")
       .select("*")
-      .ilike("name", `%${q}%`);
+      .or(orFilter);
 
     if (year) {
       const yearNum = parseInt(year, 10);

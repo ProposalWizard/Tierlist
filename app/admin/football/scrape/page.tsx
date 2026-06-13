@@ -4,6 +4,15 @@ import Link from "next/link";
 
 const FIFA_YEARS = Array.from({ length: 20 }, (_, i) => 2007 + i);
 
+function parseOvr(val: unknown): number | undefined {
+  if (typeof val === "number") return val || undefined;
+  if (typeof val === "string") {
+    const n = parseInt(val, 10);
+    return isNaN(n) || n === 0 ? undefined : n;
+  }
+  return undefined;
+}
+
 interface ScrapeResult {
   edition: string;
   scraped: number;
@@ -119,8 +128,8 @@ export default function ScrapeSofifaPage() {
       nationality: String(p.nationality ?? p.Nationality ?? p.country ?? ""),
       club: String(p.club ?? p.Club ?? ""),
       league: String(p.league ?? p.League ?? ""),
-      overall: Number(p.overall ?? p.Overall ?? p.ova ?? 0) || undefined,
-      potential: Number(p.potential ?? p.Potential ?? p.pot ?? 0) || undefined,
+      overall: parseOvr(p.overall ?? p.Overall ?? p.ova ?? p.attr_sort ?? p.attr_oa ?? 0),
+      potential: parseOvr(p.potential ?? p.Potential ?? p.pot ?? p.attr_pt ?? 0),
       age: Number(p.age ?? p.Age ?? 0) || undefined,
       image_url: p.image_url ?? p.image ?? p.Image ?? undefined,
       attributes: p.attributes ?? p,
