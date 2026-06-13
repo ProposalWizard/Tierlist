@@ -82,6 +82,7 @@ interface SofifaPlayer {
   club: string | null;
   league: string | null;
   overall: number | null;
+  manual_overall: number | null;
   potential: number | null;
   age: number | null;
   image_url: string | null;
@@ -100,6 +101,9 @@ export default function PlayerSearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
   const [expandedEdition, setExpandedEdition] = useState<string | null>(null);
+  const [editingOvr, setEditingOvr] = useState<string | null>(null);
+  const [editOvrValue, setEditOvrValue] = useState("");
+  const [savingOvr, setSavingOvr] = useState(false);
 
   const handleSearch = async () => {
     const q = nameQuery.trim();
@@ -134,6 +138,32 @@ export default function PlayerSearchPage() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSearch();
+  };
+
+  const handleSaveOvr = async (sofifaId: string, fifaYear: number) => {
+    const val = editOvrValue.trim();
+    const newOvr = val === "" ? null : parseInt(val, 10);
+    if (val !== "" && (isNaN(newOvr!) || newOvr! < 1 || newOvr! > 99)) return;
+
+    setSavingOvr(true);
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: fifaYear, manual_overall: newOvr }),
+      });
+      if (res.ok) {
+        setPlayers((prev) =>
+          prev.map((p) =>
+            p.sofifa_id === sofifaId && p.fifa_year === fifaYear
+              ? { ...p, manual_overall: newOvr }
+              : p
+          )
+        );
+      }
+    } catch {}
+    setSavingOvr(false);
+    setEditingOvr(null);
   };
 
   interface PlayerGroup {
@@ -338,7 +368,7 @@ export default function PlayerSearchPage() {
               <div className="space-y-3">
                 {grouped.map((group) => {
                   const isOpen = expandedPlayer === group.sofifa_id;
-                  const bestOvr = Math.max(...group.editions.map(e => e.overall ?? 0));
+                  const bestOvr = Math.max(...group.editions.map(e => e.manual_overall ?? e.overall ?? 0));
                   const editionRange = `${yearLabel(group.editions[group.editions.length - 1].fifa_year)} – ${yearLabel(group.editions[0].fifa_year)}`;
                   return (
                     <div key={group.sofifa_id} className="rounded-xl border border-gray-800 overflow-hidden">
@@ -380,16 +410,19 @@ export default function PlayerSearchPage() {
                               {group.editions.map((p) => {
                                 const edKey = `${p.sofifa_id}-${p.fifa_year}`;
                                 const edExpanded = expandedEdition === edKey;
+                                const isEditing = editingOvr === edKey;
+                                const effectiveOvr = p.manual_overall ?? p.overall;
+                                const hasOverride = p.manual_overall !== null && p.manual_overall !== undefined;
                                 return (
                                   <tr key={edKey} className="border-b border-gray-800/30">
                                     <td colSpan={7} className="p-0">
-                                      <button
-                                        onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
-                                        className={`w-full text-left transition-colors ${
-                                          edExpanded ? "bg-gray-800/60" : "hover:bg-gray-900/60"
-                                        }`}
-                                      >
-                                        <div className="flex items-center">
+                                      <div className={`flex items-center transition-colors ${
+                                        edExpanded ? "bg-gray-800/60" : "hover:bg-gray-900/60"
+                                      }`}>
+                                        <button
+                                          onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
+                                          className="flex items-center flex-1 min-w-0 text-left"
+                                        >
                                           <div className="px-5 py-2.5 text-gray-300 min-w-[100px] font-medium">
                                             {yearLabel(p.fifa_year)}
                                           </div>
@@ -399,9 +432,45 @@ export default function PlayerSearchPage() {
                                           <div className="px-3 py-2.5 text-yellow-400 min-w-[100px]">
                                             {p.positions ?? "--"}
                                           </div>
-                                          <div className="px-3 py-2.5 text-center font-bold text-emerald-400 min-w-[50px]">
-                                            {p.overall ?? "--"}
-                                          </div>
+                                        </button>
+                                        <div className="px-3 py-2.5 text-center font-bold min-w-[50px]">
+                                          {isEditing ? (
+                                            <input
+                                              type="number"
+                                              min={1}
+                                              max={99}
+                                              autoFocus
+                                              value={editOvrValue}
+                                              onChange={(e) => setEditOvrValue(e.target.value)}
+                                              onBlur={() => handleSaveOvr(p.sofifa_id, p.fifa_year)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleSaveOvr(p.sofifa_id, p.fifa_year);
+                                                if (e.key === "Escape") setEditingOvr(null);
+                                              }}
+                                              disabled={savingOvr}
+                                              className="w-12 bg-gray-700 border border-emerald-500 rounded px-1 py-0.5 text-center text-sm font-bold text-white focus:outline-none"
+                                            />
+                                          ) : (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingOvr(edKey);
+                                                setEditOvrValue(String(effectiveOvr ?? ""));
+                                              }}
+                                              className={`hover:ring-1 hover:ring-emerald-500 rounded px-1.5 py-0.5 transition-all ${
+                                                hasOverride ? "text-amber-400" : "text-emerald-400"
+                                              }`}
+                                              title={hasOverride ? `Manual: ${p.manual_overall} (scraped: ${p.overall ?? "?"})` : "Click to edit"}
+                                            >
+                                              {effectiveOvr ?? "--"}
+                                              {hasOverride && <span className="text-[9px] text-amber-500 ml-0.5">*</span>}
+                                            </button>
+                                          )}
+                                        </div>
+                                        <button
+                                          onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
+                                          className="flex items-center text-left"
+                                        >
                                           <div className="px-3 py-2.5 text-center text-gray-300 min-w-[50px]">
                                             {p.potential ?? "--"}
                                           </div>
@@ -411,8 +480,8 @@ export default function PlayerSearchPage() {
                                           <div className="px-3 py-2.5 text-center text-gray-600 min-w-[40px]">
                                             {edExpanded ? "▲" : "▼"}
                                           </div>
-                                        </div>
-                                      </button>
+                                        </button>
+                                      </div>
 
                                       {edExpanded && (
                                         <div className="border-t border-gray-700 bg-gray-900/40 px-6 py-4">

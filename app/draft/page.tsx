@@ -10,6 +10,7 @@ export interface DraftSettings {
   eraStart: number;
   eraEnd: number;
   mode: "normal" | "prime";
+  draftOrder: "position-first" | "club-first";
 }
 
 export interface DraftPlayer {
@@ -33,6 +34,7 @@ interface SavedProgress {
   settings: DraftSettings;
   players: DraftPlayer[];
   usedClubYears: string[];
+  slotAssignments?: number[];
 }
 
 function loadProgress(): SavedProgress | null {
@@ -91,12 +93,12 @@ export default function DraftPage() {
   }, []);
 
   const handleProgress = useCallback(
-    (picked: DraftPlayer[], usedClubYears: string[]) => {
+    (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: number[]) => {
       if (!settings) return;
       try {
         localStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify({ settings, players: picked, usedClubYears })
+          JSON.stringify({ settings, players: picked, usedClubYears, slotAssignments })
         );
       } catch {}
     },
@@ -132,6 +134,7 @@ export default function DraftPage() {
                   <div className="text-xs text-gray-400">
                     {resume.players.length}/11 picked &middot; {resume.settings.formation}
                     {resume.settings.mode === "prime" && " · Prime"}
+                    {resume.settings.draftOrder === "club-first" && " · Club First"}
                   </div>
                 </div>
                 <button
@@ -159,6 +162,7 @@ export default function DraftPage() {
           onBack={handleNewRun}
           initialPicked={resume?.players}
           initialUsedClubYears={resume?.usedClubYears}
+          initialSlotAssignments={resume?.slotAssignments}
           onProgress={handleProgress}
         />
       )}

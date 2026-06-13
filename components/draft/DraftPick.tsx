@@ -50,7 +50,8 @@ interface Props {
   onBack?: () => void;
   initialPicked?: DraftPlayer[];
   initialUsedClubYears?: string[];
-  onProgress?: (picked: DraftPlayer[], usedClubYears: string[]) => void;
+  initialSlotAssignments?: number[];
+  onProgress?: (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: number[]) => void;
 }
 
 function classifyPos(pos: string): "GK" | "DEF" | "MID" | "ATT" {
@@ -130,12 +131,16 @@ export default function DraftPick({
   onBack,
   initialPicked,
   initialUsedClubYears,
+  initialSlotAssignments,
   onProgress,
 }: Props) {
   const formation = FORMATIONS.find((f) => f.name === settings.formation) ?? FORMATIONS[0];
+  const isClubFirst = settings.draftOrder === "club-first";
   const [pickedPlayers, setPickedPlayers] = useState<DraftPlayer[]>(initialPicked ?? []);
   const [currentSlotIndex, setCurrentSlotIndex] = useState(initialPicked?.length ?? 0);
-  const [phase, setPhase] = useState<"spin" | "spinning" | "reveal" | "pick">("spin");
+  const [phase, setPhase] = useState<"spin" | "spinning" | "reveal" | "pick" | "assign">("spin");
+  const [pendingPlayer, setPendingPlayer] = useState<RosterPlayer | null>(null);
+  const [slotAssignments, setSlotAssignments] = useState<number[]>(initialSlotAssignments ?? []);
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [spinDisplay, setSpinDisplay] = useState<{ club: string; year: number } | null>(null);
@@ -276,66 +281,67 @@ export default function DraftPick({
     setSpinning(false);
   };
 
-  const handlePickPlayer = useCallback(
-    (player: RosterPlayer) => {
-      const slot = formation.slots[currentSlotIndex];
-      const clubAbbr = spinResult!.club
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 3);
+  const buildAttrs = (player: RosterPlayer): PlayerAttributes => ({
+    pace: player.pace,
+    shooting: player.shooting,
+    passing: player.passing,
+    dribbling: player.dribbling,
+    defending: player.defending,
+    physical: player.physical,
+    finishing: player.finishing,
+    positioning: player.positioning,
+    crossing: player.crossing,
+    vision: player.vision,
+    longShots: player.longShots,
+    shortPassing: player.shortPassing,
+    longPassing: player.longPassing,
+    heading: player.heading,
+    interceptions: player.interceptions,
+    standingTackle: player.standingTackle,
+    marking: player.marking,
+    reactions: player.reactions,
+    sprintSpeed: player.sprintSpeed,
+    gkDiving: player.gkDiving,
+    gkPositioning: player.gkPositioning,
+    gkReflexes: player.gkReflexes,
+  });
 
-      const attrs: PlayerAttributes = {
-        pace: player.pace,
-        shooting: player.shooting,
-        passing: player.passing,
-        dribbling: player.dribbling,
-        defending: player.defending,
-        physical: player.physical,
-        finishing: player.finishing,
-        positioning: player.positioning,
-        crossing: player.crossing,
-        vision: player.vision,
-        longShots: player.longShots,
-        shortPassing: player.shortPassing,
-        longPassing: player.longPassing,
-        heading: player.heading,
-        interceptions: player.interceptions,
-        standingTackle: player.standingTackle,
-        marking: player.marking,
-        reactions: player.reactions,
-        sprintSpeed: player.sprintSpeed,
-        gkDiving: player.gkDiving,
-        gkPositioning: player.gkPositioning,
-        gkReflexes: player.gkReflexes,
-      };
+  const buildClubAbbr = () =>
+    spinResult!.club.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 3);
 
+  const finalizePick = useCallback(
+    (player: RosterPlayer, slotLabel: string, slotIdx?: number) => {
       const drafted: DraftPlayer = {
         name: player.name,
         overall: player.overall,
         positions: player.positions,
         club: spinResult!.club,
-        clubYear: `${clubAbbr} ${spinResult!.year}`,
-        assignedPosition: slot.label,
+        clubYear: `${buildClubAbbr()} ${spinResult!.year}`,
+        assignedPosition: slotLabel,
         sofifa_id: player.sofifa_id,
         image_url: player.image_url,
         nationality: player.nationality,
-        attrs,
+        attrs: buildAttrs(player),
       };
 
       const newPicked = [...pickedPlayers, drafted];
-      const newUsed = [
-        ...Array.from(usedClubYears),
+      const newUsed: string[] = [
+        ...Array.from(usedClubYears) as string[],
         `${spinResult!.club}-${spinResult!.year}`,
       ];
+      const newAssignments = slotIdx !== undefined
+        ? [...slotAssignments, slotIdx]
+        : slotAssignments;
+
       setPickedPlayers(newPicked);
       setUsedClubYears(new Set(newUsed));
+      if (slotIdx !== undefined) setSlotAssignments(newAssignments);
+      setPendingPlayer(null);
 
       if (newPicked.length >= 11) {
         onComplete(newPicked);
       } else {
-        onProgress?.(newPicked, newUsed);
+        onProgress?.(newPicked, newUsed, newAssignments);
         setCurrentSlotIndex(currentSlotIndex + 1);
         setSpinResult(null);
         setSpinDisplay(null);
@@ -343,19 +349,52 @@ export default function DraftPick({
         setPhase("spin");
       }
     },
-    [
-      currentSlotIndex,
-      formation.slots,
-      onComplete,
-      onProgress,
-      pickedPlayers,
-      spinResult,
-      usedClubYears,
-    ]
+    [currentSlotIndex, onComplete, onProgress, pickedPlayers, spinResult, usedClubYears, slotAssignments]
   );
+
+  const handlePickPlayer = useCallback(
+    (player: RosterPlayer) => {
+      if (isClubFirst) {
+        setPendingPlayer(player);
+        setPhase("assign");
+        return;
+      }
+      const slot = formation.slots[currentSlotIndex];
+      finalizePick(player, slot.label);
+    },
+    [isClubFirst, currentSlotIndex, formation.slots, finalizePick]
+  );
+
+  const handleAssignSlot = useCallback(
+    (slotIndex: number) => {
+      if (!pendingPlayer) return;
+      const slot = formation.slots[slotIndex];
+      finalizePick(pendingPlayer, slot.label, slotIndex);
+    },
+    [pendingPlayer, formation.slots, finalizePick]
+  );
+
+  // Map slot indices to picked players for pitch rendering
+  const filledSlots = new Set(isClubFirst ? slotAssignments : Array.from({ length: pickedPlayers.length }, (_, i) => i));
+  const slotToPlayer = new Map<number, DraftPlayer>();
+  if (isClubFirst) {
+    pickedPlayers.forEach((p, pickIdx) => {
+      if (slotAssignments[pickIdx] !== undefined) {
+        slotToPlayer.set(slotAssignments[pickIdx], p);
+      }
+    });
+  } else {
+    pickedPlayers.forEach((p, i) => slotToPlayer.set(i, p));
+  }
 
   const currentSlot = formation.slots[currentSlotIndex];
   const keyStats = currentSlot ? keyStatForSlot(currentSlot.label) : [];
+  const clubFirstStats: { label: string; pick: (p: RosterPlayer) => number }[] = [
+    { label: "PAC", pick: (p) => p.pace },
+    { label: "SHO", pick: (p) => p.shooting },
+    { label: "DEF", pick: (p) => p.defending },
+  ];
+  const displayStats = isClubFirst ? clubFirstStats : keyStats;
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -382,16 +421,32 @@ export default function DraftPick({
                 {settings.mode === "prime" && (
                   <span className="ml-1.5 text-amber-400 font-bold">· PRIME</span>
                 )}
+                {isClubFirst && (
+                  <span className="ml-1.5 text-sky-400 font-bold">· CLUB FIRST</span>
+                )}
               </p>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
-              Picking for
-            </div>
-            <div className={`text-lg font-extrabold ${getPositionTextColor(currentSlot?.label ?? "")}`}>
-              {currentSlot?.label}
-            </div>
+            {isClubFirst ? (
+              <>
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+                  Pick
+                </div>
+                <div className="text-lg font-extrabold text-sky-400">
+                  {pickedPlayers.length + 1}/11
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+                  Picking for
+                </div>
+                <div className={`text-lg font-extrabold ${getPositionTextColor(currentSlot?.label ?? "")}`}>
+                  {currentSlot?.label}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -434,13 +489,23 @@ export default function DraftPick({
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-600/40" />
 
             {formation.slots.map((slot, i) => {
-              const picked = pickedPlayers[i];
-              const isCurrent = i === currentSlotIndex && !picked;
+              const picked = slotToPlayer.get(i);
+              const isCurrent = !isClubFirst && i === currentSlotIndex && !picked;
+              const isAssignable = isClubFirst && phase === "assign" && !picked;
+              const pendingPositions = pendingPlayer
+                ? (pendingPlayer.positions || "").split(",").map((p) => p.trim())
+                : [];
+              const isNaturalFit = isAssignable && slot.compatiblePositions.some(
+                (cp) => pendingPositions.includes(cp)
+              );
               return (
                 <div
                   key={i}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300"
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300 ${
+                    isAssignable ? "cursor-pointer" : ""
+                  }`}
                   style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                  onClick={() => isAssignable && handleAssignSlot(i)}
                 >
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-extrabold border-2 transition-all duration-300 ${
@@ -448,7 +513,11 @@ export default function DraftPick({
                         ? `${getPositionColor(slot.label)} border-white/80 text-white shadow-lg`
                         : isCurrent
                           ? "bg-emerald-500/80 border-emerald-300 text-white animate-pulse shadow-lg shadow-emerald-500/30"
-                          : "bg-gray-800/80 border-gray-600/50 text-gray-500"
+                          : isNaturalFit
+                            ? "bg-emerald-600/80 border-emerald-400 text-white animate-pulse shadow-lg shadow-emerald-500/30"
+                            : isAssignable
+                              ? "bg-gray-700/80 border-sky-500/60 text-sky-300 hover:bg-sky-900/40 hover:border-sky-400"
+                              : "bg-gray-800/80 border-gray-600/50 text-gray-500"
                     }`}
                   >
                     {picked ? (
@@ -521,10 +590,10 @@ export default function DraftPick({
             <div className="flex flex-col items-center justify-center py-16">
               <div className="mb-6 text-center">
                 <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${
-                  getPositionTextColor(currentSlot?.label ?? "")
+                  isClubFirst ? "text-sky-400" : getPositionTextColor(currentSlot?.label ?? "")
                 } border-current/20 bg-current/5`}>
                   <span className="text-xs font-bold tracking-widest uppercase">
-                    Pick {currentSlotIndex + 1} of 11
+                    Pick {pickedPlayers.length + 1} of 11
                   </span>
                 </div>
                 <p className="text-gray-400 text-sm">
@@ -612,14 +681,20 @@ export default function DraftPick({
                   </span>
                 </div>
                 <p className="text-gray-500 text-sm">
-                  Pick a player for{" "}
-                  <span className={`font-bold ${getPositionTextColor(currentSlot?.label ?? "")}`}>
-                    {currentSlot?.label}
-                  </span>
-                  {" "}&middot;{" "}
-                  <span className="text-emerald-500/60 font-medium">
-                    compatible: {currentSlot?.compatiblePositions.join(", ")}
-                  </span>
+                  {isClubFirst ? (
+                    "Pick any player from this roster"
+                  ) : (
+                    <>
+                      Pick a player for{" "}
+                      <span className={`font-bold ${getPositionTextColor(currentSlot?.label ?? "")}`}>
+                        {currentSlot?.label}
+                      </span>
+                      {" "}&middot;{" "}
+                      <span className="text-emerald-500/60 font-medium">
+                        compatible: {currentSlot?.compatiblePositions.join(", ")}
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -645,15 +720,15 @@ export default function DraftPick({
               )}
 
               {spinResult && <div className="max-h-[60vh] overflow-y-auto">
-                {/* Stat column headers — mirrors player row layout for alignment */}
-                {keyStats.length > 0 && (
+                {/* Stat column headers */}
+                {displayStats.length > 0 && (
                   <div className="flex items-center gap-3 px-4 mb-1 sticky top-0 bg-gray-950 z-10 py-1">
                     <div className="w-9 shrink-0" />
                     <div className="w-10 shrink-0" />
                     <div className="flex-1 min-w-0" />
                     <div className="shrink-0" />
                     <div className="flex gap-0 shrink-0">
-                      {keyStats.map((ks) => (
+                      {displayStats.map((ks) => (
                         <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-600 uppercase">
                           {ks.label}
                         </span>
@@ -664,13 +739,15 @@ export default function DraftPick({
                 <div className="space-y-1">
                 {[...spinResult.roster]
                   .sort((a, b) => {
-                    const aCompat = currentSlot?.compatiblePositions.some((cp) =>
-                      (a.positions || "").split(",").map((p) => p.trim()).includes(cp)
-                    ) ? 1 : 0;
-                    const bCompat = currentSlot?.compatiblePositions.some((cp) =>
-                      (b.positions || "").split(",").map((p) => p.trim()).includes(cp)
-                    ) ? 1 : 0;
-                    if (bCompat !== aCompat) return bCompat - aCompat;
+                    if (!isClubFirst) {
+                      const aCompat = currentSlot?.compatiblePositions.some((cp) =>
+                        (a.positions || "").split(",").map((p) => p.trim()).includes(cp)
+                      ) ? 1 : 0;
+                      const bCompat = currentSlot?.compatiblePositions.some((cp) =>
+                        (b.positions || "").split(",").map((p) => p.trim()).includes(cp)
+                      ) ? 1 : 0;
+                      if (bCompat !== aCompat) return bCompat - aCompat;
+                    }
                     return b.overall - a.overall;
                   })
                   .map((player) => {
@@ -678,7 +755,7 @@ export default function DraftPick({
                     .split(",")
                     .map((p) => p.trim())
                     .filter(Boolean);
-                  const isCompatible = currentSlot?.compatiblePositions.some((cp) =>
+                  const isCompatible = !isClubFirst && currentSlot?.compatiblePositions.some((cp) =>
                     playerPositions.includes(cp)
                   );
                   const alreadyPicked = pickedPlayers.some(
@@ -694,12 +771,13 @@ export default function DraftPick({
                       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-all duration-150 group ${
                         alreadyPicked
                           ? "opacity-20 cursor-not-allowed bg-gray-900/50"
-                          : isCompatible
-                            ? "bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/40 hover:border-emerald-600/60 hover:scale-[1.01]"
-                            : "bg-gray-900/50 hover:bg-gray-800/80 border border-transparent hover:border-gray-700/50"
+                          : isClubFirst
+                            ? "bg-gray-900/50 hover:bg-gray-800/80 border border-gray-700/30 hover:border-gray-600/50 hover:scale-[1.01]"
+                            : isCompatible
+                              ? "bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-700/40 hover:border-emerald-600/60 hover:scale-[1.01]"
+                              : "bg-gray-900/50 hover:bg-gray-800/80 border border-transparent hover:border-gray-700/50"
                       }`}
                     >
-                      {/* Face thumbnail — always rendered for layout consistency */}
                       {player.image_url ? (
                         <ImageWithFallback
                           src={player.image_url}
@@ -710,7 +788,6 @@ export default function DraftPick({
                       ) : (
                         <div className="w-9 h-9 rounded-full bg-gray-800 shrink-0" />
                       )}
-                      {/* OVR badge */}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-sm shrink-0 ${
                         player.overall >= 85
                           ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
@@ -733,7 +810,7 @@ export default function DraftPick({
                           <span
                             key={pos}
                             className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                              currentSlot?.compatiblePositions.includes(pos)
+                              isClubFirst || currentSlot?.compatiblePositions.includes(pos)
                                 ? getPositionColor(pos) + " text-white"
                                 : "bg-gray-800 text-gray-500"
                             }`}
@@ -742,10 +819,9 @@ export default function DraftPick({
                           </span>
                         ))}
                       </div>
-                      {/* Key stats for this position */}
                       {hasStats && (
                         <div className="flex gap-0 shrink-0">
-                          {keyStats.map((ks) => {
+                          {displayStats.map((ks) => {
                             const val = ks.pick(player);
                             return (
                               <span key={ks.label} className={`w-9 text-center text-[11px] font-bold tabular-nums ${statColor(val)}`}>
@@ -760,6 +836,73 @@ export default function DraftPick({
                 })}
               </div>
               </div>}
+            </div>
+          )}
+
+          {phase === "assign" && pendingPlayer && spinDisplay && (
+            <div>
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  {pendingPlayer.image_url ? (
+                    <ImageWithFallback
+                      src={pendingPlayer.image_url}
+                      alt={pendingPlayer.name}
+                      fallbackText=""
+                      className="w-14 h-14 rounded-full bg-gray-800 object-cover"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-gray-800" />
+                  )}
+                  <div className="text-left">
+                    <div className="text-xl font-extrabold">{pendingPlayer.name}</div>
+                    <div className="text-sm text-gray-400">
+                      OVR <span className="text-emerald-400 font-bold">{pendingPlayer.overall}</span>
+                      {" · "}
+                      {spinDisplay.club}
+                      {" · "}
+                      {pendingPlayer.positions}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-gray-500 text-sm">Choose a position to assign this player</p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-md mx-auto">
+                {formation.slots.map((slot, i) => {
+                  if (filledSlots.has(i)) return null;
+
+                  const pendingPositions = (pendingPlayer.positions || "").split(",").map((p) => p.trim());
+                  const isNatural = slot.compatiblePositions.some((cp) => pendingPositions.includes(cp));
+
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => handleAssignSlot(i)}
+                      className={`relative py-3 px-4 rounded-xl text-center transition-all duration-200 hover:scale-105 active:scale-95 ${
+                        isNatural
+                          ? "bg-emerald-900/30 border-2 border-emerald-600/60 hover:bg-emerald-900/50 hover:border-emerald-400 shadow-lg shadow-emerald-900/20"
+                          : "bg-gray-800/80 border border-gray-700/50 hover:bg-gray-700 hover:border-gray-500"
+                      }`}
+                    >
+                      <div className={`text-lg font-extrabold ${getPositionTextColor(slot.label)}`}>
+                        {slot.label}
+                      </div>
+                      {isNatural && (
+                        <div className="text-[10px] font-bold text-emerald-500 mt-0.5">NATURAL FIT</div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={() => { setPendingPlayer(null); setPhase("pick"); }}
+                  className="px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-lg font-bold text-sm transition-all text-gray-300"
+                >
+                  Back to roster
+                </button>
+              </div>
             </div>
           )}
         </div>
