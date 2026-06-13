@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q")?.trim();
   const year = searchParams.get("year");
   const club = searchParams.get("club")?.trim();
+  const position = searchParams.get("position")?.trim();
   const limitParam = searchParams.get("limit");
 
   if (!q) {
@@ -85,6 +86,10 @@ export async function GET(req: NextRequest) {
 
     if (club) {
       query = query.ilike("club", `%${club}%`);
+    }
+
+    if (position) {
+      query = query.ilike("positions", `%${position}%`);
     }
 
     query = query.order("overall", { ascending: false }).limit(limit);

@@ -92,6 +92,7 @@ export default function PlayerSearchPage() {
   const [nameQuery, setNameQuery] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [clubFilter, setClubFilter] = useState("");
+  const [posFilter, setPosFilter] = useState("");
 
   const [players, setPlayers] = useState<SofifaPlayer[]>([]);
   const [count, setCount] = useState<number | null>(null);
@@ -113,6 +114,7 @@ export default function PlayerSearchPage() {
       const params = new URLSearchParams({ q, limit: "200" });
       if (yearFilter) params.set("year", yearFilter);
       if (clubFilter.trim()) params.set("club", clubFilter.trim());
+      if (posFilter.trim()) params.set("position", posFilter.trim());
 
       const res = await fetch(`/api/admin/football/player-search?${params}`);
       const json = await res.json();
@@ -250,6 +252,21 @@ export default function PlayerSearchPage() {
                 onChange={(e) => setClubFilter(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g. Manchester United, Barcelona..."
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-emerald-600 focus:outline-none"
+              />
+            </div>
+
+            {/* Position */}
+            <div className="w-full sm:w-32">
+              <label className="mb-1 block text-xs font-bold uppercase text-gray-500">
+                Position
+              </label>
+              <input
+                type="text"
+                value={posFilter}
+                onChange={(e) => setPosFilter(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g. ST, GK"
                 className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-emerald-600 focus:outline-none"
               />
             </div>

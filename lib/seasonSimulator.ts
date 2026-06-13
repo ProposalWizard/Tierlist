@@ -618,32 +618,6 @@ export function simulateSeason(
   players: DraftPlayer[],
   otherTeams?: { name: string; strength: number }[],
 ): SeasonResult {
-  // --- [DRAFT-SIM] Debug logging ---
-  const p0 = players[0];
-  if (p0) {
-    console.log('[DRAFT-SIM] First player:', {
-      name: p0.name,
-      overall: p0.overall,
-      typeofOverall: typeof p0.overall,
-      assignedPosition: p0.assignedPosition,
-      positions: p0.positions,
-      hasAttrs: !!p0.attrs,
-      attrsSummary: p0.attrs ? {
-        pace: p0.attrs.pace,
-        shooting: p0.attrs.shooting,
-        passing: p0.attrs.passing,
-        defending: p0.attrs.defending,
-        typeofPace: typeof p0.attrs.pace,
-      } : null,
-    });
-  }
-  console.log('[DRAFT-SIM] All players OVR:', players.map(p => ({
-    name: p.name,
-    overall: p.overall,
-    typeofOverall: typeof p.overall,
-  })));
-  // --- end debug ---
-
   const seed = players.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42);
   const rng = createRng(seed);
 
@@ -653,15 +627,6 @@ export function simulateSeason(
 
   const ratings = computePhaseRatings(players);
 
-  // --- [DRAFT-SIM] Phase ratings ---
-  console.log('[DRAFT-SIM] Phase ratings:', {
-    attack: ratings.attack,
-    midfield: ratings.midfield,
-    defense: ratings.defense,
-    gk: ratings.gk,
-    teamStrength: ratings.teamStrength,
-  });
-
   const playerTeamName = 'Your Team';
 
   // Simulate 38 matches (home and away vs each opponent)
@@ -669,26 +634,6 @@ export function simulateSeason(
   for (const opp of opponents) {
     const homeMatch = simulateMatch(players, ratings, opp, true, rng);
     matches.push(homeMatch);
-
-    // --- [DRAFT-SIM] Log first match ---
-    if (matches.length === 1) {
-      const myAttack = ratings.attack + HOME_ADVANTAGE * 0.6;
-      const myMidfield = ratings.midfield + HOME_ADVANTAGE * 0.4;
-      const myDefense = ratings.defense + HOME_ADVANTAGE * 0.3;
-      const myGk = ratings.gk;
-      const oppDefPower = opp.strength;
-      const myXg = computeExpectedGoals(myAttack, myMidfield, oppDefPower);
-      const ourDefensivePower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
-      const oppXg = computeExpectedGoals(opp.strength, opp.strength * 0.95, ourDefensivePower);
-      console.log('[DRAFT-SIM] First match (home vs ' + opp.name + '):', {
-        goalsFor: homeMatch.goalsFor,
-        goalsAgainst: homeMatch.goalsAgainst,
-        result: homeMatch.result,
-        myXg,
-        oppXg,
-        oppStrength: opp.strength,
-      });
-    }
 
     matches.push(simulateMatch(players, ratings, opp, false, rng));
   }
