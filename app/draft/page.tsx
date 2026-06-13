@@ -9,6 +9,7 @@ export interface DraftSettings {
   formation: string;
   eraStart: number;
   eraEnd: number;
+  mode: "normal" | "prime";
 }
 
 export interface DraftPlayer {
@@ -130,6 +131,7 @@ export default function DraftPage() {
                   </div>
                   <div className="text-xs text-gray-400">
                     {resume.players.length}/11 picked &middot; {resume.settings.formation}
+                    {resume.settings.mode === "prime" && " · Prime"}
                   </div>
                 </div>
                 <button

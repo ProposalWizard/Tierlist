@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const club = searchParams.get("club");
   const yearParam = searchParams.get("year");
+  const prime = searchParams.get("prime") === "true";
 
   if (!club || !yearParam) {
     return NextResponse.json(
@@ -125,6 +126,61 @@ export async function GET(request: NextRequest) {
   for (const player of roster) {
     if (!player.positions) {
       player.positions = inferPositions(player);
+    }
+  }
+
+  // Prime mode: replace each player's stats with their best-ever edition
+  if (prime) {
+    const ids = roster.map((p) => p.sofifa_id).filter(Boolean);
+    if (ids.length > 0) {
+      const { data: allEditions } = await supabase
+        .from("sofifa_players")
+        .select("sofifa_id, overall, potential, positions, age, attributes")
+        .in("sofifa_id", ids)
+        .order("overall", { ascending: false });
+
+      if (allEditions) {
+        const bestById = new Map<string, typeof allEditions[0]>();
+        for (const row of allEditions) {
+          if (!bestById.has(row.sofifa_id)) {
+            bestById.set(row.sofifa_id, row);
+          }
+        }
+
+        for (const player of roster) {
+          const best = bestById.get(player.sofifa_id);
+          if (!best) continue;
+          const ba = (best.attributes as Record<string, unknown>) ?? {};
+          const bestOvr = best.overall || parseAttr(ba.overall) || parseAttr(ba.attr_sort) || parseAttr(ba.attr_oa) || 0;
+          if (bestOvr <= player.overall) continue;
+
+          player.overall = bestOvr;
+          player.potential = best.potential || parseAttr(ba.potential) || parseAttr(ba.attr_pt) || 0;
+          if (best.positions) player.positions = best.positions;
+          player.pace = parseAttr(ba.attr_pac) || parseAttr(ba.pac) || player.pace;
+          player.shooting = parseAttr(ba.attr_sho) || parseAttr(ba.shooting) || player.shooting;
+          player.passing = parseAttr(ba.attr_pas) || parseAttr(ba.passing) || player.passing;
+          player.dribbling = parseAttr(ba.attr_dri) || parseAttr(ba.dribbling) || player.dribbling;
+          player.defending = parseAttr(ba.attr_def) || parseAttr(ba.defending) || player.defending;
+          player.physical = parseAttr(ba.attr_phy) || parseAttr(ba.physical) || player.physical;
+          player.finishing = parseAttr(ba.attr_fi) || parseAttr(ba.finishing) || player.finishing;
+          player.positioning = parseAttr(ba.attr_po) || parseAttr(ba.positioning) || player.positioning;
+          player.crossing = parseAttr(ba.attr_cr) || parseAttr(ba.crossing) || player.crossing;
+          player.vision = parseAttr(ba.attr_vi) || parseAttr(ba.vision) || player.vision;
+          player.longShots = parseAttr(ba.attr_lo) || parseAttr(ba.longShots) || player.longShots;
+          player.shortPassing = parseAttr(ba.attr_sh) || parseAttr(ba.shortPassing) || player.shortPassing;
+          player.longPassing = parseAttr(ba.attr_lp) || parseAttr(ba.longPassing) || player.longPassing;
+          player.heading = parseAttr(ba.attr_he) || parseAttr(ba.heading) || player.heading;
+          player.interceptions = parseAttr(ba.attr_in) || parseAttr(ba.interceptions) || player.interceptions;
+          player.standingTackle = parseAttr(ba.attr_st) || parseAttr(ba.standingTackle) || player.standingTackle;
+          player.marking = parseAttr(ba.attr_ma) || parseAttr(ba.marking) || player.marking;
+          player.reactions = parseAttr(ba.attr_re) || parseAttr(ba.reactions) || player.reactions;
+          player.sprintSpeed = parseAttr(ba.attr_sp) || parseAttr(ba.sprintSpeed) || player.sprintSpeed;
+          player.gkDiving = parseAttr(ba.attr_gd) || parseAttr(ba.attr_div) || parseAttr(ba.gkDiving) || player.gkDiving;
+          player.gkPositioning = parseAttr(ba.attr_gp) || parseAttr(ba.attr_pos) || parseAttr(ba.gkPositioning) || player.gkPositioning;
+          player.gkReflexes = parseAttr(ba.attr_gr) || parseAttr(ba.attr_ref) || parseAttr(ba.gkReflexes) || player.gkReflexes;
+        }
+      }
     }
   }
 

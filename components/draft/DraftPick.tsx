@@ -259,9 +259,9 @@ export default function DraftPick({
 
   const fetchRoster = async (club: string, year: number) => {
     try {
-      const res = await fetch(
-        `/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`
-      );
+      let url = `/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`;
+      if (settings.mode === "prime") url += "&prime=true";
+      const res = await fetch(url);
       const data = await res.json();
       if (data.roster && data.roster.length > 0) {
         setSpinResult({ club, year, roster: data.roster });
@@ -377,7 +377,12 @@ export default function DraftPick({
                 <span className="text-white">PL</span>{" "}
                 <span className="text-emerald-400">DRAFT</span>
               </h1>
-              <p className="text-gray-500 text-xs">{settings.formation}</p>
+              <p className="text-gray-500 text-xs">
+                {settings.formation}
+                {settings.mode === "prime" && (
+                  <span className="ml-1.5 text-amber-400 font-bold">· PRIME</span>
+                )}
+              </p>
             </div>
           </div>
           <div className="text-right">

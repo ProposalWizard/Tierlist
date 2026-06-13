@@ -43,6 +43,25 @@ export interface MatchResult {
   result: 'W' | 'D' | 'L';
 }
 
+export interface FaCupMatch {
+  round: string;
+  opponent: string;
+  goalsFor: number;
+  goalsAgainst: number;
+  extraTime: boolean;
+  penalties: boolean;
+  penaltyScore?: { player: number; opponent: number };
+  goalScorers: { player: string; minute: number }[];
+  assistProviders: { player: string; minute: number }[];
+  result: 'W' | 'L';
+}
+
+export interface FaCupResult {
+  matches: FaCupMatch[];
+  winner: boolean;
+  exitRound: string | null;
+}
+
 export interface PlayerStats {
   name: string;
   assignedPosition: string;
@@ -93,6 +112,7 @@ export interface SeasonResult {
   actualFinish: number;
   performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED';
   phaseRatings: PhaseRatings;
+  faCup: FaCupResult;
 }
 
 // --- Seeded PRNG (mulberry32) ---
@@ -189,49 +209,77 @@ function hasAttrs(p: DraftPlayer): p is DraftPlayer & { attrs: PlayerAttributes 
 
 function statOr(val: number, ovr: number): number { return val > 0 ? val : ovr; }
 
-function playerAttackRating(p: DraftPlayer, fitness: number): number {
-  if (hasAttrs(p)) {
-    const a = p.attrs;
-    const o = p.overall;
-    const fin = statOr(a.finishing, o) || statOr(a.shooting, o);
-    const pos = statOr(a.positioning, o) || o * 0.8;
-    return (statOr(a.shooting, o) * 0.25 + fin * 0.20 + pos * 0.15 + statOr(a.pace, o) * 0.15 + statOr(a.dribbling, o) * 0.15 + statOr(a.physical, o) * 0.10) * fitness;
-  }
-  return p.overall * fitness;
-}
+// --- Position-based attack/defense contributions ---
 
-function playerMidfieldRating(p: DraftPlayer, fitness: number): number {
-  if (hasAttrs(p)) {
-    const a = p.attrs;
-    const o = p.overall;
-    const sp = statOr(a.shortPassing, o) || statOr(a.passing, o);
-    const vis = statOr(a.vision, o) || statOr(a.passing, o) * 0.8;
-    return (statOr(a.passing, o) * 0.25 + sp * 0.15 + vis * 0.15 + statOr(a.dribbling, o) * 0.15 + statOr(a.shooting, o) * 0.10 + statOr(a.defending, o) * 0.10 + statOr(a.physical, o) * 0.10) * fitness;
-  }
-  return p.overall * fitness;
-}
+function playerContributions(p: DraftPlayer, fitness: number): { attack: number; defense: number } {
+  const pos = p.assignedPosition.toUpperCase().trim();
+  const o = p.overall;
 
-function playerDefenseRating(p: DraftPlayer, fitness: number): number {
-  if (hasAttrs(p)) {
-    const a = p.attrs;
-    const o = p.overall;
-    const tackle = statOr(a.standingTackle, o) || statOr(a.defending, o);
-    const mark = statOr(a.marking, o) || statOr(a.defending, o) * 0.9;
-    const intc = statOr(a.interceptions, o) || statOr(a.defending, o) * 0.85;
-    return (statOr(a.defending, o) * 0.20 + tackle * 0.15 + mark * 0.15 + intc * 0.15 + statOr(a.physical, o) * 0.15 + statOr(a.pace, o) * 0.10 + statOr(a.reactions, o) * 0.10) * fitness;
+  if (!hasAttrs(p)) {
+    const role = classifyPosition(pos);
+    if (role === 'GK') return { attack: 0, defense: o * fitness };
+    if (role === 'DEF') return { attack: 0, defense: o * fitness };
+    if (role === 'ATT') return { attack: o * fitness, defense: 0 };
+    return { attack: o * 0.5 * fitness, defense: o * 0.5 * fitness };
   }
-  return p.overall * fitness;
-}
 
-function playerGkRating(p: DraftPlayer, fitness: number): number {
-  if (hasAttrs(p)) {
-    const a = p.attrs;
-    const o = p.overall;
-    if (a.gkDiving > 0 || a.gkReflexes > 0 || a.gkPositioning > 0) {
-      return (statOr(a.gkDiving, o) * 0.30 + statOr(a.gkReflexes, o) * 0.30 + statOr(a.gkPositioning, o) * 0.25 + statOr(a.reactions, o) * 0.15) * fitness;
-    }
+  const a = p.attrs;
+  const def = statOr(a.defending, o);
+  const phy = statOr(a.physical, o);
+  const pac = statOr(a.pace, o);
+  const crs = statOr(a.crossing, o);
+  const pas = statOr(a.passing, o);
+  const sho = statOr(a.shooting, o);
+  const dri = statOr(a.dribbling, o);
+
+  if (pos === 'GK') {
+    return { attack: 0, defense: o * fitness };
   }
-  return p.overall * fitness;
+  if (pos === 'CB') {
+    return { attack: 0, defense: ((def + phy + pac) / 3) * fitness };
+  }
+  if (['RB', 'LB', 'RWB', 'LWB'].includes(pos)) {
+    return {
+      attack: ((crs + pac) / 2) * fitness,
+      defense: ((def + pac) / 2) * fitness,
+    };
+  }
+  if (['CDM', 'DM'].includes(pos)) {
+    return {
+      attack: pas * fitness,
+      defense: ((def + phy) / 2) * fitness,
+    };
+  }
+  if (pos === 'CM') {
+    return {
+      attack: ((pas + sho) / 2) * fitness,
+      defense: def * fitness,
+    };
+  }
+  if (pos === 'CAM') {
+    return {
+      attack: ((pas + dri + sho) / 3) * fitness,
+      defense: 0,
+    };
+  }
+  if (['RM', 'LM'].includes(pos)) {
+    return {
+      attack: ((pac + dri) / 2) * fitness,
+      defense: ((pac + def) / 2) * fitness,
+    };
+  }
+  if (['ST', 'RW', 'LW'].includes(pos)) {
+    return {
+      attack: ((sho + dri + phy) / 3) * fitness,
+      defense: 0,
+    };
+  }
+
+  // Fallback
+  const role = classifyPosition(pos);
+  if (role === 'ATT') return { attack: ((sho + dri + phy) / 3) * fitness, defense: 0 };
+  if (role === 'DEF') return { attack: 0, defense: ((def + phy + pac) / 3) * fitness };
+  return { attack: ((pas + sho) / 2) * fitness, defense: def * fitness };
 }
 
 // --- Team phase ratings ---
@@ -245,8 +293,6 @@ export interface PhaseRatings {
 }
 
 function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
-  const byRole: Record<PositionRole, DraftPlayer[]> = { GK: [], DEF: [], MID: [], ATT: [] };
-
   // Defensive coercion: force overall and all attrs to numbers.
   // After JSON.parse (e.g. localStorage resume), values may arrive as strings.
   for (const p of players) {
@@ -293,32 +339,31 @@ function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
     }
   }
 
+  const attackValues: number[] = [];
+  const defenseValues: number[] = [];
+  let gkRating = 65;
+
   for (const p of players) {
-    byRole[classifyPosition(p.assignedPosition)].push(p);
+    const fit = positionFitness(p);
+    const contrib = playerContributions(p, fit);
+
+    if (contrib.attack > 0) attackValues.push(contrib.attack);
+    if (contrib.defense > 0) defenseValues.push(contrib.defense);
+
+    if (classifyPosition(p.assignedPosition) === 'GK') {
+      gkRating = contrib.defense;
+    }
   }
 
-  const avgRating = (arr: number[]) =>
+  const avg = (arr: number[]) =>
     arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 70;
 
-  const attackBase = avgRating(byRole.ATT.map(p => playerAttackRating(p, positionFitness(p))));
-  const midAttackBoost = avgRating(byRole.MID.map(p => playerAttackRating(p, positionFitness(p))));
-  const attack = attackBase * 0.7 + midAttackBoost * 0.3;
+  const attack = avg(attackValues);
+  const defense = avg(defenseValues);
+  const midfield = (attack + defense) / 2;
+  const teamStrength = attack * 0.45 + defense * 0.40 + gkRating * 0.15;
 
-  const midRatings = byRole.MID.map(p => playerMidfieldRating(p, positionFitness(p)));
-  const midfield = avgRating(midRatings);
-
-  const defenseBase = avgRating(byRole.DEF.map(p => playerDefenseRating(p, positionFitness(p))));
-  const midDefBoost = avgRating(byRole.MID.map(p => playerDefenseRating(p, positionFitness(p))));
-  const defense = defenseBase * 0.7 + midDefBoost * 0.3;
-
-  const gkPlayers = byRole.GK;
-  const gk = gkPlayers.length > 0
-    ? avgRating(gkPlayers.map(p => playerGkRating(p, positionFitness(p))))
-    : 65;
-
-  const teamStrength = attack * 0.30 + midfield * 0.28 + defense * 0.27 + gk * 0.15;
-
-  return { attack, midfield, defense, gk, teamStrength };
+  return { attack, midfield, defense, gk: gkRating, teamStrength };
 }
 
 // --- Goal scoring weights based on attributes ---
@@ -622,6 +667,135 @@ function matchRating(
   return Math.max(4.0, Math.min(10.0, Math.round(base * 10) / 10));
 }
 
+// --- FA Cup simulation ---
+
+const FA_CUP_ROUNDS = ['Round 3', 'Round 4', 'Round 5', 'Quarter-Final', 'Semi-Final', 'Final'];
+const BIG_CLUBS = ['Liverpool', 'Man City', 'Man United', 'Arsenal', 'Chelsea'];
+
+function simulateFaCup(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  opponents: { name: string; strength: number }[],
+  rng: () => number,
+): FaCupResult {
+  const matches: FaCupMatch[] = [];
+
+  for (let round = 0; round < 6; round++) {
+    const roundName = FA_CUP_ROUNDS[round];
+    let opponent: { name: string; strength: number };
+
+    if (round === 5) {
+      // Final: 75% chance of a big club
+      if (rng() < 0.75) {
+        const bigName = BIG_CLUBS[Math.floor(rng() * BIG_CLUBS.length)];
+        opponent = opponents.find(o => o.name === bigName) ?? opponents[0];
+      } else {
+        opponent = opponents[Math.floor(rng() * opponents.length)];
+      }
+    } else {
+      opponent = opponents[Math.floor(rng() * opponents.length)];
+    }
+
+    const isHome = round < 5 ? rng() > 0.5 : false;
+    const homeBonus = isHome ? HOME_ADVANTAGE : 0;
+
+    const myAttack = ratings.attack + homeBonus * 0.6;
+    const myMidfield = ratings.midfield + homeBonus * 0.4;
+    const myDefense = ratings.defense + homeBonus * 0.3;
+    const myGk = ratings.gk;
+    const oppStrength = opponent.strength + (isHome ? 0 : HOME_ADVANTAGE);
+
+    const myXg = computeExpectedGoals(myAttack, myMidfield, oppStrength);
+    const ourDefPower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
+    const oppXg = computeExpectedGoals(oppStrength, oppStrength * 0.95, ourDefPower);
+
+    let goalsFor = poisson(myXg, rng);
+    let goalsAgainst = poisson(oppXg, rng);
+    let extraTime = false;
+    let penalties = false;
+    let penaltyScore: { player: number; opponent: number } | undefined;
+
+    const goalScorers: { player: string; minute: number }[] = [];
+    const assistProviders: { player: string; minute: number }[] = [];
+
+    for (let i = 0; i < goalsFor; i++) {
+      const minute = Math.floor(rng() * 90) + 1;
+      const scorer = weightedPick(players, goalScoringWeight, rng);
+      goalScorers.push({ player: scorer.name, minute });
+      if (rng() < 0.75) {
+        const eligible = players.filter(p => p.name !== scorer.name);
+        if (eligible.length > 0) {
+          assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
+        }
+      }
+    }
+
+    if (goalsFor === goalsAgainst) {
+      extraTime = true;
+      const etMyXg = myXg * 0.33;
+      const etOppXg = oppXg * 0.33;
+      const etFor = poisson(etMyXg, rng);
+      const etAgainst = poisson(etOppXg, rng);
+      goalsFor += etFor;
+      goalsAgainst += etAgainst;
+
+      for (let i = 0; i < etFor; i++) {
+        const minute = 90 + Math.floor(rng() * 30) + 1;
+        const scorer = weightedPick(players, goalScoringWeight, rng);
+        goalScorers.push({ player: scorer.name, minute });
+        if (rng() < 0.75) {
+          const eligible = players.filter(p => p.name !== scorer.name);
+          if (eligible.length > 0) {
+            assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
+          }
+        }
+      }
+
+      if (goalsFor === goalsAgainst) {
+        penalties = true;
+        const myPens = Math.floor(rng() * 3) + 3;
+        const oppPens = Math.floor(rng() * 3) + 3;
+        if (myPens === oppPens) {
+          penaltyScore = rng() > 0.5
+            ? { player: myPens + 1, opponent: oppPens }
+            : { player: myPens, opponent: oppPens + 1 };
+        } else {
+          penaltyScore = { player: myPens, opponent: oppPens };
+        }
+      }
+    }
+
+    goalScorers.sort((a, b) => a.minute - b.minute);
+    assistProviders.sort((a, b) => a.minute - b.minute);
+
+    let result: 'W' | 'L';
+    if (penalties && penaltyScore) {
+      result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
+    } else {
+      result = goalsFor > goalsAgainst ? 'W' : 'L';
+    }
+
+    matches.push({
+      round: roundName,
+      opponent: opponent.name,
+      goalsFor,
+      goalsAgainst,
+      extraTime,
+      penalties,
+      penaltyScore,
+      goalScorers,
+      assistProviders,
+      result,
+    });
+
+    if (result === 'L') {
+      return { matches, winner: false, exitRound: roundName };
+    }
+  }
+
+  return { matches, winner: true, exitRound: null };
+}
+
 // --- Main export ---
 
 export function simulateSeason(
@@ -653,6 +827,9 @@ export function simulateSeason(
     const j = Math.floor(rng() * (i + 1));
     [matches[i], matches[j]] = [matches[j], matches[i]];
   }
+
+  // FA Cup
+  const faCup = simulateFaCup(players, ratings, opponents, rng);
 
   // Player stats
   const statsMap: Record<string, PlayerStats> = {};
@@ -690,6 +867,23 @@ export function simulateSeason(
 
     for (const p of players) {
       playerRatings[p.name].push(matchRating(p, m, rng));
+    }
+  }
+
+  // Count FA Cup stats
+  for (const cm of faCup.matches) {
+    for (const p of players) statsMap[p.name].appearances++;
+    for (const gs of cm.goalScorers) {
+      if (statsMap[gs.player]) statsMap[gs.player].goals++;
+    }
+    for (const ap of cm.assistProviders) {
+      if (statsMap[ap.player]) statsMap[ap.player].assists++;
+    }
+    if (cm.goalsAgainst === 0) {
+      if (gk) statsMap[gk.name].cleanSheets++;
+      for (const def of defenders) {
+        statsMap[def.name].cleanSheets++;
+      }
     }
   }
 
@@ -831,5 +1025,6 @@ export function simulateSeason(
     actualFinish,
     performance,
     phaseRatings: ratings,
+    faCup,
   };
 }

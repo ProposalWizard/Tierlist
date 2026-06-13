@@ -62,9 +62,9 @@ const ATTR_LABELS: Record<string, string> = {
 
 /* ── FIFA year label ── */
 function yearLabel(year: number): string {
-  if (year >= 24) return `FC ${year}`;
-  if (year >= 10) return `FIFA ${year}`;
-  return `FIFA 0${year}`;
+  const y = year > 100 ? year % 100 : year;
+  if (y >= 24) return `FC ${String(y).padStart(2, "0")}`;
+  return `FIFA ${String(y).padStart(2, "0")}`;
 }
 
 /* ── Year options (7-26) ── */

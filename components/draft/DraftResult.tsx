@@ -250,6 +250,55 @@ export default function DraftResult({ players, onNewRun }: Props) {
           </div>
         </div>
 
+        {/* FA Cup */}
+        <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">&#127942;</span>
+            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">FA Cup</h3>
+            <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded ${
+              season.faCup.winner
+                ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                : "bg-red-500/10 text-red-400 border border-red-500/20"
+            }`}>
+              {season.faCup.winner ? "WINNER" : `Out: ${season.faCup.exitRound}`}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {season.faCup.matches.map((m, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg ${
+                  m.result === "W" ? "bg-emerald-900/20" : "bg-red-900/20"
+                }`}
+              >
+                <span className="text-[10px] font-bold text-gray-500 w-20 shrink-0">{m.round}</span>
+                <span className="flex-1 font-medium truncate">{m.opponent}</span>
+                <span className={`font-black tabular-nums ${m.result === "W" ? "text-emerald-400" : "text-red-400"}`}>
+                  {m.goalsFor}-{m.goalsAgainst}
+                </span>
+                {m.extraTime && !m.penalties && (
+                  <span className="text-[9px] font-bold text-yellow-400/70 bg-yellow-500/10 px-1 py-0.5 rounded">AET</span>
+                )}
+                {m.penalties && m.penaltyScore && (
+                  <span className="text-[9px] font-bold text-purple-400/70 bg-purple-500/10 px-1 py-0.5 rounded">
+                    PEN {m.penaltyScore.player}-{m.penaltyScore.opponent}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+          {season.faCup.matches.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-gray-800/50 flex gap-4 text-[10px] text-gray-600">
+              <span>
+                Goals: {season.faCup.matches.reduce((s, m) => s + m.goalsFor, 0)}
+              </span>
+              <span>
+                Conceded: {season.faCup.matches.reduce((s, m) => s + m.goalsAgainst, 0)}
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Season Awards */}
         <div className="mb-6">
           <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
