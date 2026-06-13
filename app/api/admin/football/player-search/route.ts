@@ -106,3 +106,35 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !(await isAdmin(user.id))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { sofifa_id, fifa_year, manual_overall } = body as {
+    sofifa_id: string;
+    fifa_year: number;
+    manual_overall: number | null;
+  };
+
+  if (!sofifa_id || !fifa_year) {
+    return NextResponse.json({ error: "Missing sofifa_id or fifa_year" }, { status: 400 });
+  }
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("sofifa_players")
+    .update({ manual_overall: manual_overall })
+    .eq("sofifa_id", sofifa_id)
+    .eq("fifa_year", fifa_year);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

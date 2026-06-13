@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("sofifa_players")
     .select(
-      "sofifa_id, name, overall, potential, positions, age, image_url, nationality, attributes"
+      "sofifa_id, name, overall, manual_overall, potential, positions, age, image_url, nationality, attributes"
     )
     .eq("club", club)
     .eq("fifa_year", year)
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     return {
       sofifa_id: p.sofifa_id,
       name: p.name || (a.name as string) || "",
-      overall: p.overall || parseAttr(a.overall) || parseAttr(a.attr_sort) || parseAttr(a.attr_oa) || 0,
+      overall: p.manual_overall || p.overall || parseAttr(a.overall) || parseAttr(a.attr_sort) || parseAttr(a.attr_oa) || 0,
       potential: p.potential || parseAttr(a.potential) || parseAttr(a.attr_pt) || 0,
       positions: p.positions || (a.positions as string) || (a.player_positions as string) || "",
       age: p.age || parseAttr(a.age) || parseAttr(a.attr_ae) || 0,
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
     if (ids.length > 0) {
       const { data: allEditions } = await supabase
         .from("sofifa_players")
-        .select("sofifa_id, overall, potential, positions, age, attributes")
+        .select("sofifa_id, overall, manual_overall, potential, positions, age, attributes")
         .in("sofifa_id", ids)
         .order("overall", { ascending: false });
 
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
           const best = bestById.get(player.sofifa_id);
           if (!best) continue;
           const ba = (best.attributes as Record<string, unknown>) ?? {};
-          const bestOvr = best.overall || parseAttr(ba.overall) || parseAttr(ba.attr_sort) || parseAttr(ba.attr_oa) || 0;
+          const bestOvr = best.manual_overall || best.overall || parseAttr(ba.overall) || parseAttr(ba.attr_sort) || parseAttr(ba.attr_oa) || 0;
           if (bestOvr <= player.overall) continue;
 
           player.overall = bestOvr;
