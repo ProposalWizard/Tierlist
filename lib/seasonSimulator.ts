@@ -43,6 +43,25 @@ export interface MatchResult {
   result: 'W' | 'D' | 'L';
 }
 
+export interface FaCupMatch {
+  round: string;
+  opponent: string;
+  goalsFor: number;
+  goalsAgainst: number;
+  extraTime: boolean;
+  penalties: boolean;
+  penaltyScore?: { player: number; opponent: number };
+  goalScorers: { player: string; minute: number }[];
+  assistProviders: { player: string; minute: number }[];
+  result: 'W' | 'L';
+}
+
+export interface FaCupResult {
+  matches: FaCupMatch[];
+  winner: boolean;
+  exitRound: string | null;
+}
+
 export interface PlayerStats {
   name: string;
   assignedPosition: string;
@@ -93,6 +112,7 @@ export interface SeasonResult {
   actualFinish: number;
   performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED';
   phaseRatings: PhaseRatings;
+  faCup: FaCupResult;
 }
 
 // --- Seeded PRNG (mulberry32) ---
@@ -622,6 +642,135 @@ function matchRating(
   return Math.max(4.0, Math.min(10.0, Math.round(base * 10) / 10));
 }
 
+// --- FA Cup simulation ---
+
+const FA_CUP_ROUNDS = ['Round 3', 'Round 4', 'Round 5', 'Quarter-Final', 'Semi-Final', 'Final'];
+const BIG_CLUBS = ['Liverpool', 'Man City', 'Man United', 'Arsenal', 'Chelsea'];
+
+function simulateFaCup(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  opponents: { name: string; strength: number }[],
+  rng: () => number,
+): FaCupResult {
+  const matches: FaCupMatch[] = [];
+
+  for (let round = 0; round < 6; round++) {
+    const roundName = FA_CUP_ROUNDS[round];
+    let opponent: { name: string; strength: number };
+
+    if (round === 5) {
+      // Final: 75% chance of a big club
+      if (rng() < 0.75) {
+        const bigName = BIG_CLUBS[Math.floor(rng() * BIG_CLUBS.length)];
+        opponent = opponents.find(o => o.name === bigName) ?? opponents[0];
+      } else {
+        opponent = opponents[Math.floor(rng() * opponents.length)];
+      }
+    } else {
+      opponent = opponents[Math.floor(rng() * opponents.length)];
+    }
+
+    const isHome = round < 5 ? rng() > 0.5 : false;
+    const homeBonus = isHome ? HOME_ADVANTAGE : 0;
+
+    const myAttack = ratings.attack + homeBonus * 0.6;
+    const myMidfield = ratings.midfield + homeBonus * 0.4;
+    const myDefense = ratings.defense + homeBonus * 0.3;
+    const myGk = ratings.gk;
+    const oppStrength = opponent.strength + (isHome ? 0 : HOME_ADVANTAGE);
+
+    const myXg = computeExpectedGoals(myAttack, myMidfield, oppStrength);
+    const ourDefPower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
+    const oppXg = computeExpectedGoals(oppStrength, oppStrength * 0.95, ourDefPower);
+
+    let goalsFor = poisson(myXg, rng);
+    let goalsAgainst = poisson(oppXg, rng);
+    let extraTime = false;
+    let penalties = false;
+    let penaltyScore: { player: number; opponent: number } | undefined;
+
+    const goalScorers: { player: string; minute: number }[] = [];
+    const assistProviders: { player: string; minute: number }[] = [];
+
+    for (let i = 0; i < goalsFor; i++) {
+      const minute = Math.floor(rng() * 90) + 1;
+      const scorer = weightedPick(players, goalScoringWeight, rng);
+      goalScorers.push({ player: scorer.name, minute });
+      if (rng() < 0.75) {
+        const eligible = players.filter(p => p.name !== scorer.name);
+        if (eligible.length > 0) {
+          assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
+        }
+      }
+    }
+
+    if (goalsFor === goalsAgainst) {
+      extraTime = true;
+      const etMyXg = myXg * 0.33;
+      const etOppXg = oppXg * 0.33;
+      const etFor = poisson(etMyXg, rng);
+      const etAgainst = poisson(etOppXg, rng);
+      goalsFor += etFor;
+      goalsAgainst += etAgainst;
+
+      for (let i = 0; i < etFor; i++) {
+        const minute = 90 + Math.floor(rng() * 30) + 1;
+        const scorer = weightedPick(players, goalScoringWeight, rng);
+        goalScorers.push({ player: scorer.name, minute });
+        if (rng() < 0.75) {
+          const eligible = players.filter(p => p.name !== scorer.name);
+          if (eligible.length > 0) {
+            assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
+          }
+        }
+      }
+
+      if (goalsFor === goalsAgainst) {
+        penalties = true;
+        const myPens = Math.floor(rng() * 3) + 3;
+        const oppPens = Math.floor(rng() * 3) + 3;
+        if (myPens === oppPens) {
+          penaltyScore = rng() > 0.5
+            ? { player: myPens + 1, opponent: oppPens }
+            : { player: myPens, opponent: oppPens + 1 };
+        } else {
+          penaltyScore = { player: myPens, opponent: oppPens };
+        }
+      }
+    }
+
+    goalScorers.sort((a, b) => a.minute - b.minute);
+    assistProviders.sort((a, b) => a.minute - b.minute);
+
+    let result: 'W' | 'L';
+    if (penalties && penaltyScore) {
+      result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
+    } else {
+      result = goalsFor > goalsAgainst ? 'W' : 'L';
+    }
+
+    matches.push({
+      round: roundName,
+      opponent: opponent.name,
+      goalsFor,
+      goalsAgainst,
+      extraTime,
+      penalties,
+      penaltyScore,
+      goalScorers,
+      assistProviders,
+      result,
+    });
+
+    if (result === 'L') {
+      return { matches, winner: false, exitRound: roundName };
+    }
+  }
+
+  return { matches, winner: true, exitRound: null };
+}
+
 // --- Main export ---
 
 export function simulateSeason(
@@ -653,6 +802,9 @@ export function simulateSeason(
     const j = Math.floor(rng() * (i + 1));
     [matches[i], matches[j]] = [matches[j], matches[i]];
   }
+
+  // FA Cup
+  const faCup = simulateFaCup(players, ratings, opponents, rng);
 
   // Player stats
   const statsMap: Record<string, PlayerStats> = {};
@@ -690,6 +842,23 @@ export function simulateSeason(
 
     for (const p of players) {
       playerRatings[p.name].push(matchRating(p, m, rng));
+    }
+  }
+
+  // Count FA Cup stats
+  for (const cm of faCup.matches) {
+    for (const p of players) statsMap[p.name].appearances++;
+    for (const gs of cm.goalScorers) {
+      if (statsMap[gs.player]) statsMap[gs.player].goals++;
+    }
+    for (const ap of cm.assistProviders) {
+      if (statsMap[ap.player]) statsMap[ap.player].assists++;
+    }
+    if (cm.goalsAgainst === 0) {
+      if (gk) statsMap[gk.name].cleanSheets++;
+      for (const def of defenders) {
+        statsMap[def.name].cleanSheets++;
+      }
     }
   }
 
@@ -831,5 +1000,6 @@ export function simulateSeason(
     actualFinish,
     performance,
     phaseRatings: ratings,
+    faCup,
   };
 }
