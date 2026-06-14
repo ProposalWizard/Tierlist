@@ -311,6 +311,7 @@ export default function DraftPage() {
           onPlayNextSeason={currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
           seasonNumber={currentSeason}
           previousResult={previousResults[previousResults.length - 1]}
+          formationName={settings?.formation}
         />
       )}
       {phase === "pre-season" && (

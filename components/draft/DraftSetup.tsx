@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { FORMATIONS } from "./formations";
 import type { DraftSettings } from "@/app/draft/page";
 
@@ -246,6 +247,12 @@ export default function DraftSetup({ onStart }: Props) {
         <p className="text-center text-gray-600 text-xs mt-4">
           14 spins. 11 starters + 3 subs. 38 matches.
         </p>
+        <Link
+          href="/draft/history"
+          className="block text-center text-gray-600 hover:text-gray-300 text-xs mt-3 transition"
+        >
+          View Draft History &rarr;
+        </Link>
       </div>
     </div>
   );
