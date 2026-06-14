@@ -665,19 +665,19 @@ function matchRating(
   rng: () => number,
 ): number {
   const role = classifyPosition(player.assignedPosition);
-  const ovrBonus = (player.overall - 75) * 0.015;
-  let base = 6.5 + ovrBonus + (rng() * 0.8 - 0.4);
+  const ovrBonus = (player.overall - 70) * 0.025;
+  let base = 6.5 + ovrBonus + (rng() * 1.0 - 0.5);
 
   const scored = match.goalScorers.filter(g => g.player === player.name).length;
   const assisted = match.assistProviders.filter(a => a.player === player.name).length;
-  base += scored * 1.0 + assisted * 0.6;
+  base += scored * 1.5 + assisted * 1.0;
 
   if (match.goalsAgainst === 0 && (role === 'GK' || role === 'DEF')) {
-    base += 0.7;
+    base += 0.8;
   }
 
-  if (match.result === 'W') base += 0.2;
-  else if (match.result === 'L') base -= 0.2;
+  if (match.result === 'W') base += 0.3;
+  else if (match.result === 'L') base -= 0.3;
 
   return Math.max(4.0, Math.min(10.0, Math.round(base * 10) / 10));
 }
