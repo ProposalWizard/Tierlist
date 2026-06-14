@@ -4,6 +4,7 @@ import DraftSetup from "@/components/draft/DraftSetup";
 import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";
+import SquadManager from "@/components/draft/SquadManager";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 
 export interface DraftSettings {
@@ -29,7 +30,7 @@ export interface DraftPlayer {
   attrs?: PlayerAttributes;
 }
 
-type GamePhase = "setup" | "draft" | "result" | "season2-overview" | "season2-draft" | "season2-result";
+type GamePhase = "setup" | "draft" | "manage" | "result" | "season2-overview" | "season2-draft" | "season2-manage" | "season2-result";
 
 const STORAGE_KEY = "pl-draft-progress";
 
@@ -145,6 +146,11 @@ export default function DraftPage() {
     clearProgress();
     setResume(null);
     setPlayers(picked);
+    setPhase("manage");
+  }, []);
+
+  const handleManageConfirm = useCallback((arranged: DraftPlayer[]) => {
+    setPlayers(arranged);
     setPhase("result");
   }, []);
 
@@ -227,10 +233,15 @@ export default function DraftPage() {
 
       const fullSquad = [...season2Players, ...boosted];
       setPlayers(fullSquad);
-      setPhase("season2-result");
+      setPhase("season2-manage");
     },
     [season2Players]
   );
+
+  const handleSeason2ManageConfirm = useCallback((arranged: DraftPlayer[]) => {
+    setPlayers(arranged);
+    setPhase("season2-result");
+  }, []);
 
   const totalPicked = resume?.players.length ?? 0;
 
@@ -280,6 +291,14 @@ export default function DraftPage() {
           onProgress={handleProgress}
         />
       )}
+      {phase === "manage" && players.length > 0 && (
+        <SquadManager
+          players={players}
+          onConfirm={handleManageConfirm}
+          title="Pre-Season"
+          subtitle="Arrange Your Squad"
+        />
+      )}
       {phase === "result" && players.length > 0 && (
         <DraftResult
           players={players}
@@ -304,6 +323,14 @@ export default function DraftPage() {
           existingSquad={season2Players}
           initialUsedClubYears={season2UsedClubYears}
           onProgress={() => {}}
+        />
+      )}
+      {phase === "season2-manage" && players.length > 0 && (
+        <SquadManager
+          players={players}
+          onConfirm={handleSeason2ManageConfirm}
+          title="Season 2"
+          subtitle="Arrange Your Squad"
         />
       )}
       {phase === "season2-result" && players.length > 0 && (

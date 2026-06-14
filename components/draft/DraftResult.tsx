@@ -28,23 +28,50 @@ const PL_RECORDS: PLRecord[] = [
   { label: "Longest unbeaten run", record: 49, holder: "Arsenal (03–04)" },
   { label: "Most PL goals (team)", record: 106, holder: "Man City (17/18)" },
   { label: "Best goal difference", record: 79, holder: "Man City (17/18)" },
-  { label: "Most PL clean sheets", record: 25, holder: "Chelsea (04/05)" },
   { label: "Most PL goals (player)", record: 36, holder: "Haaland (22/23)" },
+  { label: "Most PL assists", record: 21, holder: "Bruno Fernandes (25/26)" },
+  { label: "Most goals + assists", record: 47, holder: "Salah (24/25)" },
+  { label: "Most PL clean sheets", record: 24, holder: "Petr Cech (04/05)" },
 ];
 
 function RecordsSection({ season, season1Result }: { season: SeasonResult; season1Result?: SeasonResult }) {
-  const plCleanSheets = season.matches.filter((m) => m.goalsAgainst === 0).length;
-
   const plGoalsByPlayer: Record<string, number> = {};
+  const plAssistsByPlayer: Record<string, number> = {};
   for (const m of season.matches) {
     for (const gs of m.goalScorers) {
       plGoalsByPlayer[gs.player] = (plGoalsByPlayer[gs.player] || 0) + 1;
+    }
+    for (const ap of m.assistProviders) {
+      plAssistsByPlayer[ap.player] = (plAssistsByPlayer[ap.player] || 0) + 1;
     }
   }
   const topPLGoals = Object.values(plGoalsByPlayer).length > 0
     ? Math.max(...Object.values(plGoalsByPlayer))
     : 0;
   const topPLScorer = Object.entries(plGoalsByPlayer).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+
+  const topPLAssists = Object.values(plAssistsByPlayer).length > 0
+    ? Math.max(...Object.values(plAssistsByPlayer))
+    : 0;
+  const topPLAssister = Object.entries(plAssistsByPlayer).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+
+  const allPlayerNames = Array.from(new Set([...Object.keys(plGoalsByPlayer), ...Object.keys(plAssistsByPlayer)]));
+  let topGA = 0;
+  let topGAPlayer = "";
+  for (const name of allPlayerNames) {
+    const combined = (plGoalsByPlayer[name] || 0) + (plAssistsByPlayer[name] || 0);
+    if (combined > topGA) {
+      topGA = combined;
+      topGAPlayer = name;
+    }
+  }
+
+  const gkStats = season.playerStats.find((ps) =>
+    ps.assignedPosition === "GK"
+  );
+  const plCleanSheetsByGk = gkStats
+    ? season.matches.filter((m) => m.goalsAgainst === 0).length
+    : 0;
 
   const crossSeasonWinStreak = season1Result
     ? season1Result.trailingWinStreak + season.leadingWinStreak
@@ -66,8 +93,10 @@ function RecordsSection({ season, season1Result }: { season: SeasonResult; seaso
     effectiveUnbeatenRun,
     season.teamRecord.goalsFor,
     gd,
-    plCleanSheets,
     topPLGoals,
+    topPLAssists,
+    topGA,
+    plCleanSheetsByGk,
   ];
 
   const brokenCount = PL_RECORDS.filter((r, i) =>
@@ -154,9 +183,12 @@ function RecordsSection({ season, season1Result }: { season: SeasonResult; seaso
           Win streak &amp; unbeaten run include carry-over from Season 1
         </div>
       )}
-      {topPLScorer && topPLGoals > 0 && (
-        <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600">
-          Top scorer: {topPLScorer} ({topPLGoals} PL goals)
+      {(topPLGoals > 0 || topPLAssists > 0) && (
+        <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600 space-y-0.5">
+          {topPLScorer && <div>Top scorer: {topPLScorer} ({topPLGoals}G)</div>}
+          {topPLAssister && <div>Top assists: {topPLAssister} ({topPLAssists}A)</div>}
+          {topGAPlayer && <div>Top G+A: {topGAPlayer} ({topGA})</div>}
+          {gkStats && <div>GK clean sheets: {gkStats.name} ({plCleanSheetsByGk})</div>}
         </div>
       )}
     </div>
@@ -333,7 +365,7 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
         {/* Your XI */}
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
           <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
-            {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Your XI"}
+            {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Your Squad"}
           </h3>
           <div className="space-y-0.5">
             {starterPlayers.map((p, i) => (
@@ -680,7 +712,7 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
                     {pos}
                   </span>
                   <span className={`flex-1 ml-2 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>
-                    {team.isPlayer ? "Your XI" : team.name}
+                    {team.isPlayer ? "Knowitball FC" : team.name}
                   </span>
                   <span className="w-8 text-center text-gray-500 text-xs">{team.played}</span>
                   <span className="w-8 text-center text-gray-500 text-xs">{team.won}</span>

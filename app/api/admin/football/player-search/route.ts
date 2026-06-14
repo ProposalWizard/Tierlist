@@ -115,20 +115,29 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { sofifa_id, fifa_year, manual_overall } = body as {
+  const { sofifa_id, fifa_year, manual_overall, manual_positions } = body as {
     sofifa_id: string;
     fifa_year: number;
-    manual_overall: number | null;
+    manual_overall?: number | null;
+    manual_positions?: string | null;
   };
 
   if (!sofifa_id || !fifa_year) {
     return NextResponse.json({ error: "Missing sofifa_id or fifa_year" }, { status: 400 });
   }
 
+  const updates: Record<string, unknown> = {};
+  if (manual_overall !== undefined) updates.manual_overall = manual_overall;
+  if (manual_positions !== undefined) updates.manual_positions = manual_positions;
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+  }
+
   const service = createServiceClient();
   const { error } = await service
     .from("sofifa_players")
-    .update({ manual_overall: manual_overall })
+    .update(updates)
     .eq("sofifa_id", sofifa_id)
     .eq("fifa_year", fifa_year);
 
