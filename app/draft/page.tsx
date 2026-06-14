@@ -206,9 +206,17 @@ export default function DraftPage() {
     []
   );
 
-  const handleSeason2Continue = useCallback(() => {
-    setPhase("season2-draft");
-  }, []);
+  const handleSeason2Continue = useCallback(
+    (trainingPlayerName: string) => {
+      setSeason2Players((prev) =>
+        prev.map((p) =>
+          p.name === trainingPlayerName ? applyStatChange(p, 3) : p
+        )
+      );
+      setPhase("season2-draft");
+    },
+    []
+  );
 
   const handleSeason2DraftComplete = useCallback(
     (newPlayers: DraftPlayer[]) => {
@@ -284,6 +292,7 @@ export default function DraftPage() {
         <Season2Overview
           departedPlayers={departedPlayers}
           ratingChanges={ratingChanges}
+          season2Players={season2Players}
           onContinue={handleSeason2Continue}
         />
       )}

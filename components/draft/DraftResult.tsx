@@ -13,6 +13,156 @@ interface Props {
   season1Result?: SeasonResult;
 }
 
+interface PLRecord {
+  label: string;
+  record: number;
+  holder: string;
+  lowerIsBetter?: boolean;
+}
+
+const PL_RECORDS: PLRecord[] = [
+  { label: "Most PL points", record: 100, holder: "Man City (17/18)" },
+  { label: "Most PL wins", record: 32, holder: "Man City (17/18 & 18/19)" },
+  { label: "Most consecutive wins", record: 18, holder: "Man City (2017)" },
+  { label: "Fewest PL defeats", record: 0, holder: "Arsenal (03/04)", lowerIsBetter: true },
+  { label: "Longest unbeaten run", record: 49, holder: "Arsenal (03–04)" },
+  { label: "Most PL goals (team)", record: 106, holder: "Man City (17/18)" },
+  { label: "Best goal difference", record: 79, holder: "Man City (17/18)" },
+  { label: "Most PL clean sheets", record: 25, holder: "Chelsea (04/05)" },
+  { label: "Most PL goals (player)", record: 36, holder: "Haaland (22/23)" },
+];
+
+function RecordsSection({ season, season1Result }: { season: SeasonResult; season1Result?: SeasonResult }) {
+  const plCleanSheets = season.matches.filter((m) => m.goalsAgainst === 0).length;
+
+  const plGoalsByPlayer: Record<string, number> = {};
+  for (const m of season.matches) {
+    for (const gs of m.goalScorers) {
+      plGoalsByPlayer[gs.player] = (plGoalsByPlayer[gs.player] || 0) + 1;
+    }
+  }
+  const topPLGoals = Object.values(plGoalsByPlayer).length > 0
+    ? Math.max(...Object.values(plGoalsByPlayer))
+    : 0;
+  const topPLScorer = Object.entries(plGoalsByPlayer).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+
+  const crossSeasonWinStreak = season1Result
+    ? season1Result.trailingWinStreak + season.leadingWinStreak
+    : season.longestWinStreak;
+  const effectiveConsecutiveWins = Math.max(season.longestWinStreak, crossSeasonWinStreak);
+
+  const crossSeasonUnbeaten = season1Result
+    ? season1Result.trailingUnbeatenRun + season.leadingUnbeatenRun
+    : season.longestUnbeatenRun;
+  const effectiveUnbeatenRun = Math.max(season.longestUnbeatenRun, crossSeasonUnbeaten);
+
+  const gd = season.teamRecord.goalsFor - season.teamRecord.goalsAgainst;
+
+  const values: number[] = [
+    season.teamRecord.points,
+    season.teamRecord.wins,
+    effectiveConsecutiveWins,
+    season.teamRecord.losses,
+    effectiveUnbeatenRun,
+    season.teamRecord.goalsFor,
+    gd,
+    plCleanSheets,
+    topPLGoals,
+  ];
+
+  const brokenCount = PL_RECORDS.filter((r, i) =>
+    r.lowerIsBetter ? values[i] < r.record : values[i] > r.record
+  ).length;
+
+  const matchedCount = PL_RECORDS.filter((r, i) =>
+    values[i] === r.record
+  ).length;
+
+  return (
+    <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-sm">&#127942;</span>
+        <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+          PL Records
+        </h3>
+        {brokenCount > 0 && (
+          <span className="ml-auto text-[10px] font-black text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30">
+            {brokenCount} BROKEN
+          </span>
+        )}
+        {brokenCount === 0 && matchedCount > 0 && (
+          <span className="ml-auto text-[10px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+            {matchedCount} MATCHED
+          </span>
+        )}
+      </div>
+      <div className="space-y-1">
+        {PL_RECORDS.map((rec, i) => {
+          const val = values[i];
+          const broken = rec.lowerIsBetter ? val < rec.record : val > rec.record;
+          const matched = val === rec.record;
+          const close = rec.lowerIsBetter
+            ? val <= rec.record + 2 && !broken && !matched
+            : val >= rec.record - 2 && !broken && !matched;
+
+          return (
+            <div
+              key={rec.label}
+              className={`flex items-center gap-2 text-sm py-2 px-2 rounded-lg ${
+                broken
+                  ? "bg-yellow-900/20 border border-yellow-600/30"
+                  : matched
+                    ? "bg-amber-900/15 border border-amber-700/25"
+                    : ""
+              }`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className={`text-xs font-medium ${broken ? "text-yellow-300" : matched ? "text-amber-300" : "text-gray-400"}`}>
+                  {rec.label}
+                </div>
+                <div className="text-[10px] text-gray-600">{rec.holder}</div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`text-sm font-black tabular-nums ${
+                  broken ? "text-yellow-400" :
+                  matched ? "text-amber-400" :
+                  close ? "text-white" : "text-gray-500"
+                }`}>
+                  {val}
+                </span>
+                <span className="text-gray-700 text-xs">/</span>
+                <span className="text-gray-600 text-xs font-bold tabular-nums w-6 text-right">
+                  {rec.record}
+                </span>
+              </div>
+              {broken && (
+                <span className="text-[9px] font-black text-yellow-400 bg-yellow-500/15 px-1.5 py-0.5 rounded shrink-0">
+                  BROKEN
+                </span>
+              )}
+              {matched && !broken && (
+                <span className="text-[9px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded shrink-0">
+                  MATCHED
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {season1Result && (effectiveConsecutiveWins > season.longestWinStreak || effectiveUnbeatenRun > season.longestUnbeatenRun) && (
+        <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600">
+          Win streak &amp; unbeaten run include carry-over from Season 1
+        </div>
+      )}
+      {topPLScorer && topPLGoals > 0 && (
+        <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600">
+          Top scorer: {topPLScorer} ({topPLGoals} PL goals)
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNumber = 1, season1Result }: Props) {
   const season = useMemo(() => simulateSeason(players, undefined, seasonNumber), [players, seasonNumber]);
   const [showMatches, setShowMatches] = useState(false);
@@ -468,6 +618,9 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
             </div>
           </div>
         </div>
+
+        {/* PL Records */}
+        <RecordsSection season={season} season1Result={seasonNumber === 2 ? season1Result : undefined} />
       </div>
 
       {/* League Table Toggle */}
