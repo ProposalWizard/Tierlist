@@ -239,7 +239,7 @@ function playerContributions(p: DraftPlayer, fitness: number): { attack: number;
   const sho = statOr(a.shooting, o);
   const dri = statOr(a.dribbling, o);
 
-  const blend = (statAvg: number) => (statAvg * 0.35 + o * 0.65) * fitness;
+  const blend = (statAvg: number) => (statAvg * 0.3 + o * 0.7) * fitness;
 
   if (pos === 'GK') {
     return { attack: 0, defense: o * fitness };
