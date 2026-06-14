@@ -20,6 +20,7 @@ interface Props {
   ratingChanges: RatingChange[];
   season2Players: DraftPlayer[];
   onContinue: (trainingPlayerName: string) => void;
+  seasonNumber?: number;
 }
 
 export default function Season2Overview({
@@ -27,6 +28,7 @@ export default function Season2Overview({
   ratingChanges,
   season2Players,
   onContinue,
+  seasonNumber = 2,
 }: Props) {
   const [revealStep, setRevealStep] = useState(0);
   const [selectedTraining, setSelectedTraining] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export default function Season2Overview({
         </div>
         <h1 className="text-3xl font-black tracking-tight">
           <span className="text-white">SEASON</span>{" "}
-          <span className="text-amber-400">2</span>
+          <span className="text-amber-400">{seasonNumber}</span>
         </h1>
         <p className="text-gray-500 text-sm mt-1">Off-season changes to your squad</p>
       </div>
@@ -140,7 +142,7 @@ export default function Season2Overview({
           })}
         </div>
         <div className="mt-3 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600">
-          Based on season 1 avg ratings: 8.5+ = +3, 7.7+ = +2, 7.0+ = +1, &le;6.5 = -1
+          Based on last season&apos;s avg ratings: 8.5+ = +3, 7.7+ = +2, 7.0+ = +1, &le;6.5 = -1
         </div>
       </div>
 

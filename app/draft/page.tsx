@@ -30,9 +30,10 @@ export interface DraftPlayer {
   attrs?: PlayerAttributes;
 }
 
-type GamePhase = "setup" | "draft" | "manage" | "result" | "season2-overview" | "season2-draft" | "season2-manage" | "season2-result";
+type GamePhase = "setup" | "draft" | "manage" | "result" | "pre-season" | "signing" | "arrange";
 
 const STORAGE_KEY = "pl-draft-progress";
+const MAX_SEASONS = 3;
 
 interface SavedProgress {
   settings: DraftSettings;
@@ -99,11 +100,12 @@ export default function DraftPage() {
   const [players, setPlayers] = useState<DraftPlayer[]>([]);
   const [resume, setResume] = useState<SavedProgress | null>(null);
 
-  const [season1Result, setSeason1Result] = useState<SeasonResult | null>(null);
-  const [season2Players, setSeason2Players] = useState<DraftPlayer[]>([]);
+  const [currentSeason, setCurrentSeason] = useState(1);
+  const [previousResults, setPreviousResults] = useState<SeasonResult[]>([]);
+  const [nextSeasonPlayers, setNextSeasonPlayers] = useState<DraftPlayer[]>([]);
   const [departedPlayers, setDepartedPlayers] = useState<DepartedPlayer[]>([]);
   const [ratingChanges, setRatingChanges] = useState<RatingChange[]>([]);
-  const [season2UsedClubYears, setSeason2UsedClubYears] = useState<string[]>([]);
+  const [nextUsedClubYears, setNextUsedClubYears] = useState<string[]>([]);
 
   useEffect(() => {
     setResume(loadProgress());
@@ -160,14 +162,15 @@ export default function DraftPage() {
     setPhase("setup");
     setSettings(null);
     setPlayers([]);
-    setSeason1Result(null);
-    setSeason2Players([]);
+    setCurrentSeason(1);
+    setPreviousResults([]);
+    setNextSeasonPlayers([]);
     setDepartedPlayers([]);
     setRatingChanges([]);
-    setSeason2UsedClubYears([]);
+    setNextUsedClubYears([]);
   }, []);
 
-  const handlePlaySeason2 = useCallback(
+  const handlePlayNextSeason = useCallback(
     (season: SeasonResult, currentPlayers: DraftPlayer[]) => {
       const sorted = [...currentPlayers].sort((a, b) => (b.age || 0) - (a.age || 0));
       const oldestPlayer = sorted[0];
@@ -204,43 +207,44 @@ export default function DraftPage() {
 
       setDepartedPlayers(departed);
       setRatingChanges(changes);
-      setSeason2Players(changes.map((rc) => rc.player));
-      setSeason1Result(season);
-      setSeason2UsedClubYears(usedCYs);
-      setPhase("season2-overview");
+      setNextSeasonPlayers(changes.map((rc) => rc.player));
+      setPreviousResults((prev) => [...prev, season]);
+      setNextUsedClubYears(usedCYs);
+      setCurrentSeason((s) => s + 1);
+      setPhase("pre-season");
     },
     []
   );
 
-  const handleSeason2Continue = useCallback(
+  const handlePreSeasonContinue = useCallback(
     (trainingPlayerName: string) => {
-      setSeason2Players((prev) =>
+      setNextSeasonPlayers((prev) =>
         prev.map((p) =>
           p.name === trainingPlayerName ? applyStatChange(p, 3) : p
         )
       );
-      setPhase("season2-draft");
+      setPhase("signing");
     },
     []
   );
 
-  const handleSeason2DraftComplete = useCallback(
+  const handleSigningComplete = useCallback(
     (newPlayers: DraftPlayer[]) => {
       const boosted = newPlayers.map((p) => {
         const boost = Math.floor(Math.random() * 3) + 1;
         return applyStatChange(p, boost);
       });
 
-      const fullSquad = [...season2Players, ...boosted];
+      const fullSquad = [...nextSeasonPlayers, ...boosted];
       setPlayers(fullSquad);
-      setPhase("season2-manage");
+      setPhase("arrange");
     },
-    [season2Players]
+    [nextSeasonPlayers]
   );
 
-  const handleSeason2ManageConfirm = useCallback((arranged: DraftPlayer[]) => {
+  const handleArrangeConfirm = useCallback((arranged: DraftPlayer[]) => {
     setPlayers(arranged);
-    setPhase("season2-result");
+    setPhase("result");
   }, []);
 
   const totalPicked = resume?.players.length ?? 0;
@@ -297,48 +301,44 @@ export default function DraftPage() {
           onConfirm={handleManageConfirm}
           title="Pre-Season"
           subtitle="Arrange Your Squad"
+          formationName={settings?.formation}
         />
       )}
       {phase === "result" && players.length > 0 && (
         <DraftResult
           players={players}
           onNewRun={handleNewRun}
-          onPlaySeason2={handlePlaySeason2}
-          seasonNumber={1}
+          onPlayNextSeason={currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
+          seasonNumber={currentSeason}
+          previousResult={previousResults[previousResults.length - 1]}
         />
       )}
-      {phase === "season2-overview" && (
+      {phase === "pre-season" && (
         <Season2Overview
           departedPlayers={departedPlayers}
           ratingChanges={ratingChanges}
-          season2Players={season2Players}
-          onContinue={handleSeason2Continue}
+          season2Players={nextSeasonPlayers}
+          onContinue={handlePreSeasonContinue}
+          seasonNumber={currentSeason}
         />
       )}
-      {phase === "season2-draft" && settings && (
+      {phase === "signing" && settings && (
         <DraftPick
           settings={{ ...settings, draftOrder: "club-first" }}
-          onComplete={handleSeason2DraftComplete}
+          onComplete={handleSigningComplete}
           totalPicks={2}
-          existingSquad={season2Players}
-          initialUsedClubYears={season2UsedClubYears}
+          existingSquad={nextSeasonPlayers}
+          initialUsedClubYears={nextUsedClubYears}
           onProgress={() => {}}
         />
       )}
-      {phase === "season2-manage" && players.length > 0 && (
+      {phase === "arrange" && players.length > 0 && (
         <SquadManager
           players={players}
-          onConfirm={handleSeason2ManageConfirm}
-          title="Season 2"
+          onConfirm={handleArrangeConfirm}
+          title={`Season ${currentSeason}`}
           subtitle="Arrange Your Squad"
-        />
-      )}
-      {phase === "season2-result" && players.length > 0 && (
-        <DraftResult
-          players={players}
-          onNewRun={handleNewRun}
-          seasonNumber={2}
-          season1Result={season1Result ?? undefined}
+          formationName={settings?.formation}
         />
       )}
     </div>
