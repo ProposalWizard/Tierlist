@@ -662,11 +662,12 @@ function calculateProjectedFinish(
 function matchRating(
   player: DraftPlayer,
   match: MatchResult,
+  seasonForm: number,
   rng: () => number,
 ): number {
   const role = classifyPosition(player.assignedPosition);
   const ovrBonus = (player.overall - 70) * 0.025;
-  let base = 6.5 + ovrBonus + (rng() * 1.0 - 0.5);
+  let base = 6.5 + ovrBonus + seasonForm + (rng() * 1.0 - 0.5);
 
   // Attribute-based contribution (key passes, dribbles, tackles, saves, etc.)
   if (hasAttrs(player)) {
@@ -911,6 +912,20 @@ export function simulateSeason(
   const defenders = starters.filter(p => classifyPosition(p.assignedPosition) === 'DEF');
   const defSubs = subs.filter(p => classifyPosition(p.assignedPosition) === 'DEF' || classifyPosition(p.assignedPosition) === 'GK');
 
+  // Season form: each player gets a persistent bonus/penalty for the entire season.
+  // Most players get a small form shift, but occasionally someone has a breakout
+  // or poor season. Lower-rated players have a wider range to allow surprise seasons.
+  const seasonForm: Record<string, number> = {};
+  for (const p of allPlayers) {
+    const r = rng();
+    const ovrFactor = Math.max(0.5, (90 - p.overall) / 25);
+    if (r < 0.08) seasonForm[p.name] = 0.4 * ovrFactor;
+    else if (r < 0.20) seasonForm[p.name] = 0.2 * ovrFactor;
+    else if (r < 0.80) seasonForm[p.name] = (rng() * 0.2 - 0.1) * ovrFactor;
+    else if (r < 0.92) seasonForm[p.name] = -0.15 * ovrFactor;
+    else seasonForm[p.name] = -0.3 * ovrFactor;
+  }
+
   const playerRatings: Record<string, number[]> = {};
   for (const p of allPlayers) playerRatings[p.name] = [];
 
@@ -932,11 +947,11 @@ export function simulateSeason(
     }
 
     for (const p of starters) {
-      playerRatings[p.name].push(matchRating(p, m, rng));
+      playerRatings[p.name].push(matchRating(p, m, seasonForm[p.name] || 0, rng));
     }
     for (const p of subs) {
       if (subAppearances[p.name] > 0) {
-        playerRatings[p.name].push(matchRating(p, m, rng));
+        playerRatings[p.name].push(matchRating(p, m, seasonForm[p.name] || 0, rng));
       }
     }
   }
