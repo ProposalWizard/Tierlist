@@ -1,16 +1,20 @@
 "use client";
 import { useMemo, useState, useRef, useCallback } from "react";
 import { simulateSeason } from "@/lib/seasonSimulator";
+import type { SeasonResult } from "@/lib/seasonSimulator";
 import { getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
 
 interface Props {
   players: DraftPlayer[];
   onNewRun: () => void;
+  onPlaySeason2?: (season: SeasonResult, players: DraftPlayer[]) => void;
+  seasonNumber?: number;
+  season1Result?: SeasonResult;
 }
 
-export default function DraftResult({ players, onNewRun }: Props) {
-  const season = useMemo(() => simulateSeason(players), [players]);
+export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNumber = 1, season1Result }: Props) {
+  const season = useMemo(() => simulateSeason(players, undefined, seasonNumber), [players, seasonNumber]);
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
@@ -37,8 +41,13 @@ export default function DraftResult({ players, onNewRun }: Props) {
   const msg = titleMessage();
 
   const positionOrder: Record<string, number> = { GK: 0, CB: 1, RB: 2, LB: 3, RWB: 2, LWB: 3, SW: 1, CDM: 4, DM: 4, CM: 5, CAM: 6, RM: 7, LM: 7, RAM: 6, LAM: 6, RW: 8, LW: 8, ST: 9, CF: 9 };
-  const sortedPlayers = useMemo(() =>
-    [...players].sort((a, b) => (positionOrder[a.assignedPosition] ?? 5) - (positionOrder[b.assignedPosition] ?? 5)),
+  const starterPlayers = useMemo(() =>
+    [...players.filter(p => !p.isSub)].sort((a, b) => (positionOrder[a.assignedPosition] ?? 5) - (positionOrder[b.assignedPosition] ?? 5)),
+    [players]
+  );
+
+  const subPlayers = useMemo(() =>
+    players.filter(p => p.isSub),
     [players]
   );
 
@@ -174,10 +183,10 @@ export default function DraftResult({ players, onNewRun }: Props) {
         {/* Your XI */}
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
           <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
-            Your XI
+            {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Your XI"}
           </h3>
           <div className="space-y-0.5">
-            {sortedPlayers.map((p, i) => (
+            {starterPlayers.map((p, i) => (
               <div key={i} className="flex items-center gap-2 text-sm py-1 px-1">
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
                   {p.assignedPosition}
@@ -188,6 +197,25 @@ export default function DraftResult({ players, onNewRun }: Props) {
               </div>
             ))}
           </div>
+          {subPlayers.length > 0 && (
+            <>
+              <div className="mt-2 pt-2 border-t border-gray-800/50">
+                <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-1">Substitutes</div>
+              </div>
+              <div className="space-y-0.5">
+                {subPlayers.map((p, i) => (
+                  <div key={`sub-${i}`} className="flex items-center gap-2 text-sm py-1 px-1">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
+                      {p.assignedPosition}
+                    </span>
+                    <span className="flex-1 ml-1 font-medium">{p.name}</span>
+                    <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                    <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
             <span>Average OVR</span>
             <span className="font-bold text-white">
@@ -361,6 +389,7 @@ export default function DraftResult({ players, onNewRun }: Props) {
           <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
             <span className="w-8"></span>
             <span className="flex-1 ml-2">Player</span>
+            <span className="w-8 text-center">APP</span>
             <span className="w-8 text-center">G</span>
             <span className="w-8 text-center">A</span>
             <span className="w-8 text-center">CS</span>
@@ -373,6 +402,9 @@ export default function DraftResult({ players, onNewRun }: Props) {
                   {ps.assignedPosition}
                 </span>
                 <span className="flex-1 ml-2 font-medium">{ps.name}</span>
+                <span className={`w-8 text-center text-xs font-bold ${ps.appearances < 38 ? "text-purple-400" : "text-gray-500"}`}>
+                  {ps.appearances}
+                </span>
                 <span className={`w-8 text-center font-bold ${ps.goals > 0 ? "text-emerald-400" : "text-gray-700"}`}>
                   {ps.goals > 0 ? ps.goals : "-"}
                 </span>
@@ -581,8 +613,33 @@ export default function DraftResult({ players, onNewRun }: Props) {
         </div>
       )}
 
+      {/* Season comparison for Season 2 */}
+      {seasonNumber === 2 && season1Result && (
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">Season Comparison</h3>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div className="text-[10px] text-gray-500 font-bold uppercase">S1</div>
+              <div className="text-lg font-black text-gray-400">{ordinal(season1Result.actualFinish)}</div>
+              <div className="text-xs text-gray-600">{season1Result.teamRecord.points} pts</div>
+            </div>
+            <div className="flex items-center justify-center">
+              <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            </div>
+            <div>
+              <div className="text-[10px] text-gray-500 font-bold uppercase">S2</div>
+              <div className={`text-lg font-black ${
+                season.actualFinish < season1Result.actualFinish ? "text-emerald-400" :
+                season.actualFinish > season1Result.actualFinish ? "text-red-400" : "text-yellow-400"
+              }`}>{ordinal(season.actualFinish)}</div>
+              <div className="text-xs text-gray-600">{season.teamRecord.points} pts</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`grid gap-3 ${onPlaySeason2 && seasonNumber === 1 ? "grid-cols-3" : "grid-cols-2"}`}>
         <button
           onClick={handleShare}
           disabled={sharing}
@@ -596,10 +653,19 @@ export default function DraftResult({ players, onNewRun }: Props) {
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              Share Season
+              Share
             </>
           )}
         </button>
+        {onPlaySeason2 && seasonNumber === 1 && (
+          <button
+            onClick={() => onPlaySeason2(season, players)}
+            className="py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 rounded-xl font-bold transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            Season 2
+          </button>
+        )}
         <button
           onClick={onNewRun}
           className="py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"

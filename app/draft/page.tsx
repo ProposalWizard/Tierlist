@@ -3,7 +3,8 @@ import { useState, useCallback, useEffect } from "react";
 import DraftSetup from "@/components/draft/DraftSetup";
 import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
-import type { PlayerAttributes } from "@/lib/seasonSimulator";
+import Season2Overview from "@/components/draft/Season2Overview";
+import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 
 export interface DraftSettings {
   formation: string;
@@ -23,10 +24,12 @@ export interface DraftPlayer {
   sofifa_id: string;
   image_url: string | null;
   nationality: string;
+  age: number;
+  isSub?: boolean;
   attrs?: PlayerAttributes;
 }
 
-type GamePhase = "setup" | "draft" | "result";
+type GamePhase = "setup" | "draft" | "result" | "season2-overview" | "season2-draft" | "season2-result";
 
 const STORAGE_KEY = "pl-draft-progress";
 
@@ -35,6 +38,33 @@ interface SavedProgress {
   players: DraftPlayer[];
   usedClubYears: string[];
   slotAssignments?: number[];
+}
+
+interface DepartedPlayer {
+  player: DraftPlayer;
+  reason: string;
+}
+
+interface RatingChange {
+  player: DraftPlayer;
+  oldOverall: number;
+  newOverall: number;
+  change: number;
+}
+
+function applyStatChange(player: DraftPlayer, change: number): DraftPlayer {
+  const newPlayer = {
+    ...player,
+    overall: Math.max(1, Math.min(99, player.overall + change)),
+  };
+  if (newPlayer.attrs) {
+    const attrs = { ...newPlayer.attrs };
+    for (const key of Object.keys(attrs) as (keyof PlayerAttributes)[]) {
+      attrs[key] = Math.max(1, Math.min(99, (attrs[key] as number) + change));
+    }
+    newPlayer.attrs = attrs;
+  }
+  return newPlayer;
 }
 
 function loadProgress(): SavedProgress | null {
@@ -46,7 +76,7 @@ function loadProgress(): SavedProgress | null {
       saved.settings?.formation &&
       Array.isArray(saved.players) &&
       saved.players.length > 0 &&
-      saved.players.length < 11
+      saved.players.length < 14
     ) {
       return saved;
     }
@@ -67,6 +97,12 @@ export default function DraftPage() {
   const [settings, setSettings] = useState<DraftSettings | null>(null);
   const [players, setPlayers] = useState<DraftPlayer[]>([]);
   const [resume, setResume] = useState<SavedProgress | null>(null);
+
+  const [season1Result, setSeason1Result] = useState<SeasonResult | null>(null);
+  const [season2Players, setSeason2Players] = useState<DraftPlayer[]>([]);
+  const [departedPlayers, setDepartedPlayers] = useState<DepartedPlayer[]>([]);
+  const [ratingChanges, setRatingChanges] = useState<RatingChange[]>([]);
+  const [season2UsedClubYears, setSeason2UsedClubYears] = useState<string[]>([]);
 
   useEffect(() => {
     setResume(loadProgress());
@@ -118,7 +154,77 @@ export default function DraftPage() {
     setPhase("setup");
     setSettings(null);
     setPlayers([]);
+    setSeason1Result(null);
+    setSeason2Players([]);
+    setDepartedPlayers([]);
+    setRatingChanges([]);
+    setSeason2UsedClubYears([]);
   }, []);
+
+  const handlePlaySeason2 = useCallback(
+    (season: SeasonResult, currentPlayers: DraftPlayer[]) => {
+      const sorted = [...currentPlayers].sort((a, b) => (b.age || 0) - (a.age || 0));
+      const oldestPlayer = sorted[0];
+
+      const afterRetirement = currentPlayers.filter((p) => p !== oldestPlayer);
+      const randomIdx = Math.floor(Math.random() * afterRetirement.length);
+      const randomDeparture = afterRetirement[randomIdx];
+
+      const remaining = currentPlayers.filter(
+        (p) => p !== oldestPlayer && p !== randomDeparture
+      );
+
+      const statsMap = new Map(season.playerStats.map((s) => [s.name, s]));
+      const changes: RatingChange[] = remaining.map((player) => {
+        const stats = statsMap.get(player.name);
+        const avgRating = stats?.avgRating ?? 6.5;
+        let change = 0;
+        if (avgRating >= 8.5) change = 3;
+        else if (avgRating >= 7.7) change = 2;
+        else if (avgRating >= 7.0) change = 1;
+        else if (avgRating <= 6.5) change = -1;
+
+        const oldOverall = player.overall;
+        const upgraded = applyStatChange(player, change);
+        return { player: upgraded, oldOverall, newOverall: upgraded.overall, change };
+      });
+
+      const departed: DepartedPlayer[] = [
+        { player: randomDeparture, reason: "Left the club" },
+        { player: oldestPlayer, reason: `Retired (age ${oldestPlayer.age || "?"})` },
+      ];
+
+      const usedCYs = currentPlayers.map((p) => `${p.club}-${p.clubYear.split(" ")[1]}`);
+
+      setDepartedPlayers(departed);
+      setRatingChanges(changes);
+      setSeason2Players(changes.map((rc) => rc.player));
+      setSeason1Result(season);
+      setSeason2UsedClubYears(usedCYs);
+      setPhase("season2-overview");
+    },
+    []
+  );
+
+  const handleSeason2Continue = useCallback(() => {
+    setPhase("season2-draft");
+  }, []);
+
+  const handleSeason2DraftComplete = useCallback(
+    (newPlayers: DraftPlayer[]) => {
+      const boosted = newPlayers.map((p) => {
+        const boost = Math.floor(Math.random() * 3) + 1;
+        return applyStatChange(p, boost);
+      });
+
+      const fullSquad = [...season2Players, ...boosted];
+      setPlayers(fullSquad);
+      setPhase("season2-result");
+    },
+    [season2Players]
+  );
+
+  const totalPicked = resume?.players.length ?? 0;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -132,7 +238,7 @@ export default function DraftPage() {
                     Draft in progress
                   </div>
                   <div className="text-xs text-gray-400">
-                    {resume.players.length}/11 picked &middot; {resume.settings.formation}
+                    {totalPicked}/14 picked &middot; {resume.settings.formation}
                     {resume.settings.mode === "prime" && " · Prime"}
                     {resume.settings.draftOrder === "club-first" && " · Club First"}
                   </div>
@@ -167,7 +273,37 @@ export default function DraftPage() {
         />
       )}
       {phase === "result" && players.length > 0 && (
-        <DraftResult players={players} onNewRun={handleNewRun} />
+        <DraftResult
+          players={players}
+          onNewRun={handleNewRun}
+          onPlaySeason2={handlePlaySeason2}
+          seasonNumber={1}
+        />
+      )}
+      {phase === "season2-overview" && (
+        <Season2Overview
+          departedPlayers={departedPlayers}
+          ratingChanges={ratingChanges}
+          onContinue={handleSeason2Continue}
+        />
+      )}
+      {phase === "season2-draft" && settings && (
+        <DraftPick
+          settings={{ ...settings, draftOrder: "club-first" }}
+          onComplete={handleSeason2DraftComplete}
+          totalPicks={2}
+          existingSquad={season2Players}
+          initialUsedClubYears={season2UsedClubYears}
+          onProgress={() => {}}
+        />
+      )}
+      {phase === "season2-result" && players.length > 0 && (
+        <DraftResult
+          players={players}
+          onNewRun={handleNewRun}
+          seasonNumber={2}
+          season1Result={season1Result ?? undefined}
+        />
       )}
     </div>
   );

@@ -30,6 +30,8 @@ export interface DraftPlayer {
   club: string;
   clubYear: string;
   assignedPosition: string;
+  age: number;
+  isSub?: boolean;
   attrs?: PlayerAttributes;
 }
 
@@ -504,15 +506,18 @@ function simulateMatch(
   const goalScorers: { player: string; minute: number }[] = [];
   const assistProviders: { player: string; minute: number }[] = [];
 
+  const subAdjGoal = (p: DraftPlayer) => goalScoringWeight(p) * (p.isSub ? 0.5 : 1.0);
+  const subAdjAssist = (p: DraftPlayer) => assistWeight(p) * (p.isSub ? 0.5 : 1.0);
+
   for (let i = 0; i < goalsFor; i++) {
     const minute = randomMinute(rng);
-    const scorer = weightedPick(players, goalScoringWeight, rng);
+    const scorer = weightedPick(players, subAdjGoal, rng);
     goalScorers.push({ player: scorer.name, minute });
 
     if (rng() < 0.75) {
       const eligible = players.filter(p => p.name !== scorer.name);
       if (eligible.length > 0) {
-        const assister = weightedPick(eligible, assistWeight, rng);
+        const assister = weightedPick(eligible, subAdjAssist, rng);
         assistProviders.push({ player: assister.name, minute });
       }
     }
@@ -807,25 +812,38 @@ function simulateFaCup(
 export function simulateSeason(
   players: DraftPlayer[],
   otherTeams?: { name: string; strength: number }[],
+  seasonNumber?: number,
 ): SeasonResult {
-  const seed = players.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42);
+  const seasonSeed = (seasonNumber ?? 1) * 100;
+  const seed = players.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonSeed);
   const rng = createRng(seed);
+
+  const starters = players.filter(p => !p.isSub);
+  const subs = players.filter(p => p.isSub);
 
   const opponents = otherTeams && otherTeams.length === 19
     ? otherTeams
     : DEFAULT_PL_TEAMS;
 
-  const ratings = computePhaseRatings(players);
+  const ratings = computePhaseRatings(starters);
 
   const playerTeamName = 'Your Team';
 
   // Simulate 38 matches (home and away vs each opponent)
   const matches: MatchResult[] = [];
-  for (const opp of opponents) {
-    const homeMatch = simulateMatch(players, ratings, opp, true, rng);
-    matches.push(homeMatch);
+  const subAppearances: Record<string, number> = {};
+  for (const sub of subs) subAppearances[sub.name] = 0;
 
-    matches.push(simulateMatch(players, ratings, opp, false, rng));
+  for (const opp of opponents) {
+    const homeActiveSubs = subs.filter(() => rng() < 0.6);
+    const homePlayers = [...starters, ...homeActiveSubs];
+    matches.push(simulateMatch(homePlayers, ratings, opp, true, rng));
+    for (const sub of homeActiveSubs) subAppearances[sub.name]++;
+
+    const awayActiveSubs = subs.filter(() => rng() < 0.6);
+    const awayPlayers = [...starters, ...awayActiveSubs];
+    matches.push(simulateMatch(awayPlayers, ratings, opp, false, rng));
+    for (const sub of awayActiveSubs) subAppearances[sub.name]++;
   }
 
   // Shuffle match order to feel like a real season schedule
@@ -835,11 +853,11 @@ export function simulateSeason(
   }
 
   // FA Cup
-  const faCup = simulateFaCup(players, ratings, opponents, rng);
+  const faCup = simulateFaCup(starters, ratings, opponents, rng);
 
   // Player stats
   const statsMap: Record<string, PlayerStats> = {};
-  for (const p of players) {
+  for (const p of starters) {
     statsMap[p.name] = {
       name: p.name,
       assignedPosition: p.assignedPosition,
@@ -850,12 +868,25 @@ export function simulateSeason(
       avgRating: 0,
     };
   }
+  for (const p of subs) {
+    statsMap[p.name] = {
+      name: p.name,
+      assignedPosition: p.assignedPosition,
+      goals: 0,
+      assists: 0,
+      cleanSheets: 0,
+      appearances: subAppearances[p.name] || 0,
+      avgRating: 0,
+    };
+  }
 
-  const gk = players.find(p => classifyPosition(p.assignedPosition) === 'GK');
-  const defenders = players.filter(p => classifyPosition(p.assignedPosition) === 'DEF');
+  const allPlayers = [...starters, ...subs];
+  const gk = starters.find(p => classifyPosition(p.assignedPosition) === 'GK');
+  const defenders = starters.filter(p => classifyPosition(p.assignedPosition) === 'DEF');
+  const defSubs = subs.filter(p => classifyPosition(p.assignedPosition) === 'DEF' || classifyPosition(p.assignedPosition) === 'GK');
 
   const playerRatings: Record<string, number[]> = {};
-  for (const p of players) playerRatings[p.name] = [];
+  for (const p of allPlayers) playerRatings[p.name] = [];
 
   for (const m of matches) {
     for (const gs of m.goalScorers) {
@@ -869,16 +900,24 @@ export function simulateSeason(
       for (const def of defenders) {
         statsMap[def.name].cleanSheets++;
       }
+      for (const sub of defSubs) {
+        if (subAppearances[sub.name] > 0) statsMap[sub.name].cleanSheets++;
+      }
     }
 
-    for (const p of players) {
+    for (const p of starters) {
       playerRatings[p.name].push(matchRating(p, m, rng));
+    }
+    for (const p of subs) {
+      if (subAppearances[p.name] > 0) {
+        playerRatings[p.name].push(matchRating(p, m, rng));
+      }
     }
   }
 
   // Count FA Cup stats
   for (const cm of faCup.matches) {
-    for (const p of players) statsMap[p.name].appearances++;
+    for (const p of starters) statsMap[p.name].appearances++;
     for (const gs of cm.goalScorers) {
       if (statsMap[gs.player]) statsMap[gs.player].goals++;
     }
@@ -893,7 +932,7 @@ export function simulateSeason(
     }
   }
 
-  for (const p of players) {
+  for (const p of allPlayers) {
     const ratings = playerRatings[p.name];
     statsMap[p.name].avgRating = ratings.length > 0
       ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
