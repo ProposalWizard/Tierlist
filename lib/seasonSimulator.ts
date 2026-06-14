@@ -110,6 +110,10 @@ export interface SeasonResult {
   highestScoring: { opponent: string; score: string };
   longestWinStreak: number;
   longestUnbeatenRun: number;
+  trailingWinStreak: number;
+  trailingUnbeatenRun: number;
+  leadingWinStreak: number;
+  leadingUnbeatenRun: number;
   projectedFinish: number;
   actualFinish: number;
   performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED';
@@ -1050,6 +1054,30 @@ export function simulateSeason(
     }
   }
 
+  // Trailing streaks (from end of season — for cross-season records)
+  let trailingWinStreak = 0;
+  for (let i = matches.length - 1; i >= 0; i--) {
+    if (matches[i].result === 'W') trailingWinStreak++;
+    else break;
+  }
+  let trailingUnbeatenRun = 0;
+  for (let i = matches.length - 1; i >= 0; i--) {
+    if (matches[i].result !== 'L') trailingUnbeatenRun++;
+    else break;
+  }
+
+  // Leading streaks (from start of season)
+  let leadingWinStreak = 0;
+  for (let i = 0; i < matches.length; i++) {
+    if (matches[i].result === 'W') leadingWinStreak++;
+    else break;
+  }
+  let leadingUnbeatenRun = 0;
+  for (let i = 0; i < matches.length; i++) {
+    if (matches[i].result !== 'L') leadingUnbeatenRun++;
+    else break;
+  }
+
   const formatScore = (m: MatchResult) =>
     m.isHome
       ? `${m.goalsFor}-${m.goalsAgainst}`
@@ -1066,6 +1094,10 @@ export function simulateSeason(
     highestScoring: { opponent: highestScoring.opponent, score: formatScore(highestScoring) },
     longestWinStreak,
     longestUnbeatenRun,
+    trailingWinStreak,
+    trailingUnbeatenRun,
+    leadingWinStreak,
+    leadingUnbeatenRun,
     projectedFinish,
     actualFinish,
     performance,
