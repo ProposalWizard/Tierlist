@@ -297,6 +297,7 @@ export default function DraftPage() {
           onConfirm={handleManageConfirm}
           title="Pre-Season"
           subtitle="Arrange Your Squad"
+          formationName={settings?.formation}
         />
       )}
       {phase === "result" && players.length > 0 && (
@@ -331,6 +332,7 @@ export default function DraftPage() {
           onConfirm={handleSeason2ManageConfirm}
           title="Season 2"
           subtitle="Arrange Your Squad"
+          formationName={settings?.formation}
         />
       )}
       {phase === "season2-result" && players.length > 0 && (

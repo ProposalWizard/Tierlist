@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { getPositionColor } from "./formations";
+import { FORMATIONS, getPositionColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
   onConfirm: (players: DraftPlayer[]) => void;
   title?: string;
   subtitle?: string;
+  formationName?: string;
 }
 
 const positionOrder: Record<string, number> = {
@@ -16,9 +17,11 @@ const positionOrder: Record<string, number> = {
   RW: 8, LW: 8, ST: 9, CF: 9,
 };
 
-export default function SquadManager({ players, onConfirm, title, subtitle }: Props) {
+export default function SquadManager({ players, onConfirm, title, subtitle, formationName }: Props) {
   const [squad, setSquad] = useState<DraftPlayer[]>(() => [...players]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [selectedVacant, setSelectedVacant] = useState<number | null>(null);
+  const formation = formationName ? FORMATIONS.find(f => f.name === formationName) : null;
 
   const starters = useMemo(
     () => squad
@@ -35,9 +38,61 @@ export default function SquadManager({ players, onConfirm, title, subtitle }: Pr
     [squad]
   );
 
+  const vacantSlots = useMemo(() => {
+    if (!formation) return [];
+    const starterPositions = squad.filter(p => !p.isSub).map(p => p.assignedPosition);
+    const usedSlotIndices = new Set<number>();
+    for (const pos of starterPositions) {
+      const slotIdx = formation.slots.findIndex((slot, i) =>
+        !usedSlotIndices.has(i) && slot.label === pos
+      );
+      if (slotIdx >= 0) usedSlotIndices.add(slotIdx);
+    }
+    return formation.slots
+      .map((slot, i) => ({ slot, slotIdx: i }))
+      .filter(({ slotIdx }) => !usedSlotIndices.has(slotIdx));
+  }, [squad, formation]);
+
+  const handleTapVacant = (slotIdx: number) => {
+    if (selectedVacant === slotIdx) {
+      setSelectedVacant(null);
+      return;
+    }
+    if (selectedIdx !== null && formation) {
+      const player = squad[selectedIdx];
+      const slot = formation.slots[slotIdx];
+      setSquad((prev) => {
+        const next = [...prev];
+        next[selectedIdx] = { ...player, assignedPosition: slot.label, isSub: false };
+        return next;
+      });
+      setSelectedIdx(null);
+      setSelectedVacant(null);
+      return;
+    }
+    setSelectedVacant(slotIdx);
+    setSelectedIdx(null);
+  };
+
   const handleTap = (idx: number) => {
+    if (selectedVacant !== null && formation) {
+      const player = squad[idx];
+      if (player.isSub) {
+        const slot = formation.slots[selectedVacant];
+        setSquad((prev) => {
+          const next = [...prev];
+          next[idx] = { ...player, assignedPosition: slot.label, isSub: false };
+          return next;
+        });
+      }
+      setSelectedVacant(null);
+      setSelectedIdx(null);
+      return;
+    }
+
     if (selectedIdx === null) {
       setSelectedIdx(idx);
+      setSelectedVacant(null);
       return;
     }
     if (selectedIdx === idx) {
@@ -95,10 +150,14 @@ export default function SquadManager({ players, onConfirm, title, subtitle }: Pr
         </p>
       </div>
 
-      {selectedIdx !== null && (
+      {(selectedIdx !== null || selectedVacant !== null) && (
         <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl px-4 py-2.5 mb-4 text-center">
           <span className="text-sm text-emerald-400 font-medium">
-            Selected: <span className="font-bold">{squad[selectedIdx].name}</span> — tap another player to swap
+            {selectedVacant !== null && formation ? (
+              <>Selected: <span className="font-bold">{formation.slots[selectedVacant].label} (Vacant)</span> — tap a player to fill this position</>
+            ) : (
+              <>Selected: <span className="font-bold">{squad[selectedIdx!].name}</span> — tap another player to swap{vacantSlots.length > 0 ? " or tap a vacant slot" : ""}</>
+            )}
           </span>
         </div>
       )}
@@ -119,7 +178,7 @@ export default function SquadManager({ players, onConfirm, title, subtitle }: Pr
                 className={`w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left ${
                   isSelected
                     ? "bg-emerald-900/40 border-2 border-emerald-400 scale-[1.01]"
-                    : selectedIdx !== null
+                    : selectedIdx !== null || selectedVacant !== null
                       ? "bg-gray-800/50 hover:bg-gray-800 border-2 border-transparent"
                       : "hover:bg-gray-800/50 border-2 border-transparent"
                 }`}
@@ -135,6 +194,27 @@ export default function SquadManager({ players, onConfirm, title, subtitle }: Pr
                 )}
                 <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
                 <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+              </button>
+            );
+          })}
+          {vacantSlots.map(({ slot, slotIdx }) => {
+            const isSelected = selectedVacant === slotIdx;
+            return (
+              <button
+                key={`vacant-${slotIdx}`}
+                onClick={() => handleTapVacant(slotIdx)}
+                className={`w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left ${
+                  isSelected
+                    ? "bg-red-900/30 border-2 border-red-400 scale-[1.01]"
+                    : selectedIdx !== null || selectedVacant !== null
+                      ? "bg-gray-800/30 hover:bg-gray-800 border-2 border-dashed border-gray-600/50"
+                      : "hover:bg-gray-800/30 border-2 border-dashed border-gray-600/50"
+                }`}
+              >
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-700 text-gray-400 w-9 text-center">
+                  {slot.label}
+                </span>
+                <span className="flex-1 ml-1 font-medium text-gray-600 italic">Vacant</span>
               </button>
             );
           })}
@@ -156,7 +236,7 @@ export default function SquadManager({ players, onConfirm, title, subtitle }: Pr
                 className={`w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left ${
                   isSelected
                     ? "bg-purple-900/40 border-2 border-purple-400 scale-[1.01]"
-                    : selectedIdx !== null
+                    : selectedIdx !== null || selectedVacant !== null
                       ? "bg-gray-800/50 hover:bg-gray-800 border-2 border-transparent"
                       : "hover:bg-gray-800/50 border-2 border-transparent"
                 }`}

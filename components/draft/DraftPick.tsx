@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { FORMATIONS, getPositionColor, getPositionTextColor } from "./formations";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftSettings, DraftPlayer } from "@/app/draft/page";
@@ -405,6 +405,23 @@ export default function DraftPick({
     pickedPlayers.forEach((p, i) => slotToPlayer.set(i, p));
   }
 
+  const existingSlotMap = useMemo(() => {
+    if (!existingSquad) return new Map<number, DraftPlayer>();
+    const map = new Map<number, DraftPlayer>();
+    const starters = existingSquad.filter(p => !p.isSub);
+    const usedSlots = new Set<number>();
+    for (const player of starters) {
+      const slotIdx = formation.slots.findIndex((slot, i) =>
+        !usedSlots.has(i) && slot.label === player.assignedPosition
+      );
+      if (slotIdx >= 0) {
+        map.set(slotIdx, player);
+        usedSlots.add(slotIdx);
+      }
+    }
+    return map;
+  }, [existingSquad, formation.slots]);
+
   const currentSlot = formation.slots[currentSlotIndex];
   const keyStats = currentSlot ? keyStatForSlot(currentSlot.label) : [];
   const clubFirstStats: { label: string; pick: (p: RosterPlayer) => number }[] = [
@@ -531,8 +548,10 @@ export default function DraftPick({
 
             {formation.slots.map((slot, i) => {
               const picked = slotToPlayer.get(i);
-              const isCurrent = !isClubFirst && i === currentSlotIndex && !picked;
-              const isAssignable = isClubFirst && phase === "assign" && !picked;
+              const existing = existingSlotMap.get(i);
+              const displayPlayer = picked || existing;
+              const isCurrent = !isClubFirst && i === currentSlotIndex && !displayPlayer;
+              const isAssignable = isClubFirst && phase === "assign" && !displayPlayer;
               const pendingPositions = pendingPlayer
                 ? (pendingPlayer.positions || "").split(",").map((p) => p.trim())
                 : [];
@@ -548,8 +567,8 @@ export default function DraftPick({
                 >
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-extrabold border-2 transition-all duration-300 ${
-                      picked
-                        ? `${getPositionColor(slot.label)} border-white/80 text-white shadow-lg`
+                      displayPlayer
+                        ? `${getPositionColor(slot.label)} ${existing && !picked ? 'border-white/50 text-white/80' : 'border-white/80 text-white'} shadow-lg`
                         : isCurrent
                           ? "bg-emerald-500/80 border-emerald-300 text-white animate-pulse shadow-lg shadow-emerald-500/30"
                           : isNaturalFit
@@ -559,18 +578,18 @@ export default function DraftPick({
                               : "bg-gray-800/80 border-gray-600/50 text-gray-500"
                     }`}
                   >
-                    {picked ? (
-                      <span className="text-sm font-black">{picked.overall}</span>
+                    {displayPlayer ? (
+                      <span className="text-sm font-black">{displayPlayer.overall}</span>
                     ) : (
                       slot.label
                     )}
                   </div>
                   <span
                     className={`text-[8px] mt-0.5 max-w-[64px] truncate text-center font-medium ${
-                      picked ? "text-white/90" : "text-gray-600"
+                      displayPlayer ? "text-white/90" : "text-gray-600"
                     }`}
                   >
-                    {picked ? picked.name.split(" ").pop() : ""}
+                    {displayPlayer ? displayPlayer.name.split(" ").pop() : ""}
                   </span>
                 </div>
               );
@@ -578,7 +597,7 @@ export default function DraftPick({
           </div>
 
           {/* Picked list — compact on mobile, full on desktop */}
-          {pickedPlayers.filter(p => !p.isSub).length > 0 && (
+          {pickedPlayers.length > 0 && (
             <div className="mt-3 hidden lg:block space-y-1">
               {pickedPlayers.filter(p => !p.isSub).map((p, i) => (
                 <div
@@ -599,11 +618,17 @@ export default function DraftPick({
               ))}
               {pickedPlayers.filter(p => p.isSub).length > 0 && (
                 <>
-                  <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase pt-2">Substitutes</div>
+                  <div className={`text-[10px] font-bold tracking-widest uppercase pt-2 ${isSeason2Draft ? "text-amber-400" : "text-purple-400"}`}>
+                    {isSeason2Draft ? "New Signings" : "Substitutes"}
+                  </div>
                   {pickedPlayers.filter(p => p.isSub).map((p, i) => (
                     <div
                       key={`sub-${i}`}
-                      className="flex items-center gap-2 text-sm bg-purple-900/10 border border-purple-800/30 rounded-lg px-3 py-1.5 hover:bg-purple-900/20 transition"
+                      className={`flex items-center gap-2 text-sm rounded-lg px-3 py-1.5 transition ${
+                        isSeason2Draft
+                          ? "bg-amber-900/10 border border-amber-800/30 hover:bg-amber-900/20"
+                          : "bg-purple-900/10 border border-purple-800/30 hover:bg-purple-900/20"
+                      }`}
                     >
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
                         {p.assignedPosition}
