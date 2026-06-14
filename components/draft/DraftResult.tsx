@@ -8,9 +8,9 @@ import type { DraftPlayer } from "@/app/draft/page";
 interface Props {
   players: DraftPlayer[];
   onNewRun: () => void;
-  onPlaySeason2?: (season: SeasonResult, players: DraftPlayer[]) => void;
+  onPlayNextSeason?: (season: SeasonResult, players: DraftPlayer[]) => void;
   seasonNumber?: number;
-  season1Result?: SeasonResult;
+  previousResult?: SeasonResult;
 }
 
 interface PLRecord {
@@ -34,7 +34,7 @@ const PL_RECORDS: PLRecord[] = [
   { label: "Most PL clean sheets", record: 24, holder: "Petr Cech (04/05)" },
 ];
 
-function RecordsSection({ season, season1Result }: { season: SeasonResult; season1Result?: SeasonResult }) {
+function RecordsSection({ season, previousResult }: { season: SeasonResult; previousResult?: SeasonResult }) {
   const plGoalsByPlayer: Record<string, number> = {};
   const plAssistsByPlayer: Record<string, number> = {};
   for (const m of season.matches) {
@@ -73,13 +73,13 @@ function RecordsSection({ season, season1Result }: { season: SeasonResult; seaso
     ? season.matches.filter((m) => m.goalsAgainst === 0).length
     : 0;
 
-  const crossSeasonWinStreak = season1Result
-    ? season1Result.trailingWinStreak + season.leadingWinStreak
+  const crossSeasonWinStreak = previousResult
+    ? previousResult.trailingWinStreak + season.leadingWinStreak
     : season.longestWinStreak;
   const effectiveConsecutiveWins = Math.max(season.longestWinStreak, crossSeasonWinStreak);
 
-  const crossSeasonUnbeaten = season1Result
-    ? season1Result.trailingUnbeatenRun + season.leadingUnbeatenRun
+  const crossSeasonUnbeaten = previousResult
+    ? previousResult.trailingUnbeatenRun + season.leadingUnbeatenRun
     : season.longestUnbeatenRun;
   const effectiveUnbeatenRun = Math.max(season.longestUnbeatenRun, crossSeasonUnbeaten);
 
@@ -178,9 +178,9 @@ function RecordsSection({ season, season1Result }: { season: SeasonResult; seaso
           );
         })}
       </div>
-      {season1Result && (effectiveConsecutiveWins > season.longestWinStreak || effectiveUnbeatenRun > season.longestUnbeatenRun) && (
+      {previousResult && (effectiveConsecutiveWins > season.longestWinStreak || effectiveUnbeatenRun > season.longestUnbeatenRun) && (
         <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600">
-          Win streak &amp; unbeaten run include carry-over from Season 1
+          Win streak &amp; unbeaten run include carry-over from previous season
         </div>
       )}
       {(topPLGoals > 0 || topPLAssists > 0) && (
@@ -195,7 +195,7 @@ function RecordsSection({ season, season1Result }: { season: SeasonResult; seaso
   );
 }
 
-export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNumber = 1, season1Result }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult }: Props) {
   const season = useMemo(() => simulateSeason(players, undefined, seasonNumber), [players, seasonNumber]);
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(false);
@@ -677,7 +677,7 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
         </div>
 
         {/* PL Records */}
-        <RecordsSection season={season} season1Result={seasonNumber === 2 ? season1Result : undefined} />
+        <RecordsSection season={season} previousResult={previousResult} />
       </div>
 
       {/* League Table Toggle */}
@@ -823,24 +823,24 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
         </div>
       )}
 
-      {/* Season comparison for Season 2 */}
-      {seasonNumber === 2 && season1Result && (
+      {/* Season comparison */}
+      {seasonNumber > 1 && previousResult && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
           <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">Season Comparison</h3>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-[10px] text-gray-500 font-bold uppercase">S1</div>
-              <div className="text-lg font-black text-gray-400">{ordinal(season1Result.actualFinish)}</div>
-              <div className="text-xs text-gray-600">{season1Result.teamRecord.points} pts</div>
+              <div className="text-[10px] text-gray-500 font-bold uppercase">S{seasonNumber - 1}</div>
+              <div className="text-lg font-black text-gray-400">{ordinal(previousResult.actualFinish)}</div>
+              <div className="text-xs text-gray-600">{previousResult.teamRecord.points} pts</div>
             </div>
             <div className="flex items-center justify-center">
               <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
             </div>
             <div>
-              <div className="text-[10px] text-gray-500 font-bold uppercase">S2</div>
+              <div className="text-[10px] text-gray-500 font-bold uppercase">S{seasonNumber}</div>
               <div className={`text-lg font-black ${
-                season.actualFinish < season1Result.actualFinish ? "text-emerald-400" :
-                season.actualFinish > season1Result.actualFinish ? "text-red-400" : "text-yellow-400"
+                season.actualFinish < previousResult.actualFinish ? "text-emerald-400" :
+                season.actualFinish > previousResult.actualFinish ? "text-red-400" : "text-yellow-400"
               }`}>{ordinal(season.actualFinish)}</div>
               <div className="text-xs text-gray-600">{season.teamRecord.points} pts</div>
             </div>
@@ -849,7 +849,7 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
       )}
 
       {/* Actions */}
-      <div className={`grid gap-3 ${onPlaySeason2 && seasonNumber === 1 ? "grid-cols-3" : "grid-cols-2"}`}>
+      <div className={`grid gap-3 ${onPlayNextSeason ? "grid-cols-3" : "grid-cols-2"}`}>
         <button
           onClick={handleShare}
           disabled={sharing}
@@ -867,13 +867,13 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
             </>
           )}
         </button>
-        {onPlaySeason2 && seasonNumber === 1 && (
+        {onPlayNextSeason && (
           <button
-            onClick={() => onPlaySeason2(season, players)}
+            onClick={() => onPlayNextSeason(season, players)}
             className="py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 rounded-xl font-bold transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-            Season 2
+            Season {seasonNumber + 1}
           </button>
         )}
         <button
