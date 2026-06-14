@@ -831,7 +831,7 @@ export function simulateSeason(
 
   const ratings = computePhaseRatings(starters);
 
-  const playerTeamName = 'Your Team';
+  const playerTeamName = 'Knowitball FC';
 
   // Simulate 38 matches (home and away vs each opponent)
   const matches: MatchResult[] = [];
