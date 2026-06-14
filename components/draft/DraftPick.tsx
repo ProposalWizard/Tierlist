@@ -68,39 +68,37 @@ function keyStatForSlot(slotLabel: string): { label: string; pick: (p: RosterPla
   const s = slotLabel.toUpperCase().trim();
 
   if (s === "GK") return [
-    { label: "DIV", pick: (p) => p.gkDiving || p.overall },
-    { label: "REF", pick: (p) => p.gkReflexes || p.overall },
-    { label: "POS", pick: (p) => p.gkPositioning || p.overall },
+    { label: "OVR", pick: (p) => p.overall },
   ];
   if (s === "CB") return [
     { label: "DEF", pick: (p) => p.defending },
-    { label: "HEAD", pick: (p) => p.heading },
     { label: "PHY", pick: (p) => p.physical },
+    { label: "PAC", pick: (p) => p.pace },
   ];
   if (s === "RB" || s === "LB" || s === "RWB" || s === "LWB") return [
+    { label: "DEF", pick: (p) => p.defending },
     { label: "CRS", pick: (p) => p.crossing },
     { label: "PAC", pick: (p) => p.pace },
-    { label: "DEF", pick: (p) => p.defending },
   ];
   if (s === "CDM") return [
-    { label: "INT", pick: (p) => p.interceptions },
-    { label: "TAC", pick: (p) => p.standingTackle },
+    { label: "DEF", pick: (p) => p.defending },
+    { label: "PHY", pick: (p) => p.physical },
     { label: "PAS", pick: (p) => p.passing },
   ];
   if (s === "CAM" || s === "RAM" || s === "LAM") return [
-    { label: "VIS", pick: (p) => p.vision },
+    { label: "PAS", pick: (p) => p.passing },
     { label: "DRI", pick: (p) => p.dribbling },
     { label: "SHO", pick: (p) => p.shooting },
   ];
   if (s === "CM") return [
+    { label: "DEF", pick: (p) => p.defending },
     { label: "PAS", pick: (p) => p.passing },
-    { label: "DRI", pick: (p) => p.dribbling },
     { label: "SHO", pick: (p) => p.shooting },
   ];
   if (s === "RM" || s === "LM") return [
-    { label: "CRS", pick: (p) => p.crossing },
     { label: "PAC", pick: (p) => p.pace },
     { label: "DRI", pick: (p) => p.dribbling },
+    { label: "DEF", pick: (p) => p.defending },
   ];
   if (s === "RW" || s === "LW") return [
     { label: "PAC", pick: (p) => p.pace },
@@ -108,9 +106,9 @@ function keyStatForSlot(slotLabel: string): { label: string; pick: (p: RosterPla
     { label: "SHO", pick: (p) => p.shooting },
   ];
   if (s === "ST" || s === "CF") return [
-    { label: "FIN", pick: (p) => p.finishing },
     { label: "SHO", pick: (p) => p.shooting },
-    { label: "PAC", pick: (p) => p.pace },
+    { label: "DRI", pick: (p) => p.dribbling },
+    { label: "PHY", pick: (p) => p.physical },
   ];
   return [
     { label: "SHO", pick: (p) => p.shooting },

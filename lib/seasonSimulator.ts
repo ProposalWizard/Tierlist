@@ -239,8 +239,7 @@ function playerContributions(p: DraftPlayer, fitness: number): { attack: number;
   const sho = statOr(a.shooting, o);
   const dri = statOr(a.dribbling, o);
 
-  // 50% key stats, 50% overall
-  const blend = (statAvg: number) => (statAvg * 0.5 + o * 0.5) * fitness;
+  const blend = (statAvg: number) => (statAvg * 0.35 + o * 0.65) * fitness;
 
   if (pos === 'GK') {
     return { attack: 0, defense: o * fitness };
@@ -278,9 +277,15 @@ function playerContributions(p: DraftPlayer, fitness: number): { attack: number;
       defense: blend((pac + def) / 2),
     };
   }
-  if (['ST', 'RW', 'LW'].includes(pos)) {
+  if (pos === 'ST') {
     return {
       attack: blend((sho + dri + phy) / 3),
+      defense: 0,
+    };
+  }
+  if (pos === 'RW' || pos === 'LW') {
+    return {
+      attack: blend((pac + dri + sho) / 3),
       defense: 0,
     };
   }
@@ -381,6 +386,7 @@ function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
 function goalScoringWeight(p: DraftPlayer): number {
   const role = classifyPosition(p.assignedPosition);
   const fit = positionFitness(p);
+  const qualityMult = (p.overall / 80) * (p.overall / 80);
 
   if (hasAttrs(p)) {
     const a = p.attrs;
@@ -392,11 +398,11 @@ function goalScoringWeight(p: DraftPlayer): number {
 
     switch (role) {
       case 'ATT':
-        return (fin * 3 + pos * 2 + statOr(a.shooting, o) * 1.5 + head * 0.8 + statOr(a.pace, o) * 0.5) * fit / 80;
+        return (fin * 3 + pos * 2 + sho * 1.5 + head * 0.8 + statOr(a.pace, o) * 0.5) * fit * qualityMult / 80;
       case 'MID':
-        return ((statOr(a.longShots, o) || statOr(a.shooting, o) * 0.7) * 1.5 + statOr(a.shooting, o) * 1 + pos * 0.5 + head * 0.3) * fit / 250;
+        return ((statOr(a.longShots, o) || sho * 0.7) * 1.5 + sho * 1 + pos * 0.5 + head * 0.3) * fit * qualityMult / 150;
       case 'DEF':
-        return (head * 1.2 + statOr(a.shooting, o) * 0.3 + statOr(a.physical, o) * 0.2) * fit / 600;
+        return (head * 1.2 + sho * 0.3 + statOr(a.physical, o) * 0.2) * fit * qualityMult / 600;
       case 'GK':
         return 0.02;
     }
@@ -404,7 +410,7 @@ function goalScoringWeight(p: DraftPlayer): number {
 
   const ratingFactor = 0.5 + (p.overall / 99) * 0.5;
   const roleWeights: Record<PositionRole, number> = { ATT: 10, MID: 3, DEF: 0.5, GK: 0.02 };
-  return roleWeights[role] * ratingFactor * fit;
+  return roleWeights[role] * ratingFactor * fit * qualityMult;
 }
 
 function assistWeight(p: DraftPlayer): number {
@@ -421,7 +427,7 @@ function assistWeight(p: DraftPlayer): number {
     const lp = a.longPassing > 0 ? a.longPassing : pas * 0.7;
 
     const baseW = (vis * 2 + cross * 1.5 + sp * 1 + lp * 0.5) / 5;
-    const roleMult: Record<PositionRole, number> = { ATT: 0.7, MID: 1.3, DEF: 0.4, GK: 0.02 };
+    const roleMult: Record<PositionRole, number> = { ATT: 1.0, MID: 1.3, DEF: 0.4, GK: 0.02 };
     return baseW * roleMult[role] * fit / 10;
   }
 
@@ -511,7 +517,7 @@ function simulateMatch(
   const goalScorers: { player: string; minute: number }[] = [];
   const assistProviders: { player: string; minute: number }[] = [];
 
-  const subAdjGoal = (p: DraftPlayer) => goalScoringWeight(p) * (p.isSub ? 0.5 : 1.0);
+  const subAdjGoal = (p: DraftPlayer) => goalScoringWeight(p) * (p.isSub ? 0.35 : 1.0);
   const subAdjAssist = (p: DraftPlayer) => assistWeight(p) * (p.isSub ? 0.5 : 1.0);
 
   for (let i = 0; i < goalsFor; i++) {
@@ -859,6 +865,7 @@ export function simulateSeason(
 
   // Simulate 38 matches (home and away vs each opponent)
   const matches: MatchResult[] = [];
+  const matchSubSets: Set<string>[] = [];
   const subAppearances: Record<string, number> = {};
   for (const sub of subs) subAppearances[sub.name] = 0;
 
@@ -866,11 +873,13 @@ export function simulateSeason(
     const homeActiveSubs = subs.filter(() => rng() < 0.6);
     const homePlayers = [...starters, ...homeActiveSubs];
     matches.push(simulateMatch(homePlayers, ratings, opp, true, rng));
+    matchSubSets.push(new Set(homeActiveSubs.map(s => s.name)));
     for (const sub of homeActiveSubs) subAppearances[sub.name]++;
 
     const awayActiveSubs = subs.filter(() => rng() < 0.6);
     const awayPlayers = [...starters, ...awayActiveSubs];
     matches.push(simulateMatch(awayPlayers, ratings, opp, false, rng));
+    matchSubSets.push(new Set(awayActiveSubs.map(s => s.name)));
     for (const sub of awayActiveSubs) subAppearances[sub.name]++;
   }
 
@@ -878,6 +887,7 @@ export function simulateSeason(
   for (let i = matches.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [matches[i], matches[j]] = [matches[j], matches[i]];
+    [matchSubSets[i], matchSubSets[j]] = [matchSubSets[j], matchSubSets[i]];
   }
 
   // FA Cup
@@ -930,7 +940,10 @@ export function simulateSeason(
   const playerRatings: Record<string, number[]> = {};
   for (const p of allPlayers) playerRatings[p.name] = [];
 
-  for (const m of matches) {
+  for (let mi = 0; mi < matches.length; mi++) {
+    const m = matches[mi];
+    const subsInMatch = matchSubSets[mi];
+
     for (const gs of m.goalScorers) {
       if (statsMap[gs.player]) statsMap[gs.player].goals++;
     }
@@ -943,7 +956,7 @@ export function simulateSeason(
         statsMap[def.name].cleanSheets++;
       }
       for (const sub of defSubs) {
-        if (subAppearances[sub.name] > 0) statsMap[sub.name].cleanSheets++;
+        if (subsInMatch.has(sub.name)) statsMap[sub.name].cleanSheets++;
       }
     }
 
@@ -951,7 +964,7 @@ export function simulateSeason(
       playerRatings[p.name].push(matchRating(p, m, seasonForm[p.name] || 0, rng));
     }
     for (const p of subs) {
-      if (subAppearances[p.name] > 0) {
+      if (subsInMatch.has(p.name)) {
         playerRatings[p.name].push(matchRating(p, m, seasonForm[p.name] || 0, rng));
       }
     }
