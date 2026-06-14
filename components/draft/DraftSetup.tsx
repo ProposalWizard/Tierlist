@@ -244,7 +244,7 @@ export default function DraftSetup({ onStart }: Props) {
         </button>
 
         <p className="text-center text-gray-600 text-xs mt-4">
-          11 spins. 11 picks. 38 matches. 1 season.
+          14 spins. 11 starters + 3 subs. 38 matches.
         </p>
       </div>
     </div>

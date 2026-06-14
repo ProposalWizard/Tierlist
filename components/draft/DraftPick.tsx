@@ -52,6 +52,8 @@ interface Props {
   initialUsedClubYears?: string[];
   initialSlotAssignments?: number[];
   onProgress?: (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: number[]) => void;
+  totalPicks?: number;
+  existingSquad?: DraftPlayer[];
 }
 
 function classifyPos(pos: string): "GK" | "DEF" | "MID" | "ATT" {
@@ -133,9 +135,13 @@ export default function DraftPick({
   initialUsedClubYears,
   initialSlotAssignments,
   onProgress,
+  totalPicks,
+  existingSquad,
 }: Props) {
   const formation = FORMATIONS.find((f) => f.name === settings.formation) ?? FORMATIONS[0];
   const isClubFirst = settings.draftOrder === "club-first";
+  const maxPicks = totalPicks ?? 14;
+  const isSeason2Draft = !!existingSquad;
   const [pickedPlayers, setPickedPlayers] = useState<DraftPlayer[]>(initialPicked ?? []);
   const [currentSlotIndex, setCurrentSlotIndex] = useState(initialPicked?.length ?? 0);
   const [phase, setPhase] = useState<"spin" | "spinning" | "reveal" | "pick" | "assign">("spin");
@@ -309,18 +315,25 @@ export default function DraftPick({
   const buildClubAbbr = () =>
     spinResult!.club.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 3);
 
+  const isSubPick = pickedPlayers.length >= 11 && !isSeason2Draft;
+
   const finalizePick = useCallback(
     (player: RosterPlayer, slotLabel: string, slotIdx?: number) => {
+      const currentIsSub = pickedPlayers.length >= 11 && !isSeason2Draft;
       const drafted: DraftPlayer = {
         name: player.name,
         overall: player.overall,
         positions: player.positions,
         club: spinResult!.club,
         clubYear: `${buildClubAbbr()} ${spinResult!.year}`,
-        assignedPosition: slotLabel,
+        assignedPosition: currentIsSub
+          ? (player.positions || "").split(",")[0]?.trim() || slotLabel
+          : slotLabel,
         sofifa_id: player.sofifa_id,
         image_url: player.image_url,
         nationality: player.nationality,
+        age: player.age || 0,
+        isSub: currentIsSub || isSeason2Draft,
         attrs: buildAttrs(player),
       };
 
@@ -338,22 +351,27 @@ export default function DraftPick({
       if (slotIdx !== undefined) setSlotAssignments(newAssignments);
       setPendingPlayer(null);
 
-      if (newPicked.length >= 11) {
+      if (newPicked.length >= maxPicks) {
         onComplete(newPicked);
       } else {
         onProgress?.(newPicked, newUsed, newAssignments);
-        setCurrentSlotIndex(currentSlotIndex + 1);
+        if (!currentIsSub) setCurrentSlotIndex(currentSlotIndex + 1);
         setSpinResult(null);
         setSpinDisplay(null);
         setSpinAnimating(false);
         setPhase("spin");
       }
     },
-    [currentSlotIndex, onComplete, onProgress, pickedPlayers, spinResult, usedClubYears, slotAssignments]
+    [currentSlotIndex, onComplete, onProgress, pickedPlayers, spinResult, usedClubYears, slotAssignments, maxPicks, isSeason2Draft]
   );
 
   const handlePickPlayer = useCallback(
     (player: RosterPlayer) => {
+      if (isSubPick || isSeason2Draft) {
+        const primaryPos = (player.positions || "CM").split(",")[0]?.trim() || "CM";
+        finalizePick(player, primaryPos);
+        return;
+      }
       if (isClubFirst) {
         setPendingPlayer(player);
         setPhase("assign");
@@ -362,7 +380,7 @@ export default function DraftPick({
       const slot = formation.slots[currentSlotIndex];
       finalizePick(player, slot.label);
     },
-    [isClubFirst, currentSlotIndex, formation.slots, finalizePick]
+    [isClubFirst, isSubPick, isSeason2Draft, currentSlotIndex, formation.slots, finalizePick]
   );
 
   const handleAssignSlot = useCallback(
@@ -397,7 +415,7 @@ export default function DraftPick({
     { label: "DEF", pick: (p) => p.defending },
     { label: "PHY", pick: (p) => p.physical },
   ];
-  const displayStats = isClubFirst ? clubFirstStats : keyStats;
+  const displayStats = (isClubFirst || isSubPick || isSeason2Draft) ? clubFirstStats : keyStats;
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -431,7 +449,25 @@ export default function DraftPick({
             </div>
           </div>
           <div className="text-right">
-            {isClubFirst ? (
+            {isSeason2Draft ? (
+              <>
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+                  New Signing
+                </div>
+                <div className="text-lg font-extrabold text-amber-400">
+                  {pickedPlayers.length + 1}/{maxPicks}
+                </div>
+              </>
+            ) : isSubPick ? (
+              <>
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+                  Substitute
+                </div>
+                <div className="text-lg font-extrabold text-purple-400">
+                  {pickedPlayers.length - 11 + 1}/3
+                </div>
+              </>
+            ) : isClubFirst ? (
               <>
                 <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
                   Pick
@@ -455,22 +491,24 @@ export default function DraftPick({
 
         {/* Progress bar */}
         <div className="flex items-center gap-2">
-          <div className="flex-1 flex gap-1">
-            {Array.from({ length: 11 }, (_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                  i < pickedPlayers.length
-                    ? "bg-emerald-500"
-                    : i === currentSlotIndex
-                      ? "bg-emerald-500/40 animate-pulse"
-                      : "bg-gray-800"
-                }`}
-              />
+          <div className="flex-1 flex gap-1 items-center">
+            {Array.from({ length: maxPicks }, (_, i) => (
+              <div key={i} className="contents">
+                {i === 11 && !isSeason2Draft && <div className="w-1 h-3 bg-gray-700 rounded-full mx-0.5 shrink-0" />}
+                <div
+                  className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                    i < pickedPlayers.length
+                      ? i >= 11 && !isSeason2Draft ? "bg-purple-500" : "bg-emerald-500"
+                      : i === pickedPlayers.length
+                        ? i >= 11 && !isSeason2Draft ? "bg-purple-500/40 animate-pulse" : "bg-emerald-500/40 animate-pulse"
+                        : "bg-gray-800"
+                  }`}
+                />
+              </div>
             ))}
           </div>
           <span className="text-xs font-bold text-gray-500 tabular-nums">
-            {pickedPlayers.length}/11
+            {pickedPlayers.length}/{maxPicks}
           </span>
         </div>
       </div>
@@ -540,9 +578,9 @@ export default function DraftPick({
           </div>
 
           {/* Picked list — compact on mobile, full on desktop */}
-          {pickedPlayers.length > 0 && (
+          {pickedPlayers.filter(p => !p.isSub).length > 0 && (
             <div className="mt-3 hidden lg:block space-y-1">
-              {pickedPlayers.map((p, i) => (
+              {pickedPlayers.filter(p => !p.isSub).map((p, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-2 text-sm bg-gray-900/80 border border-gray-800/50 rounded-lg px-3 py-1.5 hover:bg-gray-800/80 transition"
@@ -559,17 +597,47 @@ export default function DraftPick({
                   <span className="font-extrabold text-emerald-400 text-sm">{p.overall}</span>
                 </div>
               ))}
+              {pickedPlayers.filter(p => p.isSub).length > 0 && (
+                <>
+                  <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase pt-2">Substitutes</div>
+                  {pickedPlayers.filter(p => p.isSub).map((p, i) => (
+                    <div
+                      key={`sub-${i}`}
+                      className="flex items-center gap-2 text-sm bg-purple-900/10 border border-purple-800/30 rounded-lg px-3 py-1.5 hover:bg-purple-900/20 transition"
+                    >
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
+                        {p.assignedPosition}
+                      </span>
+                      <span className="flex-1 truncate font-medium">{p.name}</span>
+                      <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                      <span className="font-extrabold text-emerald-400 text-sm">{p.overall}</span>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           )}
           {pickedPlayers.length > 0 && (
             <div className="mt-3 lg:hidden flex gap-1.5 overflow-x-auto pb-1">
-              {pickedPlayers.map((p, i) => (
+              {pickedPlayers.filter(p => !p.isSub).map((p, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-1.5 text-xs bg-gray-900/80 border border-gray-800/50 rounded-lg px-2 py-1 shrink-0"
                 >
                   <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
                     {p.assignedPosition}
+                  </span>
+                  <span className="font-medium">{p.name.split(" ").pop()}</span>
+                  <span className="font-extrabold text-emerald-400">{p.overall}</span>
+                </div>
+              ))}
+              {pickedPlayers.filter(p => p.isSub).map((p, i) => (
+                <div
+                  key={`sub-${i}`}
+                  className="flex items-center gap-1.5 text-xs bg-purple-900/20 border border-purple-800/30 rounded-lg px-2 py-1 shrink-0"
+                >
+                  <span className={`text-[9px] font-bold px-1 py-0.5 rounded bg-purple-700 text-white`}>
+                    SUB
                   </span>
                   <span className="font-medium">{p.name.split(" ").pop()}</span>
                   <span className="font-extrabold text-emerald-400">{p.overall}</span>
@@ -591,14 +659,26 @@ export default function DraftPick({
             <div className="flex flex-col items-center justify-center py-16">
               <div className="mb-6 text-center">
                 <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${
+                  isSeason2Draft ? "text-amber-400" :
+                  isSubPick ? "text-purple-400" :
                   isClubFirst ? "text-sky-400" : getPositionTextColor(currentSlot?.label ?? "")
                 } border-current/20 bg-current/5`}>
                   <span className="text-xs font-bold tracking-widest uppercase">
-                    Pick {pickedPlayers.length + 1} of 11
+                    {isSeason2Draft
+                      ? `New Signing ${pickedPlayers.length + 1} of ${maxPicks}`
+                      : isSubPick
+                        ? `Substitute ${pickedPlayers.length - 11 + 1} of 3`
+                        : `Pick ${pickedPlayers.length + 1} of 11`
+                    }
                   </span>
                 </div>
                 <p className="text-gray-400 text-sm">
-                  Spin to get a random Premier League club & season
+                  {isSubPick
+                    ? "Spin to pick a substitute for your bench"
+                    : isSeason2Draft
+                      ? "Spin to sign a replacement player"
+                      : "Spin to get a random Premier League club & season"
+                  }
                 </p>
               </div>
               {!availableClubs && !clubsLoading && error ? (
@@ -682,7 +762,9 @@ export default function DraftPick({
                   </span>
                 </div>
                 <p className="text-gray-500 text-sm">
-                  {isClubFirst ? (
+                  {isSubPick || isSeason2Draft ? (
+                    isSubPick ? "Pick a substitute from this roster" : "Sign a player from this roster"
+                  ) : isClubFirst ? (
                     "Pick any player from this roster"
                   ) : (
                     <>
