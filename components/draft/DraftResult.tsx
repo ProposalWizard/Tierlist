@@ -55,7 +55,7 @@ function RecordsSection({ season, season1Result }: { season: SeasonResult; seaso
     : 0;
   const topPLAssister = Object.entries(plAssistsByPlayer).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
 
-  const allPlayerNames = new Set([...Object.keys(plGoalsByPlayer), ...Object.keys(plAssistsByPlayer)]);
+  const allPlayerNames = Array.from(new Set([...Object.keys(plGoalsByPlayer), ...Object.keys(plAssistsByPlayer)]));
   let topGA = 0;
   let topGAPlayer = "";
   for (const name of allPlayerNames) {
