@@ -36,6 +36,17 @@ export default function DraftResult({ players, onNewRun }: Props) {
 
   const msg = titleMessage();
 
+  const positionOrder: Record<string, number> = { GK: 0, CB: 1, RB: 2, LB: 3, RWB: 2, LWB: 3, SW: 1, CDM: 4, DM: 4, CM: 5, CAM: 6, RM: 7, LM: 7, RAM: 6, LAM: 6, RW: 8, LW: 8, ST: 9, CF: 9 };
+  const sortedPlayers = useMemo(() =>
+    [...players].sort((a, b) => (positionOrder[a.assignedPosition] ?? 5) - (positionOrder[b.assignedPosition] ?? 5)),
+    [players]
+  );
+
+  const sortedStats = useMemo(() =>
+    [...season.playerStats].sort((a, b) => (positionOrder[a.assignedPosition] ?? 5) - (positionOrder[b.assignedPosition] ?? 5)),
+    [season.playerStats]
+  );
+
   const handleShare = useCallback(async () => {
     if (!shareRef.current || sharing) return;
     setSharing(true);
@@ -166,7 +177,7 @@ export default function DraftResult({ players, onNewRun }: Props) {
             Your XI
           </h3>
           <div className="space-y-0.5">
-            {players.map((p, i) => (
+            {sortedPlayers.map((p, i) => (
               <div key={i} className="flex items-center gap-2 text-sm py-1 px-1">
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
                   {p.assignedPosition}
@@ -356,7 +367,7 @@ export default function DraftResult({ players, onNewRun }: Props) {
             <span className="w-9 text-center">AVG</span>
           </div>
           <div className="space-y-0.5">
-            {season.playerStats.map((ps, i) => (
+            {sortedStats.map((ps, i) => (
               <div key={i} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition">
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(ps.assignedPosition)} text-white w-8 text-center`}>
                   {ps.assignedPosition}

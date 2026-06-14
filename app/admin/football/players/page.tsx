@@ -416,24 +416,25 @@ export default function PlayerSearchPage() {
                                 return (
                                   <tr key={edKey} className="border-b border-gray-800/30">
                                     <td colSpan={7} className="p-0">
-                                      <div className={`flex items-center transition-colors ${
-                                        edExpanded ? "bg-gray-800/60" : "hover:bg-gray-900/60"
-                                      }`}>
-                                        <button
-                                          onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
-                                          className="flex items-center flex-1 min-w-0 text-left"
+                                      <div
+                                        onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
+                                        className={`flex items-center cursor-pointer transition-colors ${
+                                          edExpanded ? "bg-gray-800/60" : "hover:bg-gray-900/60"
+                                        }`}
+                                      >
+                                        <div className="px-5 py-2.5 text-gray-300 min-w-[100px] font-medium">
+                                          {yearLabel(p.fifa_year)}
+                                        </div>
+                                        <div className="px-3 py-2.5 text-gray-300 truncate min-w-[140px] max-w-[220px]">
+                                          {p.club ?? "--"}
+                                        </div>
+                                        <div className="px-3 py-2.5 text-yellow-400 min-w-[100px]">
+                                          {p.positions ?? "--"}
+                                        </div>
+                                        <div
+                                          className="px-3 py-2.5 text-center font-bold min-w-[60px] shrink-0 relative z-10"
+                                          onClick={(e) => e.stopPropagation()}
                                         >
-                                          <div className="px-5 py-2.5 text-gray-300 min-w-[100px] font-medium">
-                                            {yearLabel(p.fifa_year)}
-                                          </div>
-                                          <div className="px-3 py-2.5 text-gray-300 truncate min-w-[140px] max-w-[220px]">
-                                            {p.club ?? "--"}
-                                          </div>
-                                          <div className="px-3 py-2.5 text-yellow-400 min-w-[100px]">
-                                            {p.positions ?? "--"}
-                                          </div>
-                                        </button>
-                                        <div className="px-3 py-2.5 text-center font-bold min-w-[50px]">
                                           {isEditing ? (
                                             <input
                                               type="number"
@@ -448,39 +449,41 @@ export default function PlayerSearchPage() {
                                                 if (e.key === "Escape") setEditingOvr(null);
                                               }}
                                               disabled={savingOvr}
-                                              className="w-12 bg-gray-700 border border-emerald-500 rounded px-1 py-0.5 text-center text-sm font-bold text-white focus:outline-none"
+                                              className="w-14 bg-gray-700 border border-emerald-500 rounded px-1 py-0.5 text-center text-sm font-bold text-white focus:outline-none"
                                             />
                                           ) : (
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
+                                            <span
+                                              role="button"
+                                              tabIndex={0}
+                                              onClick={() => {
                                                 setEditingOvr(edKey);
                                                 setEditOvrValue(String(effectiveOvr ?? ""));
                                               }}
-                                              className={`hover:ring-1 hover:ring-emerald-500 rounded px-1.5 py-0.5 transition-all ${
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                  setEditingOvr(edKey);
+                                                  setEditOvrValue(String(effectiveOvr ?? ""));
+                                                }
+                                              }}
+                                              className={`inline-block cursor-pointer rounded px-2 py-0.5 hover:bg-gray-700 hover:ring-1 hover:ring-emerald-500 transition-all ${
                                                 hasOverride ? "text-amber-400" : "text-emerald-400"
                                               }`}
-                                              title={hasOverride ? `Manual: ${p.manual_overall} (scraped: ${p.overall ?? "?"})` : "Click to edit"}
+                                              title={hasOverride ? `Manual: ${p.manual_overall} (scraped: ${p.overall ?? "?"})` : "Click to edit OVR"}
                                             >
                                               {effectiveOvr ?? "--"}
                                               {hasOverride && <span className="text-[9px] text-amber-500 ml-0.5">*</span>}
-                                            </button>
+                                            </span>
                                           )}
                                         </div>
-                                        <button
-                                          onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
-                                          className="flex items-center text-left"
-                                        >
-                                          <div className="px-3 py-2.5 text-center text-gray-300 min-w-[50px]">
-                                            {p.potential ?? "--"}
-                                          </div>
-                                          <div className="px-3 py-2.5 text-center text-gray-400 min-w-[50px]">
-                                            {p.age ?? "--"}
-                                          </div>
-                                          <div className="px-3 py-2.5 text-center text-gray-600 min-w-[40px]">
-                                            {edExpanded ? "▲" : "▼"}
-                                          </div>
-                                        </button>
+                                        <div className="px-3 py-2.5 text-center text-gray-300 min-w-[50px]">
+                                          {p.potential ?? "--"}
+                                        </div>
+                                        <div className="px-3 py-2.5 text-center text-gray-400 min-w-[50px]">
+                                          {p.age ?? "--"}
+                                        </div>
+                                        <div className="px-3 py-2.5 text-center text-gray-600 min-w-[40px]">
+                                          {edExpanded ? "▲" : "▼"}
+                                        </div>
                                       </div>
 
                                       {edExpanded && (
