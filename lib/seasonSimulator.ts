@@ -668,6 +668,28 @@ function matchRating(
   const ovrBonus = (player.overall - 70) * 0.025;
   let base = 6.5 + ovrBonus + (rng() * 1.0 - 0.5);
 
+  // Attribute-based contribution (key passes, dribbles, tackles, saves, etc.)
+  if (hasAttrs(player)) {
+    const a = player.attrs;
+    const o = player.overall;
+    let keyAvg: number;
+    switch (role) {
+      case 'ATT':
+        keyAvg = (statOr(a.dribbling, o) + statOr(a.pace, o) + statOr(a.shooting, o)) / 3;
+        break;
+      case 'MID':
+        keyAvg = (statOr(a.passing, o) + statOr(a.dribbling, o) + (a.vision > 0 ? a.vision : statOr(a.passing, o))) / 3;
+        break;
+      case 'DEF':
+        keyAvg = (statOr(a.defending, o) + statOr(a.physical, o) + (a.interceptions > 0 ? a.interceptions : statOr(a.defending, o))) / 3;
+        break;
+      case 'GK':
+        keyAvg = (statOr(a.gkReflexes, o) + statOr(a.gkPositioning, o) + statOr(a.gkDiving, o)) / 3;
+        break;
+    }
+    base += Math.max(0, (keyAvg - 65) * 0.01);
+  }
+
   const scored = match.goalScorers.filter(g => g.player === player.name).length;
   const assisted = match.assistProviders.filter(a => a.player === player.name).length;
   base += scored * 2.0 + assisted * 1.2;
