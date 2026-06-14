@@ -79,6 +79,7 @@ interface SofifaPlayer {
   fifa_year: number;
   name: string;
   positions: string | null;
+  manual_positions: string | null;
   club: string | null;
   league: string | null;
   overall: number | null;
@@ -104,6 +105,9 @@ export default function PlayerSearchPage() {
   const [editingOvr, setEditingOvr] = useState<string | null>(null);
   const [editOvrValue, setEditOvrValue] = useState("");
   const [savingOvr, setSavingOvr] = useState(false);
+  const [editingPos, setEditingPos] = useState<string | null>(null);
+  const [editPosValue, setEditPosValue] = useState("");
+  const [savingPos, setSavingPos] = useState(false);
 
   const handleSearch = async () => {
     const q = nameQuery.trim();
@@ -164,6 +168,31 @@ export default function PlayerSearchPage() {
     } catch {}
     setSavingOvr(false);
     setEditingOvr(null);
+  };
+
+  const handleSavePos = async (sofifaId: string, fifaYear: number) => {
+    const val = editPosValue.trim().toUpperCase();
+    const newPos = val === "" ? null : val;
+
+    setSavingPos(true);
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: fifaYear, manual_positions: newPos }),
+      });
+      if (res.ok) {
+        setPlayers((prev) =>
+          prev.map((p) =>
+            p.sofifa_id === sofifaId && p.fifa_year === fifaYear
+              ? { ...p, manual_positions: newPos }
+              : p
+          )
+        );
+      }
+    } catch {}
+    setSavingPos(false);
+    setEditingPos(null);
   };
 
   interface PlayerGroup {
@@ -428,8 +457,48 @@ export default function PlayerSearchPage() {
                                         <div className="px-3 py-2.5 text-gray-300 truncate min-w-[140px] max-w-[220px]">
                                           {p.club ?? "--"}
                                         </div>
-                                        <div className="px-3 py-2.5 text-yellow-400 min-w-[100px]">
-                                          {p.positions ?? "--"}
+                                        <div
+                                          className="px-3 py-2.5 min-w-[120px] relative z-10"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {editingPos === edKey ? (
+                                            <input
+                                              type="text"
+                                              autoFocus
+                                              value={editPosValue}
+                                              onChange={(e) => setEditPosValue(e.target.value)}
+                                              onBlur={() => handleSavePos(p.sofifa_id, p.fifa_year)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleSavePos(p.sofifa_id, p.fifa_year);
+                                                if (e.key === "Escape") setEditingPos(null);
+                                              }}
+                                              disabled={savingPos}
+                                              placeholder="e.g. ST, RW, CF"
+                                              className="w-28 bg-gray-700 border border-yellow-500 rounded px-1 py-0.5 text-sm font-bold text-white focus:outline-none"
+                                            />
+                                          ) : (
+                                            <span
+                                              role="button"
+                                              tabIndex={0}
+                                              onClick={() => {
+                                                setEditingPos(edKey);
+                                                setEditPosValue((p.manual_positions ?? p.positions) || "");
+                                              }}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                  setEditingPos(edKey);
+                                                  setEditPosValue((p.manual_positions ?? p.positions) || "");
+                                                }
+                                              }}
+                                              className={`inline-block cursor-pointer rounded px-2 py-0.5 hover:bg-gray-700 hover:ring-1 hover:ring-yellow-500 transition-all ${
+                                                p.manual_positions ? "text-amber-400" : "text-yellow-400"
+                                              }`}
+                                              title={p.manual_positions ? `Manual: ${p.manual_positions} (scraped: ${p.positions ?? "?"})` : "Click to edit positions"}
+                                            >
+                                              {(p.manual_positions ?? p.positions) || "--"}
+                                              {p.manual_positions && <span className="text-[9px] text-amber-500 ml-0.5">*</span>}
+                                            </span>
+                                          )}
                                         </div>
                                         <div
                                           className="px-3 py-2.5 text-center font-bold min-w-[60px] shrink-0 relative z-10"

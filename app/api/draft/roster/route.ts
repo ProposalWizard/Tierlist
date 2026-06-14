@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("sofifa_players")
     .select(
-      "sofifa_id, name, overall, manual_overall, potential, positions, age, image_url, nationality, attributes"
+      "sofifa_id, name, overall, manual_overall, potential, positions, manual_positions, age, image_url, nationality, attributes"
     )
     .eq("club", club)
     .eq("fifa_year", year)
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       name: p.name || (a.name as string) || "",
       overall: p.manual_overall || p.overall || parseAttr(a.overall) || parseAttr(a.attr_sort) || parseAttr(a.attr_oa) || 0,
       potential: p.potential || parseAttr(a.potential) || parseAttr(a.attr_pt) || 0,
-      positions: p.positions || (a.positions as string) || (a.player_positions as string) || "",
+      positions: p.manual_positions || p.positions || (a.positions as string) || (a.player_positions as string) || "",
       age: p.age || parseAttr(a.age) || parseAttr(a.attr_ae) || 0,
       image_url: p.image_url || (a.image_url as string) || null,
       nationality: p.nationality || (a.nationality as string) || "",
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
     if (ids.length > 0) {
       const { data: allEditions } = await supabase
         .from("sofifa_players")
-        .select("sofifa_id, overall, manual_overall, potential, positions, age, attributes")
+        .select("sofifa_id, overall, manual_overall, potential, positions, manual_positions, age, attributes")
         .in("sofifa_id", ids)
         .order("overall", { ascending: false });
 
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
 
           player.overall = bestOvr;
           player.potential = best.potential || parseAttr(ba.potential) || parseAttr(ba.attr_pt) || 0;
-          if (best.positions) player.positions = best.positions;
+          if (best.manual_positions || best.positions) player.positions = best.manual_positions || best.positions;
           player.pace = parseAttr(ba.attr_pac) || parseAttr(ba.pac) || player.pace;
           player.shooting = parseAttr(ba.attr_sho) || parseAttr(ba.shooting) || player.shooting;
           player.passing = parseAttr(ba.attr_pas) || parseAttr(ba.passing) || player.passing;
