@@ -661,10 +661,10 @@ function matchRating(
 
   const scored = match.goalScorers.filter(g => g.player === player.name).length;
   const assisted = match.assistProviders.filter(a => a.player === player.name).length;
-  base += scored * 1.0 + assisted * 0.5;
+  base += scored * 1.0 + assisted * 0.6;
 
   if (match.goalsAgainst === 0 && (role === 'GK' || role === 'DEF')) {
-    base += 0.5;
+    base += 0.7;
   }
 
   if (match.result === 'W') base += 0.2;
