@@ -90,6 +90,7 @@ export interface LeagueTeam {
 export interface SeasonResult {
   matches: MatchResult[];
   playerStats: PlayerStats[];
+  plPlayerStats: PlayerStats[];
   leagueTable: LeagueTeam[];
   teamRecord: {
     wins: number;
@@ -956,7 +957,20 @@ export function simulateSeason(
     }
   }
 
-  // Count FA Cup stats
+  // Compute avg rating (PL matches only — same for both views)
+  for (const p of allPlayers) {
+    const ratings = playerRatings[p.name];
+    statsMap[p.name].avgRating = ratings.length > 0
+      ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+      : 6.0;
+  }
+
+  // Snapshot PL-only stats before adding cup competitions
+  const plPlayerStats = Object.values(statsMap).map(s => ({ ...s })).sort(
+    (a, b) => (b.goals + b.assists) - (a.goals + a.assists),
+  );
+
+  // Count FA Cup stats (added to all-comps totals)
   for (const cm of faCup.matches) {
     for (const p of starters) statsMap[p.name].appearances++;
     for (const gs of cm.goalScorers) {
@@ -971,13 +985,6 @@ export function simulateSeason(
         statsMap[def.name].cleanSheets++;
       }
     }
-  }
-
-  for (const p of allPlayers) {
-    const ratings = playerRatings[p.name];
-    statsMap[p.name].avgRating = ratings.length > 0
-      ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
-      : 6.0;
   }
 
   const playerStats = Object.values(statsMap).sort(
@@ -1123,6 +1130,7 @@ export function simulateSeason(
   return {
     matches,
     playerStats,
+    plPlayerStats,
     leagueTable,
     teamRecord,
     awards,

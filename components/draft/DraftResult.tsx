@@ -201,6 +201,7 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
   const [showTable, setShowTable] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
+  const [statsView, setStatsView] = useState<"pl" | "all">("all");
 
   const ordinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"];
@@ -233,10 +234,10 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
     [players]
   );
 
-  const sortedStats = useMemo(() =>
-    [...season.playerStats].sort((a, b) => (positionOrder[a.assignedPosition] ?? 5) - (positionOrder[b.assignedPosition] ?? 5)),
-    [season.playerStats]
-  );
+  const sortedStats = useMemo(() => {
+    const source = statsView === "pl" ? season.plPlayerStats : season.playerStats;
+    return [...source].sort((a, b) => (positionOrder[a.assignedPosition] ?? 5) - (positionOrder[b.assignedPosition] ?? 5));
+  }, [season.playerStats, season.plPlayerStats, statsView]);
 
   const handleShare = useCallback(async () => {
     if (!shareRef.current || sharing) return;
@@ -565,9 +566,33 @@ export default function DraftResult({ players, onNewRun, onPlaySeason2, seasonNu
 
         {/* Player Stats */}
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
-            Squad Stats
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+              Squad Stats
+            </h3>
+            <div className="flex rounded-lg overflow-hidden border border-gray-700/50">
+              <button
+                onClick={() => setStatsView("pl")}
+                className={`text-[10px] font-bold px-2.5 py-1 transition ${
+                  statsView === "pl"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "text-gray-600 hover:text-gray-400"
+                }`}
+              >
+                PL
+              </button>
+              <button
+                onClick={() => setStatsView("all")}
+                className={`text-[10px] font-bold px-2.5 py-1 transition ${
+                  statsView === "all"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "text-gray-600 hover:text-gray-400"
+                }`}
+              >
+                ALL COMPS
+              </button>
+            </div>
+          </div>
           <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
             <span className="w-8"></span>
             <span className="flex-1 ml-2">Player</span>
