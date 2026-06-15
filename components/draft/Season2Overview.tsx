@@ -21,6 +21,7 @@ interface Props {
   season2Players: DraftPlayer[];
   onContinue: (trainingPlayerName: string) => void;
   seasonNumber?: number;
+  previousFinish?: number;
 }
 
 export default function Season2Overview({
@@ -29,6 +30,7 @@ export default function Season2Overview({
   season2Players,
   onContinue,
   seasonNumber = 2,
+  previousFinish,
 }: Props) {
   const [revealStep, setRevealStep] = useState(0);
   const [selectedTraining, setSelectedTraining] = useState<string | null>(null);
@@ -193,6 +195,19 @@ export default function Season2Overview({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* UCL Qualification Notice */}
+      {previousFinish !== undefined && previousFinish <= 5 && (
+        <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-4 mb-4 text-center animate-[fadeIn_0.5s_ease-in]">
+          <span className="text-lg">&#9917;</span>
+          <p className="text-sm text-blue-300 font-bold mt-1">
+            Champions League Qualified!
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Your team will compete in the UCL this season
+          </p>
         </div>
       )}
 

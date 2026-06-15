@@ -458,6 +458,7 @@ export default function DraftPage() {
           season2Players={nextSeasonPlayers}
           onContinue={handlePreSeasonContinue}
           seasonNumber={currentSeason}
+          previousFinish={previousResults.length > 0 ? previousResults[previousResults.length - 1].actualFinish : undefined}
         />
       )}
       {phase === "signing" && settings && (
