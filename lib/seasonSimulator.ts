@@ -182,7 +182,7 @@ function createRng(seed: number): () => number {
 
 // --- Default PL teams ---
 
-const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
+export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
   { name: 'Man City', strength: 85 },
   { name: 'Arsenal', strength: 85 },
   { name: 'Liverpool', strength: 83 },
@@ -1978,4 +1978,12 @@ export function calculateSeasonOdds(
     avgPoints: Math.round(totalPoints / simCount),
     avgFinish: Math.round((totalFinish / simCount) * 10) / 10,
   };
+}
+
+export function computeTeamStrength(players: DraftPlayer[]): { teamStrength: number; avgOvr: number } {
+  const starters = players.filter(p => !p.isSub);
+  const ratings = computePhaseRatings(starters.length > 0 ? starters : players);
+  const total = players.reduce((sum, p) => sum + (Number(p.overall) || 70), 0);
+  const avgOvr = Math.round(total / (players.length || 1));
+  return { teamStrength: Math.round(ratings.teamStrength * 10) / 10, avgOvr };
 }

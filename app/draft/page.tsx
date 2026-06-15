@@ -5,9 +5,12 @@ import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";
 import SquadManager from "@/components/draft/SquadManager";
+import MultiplayerLobby from "@/components/draft/MultiplayerLobby";
 import { createClient } from "@/lib/supabase/client";
 import { getPositionColor } from "@/components/draft/formations";
+import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
+import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
 
 export interface DraftSettings {
   formation: string;
@@ -32,7 +35,7 @@ export interface DraftPlayer {
   attrs?: PlayerAttributes;
 }
 
-type GamePhase = "setup" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
+type GamePhase = "setup" | "lobby" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
 
 const STORAGE_KEY = "pl-draft-progress";
 const MAX_SEASONS = 3;
@@ -179,12 +182,21 @@ export default function DraftPage() {
   const [ratingChanges, setRatingChanges] = useState<RatingChange[]>([]);
   const [nextUsedClubYears, setNextUsedClubYears] = useState<string[]>([]);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Multiplayer state
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [isHost, setIsHost] = useState(false);
+  const [squadSubmitted, setSquadSubmitted] = useState(false);
+  const [preComputedSeason, setPreComputedSeason] = useState<SeasonResult | null>(null);
+  const [roomPlayers, setRoomPlayers] = useState<RoomPlayer[] | null>(null);
 
   useEffect(() => {
     setResume(loadProgress());
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setIsSignedIn(!!user);
+      setUserId(user?.id ?? null);
     });
   }, []);
 
@@ -195,7 +207,65 @@ export default function DraftPage() {
     setResume(null);
     setSettings(s);
     setPlayers([]);
+    setRoomCode(null);
+    setIsHost(false);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
     setPhase("draft");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleCreateRoom = useCallback(async (s: DraftSettings) => {
+    clearProgress();
+    setResume(null);
+    const res = await fetch("/api/draft/rooms", { method: "POST" });
+    if (!res.ok) { alert("Failed to create room"); return; }
+    const { code } = await res.json();
+    setRoomCode(code);
+    setIsHost(true);
+    setSettings(s);
+    setPlayers([]);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
+    setPhase("lobby");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleJoinRoom = useCallback((code: string, s: DraftSettings) => {
+    clearProgress();
+    setResume(null);
+    setRoomCode(code);
+    setIsHost(false);
+    setSettings(s);
+    setPlayers([]);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
+    setPhase("lobby");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleStartFromLobby = useCallback(() => {
+    setPhase("draft");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[]) => {
+    setPreComputedSeason(myResult);
+    setRoomPlayers(allPlayers);
+    setPhase("result");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleLeaveRoom = useCallback(() => {
+    setRoomCode(null);
+    setIsHost(false);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
+    setPhase("setup");
     scrollTop();
   }, [scrollTop]);
 
@@ -233,11 +303,23 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop]);
 
-  const handleManageConfirm = useCallback((arranged: DraftPlayer[]) => {
+  const handleManageConfirm = useCallback(async (arranged: DraftPlayer[]) => {
     setPlayers(arranged);
-    setPhase("result");
+    if (roomCode) {
+      // Multiplayer: submit squad and go back to lobby
+      const { teamStrength, avgOvr } = computeTeamStrength(arranged);
+      await fetch(`/api/draft/rooms/${roomCode}/ready`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ squad: arranged, avg_ovr: avgOvr, team_strength: teamStrength }),
+      });
+      setSquadSubmitted(true);
+      setPhase("lobby");
+    } else {
+      setPhase("result");
+    }
     scrollTop();
-  }, [scrollTop]);
+  }, [roomCode, scrollTop]);
 
   const handleNewRun = useCallback(() => {
     clearProgress();
@@ -251,6 +333,11 @@ export default function DraftPage() {
     setDepartedPlayers([]);
     setRatingChanges([]);
     setNextUsedClubYears([]);
+    setRoomCode(null);
+    setIsHost(false);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
     scrollTop();
   }, [scrollTop]);
 
@@ -399,14 +486,29 @@ export default function DraftPage() {
               </div>
             </div>
           )}
-          <DraftSetup onStart={handleStartDraft} />
+          <DraftSetup
+            onStart={handleStartDraft}
+            onCreateRoom={isSignedIn ? handleCreateRoom : undefined}
+            onJoinRoom={isSignedIn ? handleJoinRoom : undefined}
+          />
         </>
+      )}
+      {phase === "lobby" && roomCode && userId && (
+        <MultiplayerLobby
+          roomCode={roomCode}
+          isHost={isHost}
+          userId={userId}
+          squadSubmitted={squadSubmitted}
+          onStartDraft={handleStartFromLobby}
+          onSimulationComplete={handleSimulationComplete}
+          onLeave={handleLeaveRoom}
+        />
       )}
       {phase === "draft" && settings && (
         <DraftPick
           settings={settings}
           onComplete={handleDraftComplete}
-          onBack={handleNewRun}
+          onBack={roomCode ? handleStartFromLobby : handleNewRun}
           initialPicked={resume?.players}
           initialUsedClubYears={resume?.usedClubYears}
           initialSlotAssignments={resume?.slotAssignments}
@@ -422,15 +524,18 @@ export default function DraftPage() {
           formationName={settings?.formation}
         />
       )}
-      {phase === "result" && players.length > 0 && (
+      {phase === "result" && (players.length > 0 || preComputedSeason !== null) && (
         <DraftResult
           players={players}
           onNewRun={handleNewRun}
-          onPlayNextSeason={currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
+          onPlayNextSeason={!roomCode && currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
           seasonNumber={currentSeason}
           previousResult={previousResults[previousResults.length - 1]}
           formationName={settings?.formation}
           isSignedIn={isSignedIn}
+          preComputedSeason={preComputedSeason ?? undefined}
+          roomPlayers={roomPlayers ?? undefined}
+          roomCode={roomCode ?? undefined}
         />
       )}
       {phase === "pre-season" && (

@@ -14,6 +14,9 @@ interface Props {
   previousResult?: SeasonResult;
   formationName?: string;
   isSignedIn?: boolean;
+  preComputedSeason?: SeasonResult;
+  roomPlayers?: import("@/components/draft/MultiplayerLobby").RoomPlayer[];
+  roomCode?: string;
 }
 
 interface PLRecord {
@@ -354,14 +357,15 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, formationName, isSignedIn = false }: Props) {
-  const season = useMemo(
-    () => simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable),
-    [players, seasonNumber, previousResult],
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode }: Props) {
+  const computedSeason = useMemo(
+    () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable),
+    [players, seasonNumber, previousResult, preComputedSeason],
   );
+  const season = computedSeason;
   const odds = useMemo(
-    () => calculateSeasonOdds(players, undefined, seasonNumber, 500),
-    [players, seasonNumber],
+    () => preComputedSeason ? null : calculateSeasonOdds(players, undefined, seasonNumber, 500),
+    [players, seasonNumber, preComputedSeason],
   );
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(false);
@@ -902,6 +906,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </div>
 
         {/* Pre-Season Odds */}
+        {odds && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm">&#128202;</span>
@@ -944,6 +949,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             <span className="font-bold text-white">{ordinal(Math.round(odds.avgFinish))}</span>
           </div>
         </div>
+        )}
 
         {/* Record */}
         <div className="grid grid-cols-3 gap-2 mb-3">
@@ -1771,6 +1777,67 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 season.actualFinish > previousResult.actualFinish ? "text-red-400" : "text-yellow-400"
               }`}>{ordinal(season.actualFinish)}</div>
               <div className="text-xs text-gray-600">{season.teamRecord.points} pts</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Room Standings */}
+      {roomCode && roomPlayers && roomPlayers.length > 1 && (
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm">&#127942;</span>
+            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+              Room Standings
+            </h3>
+            <span className="ml-auto text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              {roomCode}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[320px]">
+              <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 mb-1.5 px-1 uppercase">
+                <span className="w-6 text-center">#</span>
+                <span className="flex-1 ml-1.5">Player</span>
+                <span className="w-8 text-center">Pts</span>
+                <span className="w-8 text-center">W</span>
+                <span className="w-8 text-center">D</span>
+                <span className="w-8 text-center">L</span>
+                <span className="w-10 text-right">GD</span>
+              </div>
+              <div className="space-y-0.5">
+                {[...roomPlayers]
+                  .filter(p => p.actual_finish !== null && p.season_result !== null)
+                  .sort((a, b) => (a.actual_finish ?? 99) - (b.actual_finish ?? 99))
+                  .map((rp, i) => {
+                    const record = rp.season_result?.teamRecord;
+                    const gd = record ? record.goalsFor - record.goalsAgainst : 0;
+                    const isWinner = i === 0;
+                    return (
+                      <div
+                        key={rp.user_id}
+                        className={`flex items-center text-sm py-1.5 px-1 rounded transition ${
+                          isWinner ? "bg-yellow-900/20 border border-yellow-700/30" : "hover:bg-gray-800/40"
+                        }`}
+                      >
+                        <span className={`w-6 text-center text-xs font-black ${isWinner ? "text-yellow-400" : "text-gray-600"}`}>
+                          {i + 1}
+                        </span>
+                        <span className="flex-1 ml-1.5 font-bold truncate">
+                          {rp.display_name}
+                          {isWinner && <span className="ml-1 text-yellow-400">&#9733;</span>}
+                        </span>
+                        <span className="w-8 text-center font-black text-white">{record?.points ?? "-"}</span>
+                        <span className="w-8 text-center text-xs text-emerald-400 font-bold">{record?.wins ?? "-"}</span>
+                        <span className="w-8 text-center text-xs text-yellow-400 font-bold">{record?.draws ?? "-"}</span>
+                        <span className="w-8 text-center text-xs text-red-400 font-bold">{record?.losses ?? "-"}</span>
+                        <span className={`w-10 text-right text-xs font-bold ${gd > 0 ? "text-emerald-400" : gd < 0 ? "text-red-400" : "text-gray-500"}`}>
+                          {gd > 0 ? "+" : ""}{gd}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           </div>
         </div>
