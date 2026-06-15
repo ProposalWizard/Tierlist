@@ -280,9 +280,9 @@ export default function DraftSetup({ onStart }: Props) {
         </p>
         <Link
           href="/draft/history"
-          className="block text-center text-gray-600 hover:text-gray-300 text-xs mt-3 transition"
+          className="block w-full mt-4 py-3 text-center text-sm font-bold text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
-          View Draft History &rarr;
+          View Draft History &amp; Achievements &rarr;
         </Link>
       </div>
     </div>

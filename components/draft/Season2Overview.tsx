@@ -211,6 +211,19 @@ export default function Season2Overview({
         </div>
       )}
 
+      {/* UEL Qualification Notice */}
+      {previousFinish !== undefined && (previousFinish === 6 || previousFinish === 7) && (
+        <div className="bg-orange-900/20 border border-orange-700/30 rounded-xl p-4 mb-4 text-center animate-[fadeIn_0.5s_ease-in]">
+          <span className="text-lg">&#9917;</span>
+          <p className="text-sm text-orange-300 font-bold mt-1">
+            Europa League Qualified!
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Your team will compete in the UEL this season
+          </p>
+        </div>
+      )}
+
       {/* Info about replacements */}
       <div className="bg-amber-900/10 border border-amber-700/30 rounded-xl p-4 mb-6 text-center">
         <p className="text-sm text-amber-300 font-medium">
