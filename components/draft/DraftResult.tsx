@@ -198,7 +198,7 @@ function RecordsSection({ season, previousResult }: { season: SeasonResult; prev
   );
 }
 
-// --- Combined schedule for match reveal (interleaves PL + UCL) ---
+// --- Combined schedule for match reveal (interleaves PL + UCL/UEL) ---
 
 type RevealEvent = {
   kind: 'pl';
@@ -217,17 +217,19 @@ type RevealEvent = {
 
 function buildSchedule(season: SeasonResult): RevealEvent[] {
   const events: RevealEvent[] = [];
-  const ucl = season.ucl;
+  const euroComp = season.ucl?.qualified ? season.ucl : season.uel?.qualified ? season.uel : null;
+  const isUCL = !!season.ucl?.qualified;
+  const compPrefix = isUCL ? 'UCL' : 'UEL';
 
-  if (!ucl?.qualified) {
+  if (!euroComp?.qualified) {
     return season.matches.map((m, i) => ({ kind: 'pl' as const, match: m, week: i + 1 }));
   }
 
-  // Build UCL events in chronological order
-  const uclEvents: RevealEvent[] = [];
+  // Build European competition events in chronological order
+  const euroEvents: RevealEvent[] = [];
 
-  for (let i = 0; i < ucl.leagueMatches.length; i++) {
-    uclEvents.push({ kind: 'ucl', match: ucl.leagueMatches[i], label: `UCL MD${i + 1}` });
+  for (let i = 0; i < euroComp.leagueMatches.length; i++) {
+    euroEvents.push({ kind: 'ucl', match: euroComp.leagueMatches[i], label: `${compPrefix} MD${i + 1}` });
   }
 
   const ordSuffix = (n: number) => {
@@ -236,33 +238,33 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
     return (s[(v - 20) % 10] || s[v] || s[0]);
   };
 
-  uclEvents.push({
+  euroEvents.push({
     kind: 'ucl-status',
-    text: `League Phase: ${ucl.leaguePosition}${ordSuffix(ucl.leaguePosition)}`,
-    subtext: ucl.leaguePosition <= 8
+    text: `League Phase: ${euroComp.leaguePosition}${ordSuffix(euroComp.leaguePosition)}`,
+    subtext: euroComp.leaguePosition <= 8
       ? 'Through to Round of 16'
-      : ucl.leaguePosition <= 24
+      : euroComp.leaguePosition <= 24
         ? 'Playoff Round next'
-        : 'Eliminated from UCL',
-    positive: ucl.leaguePosition <= 24,
+        : `Eliminated from ${compPrefix}`,
+    positive: euroComp.leaguePosition <= 24,
   });
 
-  for (const tie of ucl.knockoutTies) {
+  for (const tie of euroComp.knockoutTies) {
     if (tie.leg2) {
-      uclEvents.push({ kind: 'ucl', match: tie.leg1, label: `${tie.round} — L1` });
+      euroEvents.push({ kind: 'ucl', match: tie.leg1, label: `${tie.round} — L1` });
       const aggF = tie.leg1.goalsFor + tie.leg2.goalsFor;
       const aggA = tie.leg1.goalsAgainst + tie.leg2.goalsAgainst;
-      uclEvents.push({
+      euroEvents.push({
         kind: 'ucl',
         match: tie.leg2,
         label: `${tie.round} — L2 (${aggF}-${aggA} agg)`,
       });
     } else {
-      uclEvents.push({ kind: 'ucl', match: tie.leg1, label: `UCL FINAL` });
+      euroEvents.push({ kind: 'ucl', match: tie.leg1, label: `${compPrefix} FINAL` });
     }
   }
 
-  // Slots: after which PL week each UCL event is inserted
+  // Slots: after which PL week each European event is inserted
   const slots: number[] = [];
   // 8 league matchdays + 1 league result = 9 events
   const leagueWeeks = [5, 7, 9, 11, 13, 15, 22, 23];
@@ -270,14 +272,14 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
   slots.push(23); // league result after MD8
 
   // Knockout slots
-  if (ucl.leaguePosition <= 24) {
-    const needsR32 = ucl.leaguePosition >= 9;
+  if (euroComp.leaguePosition <= 24) {
+    const needsR32 = euroComp.leaguePosition >= 9;
     const allKoSlotGroups = needsR32
       ? [[25, 26], [28, 29], [31, 32], [34, 35], [38]]
       : [[28, 29], [31, 32], [34, 35], [38]];
 
     let groupIdx = 0;
-    for (const tie of ucl.knockoutTies) {
+    for (const tie of euroComp.knockoutTies) {
       if (groupIdx >= allKoSlotGroups.length) break;
       const group = allKoSlotGroups[groupIdx];
       slots.push(group[0]);
@@ -287,8 +289,8 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
   }
 
   // Build combined schedule
-  let uclIdx = 0;
-  // Build a map: after PL week X → how many UCL events
+  let euroIdx = 0;
+  // Build a map: after PL week X → how many European events
   const insertMap = new Map<number, number>();
   for (const w of slots) {
     insertMap.set(w, (insertMap.get(w) || 0) + 1);
@@ -298,8 +300,8 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
     const week = i + 1;
     events.push({ kind: 'pl', match: season.matches[i], week });
     const count = insertMap.get(week) || 0;
-    for (let j = 0; j < count && uclIdx < uclEvents.length; j++) {
-      events.push(uclEvents[uclIdx++]);
+    for (let j = 0; j < count && euroIdx < euroEvents.length; j++) {
+      events.push(euroEvents[euroIdx++]);
     }
   }
 
@@ -319,6 +321,15 @@ export interface DraftRunRecord {
   goalsScored: number;
   avgOvr: number;
   players: { name: string; assignedPosition: string; overall: number; clubYear: string }[];
+  topScorerGoals?: number;
+  topAssists?: number;
+  cleanSheets?: number;
+  goalDifference?: number;
+  longestWinStreak?: number;
+  longestUnbeatenRun?: number;
+  faCupWinner?: boolean;
+  uclWinner?: boolean;
+  uelWinner?: boolean;
 }
 
 async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
@@ -351,6 +362,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(false);
   const [showUCLTable, setShowUCLTable] = useState(false);
+  const [showUELTable, setShowUELTable] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [statsView, setStatsView] = useState<"pl" | "all">("all");
@@ -387,6 +399,18 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     if (seasonComplete && !historySaved.current) {
       historySaved.current = true;
       const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
+      const plPlayerGoals: Record<string, number> = {};
+      const plPlayerAssists: Record<string, number> = {};
+      for (const m of season.matches) {
+        for (const gs of m.goalScorers) {
+          plPlayerGoals[gs.player] = (plPlayerGoals[gs.player] || 0) + 1;
+        }
+        for (const ap of m.assistProviders) {
+          plPlayerAssists[ap.player] = (plPlayerAssists[ap.player] || 0) + 1;
+        }
+      }
+      const topScorerGoals = Object.values(plPlayerGoals).length > 0 ? Math.max(...Object.values(plPlayerGoals)) : 0;
+      const topAssists = Object.values(plPlayerAssists).length > 0 ? Math.max(...Object.values(plPlayerAssists)) : 0;
       saveRunToHistory({
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         date: new Date().toISOString(),
@@ -400,6 +424,15 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         goalsScored: season.teamRecord.goalsFor,
         avgOvr,
         players: players.map(p => ({ name: p.name, assignedPosition: p.assignedPosition, overall: p.overall, clubYear: p.clubYear })),
+        topScorerGoals,
+        topAssists,
+        cleanSheets: season.awards.goldenGlove.cleanSheets,
+        goalDifference: season.teamRecord.goalsFor - season.teamRecord.goalsAgainst,
+        longestWinStreak: season.longestWinStreak,
+        longestUnbeatenRun: season.longestUnbeatenRun,
+        faCupWinner: season.faCup.winner,
+        uclWinner: season.ucl?.winner || false,
+        uelWinner: season.uel?.winner || false,
       }, isSignedIn);
     }
   }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
@@ -417,12 +450,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
   const titleMessage = () => {
     const wonUCL = season.ucl?.winner;
+    const wonUEL = season.uel?.winner;
     if (season.actualFinish === 1 && wonUCL)
       return { title: "THE TREBLE?!", sub: "League champions AND European champions.", color: "text-yellow-400" };
-    if (season.actualFinish === 1)
-      return { title: "CHAMPIONS", sub: "TITLE WON. JOB DONE.", color: "text-emerald-400" };
     if (wonUCL)
       return { title: "EUROPEAN CHAMPIONS", sub: `Champions League winners. Finished ${ordinal(season.actualFinish)} in the league.`, color: "text-blue-400" };
+    if (season.actualFinish === 1 && wonUEL)
+      return { title: "THE DOUBLE", sub: "League champions AND Europa League winners.", color: "text-yellow-400" };
+    if (season.actualFinish === 1)
+      return { title: "CHAMPIONS", sub: "TITLE WON. JOB DONE.", color: "text-emerald-400" };
+    if (wonUEL)
+      return { title: "EUROPA CHAMPIONS", sub: `Europa League winners. Finished ${ordinal(season.actualFinish)} in the league.`, color: "text-orange-400" };
     if (season.actualFinish <= 5)
       return { title: `TOP ${season.actualFinish}`, sub: "Champions League secured.", color: "text-blue-400" };
     if (season.actualFinish <= 6)
@@ -518,6 +556,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     const runGA = revealedPL.reduce((s, e) => s + e.match.goalsAgainst, 0);
     const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
     const hasUCL = season.ucl?.qualified;
+    const hasUEL = season.uel?.qualified;
+    const hasEuro = hasUCL || hasUEL;
 
     const recentEvents = revealedEvents.slice(-6);
 
@@ -549,8 +589,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         {/* Matchweek header */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
-            {hasUCL ? `GW ${plWeek}/38` : `Matchweek ${plWeek} / 38`}
+            {hasEuro ? `GW ${plWeek}/38` : `Matchweek ${plWeek} / 38`}
             {hasUCL && <span className="text-blue-400 ml-2">+ UCL</span>}
+            {hasUEL && !hasUCL && <span className="text-orange-400 ml-2">+ UEL</span>}
           </span>
           <button
             onClick={handleSkip}
@@ -574,6 +615,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             const isLatest = i === recentEvents.length - 1;
 
             if (event.kind === 'ucl-status') {
+              const isUELStatus = hasUEL && !hasUCL;
               return (
                 <div
                   key={`status-${i}`}
@@ -581,13 +623,13 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                     isLatest ? "scale-[1.01]" : "opacity-70"
                   } ${
                     event.positive
-                      ? "bg-blue-900/30 border-blue-700/40"
+                      ? isUELStatus ? "bg-orange-900/30 border-orange-700/40" : "bg-blue-900/30 border-blue-700/40"
                       : "bg-red-900/20 border-red-700/30"
                   }`}
                 >
                   <span className="text-sm">&#9917;</span>
                   <div className="flex-1 min-w-0">
-                    <div className={`font-bold text-sm ${event.positive ? "text-blue-300" : "text-red-400"}`}>
+                    <div className={`font-bold text-sm ${event.positive ? (isUELStatus ? "text-orange-300" : "text-blue-300") : "text-red-400"}`}>
                       {event.text}
                     </div>
                     <div className="text-[10px] text-gray-500">{event.subtext}</div>
@@ -596,7 +638,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               );
             }
 
-            const isUCL = event.kind === 'ucl';
+            const isEuroEvent = event.kind === 'ucl';
+            const isUELEvent = isEuroEvent && event.label.startsWith('UEL');
             const match = event.kind === 'pl' ? event.match : event.match;
             const label = event.kind === 'pl' ? `GW${event.week}` : event.label;
 
@@ -608,8 +651,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                     ? "bg-gray-800/80 border-gray-700/50 scale-[1.01]"
                     : "bg-gray-900/60 border-gray-800/30 opacity-70"
                 } ${
-                  isUCL
-                    ? "border-l-2 border-l-blue-500"
+                  isEuroEvent
+                    ? isUELEvent ? "border-l-2 border-l-orange-500" : "border-l-2 border-l-blue-500"
                     : match.result === "W"
                       ? "border-l-2 border-l-emerald-500"
                       : match.result === "D"
@@ -617,7 +660,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                         : "border-l-2 border-l-red-500"
                 }`}
               >
-                <span className={`text-[10px] font-bold w-12 sm:w-14 shrink-0 truncate ${isUCL ? "text-blue-400" : "text-gray-600"}`}>
+                <span className={`text-[10px] font-bold w-12 sm:w-14 shrink-0 truncate ${isEuroEvent ? (isUELEvent ? "text-orange-400" : "text-blue-400") : "text-gray-600"}`}>
                   {label}
                 </span>
                 <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black shrink-0 ${
@@ -708,43 +751,56 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     <div className="max-w-2xl mx-auto p-4 pb-20">
       {/* Shareable area */}
       <div ref={shareRef} className="bg-gray-950 pb-4">
-        {/* Champion / UCL Winner / Relegated Banner */}
-        {(season.actualFinish === 1 || season.actualFinish >= 18 || season.ucl?.winner) && (
+        {/* Champion / UCL Winner / UEL Winner / Relegated Banner */}
+        {(season.actualFinish === 1 || season.actualFinish >= 18 || season.ucl?.winner || season.uel?.winner) && (
           <div className={`relative overflow-hidden rounded-xl mb-6 py-8 px-4 text-center ${
             season.ucl?.winner && season.actualFinish === 1
               ? "bg-gradient-to-r from-yellow-900/40 via-blue-600/20 to-yellow-900/40 border border-yellow-600/40"
               : season.ucl?.winner
                 ? "bg-gradient-to-r from-blue-900/40 via-blue-600/20 to-blue-900/40 border border-blue-600/40"
-                : season.actualFinish === 1
-                  ? "bg-gradient-to-r from-yellow-900/40 via-yellow-600/20 to-yellow-900/40 border border-yellow-600/40"
-                  : "bg-gradient-to-r from-red-900/40 via-red-600/20 to-red-900/40 border border-red-600/40"
+                : season.uel?.winner && season.actualFinish === 1
+                  ? "bg-gradient-to-r from-yellow-900/40 via-orange-600/20 to-yellow-900/40 border border-yellow-600/40"
+                  : season.uel?.winner
+                    ? "bg-gradient-to-r from-orange-900/40 via-orange-600/20 to-orange-900/40 border border-orange-600/40"
+                    : season.actualFinish === 1
+                      ? "bg-gradient-to-r from-yellow-900/40 via-yellow-600/20 to-yellow-900/40 border border-yellow-600/40"
+                      : "bg-gradient-to-r from-red-900/40 via-red-600/20 to-red-900/40 border border-red-600/40"
           }`}>
             <div className={`absolute inset-0 ${
               season.ucl?.winner
                 ? "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent"
-                : season.actualFinish === 1
-                  ? "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-500/10 via-transparent to-transparent"
-                  : "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent"
+                : season.uel?.winner
+                  ? "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange-500/10 via-transparent to-transparent"
+                  : season.actualFinish === 1
+                    ? "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-500/10 via-transparent to-transparent"
+                    : "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent"
             }`} />
             <div className="relative">
-              {(season.actualFinish === 1 || season.ucl?.winner) && (
+              {(season.actualFinish === 1 || season.ucl?.winner || season.uel?.winner) && (
                 <div className="text-3xl mb-2">&#9733;</div>
               )}
               <h1 className={`text-4xl font-black tracking-tighter ${
                 season.ucl?.winner && season.actualFinish === 1 ? "text-yellow-400" :
                 season.ucl?.winner ? "text-blue-300" :
+                season.uel?.winner && season.actualFinish === 1 ? "text-yellow-400" :
+                season.uel?.winner ? "text-orange-300" :
                 season.actualFinish === 1 ? "text-yellow-400" : "text-red-400"
               }`}>
                 {season.ucl?.winner && season.actualFinish === 1 ? "THE DOUBLE" :
                  season.ucl?.winner ? "EUROPEAN CHAMPIONS" :
+                 season.uel?.winner && season.actualFinish === 1 ? "THE DOUBLE" :
+                 season.uel?.winner ? "EUROPA CHAMPIONS" :
                  season.actualFinish === 1 ? "CHAMPIONS" : "RELEGATED"}
               </h1>
               <p className={`text-sm font-medium mt-1 ${
                 season.ucl?.winner ? "text-blue-400/70" :
+                season.uel?.winner ? "text-orange-400/70" :
                 season.actualFinish === 1 ? "text-yellow-500/70" : "text-red-500/70"
               }`}>
                 {season.ucl?.winner && season.actualFinish === 1 ? "Premier League + Champions League" :
                  season.ucl?.winner ? "Champions League Winners" :
+                 season.uel?.winner && season.actualFinish === 1 ? "Premier League + Europa League" :
+                 season.uel?.winner ? "Europa League Winners" :
                  season.actualFinish === 1 ? "Premier League Title Winners" : "Dropped to the Championship"}
               </p>
             </div>
@@ -778,7 +834,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </div>
 
         {/* Title message (only when no big banner) */}
-        {season.actualFinish > 1 && season.actualFinish < 18 && !season.ucl?.winner && (
+        {season.actualFinish > 1 && season.actualFinish < 18 && !season.ucl?.winner && !season.uel?.winner && (
           <div className="bg-gray-900 rounded-xl p-4 mb-6 text-center border border-gray-800/50">
             <h2 className={`text-xl font-black ${msg.color}`}>{msg.title}</h2>
             <p className="text-gray-500 text-sm">{msg.sub}</p>
@@ -1102,6 +1158,204 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                         }`}>
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-[10px] font-bold text-blue-400 uppercase">{tie.round}</span>
+                            <span className={`text-[10px] font-bold ${tie.result === 'W' ? "text-emerald-400" : "text-red-400"}`}>
+                              {tie.result === 'W' ? (isFinal ? 'WINNER' : 'ADVANCE') : 'ELIMINATED'}
+                            </span>
+                          </div>
+                          <div className="text-sm font-bold text-white mb-1">vs {tie.opponent}</div>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+                            <span>
+                              L1: {tie.leg1.goalsFor}-{tie.leg1.goalsAgainst} ({tie.leg1.isHome ? "H" : "A"})
+                            </span>
+                            {tie.leg2 && (
+                              <>
+                                <span>
+                                  L2: {tie.leg2.goalsFor}-{tie.leg2.goalsAgainst} ({tie.leg2.isHome ? "H" : "A"})
+                                </span>
+                                <span className="font-bold text-white">Agg: {aggFor}-{aggAgainst}</span>
+                              </>
+                            )}
+                            {isFinal && (
+                              <span>{tie.leg1.goalsFor}-{tie.leg1.goalsAgainst}</span>
+                            )}
+                            {(tie.leg2?.extraTime || tie.leg1.extraTime) && (
+                              <span className="text-yellow-400/70 font-bold">AET</span>
+                            )}
+                            {(tie.leg2?.penalties || tie.leg1.penalties) && (
+                              <span className="text-purple-400/70 font-bold">
+                                PEN {(tie.leg2 || tie.leg1).penaltyScore?.player}-{(tie.leg2 || tie.leg1).penaltyScore?.opponent}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Europa League */}
+        {season.uel?.qualified && (() => {
+          const uel = season.uel!;
+          const uelW = uel.leagueMatches.filter(m => m.result === 'W').length;
+          const uelD = uel.leagueMatches.filter(m => m.result === 'D').length;
+          const uelL = uel.leagueMatches.filter(m => m.result === 'L').length;
+          const uelPts = uelW * 3 + uelD;
+          const uelGF = uel.leagueMatches.reduce((s, m) => s + m.goalsFor, 0);
+          const uelGA = uel.leagueMatches.reduce((s, m) => s + m.goalsAgainst, 0);
+
+          const exitLabel = uel.winner ? 'WINNER' : uel.exitStage ? `Out: ${uel.exitStage}` : '';
+
+          return (
+            <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">&#9917;</span>
+                <h3 className="text-[10px] font-bold tracking-widest text-orange-400 uppercase">Europa League</h3>
+                <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded ${
+                  uel.winner
+                    ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                    : uel.exitStage === 'Final'
+                      ? "bg-gray-500/20 text-gray-300 border border-gray-500/30"
+                      : "bg-red-500/10 text-red-400 border border-red-500/20"
+                }`}>
+                  {exitLabel}
+                </span>
+              </div>
+
+              {/* UEL Winner Banner */}
+              {uel.winner && (
+                <div className="bg-gradient-to-r from-orange-900/40 via-orange-600/20 to-orange-900/40 border border-orange-600/40 rounded-lg py-3 px-4 text-center mb-3">
+                  <div className="text-xl font-black text-orange-300">EUROPA LEAGUE WINNERS</div>
+                </div>
+              )}
+
+              {/* League Phase Summary */}
+              <div className="mb-3">
+                <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">League Phase</div>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm">
+                  <span className="font-bold text-orange-300">{ordinal(uel.leaguePosition)}</span>
+                  <span className="text-gray-600 hidden sm:inline">|</span>
+                  <span className="text-gray-400">{uelW}W {uelD}D {uelL}L</span>
+                  <span className="text-gray-600 hidden sm:inline">|</span>
+                  <span className="font-bold text-white">{uelPts} pts</span>
+                  <span className="text-gray-600 hidden sm:inline">|</span>
+                  <span className="text-xs text-gray-500">{uelGF}GF {uelGA}GA</span>
+                </div>
+              </div>
+
+              {/* League Phase Matches */}
+              <div className="space-y-1 mb-3">
+                {uel.leagueMatches.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg ${
+                      m.result === "W" ? "bg-emerald-900/20" : m.result === "D" ? "bg-yellow-900/10" : "bg-red-900/20"
+                    }`}
+                  >
+                    <span className="text-[10px] font-bold text-orange-400 w-10 shrink-0">MD{i + 1}</span>
+                    <span className="flex-1 font-medium truncate">
+                      {m.opponent}
+                      <span className="text-gray-600 text-[10px] ml-1">({m.isHome ? "H" : "A"})</span>
+                    </span>
+                    <span className={`font-black tabular-nums ${m.result === "W" ? "text-emerald-400" : m.result === "D" ? "text-yellow-400" : "text-red-400"}`}>
+                      {m.goalsFor}-{m.goalsAgainst}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* UEL League Table Toggle */}
+              <button
+                onClick={() => setShowUELTable(!showUELTable)}
+                className="w-full bg-gray-800/50 rounded-lg p-2.5 mb-3 flex items-center justify-between hover:bg-gray-800/80 transition"
+              >
+                <span className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">League Table</span>
+                <svg className={`w-3 h-3 text-gray-500 transition-transform duration-200 ${showUELTable ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+
+              {showUELTable && (
+                <div className="overflow-x-auto mb-3">
+                  <div className="min-w-[340px]">
+                  <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 mb-1 px-1 uppercase">
+                    <span className="w-5 text-center">#</span>
+                    <span className="flex-1 ml-1.5">Club</span>
+                    <span className="w-6 text-center hidden sm:inline">P</span>
+                    <span className="w-6 text-center">W</span>
+                    <span className="w-6 text-center">D</span>
+                    <span className="w-6 text-center">L</span>
+                    <span className="w-8 text-right">GD</span>
+                    <span className="w-8 text-right">PTS</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {uel.leagueTable.slice(0, 36).map((team, i) => {
+                      const pos = i + 1;
+                      const isTop8 = pos <= 8;
+                      const isPlayoff = pos >= 9 && pos <= 24;
+                      return (
+                        <div
+                          key={team.name}
+                          className={`flex items-center text-xs py-1 px-1 rounded transition ${
+                            team.isPlayer
+                              ? "bg-orange-900/30 border border-orange-700/30 font-bold"
+                              : isTop8
+                                ? "border-l-2 border-l-orange-500"
+                                : isPlayoff
+                                  ? "border-l-2 border-l-amber-500/50"
+                                  : pos > 24
+                                    ? "border-l-2 border-l-red-500/50 opacity-60"
+                                    : ""
+                          }`}
+                        >
+                          <span className={`w-5 text-center text-[10px] font-bold ${
+                            isTop8 ? "text-orange-400" : isPlayoff ? "text-amber-400/70" : "text-gray-600"
+                          }`}>{pos}</span>
+                          <span className={`flex-1 ml-1.5 truncate ${team.isPlayer ? "text-orange-300" : "text-gray-400"}`}>
+                            {team.isPlayer ? "Knowitball FC" : team.name}
+                          </span>
+                          <span className="w-6 text-center text-gray-600 hidden sm:inline">{team.played}</span>
+                          <span className="w-6 text-center text-gray-600">{team.won}</span>
+                          <span className="w-6 text-center text-gray-600">{team.drawn}</span>
+                          <span className="w-6 text-center text-gray-600">{team.lost}</span>
+                          <span className={`w-8 text-right text-[10px] font-bold ${
+                            team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-gray-600"
+                          }`}>
+                            {team.goalDifference > 0 ? "+" : ""}{team.goalDifference}
+                          </span>
+                          <span className={`w-8 text-right font-black ${team.isPlayer ? "text-orange-300" : "text-white"}`}>
+                            {team.points}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-3 mt-2 text-[9px]">
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-orange-500" /><span className="text-gray-500">R16</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500/50" /><span className="text-gray-500">Playoff</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500/50" /><span className="text-gray-500">Eliminated</span></div>
+                  </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Knockout Results */}
+              {uel.knockoutTies.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">Knockout Stage</div>
+                  <div className="space-y-2">
+                    {uel.knockoutTies.map((tie, i) => {
+                      const isFinal = !tie.leg2;
+                      const aggFor = tie.leg1.goalsFor + (tie.leg2?.goalsFor || 0);
+                      const aggAgainst = tie.leg1.goalsAgainst + (tie.leg2?.goalsAgainst || 0);
+
+                      return (
+                        <div key={i} className={`rounded-lg border px-3 py-2 ${
+                          tie.result === 'W' ? "bg-emerald-900/15 border-emerald-700/30" : "bg-red-900/15 border-red-700/30"
+                        }`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-bold text-orange-400 uppercase">{tie.round}</span>
                             <span className={`text-[10px] font-bold ${tie.result === 'W' ? "text-emerald-400" : "text-red-400"}`}>
                               {tie.result === 'W' ? (isFinal ? 'WINNER' : 'ADVANCE') : 'ELIMINATED'}
                             </span>
