@@ -202,7 +202,7 @@ export default function Season2Overview({
           You need to sign <span className="font-black">2 replacement players</span> to fill your squad.
         </p>
         <p className="text-xs text-gray-500 mt-1">
-          New signings receive a random +1 to +3 boost on all attributes.
+          New signings receive a random +1 to +3 boost. You can also sell a player afterwards.
         </p>
       </div>
 
