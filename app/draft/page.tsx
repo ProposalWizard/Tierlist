@@ -5,6 +5,7 @@ import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";
 import SquadManager from "@/components/draft/SquadManager";
+import { createClient } from "@/lib/supabase/client";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 
 export interface DraftSettings {
@@ -106,9 +107,14 @@ export default function DraftPage() {
   const [departedPlayers, setDepartedPlayers] = useState<DepartedPlayer[]>([]);
   const [ratingChanges, setRatingChanges] = useState<RatingChange[]>([]);
   const [nextUsedClubYears, setNextUsedClubYears] = useState<string[]>([]);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
     setResume(loadProgress());
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsSignedIn(!!user);
+    });
   }, []);
 
   const handleStartDraft = useCallback((s: DraftSettings) => {
@@ -311,6 +317,8 @@ export default function DraftPage() {
           onPlayNextSeason={currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
           seasonNumber={currentSeason}
           previousResult={previousResults[previousResults.length - 1]}
+          formationName={settings?.formation}
+          isSignedIn={isSignedIn}
         />
       )}
       {phase === "pre-season" && (

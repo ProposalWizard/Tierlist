@@ -239,7 +239,7 @@ function playerContributions(p: DraftPlayer, fitness: number): { attack: number;
   const sho = statOr(a.shooting, o);
   const dri = statOr(a.dribbling, o);
 
-  const blend = (statAvg: number) => (statAvg * 0.35 + o * 0.65) * fitness;
+  const blend = (statAvg: number) => (statAvg * 0.3 + o * 0.7) * fitness;
 
   if (pos === 'GK') {
     return { attack: 0, defense: o * fitness };
@@ -520,12 +520,17 @@ function simulateMatch(
   const subAdjGoal = (p: DraftPlayer) => goalScoringWeight(p) * (p.isSub ? 0.35 : 1.0);
   const subAdjAssist = (p: DraftPlayer) => assistWeight(p) * (p.isSub ? 0.5 : 1.0);
 
+  // Penalty taker: best attacker available in this match
+  const penaltyTaker = [...players]
+    .sort((a, b) => goalScoringWeight(b) - goalScoringWeight(a))[0];
+
   for (let i = 0; i < goalsFor; i++) {
     const minute = randomMinute(rng);
-    const scorer = weightedPick(players, subAdjGoal, rng);
+    const isPenalty = rng() < 0.10;
+    const scorer = isPenalty ? penaltyTaker : weightedPick(players, subAdjGoal, rng);
     goalScorers.push({ player: scorer.name, minute });
 
-    if (rng() < 0.75) {
+    if (!isPenalty && rng() < 0.75) {
       const eligible = players.filter(p => p.name !== scorer.name);
       if (eligible.length > 0) {
         const assister = weightedPick(eligible, subAdjAssist, rng);
@@ -763,11 +768,15 @@ function simulateFaCup(
     const goalScorers: { player: string; minute: number }[] = [];
     const assistProviders: { player: string; minute: number }[] = [];
 
+    const cupPenaltyTaker = [...players]
+      .sort((a, b) => goalScoringWeight(b) - goalScoringWeight(a))[0];
+
     for (let i = 0; i < goalsFor; i++) {
       const minute = Math.floor(rng() * 90) + 1;
-      const scorer = weightedPick(players, goalScoringWeight, rng);
+      const isPenalty = rng() < 0.10;
+      const scorer = isPenalty ? cupPenaltyTaker : weightedPick(players, goalScoringWeight, rng);
       goalScorers.push({ player: scorer.name, minute });
-      if (rng() < 0.75) {
+      if (!isPenalty && rng() < 0.75) {
         const eligible = players.filter(p => p.name !== scorer.name);
         if (eligible.length > 0) {
           assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
@@ -786,9 +795,10 @@ function simulateFaCup(
 
       for (let i = 0; i < etFor; i++) {
         const minute = 90 + Math.floor(rng() * 30) + 1;
-        const scorer = weightedPick(players, goalScoringWeight, rng);
+        const isPenalty = rng() < 0.10;
+        const scorer = isPenalty ? cupPenaltyTaker : weightedPick(players, goalScoringWeight, rng);
         goalScorers.push({ player: scorer.name, minute });
-        if (rng() < 0.75) {
+        if (!isPenalty && rng() < 0.75) {
           const eligible = players.filter(p => p.name !== scorer.name);
           if (eligible.length > 0) {
             assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });

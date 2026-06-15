@@ -1,7 +1,8 @@
 "use client";
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason } from "@/lib/seasonSimulator";
 import type { SeasonResult } from "@/lib/seasonSimulator";
+import Link from "next/link";
 import { getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
 
@@ -11,6 +12,8 @@ interface Props {
   onPlayNextSeason?: (season: SeasonResult, players: DraftPlayer[]) => void;
   seasonNumber?: number;
   previousResult?: SeasonResult;
+  formationName?: string;
+  isSignedIn?: boolean;
 }
 
 interface PLRecord {
@@ -195,13 +198,100 @@ function RecordsSection({ season, previousResult }: { season: SeasonResult; prev
   );
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult }: Props) {
+export interface DraftRunRecord {
+  id: string;
+  date: string;
+  formation: string;
+  seasonNumber: number;
+  finish: number;
+  points: number;
+  record: { wins: number; draws: number; losses: number };
+  goalsFor: number;
+  goalsAgainst: number;
+  goalsScored: number;
+  avgOvr: number;
+  players: { name: string; assignedPosition: string; overall: number; clubYear: string }[];
+}
+
+async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
+  if (!isSignedIn) return;
+  try {
+    await fetch("/api/draft/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(run),
+    });
+  } catch {}
+}
+
+export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
+  try {
+    const res = await fetch("/api/draft/history");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.runs || [];
+  } catch {
+    return [];
+  }
+}
+
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, formationName, isSignedIn = false }: Props) {
   const season = useMemo(() => simulateSeason(players, undefined, seasonNumber), [players, seasonNumber]);
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [statsView, setStatsView] = useState<"pl" | "all">("all");
+
+  // Match-by-match reveal
+  const [revealedWeek, setRevealedWeek] = useState(0);
+  const [seasonComplete, setSeasonComplete] = useState(false);
+  const matchListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (seasonComplete) return;
+    if (revealedWeek < 38) {
+      const timer = setTimeout(() => setRevealedWeek(w => w + 1), 350);
+      return () => clearTimeout(timer);
+    }
+    if (revealedWeek >= 38) {
+      const timer = setTimeout(() => setSeasonComplete(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [revealedWeek, seasonComplete]);
+
+  useEffect(() => {
+    if (matchListRef.current) {
+      matchListRef.current.scrollTop = matchListRef.current.scrollHeight;
+    }
+  }, [revealedWeek]);
+
+  const historySaved = useRef(false);
+  useEffect(() => {
+    if (seasonComplete && !historySaved.current) {
+      historySaved.current = true;
+      const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
+      saveRunToHistory({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        date: new Date().toISOString(),
+        formation: formationName || "",
+        seasonNumber,
+        finish: season.actualFinish,
+        points: season.teamRecord.points,
+        record: { wins: season.teamRecord.wins, draws: season.teamRecord.draws, losses: season.teamRecord.losses },
+        goalsFor: season.teamRecord.goalsFor,
+        goalsAgainst: season.teamRecord.goalsAgainst,
+        goalsScored: season.teamRecord.goalsFor,
+        avgOvr,
+        players: players.map(p => ({ name: p.name, assignedPosition: p.assignedPosition, overall: p.overall, clubYear: p.clubYear })),
+      }, isSignedIn);
+    }
+  }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
+
+  const handleSkip = useCallback(() => {
+    setRevealedWeek(38);
+    setSeasonComplete(true);
+  }, []);
 
   const ordinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"];
@@ -294,6 +384,168 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     return weeks;
   }, [season.matches]);
 
+  // --- Match-by-match reveal phase ---
+  if (!seasonComplete) {
+    const revealedMatches = season.matches.slice(0, revealedWeek);
+    const runW = revealedMatches.filter(m => m.result === 'W').length;
+    const runD = revealedMatches.filter(m => m.result === 'D').length;
+    const runL = revealedMatches.filter(m => m.result === 'L').length;
+    const runPts = runW * 3 + runD;
+    const runGF = revealedMatches.reduce((s, m) => s + m.goalsFor, 0);
+    const runGA = revealedMatches.reduce((s, m) => s + m.goalsAgainst, 0);
+    const currentMatch = revealedWeek > 0 ? season.matches[revealedWeek - 1] : null;
+    const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
+
+    return (
+      <div className="max-w-2xl mx-auto p-4 pb-20">
+        {/* Squad header */}
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+            {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Your XI"}
+          </h3>
+          <div className="space-y-0.5">
+            {starterPlayers.map((p, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm py-1 px-1">
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
+                  {p.assignedPosition}
+                </span>
+                <span className="flex-1 ml-1 font-medium">{p.name}</span>
+                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
+            <span>Average OVR</span>
+            <span className="font-bold text-white">{avgOvr}</span>
+          </div>
+        </div>
+
+        {/* Matchweek header */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+            Matchweek {revealedWeek} / 38
+          </span>
+          <button
+            onClick={handleSkip}
+            className="text-xs font-bold text-gray-400 hover:text-white transition px-3 py-2 -mr-3 rounded-lg active:bg-gray-800"
+          >
+            Skip all &rarr;
+          </button>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full h-1 bg-gray-800 rounded-full mb-4 overflow-hidden">
+          <div
+            className="h-full bg-emerald-500 transition-all duration-300"
+            style={{ width: `${(revealedWeek / 38) * 100}%` }}
+          />
+        </div>
+
+        {/* Recent match results */}
+        <div ref={matchListRef} className="space-y-1 mb-4 max-h-[260px] overflow-y-auto scrollbar-hide">
+          {revealedMatches.slice(-5).map((match, i) => {
+            const weekNum = revealedWeek - (revealedMatches.slice(-5).length - 1 - i);
+            const isLatest = i === revealedMatches.slice(-5).length - 1;
+            return (
+              <div
+                key={weekNum}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-all duration-300 ${
+                  isLatest
+                    ? "bg-gray-800/80 border-gray-700/50 scale-[1.01]"
+                    : "bg-gray-900/60 border-gray-800/30 opacity-70"
+                } ${
+                  match.result === "W"
+                    ? "border-l-2 border-l-emerald-500"
+                    : match.result === "D"
+                      ? "border-l-2 border-l-yellow-500"
+                      : "border-l-2 border-l-red-500"
+                }`}
+              >
+                <span className="text-[10px] font-bold text-gray-600 w-8 shrink-0">GW{weekNum}</span>
+                <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black shrink-0 ${
+                  match.result === "W"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : match.result === "D"
+                      ? "bg-yellow-500/20 text-yellow-400"
+                      : "bg-red-500/20 text-red-400"
+                }`}>
+                  {match.result}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate">
+                    {match.opponent}
+                    <span className="text-gray-600 text-[10px] ml-1.5">
+                      ({match.isHome ? "H" : "A"})
+                    </span>
+                  </div>
+                  {match.goalScorers.length > 0 && (
+                    <div className="text-[10px] text-gray-500 truncate">
+                      &#9917; {match.goalScorers.map(g => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}
+                    </div>
+                  )}
+                </div>
+                <div className={`text-lg font-black tabular-nums ${
+                  match.result === "W" ? "text-emerald-400" :
+                  match.result === "D" ? "text-yellow-400" : "text-red-400"
+                }`}>
+                  {match.goalsFor}&ndash;{match.goalsAgainst}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Form guide (building up) */}
+        {revealedWeek > 0 && (
+          <div className="bg-gray-900 rounded-xl p-3 mb-3 border border-gray-800/50">
+            <div className="flex gap-[3px] flex-wrap">
+              {revealedMatches.map((m, i) => (
+                <div
+                  key={i}
+                  className={`w-5 h-5 rounded text-[9px] font-black flex items-center justify-center ${
+                    m.result === "W"
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : m.result === "D"
+                        ? "bg-yellow-500/20 text-yellow-400"
+                        : "bg-red-500/20 text-red-400"
+                  }`}
+                >
+                  {m.result}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Running stats */}
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+            <div className="text-2xl font-black text-emerald-400">{runW}</div>
+            <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase">Won</div>
+          </div>
+          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+            <div className="text-2xl font-black text-yellow-400">{runD}</div>
+            <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase">Drawn</div>
+          </div>
+          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+            <div className="text-2xl font-black text-red-400">{runL}</div>
+            <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase">Lost</div>
+          </div>
+          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+            <div className="text-2xl font-black text-white">{runPts}</div>
+            <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase">Pts</div>
+          </div>
+        </div>
+
+        <div className="text-center text-xs text-gray-600 mb-6">
+          GF {runGF} &middot; GA {runGA} &middot; GD {runGF - runGA >= 0 ? "+" : ""}{runGF - runGA}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Full results phase (after season complete) ---
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">
       {/* Shareable area */}
@@ -884,6 +1136,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           New Run
         </button>
       </div>
+
+      {/* History link */}
+      <Link
+        href="/draft/history"
+        className="block w-full mt-3 py-3 text-center text-sm font-bold text-gray-500 hover:text-white bg-gray-900 hover:bg-gray-800 border border-gray-800/50 rounded-xl transition"
+      >
+        View Draft History &rarr;
+      </Link>
     </div>
   );
 }

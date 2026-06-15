@@ -433,7 +433,7 @@ export default function DraftPick({
   const displayStats = (isClubFirst || isSubPick || isSeason2Draft) ? clubFirstStats : keyStats;
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4">
       {/* Header with progress */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
@@ -715,7 +715,7 @@ export default function DraftPick({
                 <button
                   onClick={handleSpin}
                   disabled={!availableClubs || clubsLoading}
-                  className="group relative px-16 py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-700 rounded-2xl text-xl font-extrabold transition-all duration-300 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-105 active:scale-95"
+                  className="group relative px-10 sm:px-16 py-4 sm:py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-700 rounded-2xl text-lg sm:text-xl font-extrabold transition-all duration-300 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-105 active:scale-95"
                 >
                   {availableClubs ? (
                     <span className="flex items-center gap-3">
@@ -759,10 +759,10 @@ export default function DraftPick({
                       key={i}
                       className="flex flex-col items-center justify-center h-24 shrink-0"
                     >
-                      <div className="text-2xl font-extrabold text-white tracking-tight">
+                      <div className="text-lg sm:text-2xl font-extrabold text-white tracking-tight max-w-[280px] truncate text-center">
                         {item.club}
                       </div>
-                      <div className="text-sm font-bold text-emerald-400">
+                      <div className="text-xs sm:text-sm font-bold text-emerald-400">
                         {item.year}
                       </div>
                     </div>
@@ -777,8 +777,8 @@ export default function DraftPick({
           {phase === "pick" && spinDisplay && (
             <div>
               <div className="text-center mb-5">
-                <div className="flex items-center justify-center gap-3 mb-2">
-                  <h2 className="text-2xl font-extrabold tracking-tight">{spinDisplay.club}</h2>
+                <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
+                  <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate">{spinDisplay.club}</h2>
                   <span className="px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 text-sm font-bold">
                     {spinDisplay.year >= 2024 ? "FC" : "FIFA"}{" "}
                     {String(spinDisplay.year % 100).padStart(2, "0")}
@@ -826,9 +826,9 @@ export default function DraftPick({
               )}
 
               {spinResult && <div className="max-h-[60vh] overflow-y-auto">
-                {/* Stat column headers */}
+                {/* Stat column headers — desktop only */}
                 {displayStats.length > 0 && (
-                  <div className="flex items-center gap-3 px-4 mb-1 sticky top-0 bg-gray-950 z-10 py-1">
+                  <div className="hidden sm:flex items-center gap-3 px-4 mb-1 sticky top-0 bg-gray-950 z-10 py-1">
                     <div className="w-9 shrink-0" />
                     <div className="w-10 shrink-0" />
                     <div className="flex-1 min-w-0" />
@@ -875,7 +875,7 @@ export default function DraftPick({
                       key={player.sofifa_id}
                       onClick={() => handlePickPlayer(player)}
                       disabled={alreadyPicked}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-all duration-150 group ${
+                      className={`w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-left transition-all duration-150 group ${
                         alreadyPicked
                           ? "opacity-20 cursor-not-allowed bg-gray-900/50"
                           : isClubFirst
@@ -890,12 +890,12 @@ export default function DraftPick({
                           src={player.image_url}
                           alt={player.name}
                           fallbackText=""
-                          className="w-9 h-9 rounded-full bg-gray-800 object-cover shrink-0"
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800 object-cover shrink-0"
                         />
                       ) : (
-                        <div className="w-9 h-9 rounded-full bg-gray-800 shrink-0" />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800 shrink-0" />
                       )}
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-sm shrink-0 ${
+                      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-extrabold text-xs sm:text-sm shrink-0 ${
                         player.overall >= 85
                           ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                           : player.overall >= 75
@@ -905,18 +905,30 @@ export default function DraftPick({
                         {player.overall}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold truncate group-hover:text-white transition-colors">
+                        <div className="font-semibold text-sm truncate group-hover:text-white transition-colors">
                           {player.name}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-[11px] sm:text-xs text-gray-500">
                           {player.nationality} &middot; Age {player.age}
                         </div>
+                        {hasStats && (
+                          <div className="flex gap-2 sm:hidden mt-0.5">
+                            {displayStats.slice(0, 3).map((ks) => {
+                              const val = ks.pick(player);
+                              return (
+                                <span key={ks.label} className={`text-[10px] font-bold tabular-nums ${statColor(val)}`}>
+                                  <span className="text-gray-600">{ks.label}</span> {val > 0 ? val : "-"}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-1 shrink-0">
                         {playerPositions.map((pos) => (
                           <span
                             key={pos}
-                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                            className={`text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded ${
                               isClubFirst || currentSlot?.compatiblePositions.includes(pos)
                                 ? getPositionColor(pos) + " text-white"
                                 : "bg-gray-800 text-gray-500"
@@ -927,7 +939,7 @@ export default function DraftPick({
                         ))}
                       </div>
                       {hasStats && (
-                        <div className="flex gap-0 shrink-0">
+                        <div className="hidden sm:flex gap-0 shrink-0">
                           {displayStats.map((ks) => {
                             const val = ks.pick(player);
                             return (
