@@ -295,7 +295,7 @@ function classifyPosition(pos: string): PositionRole {
   const p = pos.toUpperCase().trim();
   if (p === 'GK') return 'GK';
   if (['CB', 'RB', 'LB', 'RWB', 'LWB', 'SW'].includes(p)) return 'DEF';
-  if (['CDM', 'CM', 'CAM', 'RM', 'LM', 'DM', 'RAM', 'LAM'].includes(p)) return 'MID';
+  if (['CDM', 'CM', 'CAM', 'RM', 'LM', 'DM'].includes(p)) return 'MID';
   return 'ATT';
 }
 

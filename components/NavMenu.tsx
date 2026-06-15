@@ -101,13 +101,13 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
         {open && (
           <div
             className="absolute right-0 top-full z-50 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-800 bg-gray-950 shadow-xl md:hidden"
-            onClick={() => setOpen(false)}
           >
             <div className="flex flex-col py-2">
               {showTierlistLinks && (
                 <>
                   <Link
                     href="/find"
+                    onClick={() => setOpen(false)}
                     className="px-4 py-2.5 text-sm font-semibold text-gray-300 hover:bg-gray-900 hover:text-white"
                   >
                     Find a Tierlist
@@ -115,6 +115,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                   {isLoggedIn && (
                     <Link
                       href="/create"
+                      onClick={() => setOpen(false)}
                       className="px-4 py-2.5 text-sm font-semibold text-gray-300 hover:bg-gray-900 hover:text-white"
                     >
                       + Create Tierlist
@@ -127,6 +128,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                   {isAdmin && (
                     <Link
                       href="/admin"
+                      onClick={() => setOpen(false)}
                       className="px-4 py-2.5 text-sm font-semibold text-indigo-300 hover:bg-gray-900 hover:text-white"
                     >
                       Admin
@@ -134,6 +136,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                   )}
                   <Link
                     href="/profile"
+                    onClick={() => setOpen(false)}
                     className="px-4 py-2.5 text-sm font-semibold text-gray-300 hover:bg-gray-900 hover:text-white"
                   >
                     Profile
@@ -151,6 +154,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
               ) : (
                 <Link
                   href="/auth"
+                  onClick={() => setOpen(false)}
                   className="mx-3 my-2 rounded-lg bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-indigo-500"
                 >
                   Sign in

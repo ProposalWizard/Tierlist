@@ -1776,9 +1776,20 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </div>
       )}
 
+      {/* Relegated / Sacked message */}
+      {season.actualFinish >= 18 && onPlayNextSeason && (
+        <div className="bg-red-900/30 border border-red-700/40 rounded-xl p-5 mb-4 text-center">
+          <div className="text-3xl mb-2">&#128683;</div>
+          <h2 className="text-xl font-black text-red-400 mb-1">SACKED</h2>
+          <p className="text-sm text-gray-400">
+            You were sacked after getting relegated. Better luck next time.
+          </p>
+        </div>
+      )}
+
       {/* Actions */}
-      <div className={onPlayNextSeason ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
-        {onPlayNextSeason && (
+      <div className={onPlayNextSeason && season.actualFinish < 18 ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
+        {onPlayNextSeason && season.actualFinish < 18 && (
           <button
             onClick={() => onPlayNextSeason(season, players)}
             className="py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 rounded-xl font-bold transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
@@ -1807,10 +1818,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </button>
         <button
           onClick={onNewRun}
-          className="py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+          className="py-4 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 rounded-xl font-bold transition-all shadow-lg shadow-sky-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-          New Run
+          New Draft
         </button>
         </div>
       </div>
