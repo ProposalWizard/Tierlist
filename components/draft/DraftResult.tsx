@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
-import { simulateSeason } from "@/lib/seasonSimulator";
-import type { SeasonResult, UCLMatch, UCLResult } from "@/lib/seasonSimulator";
+import { simulateSeason, calculateSeasonOdds } from "@/lib/seasonSimulator";
+import type { SeasonResult, SeasonOdds, UCLMatch, UCLResult } from "@/lib/seasonSimulator";
 import Link from "next/link";
 import { getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
@@ -358,6 +358,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const season = useMemo(
     () => simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable),
     [players, seasonNumber, previousResult],
+  );
+  const odds = useMemo(
+    () => calculateSeasonOdds(players, undefined, seasonNumber, 500),
+    [players, seasonNumber],
   );
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(false);
@@ -894,6 +898,50 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             <span>MID {Math.round(season.phaseRatings.midfield)}</span>
             <span>DEF {Math.round(season.phaseRatings.defense)}</span>
             <span>GK {Math.round(season.phaseRatings.gk)}</span>
+          </div>
+        </div>
+
+        {/* Pre-Season Odds */}
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm">&#128202;</span>
+            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+              Pre-Season Odds
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+              <div className={`text-2xl font-black ${odds.winLeague >= 50 ? "text-yellow-400" : odds.winLeague >= 20 ? "text-emerald-400" : "text-gray-300"}`}>
+                {odds.winLeague}%
+              </div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Win League</div>
+            </div>
+            <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+              <div className={`text-2xl font-black ${odds.top4 >= 70 ? "text-blue-400" : odds.top4 >= 40 ? "text-emerald-400" : "text-gray-300"}`}>
+                {odds.top4}%
+              </div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 4</div>
+            </div>
+            <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+              <div className={`text-2xl font-black ${odds.top7 >= 80 ? "text-emerald-400" : odds.top7 >= 50 ? "text-emerald-400/70" : "text-gray-300"}`}>
+                {odds.top7}%
+              </div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 7</div>
+            </div>
+            <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+              <div className={`text-2xl font-black ${odds.relegation >= 30 ? "text-red-400" : odds.relegation >= 10 ? "text-orange-400" : "text-gray-300"}`}>
+                {odds.relegation}%
+              </div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Relegation</div>
+            </div>
+          </div>
+          <div className="mt-3 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
+            <span>Predicted Points</span>
+            <span className="font-bold text-white">{odds.avgPoints}</span>
+          </div>
+          <div className="mt-1 flex justify-between text-xs text-gray-500">
+            <span>Predicted Finish</span>
+            <span className="font-bold text-white">{ordinal(Math.round(odds.avgFinish))}</span>
           </div>
         </div>
 

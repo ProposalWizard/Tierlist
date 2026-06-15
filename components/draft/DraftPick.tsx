@@ -252,7 +252,7 @@ export default function DraftPick({
       setSpinDisplay(target);
       setPhase("pick");
       fetchRoster(target.club, target.year);
-    }, 3000);
+    }, 2200);
   }, [getRandomClubYear, generateSpinItems]);
 
   const handleRespin = useCallback(() => {
@@ -638,6 +638,27 @@ export default function DraftPick({
                   ))}
                 </>
               )}
+              {/* Existing subs from previous season — shown during Season 2 signing */}
+              {isSeason2Draft && existingSquad && existingSquad.filter(p => p.isSub).length > 0 && (
+                <>
+                  <div className="text-[10px] font-bold tracking-widest uppercase pt-2 text-purple-400">
+                    Existing Subs
+                  </div>
+                  {existingSquad.filter(p => p.isSub).map((p, i) => (
+                    <div
+                      key={`existing-sub-${i}`}
+                      className="flex items-center gap-2 text-sm bg-purple-900/10 border border-purple-800/30 rounded-lg px-3 py-1.5"
+                    >
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
+                        {p.assignedPosition}
+                      </span>
+                      <span className="flex-1 truncate font-medium text-gray-300">{p.name}</span>
+                      <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                      <span className="font-extrabold text-purple-400 text-sm">{p.overall}</span>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           )}
           {pickedPlayers.length > 0 && (
@@ -660,10 +681,22 @@ export default function DraftPick({
                   className="flex items-center gap-1.5 text-xs bg-purple-900/20 border border-purple-800/30 rounded-lg px-2 py-1 shrink-0"
                 >
                   <span className={`text-[9px] font-bold px-1 py-0.5 rounded bg-purple-700 text-white`}>
-                    SUB
+                    {isSeason2Draft ? p.assignedPosition : "SUB"}
                   </span>
                   <span className="font-medium">{p.name.split(" ").pop()}</span>
                   <span className="font-extrabold text-emerald-400">{p.overall}</span>
+                </div>
+              ))}
+              {isSeason2Draft && existingSquad?.filter(p => p.isSub).map((p, i) => (
+                <div
+                  key={`existing-sub-mobile-${i}`}
+                  className="flex items-center gap-1.5 text-xs bg-purple-900/10 border border-purple-800/20 rounded-lg px-2 py-1 shrink-0"
+                >
+                  <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
+                    {p.assignedPosition}
+                  </span>
+                  <span className="font-medium text-gray-400">{p.name.split(" ").pop()}</span>
+                  <span className="font-extrabold text-purple-400">{p.overall}</span>
                 </div>
               ))}
             </div>
@@ -750,7 +783,7 @@ export default function DraftPick({
                       ? `translateY(-${(spinItems.length - 1) * 96 - 12}px)`
                       : "translateY(12px)",
                     transition: spinAnimating
-                      ? "transform 2.8s cubic-bezier(0.15, 0.85, 0.25, 1)"
+                      ? "transform 2.0s cubic-bezier(0.15, 0.85, 0.25, 1)"
                       : "none",
                   }}
                 >

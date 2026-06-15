@@ -59,12 +59,12 @@ interface RatingChange {
 function applyStatChange(player: DraftPlayer, change: number): DraftPlayer {
   const newPlayer = {
     ...player,
-    overall: Math.max(1, Math.min(99, player.overall + change)),
+    overall: Math.max(1, Math.min(100, player.overall + change)),
   };
   if (newPlayer.attrs) {
     const attrs = { ...newPlayer.attrs };
     for (const key of Object.keys(attrs) as (keyof PlayerAttributes)[]) {
-      attrs[key] = Math.max(1, Math.min(99, (attrs[key] as number) + change));
+      attrs[key] = Math.max(1, Math.min(100, (attrs[key] as number) + change));
     }
     newPlayer.attrs = attrs;
   }
