@@ -251,7 +251,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   useEffect(() => {
     if (seasonComplete) return;
     if (revealedWeek < 38) {
-      const timer = setTimeout(() => setRevealedWeek(w => w + 1), 350);
+      const timer = setTimeout(() => setRevealedWeek(w => w + 1), 750);
       return () => clearTimeout(timer);
     }
     if (revealedWeek >= 38) {
