@@ -4,13 +4,27 @@ import Link from "next/link";
 import { loadDraftHistory } from "@/components/draft/DraftResult";
 import type { DraftRunRecord } from "@/components/draft/DraftResult";
 import { getPositionColor } from "@/components/draft/formations";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DraftHistoryPage() {
   const [history, setHistory] = useState<DraftRunRecord[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
-    setHistory(loadDraftHistory());
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsSignedIn(!!user);
+      if (user) {
+        loadDraftHistory().then((runs) => {
+          setHistory(runs);
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
+    });
   }, []);
 
   const ordinal = (n: number) => {
@@ -34,6 +48,44 @@ export default function DraftHistoryPage() {
 
     return { seasons, bestPoints, bestRecord, winRate, mostGoals, topOvr, titles };
   }, [history]);
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto p-4 pb-20">
+        <Link href="/draft" className="text-sm text-gray-500 hover:text-white transition mb-4 inline-block">
+          &larr; Back to Draft
+        </Link>
+        <h1 className="text-3xl font-black mb-2">Your Draft History</h1>
+        <div className="flex items-center gap-2 mt-8 justify-center">
+          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-gray-500 text-sm">Loading history...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="max-w-2xl mx-auto p-4 pb-20">
+        <Link href="/draft" className="text-sm text-gray-500 hover:text-white transition mb-4 inline-block">
+          &larr; Back to Draft
+        </Link>
+        <h1 className="text-3xl font-black mb-2">Your Draft History</h1>
+        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800/50 text-center mt-4">
+          <div className="text-3xl mb-3">&#128274;</div>
+          <p className="text-gray-400 text-sm mb-4">
+            Sign in to save and view your draft history.
+          </p>
+          <Link
+            href="/auth?next=/draft/history"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (history.length === 0) {
     return (

@@ -13,6 +13,7 @@ interface Props {
   seasonNumber?: number;
   previousResult?: SeasonResult;
   formationName?: string;
+  isSignedIn?: boolean;
 }
 
 interface PLRecord {
@@ -197,8 +198,6 @@ function RecordsSection({ season, previousResult }: { season: SeasonResult; prev
   );
 }
 
-const HISTORY_KEY = "pl-draft-history";
-
 export interface DraftRunRecord {
   id: string;
   date: string;
@@ -214,26 +213,29 @@ export interface DraftRunRecord {
   players: { name: string; assignedPosition: string; overall: number; clubYear: string }[];
 }
 
-function saveRunToHistory(run: DraftRunRecord) {
+async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
+  if (!isSignedIn) return;
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    const history: DraftRunRecord[] = raw ? JSON.parse(raw) : [];
-    history.unshift(run);
-    if (history.length > 50) history.length = 50;
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    await fetch("/api/draft/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(run),
+    });
   } catch {}
 }
 
-export function loadDraftHistory(): DraftRunRecord[] {
+export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const res = await fetch("/api/draft/history");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.runs || [];
   } catch {
     return [];
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, formationName }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, formationName, isSignedIn = false }: Props) {
   const season = useMemo(() => simulateSeason(players, undefined, seasonNumber), [players, seasonNumber]);
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(false);
@@ -264,7 +266,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     }
   }, [revealedWeek]);
 
-  // Save to history when season completes
   const historySaved = useRef(false);
   useEffect(() => {
     if (seasonComplete && !historySaved.current) {
@@ -283,9 +284,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         goalsScored: season.teamRecord.goalsFor,
         avgOvr,
         players: players.map(p => ({ name: p.name, assignedPosition: p.assignedPosition, overall: p.overall, clubYear: p.clubYear })),
-      });
+      }, isSignedIn);
     }
-  }, [seasonComplete, players, season, seasonNumber]);
+  }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
 
   const handleSkip = useCallback(() => {
     setRevealedWeek(38);
@@ -427,7 +428,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           </span>
           <button
             onClick={handleSkip}
-            className="text-xs font-bold text-gray-400 hover:text-white transition"
+            className="text-xs font-bold text-gray-400 hover:text-white transition px-3 py-2 -mr-3 rounded-lg active:bg-gray-800"
           >
             Skip all &rarr;
           </button>
