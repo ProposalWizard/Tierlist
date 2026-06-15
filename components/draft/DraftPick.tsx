@@ -531,7 +531,7 @@ export default function DraftPick({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Pitch with picked players — on mobile, show below the action area */}
         <div className="lg:col-span-1 order-2 lg:order-1">
-          <div className="relative w-full aspect-[4/3] lg:aspect-[3/4] max-h-[50vh] lg:max-h-none mx-auto rounded-xl overflow-hidden border border-emerald-800/40">
+          <div className="relative w-full aspect-[4/3] lg:aspect-[3/4] max-h-[35vh] sm:max-h-[50vh] lg:max-h-none mx-auto rounded-xl overflow-hidden border border-emerald-800/40">
             {/* Pitch gradient background */}
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/80 via-emerald-900/40 to-emerald-950/80" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/20 via-transparent to-transparent" />
@@ -564,7 +564,7 @@ export default function DraftPick({
                   onClick={() => isAssignable && handleAssignSlot(i)}
                 >
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-extrabold border-2 transition-all duration-300 ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-extrabold border-2 transition-all duration-300 ${
                       displayPlayer
                         ? `${getPositionColor(slot.label)} ${existing && !picked ? 'border-white/50 text-white/80' : 'border-white/80 text-white'} shadow-lg`
                         : isCurrent
@@ -583,7 +583,7 @@ export default function DraftPick({
                     )}
                   </div>
                   <span
-                    className={`text-[8px] mt-0.5 max-w-[64px] truncate text-center font-medium ${
+                    className={`text-[8px] mt-0.5 max-w-[56px] sm:max-w-[64px] truncate text-center font-medium ${
                       displayPlayer ? "text-white/90" : "text-gray-600"
                     }`}
                   >
@@ -679,7 +679,7 @@ export default function DraftPick({
           )}
 
           {phase === "spin" && (
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center py-8 sm:py-16">
               <div className="mb-6 text-center">
                 <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${
                   isSeason2Draft ? "text-amber-400" :
@@ -731,7 +731,7 @@ export default function DraftPick({
           )}
 
           {phase === "spinning" && (
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center py-8 sm:py-16">
               {/* Slot machine container */}
               <div className="relative w-full max-w-md h-24 overflow-hidden rounded-xl border border-emerald-700/40 bg-gray-900/80 mb-6">
                 {/* Top fade */}
@@ -796,7 +796,7 @@ export default function DraftPick({
                         {currentSlot?.label}
                       </span>
                       {" "}&middot;{" "}
-                      <span className="text-emerald-500/60 font-medium">
+                      <span className="hidden sm:inline text-emerald-500/60 font-medium">
                         compatible: {currentSlot?.compatiblePositions.join(", ")}
                       </span>
                     </>
@@ -819,7 +819,7 @@ export default function DraftPick({
               </div>
 
               {!spinResult && (
-                <div className="flex flex-col items-center justify-center py-16">
+                <div className="flex flex-col items-center justify-center py-8 sm:py-16">
                   <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
                   <p className="text-gray-500 text-sm">Loading roster...</p>
                 </div>

@@ -126,8 +126,8 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
       </div>
 
       {selected && (
-        <div className="bg-red-900/20 border border-red-700/40 rounded-xl px-4 py-3 mb-4 flex items-center gap-3">
-          <div className="flex-1 min-w-0">
+        <div className="bg-red-900/20 border border-red-700/40 rounded-xl px-4 py-3 mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex-1">
             <span className="text-sm font-bold text-red-400">
               Sell {selected.name}?
             </span>
@@ -137,13 +137,13 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
           </div>
           <button
             onClick={() => setSelected(null)}
-            className="px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition"
+            className="shrink-0 px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition"
           >
             Cancel
           </button>
           <button
             onClick={() => onSell(selected)}
-            className="px-4 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-500 rounded-lg transition"
+            className="shrink-0 px-4 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-500 rounded-lg transition"
           >
             Confirm Sale
           </button>

@@ -122,7 +122,7 @@ export default function Season2Overview({
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(rc.player.assignedPosition)} text-white w-8 text-center`}>
                   {rc.player.assignedPosition}
                 </span>
-                <span className="flex-1 ml-1 font-medium">{rc.player.name}</span>
+                <span className="flex-1 ml-1 font-medium truncate">{rc.player.name}</span>
                 <span className="text-gray-500 text-sm font-bold w-7 text-right">
                   {rc.oldOverall}
                 </span>
@@ -157,7 +157,7 @@ export default function Season2Overview({
           <p className="text-xs text-gray-500 mb-3">
             Choose one of your youngest players for intensive training (+3 all attributes)
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {youngestTwo.map((p) => {
               const isSelected = selectedTraining === p.name;
               return (

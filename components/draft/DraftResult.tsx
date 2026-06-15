@@ -140,7 +140,7 @@ function RecordsSection({ season, previousResult }: { season: SeasonResult; prev
           return (
             <div
               key={rec.label}
-              className={`flex items-center gap-2 text-sm py-2 px-2 rounded-lg ${
+              className={`flex flex-wrap items-center gap-2 text-sm py-2 px-2 rounded-lg ${
                 broken
                   ? "bg-yellow-900/20 border border-yellow-600/30"
                   : matched
@@ -617,7 +617,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                         : "border-l-2 border-l-red-500"
                 }`}
               >
-                <span className={`text-[10px] font-bold w-14 shrink-0 truncate ${isUCL ? "text-blue-400" : "text-gray-600"}`}>
+                <span className={`text-[10px] font-bold w-12 sm:w-14 shrink-0 truncate ${isUCL ? "text-blue-400" : "text-gray-600"}`}>
                   {label}
                 </span>
                 <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black shrink-0 ${
@@ -637,7 +637,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                     </span>
                   </div>
                   {match.goalScorers.length > 0 && (
-                    <div className="text-[10px] text-gray-500 truncate">
+                    <div className="text-[11px] text-gray-500 truncate">
                       &#9917; {match.goalScorers.map((g: { player: string; minute: number }) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}
                     </div>
                   )}
@@ -752,7 +752,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         )}
 
         {/* Finish Cards */}
-        <div className="flex justify-center gap-3 mb-4">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4">
           <div className="bg-gray-900 rounded-xl px-6 py-3 text-center border border-gray-800/50">
             <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Finished</div>
             <div className={`text-3xl font-black ${
@@ -981,13 +981,13 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               {/* League Phase Summary */}
               <div className="mb-3">
                 <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">League Phase</div>
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm">
                   <span className="font-bold text-blue-300">{ordinal(ucl.leaguePosition)}</span>
-                  <span className="text-gray-600">|</span>
+                  <span className="text-gray-600 hidden sm:inline">|</span>
                   <span className="text-gray-400">{uclW}W {uclD}D {uclL}L</span>
-                  <span className="text-gray-600">|</span>
+                  <span className="text-gray-600 hidden sm:inline">|</span>
                   <span className="font-bold text-white">{uclPts} pts</span>
-                  <span className="text-gray-600">|</span>
+                  <span className="text-gray-600 hidden sm:inline">|</span>
                   <span className="text-xs text-gray-500">{uclGF}GF {uclGA}GA</span>
                 </div>
               </div>
@@ -1024,10 +1024,11 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
               {showUCLTable && (
                 <div className="overflow-x-auto mb-3">
+                  <div className="min-w-[340px]">
                   <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 mb-1 px-1 uppercase">
                     <span className="w-5 text-center">#</span>
                     <span className="flex-1 ml-1.5">Club</span>
-                    <span className="w-6 text-center">P</span>
+                    <span className="w-6 text-center hidden sm:inline">P</span>
                     <span className="w-6 text-center">W</span>
                     <span className="w-6 text-center">D</span>
                     <span className="w-6 text-center">L</span>
@@ -1060,7 +1061,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           <span className={`flex-1 ml-1.5 truncate ${team.isPlayer ? "text-blue-300" : "text-gray-400"}`}>
                             {team.isPlayer ? "Knowitball FC" : team.name}
                           </span>
-                          <span className="w-6 text-center text-gray-600">{team.played}</span>
+                          <span className="w-6 text-center text-gray-600 hidden sm:inline">{team.played}</span>
                           <span className="w-6 text-center text-gray-600">{team.won}</span>
                           <span className="w-6 text-center text-gray-600">{team.drawn}</span>
                           <span className="w-6 text-center text-gray-600">{team.lost}</span>
@@ -1080,6 +1081,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                     <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /><span className="text-gray-500">R16</span></div>
                     <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-cyan-500/50" /><span className="text-gray-500">Playoff</span></div>
                     <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500/50" /><span className="text-gray-500">Eliminated</span></div>
+                  </div>
                   </div>
                 </div>
               )}
@@ -1105,7 +1107,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                             </span>
                           </div>
                           <div className="text-sm font-bold text-white mb-1">vs {tie.opponent}</div>
-                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
                             <span>
                               L1: {tie.leg1.goalsFor}-{tie.leg1.goalsAgainst} ({tie.leg1.isHome ? "H" : "A"})
                             </span>
@@ -1211,6 +1213,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               </button>
             </div>
           </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[360px]">
           <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
             <span className="w-8"></span>
             <span className="flex-1 ml-2">Player</span>
@@ -1249,6 +1253,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               </div>
             ))}
           </div>
+            </div>
+          </div>
         </div>
 
         {/* Extra stats */}
@@ -1267,7 +1273,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
           <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
             <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Biggest Win</div>
             <div className="font-bold text-emerald-400 text-sm mt-0.5">
@@ -1329,10 +1335,11 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             </div>
           </div>
 
+          <div className="min-w-[420px]">
           <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
             <span className="w-7 text-center">#</span>
             <span className="flex-1 ml-2">Club</span>
-            <span className="w-8 text-center">P</span>
+            <span className="w-8 text-center hidden sm:inline">P</span>
             <span className="w-8 text-center">W</span>
             <span className="w-8 text-center">D</span>
             <span className="w-8 text-center">L</span>
@@ -1354,10 +1361,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <span className={`w-7 text-center text-xs font-bold rounded ${getLeaguePositionBadge(pos)}`}>
                     {pos}
                   </span>
-                  <span className={`flex-1 ml-2 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>
+                  <span className={`flex-1 ml-2 truncate ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>
                     {team.isPlayer ? "Knowitball FC" : team.name}
                   </span>
-                  <span className="w-8 text-center text-gray-500 text-xs">{team.played}</span>
+                  <span className="w-8 text-center text-gray-500 text-xs hidden sm:inline">{team.played}</span>
                   <span className="w-8 text-center text-gray-500 text-xs">{team.won}</span>
                   <span className="w-8 text-center text-gray-500 text-xs">{team.drawn}</span>
                   <span className="w-8 text-center text-gray-500 text-xs">{team.lost}</span>
@@ -1372,6 +1379,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 </div>
               );
             })}
+          </div>
           </div>
         </div>
       )}
@@ -1467,7 +1475,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       )}
 
       {/* Actions */}
-      <div className={`grid gap-3 ${onPlayNextSeason ? "grid-cols-3" : "grid-cols-2"}`}>
+      <div className={onPlayNextSeason ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
+        {onPlayNextSeason && (
+          <button
+            onClick={() => onPlayNextSeason(season, players)}
+            className="py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 rounded-xl font-bold transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            Season {seasonNumber + 1}
+          </button>
+        )}
+        <div className="grid grid-cols-2 gap-3">
         <button
           onClick={handleShare}
           disabled={sharing}
@@ -1485,15 +1503,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             </>
           )}
         </button>
-        {onPlayNextSeason && (
-          <button
-            onClick={() => onPlayNextSeason(season, players)}
-            className="py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 rounded-xl font-bold transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-            Season {seasonNumber + 1}
-          </button>
-        )}
         <button
           onClick={onNewRun}
           className="py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
@@ -1501,6 +1510,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
           New Run
         </button>
+        </div>
       </div>
 
       {/* History link */}

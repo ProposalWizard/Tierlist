@@ -120,7 +120,7 @@ export default function DraftHistoryPage() {
               <div className="text-[10px] text-gray-500 font-bold uppercase">Best Points</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
-              <div className="text-2xl font-black">{stats.bestRecord.record.wins}W {stats.bestRecord.record.draws}D {stats.bestRecord.record.losses}L</div>
+              <div className="text-lg sm:text-2xl font-black">{stats.bestRecord.record.wins}W {stats.bestRecord.record.draws}D {stats.bestRecord.record.losses}L</div>
               <div className="text-[10px] text-gray-500 font-bold uppercase">Best Record</div>
             </div>
           </div>
@@ -147,9 +147,9 @@ export default function DraftHistoryPage() {
                 : "bg-gray-900 border-gray-800/50 opacity-50"
             }`}>
               <span className="text-xl">&#127942;</span>
-              <div>
+              <div className="min-w-0">
                 <div className="font-bold text-sm">Champions</div>
-                <div className="text-[10px] text-gray-500">Finish 1st</div>
+                <div className="text-[10px] text-gray-500 truncate">Finish 1st</div>
               </div>
               {stats.titles > 0 && (
                 <span className="ml-auto text-xs font-black text-yellow-400">&times;{stats.titles}</span>
@@ -161,9 +161,9 @@ export default function DraftHistoryPage() {
                 : "bg-gray-900 border-gray-800/50 opacity-50"
             }`}>
               <span className="text-xl">&#11088;</span>
-              <div>
+              <div className="min-w-0">
                 <div className="font-bold text-sm">Top Four</div>
-                <div className="text-[10px] text-gray-500">Finish in the top 4</div>
+                <div className="text-[10px] text-gray-500 truncate">Finish in the top 4</div>
               </div>
               {history.filter(h => h.finish <= 4).length > 0 && (
                 <span className="ml-auto text-xs font-black text-blue-400">&times;{history.filter(h => h.finish <= 4).length}</span>
@@ -214,7 +214,7 @@ export default function DraftHistoryPage() {
 
               {isExpanded && (
                 <div className="bg-gray-900/50 rounded-b-xl px-4 pb-4 pt-2 border-x border-b border-gray-800/50 -mt-1">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
                     {run.players.map((p, i) => (
                       <div key={i} className="flex items-center gap-2 text-sm py-0.5">
                         <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-7 text-center`}>
