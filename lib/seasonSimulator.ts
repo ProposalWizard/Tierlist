@@ -64,6 +64,50 @@ export interface FaCupResult {
   exitRound: string | null;
 }
 
+export interface UCLMatch {
+  opponent: string;
+  isHome: boolean;
+  goalsFor: number;
+  goalsAgainst: number;
+  result: 'W' | 'D' | 'L';
+  goalScorers: { player: string; minute: number }[];
+  assistProviders: { player: string; minute: number }[];
+  extraTime?: boolean;
+  penalties?: boolean;
+  penaltyScore?: { player: number; opponent: number };
+}
+
+export interface UCLKnockoutTie {
+  round: string;
+  opponent: string;
+  leg1: UCLMatch;
+  leg2?: UCLMatch;
+  result: 'W' | 'L';
+}
+
+export interface UCLLeagueStanding {
+  name: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  isPlayer: boolean;
+}
+
+export interface UCLResult {
+  qualified: boolean;
+  leagueMatches: UCLMatch[];
+  leaguePosition: number;
+  leagueTable: UCLLeagueStanding[];
+  knockoutTies: UCLKnockoutTie[];
+  winner: boolean;
+  exitStage: string | null;
+}
+
 export interface PlayerStats {
   name: string;
   assignedPosition: string;
@@ -120,6 +164,7 @@ export interface SeasonResult {
   performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED';
   phaseRatings: PhaseRatings;
   faCup: FaCupResult;
+  ucl?: UCLResult;
 }
 
 // --- Seeded PRNG (mulberry32) ---
@@ -138,24 +183,64 @@ function createRng(seed: number): () => number {
 
 const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
   { name: 'Man City', strength: 85 },
-  { name: 'Arsenal', strength: 84 },
+  { name: 'Arsenal', strength: 85 },
   { name: 'Liverpool', strength: 83 },
+  { name: 'Man United', strength: 82 },
   { name: 'Chelsea', strength: 80 },
-  { name: 'Man United', strength: 79 },
+  { name: 'Aston Villa', strength: 80 },
   { name: 'Tottenham', strength: 78 },
   { name: 'Newcastle', strength: 78 },
-  { name: 'Aston Villa', strength: 77 },
+  { name: 'Bournemouth', strength: 76 },
   { name: 'Brighton', strength: 75 },
-  { name: 'West Ham', strength: 74 },
-  { name: 'Bournemouth', strength: 73 },
-  { name: 'Crystal Palace', strength: 73 },
+  { name: 'Crystal Palace', strength: 75 },
+  { name: 'Brentford', strength: 75 },
+  { name: 'Everton', strength: 75 },
+  { name: 'Nottm Forest', strength: 74 },
   { name: 'Fulham', strength: 72 },
-  { name: 'Brentford', strength: 72 },
-  { name: 'Wolves', strength: 71 },
-  { name: 'Everton', strength: 70 },
-  { name: 'Nottm Forest', strength: 70 },
-  { name: 'Leicester', strength: 69 },
+  { name: 'Leeds', strength: 72 },
+  { name: 'Coventry', strength: 70 },
   { name: 'Ipswich', strength: 68 },
+  { name: 'Hull', strength: 68 },
+];
+
+// --- UCL team data ---
+
+const UCL_TEAMS: { pot: number; name: string; strength: number }[] = [
+  // Pot 1 (7 non-PL slots; PL 1st+2nd fill the other 2)
+  { pot: 1, name: 'Real Madrid', strength: 86 },
+  { pot: 1, name: 'Bayern Munich', strength: 85 },
+  { pot: 1, name: 'PSG', strength: 84 },
+  { pot: 1, name: 'Barcelona', strength: 84 },
+  { pot: 1, name: 'Inter Milan', strength: 83 },
+  { pot: 1, name: 'Borussia Dortmund', strength: 80 },
+  { pot: 1, name: 'Celtic', strength: 72 },
+  // Pot 2 (8 non-PL slots; PL 3rd fills the other 1)
+  { pot: 2, name: 'Atlético Madrid', strength: 82 },
+  { pot: 2, name: 'Bayer Leverkusen', strength: 81 },
+  { pot: 2, name: 'Juventus', strength: 80 },
+  { pot: 2, name: 'Benfica', strength: 78 },
+  { pot: 2, name: 'Roma', strength: 77 },
+  { pot: 2, name: 'Villarreal', strength: 76 },
+  { pot: 2, name: 'Eintracht Frankfurt', strength: 76 },
+  { pot: 2, name: 'Club Brugge', strength: 73 },
+  // Pot 3 (8 non-PL slots; PL 4th fills the other 1)
+  { pot: 3, name: 'Napoli', strength: 79 },
+  { pot: 3, name: 'Sporting CP', strength: 77 },
+  { pot: 3, name: 'PSV Eindhoven', strength: 76 },
+  { pot: 3, name: 'Marseille', strength: 76 },
+  { pot: 3, name: 'Ajax', strength: 75 },
+  { pot: 3, name: 'Olympiacos', strength: 72 },
+  { pot: 3, name: 'Slavia Prague', strength: 70 },
+  { pot: 3, name: 'Bodø/Glimt', strength: 68 },
+  // Pot 4 (8 non-PL slots; PL 5th fills the other 1)
+  { pot: 4, name: 'Athletic Bilbao', strength: 77 },
+  { pot: 4, name: 'Monaco', strength: 76 },
+  { pot: 4, name: 'Galatasaray', strength: 74 },
+  { pot: 4, name: 'Copenhagen', strength: 71 },
+  { pot: 4, name: 'Union Saint-Gilloise', strength: 69 },
+  { pot: 4, name: 'Como', strength: 68 },
+  { pot: 4, name: 'Qarabağ', strength: 65 },
+  { pot: 4, name: 'Pafos', strength: 63 },
 ];
 
 const HOME_ADVANTAGE = 3;
@@ -851,12 +936,321 @@ function simulateFaCup(
   return { matches, winner: true, exitRound: null };
 }
 
+// --- UCL knockout tie simulation ---
+
+function simulateUCLKnockoutTie(
+  round: string,
+  opponentName: string,
+  opponentStrength: number,
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  rng: () => number,
+  isFinal: boolean,
+): UCLKnockoutTie {
+  const starters = players.filter(p => !p.isSub);
+  const subs = players.filter(p => p.isSub);
+  const opp = { name: opponentName, strength: opponentStrength };
+
+  const makeUCLMatch = (m: MatchResult): UCLMatch => ({
+    opponent: m.opponent,
+    isHome: m.isHome,
+    goalsFor: m.goalsFor,
+    goalsAgainst: m.goalsAgainst,
+    result: m.result,
+    goalScorers: [...m.goalScorers],
+    assistProviders: [...m.assistProviders],
+  });
+
+  const addExtraTime = (match: UCLMatch, matchPlayers: DraftPlayer[]): void => {
+    match.extraTime = true;
+    const etXg = computeExpectedGoals(ratings.attack, ratings.midfield, opp.strength) * 0.33;
+    const ourDef = ratings.defense * 0.55 + ratings.gk * 0.30 + ratings.midfield * 0.15;
+    const etOppXg = computeExpectedGoals(opp.strength, opp.strength * 0.95, ourDef) * 0.33;
+    const etFor = poisson(etXg, rng);
+    const etAgainst = poisson(etOppXg, rng);
+    match.goalsFor += etFor;
+    match.goalsAgainst += etAgainst;
+    for (let i = 0; i < etFor; i++) {
+      const minute = 90 + Math.floor(rng() * 30) + 1;
+      const scorer = weightedPick(matchPlayers, goalScoringWeight, rng);
+      match.goalScorers.push({ player: scorer.name, minute });
+      if (rng() < 0.75) {
+        const eligible = matchPlayers.filter(p => p.name !== scorer.name);
+        if (eligible.length > 0) {
+          match.assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
+        }
+      }
+    }
+  };
+
+  const addPenalties = (match: UCLMatch): 'W' | 'L' => {
+    match.penalties = true;
+    const myPens = Math.floor(rng() * 3) + 3;
+    const oppPens = Math.floor(rng() * 3) + 3;
+    if (myPens === oppPens) {
+      match.penaltyScore = rng() > 0.5
+        ? { player: myPens + 1, opponent: oppPens }
+        : { player: myPens, opponent: oppPens + 1 };
+    } else {
+      match.penaltyScore = { player: myPens, opponent: oppPens };
+    }
+    return match.penaltyScore.player > match.penaltyScore.opponent ? 'W' : 'L';
+  };
+
+  if (isFinal) {
+    const activeSubs = subs.filter(() => rng() < 0.6);
+    const matchPlayers = [...starters, ...activeSubs];
+    const m = simulateMatch(matchPlayers, ratings, opp, rng() > 0.5, rng);
+    const match = makeUCLMatch(m);
+
+    if (match.goalsFor === match.goalsAgainst) {
+      addExtraTime(match, matchPlayers);
+      if (match.goalsFor === match.goalsAgainst) {
+        const penResult = addPenalties(match);
+        return { round, opponent: opponentName, leg1: match, result: penResult };
+      }
+      match.result = match.goalsFor > match.goalsAgainst ? 'W' : 'L';
+    }
+    return { round, opponent: opponentName, leg1: match, result: match.result as 'W' | 'L' };
+  }
+
+  // Two-legged tie
+  const isHomeLeg1 = rng() > 0.5;
+
+  const leg1Subs = subs.filter(() => rng() < 0.6);
+  const leg1Players = [...starters, ...leg1Subs];
+  const leg1 = makeUCLMatch(simulateMatch(leg1Players, ratings, opp, isHomeLeg1, rng));
+
+  const leg2Subs = subs.filter(() => rng() < 0.6);
+  const leg2Players = [...starters, ...leg2Subs];
+  const leg2 = makeUCLMatch(simulateMatch(leg2Players, ratings, opp, !isHomeLeg1, rng));
+
+  let aggFor = leg1.goalsFor + leg2.goalsFor;
+  let aggAgainst = leg1.goalsAgainst + leg2.goalsAgainst;
+
+  if (aggFor === aggAgainst) {
+    addExtraTime(leg2, leg2Players);
+    aggFor = leg1.goalsFor + leg2.goalsFor;
+    aggAgainst = leg1.goalsAgainst + leg2.goalsAgainst;
+
+    if (aggFor === aggAgainst) {
+      const penResult = addPenalties(leg2);
+      return { round, opponent: opponentName, leg1, leg2, result: penResult };
+    }
+  }
+
+  const tieResult: 'W' | 'L' = aggFor > aggAgainst ? 'W' : 'L';
+  return { round, opponent: opponentName, leg1, leg2, result: tieResult };
+}
+
+// --- Champions League simulation ---
+
+function simulateChampionsLeague(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  previousLeagueTable: LeagueTeam[],
+  opponents: { name: string; strength: number }[],
+  rng: () => number,
+): UCLResult {
+  const playerTeamName = 'Knowitball FC';
+  const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
+
+  if (playerFinish < 1 || playerFinish > 5) {
+    return {
+      qualified: false, leagueMatches: [], leaguePosition: 0,
+      leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+    };
+  }
+
+  const potForFinish = (f: number) => f <= 2 ? 1 : f === 3 ? 2 : f === 4 ? 3 : 4;
+  const playerPot = potForFinish(playerFinish);
+
+  // Build 4 pots of 9 teams each
+  const pots: { name: string; strength: number; isPlayer: boolean }[][] = [[], [], [], []];
+  pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
+
+  // Add other PL qualifiers (top 5 excluding player)
+  const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
+  let plAdded = 0;
+  for (let i = 0; i < previousLeagueTable.length && plAdded < 4; i++) {
+    const team = previousLeagueTable[i];
+    if (team.isPlayer) continue;
+    if (i + 1 > 5) break;
+    const strength = opponentMap.get(team.name) || 75;
+    const pot = potForFinish(i + 1);
+    pots[pot - 1].push({ name: team.name, strength, isPlayer: false });
+    plAdded++;
+  }
+
+  // Fill pots with UCL non-PL teams
+  for (const uclTeam of UCL_TEAMS) {
+    if (pots[uclTeam.pot - 1].length < 9) {
+      pots[uclTeam.pot - 1].push({ name: uclTeam.name, strength: uclTeam.strength, isPlayer: false });
+    }
+  }
+
+  const allUCLTeams = [...pots[0], ...pots[1], ...pots[2], ...pots[3]];
+  const strengthMap = new Map(allUCLTeams.map(t => [t.name, t.strength]));
+
+  // Draw player's 8 opponents (2 per pot, 1H 1A per pot)
+  const playerOpponents: { name: string; strength: number; isHome: boolean }[] = [];
+  for (const pot of pots) {
+    const available = pot.filter(t => !t.isPlayer);
+    const shuffled = [...available].sort(() => rng() - 0.5);
+    const homeFirst = rng() > 0.5;
+    playerOpponents.push({ ...shuffled[0], isHome: homeFirst });
+    playerOpponents.push({ ...shuffled[1], isHome: !homeFirst });
+  }
+  playerOpponents.sort(() => rng() - 0.5);
+
+  // Simulate player's 8 league phase matches
+  const starters = players.filter(p => !p.isSub);
+  const subs = players.filter(p => p.isSub);
+  const leagueMatches: UCLMatch[] = [];
+
+  for (const opp of playerOpponents) {
+    const activeSubs = subs.filter(() => rng() < 0.5);
+    const matchPlayers = [...starters, ...activeSubs];
+    const m = simulateMatch(matchPlayers, ratings, { name: opp.name, strength: opp.strength }, opp.isHome, rng);
+    leagueMatches.push({
+      opponent: m.opponent, isHome: m.isHome,
+      goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst,
+      result: m.result, goalScorers: m.goalScorers, assistProviders: m.assistProviders,
+    });
+  }
+
+  // Build league table — player's results already simulated
+  const tableData: Record<string, UCLLeagueStanding> = {};
+  for (const team of allUCLTeams) {
+    tableData[team.name] = {
+      name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
+      goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
+      isPlayer: team.isPlayer,
+    };
+  }
+
+  for (const m of leagueMatches) {
+    const pt = tableData[playerTeamName];
+    pt.played++;
+    pt.goalsFor += m.goalsFor;
+    pt.goalsAgainst += m.goalsAgainst;
+    if (m.result === 'W') { pt.won++; pt.points += 3; }
+    else if (m.result === 'D') { pt.drawn++; pt.points += 1; }
+    else { pt.lost++; }
+  }
+
+  // Simulate 8 matches for each other team
+  for (const team of allUCLTeams) {
+    if (team.isPlayer) continue;
+    const td = tableData[team.name];
+    for (const pot of pots) {
+      const available = pot.filter(t => t.name !== team.name);
+      const shuffled = [...available].sort(() => rng() - 0.5);
+      const picked = shuffled.slice(0, 2);
+      for (let k = 0; k < picked.length; k++) {
+        const isHome = k === 0;
+        const home = isHome ? team : picked[k];
+        const away = isHome ? picked[k] : team;
+        const { homeGoals, awayGoals } = simulateNeutralMatch(
+          { name: home.name, strength: home.strength },
+          { name: away.name, strength: away.strength }, rng,
+        );
+        const gf = isHome ? homeGoals : awayGoals;
+        const ga = isHome ? awayGoals : homeGoals;
+        td.played++;
+        td.goalsFor += gf;
+        td.goalsAgainst += ga;
+        if (gf > ga) { td.won++; td.points += 3; }
+        else if (gf === ga) { td.drawn++; td.points += 1; }
+        else { td.lost++; }
+      }
+    }
+  }
+
+  const leagueTable = Object.values(tableData);
+  for (const t of leagueTable) t.goalDifference = t.goalsFor - t.goalsAgainst;
+  leagueTable.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+    return a.name.localeCompare(b.name);
+  });
+
+  const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
+
+  if (leaguePosition > 24) {
+    return {
+      qualified: true, leagueMatches, leaguePosition, leagueTable,
+      knockoutTies: [], winner: false, exitStage: 'League Phase',
+    };
+  }
+
+  // --- Knockout phase ---
+  const knockoutTies: UCLKnockoutTie[] = [];
+
+  // Round of 32 (positions 9–24, paired: 9th vs 24th, 10th vs 23rd, etc.)
+  if (leaguePosition >= 9) {
+    const r32OppPos = 33 - leaguePosition;
+    const r32Opp = leagueTable[r32OppPos - 1];
+    const r32Str = strengthMap.get(r32Opp.name) || 75;
+    const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, players, ratings, rng, false);
+    knockoutTies.push(r32);
+    if (r32.result === 'L') {
+      return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 32' };
+    }
+  }
+
+  // Round of 16
+  const r16Pool = leagueTable.filter(t => !t.isPlayer).slice(0, 16);
+  const r16Opp = r16Pool[Math.floor(rng() * r16Pool.length)];
+  const r16Str = strengthMap.get(r16Opp.name) || 75;
+  const r16 = simulateUCLKnockoutTie('Round of 16', r16Opp.name, r16Str, players, ratings, rng, false);
+  knockoutTies.push(r16);
+  if (r16.result === 'L') {
+    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 16' };
+  }
+
+  // Quarter-Final
+  const qfPool = leagueTable.filter(t => !t.isPlayer).slice(0, 8);
+  const qfOpp = qfPool[Math.floor(rng() * qfPool.length)];
+  const qfStr = strengthMap.get(qfOpp.name) || 75;
+  const qf = simulateUCLKnockoutTie('Quarter-Final', qfOpp.name, qfStr, players, ratings, rng, false);
+  knockoutTies.push(qf);
+  if (qf.result === 'L') {
+    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Quarter-Final' };
+  }
+
+  // Semi-Final
+  const sfPool = leagueTable.filter(t => !t.isPlayer).slice(0, 4);
+  const sfOpp = sfPool[Math.floor(rng() * sfPool.length)];
+  const sfStr = strengthMap.get(sfOpp.name) || 75;
+  const sf = simulateUCLKnockoutTie('Semi-Final', sfOpp.name, sfStr, players, ratings, rng, false);
+  knockoutTies.push(sf);
+  if (sf.result === 'L') {
+    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Semi-Final' };
+  }
+
+  // Final (single match)
+  const finalPool = leagueTable.filter(t => !t.isPlayer).slice(0, 3);
+  const finalOpp = finalPool[Math.floor(rng() * finalPool.length)];
+  const finalStr = strengthMap.get(finalOpp.name) || 75;
+  const final_ = simulateUCLKnockoutTie('Final', finalOpp.name, finalStr, players, ratings, rng, true);
+  knockoutTies.push(final_);
+
+  return {
+    qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies,
+    winner: final_.result === 'W',
+    exitStage: final_.result === 'L' ? 'Final' : null,
+  };
+}
+
 // --- Main export ---
 
 export function simulateSeason(
   players: DraftPlayer[],
   otherTeams?: { name: string; strength: number }[],
   seasonNumber?: number,
+  previousLeagueTable?: LeagueTeam[],
 ): SeasonResult {
   const seasonSeed = (seasonNumber ?? 1) * 100;
   const seed = players.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonSeed);
@@ -902,6 +1296,12 @@ export function simulateSeason(
 
   // FA Cup
   const faCup = simulateFaCup(starters, ratings, opponents, rng);
+
+  // Champions League (if qualified from previous season)
+  let ucl: UCLResult | undefined;
+  if (previousLeagueTable) {
+    ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng);
+  }
 
   // Player stats
   const statsMap: Record<string, PlayerStats> = {};
@@ -1007,6 +1407,28 @@ export function simulateSeason(
       for (const def of defenders) {
         statsMap[def.name].cleanSheets++;
       }
+    }
+  }
+
+  // Count UCL stats (added to all-comps totals)
+  if (ucl?.qualified) {
+    const countUCLMatch = (m: UCLMatch) => {
+      for (const p of starters) statsMap[p.name].appearances++;
+      for (const gs of m.goalScorers) {
+        if (statsMap[gs.player]) statsMap[gs.player].goals++;
+      }
+      for (const ap of m.assistProviders) {
+        if (statsMap[ap.player]) statsMap[ap.player].assists++;
+      }
+      if (m.goalsAgainst === 0) {
+        if (gk) statsMap[gk.name].cleanSheets++;
+        for (const def of defenders) statsMap[def.name].cleanSheets++;
+      }
+    };
+    for (const m of ucl.leagueMatches) countUCLMatch(m);
+    for (const tie of ucl.knockoutTies) {
+      countUCLMatch(tie.leg1);
+      if (tie.leg2) countUCLMatch(tie.leg2);
     }
   }
 
@@ -1171,5 +1593,6 @@ export function simulateSeason(
     performance,
     phaseRatings: ratings,
     faCup,
+    ucl,
   };
 }

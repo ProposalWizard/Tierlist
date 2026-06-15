@@ -21,6 +21,7 @@ interface Props {
   season2Players: DraftPlayer[];
   onContinue: (trainingPlayerName: string) => void;
   seasonNumber?: number;
+  previousFinish?: number;
 }
 
 export default function Season2Overview({
@@ -29,6 +30,7 @@ export default function Season2Overview({
   season2Players,
   onContinue,
   seasonNumber = 2,
+  previousFinish,
 }: Props) {
   const [revealStep, setRevealStep] = useState(0);
   const [selectedTraining, setSelectedTraining] = useState<string | null>(null);
@@ -120,7 +122,7 @@ export default function Season2Overview({
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(rc.player.assignedPosition)} text-white w-8 text-center`}>
                   {rc.player.assignedPosition}
                 </span>
-                <span className="flex-1 ml-1 font-medium">{rc.player.name}</span>
+                <span className="flex-1 ml-1 font-medium truncate">{rc.player.name}</span>
                 <span className="text-gray-500 text-sm font-bold w-7 text-right">
                   {rc.oldOverall}
                 </span>
@@ -155,7 +157,7 @@ export default function Season2Overview({
           <p className="text-xs text-gray-500 mb-3">
             Choose one of your youngest players for intensive training (+3 all attributes)
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {youngestTwo.map((p) => {
               const isSelected = selectedTraining === p.name;
               return (
@@ -196,13 +198,26 @@ export default function Season2Overview({
         </div>
       )}
 
+      {/* UCL Qualification Notice */}
+      {previousFinish !== undefined && previousFinish <= 5 && (
+        <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-4 mb-4 text-center animate-[fadeIn_0.5s_ease-in]">
+          <span className="text-lg">&#9917;</span>
+          <p className="text-sm text-blue-300 font-bold mt-1">
+            Champions League Qualified!
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Your team will compete in the UCL this season
+          </p>
+        </div>
+      )}
+
       {/* Info about replacements */}
       <div className="bg-amber-900/10 border border-amber-700/30 rounded-xl p-4 mb-6 text-center">
         <p className="text-sm text-amber-300 font-medium">
           You need to sign <span className="font-black">2 replacement players</span> to fill your squad.
         </p>
         <p className="text-xs text-gray-500 mt-1">
-          New signings receive a random +1 to +3 boost on all attributes.
+          New signings receive a random +1 to +3 boost. You can also sell a player afterwards.
         </p>
       </div>
 

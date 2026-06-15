@@ -152,11 +152,11 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
 
       {(selectedIdx !== null || selectedVacant !== null) && (
         <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl px-4 py-2.5 mb-4 text-center">
-          <span className="text-sm text-emerald-400 font-medium">
+          <span className="text-xs sm:text-sm text-emerald-400 font-medium">
             {selectedVacant !== null && formation ? (
               <>Selected: <span className="font-bold">{formation.slots[selectedVacant].label} (Vacant)</span> — tap a player to fill this position</>
             ) : (
-              <>Selected: <span className="font-bold">{squad[selectedIdx!].name}</span> — tap another player to swap{vacantSlots.length > 0 ? " or tap a vacant slot" : ""}</>
+              <>Selected: <span className="font-bold truncate inline-block max-w-[120px] sm:max-w-none align-bottom">{squad[selectedIdx!].name}</span> — tap another player to swap{vacantSlots.length > 0 ? " or tap a vacant slot" : ""}</>
             )}
           </span>
         </div>
