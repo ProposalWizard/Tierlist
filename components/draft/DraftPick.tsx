@@ -57,21 +57,6 @@ interface Props {
   existingSquad?: DraftPlayer[];
 }
 
-const BENCH_POSITIONS: { label: string; positions: string[] }[] = [
-  { label: "GK",  positions: ["GK"] },
-  { label: "CB",  positions: ["CB"] },
-  { label: "LB",  positions: ["LB", "LWB"] },
-  { label: "RB",  positions: ["RB", "RWB"] },
-  { label: "CDM", positions: ["CDM"] },
-  { label: "CM",  positions: ["CM"] },
-  { label: "CAM", positions: ["CAM"] },
-  { label: "LM",  positions: ["LM", "LW"] },
-  { label: "RM",  positions: ["RM", "RW"] },
-  { label: "LW",  positions: ["LW", "LM"] },
-  { label: "RW",  positions: ["RW", "RM"] },
-  { label: "ST",  positions: ["ST", "CF"] },
-  { label: "CF",  positions: ["CF", "ST"] },
-];
 
 function classifyPos(pos: string): "GK" | "DEF" | "MID" | "ATT" {
   const p = pos.toUpperCase().trim();
@@ -161,7 +146,7 @@ export default function DraftPick({
   const [pickedPlayers, setPickedPlayers] = useState<DraftPlayer[]>(initialPicked ?? []);
   const [confirmExit, setConfirmExit] = useState(false);
   const [currentSlotIndex, setCurrentSlotIndex] = useState(initialPicked?.length ?? 0);
-  const [phase, setPhase] = useState<"spin" | "spinning" | "reveal" | "pick" | "assign" | "assign-bench">("spin");
+  const [phase, setPhase] = useState<"spin" | "spinning" | "reveal" | "pick" | "assign">("spin");
   const [pendingPlayer, setPendingPlayer] = useState<RosterPlayer | null>(null);
   const [slotAssignments, setSlotAssignments] = useState<(number | undefined)[]>(initialSlotAssignments ?? []);
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
@@ -336,12 +321,11 @@ export default function DraftPick({
   const buildClubAbbr = () =>
     spinResult!.club.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 3);
 
-  // Club-first handles bench via the assign grid, so isSubPick only applies to position-first
-  const isSubPick = !isClubFirst && pickedPlayers.length >= 11 && !isSeason2Draft;
+  const isSubPick = pickedPlayers.length >= 11 && !isSeason2Draft;
 
   const finalizePick = useCallback(
     (player: RosterPlayer, slotLabel: string, slotIdx?: number, isBench?: boolean) => {
-      const currentIsSub = !!isBench || (!isClubFirst && pickedPlayers.length >= 11 && !isSeason2Draft);
+      const currentIsSub = !!isBench || (pickedPlayers.length >= 11 && !isSeason2Draft);
       const drafted: DraftPlayer = {
         name: player.name,
         overall: player.overall,
@@ -393,13 +377,11 @@ export default function DraftPick({
         return;
       }
       if (isSubPick) {
-        // Sub pick in position-first: auto-assign primary position
         const primaryPos = (player.positions || "CM").split(",")[0]?.trim() || "CM";
         finalizePick(player, primaryPos, undefined, true);
         return;
       }
       if (isClubFirst) {
-        // Club-first: show assign grid (includes bench option)
         setPendingPlayer(player);
         setPhase("assign");
         return;
@@ -650,8 +632,8 @@ export default function DraftPick({
             })}
           </div>
 
-          {/* Sub bench — visible during sub picks or when subs exist in club-first */}
-          {(isSubPick || (isClubFirst && pickedPlayers.filter(p => p.isSub).length > 0)) && (
+          {/* Sub bench — visible when subs exist */}
+          {(isSubPick || pickedPlayers.filter(p => p.isSub).length > 0) && (
             <div className="mt-3 bg-purple-900/10 border border-purple-700/30 rounded-xl p-3">
               <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-2">
                 Bench ({pickedPlayers.filter(p => p.isSub).length}/3)
@@ -915,7 +897,7 @@ export default function DraftPick({
                   {isSeason2Draft ? (
                     "Sign a player from this roster"
                   ) : isClubFirst ? (
-                    "Pick any player — assign to XI or bench"
+                    "Pick any player from this roster"
                   ) : isSubPick ? (
                     "Pick a substitute from this roster"
                   ) : (
@@ -1156,25 +1138,6 @@ export default function DraftPick({
                 })}
               </div>
 
-              {/* Bench option — available as long as bench isn't full */}
-              {pickedPlayers.filter(p => p.isSub).length < 3 && (
-                <div className="mt-4 max-w-md mx-auto">
-                  <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase text-center mb-2">or</div>
-                  <button
-                    onClick={() => {
-                      if (!pendingPlayer) return;
-                      const primaryPos = (pendingPlayer.positions || "CM").split(",")[0]?.trim() || "CM";
-                      finalizePick(pendingPlayer, primaryPos, undefined, true);
-                    }}
-                    className="w-full py-3 px-4 rounded-xl text-center border-2 border-purple-600/50 bg-purple-900/20 hover:bg-purple-900/40 hover:border-purple-500 transition-all active:scale-95"
-                  >
-                    <div className="text-lg font-extrabold text-purple-400">BENCH</div>
-                    <div className="text-[10px] text-purple-500/70 mt-0.5">
-                      {3 - pickedPlayers.filter(p => p.isSub).length} spot{3 - pickedPlayers.filter(p => p.isSub).length !== 1 ? "s" : ""} remaining
-                    </div>
-                  </button>
-                </div>
-              )}
 
               <div className="flex justify-center mt-6">
                 <button
@@ -1187,70 +1150,6 @@ export default function DraftPick({
             </div>
           )}
 
-          {/* Bench position picker — for both club-first bench and position-first sub picks */}
-          {phase === "assign-bench" && pendingPlayer && spinDisplay && (
-            <div>
-              <div className="text-center mb-5">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  {pendingPlayer.image_url ? (
-                    <ImageWithFallback
-                      src={pendingPlayer.image_url}
-                      alt={pendingPlayer.name}
-                      fallbackText=""
-                      className="w-14 h-14 rounded-full bg-gray-800 object-cover"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-gray-800" />
-                  )}
-                  <div className="text-left">
-                    <div className="text-xl font-extrabold">{pendingPlayer.name}</div>
-                    <div className="text-sm text-gray-400">
-                      OVR <span className="text-purple-400 font-bold">{pendingPlayer.overall}</span>
-                      {" · "}{spinDisplay.club}{" · "}{pendingPlayer.positions}
-                    </div>
-                  </div>
-                </div>
-                <div className="inline-flex items-center gap-1.5 bg-purple-900/30 border border-purple-600/40 rounded-full px-3 py-1">
-                  <span className="text-purple-400 font-bold text-xs">BENCH</span>
-                </div>
-                <p className="text-gray-500 text-sm mt-2">Choose their bench position</p>
-              </div>
-
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-w-md mx-auto">
-                {BENCH_POSITIONS.map((bp) => {
-                  const playerPositions = (pendingPlayer.positions || "").split(",").map(p => p.trim());
-                  const isNatural = bp.positions.some(p => playerPositions.includes(p)) || playerPositions.includes(bp.label);
-                  return (
-                    <button
-                      key={bp.label}
-                      onClick={() => finalizePick(pendingPlayer, bp.label, undefined, true)}
-                      className={`relative py-3 px-2 rounded-xl text-center transition-all duration-200 hover:scale-105 active:scale-95 ${
-                        isNatural
-                          ? "bg-emerald-900/30 border-2 border-emerald-600/60 hover:bg-emerald-900/50 hover:border-emerald-400"
-                          : "bg-gray-800/80 border border-gray-700/50 hover:bg-gray-700 hover:border-gray-500"
-                      }`}
-                    >
-                      <div className={`text-base font-extrabold ${getPositionTextColor(bp.label)}`}>
-                        {bp.label}
-                      </div>
-                      {isNatural && (
-                        <div className="text-[9px] font-bold text-emerald-500 mt-0.5">FIT</div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="flex justify-center mt-6">
-                <button
-                  onClick={() => setPhase(isClubFirst ? "assign" : "pick")}
-                  className="px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-lg font-bold text-sm transition-all text-gray-300"
-                >
-                  {isClubFirst ? "Back to positions" : "Back to roster"}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

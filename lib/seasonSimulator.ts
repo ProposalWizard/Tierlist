@@ -608,7 +608,7 @@ function computeExpectedGoals(
   const offensiveStrength = attackPower * 0.55 + midfieldPower * 0.45;
   const diff = offensiveStrength - oppDefensePower;
   const base = 1.3;
-  const xg = base + diff * 0.04;
+  const xg = base + diff * 0.07;
   return Math.max(0.15, Math.min(4.5, xg));
 }
 

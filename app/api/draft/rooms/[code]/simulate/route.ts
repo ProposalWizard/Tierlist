@@ -50,42 +50,42 @@ export async function POST(
   // Mark room as simulating
   await service.from("draft_rooms").update({ status: "simulating" }).eq("id", room.id);
 
-  const N = roomPlayers.length;
-  // Keep the strongest AI teams (remove N weakest to make room for human players)
-  const sortedAI = [...DEFAULT_PL_TEAMS].sort((a, b) => b.strength - a.strength);
-  const aiOpponents = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
+  try {
+    const N = roomPlayers.length;
+    const sortedAI = [...DEFAULT_PL_TEAMS].sort((a, b) => b.strength - a.strength);
+    const aiOpponents = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
 
-  // Build human team inputs for shared simulation
-  const humanTeams: SharedSeasonInput[] = roomPlayers.map(rp => ({
-    userId: rp.user_id,
-    displayName: rp.display_name,
-    squad: (rp.squad ?? []) as DraftPlayer[],
-  }));
+    const humanTeams: SharedSeasonInput[] = roomPlayers.map(rp => ({
+      userId: rp.user_id,
+      displayName: rp.display_name,
+      squad: (rp.squad ?? []) as DraftPlayer[],
+    }));
 
-  // Single shared seed derived from room ID — same seed for every player
-  const sharedSeed = hashRoomId(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
+    const sharedSeed = hashRoomId(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
+    const seasonNumber = room.season_number ?? 1;
+    const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber);
 
-  // Simulate all 20 teams in ONE shared league — results are consistent for everyone
-  const seasonNumber = room.season_number ?? 1;
-  const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber);
+    for (const rp of roomPlayers) {
+      const result = results.get(rp.user_id);
+      if (!result) continue;
 
-  // Persist each player's result
-  for (const rp of roomPlayers) {
-    const result = results.get(rp.user_id);
-    if (!result) continue;
+      await service
+        .from("draft_room_players")
+        .update({
+          season_result: result,
+          actual_finish: result.actualFinish,
+          status: "simulated",
+        })
+        .eq("id", rp.id);
+    }
 
-    await service
-      .from("draft_room_players")
-      .update({
-        season_result: result,
-        actual_finish: result.actualFinish,
-        status: "simulated",
-      })
-      .eq("id", rp.id);
+    await service.from("draft_rooms").update({ status: "complete" }).eq("id", room.id);
+
+    return Response.json({ ok: true });
+  } catch (e) {
+    // Reset room so the host can retry
+    await service.from("draft_rooms").update({ status: "lobby" }).eq("id", room.id);
+    console.error("Simulation error:", e);
+    return new Response("Simulation failed", { status: 500 });
   }
-
-  // Mark room complete
-  await service.from("draft_rooms").update({ status: "complete" }).eq("id", room.id);
-
-  return Response.json({ ok: true });
 }
