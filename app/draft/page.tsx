@@ -220,7 +220,11 @@ export default function DraftPage() {
   const handleCreateRoom = useCallback(async (s: DraftSettings) => {
     clearProgress();
     setResume(null);
-    const res = await fetch("/api/draft/rooms", { method: "POST" });
+    const res = await fetch("/api/draft/rooms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings: s }),
+    });
     if (!res.ok) { alert("Failed to create room"); return; }
     const { code } = await res.json();
     setRoomCode(code);
@@ -234,12 +238,23 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop]);
 
-  const handleJoinRoom = useCallback((code: string, s: DraftSettings) => {
+  const handleJoinRoom = useCallback(async (code: string, _s: DraftSettings) => {
     clearProgress();
     setResume(null);
+    // Fetch the host's settings from the room
+    const res = await fetch(`/api/draft/rooms/${code}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.room?.settings) {
+        setSettings(data.room.settings as DraftSettings);
+      } else {
+        setSettings(_s);
+      }
+    } else {
+      setSettings(_s);
+    }
     setRoomCode(code);
     setIsHost(false);
-    setSettings(s);
     setPlayers([]);
     setSquadSubmitted(false);
     setPreComputedSeason(null);
@@ -513,6 +528,7 @@ export default function DraftPage() {
           userId={userId}
           squadSubmitted={squadSubmitted}
           currentSeason={currentSeason}
+          settings={settings}
           onStartDraft={handleStartFromLobby}
           onSimulationComplete={handleSimulationComplete}
           onLeave={handleLeaveRoom}
