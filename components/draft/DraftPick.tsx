@@ -321,11 +321,11 @@ export default function DraftPick({
   const buildClubAbbr = () =>
     spinResult!.club.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 3);
 
-  const isSubPick = pickedPlayers.length >= 11 && !isSeason2Draft;
+  const isSubPick = !isClubFirst && pickedPlayers.length >= 11 && !isSeason2Draft;
 
   const finalizePick = useCallback(
     (player: RosterPlayer, slotLabel: string, slotIdx?: number, isBench?: boolean) => {
-      const currentIsSub = !!isBench || (pickedPlayers.length >= 11 && !isSeason2Draft);
+      const currentIsSub = !!isBench || (!isClubFirst && pickedPlayers.length >= 11 && !isSeason2Draft);
       const drafted: DraftPlayer = {
         name: player.name,
         overall: player.overall,
@@ -632,8 +632,8 @@ export default function DraftPick({
             })}
           </div>
 
-          {/* Sub bench — visible when subs exist */}
-          {(isSubPick || pickedPlayers.filter(p => p.isSub).length > 0) && (
+          {/* Sub bench — visible during sub picks or when subs exist */}
+          {(isSubPick || pickedPlayers.filter(p => p.isSub).length > 0 || (isClubFirst && filledSlots.size >= 11)) && (
             <div className="mt-3 bg-purple-900/10 border border-purple-700/30 rounded-xl p-3">
               <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-2">
                 Bench ({pickedPlayers.filter(p => p.isSub).length}/3)
@@ -897,7 +897,7 @@ export default function DraftPick({
                   {isSeason2Draft ? (
                     "Sign a player from this roster"
                   ) : isClubFirst ? (
-                    "Pick any player from this roster"
+                    "Pick any player — assign to XI or bench"
                   ) : isSubPick ? (
                     "Pick a substitute from this roster"
                   ) : (
@@ -1138,6 +1138,25 @@ export default function DraftPick({
                 })}
               </div>
 
+              {/* Bench option — only in club-first, only when bench isn't full */}
+              {pickedPlayers.filter(p => p.isSub).length < 3 && (
+                <div className="mt-4 max-w-md mx-auto">
+                  <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase text-center mb-2">or</div>
+                  <button
+                    onClick={() => {
+                      if (!pendingPlayer) return;
+                      const primaryPos = (pendingPlayer.positions || "CM").split(",")[0]?.trim() || "CM";
+                      finalizePick(pendingPlayer, primaryPos, undefined, true);
+                    }}
+                    className="w-full py-3 px-4 rounded-xl text-center border-2 border-purple-600/50 bg-purple-900/20 hover:bg-purple-900/40 hover:border-purple-500 transition-all active:scale-95"
+                  >
+                    <div className="text-lg font-extrabold text-purple-400">BENCH</div>
+                    <div className="text-[10px] text-purple-500/70 mt-0.5">
+                      {3 - pickedPlayers.filter(p => p.isSub).length} spot{3 - pickedPlayers.filter(p => p.isSub).length !== 1 ? "s" : ""} remaining
+                    </div>
+                  </button>
+                </div>
+              )}
 
               <div className="flex justify-center mt-6">
                 <button
