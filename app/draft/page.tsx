@@ -5,9 +5,12 @@ import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";
 import SquadManager from "@/components/draft/SquadManager";
+import MultiplayerLobby from "@/components/draft/MultiplayerLobby";
 import { createClient } from "@/lib/supabase/client";
 import { getPositionColor } from "@/components/draft/formations";
+import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
+import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
 
 export interface DraftSettings {
   formation: string;
@@ -32,7 +35,7 @@ export interface DraftPlayer {
   attrs?: PlayerAttributes;
 }
 
-type GamePhase = "setup" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
+type GamePhase = "setup" | "lobby" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
 
 const STORAGE_KEY = "pl-draft-progress";
 const MAX_SEASONS = 3;
@@ -59,12 +62,12 @@ interface RatingChange {
 function applyStatChange(player: DraftPlayer, change: number): DraftPlayer {
   const newPlayer = {
     ...player,
-    overall: Math.max(1, Math.min(99, player.overall + change)),
+    overall: Math.max(1, Math.min(100, player.overall + change)),
   };
   if (newPlayer.attrs) {
     const attrs = { ...newPlayer.attrs };
     for (const key of Object.keys(attrs) as (keyof PlayerAttributes)[]) {
-      attrs[key] = Math.max(1, Math.min(99, (attrs[key] as number) + change));
+      attrs[key] = Math.max(1, Math.min(100, (attrs[key] as number) + change));
     }
     newPlayer.attrs = attrs;
   }
@@ -102,8 +105,6 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
   onSkip: () => void;
   seasonNumber: number;
 }) {
-  const [selected, setSelected] = useState<DraftPlayer | null>(null);
-
   const positionOrder: Record<string, number> = { GK: 0, CB: 1, RB: 2, LB: 3, RWB: 2, LWB: 3, CDM: 4, DM: 4, CM: 5, CAM: 6, RM: 7, LM: 7, RW: 8, LW: 8, ST: 9, CF: 9 };
   const sorted = [...players].sort((a, b) =>
     (a.isSub === b.isSub ? (positionOrder[a.assignedPosition] ?? 5) - (positionOrder[b.assignedPosition] ?? 5) : a.isSub ? 1 : -1)
@@ -121,34 +122,9 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
           Sell a Player?
         </h1>
         <p className="text-gray-500 text-sm mt-1">
-          Optionally sell one player and spin for a replacement.
+          Tap a player to sell them and spin for a replacement.
         </p>
       </div>
-
-      {selected && (
-        <div className="bg-red-900/20 border border-red-700/40 rounded-xl px-4 py-3 mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
-          <div className="flex-1">
-            <span className="text-sm font-bold text-red-400">
-              Sell {selected.name}?
-            </span>
-            <span className="text-xs text-gray-500 ml-2">
-              OVR {selected.overall} &middot; {selected.assignedPosition}
-            </span>
-          </div>
-          <button
-            onClick={() => setSelected(null)}
-            className="shrink-0 px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSell(selected)}
-            className="shrink-0 px-4 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-500 rounded-lg transition"
-          >
-            Confirm Sale
-          </button>
-        </div>
-      )}
 
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
         <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
@@ -156,17 +132,12 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
         </h3>
         <div className="space-y-1">
           {sorted.map((p, i) => {
-            const isSelected = selected === p;
             const isSub = !!p.isSub;
             return (
               <button
                 key={i}
-                onClick={() => setSelected(isSelected ? null : p)}
-                className={`w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left ${
-                  isSelected
-                    ? "bg-red-900/40 border-2 border-red-400 scale-[1.01]"
-                    : "hover:bg-gray-800/50 border-2 border-transparent"
-                }`}
+                onClick={() => onSell(p)}
+                className="w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left hover:bg-red-900/30 border-2 border-transparent hover:border-red-400/50 active:scale-[0.98]"
               >
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-9 text-center`}>
                   {p.assignedPosition}
@@ -211,29 +182,100 @@ export default function DraftPage() {
   const [ratingChanges, setRatingChanges] = useState<RatingChange[]>([]);
   const [nextUsedClubYears, setNextUsedClubYears] = useState<string[]>([]);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Multiplayer state
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [isHost, setIsHost] = useState(false);
+  const [squadSubmitted, setSquadSubmitted] = useState(false);
+  const [preComputedSeason, setPreComputedSeason] = useState<SeasonResult | null>(null);
+  const [roomPlayers, setRoomPlayers] = useState<RoomPlayer[] | null>(null);
 
   useEffect(() => {
     setResume(loadProgress());
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setIsSignedIn(!!user);
+      setUserId(user?.id ?? null);
     });
   }, []);
+
+  const scrollTop = useCallback(() => window.scrollTo({ top: 0 }), []);
 
   const handleStartDraft = useCallback((s: DraftSettings) => {
     clearProgress();
     setResume(null);
     setSettings(s);
     setPlayers([]);
+    setRoomCode(null);
+    setIsHost(false);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
     setPhase("draft");
-  }, []);
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleCreateRoom = useCallback(async (s: DraftSettings) => {
+    clearProgress();
+    setResume(null);
+    const res = await fetch("/api/draft/rooms", { method: "POST" });
+    if (!res.ok) { alert("Failed to create room"); return; }
+    const { code } = await res.json();
+    setRoomCode(code);
+    setIsHost(true);
+    setSettings(s);
+    setPlayers([]);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
+    setPhase("lobby");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleJoinRoom = useCallback((code: string, s: DraftSettings) => {
+    clearProgress();
+    setResume(null);
+    setRoomCode(code);
+    setIsHost(false);
+    setSettings(s);
+    setPlayers([]);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
+    setPhase("lobby");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleStartFromLobby = useCallback(() => {
+    setPhase("draft");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[]) => {
+    setPreComputedSeason(myResult);
+    setRoomPlayers(allPlayers);
+    setPhase("result");
+    scrollTop();
+  }, [scrollTop]);
+
+  const handleLeaveRoom = useCallback(() => {
+    setRoomCode(null);
+    setIsHost(false);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
+    setPhase("setup");
+    scrollTop();
+  }, [scrollTop]);
 
   const handleResume = useCallback(() => {
     if (!resume) return;
     setSettings(resume.settings);
     setPlayers([]);
     setPhase("draft");
-  }, [resume]);
+    scrollTop();
+  }, [resume, scrollTop]);
 
   const handleDiscardResume = useCallback(() => {
     clearProgress();
@@ -258,12 +300,26 @@ export default function DraftPage() {
     setResume(null);
     setPlayers(picked);
     setPhase("manage");
-  }, []);
+    scrollTop();
+  }, [scrollTop]);
 
-  const handleManageConfirm = useCallback((arranged: DraftPlayer[]) => {
+  const handleManageConfirm = useCallback(async (arranged: DraftPlayer[]) => {
     setPlayers(arranged);
-    setPhase("result");
-  }, []);
+    if (roomCode) {
+      // Multiplayer: submit squad and go back to lobby
+      const { teamStrength, avgOvr } = computeTeamStrength(arranged);
+      await fetch(`/api/draft/rooms/${roomCode}/ready`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ squad: arranged, avg_ovr: avgOvr, team_strength: teamStrength }),
+      });
+      setSquadSubmitted(true);
+      setPhase("lobby");
+    } else {
+      setPhase("result");
+    }
+    scrollTop();
+  }, [roomCode, scrollTop]);
 
   const handleNewRun = useCallback(() => {
     clearProgress();
@@ -277,7 +333,13 @@ export default function DraftPage() {
     setDepartedPlayers([]);
     setRatingChanges([]);
     setNextUsedClubYears([]);
-  }, []);
+    setRoomCode(null);
+    setIsHost(false);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
+    scrollTop();
+  }, [scrollTop]);
 
   const handlePlayNextSeason = useCallback(
     (season: SeasonResult, currentPlayers: DraftPlayer[]) => {
@@ -323,8 +385,9 @@ export default function DraftPage() {
       setNextUsedClubYears(usedCYs);
       setCurrentSeason((s) => s + 1);
       setPhase("pre-season");
+      scrollTop();
     },
-    []
+    [scrollTop]
   );
 
   const handlePreSeasonContinue = useCallback(
@@ -335,8 +398,9 @@ export default function DraftPage() {
         )
       );
       setPhase("signing");
+      scrollTop();
     },
-    []
+    [scrollTop]
   );
 
   const handleSigningComplete = useCallback(
@@ -349,21 +413,24 @@ export default function DraftPage() {
       const fullSquad = [...nextSeasonPlayers, ...boosted];
       setPlayers(fullSquad);
       setPhase("sell");
+      scrollTop();
     },
-    [nextSeasonPlayers]
+    [nextSeasonPlayers, scrollTop]
   );
 
   const handleSellPlayer = useCallback(
     (soldPlayer: DraftPlayer) => {
       setPlayers((prev) => prev.filter((p) => p !== soldPlayer));
       setPhase("sell-signing");
+      scrollTop();
     },
-    []
+    [scrollTop]
   );
 
   const handleSkipSell = useCallback(() => {
     setPhase("arrange");
-  }, []);
+    scrollTop();
+  }, [scrollTop]);
 
   const handleSellSigningComplete = useCallback(
     (newPlayers: DraftPlayer[]) => {
@@ -374,14 +441,16 @@ export default function DraftPage() {
 
       setPlayers((prev) => [...prev, ...boosted]);
       setPhase("arrange");
+      scrollTop();
     },
-    []
+    [scrollTop]
   );
 
   const handleArrangeConfirm = useCallback((arranged: DraftPlayer[]) => {
     setPlayers(arranged);
     setPhase("result");
-  }, []);
+    scrollTop();
+  }, [scrollTop]);
 
   const totalPicked = resume?.players.length ?? 0;
 
@@ -417,14 +486,29 @@ export default function DraftPage() {
               </div>
             </div>
           )}
-          <DraftSetup onStart={handleStartDraft} />
+          <DraftSetup
+            onStart={handleStartDraft}
+            onCreateRoom={isSignedIn ? handleCreateRoom : undefined}
+            onJoinRoom={isSignedIn ? handleJoinRoom : undefined}
+          />
         </>
+      )}
+      {phase === "lobby" && roomCode && userId && (
+        <MultiplayerLobby
+          roomCode={roomCode}
+          isHost={isHost}
+          userId={userId}
+          squadSubmitted={squadSubmitted}
+          onStartDraft={handleStartFromLobby}
+          onSimulationComplete={handleSimulationComplete}
+          onLeave={handleLeaveRoom}
+        />
       )}
       {phase === "draft" && settings && (
         <DraftPick
           settings={settings}
           onComplete={handleDraftComplete}
-          onBack={handleNewRun}
+          onBack={roomCode ? handleStartFromLobby : handleNewRun}
           initialPicked={resume?.players}
           initialUsedClubYears={resume?.usedClubYears}
           initialSlotAssignments={resume?.slotAssignments}
@@ -440,15 +524,18 @@ export default function DraftPage() {
           formationName={settings?.formation}
         />
       )}
-      {phase === "result" && players.length > 0 && (
+      {phase === "result" && (players.length > 0 || preComputedSeason !== null) && (
         <DraftResult
           players={players}
           onNewRun={handleNewRun}
-          onPlayNextSeason={currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
+          onPlayNextSeason={!roomCode && currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
           seasonNumber={currentSeason}
           previousResult={previousResults[previousResults.length - 1]}
           formationName={settings?.formation}
           isSignedIn={isSignedIn}
+          preComputedSeason={preComputedSeason ?? undefined}
+          roomPlayers={roomPlayers ?? undefined}
+          roomCode={roomCode ?? undefined}
         />
       )}
       {phase === "pre-season" && (

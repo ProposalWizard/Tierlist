@@ -7,15 +7,20 @@ import type { DraftSettings } from "@/app/draft/page";
 
 interface Props {
   onStart: (settings: DraftSettings) => void;
+  onCreateRoom?: (settings: DraftSettings) => void;
+  onJoinRoom?: (code: string, settings: DraftSettings) => void;
 }
 
-export default function DraftSetup({ onStart }: Props) {
+export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props) {
   const [formation, setFormation] = useState("4-3-3");
   const [eraStart, setEraStart] = useState(2007);
   const [eraEnd, setEraEnd] = useState(2026);
   const [mode, setMode] = useState<"normal" | "prime">("normal");
   const [draftOrder, setDraftOrder] = useState<"position-first" | "club-first">("position-first");
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
+  const [joinCode, setJoinCode] = useState("");
+  const [joiningRoom, setJoiningRoom] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -23,6 +28,37 @@ export default function DraftSetup({ onStart }: Props) {
       setIsSignedIn(!!user);
     });
   }, []);
+
+  const currentSettings = (): DraftSettings => ({
+    formation,
+    eraStart,
+    eraEnd: Math.max(eraStart, eraEnd),
+    mode,
+    draftOrder,
+  });
+
+  const handleJoin = async () => {
+    const code = joinCode.trim().toUpperCase();
+    if (!code || code.length !== 6) {
+      setJoinError("Enter a 6-character room code");
+      return;
+    }
+    setJoiningRoom(true);
+    setJoinError(null);
+    try {
+      const res = await fetch(`/api/draft/rooms/${code}/join`, { method: "POST" });
+      if (!res.ok) {
+        const text = await res.text();
+        setJoinError(text || "Room not found");
+        return;
+      }
+      onJoinRoom?.(code, currentSettings());
+    } catch {
+      setJoinError("Failed to connect");
+    } finally {
+      setJoiningRoom(false);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-3 sm:px-4 py-6">
@@ -255,6 +291,51 @@ export default function DraftSetup({ onStart }: Props) {
             )}
           </div>
         </div>
+
+        {/* Multiplayer */}
+        {isSignedIn === true && onCreateRoom && onJoinRoom && (
+          <div className="mb-6 sm:mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-px flex-1 bg-gray-800" />
+              <label className="text-xs font-bold tracking-widest text-gray-500 uppercase">
+                Multiplayer
+              </label>
+              <div className="h-px flex-1 bg-gray-800" />
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={() => onCreateRoom(currentSettings())}
+                className="w-full py-3 px-4 rounded-xl text-sm font-bold bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50 text-gray-300 hover:text-white transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
+              >
+                <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create Room
+              </button>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinError(null); }}
+                  onKeyDown={e => e.key === "Enter" && handleJoin()}
+                  placeholder="Room code"
+                  maxLength={6}
+                  className="flex-1 bg-gray-800/80 border border-gray-700/50 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-sky-500 tracking-widest uppercase"
+                />
+                <button
+                  onClick={handleJoin}
+                  disabled={joiningRoom}
+                  className="px-5 py-3 rounded-xl text-sm font-bold bg-sky-600 hover:bg-sky-500 text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {joiningRoom ? "..." : "Join"}
+                </button>
+              </div>
+              {joinError && (
+                <div className="text-red-400 text-xs text-center">{joinError}</div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Era validation warning */}
         {eraStart > eraEnd && (

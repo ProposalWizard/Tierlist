@@ -182,7 +182,7 @@ function createRng(seed: number): () => number {
 
 // --- Default PL teams ---
 
-const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
+export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
   { name: 'Man City', strength: 85 },
   { name: 'Arsenal', strength: 85 },
   { name: 'Liverpool', strength: 83 },
@@ -295,7 +295,7 @@ function classifyPosition(pos: string): PositionRole {
   const p = pos.toUpperCase().trim();
   if (p === 'GK') return 'GK';
   if (['CB', 'RB', 'LB', 'RWB', 'LWB', 'SW'].includes(p)) return 'DEF';
-  if (['CDM', 'CM', 'CAM', 'RM', 'LM', 'DM', 'RAM', 'LAM'].includes(p)) return 'MID';
+  if (['CDM', 'CM', 'CAM', 'RM', 'LM', 'DM'].includes(p)) return 'MID';
   return 'ATT';
 }
 
@@ -1612,7 +1612,7 @@ export function simulateSeason(
     }
   }
 
-  // Compute avg rating (PL matches only — same for both views)
+  // Compute PL-only avg rating
   for (const p of allPlayers) {
     const ratings = playerRatings[p.name];
     statsMap[p.name].avgRating = ratings.length > 0
@@ -1625,9 +1625,23 @@ export function simulateSeason(
     (a, b) => (b.goals + b.assists) - (a.goals + a.assists),
   );
 
+  // All-comps ratings — start from PL ratings, append cup match ratings.
+  // Use a separate seeded rng so cup ratings don't shift the main rng stream.
+  const allCompsRatings: Record<string, number[]> = {};
+  for (const p of allPlayers) allCompsRatings[p.name] = [...playerRatings[p.name]];
+  const cupRng = createRng(seed + 77777);
+
+  const rateMatchForPlayer = (p: DraftPlayer, m: { goalScorers: { player: string; minute: number }[]; assistProviders: { player: string; minute: number }[]; goalsAgainst: number; result: 'W' | 'D' | 'L'; goalsFor: number; opponent: string; isHome: boolean }) => {
+    allCompsRatings[p.name].push(matchRating(p, m as MatchResult, seasonForm[p.name] || 0, cupRng));
+  };
+
   // Count FA Cup stats (added to all-comps totals)
   for (const cm of faCup.matches) {
-    for (const p of starters) statsMap[p.name].appearances++;
+    const matchForRating = { goalScorers: cm.goalScorers, assistProviders: cm.assistProviders, goalsAgainst: cm.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.goalsFor, opponent: cm.opponent, isHome: false };
+    for (const p of starters) {
+      statsMap[p.name].appearances++;
+      rateMatchForPlayer(p, matchForRating);
+    }
     for (const gs of cm.goalScorers) {
       if (statsMap[gs.player]) statsMap[gs.player].goals++;
     }
@@ -1645,7 +1659,11 @@ export function simulateSeason(
   // Count UCL stats (added to all-comps totals)
   if (ucl?.qualified) {
     const countUCLMatch = (m: UCLMatch) => {
-      for (const p of starters) statsMap[p.name].appearances++;
+      const mr = { goalScorers: m.goalScorers, assistProviders: m.assistProviders, goalsAgainst: m.goalsAgainst, result: m.result, goalsFor: m.goalsFor, opponent: m.opponent, isHome: m.isHome };
+      for (const p of starters) {
+        statsMap[p.name].appearances++;
+        rateMatchForPlayer(p, mr);
+      }
       for (const gs of m.goalScorers) {
         if (statsMap[gs.player]) statsMap[gs.player].goals++;
       }
@@ -1667,7 +1685,11 @@ export function simulateSeason(
   // Count UEL stats (added to all-comps totals)
   if (uel?.qualified) {
     const countUELMatch = (m: UCLMatch) => {
-      for (const p of starters) statsMap[p.name].appearances++;
+      const mr = { goalScorers: m.goalScorers, assistProviders: m.assistProviders, goalsAgainst: m.goalsAgainst, result: m.result, goalsFor: m.goalsFor, opponent: m.opponent, isHome: m.isHome };
+      for (const p of starters) {
+        statsMap[p.name].appearances++;
+        rateMatchForPlayer(p, mr);
+      }
       for (const gs of m.goalScorers) {
         if (statsMap[gs.player]) statsMap[gs.player].goals++;
       }
@@ -1684,6 +1706,14 @@ export function simulateSeason(
       countUELMatch(tie.leg1);
       if (tie.leg2) countUELMatch(tie.leg2);
     }
+  }
+
+  // Update statsMap with all-comps avg rating
+  for (const p of allPlayers) {
+    const r = allCompsRatings[p.name];
+    statsMap[p.name].avgRating = r.length > 0
+      ? Math.round((r.reduce((a, b) => a + b, 0) / r.length) * 10) / 10
+      : 6.0;
   }
 
   const playerStats = Object.values(statsMap).sort(
@@ -1850,4 +1880,110 @@ export function simulateSeason(
     ucl,
     uel,
   };
+}
+
+// --- Pre-season odds calculation (Monte Carlo) ---
+
+export interface SeasonOdds {
+  winLeague: number;
+  top4: number;
+  top7: number;
+  relegation: number;
+  avgPoints: number;
+  avgFinish: number;
+}
+
+export function calculateSeasonOdds(
+  players: DraftPlayer[],
+  otherTeams?: { name: string; strength: number }[],
+  seasonNumber?: number,
+  simCount: number = 500,
+): SeasonOdds {
+  const starters = players.filter(p => !p.isSub);
+  const subs = players.filter(p => p.isSub);
+
+  const opponents = otherTeams && otherTeams.length === 19
+    ? otherTeams
+    : DEFAULT_PL_TEAMS;
+
+  const ratings = computePhaseRatings(starters);
+  const playerTeamName = 'Knowitball FC';
+
+  let winCount = 0;
+  let top4Count = 0;
+  let top7Count = 0;
+  let relegationCount = 0;
+  let totalPoints = 0;
+  let totalFinish = 0;
+
+  for (let sim = 0; sim < simCount; sim++) {
+    const seed = (seasonNumber ?? 1) * 100 + sim * 7919 + 31;
+    const rng = createRng(seed);
+
+    const matches: MatchResult[] = [];
+    const subAppearances: Record<string, number> = {};
+    for (const sub of subs) subAppearances[sub.name] = 0;
+
+    // Season form
+    const allPlayers = [...starters, ...subs];
+    const seasonForm: Record<string, number> = {};
+    for (const p of allPlayers) {
+      const r = rng();
+      const ovrFactor = Math.max(0.5, (90 - p.overall) / 25);
+      if (r < 0.08) seasonForm[p.name] = 0.4 * ovrFactor;
+      else if (r < 0.20) seasonForm[p.name] = 0.2 * ovrFactor;
+      else if (r < 0.80) seasonForm[p.name] = (rng() * 0.2 - 0.1) * ovrFactor;
+      else if (r < 0.92) seasonForm[p.name] = -0.15 * ovrFactor;
+      else seasonForm[p.name] = -0.3 * ovrFactor;
+    }
+    // consume seasonForm RNG draws but don't use them — just advance the RNG state
+    void seasonForm;
+
+    for (const opp of opponents) {
+      const homeActiveSubs = subs.filter(() => rng() < 0.6);
+      const homePlayers = [...starters, ...homeActiveSubs];
+      matches.push(simulateMatch(homePlayers, ratings, opp, true, rng));
+
+      const awayActiveSubs = subs.filter(() => rng() < 0.6);
+      const awayPlayers = [...starters, ...awayActiveSubs];
+      matches.push(simulateMatch(awayPlayers, ratings, opp, false, rng));
+    }
+
+    // Shuffle
+    for (let i = matches.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [matches[i], matches[j]] = [matches[j], matches[i]];
+    }
+
+    const wins = matches.filter(m => m.result === 'W').length;
+    const draws = matches.filter(m => m.result === 'D').length;
+    const points = wins * 3 + draws;
+
+    const leagueTable = simulateLeague(playerTeamName, ratings.teamStrength, opponents, matches, rng);
+    const finish = leagueTable.findIndex(t => t.isPlayer) + 1;
+
+    totalPoints += points;
+    totalFinish += finish;
+    if (finish === 1) winCount++;
+    if (finish <= 4) top4Count++;
+    if (finish <= 7) top7Count++;
+    if (finish >= 18) relegationCount++;
+  }
+
+  return {
+    winLeague: Math.round((winCount / simCount) * 100),
+    top4: Math.round((top4Count / simCount) * 100),
+    top7: Math.round((top7Count / simCount) * 100),
+    relegation: Math.round((relegationCount / simCount) * 100),
+    avgPoints: Math.round(totalPoints / simCount),
+    avgFinish: Math.round((totalFinish / simCount) * 10) / 10,
+  };
+}
+
+export function computeTeamStrength(players: DraftPlayer[]): { teamStrength: number; avgOvr: number } {
+  const starters = players.filter(p => !p.isSub);
+  const ratings = computePhaseRatings(starters.length > 0 ? starters : players);
+  const total = players.reduce((sum, p) => sum + (Number(p.overall) || 70), 0);
+  const avgOvr = Math.round(total / (players.length || 1));
+  return { teamStrength: Math.round(ratings.teamStrength * 10) / 10, avgOvr };
 }

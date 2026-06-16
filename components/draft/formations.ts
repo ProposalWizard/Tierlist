@@ -54,9 +54,9 @@ export const FORMATIONS: Formation[] = [
       { position: "LB", label: "LB", x: 15, y: 72, compatiblePositions: ["LB", "LWB"] },
       { position: "CDM", label: "CDM", x: 60, y: 58, compatiblePositions: ["CDM", "CM"] },
       { position: "CDM", label: "CDM", x: 40, y: 58, compatiblePositions: ["CDM", "CM"] },
-      { position: "RAM", label: "RAM", x: 78, y: 38, compatiblePositions: ["RW", "RM", "CAM", "CM"] },
+      { position: "RW", label: "RW", x: 78, y: 38, compatiblePositions: ["RW", "RM", "CAM", "CM"] },
       { position: "CAM", label: "CAM", x: 50, y: 35, compatiblePositions: ["CAM", "CM", "CF"] },
-      { position: "LAM", label: "LAM", x: 22, y: 38, compatiblePositions: ["LW", "LM", "CAM", "CM"] },
+      { position: "LW", label: "LW", x: 22, y: 38, compatiblePositions: ["LW", "LM", "CAM", "CM"] },
       { position: "ST", label: "ST", x: 50, y: 18, compatiblePositions: ["ST", "CF"] },
     ],
   },
@@ -153,7 +153,7 @@ export function getPositionColor(pos: string): string {
   const p = pos.toUpperCase();
   if (p === "GK") return "bg-yellow-500";
   if (["CB", "RB", "LB", "RWB", "LWB"].includes(p)) return "bg-blue-500";
-  if (["CDM", "CM", "CAM", "RM", "LM", "RAM", "LAM"].includes(p)) return "bg-green-500";
+  if (["CDM", "CM", "CAM", "RM", "LM"].includes(p)) return "bg-green-500";
   return "bg-red-500";
 }
 
@@ -161,6 +161,6 @@ export function getPositionTextColor(pos: string): string {
   const p = pos.toUpperCase();
   if (p === "GK") return "text-yellow-400";
   if (["CB", "RB", "LB", "RWB", "LWB"].includes(p)) return "text-blue-400";
-  if (["CDM", "CM", "CAM", "RM", "LM", "RAM", "LAM"].includes(p)) return "text-green-400";
+  if (["CDM", "CM", "CAM", "RM", "LM"].includes(p)) return "text-green-400";
   return "text-red-400";
 }
