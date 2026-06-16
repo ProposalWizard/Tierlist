@@ -1171,17 +1171,16 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               </button>
 
               {showUCLTable && (
-                <div className="overflow-x-auto mb-3">
-                  <div className="min-w-[340px]">
+                <div className="mb-3">
+                  <div>
                   <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 mb-1 px-1 uppercase">
-                    <span className="w-5 text-center">#</span>
-                    <span className="flex-1 ml-1.5">Club</span>
-                    <span className="w-6 text-center hidden sm:inline">P</span>
-                    <span className="w-6 text-center">W</span>
-                    <span className="w-6 text-center">D</span>
-                    <span className="w-6 text-center">L</span>
-                    <span className="w-8 text-right">GD</span>
-                    <span className="w-8 text-right">PTS</span>
+                    <span className="w-5 text-center shrink-0">#</span>
+                    <span className="flex-1 ml-1 min-w-0">Club</span>
+                    <span className="w-6 text-center shrink-0">W</span>
+                    <span className="w-6 text-center shrink-0">D</span>
+                    <span className="w-6 text-center shrink-0">L</span>
+                    <span className="w-7 text-right shrink-0">GD</span>
+                    <span className="w-7 text-right shrink-0">PTS</span>
                   </div>
                   <div className="space-y-0.5">
                     {ucl.leagueTable.slice(0, 36).map((team, i) => {
@@ -1203,22 +1202,21 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                                     : ""
                           }`}
                         >
-                          <span className={`w-5 text-center text-[10px] font-bold ${
+                          <span className={`w-5 text-center text-[10px] font-bold shrink-0 ${
                             isTop8 ? "text-blue-400" : isPlayoff ? "text-cyan-400/70" : "text-gray-600"
                           }`}>{pos}</span>
-                          <span className={`flex-1 ml-1.5 truncate ${team.isPlayer ? "text-blue-300" : "text-gray-400"}`}>
+                          <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-blue-300" : "text-gray-400"}`}>
                             {team.isPlayer ? "Knowitball FC" : team.name}
                           </span>
-                          <span className="w-6 text-center text-gray-600 hidden sm:inline">{team.played}</span>
-                          <span className="w-6 text-center text-gray-600">{team.won}</span>
-                          <span className="w-6 text-center text-gray-600">{team.drawn}</span>
-                          <span className="w-6 text-center text-gray-600">{team.lost}</span>
-                          <span className={`w-8 text-right text-[10px] font-bold ${
+                          <span className="w-6 text-center text-gray-600 shrink-0">{team.won}</span>
+                          <span className="w-6 text-center text-gray-600 shrink-0">{team.drawn}</span>
+                          <span className="w-6 text-center text-gray-600 shrink-0">{team.lost}</span>
+                          <span className={`w-7 text-right text-[10px] font-bold shrink-0 ${
                             team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-gray-600"
                           }`}>
                             {team.goalDifference > 0 ? "+" : ""}{team.goalDifference}
                           </span>
-                          <span className={`w-8 text-right font-black ${team.isPlayer ? "text-blue-300" : "text-white"}`}>
+                          <span className={`w-7 text-right font-black shrink-0 ${team.isPlayer ? "text-blue-300" : "text-white"}`}>
                             {team.points}
                           </span>
                         </div>
@@ -1369,17 +1367,16 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               </button>
 
               {showUELTable && (
-                <div className="overflow-x-auto mb-3">
-                  <div className="min-w-[340px]">
+                <div className="mb-3">
+                  <div>
                   <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 mb-1 px-1 uppercase">
-                    <span className="w-5 text-center">#</span>
-                    <span className="flex-1 ml-1.5">Club</span>
-                    <span className="w-6 text-center hidden sm:inline">P</span>
-                    <span className="w-6 text-center">W</span>
-                    <span className="w-6 text-center">D</span>
-                    <span className="w-6 text-center">L</span>
-                    <span className="w-8 text-right">GD</span>
-                    <span className="w-8 text-right">PTS</span>
+                    <span className="w-5 text-center shrink-0">#</span>
+                    <span className="flex-1 ml-1 min-w-0">Club</span>
+                    <span className="w-6 text-center shrink-0">W</span>
+                    <span className="w-6 text-center shrink-0">D</span>
+                    <span className="w-6 text-center shrink-0">L</span>
+                    <span className="w-7 text-right shrink-0">GD</span>
+                    <span className="w-7 text-right shrink-0">PTS</span>
                   </div>
                   <div className="space-y-0.5">
                     {uel.leagueTable.slice(0, 36).map((team, i) => {
@@ -1401,22 +1398,21 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                                     : ""
                           }`}
                         >
-                          <span className={`w-5 text-center text-[10px] font-bold ${
+                          <span className={`w-5 text-center text-[10px] font-bold shrink-0 ${
                             isTop8 ? "text-orange-400" : isPlayoff ? "text-amber-400/70" : "text-gray-600"
                           }`}>{pos}</span>
-                          <span className={`flex-1 ml-1.5 truncate ${team.isPlayer ? "text-orange-300" : "text-gray-400"}`}>
+                          <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-orange-300" : "text-gray-400"}`}>
                             {team.isPlayer ? "Knowitball FC" : team.name}
                           </span>
-                          <span className="w-6 text-center text-gray-600 hidden sm:inline">{team.played}</span>
-                          <span className="w-6 text-center text-gray-600">{team.won}</span>
-                          <span className="w-6 text-center text-gray-600">{team.drawn}</span>
-                          <span className="w-6 text-center text-gray-600">{team.lost}</span>
-                          <span className={`w-8 text-right text-[10px] font-bold ${
+                          <span className="w-6 text-center text-gray-600 shrink-0">{team.won}</span>
+                          <span className="w-6 text-center text-gray-600 shrink-0">{team.drawn}</span>
+                          <span className="w-6 text-center text-gray-600 shrink-0">{team.lost}</span>
+                          <span className={`w-7 text-right text-[10px] font-bold shrink-0 ${
                             team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-gray-600"
                           }`}>
                             {team.goalDifference > 0 ? "+" : ""}{team.goalDifference}
                           </span>
-                          <span className={`w-8 text-right font-black ${team.isPlayer ? "text-orange-300" : "text-white"}`}>
+                          <span className={`w-7 text-right font-black shrink-0 ${team.isPlayer ? "text-orange-300" : "text-white"}`}>
                             {team.points}
                           </span>
                         </div>
@@ -1559,37 +1555,32 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               </button>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <div className="min-w-[360px]">
+          <div>
           <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
-            <span className="w-8"></span>
-            <span className="flex-1 ml-2">Player</span>
-            <span className="w-8 text-center">APP</span>
-            <span className="w-8 text-center">G</span>
-            <span className="w-8 text-center">A</span>
-            <span className="w-8 text-center">CS</span>
-            <span className="w-9 text-center">AVG</span>
+            <span className="w-7 shrink-0"></span>
+            <span className="flex-1 ml-1 min-w-0">Player</span>
+            <span className="w-6 text-center shrink-0">G</span>
+            <span className="w-6 text-center shrink-0">A</span>
+            <span className="w-6 text-center shrink-0">CS</span>
+            <span className="w-8 text-center shrink-0">AVG</span>
           </div>
           <div className="space-y-0.5">
             {sortedStats.map((ps, i) => (
               <div key={i} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(ps.assignedPosition)} text-white w-8 text-center`}>
+                <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(ps.assignedPosition)} text-white w-7 text-center shrink-0`}>
                   {ps.assignedPosition}
                 </span>
-                <span className="flex-1 ml-2 font-medium">{ps.name}</span>
-                <span className={`w-8 text-center text-xs font-bold ${ps.appearances < 38 ? "text-purple-400" : "text-gray-500"}`}>
-                  {ps.appearances}
-                </span>
-                <span className={`w-8 text-center font-bold ${ps.goals > 0 ? "text-emerald-400" : "text-gray-700"}`}>
+                <span className="flex-1 ml-1 font-medium truncate min-w-0">{ps.name}</span>
+                <span className={`w-6 text-center text-xs font-bold shrink-0 ${ps.goals > 0 ? "text-emerald-400" : "text-gray-700"}`}>
                   {ps.goals > 0 ? ps.goals : "-"}
                 </span>
-                <span className={`w-8 text-center font-bold ${ps.assists > 0 ? "text-emerald-400" : "text-gray-700"}`}>
+                <span className={`w-6 text-center text-xs font-bold shrink-0 ${ps.assists > 0 ? "text-emerald-400" : "text-gray-700"}`}>
                   {ps.assists > 0 ? ps.assists : "-"}
                 </span>
-                <span className={`w-8 text-center font-bold ${ps.cleanSheets > 0 ? "text-emerald-400" : "text-gray-700"}`}>
+                <span className={`w-6 text-center text-xs font-bold shrink-0 ${ps.cleanSheets > 0 ? "text-emerald-400" : "text-gray-700"}`}>
                   {ps.cleanSheets > 0 ? ps.cleanSheets : "-"}
                 </span>
-                <span className={`w-9 text-center text-xs font-bold ${
+                <span className={`w-8 text-center text-xs font-bold shrink-0 ${
                   ps.avgRating >= 7.5 ? "text-emerald-400" :
                   ps.avgRating >= 7.0 ? "text-yellow-400" :
                   ps.avgRating >= 6.5 ? "text-orange-400" : "text-gray-500"
@@ -1599,7 +1590,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               </div>
             ))}
           </div>
-            </div>
           </div>
         </div>
 
@@ -1660,7 +1650,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       </button>
 
       {showTable && (
-        <div className="bg-gray-900 rounded-xl p-4 mb-4 overflow-x-auto border border-gray-800/50">
+        <div className="bg-gray-900 rounded-xl p-3 sm:p-4 mb-4 border border-gray-800/50">
           {/* Legend */}
           <div className="flex items-center gap-4 mb-3 text-[10px]">
             <div className="flex items-center gap-1.5">
@@ -1681,16 +1671,15 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             </div>
           </div>
 
-          <div className="min-w-[420px]">
+          <div>
           <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
-            <span className="w-7 text-center">#</span>
-            <span className="flex-1 ml-2">Club</span>
-            <span className="w-8 text-center hidden sm:inline">P</span>
-            <span className="w-8 text-center">W</span>
-            <span className="w-8 text-center">D</span>
-            <span className="w-8 text-center">L</span>
-            <span className="w-10 text-right">GD</span>
-            <span className="w-10 text-right">PTS</span>
+            <span className="w-6 text-center shrink-0">#</span>
+            <span className="flex-1 ml-1 min-w-0">Club</span>
+            <span className="w-7 text-center shrink-0">W</span>
+            <span className="w-7 text-center shrink-0">D</span>
+            <span className="w-7 text-center shrink-0">L</span>
+            <span className="w-8 text-right shrink-0">GD</span>
+            <span className="w-8 text-right shrink-0">PTS</span>
           </div>
           <div className="space-y-0.5">
             {season.leagueTable.map((team, i) => {
@@ -1704,22 +1693,21 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                       : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer)}`
                   }`}
                 >
-                  <span className={`w-7 text-center text-xs font-bold rounded ${getLeaguePositionBadge(pos)}`}>
+                  <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos)}`}>
                     {pos}
                   </span>
-                  <span className={`flex-1 ml-2 truncate ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>
+                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>
                     {team.isPlayer ? "Knowitball FC" : team.name}
                   </span>
-                  <span className="w-8 text-center text-gray-500 text-xs hidden sm:inline">{team.played}</span>
-                  <span className="w-8 text-center text-gray-500 text-xs">{team.won}</span>
-                  <span className="w-8 text-center text-gray-500 text-xs">{team.drawn}</span>
-                  <span className="w-8 text-center text-gray-500 text-xs">{team.lost}</span>
-                  <span className={`w-10 text-right text-xs font-bold ${
+                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.won}</span>
+                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.drawn}</span>
+                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.lost}</span>
+                  <span className={`w-8 text-right text-xs font-bold shrink-0 ${
                     team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-gray-500"
                   }`}>
                     {team.goalDifference > 0 ? "+" : ""}{team.goalDifference}
                   </span>
-                  <span className={`w-10 text-right font-black ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>
+                  <span className={`w-8 text-right font-black shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>
                     {team.points}
                   </span>
                 </div>
