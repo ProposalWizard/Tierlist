@@ -460,7 +460,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   );
   const season = computedSeason;
   const odds = useMemo(
-    () => preComputedSeason ? null : calculateSeasonOdds(players, undefined, seasonNumber, 500),
+    () => preComputedSeason ? null : calculateSeasonOdds(players, undefined, seasonNumber, 800),
     [players, seasonNumber, preComputedSeason],
   );
   const [showMatches, setShowMatches] = useState(false);
