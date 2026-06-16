@@ -2149,7 +2149,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       {/* History link */}
       <Link
         href="/draft/history"
-        className="block w-full mt-3 py-3 text-center text-sm font-bold text-gray-500 hover:text-white bg-gray-900 hover:bg-gray-800 border border-gray-800/50 rounded-xl transition"
+        className="block w-full mt-3 py-3 text-center text-sm font-bold text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-xl transition"
       >
         View Draft History &rarr;
       </Link>
