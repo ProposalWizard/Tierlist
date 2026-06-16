@@ -263,12 +263,18 @@ export default function MultiplayerLobby({
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                        {p.squad.slice(0, 14).map((player, i) => (
+                        {[...p.squad]
+                          .sort((a, b) => {
+                            if (a.isSub !== b.isSub) return a.isSub ? 1 : -1;
+                            const order: Record<string, number> = { GK: 0, CB: 1, LB: 2, RB: 3, RWB: 3, LWB: 2, CDM: 4, CM: 5, CAM: 6, LM: 7, RM: 8, LW: 9, RW: 10, CF: 11, ST: 12 };
+                            return (order[a.assignedPosition] ?? 6) - (order[b.assignedPosition] ?? 6);
+                          })
+                          .map((player, i) => (
                           <div key={i} className="flex items-center gap-1.5 text-xs">
                             <span className={`text-[9px] font-bold px-1 py-0.5 rounded w-8 text-center shrink-0 ${
                               player.isSub ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-300"
                             }`}>
-                              {player.isSub ? "SUB" : player.assignedPosition}
+                              {player.assignedPosition}
                             </span>
                             <span className="truncate text-gray-300">{player.name}</span>
                             <span className="text-gray-600 font-bold shrink-0">{player.overall}</span>
