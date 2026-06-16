@@ -75,19 +75,22 @@ export default function MultiplayerLobby({
   }, [userId, onSimulationComplete]);
 
   useEffect(() => {
-    let roomId: string | null = null;
     const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
 
     fetchRoom().then((data) => {
+      if (cancelled) return;
       setLoading(false);
       if (data?.room) {
-        roomId = data.room.id;
+        const roomId = data.room.id;
         if (data.room.status === "complete") {
           handleComplete(data.players ?? []);
           return;
         }
-        // Subscribe to realtime updates
-        const channel = supabase
+
+        channel = supabase
           .channel(`draft-room-${roomCode}`)
           .on(
             "postgres_changes",
@@ -105,15 +108,26 @@ export default function MultiplayerLobby({
           .on(
             "postgres_changes",
             { event: "*", schema: "public", table: "draft_room_players", filter: `room_id=eq.${roomId}` },
-            () => {
-              fetchRoom();
-            }
+            () => { fetchRoom(); }
           )
           .subscribe();
 
-        return () => { supabase.removeChannel(channel); };
+        // Polling fallback in case Realtime misses an update
+        pollTimer = setInterval(async () => {
+          if (cancelled) return;
+          const d = await fetchRoom();
+          if (d?.room?.status === "complete" && d.players) {
+            handleComplete(d.players);
+          }
+        }, 3000);
       }
     });
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+      if (pollTimer) clearInterval(pollTimer);
+    };
   }, [roomCode, fetchRoom, handleComplete]);
 
   const handleCopyCode = () => {
