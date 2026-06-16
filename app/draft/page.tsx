@@ -556,22 +556,32 @@ export default function DraftPage() {
         gkDiving: p.gkDiving, gkPositioning: p.gkPositioning, gkReflexes: p.gkReflexes,
       });
 
+      const fetchRosterSafe = async (club: string, year: number): Promise<Record<string, unknown>[]> => {
+        try {
+          const res = await fetch(`/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`);
+          if (!res.ok) return [];
+          const data = await res.json();
+          return Array.isArray(data.roster) ? data.roster : [];
+        } catch { return []; }
+      };
+
+      const spinAndPick = async (): Promise<{ roster: Record<string, unknown>[]; clubYear: { club: string; year: number } } | null> => {
+        for (let r = 0; r < 5; r++) {
+          const cy = pickClubYear();
+          if (!cy) return null;
+          usedClubYears.add(`${cy.club}-${cy.year}`);
+          const roster = await fetchRosterSafe(cy.club, cy.year);
+          if (roster.length > 0) return { roster, clubYear: cy };
+        }
+        return null;
+      };
+
       // 11 starters — one spin per formation slot
       for (let i = 0; i < formation.slots.length; i++) {
         const slot = formation.slots[i];
-        let roster: Record<string, unknown>[] = [];
-        let clubYear: { club: string; year: number } | null = null;
-        let retries = 0;
-        while (roster.length === 0 && retries < 5) {
-          clubYear = pickClubYear();
-          if (!clubYear) break;
-          usedClubYears.add(`${clubYear.club}-${clubYear.year}`);
-          const res = await fetch(`/api/draft/roster?club=${encodeURIComponent(clubYear.club)}&year=${clubYear.year}`);
-          const data = await res.json();
-          roster = data.roster ?? [];
-          retries++;
-        }
-        if (!clubYear || roster.length === 0) continue;
+        const pick = await spinAndPick();
+        if (!pick) continue;
+        const { roster, clubYear } = pick;
 
         const compatible = roster.filter(p => {
           const playerPositions = String(p.positions ?? "").split(",").map(s => s.trim());
@@ -593,19 +603,9 @@ export default function DraftPage() {
 
       // 3 subs
       for (let i = 0; i < 3; i++) {
-        let roster: Record<string, unknown>[] = [];
-        let clubYear: { club: string; year: number } | null = null;
-        let retries = 0;
-        while (roster.length === 0 && retries < 5) {
-          clubYear = pickClubYear();
-          if (!clubYear) break;
-          usedClubYears.add(`${clubYear.club}-${clubYear.year}`);
-          const res = await fetch(`/api/draft/roster?club=${encodeURIComponent(clubYear.club)}&year=${clubYear.year}`);
-          const data = await res.json();
-          roster = data.roster ?? [];
-          retries++;
-        }
-        if (!clubYear || roster.length === 0) continue;
+        const pick = await spinAndPick();
+        if (!pick) continue;
+        const { roster, clubYear } = pick;
 
         const best = roster.reduce((a, b) => (Number(b.overall) > Number(a.overall) ? b : a), roster[0]) as Record<string, unknown>;
         const primaryPos = String(best.positions ?? "CM").split(",")[0].trim() || "CM";
@@ -619,6 +619,12 @@ export default function DraftPage() {
           nationality: String(best.nationality ?? ""), age: Number(best.age ?? 0),
           isSub: true, attrs: buildAttrs(best as Record<string, number>),
         });
+      }
+
+      if (squad.length === 0) {
+        alert("Auto-draft found no players — check that player data is imported");
+        setAutoFilling(false);
+        return;
       }
 
       setSettings(defaultSettings);
