@@ -45,7 +45,7 @@ interface SavedProgress {
   settings: DraftSettings;
   players: DraftPlayer[];
   usedClubYears: string[];
-  slotAssignments?: number[];
+  slotAssignments?: (number | undefined)[];
 }
 
 interface DepartedPlayer {
@@ -303,7 +303,7 @@ export default function DraftPage() {
   }, []);
 
   const handleProgress = useCallback(
-    (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: number[]) => {
+    (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: (number | undefined)[]) => {
       if (!settings) return;
       try {
         localStorage.setItem(
@@ -425,9 +425,11 @@ export default function DraftPage() {
   const handlePreSeasonContinue = useCallback(
     (trainingPlayerName: string) => {
       setNextSeasonPlayers((prev) =>
-        prev.map((p) =>
-          p.name === trainingPlayerName ? applyStatChange(p, 3) : p
-        )
+        prev.map((p) => {
+          if (p.name !== trainingPlayerName) return p;
+          const boost = p.overall >= 90 ? 2 : 3;
+          return applyStatChange(p, boost);
+        })
       );
       setPhase("signing");
       scrollTop();
