@@ -1040,25 +1040,25 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-gray-800/50 rounded-lg p-3 text-center">
               <div className={`text-2xl font-black ${odds.winLeague >= 50 ? "text-yellow-400" : odds.winLeague >= 20 ? "text-emerald-400" : "text-gray-300"}`}>
-                {odds.winLeague}%
+                {odds.winLeague.toFixed(1)}%
               </div>
               <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Win League</div>
             </div>
             <div className="bg-gray-800/50 rounded-lg p-3 text-center">
               <div className={`text-2xl font-black ${odds.top4 >= 70 ? "text-blue-400" : odds.top4 >= 40 ? "text-emerald-400" : "text-gray-300"}`}>
-                {odds.top4}%
+                {odds.top4.toFixed(1)}%
               </div>
               <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 4</div>
             </div>
             <div className="bg-gray-800/50 rounded-lg p-3 text-center">
               <div className={`text-2xl font-black ${odds.top7 >= 80 ? "text-emerald-400" : odds.top7 >= 50 ? "text-emerald-400/70" : "text-gray-300"}`}>
-                {odds.top7}%
+                {odds.top7.toFixed(1)}%
               </div>
               <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 7</div>
             </div>
             <div className="bg-gray-800/50 rounded-lg p-3 text-center">
               <div className={`text-2xl font-black ${odds.relegation >= 30 ? "text-red-400" : odds.relegation >= 10 ? "text-orange-400" : "text-gray-300"}`}>
-                {odds.relegation}%
+                {odds.relegation.toFixed(1)}%
               </div>
               <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Relegation</div>
             </div>

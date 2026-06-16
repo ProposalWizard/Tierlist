@@ -2014,10 +2014,10 @@ export function calculateSeasonOdds(
   }
 
   return {
-    winLeague: Math.round((winCount / simCount) * 100),
-    top4: Math.round((top4Count / simCount) * 100),
-    top7: Math.round((top7Count / simCount) * 100),
-    relegation: Math.round((relegationCount / simCount) * 100),
+    winLeague: Math.round((winCount / simCount) * 1000) / 10,
+    top4: Math.round((top4Count / simCount) * 1000) / 10,
+    top7: Math.round((top7Count / simCount) * 1000) / 10,
+    relegation: Math.round((relegationCount / simCount) * 1000) / 10,
     avgPoints: Math.round(totalPoints / simCount),
     avgFinish: Math.round((totalFinish / simCount) * 10) / 10,
     perfectSeason: Math.round((perfectCount / simCount) * 1000) / 10,
