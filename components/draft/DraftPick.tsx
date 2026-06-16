@@ -1161,7 +1161,11 @@ export default function DraftPick({
                 <div className="mt-4 max-w-md mx-auto">
                   <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase text-center mb-2">or</div>
                   <button
-                    onClick={() => setPhase("assign-bench")}
+                    onClick={() => {
+                      if (!pendingPlayer) return;
+                      const primaryPos = (pendingPlayer.positions || "CM").split(",")[0]?.trim() || "CM";
+                      finalizePick(pendingPlayer, primaryPos, undefined, true);
+                    }}
                     className="w-full py-3 px-4 rounded-xl text-center border-2 border-purple-600/50 bg-purple-900/20 hover:bg-purple-900/40 hover:border-purple-500 transition-all active:scale-95"
                   >
                     <div className="text-lg font-extrabold text-purple-400">BENCH</div>

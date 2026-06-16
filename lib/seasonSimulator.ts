@@ -310,7 +310,7 @@ function positionFitness(player: DraftPlayer): number {
   if (natural.includes(assigned)) return 1.0;
 
   const assignedRole = classifyPosition(assigned);
-  if (natural.some(p => classifyPosition(p) === assignedRole)) return 0.92;
+  if (natural.some(p => classifyPosition(p) === assignedRole)) return 0.96;
 
   const mediumPairs: [string[], string[]][] = [
     [['LB', 'LWB'], ['LM']],
@@ -318,8 +318,8 @@ function positionFitness(player: DraftPlayer): number {
     [['CDM', 'DM'], ['CB']],
   ];
   for (const [groupA, groupB] of mediumPairs) {
-    if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.77;
-    if (groupB.includes(assigned) && natural.some(p => groupA.includes(p))) return 0.77;
+    if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.88;
+    if (groupB.includes(assigned) && natural.some(p => groupA.includes(p))) return 0.88;
   }
 
   const adjacent: Record<PositionRole, PositionRole[]> = {
@@ -328,9 +328,9 @@ function positionFitness(player: DraftPlayer): number {
     DEF: ['MID'],
     GK: [],
   };
-  if (natural.some(p => adjacent[assignedRole]?.includes(classifyPosition(p)))) return 0.70;
+  if (natural.some(p => adjacent[assignedRole]?.includes(classifyPosition(p)))) return 0.82;
 
-  return 0.4;
+  return 0.6;
 }
 
 // --- Attribute helpers ---
@@ -1920,6 +1920,10 @@ export interface SeasonOdds {
   relegation: number;
   avgPoints: number;
   avgFinish: number;
+  perfectSeason: number;
+  unbeaten: number;
+  centurion: number;
+  avgWins: number;
 }
 
 export function calculateSeasonOdds(
@@ -1942,8 +1946,12 @@ export function calculateSeasonOdds(
   let top4Count = 0;
   let top7Count = 0;
   let relegationCount = 0;
+  let perfectCount = 0;
+  let unbeatenCount = 0;
+  let centurionCount = 0;
   let totalPoints = 0;
   let totalFinish = 0;
+  let totalWins = 0;
 
   for (let sim = 0; sim < simCount; sim++) {
     const seed = (seasonNumber ?? 1) * 100 + sim * 7919 + 31;
@@ -1991,21 +1999,31 @@ export function calculateSeasonOdds(
     const leagueTable = simulateLeague(playerTeamName, ratings.teamStrength, opponents, matches, rng);
     const finish = leagueTable.findIndex(t => t.isPlayer) + 1;
 
+    const losses = matches.filter(m => m.result === 'L').length;
+
     totalPoints += points;
     totalFinish += finish;
+    totalWins += wins;
     if (finish === 1) winCount++;
     if (finish <= 4) top4Count++;
     if (finish <= 7) top7Count++;
     if (finish >= 18) relegationCount++;
+    if (wins === 38) perfectCount++;
+    if (losses === 0) unbeatenCount++;
+    if (points >= 100) centurionCount++;
   }
 
   return {
-    winLeague: Math.round((winCount / simCount) * 100),
-    top4: Math.round((top4Count / simCount) * 100),
-    top7: Math.round((top7Count / simCount) * 100),
-    relegation: Math.round((relegationCount / simCount) * 100),
+    winLeague: Math.round((winCount / simCount) * 1000) / 10,
+    top4: Math.round((top4Count / simCount) * 1000) / 10,
+    top7: Math.round((top7Count / simCount) * 1000) / 10,
+    relegation: Math.round((relegationCount / simCount) * 1000) / 10,
     avgPoints: Math.round(totalPoints / simCount),
     avgFinish: Math.round((totalFinish / simCount) * 10) / 10,
+    perfectSeason: Math.round((perfectCount / simCount) * 1000) / 10,
+    unbeaten: Math.round((unbeatenCount / simCount) * 1000) / 10,
+    centurion: Math.round((centurionCount / simCount) * 1000) / 10,
+    avgWins: Math.round((totalWins / simCount) * 10) / 10,
   };
 }
 
