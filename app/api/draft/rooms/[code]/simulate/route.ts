@@ -51,6 +51,12 @@ export async function POST(
   await service.from("draft_rooms").update({ status: "simulating" }).eq("id", room.id);
 
   try {
+    const emptySquads = roomPlayers.filter(rp => !rp.squad || !Array.isArray(rp.squad) || rp.squad.length === 0);
+    if (emptySquads.length > 0) {
+      await service.from("draft_rooms").update({ status: "lobby" }).eq("id", room.id);
+      return new Response(`Missing squad data for ${emptySquads.length} player(s)`, { status: 400 });
+    }
+
     const N = roomPlayers.length;
     const sortedAI = [...DEFAULT_PL_TEAMS].sort((a, b) => b.strength - a.strength);
     const aiOpponents = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
@@ -83,9 +89,9 @@ export async function POST(
 
     return Response.json({ ok: true });
   } catch (e) {
-    // Reset room so the host can retry
     await service.from("draft_rooms").update({ status: "lobby" }).eq("id", room.id);
     console.error("Simulation error:", e);
-    return new Response("Simulation failed", { status: 500 });
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return new Response(`Simulation failed: ${msg}`, { status: 500 });
   }
 }

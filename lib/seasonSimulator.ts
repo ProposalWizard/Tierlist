@@ -608,8 +608,8 @@ function computeExpectedGoals(
   const offensiveStrength = attackPower * 0.55 + midfieldPower * 0.45;
   const diff = offensiveStrength - oppDefensePower;
   const base = 1.3;
-  const xg = base + diff * 0.055;
-  return Math.max(0.45, Math.min(3.5, xg));
+  const xg = base + diff * 0.065;
+  return Math.max(0.25, Math.min(3.5, xg));
 }
 
 // --- Match simulation ---
@@ -638,9 +638,9 @@ function simulateMatch(
   const ourDefensivePower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
   const oppXg = computeExpectedGoals(oppAtkPower, oppStrength * 0.95, ourDefensivePower);
 
-  // Per-match form factor: teams can over/under-perform on the day (0.78–1.22)
-  const myForm = 0.78 + rng() * 0.44;
-  const oppForm = 0.78 + rng() * 0.44;
+  // Per-match form factor: teams can over/under-perform on the day (0.85–1.15)
+  const myForm = 0.85 + rng() * 0.30;
+  const oppForm = 0.85 + rng() * 0.30;
 
   const goalsFor = poisson(myXg * myForm, rng);
   const goalsAgainst = poisson(oppXg * oppForm, rng);
@@ -694,8 +694,8 @@ function simulateNeutralMatch(
   const homeXg = computeExpectedGoals(homeEff, homeEff * 0.95, awayEff);
   const awayXg = computeExpectedGoals(awayEff, awayEff * 0.95, homeEff);
 
-  const homeForm = 0.78 + rng() * 0.44;
-  const awayForm = 0.78 + rng() * 0.44;
+  const homeForm = 0.85 + rng() * 0.30;
+  const awayForm = 0.85 + rng() * 0.30;
 
   return {
     homeGoals: poisson(homeXg * homeForm, rng),
@@ -2066,7 +2066,10 @@ function simulateScoreline(
   const homeXg = computeExpectedGoals(hAtk, hMid, aDefPower);
   const awayXg = computeExpectedGoals(aAtk, aMid, hDefPower);
 
-  return { homeGoals: poisson(homeXg, rng), awayGoals: poisson(awayXg, rng) };
+  const homeForm = 0.85 + rng() * 0.30;
+  const awayForm = 0.85 + rng() * 0.30;
+
+  return { homeGoals: poisson(homeXg * homeForm, rng), awayGoals: poisson(awayXg * awayForm, rng) };
 }
 
 // Build a MatchResult from a pre-computed scoreline, assigning goal scorers from the given players
