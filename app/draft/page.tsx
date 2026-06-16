@@ -18,6 +18,7 @@ export interface DraftSettings {
   eraEnd: number;
   mode: "normal" | "prime";
   draftOrder: "position-first" | "club-first";
+  respins: 0 | 1 | 3;
 }
 
 export interface DraftPlayer {
