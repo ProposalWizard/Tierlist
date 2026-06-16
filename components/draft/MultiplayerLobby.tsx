@@ -55,72 +55,81 @@ export default function MultiplayerLobby({
   const [copied, setCopied] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
   const completedRef = useRef(false);
+  const roomCodeRef = useRef(roomCode);
+  const userIdRef = useRef(userId);
+  const onSimCompleteRef = useRef(onSimulationComplete);
+  roomCodeRef.current = roomCode;
+  userIdRef.current = userId;
+  onSimCompleteRef.current = onSimulationComplete;
 
   const fetchRoom = useCallback(async () => {
-    const res = await fetch(`/api/draft/rooms/${roomCode}`);
+    const res = await fetch(`/api/draft/rooms/${roomCodeRef.current}`);
     if (!res.ok) return;
     const data = await res.json();
     setRoom(data.room);
     setPlayers(data.players ?? []);
     return data;
-  }, [roomCode]);
+  }, []);
 
-  // Handle room completion — call parent once
-  const handleComplete = useCallback((roomPlayers: RoomPlayer[]) => {
+  const tryComplete = useCallback((roomPlayers: RoomPlayer[]) => {
     if (completedRef.current) return;
-    const myPlayer = roomPlayers.find(p => p.user_id === userId);
+    const myPlayer = roomPlayers.find(p => p.user_id === userIdRef.current);
     if (!myPlayer?.season_result) return;
     completedRef.current = true;
-    onSimulationComplete(myPlayer.season_result, roomPlayers);
-  }, [userId, onSimulationComplete]);
+    onSimCompleteRef.current(myPlayer.season_result, roomPlayers);
+  }, []);
 
+  // Realtime subscription + polling fallback (stable — no deps that change on re-render)
   useEffect(() => {
     const supabase = createClient();
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let cancelled = false;
 
+    const checkComplete = async () => {
+      if (cancelled || completedRef.current) return;
+      const d = await fetchRoom();
+      if (d?.room?.status === "complete" && d.players) {
+        tryComplete(d.players);
+      }
+    };
+
     fetchRoom().then((data) => {
       if (cancelled) return;
       setLoading(false);
-      if (data?.room) {
-        const roomId = data.room.id;
-        if (data.room.status === "complete") {
-          handleComplete(data.players ?? []);
+      if (!data?.room) return;
+
+      const roomId = data.room.id;
+      if (data.room.status === "complete") {
+        tryComplete(data.players ?? []);
+        return;
+      }
+
+      channel = supabase
+        .channel(`draft-room-${roomCodeRef.current}-${Date.now()}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "draft_rooms", filter: `id=eq.${roomId}` },
+          (payload) => {
+            const updated = payload.new as RoomData;
+            setRoom(updated);
+            if (updated.status === "complete") checkComplete();
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "draft_room_players", filter: `room_id=eq.${roomId}` },
+          () => { fetchRoom(); }
+        )
+        .subscribe();
+
+      pollTimer = setInterval(() => {
+        if (completedRef.current) {
+          if (pollTimer) clearInterval(pollTimer);
           return;
         }
-
-        channel = supabase
-          .channel(`draft-room-${roomCode}`)
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "draft_rooms", filter: `id=eq.${roomId}` },
-            (payload) => {
-              const updated = payload.new as RoomData;
-              setRoom(updated);
-              if (updated.status === "complete") {
-                fetchRoom().then((d) => {
-                  if (d?.players) handleComplete(d.players);
-                });
-              }
-            }
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "draft_room_players", filter: `room_id=eq.${roomId}` },
-            () => { fetchRoom(); }
-          )
-          .subscribe();
-
-        // Polling fallback in case Realtime misses an update
-        pollTimer = setInterval(async () => {
-          if (cancelled) return;
-          const d = await fetchRoom();
-          if (d?.room?.status === "complete" && d.players) {
-            handleComplete(d.players);
-          }
-        }, 3000);
-      }
+        checkComplete();
+      }, 3000);
     });
 
     return () => {
@@ -128,7 +137,7 @@ export default function MultiplayerLobby({
       if (channel) supabase.removeChannel(channel);
       if (pollTimer) clearInterval(pollTimer);
     };
-  }, [roomCode, fetchRoom, handleComplete]);
+  }, [roomCode, fetchRoom, tryComplete]);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(roomCode).then(() => {
@@ -140,13 +149,23 @@ export default function MultiplayerLobby({
   const handleSimulate = async () => {
     setSimulating(true);
     setSimError(null);
-    const res = await fetch(`/api/draft/rooms/${roomCode}/simulate`, { method: "POST" });
-    if (!res.ok) {
-      const text = await res.text();
-      setSimError(text || "Simulation failed");
+    try {
+      const res = await fetch(`/api/draft/rooms/${roomCode}/simulate`, { method: "POST" });
+      if (!res.ok) {
+        const text = await res.text();
+        setSimError(text || "Simulation failed");
+        setSimulating(false);
+        return;
+      }
+      // Simulation succeeded on the server — immediately fetch and complete
+      const d = await fetchRoom();
+      if (d?.room?.status === "complete" && d.players) {
+        tryComplete(d.players);
+      }
+    } catch {
+      setSimError("Network error — try again");
       setSimulating(false);
     }
-    // On success, realtime will trigger the completion
   };
 
   const allReady = players.length > 1 && players.every(p => p.status === "ready" || p.status === "simulated");
