@@ -504,6 +504,36 @@ export default function DraftPage() {
     scrollTop();
   }, [roomCode, currentSeason, scrollTop]);
 
+  const handleSkipToTest = useCallback(() => {
+    const makePlayer = (name: string, pos: string, ovr: number, age: number, isSub?: boolean): DraftPlayer => ({
+      name, overall: ovr, positions: pos, club: "Test FC", clubYear: "FIFA 23",
+      assignedPosition: pos.split(",")[0].trim(), sofifa_id: String(Math.random()),
+      image_url: null, nationality: "England", age, isSub,
+    });
+    const testSquad: DraftPlayer[] = [
+      makePlayer("Alisson", "GK", 89, 31),
+      makePlayer("Trent Alexander-Arnold", "RB", 87, 25),
+      makePlayer("Virgil van Dijk", "CB", 90, 32),
+      makePlayer("Rúben Dias", "CB", 89, 27),
+      makePlayer("Andrew Robertson", "LB", 87, 30),
+      makePlayer("Casemiro", "CDM", 87, 32),
+      makePlayer("Rodri", "CM", 91, 28),
+      makePlayer("Kevin De Bruyne", "CAM", 92, 33),
+      makePlayer("Mohamed Salah", "RW", 91, 32),
+      makePlayer("Erling Haaland", "ST", 93, 24),
+      makePlayer("Son Heung-min", "LW", 87, 32),
+      makePlayer("Ederson", "GK", 89, 31, true),
+      makePlayer("João Cancelo", "RB,CB", 85, 30, true),
+      makePlayer("Marcus Rashford", "LW,ST", 83, 27, true),
+    ];
+    setSettings({ formation: "4-3-3", eraStart: 7, eraEnd: 26, mode: "normal", draftOrder: "position-first", respins: 1 });
+    setPlayers(testSquad);
+    setCurrentSeason(1);
+    setPreviousResults([]);
+    setPhase("result");
+    scrollTop();
+  }, [scrollTop]);
+
   const totalPicked = resume?.players.length ?? 0;
 
   return (
@@ -543,6 +573,14 @@ export default function DraftPage() {
             onCreateRoom={isSignedIn ? handleCreateRoom : undefined}
             onJoinRoom={isSignedIn ? handleJoinRoom : undefined}
           />
+          <div className="text-center pb-6">
+            <button
+              onClick={handleSkipToTest}
+              className="text-xs text-gray-700 hover:text-gray-500 underline transition"
+            >
+              [test] skip draft → simulate
+            </button>
+          </div>
         </>
       )}
       {phase === "lobby" && roomCode && userId && (
