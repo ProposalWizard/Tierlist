@@ -361,7 +361,6 @@ export default function DraftPick({
         setSpinResult(null);
         setSpinDisplay(null);
         setSpinAnimating(false);
-        setRespinsRemaining(maxRespins);
         setPhase("spin");
       }
     },

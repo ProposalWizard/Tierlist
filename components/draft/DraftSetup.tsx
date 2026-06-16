@@ -297,7 +297,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
         {/* Re-spins */}
         <div className="mb-6 sm:mb-8">
           <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
-            Re-spins Per Pick
+            Re-spins Per Draft
           </label>
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {([3, 1, 0] as const).map((n) => (
@@ -314,7 +314,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                   {n === 0 ? "None" : n === 1 ? "1 Re-spin" : "3 Re-spins"}
                 </div>
                 <div className={`text-[9px] sm:text-[10px] mt-0.5 ${respins === n ? "text-emerald-200/70" : "text-gray-600"}`}>
-                  {n === 0 ? "No second chances" : n === 1 ? "One per pick" : "Three per pick"}
+                  {n === 0 ? "No second chances" : n === 1 ? "One total" : "Three total"}
                 </div>
               </button>
             ))}
