@@ -51,8 +51,8 @@ interface Props {
   isMultiplayer?: boolean;
   initialPicked?: DraftPlayer[];
   initialUsedClubYears?: string[];
-  initialSlotAssignments?: number[];
-  onProgress?: (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: number[]) => void;
+  initialSlotAssignments?: (number | undefined)[];
+  onProgress?: (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: (number | undefined)[]) => void;
   totalPicks?: number;
   existingSquad?: DraftPlayer[];
 }
@@ -163,7 +163,7 @@ export default function DraftPick({
   const [currentSlotIndex, setCurrentSlotIndex] = useState(initialPicked?.length ?? 0);
   const [phase, setPhase] = useState<"spin" | "spinning" | "reveal" | "pick" | "assign" | "assign-bench">("spin");
   const [pendingPlayer, setPendingPlayer] = useState<RosterPlayer | null>(null);
-  const [slotAssignments, setSlotAssignments] = useState<number[]>(initialSlotAssignments ?? []);
+  const [slotAssignments, setSlotAssignments] = useState<(number | undefined)[]>(initialSlotAssignments ?? []);
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [spinDisplay, setSpinDisplay] = useState<{ club: string; year: number } | null>(null);
@@ -341,7 +341,7 @@ export default function DraftPick({
 
   const finalizePick = useCallback(
     (player: RosterPlayer, slotLabel: string, slotIdx?: number, isBench?: boolean) => {
-      const currentIsSub = isBench || (pickedPlayers.length >= 11 && !isSeason2Draft);
+      const currentIsSub = !!isBench || (!isClubFirst && pickedPlayers.length >= 11 && !isSeason2Draft);
       const drafted: DraftPlayer = {
         name: player.name,
         overall: player.overall,
@@ -362,13 +362,11 @@ export default function DraftPick({
         ...Array.from(usedClubYears) as string[],
         `${spinResult!.club}-${spinResult!.year}`,
       ];
-      const newAssignments = slotIdx !== undefined
-        ? [...slotAssignments, slotIdx]
-        : slotAssignments;
+      const newAssignments = [...slotAssignments, slotIdx];
 
       setPickedPlayers(newPicked);
       setUsedClubYears(new Set(newUsed));
-      if (slotIdx !== undefined) setSlotAssignments(newAssignments);
+      setSlotAssignments(newAssignments);
       setPendingPlayer(null);
 
       if (newPicked.length >= maxPicks) {
@@ -395,9 +393,9 @@ export default function DraftPick({
         return;
       }
       if (isSubPick) {
-        // Sub pick in position-first: show position picker
-        setPendingPlayer(player);
-        setPhase("assign-bench");
+        // Sub pick in position-first: auto-assign primary position
+        const primaryPos = (player.positions || "CM").split(",")[0]?.trim() || "CM";
+        finalizePick(player, primaryPos, undefined, true);
         return;
       }
       if (isClubFirst) {
@@ -422,12 +420,13 @@ export default function DraftPick({
   );
 
   // Map slot indices to picked players for pitch rendering
-  const filledSlots = new Set(isClubFirst ? slotAssignments : Array.from({ length: pickedPlayers.length }, (_, i) => i));
+  const filledSlots = new Set(isClubFirst ? slotAssignments.filter((s): s is number => s !== undefined) : Array.from({ length: pickedPlayers.length }, (_, i) => i));
   const slotToPlayer = new Map<number, DraftPlayer>();
   if (isClubFirst) {
     pickedPlayers.forEach((p, pickIdx) => {
-      if (slotAssignments[pickIdx] !== undefined) {
-        slotToPlayer.set(slotAssignments[pickIdx], p);
+      const s = slotAssignments[pickIdx];
+      if (s !== undefined) {
+        slotToPlayer.set(s, p);
       }
     });
   } else {

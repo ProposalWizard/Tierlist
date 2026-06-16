@@ -155,7 +155,7 @@ export default function Season2Overview({
             Off-Season Training
           </h3>
           <p className="text-xs text-gray-500 mb-3">
-            Choose one of your youngest players for intensive training (+3 all attributes)
+            Choose one of your youngest players for intensive training (+3 all attributes, +2 if 90+ OVR)
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {youngestTwo.map((p) => {
@@ -188,7 +188,7 @@ export default function Season2Overview({
                   </div>
                   {isSelected && (
                     <div className="mt-2 text-xs font-bold text-cyan-400">
-                      {p.overall} &rarr; {p.overall + 3} OVR
+                      {p.overall} &rarr; {p.overall + (p.overall >= 90 ? 2 : 3)} OVR
                     </div>
                   )}
                 </button>
