@@ -171,9 +171,9 @@ export default function MultiplayerLobby({
       {/* Room Settings */}
       {settings && currentSeason === 1 && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Rules</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-1">Rules</div>
+          <div className="text-[10px] text-gray-600 mb-2">Formation is chosen individually</div>
           <div className="flex flex-wrap gap-2">
-            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">{settings.formation}</span>
             <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">FIFA {settings.eraStart}–{settings.eraEnd}</span>
             {settings.mode === "prime" && (
               <span className="text-xs font-bold bg-yellow-500/15 text-yellow-400 px-2.5 py-1 rounded border border-yellow-500/30">Prime</span>
@@ -263,12 +263,18 @@ export default function MultiplayerLobby({
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                        {p.squad.slice(0, 14).map((player, i) => (
+                        {[...p.squad]
+                          .sort((a, b) => {
+                            if (a.isSub !== b.isSub) return a.isSub ? 1 : -1;
+                            const order: Record<string, number> = { GK: 0, CB: 1, LB: 2, RB: 3, RWB: 3, LWB: 2, CDM: 4, CM: 5, CAM: 6, LM: 7, RM: 8, LW: 9, RW: 10, CF: 11, ST: 12 };
+                            return (order[a.assignedPosition] ?? 6) - (order[b.assignedPosition] ?? 6);
+                          })
+                          .map((player, i) => (
                           <div key={i} className="flex items-center gap-1.5 text-xs">
                             <span className={`text-[9px] font-bold px-1 py-0.5 rounded w-8 text-center shrink-0 ${
                               player.isSub ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-300"
                             }`}>
-                              {player.isSub ? "SUB" : player.assignedPosition}
+                              {player.assignedPosition}
                             </span>
                             <span className="truncate text-gray-300">{player.name}</span>
                             <span className="text-gray-600 font-bold shrink-0">{player.overall}</span>

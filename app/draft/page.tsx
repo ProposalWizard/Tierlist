@@ -238,20 +238,24 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop]);
 
-  const handleJoinRoom = useCallback(async (code: string, _s: DraftSettings) => {
+  const handleJoinRoom = useCallback(async (code: string, ownSettings: DraftSettings) => {
     clearProgress();
     setResume(null);
-    // Fetch the host's settings from the room
+    // Fetch host's settings but keep player's own formation
     const res = await fetch(`/api/draft/rooms/${code}`);
     if (res.ok) {
       const data = await res.json();
       if (data.room?.settings) {
-        setSettings(data.room.settings as DraftSettings);
+        const hostSettings = data.room.settings as DraftSettings;
+        setSettings({
+          ...hostSettings,
+          formation: ownSettings.formation, // each player picks their own formation
+        });
       } else {
-        setSettings(_s);
+        setSettings(ownSettings);
       }
     } else {
-      setSettings(_s);
+      setSettings(ownSettings);
     }
     setRoomCode(code);
     setIsHost(false);
@@ -474,11 +478,29 @@ export default function DraftPage() {
     [scrollTop]
   );
 
-  const handleArrangeConfirm = useCallback((arranged: DraftPlayer[]) => {
+  const handleArrangeConfirm = useCallback(async (arranged: DraftPlayer[]) => {
     setPlayers(arranged);
-    setPhase("result");
+    if (roomCode) {
+      if (currentSeason > 1) {
+        await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nextSeasonNumber: currentSeason }),
+        });
+      }
+      const { teamStrength, avgOvr } = computeTeamStrength(arranged);
+      await fetch(`/api/draft/rooms/${roomCode}/ready`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ squad: arranged, avg_ovr: avgOvr, team_strength: teamStrength }),
+      });
+      setSquadSubmitted(true);
+      setPhase("lobby");
+    } else {
+      setPhase("result");
+    }
     scrollTop();
-  }, [scrollTop]);
+  }, [roomCode, currentSeason, scrollTop]);
 
   const totalPicked = resume?.players.length ?? 0;
 
@@ -539,6 +561,7 @@ export default function DraftPage() {
           settings={settings}
           onComplete={handleDraftComplete}
           onBack={roomCode ? handleStartFromLobby : handleNewRun}
+          isMultiplayer={!!roomCode}
           initialPicked={resume?.players}
           initialUsedClubYears={resume?.usedClubYears}
           initialSlotAssignments={resume?.slotAssignments}

@@ -1229,6 +1229,7 @@ function simulateChampionsLeague(
 
   // --- Knockout phase ---
   const knockoutTies: UCLKnockoutTie[] = [];
+  const eliminatedTeams = new Set<string>();
 
   // Round of 32 (positions 9–24, paired: 9th vs 24th, 10th vs 23rd, etc.)
   if (leaguePosition >= 9) {
@@ -1237,43 +1238,47 @@ function simulateChampionsLeague(
     const r32Str = strengthMap.get(r32Opp.name) || 75;
     const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, players, ratings, rng, false);
     knockoutTies.push(r32);
+    eliminatedTeams.add(r32Opp.name);
     if (r32.result === 'L') {
       return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 32' };
     }
   }
 
   // Round of 16
-  const r16Pool = leagueTable.filter(t => !t.isPlayer).slice(0, 16);
+  const r16Pool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 16);
   const r16Opp = r16Pool[Math.floor(rng() * r16Pool.length)];
   const r16Str = strengthMap.get(r16Opp.name) || 75;
   const r16 = simulateUCLKnockoutTie('Round of 16', r16Opp.name, r16Str, players, ratings, rng, false);
   knockoutTies.push(r16);
+  eliminatedTeams.add(r16Opp.name);
   if (r16.result === 'L') {
     return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 16' };
   }
 
   // Quarter-Final
-  const qfPool = leagueTable.filter(t => !t.isPlayer).slice(0, 8);
+  const qfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 8);
   const qfOpp = qfPool[Math.floor(rng() * qfPool.length)];
   const qfStr = strengthMap.get(qfOpp.name) || 75;
   const qf = simulateUCLKnockoutTie('Quarter-Final', qfOpp.name, qfStr, players, ratings, rng, false);
   knockoutTies.push(qf);
+  eliminatedTeams.add(qfOpp.name);
   if (qf.result === 'L') {
     return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Quarter-Final' };
   }
 
   // Semi-Final
-  const sfPool = leagueTable.filter(t => !t.isPlayer).slice(0, 4);
+  const sfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 4);
   const sfOpp = sfPool[Math.floor(rng() * sfPool.length)];
   const sfStr = strengthMap.get(sfOpp.name) || 75;
   const sf = simulateUCLKnockoutTie('Semi-Final', sfOpp.name, sfStr, players, ratings, rng, false);
   knockoutTies.push(sf);
+  eliminatedTeams.add(sfOpp.name);
   if (sf.result === 'L') {
     return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Semi-Final' };
   }
 
   // Final (single match)
-  const finalPool = leagueTable.filter(t => !t.isPlayer).slice(0, 3);
+  const finalPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 3);
   const finalOpp = finalPool[Math.floor(rng() * finalPool.length)];
   const finalStr = strengthMap.get(finalOpp.name) || 75;
   const final_ = simulateUCLKnockoutTie('Final', finalOpp.name, finalStr, players, ratings, rng, true);
@@ -1420,6 +1425,7 @@ function simulateEuropaLeague(
   }
 
   const knockoutTies: UCLKnockoutTie[] = [];
+  const eliminatedTeams = new Set<string>();
 
   if (leaguePosition >= 9) {
     const r32OppPos = 33 - leaguePosition;
@@ -1427,39 +1433,43 @@ function simulateEuropaLeague(
     const r32Str = strengthMap.get(r32Opp.name) || 70;
     const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, players, ratings, rng, false);
     knockoutTies.push(r32);
+    eliminatedTeams.add(r32Opp.name);
     if (r32.result === 'L') {
       return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 32' };
     }
   }
 
-  const r16Pool = leagueTable.filter(t => !t.isPlayer).slice(0, 16);
+  const r16Pool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 16);
   const r16Opp = r16Pool[Math.floor(rng() * r16Pool.length)];
   const r16Str = strengthMap.get(r16Opp.name) || 70;
   const r16 = simulateUCLKnockoutTie('Round of 16', r16Opp.name, r16Str, players, ratings, rng, false);
   knockoutTies.push(r16);
+  eliminatedTeams.add(r16Opp.name);
   if (r16.result === 'L') {
     return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 16' };
   }
 
-  const qfPool = leagueTable.filter(t => !t.isPlayer).slice(0, 8);
+  const qfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 8);
   const qfOpp = qfPool[Math.floor(rng() * qfPool.length)];
   const qfStr = strengthMap.get(qfOpp.name) || 70;
   const qf = simulateUCLKnockoutTie('Quarter-Final', qfOpp.name, qfStr, players, ratings, rng, false);
   knockoutTies.push(qf);
+  eliminatedTeams.add(qfOpp.name);
   if (qf.result === 'L') {
     return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Quarter-Final' };
   }
 
-  const sfPool = leagueTable.filter(t => !t.isPlayer).slice(0, 4);
+  const sfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 4);
   const sfOpp = sfPool[Math.floor(rng() * sfPool.length)];
   const sfStr = strengthMap.get(sfOpp.name) || 70;
   const sf = simulateUCLKnockoutTie('Semi-Final', sfOpp.name, sfStr, players, ratings, rng, false);
   knockoutTies.push(sf);
+  eliminatedTeams.add(sfOpp.name);
   if (sf.result === 'L') {
     return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Semi-Final' };
   }
 
-  const finalPool = leagueTable.filter(t => !t.isPlayer).slice(0, 3);
+  const finalPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 3);
   const finalOpp = finalPool[Math.floor(rng() * finalPool.length)];
   const finalStr = strengthMap.get(finalOpp.name) || 70;
   const final_ = simulateUCLKnockoutTie('Final', finalOpp.name, finalStr, players, ratings, rng, true);
@@ -1496,31 +1506,50 @@ export function simulateSeason(
   const playerTeamName = 'Knowitball FC';
 
   // Simulate 38 matches (home and away vs each opponent)
-  const matches: MatchResult[] = [];
-  const matchSubSets: Set<string>[] = [];
+  // Structured as two halves: MW 1-19 and MW 20-38
   const subAppearances: Record<string, number> = {};
   for (const sub of subs) subAppearances[sub.name] = 0;
 
+  // First half: one match per opponent, randomly home or away
+  const firstHalf: MatchResult[] = [];
+  const firstHalfSubs: Set<string>[] = [];
   for (const opp of opponents) {
-    const homeActiveSubs = subs.filter(() => rng() < 0.6);
-    const homePlayers = [...starters, ...homeActiveSubs];
-    matches.push(simulateMatch(homePlayers, ratings, opp, true, rng));
-    matchSubSets.push(new Set(homeActiveSubs.map(s => s.name)));
-    for (const sub of homeActiveSubs) subAppearances[sub.name]++;
-
-    const awayActiveSubs = subs.filter(() => rng() < 0.6);
-    const awayPlayers = [...starters, ...awayActiveSubs];
-    matches.push(simulateMatch(awayPlayers, ratings, opp, false, rng));
-    matchSubSets.push(new Set(awayActiveSubs.map(s => s.name)));
-    for (const sub of awayActiveSubs) subAppearances[sub.name]++;
+    const isHome = rng() > 0.5;
+    const activeSubs = subs.filter(() => rng() < 0.6);
+    const matchPlayers = [...starters, ...activeSubs];
+    firstHalf.push(simulateMatch(matchPlayers, ratings, opp, isHome, rng));
+    firstHalfSubs.push(new Set(activeSubs.map(s => s.name)));
+    for (const sub of activeSubs) subAppearances[sub.name]++;
   }
-
-  // Shuffle match order to feel like a real season schedule
-  for (let i = matches.length - 1; i > 0; i--) {
+  // Shuffle first half
+  for (let i = firstHalf.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
-    [matches[i], matches[j]] = [matches[j], matches[i]];
-    [matchSubSets[i], matchSubSets[j]] = [matchSubSets[j], matchSubSets[i]];
+    [firstHalf[i], firstHalf[j]] = [firstHalf[j], firstHalf[i]];
+    [firstHalfSubs[i], firstHalfSubs[j]] = [firstHalfSubs[j], firstHalfSubs[i]];
   }
+
+  // Second half: opposite home/away from first half
+  const secondHalf: MatchResult[] = [];
+  const secondHalfSubs: Set<string>[] = [];
+  for (let i = 0; i < firstHalf.length; i++) {
+    const oppName = firstHalf[i].opponent;
+    const opp = opponents.find(o => o.name === oppName)!;
+    const isHome = !firstHalf[i].isHome;
+    const activeSubs = subs.filter(() => rng() < 0.6);
+    const matchPlayers = [...starters, ...activeSubs];
+    secondHalf.push(simulateMatch(matchPlayers, ratings, opp, isHome, rng));
+    secondHalfSubs.push(new Set(activeSubs.map(s => s.name)));
+    for (const sub of activeSubs) subAppearances[sub.name]++;
+  }
+  // Shuffle second half
+  for (let i = secondHalf.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [secondHalf[i], secondHalf[j]] = [secondHalf[j], secondHalf[i]];
+    [secondHalfSubs[i], secondHalfSubs[j]] = [secondHalfSubs[j], secondHalfSubs[i]];
+  }
+
+  const matches = [...firstHalf, ...secondHalf];
+  const matchSubSets = [...firstHalfSubs, ...secondHalfSubs];
 
   // FA Cup
   const faCup = simulateFaCup(starters, ratings, opponents, rng);
@@ -2107,6 +2136,48 @@ export function simulateSharedSeason(
     }
   }
 
+  // Generate a shared round-robin schedule using the circle method
+  // For N=20 teams: first half has 19 rounds of 10 matches each, second half mirrors with opposite H/A
+  const firstHalfRounds: { home: number; away: number }[][] = [];
+  const rotating = Array.from({ length: N - 1 }, (_, i) => i + 1); // [1, 2, ..., N-1]
+  for (let r = 0; r < N - 1; r++) {
+    const round: { home: number; away: number }[] = [];
+    // Match: team 0 vs rotating[0]
+    if (sharedRng() > 0.5) {
+      round.push({ home: 0, away: rotating[0] });
+    } else {
+      round.push({ home: rotating[0], away: 0 });
+    }
+    // Match: rotating[i] vs rotating[N-2-i] for i = 1..N/2-1
+    for (let i = 1; i < N / 2; i++) {
+      if (sharedRng() > 0.5) {
+        round.push({ home: rotating[i], away: rotating[N - 2 - i] });
+      } else {
+        round.push({ home: rotating[N - 2 - i], away: rotating[i] });
+      }
+    }
+    firstHalfRounds.push(round);
+    // Rotate: move last element to position 0
+    rotating.unshift(rotating.pop()!);
+  }
+  // Shuffle the first-half round order
+  for (let i = firstHalfRounds.length - 1; i > 0; i--) {
+    const j = Math.floor(sharedRng() * (i + 1));
+    [firstHalfRounds[i], firstHalfRounds[j]] = [firstHalfRounds[j], firstHalfRounds[i]];
+  }
+
+  // Second half: same pairings, opposite H/A, independently shuffled
+  const secondHalfRounds = firstHalfRounds.map(round =>
+    round.map(m => ({ home: m.away, away: m.home }))
+  );
+  for (let i = secondHalfRounds.length - 1; i > 0; i--) {
+    const j = Math.floor(sharedRng() * (i + 1));
+    [secondHalfRounds[i], secondHalfRounds[j]] = [secondHalfRounds[j], secondHalfRounds[i]];
+  }
+
+  // fullSchedule[matchweek] = array of fixtures for that matchweek
+  const fullSchedule: { home: number; away: number }[][] = [...firstHalfRounds, ...secondHalfRounds];
+
   // Build the shared league table from all 380 scorelines
   const table: Record<string, LeagueTeam> = {};
   for (const t of allTeams) {
@@ -2146,35 +2217,26 @@ export function simulateSharedSeason(
     const subAppearances: Record<string, number> = {};
     for (const s of hd.subs) subAppearances[s.name] = 0;
 
-    // Build 38 matches from shared scorelines, assign scorers with per-player RNG
+    // Build 38 matches from the shared round-robin schedule
     const matches: MatchResult[] = [];
     const matchSubSets: Set<string>[] = [];
-
-    for (const opp of opponents) {
-      const oppIdx = allTeams.findIndex(t => t.name === opp.name);
-
-      // Home: hd plays at home vs opp
-      const homeScoreline = matchScores[myIdx][oppIdx];
-      const homeActiveSubs = hd.subs.filter(() => playerRng() < 0.6);
-      const homePlayers = [...hd.starters, ...homeActiveSubs];
-      matches.push(buildMatchFromScoreline(homePlayers, homeScoreline.homeGoals, homeScoreline.awayGoals, opp.name, true, playerRng));
-      matchSubSets.push(new Set(homeActiveSubs.map(s => s.name)));
-      for (const s of homeActiveSubs) subAppearances[s.name]++;
-
-      // Away: opp plays at home vs hd → awayGoals of matchScores[oppIdx][myIdx]
-      const awayScoreline = matchScores[oppIdx][myIdx];
-      const awayActiveSubs = hd.subs.filter(() => playerRng() < 0.6);
-      const awayPlayers = [...hd.starters, ...awayActiveSubs];
-      matches.push(buildMatchFromScoreline(awayPlayers, awayScoreline.awayGoals, awayScoreline.homeGoals, opp.name, false, playerRng));
-      matchSubSets.push(new Set(awayActiveSubs.map(s => s.name)));
-      for (const s of awayActiveSubs) subAppearances[s.name]++;
-    }
-
-    // Shuffle match order
-    for (let i = matches.length - 1; i > 0; i--) {
-      const j = Math.floor(playerRng() * (i + 1));
-      [matches[i], matches[j]] = [matches[j], matches[i]];
-      [matchSubSets[i], matchSubSets[j]] = [matchSubSets[j], matchSubSets[i]];
+    for (let mw = 0; mw < 38; mw++) {
+      const round = fullSchedule[mw];
+      const fixture = round.find(f => f.home === myIdx || f.away === myIdx)!;
+      const isHome = fixture.home === myIdx;
+      const oppIdx = isHome ? fixture.away : fixture.home;
+      const oppName = allTeams[oppIdx].name;
+      const activeSubs = hd.subs.filter(() => playerRng() < 0.6);
+      const matchPlayers = [...hd.starters, ...activeSubs];
+      if (isHome) {
+        const sc = matchScores[myIdx][oppIdx];
+        matches.push(buildMatchFromScoreline(matchPlayers, sc.homeGoals, sc.awayGoals, oppName, true, playerRng));
+      } else {
+        const sc = matchScores[oppIdx][myIdx];
+        matches.push(buildMatchFromScoreline(matchPlayers, sc.awayGoals, sc.homeGoals, oppName, false, playerRng));
+      }
+      matchSubSets.push(new Set(activeSubs.map(s => s.name)));
+      for (const s of activeSubs) subAppearances[s.name]++;
     }
 
     // FA Cup + European competitions (independent per player)
