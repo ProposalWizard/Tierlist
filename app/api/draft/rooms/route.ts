@@ -1,10 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
-export async function POST() {
+export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+
+  const body = await req.json().catch(() => ({}));
+  const settings = body.settings ?? null;
 
   const service = createServiceClient();
 
@@ -20,7 +23,7 @@ export async function POST() {
 
   const { data: room, error } = await service
     .from("draft_rooms")
-    .insert({ code, host_id: user.id, status: "lobby" })
+    .insert({ code, host_id: user.id, status: "lobby", settings })
     .select()
     .single();
 

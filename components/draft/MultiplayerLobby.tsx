@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { SeasonResult } from "@/lib/seasonSimulator";
-import type { DraftPlayer } from "@/app/draft/page";
+import type { DraftPlayer, DraftSettings } from "@/app/draft/page";
 
 export interface RoomPlayer {
   id: string;
@@ -30,6 +30,7 @@ interface Props {
   userId: string;
   squadSubmitted: boolean;
   currentSeason?: number;
+  settings?: DraftSettings | null;
   onStartDraft: () => void;
   onSimulationComplete: (myResult: SeasonResult, allPlayers: RoomPlayer[]) => void;
   onLeave: () => void;
@@ -41,6 +42,7 @@ export default function MultiplayerLobby({
   userId,
   squadSubmitted,
   currentSeason = 1,
+  settings,
   onStartDraft,
   onSimulationComplete,
   onLeave,
@@ -165,6 +167,26 @@ export default function MultiplayerLobby({
           </button>
         </div>
       </div>
+
+      {/* Room Settings */}
+      {settings && currentSeason === 1 && (
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Rules</div>
+          <div className="flex flex-wrap gap-2">
+            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">{settings.formation}</span>
+            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">FIFA {settings.eraStart}–{settings.eraEnd}</span>
+            {settings.mode === "prime" && (
+              <span className="text-xs font-bold bg-yellow-500/15 text-yellow-400 px-2.5 py-1 rounded border border-yellow-500/30">Prime</span>
+            )}
+            {settings.draftOrder === "club-first" && (
+              <span className="text-xs font-bold bg-blue-500/15 text-blue-400 px-2.5 py-1 rounded border border-blue-500/30">Club First</span>
+            )}
+            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">
+              {settings.respins === 0 ? "No Re-spins" : settings.respins === 1 ? "1 Re-spin" : "3 Re-spins"}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Simulating state */}
       {isSimulating && (

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS draft_rooms (
   host_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'lobby', -- 'lobby' | 'simulating' | 'complete'
   season_number INTEGER NOT NULL DEFAULT 1,
+  settings JSONB, -- host's DraftSettings (formation, eraStart, eraEnd, mode, draftOrder, respins)
   created_at TIMESTAMPTZ DEFAULT NOW(),
   expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours')
 );
