@@ -15,13 +15,13 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, status, season_number")
+    .select("id, host_id, status, season_number")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
   if (!room) return new Response("Room not found", { status: 404 });
 
-  // Idempotent: only advance if the room hasn't already moved to the next season
+  // Idempotent: only advance if the room is complete and hasn't already moved to the next season
   if (room.status !== "complete" || (room.season_number ?? 1) >= nextSeasonNumber) {
     return Response.json({ ok: true, skipped: true });
   }
@@ -32,7 +32,7 @@ export async function POST(
     .update({ status: "lobby", season_number: nextSeasonNumber })
     .eq("id", room.id);
 
-  // Reset all players to drafting for the new season
+  // Reset all players for the new season (drafting, not ready — they need to re-submit squads)
   await service
     .from("draft_room_players")
     .update({ status: "drafting", squad: null, avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })

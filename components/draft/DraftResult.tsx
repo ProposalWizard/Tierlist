@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason, calculateSeasonOdds } from "@/lib/seasonSimulator";
-import type { SeasonResult, SeasonOdds, UCLMatch, UCLResult } from "@/lib/seasonSimulator";
+import type { SeasonResult, SeasonOdds, UCLMatch, UCLResult, FaCupMatch } from "@/lib/seasonSimulator";
 import Link from "next/link";
 import { getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
@@ -243,11 +243,15 @@ function RecordsSection({ season, previousResult }: { season: SeasonResult; prev
 
 type RevealEvent = {
   kind: 'pl';
-  match: { opponent: string; isHome: boolean; goalsFor: number; goalsAgainst: number; result: 'W' | 'D' | 'L'; goalScorers: { player: string; minute: number }[] };
+  match: { opponent: string; isHome: boolean; goalsFor: number; goalsAgainst: number; result: 'W' | 'D' | 'L'; goalScorers: { player: string; minute: number }[]; assistProviders?: { player: string; minute: number }[] };
   week: number;
 } | {
   kind: 'ucl';
   match: UCLMatch;
+  label: string;
+} | {
+  kind: 'fa-cup';
+  match: { opponent: string; isHome: boolean; goalsFor: number; goalsAgainst: number; result: 'W' | 'D' | 'L'; goalScorers: { player: string; minute: number }[]; assistProviders?: { player: string; minute: number }[] };
   label: string;
 } | {
   kind: 'ucl-status';
@@ -262,8 +266,50 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
   const isUCL = !!season.ucl?.qualified;
   const compPrefix = isUCL ? 'UCL' : 'UEL';
 
+  // FA Cup events — inserted at fixed PL weeks
+  const faCupSlots = [3, 8, 14, 20, 28, 36]; // R3, R4, R5, QF, SF placed during season; Final after MW38
+  const faCupEvents: RevealEvent[] = season.faCup.matches.map((m, i) => ({
+    kind: 'fa-cup' as const,
+    match: {
+      opponent: m.opponent,
+      isHome: false,
+      goalsFor: m.goalsFor,
+      goalsAgainst: m.goalsAgainst,
+      goalScorers: m.goalScorers,
+      assistProviders: m.assistProviders,
+      result: m.result as 'W' | 'D' | 'L',
+    },
+    label: `FA Cup ${m.round}`,
+  }));
+
+  // Build FA Cup insertion map
+  const faCupInsertMap = new Map<number, number>();
+  for (let i = 0; i < faCupEvents.length; i++) {
+    const round = season.faCup.matches[i];
+    if (round.round === 'Final') {
+      faCupInsertMap.set(39, (faCupInsertMap.get(39) || 0) + 1); // after MW38
+    } else {
+      const slot = faCupSlots[i] ?? 38;
+      faCupInsertMap.set(slot, (faCupInsertMap.get(slot) || 0) + 1);
+    }
+  }
+
   if (!euroComp?.qualified) {
-    return season.matches.map((m, i) => ({ kind: 'pl' as const, match: m, week: i + 1 }));
+    let fcIdx = 0;
+    for (let i = 0; i < 38; i++) {
+      const week = i + 1;
+      events.push({ kind: 'pl' as const, match: season.matches[i], week });
+      const fcCount = faCupInsertMap.get(week) || 0;
+      for (let j = 0; j < fcCount && fcIdx < faCupEvents.length; j++) {
+        events.push(faCupEvents[fcIdx++]);
+      }
+    }
+    // FA Cup Final after last matchweek
+    const fcFinalCount = faCupInsertMap.get(39) || 0;
+    for (let j = 0; j < fcFinalCount && fcIdx < faCupEvents.length; j++) {
+      events.push(faCupEvents[fcIdx++]);
+    }
+    return events;
   }
 
   // Build European competition events in chronological order
@@ -331,6 +377,7 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
 
   // Build combined schedule
   let euroIdx = 0;
+  let fcIdx = 0;
   // Build a map: after PL week X → how many European events
   const insertMap = new Map<number, number>();
   for (const w of slots) {
@@ -340,10 +387,21 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
   for (let i = 0; i < 38; i++) {
     const week = i + 1;
     events.push({ kind: 'pl', match: season.matches[i], week });
+    // Insert FA Cup round if scheduled here
+    const fcCount = faCupInsertMap.get(week) || 0;
+    for (let j = 0; j < fcCount && fcIdx < faCupEvents.length; j++) {
+      events.push(faCupEvents[fcIdx++]);
+    }
+    // Insert European competition matches
     const count = insertMap.get(week) || 0;
     for (let j = 0; j < count && euroIdx < euroEvents.length; j++) {
       events.push(euroEvents[euroIdx++]);
     }
+  }
+  // FA Cup Final after last matchweek
+  const fcFinalCount = faCupInsertMap.get(39) || 0;
+  for (let j = 0; j < fcFinalCount && fcIdx < faCupEvents.length; j++) {
+    events.push(faCupEvents[fcIdx++]);
   }
 
   return events;
@@ -580,14 +638,38 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     return "text-gray-500";
   };
 
-  // Group matches into matchweeks (2 matches per week for a 38-match season against 19 opponents)
-  const matchweeks = useMemo(() => {
-    const weeks: { week: number; matches: typeof season.matches }[] = [];
-    for (let i = 0; i < season.matches.length; i++) {
-      weeks.push({ week: i + 1, matches: [season.matches[i]] });
+  // Build a static schedule that interleaves PL matches, FA Cup, and European events
+  // (same ordering as the reveal animation)
+  const staticSchedule = useMemo(() => {
+    const events = buildSchedule(season);
+    type StaticEntry =
+      | { type: 'pl-header'; week: number; hasEuro: boolean }
+      | { type: 'pl'; match: typeof season.matches[0]; week: number }
+      | { type: 'fa-cup'; match: { opponent: string; isHome: boolean; goalsFor: number; goalsAgainst: number; result: 'W' | 'D' | 'L'; goalScorers: { player: string; minute: number }[]; assistProviders?: { player: string; minute: number }[] }; label: string; faCupMatch?: FaCupMatch }
+      | { type: 'ucl'; match: UCLMatch; label: string }
+      | { type: 'ucl-status'; text: string; subtext: string; positive: boolean };
+    const entries: StaticEntry[] = [];
+    const hasEuro = !!(season.ucl?.qualified || season.uel?.qualified);
+    let lastPLWeek = 0;
+    for (const event of events) {
+      if (event.kind === 'pl') {
+        if (event.week !== lastPLWeek) {
+          entries.push({ type: 'pl-header', week: event.week, hasEuro });
+          lastPLWeek = event.week;
+        }
+        entries.push({ type: 'pl', match: event.match as typeof season.matches[0], week: event.week });
+      } else if (event.kind === 'fa-cup') {
+        // Find the matching FaCupMatch for extra info (extraTime, penalties)
+        const fcMatch = season.faCup.matches.find(m => `FA Cup ${m.round}` === event.label);
+        entries.push({ type: 'fa-cup', match: event.match, label: event.label, faCupMatch: fcMatch });
+      } else if (event.kind === 'ucl') {
+        entries.push({ type: 'ucl', match: event.match, label: event.label });
+      } else if (event.kind === 'ucl-status') {
+        entries.push({ type: 'ucl-status', text: event.text, subtext: event.subtext, positive: event.positive });
+      }
     }
-    return weeks;
-  }, [season.matches]);
+    return entries;
+  }, [season]);
 
   // --- Match-by-match reveal phase ---
   if (!seasonComplete) {
@@ -685,8 +767,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             }
 
             const isEuroEvent = event.kind === 'ucl';
+            const isFACup = event.kind === 'fa-cup';
             const isUELEvent = isEuroEvent && event.label.startsWith('UEL');
-            const match = event.kind === 'pl' ? event.match : event.match;
+            const match = event.match;
             const label = event.kind === 'pl' ? `GW${event.week}` : event.label;
 
             return (
@@ -699,14 +782,16 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 } ${
                   isEuroEvent
                     ? isUELEvent ? "border-l-2 border-l-orange-500" : "border-l-2 border-l-blue-500"
-                    : match.result === "W"
-                      ? "border-l-2 border-l-emerald-500"
-                      : match.result === "D"
-                        ? "border-l-2 border-l-yellow-500"
-                        : "border-l-2 border-l-red-500"
+                    : isFACup
+                      ? "border-l-2 border-l-purple-500"
+                      : match.result === "W"
+                        ? "border-l-2 border-l-emerald-500"
+                        : match.result === "D"
+                          ? "border-l-2 border-l-yellow-500"
+                          : "border-l-2 border-l-red-500"
                 }`}
               >
-                <span className={`text-[10px] font-bold w-12 sm:w-14 shrink-0 truncate ${isEuroEvent ? (isUELEvent ? "text-orange-400" : "text-blue-400") : "text-gray-600"}`}>
+                <span className={`text-[10px] font-bold w-12 sm:w-14 shrink-0 truncate ${isEuroEvent ? (isUELEvent ? "text-orange-400" : "text-blue-400") : isFACup ? "text-purple-400" : "text-gray-600"}`}>
                   {label}
                 </span>
                 <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black shrink-0 ${
@@ -1729,22 +1814,25 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
       {showMatches && (
         <div className="space-y-1 mb-6">
-          {matchweeks.map(({ week, matches }) => (
-            <div key={week}>
-              {/* Matchweek header */}
-              <div className="flex items-center gap-2 py-2 px-1">
-                <div className="h-px flex-1 bg-gray-800" />
-                <span className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">
-                  MW {week} / 38
-                </span>
-                <div className="h-px flex-1 bg-gray-800" />
-              </div>
-              {matches.map((match, mi) => (
+          {staticSchedule.map((entry, idx) => {
+            if (entry.type === 'pl-header') {
+              return (
+                <div key={`hdr-${entry.week}`} className="flex items-center gap-2 py-2 px-1">
+                  <div className="h-px flex-1 bg-gray-800" />
+                  <span className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">
+                    {entry.hasEuro ? 'GW' : 'MW'} {entry.week}/38
+                  </span>
+                  <div className="h-px flex-1 bg-gray-800" />
+                </div>
+              );
+            }
+            if (entry.type === 'pl') {
+              const match = entry.match;
+              return (
                 <div
-                  key={mi}
+                  key={`pl-${idx}`}
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 hover:bg-gray-800/60 transition"
                 >
-                  {/* Result badge */}
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
                     match.result === "W"
                       ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
@@ -1777,9 +1865,114 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                     {match.goalsFor}-{match.goalsAgainst}
                   </div>
                 </div>
-              ))}
-            </div>
-          ))}
+              );
+            }
+            if (entry.type === 'fa-cup') {
+              const match = entry.match;
+              const fcm = entry.faCupMatch;
+              return (
+                <div
+                  key={`fa-${idx}`}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition"
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                    match.result === "W"
+                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                      : "bg-red-500/20 text-red-400 border border-red-500/30"
+                  }`}>
+                    {match.result}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate">
+                      <span className="text-purple-400 text-xs mr-1.5">{entry.label}</span>
+                      {match.opponent}
+                    </div>
+                    <div className="text-[11px] text-gray-500 truncate">
+                      {match.goalScorers.length > 0 && (
+                        <span>{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</span>
+                      )}
+                      {fcm?.extraTime && <span className="ml-1 text-purple-400/70">(AET)</span>}
+                      {fcm?.penalties && fcm.penaltyScore && (
+                        <span className="ml-1 text-purple-400/70">(Pens {fcm.penaltyScore.player}-{fcm.penaltyScore.opponent})</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={`text-lg font-black tabular-nums ${
+                    match.result === "W" ? "text-purple-400" : "text-red-400"
+                  }`}>
+                    {match.goalsFor}-{match.goalsAgainst}
+                  </div>
+                </div>
+              );
+            }
+            if (entry.type === 'ucl') {
+              const match = entry.match;
+              const isUEL = entry.label.startsWith('UEL');
+              return (
+                <div
+                  key={`ucl-${idx}`}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 border-l-2 ${isUEL ? 'border-l-orange-500' : 'border-l-blue-500'} hover:bg-gray-800/60 transition`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                    match.result === "W"
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                      : match.result === "D"
+                        ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                        : "bg-red-500/20 text-red-400 border border-red-500/30"
+                  }`}>
+                    {match.result}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate">
+                      <span className={`text-xs mr-1.5 ${isUEL ? 'text-orange-400' : 'text-blue-400'}`}>{entry.label}</span>
+                      {match.opponent}
+                      <span className="text-gray-600 text-[10px] ml-1.5">({match.isHome ? "H" : "A"})</span>
+                    </div>
+                    {match.goalScorers.length > 0 && (
+                      <div className="text-[11px] text-gray-500 truncate">
+                        {match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}
+                        {match.extraTime && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(AET)</span>}
+                        {match.penalties && match.penaltyScore && (
+                          <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(Pens {match.penaltyScore.player}-{match.penaltyScore.opponent})</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className={`text-lg font-black tabular-nums ${
+                    match.result === "W"
+                      ? "text-emerald-400"
+                      : match.result === "D"
+                        ? "text-yellow-400"
+                        : "text-red-400"
+                  }`}>
+                    {match.goalsFor}-{match.goalsAgainst}
+                  </div>
+                </div>
+              );
+            }
+            if (entry.type === 'ucl-status') {
+              const isUEL = !!(season.uel?.qualified && !season.ucl?.qualified);
+              return (
+                <div
+                  key={`status-${idx}`}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 border ${
+                    entry.positive
+                      ? isUEL ? "bg-orange-900/30 border-orange-700/40" : "bg-blue-900/30 border-blue-700/40"
+                      : "bg-red-900/20 border-red-700/30"
+                  }`}
+                >
+                  <span className="text-sm">&#9917;</span>
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-bold text-sm ${entry.positive ? (isUEL ? "text-orange-300" : "text-blue-300") : "text-red-400"}`}>
+                      {entry.text}
+                    </div>
+                    <div className="text-[10px] text-gray-500">{entry.subtext}</div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })}
         </div>
       )}
 

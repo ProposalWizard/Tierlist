@@ -478,11 +478,29 @@ export default function DraftPage() {
     [scrollTop]
   );
 
-  const handleArrangeConfirm = useCallback((arranged: DraftPlayer[]) => {
+  const handleArrangeConfirm = useCallback(async (arranged: DraftPlayer[]) => {
     setPlayers(arranged);
-    setPhase("result");
+    if (roomCode) {
+      if (currentSeason > 1) {
+        await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nextSeasonNumber: currentSeason }),
+        });
+      }
+      const { teamStrength, avgOvr } = computeTeamStrength(arranged);
+      await fetch(`/api/draft/rooms/${roomCode}/ready`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ squad: arranged, avg_ovr: avgOvr, team_strength: teamStrength }),
+      });
+      setSquadSubmitted(true);
+      setPhase("lobby");
+    } else {
+      setPhase("result");
+    }
     scrollTop();
-  }, [scrollTop]);
+  }, [roomCode, currentSeason, scrollTop]);
 
   const totalPicked = resume?.players.length ?? 0;
 
