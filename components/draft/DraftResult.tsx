@@ -1071,6 +1071,37 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             <span>Predicted Finish</span>
             <span className="font-bold text-white">{ordinal(Math.round(odds.avgFinish))}</span>
           </div>
+          <div className="mt-1 flex justify-between text-xs text-gray-500">
+            <span>Avg Wins</span>
+            <span className="font-bold text-white">{odds.avgWins}/38</span>
+          </div>
+
+          {/* Milestone Odds */}
+          <div className="mt-3 pt-2 border-t border-gray-800/50">
+            <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">Milestone Odds</div>
+            <div className="space-y-1.5">
+              {[
+                { label: "100+ Points (Centurion)", pct: odds.centurion, color: "text-yellow-400" },
+                { label: "Unbeaten Season (0 losses)", pct: odds.unbeaten, color: "text-emerald-400" },
+                { label: "Perfect Season (38 wins)", pct: odds.perfectSeason, color: "text-purple-400" },
+              ].map((m) => (
+                <div key={m.label} className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-gray-400">{m.label}</div>
+                    <div className="w-full h-1 bg-gray-800 rounded-full mt-0.5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${m.pct > 0 ? "bg-gradient-to-r from-gray-600 to-gray-500" : ""}`}
+                        style={{ width: `${Math.min(100, Math.max(m.pct > 0 ? 2 : 0, m.pct))}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className={`text-sm font-black w-14 text-right tabular-nums ${m.pct > 0 ? m.color : "text-gray-700"}`}>
+                    {m.pct > 0 ? `${m.pct}%` : "0%"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
         )}
 

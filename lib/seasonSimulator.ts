@@ -1920,6 +1920,10 @@ export interface SeasonOdds {
   relegation: number;
   avgPoints: number;
   avgFinish: number;
+  perfectSeason: number;
+  unbeaten: number;
+  centurion: number;
+  avgWins: number;
 }
 
 export function calculateSeasonOdds(
@@ -1942,8 +1946,12 @@ export function calculateSeasonOdds(
   let top4Count = 0;
   let top7Count = 0;
   let relegationCount = 0;
+  let perfectCount = 0;
+  let unbeatenCount = 0;
+  let centurionCount = 0;
   let totalPoints = 0;
   let totalFinish = 0;
+  let totalWins = 0;
 
   for (let sim = 0; sim < simCount; sim++) {
     const seed = (seasonNumber ?? 1) * 100 + sim * 7919 + 31;
@@ -1991,12 +1999,18 @@ export function calculateSeasonOdds(
     const leagueTable = simulateLeague(playerTeamName, ratings.teamStrength, opponents, matches, rng);
     const finish = leagueTable.findIndex(t => t.isPlayer) + 1;
 
+    const losses = matches.filter(m => m.result === 'L').length;
+
     totalPoints += points;
     totalFinish += finish;
+    totalWins += wins;
     if (finish === 1) winCount++;
     if (finish <= 4) top4Count++;
     if (finish <= 7) top7Count++;
     if (finish >= 18) relegationCount++;
+    if (wins === 38) perfectCount++;
+    if (losses === 0) unbeatenCount++;
+    if (points >= 100) centurionCount++;
   }
 
   return {
@@ -2006,6 +2020,10 @@ export function calculateSeasonOdds(
     relegation: Math.round((relegationCount / simCount) * 100),
     avgPoints: Math.round(totalPoints / simCount),
     avgFinish: Math.round((totalFinish / simCount) * 10) / 10,
+    perfectSeason: Math.round((perfectCount / simCount) * 1000) / 10,
+    unbeaten: Math.round((unbeatenCount / simCount) * 1000) / 10,
+    centurion: Math.round((centurionCount / simCount) * 1000) / 10,
+    avgWins: Math.round((totalWins / simCount) * 10) / 10,
   };
 }
 
