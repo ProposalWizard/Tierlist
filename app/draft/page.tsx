@@ -7,7 +7,7 @@ import Season2Overview from "@/components/draft/Season2Overview";
 import SquadManager from "@/components/draft/SquadManager";
 import MultiplayerLobby from "@/components/draft/MultiplayerLobby";
 import { createClient } from "@/lib/supabase/client";
-import { getPositionColor } from "@/components/draft/formations";
+import { getPositionColor, FORMATIONS } from "@/components/draft/formations";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
@@ -184,6 +184,7 @@ export default function DraftPage() {
   const [nextUsedClubYears, setNextUsedClubYears] = useState<string[]>([]);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [autoFilling, setAutoFilling] = useState(false);
 
   // Multiplayer state
   const [roomCode, setRoomCode] = useState<string | null>(null);
@@ -504,34 +505,134 @@ export default function DraftPage() {
     scrollTop();
   }, [roomCode, currentSeason, scrollTop]);
 
-  const handleSkipToTest = useCallback(() => {
-    const makePlayer = (name: string, pos: string, ovr: number, age: number, isSub?: boolean): DraftPlayer => ({
-      name, overall: ovr, positions: pos, club: "Test FC", clubYear: "FIFA 23",
-      assignedPosition: pos.split(",")[0].trim(), sofifa_id: String(Math.random()),
-      image_url: null, nationality: "England", age, isSub,
-    });
-    const testSquad: DraftPlayer[] = [
-      makePlayer("Alisson", "GK", 89, 31),
-      makePlayer("Trent Alexander-Arnold", "RB", 87, 25),
-      makePlayer("Virgil van Dijk", "CB", 90, 32),
-      makePlayer("Rúben Dias", "CB", 89, 27),
-      makePlayer("Andrew Robertson", "LB", 87, 30),
-      makePlayer("Casemiro", "CDM", 87, 32),
-      makePlayer("Rodri", "CM", 91, 28),
-      makePlayer("Kevin De Bruyne", "CAM", 92, 33),
-      makePlayer("Mohamed Salah", "RW", 91, 32),
-      makePlayer("Erling Haaland", "ST", 93, 24),
-      makePlayer("Son Heung-min", "LW", 87, 32),
-      makePlayer("Ederson", "GK", 89, 31, true),
-      makePlayer("João Cancelo", "RB,CB", 85, 30, true),
-      makePlayer("Marcus Rashford", "LW,ST", 83, 27, true),
-    ];
-    setSettings({ formation: "4-3-3", eraStart: 7, eraEnd: 26, mode: "normal", draftOrder: "position-first", respins: 1 });
-    setPlayers(testSquad);
-    setCurrentSeason(1);
-    setPreviousResults([]);
-    setPhase("result");
-    scrollTop();
+  const handleSkipToTest = useCallback(async () => {
+    const defaultSettings: DraftSettings = {
+      formation: "4-3-3", eraStart: 7, eraEnd: 26, mode: "normal", draftOrder: "position-first", respins: 1,
+    };
+    setAutoFilling(true);
+
+    try {
+      const clubsRes = await fetch("/api/draft/clubs");
+      const clubsData = await clubsRes.json();
+      const availableClubs: { name: string; seasons: number[] }[] = clubsData.clubs ?? [];
+      if (availableClubs.length === 0) {
+        alert("No clubs found — import player data first");
+        setAutoFilling(false);
+        return;
+      }
+
+      const usedClubYears = new Set<string>();
+      const formation = FORMATIONS.find(f => f.name === "4-3-3") ?? FORMATIONS[0];
+      const squad: DraftPlayer[] = [];
+
+      const pickClubYear = (): { club: string; year: number } | null => {
+        const pairs: { club: string; year: number }[] = [];
+        for (const c of availableClubs) {
+          for (const y of c.seasons) {
+            if (y >= defaultSettings.eraStart && y <= defaultSettings.eraEnd && !usedClubYears.has(`${c.name}-${y}`)) {
+              pairs.push({ club: c.name, year: y });
+            }
+          }
+        }
+        if (pairs.length === 0) return null;
+        const byYear = new Map<number, typeof pairs>();
+        for (const p of pairs) {
+          if (!byYear.has(p.year)) byYear.set(p.year, []);
+          byYear.get(p.year)!.push(p);
+        }
+        const years = Array.from(byYear.keys());
+        const year = years[Math.floor(Math.random() * years.length)];
+        const pool = byYear.get(year)!;
+        return pool[Math.floor(Math.random() * pool.length)];
+      };
+
+      const buildAttrs = (p: Record<string, number>): PlayerAttributes => ({
+        pace: p.pace, shooting: p.shooting, passing: p.passing, dribbling: p.dribbling,
+        defending: p.defending, physical: p.physical, finishing: p.finishing,
+        positioning: p.positioning, crossing: p.crossing, vision: p.vision,
+        longShots: p.longShots, shortPassing: p.shortPassing, longPassing: p.longPassing,
+        heading: p.heading, interceptions: p.interceptions, standingTackle: p.standingTackle,
+        marking: p.marking, reactions: p.reactions, sprintSpeed: p.sprintSpeed,
+        gkDiving: p.gkDiving, gkPositioning: p.gkPositioning, gkReflexes: p.gkReflexes,
+      });
+
+      // 11 starters — one spin per formation slot
+      for (let i = 0; i < formation.slots.length; i++) {
+        const slot = formation.slots[i];
+        let roster: Record<string, unknown>[] = [];
+        let clubYear: { club: string; year: number } | null = null;
+        let retries = 0;
+        while (roster.length === 0 && retries < 5) {
+          clubYear = pickClubYear();
+          if (!clubYear) break;
+          usedClubYears.add(`${clubYear.club}-${clubYear.year}`);
+          const res = await fetch(`/api/draft/roster?club=${encodeURIComponent(clubYear.club)}&year=${clubYear.year}`);
+          const data = await res.json();
+          roster = data.roster ?? [];
+          retries++;
+        }
+        if (!clubYear || roster.length === 0) continue;
+
+        const compatible = roster.filter(p => {
+          const playerPositions = String(p.positions ?? "").split(",").map(s => s.trim());
+          return playerPositions.some(pp => slot.compatiblePositions.includes(pp));
+        });
+        const pool = compatible.length > 0 ? compatible : roster;
+        const best = pool.reduce((a, b) => (Number(b.overall) > Number(a.overall) ? b : a), pool[0]) as Record<string, unknown>;
+        const abbr = clubYear.club.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 3);
+
+        squad.push({
+          name: String(best.name), overall: Number(best.overall),
+          positions: String(best.positions ?? ""), club: clubYear.club,
+          clubYear: `${abbr} ${clubYear.year}`, assignedPosition: slot.label,
+          sofifa_id: String(best.sofifa_id), image_url: best.image_url as string | null,
+          nationality: String(best.nationality ?? ""), age: Number(best.age ?? 0),
+          isSub: false, attrs: buildAttrs(best as Record<string, number>),
+        });
+      }
+
+      // 3 subs
+      for (let i = 0; i < 3; i++) {
+        let roster: Record<string, unknown>[] = [];
+        let clubYear: { club: string; year: number } | null = null;
+        let retries = 0;
+        while (roster.length === 0 && retries < 5) {
+          clubYear = pickClubYear();
+          if (!clubYear) break;
+          usedClubYears.add(`${clubYear.club}-${clubYear.year}`);
+          const res = await fetch(`/api/draft/roster?club=${encodeURIComponent(clubYear.club)}&year=${clubYear.year}`);
+          const data = await res.json();
+          roster = data.roster ?? [];
+          retries++;
+        }
+        if (!clubYear || roster.length === 0) continue;
+
+        const best = roster.reduce((a, b) => (Number(b.overall) > Number(a.overall) ? b : a), roster[0]) as Record<string, unknown>;
+        const primaryPos = String(best.positions ?? "CM").split(",")[0].trim() || "CM";
+        const abbr = clubYear.club.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 3);
+
+        squad.push({
+          name: String(best.name), overall: Number(best.overall),
+          positions: String(best.positions ?? ""), club: clubYear.club,
+          clubYear: `${abbr} ${clubYear.year}`, assignedPosition: primaryPos,
+          sofifa_id: String(best.sofifa_id), image_url: best.image_url as string | null,
+          nationality: String(best.nationality ?? ""), age: Number(best.age ?? 0),
+          isSub: true, attrs: buildAttrs(best as Record<string, number>),
+        });
+      }
+
+      setSettings(defaultSettings);
+      setPlayers(squad);
+      setCurrentSeason(1);
+      setPreviousResults([]);
+      setPhase("manage");
+      scrollTop();
+    } catch (e) {
+      console.error("Auto-fill failed:", e);
+      alert("Auto-fill failed — check console");
+    } finally {
+      setAutoFilling(false);
+    }
   }, [scrollTop]);
 
   const totalPicked = resume?.players.length ?? 0;
@@ -576,9 +677,10 @@ export default function DraftPage() {
           <div className="text-center pb-6">
             <button
               onClick={handleSkipToTest}
-              className="text-xs text-gray-700 hover:text-gray-500 underline transition"
+              disabled={autoFilling}
+              className="text-xs text-gray-700 hover:text-gray-500 underline transition disabled:cursor-wait"
             >
-              [test] skip draft → simulate
+              {autoFilling ? "auto-drafting squad…" : "[test] skip draft → auto-fill squad"}
             </button>
           </div>
         </>
