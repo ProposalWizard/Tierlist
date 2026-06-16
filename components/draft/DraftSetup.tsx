@@ -17,6 +17,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
   const [eraEnd, setEraEnd] = useState(2026);
   const [mode, setMode] = useState<"normal" | "prime">("normal");
   const [draftOrder, setDraftOrder] = useState<"position-first" | "club-first">("position-first");
+  const [respins, setRespins] = useState<0 | 1 | 3>(3);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [joiningRoom, setJoiningRoom] = useState(false);
@@ -35,6 +36,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
     eraEnd: Math.max(eraStart, eraEnd),
     mode,
     draftOrder,
+    respins,
   });
 
   const handleJoin = async () => {
@@ -292,6 +294,33 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
           </div>
         </div>
 
+        {/* Re-spins */}
+        <div className="mb-6 sm:mb-8">
+          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+            Re-spins Per Pick
+          </label>
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            {([3, 1, 0] as const).map((n) => (
+              <button
+                key={n}
+                onClick={() => setRespins(n)}
+                className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
+                  respins === n
+                    ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
+                    : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
+                }`}
+              >
+                <div className={`text-sm font-bold ${respins === n ? "text-white" : "text-gray-400"}`}>
+                  {n === 0 ? "None" : n === 1 ? "1 Re-spin" : "3 Re-spins"}
+                </div>
+                <div className={`text-[9px] sm:text-[10px] mt-0.5 ${respins === n ? "text-emerald-200/70" : "text-gray-600"}`}>
+                  {n === 0 ? "No second chances" : n === 1 ? "One per pick" : "Three per pick"}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Multiplayer */}
         {isSignedIn === true && onCreateRoom && onJoinRoom && (
           <div className="mb-6 sm:mb-8">
@@ -346,7 +375,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
         {/* Start Button */}
         <button
-          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder })}
+          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder, respins })}
           disabled={eraStart > eraEnd}
           className="group relative w-full py-3.5 sm:py-4 rounded-xl text-base sm:text-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98] disabled:from-gray-700 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed"
         >

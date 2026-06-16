@@ -157,6 +157,8 @@ export default function DraftPick({
   const [spinItems, setSpinItems] = useState<{ club: string; year: number }[]>([]);
   const [spinAnimating, setSpinAnimating] = useState(false);
   const spinContainerRef = useRef<HTMLDivElement>(null);
+  const maxRespins = settings.respins ?? 3;
+  const [respinsRemaining, setRespinsRemaining] = useState(maxRespins);
 
   const loadClubs = useCallback(() => {
     setClubsLoading(true);
@@ -256,6 +258,8 @@ export default function DraftPick({
   }, [getRandomClubYear, generateSpinItems]);
 
   const handleRespin = useCallback(() => {
+    if (respinsRemaining <= 0) return;
+    setRespinsRemaining(r => Math.max(0, r - 1) as 0 | 1 | 3);
     setSpinResult(null);
     setSpinDisplay(null);
     setSpinAnimating(false);
@@ -264,7 +268,7 @@ export default function DraftPick({
     setTimeout(() => {
       handleSpin();
     }, 50);
-  }, [handleSpin]);
+  }, [handleSpin, respinsRemaining]);
 
   const fetchRoster = async (club: string, year: number) => {
     try {
@@ -357,6 +361,7 @@ export default function DraftPick({
         setSpinResult(null);
         setSpinDisplay(null);
         setSpinAnimating(false);
+        setRespinsRemaining(maxRespins);
         setPhase("spin");
       }
     },
@@ -876,18 +881,29 @@ export default function DraftPick({
               </div>
 
               {/* Re-spin button */}
-              <div className="flex justify-center mb-4">
-                <button
-                  onClick={handleRespin}
-                  disabled={spinning}
-                  className="px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-lg font-bold text-sm transition-all hover:scale-105 active:scale-95 text-gray-300"
-                >
-                  <span className="flex items-center gap-2">
+              {maxRespins > 0 && (
+                <div className="flex justify-center mb-4">
+                  <button
+                    onClick={handleRespin}
+                    disabled={spinning || respinsRemaining <= 0}
+                    className={`px-5 py-2 rounded-lg font-bold text-sm transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
+                      respinsRemaining > 0
+                        ? "bg-gray-800 hover:bg-gray-700 border border-gray-700/50 text-gray-300"
+                        : "bg-gray-900 border border-gray-800/30 text-gray-700 cursor-not-allowed"
+                    }`}
+                  >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                     Re-spin
-                  </span>
-                </button>
-              </div>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ml-1 ${
+                      respinsRemaining > 0
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-gray-800 text-gray-600"
+                    }`}>
+                      {respinsRemaining}/{maxRespins}
+                    </span>
+                  </button>
+                </div>
+              )}
 
               {!spinResult && (
                 <div className="flex flex-col items-center justify-center py-8 sm:py-16">

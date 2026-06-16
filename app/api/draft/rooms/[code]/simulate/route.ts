@@ -1,7 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { simulateSeason, DEFAULT_PL_TEAMS } from "@/lib/seasonSimulator";
-import type { DraftPlayer } from "@/lib/seasonSimulator";
+import { simulateSharedSeason, DEFAULT_PL_TEAMS } from "@/lib/seasonSimulator";
+import type { DraftPlayer, SharedSeasonInput } from "@/lib/seasonSimulator";
+
+function hashRoomId(roomId: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < roomId.length; i++) {
+    h ^= roomId.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
 
 export async function POST(
   _req: Request,
@@ -16,7 +25,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, host_id, status")
+    .select("id, host_id, status, season_number")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -44,23 +53,26 @@ export async function POST(
   const N = roomPlayers.length;
   // Keep the strongest AI teams (remove N weakest to make room for human players)
   const sortedAI = [...DEFAULT_PL_TEAMS].sort((a, b) => b.strength - a.strength);
-  const aiOpponents = sortedAI.slice(0, 20 - N);
+  const aiOpponents = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
 
-  // Simulate each player's season
+  // Build human team inputs for shared simulation
+  const humanTeams: SharedSeasonInput[] = roomPlayers.map(rp => ({
+    userId: rp.user_id,
+    displayName: rp.display_name,
+    squad: (rp.squad ?? []) as DraftPlayer[],
+  }));
+
+  // Single shared seed derived from room ID — same seed for every player
+  const sharedSeed = hashRoomId(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
+
+  // Simulate all 20 teams in ONE shared league — results are consistent for everyone
+  const seasonNumber = room.season_number ?? 1;
+  const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber);
+
+  // Persist each player's result
   for (const rp of roomPlayers) {
-    const squad = (rp.squad ?? []) as DraftPlayer[];
-
-    const humanOpponents = roomPlayers
-      .filter(p => p.user_id !== rp.user_id)
-      .map(p => ({
-        name: `${p.display_name}'s XI`,
-        strength: Number(p.team_strength) || 75,
-      }));
-
-    // Always exactly 19 opponents: (20-N) AI + (N-1) human = 19
-    const opponents = [...aiOpponents, ...humanOpponents];
-
-    const result = simulateSeason(squad, opponents, 1);
+    const result = results.get(rp.user_id);
+    if (!result) continue;
 
     await service
       .from("draft_room_players")
