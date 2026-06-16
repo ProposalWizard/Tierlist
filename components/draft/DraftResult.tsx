@@ -1675,6 +1675,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
             <span className="w-7 shrink-0"></span>
             <span className="flex-1 ml-1 min-w-0">Player</span>
+            <span className="w-7 text-center shrink-0">APP</span>
             <span className="w-6 text-center shrink-0">G</span>
             <span className="w-6 text-center shrink-0">A</span>
             <span className="w-6 text-center shrink-0">CS</span>
@@ -1687,6 +1688,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   {ps.assignedPosition}
                 </span>
                 <span className="flex-1 ml-1 font-medium truncate min-w-0">{ps.name}</span>
+                <span className="w-7 text-center text-xs font-bold shrink-0 text-gray-500">
+                  {ps.appearances}
+                </span>
                 <span className={`w-6 text-center text-xs font-bold shrink-0 ${ps.goals > 0 ? "text-emerald-400" : "text-gray-700"}`}>
                   {ps.goals > 0 ? ps.goals : "-"}
                 </span>
