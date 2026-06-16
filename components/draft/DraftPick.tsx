@@ -48,6 +48,7 @@ interface Props {
   settings: DraftSettings;
   onComplete: (players: DraftPlayer[]) => void;
   onBack?: () => void;
+  isMultiplayer?: boolean;
   initialPicked?: DraftPlayer[];
   initialUsedClubYears?: string[];
   initialSlotAssignments?: number[];
@@ -129,6 +130,7 @@ export default function DraftPick({
   settings,
   onComplete,
   onBack,
+  isMultiplayer,
   initialPicked,
   initialUsedClubYears,
   initialSlotAssignments,
@@ -141,6 +143,7 @@ export default function DraftPick({
   const maxPicks = totalPicks ?? 14;
   const isSeason2Draft = !!existingSquad;
   const [pickedPlayers, setPickedPlayers] = useState<DraftPlayer[]>(initialPicked ?? []);
+  const [confirmExit, setConfirmExit] = useState(false);
   const [currentSlotIndex, setCurrentSlotIndex] = useState(initialPicked?.length ?? 0);
   const [phase, setPhase] = useState<"spin" | "spinning" | "reveal" | "pick" | "assign">("spin");
   const [pendingPlayer, setPendingPlayer] = useState<RosterPlayer | null>(null);
@@ -443,14 +446,40 @@ export default function DraftPick({
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            {onBack && pickedPlayers.length === 0 && (
-              <button
-                onClick={onBack}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition"
-                aria-label="Back to setup"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-              </button>
+            {onBack && (pickedPlayers.length === 0 || isMultiplayer) && (
+              <>
+                <button
+                  onClick={() => isMultiplayer ? setConfirmExit(true) : onBack()}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition"
+                  aria-label="Back"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                {/* Confirm exit dialog */}
+                {confirmExit && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+                    <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl">
+                      <div className="text-2xl mb-3">🚪</div>
+                      <h3 className="text-white font-black text-lg mb-2">Leave the Draft?</h3>
+                      <p className="text-gray-400 text-sm mb-5">You'll go back to the lobby. Any picks you've made will be lost.</p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setConfirmExit(false)}
+                          className="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-sm transition"
+                        >
+                          Stay
+                        </button>
+                        <button
+                          onClick={() => { setConfirmExit(false); onBack(); }}
+                          className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition"
+                        >
+                          Leave
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             <div>
               <h1 className="text-xl font-extrabold tracking-tight">

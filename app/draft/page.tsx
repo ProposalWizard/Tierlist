@@ -238,20 +238,24 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop]);
 
-  const handleJoinRoom = useCallback(async (code: string, _s: DraftSettings) => {
+  const handleJoinRoom = useCallback(async (code: string, ownSettings: DraftSettings) => {
     clearProgress();
     setResume(null);
-    // Fetch the host's settings from the room
+    // Fetch host's settings but keep player's own formation
     const res = await fetch(`/api/draft/rooms/${code}`);
     if (res.ok) {
       const data = await res.json();
       if (data.room?.settings) {
-        setSettings(data.room.settings as DraftSettings);
+        const hostSettings = data.room.settings as DraftSettings;
+        setSettings({
+          ...hostSettings,
+          formation: ownSettings.formation, // each player picks their own formation
+        });
       } else {
-        setSettings(_s);
+        setSettings(ownSettings);
       }
     } else {
-      setSettings(_s);
+      setSettings(ownSettings);
     }
     setRoomCode(code);
     setIsHost(false);
@@ -539,6 +543,7 @@ export default function DraftPage() {
           settings={settings}
           onComplete={handleDraftComplete}
           onBack={roomCode ? handleStartFromLobby : handleNewRun}
+          isMultiplayer={!!roomCode}
           initialPicked={resume?.players}
           initialUsedClubYears={resume?.usedClubYears}
           initialSlotAssignments={resume?.slotAssignments}

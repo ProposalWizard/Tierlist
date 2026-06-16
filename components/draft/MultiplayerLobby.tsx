@@ -171,9 +171,9 @@ export default function MultiplayerLobby({
       {/* Room Settings */}
       {settings && currentSeason === 1 && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Rules</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-1">Rules</div>
+          <div className="text-[10px] text-gray-600 mb-2">Formation is chosen individually</div>
           <div className="flex flex-wrap gap-2">
-            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">{settings.formation}</span>
             <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">FIFA {settings.eraStart}–{settings.eraEnd}</span>
             {settings.mode === "prime" && (
               <span className="text-xs font-bold bg-yellow-500/15 text-yellow-400 px-2.5 py-1 rounded border border-yellow-500/30">Prime</span>
