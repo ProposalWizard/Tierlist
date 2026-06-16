@@ -483,7 +483,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   useEffect(() => {
     if (seasonComplete) return;
     if (revealedIdx < totalEvents) {
-      const timer = setTimeout(() => setRevealedIdx(i => i + 1), 750);
+      const timer = setTimeout(() => setRevealedIdx(i => i + 1), 900);
       return () => clearTimeout(timer);
     }
     if (revealedIdx >= totalEvents) {
