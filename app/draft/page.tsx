@@ -507,7 +507,7 @@ export default function DraftPage() {
 
   const handleSkipToTest = useCallback(async () => {
     const defaultSettings: DraftSettings = {
-      formation: "4-3-3", eraStart: 7, eraEnd: 26, mode: "normal", draftOrder: "position-first", respins: 1,
+      formation: "4-3-3", eraStart: 2007, eraEnd: 2026, mode: "normal", draftOrder: "position-first", respins: 1,
     };
     setAutoFilling(true);
 
