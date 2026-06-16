@@ -41,6 +41,8 @@ const PL_RECORDS: PLRecord[] = [
 ];
 
 function RecordsSection({ season, previousResult }: { season: SeasonResult; previousResult?: SeasonResult }) {
+  const [open, setOpen] = useState(false);
+
   const plGoalsByPlayer: Record<string, number> = {};
   const plAssistsByPlayer: Record<string, number> = {};
   for (const m of season.matches) {
@@ -113,88 +115,124 @@ function RecordsSection({ season, previousResult }: { season: SeasonResult; prev
     values[i] === r.record
   ).length;
 
+  const closeCount = PL_RECORDS.filter((r, i) => {
+    const val = values[i];
+    const broken = r.lowerIsBetter ? val < r.record : val > r.record;
+    const matched = val === r.record;
+    return !broken && !matched && (
+      r.lowerIsBetter ? val <= r.record + 3 : val >= r.record - 3
+    );
+  }).length;
+
   return (
-    <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-      <div className="flex items-center gap-2 mb-3">
+    <div className="bg-gray-900 rounded-xl mb-4 border border-gray-800/50 overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 p-4 text-left hover:bg-gray-800/40 transition-colors"
+      >
         <span className="text-sm">&#127942;</span>
         <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
           PL Records
         </h3>
-        {brokenCount > 0 && (
-          <span className="ml-auto text-[10px] font-black text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30">
-            {brokenCount} BROKEN
-          </span>
-        )}
-        {brokenCount === 0 && matchedCount > 0 && (
-          <span className="ml-auto text-[10px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-            {matchedCount} MATCHED
-          </span>
-        )}
-      </div>
-      <div className="space-y-1">
-        {PL_RECORDS.map((rec, i) => {
-          const val = values[i];
-          const broken = rec.lowerIsBetter ? val < rec.record : val > rec.record;
-          const matched = val === rec.record;
-          const close = rec.lowerIsBetter
-            ? val <= rec.record + 2 && !broken && !matched
-            : val >= rec.record - 2 && !broken && !matched;
-
-          return (
-            <div
-              key={rec.label}
-              className={`flex flex-wrap items-center gap-2 text-sm py-2 px-2 rounded-lg ${
-                broken
-                  ? "bg-yellow-900/20 border border-yellow-600/30"
-                  : matched
-                    ? "bg-amber-900/15 border border-amber-700/25"
-                    : ""
-              }`}
-            >
-              <div className="flex-1 min-w-0">
-                <div className={`text-xs font-medium ${broken ? "text-yellow-300" : matched ? "text-amber-300" : "text-gray-400"}`}>
-                  {rec.label}
-                </div>
-                <div className="text-[10px] text-gray-600">{rec.holder}</div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className={`text-sm font-black tabular-nums ${
-                  broken ? "text-yellow-400" :
-                  matched ? "text-amber-400" :
-                  close ? "text-white" : "text-gray-500"
-                }`}>
-                  {val}
-                </span>
-                <span className="text-gray-700 text-xs">/</span>
-                <span className="text-gray-600 text-xs font-bold tabular-nums w-6 text-right">
-                  {rec.record}
-                </span>
-              </div>
-              {broken && (
-                <span className="text-[9px] font-black text-yellow-400 bg-yellow-500/15 px-1.5 py-0.5 rounded shrink-0">
-                  BROKEN
-                </span>
-              )}
-              {matched && !broken && (
-                <span className="text-[9px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded shrink-0">
-                  MATCHED
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      {previousResult && (effectiveConsecutiveWins > season.longestWinStreak || effectiveUnbeatenRun > season.longestUnbeatenRun) && (
-        <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600">
-          Win streak &amp; unbeaten run include carry-over from previous season
+        <div className="ml-auto flex items-center gap-2">
+          {brokenCount > 0 && (
+            <span className="text-[10px] font-black text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30">
+              {brokenCount} BROKEN
+            </span>
+          )}
+          {brokenCount === 0 && matchedCount > 0 && (
+            <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+              {matchedCount} MATCHED
+            </span>
+          )}
+          {brokenCount === 0 && matchedCount === 0 && closeCount > 0 && (
+            <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/30">
+              SO CLOSE!
+            </span>
+          )}
+          <svg
+            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
-      )}
-      {(topPLGoals > 0 || topPLAssists > 0) && (
-        <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600 space-y-0.5">
-          {topPLScorer && <div>Top scorer: {topPLScorer} ({topPLGoals}G)</div>}
-          {topPLAssister && <div>Top assists: {topPLAssister} ({topPLAssists}A)</div>}
-          {topGAPlayer && <div>Top G+A: {topGAPlayer} ({topGA})</div>}
-          {gkStats && <div>GK clean sheets: {gkStats.name} ({plCleanSheetsByGk})</div>}
+      </button>
+      {open && (
+        <div className="px-4 pb-4">
+          <div className="space-y-1">
+            {PL_RECORDS.map((rec, i) => {
+              const val = values[i];
+              const broken = rec.lowerIsBetter ? val < rec.record : val > rec.record;
+              const matched = val === rec.record;
+              const close = !broken && !matched && (
+                rec.lowerIsBetter ? val <= rec.record + 3 : val >= rec.record - 3
+              );
+
+              return (
+                <div
+                  key={rec.label}
+                  className={`flex flex-wrap items-center gap-2 text-sm py-2 px-2 rounded-lg ${
+                    broken
+                      ? "bg-yellow-900/20 border border-yellow-600/30"
+                      : matched
+                        ? "bg-amber-900/15 border border-amber-700/25"
+                        : close
+                          ? "bg-orange-900/10 border border-orange-700/20"
+                          : ""
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-medium ${broken ? "text-yellow-300" : matched ? "text-amber-300" : close ? "text-orange-300" : "text-gray-400"}`}>
+                      {rec.label}
+                    </div>
+                    <div className="text-[10px] text-gray-600">{rec.holder}</div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-sm font-black tabular-nums ${
+                      broken ? "text-yellow-400" :
+                      matched ? "text-amber-400" :
+                      close ? "text-orange-400" : "text-gray-500"
+                    }`}>
+                      {val}
+                    </span>
+                    <span className="text-gray-700 text-xs">/</span>
+                    <span className="text-gray-600 text-xs font-bold tabular-nums w-6 text-right">
+                      {rec.record}
+                    </span>
+                  </div>
+                  {broken && (
+                    <span className="text-[9px] font-black text-yellow-400 bg-yellow-500/15 px-1.5 py-0.5 rounded shrink-0">
+                      BROKEN
+                    </span>
+                  )}
+                  {matched && !broken && (
+                    <span className="text-[9px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded shrink-0">
+                      MATCHED
+                    </span>
+                  )}
+                  {close && (
+                    <span className="text-[9px] font-black text-orange-400 bg-orange-500/15 px-1.5 py-0.5 rounded shrink-0">
+                      SO CLOSE!
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {previousResult && (effectiveConsecutiveWins > season.longestWinStreak || effectiveUnbeatenRun > season.longestUnbeatenRun) && (
+            <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600">
+              Win streak &amp; unbeaten run include carry-over from previous season
+            </div>
+          )}
+          {(topPLGoals > 0 || topPLAssists > 0) && (
+            <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600 space-y-0.5">
+              {topPLScorer && <div>Top scorer: {topPLScorer} ({topPLGoals}G)</div>}
+              {topPLAssister && <div>Top assists: {topPLAssister} ({topPLAssists}A)</div>}
+              {topGAPlayer && <div>Top G+A: {topGAPlayer} ({topGA})</div>}
+              {gkStats && <div>GK clean sheets: {gkStats.name} ({plCleanSheetsByGk})</div>}
+            </div>
+          )}
         </div>
       )}
     </div>

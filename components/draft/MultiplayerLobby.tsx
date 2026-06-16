@@ -29,6 +29,7 @@ interface Props {
   isHost: boolean;
   userId: string;
   squadSubmitted: boolean;
+  currentSeason?: number;
   onStartDraft: () => void;
   onSimulationComplete: (myResult: SeasonResult, allPlayers: RoomPlayer[]) => void;
   onLeave: () => void;
@@ -39,6 +40,7 @@ export default function MultiplayerLobby({
   isHost,
   userId,
   squadSubmitted,
+  currentSeason = 1,
   onStartDraft,
   onSimulationComplete,
   onLeave,
@@ -143,7 +145,9 @@ export default function MultiplayerLobby({
           <span className="text-xs font-bold tracking-widest uppercase text-emerald-400">Multiplayer</span>
         </div>
         <h1 className="text-2xl font-black tracking-tight text-white mb-1">Lobby</h1>
-        <p className="text-gray-500 text-sm">Share the code so friends can join</p>
+        <p className="text-gray-500 text-sm">
+          {currentSeason > 1 ? `Season ${currentSeason} — submit your squad to continue` : "Share the code so friends can join"}
+        </p>
       </div>
 
       {/* Room Code */}
@@ -272,7 +276,7 @@ export default function MultiplayerLobby({
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
           </svg>
-          Start My Draft
+          {currentSeason > 1 ? `Arrange Season ${currentSeason} Squad` : "Start My Draft"}
         </button>
       )}
 
@@ -310,7 +314,7 @@ export default function MultiplayerLobby({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             )}
-            Simulate Season
+            Simulate Season {currentSeason}
           </button>
         </>
       )}

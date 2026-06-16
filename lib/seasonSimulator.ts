@@ -1987,3 +1987,361 @@ export function computeTeamStrength(players: DraftPlayer[]): { teamStrength: num
   const avgOvr = Math.round(total / (players.length || 1));
   return { teamStrength: Math.round(ratings.teamStrength * 10) / 10, avgOvr };
 }
+
+// --- Shared league simulation (multiplayer: all teams play in the same league) ---
+
+// Simulate a match scoreline using full phase ratings for both teams
+function simulateScoreline(
+  homeRat: PhaseRatings,
+  awayRat: PhaseRatings,
+  rng: () => number,
+): { homeGoals: number; awayGoals: number } {
+  const ha = HOME_ADVANTAGE;
+  const hAtk = homeRat.attack + ha * 0.6;
+  const hMid = homeRat.midfield + ha * 0.4;
+  const hDef = homeRat.defense + ha * 0.3;
+  const hGk  = homeRat.gk;
+  const aAtk = awayRat.attack;
+  const aMid = awayRat.midfield;
+  const aDef = awayRat.defense;
+  const aGk  = awayRat.gk;
+
+  const hDefPower = hDef * 0.55 + hGk * 0.30 + hMid * 0.15;
+  const aDefPower = aDef * 0.55 + aGk * 0.30 + aMid * 0.15;
+
+  const homeXg = computeExpectedGoals(hAtk, hMid, aDefPower);
+  const awayXg = computeExpectedGoals(aAtk, aMid, hDefPower);
+
+  return { homeGoals: poisson(homeXg, rng), awayGoals: poisson(awayXg, rng) };
+}
+
+// Build a MatchResult from a pre-computed scoreline, assigning goal scorers from the given players
+function buildMatchFromScoreline(
+  players: DraftPlayer[],
+  goalsFor: number,
+  goalsAgainst: number,
+  opponentName: string,
+  isHome: boolean,
+  rng: () => number,
+): MatchResult {
+  const goalScorers: { player: string; minute: number }[] = [];
+  const assistProviders: { player: string; minute: number }[] = [];
+
+  const subAdjGoal = (p: DraftPlayer) => goalScoringWeight(p) * (p.isSub ? 0.35 : 1.0);
+  const subAdjAssist = (p: DraftPlayer) => assistWeight(p) * (p.isSub ? 0.5 : 1.0);
+  const penaltyTaker = [...players].sort((a, b) => goalScoringWeight(b) - goalScoringWeight(a))[0];
+
+  for (let i = 0; i < goalsFor; i++) {
+    const minute = randomMinute(rng);
+    const isPenalty = rng() < 0.10;
+    const scorer = isPenalty ? penaltyTaker : weightedPick(players, subAdjGoal, rng);
+    goalScorers.push({ player: scorer.name, minute });
+    if (!isPenalty && rng() < 0.75) {
+      const eligible = players.filter(p => p.name !== scorer.name);
+      if (eligible.length > 0) {
+        assistProviders.push({ player: weightedPick(eligible, subAdjAssist, rng).name, minute });
+      }
+    }
+  }
+
+  goalScorers.sort((a, b) => a.minute - b.minute);
+  assistProviders.sort((a, b) => a.minute - b.minute);
+
+  const result = goalsFor > goalsAgainst ? 'W' : goalsFor < goalsAgainst ? 'L' : 'D';
+  return { opponent: opponentName, isHome, goalsFor, goalsAgainst, goalScorers, assistProviders, result };
+}
+
+// Convert AI team strength to synthetic PhaseRatings for the shared scoreline sim
+function aiRatings(strength: number): PhaseRatings {
+  return { attack: strength, midfield: strength * 0.95, defense: strength, gk: strength, teamStrength: strength };
+}
+
+export interface SharedSeasonInput {
+  userId: string;
+  displayName: string;
+  squad: DraftPlayer[];
+}
+
+/**
+ * Simulate a full shared Premier League season for N human teams.
+ * All 20 teams (N human + 20-N AI) play in the same round-robin league
+ * using a single shared RNG seed, so every team's results are consistent.
+ * FA Cup and European competitions are still simulated independently per player.
+ */
+export function simulateSharedSeason(
+  humanTeams: SharedSeasonInput[],
+  aiTeams: { name: string; strength: number }[],
+  sharedSeed: number,
+  seasonNumber: number = 1,
+): Map<string, SeasonResult> {
+  const sharedRng = createRng(sharedSeed);
+
+  // Compute phase ratings for every human team
+  const humanData = humanTeams.map(ht => {
+    const starters = ht.squad.filter(p => !p.isSub);
+    const subs     = ht.squad.filter(p => p.isSub);
+    return {
+      ...ht,
+      teamName: `${ht.displayName}'s XI`,
+      ratings: computePhaseRatings(starters.length > 0 ? starters : ht.squad),
+      starters,
+      subs,
+    };
+  });
+
+  // Full 20-team roster
+  type TeamEntry = { name: string; ratings: PhaseRatings; isHuman: boolean; userId?: string };
+  const allTeams: TeamEntry[] = [
+    ...humanData.map(hd => ({ name: hd.teamName, ratings: hd.ratings, isHuman: true, userId: hd.userId })),
+    ...aiTeams.map(ai => ({ name: ai.name, ratings: aiRatings(ai.strength), isHuman: false })),
+  ];
+  const N = allTeams.length;
+
+  // Simulate ALL match scorelines with the shared RNG
+  // matchScores[i][j] = { homeGoals, awayGoals } when team i plays at home vs team j
+  const matchScores: { homeGoals: number; awayGoals: number }[][] = Array.from({ length: N }, () => new Array(N).fill(null));
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      if (i === j) continue;
+      matchScores[i][j] = simulateScoreline(allTeams[i].ratings, allTeams[j].ratings, sharedRng);
+    }
+  }
+
+  // Build the shared league table from all 380 scorelines
+  const table: Record<string, LeagueTeam> = {};
+  for (const t of allTeams) {
+    table[t.name] = { name: t.name, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, isPlayer: false };
+  }
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      if (i === j) continue;
+      const { homeGoals, awayGoals } = matchScores[i][j];
+      const ht = table[allTeams[i].name];
+      const at = table[allTeams[j].name];
+      ht.played++; ht.goalsFor += homeGoals; ht.goalsAgainst += awayGoals;
+      at.played++; at.goalsFor += awayGoals; at.goalsAgainst += homeGoals;
+      if (homeGoals > awayGoals) { ht.won++; ht.points += 3; at.lost++; }
+      else if (homeGoals === awayGoals) { ht.drawn++; ht.points += 1; at.drawn++; at.points += 1; }
+      else { ht.lost++; at.won++; at.points += 3; }
+    }
+  }
+  for (const t of Object.values(table)) t.goalDifference = t.goalsFor - t.goalsAgainst;
+  const sharedTable = Object.values(table).sort((a, b) =>
+    b.points !== a.points ? b.points - a.points :
+    b.goalDifference !== a.goalDifference ? b.goalDifference - a.goalDifference :
+    b.goalsFor - a.goalsFor
+  );
+
+  // Build SeasonResult for each human team
+  const results = new Map<string, SeasonResult>();
+
+  for (const hd of humanData) {
+    const myIdx = allTeams.findIndex(t => t.name === hd.teamName);
+    const opponents = allTeams.filter((_, i) => i !== myIdx);
+
+    // Per-player seed for goal scorer assignment, sub selection, FA Cup/UCL/UEL
+    const playerSeed = hd.squad.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonNumber * 100);
+    const playerRng = createRng(playerSeed);
+
+    const subAppearances: Record<string, number> = {};
+    for (const s of hd.subs) subAppearances[s.name] = 0;
+
+    // Build 38 matches from shared scorelines, assign scorers with per-player RNG
+    const matches: MatchResult[] = [];
+    const matchSubSets: Set<string>[] = [];
+
+    for (const opp of opponents) {
+      const oppIdx = allTeams.findIndex(t => t.name === opp.name);
+
+      // Home: hd plays at home vs opp
+      const homeScoreline = matchScores[myIdx][oppIdx];
+      const homeActiveSubs = hd.subs.filter(() => playerRng() < 0.6);
+      const homePlayers = [...hd.starters, ...homeActiveSubs];
+      matches.push(buildMatchFromScoreline(homePlayers, homeScoreline.homeGoals, homeScoreline.awayGoals, opp.name, true, playerRng));
+      matchSubSets.push(new Set(homeActiveSubs.map(s => s.name)));
+      for (const s of homeActiveSubs) subAppearances[s.name]++;
+
+      // Away: opp plays at home vs hd → awayGoals of matchScores[oppIdx][myIdx]
+      const awayScoreline = matchScores[oppIdx][myIdx];
+      const awayActiveSubs = hd.subs.filter(() => playerRng() < 0.6);
+      const awayPlayers = [...hd.starters, ...awayActiveSubs];
+      matches.push(buildMatchFromScoreline(awayPlayers, awayScoreline.awayGoals, awayScoreline.homeGoals, opp.name, false, playerRng));
+      matchSubSets.push(new Set(awayActiveSubs.map(s => s.name)));
+      for (const s of awayActiveSubs) subAppearances[s.name]++;
+    }
+
+    // Shuffle match order
+    for (let i = matches.length - 1; i > 0; i--) {
+      const j = Math.floor(playerRng() * (i + 1));
+      [matches[i], matches[j]] = [matches[j], matches[i]];
+      [matchSubSets[i], matchSubSets[j]] = [matchSubSets[j], matchSubSets[i]];
+    }
+
+    // FA Cup + European competitions (independent per player)
+    const oppForCups = opponents.map(o => ({ name: o.name, strength: o.ratings.teamStrength }));
+    const faCup = simulateFaCup(hd.starters, hd.ratings, oppForCups, playerRng);
+    const ucl = simulateChampionsLeague(hd.squad, hd.ratings, [], oppForCups, playerRng);
+    const uel = !ucl.qualified
+      ? simulateEuropaLeague(hd.squad, hd.ratings, [], oppForCups, playerRng)
+      : undefined;
+
+    // Player stats
+    const statsMap: Record<string, PlayerStats> = {};
+    for (const p of hd.starters) {
+      statsMap[p.name] = { name: p.name, assignedPosition: p.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: 38, avgRating: 0 };
+    }
+    for (const p of hd.subs) {
+      statsMap[p.name] = { name: p.name, assignedPosition: p.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: subAppearances[p.name] || 0, avgRating: 0 };
+    }
+    const allPlayers = [...hd.starters, ...hd.subs];
+    const gk = hd.starters.find(p => classifyPosition(p.assignedPosition) === 'GK');
+    const defenders = hd.starters.filter(p => classifyPosition(p.assignedPosition) === 'DEF');
+    const defSubs = hd.subs.filter(p => classifyPosition(p.assignedPosition) === 'DEF' || classifyPosition(p.assignedPosition) === 'GK');
+
+    const seasonForm: Record<string, number> = {};
+    for (const p of allPlayers) {
+      const r = playerRng();
+      const ovrF = Math.max(0.5, (90 - p.overall) / 25);
+      if (r < 0.08) seasonForm[p.name] = 0.4 * ovrF;
+      else if (r < 0.20) seasonForm[p.name] = 0.2 * ovrF;
+      else if (r < 0.80) seasonForm[p.name] = (playerRng() * 0.2 - 0.1) * ovrF;
+      else if (r < 0.92) seasonForm[p.name] = -0.15 * ovrF;
+      else seasonForm[p.name] = -0.3 * ovrF;
+    }
+
+    const playerRatingsMap: Record<string, number[]> = {};
+    for (const p of allPlayers) playerRatingsMap[p.name] = [];
+
+    for (let mi = 0; mi < matches.length; mi++) {
+      const m = matches[mi];
+      const subsInMatch = matchSubSets[mi];
+      for (const gs of m.goalScorers) { if (statsMap[gs.player]) statsMap[gs.player].goals++; }
+      for (const ap of m.assistProviders) { if (statsMap[ap.player]) statsMap[ap.player].assists++; }
+      if (m.goalsAgainst === 0) {
+        if (gk) statsMap[gk.name].cleanSheets++;
+        for (const d of defenders) statsMap[d.name].cleanSheets++;
+        for (const s of defSubs) { if (subsInMatch.has(s.name)) statsMap[s.name].cleanSheets++; }
+      }
+      for (const p of hd.starters) playerRatingsMap[p.name].push(matchRating(p, m, seasonForm[p.name] || 0, playerRng));
+      for (const p of hd.subs) { if (subsInMatch.has(p.name)) playerRatingsMap[p.name].push(matchRating(p, m, seasonForm[p.name] || 0, playerRng)); }
+    }
+
+    for (const p of allPlayers) {
+      const rs = playerRatingsMap[p.name];
+      statsMap[p.name].avgRating = rs.length > 0 ? Math.round((rs.reduce((a, b) => a + b, 0) / rs.length) * 10) / 10 : 6.0;
+    }
+    const plPlayerStats = Object.values(statsMap).map(s => ({ ...s })).sort((a, b) => (b.goals + b.assists) - (a.goals + a.assists));
+
+    const allCompsRatings: Record<string, number[]> = {};
+    for (const p of allPlayers) allCompsRatings[p.name] = [...playerRatingsMap[p.name]];
+    const cupRng = createRng(playerSeed + 77777);
+
+    const rateMatchForPlayer = (p: DraftPlayer, m: MatchResult) => { allCompsRatings[p.name].push(matchRating(p, m, seasonForm[p.name] || 0, cupRng)); };
+
+    for (const cm of faCup.matches) {
+      const mr: MatchResult = { goalScorers: cm.goalScorers, assistProviders: cm.assistProviders, goalsAgainst: cm.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.goalsFor, opponent: cm.opponent, isHome: false };
+      for (const p of hd.starters) { statsMap[p.name].appearances++; rateMatchForPlayer(p, mr); }
+      for (const gs of cm.goalScorers) { if (statsMap[gs.player]) statsMap[gs.player].goals++; }
+      for (const ap of cm.assistProviders) { if (statsMap[ap.player]) statsMap[ap.player].assists++; }
+      if (cm.goalsAgainst === 0) { if (gk) statsMap[gk.name].cleanSheets++; for (const d of defenders) statsMap[d.name].cleanSheets++; }
+    }
+
+    const countUCLMatch = (m: UCLMatch) => {
+      const mr: MatchResult = { goalScorers: m.goalScorers, assistProviders: m.assistProviders, goalsAgainst: m.goalsAgainst, result: m.result, goalsFor: m.goalsFor, opponent: m.opponent, isHome: m.isHome };
+      for (const p of hd.starters) { statsMap[p.name].appearances++; rateMatchForPlayer(p, mr); }
+      for (const gs of m.goalScorers) { if (statsMap[gs.player]) statsMap[gs.player].goals++; }
+      for (const ap of m.assistProviders) { if (statsMap[ap.player]) statsMap[ap.player].assists++; }
+      if (m.goalsAgainst === 0) { if (gk) statsMap[gk.name].cleanSheets++; for (const d of defenders) statsMap[d.name].cleanSheets++; }
+    };
+    if (ucl?.qualified) {
+      for (const m of ucl.leagueMatches) countUCLMatch(m);
+      for (const tie of ucl.knockoutTies) { countUCLMatch(tie.leg1); if (tie.leg2) countUCLMatch(tie.leg2); }
+    }
+    if (uel?.qualified) {
+      for (const m of uel.leagueMatches) countUCLMatch(m);
+      for (const tie of uel.knockoutTies) { countUCLMatch(tie.leg1); if (tie.leg2) countUCLMatch(tie.leg2); }
+    }
+
+    for (const p of allPlayers) {
+      const rs = allCompsRatings[p.name];
+      statsMap[p.name].avgRating = rs.length > 0 ? Math.round((rs.reduce((a, b) => a + b, 0) / rs.length) * 10) / 10 : 6.0;
+    }
+    const playerStats = Object.values(statsMap).sort((a, b) => (b.goals + b.assists) - (a.goals + a.assists));
+
+    // Team record
+    const wins = matches.filter(m => m.result === 'W').length;
+    const draws = matches.filter(m => m.result === 'D').length;
+    const losses = matches.filter(m => m.result === 'L').length;
+    const goalsFor = matches.reduce((s, m) => s + m.goalsFor, 0);
+    const goalsAgainst = matches.reduce((s, m) => s + m.goalsAgainst, 0);
+    const points = wins * 3 + draws;
+
+    // Shared table with isPlayer flag for this human
+    const leagueTable = sharedTable.map(t => ({ ...t, isPlayer: t.name === hd.teamName }));
+    const actualFinish = leagueTable.findIndex(t => t.isPlayer) + 1;
+
+    const allTeamsForProjection = allTeams.map(t => ({ name: t.name, strength: t.ratings.teamStrength }));
+    const projectedFinish = calculateProjectedFinish(hd.ratings.teamStrength, allTeamsForProjection);
+    const diff = projectedFinish - actualFinish;
+    const performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED' = diff >= 3 ? 'OVERPERFORMED' : diff <= -3 ? 'UNDERPERFORMED' : 'AS EXPECTED';
+
+    const topScorer = [...playerStats].sort((a, b) => b.goals - a.goals)[0];
+    const topAssister = [...playerStats].sort((a, b) => b.assists - a.assists)[0];
+    const topGk = gk ? statsMap[gk.name] : playerStats[0];
+    const pots = [...playerStats].sort((a, b) => (b.goals + b.assists) - (a.goals + a.assists))[0];
+    const awards = {
+      goldenBoot: { name: topScorer.name, goals: topScorer.goals },
+      playmaker: { name: topAssister.name, assists: topAssister.assists },
+      goldenGlove: { name: topGk.name, cleanSheets: topGk.cleanSheets },
+      playerOfSeason: { name: pots.name, goals: pots.goals, assists: pots.assists },
+    };
+
+    // Match highlights
+    const winsOnly = matches.filter(m => m.result === 'W');
+    let biggestWin = winsOnly.length > 0 ? winsOnly[0] : matches[0];
+    for (const m of winsOnly) { if ((m.goalsFor - m.goalsAgainst) > (biggestWin.goalsFor - biggestWin.goalsAgainst)) biggestWin = m; }
+
+    const lossesOnly = matches.filter(m => m.result === 'L');
+    let worstDefeat = lossesOnly.length > 0 ? lossesOnly[0] : matches[0];
+    for (const m of lossesOnly) { if ((m.goalsAgainst - m.goalsFor) > (worstDefeat.goalsAgainst - worstDefeat.goalsFor)) worstDefeat = m; }
+
+    let highestScoring = matches[0];
+    for (const m of matches) { if (m.goalsFor + m.goalsAgainst > highestScoring.goalsFor + highestScoring.goalsAgainst) highestScoring = m; }
+
+    let longestWinStreak = 0, curWin = 0, longestUnbeatenRun = 0, curUnbeaten = 0;
+    let trailingWinStreak = 0, trailingUnbeatenRun = 0;
+    for (let i = matches.length - 1; i >= 0; i--) {
+      if (matches[i].result === 'W') { trailingWinStreak++; trailingUnbeatenRun++; }
+      else if (matches[i].result === 'D') { trailingWinStreak = 0; trailingUnbeatenRun++; }
+      else break;
+    }
+    for (const m of matches) {
+      if (m.result === 'W') { curWin++; longestWinStreak = Math.max(longestWinStreak, curWin); curUnbeaten++; longestUnbeatenRun = Math.max(longestUnbeatenRun, curUnbeaten); }
+      else if (m.result === 'D') { curWin = 0; curUnbeaten++; longestUnbeatenRun = Math.max(longestUnbeatenRun, curUnbeaten); }
+      else { curWin = 0; curUnbeaten = 0; }
+    }
+    let leadingWinStreak = 0, leadingUnbeatenRun = 0;
+    for (const m of matches) {
+      if (m.result === 'W') { leadingWinStreak++; leadingUnbeatenRun++; }
+      else if (m.result === 'D') { leadingWinStreak = 0; leadingUnbeatenRun++; }
+      else break;
+    }
+
+    const formatScore = (m: MatchResult) => m.isHome ? `${m.goalsFor}-${m.goalsAgainst}` : `${m.goalsAgainst}-${m.goalsFor}`;
+
+    results.set(hd.userId, {
+      matches, playerStats, plPlayerStats, leagueTable,
+      teamRecord: { wins, draws, losses, points, goalsFor, goalsAgainst },
+      awards,
+      biggestWin: { opponent: biggestWin.opponent, score: formatScore(biggestWin) },
+      worstDefeat: { opponent: worstDefeat.opponent, score: formatScore(worstDefeat) },
+      highestScoring: { opponent: highestScoring.opponent, score: formatScore(highestScoring) },
+      longestWinStreak, longestUnbeatenRun, trailingWinStreak, trailingUnbeatenRun, leadingWinStreak, leadingUnbeatenRun,
+      projectedFinish, actualFinish, performance,
+      phaseRatings: hd.ratings,
+      faCup, ucl, uel,
+    });
+  }
+
+  return results;
+}

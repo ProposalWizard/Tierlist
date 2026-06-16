@@ -307,7 +307,15 @@ export default function DraftPage() {
   const handleManageConfirm = useCallback(async (arranged: DraftPlayer[]) => {
     setPlayers(arranged);
     if (roomCode) {
-      // Multiplayer: submit squad and go back to lobby
+      // Multiplayer: if this is a subsequent season, advance the room first (idempotent)
+      if (currentSeason > 1) {
+        await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nextSeasonNumber: currentSeason }),
+        });
+      }
+      // Submit squad and go back to lobby
       const { teamStrength, avgOvr } = computeTeamStrength(arranged);
       await fetch(`/api/draft/rooms/${roomCode}/ready`, {
         method: "POST",
@@ -320,7 +328,7 @@ export default function DraftPage() {
       setPhase("result");
     }
     scrollTop();
-  }, [roomCode, scrollTop]);
+  }, [roomCode, currentSeason, scrollTop]);
 
   const handleNewRun = useCallback(() => {
     clearProgress();
@@ -385,6 +393,10 @@ export default function DraftPage() {
       setPreviousResults((prev) => [...prev, season]);
       setNextUsedClubYears(usedCYs);
       setCurrentSeason((s) => s + 1);
+      // Reset multiplayer state so the lobby is fresh for the next season
+      setPreComputedSeason(null);
+      setRoomPlayers(null);
+      setSquadSubmitted(false);
       setPhase("pre-season");
       scrollTop();
     },
@@ -500,6 +512,7 @@ export default function DraftPage() {
           isHost={isHost}
           userId={userId}
           squadSubmitted={squadSubmitted}
+          currentSeason={currentSeason}
           onStartDraft={handleStartFromLobby}
           onSimulationComplete={handleSimulationComplete}
           onLeave={handleLeaveRoom}
@@ -529,7 +542,7 @@ export default function DraftPage() {
         <DraftResult
           players={players}
           onNewRun={handleNewRun}
-          onPlayNextSeason={!roomCode && currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
+          onPlayNextSeason={currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
           seasonNumber={currentSeason}
           previousResult={previousResults[previousResults.length - 1]}
           formationName={settings?.formation}
