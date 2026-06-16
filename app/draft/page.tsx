@@ -39,7 +39,7 @@ export interface DraftPlayer {
 type GamePhase = "setup" | "lobby" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
 
 const STORAGE_KEY = "pl-draft-progress";
-const MAX_SEASONS = 3;
+const MAX_SEASONS = 5;
 
 interface SavedProgress {
   settings: DraftSettings;
