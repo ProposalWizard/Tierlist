@@ -259,7 +259,7 @@ export default function DraftPick({
 
   const handleRespin = useCallback(() => {
     if (respinsRemaining <= 0) return;
-    setRespinsRemaining(r => r - 1);
+    setRespinsRemaining(r => Math.max(0, r - 1) as 0 | 1 | 3);
     setSpinResult(null);
     setSpinDisplay(null);
     setSpinAnimating(false);
