@@ -697,7 +697,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     const liveAssists: Record<string, number> = {};
     for (const e of revealedPL) {
       for (const gs of e.match.goalScorers) liveGoals[gs.player] = (liveGoals[gs.player] || 0) + 1;
-      for (const ap of e.match.assistProviders) liveAssists[ap.player] = (liveAssists[ap.player] || 0) + 1;
+      for (const ap of e.match.assistProviders ?? []) liveAssists[ap.player] = (liveAssists[ap.player] || 0) + 1;
     }
 
     return (
