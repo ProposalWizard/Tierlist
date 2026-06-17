@@ -70,10 +70,6 @@ export default async function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-gray-950 p-4 md:p-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-white md:text-3xl">My Profile</h1>
-      </header>
-
       <ProfileClient
         userEmail={user.email ?? ""}
         profile={profile}

@@ -68,7 +68,7 @@ export const MANAGER_TITLES: { id: string; name: string; level: number; rarity: 
   { id: 'title_legend', name: 'Legend', level: 50, rarity: 'diamond' },
 ];
 
-export function getTitleForLevel(level: number): { id: string; name: string } {
+export function getTitleForLevel(level: number): { id: string; name: string; level: number; rarity: string } {
   let best = MANAGER_TITLES[0];
   for (const t of MANAGER_TITLES) {
     if (level >= t.level) best = t;
