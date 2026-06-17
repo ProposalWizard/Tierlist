@@ -67,6 +67,24 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
       .catch(() => setLoadingProgression(false));
   }, []);
 
+  async function handleEquip(type: "frame" | "title", id: string) {
+    const body: Record<string, string> = {};
+    if (type === "frame") body.frame = id;
+    if (type === "title") body.title = id;
+    const res = await fetch("/api/profile/equip", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.ok && progression) {
+      setProgression({
+        ...progression,
+        equippedFrame: type === "frame" ? id : progression.equippedFrame,
+        equippedTitle: type === "title" ? id : progression.equippedTitle,
+      });
+    }
+  }
+
   async function handleSaveSettings(newUsername: string, newIsAnon: boolean): Promise<{ ok: boolean; error?: string }> {
     const res = await fetch("/api/profile", {
       method: "PUT",
@@ -149,7 +167,14 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                 longestStreak={profile?.longest_streak ?? 0}
                 tierlistsCreated={createdList.length}
               />
-              <TrophyCabinet rewards={progression?.rewards ?? []} />
+              <TrophyCabinet
+                rewards={progression?.rewards ?? []}
+                stats={progression?.stats ?? null}
+                level={progression?.level ?? 1}
+                equippedFrame={progression?.equippedFrame ?? "frame_default"}
+                equippedTitle={progression?.equippedTitle ?? "title_rookie"}
+                onEquip={handleEquip}
+              />
               <RecentActivity events={progression?.recentXpEvents ?? []} />
             </>
           )}
