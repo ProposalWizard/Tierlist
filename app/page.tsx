@@ -13,8 +13,6 @@ const games = [
   { name: "Tierlist", href: "/tierlists" },
   { name: "Blind Ranking", href: "/blind-rankings" },
   { name: "Tenaball", href: "/tenable" },
-  { name: "PL Draft", href: "/draft" },
-  { name: "The Chairman", href: "/manager" },
 ];
 
 export default function HomePage() {
