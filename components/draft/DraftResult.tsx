@@ -3,6 +3,7 @@ import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason } from "@/lib/seasonSimulator";
 import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch } from "@/lib/seasonSimulator";
 import Link from "next/link";
+import { XP_AWARDS } from "@/lib/xp";
 import { getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
 import CareerRecap from "./CareerRecap";
@@ -537,6 +538,36 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         uclWinner: season.ucl?.winner || false,
         uelWinner: season.uel?.winner || false,
       }, isSignedIn);
+
+      if (isSignedIn) {
+        const runId = `s${seasonNumber}-${Date.now()}`;
+        const awardXp = (eventType: string, ref: string, amount: number) =>
+          fetch("/api/xp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ event_type: eventType, event_ref: ref, xp_amount: amount }),
+          }).catch(() => {});
+
+        awardXp("draft_complete", runId, XP_AWARDS.draft_complete);
+        if (season.actualFinish === 1) {
+          awardXp("draft_win", runId, XP_AWARDS.draft_win);
+        }
+        if (season.teamRecord.losses === 0) {
+          awardXp("draft_invincible", runId, XP_AWARDS.draft_invincible);
+        }
+
+        fetch("/api/stats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            drafts_played: 1,
+            draft_wins: season.actualFinish === 1 ? 1 : 0,
+            draft_invincibles: season.teamRecord.losses === 0 ? 1 : 0,
+            total_goals_scored: season.teamRecord.goalsFor,
+            seasons_played: 1,
+          }),
+        }).catch(() => {});
+      }
     }
   }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
 
