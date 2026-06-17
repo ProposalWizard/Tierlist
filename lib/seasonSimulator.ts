@@ -183,25 +183,25 @@ function createRng(seed: number): () => number {
 // --- Default PL teams ---
 
 export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
-  { name: 'Man City', strength: 85 },
-  { name: 'Arsenal', strength: 85 },
-  { name: 'Liverpool', strength: 83 },
-  { name: 'Man United', strength: 82 },
-  { name: 'Chelsea', strength: 80 },
-  { name: 'Aston Villa', strength: 80 },
-  { name: 'Tottenham', strength: 78 },
-  { name: 'Newcastle', strength: 78 },
-  { name: 'Bournemouth', strength: 76 },
-  { name: 'Brighton', strength: 75 },
-  { name: 'Crystal Palace', strength: 75 },
-  { name: 'Brentford', strength: 75 },
-  { name: 'Everton', strength: 75 },
-  { name: 'Nottm Forest', strength: 74 },
-  { name: 'Fulham', strength: 72 },
-  { name: 'Leeds', strength: 72 },
-  { name: 'Coventry', strength: 70 },
-  { name: 'Ipswich', strength: 68 },
-  { name: 'Hull', strength: 68 },
+  { name: 'Man City', strength: 88 },
+  { name: 'Arsenal', strength: 87 },
+  { name: 'Liverpool', strength: 86 },
+  { name: 'Man United', strength: 83 },
+  { name: 'Chelsea', strength: 83 },
+  { name: 'Aston Villa', strength: 82 },
+  { name: 'Tottenham', strength: 81 },
+  { name: 'Newcastle', strength: 81 },
+  { name: 'Bournemouth', strength: 78 },
+  { name: 'Brighton', strength: 78 },
+  { name: 'Crystal Palace', strength: 77 },
+  { name: 'Brentford', strength: 77 },
+  { name: 'Everton', strength: 76 },
+  { name: 'Nottm Forest', strength: 76 },
+  { name: 'Fulham', strength: 75 },
+  { name: 'Leeds', strength: 75 },
+  { name: 'Coventry', strength: 73 },
+  { name: 'Ipswich', strength: 72 },
+  { name: 'Hull', strength: 71 },
 ];
 
 // --- UCL team data ---
@@ -620,23 +620,25 @@ function simulateMatch(
   opponent: { name: string; strength: number },
   isHome: boolean,
   rng: () => number,
+  mySeasonForm: number = 0,
+  oppSeasonForm: number = 0,
 ): MatchResult {
   const homeBonus = isHome ? HOME_ADVANTAGE : 0;
   const awayPenalty = isHome ? 0 : HOME_ADVANTAGE;
 
-  const myAttack = ratings.attack + homeBonus * 0.6;
-  const myMidfield = ratings.midfield + homeBonus * 0.4;
-  const myDefense = ratings.defense + homeBonus * 0.3;
-  const myGk = ratings.gk;
+  const myAttack = ratings.attack + homeBonus * 0.6 + mySeasonForm;
+  const myMidfield = ratings.midfield + homeBonus * 0.4 + mySeasonForm * 0.7;
+  const myDefense = ratings.defense + homeBonus * 0.3 + mySeasonForm * 0.5;
+  const myGk = ratings.gk + mySeasonForm * 0.3;
 
-  const oppStrength = opponent.strength + awayPenalty;
-  const oppDefPower = oppStrength;
-  const oppAtkPower = oppStrength;
+  const effOppStrength = opponent.strength + awayPenalty + oppSeasonForm;
+  const oppDefPower = effOppStrength;
+  const oppAtkPower = effOppStrength;
 
   const myXg = computeExpectedGoals(myAttack, myMidfield, oppDefPower);
 
   const ourDefensivePower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
-  const oppXg = computeExpectedGoals(oppAtkPower, oppStrength * 0.95, ourDefensivePower);
+  const oppXg = computeExpectedGoals(oppAtkPower, effOppStrength * 0.95, ourDefensivePower);
 
   // Per-match form factor: teams can over/under-perform on the day (0.85–1.15)
   const myForm = 0.85 + rng() * 0.30;
@@ -687,9 +689,11 @@ function simulateNeutralMatch(
   home: { name: string; strength: number },
   away: { name: string; strength: number },
   rng: () => number,
+  homeSeasonForm: number = 0,
+  awaySeasonForm: number = 0,
 ): { homeGoals: number; awayGoals: number } {
-  const homeEff = home.strength + HOME_ADVANTAGE;
-  const awayEff = away.strength;
+  const homeEff = home.strength + HOME_ADVANTAGE + homeSeasonForm;
+  const awayEff = away.strength + awaySeasonForm;
 
   const homeXg = computeExpectedGoals(homeEff, homeEff * 0.95, awayEff);
   const awayXg = computeExpectedGoals(awayEff, awayEff * 0.95, homeEff);
@@ -711,6 +715,7 @@ function simulateLeague(
   opponents: { name: string; strength: number }[],
   playerMatches: MatchResult[],
   rng: () => number,
+  oppSeasonMods?: Record<string, number>,
 ): LeagueTeam[] {
   const allTeams = [
     { name: playerTeamName, strength: playerTeamStrength },
@@ -757,7 +762,9 @@ function simulateLeague(
 
       const home = opponents[i];
       const away = opponents[j];
-      const { homeGoals, awayGoals } = simulateNeutralMatch(home, away, rng);
+      const homeMod = oppSeasonMods?.[home.name] ?? 0;
+      const awayMod = oppSeasonMods?.[away.name] ?? 0;
+      const { homeGoals, awayGoals } = simulateNeutralMatch(home, away, rng, homeMod, awayMod);
 
       const ht = table[home.name];
       ht.played++;
@@ -1512,6 +1519,14 @@ export function simulateSeason(
 
   const playerTeamName = 'Knowitball FC';
 
+  // Season-wide form modifiers: each team (including player) gets a random
+  // modifier that persists all season, simulating good/bad campaigns.
+  // Gaussian-ish via sum of two uniforms, range roughly -6 to +6, centered at 0.
+  const genSeasonMod = () => (rng() - 0.5) * 8 + (rng() - 0.5) * 4;
+  const playerSeasonMod = genSeasonMod();
+  const oppSeasonMods: Record<string, number> = {};
+  for (const opp of opponents) oppSeasonMods[opp.name] = genSeasonMod();
+
   // Simulate 38 matches (home and away vs each opponent)
   // Structured as two halves: MW 1-19 and MW 20-38
   const subAppearances: Record<string, number> = {};
@@ -1524,7 +1539,7 @@ export function simulateSeason(
     const isHome = rng() > 0.5;
     const activeSubs = subs.filter(() => rng() < 0.6);
     const matchPlayers = [...starters, ...activeSubs];
-    firstHalf.push(simulateMatch(matchPlayers, ratings, opp, isHome, rng));
+    firstHalf.push(simulateMatch(matchPlayers, ratings, opp, isHome, rng, playerSeasonMod, oppSeasonMods[opp.name] ?? 0));
     firstHalfSubs.push(new Set(activeSubs.map(s => s.name)));
     for (const sub of activeSubs) subAppearances[sub.name]++;
   }
@@ -1544,7 +1559,7 @@ export function simulateSeason(
     const isHome = !firstHalf[i].isHome;
     const activeSubs = subs.filter(() => rng() < 0.6);
     const matchPlayers = [...starters, ...activeSubs];
-    secondHalf.push(simulateMatch(matchPlayers, ratings, opp, isHome, rng));
+    secondHalf.push(simulateMatch(matchPlayers, ratings, opp, isHome, rng, playerSeasonMod, oppSeasonMods[opp.name] ?? 0));
     secondHalfSubs.push(new Set(activeSubs.map(s => s.name)));
     for (const sub of activeSubs) subAppearances[sub.name]++;
   }
@@ -1773,6 +1788,7 @@ export function simulateSeason(
     opponents,
     matches,
     rng,
+    oppSeasonMods,
   );
 
   const actualFinish = leagueTable.findIndex(t => t.isPlayer) + 1;
@@ -1983,14 +1999,19 @@ export function calculateSeasonOdds(
     // consume seasonForm RNG draws but don't use them — just advance the RNG state
     void seasonForm;
 
+    // Season-wide team modifiers for this sim run
+    const simPlayerMod = (rng() - 0.5) * 8 + (rng() - 0.5) * 4;
+    const simOppMods: Record<string, number> = {};
+    for (const opp of opponents) simOppMods[opp.name] = (rng() - 0.5) * 8 + (rng() - 0.5) * 4;
+
     for (const opp of opponents) {
       const homeActiveSubs = subs.filter(() => rng() < 0.6);
       const homePlayers = [...starters, ...homeActiveSubs];
-      matches.push(simulateMatch(homePlayers, ratings, opp, true, rng));
+      matches.push(simulateMatch(homePlayers, ratings, opp, true, rng, simPlayerMod, simOppMods[opp.name] ?? 0));
 
       const awayActiveSubs = subs.filter(() => rng() < 0.6);
       const awayPlayers = [...starters, ...awayActiveSubs];
-      matches.push(simulateMatch(awayPlayers, ratings, opp, false, rng));
+      matches.push(simulateMatch(awayPlayers, ratings, opp, false, rng, simPlayerMod, simOppMods[opp.name] ?? 0));
     }
 
     // Shuffle
@@ -2003,7 +2024,7 @@ export function calculateSeasonOdds(
     const draws = matches.filter(m => m.result === 'D').length;
     const points = wins * 3 + draws;
 
-    const leagueTable = simulateLeague(playerTeamName, ratings.teamStrength, opponents, matches, rng);
+    const leagueTable = simulateLeague(playerTeamName, ratings.teamStrength, opponents, matches, rng, simOppMods);
     const finish = leagueTable.findIndex(t => t.isPlayer) + 1;
 
     const losses = matches.filter(m => m.result === 'L').length;
@@ -2049,16 +2070,18 @@ function simulateScoreline(
   homeRat: PhaseRatings,
   awayRat: PhaseRatings,
   rng: () => number,
+  homeSeasonMod: number = 0,
+  awaySeasonMod: number = 0,
 ): { homeGoals: number; awayGoals: number } {
   const ha = HOME_ADVANTAGE;
-  const hAtk = homeRat.attack + ha * 0.6;
-  const hMid = homeRat.midfield + ha * 0.4;
-  const hDef = homeRat.defense + ha * 0.3;
-  const hGk  = homeRat.gk;
-  const aAtk = awayRat.attack;
-  const aMid = awayRat.midfield;
-  const aDef = awayRat.defense;
-  const aGk  = awayRat.gk;
+  const hAtk = homeRat.attack + ha * 0.6 + homeSeasonMod;
+  const hMid = homeRat.midfield + ha * 0.4 + homeSeasonMod * 0.7;
+  const hDef = homeRat.defense + ha * 0.3 + homeSeasonMod * 0.5;
+  const hGk  = homeRat.gk + homeSeasonMod * 0.3;
+  const aAtk = awayRat.attack + awaySeasonMod;
+  const aMid = awayRat.midfield + awaySeasonMod * 0.7;
+  const aDef = awayRat.defense + awaySeasonMod * 0.5;
+  const aGk  = awayRat.gk + awaySeasonMod * 0.3;
 
   const hDefPower = hDef * 0.55 + hGk * 0.30 + hMid * 0.15;
   const aDefPower = aDef * 0.55 + aGk * 0.30 + aMid * 0.15;
@@ -2154,13 +2177,16 @@ export function simulateSharedSeason(
   ];
   const N = allTeams.length;
 
+  // Season-wide form modifiers for each team (shared RNG so all players see same table)
+  const teamSeasonMods: number[] = allTeams.map(() => (sharedRng() - 0.5) * 8 + (sharedRng() - 0.5) * 4);
+
   // Simulate ALL match scorelines with the shared RNG
   // matchScores[i][j] = { homeGoals, awayGoals } when team i plays at home vs team j
   const matchScores: { homeGoals: number; awayGoals: number }[][] = Array.from({ length: N }, () => new Array(N).fill(null));
   for (let i = 0; i < N; i++) {
     for (let j = 0; j < N; j++) {
       if (i === j) continue;
-      matchScores[i][j] = simulateScoreline(allTeams[i].ratings, allTeams[j].ratings, sharedRng);
+      matchScores[i][j] = simulateScoreline(allTeams[i].ratings, allTeams[j].ratings, sharedRng, teamSeasonMods[i], teamSeasonMods[j]);
     }
   }
 

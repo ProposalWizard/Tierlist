@@ -689,28 +689,75 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
     const recentEvents = revealedEvents.slice(-6);
 
+    // Compute live player stats from revealed PL matches
+    const liveGoals: Record<string, number> = {};
+    const liveAssists: Record<string, number> = {};
+    for (const e of revealedPL) {
+      for (const gs of e.match.goalScorers) liveGoals[gs.player] = (liveGoals[gs.player] || 0) + 1;
+      for (const ap of e.match.assistProviders) liveAssists[ap.player] = (liveAssists[ap.player] || 0) + 1;
+    }
+
     return (
       <div className="max-w-2xl mx-auto p-4 pb-20">
-        {/* Squad header */}
+        {/* Live squad stats */}
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
-            {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Your XI"}
-          </h3>
-          <div className="space-y-0.5">
-            {starterPlayers.map((p, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm py-1 px-1">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
-                  {p.assignedPosition}
-                </span>
-                <span className="flex-1 ml-1 font-medium">{p.name}</span>
-                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
-                <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+              {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Squad Stats"}
+            </h3>
+            {plWeek > 0 && (
+              <div className="flex gap-3 text-[10px] text-gray-500">
+                <span>G</span>
+                <span>A</span>
               </div>
-            ))}
+            )}
+          </div>
+          <div className="space-y-0.5">
+            {starterPlayers.map((p, i) => {
+              const g = liveGoals[p.name] || 0;
+              const a = liveAssists[p.name] || 0;
+              const scored = g > 0 || a > 0;
+              return (
+                <div key={i} className={`flex items-center gap-2 text-sm py-1 px-1 rounded transition-colors ${scored ? "bg-emerald-950/20" : ""}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
+                    {p.assignedPosition}
+                  </span>
+                  <span className="flex-1 ml-1 font-medium">{p.name}</span>
+                  {plWeek > 0 ? (
+                    <>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                      <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            {subPlayers.length > 0 && plWeek > 0 && (
+              <>
+                <div className="border-t border-gray-800/50 my-1" />
+                {subPlayers.map((p, i) => {
+                  const g = liveGoals[p.name] || 0;
+                  const a = liveAssists[p.name] || 0;
+                  return (
+                    <div key={`sub-${i}`} className="flex items-center gap-2 text-sm py-1 px-1 opacity-70">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-700 text-white w-8 text-center">SUB</span>
+                      <span className="flex-1 ml-1 font-medium text-gray-400">{p.name}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
           <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
-            <span>Average OVR</span>
-            <span className="font-bold text-white">{avgOvr}</span>
+            <span>{plWeek > 0 ? `${plWeek} match${plWeek > 1 ? "es" : ""} played` : "Average OVR"}</span>
+            <span className="font-bold text-white">{plWeek > 0 ? `${runW}W ${runD}D ${runL}L · ${runPts}pts` : avgOvr}</span>
           </div>
         </div>
 
