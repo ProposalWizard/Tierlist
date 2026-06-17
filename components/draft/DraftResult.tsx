@@ -5,6 +5,7 @@ import type { SeasonResult, SeasonOdds, UCLMatch, UCLResult, FaCupMatch } from "
 import Link from "next/link";
 import { getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
+import CareerRecap from "./CareerRecap";
 
 interface Props {
   players: DraftPlayer[];
@@ -12,6 +13,7 @@ interface Props {
   onPlayNextSeason?: (season: SeasonResult, players: DraftPlayer[]) => void;
   seasonNumber?: number;
   previousResult?: SeasonResult;
+  allSeasonResults?: SeasonResult[];
   formationName?: string;
   isSignedIn?: boolean;
   preComputedSeason?: SeasonResult;
@@ -453,7 +455,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable),
     [players, seasonNumber, previousResult, preComputedSeason],
@@ -467,6 +469,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const [showTable, setShowTable] = useState(false);
   const [showUCLTable, setShowUCLTable] = useState(false);
   const [showUELTable, setShowUELTable] = useState(false);
+  const [showCareerRecap, setShowCareerRecap] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [statsView, setStatsView] = useState<"pl" | "all">("all");
@@ -689,28 +692,75 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
     const recentEvents = revealedEvents.slice(-6);
 
+    // Compute live player stats from revealed PL matches
+    const liveGoals: Record<string, number> = {};
+    const liveAssists: Record<string, number> = {};
+    for (const e of revealedPL) {
+      for (const gs of e.match.goalScorers) liveGoals[gs.player] = (liveGoals[gs.player] || 0) + 1;
+      for (const ap of e.match.assistProviders ?? []) liveAssists[ap.player] = (liveAssists[ap.player] || 0) + 1;
+    }
+
     return (
       <div className="max-w-2xl mx-auto p-4 pb-20">
-        {/* Squad header */}
+        {/* Live squad stats */}
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
-            {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Your XI"}
-          </h3>
-          <div className="space-y-0.5">
-            {starterPlayers.map((p, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm py-1 px-1">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
-                  {p.assignedPosition}
-                </span>
-                <span className="flex-1 ml-1 font-medium">{p.name}</span>
-                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
-                <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+              {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Squad Stats"}
+            </h3>
+            {plWeek > 0 && (
+              <div className="flex gap-3 text-[10px] text-gray-500">
+                <span>G</span>
+                <span>A</span>
               </div>
-            ))}
+            )}
+          </div>
+          <div className="space-y-0.5">
+            {starterPlayers.map((p, i) => {
+              const g = liveGoals[p.name] || 0;
+              const a = liveAssists[p.name] || 0;
+              const scored = g > 0 || a > 0;
+              return (
+                <div key={i} className={`flex items-center gap-2 text-sm py-1 px-1 rounded transition-colors ${scored ? "bg-emerald-950/20" : ""}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
+                    {p.assignedPosition}
+                  </span>
+                  <span className="flex-1 ml-1 font-medium">{p.name}</span>
+                  {plWeek > 0 ? (
+                    <>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                      <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            {subPlayers.length > 0 && plWeek > 0 && (
+              <>
+                <div className="border-t border-gray-800/50 my-1" />
+                {subPlayers.map((p, i) => {
+                  const g = liveGoals[p.name] || 0;
+                  const a = liveAssists[p.name] || 0;
+                  return (
+                    <div key={`sub-${i}`} className="flex items-center gap-2 text-sm py-1 px-1 opacity-70">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-700 text-white w-8 text-center">SUB</span>
+                      <span className="flex-1 ml-1 font-medium text-gray-400">{p.name}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
           <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
-            <span>Average OVR</span>
-            <span className="font-bold text-white">{avgOvr}</span>
+            <span>{plWeek > 0 ? `${plWeek} match${plWeek > 1 ? "es" : ""} played` : "Average OVR"}</span>
+            <span className="font-bold text-white">{plWeek > 0 ? `${runW}W ${runD}D ${runL}L · ${runPts}pts` : avgOvr}</span>
           </div>
         </div>
 
@@ -2107,6 +2157,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </div>
       )}
 
+      {/* Career Recap button — shown at the end of career (final season or sacked) */}
+      {!onPlayNextSeason && seasonNumber > 1 && allSeasonResults && allSeasonResults.length > 0 && (
+        <button
+          onClick={() => setShowCareerRecap(true)}
+          className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 rounded-xl font-bold transition-all shadow-lg shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-3"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+          Career Recap
+        </button>
+      )}
+
       {/* Actions */}
       <div className={onPlayNextSeason && season.actualFinish < 18 ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
         {onPlayNextSeason && season.actualFinish < 18 && (
@@ -2153,6 +2214,15 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       >
         View Draft History &rarr;
       </Link>
+
+      {/* Career Recap Modal */}
+      {showCareerRecap && allSeasonResults && (
+        <CareerRecap
+          allSeasons={[...allSeasonResults, season]}
+          roomPlayers={roomPlayers}
+          onClose={() => setShowCareerRecap(false)}
+        />
+      )}
     </div>
   );
 }

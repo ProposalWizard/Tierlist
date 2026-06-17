@@ -669,6 +669,45 @@ export default function DraftPick({
             </div>
           )}
 
+          {/* Existing bench — shown immediately during Season 2 signing, even before first pick */}
+          {isSeason2Draft && existingSquad && existingSquad.filter(p => p.isSub).length > 0 && pickedPlayers.length === 0 && (
+            <div className="mt-3 hidden lg:block space-y-1">
+              <div className="text-[10px] font-bold tracking-widest uppercase text-purple-400">
+                Current Bench
+              </div>
+              {existingSquad.filter(p => p.isSub).map((p, i) => (
+                <div
+                  key={`existing-sub-${i}`}
+                  className="flex items-center gap-2 text-sm bg-purple-900/10 border border-purple-800/30 rounded-lg px-3 py-1.5"
+                >
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
+                    {p.assignedPosition}
+                  </span>
+                  <span className="flex-1 truncate font-medium text-gray-300">{p.name}</span>
+                  <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                  <span className="font-extrabold text-purple-400 text-sm">{p.overall}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {isSeason2Draft && existingSquad && existingSquad.filter(p => p.isSub).length > 0 && pickedPlayers.length === 0 && (
+            <div className="mt-3 lg:hidden flex gap-1.5 overflow-x-auto pb-1">
+              <div className="text-[9px] font-bold tracking-widest uppercase text-purple-400 shrink-0 self-center pr-1">Bench</div>
+              {existingSquad.filter(p => p.isSub).map((p, i) => (
+                <div
+                  key={`existing-sub-mobile-${i}`}
+                  className="flex items-center gap-1.5 text-xs bg-purple-900/10 border border-purple-800/20 rounded-lg px-2 py-1 shrink-0"
+                >
+                  <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
+                    {p.assignedPosition}
+                  </span>
+                  <span className="font-medium text-gray-400">{p.name.split(" ").pop()}</span>
+                  <span className="font-extrabold text-purple-400">{p.overall}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Picked list — compact on mobile, full on desktop */}
           {pickedPlayers.length > 0 && (
             <div className="mt-3 hidden lg:block space-y-1">
@@ -713,11 +752,10 @@ export default function DraftPick({
                   ))}
                 </>
               )}
-              {/* Existing subs from previous season — shown during Season 2 signing */}
               {isSeason2Draft && existingSquad && existingSquad.filter(p => p.isSub).length > 0 && (
                 <>
                   <div className="text-[10px] font-bold tracking-widest uppercase pt-2 text-purple-400">
-                    Existing Subs
+                    Current Bench
                   </div>
                   {existingSquad.filter(p => p.isSub).map((p, i) => (
                     <div
