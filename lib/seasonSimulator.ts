@@ -2176,12 +2176,13 @@ export function simulateSharedSeason(
     } else {
       round.push({ home: rotating[0], away: 0 });
     }
-    // Match: rotating[i] vs rotating[N-2-i] for i = 1..N/2-1
+    // Match: rotating[i] vs rotating[N-1-1-i] for i = 1..N/2-1
     for (let i = 1; i < N / 2; i++) {
+      const mirrorIdx = N - 1 - i;
       if (sharedRng() > 0.5) {
-        round.push({ home: rotating[i], away: rotating[N - 2 - i] });
+        round.push({ home: rotating[i], away: rotating[mirrorIdx] });
       } else {
-        round.push({ home: rotating[N - 2 - i], away: rotating[i] });
+        round.push({ home: rotating[mirrorIdx], away: rotating[i] });
       }
     }
     firstHalfRounds.push(round);
