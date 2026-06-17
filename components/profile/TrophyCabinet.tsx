@@ -37,7 +37,7 @@ export default function TrophyCabinet({ rewards, stats, level, equippedFrame, eq
   return (
     <div className="rounded-xl border border-gray-800/50 bg-gray-900 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+        <h3 className="text-[10px] font-bold tracking-[0.25em] text-amber-400/80 uppercase">
           Trophy Cabinet
         </h3>
         <div className="flex items-center gap-2">
