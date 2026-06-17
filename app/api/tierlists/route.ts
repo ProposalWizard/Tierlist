@@ -10,6 +10,8 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { XP_AWARDS, levelFromXp } from "@/lib/xp";
 
 function slugify(text: string): string {
   return text
@@ -87,6 +89,33 @@ export async function POST(request: Request) {
     console.error("[POST /api/tierlists] images insert error:", imgError);
     return NextResponse.json({ error: "Failed to save images" }, { status: 500 });
   }
+
+  // Award XP for tierlist creation (fire-and-forget)
+  const svc = createServiceClient();
+  svc.from("xp_events").insert({
+    user_id: user.id,
+    event_type: "tierlist_create",
+    event_ref: tierlist.id,
+    xp_awarded: XP_AWARDS.tierlist_create,
+  }).then(async ({ error: xpErr }) => {
+    if (xpErr) return;
+    const { data: xpRow } = await svc.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
+    const oldXp = xpRow?.total_xp ?? 0;
+    const newXp = oldXp + XP_AWARDS.tierlist_create;
+    await svc.from("user_xp").upsert({
+      user_id: user.id,
+      total_xp: newXp,
+      current_level: levelFromXp(newXp).level,
+      updated_at: new Date().toISOString(),
+    });
+    // Increment tierlists_created stat
+    const { data: stats } = await svc.from("user_stats").select("tierlists_created").eq("user_id", user.id).maybeSingle();
+    await svc.from("user_stats").upsert({
+      user_id: user.id,
+      tierlists_created: (stats?.tierlists_created ?? 0) + 1,
+      updated_at: new Date().toISOString(),
+    });
+  });
 
   return NextResponse.json({ id: tierlist.id, slug: tierlist.slug });
 }

@@ -14,6 +14,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { XP_AWARDS, levelFromXp } from "@/lib/xp";
 
 export async function POST(
   request: Request,
@@ -76,6 +77,32 @@ export async function POST(
     vote_counts[v.tier_label] = (vote_counts[v.tier_label] ?? 0) + 1;
   }
   const total_votes = Object.values(vote_counts).reduce((a, b) => a + b, 0);
+
+  // Award XP for first vote on this tierlist (logged-in users only, fire-and-forget)
+  if (user) {
+    service.from("xp_events").insert({
+      user_id: user.id,
+      event_type: "vote_cast",
+      event_ref: `${id}_${image_id}`,
+      xp_awarded: XP_AWARDS.vote_cast,
+    }).then(async ({ error: xpErr }) => {
+      if (xpErr) return;
+      const { data: xpRow } = await service.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
+      const newXp = (xpRow?.total_xp ?? 0) + XP_AWARDS.vote_cast;
+      await service.from("user_xp").upsert({
+        user_id: user.id,
+        total_xp: newXp,
+        current_level: levelFromXp(newXp).level,
+        updated_at: new Date().toISOString(),
+      });
+      const { data: stats } = await service.from("user_stats").select("votes_cast").eq("user_id", user.id).maybeSingle();
+      await service.from("user_stats").upsert({
+        user_id: user.id,
+        votes_cast: (stats?.votes_cast ?? 0) + 1,
+        updated_at: new Date().toISOString(),
+      });
+    });
+  }
 
   return NextResponse.json({ vote_counts, total_votes });
 }
