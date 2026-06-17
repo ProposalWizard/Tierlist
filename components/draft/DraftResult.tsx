@@ -695,6 +695,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       for (const gs of e.match.goalScorers) liveGoals[gs.player] = (liveGoals[gs.player] || 0) + 1;
       for (const ap of e.match.assistProviders ?? []) liveAssists[ap.player] = (liveAssists[ap.player] || 0) + 1;
     }
+    // Pre-computed avg ratings per player (PL only)
+    const plRatingsByName: Record<string, number> = {};
+    for (const s of season.plPlayerStats) plRatingsByName[s.name] = s.avgRating;
 
     return (
       <div className="max-w-2xl mx-auto p-4 pb-20">
@@ -705,9 +708,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Squad Stats"}
             </h3>
             {plWeek > 0 && (
-              <div className="flex gap-3 text-[10px] text-gray-500">
-                <span>G</span>
-                <span>A</span>
+              <div className="flex text-[10px] text-gray-500">
+                <span className="w-6 text-right">G</span>
+                <span className="w-6 text-right ml-1">A</span>
+                <span className="w-9 text-right ml-1">RAT</span>
               </div>
             )}
           </div>
@@ -725,7 +729,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   {plWeek > 0 ? (
                     <>
                       <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
-                      <span className={`w-6 text-right font-black text-xs tabular-nums ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                      <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(plRatingsByName[p.name] || 0) >= 7.5 ? "text-emerald-400" : (plRatingsByName[p.name] || 0) >= 6.5 ? "text-gray-300" : "text-gray-500"}`}>
+                        {plRatingsByName[p.name] ? plRatingsByName[p.name].toFixed(1) : "-"}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -747,7 +754,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-700 text-white w-8 text-center">SUB</span>
                       <span className="flex-1 ml-1 font-medium text-gray-400">{p.name}</span>
                       <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
-                      <span className={`w-6 text-right font-black text-xs tabular-nums ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                      <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(plRatingsByName[p.name] || 0) >= 7.5 ? "text-emerald-400" : "text-gray-500"}`}>
+                        {plRatingsByName[p.name] ? plRatingsByName[p.name].toFixed(1) : "-"}
+                      </span>
                     </div>
                   );
                 })}
