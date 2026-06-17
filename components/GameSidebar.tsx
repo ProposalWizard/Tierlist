@@ -22,6 +22,7 @@ const GAMES: GameLink[] = [
   { name: "Player Ratings", description: "Rate and compare players", href: "/ratings", comingSoon: true },
   { name: "Match Predictions", description: "Predict match results", href: "/predictions", comingSoon: true },
   { name: "PL Draft", description: "Build a dream XI from random FIFA rosters", href: "/draft" },
+  { name: "The Chairman", description: "£500M budget, live match days, transfers", href: "/manager" },
   { name: "Tenable", description: "Football trivia challenge", href: "/tenable" },
   { name: "Winner Stays On", description: "Pick the winner each round", href: "/winner-stays-on", comingSoon: true },
   { name: "Guess the 11", description: "Guess the starting lineup", href: "/guess-the-11", comingSoon: true },
