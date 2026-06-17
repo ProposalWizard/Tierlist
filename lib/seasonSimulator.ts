@@ -1025,7 +1025,7 @@ function simulateSharedFaCup(
   for (let round = 0; round < 6; round++) {
     const roundName = FA_CUP_ROUNDS[round];
     const teamsInRound = FA_CUP_TEAMS_IN_ROUND[round];
-    const survivorIds = [...surviving.keys()];
+    const survivorIds = Array.from(surviving.keys());
     if (survivorIds.length === 0) break;
 
     const pairedHumans = new Set<string>();
