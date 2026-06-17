@@ -1162,11 +1162,11 @@ function simulateSharedFaCup(
     }
   }
 
-  for (const [userId] of surviving) {
+  surviving.forEach((_, userId) => {
     if (!results.has(userId)) {
       results.set(userId, { matches: humanMatches.get(userId)!, winner: true, exitRound: null });
     }
-  }
+  });
 
   return results;
 }
