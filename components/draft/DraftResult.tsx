@@ -5,6 +5,7 @@ import type { SeasonResult, SeasonOdds, UCLMatch, UCLResult, FaCupMatch } from "
 import Link from "next/link";
 import { getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
+import CareerRecap from "./CareerRecap";
 
 interface Props {
   players: DraftPlayer[];
@@ -12,6 +13,7 @@ interface Props {
   onPlayNextSeason?: (season: SeasonResult, players: DraftPlayer[]) => void;
   seasonNumber?: number;
   previousResult?: SeasonResult;
+  allSeasonResults?: SeasonResult[];
   formationName?: string;
   isSignedIn?: boolean;
   preComputedSeason?: SeasonResult;
@@ -453,7 +455,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable),
     [players, seasonNumber, previousResult, preComputedSeason],
@@ -467,6 +469,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const [showTable, setShowTable] = useState(false);
   const [showUCLTable, setShowUCLTable] = useState(false);
   const [showUELTable, setShowUELTable] = useState(false);
+  const [showCareerRecap, setShowCareerRecap] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [statsView, setStatsView] = useState<"pl" | "all">("all");
@@ -2154,6 +2157,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </div>
       )}
 
+      {/* Career Recap button — shown at the end of career (final season or sacked) */}
+      {!onPlayNextSeason && seasonNumber > 1 && allSeasonResults && allSeasonResults.length > 0 && (
+        <button
+          onClick={() => setShowCareerRecap(true)}
+          className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 rounded-xl font-bold transition-all shadow-lg shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-3"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+          Career Recap
+        </button>
+      )}
+
       {/* Actions */}
       <div className={onPlayNextSeason && season.actualFinish < 18 ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
         {onPlayNextSeason && season.actualFinish < 18 && (
@@ -2200,6 +2214,15 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       >
         View Draft History &rarr;
       </Link>
+
+      {/* Career Recap Modal */}
+      {showCareerRecap && allSeasonResults && (
+        <CareerRecap
+          allSeasons={[...allSeasonResults, season]}
+          roomPlayers={roomPlayers}
+          onClose={() => setShowCareerRecap(false)}
+        />
+      )}
     </div>
   );
 }

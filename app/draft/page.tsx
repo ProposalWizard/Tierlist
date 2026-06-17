@@ -732,6 +732,7 @@ export default function DraftPage() {
           onPlayNextSeason={currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
           seasonNumber={currentSeason}
           previousResult={previousResults[previousResults.length - 1]}
+          allSeasonResults={previousResults}
           formationName={settings?.formation}
           isSignedIn={isSignedIn}
           preComputedSeason={preComputedSeason ?? undefined}

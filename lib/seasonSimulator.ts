@@ -2585,12 +2585,13 @@ export function simulateSharedSeason(
       for (const s of activeSubs) subAppearances[s.name]++;
     }
 
-    // FA Cup from shared simulation; European competitions still independent
+    // FA Cup from shared simulation; European competitions use shared table for qualification
     const faCup = sharedFaCupResults.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round 3' };
     const oppForCups = opponents.map(o => ({ name: o.name, strength: o.ratings.teamStrength }));
-    const ucl = simulateChampionsLeague(hd.squad, hd.ratings, [], oppForCups, playerRng);
+    const playerLeagueTable = sharedTable.map(t => ({ ...t, isPlayer: t.name === hd.teamName }));
+    const ucl = simulateChampionsLeague(hd.squad, hd.ratings, playerLeagueTable, oppForCups, playerRng);
     const uel = !ucl.qualified
-      ? simulateEuropaLeague(hd.squad, hd.ratings, [], oppForCups, playerRng)
+      ? simulateEuropaLeague(hd.squad, hd.ratings, playerLeagueTable, oppForCups, playerRng)
       : undefined;
 
     // Player stats
