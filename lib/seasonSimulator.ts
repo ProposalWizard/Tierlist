@@ -184,7 +184,7 @@ function createRng(seed: number): () => number {
 
 export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
   { name: 'Man City', strength: 88 },
-  { name: 'Arsenal', strength: 87 },
+  { name: 'Arsenal', strength: 88 },
   { name: 'Liverpool', strength: 86 },
   { name: 'Man United', strength: 83 },
   { name: 'Chelsea', strength: 83 },

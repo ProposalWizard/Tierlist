@@ -430,6 +430,8 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 - [ ] **Sort/filter on homepage** — Users can only browse by category, no sort controls
 - [ ] **PWA support** — Could be installable as a mobile app
 - [x] ~~**Run `tierlist_tiers.sql` migration**~~ — Done (April 2026)
+- [ ] **Online multiplayer draft** — Multiple players draft from the same PL pool (first come first served, no duplicate picks). Needs Supabase Realtime for turn sync. Relegated players get sacked; remaining players continue.
+- [ ] **Player trait system (PL Draft)** — Traits that players can have or be assigned: Captain, Wonderkid, Timeless, Big Game Player, Reckless, Selfish. Not yet designed — just an idea to explore.
 
 ---
 
