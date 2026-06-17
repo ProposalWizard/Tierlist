@@ -723,6 +723,7 @@ export default function DraftPage() {
           title="Pre-Season"
           subtitle="Arrange Your Squad"
           formationName={settings?.formation}
+          seasonNumber={currentSeason}
         />
       )}
       {phase === "result" && (players.length > 0 || preComputedSeason !== null) && (
@@ -785,6 +786,7 @@ export default function DraftPage() {
           title={`Season ${currentSeason}`}
           subtitle="Arrange Your Squad"
           formationName={settings?.formation}
+          seasonNumber={currentSeason}
         />
       )}
     </div>
