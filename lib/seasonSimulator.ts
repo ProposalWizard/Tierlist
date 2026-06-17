@@ -607,9 +607,9 @@ function computeExpectedGoals(
 ): number {
   const offensiveStrength = attackPower * 0.55 + midfieldPower * 0.45;
   const diff = offensiveStrength - oppDefensePower;
-  const base = 1.3;
+  const base = 1.5;
   const xg = base + diff * 0.065;
-  return Math.max(0.25, Math.min(3.5, xg));
+  return Math.max(0.4, Math.min(3.5, xg));
 }
 
 // --- Match simulation ---
@@ -1771,6 +1771,18 @@ function simulateEuropaLeague(
 
 // --- Main export ---
 
+function rollInjuryLength(rng: () => number): number {
+  const r = rng();
+  if (r < 0.45) return 1;
+  if (r < 0.65) return 2;
+  if (r < 0.78) return 3;
+  if (r < 0.86) return 4;
+  if (r < 0.92) return 5;
+  if (r < 0.95) return 7;
+  if (r < 0.98) return 9;
+  return 12;
+}
+
 export function simulateSeason(
   players: DraftPlayer[],
   otherTeams?: { name: string; strength: number }[],
@@ -1783,6 +1795,9 @@ export function simulateSeason(
 
   const starters = players.filter(p => !p.isSub);
   const subs = players.filter(p => p.isSub);
+  // Bench GK handled separately: excluded from random sub pool,
+  // starts all FA Cup games, covers PL games if starter GK is injured.
+  const benchGk = subs.find(p => classifyPosition(p.assignedPosition) === 'GK');
 
   const opponents = otherTeams && otherTeams.length === 19
     ? otherTeams
@@ -1810,7 +1825,9 @@ export function simulateSeason(
   const firstHalfSubs: Set<string>[] = [];
   for (const opp of opponents) {
     const isHome = rng() > 0.5;
-    const activeSubs = subs.filter(() => rng() < 0.6);
+    // Call rng() for every sub (including bench GK) to keep RNG stream stable,
+    // but exclude bench GK from active subs — they have a dedicated role.
+    const activeSubs = subs.filter(sub => rng() < 0.6 && sub !== benchGk);
     const matchPlayers = [...starters, ...activeSubs];
     firstHalf.push(simulateMatch(matchPlayers, ratings, opp, isHome, rng, playerSeasonMod, oppSeasonMods[opp.name] ?? 0));
     firstHalfSubs.push(new Set(activeSubs.map(s => s.name)));
@@ -1830,7 +1847,7 @@ export function simulateSeason(
     const oppName = firstHalf[i].opponent;
     const opp = opponents.find(o => o.name === oppName)!;
     const isHome = !firstHalf[i].isHome;
-    const activeSubs = subs.filter(() => rng() < 0.6);
+    const activeSubs = subs.filter(sub => rng() < 0.6 && sub !== benchGk);
     const matchPlayers = [...starters, ...activeSubs];
     secondHalf.push(simulateMatch(matchPlayers, ratings, opp, isHome, rng, playerSeasonMod, oppSeasonMods[opp.name] ?? 0));
     secondHalfSubs.push(new Set(activeSubs.map(s => s.name)));
@@ -1845,6 +1862,19 @@ export function simulateSeason(
 
   const matches = [...firstHalf, ...secondHalf];
   const matchSubSets = [...firstHalfSubs, ...secondHalfSubs];
+
+  // Determine starter GK injury (only if a bench GK exists)
+  // Affects stat tracking only — team performance is unchanged.
+  let gkInjuryStart = -1;
+  let gkInjuryLen = 0;
+  if (benchGk && rng() < 0.25) {
+    gkInjuryLen = rollInjuryLength(rng);
+    gkInjuryStart = Math.floor(rng() * Math.max(1, 39 - gkInjuryLen));
+  }
+  const gkInjuredMatchIndices = new Set<number>();
+  for (let i = gkInjuryStart; i < gkInjuryStart + gkInjuryLen && i < 38; i++) {
+    if (i >= 0) gkInjuredMatchIndices.add(i);
+  }
 
   // FA Cup
   const faCup = simulateFaCup(starters, ratings, opponents, rng);
@@ -1889,6 +1919,12 @@ export function simulateSeason(
   const defenders = starters.filter(p => classifyPosition(p.assignedPosition) === 'DEF');
   const defSubs = subs.filter(p => classifyPosition(p.assignedPosition) === 'DEF' || classifyPosition(p.assignedPosition) === 'GK');
 
+  // Adjust starter GK appearances down and bench GK up for injury period
+  if (gk && benchGk && gkInjuredMatchIndices.size > 0) {
+    statsMap[gk.name].appearances = Math.max(0, 38 - gkInjuredMatchIndices.size);
+    statsMap[benchGk.name].appearances = gkInjuredMatchIndices.size;
+  }
+
   // Season form: each player gets a persistent bonus/penalty for the entire season.
   // Most players get a small form shift, but occasionally someone has a breakout
   // or poor season. Lower-rated players have a wider range to allow surprise seasons.
@@ -1909,6 +1945,7 @@ export function simulateSeason(
   for (let mi = 0; mi < matches.length; mi++) {
     const m = matches[mi];
     const subsInMatch = matchSubSets[mi];
+    const benchGkPlayingThisMatch = benchGk !== undefined && gkInjuredMatchIndices.has(mi);
 
     for (const gs of m.goalScorers) {
       if (statsMap[gs.player]) statsMap[gs.player].goals++;
@@ -1917,7 +1954,12 @@ export function simulateSeason(
       if (statsMap[ap.player]) statsMap[ap.player].assists++;
     }
     if (m.goalsAgainst === 0) {
-      if (gk) statsMap[gk.name].cleanSheets++;
+      // Clean sheet goes to bench GK if they're covering an injury game
+      if (benchGkPlayingThisMatch && benchGk && statsMap[benchGk.name]) {
+        statsMap[benchGk.name].cleanSheets++;
+      } else if (gk) {
+        statsMap[gk.name].cleanSheets++;
+      }
       for (const def of defenders) {
         statsMap[def.name].cleanSheets++;
       }
@@ -1927,7 +1969,11 @@ export function simulateSeason(
     }
 
     for (const p of starters) {
+      if (p === gk && benchGkPlayingThisMatch) continue; // starter GK is injured/out
       playerRatings[p.name].push(matchRating(p, m, seasonForm[p.name] || 0, rng));
+    }
+    if (benchGkPlayingThisMatch && benchGk) {
+      playerRatings[benchGk.name].push(matchRating(benchGk, m, seasonForm[benchGk.name] || 0, rng));
     }
     for (const p of subs) {
       if (subsInMatch.has(p.name)) {
@@ -1960,11 +2006,17 @@ export function simulateSeason(
   };
 
   // Count FA Cup stats (added to all-comps totals)
+  // Bench GK starts all FA Cup games — starter GK gets a rest.
   for (const cm of faCup.matches) {
     const matchForRating = { goalScorers: cm.goalScorers, assistProviders: cm.assistProviders, goalsAgainst: cm.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.goalsFor, opponent: cm.opponent, isHome: false };
     for (const p of starters) {
+      if (p === gk && benchGk) continue; // bench GK starts FA Cup
       statsMap[p.name].appearances++;
       rateMatchForPlayer(p, matchForRating);
+    }
+    if (benchGk && statsMap[benchGk.name]) {
+      statsMap[benchGk.name].appearances++;
+      rateMatchForPlayer(benchGk, matchForRating);
     }
     for (const gs of cm.goalScorers) {
       if (statsMap[gs.player]) statsMap[gs.player].goals++;
@@ -1973,7 +2025,11 @@ export function simulateSeason(
       if (statsMap[ap.player]) statsMap[ap.player].assists++;
     }
     if (cm.goalsAgainst === 0) {
-      if (gk) statsMap[gk.name].cleanSheets++;
+      if (benchGk && statsMap[benchGk.name]) {
+        statsMap[benchGk.name].cleanSheets++;
+      } else if (gk) {
+        statsMap[gk.name].cleanSheets++;
+      }
       for (const def of defenders) {
         statsMap[def.name].cleanSheets++;
       }

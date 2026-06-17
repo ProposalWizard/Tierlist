@@ -6,6 +6,7 @@ import type { DraftPlayer } from "@/app/draft/page";
 interface DepartedPlayer {
   player: DraftPlayer;
   reason: string;
+  convinceable?: boolean;
 }
 
 interface RatingChange {
@@ -19,7 +20,7 @@ interface Props {
   departedPlayers: DepartedPlayer[];
   ratingChanges: RatingChange[];
   season2Players: DraftPlayer[];
-  onContinue: (trainingPlayerName: string) => void;
+  onContinue: (trainingPlayerName: string, retainedPlayer?: DraftPlayer) => void;
   seasonNumber?: number;
   previousFinish?: number;
 }
@@ -34,6 +35,21 @@ export default function Season2Overview({
 }: Props) {
   const [revealStep, setRevealStep] = useState(0);
   const [selectedTraining, setSelectedTraining] = useState<string | null>(null);
+  const [convinceAttempted, setConvinceAttempted] = useState(false);
+  const [convinceSuccess, setConvinceSuccess] = useState(false);
+
+  const convinceableIdx = useMemo(
+    () => departedPlayers.findIndex(dp => dp.convinceable),
+    [departedPlayers],
+  );
+  const convinceablePlayer = convinceableIdx >= 0 ? departedPlayers[convinceableIdx] : null;
+
+  const handleConvince = () => {
+    if (convinceAttempted) return;
+    const success = Math.random() < 0.5;
+    setConvinceAttempted(true);
+    setConvinceSuccess(success);
+  };
 
   const youngestTwo = useMemo(() => {
     const sorted = [...season2Players]
@@ -92,27 +108,58 @@ export default function Season2Overview({
           Departures
         </h3>
         <div className="space-y-2">
-          {departedPlayers.map((dp, i) => (
-            <div
-              key={i}
-              className={`flex items-center gap-3 bg-red-900/10 border border-red-800/30 rounded-lg px-4 py-3 transition-all duration-500 ${
-                revealStep > i ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-              }`}
-            >
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(dp.player.assignedPosition)} text-white`}>
-                {dp.player.assignedPosition}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-sm">{dp.player.name}</div>
-                <div className="text-xs text-gray-500">{dp.player.clubYear} &middot; OVR {dp.player.overall}</div>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded">
-                  {dp.reason}
+          {departedPlayers.map((dp, i) => {
+            const isConvinceable = i === convinceableIdx;
+            const retained = isConvinceable && convinceAttempted && convinceSuccess;
+            return (
+              <div
+                key={i}
+                className={`flex items-center gap-3 border rounded-lg px-4 py-3 transition-all duration-500 ${
+                  revealStep > i ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
+                } ${retained
+                  ? "bg-emerald-900/20 border-emerald-700/40"
+                  : "bg-red-900/10 border-red-800/30"
+                }`}
+              >
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(dp.player.assignedPosition)} text-white`}>
+                  {dp.player.assignedPosition}
                 </span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm">{dp.player.name}</div>
+                  <div className="text-xs text-gray-500">{dp.player.clubYear} &middot; OVR {dp.player.overall}</div>
+                </div>
+                <div className="text-right flex flex-col items-end gap-1">
+                  {!isConvinceable && (
+                    <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded">
+                      {dp.reason}
+                    </span>
+                  )}
+                  {isConvinceable && !convinceAttempted && revealStep > i && (
+                    <button
+                      onClick={handleConvince}
+                      className="text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 px-2.5 py-1 rounded transition-all active:scale-95"
+                    >
+                      💬 Convince to stay
+                    </button>
+                  )}
+                  {isConvinceable && convinceAttempted && (
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${
+                      convinceSuccess
+                        ? "text-emerald-300 bg-emerald-500/15"
+                        : "text-red-400 bg-red-500/10"
+                    }`}>
+                      {convinceSuccess ? "✓ Changed their mind!" : "✗ Still leaving"}
+                    </span>
+                  )}
+                  {isConvinceable && !convinceAttempted && revealStep <= i && (
+                    <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded">
+                      {dp.reason}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -173,7 +220,7 @@ export default function Season2Overview({
             Off-Season Training
           </h3>
           <p className="text-xs text-gray-500 mb-3">
-            Choose one of your youngest players for intensive training (+3 all attributes, +2 if 90+ OVR)
+            Choose one of your youngest players for intensive training (random +1 to +3; max +2 if 90+ OVR)
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {youngestTwo.map((p) => {
@@ -214,7 +261,7 @@ export default function Season2Overview({
                     </div>
                   ) : isSelected ? (
                     <div className="mt-2 text-xs font-bold text-cyan-400">
-                      {p.overall} &rarr; {Math.min(100, p.overall + (p.overall >= 90 ? 2 : 3))} OVR
+                      +{p.overall >= 90 ? "1–2" : "1–3"} OVR (random)
                     </div>
                   ) : null}
                 </button>
@@ -260,19 +307,35 @@ export default function Season2Overview({
       )}
 
       {/* Info about replacements */}
-      <div className="bg-amber-900/10 border border-amber-700/30 rounded-xl p-4 mb-6 text-center">
-        <p className="text-sm text-amber-300 font-medium">
-          You need to sign <span className="font-black">2 replacement players</span> to fill your squad.
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          New signings receive a random +1 to +3 boost. You can also sell a player afterwards.
-        </p>
-      </div>
+      {(() => {
+        const signingsNeeded = convinceAttempted && convinceSuccess
+          ? Math.max(0, departedPlayers.length - 1)
+          : departedPlayers.length;
+        return (
+          <div className="bg-amber-900/10 border border-amber-700/30 rounded-xl p-4 mb-6 text-center">
+            {signingsNeeded === 0 ? (
+              <p className="text-sm text-emerald-300 font-medium">
+                No replacement signings needed this window!
+              </p>
+            ) : (
+              <p className="text-sm text-amber-300 font-medium">
+                You need to sign <span className="font-black">{signingsNeeded} replacement player{signingsNeeded !== 1 ? "s" : ""}</span> to fill your squad.
+              </p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              New signings receive a random +1 to +3 boost. You can also sell a player afterwards.
+            </p>
+          </div>
+        );
+      })()}
 
       {/* Continue button */}
       {!allMaxed && (
         <button
-          onClick={() => selectedTraining && onContinue(selectedTraining)}
+          onClick={() => selectedTraining && onContinue(
+            selectedTraining,
+            convinceAttempted && convinceSuccess && convinceablePlayer ? convinceablePlayer.player : undefined,
+          )}
           disabled={!allRevealed || !selectedTraining}
           className="w-full py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:from-gray-700 disabled:to-gray-700 rounded-xl font-bold text-lg transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
         >

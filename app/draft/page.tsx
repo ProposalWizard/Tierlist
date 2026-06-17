@@ -51,6 +51,7 @@ interface SavedProgress {
 interface DepartedPlayer {
   player: DraftPlayer;
   reason: string;
+  convinceable?: boolean;
 }
 
 interface RatingChange {
@@ -181,6 +182,7 @@ export default function DraftPage() {
   const [nextSeasonPlayers, setNextSeasonPlayers] = useState<DraftPlayer[]>([]);
   const [departedPlayers, setDepartedPlayers] = useState<DepartedPlayer[]>([]);
   const [ratingChanges, setRatingChanges] = useState<RatingChange[]>([]);
+  const [signingSlots, setSigningSlots] = useState(2);
   const [nextUsedClubYears, setNextUsedClubYears] = useState<string[]>([]);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -375,16 +377,34 @@ export default function DraftPage() {
       const sorted = [...currentPlayers].sort((a, b) => (b.age || 0) - (a.age || 0));
       const departed: DepartedPlayer[] = [];
 
-      if (Math.random() < 0.5) {
-        const retiree = Math.random() < 0.5 ? sorted[0] : sorted[1];
-        departed.push({ player: retiree, reason: `Retired (age ${retiree.age || "?"})` });
-        const rest = currentPlayers.filter((p) => p !== retiree);
-        const randomIdx = Math.floor(Math.random() * rest.length);
-        departed.push({ player: rest[randomIdx], reason: "Left the club" });
+      // 60% chance 2 players leave, 40% chance only 1 leaves
+      const twoDepartures = Math.random() < 0.6;
+
+      if (twoDepartures) {
+        // One has 50% chance of being one of the two oldest; the other is random
+        if (Math.random() < 0.5) {
+          const retiree = Math.random() < 0.5 ? sorted[0] : sorted[1];
+          departed.push({ player: retiree, reason: `Retired (age ${retiree.age || "?"})` });
+          const rest = currentPlayers.filter((p) => p !== retiree);
+          const randomIdx = Math.floor(Math.random() * rest.length);
+          departed.push({ player: rest[randomIdx], reason: "Left the club" });
+        } else {
+          const shuffled = [...currentPlayers].sort(() => Math.random() - 0.5);
+          departed.push({ player: shuffled[0], reason: "Left the club" });
+          departed.push({ player: shuffled[1], reason: "Left the club" });
+        }
+        // One randomly chosen player gets the "convince to stay" chance
+        const convinceIdx = Math.floor(Math.random() * 2);
+        departed[convinceIdx] = { ...departed[convinceIdx], convinceable: true };
       } else {
-        const shuffled = [...currentPlayers].sort(() => Math.random() - 0.5);
-        departed.push({ player: shuffled[0], reason: "Left the club" });
-        departed.push({ player: shuffled[1], reason: "Left the club" });
+        // Only 1 departure — that player is convinceable
+        if (Math.random() < 0.5) {
+          const retiree = Math.random() < 0.5 ? sorted[0] : sorted[1];
+          departed.push({ player: retiree, reason: `Retired (age ${retiree.age || "?"})`, convinceable: true });
+        } else {
+          const shuffled = [...currentPlayers].sort(() => Math.random() - 0.5);
+          departed.push({ player: shuffled[0], reason: "Left the club", convinceable: true });
+        }
       }
 
       const departedSet = new Set(departed.map((d) => d.player));
@@ -412,6 +432,7 @@ export default function DraftPage() {
       setNextSeasonPlayers(changes.map((rc) => rc.player));
       setPreviousResults((prev) => [...prev, season]);
       setNextUsedClubYears(usedCYs);
+      setSigningSlots(departed.length);
       setCurrentSeason((s) => s + 1);
       // Reset multiplayer state so the lobby is fresh for the next season
       setPreComputedSeason(null);
@@ -424,18 +445,28 @@ export default function DraftPage() {
   );
 
   const handlePreSeasonContinue = useCallback(
-    (trainingPlayerName: string) => {
-      setNextSeasonPlayers((prev) =>
-        prev.map((p) => {
+    (trainingPlayerName: string, retainedPlayer?: DraftPlayer) => {
+      const trainingRoll = Math.floor(Math.random() * 3) + 1; // random +1, +2, or +3
+      const updatedSquad = [
+        ...nextSeasonPlayers.map((p) => {
           if (p.name !== trainingPlayerName) return p;
-          const boost = p.overall >= 90 ? 2 : 3;
+          const boost = p.overall >= 90 ? Math.min(2, trainingRoll) : trainingRoll;
           return applyStatChange(p, boost);
-        })
-      );
-      setPhase("signing");
+        }),
+        ...(retainedPlayer ? [retainedPlayer] : []),
+      ];
+      setNextSeasonPlayers(updatedSquad);
+      const actualSlots = retainedPlayer ? Math.max(0, signingSlots - 1) : signingSlots;
+      setSigningSlots(actualSlots);
+      if (actualSlots === 0) {
+        setPlayers(updatedSquad);
+        setPhase("sell");
+      } else {
+        setPhase("signing");
+      }
       scrollTop();
     },
-    [scrollTop]
+    [nextSeasonPlayers, signingSlots, scrollTop]
   );
 
   const handleSigningComplete = useCallback(
@@ -723,6 +754,7 @@ export default function DraftPage() {
           title="Pre-Season"
           subtitle="Arrange Your Squad"
           formationName={settings?.formation}
+          seasonNumber={currentSeason}
         />
       )}
       {phase === "result" && (players.length > 0 || preComputedSeason !== null) && (
@@ -750,11 +782,11 @@ export default function DraftPage() {
           previousFinish={previousResults.length > 0 ? previousResults[previousResults.length - 1].actualFinish : undefined}
         />
       )}
-      {phase === "signing" && settings && (
+      {phase === "signing" && settings && signingSlots > 0 && (
         <DraftPick
           settings={{ ...settings, draftOrder: "club-first" }}
           onComplete={handleSigningComplete}
-          totalPicks={2}
+          totalPicks={signingSlots}
           existingSquad={nextSeasonPlayers}
           initialUsedClubYears={nextUsedClubYears}
           onProgress={() => {}}
@@ -785,6 +817,7 @@ export default function DraftPage() {
           title={`Season ${currentSeason}`}
           subtitle="Arrange Your Squad"
           formationName={settings?.formation}
+          seasonNumber={currentSeason}
         />
       )}
     </div>
