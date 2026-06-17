@@ -863,6 +863,22 @@ function matchRating(
 const FA_CUP_ROUNDS = ['Round 3', 'Round 4', 'Round 5', 'Quarter-Final', 'Semi-Final', 'Final'];
 const BIG_CLUBS = ['Liverpool', 'Man City', 'Man United', 'Arsenal', 'Chelsea'];
 
+function pickFaCupOpponent(
+  opponents: { name: string; strength: number }[],
+  usedOpponents: Set<string>,
+  round: number,
+  rng: () => number,
+): { name: string; strength: number } {
+  const available = opponents.filter(o => !usedOpponents.has(o.name));
+  if (available.length === 0) return opponents[Math.floor(rng() * opponents.length)];
+
+  if (round === 5 && rng() < 0.75) {
+    const bigAvail = available.filter(o => BIG_CLUBS.includes(o.name));
+    if (bigAvail.length > 0) return bigAvail[Math.floor(rng() * bigAvail.length)];
+  }
+  return available[Math.floor(rng() * available.length)];
+}
+
 function simulateFaCup(
   players: DraftPlayer[],
   ratings: PhaseRatings,
@@ -870,22 +886,12 @@ function simulateFaCup(
   rng: () => number,
 ): FaCupResult {
   const matches: FaCupMatch[] = [];
+  const usedOpponents = new Set<string>();
 
   for (let round = 0; round < 6; round++) {
     const roundName = FA_CUP_ROUNDS[round];
-    let opponent: { name: string; strength: number };
-
-    if (round === 5) {
-      // Final: 75% chance of a big club
-      if (rng() < 0.75) {
-        const bigName = BIG_CLUBS[Math.floor(rng() * BIG_CLUBS.length)];
-        opponent = opponents.find(o => o.name === bigName) ?? opponents[0];
-      } else {
-        opponent = opponents[Math.floor(rng() * opponents.length)];
-      }
-    } else {
-      opponent = opponents[Math.floor(rng() * opponents.length)];
-    }
+    const opponent = pickFaCupOpponent(opponents, usedOpponents, round, rng);
+    usedOpponents.add(opponent.name);
 
     const isHome = round < 5 ? rng() > 0.5 : false;
     const homeBonus = isHome ? HOME_ADVANTAGE : 0;
@@ -990,6 +996,273 @@ function simulateFaCup(
   }
 
   return { matches, winner: true, exitRound: null };
+}
+
+// Number of teams in each FA Cup round (Round 3 through Final)
+const FA_CUP_TEAMS_IN_ROUND = [64, 32, 16, 8, 4, 2];
+
+function simulateSharedFaCup(
+  humanTeams: {
+    userId: string;
+    displayName: string;
+    starters: DraftPlayer[];
+    ratings: PhaseRatings;
+    rng: () => number;
+  }[],
+  aiOpponents: { name: string; strength: number }[],
+  drawRng: () => number,
+): Map<string, FaCupResult> {
+  const results = new Map<string, FaCupResult>();
+  const humanMatches = new Map<string, FaCupMatch[]>();
+  const humanUsedOpponents = new Map<string, Set<string>>();
+
+  const surviving = new Map(humanTeams.map(h => [h.userId, h]));
+  for (const h of humanTeams) {
+    humanMatches.set(h.userId, []);
+    humanUsedOpponents.set(h.userId, new Set());
+  }
+
+  for (let round = 0; round < 6; round++) {
+    const roundName = FA_CUP_ROUNDS[round];
+    const teamsInRound = FA_CUP_TEAMS_IN_ROUND[round];
+    const survivorIds = [...surviving.keys()];
+    if (survivorIds.length === 0) break;
+
+    const pairedHumans = new Set<string>();
+    const humanVsHuman: [string, string][] = [];
+
+    // From QF onwards, surviving humans can draw each other
+    if (survivorIds.length >= 2 && round >= 3) {
+      const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
+      for (let i = 0; i + 1 < shuffled.length; i += 2) {
+        // Probability two specific teams meet = 1/(teamsInRound-1)
+        if (drawRng() < 1 / (teamsInRound - 1)) {
+          humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
+          pairedHumans.add(shuffled[i]);
+          pairedHumans.add(shuffled[i + 1]);
+        }
+      }
+    }
+
+    // Draw AI opponents for unpaired humans (no overlap across humans, no repeats per human)
+    const usedAIThisRound = new Set<string>();
+    const humansVsAI = survivorIds.filter(id => !pairedHumans.has(id));
+
+    for (const userId of humansVsAI) {
+      const playerUsed = humanUsedOpponents.get(userId)!;
+      const combined = new Set([...usedAIThisRound, ...playerUsed]);
+      const opponent = pickFaCupOpponent(aiOpponents, combined, round, drawRng);
+      usedAIThisRound.add(opponent.name);
+      playerUsed.add(opponent.name);
+
+      const h = surviving.get(userId)!;
+      const match = simulateFaCupMatchForHuman(h.starters, h.ratings, opponent, round, h.rng);
+      humanMatches.get(userId)!.push(match);
+
+      if (match.result === 'L') {
+        surviving.delete(userId);
+        results.set(userId, { matches: humanMatches.get(userId)!, winner: false, exitRound: roundName });
+      }
+    }
+
+    // Human-vs-human matches
+    for (const [id1, id2] of humanVsHuman) {
+      if (!surviving.has(id1) || !surviving.has(id2)) continue;
+      const h1 = surviving.get(id1)!;
+      const h2 = surviving.get(id2)!;
+
+      const isH1Home = round < 5 ? drawRng() > 0.5 : false;
+      const homeBonus = HOME_ADVANTAGE;
+
+      const h1Atk = h1.ratings.attack + (isH1Home ? homeBonus * 0.6 : 0);
+      const h1Mid = h1.ratings.midfield + (isH1Home ? homeBonus * 0.4 : 0);
+      const h1Def = h1.ratings.defense + (isH1Home ? homeBonus * 0.3 : 0);
+      const h1Gk = h1.ratings.gk;
+      const h2Atk = h2.ratings.attack + (isH1Home ? 0 : homeBonus * 0.6);
+      const h2Mid = h2.ratings.midfield + (isH1Home ? 0 : homeBonus * 0.4);
+      const h2Def = h2.ratings.defense + (isH1Home ? 0 : homeBonus * 0.3);
+      const h2Gk = h2.ratings.gk;
+
+      const h1DefPower = h1Def * 0.55 + h1Gk * 0.30 + h1Mid * 0.15;
+      const h2DefPower = h2Def * 0.55 + h2Gk * 0.30 + h2Mid * 0.15;
+
+      const h1Xg = computeExpectedGoals(h1Atk, h1Mid, h2DefPower);
+      const h2Xg = computeExpectedGoals(h2Atk, h2Mid, h1DefPower);
+
+      const h1Form = 0.85 + drawRng() * 0.30;
+      const h2Form = 0.85 + drawRng() * 0.30;
+
+      let h1Goals = poisson(h1Xg * h1Form, drawRng);
+      let h2Goals = poisson(h2Xg * h2Form, drawRng);
+
+      // Generate goal scorers for both sides
+      const h1Scorers = generateGoalScorers(h1.starters, h1Goals, h1.rng);
+      const h2Scorers = generateGoalScorers(h2.starters, h2Goals, h2.rng);
+
+      let extraTime = false;
+      let penalties = false;
+      let penaltyScore: { player: number; opponent: number } | undefined;
+
+      if (h1Goals === h2Goals) {
+        extraTime = true;
+        const etH1 = poisson(h1Xg * 0.33, drawRng);
+        const etH2 = poisson(h2Xg * 0.33, drawRng);
+        h1Goals += etH1;
+        h2Goals += etH2;
+        const etH1Scorers = generateGoalScorers(h1.starters, etH1, h1.rng, 90);
+        const etH2Scorers = generateGoalScorers(h2.starters, etH2, h2.rng, 90);
+        h1Scorers.goals.push(...etH1Scorers.goals);
+        h1Scorers.assists.push(...etH1Scorers.assists);
+        h2Scorers.goals.push(...etH2Scorers.goals);
+        h2Scorers.assists.push(...etH2Scorers.assists);
+
+        if (h1Goals === h2Goals) {
+          penalties = true;
+          const p1 = Math.floor(drawRng() * 3) + 3;
+          const p2 = Math.floor(drawRng() * 3) + 3;
+          if (p1 === p2) {
+            penaltyScore = drawRng() > 0.5 ? { player: p1 + 1, opponent: p2 } : { player: p1, opponent: p2 + 1 };
+          } else {
+            penaltyScore = { player: p1, opponent: p2 };
+          }
+        }
+      }
+
+      let h1Result: 'W' | 'L';
+      if (penalties && penaltyScore) {
+        h1Result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
+      } else {
+        h1Result = h1Goals > h2Goals ? 'W' : 'L';
+      }
+
+      h1Scorers.goals.sort((a, b) => a.minute - b.minute);
+      h1Scorers.assists.sort((a, b) => a.minute - b.minute);
+      h2Scorers.goals.sort((a, b) => a.minute - b.minute);
+      h2Scorers.assists.sort((a, b) => a.minute - b.minute);
+
+      humanMatches.get(id1)!.push({
+        round: roundName, opponent: h2.displayName,
+        goalsFor: h1Goals, goalsAgainst: h2Goals,
+        extraTime, penalties, penaltyScore,
+        goalScorers: h1Scorers.goals, assistProviders: h1Scorers.assists,
+        result: h1Result,
+      });
+      humanMatches.get(id2)!.push({
+        round: roundName, opponent: h1.displayName,
+        goalsFor: h2Goals, goalsAgainst: h1Goals,
+        extraTime, penalties,
+        penaltyScore: penaltyScore ? { player: penaltyScore.opponent, opponent: penaltyScore.player } : undefined,
+        goalScorers: h2Scorers.goals, assistProviders: h2Scorers.assists,
+        result: h1Result === 'W' ? 'L' : 'W',
+      });
+
+      const loserId = h1Result === 'W' ? id2 : id1;
+      surviving.delete(loserId);
+      results.set(loserId, { matches: humanMatches.get(loserId)!, winner: false, exitRound: roundName });
+    }
+  }
+
+  for (const [userId] of surviving) {
+    if (!results.has(userId)) {
+      results.set(userId, { matches: humanMatches.get(userId)!, winner: true, exitRound: null });
+    }
+  }
+
+  return results;
+}
+
+function simulateFaCupMatchForHuman(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  opponent: { name: string; strength: number },
+  round: number,
+  rng: () => number,
+): FaCupMatch {
+  const roundName = FA_CUP_ROUNDS[round];
+  const isHome = round < 5 ? rng() > 0.5 : false;
+  const homeBonus = isHome ? HOME_ADVANTAGE : 0;
+
+  const myAttack = ratings.attack + homeBonus * 0.6;
+  const myMidfield = ratings.midfield + homeBonus * 0.4;
+  const myDefense = ratings.defense + homeBonus * 0.3;
+  const myGk = ratings.gk;
+  const oppStrength = opponent.strength + (isHome ? 0 : HOME_ADVANTAGE);
+
+  const myXg = computeExpectedGoals(myAttack, myMidfield, oppStrength);
+  const ourDefPower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
+  const oppXg = computeExpectedGoals(oppStrength, oppStrength * 0.95, ourDefPower);
+
+  let goalsFor = poisson(myXg, rng);
+  let goalsAgainst = poisson(oppXg, rng);
+  let extraTime = false;
+  let penalties = false;
+  let penaltyScore: { player: number; opponent: number } | undefined;
+
+  const scorers = generateGoalScorers(players, goalsFor, rng);
+
+  if (goalsFor === goalsAgainst) {
+    extraTime = true;
+    const etFor = poisson(myXg * 0.33, rng);
+    const etAgainst = poisson(oppXg * 0.33, rng);
+    goalsFor += etFor;
+    goalsAgainst += etAgainst;
+    const etScorers = generateGoalScorers(players, etFor, rng, 90);
+    scorers.goals.push(...etScorers.goals);
+    scorers.assists.push(...etScorers.assists);
+
+    if (goalsFor === goalsAgainst) {
+      penalties = true;
+      const myPens = Math.floor(rng() * 3) + 3;
+      const oppPens = Math.floor(rng() * 3) + 3;
+      if (myPens === oppPens) {
+        penaltyScore = rng() > 0.5 ? { player: myPens + 1, opponent: oppPens } : { player: myPens, opponent: oppPens + 1 };
+      } else {
+        penaltyScore = { player: myPens, opponent: oppPens };
+      }
+    }
+  }
+
+  scorers.goals.sort((a, b) => a.minute - b.minute);
+  scorers.assists.sort((a, b) => a.minute - b.minute);
+
+  let result: 'W' | 'L';
+  if (penalties && penaltyScore) {
+    result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
+  } else {
+    result = goalsFor > goalsAgainst ? 'W' : 'L';
+  }
+
+  return {
+    round: roundName, opponent: opponent.name,
+    goalsFor, goalsAgainst, extraTime, penalties, penaltyScore,
+    goalScorers: scorers.goals, assistProviders: scorers.assists,
+    result,
+  };
+}
+
+function generateGoalScorers(
+  players: DraftPlayer[],
+  goalCount: number,
+  rng: () => number,
+  minuteOffset: number = 0,
+): { goals: { player: string; minute: number }[]; assists: { player: string; minute: number }[] } {
+  const goals: { player: string; minute: number }[] = [];
+  const assists: { player: string; minute: number }[] = [];
+  const penaltyTaker = [...players].sort((a, b) => goalScoringWeight(b) - goalScoringWeight(a))[0];
+
+  for (let i = 0; i < goalCount; i++) {
+    const minute = minuteOffset + Math.floor(rng() * (minuteOffset > 0 ? 30 : 90)) + 1;
+    const isPenalty = rng() < 0.10;
+    const scorer = isPenalty ? penaltyTaker : weightedPick(players, goalScoringWeight, rng);
+    goals.push({ player: scorer.name, minute });
+    if (!isPenalty && rng() < 0.75) {
+      const eligible = players.filter(p => p.name !== scorer.name);
+      if (eligible.length > 0) {
+        assists.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
+      }
+    }
+  }
+  return { goals, assists };
 }
 
 // --- UCL knockout tie simulation ---
@@ -2258,6 +2531,24 @@ export function simulateSharedSeason(
     b.goalsFor - a.goalsFor
   );
 
+  // Shared FA Cup: draw opponents together so humans don't face the same AI, and can face each other
+  const faCupDrawRng = createRng(sharedSeed ^ 0xFAC09);
+  const aiOppForCups = allTeams
+    .filter(t => !t.isHuman)
+    .map(t => ({ name: t.name, strength: t.ratings.teamStrength }));
+
+  const sharedFaCupTeams = humanData.map(hd => {
+    const playerSeed = hd.squad.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonNumber * 100);
+    return {
+      userId: hd.userId,
+      displayName: hd.displayName,
+      starters: hd.starters,
+      ratings: hd.ratings,
+      rng: createRng(playerSeed + 55555),
+    };
+  });
+  const sharedFaCupResults = simulateSharedFaCup(sharedFaCupTeams, aiOppForCups, faCupDrawRng);
+
   // Build SeasonResult for each human team
   const results = new Map<string, SeasonResult>();
 
@@ -2265,7 +2556,7 @@ export function simulateSharedSeason(
     const myIdx = allTeams.findIndex(t => t.name === hd.teamName);
     const opponents = allTeams.filter((_, i) => i !== myIdx);
 
-    // Per-player seed for goal scorer assignment, sub selection, FA Cup/UCL/UEL
+    // Per-player seed for goal scorer assignment, sub selection, UCL/UEL
     const playerSeed = hd.squad.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonNumber * 100);
     const playerRng = createRng(playerSeed);
 
@@ -2294,9 +2585,9 @@ export function simulateSharedSeason(
       for (const s of activeSubs) subAppearances[s.name]++;
     }
 
-    // FA Cup + European competitions (independent per player)
+    // FA Cup from shared simulation; European competitions still independent
+    const faCup = sharedFaCupResults.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round 3' };
     const oppForCups = opponents.map(o => ({ name: o.name, strength: o.ratings.teamStrength }));
-    const faCup = simulateFaCup(hd.starters, hd.ratings, oppForCups, playerRng);
     const ucl = simulateChampionsLeague(hd.squad, hd.ratings, [], oppForCups, playerRng);
     const uel = !ucl.qualified
       ? simulateEuropaLeague(hd.squad, hd.ratings, [], oppForCups, playerRng)
