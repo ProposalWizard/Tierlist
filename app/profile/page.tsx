@@ -8,6 +8,8 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { XP_AWARDS, levelFromXp } from "@/lib/xp";
 import ProfileClient from "./ProfileClient";
 
 export const metadata: Metadata = {
@@ -29,6 +31,33 @@ export default async function ProfilePage() {
 
   // Update login streak (RPC skips if already updated today)
   await supabase.rpc("update_login_streak", { p_user_id: user.id });
+
+  // Ensure user_xp and user_stats rows exist
+  const svc = createServiceClient();
+  await svc.from("user_xp").upsert({ user_id: user.id }, { onConflict: "user_id", ignoreDuplicates: true });
+  await svc.from("user_stats").upsert({ user_id: user.id }, { onConflict: "user_id", ignoreDuplicates: true });
+
+  // Check for streak milestone XP awards
+  const { data: streakProfile } = await svc.from("user_profiles").select("current_streak").eq("user_id", user.id).maybeSingle();
+  const streak = streakProfile?.current_streak ?? 0;
+  if (streak >= 7) {
+    svc.from("xp_events").insert({ user_id: user.id, event_type: "streak_7", event_ref: "streak_7", xp_awarded: XP_AWARDS.streak_7 })
+      .then(async ({ error }) => {
+        if (error) return;
+        const { data: xpRow } = await svc.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
+        const newXp = (xpRow?.total_xp ?? 0) + XP_AWARDS.streak_7;
+        await svc.from("user_xp").upsert({ user_id: user.id, total_xp: newXp, current_level: levelFromXp(newXp).level, updated_at: new Date().toISOString() });
+      });
+  }
+  if (streak >= 30) {
+    svc.from("xp_events").insert({ user_id: user.id, event_type: "streak_30", event_ref: "streak_30", xp_awarded: XP_AWARDS.streak_30 })
+      .then(async ({ error }) => {
+        if (error) return;
+        const { data: xpRow } = await svc.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
+        const newXp = (xpRow?.total_xp ?? 0) + XP_AWARDS.streak_30;
+        await svc.from("user_xp").upsert({ user_id: user.id, total_xp: newXp, current_level: levelFromXp(newXp).level, updated_at: new Date().toISOString() });
+      });
+  }
 
   // Fetch all data in parallel
   const [profileRes, createdRes, likedRes, savedRes, savedImagesRes] = await Promise.all([

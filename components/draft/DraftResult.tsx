@@ -3,7 +3,8 @@ import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason } from "@/lib/seasonSimulator";
 import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch } from "@/lib/seasonSimulator";
 import Link from "next/link";
-import { XP_AWARDS } from "@/lib/xp";
+import { XP_AWARDS, FRAME_STYLES } from "@/lib/xp";
+import XPPopup from "./XPPopup";
 import { getPositionColor, getPositionTextColor } from "./formations";
 import type { DraftPlayer } from "@/app/draft/page";
 import CareerRecap from "./CareerRecap";
@@ -467,9 +468,24 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const [showUCLTable, setShowUCLTable] = useState(false);
   const [showUELTable, setShowUELTable] = useState(false);
   const [showCareerRecap, setShowCareerRecap] = useState(false);
+  const [equippedFrame, setEquippedFrame] = useState("frame_default");
+  const [xpPopup, setXpPopup] = useState<{
+    events: { label: string; xp: number }[];
+    oldLevel: number;
+    newLevel: number;
+    newRewards: string[];
+  } | null>(null);
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [statsView, setStatsView] = useState<"pl" | "all">("all");
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    fetch("/api/profile/progression")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.equippedFrame) setEquippedFrame(data.equippedFrame); })
+      .catch(() => {});
+  }, [isSignedIn]);
 
   // Combined schedule for interleaved PL + UCL reveal
   const schedule = useMemo(() => buildSchedule(season), [season]);
@@ -540,33 +556,52 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       }, isSignedIn);
 
       if (isSignedIn) {
-        const runId = `s${seasonNumber}-${Date.now()}`;
-        const awardXp = (eventType: string, ref: string, amount: number) =>
-          fetch("/api/xp", {
+        (async () => {
+          const runId = `s${seasonNumber}-${Date.now()}`;
+          const xpEvents: { label: string; xp: number }[] = [];
+          const awardXp = async (eventType: string, ref: string, amount: number, label: string) => {
+            try {
+              const res = await fetch("/api/xp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ event_type: eventType, event_ref: ref, xp_amount: amount }),
+              });
+              const data = await res.json();
+              if (!data.duplicate) xpEvents.push({ label, xp: amount });
+              return data;
+            } catch { return null; }
+          };
+
+          let lastResult: { new_level?: number; old_level?: number; new_rewards?: string[] } | null = null;
+          lastResult = await awardXp("draft_complete", runId, XP_AWARDS.draft_complete, "Season Complete");
+          if (season.actualFinish === 1) {
+            lastResult = await awardXp("draft_win", runId, XP_AWARDS.draft_win, "League Champions!");
+          }
+          if (season.teamRecord.losses === 0) {
+            lastResult = await awardXp("draft_invincible", runId, XP_AWARDS.draft_invincible, "Invincible Season!");
+          }
+
+          fetch("/api/stats", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ event_type: eventType, event_ref: ref, xp_amount: amount }),
+            body: JSON.stringify({
+              drafts_played: 1,
+              draft_wins: season.actualFinish === 1 ? 1 : 0,
+              draft_invincibles: season.teamRecord.losses === 0 ? 1 : 0,
+              total_goals_scored: season.teamRecord.goalsFor,
+              seasons_played: 1,
+            }),
           }).catch(() => {});
 
-        awardXp("draft_complete", runId, XP_AWARDS.draft_complete);
-        if (season.actualFinish === 1) {
-          awardXp("draft_win", runId, XP_AWARDS.draft_win);
-        }
-        if (season.teamRecord.losses === 0) {
-          awardXp("draft_invincible", runId, XP_AWARDS.draft_invincible);
-        }
-
-        fetch("/api/stats", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            drafts_played: 1,
-            draft_wins: season.actualFinish === 1 ? 1 : 0,
-            draft_invincibles: season.teamRecord.losses === 0 ? 1 : 0,
-            total_goals_scored: season.teamRecord.goalsFor,
-            seasons_played: 1,
-          }),
-        }).catch(() => {});
+          if (xpEvents.length > 0) {
+            setXpPopup({
+              events: xpEvents,
+              oldLevel: lastResult?.old_level ?? 1,
+              newLevel: lastResult?.new_level ?? 1,
+              newRewards: lastResult?.new_rewards ?? [],
+            });
+          }
+        })();
       }
     }
   }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
@@ -968,7 +1003,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">
       {/* Shareable area */}
-      <div ref={shareRef} className="bg-gray-950 pb-4">
+      <div ref={shareRef} className={`bg-gray-950 pb-4 rounded-xl ${FRAME_STYLES[equippedFrame]?.border ?? ""} ${FRAME_STYLES[equippedFrame]?.shadow ?? ""}`}>
         {/* Champion / UCL Winner / UEL Winner / Relegated Banner */}
         {(season.actualFinish === 1 || season.actualFinish >= 18 || season.ucl?.winner || season.uel?.winner) && (
           <div className={`relative overflow-hidden rounded-xl mb-6 py-8 px-4 text-center ${
@@ -2182,6 +2217,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           allSeasons={[...allSeasonResults, season]}
           roomPlayers={roomPlayers}
           onClose={() => setShowCareerRecap(false)}
+        />
+      )}
+
+      {/* XP Popup */}
+      {xpPopup && (
+        <XPPopup
+          events={xpPopup.events}
+          oldLevel={xpPopup.oldLevel}
+          newLevel={xpPopup.newLevel}
+          newRewards={xpPopup.newRewards}
+          onDismiss={() => setXpPopup(null)}
         />
       )}
     </div>
