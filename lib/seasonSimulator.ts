@@ -1050,7 +1050,7 @@ function simulateSharedFaCup(
 
     for (const userId of humansVsAI) {
       const playerUsed = humanUsedOpponents.get(userId)!;
-      const combined = new Set([...usedAIThisRound, ...playerUsed]);
+      const combined = new Set(Array.from(usedAIThisRound).concat(Array.from(playerUsed)));
       const opponent = pickFaCupOpponent(aiOpponents, combined, round, drawRng);
       usedAIThisRound.add(opponent.name);
       playerUsed.add(opponent.name);
