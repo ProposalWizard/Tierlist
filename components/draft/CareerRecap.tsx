@@ -141,7 +141,11 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
       }
     }
     for (const p of Object.values(map)) {
-      p.avgRating = p.bestRating;
+      const totalRatingSum = allSeasons.reduce((sum, season) => {
+        const ps = season.playerStats.find(s => s.name === p.name);
+        return sum + (ps ? ps.avgRating * ps.appearances : 0);
+      }, 0);
+      p.avgRating = p.appearances > 0 ? Math.round((totalRatingSum / p.appearances) * 10) / 10 : 0;
     }
     return Object.values(map);
   }, [allSeasons]);
@@ -193,7 +197,6 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
 
     const totalMatches = allSeasons.reduce((s, r) => s + r.matches.length, 0);
     items.push({ label: "Total Matches Played", value: `${totalMatches}` });
-    items.push({ label: "Total Goals Scored", value: `${stats.totalGoalsFor}` });
     items.push({ label: "Goals Per Game", value: `${(stats.totalGoalsFor / totalMatches).toFixed(1)}` });
 
     const cleanSheetSeasons = allSeasons.map((r, i) => ({
@@ -248,10 +251,42 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
     [allTimePlayers]
   );
 
+  const topRatings = useMemo(() =>
+    [...allTimePlayers].filter(p => p.appearances >= 15).sort((a, b) => b.avgRating - a.avgRating).slice(0, 5),
+    [allTimePlayers]
+  );
+
   const clubLegends = useMemo(() =>
     [...allTimePlayers].filter(p => p.seasons >= 2).sort((a, b) => b.seasons - a.seasons || (b.goals + b.assists) - (a.goals + a.assists)).slice(0, 5),
     [allTimePlayers]
   );
+
+  const faCupAbbr = (exitRound: string | null, winner: boolean): string => {
+    if (winner) return "W";
+    if (!exitRound) return "-";
+    if (exitRound === "Round 3") return "R3";
+    if (exitRound === "Round 4") return "R4";
+    if (exitRound === "Round 5") return "R5";
+    if (exitRound === "Quarter-Final") return "QF";
+    if (exitRound === "Semi-Final") return "SF";
+    if (exitRound === "Final") return "F";
+    return exitRound;
+  };
+
+  const euroAbbr = (exitStage: string | null, winner: boolean): string => {
+    if (winner) return "W";
+    if (!exitStage) return "-";
+    if (exitStage === "League Phase") return "LP";
+    if (exitStage === "Round of 32") return "R32";
+    if (exitStage === "Round of 16") return "R16";
+    if (exitStage === "Quarter-Final") return "QF";
+    if (exitStage === "Semi-Final") return "SF";
+    if (exitStage === "Final") return "F";
+    return exitStage;
+  };
+
+  const hasAnyUCL = allSeasons.some(s => s.ucl?.qualified);
+  const hasAnyUEL = allSeasons.some(s => s.uel?.qualified);
 
   const ordinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"];
@@ -348,34 +383,52 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
               {/* Season-by-Season */}
               <div>
                 <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Season by Season</div>
-                <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
-                  <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-3 py-2 border-b border-gray-800/50 uppercase">
-                    <span className="w-10">S</span>
-                    <span className="w-8 text-center">#</span>
-                    <span className="w-10 text-center">Pts</span>
-                    <span className="flex-1 text-center">Record</span>
-                    <span className="w-10 text-center">GF</span>
-                    <span className="w-10 text-center">GA</span>
-                    <span className="w-12 text-right">Cups</span>
+                <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden overflow-x-auto">
+                  <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-3 py-2 border-b border-gray-800/50 uppercase min-w-0">
+                    <span className="w-8 shrink-0">S</span>
+                    <span className="w-8 text-center shrink-0">#</span>
+                    <span className="w-9 text-center shrink-0">Pts</span>
+                    <span className="w-[88px] text-center shrink-0">Record</span>
+                    <span className="w-8 text-center shrink-0">GF</span>
+                    <span className="w-8 text-center shrink-0">GA</span>
+                    <span className="w-8 text-center shrink-0">FA</span>
+                    {hasAnyUCL && <span className="w-9 text-center shrink-0">UCL</span>}
+                    {hasAnyUEL && <span className="w-9 text-center shrink-0">UEL</span>}
                   </div>
-                  {allSeasons.map((s, i) => (
-                    <div key={i} className={`flex items-center text-xs px-3 py-2 ${i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                      <span className="w-10 font-bold text-gray-400">S{i + 1}</span>
-                      <span className={`w-8 text-center font-black ${s.actualFinish === 1 ? "text-yellow-400" : s.actualFinish <= 4 ? "text-blue-400" : s.actualFinish >= 18 ? "text-red-400" : "text-white"}`}>
-                        {ordinal(s.actualFinish)}
-                      </span>
-                      <span className="w-10 text-center font-bold">{s.teamRecord.points}</span>
-                      <span className="flex-1 text-center text-gray-400">{s.teamRecord.wins}W {s.teamRecord.draws}D {s.teamRecord.losses}L</span>
-                      <span className="w-10 text-center text-emerald-400">{s.teamRecord.goalsFor}</span>
-                      <span className="w-10 text-center text-red-400">{s.teamRecord.goalsAgainst}</span>
-                      <span className="w-12 text-right">
-                        {s.faCup.winner && <span title="FA Cup" className="text-[10px]">{"\u{1F3C6}"}</span>}
-                        {s.ucl?.winner && <span title="UCL" className="text-[10px]">{"\u{1F31F}"}</span>}
-                        {s.uel?.winner && <span title="UEL" className="text-[10px]">{"\u{1F3C5}"}</span>}
-                        {!s.faCup.winner && !s.ucl?.winner && !s.uel?.winner && <span className="text-gray-700">-</span>}
-                      </span>
-                    </div>
-                  ))}
+                  {allSeasons.map((s, i) => {
+                    const fa = faCupAbbr(s.faCup.exitRound, s.faCup.winner);
+                    const ucl = s.ucl?.qualified ? euroAbbr(s.ucl.exitStage, s.ucl.winner) : null;
+                    const uel = s.uel?.qualified ? euroAbbr(s.uel.exitStage, s.uel.winner) : null;
+                    return (
+                      <div key={i} className={`flex items-center text-xs px-3 py-2 min-w-0 ${i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                        <span className="w-8 font-bold text-gray-400 shrink-0">S{i + 1}</span>
+                        <span className={`w-8 text-center font-black shrink-0 ${s.actualFinish === 1 ? "text-yellow-400" : s.actualFinish <= 4 ? "text-blue-400" : s.actualFinish >= 18 ? "text-red-400" : "text-white"}`}>
+                          {ordinal(s.actualFinish)}
+                        </span>
+                        <span className="w-9 text-center font-bold shrink-0">{s.teamRecord.points}</span>
+                        <span className="w-[88px] text-center font-bold shrink-0">
+                          <span className="text-emerald-400">{s.teamRecord.wins}W</span>{" "}
+                          <span className="text-yellow-400">{s.teamRecord.draws}D</span>{" "}
+                          <span className="text-red-400">{s.teamRecord.losses}L</span>
+                        </span>
+                        <span className="w-8 text-center text-emerald-400 shrink-0">{s.teamRecord.goalsFor}</span>
+                        <span className="w-8 text-center text-red-400 shrink-0">{s.teamRecord.goalsAgainst}</span>
+                        <span className={`w-8 text-center shrink-0 font-bold ${fa === "W" ? "text-yellow-400" : fa === "F" ? "text-gray-300" : "text-gray-500"}`}>
+                          {fa}
+                        </span>
+                        {hasAnyUCL && (
+                          <span className={`w-9 text-center shrink-0 font-bold ${ucl === "W" ? "text-yellow-400" : ucl === "F" || ucl === "SF" ? "text-blue-300" : ucl ? "text-blue-400/60" : "text-gray-700"}`}>
+                            {ucl || "-"}
+                          </span>
+                        )}
+                        {hasAnyUEL && (
+                          <span className={`w-9 text-center shrink-0 font-bold ${uel === "W" ? "text-yellow-400" : uel === "F" || uel === "SF" ? "text-orange-300" : uel ? "text-orange-400/60" : "text-gray-700"}`}>
+                            {uel || "-"}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -421,6 +474,25 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                   <StatBox label="Total Goal Diff" value={`${stats.totalGoalsFor - stats.totalGoalsAgainst >= 0 ? "+" : ""}${stats.totalGoalsFor - stats.totalGoalsAgainst}`} />
                 </div>
               </div>
+
+              {/* Top Avg Ratings */}
+              {topRatings.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Highest Career Avg Rating</div>
+                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
+                    {topRatings.map((p, i) => (
+                      <div key={i} className={`flex items-center text-sm px-4 py-2.5 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                        <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
+                        <span className="flex-1 font-bold truncate">{p.name}</span>
+                        <span className="text-xs text-gray-500 mr-3">{p.appearances} apps</span>
+                        <span className={`text-sm font-black ${p.avgRating >= 7.5 ? "text-emerald-400" : p.avgRating >= 7.0 ? "text-yellow-400" : "text-gray-300"}`}>
+                          {p.avgRating.toFixed(1)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Club Legends */}
               {clubLegends.length > 0 && (
