@@ -91,19 +91,19 @@ export const FRAME_STYLES: Record<string, { border: string; shadow: string; grad
   frame_default: {
     border: 'border-2 border-gray-700',
     shadow: '',
-    image: '/cards/ronaldinho.png',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/image-b2ccc256-bac0-4053-9192-58578934c62b.png',
   },
   frame_silver: {
     border: 'border-2 border-gray-300',
     shadow: 'shadow-lg shadow-gray-400/20',
     gradient: 'bg-gradient-to-br from-gray-200 via-gray-400 to-gray-300',
-    image: '/cards/maradona.png',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2002_46_46%20AM.png',
   },
   frame_gold: {
     border: 'border-2 border-amber-400',
     shadow: 'shadow-lg shadow-amber-500/30',
     gradient: 'bg-gradient-to-br from-amber-300 via-amber-500 to-yellow-400',
-    image: '/cards/messi.png',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/messi_legends_card_2.png',
   },
   frame_champions: {
     border: 'border-2 border-blue-500',

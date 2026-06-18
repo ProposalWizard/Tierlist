@@ -5,6 +5,7 @@ const nextConfig = {
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "commons.wikimedia.org" },
       { protocol: "http", hostname: "commons.wikimedia.org" },
+      { protocol: "https", hostname: "cagkgfketucousksgtbk.supabase.co" },
     ],
   },
   experimental: {
