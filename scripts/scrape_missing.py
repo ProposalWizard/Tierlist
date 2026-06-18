@@ -289,7 +289,19 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
                 break
 
         player["sofifa_id"] = sofifa_id
-        player["name"] = name_link.get_text(strip=True)
+        # Prefer data-tippy-content (clean name without jersey number).
+        # Fall back to the text of the first <div> child (the name element).
+        # Last resort: get_text() but strip any leading jersey number.
+        raw_name = name_link.get("data-tippy-content", "").strip()
+        if not raw_name:
+            name_div = name_link.find("div")
+            if name_div:
+                raw_name = name_div.get_text(strip=True)
+            else:
+                raw_name = name_link.get_text(strip=True)
+        # Strip leading jersey numbers (e.g. "13 Carragher" -> "Carragher")
+        raw_name = re.sub(r"^\d+\s+", "", raw_name)
+        player["name"] = raw_name
 
         img = row.select_one("img[data-src]")
         if not img:

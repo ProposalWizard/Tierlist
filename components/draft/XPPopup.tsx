@@ -17,92 +17,118 @@ interface Props {
 
 export default function XPPopup({ events, oldLevel, newLevel, newRewards, onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
-  const [revealedCount, setRevealedCount] = useState(0);
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 300);
-    return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    if (!visible) return;
-    if (revealedCount < events.length + (newLevel > oldLevel ? 1 : 0) + newRewards.length) {
-      const t = setTimeout(() => setRevealedCount(c => c + 1), 400);
-      return () => clearTimeout(t);
-    }
-    const t = setTimeout(onDismiss, 3000);
-    return () => clearTimeout(t);
-  }, [visible, revealedCount, events.length, oldLevel, newLevel, newRewards.length, onDismiss]);
+  const [exiting, setExiting] = useState(false);
 
   const totalXp = events.reduce((s, e) => s + e.xp, 0);
   const leveledUp = newLevel > oldLevel;
 
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setExiting(true);
+      setTimeout(onDismiss, 400);
+    }, leveledUp ? 3000 : 1500);
+    return () => clearTimeout(timer);
+  }, [onDismiss, leveledUp]);
+
+  const handleDismiss = () => {
+    setExiting(true);
+    setTimeout(onDismiss, 400);
+  };
+
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 transition-opacity duration-500 ${visible ? "opacity-100" : "opacity-0"}`}
-      onClick={onDismiss}
-    >
+    <>
+      <style jsx>{`
+        @keyframes slideIn {
+          from { transform: translateX(120%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(120%); opacity: 0; }
+        }
+        @keyframes xpFill {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+        .toast-enter {
+          animation: slideIn 0.3s ease-out forwards;
+        }
+        .toast-exit {
+          animation: slideOut 0.3s ease-in forwards;
+        }
+        .xp-bar-fill {
+          animation: xpFill 1.2s ease-out 0.3s forwards;
+        }
+      `}</style>
+
       <div
-        className={`w-full max-w-xs rounded-2xl border border-amber-500/30 bg-gray-900 p-5 shadow-2xl shadow-amber-900/30 transition-all duration-500 ${visible ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
-        onClick={e => e.stopPropagation()}
+        className={`fixed top-4 right-4 z-50 ${exiting ? "toast-exit" : visible ? "toast-enter" : "opacity-0 translate-x-full"}`}
+        style={{ pointerEvents: "auto" }}
       >
-        <div className="text-center mb-3">
-          <div className="text-[10px] font-bold tracking-widest uppercase text-amber-400 mb-1">
-            XP Earned
+        <div className="relative w-72 rounded-xl border border-amber-500/30 bg-gray-900/95 backdrop-blur-sm shadow-2xl shadow-amber-900/20 overflow-hidden">
+          {/* Close button */}
+          <button
+            onClick={handleDismiss}
+            className="absolute top-2 right-2 z-10 w-5 h-5 flex items-center justify-center rounded-full text-gray-500 hover:text-white hover:bg-gray-700 transition-colors"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <div className="p-3">
+            {/* Header */}
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/20">
+                <span className="text-base">&#9889;</span>
+              </div>
+              <div>
+                <div className="text-lg font-black text-amber-400 leading-none">
+                  +{totalXp} XP
+                </div>
+                <div className="text-[10px] text-gray-500 font-medium mt-0.5">
+                  {events.map(e => e.label).join(" + ")}
+                </div>
+              </div>
+            </div>
+
+            {/* Level up notification */}
+            {leveledUp && (
+              <div className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-2">
+                <span className="text-sm">&#127942;</span>
+                <span className="text-xs font-bold text-amber-400">
+                  Level {oldLevel} &rarr; Level {newLevel}!
+                </span>
+              </div>
+            )}
+
+            {/* New rewards */}
+            {newRewards.length > 0 && (
+              <div className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 mb-2">
+                <span className="text-sm">&#127775;</span>
+                <span className="text-xs font-bold text-emerald-400">
+                  {newRewards.length} New Reward{newRewards.length > 1 ? "s" : ""} Unlocked!
+                </span>
+              </div>
+            )}
+
+            {/* XP progress bar animation */}
+            <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-300 rounded-full xp-bar-fill"
+                style={{ width: 0 }}
+              />
+            </div>
           </div>
-          <div className="text-3xl font-black text-amber-400">
-            +{totalXp} XP
-          </div>
+
+          {/* Top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500/60 via-amber-400 to-amber-500/60" />
         </div>
-
-        <div className="space-y-1.5 mb-3">
-          {events.map((event, i) => (
-            <div
-              key={i}
-              className={`flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-800/50 transition-all duration-300 ${
-                i < revealedCount ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-              }`}
-            >
-              <span className="text-xs text-gray-300 font-medium">{event.label}</span>
-              <span className="text-xs font-bold text-amber-400">+{event.xp}</span>
-            </div>
-          ))}
-
-          {leveledUp && (
-            <div
-              className={`flex items-center justify-center py-2 px-3 rounded-lg bg-amber-500/10 border border-amber-500/30 transition-all duration-500 ${
-                revealedCount > events.length - 1 ? "opacity-100 scale-100" : "opacity-0 scale-90"
-              }`}
-            >
-              <span className="text-sm font-black text-amber-400">
-                Level {oldLevel} &rarr; Level {newLevel}!
-              </span>
-            </div>
-          )}
-
-          {newRewards.map((rewardId, i) => (
-            <div
-              key={rewardId}
-              className={`flex items-center justify-center py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 transition-all duration-500 ${
-                revealedCount > events.length + (leveledUp ? 1 : 0) + i - 1
-                  ? "opacity-100 scale-100"
-                  : "opacity-0 scale-90"
-              }`}
-            >
-              <span className="text-xs font-bold text-emerald-400">
-                New Reward Unlocked!
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <button
-          onClick={onDismiss}
-          className="w-full py-2 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-300 transition-colors"
-        >
-          Tap to continue
-        </button>
       </div>
-    </div>
+    </>
   );
 }
