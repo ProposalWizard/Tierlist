@@ -272,7 +272,7 @@ export default function DraftPick({
     if (onUseRespin) {
       onUseRespin();
     } else {
-      setLocalRespins(r => Math.max(0, r - 1));
+      setLocalRespins(r => Math.max(0, r - 1) as 0 | 1 | 3);
     }
     setSpinResult(null);
     setSpinDisplay(null);
