@@ -34,6 +34,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
   const [tab, setTab] = useState<"overview" | "records" | "h2h" | "players">(
     roomPlayers && roomPlayers.length > 1 ? "h2h" : "overview"
   );
+  const [playerStatsView, setPlayerStatsView] = useState<"all" | "pl">("all");
 
   const humanTeamNames = useMemo(() => {
     if (!roomPlayers) return new Set<string>();
@@ -123,11 +124,12 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
     return data.sort((a, b) => a.avgFinish - b.avgFinish);
   }, [allSeasons, roomPlayers]);
 
-  const allTimePlayers = useMemo(() => {
+  const buildAllTimePlayers = (usePl: boolean) => {
     const map: Record<string, AllTimePlayer> = {};
     for (let si = 0; si < allSeasons.length; si++) {
       const season = allSeasons[si];
-      for (const ps of season.playerStats) {
+      const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
+      for (const ps of stats) {
         if (!map[ps.name]) {
           map[ps.name] = { name: ps.name, goals: 0, assists: 0, cleanSheets: 0, appearances: 0, seasons: 0, bestRating: 0, avgRating: 0 };
         }
@@ -142,13 +144,50 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
     }
     for (const p of Object.values(map)) {
       const totalRatingSum = allSeasons.reduce((sum, season) => {
-        const ps = season.playerStats.find(s => s.name === p.name);
+        const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
+        const ps = stats.find(s => s.name === p.name);
         return sum + (ps ? ps.avgRating * ps.appearances : 0);
       }, 0);
       p.avgRating = p.appearances > 0 ? Math.round((totalRatingSum / p.appearances) * 10) / 10 : 0;
     }
     return Object.values(map);
-  }, [allSeasons]);
+  };
+
+  const allTimePlayers = useMemo(() => buildAllTimePlayers(false), [allSeasons]);
+  const allTimePlayersPL = useMemo(() => buildAllTimePlayers(true), [allSeasons]);
+
+  const activeAllTime = playerStatsView === "pl" ? allTimePlayersPL : allTimePlayers;
+
+  interface SeasonRecord { name: string; value: number; season: number }
+
+  const buildSeasonRecords = (usePl: boolean) => {
+    const goals: SeasonRecord[] = [];
+    const assists: SeasonRecord[] = [];
+    const cleanSheets: SeasonRecord[] = [];
+    const ratings: SeasonRecord[] = [];
+
+    for (let si = 0; si < allSeasons.length; si++) {
+      const season = allSeasons[si];
+      const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
+      for (const ps of stats) {
+        if (ps.goals > 0) goals.push({ name: ps.name, value: ps.goals, season: si + 1 });
+        if (ps.assists > 0) assists.push({ name: ps.name, value: ps.assists, season: si + 1 });
+        if (ps.cleanSheets > 0) cleanSheets.push({ name: ps.name, value: ps.cleanSheets, season: si + 1 });
+        if (ps.appearances >= 10) ratings.push({ name: ps.name, value: Math.round(ps.avgRating * 100) / 100, season: si + 1 });
+      }
+    }
+
+    return {
+      goals: goals.sort((a, b) => b.value - a.value).slice(0, 5),
+      assists: assists.sort((a, b) => b.value - a.value).slice(0, 5),
+      cleanSheets: cleanSheets.sort((a, b) => b.value - a.value).slice(0, 5),
+      ratings: ratings.sort((a, b) => b.value - a.value).slice(0, 5),
+    };
+  };
+
+  const seasonRecordsAll = useMemo(() => buildSeasonRecords(false), [allSeasons]);
+  const seasonRecordsPL = useMemo(() => buildSeasonRecords(true), [allSeasons]);
+  const activeSeasonRecords = playerStatsView === "pl" ? seasonRecordsPL : seasonRecordsAll;
 
   const singleSeasonRecords = useMemo(() => {
     const records: { label: string; value: string; detail: string }[] = [];
@@ -241,25 +280,11 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
     return items;
   }, [allSeasons, stats]);
 
-  const topScorers = useMemo(() =>
-    [...allTimePlayers].sort((a, b) => b.goals - a.goals).slice(0, 10),
-    [allTimePlayers]
-  );
-
-  const topAssisters = useMemo(() =>
-    [...allTimePlayers].sort((a, b) => b.assists - a.assists).slice(0, 10),
-    [allTimePlayers]
-  );
-
-  const topRatings = useMemo(() =>
-    [...allTimePlayers].filter(p => p.appearances >= 15).sort((a, b) => b.avgRating - a.avgRating).slice(0, 5),
-    [allTimePlayers]
-  );
-
-  const clubLegends = useMemo(() =>
-    [...allTimePlayers].filter(p => p.seasons >= 2).sort((a, b) => b.seasons - a.seasons || (b.goals + b.assists) - (a.goals + a.assists)).slice(0, 5),
-    [allTimePlayers]
-  );
+  const topScorers = [...activeAllTime].sort((a, b) => b.goals - a.goals).slice(0, 10);
+  const topAssisters = [...activeAllTime].sort((a, b) => b.assists - a.assists).slice(0, 10);
+  const topRatings = [...activeAllTime].filter(p => p.appearances >= 15).sort((a, b) => b.avgRating - a.avgRating).slice(0, 5);
+  const clubLegends = [...activeAllTime].filter(p => p.seasons >= 2).sort((a, b) => b.seasons - a.seasons || (b.goals + b.assists) - (a.goals + a.assists)).slice(0, 5);
+  const topCleanSheets = [...activeAllTime].filter(p => p.cleanSheets > 0).sort((a, b) => b.cleanSheets - a.cleanSheets).slice(0, 5);
 
   const faCupAbbr = (exitRound: string | null, winner: boolean): string => {
     if (winner) return "W";
@@ -591,6 +616,122 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
           {/* Players Tab */}
           {tab === "players" && (
             <>
+              {/* PL / All Comps Toggle */}
+              <div className="flex items-center gap-1.5 bg-gray-900/50 border border-gray-800/50 rounded-lg p-0.5 w-fit">
+                <button
+                  onClick={() => setPlayerStatsView("all")}
+                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition ${
+                    playerStatsView === "all"
+                      ? "bg-emerald-600 text-white shadow"
+                      : "text-gray-500 hover:text-gray-300"
+                  }`}
+                >
+                  All Competitions
+                </button>
+                <button
+                  onClick={() => setPlayerStatsView("pl")}
+                  className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition ${
+                    playerStatsView === "pl"
+                      ? "bg-purple-600 text-white shadow"
+                      : "text-gray-500 hover:text-gray-300"
+                  }`}
+                >
+                  Premier League
+                </button>
+              </div>
+
+              {/* Most Goals in a Season */}
+              {activeSeasonRecords.goals.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Most Goals in a Season</div>
+                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
+                    <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-3 py-2 border-b border-gray-800/50 uppercase">
+                      <span className="w-6">#</span>
+                      <span className="flex-1">Player</span>
+                      <span className="w-10 text-center">Season</span>
+                      <span className="w-10 text-center">Goals</span>
+                    </div>
+                    {activeSeasonRecords.goals.map((r, i) => (
+                      <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                        <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
+                        <span className="flex-1 font-bold truncate">{r.name}</span>
+                        <span className="w-10 text-center text-gray-500">S{r.season}</span>
+                        <span className="w-10 text-center font-black text-emerald-400">{r.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Most Assists in a Season */}
+              {activeSeasonRecords.assists.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Most Assists in a Season</div>
+                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
+                    <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-3 py-2 border-b border-gray-800/50 uppercase">
+                      <span className="w-6">#</span>
+                      <span className="flex-1">Player</span>
+                      <span className="w-10 text-center">Season</span>
+                      <span className="w-12 text-center">Assists</span>
+                    </div>
+                    {activeSeasonRecords.assists.map((r, i) => (
+                      <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-blue-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                        <span className={`w-6 font-black ${i === 0 ? "text-blue-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
+                        <span className="flex-1 font-bold truncate">{r.name}</span>
+                        <span className="w-10 text-center text-gray-500">S{r.season}</span>
+                        <span className="w-12 text-center font-black text-blue-400">{r.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Most Clean Sheets in a Season */}
+              {activeSeasonRecords.cleanSheets.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Most Clean Sheets in a Season</div>
+                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
+                    <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-3 py-2 border-b border-gray-800/50 uppercase">
+                      <span className="w-6">#</span>
+                      <span className="flex-1">Player</span>
+                      <span className="w-10 text-center">Season</span>
+                      <span className="w-10 text-center">CS</span>
+                    </div>
+                    {activeSeasonRecords.cleanSheets.map((r, i) => (
+                      <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-cyan-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                        <span className={`w-6 font-black ${i === 0 ? "text-cyan-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
+                        <span className="flex-1 font-bold truncate">{r.name}</span>
+                        <span className="w-10 text-center text-gray-500">S{r.season}</span>
+                        <span className="w-10 text-center font-black text-cyan-400">{r.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Best Avg Rating in a Season */}
+              {activeSeasonRecords.ratings.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Best Avg Rating in a Season</div>
+                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
+                    <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-3 py-2 border-b border-gray-800/50 uppercase">
+                      <span className="w-6">#</span>
+                      <span className="flex-1">Player</span>
+                      <span className="w-10 text-center">Season</span>
+                      <span className="w-12 text-center">Rating</span>
+                    </div>
+                    {activeSeasonRecords.ratings.map((r, i) => (
+                      <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-amber-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                        <span className={`w-6 font-black ${i === 0 ? "text-amber-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
+                        <span className="flex-1 font-bold truncate">{r.name}</span>
+                        <span className="w-10 text-center text-gray-500">S{r.season}</span>
+                        <span className={`w-12 text-center font-black ${r.value >= 7.5 ? "text-emerald-400" : r.value >= 7.0 ? "text-yellow-400" : "text-gray-300"}`}>{r.value.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* All-Time Top Scorers */}
               <div>
                 <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">All-Time Top Scorers</div>
@@ -670,6 +811,31 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                     ))}
                 </div>
               </div>
+
+              {/* All-Time Clean Sheets */}
+              {topCleanSheets.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">All-Time Clean Sheets</div>
+                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
+                    <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-3 py-2 border-b border-gray-800/50 uppercase">
+                      <span className="w-6">#</span>
+                      <span className="flex-1">Player</span>
+                      <span className="w-10 text-center">App</span>
+                      <span className="w-10 text-center">CS</span>
+                      <span className="w-10 text-center">Szns</span>
+                    </div>
+                    {topCleanSheets.map((p, i) => (
+                      <div key={i} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-cyan-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                        <span className={`w-6 font-black ${i === 0 ? "text-cyan-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
+                        <span className="flex-1 font-bold truncate">{p.name}</span>
+                        <span className="w-10 text-center text-gray-500">{p.appearances}</span>
+                        <span className="w-10 text-center font-black text-cyan-400">{p.cleanSheets}</span>
+                        <span className="w-10 text-center text-gray-500">{p.seasons}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
