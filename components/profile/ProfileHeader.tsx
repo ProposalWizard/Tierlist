@@ -231,9 +231,18 @@ export default function ProfileHeader({
               >
                 {/* Inner avatar circle */}
                 <div
-                  className={`w-full h-full rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-4xl font-black text-gray-200 ${frameStyle?.shadow ?? ""}`}
+                  className={`w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-4xl font-black text-gray-200 ${frameStyle?.shadow ?? ""}`}
                 >
-                  {initial}
+                  {frameStyle?.image ? (
+                    <img
+                      src={frameStyle.image}
+                      alt="Card"
+                      className="w-full h-full object-cover"
+                      style={{ objectPosition: "center 22%" }}
+                    />
+                  ) : (
+                    initial
+                  )}
                 </div>
               </div>
 
