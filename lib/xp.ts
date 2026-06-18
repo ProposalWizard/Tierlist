@@ -87,20 +87,23 @@ export const RARITY_COLORS = {
 
 // --- Card frame CSS styles ---
 
-export const FRAME_STYLES: Record<string, { border: string; shadow: string; gradient?: string }> = {
+export const FRAME_STYLES: Record<string, { border: string; shadow: string; gradient?: string; image?: string }> = {
   frame_default: {
     border: 'border-2 border-gray-700',
     shadow: '',
+    image: '/cards/ronaldinho.png',
   },
   frame_silver: {
     border: 'border-2 border-gray-300',
     shadow: 'shadow-lg shadow-gray-400/20',
     gradient: 'bg-gradient-to-br from-gray-200 via-gray-400 to-gray-300',
+    image: '/cards/maradona.png',
   },
   frame_gold: {
     border: 'border-2 border-amber-400',
     shadow: 'shadow-lg shadow-amber-500/30',
     gradient: 'bg-gradient-to-br from-amber-300 via-amber-500 to-yellow-400',
+    image: '/cards/messi.png',
   },
   frame_champions: {
     border: 'border-2 border-blue-500',
