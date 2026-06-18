@@ -108,6 +108,15 @@ export default function PlayerSearchPage() {
   const [editingPos, setEditingPos] = useState<string | null>(null);
   const [editPosValue, setEditPosValue] = useState("");
   const [savingPos, setSavingPos] = useState(false);
+  const [deletingEdition, setDeletingEdition] = useState<string | null>(null);
+  const [deletingInProgress, setDeletingInProgress] = useState<string | null>(null);
+  const [cloningEdition, setCloningEdition] = useState<string | null>(null);
+  const [cloneTargetYear, setCloneTargetYear] = useState<number>(26);
+  const [cloneOvr, setCloneOvr] = useState("");
+  const [cloneClub, setCloneClub] = useState("");
+  const [clonePositions, setClonePositions] = useState("");
+  const [cloningInProgress, setCloningInProgress] = useState(false);
+  const [cloneError, setCloneError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     const q = nameQuery.trim();
@@ -193,6 +202,74 @@ export default function PlayerSearchPage() {
     } catch {}
     setSavingPos(false);
     setEditingPos(null);
+  };
+
+  const handleDelete = async (sofifaId: string, fifaYear: number) => {
+    const edKey = `${sofifaId}-${fifaYear}`;
+    setDeletingInProgress(edKey);
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: fifaYear }),
+      });
+      if (res.ok) {
+        setPlayers((prev) => prev.filter((p) => !(p.sofifa_id === sofifaId && p.fifa_year === fifaYear)));
+        setCount((c) => (c !== null ? c - 1 : null));
+      }
+    } catch {}
+    setDeletingInProgress(null);
+    setDeletingEdition(null);
+  };
+
+  const openCloneForm = (p: SofifaPlayer, existingYears: Set<number>) => {
+    const edKey = `${p.sofifa_id}-${p.fifa_year}`;
+    setCloningEdition(edKey);
+    setCloneOvr(String(p.manual_overall ?? p.overall ?? ""));
+    setCloneClub(p.club ?? "");
+    setClonePositions((p.manual_positions ?? p.positions) ?? "");
+    setCloneError(null);
+    for (let y = 26; y >= 7; y--) {
+      if (!existingYears.has(y)) {
+        setCloneTargetYear(y);
+        break;
+      }
+    }
+  };
+
+  const handleClone = async (sourcePlayer: SofifaPlayer) => {
+    setCloningInProgress(true);
+    setCloneError(null);
+    const ovr = cloneOvr.trim() ? parseInt(cloneOvr.trim(), 10) : undefined;
+    const club = cloneClub.trim() || undefined;
+    const positions = clonePositions.trim() || undefined;
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sofifa_id: sourcePlayer.sofifa_id,
+          source_year: sourcePlayer.fifa_year,
+          target_year: cloneTargetYear,
+          overrides: {
+            ...(ovr !== undefined && !isNaN(ovr) ? { overall: ovr } : {}),
+            ...(club ? { club } : {}),
+            ...(positions ? { positions } : {}),
+          },
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.player) {
+        setPlayers((prev) => [...prev, json.player]);
+        setCount((c) => (c !== null ? c + 1 : null));
+        setCloningEdition(null);
+      } else {
+        setCloneError(json.error ?? "Clone failed");
+      }
+    } catch {
+      setCloneError("Clone failed");
+    }
+    setCloningInProgress(false);
   };
 
   interface PlayerGroup {
@@ -432,7 +509,7 @@ export default function PlayerSearchPage() {
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">OVR</th>
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">POT</th>
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Age</th>
-                                <th className="px-3 py-2 w-10"></th>
+                                <th className="px-3 py-2 text-right text-xs font-bold uppercase text-gray-500 pr-4">Actions</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -553,6 +630,53 @@ export default function PlayerSearchPage() {
                                         <div className="px-3 py-2.5 text-center text-gray-600 min-w-[40px]">
                                           {edExpanded ? "▲" : "▼"}
                                         </div>
+                                        <div
+                                          className="px-3 py-2.5 flex items-center gap-2 relative z-10 ml-auto"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {deletingEdition === edKey ? (
+                                            <>
+                                              <span className="text-xs text-red-400 whitespace-nowrap">Delete?</span>
+                                              <button
+                                                onClick={() => handleDelete(p.sofifa_id, p.fifa_year)}
+                                                disabled={deletingInProgress === edKey}
+                                                className="px-2 py-0.5 text-xs bg-red-700 hover:bg-red-600 text-white rounded font-bold disabled:opacity-50"
+                                              >
+                                                {deletingInProgress === edKey ? "..." : "Yes"}
+                                              </button>
+                                              <button
+                                                onClick={() => setDeletingEdition(null)}
+                                                className="px-2 py-0.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded font-bold"
+                                              >
+                                                No
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <button
+                                                onClick={() => {
+                                                  setDeletingEdition(edKey);
+                                                  setCloningEdition(null);
+                                                }}
+                                                title="Delete this edition"
+                                                className="px-2 py-0.5 text-xs bg-red-900/40 hover:bg-red-700 text-red-400 hover:text-white rounded transition-colors"
+                                              >
+                                                Delete
+                                              </button>
+                                              <button
+                                                onClick={() => {
+                                                  const existingYears = new Set(group.editions.map((e) => e.fifa_year));
+                                                  openCloneForm(p, existingYears);
+                                                  setDeletingEdition(null);
+                                                }}
+                                                title="Clone to another year"
+                                                className="px-2 py-0.5 text-xs bg-blue-900/40 hover:bg-blue-700 text-blue-400 hover:text-white rounded transition-colors"
+                                              >
+                                                Clone
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
                                       </div>
 
                                       {edExpanded && (
@@ -566,6 +690,88 @@ export default function PlayerSearchPage() {
                                             <p className="text-sm text-gray-500">
                                               No attributes stored for this player.
                                             </p>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {cloningEdition === edKey && (
+                                        <div className="border-t border-blue-900/50 bg-blue-950/20 px-6 py-4">
+                                          <h4 className="mb-3 text-xs font-bold uppercase text-blue-400">
+                                            Clone {yearLabel(p.fifa_year)} → new edition
+                                          </h4>
+                                          <div className="flex flex-wrap items-end gap-3">
+                                            <div>
+                                              <label className="block text-xs text-gray-500 mb-1">Target Year</label>
+                                              <select
+                                                value={cloneTargetYear}
+                                                onChange={(e) => setCloneTargetYear(parseInt(e.target.value, 10))}
+                                                className="rounded bg-gray-800 border border-gray-600 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                                              >
+                                                {YEAR_OPTIONS.filter(
+                                                  (opt) => !group.editions.some((e) => e.fifa_year === opt.value)
+                                                ).map((opt) => (
+                                                  <option key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                            <div>
+                                              <label className="block text-xs text-gray-500 mb-1">
+                                                OVR <span className="text-gray-600">(blank = copy source)</span>
+                                              </label>
+                                              <input
+                                                type="number"
+                                                min={1}
+                                                max={99}
+                                                value={cloneOvr}
+                                                onChange={(e) => setCloneOvr(e.target.value)}
+                                                placeholder={String(p.manual_overall ?? p.overall ?? "")}
+                                                className="w-16 rounded bg-gray-800 border border-gray-600 px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:border-blue-500"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block text-xs text-gray-500 mb-1">
+                                                Club <span className="text-gray-600">(blank = copy source)</span>
+                                              </label>
+                                              <input
+                                                type="text"
+                                                value={cloneClub}
+                                                onChange={(e) => setCloneClub(e.target.value)}
+                                                placeholder={p.club ?? ""}
+                                                className="w-48 rounded bg-gray-800 border border-gray-600 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="block text-xs text-gray-500 mb-1">
+                                                Positions <span className="text-gray-600">(blank = copy source)</span>
+                                              </label>
+                                              <input
+                                                type="text"
+                                                value={clonePositions}
+                                                onChange={(e) => setClonePositions(e.target.value)}
+                                                placeholder={(p.manual_positions ?? p.positions) ?? ""}
+                                                className="w-36 rounded bg-gray-800 border border-gray-600 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                                              />
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <button
+                                                onClick={() => handleClone(p)}
+                                                disabled={cloningInProgress}
+                                                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded font-bold disabled:opacity-50"
+                                              >
+                                                {cloningInProgress ? "Cloning..." : "Clone"}
+                                              </button>
+                                              <button
+                                                onClick={() => setCloningEdition(null)}
+                                                className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded font-bold"
+                                              >
+                                                Cancel
+                                              </button>
+                                            </div>
+                                          </div>
+                                          {cloneError && (
+                                            <p className="mt-2 text-sm text-red-400">{cloneError}</p>
                                           )}
                                         </div>
                                       )}

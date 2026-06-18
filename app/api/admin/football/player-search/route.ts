@@ -147,3 +147,118 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ success: true });
 }
+
+export async function DELETE(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !(await isAdmin(user.id))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { sofifa_id, fifa_year } = body as { sofifa_id: string; fifa_year: number };
+
+  if (!sofifa_id || !fifa_year) {
+    return NextResponse.json({ error: "Missing sofifa_id or fifa_year" }, { status: 400 });
+  }
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("sofifa_players")
+    .delete()
+    .eq("sofifa_id", sofifa_id)
+    .eq("fifa_year", fifa_year);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+
+function editionLabel(year: number): string {
+  const y = year > 100 ? year % 100 : year;
+  if (y >= 24) return `FC ${String(y).padStart(2, "0")}`;
+  return `FIFA ${String(y).padStart(2, "0")}`;
+}
+
+export async function POST(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !(await isAdmin(user.id))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { sofifa_id, source_year, target_year, overrides } = body as {
+    sofifa_id: string;
+    source_year: number;
+    target_year: number;
+    overrides?: { overall?: number; club?: string; positions?: string };
+  };
+
+  if (!sofifa_id || !source_year || !target_year) {
+    return NextResponse.json({ error: "Missing sofifa_id, source_year, or target_year" }, { status: 400 });
+  }
+
+  if (source_year === target_year) {
+    return NextResponse.json({ error: "Source and target year must be different" }, { status: 400 });
+  }
+
+  const service = createServiceClient();
+
+  const { data: existing } = await service
+    .from("sofifa_players")
+    .select("sofifa_id")
+    .eq("sofifa_id", sofifa_id)
+    .eq("fifa_year", target_year)
+    .maybeSingle();
+
+  if (existing) {
+    return NextResponse.json(
+      { error: `Player already has a ${editionLabel(target_year)} entry` },
+      { status: 409 }
+    );
+  }
+
+  const { data: source, error: fetchError } = await service
+    .from("sofifa_players")
+    .select("*")
+    .eq("sofifa_id", sofifa_id)
+    .eq("fifa_year", source_year)
+    .single();
+
+  if (fetchError || !source) {
+    return NextResponse.json({ error: "Source player/year not found" }, { status: 404 });
+  }
+
+  const newRow = {
+    sofifa_id: source.sofifa_id,
+    fifa_year: target_year,
+    fifa_edition: editionLabel(target_year),
+    name: source.name,
+    positions: overrides?.positions ?? source.positions,
+    nationality: source.nationality,
+    club: overrides?.club ?? source.club,
+    league: source.league,
+    overall: overrides?.overall ?? source.overall,
+    potential: source.potential,
+    age: source.age,
+    image_url: source.image_url,
+    attributes: source.attributes,
+    manual_overall: null,
+    manual_positions: null,
+  };
+
+  const { data: inserted, error: insertError } = await service
+    .from("sofifa_players")
+    .insert(newRow)
+    .select()
+    .single();
+
+  if (insertError) {
+    return NextResponse.json({ error: insertError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ player: inserted });
+}
