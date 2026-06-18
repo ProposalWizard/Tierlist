@@ -91,44 +91,49 @@ export const FRAME_STYLES: Record<string, { border: string; shadow: string; grad
   frame_default: {
     border: 'border-2 border-gray-700',
     shadow: '',
-    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/image-b2ccc256-bac0-4053-9192-58578934c62b.png',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_13_20%20PM.png',
   },
   frame_silver: {
     border: 'border-2 border-gray-300',
     shadow: 'shadow-lg shadow-gray-400/20',
     gradient: 'bg-gradient-to-br from-gray-200 via-gray-400 to-gray-300',
-    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2002_46_46%20AM.png',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_12_14%20PM.png',
   },
   frame_gold: {
     border: 'border-2 border-amber-400',
     shadow: 'shadow-lg shadow-amber-500/30',
     gradient: 'bg-gradient-to-br from-amber-300 via-amber-500 to-yellow-400',
-    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/messi_legends_card_2.png',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_12_34%20PM.png',
   },
   frame_champions: {
     border: 'border-2 border-blue-500',
     shadow: 'shadow-lg shadow-blue-500/30',
     gradient: 'bg-gradient-to-br from-blue-900 via-blue-600 to-indigo-500',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2006_00_27%20PM.png',
   },
   frame_diamond: {
     border: 'border-2 border-cyan-400',
     shadow: 'shadow-lg shadow-cyan-400/30',
     gradient: 'bg-gradient-to-br from-cyan-300 via-teal-400 to-cyan-500',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_11_05%20PM.png',
   },
   frame_invincibles: {
     border: 'border-2 border-emerald-400',
     shadow: 'shadow-lg shadow-emerald-500/30',
     gradient: 'bg-gradient-to-br from-emerald-400 via-green-500 to-amber-400',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_27_16%20PM.png',
   },
   frame_future_stars: {
     border: 'border-2 border-purple-400',
     shadow: 'shadow-lg shadow-purple-500/30',
     gradient: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_12_24%20PM.png',
   },
   frame_ballon_dor: {
     border: 'border-2 border-amber-300',
     shadow: 'shadow-xl shadow-amber-400/40',
     gradient: 'bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-600',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_30_22%20PM.png',
   },
 };
 
