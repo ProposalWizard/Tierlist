@@ -164,3 +164,10 @@ export function getPositionTextColor(pos: string): string {
   if (["CDM", "CM", "CAM", "RM", "LM"].includes(p)) return "text-green-400";
   return "text-red-400";
 }
+
+export function formatSeasonYear(year: number): string {
+  const full = year < 100 ? 2000 + year : year;
+  const prev = full - 1;
+  const short = String(full % 100).padStart(2, "0");
+  return `${prev}/${short}`;
+}

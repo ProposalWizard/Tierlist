@@ -26,10 +26,36 @@ export async function POST(
     return Response.json({ ok: true, skipped: true });
   }
 
-  // Reset room for the next season
+  // Read players' season_result BEFORE clearing, to preserve the league table for European comp qualification
+  const { data: roomPlayers } = await service
+    .from("draft_room_players")
+    .select("season_result")
+    .eq("room_id", room.id)
+    .not("season_result", "is", null)
+    .limit(1);
+
+  let previousLeagueTable: { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }[] | null = null;
+  if (roomPlayers && roomPlayers.length > 0) {
+    const result = roomPlayers[0].season_result as { leagueTable?: { name: string; played: number; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; points: number; isPlayer?: boolean }[] } | null;
+    if (result?.leagueTable) {
+      // Store a compact form: strip isPlayer (it varies per human) and rename fields to save space
+      previousLeagueTable = result.leagueTable.map(t => ({
+        name: t.name,
+        played: t.played,
+        won: t.won,
+        drawn: t.drawn,
+        lost: t.lost,
+        gf: t.goalsFor,
+        ga: t.goalsAgainst,
+        points: t.points,
+      }));
+    }
+  }
+
+  // Reset room for the next season, storing the previous league table
   await service
     .from("draft_rooms")
-    .update({ status: "lobby", season_number: nextSeasonNumber })
+    .update({ status: "lobby", season_number: nextSeasonNumber, previous_league_table: previousLeagueTable })
     .eq("id", room.id);
 
   // Reset all players for the new season (drafting, not ready — they need to re-submit squads)

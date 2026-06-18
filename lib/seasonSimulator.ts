@@ -2471,6 +2471,702 @@ export interface SharedSeasonInput {
   squad: DraftPlayer[];
 }
 
+// --- Shared European competition helpers (multiplayer opponent dedup) ---
+
+interface UCLLeaguePhaseResult {
+  qualified: boolean;
+  leagueMatches: UCLMatch[];
+  leaguePosition: number;
+  leagueTable: UCLLeagueStanding[];
+  strengthMap: Map<string, number>;
+}
+
+/**
+ * Run UCL league phase only (no knockout) for a single human.
+ * Returns intermediate state needed for the shared knockout draw.
+ */
+function simulateUCLLeaguePhase(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  previousLeagueTable: LeagueTeam[],
+  opponents: { name: string; strength: number }[],
+  rng: () => number,
+): UCLLeaguePhaseResult {
+  const playerTeamName = 'Knowitball FC';
+  const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
+
+  if (playerFinish < 1 || playerFinish > 5) {
+    return {
+      qualified: false, leagueMatches: [], leaguePosition: 0,
+      leagueTable: [], strengthMap: new Map(),
+    };
+  }
+
+  const potForFinish = (f: number) => f <= 2 ? 1 : f === 3 ? 2 : f === 4 ? 3 : 4;
+  const playerPot = potForFinish(playerFinish);
+
+  const pots: { name: string; strength: number; isPlayer: boolean }[][] = [[], [], [], []];
+  pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
+
+  const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
+  let plAdded = 0;
+  for (let i = 0; i < previousLeagueTable.length && plAdded < 4; i++) {
+    const team = previousLeagueTable[i];
+    if (team.isPlayer) continue;
+    if (i + 1 > 5) break;
+    const strength = opponentMap.get(team.name) || 75;
+    const pot = potForFinish(i + 1);
+    pots[pot - 1].push({ name: team.name, strength, isPlayer: false });
+    plAdded++;
+  }
+
+  for (const uclTeam of UCL_TEAMS) {
+    if (pots[uclTeam.pot - 1].length < 9) {
+      pots[uclTeam.pot - 1].push({ name: uclTeam.name, strength: uclTeam.strength, isPlayer: false });
+    }
+  }
+
+  const allUCLTeams = [...pots[0], ...pots[1], ...pots[2], ...pots[3]];
+  const strengthMap = new Map(allUCLTeams.map(t => [t.name, t.strength]));
+
+  const playerOpponents: { name: string; strength: number; isHome: boolean }[] = [];
+  for (const pot of pots) {
+    const available = pot.filter(t => !t.isPlayer);
+    const shuffled = [...available].sort(() => rng() - 0.5);
+    const homeFirst = rng() > 0.5;
+    playerOpponents.push({ ...shuffled[0], isHome: homeFirst });
+    playerOpponents.push({ ...shuffled[1], isHome: !homeFirst });
+  }
+  playerOpponents.sort(() => rng() - 0.5);
+
+  const starters = players.filter(p => !p.isSub);
+  const subs = players.filter(p => p.isSub);
+  const leagueMatches: UCLMatch[] = [];
+
+  for (const opp of playerOpponents) {
+    const activeSubs = subs.filter(() => rng() < 0.5);
+    const matchPlayers = [...starters, ...activeSubs];
+    const m = simulateMatch(matchPlayers, ratings, { name: opp.name, strength: opp.strength }, opp.isHome, rng);
+    leagueMatches.push({
+      opponent: m.opponent, isHome: m.isHome,
+      goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst,
+      result: m.result, goalScorers: m.goalScorers, assistProviders: m.assistProviders,
+    });
+  }
+
+  const tableData: Record<string, UCLLeagueStanding> = {};
+  for (const team of allUCLTeams) {
+    tableData[team.name] = {
+      name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
+      goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
+      isPlayer: team.isPlayer,
+    };
+  }
+
+  for (const m of leagueMatches) {
+    const pt = tableData[playerTeamName];
+    pt.played++;
+    pt.goalsFor += m.goalsFor;
+    pt.goalsAgainst += m.goalsAgainst;
+    if (m.result === 'W') { pt.won++; pt.points += 3; }
+    else if (m.result === 'D') { pt.drawn++; pt.points += 1; }
+    else { pt.lost++; }
+  }
+
+  for (const team of allUCLTeams) {
+    if (team.isPlayer) continue;
+    const td = tableData[team.name];
+    for (const pot of pots) {
+      const available = pot.filter(t => t.name !== team.name);
+      const shuffled = [...available].sort(() => rng() - 0.5);
+      const picked = shuffled.slice(0, 2);
+      for (let k = 0; k < picked.length; k++) {
+        const isHome = k === 0;
+        const home = isHome ? team : picked[k];
+        const away = isHome ? picked[k] : team;
+        const { homeGoals, awayGoals } = simulateNeutralMatch(
+          { name: home.name, strength: home.strength },
+          { name: away.name, strength: away.strength }, rng,
+        );
+        const gf = isHome ? homeGoals : awayGoals;
+        const ga = isHome ? awayGoals : homeGoals;
+        td.played++;
+        td.goalsFor += gf;
+        td.goalsAgainst += ga;
+        if (gf > ga) { td.won++; td.points += 3; }
+        else if (gf === ga) { td.drawn++; td.points += 1; }
+        else { td.lost++; }
+      }
+    }
+  }
+
+  const leagueTable = Object.values(tableData);
+  for (const t of leagueTable) t.goalDifference = t.goalsFor - t.goalsAgainst;
+  leagueTable.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+    return a.name.localeCompare(b.name);
+  });
+
+  const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
+
+  return { qualified: true, leagueMatches, leaguePosition, leagueTable, strengthMap };
+}
+
+/**
+ * Run UEL league phase only (no knockout) for a single human.
+ */
+function simulateUELLeaguePhase(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  previousLeagueTable: LeagueTeam[],
+  opponents: { name: string; strength: number }[],
+  rng: () => number,
+): UCLLeaguePhaseResult {
+  const playerTeamName = 'Knowitball FC';
+  const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
+
+  if (playerFinish < 6 || playerFinish > 7) {
+    return {
+      qualified: false, leagueMatches: [], leaguePosition: 0,
+      leagueTable: [], strengthMap: new Map(),
+    };
+  }
+
+  const playerPot = playerFinish === 6 ? 1 : 2;
+
+  const pots: { name: string; strength: number; isPlayer: boolean }[][] = [[], [], [], []];
+  pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
+
+  const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
+  const otherPLSlot = playerFinish === 6 ? 7 : 6;
+  const otherPLPot = otherPLSlot === 6 ? 1 : 2;
+  for (let i = 0; i < previousLeagueTable.length; i++) {
+    const team = previousLeagueTable[i];
+    if (team.isPlayer) continue;
+    if (i + 1 === otherPLSlot) {
+      const strength = opponentMap.get(team.name) || 75;
+      pots[otherPLPot - 1].push({ name: team.name, strength, isPlayer: false });
+      break;
+    }
+  }
+
+  for (const uelTeam of UEL_TEAMS) {
+    if (pots[uelTeam.pot - 1].length < 9) {
+      pots[uelTeam.pot - 1].push({ name: uelTeam.name, strength: uelTeam.strength, isPlayer: false });
+    }
+  }
+
+  const allUELTeams = [...pots[0], ...pots[1], ...pots[2], ...pots[3]];
+  const strengthMap = new Map(allUELTeams.map(t => [t.name, t.strength]));
+
+  const playerOpponents: { name: string; strength: number; isHome: boolean }[] = [];
+  for (const pot of pots) {
+    const available = pot.filter(t => !t.isPlayer);
+    const shuffled = [...available].sort(() => rng() - 0.5);
+    const homeFirst = rng() > 0.5;
+    playerOpponents.push({ ...shuffled[0], isHome: homeFirst });
+    playerOpponents.push({ ...shuffled[1], isHome: !homeFirst });
+  }
+  playerOpponents.sort(() => rng() - 0.5);
+
+  const starters = players.filter(p => !p.isSub);
+  const subs = players.filter(p => p.isSub);
+  const leagueMatches: UCLMatch[] = [];
+
+  for (const opp of playerOpponents) {
+    const activeSubs = subs.filter(() => rng() < 0.5);
+    const matchPlayers = [...starters, ...activeSubs];
+    const m = simulateMatch(matchPlayers, ratings, { name: opp.name, strength: opp.strength }, opp.isHome, rng);
+    leagueMatches.push({
+      opponent: m.opponent, isHome: m.isHome,
+      goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst,
+      result: m.result, goalScorers: m.goalScorers, assistProviders: m.assistProviders,
+    });
+  }
+
+  const tableData: Record<string, UCLLeagueStanding> = {};
+  for (const team of allUELTeams) {
+    tableData[team.name] = {
+      name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
+      goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
+      isPlayer: team.isPlayer,
+    };
+  }
+
+  for (const m of leagueMatches) {
+    const pt = tableData[playerTeamName];
+    pt.played++;
+    pt.goalsFor += m.goalsFor;
+    pt.goalsAgainst += m.goalsAgainst;
+    if (m.result === 'W') { pt.won++; pt.points += 3; }
+    else if (m.result === 'D') { pt.drawn++; pt.points += 1; }
+    else { pt.lost++; }
+  }
+
+  for (const team of allUELTeams) {
+    if (team.isPlayer) continue;
+    const td = tableData[team.name];
+    for (const pot of pots) {
+      const available = pot.filter(t => t.name !== team.name);
+      const shuffled = [...available].sort(() => rng() - 0.5);
+      const picked = shuffled.slice(0, 2);
+      for (let k = 0; k < picked.length; k++) {
+        const isHome = k === 0;
+        const home = isHome ? team : picked[k];
+        const away = isHome ? picked[k] : team;
+        const { homeGoals, awayGoals } = simulateNeutralMatch(
+          { name: home.name, strength: home.strength },
+          { name: away.name, strength: away.strength }, rng,
+        );
+        const gf = isHome ? homeGoals : awayGoals;
+        const ga = isHome ? awayGoals : homeGoals;
+        td.played++;
+        td.goalsFor += gf;
+        td.goalsAgainst += ga;
+        if (gf > ga) { td.won++; td.points += 3; }
+        else if (gf === ga) { td.drawn++; td.points += 1; }
+        else { td.lost++; }
+      }
+    }
+  }
+
+  const leagueTable = Object.values(tableData);
+  for (const t of leagueTable) t.goalDifference = t.goalsFor - t.goalsAgainst;
+  leagueTable.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+    return a.name.localeCompare(b.name);
+  });
+
+  const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
+
+  return { qualified: true, leagueMatches, leaguePosition, leagueTable, strengthMap };
+}
+
+interface SharedEuropeanHuman {
+  userId: string;
+  displayName: string;
+  squad: DraftPlayer[];
+  ratings: PhaseRatings;
+  rng: () => number;
+}
+
+/**
+ * Shared UCL knockout simulation for multiplayer.
+ * League phase runs independently per human; knockout draws are coordinated
+ * so no AI team faces multiple humans in the same round.
+ * Follows the same pattern as simulateSharedFaCup.
+ */
+function simulateSharedUCL(
+  humanEntrants: (SharedEuropeanHuman & {
+    previousLeagueTable: LeagueTeam[];
+    oppForCups: { name: string; strength: number }[];
+  })[],
+  drawRng: () => number,
+): Map<string, UCLResult> {
+  const results = new Map<string, UCLResult>();
+
+  if (humanEntrants.length === 0) return results;
+
+  // 1. Run league phase independently per human
+  const phaseResults = new Map<string, UCLLeaguePhaseResult>();
+  for (const h of humanEntrants) {
+    const lp = simulateUCLLeaguePhase(h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng);
+    phaseResults.set(h.userId, lp);
+    if (!lp.qualified) {
+      results.set(h.userId, {
+        qualified: false, leagueMatches: [], leaguePosition: 0,
+        leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+      });
+    }
+  }
+
+  // Filter to qualified humans who survived league phase
+  const qualifiedHumans = humanEntrants.filter(h => {
+    const lp = phaseResults.get(h.userId)!;
+    if (!lp.qualified) return false;
+    if (lp.leaguePosition > 24) {
+      results.set(h.userId, {
+        qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
+        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase',
+      });
+      return false;
+    }
+    return true;
+  });
+
+  // 2. Knockout phase — coordinated draws (or solo if only 1 human)
+  const humanKnockoutTies = new Map<string, UCLKnockoutTie[]>();
+  const humanEliminated = new Map<string, Set<string>>(); // AI teams each human has already faced
+  const surviving = new Map<string, typeof qualifiedHumans[0]>();
+
+  for (const h of qualifiedHumans) {
+    humanKnockoutTies.set(h.userId, []);
+    humanEliminated.set(h.userId, new Set());
+    surviving.set(h.userId, h);
+  }
+
+  // R32: deterministic based on league position (9-24 paired with 33-pos)
+  for (const h of qualifiedHumans) {
+    const lp = phaseResults.get(h.userId)!;
+    if (lp.leaguePosition >= 9) {
+      const r32OppPos = 33 - lp.leaguePosition;
+      const r32Opp = lp.leagueTable[r32OppPos - 1];
+      const r32Str = lp.strengthMap.get(r32Opp.name) || 75;
+      const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, h.squad, h.ratings, h.rng, false);
+      humanKnockoutTies.get(h.userId)!.push(r32);
+      humanEliminated.get(h.userId)!.add(r32Opp.name);
+      if (r32.result === 'L') {
+        surviving.delete(h.userId);
+        results.set(h.userId, {
+          qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
+          leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(h.userId)!,
+          winner: false, exitStage: 'Round of 32',
+        });
+      }
+    }
+  }
+
+  // R16 through Final: coordinated draws
+  const roundPoolSizes = [16, 8, 4, 3]; // pool slice sizes for R16, QF, SF, Final
+  const knockoutRoundNames = ['Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
+
+  for (let ri = 0; ri < knockoutRoundNames.length; ri++) {
+    const roundName = knockoutRoundNames[ri];
+    const poolSize = roundPoolSizes[ri];
+    const isFinal = roundName === 'Final';
+    const survivorIds = Array.from(surviving.keys());
+    if (survivorIds.length === 0) break;
+
+    const pairedHumans = new Set<string>();
+    const humanVsHuman: [string, string][] = [];
+
+    // From QF onwards, surviving humans can draw each other
+    if (survivorIds.length >= 2 && ri >= 1) {
+      const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
+      // Approximate probability: similar to FA Cup logic
+      const teamsInRound = poolSize * 2; // rough estimate
+      for (let i = 0; i + 1 < shuffled.length; i += 2) {
+        if (drawRng() < 1 / Math.max(1, teamsInRound - 1)) {
+          humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
+          pairedHumans.add(shuffled[i]);
+          pairedHumans.add(shuffled[i + 1]);
+        }
+      }
+    }
+
+    // Draw AI opponents for unpaired humans (no overlap across humans)
+    const usedAIThisRound = new Set<string>();
+    const humansVsAI = survivorIds.filter(id => !pairedHumans.has(id));
+
+    for (const userId of humansVsAI) {
+      const h = surviving.get(userId)!;
+      const lp = phaseResults.get(userId)!;
+      const eliminated = humanEliminated.get(userId)!;
+
+      // Pool: non-player, non-eliminated teams from this human's league table
+      let pool = lp.leagueTable.filter(t => !t.isPlayer && !eliminated.has(t.name) && !usedAIThisRound.has(t.name)).slice(0, poolSize);
+      if (pool.length === 0) {
+        // Fallback: allow reuse if pool is exhausted
+        pool = lp.leagueTable.filter(t => !t.isPlayer && !eliminated.has(t.name)).slice(0, poolSize);
+      }
+      if (pool.length === 0) {
+        pool = lp.leagueTable.filter(t => !t.isPlayer).slice(0, poolSize);
+      }
+
+      const opp = pool[Math.floor(drawRng() * pool.length)];
+      const oppStr = lp.strengthMap.get(opp.name) || 75;
+      usedAIThisRound.add(opp.name);
+      eliminated.add(opp.name);
+
+      const tie = simulateUCLKnockoutTie(roundName, opp.name, oppStr, h.squad, h.ratings, h.rng, isFinal);
+      humanKnockoutTies.get(userId)!.push(tie);
+
+      if (tie.result === 'L') {
+        surviving.delete(userId);
+        results.set(userId, {
+          qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
+          leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(userId)!,
+          winner: false, exitStage: roundName,
+        });
+      }
+    }
+
+    // Human-vs-human matches
+    for (const [id1, id2] of humanVsHuman) {
+      if (!surviving.has(id1) || !surviving.has(id2)) continue;
+      const h1 = surviving.get(id1)!;
+      const h2 = surviving.get(id2)!;
+
+      // Simulate using h1's RNG for the tie, with h2's team strength as opponent
+      const tie1 = simulateUCLKnockoutTie(roundName, h2.displayName, h2.ratings.teamStrength, h1.squad, h1.ratings, h1.rng, isFinal);
+
+      // Build mirrored result for h2
+      const mirrorLeg = (leg: UCLMatch): UCLMatch => ({
+        opponent: h1.displayName,
+        isHome: !leg.isHome,
+        goalsFor: leg.goalsAgainst,
+        goalsAgainst: leg.goalsFor,
+        result: leg.result === 'W' ? 'L' : leg.result === 'L' ? 'W' : 'D',
+        goalScorers: [], // h2's scorers would need separate generation
+        assistProviders: [],
+        extraTime: leg.extraTime,
+        penalties: leg.penalties,
+        penaltyScore: leg.penaltyScore ? { player: leg.penaltyScore.opponent, opponent: leg.penaltyScore.player } : undefined,
+      });
+
+      // Generate h2's goal scorers for each leg
+      const h2Leg1Scorers = generateGoalScorers(h2.squad, tie1.leg1.goalsAgainst, h2.rng);
+      const mirroredLeg1 = mirrorLeg(tie1.leg1);
+      mirroredLeg1.goalScorers = h2Leg1Scorers.goals;
+      mirroredLeg1.assistProviders = h2Leg1Scorers.assists;
+
+      let mirroredLeg2: UCLMatch | undefined;
+      if (tie1.leg2) {
+        const h2Leg2Scorers = generateGoalScorers(h2.squad, tie1.leg2.goalsAgainst, h2.rng);
+        mirroredLeg2 = mirrorLeg(tie1.leg2);
+        mirroredLeg2.goalScorers = h2Leg2Scorers.goals;
+        mirroredLeg2.assistProviders = h2Leg2Scorers.assists;
+      }
+
+      const tie2: UCLKnockoutTie = {
+        round: roundName,
+        opponent: h1.displayName,
+        leg1: mirroredLeg1,
+        leg2: mirroredLeg2,
+        result: tie1.result === 'W' ? 'L' : 'W',
+      };
+
+      humanKnockoutTies.get(id1)!.push(tie1);
+      humanKnockoutTies.get(id2)!.push(tie2);
+
+      const loserId = tie1.result === 'W' ? id2 : id1;
+      const loserLp = phaseResults.get(loserId)!;
+      surviving.delete(loserId);
+      results.set(loserId, {
+        qualified: true, leagueMatches: loserLp.leagueMatches, leaguePosition: loserLp.leaguePosition,
+        leagueTable: loserLp.leagueTable, knockoutTies: humanKnockoutTies.get(loserId)!,
+        winner: false, exitStage: roundName,
+      });
+    }
+  }
+
+  // Finalize surviving humans (winners or still standing after final)
+  surviving.forEach((_, userId) => {
+    if (!results.has(userId)) {
+      const lp = phaseResults.get(userId)!;
+      const ties = humanKnockoutTies.get(userId)!;
+      const lastTie = ties[ties.length - 1];
+      const isWinner = lastTie?.round === 'Final' && lastTie.result === 'W';
+      results.set(userId, {
+        qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
+        leagueTable: lp.leagueTable, knockoutTies: ties,
+        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null,
+      });
+    }
+  });
+
+  return results;
+}
+
+/**
+ * Shared UEL knockout simulation for multiplayer.
+ * Same pattern as simulateSharedUCL but for Europa League (6th-7th qualify).
+ */
+function simulateSharedUEL(
+  humanEntrants: (SharedEuropeanHuman & {
+    previousLeagueTable: LeagueTeam[];
+    oppForCups: { name: string; strength: number }[];
+  })[],
+  drawRng: () => number,
+): Map<string, UCLResult> {
+  const results = new Map<string, UCLResult>();
+
+  if (humanEntrants.length === 0) return results;
+
+  // 1. Run league phase independently per human
+  const phaseResults = new Map<string, UCLLeaguePhaseResult>();
+  for (const h of humanEntrants) {
+    const lp = simulateUELLeaguePhase(h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng);
+    phaseResults.set(h.userId, lp);
+    if (!lp.qualified) {
+      results.set(h.userId, {
+        qualified: false, leagueMatches: [], leaguePosition: 0,
+        leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+      });
+    }
+  }
+
+  const qualifiedHumans = humanEntrants.filter(h => {
+    const lp = phaseResults.get(h.userId)!;
+    if (!lp.qualified) return false;
+    if (lp.leaguePosition > 24) {
+      results.set(h.userId, {
+        qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
+        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase',
+      });
+      return false;
+    }
+    return true;
+  });
+
+  // 2. Knockout phase — coordinated draws (or solo if only 1 human)
+  const humanKnockoutTies = new Map<string, UCLKnockoutTie[]>();
+  const humanEliminated = new Map<string, Set<string>>();
+  const surviving = new Map<string, typeof qualifiedHumans[0]>();
+
+  for (const h of qualifiedHumans) {
+    humanKnockoutTies.set(h.userId, []);
+    humanEliminated.set(h.userId, new Set());
+    surviving.set(h.userId, h);
+  }
+
+  // R32
+  for (const h of qualifiedHumans) {
+    const lp = phaseResults.get(h.userId)!;
+    if (lp.leaguePosition >= 9) {
+      const r32OppPos = 33 - lp.leaguePosition;
+      const r32Opp = lp.leagueTable[r32OppPos - 1];
+      const r32Str = lp.strengthMap.get(r32Opp.name) || 70;
+      const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, h.squad, h.ratings, h.rng, false);
+      humanKnockoutTies.get(h.userId)!.push(r32);
+      humanEliminated.get(h.userId)!.add(r32Opp.name);
+      if (r32.result === 'L') {
+        surviving.delete(h.userId);
+        results.set(h.userId, {
+          qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
+          leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(h.userId)!,
+          winner: false, exitStage: 'Round of 32',
+        });
+      }
+    }
+  }
+
+  const roundPoolSizes = [16, 8, 4, 3];
+  const knockoutRoundNames = ['Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
+
+  for (let ri = 0; ri < knockoutRoundNames.length; ri++) {
+    const roundName = knockoutRoundNames[ri];
+    const poolSize = roundPoolSizes[ri];
+    const isFinal = roundName === 'Final';
+    const survivorIds = Array.from(surviving.keys());
+    if (survivorIds.length === 0) break;
+
+    const pairedHumans = new Set<string>();
+    const humanVsHuman: [string, string][] = [];
+
+    if (survivorIds.length >= 2 && ri >= 1) {
+      const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
+      const teamsInRound = poolSize * 2;
+      for (let i = 0; i + 1 < shuffled.length; i += 2) {
+        if (drawRng() < 1 / Math.max(1, teamsInRound - 1)) {
+          humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
+          pairedHumans.add(shuffled[i]);
+          pairedHumans.add(shuffled[i + 1]);
+        }
+      }
+    }
+
+    const usedAIThisRound = new Set<string>();
+    const humansVsAI = survivorIds.filter(id => !pairedHumans.has(id));
+
+    for (const userId of humansVsAI) {
+      const h = surviving.get(userId)!;
+      const lp = phaseResults.get(userId)!;
+      const eliminated = humanEliminated.get(userId)!;
+
+      let pool = lp.leagueTable.filter(t => !t.isPlayer && !eliminated.has(t.name) && !usedAIThisRound.has(t.name)).slice(0, poolSize);
+      if (pool.length === 0) pool = lp.leagueTable.filter(t => !t.isPlayer && !eliminated.has(t.name)).slice(0, poolSize);
+      if (pool.length === 0) pool = lp.leagueTable.filter(t => !t.isPlayer).slice(0, poolSize);
+
+      const opp = pool[Math.floor(drawRng() * pool.length)];
+      const oppStr = lp.strengthMap.get(opp.name) || 70;
+      usedAIThisRound.add(opp.name);
+      eliminated.add(opp.name);
+
+      const tie = simulateUCLKnockoutTie(roundName, opp.name, oppStr, h.squad, h.ratings, h.rng, isFinal);
+      humanKnockoutTies.get(userId)!.push(tie);
+
+      if (tie.result === 'L') {
+        surviving.delete(userId);
+        results.set(userId, {
+          qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
+          leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(userId)!,
+          winner: false, exitStage: roundName,
+        });
+      }
+    }
+
+    // Human-vs-human
+    for (const [id1, id2] of humanVsHuman) {
+      if (!surviving.has(id1) || !surviving.has(id2)) continue;
+      const h1 = surviving.get(id1)!;
+      const h2 = surviving.get(id2)!;
+
+      const tie1 = simulateUCLKnockoutTie(roundName, h2.displayName, h2.ratings.teamStrength, h1.squad, h1.ratings, h1.rng, isFinal);
+
+      const mirrorLeg = (leg: UCLMatch): UCLMatch => ({
+        opponent: h1.displayName, isHome: !leg.isHome,
+        goalsFor: leg.goalsAgainst, goalsAgainst: leg.goalsFor,
+        result: leg.result === 'W' ? 'L' : leg.result === 'L' ? 'W' : 'D',
+        goalScorers: [], assistProviders: [],
+        extraTime: leg.extraTime, penalties: leg.penalties,
+        penaltyScore: leg.penaltyScore ? { player: leg.penaltyScore.opponent, opponent: leg.penaltyScore.player } : undefined,
+      });
+
+      const h2Leg1Scorers = generateGoalScorers(h2.squad, tie1.leg1.goalsAgainst, h2.rng);
+      const mirroredLeg1 = mirrorLeg(tie1.leg1);
+      mirroredLeg1.goalScorers = h2Leg1Scorers.goals;
+      mirroredLeg1.assistProviders = h2Leg1Scorers.assists;
+
+      let mirroredLeg2: UCLMatch | undefined;
+      if (tie1.leg2) {
+        const h2Leg2Scorers = generateGoalScorers(h2.squad, tie1.leg2.goalsAgainst, h2.rng);
+        mirroredLeg2 = mirrorLeg(tie1.leg2);
+        mirroredLeg2.goalScorers = h2Leg2Scorers.goals;
+        mirroredLeg2.assistProviders = h2Leg2Scorers.assists;
+      }
+
+      const tie2: UCLKnockoutTie = {
+        round: roundName, opponent: h1.displayName,
+        leg1: mirroredLeg1, leg2: mirroredLeg2,
+        result: tie1.result === 'W' ? 'L' : 'W',
+      };
+
+      humanKnockoutTies.get(id1)!.push(tie1);
+      humanKnockoutTies.get(id2)!.push(tie2);
+
+      const loserId = tie1.result === 'W' ? id2 : id1;
+      const loserLp = phaseResults.get(loserId)!;
+      surviving.delete(loserId);
+      results.set(loserId, {
+        qualified: true, leagueMatches: loserLp.leagueMatches, leaguePosition: loserLp.leaguePosition,
+        leagueTable: loserLp.leagueTable, knockoutTies: humanKnockoutTies.get(loserId)!,
+        winner: false, exitStage: roundName,
+      });
+    }
+  }
+
+  surviving.forEach((_, userId) => {
+    if (!results.has(userId)) {
+      const lp = phaseResults.get(userId)!;
+      const ties = humanKnockoutTies.get(userId)!;
+      const lastTie = ties[ties.length - 1];
+      const isWinner = lastTie?.round === 'Final' && lastTie.result === 'W';
+      results.set(userId, {
+        qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
+        leagueTable: lp.leagueTable, knockoutTies: ties,
+        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null,
+      });
+    }
+  });
+
+  return results;
+}
+
 /**
  * Simulate a full shared Premier League season for N human teams.
  * All 20 teams (N human + 20-N AI) play in the same round-robin league
@@ -2482,6 +3178,7 @@ export function simulateSharedSeason(
   aiTeams: { name: string; strength: number }[],
   sharedSeed: number,
   seasonNumber: number = 1,
+  previousLeagueTable?: { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
 ): Map<string, SeasonResult> {
   const sharedRng = createRng(sharedSeed);
 
@@ -2605,6 +3302,62 @@ export function simulateSharedSeason(
   });
   const sharedFaCupResults = simulateSharedFaCup(sharedFaCupTeams, aiOppForCups, faCupDrawRng);
 
+  // Shared European competitions (only from season 2+ when previousLeagueTable is provided)
+  // Convert previousLeagueTable to LeagueTeam[] format, mapping human team names back
+  let sharedUCLResults = new Map<string, UCLResult>();
+  let sharedUELResults = new Map<string, UCLResult>();
+
+  if (previousLeagueTable) {
+    // Build per-human previousLeagueTable with isPlayer set for each
+    const buildPrevTable = (forHd: typeof humanData[0]): LeagueTeam[] =>
+      previousLeagueTable.map(row => ({
+        name: row.name,
+        played: row.played,
+        won: row.won,
+        drawn: row.drawn,
+        lost: row.lost,
+        goalsFor: row.gf,
+        goalsAgainst: row.ga,
+        goalDifference: row.gf - row.ga,
+        points: row.points,
+        isPlayer: row.name === forHd.teamName,
+      }));
+
+    // Determine which humans qualify for UCL (top 5) vs UEL (6th-7th) from previous table
+    const uclEntrants: (SharedEuropeanHuman & { previousLeagueTable: LeagueTeam[]; oppForCups: { name: string; strength: number }[] })[] = [];
+    const uelEntrants: (SharedEuropeanHuman & { previousLeagueTable: LeagueTeam[]; oppForCups: { name: string; strength: number }[] })[] = [];
+
+    for (const hd of humanData) {
+      const prevTable = buildPrevTable(hd);
+      const myFinish = prevTable.findIndex(t => t.isPlayer) + 1;
+      const myIdx = allTeams.findIndex(t => t.name === hd.teamName);
+      const opponents = allTeams.filter((_, i) => i !== myIdx);
+      const oppForCups = opponents.map(o => ({ name: o.name, strength: o.ratings.teamStrength }));
+      const playerSeed = hd.squad.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonNumber * 100);
+
+      const entrant = {
+        userId: hd.userId,
+        displayName: hd.displayName,
+        squad: hd.squad,
+        ratings: hd.ratings,
+        rng: createRng(playerSeed + 88888), // separate RNG for European comps
+        previousLeagueTable: prevTable,
+        oppForCups,
+      };
+
+      if (myFinish >= 1 && myFinish <= 5) {
+        uclEntrants.push(entrant);
+      } else if (myFinish >= 6 && myFinish <= 7) {
+        uelEntrants.push(entrant);
+      }
+    }
+
+    const uclDrawRng = createRng(sharedSeed ^ 0xDC101);
+    const uelDrawRng = createRng(sharedSeed ^ 0xDE102);
+    sharedUCLResults = simulateSharedUCL(uclEntrants, uclDrawRng);
+    sharedUELResults = simulateSharedUEL(uelEntrants, uelDrawRng);
+  }
+
   // Build SeasonResult for each human team
   const results = new Map<string, SeasonResult>();
 
@@ -2612,7 +3365,7 @@ export function simulateSharedSeason(
     const myIdx = allTeams.findIndex(t => t.name === hd.teamName);
     const opponents = allTeams.filter((_, i) => i !== myIdx);
 
-    // Per-player seed for goal scorer assignment, sub selection, UCL/UEL
+    // Per-player seed for goal scorer assignment, sub selection
     const playerSeed = hd.squad.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonNumber * 100);
     const playerRng = createRng(playerSeed);
 
@@ -2641,14 +3394,10 @@ export function simulateSharedSeason(
       for (const s of activeSubs) subAppearances[s.name]++;
     }
 
-    // FA Cup from shared simulation; European competitions use shared table for qualification
+    // FA Cup from shared simulation; European competitions from shared UCL/UEL (if available)
     const faCup = sharedFaCupResults.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round 3' };
-    const oppForCups = opponents.map(o => ({ name: o.name, strength: o.ratings.teamStrength }));
-    const playerLeagueTable = sharedTable.map(t => ({ ...t, isPlayer: t.name === hd.teamName }));
-    const ucl = simulateChampionsLeague(hd.squad, hd.ratings, playerLeagueTable, oppForCups, playerRng);
-    const uel = !ucl.qualified
-      ? simulateEuropaLeague(hd.squad, hd.ratings, playerLeagueTable, oppForCups, playerRng)
-      : undefined;
+    const ucl = sharedUCLResults.get(hd.userId);
+    const uel = sharedUELResults.get(hd.userId);
 
     // Player stats
     const statsMap: Record<string, PlayerStats> = {};

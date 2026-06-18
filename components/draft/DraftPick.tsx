@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { FORMATIONS, getPositionColor, getPositionTextColor } from "./formations";
+import { FORMATIONS, getPositionColor, getPositionTextColor, formatSeasonYear } from "./formations";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftSettings, DraftPlayer } from "@/app/draft/page";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
@@ -341,7 +341,7 @@ export default function DraftPick({
         overall: player.overall,
         positions: player.positions,
         club: spinResult!.club,
-        clubYear: `${buildClubAbbr()} ${spinResult!.year}`,
+        clubYear: `${buildClubAbbr()} ${formatSeasonYear(spinResult!.year)}`,
         assignedPosition: slotLabel,
         sofifa_id: player.sofifa_id,
         image_url: player.image_url,
@@ -919,7 +919,7 @@ export default function DraftPick({
                         {item.club}
                       </div>
                       <div className="text-xs sm:text-sm font-bold text-emerald-400">
-                        {item.year}
+                        {formatSeasonYear(item.year)}
                       </div>
                     </div>
                   ))}
@@ -936,8 +936,7 @@ export default function DraftPick({
                 <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
                   <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate">{spinDisplay.club}</h2>
                   <span className="px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 text-sm font-bold">
-                    {spinDisplay.year >= 2024 ? "FC" : "FIFA"}{" "}
-                    {String(spinDisplay.year % 100).padStart(2, "0")}
+                    {formatSeasonYear(spinDisplay.year)}
                   </span>
                 </div>
                 <p className="text-gray-500 text-sm">
@@ -996,7 +995,7 @@ export default function DraftPick({
 
               {spinResult && <div className="max-h-[60vh] overflow-y-auto">
                 {/* Stat column headers — desktop only */}
-                {displayStats.length > 0 && (
+                {displayStats.length > 0 && !settings.hiddenRatings && (
                   <div className="hidden sm:flex items-center gap-3 px-4 mb-1 sticky top-0 bg-gray-950 z-10 py-1">
                     <div className="w-9 shrink-0" />
                     <div className="w-10 shrink-0" />
@@ -1014,6 +1013,11 @@ export default function DraftPick({
                 <div className="space-y-1">
                 {[...spinResult.roster]
                   .sort((a, b) => {
+                    if (settings.hiddenRatings) {
+                      const ha = ((parseInt(a.sofifa_id, 10) * 2654435761) >>> 0);
+                      const hb = ((parseInt(b.sofifa_id, 10) * 2654435761) >>> 0);
+                      return ha - hb;
+                    }
                     if (!isClubFirst) {
                       const aCompat = currentSlot?.compatiblePositions.some((cp) =>
                         (a.positions || "").split(",").map((p) => p.trim()).includes(cp)
@@ -1067,13 +1071,15 @@ export default function DraftPick({
                         <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800 shrink-0" />
                       )}
                       <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-extrabold text-xs sm:text-sm shrink-0 ${
-                        player.overall >= 85
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          : player.overall >= 75
-                            ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                            : "bg-gray-800/80 text-gray-400 border border-gray-700/40"
+                        settings.hiddenRatings
+                          ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                          : player.overall >= 85
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : player.overall >= 75
+                              ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                              : "bg-gray-800/80 text-gray-400 border border-gray-700/40"
                       }`}>
-                        {player.overall}
+                        {settings.hiddenRatings ? "?" : player.overall}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-sm truncate group-hover:text-white transition-colors">
@@ -1082,7 +1088,7 @@ export default function DraftPick({
                         <div className="text-[11px] sm:text-xs text-gray-500">
                           {player.nationality} &middot; Age {player.age}
                         </div>
-                        {hasStats && (
+                        {hasStats && !settings.hiddenRatings && (
                           <div className="flex gap-2 sm:hidden mt-0.5">
                             {displayStats.slice(0, 3).map((ks) => {
                               const val = ks.pick(player);
@@ -1109,7 +1115,7 @@ export default function DraftPick({
                           </span>
                         ))}
                       </div>
-                      {hasStats && (
+                      {hasStats && !settings.hiddenRatings && (
                         <div className="hidden sm:flex gap-0 shrink-0">
                           {displayStats.map((ks) => {
                             const val = ks.pick(player);
@@ -1146,7 +1152,7 @@ export default function DraftPick({
                   <div className="text-left">
                     <div className="text-xl font-extrabold">{pendingPlayer.name}</div>
                     <div className="text-sm text-gray-400">
-                      OVR <span className="text-emerald-400 font-bold">{pendingPlayer.overall}</span>
+                      OVR <span className="text-emerald-400 font-bold">{settings.hiddenRatings ? "?" : pendingPlayer.overall}</span>
                       {" · "}
                       {spinDisplay.club}
                       {" · "}
