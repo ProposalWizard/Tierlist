@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import DraftSetup from "@/components/draft/DraftSetup";
 import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
@@ -101,15 +101,19 @@ function clearProgress() {
   } catch {}
 }
 
+const SELL_POSITION_ORDER: Record<string, number> = { GK: 0, CB: 1, RB: 2, LB: 3, RWB: 2, LWB: 3, CDM: 4, DM: 4, CM: 5, CAM: 6, RM: 7, LM: 7, RW: 8, LW: 8, ST: 9, CF: 9 };
+
 function SellPhase({ players, onSell, onSkip, seasonNumber }: {
   players: DraftPlayer[];
   onSell: (player: DraftPlayer) => void;
   onSkip: () => void;
   seasonNumber: number;
 }) {
-  const positionOrder: Record<string, number> = { GK: 0, CB: 1, RB: 2, LB: 3, RWB: 2, LWB: 3, CDM: 4, DM: 4, CM: 5, CAM: 6, RM: 7, LM: 7, RW: 8, LW: 8, ST: 9, CF: 9 };
-  const sorted = [...players].sort((a, b) =>
-    (a.isSub === b.isSub ? (positionOrder[a.assignedPosition] ?? 5) - (positionOrder[b.assignedPosition] ?? 5) : a.isSub ? 1 : -1)
+  const sorted = useMemo(
+    () => [...players].sort((a, b) =>
+      (a.isSub === b.isSub ? (SELL_POSITION_ORDER[a.assignedPosition] ?? 5) - (SELL_POSITION_ORDER[b.assignedPosition] ?? 5) : a.isSub ? 1 : -1)
+    ),
+    [players],
   );
 
   return (
@@ -188,6 +192,9 @@ export default function DraftPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [autoFilling, setAutoFilling] = useState(false);
 
+  // Respin counter — persists across all DraftPick phases in one save
+  const [respinsRemaining, setRespinsRemaining] = useState(0);
+
   // Multiplayer state
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
@@ -216,6 +223,7 @@ export default function DraftPage() {
     setSquadSubmitted(false);
     setPreComputedSeason(null);
     setRoomPlayers(null);
+    setRespinsRemaining(s.respins ?? 0);
     setPhase("draft");
     scrollTop();
   }, [scrollTop]);
@@ -237,6 +245,7 @@ export default function DraftPage() {
     setSquadSubmitted(false);
     setPreComputedSeason(null);
     setRoomPlayers(null);
+    setRespinsRemaining(s.respins ?? 0);
     setPhase("lobby");
     scrollTop();
   }, [scrollTop]);
@@ -296,6 +305,7 @@ export default function DraftPage() {
     if (!resume) return;
     setSettings(resume.settings);
     setPlayers([]);
+    setRespinsRemaining(resume.settings.respins ?? 0);
     setPhase("draft");
     scrollTop();
   }, [resume, scrollTop]);
@@ -369,6 +379,7 @@ export default function DraftPage() {
     setSquadSubmitted(false);
     setPreComputedSeason(null);
     setRoomPlayers(null);
+    setRespinsRemaining(0);
     scrollTop();
   }, [scrollTop]);
 
@@ -745,6 +756,8 @@ export default function DraftPage() {
           initialUsedClubYears={resume?.usedClubYears}
           initialSlotAssignments={resume?.slotAssignments}
           onProgress={handleProgress}
+          respinsRemaining={respinsRemaining}
+          onUseRespin={() => setRespinsRemaining(r => Math.max(0, r - 1))}
         />
       )}
       {phase === "manage" && players.length > 0 && (
@@ -784,7 +797,7 @@ export default function DraftPage() {
       )}
       {phase === "signing" && settings && signingSlots > 0 && (
         <DraftPick
-          settings={{ ...settings, draftOrder: "club-first" }}
+          settings={{ ...settings, draftOrder: "club-first", respins: 0 }}
           onComplete={handleSigningComplete}
           totalPicks={signingSlots}
           existingSquad={nextSeasonPlayers}
@@ -802,7 +815,7 @@ export default function DraftPage() {
       )}
       {phase === "sell-signing" && settings && (
         <DraftPick
-          settings={{ ...settings, draftOrder: "club-first" }}
+          settings={{ ...settings, draftOrder: "club-first", respins: 0 }}
           onComplete={handleSellSigningComplete}
           totalPicks={1}
           existingSquad={players}

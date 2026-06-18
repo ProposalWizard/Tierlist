@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { RARITY_COLORS, FRAME_STYLES } from "@/lib/xp";
 import type { Reward } from "@/lib/xp";
 
@@ -93,74 +94,95 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
                     isLocked ? "grayscale opacity-40" : ""
                   } ${isHovered && !isLocked ? "scale-105" : ""}`}
                 >
-                  {/* Card body */}
-                  <div
-                    className={`absolute inset-0 rounded-lg ${frameStyle.border} ${
-                      frameStyle.shadow
-                    } overflow-hidden`}
-                  >
-                    {/* Card gradient background */}
-                    <div
-                      className={`absolute inset-0 ${
-                        frameStyle.gradient
-                          ? frameStyle.gradient
-                          : "bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900"
-                      } opacity-30`}
-                    />
-
-                    {/* Inner card structure */}
-                    <div className="relative h-full flex flex-col items-center justify-between p-1.5">
-                      {/* Rating box */}
-                      <div className="self-start">
-                        <div className="text-[8px] font-black text-white/60 leading-none">
-                          88
+                  {frameStyle.image ? (
+                    <>
+                      <Image
+                        src={frameStyle.image}
+                        alt={reward.name}
+                        fill
+                        className="object-contain rounded-lg"
+                        sizes="80px"
+                      />
+                      {isLocked && (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900/60">
+                          <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
                         </div>
-                        <div className="text-[5px] font-bold text-white/40 leading-none mt-0.5">
-                          ST
-                        </div>
-                      </div>
-
-                      {/* Player silhouette */}
-                      <div className="flex-1 flex items-center justify-center">
-                        <svg
-                          className="w-8 h-8 text-white/20"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                        </svg>
-                      </div>
-
-                      {/* Name bar */}
-                      <div className="w-full">
-                        <div className="h-0.5 bg-white/10 rounded-full mb-0.5" />
-                        <div className="flex justify-center gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-1 h-0.5 bg-white/10 rounded-full"
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Lock overlay */}
-                  {isLocked && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900/60">
-                      <svg
-                        className="w-5 h-5 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Card body */}
+                      <div
+                        className={`absolute inset-0 rounded-lg ${frameStyle.border} ${
+                          frameStyle.shadow
+                        } overflow-hidden`}
                       >
-                        <path
-                          fillRule="evenodd"
-                          d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                          clipRule="evenodd"
+                        {/* Card gradient background */}
+                        <div
+                          className={`absolute inset-0 ${
+                            frameStyle.gradient
+                              ? frameStyle.gradient
+                              : "bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900"
+                          } opacity-30`}
                         />
-                      </svg>
-                    </div>
+
+                        {/* Inner card structure */}
+                        <div className="relative h-full flex flex-col items-center justify-between p-1.5">
+                          {/* Rating box */}
+                          <div className="self-start">
+                            <div className="text-[8px] font-black text-white/60 leading-none">
+                              88
+                            </div>
+                            <div className="text-[5px] font-bold text-white/40 leading-none mt-0.5">
+                              ST
+                            </div>
+                          </div>
+
+                          {/* Player silhouette */}
+                          <div className="flex-1 flex items-center justify-center">
+                            <svg
+                              className="w-8 h-8 text-white/20"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                            </svg>
+                          </div>
+
+                          {/* Name bar */}
+                          <div className="w-full">
+                            <div className="h-0.5 bg-white/10 rounded-full mb-0.5" />
+                            <div className="flex justify-center gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="w-1 h-0.5 bg-white/10 rounded-full"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Lock overlay */}
+                      {isLocked && (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900/60">
+                          <svg
+                            className="w-5 h-5 text-gray-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

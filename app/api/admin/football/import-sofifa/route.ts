@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       sofifa_id: p.sofifa_id,
       fifa_year: year,
       fifa_edition: edition,
-      name: p.name,
+      name: String(p.name).replace(/^\d+\s+/, "").trim(),
       positions: cleanPositions(p.positions),
       nationality: p.nationality || null,
       club: p.club || null,

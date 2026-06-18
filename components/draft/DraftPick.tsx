@@ -55,6 +55,8 @@ interface Props {
   onProgress?: (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: (number | undefined)[]) => void;
   totalPicks?: number;
   existingSquad?: DraftPlayer[];
+  respinsRemaining?: number;
+  onUseRespin?: () => void;
 }
 
 
@@ -138,6 +140,8 @@ export default function DraftPick({
   onProgress,
   totalPicks,
   existingSquad,
+  respinsRemaining: respinsRemainingProp,
+  onUseRespin,
 }: Props) {
   const formation = FORMATIONS.find((f) => f.name === settings.formation) ?? FORMATIONS[0];
   const isClubFirst = settings.draftOrder === "club-first";
@@ -162,7 +166,9 @@ export default function DraftPick({
   const [spinAnimating, setSpinAnimating] = useState(false);
   const spinContainerRef = useRef<HTMLDivElement>(null);
   const maxRespins = settings.respins ?? 3;
-  const [respinsRemaining, setRespinsRemaining] = useState(maxRespins);
+  // If parent tracks respins across phases, use that; otherwise local state.
+  const [localRespins, setLocalRespins] = useState(maxRespins);
+  const respinsRemaining = respinsRemainingProp ?? localRespins;
 
   const loadClubs = useCallback(() => {
     setClubsLoading(true);
@@ -263,7 +269,11 @@ export default function DraftPick({
 
   const handleRespin = useCallback(() => {
     if (respinsRemaining <= 0) return;
-    setRespinsRemaining(r => Math.max(0, r - 1) as 0 | 1 | 3);
+    if (onUseRespin) {
+      onUseRespin();
+    } else {
+      setLocalRespins(r => Math.max(0, r - 1) as 0 | 1 | 3);
+    }
     setSpinResult(null);
     setSpinDisplay(null);
     setSpinAnimating(false);

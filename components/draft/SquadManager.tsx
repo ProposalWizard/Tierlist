@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { FORMATIONS, getPositionColor } from "./formations";
 import { calculateSeasonOdds } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/app/draft/page";
@@ -134,10 +134,15 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
     setSelectedIdx(null);
   };
 
-  const odds = useMemo(
-    () => calculateSeasonOdds(squad, undefined, seasonNumber, 800),
-    [squad, seasonNumber],
-  );
+  const [odds, setOdds] = useState<ReturnType<typeof calculateSeasonOdds> | null>(null);
+  const oddsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (oddsTimer.current) clearTimeout(oddsTimer.current);
+    oddsTimer.current = setTimeout(() => {
+      setOdds(calculateSeasonOdds(squad, undefined, seasonNumber, 200));
+    }, 400);
+    return () => { if (oddsTimer.current) clearTimeout(oddsTimer.current); };
+  }, [squad, seasonNumber]);
 
   const naturalPositions = (p: DraftPlayer) =>
     (p.positions || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -276,70 +281,79 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
           <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
             Pre-Season Predictions
           </h3>
+          {!odds && <span className="text-[10px] text-gray-600 animate-pulse ml-auto">Calculating...</span>}
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-            <div className={`text-2xl font-black ${odds.winLeague >= 50 ? "text-yellow-400" : odds.winLeague >= 20 ? "text-emerald-400" : "text-gray-300"}`}>
-              {odds.winLeague.toFixed(1)}%
-            </div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Win League</div>
-          </div>
-          <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-            <div className={`text-2xl font-black ${odds.top4 >= 70 ? "text-blue-400" : odds.top4 >= 40 ? "text-emerald-400" : "text-gray-300"}`}>
-              {odds.top4.toFixed(1)}%
-            </div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 4</div>
-          </div>
-          <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-            <div className={`text-2xl font-black ${odds.top7 >= 80 ? "text-emerald-400" : odds.top7 >= 50 ? "text-emerald-400/70" : "text-gray-300"}`}>
-              {odds.top7.toFixed(1)}%
-            </div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 7</div>
-          </div>
-          <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-            <div className={`text-2xl font-black ${odds.relegation >= 30 ? "text-red-400" : odds.relegation >= 10 ? "text-orange-400" : "text-gray-300"}`}>
-              {odds.relegation.toFixed(1)}%
-            </div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Relegation</div>
-          </div>
-        </div>
-        <div className="mt-3 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
-          <span>Predicted Points</span>
-          <span className="font-bold text-white">{odds.avgPoints}</span>
-        </div>
-        <div className="mt-1 flex justify-between text-xs text-gray-500">
-          <span>Predicted Finish</span>
-          <span className="font-bold text-white">{ordinal(Math.round(odds.avgFinish))}</span>
-        </div>
-        <div className="mt-1 flex justify-between text-xs text-gray-500">
-          <span>Avg Wins</span>
-          <span className="font-bold text-white">{odds.avgWins}/38</span>
-        </div>
-        <div className="mt-3 pt-2 border-t border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">Milestone Odds</div>
-          <div className="space-y-1.5">
-            {[
-              { label: "100+ Points (Centurion)", pct: odds.centurion, color: "text-yellow-400" },
-              { label: "Unbeaten Season (0 losses)", pct: odds.unbeaten, color: "text-emerald-400" },
-              { label: "Perfect Season (38 wins)", pct: odds.perfectSeason, color: "text-purple-400" },
-            ].map((m) => (
-              <div key={m.label} className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-400">{m.label}</div>
-                  <div className="w-full h-1 bg-gray-800 rounded-full mt-0.5 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${m.pct > 0 ? "bg-gradient-to-r from-gray-600 to-gray-500" : ""}`}
-                      style={{ width: `${Math.min(100, Math.max(m.pct > 0 ? 2 : 0, m.pct))}%` }}
-                    />
-                  </div>
+        {odds ? (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                <div className={`text-2xl font-black ${odds.winLeague >= 50 ? "text-yellow-400" : odds.winLeague >= 20 ? "text-emerald-400" : "text-gray-300"}`}>
+                  {odds.winLeague.toFixed(1)}%
                 </div>
-                <span className={`text-sm font-black w-14 text-right tabular-nums ${m.pct > 0 ? m.color : "text-gray-700"}`}>
-                  {m.pct > 0 ? `${m.pct}%` : "0%"}
-                </span>
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Win League</div>
               </div>
-            ))}
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                <div className={`text-2xl font-black ${odds.top4 >= 70 ? "text-blue-400" : odds.top4 >= 40 ? "text-emerald-400" : "text-gray-300"}`}>
+                  {odds.top4.toFixed(1)}%
+                </div>
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 4</div>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                <div className={`text-2xl font-black ${odds.top7 >= 80 ? "text-emerald-400" : odds.top7 >= 50 ? "text-emerald-400/70" : "text-gray-300"}`}>
+                  {odds.top7.toFixed(1)}%
+                </div>
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 7</div>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                <div className={`text-2xl font-black ${odds.relegation >= 30 ? "text-red-400" : odds.relegation >= 10 ? "text-orange-400" : "text-gray-300"}`}>
+                  {odds.relegation.toFixed(1)}%
+                </div>
+                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Relegation</div>
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
+              <span>Predicted Points</span>
+              <span className="font-bold text-white">{odds.avgPoints}</span>
+            </div>
+            <div className="mt-1 flex justify-between text-xs text-gray-500">
+              <span>Predicted Finish</span>
+              <span className="font-bold text-white">{ordinal(Math.round(odds.avgFinish))}</span>
+            </div>
+            <div className="mt-1 flex justify-between text-xs text-gray-500">
+              <span>Avg Wins</span>
+              <span className="font-bold text-white">{odds.avgWins}/38</span>
+            </div>
+            <div className="mt-3 pt-2 border-t border-gray-800/50">
+              <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">Milestone Odds</div>
+              <div className="space-y-1.5">
+                {[
+                  { label: "100+ Points (Centurion)", pct: odds.centurion, color: "text-yellow-400" },
+                  { label: "Unbeaten Season (0 losses)", pct: odds.unbeaten, color: "text-emerald-400" },
+                  { label: "Perfect Season (38 wins)", pct: odds.perfectSeason, color: "text-purple-400" },
+                ].map((m) => (
+                  <div key={m.label} className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-400">{m.label}</div>
+                      <div className="w-full h-1 bg-gray-800 rounded-full mt-0.5 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${m.pct > 0 ? "bg-gradient-to-r from-gray-600 to-gray-500" : ""}`}
+                          style={{ width: `${Math.min(100, Math.max(m.pct > 0 ? 2 : 0, m.pct))}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className={`text-sm font-black w-14 text-right tabular-nums ${m.pct > 0 ? m.color : "text-gray-700"}`}>
+                      {m.pct > 0 ? `${m.pct}%` : "0%"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="py-6 text-center">
+            <div className="text-sm text-gray-600 animate-pulse">Simulating seasons...</div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Confirm */}
