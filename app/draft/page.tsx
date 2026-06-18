@@ -7,7 +7,7 @@ import Season2Overview from "@/components/draft/Season2Overview";
 import SquadManager from "@/components/draft/SquadManager";
 import MultiplayerLobby from "@/components/draft/MultiplayerLobby";
 import { createClient } from "@/lib/supabase/client";
-import { getPositionColor, FORMATIONS } from "@/components/draft/formations";
+import { getPositionColor, FORMATIONS, formatSeasonYear } from "@/components/draft/formations";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
@@ -19,6 +19,7 @@ export interface DraftSettings {
   mode: "normal" | "prime";
   draftOrder: "position-first" | "club-first";
   respins: 0 | 1 | 3;
+  hiddenRatings?: boolean;
 }
 
 export interface DraftPlayer {
@@ -436,7 +437,13 @@ export default function DraftPage() {
         return { player: upgraded, oldOverall, newOverall: upgraded.overall, change };
       });
 
-      const usedCYs = currentPlayers.map((p) => `${p.club}-${p.clubYear.split(" ")[1]}`);
+      const usedCYs = currentPlayers.map((p) => {
+        const yearPart = p.clubYear.split(" ")[1] ?? "";
+        const rawYear = yearPart.includes("/")
+          ? String(2000 + parseInt(yearPart.split("/")[1], 10))
+          : yearPart;
+        return `${p.club}-${rawYear}`;
+      });
 
       setDepartedPlayers(departed);
       setRatingChanges(changes);
@@ -636,7 +643,7 @@ export default function DraftPage() {
         squad.push({
           name: String(best.name), overall: Number(best.overall),
           positions: String(best.positions ?? ""), club: clubYear.club,
-          clubYear: `${abbr} ${clubYear.year}`, assignedPosition: slot.label,
+          clubYear: `${abbr} ${formatSeasonYear(clubYear.year)}`, assignedPosition: slot.label,
           sofifa_id: String(best.sofifa_id), image_url: best.image_url as string | null,
           nationality: String(best.nationality ?? ""), age: Number(best.age ?? 0),
           isSub: false, attrs: buildAttrs(best as Record<string, number>),
@@ -656,7 +663,7 @@ export default function DraftPage() {
         squad.push({
           name: String(best.name), overall: Number(best.overall),
           positions: String(best.positions ?? ""), club: clubYear.club,
-          clubYear: `${abbr} ${clubYear.year}`, assignedPosition: primaryPos,
+          clubYear: `${abbr} ${formatSeasonYear(clubYear.year)}`, assignedPosition: primaryPos,
           sofifa_id: String(best.sofifa_id), image_url: best.image_url as string | null,
           nationality: String(best.nationality ?? ""), age: Number(best.age ?? 0),
           isSub: true, attrs: buildAttrs(best as Record<string, number>),

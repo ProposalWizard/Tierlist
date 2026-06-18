@@ -18,6 +18,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
   const [mode, setMode] = useState<"normal" | "prime">("normal");
   const [draftOrder, setDraftOrder] = useState<"position-first" | "club-first">("position-first");
   const [respins, setRespins] = useState<0 | 1 | 3>(3);
+  const [hiddenRatings, setHiddenRatings] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [joiningRoom, setJoiningRoom] = useState(false);
@@ -37,6 +38,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
     mode,
     draftOrder,
     respins,
+    hiddenRatings,
   });
 
   const handleJoin = async () => {
@@ -143,7 +145,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               >
                 {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
                   <option key={y} value={y}>
-                    {y >= 2024 ? `FC ${String(y % 100).padStart(2, "0")}` : `FIFA ${String(y % 100).padStart(2, "0")}`} ({y})
+                    {y - 1}/{String(y % 100).padStart(2, "0")}
                   </option>
                 ))}
               </select>
@@ -164,7 +166,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               >
                 {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
                   <option key={y} value={y}>
-                    {y >= 2024 ? `FC ${String(y % 100).padStart(2, "0")}` : `FIFA ${String(y % 100).padStart(2, "0")}`} ({y})
+                    {y - 1}/{String(y % 100).padStart(2, "0")}
                   </option>
                 ))}
               </select>
@@ -321,6 +323,28 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
           </div>
         </div>
 
+        {/* Hidden Ratings */}
+        <div className="mb-6 sm:mb-8">
+          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+            Mystery Mode
+          </label>
+          <button
+            onClick={() => setHiddenRatings(!hiddenRatings)}
+            className={`w-full relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
+              hiddenRatings
+                ? "bg-purple-600 ring-2 ring-purple-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-purple-900/50"
+                : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
+            }`}
+          >
+            <div className={`text-xs sm:text-sm font-bold ${hiddenRatings ? "text-white" : "text-gray-400"}`}>
+              {hiddenRatings ? "Hidden Ratings: ON" : "Hidden Ratings: OFF"}
+            </div>
+            <div className={`text-[9px] sm:text-[10px] mt-0.5 ${hiddenRatings ? "text-purple-200/70" : "text-gray-600"}`}>
+              All ratings &amp; attributes hidden until you pick. Roster order randomised.
+            </div>
+          </button>
+        </div>
+
         {/* Multiplayer */}
         {isSignedIn === true && onCreateRoom && onJoinRoom && (
           <div className="mb-6 sm:mb-8">
@@ -375,7 +399,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
         {/* Start Button */}
         <button
-          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder, respins })}
+          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder, respins, hiddenRatings })}
           disabled={eraStart > eraEnd}
           className="group relative w-full py-3.5 sm:py-4 rounded-xl text-base sm:text-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98] disabled:from-gray-700 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed"
         >
