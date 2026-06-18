@@ -47,7 +47,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
       </div>
 
       {/* Frame grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 relative">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 relative">
         {frameRewards.map((reward) => {
           const rarity =
             RARITY_COLORS[reward.rarity as keyof typeof RARITY_COLORS] ??
@@ -90,7 +90,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
               {/* Card preview area */}
               <div className="flex items-center justify-center pt-4 pb-2 px-3">
                 <div
-                  className={`relative w-20 h-28 rounded-lg transition-transform duration-200 ${
+                  className={`relative w-32 h-44 rounded-lg transition-transform duration-200 ${
                     isLocked ? "grayscale opacity-40" : ""
                   } ${isHovered && !isLocked ? "scale-105" : ""}`}
                 >
@@ -101,11 +101,11 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
                         alt={reward.name}
                         fill
                         className="object-contain rounded-lg"
-                        sizes="80px"
+                        sizes="128px"
                       />
                       {isLocked && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900/60">
-                          <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-7 h-7 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                           </svg>
                         </div>
@@ -170,7 +170,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
                       {isLocked && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900/60">
                           <svg
-                            className="w-5 h-5 text-gray-500"
+                            className="w-7 h-7 text-gray-500"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >

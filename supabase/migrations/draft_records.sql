@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS draft_records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID,
   username TEXT NOT NULL DEFAULT 'Player',
   competition TEXT NOT NULL CHECK (competition IN ('pl', 'all')),
   record_type TEXT NOT NULL CHECK (record_type IN ('wins', 'goals', 'assists', 'clean_sheets', 'unbeaten')),
@@ -18,3 +18,5 @@ CREATE POLICY "Anyone can view draft records"
 
 CREATE POLICY "Users can insert own draft records"
   ON draft_records FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Allow service role to delete pruned records (no user-facing delete policy needed)

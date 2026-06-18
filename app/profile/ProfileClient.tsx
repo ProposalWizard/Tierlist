@@ -10,6 +10,7 @@ import TrophyCabinet from "@/components/profile/TrophyCabinet";
 import RecentActivity from "@/components/profile/RecentActivity";
 import WaysToEarnXP from "@/components/profile/WaysToEarnXP";
 import CardDesigns from "@/components/profile/CardDesigns";
+import PersonalRecords from "@/components/profile/PersonalRecords";
 import SettingsModal from "@/components/profile/SettingsModal";
 import type { UserProfile } from "@/lib/types";
 import type { UserProgression } from "@/lib/xp";
@@ -189,6 +190,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                   longestStreak={profile?.longest_streak ?? 0}
                   tierlistsCreated={createdList.length}
                 />
+                <PersonalRecords />
                 <RecentActivity events={progression?.recentXpEvents ?? []} />
               </div>
 
