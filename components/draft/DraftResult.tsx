@@ -602,6 +602,48 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             });
           }
         })();
+
+        // Submit season records to global leaderboard
+        (async () => {
+          const findOvr = (name: string) => players.find(p => p.name === name)?.overall ?? null;
+
+          const topBy = (stats: { name: string; goals: number; assists: number; cleanSheets: number }[], field: "goals" | "assists" | "cleanSheets") => {
+            const best = stats.reduce((a, b) => b[field] > a[field] ? b : a, { name: "", goals: 0, assists: 0, cleanSheets: 0 });
+            return { value: best[field], playerName: best.name || null, playerOvr: best.name ? findOvr(best.name) : null };
+          };
+
+          const faCupWins = season.faCup.matches.filter(m =>
+            m.goalsFor > m.goalsAgainst || (m.penalties && m.penaltyScore && m.penaltyScore.player > m.penaltyScore.opponent)
+          ).length;
+          const uclWins = (season.ucl?.leagueMatches.filter(m => m.result === "W").length ?? 0)
+            + (season.ucl?.knockoutTies.filter(t => t.result === "W").length ?? 0);
+          const uelWins = (season.uel?.leagueMatches.filter(m => m.result === "W").length ?? 0)
+            + (season.uel?.knockoutTies.filter(t => t.result === "W").length ?? 0);
+
+          const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins;
+
+          await fetch("/api/draft/records", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pl: {
+                wins: season.teamRecord.wins,
+                unbeaten: season.longestUnbeatenRun,
+                goals: topBy(season.plPlayerStats, "goals"),
+                assists: topBy(season.plPlayerStats, "assists"),
+                cleanSheets: topBy(season.plPlayerStats, "cleanSheets"),
+              },
+              all: {
+                wins: allWins,
+                unbeaten: season.longestUnbeatenRun,
+                goals: topBy(season.playerStats, "goals"),
+                assists: topBy(season.playerStats, "assists"),
+                cleanSheets: topBy(season.playerStats, "cleanSheets"),
+              },
+              seasonNumber,
+            }),
+          }).catch(() => {});
+        })();
       }
     }
   }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
