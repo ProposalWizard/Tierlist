@@ -25,7 +25,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, host_id, status, season_number")
+    .select("id, host_id, status, season_number, previous_league_table")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -69,7 +69,9 @@ export async function POST(
 
     const sharedSeed = hashRoomId(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
     const seasonNumber = room.season_number ?? 1;
-    const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber);
+    const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
+      { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
+    const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined);
 
     for (const rp of roomPlayers) {
       const result = results.get(rp.user_id);
