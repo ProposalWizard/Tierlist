@@ -82,8 +82,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
             <span className="text-emerald-400">DRAFT</span>
           </h1>
           <p className="text-gray-400 text-xs sm:text-sm max-w-sm mx-auto">
-            Build your dream XI from random club rosters across FIFA history.
-            Spin the wheel, pick your players, simulate the season.
+            Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
           </p>
         </div>
 
@@ -412,12 +411,20 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
         <p className="text-center text-gray-600 text-xs mt-4">
           14 spins. 11 starters + 3 subs. 38 matches.
         </p>
-        <Link
-          href="/draft/history"
-          className="block w-full mt-4 py-3 text-center text-sm font-bold text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-        >
-          View Draft History &amp; Achievements &rarr;
-        </Link>
+        <div className="flex gap-2 mt-4">
+          <Link
+            href="/draft/history"
+            className="flex-1 py-3 text-center text-sm font-bold text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            History &amp; Achievements &rarr;
+          </Link>
+          <Link
+            href="/draft/records"
+            className="flex-1 py-3 text-center text-sm font-bold text-amber-400 hover:text-amber-300 bg-amber-900/10 hover:bg-amber-900/20 border border-amber-700/30 hover:border-amber-600/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            📋 Hall of Records &rarr;
+          </Link>
+        </div>
       </div>
     </div>
   );
