@@ -237,8 +237,13 @@ export default function ProfileHeader({
                     <img
                       src={frameStyle.image}
                       alt="Card"
-                      className="w-full h-full object-cover"
-                      style={{ objectPosition: "center 22%" }}
+                      className="w-full h-full"
+                      style={{
+                        objectFit: "cover",
+                        objectPosition: "center 28%",
+                        transform: "scale(1.6)",
+                        transformOrigin: "center 28%",
+                      }}
                     />
                   ) : (
                     initial
