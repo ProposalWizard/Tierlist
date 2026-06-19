@@ -2,13 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-const TIERLIST_PATHS = ["/tierlists", "/find", "/play", "/vote", "/create"];
-
-function isTierlistPage(path: string) {
-  return TIERLIST_PATHS.some((p) => path === p || path.startsWith(p + "/"));
-}
 
 interface Props {
   isLoggedIn: boolean;
@@ -17,31 +10,9 @@ interface Props {
 
 export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
   const [open, setOpen] = useState(false);
-  const pathname = usePathname();
-  const showTierlistLinks = isTierlistPage(pathname);
 
   return (
     <>
-      {/* Desktop center links — only on tierlist pages */}
-      {showTierlistLinks && (
-        <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-3 md:flex">
-          <Link
-            href="/find"
-            className="rounded-lg px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:text-white"
-          >
-            Find a Tierlist
-          </Link>
-          {isLoggedIn && (
-            <Link
-              href="/create"
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
-            >
-              + Create
-            </Link>
-          )}
-        </div>
-      )}
-
       {/* Desktop right-side buttons */}
       <div className="relative">
         <div className="hidden items-center gap-3 md:flex">
@@ -103,26 +74,6 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
             className="absolute right-0 top-full z-50 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-800 bg-gray-950 shadow-xl md:hidden"
           >
             <div className="flex flex-col py-2">
-              {showTierlistLinks && (
-                <>
-                  <Link
-                    href="/find"
-                    onClick={() => setOpen(false)}
-                    className="px-4 py-2.5 text-sm font-semibold text-gray-300 hover:bg-gray-900 hover:text-white"
-                  >
-                    Find a Tierlist
-                  </Link>
-                  {isLoggedIn && (
-                    <Link
-                      href="/create"
-                      onClick={() => setOpen(false)}
-                      className="px-4 py-2.5 text-sm font-semibold text-gray-300 hover:bg-gray-900 hover:text-white"
-                    >
-                      + Create Tierlist
-                    </Link>
-                  )}
-                </>
-              )}
               {isLoggedIn ? (
                 <>
                   {isAdmin && (

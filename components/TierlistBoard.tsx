@@ -245,7 +245,14 @@ export default function TierlistBoard({
     const map: Record<string, string[]> = {
       unranked: initialImages?.map((img) => img.id) ?? [],
     };
-    for (const t of DEFAULT_TIER_ROWS) map[t.id] = [];
+    // Use the same tier IDs that the tiers state was initialized with —
+    // when initialTiers is provided, tiers use "tier-0", "tier-1", etc.
+    // instead of the DEFAULT_TIER_ROWS IDs ("tier-s", "tier-a", …).
+    const tierRows =
+      initialTiers && initialTiers.length > 0
+        ? initialTiers.map((_t, i) => ({ id: `tier-${i}` }))
+        : DEFAULT_TIER_ROWS;
+    for (const t of tierRows) map[t.id] = [];
     return map;
   });
 

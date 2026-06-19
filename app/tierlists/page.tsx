@@ -157,10 +157,16 @@ export default async function HomePage() {
         <p className="mx-auto mt-3 max-w-md text-gray-400">
           Pick a tierlist and drag the images into tiers.
         </p>
-        <Link href="/create"
-          className="mt-6 inline-block rounded-xl bg-indigo-600 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500">
-          + Create a Tierlist
-        </Link>
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <Link href="/find"
+            className="rounded-xl border border-gray-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:border-indigo-500 hover:bg-gray-900">
+            Find a Tierlist
+          </Link>
+          <Link href="/create"
+            className="rounded-xl bg-indigo-600 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500">
+            + Create a Tierlist
+          </Link>
+        </div>
       </div>
 
       {/* ── Category rows ── */}
@@ -171,7 +177,7 @@ export default async function HomePage() {
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">
                   {cat}
-                  <span className="ml-2 text-sm font-normal text-gray-500">
+                  <span className="ml-2 text-sm font-normal text-gray-400">
                     {total} {total === 1 ? "tierlist" : "tierlists"}
                   </span>
                 </h2>
@@ -211,7 +217,7 @@ export default async function HomePage() {
                     </div>
                     <div className="p-2">
                       <p className="truncate text-xs font-semibold text-white">{item.title}</p>
-                      <div className="mt-0.5 flex items-center justify-between text-[10px] text-gray-500">
+                      <div className="mt-0.5 flex items-center justify-between text-[10px] text-gray-400">
                         {!item.is_vote ? <span title="Views">👁 {item.view_count}</span> : <span />}
                         {item.like_count > 0 && <span className="text-red-400">❤ {item.like_count}</span>}
                       </div>
@@ -227,7 +233,7 @@ export default async function HomePage() {
                   >
                     <span className="text-2xl">→</span>
                     <p className="mt-2 text-xs font-semibold text-gray-400">View More</p>
-                    <p className="mt-0.5 text-[10px] text-gray-600">{total - MAX_PER_CATEGORY} more</p>
+                    <p className="mt-0.5 text-[10px] text-gray-400">{total - MAX_PER_CATEGORY} more</p>
                   </Link>
                 )}
               </div>
@@ -235,7 +241,7 @@ export default async function HomePage() {
           ))
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <p className="mb-4 text-gray-500">No tierlists yet. Be the first to create one!</p>
+            <p className="mb-4 text-gray-400">No tierlists yet. Be the first to create one!</p>
             <Link href="/create"
               className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500">
               Create your first tierlist
