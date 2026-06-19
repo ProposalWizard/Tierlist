@@ -1,11 +1,12 @@
 "use client";
 import { useMemo, useState } from "react";
-import type { SeasonResult, PlayerStats, MatchResult } from "@/lib/seasonSimulator";
+import type { SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
 
 interface Props {
   allSeasons: SeasonResult[];
   roomPlayers?: RoomPlayer[];
+  allRoomPlayerSeasons?: Record<string, SeasonResult[]>;
   onClose: () => void;
 }
 
@@ -21,16 +22,19 @@ interface H2HRecord {
 
 interface AllTimePlayer {
   name: string;
+  owner?: string;
+  position?: string;
   goals: number;
   assists: number;
   cleanSheets: number;
   appearances: number;
   seasons: number;
   bestRating: number;
+  bestRatingSeason: number;
   avgRating: number;
 }
 
-export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props) {
+export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeasons, onClose }: Props) {
   const [tab, setTab] = useState<"overview" | "records" | "h2h" | "players">(
     roomPlayers && roomPlayers.length > 1 ? "h2h" : "overview"
   );
@@ -100,14 +104,16 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
 
   const finishComparison = useMemo(() => {
     if (!roomPlayers || roomPlayers.length <= 1) return [];
-    const data: { name: string; finishes: (number | null)[]; avgFinish: number; bestFinish: number; titles: number }[] = [];
+    const data: { name: string; finishes: (number | null)[]; totalPoints: number; bestFinish: number; titles: number }[] = [];
     for (const rp of roomPlayers) {
       const teamName = `${rp.display_name}'s XI`;
       const finishes: (number | null)[] = [];
+      let totalPoints = 0;
       for (const season of allSeasons) {
         const entry = season.leagueTable.find(t => t.name === teamName);
         if (entry) {
           finishes.push(season.leagueTable.indexOf(entry) + 1);
+          totalPoints += entry.points;
         } else {
           finishes.push(null);
         }
@@ -116,49 +122,103 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
       data.push({
         name: rp.display_name,
         finishes,
-        avgFinish: validFinishes.length > 0 ? Math.round((validFinishes.reduce((a, b) => a + b, 0) / validFinishes.length) * 10) / 10 : 99,
+        totalPoints,
         bestFinish: validFinishes.length > 0 ? Math.min(...validFinishes) : 99,
         titles: validFinishes.filter(f => f === 1).length,
       });
     }
-    return data.sort((a, b) => a.avgFinish - b.avgFinish);
+    return data.sort((a, b) => b.totalPoints - a.totalPoints || a.bestFinish - b.bestFinish);
   }, [allSeasons, roomPlayers]);
+
+  const collectAllSeasonSets = () => {
+    const sets: { ownerName: string | undefined; seasons: SeasonResult[] }[] = [];
+    if (allRoomPlayerSeasons && Object.keys(allRoomPlayerSeasons).length > 0) {
+      for (const [ownerName, seasons] of Object.entries(allRoomPlayerSeasons)) {
+        sets.push({ ownerName, seasons });
+      }
+    } else {
+      sets.push({ ownerName: undefined, seasons: allSeasons });
+    }
+    return sets;
+  };
 
   const buildAllTimePlayers = (usePl: boolean) => {
     const map: Record<string, AllTimePlayer> = {};
-    for (let si = 0; si < allSeasons.length; si++) {
-      const season = allSeasons[si];
-      const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
-      for (const ps of stats) {
-        if (!map[ps.name]) {
-          map[ps.name] = { name: ps.name, goals: 0, assists: 0, cleanSheets: 0, appearances: 0, seasons: 0, bestRating: 0, avgRating: 0 };
+    const seasonSets = collectAllSeasonSets();
+
+    for (const { ownerName, seasons } of seasonSets) {
+      for (let si = 0; si < seasons.length; si++) {
+        const season = seasons[si];
+        const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
+        for (const ps of stats) {
+          const key = ownerName ? `${ps.name}::${ownerName}` : ps.name;
+          if (!map[key]) {
+            map[key] = { name: ps.name, owner: ownerName, position: ps.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: 0, seasons: 0, bestRating: 0, bestRatingSeason: 0, avgRating: 0 };
+          }
+          const p = map[key];
+          p.goals += ps.goals;
+          p.assists += ps.assists;
+          p.cleanSheets += ps.cleanSheets;
+          p.appearances += ps.appearances;
+          p.seasons++;
+          if (!p.position) p.position = ps.assignedPosition;
+          if (ps.avgRating > p.bestRating) {
+            p.bestRating = ps.avgRating;
+            p.bestRatingSeason = si + 1;
+          }
         }
-        const p = map[ps.name];
-        p.goals += ps.goals;
-        p.assists += ps.assists;
-        p.cleanSheets += ps.cleanSheets;
-        p.appearances += ps.appearances;
-        p.seasons++;
-        if (ps.avgRating > p.bestRating) p.bestRating = ps.avgRating;
       }
     }
+
     for (const p of Object.values(map)) {
-      const totalRatingSum = allSeasons.reduce((sum, season) => {
-        const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
-        const ps = stats.find(s => s.name === p.name);
-        return sum + (ps ? ps.avgRating * ps.appearances : 0);
-      }, 0);
+      let totalRatingSum = 0;
+      for (const { ownerName, seasons } of seasonSets) {
+        if (ownerName && ownerName !== p.owner) continue;
+        if (!ownerName && p.owner) continue;
+        for (const season of seasons) {
+          const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
+          const ps = stats.find(s => s.name === p.name);
+          if (ps) totalRatingSum += ps.avgRating * ps.appearances;
+        }
+      }
       p.avgRating = p.appearances > 0 ? Math.round((totalRatingSum / p.appearances) * 10) / 10 : 0;
     }
     return Object.values(map);
   };
 
-  const allTimePlayers = useMemo(() => buildAllTimePlayers(false), [allSeasons]);
-  const allTimePlayersPL = useMemo(() => buildAllTimePlayers(true), [allSeasons]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const allTimePlayers = useMemo(() => buildAllTimePlayers(false), [allSeasons, allRoomPlayerSeasons]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const allTimePlayersPL = useMemo(() => buildAllTimePlayers(true), [allSeasons, allRoomPlayerSeasons]);
 
   const activeAllTime = playerStatsView === "pl" ? allTimePlayersPL : allTimePlayers;
 
-  interface SeasonRecord { name: string; value: number; season: number }
+  const bestXI = useMemo(() => {
+    const positionSlots: { pos: string; label: string }[] = [
+      { pos: "GK", label: "GK" },
+      { pos: "LB", label: "LB" }, { pos: "CB", label: "CB" }, { pos: "CB", label: "CB" }, { pos: "RB", label: "RB" },
+      { pos: "CM", label: "CM" }, { pos: "CM", label: "CM" }, { pos: "CM", label: "CM" },
+      { pos: "LW", label: "LW" }, { pos: "ST", label: "ST" }, { pos: "RW", label: "RW" },
+    ];
+    const used = new Set<string>();
+    const xi: { slot: string; player: AllTimePlayer | null }[] = [];
+
+    for (const slot of positionSlots) {
+      const candidates = activeAllTime
+        .filter(p => p.position === slot.pos && !used.has(p.owner ? `${p.name}::${p.owner}` : p.name))
+        .sort((a, b) => b.bestRating - a.bestRating);
+      if (candidates.length > 0) {
+        const pick = candidates[0];
+        used.add(pick.owner ? `${pick.name}::${pick.owner}` : pick.name);
+        xi.push({ slot: slot.label, player: pick });
+      } else {
+        xi.push({ slot: slot.label, player: null });
+      }
+    }
+    return xi;
+  }, [activeAllTime]);
+
+  interface SeasonRecord { name: string; owner?: string; value: number; season: number }
 
   const buildSeasonRecords = (usePl: boolean) => {
     const goals: SeasonRecord[] = [];
@@ -166,14 +226,17 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
     const cleanSheets: SeasonRecord[] = [];
     const ratings: SeasonRecord[] = [];
 
-    for (let si = 0; si < allSeasons.length; si++) {
-      const season = allSeasons[si];
-      const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
-      for (const ps of stats) {
-        if (ps.goals > 0) goals.push({ name: ps.name, value: ps.goals, season: si + 1 });
-        if (ps.assists > 0) assists.push({ name: ps.name, value: ps.assists, season: si + 1 });
-        if (ps.cleanSheets > 0) cleanSheets.push({ name: ps.name, value: ps.cleanSheets, season: si + 1 });
-        if (ps.appearances >= 10) ratings.push({ name: ps.name, value: Math.round(ps.avgRating * 100) / 100, season: si + 1 });
+    const seasonSets = collectAllSeasonSets();
+    for (const { ownerName, seasons } of seasonSets) {
+      for (let si = 0; si < seasons.length; si++) {
+        const season = seasons[si];
+        const stats = usePl && season.plPlayerStats ? season.plPlayerStats : season.playerStats;
+        for (const ps of stats) {
+          if (ps.goals > 0) goals.push({ name: ps.name, owner: ownerName, value: ps.goals, season: si + 1 });
+          if (ps.assists > 0) assists.push({ name: ps.name, owner: ownerName, value: ps.assists, season: si + 1 });
+          if (ps.cleanSheets > 0) cleanSheets.push({ name: ps.name, owner: ownerName, value: ps.cleanSheets, season: si + 1 });
+          if (ps.appearances >= 10) ratings.push({ name: ps.name, owner: ownerName, value: Math.round(ps.avgRating * 100) / 100, season: si + 1 });
+        }
       }
     }
 
@@ -185,8 +248,10 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
     };
   };
 
-  const seasonRecordsAll = useMemo(() => buildSeasonRecords(false), [allSeasons]);
-  const seasonRecordsPL = useMemo(() => buildSeasonRecords(true), [allSeasons]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const seasonRecordsAll = useMemo(() => buildSeasonRecords(false), [allSeasons, allRoomPlayerSeasons]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const seasonRecordsPL = useMemo(() => buildSeasonRecords(true), [allSeasons, allRoomPlayerSeasons]);
   const activeSeasonRecords = playerStatsView === "pl" ? seasonRecordsPL : seasonRecordsAll;
 
   const singleSeasonRecords = useMemo(() => {
@@ -347,7 +412,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                 tab === t ? "text-white border-emerald-500" : "text-gray-500 border-transparent hover:text-gray-300"
               }`}
             >
-              {t === "h2h" ? "Head-to-Head" : t === "players" ? "All-Time XI" : t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === "h2h" ? "Head-to-Head" : t === "players" ? "Group Statistics" : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
@@ -549,7 +614,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                     <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-4 py-2 border-b border-gray-800/50 uppercase">
                       <span className="w-6">#</span>
                       <span className="flex-1">Player</span>
-                      <span className="w-10 text-center">Avg</span>
+                      <span className="w-10 text-center">Pts</span>
                       <span className="w-10 text-center">Best</span>
                       <span className="w-8 text-center">
                         {"\u{1F3C6}"}
@@ -562,7 +627,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                       <div key={i} className={`flex items-center text-xs px-4 py-2 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : "text-gray-600"}`}>{i + 1}</span>
                         <span className="flex-1 font-bold truncate">{fc.name}</span>
-                        <span className="w-10 text-center font-bold">{fc.avgFinish}</span>
+                        <span className="w-10 text-center font-black">{fc.totalPoints}</span>
                         <span className="w-10 text-center text-emerald-400 font-bold">{ordinal(fc.bestFinish)}</span>
                         <span className="w-8 text-center font-bold text-yellow-400">{fc.titles || "-"}</span>
                         {fc.finishes.map((f, fi) => (
@@ -640,6 +705,35 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                 </button>
               </div>
 
+              {/* Best XI */}
+              {bestXI.some(s => s.player !== null) && (
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Best XI (Highest Season Rating)</div>
+                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
+                    <div className="flex items-center text-[9px] font-bold tracking-widest text-gray-600 px-3 py-2 border-b border-gray-800/50 uppercase">
+                      <span className="w-8">Pos</span>
+                      <span className="flex-1">Player</span>
+                      {allRoomPlayerSeasons && <span className="w-16 text-center">Manager</span>}
+                      <span className="w-10 text-center">Season</span>
+                      <span className="w-12 text-center">Rating</span>
+                    </div>
+                    {bestXI.map((s, i) => (
+                      <div key={i} className={`flex items-center text-xs px-3 py-2 ${i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                        <span className="w-8 font-black text-gray-500">{s.slot}</span>
+                        <span className="flex-1 font-bold truncate">{s.player?.name ?? "-"}</span>
+                        {allRoomPlayerSeasons && (
+                          <span className="w-16 text-center text-[10px] text-gray-500 truncate">{s.player?.owner ?? "-"}</span>
+                        )}
+                        <span className="w-10 text-center text-gray-500">{s.player ? `S${s.player.bestRatingSeason}` : "-"}</span>
+                        <span className={`w-12 text-center font-black ${(s.player?.bestRating ?? 0) >= 7.5 ? "text-emerald-400" : (s.player?.bestRating ?? 0) >= 7.0 ? "text-yellow-400" : "text-gray-300"}`}>
+                          {s.player ? s.player.bestRating.toFixed(1) : "-"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Most Goals in a Season */}
               {activeSeasonRecords.goals.length > 0 && (
                 <div>
@@ -654,7 +748,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                     {activeSeasonRecords.goals.map((r, i) => (
                       <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
-                        <span className="flex-1 font-bold truncate">{r.name}</span>
+                        <span className="flex-1 font-bold truncate">{r.name}{r.owner && <span className="text-[9px] text-gray-600 ml-1">({r.owner})</span>}</span>
                         <span className="w-10 text-center text-gray-500">S{r.season}</span>
                         <span className="w-10 text-center font-black text-emerald-400">{r.value}</span>
                       </div>
@@ -677,7 +771,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                     {activeSeasonRecords.assists.map((r, i) => (
                       <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-blue-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className={`w-6 font-black ${i === 0 ? "text-blue-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
-                        <span className="flex-1 font-bold truncate">{r.name}</span>
+                        <span className="flex-1 font-bold truncate">{r.name}{r.owner && <span className="text-[9px] text-gray-600 ml-1">({r.owner})</span>}</span>
                         <span className="w-10 text-center text-gray-500">S{r.season}</span>
                         <span className="w-12 text-center font-black text-blue-400">{r.value}</span>
                       </div>
@@ -700,7 +794,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                     {activeSeasonRecords.cleanSheets.map((r, i) => (
                       <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-cyan-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className={`w-6 font-black ${i === 0 ? "text-cyan-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
-                        <span className="flex-1 font-bold truncate">{r.name}</span>
+                        <span className="flex-1 font-bold truncate">{r.name}{r.owner && <span className="text-[9px] text-gray-600 ml-1">({r.owner})</span>}</span>
                         <span className="w-10 text-center text-gray-500">S{r.season}</span>
                         <span className="w-10 text-center font-black text-cyan-400">{r.value}</span>
                       </div>
@@ -723,7 +817,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                     {activeSeasonRecords.ratings.map((r, i) => (
                       <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-amber-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className={`w-6 font-black ${i === 0 ? "text-amber-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
-                        <span className="flex-1 font-bold truncate">{r.name}</span>
+                        <span className="flex-1 font-bold truncate">{r.name}{r.owner && <span className="text-[9px] text-gray-600 ml-1">({r.owner})</span>}</span>
                         <span className="w-10 text-center text-gray-500">S{r.season}</span>
                         <span className={`w-12 text-center font-black ${r.value >= 7.5 ? "text-emerald-400" : r.value >= 7.0 ? "text-yellow-400" : "text-gray-300"}`}>{r.value.toFixed(2)}</span>
                       </div>
@@ -748,7 +842,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                       <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
                       <span className="flex-1 font-bold truncate">
                         {p.name}
-                        {p.seasons > 1 && <span className="text-[9px] text-gray-600 ml-1">({p.seasons}yr)</span>}
+                        {p.owner ? <span className="text-[9px] text-gray-600 ml-1">({p.owner})</span> : p.seasons > 1 && <span className="text-[9px] text-gray-600 ml-1">({p.seasons}yr)</span>}
                       </span>
                       <span className="w-10 text-center text-gray-500">{p.appearances}</span>
                       <span className="w-10 text-center font-black text-emerald-400">{p.goals}</span>
@@ -774,7 +868,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                       <span className={`w-6 font-black ${i === 0 ? "text-blue-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
                       <span className="flex-1 font-bold truncate">
                         {p.name}
-                        {p.seasons > 1 && <span className="text-[9px] text-gray-600 ml-1">({p.seasons}yr)</span>}
+                        {p.owner ? <span className="text-[9px] text-gray-600 ml-1">({p.owner})</span> : p.seasons > 1 && <span className="text-[9px] text-gray-600 ml-1">({p.seasons}yr)</span>}
                       </span>
                       <span className="w-10 text-center text-gray-500">{p.appearances}</span>
                       <span className="w-12 text-center font-black text-blue-400">{p.assists}</span>
@@ -802,7 +896,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                     .map((p, i) => (
                       <div key={i} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-purple-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className={`w-6 font-black ${i === 0 ? "text-purple-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
-                        <span className="flex-1 font-bold truncate">{p.name}</span>
+                        <span className="flex-1 font-bold truncate">{p.name}{p.owner && <span className="text-[9px] text-gray-600 ml-1">({p.owner})</span>}</span>
                         <span className="w-8 text-center text-emerald-400 font-bold">{p.goals}</span>
                         <span className="w-8 text-center text-blue-400 font-bold">{p.assists}</span>
                         <span className="w-10 text-center font-black">{p.goals + p.assists}</span>
@@ -827,7 +921,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, onClose }: Props)
                     {topCleanSheets.map((p, i) => (
                       <div key={i} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-cyan-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className={`w-6 font-black ${i === 0 ? "text-cyan-400" : i < 3 ? "text-gray-300" : "text-gray-600"}`}>{i + 1}</span>
-                        <span className="flex-1 font-bold truncate">{p.name}</span>
+                        <span className="flex-1 font-bold truncate">{p.name}{p.owner && <span className="text-[9px] text-gray-600 ml-1">({p.owner})</span>}</span>
                         <span className="w-10 text-center text-gray-500">{p.appearances}</span>
                         <span className="w-10 text-center font-black text-cyan-400">{p.cleanSheets}</span>
                         <span className="w-10 text-center text-gray-500">{p.seasons}</span>

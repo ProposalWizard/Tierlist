@@ -34,7 +34,7 @@ interface Props {
   settings?: DraftSettings | null;
   onStartDraft: () => void;
   onSimulationComplete: (myResult: SeasonResult, allPlayers: RoomPlayer[]) => void;
-  onCareerComplete?: (seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[]) => void;
+  onCareerComplete?: (seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[], allRoomPlayerSeasons?: Record<string, SeasonResult[]>) => void;
   onLeave: () => void;
 }
 
@@ -207,7 +207,7 @@ export default function MultiplayerLobby({
         return;
       }
       const data = await res.json();
-      onCareerComplete(data.seasons as SeasonResult[], data.finalRoomPlayers as RoomPlayer[]);
+      onCareerComplete(data.seasons as SeasonResult[], data.finalRoomPlayers as RoomPlayer[], data.allRoomPlayerSeasons as Record<string, SeasonResult[]> | undefined);
     } catch {
       setSimError("Network error — try again");
       setSimulating(false);
