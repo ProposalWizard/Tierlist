@@ -87,8 +87,8 @@ export async function POST(
         team_strength: 0.83,
       }).eq("id", rp.id);
     } else {
-      const squad = rp.squad as { overall?: number }[];
-      const starters = squad.filter((p: { isSub?: boolean }) => !p.isSub);
+      const squad = rp.squad as { overall?: number; isSub?: boolean }[];
+      const starters = squad.filter(p => !p.isSub);
       const sum = starters.reduce((acc, p) => acc + (p.overall ?? 75), 0);
       const avgOvr = starters.length > 0 ? Math.round(sum / starters.length) : 75;
       const teamStrength = parseFloat((avgOvr / 100).toFixed(2));
