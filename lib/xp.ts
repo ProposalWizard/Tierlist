@@ -115,7 +115,7 @@ export const FRAME_STYLES: Record<string, { border: string; shadow: string; grad
     border: 'border-2 border-cyan-400',
     shadow: 'shadow-lg shadow-cyan-400/30',
     gradient: 'bg-gradient-to-br from-cyan-300 via-teal-400 to-cyan-500',
-    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_11_05%20PM.png',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_11_05%20PM%20(1).png',
   },
   frame_invincibles: {
     border: 'border-2 border-emerald-400',
@@ -133,7 +133,7 @@ export const FRAME_STYLES: Record<string, { border: string; shadow: string; grad
     border: 'border-2 border-amber-300',
     shadow: 'shadow-xl shadow-amber-400/40',
     gradient: 'bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-600',
-    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_30_22%20PM.png',
+    image: 'https://cagkgfketucousksgtbk.supabase.co/storage/v1/object/public/tierlist-images/ChatGPT%20Image%20Jun%2018,%202026,%2005_37_13%20PM.png',
   },
 };
 
