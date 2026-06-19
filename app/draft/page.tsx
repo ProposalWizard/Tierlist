@@ -305,6 +305,22 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop, userId]);
 
+  const handleCareerComplete = useCallback((seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[]) => {
+    if (seasons.length === 0) return;
+    const lastSeason = seasons[seasons.length - 1];
+    setPreviousResults(seasons.slice(0, -1));
+    setPreComputedSeason(lastSeason);
+    setRoomPlayers(finalRoomPlayers);
+    setCurrentSeason(MAX_SEASONS);
+    // Use the fake squad from the last season's room player so the state is non-empty
+    const myRoomPlayer = finalRoomPlayers.find(rp => rp.user_id === userId);
+    if (myRoomPlayer?.squad && (myRoomPlayer.squad as DraftPlayer[]).length > 0) {
+      setPlayers(myRoomPlayer.squad as DraftPlayer[]);
+    }
+    setPhase("result");
+    scrollTop();
+  }, [scrollTop, userId]);
+
   const handleLeaveRoom = useCallback(() => {
     setRoomCode(null);
     setIsHost(false);
@@ -764,6 +780,7 @@ export default function DraftPage() {
           settings={settings}
           onStartDraft={handleStartFromLobby}
           onSimulationComplete={handleSimulationComplete}
+          onCareerComplete={isAdminUser ? handleCareerComplete : undefined}
           onLeave={handleLeaveRoom}
         />
       )}
