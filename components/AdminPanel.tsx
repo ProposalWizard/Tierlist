@@ -1407,7 +1407,7 @@ export default function AdminPanel({
             tab === "tenable" ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white"
           }`}
         >
-          Tenable
+          Ten-A-Ball
         </button>
         <div className="ml-auto">
           <button

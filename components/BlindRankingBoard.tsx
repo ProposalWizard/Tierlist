@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import type { BlindRankingImage } from "@/lib/types";
 
 function displayName(img: BlindRankingImage): string {
-  return img.name?.trim() || "???";
+  return img.name?.trim() || "";
 }
 
 interface Props {

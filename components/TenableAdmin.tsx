@@ -235,7 +235,7 @@ export default function TenableAdmin() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-white">
-            {editing === "new" ? "New Tenable Puzzle" : "Edit Puzzle"}
+            {editing === "new" ? "New Ten-A-Ball Puzzle" : "Edit Puzzle"}
           </h3>
           <button
             onClick={() => { setEditing(null); resetForm(); }}
@@ -428,7 +428,7 @@ export default function TenableAdmin() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-white">Tenable Puzzles ({puzzles.length})</h3>
+        <h3 className="text-lg font-bold text-white">Ten-A-Ball Puzzles ({puzzles.length})</h3>
         <button
           onClick={openNew}
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-500"
@@ -444,7 +444,7 @@ export default function TenableAdmin() {
       )}
 
       {puzzles.length === 0 ? (
-        <p className="py-12 text-center text-gray-500">No Tenable puzzles yet.</p>
+        <p className="py-12 text-center text-gray-500">No Ten-A-Ball puzzles yet.</p>
       ) : (
         <div className="space-y-2">
           {puzzles.map((p) => (

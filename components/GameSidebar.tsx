@@ -22,7 +22,7 @@ const GAMES: GameLink[] = [
   { name: "Player Ratings", description: "Rate and compare players", href: "/ratings", comingSoon: true },
   { name: "Match Predictions", description: "Predict match results", href: "/predictions", comingSoon: true },
   { name: "PL Draft", description: "Build a dream XI from random FIFA rosters", href: "/draft" },
-  { name: "Tenable", description: "Football trivia challenge", href: "/tenable" },
+  { name: "Ten-A-Ball", description: "Football trivia challenge", href: "/tenable" },
   { name: "Winner Stays On", description: "Pick the winner each round", href: "/winner-stays-on", comingSoon: true },
   { name: "Guess the 11", description: "Guess the starting lineup", href: "/guess-the-11", comingSoon: true },
   { name: "Higher or Lower", description: "Compare player stats", href: "/higher-or-lower", comingSoon: true },
@@ -110,7 +110,7 @@ export default function GameSidebar() {
                           Soon
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-gray-600">{game.description}</p>
+                      <p className="mt-0.5 text-xs text-gray-500">{game.description}</p>
                     </div>
                   );
                 }
@@ -126,7 +126,7 @@ export default function GameSidebar() {
                     }`}
                   >
                     <span className="text-sm font-bold">{game.name}</span>
-                    <p className={`mt-0.5 text-xs ${isActive ? "text-purple-300" : "text-gray-500 group-hover:text-gray-400"}`}>
+                    <p className={`mt-0.5 text-xs ${isActive ? "text-purple-300" : "text-gray-400 group-hover:text-gray-300"}`}>
                       {game.description}
                     </p>
                   </Link>
@@ -136,7 +136,7 @@ export default function GameSidebar() {
 
             {/* Footer */}
             <div className="border-t border-gray-800 px-5 py-4">
-              <p className="text-[10px] text-gray-600">knowitball.co.uk</p>
+              <p className="text-[10px] text-gray-500">knowitball.co.uk</p>
             </div>
           </div>
         </>,

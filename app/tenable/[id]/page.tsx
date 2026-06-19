@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .single();
 
   return {
-    title: data ? `${data.title} — Tenable | Knowitball` : "Tenable — Knowitball",
+    title: data ? `${data.title} — Ten-A-Ball | Knowitball` : "Ten-A-Ball — Knowitball",
   };
 }
 

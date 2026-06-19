@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = {
-  title: "Tenable — Knowitball",
+  title: "Ten-A-Ball — Knowitball",
   description: "Football trivia challenge. Guess all 10 answers before you lose your 3 lives!",
   alternates: { canonical: "/tenable" },
 };
@@ -38,10 +38,10 @@ export default async function TenableListPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="border-b border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 px-4 py-10 text-center">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-emerald-700 bg-emerald-900/30 px-3 py-1 text-xs font-semibold text-emerald-300 mb-3">
-          Tenable
+          Ten-A-Ball
         </div>
         <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
-          Tenable
+          Ten-A-Ball
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm text-gray-400">
           Guess all 10 answers before you lose your 3 lives. A new challenge every day!
@@ -59,7 +59,7 @@ export default async function TenableListPage() {
             >
               <h3 className="text-xl font-black text-white group-hover:text-emerald-300">{daily.title}</h3>
               {daily.daily_date && (
-                <p className="mt-1 text-xs text-gray-500">{daily.daily_date}</p>
+                <p className="mt-1 text-xs text-gray-400">{daily.daily_date}</p>
               )}
               <div className="mt-3">
                 <span className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-white">
@@ -99,7 +99,7 @@ export default async function TenableListPage() {
         )}
 
         {items.length === 0 && (
-          <div className="py-24 text-center text-gray-500">
+          <div className="py-24 text-center text-gray-400">
             No challenges available yet. Check back soon!
           </div>
         )}
