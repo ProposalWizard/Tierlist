@@ -644,13 +644,13 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           let topCareerGoals = 0;
           let topCareerScorer = "";
           let topCareerOvr: number | null = null;
-          for (const [name, { goals, ovr }] of careerGoalMap) {
+          Array.from(careerGoalMap.entries()).forEach(([name, { goals, ovr }]) => {
             if (goals > topCareerGoals) {
               topCareerGoals = goals;
               topCareerScorer = name;
               topCareerOvr = ovr;
             }
-          }
+          });
 
           // Career trophies: PL title + FA Cup + UCL + UEL across all seasons
           const countTrophies = (s: SeasonResult) =>
