@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
 import { simulateSharedSeason, getSeasonTeams } from "@/lib/seasonSimulator";
-import type { DraftPlayer, SharedSeasonInput, LeagueTeam } from "@/lib/seasonSimulator";
+import type { DraftPlayer, SharedSeasonInput, LeagueTeam, PlayerAttributes } from "@/lib/seasonSimulator";
 
 function hashStr(s: string): number {
   let h = 2166136261;
@@ -14,7 +14,7 @@ function hashStr(s: string): number {
 }
 
 function generateFakeSquad(seed: number): DraftPlayer[] {
-  const slots: { pos: string; isSub: boolean; ovr: number; attrs: Record<string, number> }[] = [
+  const slots: { pos: string; isSub: boolean; ovr: number; attrs: PlayerAttributes }[] = [
     { pos: "GK",  isSub: false, ovr: 87, attrs: { pace: 55, shooting: 20, passing: 65, dribbling: 30, defending: 30, physical: 75, finishing: 15, positioning: 20, crossing: 20, vision: 60, longShots: 15, shortPassing: 65, longPassing: 70, heading: 15, interceptions: 20, standingTackle: 15, marking: 15, reactions: 88, sprintSpeed: 55, gkDiving: 87, gkPositioning: 86, gkReflexes: 89 } },
     { pos: "LB",  isSub: false, ovr: 84, attrs: { pace: 85, shooting: 55, passing: 78, dribbling: 75, defending: 80, physical: 76, finishing: 45, positioning: 50, crossing: 82, vision: 72, longShots: 50, shortPassing: 78, longPassing: 74, heading: 60, interceptions: 80, standingTackle: 82, marking: 78, reactions: 82, sprintSpeed: 86, gkDiving: 0, gkPositioning: 0, gkReflexes: 0 } },
     { pos: "CB",  isSub: false, ovr: 86, attrs: { pace: 70, shooting: 40, passing: 65, dribbling: 55, defending: 88, physical: 86, finishing: 30, positioning: 35, crossing: 30, vision: 55, longShots: 35, shortPassing: 68, longPassing: 70, heading: 85, interceptions: 86, standingTackle: 88, marking: 87, reactions: 84, sprintSpeed: 70, gkDiving: 0, gkPositioning: 0, gkReflexes: 0 } },
