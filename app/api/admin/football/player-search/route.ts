@@ -51,6 +51,14 @@ export async function GET(req: NextRequest) {
   const position = searchParams.get("position")?.trim();
   const limitParam = searchParams.get("limit");
 
+  // Require year when no name — prevents full-table-scan timeouts on club/position alone
+  if (!q && !year) {
+    return NextResponse.json(
+      { error: "Please select a FIFA Year when not searching by player name." },
+      { status: 400 }
+    );
+  }
+
   if (!q && !year && !club && !position) {
     return NextResponse.json(
       { error: "Provide at least one filter: q, year, club, or position" },
@@ -71,10 +79,9 @@ export async function GET(req: NextRequest) {
   try {
     let query = service.from("sofifa_players").select("*");
 
+    // Simple ilike — avoids issues with .or() chained with .eq()/.ilike()
     if (q) {
-      const variants = generateAccentVariants(q);
-      const orFilter = variants.map((v) => `name.ilike.%${v}%`).join(",");
-      query = query.or(orFilter);
+      query = query.ilike("name", `%${q}%`);
     }
 
     if (year) {
