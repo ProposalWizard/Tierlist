@@ -1234,27 +1234,23 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         <svg className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showMatches ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </button>
       {showMatches && (
-        <div className="space-y-1 mb-6">
+        <div className="mb-6 max-h-[420px] overflow-y-auto rounded-xl border border-gray-800/50 bg-gray-900/40" style={{ scrollbarWidth: "thin", scrollbarColor: "#374151 transparent" }}>
+          <div className="space-y-0.5 p-2">
           {staticSchedule.map((entry, idx) => {
             if (entry.type === 'pl-header') {
-              return (
-                <div key={`hdr-${entry.week}`} className="flex items-center gap-2 py-2 px-1">
-                  <div className="h-px flex-1 bg-gray-800" />
-                  <span className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">{entry.hasEuro ? 'GW' : 'MW'} {entry.week}/38</span>
-                  <div className="h-px flex-1 bg-gray-800" />
-                </div>
-              );
+              return null;
             }
             if (entry.type === 'pl') {
               const match = entry.match;
               return (
-                <div key={`pl-${idx}`} className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 hover:bg-gray-800/60 transition">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
+                <div key={`pl-${idx}`} className="flex items-center gap-2 rounded-lg px-2.5 py-2 bg-gray-900/80 hover:bg-gray-800/60 transition">
+                  <span className="text-[10px] font-bold text-gray-500 w-8 shrink-0 tabular-nums">MW{entry.week}</span>
+                  <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate"><span className="text-gray-500 text-xs mr-1.5">{match.isHome ? "H" : "A"}</span>{match.opponent}</div>
-                    {match.goalScorers.length > 0 && <div className="text-[11px] text-gray-500 truncate">{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</div>}
+                    <div className="font-semibold text-sm truncate"><span className="text-gray-500 text-xs mr-1">{match.isHome ? "H" : "A"}</span>{match.opponent}</div>
+                    {match.goalScorers.length > 0 && <div className="text-[10px] text-gray-500 truncate">{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</div>}
                   </div>
-                  <div className={`text-lg font-black tabular-nums ${match.result === "W" ? "text-emerald-400" : match.result === "D" ? "text-yellow-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
+                  <div className={`text-base font-black tabular-nums shrink-0 ${match.result === "W" ? "text-emerald-400" : match.result === "D" ? "text-yellow-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
                 </div>
               );
             }
@@ -1262,17 +1258,18 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               const match = entry.match;
               const fcm = entry.faCupMatch;
               return (
-                <div key={`fa-${idx}`} className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
+                <div key={`fa-${idx}`} className="flex items-center gap-2 rounded-lg px-2.5 py-2 bg-purple-950/30 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition">
+                  <span className="text-[10px] font-bold text-purple-400/70 w-8 shrink-0 truncate">{entry.label.replace("FA Cup ", "FA ")}</span>
+                  <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate"><span className="text-purple-400 text-xs mr-1.5">{entry.label}</span>{match.opponent}</div>
-                    <div className="text-[11px] text-gray-500 truncate">
+                    <div className="font-semibold text-sm truncate">{match.opponent}</div>
+                    <div className="text-[10px] text-gray-500 truncate">
                       {match.goalScorers.length > 0 && <span>{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</span>}
                       {fcm?.extraTime && <span className="ml-1 text-purple-400/70">(AET)</span>}
                       {fcm?.penalties && fcm.penaltyScore && <span className="ml-1 text-purple-400/70">(Pens {fcm.penaltyScore.player}-{fcm.penaltyScore.opponent})</span>}
                     </div>
                   </div>
-                  <div className={`text-lg font-black tabular-nums ${match.result === "W" ? "text-purple-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
+                  <div className={`text-base font-black tabular-nums shrink-0 ${match.result === "W" ? "text-purple-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
                 </div>
               );
             }
@@ -1280,13 +1277,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               const match = entry.match;
               const isUEL = entry.label.startsWith('UEL');
               return (
-                <div key={`ucl-${idx}`} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 border-l-2 ${isUEL ? 'border-l-orange-500' : 'border-l-blue-500'} hover:bg-gray-800/60 transition`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
+                <div key={`ucl-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 border-l-2 ${isUEL ? 'border-l-orange-500 bg-orange-950/20' : 'border-l-blue-500 bg-blue-950/20'} hover:bg-gray-800/60 transition`}>
+                  <span className={`text-[10px] font-bold w-8 shrink-0 truncate ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>{entry.label.split(" ")[1] ?? entry.label}</span>
+                  <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate"><span className={`text-xs mr-1.5 ${isUEL ? 'text-orange-400' : 'text-blue-400'}`}>{entry.label}</span>{match.opponent}<span className="text-gray-600 text-[10px] ml-1.5">({match.isHome ? "H" : "A"})</span></div>
-                    {match.goalScorers.length > 0 && <div className="text-[11px] text-gray-500 truncate">{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}{match.extraTime && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(AET)</span>}{match.penalties && match.penaltyScore && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(Pens {match.penaltyScore.player}-{match.penaltyScore.opponent})</span>}</div>}
+                    <div className="font-semibold text-sm truncate">{match.opponent}<span className="text-gray-500 text-[10px] ml-1">({match.isHome ? "H" : "A"})</span></div>
+                    {match.goalScorers.length > 0 && <div className="text-[10px] text-gray-500 truncate">{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}{match.extraTime && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(AET)</span>}{match.penalties && match.penaltyScore && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(Pens {match.penaltyScore.player}-{match.penaltyScore.opponent})</span>}</div>}
                   </div>
-                  <div className={`text-lg font-black tabular-nums ${match.result === "W" ? "text-emerald-400" : match.result === "D" ? "text-yellow-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
+                  <div className={`text-base font-black tabular-nums shrink-0 ${match.result === "W" ? "text-emerald-400" : match.result === "D" ? "text-yellow-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
                 </div>
               );
             }
@@ -1304,6 +1302,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             }
             return null;
           })}
+          </div>
         </div>
       )}
 

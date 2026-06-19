@@ -296,9 +296,14 @@ export default function DraftPage() {
   const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[]) => {
     setPreComputedSeason(myResult);
     setRoomPlayers(allPlayers);
+    // Populate players from the user's room squad so handlePlayNextSeason has a squad to work with
+    const myRoomPlayer = allPlayers.find(rp => rp.user_id === userId);
+    if (myRoomPlayer?.squad && (myRoomPlayer.squad as DraftPlayer[]).length > 0) {
+      setPlayers(myRoomPlayer.squad as DraftPlayer[]);
+    }
     setPhase("result");
     scrollTop();
-  }, [scrollTop]);
+  }, [scrollTop, userId]);
 
   const handleLeaveRoom = useCallback(() => {
     setRoomCode(null);
