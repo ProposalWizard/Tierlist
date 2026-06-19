@@ -646,7 +646,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
 
               <section>
                 <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Sub-Requirements</h3>
-                <p>Some squares have a <strong className="text-white">sub-requirement</strong> — extra text shown inside the square in small purple text. These change what a square requires beyond just the row and column labels. There are three main types:</p>
+                <p>Some squares have a <strong className="text-white">sub-requirement</strong> — extra text shown inside the square. These change what a square requires beyond just the row and column labels. There are three main types:</p>
                 <ul className="mt-2 space-y-2.5">
                   <li>
                     <strong className="text-indigo-400">And</strong> — The square shows a third requirement inside it. Your answer must match <strong className="text-white">all three</strong>: the row label, the column label, <em>and</em> the sub-requirement. For example: Row = <em>Arsenal</em>, Column = <em>France</em>, Sub = <em>World Cup Winner</em> — you&apos;d need a French player who played for Arsenal and won the World Cup.
