@@ -86,8 +86,17 @@ export async function POST(
         avg_ovr: 83,
         team_strength: 0.83,
       }).eq("id", rp.id);
-    } else if (rp.status !== "ready") {
-      await service.from("draft_room_players").update({ status: "ready" }).eq("id", rp.id);
+    } else {
+      const squad = rp.squad as { overall?: number; isSub?: boolean }[];
+      const starters = squad.filter(p => !p.isSub);
+      const sum = starters.reduce((acc, p) => acc + (p.overall ?? 75), 0);
+      const avgOvr = starters.length > 0 ? Math.round(sum / starters.length) : 75;
+      const teamStrength = parseFloat((avgOvr / 100).toFixed(2));
+      await service.from("draft_room_players").update({
+        status: "ready",
+        avg_ovr: avgOvr,
+        team_strength: teamStrength,
+      }).eq("id", rp.id);
     }
   }
 

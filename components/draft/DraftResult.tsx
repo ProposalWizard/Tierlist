@@ -611,6 +611,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             return { value: best[field], playerName: best.name || null, playerOvr: best.name ? findOvr(best.name) : null };
           };
 
+          const teamOvr = players.length > 0
+            ? Math.round(players.reduce((acc, p) => acc + p.overall, 0) / players.length)
+            : null;
+
+          // GK-only clean sheets
+          const gkPlStats = season.plPlayerStats.filter(s => s.assignedPosition === "GK");
+          const gkAllStats = season.playerStats.filter(s => s.assignedPosition === "GK");
+
           const faCupWins = season.faCup.matches.filter(m =>
             m.goalsFor > m.goalsAgainst || (m.penalties && m.penaltyScore && m.penaltyScore.player > m.penaltyScore.opponent)
           ).length;
@@ -621,23 +629,59 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
           const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins;
 
+          // Career goals: accumulate across all seasons
+          const careerGoalMap = new Map<string, { goals: number; ovr: number | null }>();
+          for (const s of allSeasonResults ?? []) {
+            for (const ps of s.playerStats) {
+              const prev = careerGoalMap.get(ps.name) ?? { goals: 0, ovr: null };
+              careerGoalMap.set(ps.name, { goals: prev.goals + ps.goals, ovr: null });
+            }
+          }
+          for (const ps of season.playerStats) {
+            const prev = careerGoalMap.get(ps.name) ?? { goals: 0, ovr: null };
+            careerGoalMap.set(ps.name, { goals: prev.goals + ps.goals, ovr: findOvr(ps.name) });
+          }
+          let topCareerGoals = 0;
+          let topCareerScorer = "";
+          let topCareerOvr: number | null = null;
+          Array.from(careerGoalMap.entries()).forEach(([name, { goals, ovr }]) => {
+            if (goals > topCareerGoals) {
+              topCareerGoals = goals;
+              topCareerScorer = name;
+              topCareerOvr = ovr;
+            }
+          });
+
+          // Career trophies: PL title + FA Cup + UCL + UEL across all seasons
+          const countTrophies = (s: SeasonResult) =>
+            (s.actualFinish === 1 ? 1 : 0) +
+            (s.faCup.winner ? 1 : 0) +
+            (s.ucl?.winner ? 1 : 0) +
+            (s.uel?.winner ? 1 : 0);
+          const totalTrophies = [...(allSeasonResults ?? []), season].reduce((sum, s) => sum + countTrophies(s), 0);
+
           await fetch("/api/draft/records", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               pl: {
-                wins: season.teamRecord.wins,
-                unbeaten: season.longestUnbeatenRun,
+                wins: { value: season.teamRecord.wins, teamOvr },
+                unbeaten: { value: season.longestUnbeatenRun, teamOvr },
                 goals: topBy(season.plPlayerStats, "goals"),
                 assists: topBy(season.plPlayerStats, "assists"),
-                cleanSheets: topBy(season.plPlayerStats, "cleanSheets"),
+                cleanSheets: topBy(gkPlStats.length > 0 ? gkPlStats : season.plPlayerStats, "cleanSheets"),
+                goalsConceded: { value: season.teamRecord.goalsAgainst, teamOvr },
               },
               all: {
-                wins: allWins,
-                unbeaten: season.longestUnbeatenRun,
+                wins: { value: allWins, teamOvr },
+                unbeaten: { value: season.longestUnbeatenRun, teamOvr },
                 goals: topBy(season.playerStats, "goals"),
                 assists: topBy(season.playerStats, "assists"),
-                cleanSheets: topBy(season.playerStats, "cleanSheets"),
+                cleanSheets: topBy(gkAllStats.length > 0 ? gkAllStats : season.playerStats, "cleanSheets"),
+              },
+              career: {
+                goals: { value: topCareerGoals, playerName: topCareerScorer || null, playerOvr: topCareerOvr },
+                trophies: totalTrophies,
               },
               seasonNumber,
             }),

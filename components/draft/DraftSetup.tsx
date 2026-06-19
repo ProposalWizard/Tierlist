@@ -190,10 +190,10 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                   : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
               }`}
             >
-              <div className={`text-xs sm:text-sm font-bold ${mode === "normal" ? "text-white" : "text-gray-400"}`}>
+              <div className={`text-xs sm:text-sm font-bold ${mode === "normal" ? "text-white" : "text-gray-300"}`}>
                 Normal
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "normal" ? "text-emerald-200/70" : "text-gray-600"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "normal" ? "text-emerald-100" : "text-gray-400"}`}>
                 Players rated as they were that season
               </div>
             </button>
@@ -205,10 +205,10 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                   : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
               }`}
             >
-              <div className={`text-xs sm:text-sm font-bold ${mode === "prime" ? "text-white" : "text-gray-400"}`}>
+              <div className={`text-xs sm:text-sm font-bold ${mode === "prime" ? "text-white" : "text-gray-300"}`}>
                 Prime
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "prime" ? "text-amber-200/70" : "text-gray-600"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "prime" ? "text-amber-100" : "text-gray-400"}`}>
                 Every player uses their best-ever rating
               </div>
             </button>
@@ -229,10 +229,10 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                   : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
               }`}
             >
-              <div className={`text-xs sm:text-sm font-bold ${draftOrder === "position-first" ? "text-white" : "text-gray-400"}`}>
+              <div className={`text-xs sm:text-sm font-bold ${draftOrder === "position-first" ? "text-white" : "text-gray-300"}`}>
                 Position First
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-emerald-200/70" : "text-gray-600"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-emerald-100" : "text-gray-400"}`}>
                 Fill each position slot in order
               </div>
             </button>
@@ -244,10 +244,10 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                   : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
               }`}
             >
-              <div className={`text-xs sm:text-sm font-bold ${draftOrder === "club-first" ? "text-white" : "text-gray-400"}`}>
+              <div className={`text-xs sm:text-sm font-bold ${draftOrder === "club-first" ? "text-white" : "text-gray-300"}`}>
                 Club First
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-sky-200/70" : "text-gray-600"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-sky-100" : "text-gray-400"}`}>
                 Pick a player, then choose their position
               </div>
             </button>
