@@ -20,6 +20,7 @@ interface Props {
   preComputedSeason?: SeasonResult;
   roomPlayers?: import("@/components/draft/MultiplayerLobby").RoomPlayer[];
   roomCode?: string;
+  allRoomPlayerSeasons?: Record<string, SeasonResult[]>;
 }
 
 interface PLRecord {
@@ -456,7 +457,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable),
     [players, seasonNumber, previousResult, preComputedSeason],
@@ -2099,6 +2100,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         <CareerRecap
           allSeasons={[...allSeasonResults, season]}
           roomPlayers={roomPlayers}
+          allRoomPlayerSeasons={allRoomPlayerSeasons}
           onClose={() => setShowCareerRecap(false)}
         />
       )}

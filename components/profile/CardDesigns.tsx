@@ -47,7 +47,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
       </div>
 
       {/* Frame grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 relative">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 relative">
         {frameRewards.map((reward) => {
           const rarity =
             RARITY_COLORS[reward.rarity as keyof typeof RARITY_COLORS] ??

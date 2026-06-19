@@ -71,6 +71,7 @@ export async function POST(
 
   const startSeason = room.season_number ?? 1;
   const allUserSeasons: SeasonResult[] = [];
+  const allRoomPlayerSeasons: Record<string, SeasonResult[]> = {};
 
   let previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
     { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }[] | null | undefined;
@@ -141,6 +142,14 @@ export async function POST(
       const myResult = results.get(user.id);
       if (myResult) allUserSeasons.push(myResult);
 
+      // Collect all users' results for group statistics
+      for (const rp of readyPlayers) {
+        const result = results.get(rp.user_id);
+        if (!result) continue;
+        if (!allRoomPlayerSeasons[rp.display_name]) allRoomPlayerSeasons[rp.display_name] = [];
+        allRoomPlayerSeasons[rp.display_name].push(result);
+      }
+
       // Extract league table for next season
       const firstResult = results.values().next().value as SeasonResult | undefined;
       if (firstResult?.leagueTable) {
@@ -184,7 +193,7 @@ export async function POST(
       .select("*")
       .eq("room_id", room.id);
 
-    return Response.json({ seasons: allUserSeasons, finalRoomPlayers: finalPlayers ?? [] });
+    return Response.json({ seasons: allUserSeasons, finalRoomPlayers: finalPlayers ?? [], allRoomPlayerSeasons });
   } catch (e) {
     await service.from("draft_rooms").update({ status: "lobby" }).eq("id", room.id);
     const msg = e instanceof Error ? e.message : "Unknown error";

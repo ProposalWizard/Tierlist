@@ -203,6 +203,7 @@ export default function DraftPage() {
   const [squadSubmitted, setSquadSubmitted] = useState(false);
   const [preComputedSeason, setPreComputedSeason] = useState<SeasonResult | null>(null);
   const [roomPlayers, setRoomPlayers] = useState<RoomPlayer[] | null>(null);
+  const [allRoomPlayerSeasons, setAllRoomPlayerSeasons] = useState<Record<string, SeasonResult[]> | null>(null);
 
   useEffect(() => {
     setResume(loadProgress());
@@ -305,14 +306,14 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop, userId]);
 
-  const handleCareerComplete = useCallback((seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[]) => {
+  const handleCareerComplete = useCallback((seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[], roomPlayerSeasons?: Record<string, SeasonResult[]>) => {
     if (seasons.length === 0) return;
     const lastSeason = seasons[seasons.length - 1];
     setPreviousResults(seasons.slice(0, -1));
     setPreComputedSeason(lastSeason);
     setRoomPlayers(finalRoomPlayers);
+    if (roomPlayerSeasons) setAllRoomPlayerSeasons(roomPlayerSeasons);
     setCurrentSeason(MAX_SEASONS);
-    // Use the fake squad from the last season's room player so the state is non-empty
     const myRoomPlayer = finalRoomPlayers.find(rp => rp.user_id === userId);
     if (myRoomPlayer?.squad && (myRoomPlayer.squad as DraftPlayer[]).length > 0) {
       setPlayers(myRoomPlayer.squad as DraftPlayer[]);
@@ -821,6 +822,7 @@ export default function DraftPage() {
           preComputedSeason={preComputedSeason ?? undefined}
           roomPlayers={roomPlayers ?? undefined}
           roomCode={roomCode ?? undefined}
+          allRoomPlayerSeasons={allRoomPlayerSeasons ?? undefined}
         />
       )}
       {phase === "pre-season" && (
