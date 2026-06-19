@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
-import { simulateSharedSeason, DEFAULT_PL_TEAMS } from "@/lib/seasonSimulator";
-import type { DraftPlayer, SharedSeasonInput } from "@/lib/seasonSimulator";
+import { simulateSharedSeason, getSeasonTeams } from "@/lib/seasonSimulator";
+import type { DraftPlayer, SharedSeasonInput, LeagueTeam } from "@/lib/seasonSimulator";
 
 function hashStr(s: string): number {
   let h = 2166136261;
@@ -32,7 +32,7 @@ function generateFakeSquad(seed: number): DraftPlayer[] {
   ];
   return slots.map((s, i) => ({
     name: `Dev ${s.pos}${s.isSub ? " (sub)" : ""}`,
-    overall: 65 + ((seed + i * 7) % 20),
+    overall: 78 + ((seed + i * 7) % 10),
     positions: s.pos,
     club: "Dev FC",
     clubYear: "FC 24",
@@ -83,8 +83,8 @@ export async function POST(
       await service.from("draft_room_players").update({
         squad: fake,
         status: "ready",
-        avg_ovr: 74,
-        team_strength: 0.74,
+        avg_ovr: 83,
+        team_strength: 0.83,
       }).eq("id", rp.id);
     } else if (rp.status !== "ready") {
       await service.from("draft_room_players").update({ status: "ready" }).eq("id", rp.id);
@@ -103,7 +103,11 @@ export async function POST(
 
   try {
     const N = readyPlayers.length;
-    const aiOpponents = [...DEFAULT_PL_TEAMS]
+    const seasonNumber = room.season_number ?? 1;
+    const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
+      { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
+    const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined);
+    const aiOpponents = [...seasonTeams]
       .sort((a, b) => b.strength - a.strength)
       .slice(0, 20 - N)
       .map(t => ({ name: t.name, strength: t.strength }));
@@ -114,10 +118,7 @@ export async function POST(
       squad: (rp.squad ?? []) as DraftPlayer[],
     }));
 
-    const sharedSeed = hashStr(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
-    const seasonNumber = room.season_number ?? 1;
-    const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
-      { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
+    const sharedSeed = hashStr(room.id) ^ (seasonNumber) * 0x9e3779b9;
 
     const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined);
 

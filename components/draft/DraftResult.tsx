@@ -2,7 +2,6 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason } from "@/lib/seasonSimulator";
 import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch } from "@/lib/seasonSimulator";
-import Link from "next/link";
 import { XP_AWARDS, FRAME_STYLES } from "@/lib/xp";
 import XPPopup from "./XPPopup";
 import { getPositionColor, getPositionTextColor } from "./formations";
@@ -464,7 +463,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   );
   const season = computedSeason;
   const [showMatches, setShowMatches] = useState(false);
-  const [showTable, setShowTable] = useState(false);
+  const [showTable, setShowTable] = useState(true);
   const [showUCLTable, setShowUCLTable] = useState(false);
   const [showUELTable, setShowUELTable] = useState(false);
   const [showCareerRecap, setShowCareerRecap] = useState(false);
@@ -1044,7 +1043,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   // --- Full results phase (after season complete) ---
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">
-      {/* Shareable area */}
+      {/* Shareable area — key summary only */}
       <div ref={shareRef} className={`bg-gray-950 pb-4 rounded-xl ${FRAME_STYLES[equippedFrame]?.border ?? ""} ${FRAME_STYLES[equippedFrame]?.shadow ?? ""}`}>
         {/* Champion / UCL Winner / UEL Winner / Relegated Banner */}
         {(season.actualFinish === 1 || season.actualFinish >= 18 || season.ucl?.winner || season.uel?.winner) && (
@@ -1136,66 +1135,138 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           </div>
         )}
 
-        {/* Your XI */}
-        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
-            {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Your Squad"}
-          </h3>
+      </div>{/* end shareRef */}
+
+      {/* League Table — starts OPEN */}
+      <button
+        onClick={() => setShowTable(!showTable)}
+        className="w-full bg-gray-900 rounded-xl p-4 mt-4 mb-3 flex items-center justify-between hover:bg-gray-800/80 transition border border-gray-800/50"
+      >
+        <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Final League Table</span>
+        <svg className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showTable ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {showTable && (
+        <div className="bg-gray-900 rounded-xl p-3 sm:p-4 mb-4 border border-gray-800/50">
+          <div className="flex flex-wrap items-center gap-4 mb-3 text-[10px]">
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-yellow-500" /><span className="text-gray-500">Champion</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" /><span className="text-gray-500">Champions League</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-gray-500">Europa League</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-gray-500">Relegation</span></div>
+          </div>
+          <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
+            <span className="w-6 text-center shrink-0">#</span>
+            <span className="flex-1 ml-1 min-w-0">Club</span>
+            <span className="w-7 text-center shrink-0">W</span>
+            <span className="w-7 text-center shrink-0">D</span>
+            <span className="w-7 text-center shrink-0">L</span>
+            <span className="w-8 text-right shrink-0">GD</span>
+            <span className="w-8 text-right shrink-0">PTS</span>
+          </div>
           <div className="space-y-0.5">
-            {starterPlayers.map((p, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm py-1 px-1">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
-                  {p.assignedPosition}
-                </span>
-                <span className="flex-1 ml-1 font-medium">{p.name}</span>
-                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
-                <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
-              </div>
-            ))}
-          </div>
-          {subPlayers.length > 0 && (
-            <>
-              <div className="mt-2 pt-2 border-t border-gray-800/50">
-                <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-1">Substitutes</div>
-              </div>
-              <div className="space-y-0.5">
-                {subPlayers.map((p, i) => (
-                  <div key={`sub-${i}`} className="flex items-center gap-2 text-sm py-1 px-1">
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
-                      {p.assignedPosition}
-                    </span>
-                    <span className="flex-1 ml-1 font-medium">{p.name}</span>
-                    <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
-                    <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-          <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
-            <span>Average OVR</span>
-            <span className="font-bold text-white">
-              {Math.round(players.reduce((acc, p) => acc + p.overall, 0) / players.length)}
-            </span>
-          </div>
-          <div className="mt-1 flex justify-between text-xs text-gray-500">
-            <span>Team Strength</span>
-            <span className="font-bold text-emerald-400">
-              {Math.round(season.phaseRatings.teamStrength)}
-            </span>
-          </div>
-          <div className="mt-1 flex gap-3 text-[10px] text-gray-600 justify-end">
-            <span>ATK {Math.round(season.phaseRatings.attack)}</span>
-            <span>MID {Math.round(season.phaseRatings.midfield)}</span>
-            <span>DEF {Math.round(season.phaseRatings.defense)}</span>
-            <span>GK {Math.round(season.phaseRatings.gk)}</span>
+            {season.leagueTable.map((team, i) => {
+              const pos = i + 1;
+              return (
+                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer)}`}`}>
+                  <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos)}`}>{pos}</span>
+                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>{team.isPlayer ? "Knowitball FC" : team.name}</span>
+                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.won}</span>
+                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.drawn}</span>
+                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.lost}</span>
+                  <span className={`w-8 text-right text-xs font-bold shrink-0 ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-gray-500"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
+                  <span className={`w-8 text-right font-black shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
+      )}
 
-        {/* Record */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-3xl font-black text-emerald-400">{season.teamRecord.wins}</div>
+      {/* Match Results — starts CLOSED */}
+      <button
+        onClick={() => setShowMatches(!showMatches)}
+        className="w-full bg-gray-900 rounded-xl p-4 mb-3 flex items-center justify-between hover:bg-gray-800/80 transition border border-gray-800/50"
+      >
+        <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Match Results</span>
+        <svg className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showMatches ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {showMatches && (
+        <div className="space-y-1 mb-6">
+          {staticSchedule.map((entry, idx) => {
+            if (entry.type === 'pl-header') {
+              return (
+                <div key={`hdr-${entry.week}`} className="flex items-center gap-2 py-2 px-1">
+                  <div className="h-px flex-1 bg-gray-800" />
+                  <span className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">{entry.hasEuro ? 'GW' : 'MW'} {entry.week}/38</span>
+                  <div className="h-px flex-1 bg-gray-800" />
+                </div>
+              );
+            }
+            if (entry.type === 'pl') {
+              const match = entry.match;
+              return (
+                <div key={`pl-${idx}`} className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 hover:bg-gray-800/60 transition">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate"><span className="text-gray-500 text-xs mr-1.5">{match.isHome ? "H" : "A"}</span>{match.opponent}</div>
+                    {match.goalScorers.length > 0 && <div className="text-[11px] text-gray-500 truncate">{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</div>}
+                  </div>
+                  <div className={`text-lg font-black tabular-nums ${match.result === "W" ? "text-emerald-400" : match.result === "D" ? "text-yellow-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
+                </div>
+              );
+            }
+            if (entry.type === 'fa-cup') {
+              const match = entry.match;
+              const fcm = entry.faCupMatch;
+              return (
+                <div key={`fa-${idx}`} className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate"><span className="text-purple-400 text-xs mr-1.5">{entry.label}</span>{match.opponent}</div>
+                    <div className="text-[11px] text-gray-500 truncate">
+                      {match.goalScorers.length > 0 && <span>{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</span>}
+                      {fcm?.extraTime && <span className="ml-1 text-purple-400/70">(AET)</span>}
+                      {fcm?.penalties && fcm.penaltyScore && <span className="ml-1 text-purple-400/70">(Pens {fcm.penaltyScore.player}-{fcm.penaltyScore.opponent})</span>}
+                    </div>
+                  </div>
+                  <div className={`text-lg font-black tabular-nums ${match.result === "W" ? "text-purple-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
+                </div>
+              );
+            }
+            if (entry.type === 'ucl') {
+              const match = entry.match;
+              const isUEL = entry.label.startsWith('UEL');
+              return (
+                <div key={`ucl-${idx}`} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 border-l-2 ${isUEL ? 'border-l-orange-500' : 'border-l-blue-500'} hover:bg-gray-800/60 transition`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate"><span className={`text-xs mr-1.5 ${isUEL ? 'text-orange-400' : 'text-blue-400'}`}>{entry.label}</span>{match.opponent}<span className="text-gray-600 text-[10px] ml-1.5">({match.isHome ? "H" : "A"})</span></div>
+                    {match.goalScorers.length > 0 && <div className="text-[11px] text-gray-500 truncate">{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}{match.extraTime && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(AET)</span>}{match.penalties && match.penaltyScore && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(Pens {match.penaltyScore.player}-{match.penaltyScore.opponent})</span>}</div>}
+                  </div>
+                  <div className={`text-lg font-black tabular-nums ${match.result === "W" ? "text-emerald-400" : match.result === "D" ? "text-yellow-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
+                </div>
+              );
+            }
+            if (entry.type === 'ucl-status') {
+              const isUEL = !!(season.uel?.qualified && !season.ucl?.qualified);
+              return (
+                <div key={`status-${idx}`} className={`flex items-center gap-3 rounded-lg px-3 py-3 border ${entry.positive ? isUEL ? "bg-orange-900/30 border-orange-700/40" : "bg-blue-900/30 border-blue-700/40" : "bg-red-900/20 border-red-700/30"}`}>
+                  <span className="text-sm">&#9917;</span>
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-bold text-sm ${entry.positive ? (isUEL ? "text-orange-300" : "text-blue-300") : "text-red-400"}`}>{entry.text}</div>
+                    <div className="text-[10px] text-gray-500">{entry.subtext}</div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })}
+        </div>
+      )}
+
+      {/* W/D/L Record */}
+      <div className="grid grid-cols-3 gap-2 mb-3 mt-4">
+        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+          <div className="text-3xl font-black text-emerald-400">{season.teamRecord.wins}</div>
             <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Wins</div>
           </div>
           <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
@@ -1208,48 +1279,75 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           </div>
         </div>
 
-        {/* Form Guide */}
-        <div className="bg-gray-900 rounded-xl p-3 mb-3 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">Form</div>
-          <div className="flex gap-[3px] flex-wrap">
-            {season.matches.map((m, i) => (
-              <div
-                key={i}
-                className={`w-5 h-5 rounded text-[9px] font-black flex items-center justify-center ${
-                  m.result === "W"
-                    ? "bg-emerald-500/20 text-emerald-400"
-                    : m.result === "D"
-                      ? "bg-yellow-500/20 text-yellow-400"
-                      : "bg-red-500/20 text-red-400"
-                }`}
-                title={`MW${i + 1}: ${m.result} ${m.goalsFor}-${m.goalsAgainst} vs ${m.opponent}`}
-              >
-                {m.result}
-              </div>
-            ))}
+      {/* Points / GF / GA */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+          <div className="text-3xl font-black text-white">{season.teamRecord.points}</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Points</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+          <div className="text-3xl font-black text-emerald-400">{season.teamRecord.goalsFor}</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Goals For</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+          <div className="text-3xl font-black text-red-400">{season.teamRecord.goalsAgainst}</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Goals Against</div>
+        </div>
+      </div>
+
+      {/* CS / Win Streak / Unbeaten Run */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+          <div className="text-2xl font-black">{season.awards.goldenGlove.cleanSheets}</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Clean Sheets</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+          <div className="text-2xl font-black">{season.longestWinStreak}</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Win Streak</div>
+        </div>
+        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
+          <div className="text-2xl font-black">{season.longestUnbeatenRun}</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Unbeaten Run</div>
+        </div>
+      </div>
+
+      {/* Biggest Win / Worst Defeat / Highest Scoring */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
+          <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Biggest Win</div>
+          <div className="font-bold text-emerald-400 text-sm mt-0.5">
+            {season.teamRecord.wins > 0 ? <>{season.biggestWin.score} vs {season.biggestWin.opponent}</> : <span className="text-gray-600">No wins</span>}
           </div>
         </div>
-
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-3xl font-black text-white">{season.teamRecord.points}</div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Points</div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-3xl font-black text-emerald-400">{season.teamRecord.goalsFor}</div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Goals For</div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-3xl font-black text-red-400">{season.teamRecord.goalsAgainst}</div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Goals Against</div>
+        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
+          <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Worst Defeat</div>
+          <div className="font-bold text-red-400 text-sm mt-0.5">
+            {season.teamRecord.losses > 0 ? <>{season.worstDefeat.score} vs {season.worstDefeat.opponent}</> : <span className="text-emerald-400">Undefeated!</span>}
           </div>
         </div>
+        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
+          <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Highest Scoring</div>
+          <div className="font-bold text-emerald-400 text-sm mt-0.5">{season.highestScoring.score} vs {season.highestScoring.opponent}</div>
+        </div>
+      </div>
 
-        {/* FA Cup */}
-        <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">&#127942;</span>
-            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">FA Cup</h3>
+      {/* Form Guide */}
+      <div className="bg-gray-900 rounded-xl p-3 mb-6 border border-gray-800/50">
+        <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">Form</div>
+        <div className="flex gap-[3px] flex-wrap">
+          {season.matches.map((m, i) => (
+            <div key={i} className={`w-5 h-5 rounded text-[9px] font-black flex items-center justify-center ${m.result === "W" ? "bg-emerald-500/20 text-emerald-400" : m.result === "D" ? "bg-yellow-500/20 text-yellow-400" : "bg-red-500/20 text-red-400"}`} title={`MW${i + 1}: ${m.result} ${m.goalsFor}-${m.goalsAgainst} vs ${m.opponent}`}>
+              {m.result}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FA Cup */}
+      <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg">&#127942;</span>
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">FA Cup</h3>
             <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded ${
               season.faCup.winner
                 ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
@@ -1686,11 +1784,88 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           );
         })()}
 
-        {/* Season Awards */}
-        <div className="mb-6">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
-            Season Awards
+      {/* Squad Stats */}
+      <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+            {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Squad Stats"}
           </h3>
+          <div className="flex rounded-lg overflow-hidden border border-gray-700/50">
+            <button onClick={() => setStatsView("pl")} className={`text-[10px] font-bold px-2.5 py-1 transition ${statsView === "pl" ? "bg-emerald-500/20 text-emerald-400" : "text-gray-600 hover:text-gray-400"}`}>PL</button>
+            <button onClick={() => setStatsView("all")} className={`text-[10px] font-bold px-2.5 py-1 transition ${statsView === "all" ? "bg-emerald-500/20 text-emerald-400" : "text-gray-600 hover:text-gray-400"}`}>ALL COMPS</button>
+          </div>
+        </div>
+        <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
+          <span className="w-7 shrink-0"></span>
+          <span className="flex-1 ml-1 min-w-0">Player</span>
+          <span className="w-7 text-right shrink-0">OVR</span>
+          <span className="w-7 text-center shrink-0">APP</span>
+          <span className="w-6 text-center shrink-0">G</span>
+          <span className="w-6 text-center shrink-0">A</span>
+          <span className="w-6 text-center shrink-0">CS</span>
+          <span className="w-8 text-center shrink-0">AVG</span>
+        </div>
+        <div className="space-y-0.5">
+          {starterPlayers.map((p, i) => {
+            const ps = sortedStats.find(s => s.name === p.name);
+            return (
+              <div key={i} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition">
+                <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-7 text-center shrink-0`}>{p.assignedPosition}</span>
+                <span className="flex-1 ml-1 font-medium truncate min-w-0">{p.name}</span>
+                <span className="w-7 text-right text-xs font-black tabular-nums text-emerald-400 shrink-0">{p.overall}</span>
+                <span className="w-7 text-center text-xs font-bold shrink-0 text-gray-500">{ps?.appearances ?? "-"}</span>
+                <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.goals ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.goals ?? 0) > 0 ? ps!.goals : "-"}</span>
+                <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.assists ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.assists ?? 0) > 0 ? ps!.assists : "-"}</span>
+                <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.cleanSheets ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.cleanSheets ?? 0) > 0 ? ps!.cleanSheets : "-"}</span>
+                <span className={`w-8 text-center text-xs font-bold shrink-0 ${(ps?.avgRating ?? 0) >= 7.5 ? "text-emerald-400" : (ps?.avgRating ?? 0) >= 7.0 ? "text-yellow-400" : (ps?.avgRating ?? 0) >= 6.5 ? "text-orange-400" : "text-gray-500"}`}>{ps ? ps.avgRating.toFixed(1) : "-"}</span>
+              </div>
+            );
+          })}
+        </div>
+        {subPlayers.length > 0 && (
+          <>
+            <div className="border-t border-gray-800/50 my-2" />
+            <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-1.5 px-1">Substitutes</div>
+            <div className="space-y-0.5">
+              {subPlayers.map((p, i) => {
+                const ps = sortedStats.find(s => s.name === p.name);
+                return (
+                  <div key={`sub-${i}`} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition opacity-80">
+                    <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-purple-700 text-white w-7 text-center shrink-0">SUB</span>
+                    <span className="flex-1 ml-1 font-medium truncate min-w-0 text-gray-300">{p.name}</span>
+                    <span className="w-7 text-right text-xs font-black tabular-nums text-emerald-400/70 shrink-0">{p.overall}</span>
+                    <span className="w-7 text-center text-xs font-bold shrink-0 text-gray-500">{ps?.appearances ?? "-"}</span>
+                    <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.goals ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.goals ?? 0) > 0 ? ps!.goals : "-"}</span>
+                    <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.assists ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.assists ?? 0) > 0 ? ps!.assists : "-"}</span>
+                    <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.cleanSheets ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.cleanSheets ?? 0) > 0 ? ps!.cleanSheets : "-"}</span>
+                    <span className={`w-8 text-center text-xs font-bold shrink-0 ${(ps?.avgRating ?? 0) >= 7.5 ? "text-emerald-400" : (ps?.avgRating ?? 0) >= 7.0 ? "text-yellow-400" : (ps?.avgRating ?? 0) >= 6.5 ? "text-orange-400" : "text-gray-500"}`}>{ps ? ps.avgRating.toFixed(1) : "-"}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+        <div className="mt-3 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
+          <span>Average OVR</span>
+          <span className="font-bold text-white">{Math.round(players.reduce((acc, p) => acc + p.overall, 0) / players.length)}</span>
+        </div>
+        <div className="mt-1 flex justify-between text-xs text-gray-500">
+          <span>Team Strength</span>
+          <span className="font-bold text-emerald-400">{Math.round(season.phaseRatings.teamStrength)}</span>
+        </div>
+        <div className="mt-1 flex gap-3 text-[10px] text-gray-600 justify-end">
+          <span>ATK {Math.round(season.phaseRatings.attack)}</span>
+          <span>MID {Math.round(season.phaseRatings.midfield)}</span>
+          <span>DEF {Math.round(season.phaseRatings.defense)}</span>
+          <span>GK {Math.round(season.phaseRatings.gk)}</span>
+        </div>
+      </div>
+
+      {/* Season Awards */}
+      <div className="mb-6">
+        <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+          Season Awards
+        </h3>
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-gray-900 rounded-xl p-4 border border-gray-800/50">
               <div className="flex items-center gap-1.5 mb-1.5">
@@ -1728,375 +1903,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             </div>
           </div>
         </div>
-
-        {/* Player Stats */}
-        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
-              Squad Stats
-            </h3>
-            <div className="flex rounded-lg overflow-hidden border border-gray-700/50">
-              <button
-                onClick={() => setStatsView("pl")}
-                className={`text-[10px] font-bold px-2.5 py-1 transition ${
-                  statsView === "pl"
-                    ? "bg-emerald-500/20 text-emerald-400"
-                    : "text-gray-600 hover:text-gray-400"
-                }`}
-              >
-                PL
-              </button>
-              <button
-                onClick={() => setStatsView("all")}
-                className={`text-[10px] font-bold px-2.5 py-1 transition ${
-                  statsView === "all"
-                    ? "bg-emerald-500/20 text-emerald-400"
-                    : "text-gray-600 hover:text-gray-400"
-                }`}
-              >
-                ALL COMPS
-              </button>
-            </div>
-          </div>
-          <div>
-          <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
-            <span className="w-7 shrink-0"></span>
-            <span className="flex-1 ml-1 min-w-0">Player</span>
-            <span className="w-7 text-center shrink-0">APP</span>
-            <span className="w-6 text-center shrink-0">G</span>
-            <span className="w-6 text-center shrink-0">A</span>
-            <span className="w-6 text-center shrink-0">CS</span>
-            <span className="w-8 text-center shrink-0">AVG</span>
-          </div>
-          <div className="space-y-0.5">
-            {sortedStats.map((ps, i) => (
-              <div key={i} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition">
-                <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(ps.assignedPosition)} text-white w-7 text-center shrink-0`}>
-                  {ps.assignedPosition}
-                </span>
-                <span className="flex-1 ml-1 font-medium truncate min-w-0">{ps.name}</span>
-                <span className="w-7 text-center text-xs font-bold shrink-0 text-gray-500">
-                  {ps.appearances}
-                </span>
-                <span className={`w-6 text-center text-xs font-bold shrink-0 ${ps.goals > 0 ? "text-emerald-400" : "text-gray-700"}`}>
-                  {ps.goals > 0 ? ps.goals : "-"}
-                </span>
-                <span className={`w-6 text-center text-xs font-bold shrink-0 ${ps.assists > 0 ? "text-emerald-400" : "text-gray-700"}`}>
-                  {ps.assists > 0 ? ps.assists : "-"}
-                </span>
-                <span className={`w-6 text-center text-xs font-bold shrink-0 ${ps.cleanSheets > 0 ? "text-emerald-400" : "text-gray-700"}`}>
-                  {ps.cleanSheets > 0 ? ps.cleanSheets : "-"}
-                </span>
-                <span className={`w-8 text-center text-xs font-bold shrink-0 ${
-                  ps.avgRating >= 7.5 ? "text-emerald-400" :
-                  ps.avgRating >= 7.0 ? "text-yellow-400" :
-                  ps.avgRating >= 6.5 ? "text-orange-400" : "text-gray-500"
-                }`}>
-                  {ps.avgRating.toFixed(1)}
-                </span>
-              </div>
-            ))}
-          </div>
-          </div>
-        </div>
-
-        {/* Extra stats */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-2xl font-black">{season.awards.goldenGlove.cleanSheets}</div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Clean Sheets</div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-2xl font-black">{season.longestWinStreak}</div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Win Streak</div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-2xl font-black">{season.longestUnbeatenRun}</div>
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Unbeaten Run</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
-          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
-            <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Biggest Win</div>
-            <div className="font-bold text-emerald-400 text-sm mt-0.5">
-              {season.teamRecord.wins > 0
-                ? <>{season.biggestWin.score} vs {season.biggestWin.opponent}</>
-                : <span className="text-gray-600">No wins</span>
-              }
-            </div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
-            <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Worst Defeat</div>
-            <div className="font-bold text-red-400 text-sm mt-0.5">
-              {season.teamRecord.losses > 0
-                ? <>{season.worstDefeat.score} vs {season.worstDefeat.opponent}</>
-                : <span className="text-emerald-400">Undefeated!</span>
-              }
-            </div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
-            <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">Highest Scoring</div>
-            <div className="font-bold text-emerald-400 text-sm mt-0.5">
-              {season.highestScoring.score} vs {season.highestScoring.opponent}
-            </div>
-          </div>
-        </div>
-
-        {/* PL Records */}
-        <RecordsSection season={season} previousResult={previousResult} />
-      </div>
-
-      {/* League Table Toggle */}
-      <button
-        onClick={() => setShowTable(!showTable)}
-        className="w-full bg-gray-900 rounded-xl p-4 mb-3 flex items-center justify-between hover:bg-gray-800/80 transition border border-gray-800/50"
-      >
-        <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Final League Table</span>
-        <svg className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showTable ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-      </button>
-
-      {showTable && (
-        <div className="bg-gray-900 rounded-xl p-3 sm:p-4 mb-4 border border-gray-800/50">
-          {/* Legend */}
-          <div className="flex items-center gap-4 mb-3 text-[10px]">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-yellow-500" />
-              <span className="text-gray-500">Champion</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-gray-500">Champions League</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-gray-500">Europa League</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-gray-500">Relegation</span>
-            </div>
-          </div>
-
-          <div>
-          <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
-            <span className="w-6 text-center shrink-0">#</span>
-            <span className="flex-1 ml-1 min-w-0">Club</span>
-            <span className="w-7 text-center shrink-0">W</span>
-            <span className="w-7 text-center shrink-0">D</span>
-            <span className="w-7 text-center shrink-0">L</span>
-            <span className="w-8 text-right shrink-0">GD</span>
-            <span className="w-8 text-right shrink-0">PTS</span>
-          </div>
-          <div className="space-y-0.5">
-            {season.leagueTable.map((team, i) => {
-              const pos = i + 1;
-              return (
-                <div
-                  key={team.name}
-                  className={`flex items-center text-sm py-1.5 px-1 rounded transition ${
-                    team.isPlayer
-                      ? "bg-emerald-900/30 border border-emerald-700/30 font-bold"
-                      : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer)}`
-                  }`}
-                >
-                  <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos)}`}>
-                    {pos}
-                  </span>
-                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>
-                    {team.isPlayer ? "Knowitball FC" : team.name}
-                  </span>
-                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.won}</span>
-                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.drawn}</span>
-                  <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.lost}</span>
-                  <span className={`w-8 text-right text-xs font-bold shrink-0 ${
-                    team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-gray-500"
-                  }`}>
-                    {team.goalDifference > 0 ? "+" : ""}{team.goalDifference}
-                  </span>
-                  <span className={`w-8 text-right font-black shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>
-                    {team.points}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          </div>
-        </div>
-      )}
-
-      {/* Match Results Toggle */}
-      <button
-        onClick={() => setShowMatches(!showMatches)}
-        className="w-full bg-gray-900 rounded-xl p-4 mb-3 flex items-center justify-between hover:bg-gray-800/80 transition border border-gray-800/50"
-      >
-        <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Match Results</span>
-        <svg className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showMatches ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-      </button>
-
-      {showMatches && (
-        <div className="space-y-1 mb-6">
-          {staticSchedule.map((entry, idx) => {
-            if (entry.type === 'pl-header') {
-              return (
-                <div key={`hdr-${entry.week}`} className="flex items-center gap-2 py-2 px-1">
-                  <div className="h-px flex-1 bg-gray-800" />
-                  <span className="text-[10px] font-bold tracking-widest text-gray-600 uppercase">
-                    {entry.hasEuro ? 'GW' : 'MW'} {entry.week}/38
-                  </span>
-                  <div className="h-px flex-1 bg-gray-800" />
-                </div>
-              );
-            }
-            if (entry.type === 'pl') {
-              const match = entry.match;
-              return (
-                <div
-                  key={`pl-${idx}`}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 hover:bg-gray-800/60 transition"
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                    match.result === "W"
-                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      : match.result === "D"
-                        ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                        : "bg-red-500/20 text-red-400 border border-red-500/30"
-                  }`}>
-                    {match.result}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">
-                      <span className="text-gray-500 text-xs mr-1.5">
-                        {match.isHome ? "H" : "A"}
-                      </span>
-                      {match.opponent}
-                    </div>
-                    {match.goalScorers.length > 0 && (
-                      <div className="text-[11px] text-gray-500 truncate">
-                        {match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}
-                      </div>
-                    )}
-                  </div>
-                  <div className={`text-lg font-black tabular-nums ${
-                    match.result === "W"
-                      ? "text-emerald-400"
-                      : match.result === "D"
-                        ? "text-yellow-400"
-                        : "text-red-400"
-                  }`}>
-                    {match.goalsFor}-{match.goalsAgainst}
-                  </div>
-                </div>
-              );
-            }
-            if (entry.type === 'fa-cup') {
-              const match = entry.match;
-              const fcm = entry.faCupMatch;
-              return (
-                <div
-                  key={`fa-${idx}`}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition"
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                    match.result === "W"
-                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                      : "bg-red-500/20 text-red-400 border border-red-500/30"
-                  }`}>
-                    {match.result}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">
-                      <span className="text-purple-400 text-xs mr-1.5">{entry.label}</span>
-                      {match.opponent}
-                    </div>
-                    <div className="text-[11px] text-gray-500 truncate">
-                      {match.goalScorers.length > 0 && (
-                        <span>{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</span>
-                      )}
-                      {fcm?.extraTime && <span className="ml-1 text-purple-400/70">(AET)</span>}
-                      {fcm?.penalties && fcm.penaltyScore && (
-                        <span className="ml-1 text-purple-400/70">(Pens {fcm.penaltyScore.player}-{fcm.penaltyScore.opponent})</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className={`text-lg font-black tabular-nums ${
-                    match.result === "W" ? "text-purple-400" : "text-red-400"
-                  }`}>
-                    {match.goalsFor}-{match.goalsAgainst}
-                  </div>
-                </div>
-              );
-            }
-            if (entry.type === 'ucl') {
-              const match = entry.match;
-              const isUEL = entry.label.startsWith('UEL');
-              return (
-                <div
-                  key={`ucl-${idx}`}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 bg-gray-900/80 border border-gray-800/50 border-l-2 ${isUEL ? 'border-l-orange-500' : 'border-l-blue-500'} hover:bg-gray-800/60 transition`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                    match.result === "W"
-                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      : match.result === "D"
-                        ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                        : "bg-red-500/20 text-red-400 border border-red-500/30"
-                  }`}>
-                    {match.result}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">
-                      <span className={`text-xs mr-1.5 ${isUEL ? 'text-orange-400' : 'text-blue-400'}`}>{entry.label}</span>
-                      {match.opponent}
-                      <span className="text-gray-600 text-[10px] ml-1.5">({match.isHome ? "H" : "A"})</span>
-                    </div>
-                    {match.goalScorers.length > 0 && (
-                      <div className="text-[11px] text-gray-500 truncate">
-                        {match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}
-                        {match.extraTime && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(AET)</span>}
-                        {match.penalties && match.penaltyScore && (
-                          <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(Pens {match.penaltyScore.player}-{match.penaltyScore.opponent})</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className={`text-lg font-black tabular-nums ${
-                    match.result === "W"
-                      ? "text-emerald-400"
-                      : match.result === "D"
-                        ? "text-yellow-400"
-                        : "text-red-400"
-                  }`}>
-                    {match.goalsFor}-{match.goalsAgainst}
-                  </div>
-                </div>
-              );
-            }
-            if (entry.type === 'ucl-status') {
-              const isUEL = !!(season.uel?.qualified && !season.ucl?.qualified);
-              return (
-                <div
-                  key={`status-${idx}`}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-3 border ${
-                    entry.positive
-                      ? isUEL ? "bg-orange-900/30 border-orange-700/40" : "bg-blue-900/30 border-blue-700/40"
-                      : "bg-red-900/20 border-red-700/30"
-                  }`}
-                >
-                  <span className="text-sm">&#9917;</span>
-                  <div className="flex-1 min-w-0">
-                    <div className={`font-bold text-sm ${entry.positive ? (isUEL ? "text-orange-300" : "text-blue-300") : "text-red-400"}`}>
-                      {entry.text}
-                    </div>
-                    <div className="text-[10px] text-gray-500">{entry.subtext}</div>
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })}
-        </div>
-      )}
 
       {/* Season comparison */}
       {seasonNumber > 1 && previousResult && (
@@ -2206,22 +2012,23 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </button>
       )}
 
-      {/* Actions */}
-      <div className={onPlayNextSeason && season.actualFinish < 18 ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
-        {onPlayNextSeason && season.actualFinish < 18 && (
-          <button
-            onClick={() => onPlayNextSeason(season, players)}
-            className="py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 rounded-xl font-bold transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-            Season {seasonNumber + 1}
-          </button>
-        )}
-        <div className="grid grid-cols-2 gap-3">
+      {/* Season N+1 — big prominent button */}
+      {onPlayNextSeason && season.actualFinish < 18 && (
+        <button
+          onClick={() => onPlayNextSeason(season, players)}
+          className="w-full py-5 mb-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 rounded-xl text-lg font-black transition-all shadow-lg shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+          Season {seasonNumber + 1}
+        </button>
+      )}
+
+      {/* Share + New Draft — smaller, side by side */}
+      <div className="grid grid-cols-2 gap-3">
         <button
           onClick={handleShare}
           disabled={sharing}
-          className="py-4 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+          className="py-3.5 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
         >
           {sharing ? (
             <>
@@ -2237,21 +2044,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </button>
         <button
           onClick={onNewRun}
-          className="py-4 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 rounded-xl font-bold transition-all shadow-lg shadow-sky-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+          className="py-3.5 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 rounded-xl font-bold transition-all shadow-lg shadow-sky-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
           New Draft
         </button>
-        </div>
       </div>
-
-      {/* History link */}
-      <Link
-        href="/draft/history"
-        className="block w-full mt-3 py-3 text-center text-sm font-bold text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-xl transition"
-      >
-        View Draft History &rarr;
-      </Link>
 
       {/* Career Recap Modal */}
       {showCareerRecap && allSeasonResults && (
