@@ -34,6 +34,7 @@ interface Props {
   settings?: DraftSettings | null;
   onStartDraft: () => void;
   onSimulationComplete: (myResult: SeasonResult, allPlayers: RoomPlayer[]) => void;
+  onCareerComplete?: (seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[]) => void;
   onLeave: () => void;
 }
 
@@ -47,6 +48,7 @@ export default function MultiplayerLobby({
   settings,
   onStartDraft,
   onSimulationComplete,
+  onCareerComplete,
   onLeave,
 }: Props) {
   const [room, setRoom] = useState<RoomData | null>(null);
@@ -186,6 +188,26 @@ export default function MultiplayerLobby({
       if (d?.room?.status === "complete" && d.players) {
         tryComplete(d.players);
       }
+    } catch {
+      setSimError("Network error — try again");
+      setSimulating(false);
+    }
+  };
+
+  const handleDevSkipCareer = async () => {
+    if (!onCareerComplete) return;
+    setSimulating(true);
+    setSimError(null);
+    try {
+      const res = await fetch(`/api/draft/rooms/${roomCode}/dev-skip-career`, { method: "POST" });
+      if (!res.ok) {
+        const text = await res.text();
+        setSimError(text || "Career skip failed");
+        setSimulating(false);
+        return;
+      }
+      const data = await res.json();
+      onCareerComplete(data.seasons as SeasonResult[], data.finalRoomPlayers as RoomPlayer[]);
     } catch {
       setSimError("Network error — try again");
       setSimulating(false);
@@ -406,13 +428,24 @@ export default function MultiplayerLobby({
 
       {/* Admin dev skip — fills random squads + simulates instantly */}
       {isAdmin && isHost && !isSimulating && (
-        <button
-          onClick={handleDevSkip}
-          disabled={simulating}
-          className="w-full py-2.5 mb-3 rounded-xl border border-dashed border-orange-700/50 bg-orange-900/10 text-orange-400 text-xs font-bold tracking-wider uppercase hover:bg-orange-900/20 transition disabled:opacity-40"
-        >
-          ⚡ Dev Skip — Random Squads &amp; Simulate
-        </button>
+        <>
+          <button
+            onClick={handleDevSkip}
+            disabled={simulating}
+            className="w-full py-2.5 mb-1.5 rounded-xl border border-dashed border-orange-700/50 bg-orange-900/10 text-orange-400 text-xs font-bold tracking-wider uppercase hover:bg-orange-900/20 transition disabled:opacity-40"
+          >
+            ⚡ Dev Skip — Random Squads &amp; Simulate
+          </button>
+          {onCareerComplete && (
+            <button
+              onClick={handleDevSkipCareer}
+              disabled={simulating}
+              className="w-full py-2.5 mb-3 rounded-xl border border-dashed border-purple-700/50 bg-purple-900/10 text-purple-400 text-xs font-bold tracking-wider uppercase hover:bg-purple-900/20 transition disabled:opacity-40"
+            >
+              🏆 Dev Skip Full Career (5 Seasons)
+            </button>
+          )}
+        </>
       )}
 
       {!isHost && squadSubmitted && (

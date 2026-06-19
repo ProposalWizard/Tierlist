@@ -1260,7 +1260,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               return (
                 <div key={`fa-${idx}`} className="flex items-center gap-2 rounded-lg px-2.5 py-2 bg-purple-950/30 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition">
                   <span className="text-[10px] font-bold text-purple-400/70 w-8 shrink-0 truncate">{entry.label.replace("FA Cup ", "FA ")}</span>
-                  <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
+                  <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate">{match.opponent}</div>
                     <div className="text-[10px] text-gray-500 truncate">
@@ -1269,7 +1269,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                       {fcm?.penalties && fcm.penaltyScore && <span className="ml-1 text-purple-400/70">(Pens {fcm.penaltyScore.player}-{fcm.penaltyScore.opponent})</span>}
                     </div>
                   </div>
-                  <div className={`text-base font-black tabular-nums shrink-0 ${match.result === "W" ? "text-purple-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
+                  <div className={`text-base font-black tabular-nums shrink-0 ${match.result === "W" ? "text-emerald-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
                 </div>
               );
             }
