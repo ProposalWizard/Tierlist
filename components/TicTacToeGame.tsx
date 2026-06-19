@@ -345,6 +345,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
     type: "correct" | "wrong" | "duplicate";
   } | null>(null);
   const [popup, setPopup] = useState<{ text: string; title: string; isHint: boolean } | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [revealedHints, setRevealedHints] = useState<Set<string>>(new Set());
   const [hintsUsed, setHintsUsed] = useState(0);
   const [scoreSaved, setScoreSaved] = useState(false);
@@ -611,7 +612,80 @@ export default function TicTacToeGame({ puzzle }: Props) {
             {feedback.text}
           </p>
         )}
+        <button
+          onClick={() => setShowTutorial(true)}
+          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          How to Play
+        </button>
       </div>
+
+      {/* Tutorial modal */}
+      {showTutorial && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowTutorial(false)}>
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-gray-900 rounded-t-2xl">
+              <h2 className="text-base font-black text-white">How to Play</h2>
+              <button onClick={() => setShowTutorial(false)} className="text-gray-500 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-5 text-sm text-gray-300">
+
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">The Basics</h3>
+                <p>You&apos;re given a 3×3 grid. Each row and column has a label — a football club, nationality, league, or special category. To fill a square, you must name a player who fits <strong className="text-white">both</strong> the row and column labels for that square.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">How to Guess</h3>
+                <p>Click any empty square to select it, then type a player&apos;s name and press Enter. Names are fuzzy-matched — typos and accents are handled automatically. You can also type a surname only if it&apos;s unique enough.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Scoring</h3>
+                <p>Each valid answer earns points based on how rare that player is as an answer for that specific square. Rarer answers score more. Filling all 9 squares earns a <strong className="text-white">bonus</strong> on top.</p>
+                <p className="mt-1.5">In solo mode your total score is shown as you go. Try to beat your personal best by picking the highest-scoring answers.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">No Repeated Players</h3>
+                <p>You <strong className="text-white">cannot use the same player in more than one square</strong> — even if they technically qualify for multiple squares. Each player can only be placed once per game.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Categories & Subcategories</h3>
+                <p>Some labels are broad (e.g. <em>Premier League</em>) and some are specific (e.g. <em>Arsenal</em>). A player qualifies if they played for that club or meet that category at <strong className="text-white">any point in their career</strong>, not just currently.</p>
+                <p className="mt-1.5">Special categories like <em>50+ caps</em> or <em>World Cup winner</em> are explained with an <strong className="text-cyan-400">ⓘ info button</strong> on that label — tap it to see exactly what counts.</p>
+                <p className="mt-1.5">Some labels also have a <strong className="text-indigo-400">? hint button</strong> which gives you a clue about a valid answer (costs 1 hint; hints reduce your final score).</p>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">2 Player Mode</h3>
+                <p>Players take turns. On your turn, pick any unclaimed square and enter a valid player. If your answer is correct, you <strong className="text-white">claim that square</strong>. Get <strong className="text-white">three in a row</strong> (horizontally, vertically, or diagonally) to win the bonus and take the lead.</p>
+                <p className="mt-1.5">Each player has their own score and timer. The player with the most points when all squares are filled wins — or the first to complete a three-in-a-row earns a big bonus.</p>
+                <p className="mt-1.5">Both players share the same &quot;no repeated players&quot; rule — if Player 1 uses Messi, Player 2 cannot use Messi either.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Tips</h3>
+                <ul className="space-y-1 list-disc list-inside text-gray-400">
+                  <li>Think of obscure players for rarer squares — they score more points.</li>
+                  <li>Plan ahead so you don&apos;t use a key player in the wrong square.</li>
+                  <li>In 2-player, block your opponent&apos;s three-in-a-row by claiming a key square.</li>
+                  <li>Use hints sparingly — they cost points.</li>
+                </ul>
+              </section>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Grid */}
       <div className="mb-6">

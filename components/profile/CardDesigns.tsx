@@ -90,7 +90,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
               {/* Card preview area */}
               <div className="flex items-center justify-center pt-4 pb-2 px-3 bg-gray-900 rounded-t-xl">
                 <div
-                  className={`relative w-32 h-44 rounded-lg overflow-hidden transition-transform duration-200 ${
+                  className={`relative w-32 h-44 rounded-lg overflow-hidden bg-gray-900 transition-transform duration-200 ${
                     isLocked ? "grayscale opacity-40" : ""
                   } ${isHovered && !isLocked ? "scale-105" : ""}`}
                 >
@@ -100,7 +100,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
                         src={frameStyle.image}
                         alt={reward.name}
                         fill
-                        className="object-contain rounded-lg"
+                        className="object-cover"
                         sizes="128px"
                       />
                       {isLocked && (
