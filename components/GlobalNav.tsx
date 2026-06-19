@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import NavMenu from "./NavMenu";
 import GameSidebar from "./GameSidebar";
+import NavGameLinks from "./NavGameLinks";
 
 export default async function GlobalNav() {
   const supabase = await createClient();
@@ -21,14 +22,19 @@ export default async function GlobalNav() {
 
   return (
     <nav className="relative sticky top-0 z-50 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
-      <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-3 items-center px-4 py-3">
         <div className="flex items-center gap-2">
           <GameSidebar />
           <Link href="/" className="text-lg font-bold tracking-tight text-white">
             Knowitball
           </Link>
         </div>
-        <NavMenu isLoggedIn={!!user} isAdmin={userIsAdmin} />
+        <div className="flex justify-center">
+          <NavGameLinks />
+        </div>
+        <div className="flex justify-end">
+          <NavMenu isLoggedIn={!!user} isAdmin={userIsAdmin} />
+        </div>
       </div>
     </nav>
   );

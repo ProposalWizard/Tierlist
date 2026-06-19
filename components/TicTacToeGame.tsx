@@ -638,13 +638,32 @@ export default function TicTacToeGame({ puzzle }: Props) {
             <div className="px-5 py-4 space-y-5 text-sm text-gray-300">
 
               <section>
-                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">The Basics</h3>
-                <p>You&apos;re given a 3×3 grid. Each row and column has a label — a football club, nationality, league, or special category. To fill a square, you must name a player who fits <strong className="text-white">both</strong> the row and column labels for that square.</p>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">The Grid</h3>
+                <p>You&apos;re given a 3×3 grid. Each <strong className="text-white">row</strong> (left side) and <strong className="text-white">column</strong> (top) has a label — this could be a football club (e.g. <em>Arsenal</em>), a nationality (e.g. <em>Brazil</em>), a league (e.g. <em>La Liga</em>), or a special category (e.g. <em>50+ caps</em>).</p>
+                <p className="mt-1.5">To fill a square, you must name a player who matches <strong className="text-white">both</strong> the row label on the left and the column label above that square. For example, if the row says <em>Arsenal</em> and the column says <em>France</em>, you need to name a player who has played for Arsenal <strong className="text-white">and</strong> is French.</p>
+                <p className="mt-1.5">A player qualifies if they meet the requirement at <strong className="text-white">any point in their career</strong> — not just their current club or stats.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Sub-Requirements</h3>
+                <p>Some squares have a <strong className="text-white">sub-requirement</strong> — extra text shown inside the square in small purple text. These change what a square requires beyond just the row and column labels. There are three main types:</p>
+                <ul className="mt-2 space-y-2.5">
+                  <li>
+                    <strong className="text-indigo-400">And</strong> — The square shows a third requirement inside it. Your answer must match <strong className="text-white">all three</strong>: the row label, the column label, <em>and</em> the sub-requirement. For example: Row = <em>Arsenal</em>, Column = <em>France</em>, Sub = <em>World Cup Winner</em> — you&apos;d need a French player who played for Arsenal and won the World Cup.
+                  </li>
+                  <li>
+                    <strong className="text-indigo-400">Replace Left / Replace Above</strong> — The sub-requirement <strong className="text-white">replaces</strong> either the row label (left) or the column label (above). So instead of matching the original row/column, you match the sub-requirement text instead. The square text tells you what the replacement is.
+                  </li>
+                  <li>
+                    <strong className="text-indigo-400">Or Replace Left / Or Replace Above</strong> — The sub-requirement gives you an <strong className="text-white">alternative</strong> for one of the labels. Your answer can match either the original row/column label <em>or</em> the sub-requirement text. For example: Row = <em>Arsenal</em>, Column = <em>France</em>, Sub = <em>Or Replace Left: Chelsea</em> — the player could have played for Arsenal <em>or</em> Chelsea, and be French.
+                  </li>
+                </ul>
+                <p className="mt-2 text-gray-400">If a square has no sub-requirement text inside it, it&apos;s a normal square — just match the row and column labels.</p>
               </section>
 
               <section>
                 <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">How to Guess</h3>
-                <p>Click any empty square to select it, then type a player&apos;s name and press Enter. Names are fuzzy-matched — typos and accents are handled automatically. You can also type a surname only if it&apos;s unique enough.</p>
+                <p>Click any empty square to select it, then type a player&apos;s name and press Enter. Names are fuzzy-matched — typos and accents are handled automatically. You can also type just a surname if it&apos;s unique enough.</p>
               </section>
 
               <section>
@@ -659,17 +678,16 @@ export default function TicTacToeGame({ puzzle }: Props) {
               </section>
 
               <section>
-                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Categories & Subcategories</h3>
-                <p>Some labels are broad (e.g. <em>Premier League</em>) and some are specific (e.g. <em>Arsenal</em>). A player qualifies if they played for that club or meet that category at <strong className="text-white">any point in their career</strong>, not just currently.</p>
-                <p className="mt-1.5">Special categories like <em>50+ caps</em> or <em>World Cup winner</em> are explained with an <strong className="text-cyan-400">ⓘ info button</strong> on that label — tap it to see exactly what counts.</p>
-                <p className="mt-1.5">Some labels also have a <strong className="text-indigo-400">? hint button</strong> which gives you a clue about a valid answer (costs 1 hint; hints reduce your final score).</p>
+                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Info &amp; Hints</h3>
+                <p>Some labels have an <strong className="text-cyan-400">ⓘ info button</strong> — tap it to see exactly what counts for that label (e.g. what qualifies as &quot;50+ caps&quot;).</p>
+                <p className="mt-1.5">Some labels also have a <strong className="text-indigo-400">? hint button</strong> which gives you a clue about a valid answer. Using a hint reduces your final score.</p>
               </section>
 
               <section>
                 <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">2 Player Mode</h3>
-                <p>Players take turns. On your turn, pick any unclaimed square and enter a valid player. If your answer is correct, you <strong className="text-white">claim that square</strong>. Get <strong className="text-white">three in a row</strong> (horizontally, vertically, or diagonally) to win the bonus and take the lead.</p>
-                <p className="mt-1.5">Each player has their own score and timer. The player with the most points when all squares are filled wins — or the first to complete a three-in-a-row earns a big bonus.</p>
-                <p className="mt-1.5">Both players share the same &quot;no repeated players&quot; rule — if Player 1 uses Messi, Player 2 cannot use Messi either.</p>
+                <p>Players take turns. On your turn, pick any unclaimed square and enter a valid player. If your answer is correct, you <strong className="text-white">claim that square</strong>. Get <strong className="text-white">three in a row</strong> (horizontally, vertically, or diagonally) to win a bonus.</p>
+                <p className="mt-1.5">Each player has their own score and timer. The player with the most points when all squares are filled wins.</p>
+                <p className="mt-1.5">Both players share the same no-repeat rule — if Player 1 uses Messi, Player 2 cannot use Messi either.</p>
               </section>
 
               <section>
@@ -678,6 +696,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                   <li>Think of obscure players for rarer squares — they score more points.</li>
                   <li>Plan ahead so you don&apos;t use a key player in the wrong square.</li>
                   <li>In 2-player, block your opponent&apos;s three-in-a-row by claiming a key square.</li>
+                  <li>Check sub-requirements carefully — they change what a square needs.</li>
                   <li>Use hints sparingly — they cost points.</li>
                 </ul>
               </section>
