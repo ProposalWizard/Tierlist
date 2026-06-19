@@ -36,6 +36,7 @@ export default async function GlobalNav() {
           <NavMenu isLoggedIn={!!user} isAdmin={userIsAdmin} />
         </div>
       </div>
+      <NavGameLinks mobile />
     </nav>
   );
 }
