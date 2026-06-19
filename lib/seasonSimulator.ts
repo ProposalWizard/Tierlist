@@ -204,6 +204,43 @@ export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
   { name: 'Hull', strength: 71 },
 ];
 
+export const RESERVE_TEAMS: { name: string; strength: number }[] = [
+  { name: 'Wolves', strength: 73 },
+  { name: 'Burnley', strength: 72 },
+  { name: 'West Ham', strength: 71 },
+];
+
+const ALL_TEAMS_POOL: { name: string; strength: number }[] = [...DEFAULT_PL_TEAMS, ...RESERVE_TEAMS];
+
+export function getSeasonTeams(
+  previousLeagueTable?: LeagueTeam[] | { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
+): { name: string; strength: number }[] {
+  if (!previousLeagueTable || previousLeagueTable.length === 0) {
+    return DEFAULT_PL_TEAMS;
+  }
+
+  const poolNames = new Set(ALL_TEAMS_POOL.map(t => t.name));
+  const isAiTeam = (name: string) => poolNames.has(name);
+
+  const aiTeamsInTable = previousLeagueTable.filter(t => isAiTeam(t.name));
+  const relegated = aiTeamsInTable.slice(-3).map(t => t.name);
+
+  const currentAiNames = new Set(aiTeamsInTable.map(t => t.name));
+  const promoted = ALL_TEAMS_POOL
+    .filter(t => !currentAiNames.has(t.name))
+    .slice(0, relegated.length);
+
+  const relegatedSet = new Set(relegated);
+  const remainingTeams = aiTeamsInTable
+    .filter(t => !relegatedSet.has(t.name))
+    .map(t => {
+      const pool = ALL_TEAMS_POOL.find(p => p.name === t.name);
+      return { name: t.name, strength: pool?.strength ?? 75 };
+    });
+
+  return [...remainingTeams, ...promoted];
+}
+
 // --- UCL team data ---
 
 const UCL_TEAMS: { pot: number; name: string; strength: number }[] = [
@@ -1801,7 +1838,7 @@ export function simulateSeason(
 
   const opponents = otherTeams && otherTeams.length === 19
     ? otherTeams
-    : DEFAULT_PL_TEAMS;
+    : getSeasonTeams(previousLeagueTable);
 
   const ratings = computePhaseRatings(starters);
 

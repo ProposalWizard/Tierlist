@@ -213,7 +213,7 @@ export default function MultiplayerLobby({
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
         <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Room Code</div>
         <div className="flex items-center gap-3">
-          <div className="flex-1 text-3xl font-black tracking-[0.3em] text-emerald-400 font-mono">
+          <div className="flex-1 text-3xl font-black tracking-[0.3em] text-emerald-400 font-mono" style={{ fontFeatureSettings: '"zero" 1' }}>
             {roomCode}
           </div>
           <button

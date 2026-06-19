@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { simulateSharedSeason, DEFAULT_PL_TEAMS } from "@/lib/seasonSimulator";
-import type { DraftPlayer, SharedSeasonInput } from "@/lib/seasonSimulator";
+import { simulateSharedSeason, getSeasonTeams } from "@/lib/seasonSimulator";
+import type { DraftPlayer, SharedSeasonInput, LeagueTeam } from "@/lib/seasonSimulator";
 
 function hashRoomId(roomId: string): number {
   let h = 2166136261;
@@ -58,7 +58,11 @@ export async function POST(
     }
 
     const N = roomPlayers.length;
-    const sortedAI = [...DEFAULT_PL_TEAMS].sort((a, b) => b.strength - a.strength);
+    const seasonNumber = room.season_number ?? 1;
+    const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
+      { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
+    const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined);
+    const sortedAI = [...seasonTeams].sort((a, b) => b.strength - a.strength);
     const aiOpponents = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
 
     const humanTeams: SharedSeasonInput[] = roomPlayers.map(rp => ({
@@ -68,9 +72,6 @@ export async function POST(
     }));
 
     const sharedSeed = hashRoomId(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
-    const seasonNumber = room.season_number ?? 1;
-    const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
-      { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
     const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined);
 
     for (const rp of roomPlayers) {
