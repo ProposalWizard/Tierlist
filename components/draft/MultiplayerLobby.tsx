@@ -27,6 +27,7 @@ export interface RoomData {
 interface Props {
   roomCode: string;
   isHost: boolean;
+  isAdmin?: boolean;
   userId: string;
   squadSubmitted: boolean;
   currentSeason?: number;
@@ -39,6 +40,7 @@ interface Props {
 export default function MultiplayerLobby({
   roomCode,
   isHost,
+  isAdmin = false,
   userId,
   squadSubmitted,
   currentSeason = 1,
@@ -158,6 +160,28 @@ export default function MultiplayerLobby({
         return;
       }
       // Simulation succeeded on the server — immediately fetch and complete
+      const d = await fetchRoom();
+      if (d?.room?.status === "complete" && d.players) {
+        tryComplete(d.players);
+      }
+    } catch {
+      setSimError("Network error — try again");
+      setSimulating(false);
+    }
+  };
+
+  const handleDevSkip = async () => {
+    setSimulating(true);
+    setSimError(null);
+    completedRef.current = false;
+    try {
+      const res = await fetch(`/api/draft/rooms/${roomCode}/dev-skip`, { method: "POST" });
+      if (!res.ok) {
+        const text = await res.text();
+        setSimError(text || "Dev skip failed");
+        setSimulating(false);
+        return;
+      }
       const d = await fetchRoom();
       if (d?.room?.status === "complete" && d.players) {
         tryComplete(d.players);
@@ -378,6 +402,17 @@ export default function MultiplayerLobby({
             Simulate Season {currentSeason}
           </button>
         </>
+      )}
+
+      {/* Admin dev skip — fills random squads + simulates instantly */}
+      {isAdmin && isHost && !isSimulating && (
+        <button
+          onClick={handleDevSkip}
+          disabled={simulating}
+          className="w-full py-2.5 mb-3 rounded-xl border border-dashed border-orange-700/50 bg-orange-900/10 text-orange-400 text-xs font-bold tracking-wider uppercase hover:bg-orange-900/20 transition disabled:opacity-40"
+        >
+          ⚡ Dev Skip — Random Squads &amp; Simulate
+        </button>
       )}
 
       {!isHost && squadSubmitted && (

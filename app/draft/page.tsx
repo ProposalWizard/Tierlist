@@ -191,6 +191,7 @@ export default function DraftPage() {
   const [nextUsedClubYears, setNextUsedClubYears] = useState<string[]>([]);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
 
   // Respin counter — persists across all DraftPick phases in one save
@@ -206,9 +207,16 @@ export default function DraftPage() {
   useEffect(() => {
     setResume(loadProgress());
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setIsSignedIn(!!user);
       setUserId(user?.id ?? null);
+      if (user) {
+        const res = await fetch("/api/profile/admin-check");
+        if (res.ok) {
+          const d = await res.json();
+          setIsAdminUser(d.isAdmin === true);
+        }
+      }
     });
   }, []);
 
@@ -744,6 +752,7 @@ export default function DraftPage() {
         <MultiplayerLobby
           roomCode={roomCode}
           isHost={isHost}
+          isAdmin={isAdminUser}
           userId={userId}
           squadSubmitted={squadSubmitted}
           currentSeason={currentSeason}
