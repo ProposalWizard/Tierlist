@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 const MAX_PER_CATEGORY = 5;
+const ASCENDING_RECORD_TYPES = new Set(["goals_conceded"]);
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -49,8 +50,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Table is already capped at ~5 per (competition, record_type),
-  // so just group directly — no JS filtering needed.
   const grouped: Record<string, { value: number; playerName: string | null; playerOvr: number | null; username: string; seasonNumber: number | null; createdAt: string }[]> = {};
 
   for (const row of data ?? []) {
@@ -66,6 +65,14 @@ export async function GET(req: Request) {
     });
   }
 
+  // Re-sort ascending record types so index 0 = best (lowest)
+  for (const key of Object.keys(grouped)) {
+    const recordType = key.split("_").slice(1).join("_");
+    if (ASCENDING_RECORD_TYPES.has(recordType)) {
+      grouped[key].sort((a, b) => a.value - b.value);
+    }
+  }
+
   return NextResponse.json({ records: grouped });
 }
 
@@ -75,20 +82,30 @@ interface RecordEntry {
   playerOvr: number | null;
 }
 
+interface TeamStat {
+  value: number;
+  teamOvr?: number | null;
+}
+
 interface RecordPayload {
   pl: {
-    wins: number;
-    unbeaten: number;
+    wins: TeamStat;
+    unbeaten: TeamStat;
+    goals: RecordEntry;
+    assists: RecordEntry;
+    cleanSheets: RecordEntry;
+    goalsConceded: TeamStat;
+  };
+  all: {
+    wins: TeamStat;
+    unbeaten: TeamStat;
     goals: RecordEntry;
     assists: RecordEntry;
     cleanSheets: RecordEntry;
   };
-  all: {
-    wins: number;
-    unbeaten: number;
+  career?: {
     goals: RecordEntry;
-    assists: RecordEntry;
-    cleanSheets: RecordEntry;
+    trophies: number;
   };
   seasonNumber?: number;
 }
@@ -112,44 +129,65 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Get username from profile
   const serviceClient = createServiceClient();
   const { data: profile } = await serviceClient
     .from("user_profiles")
     .select("username")
-    .eq("id", user.id)
+    .eq("user_id", user.id)
     .single();
 
   const username = profile?.username || user.email?.split("@")[0] || "Player";
 
   const body: RecordPayload = await req.json();
-  const { pl, all, seasonNumber } = body;
-
-  type TopStat = { value: number; playerName: string | null; playerOvr: number | null };
+  const { pl, all, career, seasonNumber } = body;
 
   const candidates: CandidateRow[] = [];
 
-  const pushCandidate = (competition: string, record_type: string, stat: number | TopStat, withPlayer = false) => {
-    if (typeof stat === "number") {
-      if (stat <= 0) return;
-      candidates.push({ user_id: user.id, username, competition, record_type, value: stat, player_name: null, player_ovr: null, season_number: seasonNumber ?? null });
-    } else {
-      if (stat.value <= 0) return;
-      candidates.push({ user_id: user.id, username, competition, record_type, value: stat.value, player_name: withPlayer ? stat.playerName : null, player_ovr: withPlayer ? stat.playerOvr : null, season_number: seasonNumber ?? null });
-    }
+  const pushEntry = (competition: string, record_type: string, stat: RecordEntry) => {
+    if (stat.value <= 0) return;
+    candidates.push({
+      user_id: user.id, username, competition, record_type,
+      value: stat.value,
+      player_name: stat.playerName,
+      player_ovr: stat.playerOvr,
+      season_number: seasonNumber ?? null,
+    });
   };
 
-  pushCandidate("pl", "wins", pl.wins);
-  pushCandidate("pl", "unbeaten", pl.unbeaten);
-  pushCandidate("pl", "goals", pl.goals, true);
-  pushCandidate("pl", "assists", pl.assists, true);
-  pushCandidate("pl", "clean_sheets", pl.cleanSheets, true);
+  const pushTeam = (competition: string, record_type: string, stat: TeamStat) => {
+    if (stat.value <= 0) return;
+    candidates.push({
+      user_id: user.id, username, competition, record_type,
+      value: stat.value,
+      player_name: null,
+      player_ovr: stat.teamOvr ?? null,
+      season_number: seasonNumber ?? null,
+    });
+  };
 
-  pushCandidate("all", "wins", all.wins);
-  pushCandidate("all", "unbeaten", all.unbeaten);
-  pushCandidate("all", "goals", all.goals, true);
-  pushCandidate("all", "assists", all.assists, true);
-  pushCandidate("all", "clean_sheets", all.cleanSheets, true);
+  pushTeam("pl", "wins", pl.wins);
+  pushTeam("pl", "unbeaten", pl.unbeaten);
+  pushEntry("pl", "goals", pl.goals);
+  pushEntry("pl", "assists", pl.assists);
+  pushEntry("pl", "clean_sheets", pl.cleanSheets);
+  pushTeam("pl", "goals_conceded", pl.goalsConceded);
+
+  pushTeam("all", "wins", all.wins);
+  pushTeam("all", "unbeaten", all.unbeaten);
+  pushEntry("all", "goals", all.goals);
+  pushEntry("all", "assists", all.assists);
+  pushEntry("all", "clean_sheets", all.cleanSheets);
+
+  if (career) {
+    if (career.goals.value > 0) pushEntry("career", "career_goals", career.goals);
+    if (career.trophies > 0) {
+      candidates.push({
+        user_id: user.id, username, competition: "career", record_type: "career_trophies",
+        value: career.trophies, player_name: null, player_ovr: null,
+        season_number: seasonNumber ?? null,
+      });
+    }
+  }
 
   if (candidates.length === 0) {
     return NextResponse.json({ ok: true, inserted: 0 });
@@ -158,13 +196,14 @@ export async function POST(req: Request) {
   let inserted = 0;
 
   for (const candidate of candidates) {
-    // Fetch current top 5 for this (competition, record_type), ordered by value DESC
+    const ascending = ASCENDING_RECORD_TYPES.has(candidate.record_type);
+
     const { data: existing, error: fetchErr } = await serviceClient
       .from("draft_records")
       .select("id, value")
       .eq("competition", candidate.competition)
       .eq("record_type", candidate.record_type)
-      .order("value", { ascending: false })
+      .order("value", { ascending })
       .limit(MAX_PER_CATEGORY);
 
     if (fetchErr) {
@@ -175,7 +214,6 @@ export async function POST(req: Request) {
     const count = existing?.length ?? 0;
 
     if (count < MAX_PER_CATEGORY) {
-      // Fewer than 5 entries — insert directly
       const { error: insErr } = await serviceClient.from("draft_records").insert(candidate);
       if (insErr) {
         console.error(`Failed to insert record:`, insErr.message);
@@ -183,10 +221,9 @@ export async function POST(req: Request) {
         inserted++;
       }
     } else {
-      // 5 entries exist — check if new value beats the lowest (last in the sorted list)
-      const lowest = existing![count - 1];
-      if (candidate.value > lowest.value) {
-        // Insert the new record and delete the lowest one
+      const worst = existing![count - 1];
+      const beatsWorst = ascending ? candidate.value < worst.value : candidate.value > worst.value;
+      if (beatsWorst) {
         const { error: insErr } = await serviceClient.from("draft_records").insert(candidate);
         if (insErr) {
           console.error(`Failed to insert record:`, insErr.message);
@@ -197,17 +234,18 @@ export async function POST(req: Request) {
         const { error: delErr } = await serviceClient
           .from("draft_records")
           .delete()
-          .eq("id", lowest.id);
+          .eq("id", worst.id);
         if (delErr) {
-          console.error(`Failed to prune lowest record:`, delErr.message);
+          console.error(`Failed to prune worst record:`, delErr.message);
         }
       }
-      // Otherwise: value doesn't beat top 5, skip silently
     }
   }
 
   // Upsert personal bests
   for (const candidate of candidates) {
+    const ascending = ASCENDING_RECORD_TYPES.has(candidate.record_type);
+
     const { data: existing } = await serviceClient
       .from("draft_personal_records")
       .select("id, value")
@@ -226,17 +264,20 @@ export async function POST(req: Request) {
         player_ovr: candidate.player_ovr,
         season_number: candidate.season_number,
       });
-    } else if (candidate.value > existing.value) {
-      await serviceClient
-        .from("draft_personal_records")
-        .update({
-          value: candidate.value,
-          player_name: candidate.player_name,
-          player_ovr: candidate.player_ovr,
-          season_number: candidate.season_number,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existing.id);
+    } else {
+      const isNewBest = ascending ? candidate.value < existing.value : candidate.value > existing.value;
+      if (isNewBest) {
+        await serviceClient
+          .from("draft_personal_records")
+          .update({
+            value: candidate.value,
+            player_name: candidate.player_name,
+            player_ovr: candidate.player_ovr,
+            season_number: candidate.season_number,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+      }
     }
   }
 

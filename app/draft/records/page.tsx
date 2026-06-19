@@ -10,29 +10,44 @@ interface RecordEntry {
   seasonNumber: number | null;
 }
 
-const RECORD_TYPES: { key: string; label: string; emoji: string; isTeam: boolean }[] = [
-  { key: "wins",        label: "Most Wins",        emoji: "🏆", isTeam: true },
-  { key: "goals",       label: "Most Goals",       emoji: "⚽", isTeam: false },
-  { key: "assists",     label: "Most Assists",      emoji: "🎯", isTeam: false },
-  { key: "clean_sheets",label: "Most Clean Sheets", emoji: "🧤", isTeam: false },
-  { key: "unbeaten",    label: "Longest Unbeaten",  emoji: "🛡️", isTeam: true },
+interface RecordType {
+  key: string;
+  label: string;
+  emoji: string;
+  isTeam: boolean;
+  ascending?: boolean;
+  plOnly?: boolean;
+}
+
+const RECORD_TYPES: RecordType[] = [
+  { key: "wins",          label: "Most Wins",           emoji: "🏆", isTeam: true },
+  { key: "goals",         label: "Golden Boot",         emoji: "👟", isTeam: false },
+  { key: "assists",       label: "Most Assists",        emoji: "🎯", isTeam: false },
+  { key: "clean_sheets",  label: "Golden Glove",        emoji: "🧤", isTeam: false },
+  { key: "unbeaten",      label: "Longest Unbeaten",    emoji: "🛡️", isTeam: true },
+  { key: "goals_conceded",label: "Least Goals Conceded",emoji: "🔒", isTeam: true, ascending: true, plOnly: true },
+];
+
+const CAREER_RECORD_TYPES: RecordType[] = [
+  { key: "career_goals",    label: "Most Career Goals",  emoji: "⚽", isTeam: false },
+  { key: "career_trophies", label: "Most Trophies Won",  emoji: "🏅", isTeam: true },
 ];
 
 const MEDALS = ["🥇", "🥈", "🥉", "4th", "5th"];
 
-function OvrBadge({ ovr }: { ovr: number }) {
+function OvrBadge({ ovr, label }: { ovr: number; label?: string }) {
   const colour =
     ovr >= 88 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" :
     ovr >= 80 ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" :
     "bg-gray-800/80 text-gray-400 border-gray-700/40";
   return (
     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${colour}`}>
-      {ovr} OVR
+      {ovr} {label ?? "OVR"}
     </span>
   );
 }
 
-function Leaderboard({ entries, isTeam }: { entries: RecordEntry[]; isTeam: boolean }) {
+function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }) {
   if (entries.length === 0) {
     return (
       <div className="text-center py-6 text-gray-600 text-sm">
@@ -59,7 +74,7 @@ function Leaderboard({ entries, isTeam }: { entries: RecordEntry[]; isTeam: bool
             {MEDALS[i]}
           </span>
           <div className="flex-1 min-w-0">
-            {!isTeam && entry.playerName && (
+            {!rt.isTeam && entry.playerName && (
               <div className="text-sm font-bold text-white truncate">
                 {entry.playerName}
                 {entry.playerOvr !== null && (
@@ -69,13 +84,16 @@ function Leaderboard({ entries, isTeam }: { entries: RecordEntry[]; isTeam: bool
                 )}
               </div>
             )}
-            <div className={`text-xs text-gray-400 truncate ${isTeam ? "font-bold text-sm text-white" : ""}`}>
-              {isTeam ? (
-                <>
+            <div className={`text-xs text-gray-400 truncate ${rt.isTeam ? "font-bold text-sm text-white" : ""}`}>
+              {rt.isTeam ? (
+                <span className="flex items-center gap-2 flex-wrap">
                   <span className="text-white font-bold text-sm">{entry.value}</span>
-                  <span className="text-gray-500 text-xs font-normal ml-2">by </span>
+                  {entry.playerOvr !== null && (
+                    <OvrBadge ovr={entry.playerOvr} label="OVR" />
+                  )}
+                  <span className="text-gray-500 text-xs font-normal">by</span>
                   <span className="text-emerald-400 font-bold">{entry.username}</span>
-                </>
+                </span>
               ) : (
                 <>
                   <span className="text-emerald-400 font-bold">{entry.username}</span>
@@ -86,11 +104,13 @@ function Leaderboard({ entries, isTeam }: { entries: RecordEntry[]; isTeam: bool
               )}
             </div>
           </div>
-          <div className={`text-xl font-black tabular-nums shrink-0 ${
-            i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-gray-500"
-          }`}>
-            {!isTeam ? entry.value : ""}
-          </div>
+          {!rt.isTeam && (
+            <div className={`text-xl font-black tabular-nums shrink-0 ${
+              i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-gray-500"
+            }`}>
+              {entry.value}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -113,6 +133,8 @@ export default function DraftRecordsPage() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  const visibleRecords = RECORD_TYPES.filter(rt => !(rt.plOnly && competition === "all"));
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -176,7 +198,8 @@ export default function DraftRecordsPage() {
 
         {!loading && !error && (
           <div className="space-y-6">
-            {RECORD_TYPES.map(rt => {
+            {/* Season records */}
+            {visibleRecords.map(rt => {
               const key = `${competition}_${rt.key}`;
               const entries = records[key] ?? [];
               return (
@@ -191,11 +214,45 @@ export default function DraftRecordsPage() {
                         {competition === "pl" ? "Premier League" : "All Competitions"} · Season record
                       </p>
                     </div>
+                    {rt.ascending && (
+                      <span className="ml-auto text-[10px] text-gray-600 font-bold tracking-widest uppercase">lower is better</span>
+                    )}
                   </div>
-                  <Leaderboard entries={entries} isTeam={rt.isTeam} />
+                  <Leaderboard entries={entries} rt={rt} />
                 </div>
               );
             })}
+
+            {/* Career records — always visible */}
+            <div className="pt-2">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-lg">🌟</span>
+                <h2 className="text-xs font-extrabold tracking-[0.2em] text-gray-500 uppercase">Career Records</h2>
+                <div className="flex-1 h-px bg-gray-800" />
+              </div>
+              <div className="space-y-4">
+                {CAREER_RECORD_TYPES.map(rt => {
+                  const key = `career_${rt.key}`;
+                  const entries = records[key] ?? [];
+                  return (
+                    <div key={rt.key} className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-xl">{rt.emoji}</span>
+                        <div>
+                          <h2 className="text-sm font-extrabold tracking-wide text-white uppercase">
+                            {rt.label}
+                          </h2>
+                          <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">
+                            Career · All competitions
+                          </p>
+                        </div>
+                      </div>
+                      <Leaderboard entries={entries} rt={rt} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             <p className="text-center text-gray-700 text-xs pb-4">
               Only signed-in players appear on these boards.
