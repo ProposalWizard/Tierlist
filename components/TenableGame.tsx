@@ -269,9 +269,9 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
         {/* Score */}
         <div className="text-center mb-4">
           <span className="text-2xl font-black text-white">{score}</span>
-          <span className="text-lg text-gray-500"> / 10</span>
+          <span className="text-lg text-gray-400"> / 10</span>
           {hasBank && (
-            <span className="ml-2 text-xs text-gray-600">({answers.length} in bank)</span>
+            <span className="ml-2 text-xs text-gray-400">({answers.length} in bank)</span>
           )}
         </div>
 
@@ -290,7 +290,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
 
             let bgClass = "bg-gray-800";
             let textContent: React.ReactNode = (
-              <span className="text-lg font-black text-gray-500">{pos}</span>
+              <span className="text-lg font-black text-gray-400">{pos}</span>
             );
 
             if (isRevealed) {
@@ -318,8 +318,8 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
               if (!hasBank) {
                 textContent = (
                   <div className="flex items-center justify-between w-full px-2">
-                    <span className="text-lg font-black text-gray-500">{pos}</span>
-                    <span className="text-sm font-semibold text-gray-500">{slot.name}</span>
+                    <span className="text-lg font-black text-gray-400">{pos}</span>
+                    <span className="text-sm font-semibold text-gray-400">{slot.name}</span>
                   </div>
                 );
               }
@@ -408,7 +408,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
         )}
 
         {/* Navigation */}
-        <div className="mt-8 flex items-center justify-between text-xs text-gray-600">
+        <div className="mt-8 flex items-center justify-between text-xs text-gray-400">
           {puzzle.daily_date && (
             <span>#{puzzle.daily_date}</span>
           )}

@@ -12,7 +12,7 @@ const games = [
   { name: "Football Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Tierlist", href: "/tierlists" },
   { name: "Blind Ranking", href: "/blind-rankings" },
-  { name: "Tenaball", href: "/tenable" },
+  { name: "Ten-A-Ball", href: "/tenable" },
 ];
 
 export default function HomePage() {

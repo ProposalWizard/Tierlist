@@ -90,7 +90,7 @@ function OvrBadge({ ovr }: { ovr: number }) {
 function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }) {
   if (entries.length === 0) {
     return (
-      <div className="text-center py-6 text-gray-600 text-sm">
+      <div className="text-center py-6 text-gray-400 text-sm">
         No records yet — be the first!
       </div>
     );
@@ -112,7 +112,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
                     : "bg-gray-900/50 border-gray-800/30"
             }`}
           >
-            <span className={`text-lg leading-none w-6 text-center shrink-0 ${i >= 3 ? "text-xs font-bold text-gray-600" : ""}`}>
+            <span className={`text-lg leading-none w-6 text-center shrink-0 ${i >= 3 ? "text-xs font-bold text-gray-400" : ""}`}>
               {MEDALS[i]}
             </span>
             <div className="flex-1 min-w-0">
@@ -129,7 +129,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
                   <span className="flex items-center gap-2 flex-wrap">
                     <span className="text-white font-bold text-sm">{entry.value}</span>
                     {entry.playerOvr !== null && <OvrBadge ovr={entry.playerOvr} />}
-                    <span className="text-gray-500 text-xs font-normal">by</span>
+                    <span className="text-gray-400 text-xs font-normal">by</span>
                     {isOfficial ? (
                       <span className="text-amber-400 font-bold">⭐ Official</span>
                     ) : (
@@ -144,7 +144,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
                       <span className="text-emerald-400 font-bold">{entry.username}</span>
                     )}
                     {!isOfficial && entry.seasonNumber && (
-                      <span className="text-gray-600 ml-1">· S{entry.seasonNumber}</span>
+                      <span className="text-gray-400 ml-1">· S{entry.seasonNumber}</span>
                     )}
                   </>
                 )}
@@ -152,7 +152,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
             </div>
             {!rt.isTeam && (
               <div className={`text-xl font-black tabular-nums shrink-0 ${
-                i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-gray-500"
+                i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-gray-400"
               }`}>
                 {entry.value}
               </div>
@@ -190,7 +190,7 @@ export default function DraftRecordsPage() {
         <div className="mb-8">
           <Link
             href="/draft"
-            className="inline-flex items-center gap-1.5 text-gray-500 hover:text-white text-sm font-medium mb-6 transition-colors"
+            className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium mb-6 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -201,7 +201,7 @@ export default function DraftRecordsPage() {
             <span className="text-3xl">📋</span>
             <div>
               <h1 className="text-2xl font-black tracking-tight text-white">Hall of Records</h1>
-              <p className="text-gray-500 text-sm">All-time season records · <span className="text-amber-400/80">⭐ Official</span> = real-world PL record to beat</p>
+              <p className="text-gray-400 text-sm">All-time season records · <span className="text-amber-400">⭐ Official</span> = real-world PL record to beat</p>
             </div>
           </div>
         </div>
@@ -211,7 +211,7 @@ export default function DraftRecordsPage() {
           <button
             onClick={() => setCompetition("pl")}
             className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-              competition === "pl" ? "bg-purple-600 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"
+              competition === "pl" ? "bg-purple-600 text-white shadow-lg" : "text-gray-400 hover:text-white"
             }`}
           >
             Premier League
@@ -219,7 +219,7 @@ export default function DraftRecordsPage() {
           <button
             onClick={() => setCompetition("all")}
             className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-              competition === "all" ? "bg-purple-600 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"
+              competition === "all" ? "bg-purple-600 text-white shadow-lg" : "text-gray-400 hover:text-white"
             }`}
           >
             All Comps
@@ -229,7 +229,7 @@ export default function DraftRecordsPage() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-gray-500 text-sm">Loading records...</p>
+            <p className="text-gray-400 text-sm">Loading records...</p>
           </div>
         )}
 
@@ -252,12 +252,12 @@ export default function DraftRecordsPage() {
                       <h2 className="text-sm font-extrabold tracking-wide text-white uppercase">
                         {rt.label}
                       </h2>
-                      <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
                         {competition === "pl" ? "Premier League" : "All Competitions"} · Season record
                       </p>
                     </div>
                     {rt.ascending && (
-                      <span className="text-[10px] text-gray-600 font-bold tracking-widest uppercase">lower is better</span>
+                      <span className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">lower is better</span>
                     )}
                   </div>
                   <Leaderboard entries={entries} rt={rt} />
@@ -269,7 +269,7 @@ export default function DraftRecordsPage() {
             <div className="pt-2">
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-lg">🌟</span>
-                <h2 className="text-xs font-extrabold tracking-[0.2em] text-gray-500 uppercase">Career Records</h2>
+                <h2 className="text-xs font-extrabold tracking-[0.2em] text-gray-300 uppercase">Career Records</h2>
                 <div className="flex-1 h-px bg-gray-800" />
               </div>
               <div className="space-y-4">
@@ -284,7 +284,7 @@ export default function DraftRecordsPage() {
                           <h2 className="text-sm font-extrabold tracking-wide text-white uppercase">
                             {rt.label}
                           </h2>
-                          <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">
+                          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
                             Career · All competitions
                           </p>
                         </div>
@@ -296,7 +296,7 @@ export default function DraftRecordsPage() {
               </div>
             </div>
 
-            <p className="text-center text-gray-700 text-xs pb-4">
+            <p className="text-center text-gray-500 text-xs pb-4">
               Only signed-in players appear on these boards. ⭐ Official = real-world PL benchmark.
             </p>
           </div>

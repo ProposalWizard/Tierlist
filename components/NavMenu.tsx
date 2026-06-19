@@ -145,7 +145,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                   <form action="/api/auth/signout" method="POST">
                     <button
                       type="submit"
-                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-400 hover:bg-gray-900 hover:text-white"
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-300 hover:bg-gray-900 hover:text-white"
                     >
                       Sign out
                     </button>
