@@ -118,9 +118,13 @@ export default function PlayerSearchPage() {
   const [cloningInProgress, setCloningInProgress] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
 
+  const hasAnyFilter = nameQuery.trim() || yearFilter || clubFilter.trim() || posFilter.trim();
+
   const handleSearch = async () => {
-    const q = nameQuery.trim();
-    if (!q) return;
+    if (!hasAnyFilter) {
+      setError("Enter at least one filter (name, year, club, or position).");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -130,7 +134,8 @@ export default function PlayerSearchPage() {
     setExpandedEdition(null);
 
     try {
-      const params = new URLSearchParams({ q, limit: "200" });
+      const params = new URLSearchParams({ limit: "200" });
+      if (nameQuery.trim()) params.set("q", nameQuery.trim());
       if (yearFilter) params.set("year", yearFilter);
       if (clubFilter.trim()) params.set("club", clubFilter.trim());
       if (posFilter.trim()) params.set("position", posFilter.trim());
@@ -429,7 +434,7 @@ export default function PlayerSearchPage() {
             {/* Search button */}
             <button
               onClick={handleSearch}
-              disabled={loading || !nameQuery.trim()}
+              disabled={loading || !hasAnyFilter}
               className="shrink-0 rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? "Searching..." : "Search"}

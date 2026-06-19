@@ -51,9 +51,9 @@ export async function GET(req: NextRequest) {
   const position = searchParams.get("position")?.trim();
   const limitParam = searchParams.get("limit");
 
-  if (!q) {
+  if (!q && !year && !club && !position) {
     return NextResponse.json(
-      { error: "Missing required query param: q" },
+      { error: "Provide at least one filter: q, year, club, or position" },
       { status: 400 }
     );
   }
@@ -69,13 +69,13 @@ export async function GET(req: NextRequest) {
   const service = createServiceClient();
 
   try {
-    const variants = generateAccentVariants(q);
-    const orFilter = variants.map((v) => `name.ilike.%${v}%`).join(",");
+    let query = service.from("sofifa_players").select("*");
 
-    let query = service
-      .from("sofifa_players")
-      .select("*")
-      .or(orFilter);
+    if (q) {
+      const variants = generateAccentVariants(q);
+      const orFilter = variants.map((v) => `name.ilike.%${v}%`).join(",");
+      query = query.or(orFilter);
+    }
 
     if (year) {
       const yearNum = parseInt(year, 10);
