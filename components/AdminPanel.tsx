@@ -1409,7 +1409,19 @@ export default function AdminPanel({
         >
           Ten-A-Ball
         </button>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <a
+            href="/admin/football/scrape"
+            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
+          >
+            ⚽ Scrape Data
+          </a>
+          <a
+            href="/admin/football/players"
+            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
+          >
+            👥 Players DB
+          </a>
           <button
             onClick={async () => {
               try {
