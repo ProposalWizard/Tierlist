@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason } from "@/lib/seasonSimulator";
-import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch } from "@/lib/seasonSimulator";
+import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch, SuperCupResult } from "@/lib/seasonSimulator";
 import { XP_AWARDS, FRAME_STYLES } from "@/lib/xp";
 import XPPopup from "./XPPopup";
 import { getPositionColor, getPositionTextColor } from "./formations";
@@ -266,6 +266,25 @@ type RevealEvent = {
 
 function buildSchedule(season: SeasonResult): RevealEvent[] {
   const events: RevealEvent[] = [];
+
+  // Super Cup — first event of the season
+  if (season.superCup?.played) {
+    const sc = season.superCup;
+    events.push({
+      kind: 'fa-cup' as const,
+      match: {
+        opponent: sc.opponent,
+        isHome: true,
+        goalsFor: sc.goalsFor,
+        goalsAgainst: sc.goalsAgainst,
+        goalScorers: sc.goalScorers,
+        assistProviders: sc.assistProviders,
+        result: sc.result as 'W' | 'D' | 'L',
+      },
+      label: 'Super Cup',
+    });
+  }
+
   const euroComp = season.ucl?.qualified ? season.ucl : season.uel?.qualified ? season.uel : null;
   const isUCL = !!season.ucl?.qualified;
   const compPrefix = isUCL ? 'UCL' : 'UEL';
@@ -433,6 +452,7 @@ export interface DraftRunRecord {
   faCupWinner?: boolean;
   uclWinner?: boolean;
   uelWinner?: boolean;
+  superCupWinner?: boolean;
 }
 
 async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
@@ -553,6 +573,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         faCupWinner: season.faCup.winner,
         uclWinner: season.ucl?.winner || false,
         uelWinner: season.uel?.winner || false,
+        superCupWinner: season.superCup?.result === 'W' || false,
       }, isSignedIn);
 
       if (isSignedIn) {
@@ -1428,6 +1449,46 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           ))}
         </div>
       </div>
+
+      {/* Super Cup */}
+      {season.superCup?.played && (() => {
+        const sc = season.superCup!;
+        const won = sc.result === 'W';
+        return (
+          <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">&#127941;</span>
+              <h3 className="text-[10px] font-bold tracking-widest text-amber-400 uppercase">Super Cup</h3>
+              <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded ${
+                won
+                  ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
+                {won ? "WINNER" : "DEFEATED"}
+              </span>
+            </div>
+            <div className="text-[10px] text-gray-500 mb-2">
+              {sc.playerRole} vs {sc.opponentRole}
+            </div>
+            <div className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg ${won ? "bg-emerald-900/20" : "bg-red-900/20"}`}>
+              <span className="flex-1 font-medium truncate">{sc.opponent}</span>
+              <span className={`font-black tabular-nums ${won ? "text-emerald-400" : "text-red-400"}`}>
+                {sc.goalsFor}-{sc.goalsAgainst}
+              </span>
+              {sc.penalties && sc.penaltyScore && (
+                <span className="text-[9px] font-bold text-purple-400/70 bg-purple-500/10 px-1 py-0.5 rounded">
+                  PEN {sc.penaltyScore.player}-{sc.penaltyScore.opponent}
+                </span>
+              )}
+            </div>
+            {sc.goalScorers.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-500">
+                Goals: {sc.goalScorers.map(gs => `${gs.player} ${gs.minute}'`).join(", ")}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* FA Cup */}
       <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
