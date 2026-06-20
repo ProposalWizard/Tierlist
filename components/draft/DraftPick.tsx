@@ -454,6 +454,10 @@ export default function DraftPick({
     { label: "DEF", pick: (p) => p.defending },
     { label: "PHY", pick: (p) => p.physical },
   ];
+  const getTop3Stats = (player: RosterPlayer) =>
+    [...clubFirstStats]
+      .sort((a, b) => b.pick(player) - a.pick(player))
+      .slice(0, 3);
   const displayStats = (isClubFirst || isSubPick || isSeason2Draft) ? clubFirstStats : keyStats;
 
   return (
@@ -1060,7 +1064,7 @@ export default function DraftPick({
 
               {spinResult && <div className="max-h-[60vh] overflow-y-auto">
                 {/* Stat column headers — desktop only */}
-                {displayStats.length > 0 && !settings.hiddenRatings && (
+                {displayStats.length > 0 && !settings.hiddenRatings && !isClubFirst && !isSubPick && !isSeason2Draft && (
                   <div className="hidden sm:flex items-center gap-3 px-4 mb-1 sticky top-0 bg-gray-950 z-10 py-1">
                     <div className="w-9 shrink-0" />
                     <div className="w-10 shrink-0" />
@@ -1155,7 +1159,7 @@ export default function DraftPick({
                         </div>
                         {hasStats && !settings.hiddenRatings && (
                           <div className="flex gap-2 sm:hidden mt-0.5">
-                            {displayStats.slice(0, 3).map((ks) => {
+                            {((isClubFirst || isSubPick || isSeason2Draft) ? getTop3Stats(player) : displayStats.slice(0, 3)).map((ks) => {
                               const val = ks.pick(player);
                               return (
                                 <span key={ks.label} className={`text-[10px] font-bold tabular-nums ${statColor(val)}`}>
@@ -1182,10 +1186,11 @@ export default function DraftPick({
                       </div>
                       {hasStats && !settings.hiddenRatings && (
                         <div className="hidden sm:flex gap-0 shrink-0">
-                          {displayStats.map((ks) => {
+                          {((isClubFirst || isSubPick || isSeason2Draft) ? getTop3Stats(player) : displayStats).map((ks) => {
                             const val = ks.pick(player);
                             return (
                               <span key={ks.label} className={`w-9 text-center text-[11px] font-bold tabular-nums ${statColor(val)}`}>
+                                <span className="block text-[8px] text-gray-600 font-normal leading-none">{ks.label}</span>
                                 {val > 0 ? val : "-"}
                               </span>
                             );
