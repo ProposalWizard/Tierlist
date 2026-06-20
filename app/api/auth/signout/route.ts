@@ -18,5 +18,7 @@ export async function POST(request: Request) {
   await supabase.auth.signOut();
 
   const origin = new URL(request.url).origin;
-  return NextResponse.redirect(new URL("/", origin));
+  const response = NextResponse.redirect(new URL("/", origin));
+  response.cookies.set("has-username", "", { path: "/", maxAge: 0 });
+  return response;
 }
