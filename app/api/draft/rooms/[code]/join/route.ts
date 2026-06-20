@@ -27,8 +27,8 @@ export async function POST(
     .eq("room_id", room.id);
 
   const alreadyInRoom = existingPlayers?.some(p => p.user_id === user.id);
-  if (!alreadyInRoom && (existingPlayers?.length ?? 0) >= 5) {
-    return new Response("Room is full (max 5 players)", { status: 400 });
+  if (!alreadyInRoom && (existingPlayers?.length ?? 0) >= 6) {
+    return new Response("Room is full (max 6 players)", { status: 400 });
   }
 
   const { data: profile } = await service
