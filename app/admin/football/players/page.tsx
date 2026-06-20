@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 /* ── Attribute label map ── */
@@ -117,6 +117,33 @@ export default function PlayerSearchPage() {
   const [clonePositions, setClonePositions] = useState("");
   const [cloningInProgress, setCloningInProgress] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
+
+  const [dataStats, setDataStats] = useState<Record<number, number> | null>(null);
+  const [clubSuggestions, setClubSuggestions] = useState<string[]>([]);
+  const [showClubDropdown, setShowClubDropdown] = useState(false);
+  const [loadingClubs, setLoadingClubs] = useState(false);
+
+  // Load data stats (player count per year) on mount
+  useEffect(() => {
+    fetch("/api/admin/football/data-stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.stats) setDataStats(d.stats); })
+      .catch(() => {});
+  }, []);
+
+  // Fetch club suggestions when year changes
+  const fetchClubSuggestions = async (yearVal: string) => {
+    if (!yearVal) { setClubSuggestions([]); return; }
+    setLoadingClubs(true);
+    try {
+      const res = await fetch(`/api/admin/football/data-stats?year=${yearVal}&clubs=1`);
+      if (res.ok) {
+        const d = await res.json();
+        setClubSuggestions(d.clubs ?? []);
+      }
+    } catch { /* ignore */ }
+    setLoadingClubs(false);
+  };
 
   const hasAnyFilter = nameQuery.trim() || yearFilter || clubFilter.trim() || posFilter.trim();
 
@@ -363,6 +390,26 @@ export default function PlayerSearchPage() {
           </p>
         </div>
 
+        {/* Data availability */}
+        {dataStats && (
+          <div className="mb-4 rounded-lg border border-gray-800/60 bg-gray-900/60 px-4 py-2.5 text-xs text-gray-400">
+            <span className="font-bold text-gray-300">Imported data: </span>
+            {Object.entries(dataStats)
+              .filter(([, v]) => v > 0)
+              .sort(([a], [b]) => parseInt(b) - parseInt(a))
+              .map(([y, v]) => (
+                <span key={y} className="inline-block mr-3">
+                  <span className="text-emerald-400 font-bold">{yearLabel(parseInt(y, 10))}</span>
+                  <span className="text-gray-600 ml-1">({(v as number).toLocaleString()})</span>
+                </span>
+              ))
+            }
+            {Object.values(dataStats).every(v => v === 0) && (
+              <span className="text-yellow-500">No data imported yet.</span>
+            )}
+          </div>
+        )}
+
         {/* Search controls */}
         <div className="mb-6 rounded-xl border border-gray-800 bg-gray-900 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -382,38 +429,73 @@ export default function PlayerSearchPage() {
             </div>
 
             {/* FIFA year */}
-            <div className="w-full sm:w-36">
+            <div className="w-full sm:w-44">
               <label className="mb-1 block text-xs font-bold uppercase text-gray-500">
                 FIFA Year
               </label>
               <select
                 value={yearFilter}
-                onChange={(e) => setYearFilter(e.target.value)}
+                onChange={(e) => {
+                  setYearFilter(e.target.value);
+                  fetchClubSuggestions(e.target.value);
+                }}
                 onKeyDown={handleKeyDown}
                 className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white focus:border-emerald-600 focus:outline-none"
               >
                 <option value="">All Years</option>
-                {YEAR_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
+                {YEAR_OPTIONS.map((opt) => {
+                  const cnt = dataStats?.[opt.value];
+                  return (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}{cnt ? ` (${cnt.toLocaleString()})` : cnt === 0 ? " (empty)" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
             {/* Club name */}
-            <div className="flex-1">
+            <div className="flex-1 relative">
               <label className="mb-1 block text-xs font-bold uppercase text-gray-500">
                 Club Name
               </label>
               <input
                 type="text"
                 value={clubFilter}
-                onChange={(e) => setClubFilter(e.target.value)}
+                onChange={(e) => {
+                  setClubFilter(e.target.value);
+                  setShowClubDropdown(true);
+                }}
+                onFocus={() => { if (clubSuggestions.length > 0) setShowClubDropdown(true); }}
+                onBlur={() => setTimeout(() => setShowClubDropdown(false), 200)}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g. Manchester United, Barcelona..."
+                placeholder={loadingClubs ? "Loading clubs..." : "e.g. Manchester United, Barcelona..."}
                 className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-emerald-600 focus:outline-none"
               />
+              {showClubDropdown && clubSuggestions.length > 0 && (() => {
+                const filtered = clubFilter.trim()
+                  ? clubSuggestions.filter(c => c.toLowerCase().includes(clubFilter.toLowerCase()))
+                  : clubSuggestions;
+                if (filtered.length === 0) return null;
+                return (
+                  <div className="absolute top-full left-0 right-0 z-30 mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800 shadow-xl">
+                    {filtered.slice(0, 30).map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => { setClubFilter(c); setShowClubDropdown(false); }}
+                        className="w-full text-left px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                      >
+                        {c}
+                      </button>
+                    ))}
+                    {filtered.length > 30 && (
+                      <div className="px-3 py-1.5 text-xs text-gray-500">...{filtered.length - 30} more</div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Position */}
@@ -473,7 +555,15 @@ export default function PlayerSearchPage() {
 
             {grouped.length === 0 ? (
               <div className="py-12 text-center text-gray-500">
-                No players match your search criteria.
+                <p>No players match your search criteria.</p>
+                {yearFilter && dataStats && !dataStats[parseInt(yearFilter, 10)] && (
+                  <p className="mt-2 text-xs text-yellow-500">No data has been imported for {yearLabel(parseInt(yearFilter, 10))} yet. Import data first via the Scrape Data page.</p>
+                )}
+                {!yearFilter && dataStats && (
+                  <p className="mt-2 text-xs text-gray-600">
+                    Data available for: {Object.entries(dataStats).filter(([,v]) => v > 0).map(([y]) => yearLabel(parseInt(y, 10))).join(", ") || "none"}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-3">

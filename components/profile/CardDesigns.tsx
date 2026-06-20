@@ -36,7 +36,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
       {/* Header */}
       <div className="flex items-center justify-between mb-4 relative">
         <h3 className="text-[10px] font-bold tracking-[0.2em] text-amber-400/80 uppercase">
-          Card Designs
+          Collection
         </h3>
         {equippedReward && (
           <span className="text-[10px] font-bold text-gray-500">

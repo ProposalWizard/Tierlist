@@ -21,6 +21,16 @@ export async function POST(
   if (!room) return new Response("Room not found", { status: 404 });
   if (room.status !== "lobby") return new Response("Room is not accepting players", { status: 400 });
 
+  const { data: existingPlayers } = await service
+    .from("draft_room_players")
+    .select("user_id")
+    .eq("room_id", room.id);
+
+  const alreadyInRoom = existingPlayers?.some(p => p.user_id === user.id);
+  if (!alreadyInRoom && (existingPlayers?.length ?? 0) >= 5) {
+    return new Response("Room is full (max 5 players)", { status: 400 });
+  }
+
   const { data: profile } = await service
     .from("user_profiles")
     .select("username")
