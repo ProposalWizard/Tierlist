@@ -52,17 +52,17 @@ export async function POST(
     }
   }
 
-  // Reset room for the next season, storing the previous league table
-  await service
-    .from("draft_rooms")
-    .update({ status: "lobby", season_number: nextSeasonNumber, previous_league_table: previousLeagueTable })
-    .eq("id", room.id);
-
-  // Reset all players for the new season (drafting, not ready — they need to re-submit squads)
-  await service
-    .from("draft_room_players")
-    .update({ status: "drafting", squad: null, avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })
-    .eq("room_id", room.id);
+  // Reset room + players in parallel
+  await Promise.all([
+    service
+      .from("draft_rooms")
+      .update({ status: "lobby", season_number: nextSeasonNumber, previous_league_table: previousLeagueTable })
+      .eq("id", room.id),
+    service
+      .from("draft_room_players")
+      .update({ status: "drafting", squad: null, avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })
+      .eq("room_id", room.id),
+  ]);
 
   return Response.json({ ok: true });
 }

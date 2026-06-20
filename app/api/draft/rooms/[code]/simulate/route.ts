@@ -74,10 +74,10 @@ export async function POST(
     const sharedSeed = hashRoomId(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
     const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined);
 
-    for (const rp of roomPlayers) {
+    // Write all player results in parallel
+    await Promise.all(roomPlayers.map(async (rp) => {
       const result = results.get(rp.user_id);
-      if (!result) continue;
-
+      if (!result) return;
       await service
         .from("draft_room_players")
         .update({
@@ -86,7 +86,7 @@ export async function POST(
           status: "simulated",
         })
         .eq("id", rp.id);
-    }
+    }));
 
     await service.from("draft_rooms").update({ status: "complete" }).eq("id", room.id);
 

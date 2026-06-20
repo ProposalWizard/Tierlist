@@ -133,7 +133,7 @@ export default function MultiplayerLobby({
           return;
         }
         checkComplete();
-      }, 3000);
+      }, 5000);
     });
 
     return () => {

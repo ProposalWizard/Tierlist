@@ -88,16 +88,16 @@ export async function POST(
         return new Response("No players in room", { status: 400 });
       }
 
-      // Assign fake squads
-      for (const rp of roomPlayers) {
+      // Assign fake squads in parallel
+      await Promise.all(roomPlayers.map((rp) => {
         const fake = generateFakeSquad(hashStr(rp.id) ^ seasonNumber * 0x1234abcd);
-        await service.from("draft_room_players").update({
+        return service.from("draft_room_players").update({
           squad: fake,
           status: "ready",
           avg_ovr: 85,
           team_strength: 0.85,
         }).eq("id", rp.id);
-      }
+      }));
 
       // Re-fetch with squads
       const { data: readyPlayers } = await service
@@ -127,16 +127,16 @@ export async function POST(
 
       const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined);
 
-      // Save results to DB
-      for (const rp of readyPlayers) {
+      // Save all results to DB in parallel
+      await Promise.all(readyPlayers.map(async (rp) => {
         const result = results.get(rp.user_id);
-        if (!result) continue;
+        if (!result) return;
         await service.from("draft_room_players").update({
           season_result: result,
           actual_finish: result.actualFinish,
           status: "simulated",
         }).eq("id", rp.id);
-      }
+      }));
 
       // Collect this user's result
       const myResult = results.get(user.id);
@@ -166,21 +166,22 @@ export async function POST(
       }
 
       if (seasonNumber < MAX_SEASONS) {
-        // Advance room to next season
-        await service.from("draft_rooms").update({
-          status: "lobby",
-          season_number: seasonNumber + 1,
-          previous_league_table: previousLeagueTable,
-        }).eq("id", room.id);
-
-        await service.from("draft_room_players").update({
-          status: "drafting",
-          squad: null,
-          avg_ovr: null,
-          team_strength: null,
-          season_result: null,
-          actual_finish: null,
-        }).eq("room_id", room.id);
+        // Advance room + reset players in parallel
+        await Promise.all([
+          service.from("draft_rooms").update({
+            status: "lobby",
+            season_number: seasonNumber + 1,
+            previous_league_table: previousLeagueTable,
+          }).eq("id", room.id),
+          service.from("draft_room_players").update({
+            status: "drafting",
+            squad: null,
+            avg_ovr: null,
+            team_strength: null,
+            season_result: null,
+            actual_finish: null,
+          }).eq("room_id", room.id),
+        ]);
       } else {
         // Final season — mark complete
         await service.from("draft_rooms").update({ status: "complete" }).eq("id", room.id);
