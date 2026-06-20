@@ -57,9 +57,9 @@ const FORMATIONS: Record<string, SlotDef[]> = {
     { id: "RB",  label: "RB",  x: 90, y: 67 },
     { id: "LDM", label: "CDM", x: 34, y: 52 },
     { id: "RDM", label: "CDM", x: 66, y: 52 },
-    { id: "LAM", label: "CAM", x: 18, y: 30 },
+    { id: "LW",  label: "LW",  x: 18, y: 30 },
     { id: "CAM", label: "CAM", x: 50, y: 27 },
-    { id: "RAM", label: "CAM", x: 82, y: 30 },
+    { id: "RW",  label: "RW",  x: 82, y: 30 },
     { id: "ST",  label: "ST",  x: 50, y: 11 },
   ],
   "3-4-3": [
@@ -75,7 +75,7 @@ const FORMATIONS: Record<string, SlotDef[]> = {
     { id: "ST",  label: "ST",  x: 50, y: 13 },
     { id: "RW",  label: "RW",  x: 82, y: 16 },
   ],
-  "3-5-2": [
+  "5-3-2": [
     { id: "GK",  label: "GK",  x: 50, y: 87 },
     { id: "LCB", label: "CB",  x: 22, y: 67 },
     { id: "CB",  label: "CB",  x: 50, y: 67 },
@@ -90,8 +90,73 @@ const FORMATIONS: Record<string, SlotDef[]> = {
   ],
 };
 
+// Role categories for intelligent formation remapping
+const POSITION_ROLES: Record<string, string> = {
+  GK: "gk",
+  LB: "def", RB: "def", LCB: "def", RCB: "def", CB: "def",
+  LWB: "wb", RWB: "wb",
+  LDM: "dm", RDM: "dm",
+  LM: "mid", RM: "mid", LCM: "mid", RCM: "mid", CM: "mid",
+  LAM: "am", RAM: "am", CAM: "am",
+  LW: "wing", RW: "wing",
+  ST: "att", ST1: "att", ST2: "att",
+};
+
+const ROLE_FALLBACKS: Record<string, string[]> = {
+  gk:   ["gk"],
+  def:  ["def", "wb", "dm"],
+  wb:   ["wb", "def", "mid"],
+  dm:   ["dm", "mid", "def"],
+  mid:  ["mid", "dm", "am"],
+  am:   ["am", "mid", "wing"],
+  wing: ["wing", "am", "att"],
+  att:  ["att", "wing", "am"],
+};
+
+const ROLE_ORDER = ["gk", "def", "wb", "dm", "mid", "am", "wing", "att"];
+
+function remapSlots(
+  fromSlots: SlotDef[],
+  toSlots: SlotDef[],
+  current: Record<string, string | null>
+): Record<string, string | null> {
+  const toPlace: Array<{ frameId: string; role: string }> = [];
+  for (const slot of fromSlots) {
+    const frameId = current[slot.id];
+    if (frameId) {
+      toPlace.push({ frameId, role: POSITION_ROLES[slot.id] ?? "mid" });
+    }
+  }
+
+  const available = toSlots.map(s => ({
+    slotId: s.id,
+    role: POSITION_ROLES[s.id] ?? "mid",
+    taken: false,
+  }));
+
+  const result: Record<string, string | null> = {};
+
+  for (const role of ROLE_ORDER) {
+    const cards = toPlace.filter(c => c.role === role);
+    for (const card of cards) {
+      const fallbacks = ROLE_FALLBACKS[role] ?? [role, "mid"];
+      for (const fbRole of fallbacks) {
+        const slot = available.find(s => !s.taken && s.role === fbRole);
+        if (slot) {
+          result[slot.slotId] = card.frameId;
+          slot.taken = true;
+          break;
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 const STORAGE_KEY = "collection-squad-v1";
 const FORMATION_KEY = "collection-squad-formation-v1";
+const REMOVE_COOLDOWN_MS = 1000;
 
 interface Props {
   progression: UserProgression | null;
@@ -102,6 +167,8 @@ export default function CollectionSquad({ progression }: Props) {
   const [slots, setSlots] = useState<Record<string, string | null>>({});
   const [activeFrameId, setActiveFrameId] = useState<string | null>(null);
   const [dragSourceSlot, setDragSourceSlot] = useState<string | null>(null);
+  const [droppedAt, setDroppedAt] = useState<Record<string, number>>({});
+  const [selectedBenchCard, setSelectedBenchCard] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -111,7 +178,6 @@ export default function CollectionSquad({ progression }: Props) {
     .filter((r) => r.category === "frame" && r.unlocked)
     .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0));
 
-  // Load from localStorage
   useEffect(() => {
     try {
       const f = localStorage.getItem(FORMATION_KEY);
@@ -137,15 +203,19 @@ export default function CollectionSquad({ progression }: Props) {
   const benchCards = unlockedCards.filter((c) => !assignedFrameIds.has(c.id));
 
   function changeFormation(f: string) {
+    const newSlots = FORMATIONS[f] ?? FORMATIONS["4-3-3"];
+    const remapped = remapSlots(currentSlots, newSlots, slots);
     setFormation(f);
-    const cleared: Record<string, string | null> = {};
-    setSlots(cleared);
-    persist(f, cleared);
+    setSlots(remapped);
+    persist(f, remapped);
+    setDroppedAt({});
+    setSelectedBenchCard(null);
   }
 
   function handleDragStart(e: DragStartEvent) {
     const id = e.active.id as string;
     setActiveFrameId(id);
+    setSelectedBenchCard(null);
     const src = Object.entries(slots).find(([, v]) => v === id)?.[0] ?? null;
     setDragSourceSlot(src);
   }
@@ -157,18 +227,16 @@ export default function CollectionSquad({ progression }: Props) {
 
     const targetId = e.over?.id as string | undefined;
     if (!targetId) return;
-    // Must be a valid slot
     if (!currentSlots.find((s) => s.id === targetId)) return;
 
     setSlots((prev) => {
       const next = { ...prev };
-      // Clear source slot (if dragging from pitch)
       if (dragSourceSlot) next[dragSourceSlot] = null;
-      // Place card in target (displaces any existing card — it returns to bench)
       next[targetId] = frameId;
       persist(formation, next);
       return next;
     });
+    setDroppedAt((prev) => ({ ...prev, [targetId]: Date.now() }));
   }
 
   function removeFromSlot(slotId: string) {
@@ -177,6 +245,26 @@ export default function CollectionSquad({ progression }: Props) {
       persist(formation, next);
       return next;
     });
+    setDroppedAt((prev) => {
+      const next = { ...prev };
+      delete next[slotId];
+      return next;
+    });
+  }
+
+  function handleSlotTap(slotId: string) {
+    if (!selectedBenchCard) return;
+    setSlots((prev) => {
+      const next = { ...prev, [slotId]: selectedBenchCard };
+      persist(formation, next);
+      return next;
+    });
+    setDroppedAt((prev) => ({ ...prev, [slotId]: Date.now() }));
+    setSelectedBenchCard(null);
+  }
+
+  function handleBenchCardTap(cardId: string) {
+    setSelectedBenchCard(prev => prev === cardId ? null : cardId);
   }
 
   const activeCard = activeFrameId
@@ -210,9 +298,16 @@ export default function CollectionSquad({ progression }: Props) {
         </div>
       </div>
 
+      {selectedBenchCard && (
+        <div className="mb-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs font-bold text-amber-400 text-center">
+          Tap a position to place · tap bench card again to deselect
+        </div>
+      )}
+
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         {/* Pitch */}
-        <div className="relative w-full mx-auto rounded-xl overflow-hidden mb-5"
+        <div
+          className="relative w-full mx-auto rounded-xl overflow-hidden mb-5"
           style={{
             paddingBottom: "65%",
             background: "linear-gradient(180deg, #0d380d 0%, #0a2a0a 45%, #06190a 100%)",
@@ -248,7 +343,10 @@ export default function CollectionSquad({ progression }: Props) {
                 frameId={frameId}
                 card={card ?? null}
                 frameStyle={style}
+                dropTime={droppedAt[slot.id] ?? 0}
+                hasBenchSelection={!!selectedBenchCard}
                 onRemove={() => removeFromSlot(slot.id)}
+                onTap={() => handleSlotTap(slot.id)}
               />
             );
           })}
@@ -261,11 +359,16 @@ export default function CollectionSquad({ progression }: Props) {
               ? "Unlock cards by levelling up"
               : benchCards.length === 0
               ? "All cards placed on pitch"
-              : "Bench — drag onto a position to place"}
+              : "Bench — drag onto a position or tap to select"}
           </p>
           <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
             {benchCards.map((card) => (
-              <BenchCard key={card.id} card={card} />
+              <BenchCard
+                key={card.id}
+                card={card}
+                selected={selectedBenchCard === card.id}
+                onTap={() => handleBenchCardTap(card.id)}
+              />
             ))}
           </div>
         </div>
@@ -301,15 +404,33 @@ function PitchSlot({
   frameId,
   card,
   frameStyle,
+  dropTime,
+  hasBenchSelection,
   onRemove,
+  onTap,
 }: {
   slot: SlotDef;
   frameId: string | null;
   card: { id: string; name: string } | null;
   frameStyle: { border: string; shadow: string; gradient?: string; image?: string } | null;
+  dropTime: number;
+  hasBenchSelection: boolean;
   onRemove: () => void;
+  onTap: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
+  const [, forceUpdate] = useState(0);
+
+  // Re-render once cooldown expires so remove overlay becomes visible
+  useEffect(() => {
+    if (!dropTime) return;
+    const elapsed = Date.now() - dropTime;
+    if (elapsed >= REMOVE_COOLDOWN_MS) return;
+    const t = setTimeout(() => forceUpdate(n => n + 1), REMOVE_COOLDOWN_MS - elapsed + 50);
+    return () => clearTimeout(t);
+  }, [dropTime]);
+
+  const removeReady = !dropTime || (Date.now() - dropTime) >= REMOVE_COOLDOWN_MS;
 
   return (
     <div
@@ -325,9 +446,15 @@ function PitchSlot({
     >
       {card && frameStyle ? (
         <button
-          onClick={onRemove}
-          title="Click to remove"
-          className="group relative w-[72px] h-[96px] sm:w-[88px] sm:h-[116px] rounded-xl overflow-hidden shadow-lg ring-1 ring-white/10 hover:ring-red-500/70 transition-all"
+          onClick={hasBenchSelection ? onTap : (removeReady ? onRemove : undefined)}
+          title={hasBenchSelection ? "Place here" : removeReady ? "Click to remove" : ""}
+          className={`group relative w-[58px] h-[77px] sm:w-[88px] sm:h-[117px] md:w-[106px] md:h-[141px] rounded-xl overflow-hidden shadow-lg ring-1 transition-all ${
+            hasBenchSelection
+              ? "ring-amber-400/80 hover:ring-amber-400 hover:scale-105"
+              : removeReady
+              ? "ring-white/10 hover:ring-red-500/70"
+              : "ring-white/10"
+          }`}
         >
           {frameStyle.image ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -341,30 +468,36 @@ function PitchSlot({
               className={`w-full h-full bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"}`}
             />
           )}
-          <div className="absolute inset-0 bg-red-900/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <svg
-              className="w-4 h-4 text-white"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.5}
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
+          {removeReady && !hasBenchSelection && (
+            <div className="absolute inset-0 bg-red-900/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+          )}
+          {hasBenchSelection && (
+            <div className="absolute inset-0 bg-amber-500/25 flex items-center justify-center">
+              <svg className="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+          )}
         </button>
       ) : (
-        <div
-          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
-            isOver
+        <button
+          onClick={hasBenchSelection ? onTap : undefined}
+          className={`w-9 h-9 sm:w-[52px] sm:h-[52px] md:w-[64px] md:h-[64px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+            hasBenchSelection
+              ? "border-amber-400 bg-amber-400/25 shadow-lg shadow-amber-400/40 hover:scale-110 cursor-pointer"
+              : isOver
               ? "border-amber-400 bg-amber-400/25 shadow-lg shadow-amber-400/40"
               : "border-white/25 bg-black/35 hover:border-white/40"
           }`}
         >
-          <span className="text-[9px] sm:text-[10px] font-black text-white/75 leading-none text-center">
+          <span className="text-[7px] sm:text-[9px] md:text-[10px] font-black text-white/75 leading-none text-center">
             {slot.label}
           </span>
-        </div>
+        </button>
       )}
     </div>
   );
@@ -372,8 +505,12 @@ function PitchSlot({
 
 function BenchCard({
   card,
+  selected,
+  onTap,
 }: {
   card: { id: string; name: string; unlock_value: number | null };
+  selected: boolean;
+  onTap: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
@@ -385,8 +522,9 @@ function BenchCard({
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onClick={onTap}
       className={`flex-shrink-0 flex flex-col items-center gap-1.5 cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
-        isDragging ? "opacity-30 scale-95" : "hover:scale-105"
+        isDragging ? "opacity-30 scale-95" : selected ? "scale-110" : "hover:scale-105"
       }`}
       style={
         transform
@@ -394,7 +532,9 @@ function BenchCard({
           : undefined
       }
     >
-      <div className="w-16 h-[84px] rounded-xl overflow-hidden shadow-md ring-1 ring-white/10">
+      <div className={`w-16 h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
+        selected ? "ring-amber-400 shadow-lg shadow-amber-500/30" : "ring-white/10"
+      }`}>
         {frameStyle.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -409,7 +549,9 @@ function BenchCard({
           />
         )}
       </div>
-      <span className="text-[9px] text-gray-400 font-medium text-center max-w-[64px] truncate leading-tight">
+      <span className={`text-[9px] font-medium text-center max-w-[64px] truncate leading-tight ${
+        selected ? "text-amber-400" : "text-gray-400"
+      }`}>
         {card.name}
       </span>
     </div>

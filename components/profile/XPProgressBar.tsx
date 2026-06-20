@@ -105,10 +105,10 @@ export default function XPProgressBar({ progression }: Props) {
         {/* Header row */}
         <div className="relative flex items-start justify-between mb-5">
           <div>
-            <h3 className="text-[10px] font-bold tracking-[0.25em] text-amber-500/80 uppercase">
+            <h3 className="text-xs font-black tracking-[0.2em] text-amber-500/80 uppercase">
               Road to Legend Season 1
             </h3>
-            <div className={`text-2xl font-black mt-0.5 leading-tight ${titleColor}`}>
+            <div className={`text-base sm:text-2xl font-medium italic mt-0.5 leading-tight ${titleColor}`}>
               {currentTitle.name}
             </div>
           </div>
@@ -129,12 +129,12 @@ export default function XPProgressBar({ progression }: Props) {
 
         {/* Milestone pair view */}
         {pairs.length > 0 && leftCard && (
-          <div className="relative flex items-center gap-4 mb-5">
+          <div className="relative flex items-center gap-2 sm:gap-4 mb-5">
             {/* Prev arrow */}
             <button
               onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
               disabled={pageIndex === 0}
-              className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -186,7 +186,7 @@ export default function XPProgressBar({ progression }: Props) {
             <button
               onClick={() => setPageIndex((p) => Math.min(pairs.length - 1, p + 1))}
               disabled={pageIndex === pairs.length - 1}
-              className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -305,7 +305,7 @@ function MilestoneCard({
       className="flex-shrink-0 flex flex-col items-center gap-1.5 group"
     >
       <div
-        className={`relative w-28 h-36 rounded-xl overflow-hidden shadow-xl transition-transform duration-200 group-hover:scale-105 ${
+        className={`relative w-[72px] h-24 sm:w-28 sm:h-36 rounded-xl overflow-hidden shadow-xl transition-transform duration-200 group-hover:scale-105 ${
           !isUnlocked ? "opacity-40" : ""
         }`}
       >
@@ -347,14 +347,14 @@ function MilestoneCard({
         )}
       </div>
       <p
-        className={`text-[10px] font-bold text-center leading-tight max-w-[112px] ${
+        className={`text-[10px] font-bold text-center leading-tight max-w-[72px] sm:max-w-[112px] ${
           isUnlocked ? "text-gray-200" : "text-gray-600"
         }`}
       >
         {isUnlocked ? reward.name : "???"}
       </p>
       <span
-        className={`text-[9px] font-black px-2 py-0.5 rounded border ${rarity.text} ${rarity.border} ${rarity.bg}`}
+        className={`text-[9px] font-black px-1.5 sm:px-2 py-0.5 rounded border ${rarity.text} ${rarity.border} ${rarity.bg}`}
       >
         Lv {reward.unlock_value}
       </span>
