@@ -8,8 +8,8 @@ import XPProgressBar from "@/components/profile/XPProgressBar";
 import StatsGrid from "@/components/profile/StatsGrid";
 import TrophyCabinet from "@/components/profile/TrophyCabinet";
 import WaysToEarnXP from "@/components/profile/WaysToEarnXP";
-import CardDesigns from "@/components/profile/CardDesigns";
 import PersonalRecords from "@/components/profile/PersonalRecords";
+import CollectionSquad from "@/components/profile/CollectionSquad";
 import SettingsModal from "@/components/profile/SettingsModal";
 import type { UserProfile } from "@/lib/types";
 import type { UserProgression } from "@/lib/xp";
@@ -126,7 +126,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
 
   return (
     <div className="mx-auto max-w-7xl px-4">
-      {/* Tab bar - sleek dark design */}
+      {/* Tab bar */}
       <div className="flex items-center gap-1 mb-6 pb-0 border-b border-gray-800/30">
         {tabs.map(tab => (
           <button
@@ -145,6 +145,9 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
             )}
           </button>
         ))}
+        <div className="ml-auto pb-1">
+          <WaysToEarnXP compact />
+        </div>
       </div>
 
       {/* Dashboard - multi-column layout */}
@@ -162,48 +165,49 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Left Column — Profile Card + Card Designs */}
-              <div className="lg:col-span-3 space-y-5">
-                <ProfileHeader
-                  username={username || null}
-                  email={userEmail}
-                  progression={progression}
-                  loginStreak={profile?.current_streak ?? 0}
-                  tierlistsCreated={createdList.length}
-                  onOpenSettings={() => setShowSettings(true)}
-                />
-                <CardDesigns
-                  rewards={progression?.rewards ?? []}
-                  equippedFrame={progression?.equippedFrame ?? "frame_default"}
-                  onEquip={(_, id) => handleEquip("frame", id)}
-                />
+            <div className="space-y-5">
+              {/* Row 1 — Profile + Road to Legend (wider) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:items-stretch">
+                <div className="lg:col-span-3">
+                  <ProfileHeader
+                    username={username || null}
+                    email={userEmail}
+                    progression={progression}
+                    loginStreak={profile?.current_streak ?? 0}
+                    tierlistsCreated={createdList.length}
+                    onOpenSettings={() => setShowSettings(true)}
+                  />
+                </div>
+                <div className="lg:col-span-9">
+                  <XPProgressBar progression={progression} />
+                </div>
               </div>
 
-              {/* Center Column — Road to Legend + Stats + Activity */}
-              <div className="lg:col-span-5 space-y-5">
-                <XPProgressBar progression={progression} />
-                <StatsGrid
-                  stats={progression?.stats ?? null}
-                  loginStreak={profile?.current_streak ?? 0}
-                  longestStreak={profile?.longest_streak ?? 0}
-                  tierlistsCreated={createdList.length}
-                />
-                <PersonalRecords />
+              {/* Row 2 — Trophy Cabinet + Career Stats */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div className="lg:col-span-4 space-y-5">
+                  <TrophyCabinet
+                    rewards={progression?.rewards ?? []}
+                    stats={progression?.stats ?? null}
+                    level={progression?.level ?? 1}
+                    equippedFrame={progression?.equippedFrame ?? "frame_default"}
+                    equippedTitle={progression?.equippedTitle ?? "title_rookie"}
+                    onEquip={handleEquip}
+                  />
+                </div>
+                <div className="lg:col-span-8 space-y-5">
+                  <StatsGrid
+                    stats={progression?.stats ?? null}
+                    loginStreak={profile?.current_streak ?? 0}
+                    longestStreak={profile?.longest_streak ?? 0}
+                    tierlistsCreated={createdList.length}
+                  />
+                  <PersonalRecords />
+                </div>
               </div>
 
-              {/* Right Column — Trophy Cabinet + Ways to Earn XP */}
-              <div className="lg:col-span-4 space-y-5">
-                <TrophyCabinet
-                  rewards={progression?.rewards ?? []}
-                  stats={progression?.stats ?? null}
-                  level={progression?.level ?? 1}
-                  equippedFrame={progression?.equippedFrame ?? "frame_default"}
-                  equippedTitle={progression?.equippedTitle ?? "title_rookie"}
-                  onEquip={handleEquip}
-                />
-                <WaysToEarnXP />
-              </div>
+              {/* Row 3 — Collection Squad (full width) */}
+              <CollectionSquad progression={progression} />
             </div>
           )}
         </>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { getTitleForLevel, RARITY_COLORS, FRAME_STYLES } from "@/lib/xp";
+import { getTitleForLevel, RARITY_COLORS, FRAME_STYLES, cumulativeXpForLevel } from "@/lib/xp";
 import type { UserProgression } from "@/lib/xp";
 
 interface Props {
@@ -10,226 +10,208 @@ interface Props {
 }
 
 const SEASON_EXPIRY = new Date("2026-09-16T00:00:00Z");
-const CARDS_PER_PAGE = 3;
 
 function getDaysLeft(): number {
-  const diff = SEASON_EXPIRY.getTime() - Date.now();
-  return Math.max(0, Math.ceil(diff / 86400000));
-}
-
-function getRarityAccent(rarity: string) {
-  switch (rarity) {
-    case "diamond": return { glow: "shadow-cyan-400/60", ring: "ring-cyan-400", fill: "bg-cyan-400", text: "text-cyan-300" };
-    case "gold": return { glow: "shadow-amber-400/60", ring: "ring-amber-400", fill: "bg-amber-400", text: "text-amber-400" };
-    case "silver": return { glow: "shadow-gray-300/50", ring: "ring-gray-300", fill: "bg-gray-300", text: "text-gray-300" };
-    default: return { glow: "shadow-orange-500/50", ring: "ring-orange-600", fill: "bg-orange-500", text: "text-orange-500" };
-  }
+  return Math.max(0, Math.ceil((SEASON_EXPIRY.getTime() - Date.now()) / 86400000));
 }
 
 export default function XPProgressBar({ progression }: Props) {
   const level = progression?.level ?? 1;
+  const totalXp = progression?.xp ?? 0;
   const currentXp = progression?.currentLevelXp ?? 0;
   const xpToNext = progression?.xpToNext ?? 100;
-  const totalXp = progression?.xp ?? 0;
 
   const currentTitle = getTitleForLevel(level);
-  const rarityAccent = getRarityAccent(currentTitle.rarity);
-  const levelProgress = xpToNext > 0 ? (currentXp / xpToNext) * 100 : 100;
+  const titleColor =
+    RARITY_COLORS[currentTitle.rarity as keyof typeof RARITY_COLORS]?.text ?? "text-amber-400";
 
-  const [animatedLevelProgress, setAnimatedLevelProgress] = useState(0);
-  const [pageIndex, setPageIndex] = useState(0);
-  const [expandedFrameId, setExpandedFrameId] = useState<string | null>(null);
   const [daysLeft] = useState(getDaysLeft);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [animatedLevelPct, setAnimatedLevelPct] = useState(0);
+  const [animatedMilestonePct, setAnimatedMilestonePct] = useState(0);
 
-  useEffect(() => {
-    const t = setTimeout(() => setAnimatedLevelProgress(levelProgress), 200);
-    return () => clearTimeout(t);
-  }, [levelProgress]);
-
-  const frameRewards = useMemo(() =>
-    (progression?.rewards ?? [])
-      .filter(r => r.category === "frame")
-      .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0)),
+  // Sorted frame rewards from progression
+  const frameRewards = useMemo(
+    () =>
+      (progression?.rewards ?? [])
+        .filter((r) => r.category === "frame")
+        .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0)),
     [progression?.rewards]
   );
 
-  const totalPages = Math.max(1, Math.ceil(frameRewards.length / CARDS_PER_PAGE));
-  const visibleFrames = frameRewards.slice(pageIndex * CARDS_PER_PAGE, (pageIndex + 1) * CARDS_PER_PAGE);
+  // Pairs: (frameRewards[0],frameRewards[1]), (frameRewards[1],frameRewards[2]), …
+  // Each pair = one page showing left card, bar, right card
+  const pairs = useMemo(() => {
+    const out: [typeof frameRewards[0], typeof frameRewards[0] | null][] = [];
+    for (let i = 0; i < frameRewards.length; i++) {
+      out.push([frameRewards[i], frameRewards[i + 1] ?? null]);
+    }
+    return out;
+  }, [frameRewards]);
 
-  const expandedReward = expandedFrameId ? frameRewards.find(r => r.id === expandedFrameId) ?? null : null;
-  const expandedStyle = expandedFrameId ? (FRAME_STYLES[expandedFrameId] ?? FRAME_STYLES.frame_default) : null;
+  // Auto-navigate to the pair containing the current level
+  useEffect(() => {
+    if (pairs.length === 0) return;
+    let idx = pairs.length - 1;
+    for (let i = 0; i < pairs.length; i++) {
+      const [, right] = pairs[i];
+      if (right === null || level < (right.unlock_value ?? Infinity)) {
+        idx = i;
+        break;
+      }
+    }
+    setPageIndex(idx);
+  }, [level, pairs]);
+
+  const [leftCard, rightCard] = pairs[pageIndex] ?? [null, null];
+
+  // Progress between the two milestone levels shown on the current page
+  const milestonePct = useMemo(() => {
+    if (!leftCard) return 0;
+    const lv0 = leftCard.unlock_value ?? 0;
+    const lv1 = rightCard?.unlock_value ?? lv0 + 1;
+    if (level >= lv1) return 1;
+    if (level < lv0) return 0;
+    const xp0 = cumulativeXpForLevel(lv0);
+    const xp1 = cumulativeXpForLevel(lv1);
+    return xp1 > xp0 ? Math.min((totalXp - xp0) / (xp1 - xp0), 1) : 1;
+  }, [leftCard, rightCard, level, totalXp]);
+
+  // Per-level bar fill
+  const levelPct = xpToNext > 0 ? Math.min(currentXp / xpToNext, 1) : 1;
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setAnimatedLevelPct(levelPct * 100), 200);
+    const t2 = setTimeout(() => setAnimatedMilestonePct(milestonePct * 100), 350);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [levelPct, milestonePct]);
+
+  const expandedReward = expandedId ? frameRewards.find((r) => r.id === expandedId) ?? null : null;
+  const expandedStyle = expandedId ? (FRAME_STYLES[expandedId] ?? FRAME_STYLES.frame_default) : null;
 
   return (
     <>
-      <div className="rounded-xl border border-gray-800/60 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 p-5 overflow-hidden relative">
-        {/* Background texture */}
+      <div className="rounded-xl border border-gray-800/60 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 p-5 relative overflow-hidden h-full">
+        {/* Background glow */}
         <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{
-            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(251,191,36,0.3) 0%, transparent 50%),
-                              radial-gradient(circle at 80% 20%, rgba(251,191,36,0.15) 0%, transparent 40%)`,
+            backgroundImage:
+              "radial-gradient(circle at 15% 50%, rgba(251,191,36,0.5) 0%, transparent 45%), radial-gradient(circle at 85% 15%, rgba(251,191,36,0.25) 0%, transparent 40%)",
           }}
         />
 
-        {/* Title + expiry */}
-        <div className="relative mb-5 flex items-center justify-between">
-          <h3 className="text-[10px] font-bold tracking-[0.25em] text-amber-500/90 uppercase">
-            Road to Legend Season 1
-          </h3>
-          <span className={`text-[10px] font-semibold tabular-nums ${daysLeft <= 14 ? "text-red-400" : "text-gray-500"}`}>
-            {daysLeft}d left
-          </span>
-        </div>
-
-        {/* Current level display */}
-        <div className="relative flex items-center gap-4 mb-6">
-          <div className="relative flex-shrink-0">
-            <div
-              className={`w-16 h-16 rounded-full flex items-center justify-center
-                bg-gradient-to-br from-amber-500/20 via-amber-600/10 to-transparent
-                border-2 border-amber-500/40 ${rarityAccent.glow} shadow-lg`}
-            >
-              <span className="text-2xl font-black text-amber-400 leading-none">{level}</span>
-            </div>
-            <div className="absolute -inset-1 rounded-full border border-amber-500/20 animate-pulse pointer-events-none" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className={`text-lg font-bold ${RARITY_COLORS[currentTitle.rarity as keyof typeof RARITY_COLORS]?.text ?? "text-amber-400"} leading-tight`}>
+        {/* Header row */}
+        <div className="relative flex items-start justify-between mb-5">
+          <div>
+            <h3 className="text-[10px] font-bold tracking-[0.25em] text-amber-500/80 uppercase">
+              Road to Legend Season 1
+            </h3>
+            <div className={`text-2xl font-black mt-0.5 leading-tight ${titleColor}`}>
               {currentTitle.name}
             </div>
-            <div className="text-[11px] text-gray-500 font-medium mt-0.5">
-              {totalXp.toLocaleString()} total XP
+          </div>
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <div className="text-right">
+              <div className="text-3xl font-black text-amber-400 leading-none">Lv {level}</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">
+                {totalXp.toLocaleString()} XP total
+              </div>
             </div>
-            <div className="mt-2 relative">
-              <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+            <span
+              className={`text-[10px] font-bold tabular-nums ${daysLeft <= 14 ? "text-red-400" : "text-gray-600"}`}
+            >
+              {daysLeft}d left
+            </span>
+          </div>
+        </div>
+
+        {/* Milestone pair view */}
+        {pairs.length > 0 && leftCard && (
+          <div className="relative flex items-center gap-4 mb-5">
+            {/* Prev arrow */}
+            <button
+              onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+              disabled={pageIndex === 0}
+              className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Left card */}
+            <MilestoneCard
+              reward={leftCard}
+              onClick={() => setExpandedId(leftCard.id)}
+            />
+
+            {/* Bar column */}
+            <div className="flex-1 flex flex-col gap-2 min-w-0">
+              <div className="flex justify-between text-xs font-black">
+                <span className="text-amber-400">Lv {leftCard.unlock_value}</span>
+                {rightCard && <span className="text-gray-500">Lv {rightCard.unlock_value}</span>}
+              </div>
+              <div className="relative h-3.5 bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${Math.min(animatedLevelProgress, 100)}%` }}
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-700 via-amber-500 to-amber-300 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${animatedMilestonePct}%` }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-full pointer-events-none" />
               </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-[10px] text-gray-500 font-semibold tabular-nums">
-                  {currentXp.toLocaleString()} / {xpToNext.toLocaleString()} XP
-                </span>
-                <span className="text-[10px] text-gray-600 tabular-nums">
-                  Lv {level} &rarr; {level + 1}
-                </span>
+              <div className="text-center text-[11px] font-semibold">
+                {rightCard && level < (rightCard.unlock_value ?? 999) ? (
+                  <span className="text-gray-400">
+                    {(rightCard.unlock_value ?? 0) - level} level
+                    {(rightCard.unlock_value ?? 0) - level !== 1 ? "s" : ""} to next card
+                  </span>
+                ) : (
+                  <span className="text-amber-400">✓ Reward unlocked!</span>
+                )}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Card rewards carousel */}
-        {frameRewards.length > 0 && (
-          <div>
-            {/* Carousel header */}
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-bold tracking-widest text-gray-500 uppercase">
-                Card Rewards
-              </span>
-              {totalPages > 1 && (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setPageIndex(p => Math.max(0, p - 1))}
-                    disabled={pageIndex === 0}
-                    className="w-5 h-5 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <span className="text-[9px] text-gray-600 tabular-nums">{pageIndex + 1}/{totalPages}</span>
-                  <button
-                    onClick={() => setPageIndex(p => Math.min(totalPages - 1, p + 1))}
-                    disabled={pageIndex === totalPages - 1}
-                    className="w-5 h-5 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Card grid */}
-            <div className="grid grid-cols-3 gap-2">
-              {visibleFrames.map(reward => {
-                const frameStyle = FRAME_STYLES[reward.id] ?? FRAME_STYLES.frame_default;
-                const isUnlocked = reward.unlocked;
-                const rarity = RARITY_COLORS[reward.rarity as keyof typeof RARITY_COLORS] ?? RARITY_COLORS.bronze;
-
-                return (
-                  <button
-                    key={reward.id}
-                    onClick={() => setExpandedFrameId(reward.id)}
-                    className={`relative flex flex-col items-center rounded-xl border p-2 transition-all duration-200 w-full ${
-                      isUnlocked
-                        ? "border-amber-500/40 bg-amber-950/10 hover:bg-amber-950/25 hover:scale-105"
-                        : "border-gray-800/60 bg-gray-900/40 hover:border-gray-700/60 hover:scale-105"
-                    }`}
-                  >
-                    {/* Card image */}
-                    <div className={`relative w-full aspect-[4/5] rounded-lg overflow-hidden mb-2 ${!isUnlocked ? "grayscale opacity-40" : ""}`}>
-                      {frameStyle.image ? (
-                        <Image
-                          src={frameStyle.image}
-                          alt={isUnlocked ? reward.name : "Locked"}
-                          fill
-                          className="object-cover"
-                          sizes="96px"
-                        />
-                      ) : (
-                        <div className={`absolute inset-0 bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"} opacity-50`} />
-                      )}
-                      {!isUnlocked && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50 rounded-lg">
-                          <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
-                      {isUnlocked && (
-                        <div className="absolute top-1 right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
-                          <svg className="w-2.5 h-2.5 text-black" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Name */}
-                    <p className={`text-[9px] font-bold text-center leading-tight mb-1 ${isUnlocked ? "text-gray-200" : "text-gray-600"}`}>
-                      {isUnlocked ? reward.name : "???"}
-                    </p>
-
-                    {/* Level badge */}
-                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${rarity.text} ${rarity.border} ${rarity.bg}`}>
-                      Lv {reward.unlock_value}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Pagination dots */}
-            {totalPages > 1 && (
-              <div className="flex justify-center gap-1 mt-3">
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPageIndex(i)}
-                    className={`rounded-full transition-all duration-200 ${
-                      i === pageIndex ? "w-4 h-1.5 bg-amber-400" : "w-1.5 h-1.5 bg-gray-700 hover:bg-gray-600"
-                    }`}
-                  />
-                ))}
-              </div>
+            {/* Right card */}
+            {rightCard ? (
+              <MilestoneCard
+                reward={rightCard}
+                onClick={() => setExpandedId(rightCard.id)}
+              />
+            ) : (
+              <div className="flex-shrink-0 w-28" />
             )}
+
+            {/* Next arrow */}
+            <button
+              onClick={() => setPageIndex((p) => Math.min(pairs.length - 1, p + 1))}
+              disabled={pageIndex === pairs.length - 1}
+              className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         )}
+
+        {/* Per-level XP bar */}
+        <div className="relative pt-4 border-t border-gray-800/40">
+          <div className="flex justify-between mb-1.5">
+            <span className="text-[11px] text-gray-500 font-semibold">
+              {currentXp.toLocaleString()} / {xpToNext.toLocaleString()} XP this level
+            </span>
+            <span className="text-[11px] text-gray-600">
+              Lv {level} &rarr; {level + 1}
+            </span>
+          </div>
+          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${animatedLevelPct}%` }}
+            />
+          </div>
+        </div>
 
         {/* Legend achieved */}
         {level >= 50 && (
@@ -240,7 +222,9 @@ export default function XPProgressBar({ progression }: Props) {
               </svg>
               <div>
                 <div className="text-xs font-bold text-cyan-300">Legend Status Achieved</div>
-                <div className="text-[10px] text-cyan-500/70 mt-0.5">You have reached the pinnacle of management.</div>
+                <div className="text-[10px] text-cyan-500/70 mt-0.5">
+                  You have reached the pinnacle of management.
+                </div>
               </div>
             </div>
           </div>
@@ -251,47 +235,49 @@ export default function XPProgressBar({ progression }: Props) {
       {expandedReward && expandedStyle && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-6"
-          onClick={() => setExpandedFrameId(null)}
+          onClick={() => setExpandedId(null)}
         >
-          <div
-            className="flex flex-col items-center gap-5"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="relative w-52 h-[272px] rounded-2xl overflow-hidden shadow-2xl">
+          <div className="flex flex-col items-center gap-5" onClick={(e) => e.stopPropagation()}>
+            <div className="relative w-56 h-[290px] rounded-2xl overflow-hidden shadow-2xl">
               {expandedStyle.image ? (
                 <Image
                   src={expandedStyle.image}
                   alt={expandedReward.unlocked ? expandedReward.name : "Locked"}
                   fill
                   className="object-cover"
-                  sizes="208px"
+                  sizes="224px"
+                  quality={100}
                 />
               ) : (
-                <div className={`absolute inset-0 bg-gradient-to-br ${expandedStyle.gradient ?? "from-gray-700 to-gray-900"}`} />
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${expandedStyle.gradient ?? "from-gray-700 to-gray-900"}`}
+                />
               )}
               {!expandedReward.unlocked && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-900/65 rounded-2xl">
-                  <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                  <svg className="w-14 h-14 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               )}
             </div>
-
             <div className="text-center">
-              <p className="text-white font-bold text-base">
+              <p className="text-white font-bold text-lg">
                 {expandedReward.unlocked ? expandedReward.name : "???"}
               </p>
-              <p className="text-gray-400 text-xs mt-1">
+              <p className="text-gray-400 text-sm mt-1">
                 {expandedReward.unlocked
                   ? "Unlocked!"
                   : `Unlocks at Level ${expandedReward.unlock_value}`}
               </p>
             </div>
-
             <button
-              onClick={() => setExpandedFrameId(null)}
-              className="px-6 py-2 rounded-xl bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-300 hover:text-white hover:border-gray-500 transition-all"
+              onClick={() => setExpandedId(null)}
+              className="px-7 py-2.5 rounded-xl bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-300 hover:text-white hover:border-gray-500 transition-all"
             >
               Close
             </button>
@@ -299,5 +285,79 @@ export default function XPProgressBar({ progression }: Props) {
         </div>
       )}
     </>
+  );
+}
+
+function MilestoneCard({
+  reward,
+  onClick,
+}: {
+  reward: { id: string; name: string; unlock_value: number | null; unlocked: boolean; rarity: string };
+  onClick: () => void;
+}) {
+  const frameStyle = FRAME_STYLES[reward.id] ?? FRAME_STYLES.frame_default;
+  const isUnlocked = reward.unlocked;
+  const rarity = RARITY_COLORS[reward.rarity as keyof typeof RARITY_COLORS] ?? RARITY_COLORS.bronze;
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex-shrink-0 flex flex-col items-center gap-1.5 group"
+    >
+      <div
+        className={`relative w-28 h-36 rounded-xl overflow-hidden shadow-xl transition-transform duration-200 group-hover:scale-105 ${
+          !isUnlocked ? "opacity-40" : ""
+        }`}
+      >
+        {frameStyle.image ? (
+          <Image
+            src={frameStyle.image}
+            alt={isUnlocked ? reward.name : "Locked"}
+            fill
+            className="object-cover"
+            sizes="112px"
+            quality={100}
+          />
+        ) : (
+          <div
+            className={`absolute inset-0 bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"}`}
+          />
+        )}
+        {!isUnlocked && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900/55 rounded-xl">
+            <svg className="w-7 h-7 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+        )}
+        {isUnlocked && (
+          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center shadow-md">
+            <svg className="w-3 h-3 text-black" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+        )}
+      </div>
+      <p
+        className={`text-[10px] font-bold text-center leading-tight max-w-[112px] ${
+          isUnlocked ? "text-gray-200" : "text-gray-600"
+        }`}
+      >
+        {isUnlocked ? reward.name : "???"}
+      </p>
+      <span
+        className={`text-[9px] font-black px-2 py-0.5 rounded border ${rarity.text} ${rarity.border} ${rarity.bg}`}
+      >
+        Lv {reward.unlock_value}
+      </span>
+    </button>
   );
 }
