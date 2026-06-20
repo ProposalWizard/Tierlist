@@ -23,9 +23,13 @@ type FilterCategory = "all" | "trophy" | "frame" | "title";
 export default function TrophyCabinet({ rewards, stats, level, equippedFrame, equippedTitle, onEquip }: Props) {
   const [filter, setFilter] = useState<FilterCategory>("all");
   const [selectedReward, setSelectedReward] = useState<RewardWithStatus | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const filtered = filter === "all" ? rewards : rewards.filter(r => r.category === filter);
   const unlockedCount = rewards.filter(r => r.unlocked).length;
+
+  const INITIAL_VISIBLE = Math.max(8, Math.ceil(filtered.length / 3));
+  const visible = showAll ? filtered : filtered.slice(0, INITIAL_VISIBLE);
 
   const filters: { key: FilterCategory; label: string; count: number }[] = [
     { key: "all", label: "All", count: rewards.length },
@@ -58,7 +62,7 @@ export default function TrophyCabinet({ rewards, stats, level, equippedFrame, eq
         {filters.map(f => (
           <button
             key={f.key}
-            onClick={() => setFilter(f.key)}
+            onClick={() => { setFilter(f.key); setShowAll(false); }}
             className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-colors ${
               filter === f.key
                 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
@@ -72,7 +76,7 @@ export default function TrophyCabinet({ rewards, stats, level, equippedFrame, eq
 
       {/* Rewards grid */}
       <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
-        {filtered.map((reward) => {
+        {visible.map((reward) => {
           const rarity = RARITY_COLORS[reward.rarity as keyof typeof RARITY_COLORS] ?? RARITY_COLORS.bronze;
           const isEquipped = (reward.category === "frame" && equippedFrame === reward.id) ||
                              (reward.category === "title" && equippedTitle === reward.id);
@@ -114,6 +118,16 @@ export default function TrophyCabinet({ rewards, stats, level, equippedFrame, eq
           );
         })}
       </div>
+
+      {/* Show more / less */}
+      {filtered.length > INITIAL_VISIBLE && (
+        <button
+          onClick={() => setShowAll(v => !v)}
+          className="w-full mt-3 py-2 text-[11px] font-bold text-gray-500 hover:text-gray-300 border border-gray-800/60 hover:border-gray-700/60 rounded-lg transition-colors"
+        >
+          {showAll ? "Show less ↑" : `Show more (${filtered.length - INITIAL_VISIBLE} hidden) ↓`}
+        </button>
+      )}
 
       {/* Detail modal */}
       {selectedReward && (

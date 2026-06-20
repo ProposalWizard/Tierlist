@@ -254,44 +254,42 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
           </div>
         </div>
 
-        {/* Formation Preview */}
+        {/* Rating Visibility */}
         <div className="mb-6 sm:mb-8">
           <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
-            Formation Preview
+            Rating Visibility
           </label>
-          <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden border border-emerald-800/40">
-            {/* Pitch gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/80 via-emerald-900/40 to-emerald-950/80" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/20 via-transparent to-transparent" />
-
-            {/* Pitch lines */}
-            <div className="absolute inset-x-[10%] top-[5%] bottom-[5%] border border-emerald-600/30 rounded" />
-            <div className="absolute inset-x-[10%] top-[5%] h-[18%] border-b border-emerald-600/30" />
-            <div className="absolute inset-x-[10%] bottom-[5%] h-[18%] border-t border-emerald-600/30" />
-            <div className="absolute left-1/2 top-[5%] bottom-[5%] w-px bg-emerald-600/30" />
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-emerald-600/30" />
-            {/* Center dot */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-600/40" />
-
-            {/* Formation name overlay */}
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 text-xs font-bold tracking-widest text-emerald-400/60 uppercase">
-              {formation}
-            </div>
-
-            {/* Players */}
-            {FORMATIONS.find((f) => f.name === formation)?.slots.map(
-              (slot, i) => (
-                <div
-                  key={i}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300"
-                  style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                >
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-600/90 border-2 border-emerald-400/70 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white shadow-lg shadow-emerald-900/50">
-                    {slot.label}
-                  </div>
-                </div>
-              )
-            )}
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+            <button
+              onClick={() => setHiddenRatings(false)}
+              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
+                !hiddenRatings
+                  ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
+                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
+              }`}
+            >
+              <div className={`text-xs sm:text-sm font-bold ${!hiddenRatings ? "text-white" : "text-gray-300"}`}>
+                Normal
+              </div>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${!hiddenRatings ? "text-emerald-100" : "text-gray-400"}`}>
+                Ratings visible while picking
+              </div>
+            </button>
+            <button
+              onClick={() => setHiddenRatings(true)}
+              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
+                hiddenRatings
+                  ? "bg-purple-600 ring-2 ring-purple-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-purple-900/50"
+                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
+              }`}
+            >
+              <div className={`text-xs sm:text-sm font-bold ${hiddenRatings ? "text-white" : "text-gray-300"}`}>
+                Hidden Ratings
+              </div>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${hiddenRatings ? "text-purple-200/70" : "text-gray-400"}`}>
+                All ratings hidden until you pick
+              </div>
+            </button>
           </div>
         </div>
 
@@ -320,28 +318,6 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Hidden Ratings */}
-        <div className="mb-6 sm:mb-8">
-          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
-            Mystery Mode
-          </label>
-          <button
-            onClick={() => setHiddenRatings(!hiddenRatings)}
-            className={`w-full relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-              hiddenRatings
-                ? "bg-purple-600 ring-2 ring-purple-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-purple-900/50"
-                : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-            }`}
-          >
-            <div className={`text-xs sm:text-sm font-bold ${hiddenRatings ? "text-white" : "text-gray-400"}`}>
-              {hiddenRatings ? "Hidden Ratings: ON" : "Hidden Ratings: OFF"}
-            </div>
-            <div className={`text-[9px] sm:text-[10px] mt-0.5 ${hiddenRatings ? "text-purple-200/70" : "text-gray-600"}`}>
-              All ratings &amp; attributes hidden until you pick. Roster order randomised.
-            </div>
-          </button>
         </div>
 
         {/* Multiplayer */}
@@ -414,13 +390,13 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
         <div className="flex gap-2 mt-4">
           <Link
             href="/draft/history"
-            className="flex-1 py-3 text-center text-sm font-bold text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex-1 py-3 text-center text-sm font-bold text-white hover:text-emerald-300 bg-gray-800 hover:bg-gray-700 border border-gray-600/60 hover:border-emerald-600/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md"
           >
             History &amp; Achievements &rarr;
           </Link>
           <Link
             href="/draft/records"
-            className="flex-1 py-3 text-center text-sm font-bold text-amber-400 hover:text-amber-300 bg-amber-900/10 hover:bg-amber-900/20 border border-amber-700/30 hover:border-amber-600/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex-1 py-3 text-center text-sm font-bold text-amber-300 hover:text-amber-200 bg-amber-900/30 hover:bg-amber-900/40 border border-amber-600/50 hover:border-amber-500/60 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-amber-900/30"
           >
             📋 Hall of Records &rarr;
           </Link>

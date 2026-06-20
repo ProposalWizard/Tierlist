@@ -131,6 +131,21 @@ export interface LeagueTeam {
   isPlayer: boolean;
 }
 
+export interface SuperCupResult {
+  played: boolean;
+  opponent: string;
+  opponentRole: 'UCL Winner' | 'UEL Winner';
+  playerRole: 'UCL Winner' | 'UEL Winner';
+  goalsFor: number;
+  goalsAgainst: number;
+  result: 'W' | 'L';
+  goalScorers: { player: string; minute: number }[];
+  assistProviders: { player: string; minute: number }[];
+  extraTime?: boolean;
+  penalties?: boolean;
+  penaltyScore?: { player: number; opponent: number };
+}
+
 export interface SeasonResult {
   matches: MatchResult[];
   playerStats: PlayerStats[];
@@ -166,6 +181,7 @@ export interface SeasonResult {
   faCup: FaCupResult;
   ucl?: UCLResult;
   uel?: UCLResult;
+  superCup?: SuperCupResult;
 }
 
 // --- Seeded PRNG (mulberry32) ---
@@ -1417,11 +1433,13 @@ function simulateChampionsLeague(
   previousLeagueTable: LeagueTeam[],
   opponents: { name: string; strength: number }[],
   rng: () => number,
+  uelWinnerQualifies?: boolean,
 ): UCLResult {
   const playerTeamName = 'Knowitball FC';
   const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
 
-  if (playerFinish < 1 || playerFinish > 5) {
+  const qualifiesThroughLeague = playerFinish >= 1 && playerFinish <= 5;
+  if (!qualifiesThroughLeague && !uelWinnerQualifies) {
     return {
       qualified: false, leagueMatches: [], leaguePosition: 0,
       leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
@@ -1429,11 +1447,26 @@ function simulateChampionsLeague(
   }
 
   const potForFinish = (f: number) => f <= 2 ? 1 : f === 3 ? 2 : f === 4 ? 3 : 4;
-  const playerPot = potForFinish(playerFinish);
+  const playerPot = qualifiesThroughLeague ? potForFinish(playerFinish) : 4;
 
   // Build 4 pots of 9 teams each
   const pots: { name: string; strength: number; isPlayer: boolean }[][] = [[], [], [], []];
-  pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
+
+  if (uelWinnerQualifies && !qualifiesThroughLeague) {
+    // EL winner replaces lowest-rated team in pot 4
+    const pot4Teams = UCL_TEAMS.filter(t => t.pot === 4);
+    pot4Teams.sort((a, b) => a.strength - b.strength);
+    const replaced = pot4Teams[0];
+    const filteredUCL = UCL_TEAMS.filter(t => t !== replaced);
+    for (const uclTeam of filteredUCL) {
+      if (pots[uclTeam.pot - 1].length < (uclTeam.pot === playerPot ? 8 : 9)) {
+        pots[uclTeam.pot - 1].push({ name: uclTeam.name, strength: uclTeam.strength, isPlayer: false });
+      }
+    }
+    pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
+  } else {
+    pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
+  }
 
   // Add other PL qualifiers (top 5 excluding player)
   const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
@@ -1806,6 +1839,118 @@ function simulateEuropaLeague(
   };
 }
 
+// --- Super Cup simulation ---
+
+function determinePreviousWinners(
+  prevResult: SeasonResult | undefined,
+  opponents: { name: string; strength: number }[],
+  rng: () => number,
+): { uclWinner: string | null; uelWinner: string | null; uclWinnerStrength: number; uelWinnerStrength: number } {
+  if (!prevResult) return { uclWinner: null, uelWinner: null, uclWinnerStrength: 0, uelWinnerStrength: 0 };
+
+  let uclWinner: string | null = null;
+  let uclWinnerStrength = 80;
+  if (prevResult.ucl?.winner) {
+    uclWinner = 'Knowitball FC';
+    uclWinnerStrength = prevResult.phaseRatings.teamStrength;
+  } else if (prevResult.ucl?.qualified) {
+    const uclTable = prevResult.ucl.leagueTable;
+    const eliminated = new Set(prevResult.ucl.knockoutTies.filter(t => t.result === 'L').map(t => t.opponent));
+    const candidates = uclTable.filter(t => !t.isPlayer && !eliminated.has(t.name));
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => b.points - a.points);
+      uclWinner = candidates[0].name;
+      const oppStrength = opponents.find(o => o.name === uclWinner)?.strength;
+      uclWinnerStrength = oppStrength ?? UCL_TEAMS.find(t => t.name === uclWinner)?.strength ?? 82;
+    }
+  }
+  if (!uclWinner) {
+    const topUcl = [...UCL_TEAMS].sort((a, b) => b.strength - a.strength);
+    uclWinner = topUcl[Math.floor(rng() * Math.min(3, topUcl.length))].name;
+    uclWinnerStrength = topUcl.find(t => t.name === uclWinner)?.strength ?? 85;
+  }
+
+  let uelWinner: string | null = null;
+  let uelWinnerStrength = 74;
+  if (prevResult.uel?.winner) {
+    uelWinner = 'Knowitball FC';
+    uelWinnerStrength = prevResult.phaseRatings.teamStrength;
+  } else if (prevResult.uel?.qualified) {
+    const uelTable = prevResult.uel.leagueTable;
+    const eliminated = new Set(prevResult.uel.knockoutTies.filter(t => t.result === 'L').map(t => t.opponent));
+    const candidates = uelTable.filter(t => !t.isPlayer && !eliminated.has(t.name));
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => b.points - a.points);
+      uelWinner = candidates[0].name;
+      const oppStrength = opponents.find(o => o.name === uelWinner)?.strength;
+      uelWinnerStrength = oppStrength ?? UEL_TEAMS.find(t => t.name === uelWinner)?.strength ?? 74;
+    }
+  }
+  if (!uelWinner) {
+    const topUel = [...UEL_TEAMS].sort((a, b) => b.strength - a.strength);
+    uelWinner = topUel[Math.floor(rng() * Math.min(3, topUel.length))].name;
+    uelWinnerStrength = topUel.find(t => t.name === uelWinner)?.strength ?? 76;
+  }
+
+  return { uclWinner, uelWinner, uclWinnerStrength, uelWinnerStrength };
+}
+
+function simulateSuperCup(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  prevResult: SeasonResult,
+  opponents: { name: string; strength: number }[],
+  rng: () => number,
+): SuperCupResult | undefined {
+  const { uclWinner, uelWinner, uclWinnerStrength, uelWinnerStrength } = determinePreviousWinners(prevResult, opponents, rng);
+  if (!uclWinner || !uelWinner) return undefined;
+
+  const playerWonUCL = prevResult.ucl?.winner === true;
+  const playerWonUEL = prevResult.uel?.winner === true;
+  if (!playerWonUCL && !playerWonUEL) return undefined;
+
+  const playerRole: 'UCL Winner' | 'UEL Winner' = playerWonUCL ? 'UCL Winner' : 'UEL Winner';
+  const opponentName = playerWonUCL ? uelWinner : uclWinner;
+  const opponentStrength = playerWonUCL ? uelWinnerStrength : uclWinnerStrength;
+  const opponentRole: 'UCL Winner' | 'UEL Winner' = playerWonUCL ? 'UEL Winner' : 'UCL Winner';
+
+  const starters = players.filter(p => !p.isSub);
+  const subs = players.filter(p => p.isSub);
+  const activeSubs = subs.filter(() => rng() < 0.5);
+  const matchPlayers = [...starters, ...activeSubs];
+
+  const m = simulateMatch(matchPlayers, ratings, { name: opponentName, strength: opponentStrength }, true, rng);
+
+  const result: SuperCupResult = {
+    played: true,
+    opponent: opponentName,
+    opponentRole,
+    playerRole,
+    goalsFor: m.goalsFor,
+    goalsAgainst: m.goalsAgainst,
+    result: m.result === 'D' ? 'W' : m.result,
+    goalScorers: m.goalScorers,
+    assistProviders: m.assistProviders,
+  };
+
+  if (m.result === 'D') {
+    // Penalties for a draw
+    const playerPens = 4 + Math.floor(rng() * 3);
+    const oppPens = playerPens + (rng() > 0.5 ? -1 : 0);
+    if (playerPens > oppPens) {
+      result.result = 'W';
+    } else if (oppPens > playerPens) {
+      result.result = 'L';
+    } else {
+      result.result = rng() > 0.5 ? 'W' : 'L';
+    }
+    result.penalties = true;
+    result.penaltyScore = { player: playerPens, opponent: oppPens };
+  }
+
+  return result;
+}
+
 // --- Main export ---
 
 function rollInjuryLength(rng: () => number): number {
@@ -1825,6 +1970,7 @@ export function simulateSeason(
   otherTeams?: { name: string; strength: number }[],
   seasonNumber?: number,
   previousLeagueTable?: LeagueTeam[],
+  previousSeasonResult?: SeasonResult,
 ): SeasonResult {
   const seasonSeed = (seasonNumber ?? 1) * 100;
   const seed = players.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonSeed);
@@ -1916,11 +2062,22 @@ export function simulateSeason(
   // FA Cup
   const faCup = simulateFaCup(starters, ratings, opponents, rng);
 
+  // Super Cup (if won UCL or UEL last season)
+  let superCup: SuperCupResult | undefined;
+  if (previousSeasonResult) {
+    superCup = simulateSuperCup(players, ratings, previousSeasonResult, opponents, rng);
+  }
+
   // Champions League / Europa League (if qualified from previous season)
   let ucl: UCLResult | undefined;
   let uel: UCLResult | undefined;
   if (previousLeagueTable) {
-    ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng);
+    const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
+    const wonUELLastSeason = previousSeasonResult?.uel?.winner === true;
+    const qualifiesThroughLeague = playerFinish >= 1 && playerFinish <= 5;
+    const uelWinnerQualifies = wonUELLastSeason && !qualifiesThroughLeague;
+
+    ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng, uelWinnerQualifies);
     if (!ucl.qualified) {
       uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng);
     }
@@ -2125,6 +2282,29 @@ export function simulateSeason(
     }
   }
 
+  // Count Super Cup stats (added to all-comps totals)
+  if (superCup?.played) {
+    const scMatch = {
+      goalScorers: superCup.goalScorers, assistProviders: superCup.assistProviders,
+      goalsAgainst: superCup.goalsAgainst, result: superCup.result as 'W' | 'D' | 'L',
+      goalsFor: superCup.goalsFor, opponent: superCup.opponent, isHome: true,
+    };
+    for (const p of starters) {
+      statsMap[p.name].appearances++;
+      rateMatchForPlayer(p, scMatch);
+    }
+    for (const gs of superCup.goalScorers) {
+      if (statsMap[gs.player]) statsMap[gs.player].goals++;
+    }
+    for (const ap of superCup.assistProviders) {
+      if (statsMap[ap.player]) statsMap[ap.player].assists++;
+    }
+    if (superCup.goalsAgainst === 0) {
+      if (gk) statsMap[gk.name].cleanSheets++;
+      for (const def of defenders) statsMap[def.name].cleanSheets++;
+    }
+  }
+
   // Update statsMap with all-comps avg rating
   for (const p of allPlayers) {
     const r = allCompsRatings[p.name];
@@ -2297,6 +2477,7 @@ export function simulateSeason(
     faCup,
     ucl,
     uel,
+    superCup,
   };
 }
 

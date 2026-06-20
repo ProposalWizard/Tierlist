@@ -5,6 +5,11 @@ import { createServiceClient } from "@/lib/supabase/service";
 const MAX_PER_CATEGORY = 5;
 const ASCENDING_RECORD_TYPES = new Set(["goals_conceded"]);
 
+function isDevPlayer(name: string | null): boolean {
+  if (!name) return false;
+  return /^Dev\s/i.test(name);
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const personal = url.searchParams.get("personal");
@@ -27,6 +32,7 @@ export async function GET(req: Request) {
 
     const records: Record<string, { value: number; playerName: string | null; playerOvr: number | null; seasonNumber: number | null }> = {};
     for (const row of data ?? []) {
+      if (isDevPlayer(row.player_name)) continue;
       records[`${row.competition}_${row.record_type}`] = {
         value: row.value,
         playerName: row.player_name,
@@ -53,6 +59,7 @@ export async function GET(req: Request) {
   const grouped: Record<string, { value: number; playerName: string | null; playerOvr: number | null; username: string; seasonNumber: number | null; createdAt: string }[]> = {};
 
   for (const row of data ?? []) {
+    if (isDevPlayer(row.player_name)) continue;
     const key = `${row.competition}_${row.record_type}`;
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push({
@@ -95,6 +102,7 @@ interface RecordPayload {
     assists: RecordEntry;
     cleanSheets: RecordEntry;
     goalsConceded: TeamStat;
+    avgRating?: RecordEntry;
   };
   all: {
     wins: TeamStat;
@@ -102,12 +110,17 @@ interface RecordPayload {
     goals: RecordEntry;
     assists: RecordEntry;
     cleanSheets: RecordEntry;
+    goalsConceded?: TeamStat;
+    avgRating?: RecordEntry;
   };
   career?: {
     goals: RecordEntry;
+    assists?: RecordEntry;
     trophies: number;
+    avgRating?: RecordEntry;
   };
   seasonNumber?: number;
+  hasDevPlayers?: boolean;
 }
 
 interface CandidateRow {
@@ -139,12 +152,17 @@ export async function POST(req: Request) {
   const username = profile?.username || user.email?.split("@")[0] || "Player";
 
   const body: RecordPayload = await req.json();
-  const { pl, all, career, seasonNumber } = body;
+  const { pl, all, career, seasonNumber, hasDevPlayers } = body;
+
+  if (hasDevPlayers) {
+    return NextResponse.json({ ok: true, inserted: 0, skipped: "dev_team" });
+  }
 
   const candidates: CandidateRow[] = [];
 
   const pushEntry = (competition: string, record_type: string, stat: RecordEntry) => {
     if (stat.value <= 0) return;
+    if (isDevPlayer(stat.playerName)) return;
     candidates.push({
       user_id: user.id, username, competition, record_type,
       value: stat.value,
@@ -160,7 +178,7 @@ export async function POST(req: Request) {
       user_id: user.id, username, competition, record_type,
       value: stat.value,
       player_name: null,
-      player_ovr: stat.teamOvr ?? null,
+      player_ovr: null,
       season_number: seasonNumber ?? null,
     });
   };
@@ -171,15 +189,19 @@ export async function POST(req: Request) {
   pushEntry("pl", "assists", pl.assists);
   pushEntry("pl", "clean_sheets", pl.cleanSheets);
   pushTeam("pl", "goals_conceded", pl.goalsConceded);
+  if (pl.avgRating) pushEntry("pl", "avg_rating", pl.avgRating);
 
   pushTeam("all", "wins", all.wins);
   pushTeam("all", "unbeaten", all.unbeaten);
   pushEntry("all", "goals", all.goals);
   pushEntry("all", "assists", all.assists);
   pushEntry("all", "clean_sheets", all.cleanSheets);
+  if (all.goalsConceded) pushTeam("all", "goals_conceded", all.goalsConceded);
+  if (all.avgRating) pushEntry("all", "avg_rating", all.avgRating);
 
   if (career) {
     if (career.goals.value > 0) pushEntry("career", "career_goals", career.goals);
+    if (career.assists && career.assists.value > 0) pushEntry("career", "career_assists", career.assists);
     if (career.trophies > 0) {
       candidates.push({
         user_id: user.id, username, competition: "career", record_type: "career_trophies",
@@ -187,6 +209,7 @@ export async function POST(req: Request) {
         season_number: seasonNumber ?? null,
       });
     }
+    if (career.avgRating && career.avgRating.value > 0) pushEntry("career", "career_avg_rating", career.avgRating);
   }
 
   if (candidates.length === 0) {

@@ -145,10 +145,16 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
             )}
           </button>
         ))}
-        <div className="ml-auto pb-1">
+        <div className="ml-auto pb-1 hidden sm:block">
           <WaysToEarnXP compact />
         </div>
       </div>
+      {/* Mobile-only Ways to Earn XP */}
+      {activeTab === "dashboard" && (
+        <div className="flex justify-end mb-4 sm:hidden">
+          <WaysToEarnXP compact />
+        </div>
+      )}
 
       {/* Dashboard - multi-column layout */}
       {activeTab === "dashboard" && (

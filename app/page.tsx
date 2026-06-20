@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const games = [
   { name: "Tierlists", href: "/tierlists" },
-  { name: "PL Draft", href: "/draft" },
+  { name: "Draft", href: "/draft" },
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
   { name: "Blind Rankings", href: "/blind-rankings" },

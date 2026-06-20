@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason } from "@/lib/seasonSimulator";
-import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch } from "@/lib/seasonSimulator";
+import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch, SuperCupResult } from "@/lib/seasonSimulator";
 import { XP_AWARDS, FRAME_STYLES } from "@/lib/xp";
 import XPPopup from "./XPPopup";
 import { getPositionColor, getPositionTextColor } from "./formations";
@@ -266,6 +266,25 @@ type RevealEvent = {
 
 function buildSchedule(season: SeasonResult): RevealEvent[] {
   const events: RevealEvent[] = [];
+
+  // Super Cup — first event of the season
+  if (season.superCup?.played) {
+    const sc = season.superCup;
+    events.push({
+      kind: 'fa-cup' as const,
+      match: {
+        opponent: sc.opponent,
+        isHome: true,
+        goalsFor: sc.goalsFor,
+        goalsAgainst: sc.goalsAgainst,
+        goalScorers: sc.goalScorers,
+        assistProviders: sc.assistProviders,
+        result: sc.result as 'W' | 'D' | 'L',
+      },
+      label: 'Super Cup',
+    });
+  }
+
   const euroComp = season.ucl?.qualified ? season.ucl : season.uel?.qualified ? season.uel : null;
   const isUCL = !!season.ucl?.qualified;
   const compPrefix = isUCL ? 'UCL' : 'UEL';
@@ -433,6 +452,7 @@ export interface DraftRunRecord {
   faCupWinner?: boolean;
   uclWinner?: boolean;
   uelWinner?: boolean;
+  superCupWinner?: boolean;
 }
 
 async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
@@ -459,7 +479,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
 
 export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons }: Props) {
   const computedSeason = useMemo(
-    () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable),
+    () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined),
     [players, seasonNumber, previousResult, preComputedSeason],
   );
   const season = computedSeason;
@@ -553,6 +573,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         faCupWinner: season.faCup.winner,
         uclWinner: season.ucl?.winner || false,
         uelWinner: season.uel?.winner || false,
+        superCupWinner: season.superCup?.result === 'W' || false,
       }, isSignedIn);
 
       if (isSignedIn) {
@@ -606,10 +627,16 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         // Submit season records to global leaderboard
         (async () => {
           const findOvr = (name: string) => players.find(p => p.name === name)?.overall ?? null;
+          const hasDevPlayers = players.some(p => /^Dev\s/i.test(p.name));
 
-          const topBy = (stats: { name: string; goals: number; assists: number; cleanSheets: number }[], field: "goals" | "assists" | "cleanSheets") => {
+          const topBy = (stats: { name: string; goals: number; assists: number; cleanSheets: number; avgRating?: number }[], field: "goals" | "assists" | "cleanSheets") => {
             const best = stats.reduce((a, b) => b[field] > a[field] ? b : a, { name: "", goals: 0, assists: 0, cleanSheets: 0 });
             return { value: best[field], playerName: best.name || null, playerOvr: best.name ? findOvr(best.name) : null };
+          };
+
+          const bestAvgRating = (stats: { name: string; avgRating: number }[]) => {
+            const best = stats.reduce((a, b) => b.avgRating > a.avgRating ? b : a, { name: "", avgRating: 0 });
+            return { value: Math.round(best.avgRating * 10), playerName: best.name || null, playerOvr: best.name ? findOvr(best.name) : null };
           };
 
           const teamOvr = players.length > 0
@@ -628,28 +655,57 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           const uelWins = (season.uel?.leagueMatches.filter(m => m.result === "W").length ?? 0)
             + (season.uel?.knockoutTies.filter(t => t.result === "W").length ?? 0);
 
-          const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins;
+          const superCupWins = season.superCup?.result === 'W' ? 1 : 0;
+          const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins + superCupWins;
 
-          // Career goals: accumulate across all seasons
-          const careerGoalMap = new Map<string, { goals: number; ovr: number | null }>();
+          // All-comps goals conceded: PL + FA Cup + UCL/UEL
+          const faCupGoalsAgainst = season.faCup.matches.reduce((sum, m) => sum + m.goalsAgainst, 0);
+          const uclGoalsAgainst = (season.ucl?.leagueMatches.reduce((s, m) => s + m.goalsAgainst, 0) ?? 0)
+            + (season.ucl?.knockoutTies.reduce((s, t) => s + t.leg1.goalsAgainst + (t.leg2?.goalsAgainst ?? 0), 0) ?? 0);
+          const uelGoalsAgainst = (season.uel?.leagueMatches.reduce((s, m) => s + m.goalsAgainst, 0) ?? 0)
+            + (season.uel?.knockoutTies.reduce((s, t) => s + t.leg1.goalsAgainst + (t.leg2?.goalsAgainst ?? 0), 0) ?? 0);
+          const allGoalsAgainst = season.teamRecord.goalsAgainst + faCupGoalsAgainst + uclGoalsAgainst + uelGoalsAgainst;
+
+          // Career stats: accumulate across all seasons
+          const careerGoalMap = new Map<string, { goals: number; assists: number; ovr: number | null; totalRating: number; matchCount: number }>();
           for (const s of allSeasonResults ?? []) {
             for (const ps of s.playerStats) {
-              const prev = careerGoalMap.get(ps.name) ?? { goals: 0, ovr: null };
-              careerGoalMap.set(ps.name, { goals: prev.goals + ps.goals, ovr: null });
+              const prev = careerGoalMap.get(ps.name) ?? { goals: 0, assists: 0, ovr: null, totalRating: 0, matchCount: 0 };
+              careerGoalMap.set(ps.name, {
+                goals: prev.goals + ps.goals,
+                assists: prev.assists + ps.assists,
+                ovr: null,
+                totalRating: prev.totalRating + ps.avgRating * ps.appearances,
+                matchCount: prev.matchCount + ps.appearances,
+              });
             }
           }
           for (const ps of season.playerStats) {
-            const prev = careerGoalMap.get(ps.name) ?? { goals: 0, ovr: null };
-            careerGoalMap.set(ps.name, { goals: prev.goals + ps.goals, ovr: findOvr(ps.name) });
+            const prev = careerGoalMap.get(ps.name) ?? { goals: 0, assists: 0, ovr: null, totalRating: 0, matchCount: 0 };
+            careerGoalMap.set(ps.name, {
+              goals: prev.goals + ps.goals,
+              assists: prev.assists + ps.assists,
+              ovr: findOvr(ps.name),
+              totalRating: prev.totalRating + ps.avgRating * ps.appearances,
+              matchCount: prev.matchCount + ps.appearances,
+            });
           }
-          let topCareerGoals = 0;
-          let topCareerScorer = "";
-          let topCareerOvr: number | null = null;
-          Array.from(careerGoalMap.entries()).forEach(([name, { goals, ovr }]) => {
-            if (goals > topCareerGoals) {
-              topCareerGoals = goals;
-              topCareerScorer = name;
-              topCareerOvr = ovr;
+
+          let topCareerGoals = 0, topCareerScorer = "", topCareerGoalsOvr: number | null = null;
+          let topCareerAssists = 0, topCareerAssister = "", topCareerAssistsOvr: number | null = null;
+          let topCareerAvgRating = 0, topCareerRatingPlayer = "", topCareerRatingOvr: number | null = null;
+          Array.from(careerGoalMap.entries()).forEach(([name, data]) => {
+            if (data.goals > topCareerGoals) {
+              topCareerGoals = data.goals; topCareerScorer = name; topCareerGoalsOvr = data.ovr;
+            }
+            if (data.assists > topCareerAssists) {
+              topCareerAssists = data.assists; topCareerAssister = name; topCareerAssistsOvr = data.ovr;
+            }
+            if (data.matchCount > 0) {
+              const avg = data.totalRating / data.matchCount;
+              if (avg > topCareerAvgRating) {
+                topCareerAvgRating = avg; topCareerRatingPlayer = name; topCareerRatingOvr = data.ovr;
+              }
             }
           });
 
@@ -658,13 +714,15 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             (s.actualFinish === 1 ? 1 : 0) +
             (s.faCup.winner ? 1 : 0) +
             (s.ucl?.winner ? 1 : 0) +
-            (s.uel?.winner ? 1 : 0);
+            (s.uel?.winner ? 1 : 0) +
+            (s.superCup?.result === 'W' ? 1 : 0);
           const totalTrophies = [...(allSeasonResults ?? []), season].reduce((sum, s) => sum + countTrophies(s), 0);
 
           await fetch("/api/draft/records", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              hasDevPlayers,
               pl: {
                 wins: { value: season.teamRecord.wins, teamOvr },
                 unbeaten: { value: season.longestUnbeatenRun, teamOvr },
@@ -672,6 +730,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 assists: topBy(season.plPlayerStats, "assists"),
                 cleanSheets: topBy(gkPlStats.length > 0 ? gkPlStats : season.plPlayerStats, "cleanSheets"),
                 goalsConceded: { value: season.teamRecord.goalsAgainst, teamOvr },
+                avgRating: bestAvgRating(season.plPlayerStats),
               },
               all: {
                 wins: { value: allWins, teamOvr },
@@ -679,10 +738,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 goals: topBy(season.playerStats, "goals"),
                 assists: topBy(season.playerStats, "assists"),
                 cleanSheets: topBy(gkAllStats.length > 0 ? gkAllStats : season.playerStats, "cleanSheets"),
+                goalsConceded: { value: allGoalsAgainst, teamOvr },
+                avgRating: bestAvgRating(season.playerStats),
               },
               career: {
-                goals: { value: topCareerGoals, playerName: topCareerScorer || null, playerOvr: topCareerOvr },
+                goals: { value: topCareerGoals, playerName: topCareerScorer || null, playerOvr: topCareerGoalsOvr },
+                assists: { value: topCareerAssists, playerName: topCareerAssister || null, playerOvr: topCareerAssistsOvr },
                 trophies: totalTrophies,
+                avgRating: { value: Math.round(topCareerAvgRating * 10), playerName: topCareerRatingPlayer || null, playerOvr: topCareerRatingOvr },
               },
               seasonNumber,
             }),
@@ -1386,6 +1449,46 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           ))}
         </div>
       </div>
+
+      {/* Super Cup */}
+      {season.superCup?.played && (() => {
+        const sc = season.superCup!;
+        const won = sc.result === 'W';
+        return (
+          <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">&#127941;</span>
+              <h3 className="text-[10px] font-bold tracking-widest text-amber-400 uppercase">Super Cup</h3>
+              <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded ${
+                won
+                  ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
+                {won ? "WINNER" : "DEFEATED"}
+              </span>
+            </div>
+            <div className="text-[10px] text-gray-500 mb-2">
+              {sc.playerRole} vs {sc.opponentRole}
+            </div>
+            <div className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg ${won ? "bg-emerald-900/20" : "bg-red-900/20"}`}>
+              <span className="flex-1 font-medium truncate">{sc.opponent}</span>
+              <span className={`font-black tabular-nums ${won ? "text-emerald-400" : "text-red-400"}`}>
+                {sc.goalsFor}-{sc.goalsAgainst}
+              </span>
+              {sc.penalties && sc.penaltyScore && (
+                <span className="text-[9px] font-bold text-purple-400/70 bg-purple-500/10 px-1 py-0.5 rounded">
+                  PEN {sc.penaltyScore.player}-{sc.penaltyScore.opponent}
+                </span>
+              )}
+            </div>
+            {sc.goalScorers.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-500">
+                Goals: {sc.goalScorers.map(gs => `${gs.player} ${gs.minute}'`).join(", ")}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* FA Cup */}
       <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
