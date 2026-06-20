@@ -7,7 +7,6 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import XPProgressBar from "@/components/profile/XPProgressBar";
 import StatsGrid from "@/components/profile/StatsGrid";
 import TrophyCabinet from "@/components/profile/TrophyCabinet";
-import RecentActivity from "@/components/profile/RecentActivity";
 import WaysToEarnXP from "@/components/profile/WaysToEarnXP";
 import CardDesigns from "@/components/profile/CardDesigns";
 import PersonalRecords from "@/components/profile/PersonalRecords";
@@ -191,7 +190,6 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                   tierlistsCreated={createdList.length}
                 />
                 <PersonalRecords />
-                <RecentActivity events={progression?.recentXpEvents ?? []} />
               </div>
 
               {/* Right Column — Trophy Cabinet + Ways to Earn XP */}
