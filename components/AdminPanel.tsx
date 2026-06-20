@@ -1422,6 +1422,12 @@ export default function AdminPanel({
           >
             👥 Players DB
           </a>
+          <a
+            href="/admin/xp"
+            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
+          >
+            ✨ XP & Rewards
+          </a>
           <button
             onClick={async () => {
               try {
