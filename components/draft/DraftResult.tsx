@@ -459,7 +459,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
 
 export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons }: Props) {
   const computedSeason = useMemo(
-    () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable),
+    () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined),
     [players, seasonNumber, previousResult, preComputedSeason],
   );
   const season = computedSeason;
@@ -606,10 +606,16 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         // Submit season records to global leaderboard
         (async () => {
           const findOvr = (name: string) => players.find(p => p.name === name)?.overall ?? null;
+          const hasDevPlayers = players.some(p => /^Dev\s/i.test(p.name));
 
-          const topBy = (stats: { name: string; goals: number; assists: number; cleanSheets: number }[], field: "goals" | "assists" | "cleanSheets") => {
+          const topBy = (stats: { name: string; goals: number; assists: number; cleanSheets: number; avgRating?: number }[], field: "goals" | "assists" | "cleanSheets") => {
             const best = stats.reduce((a, b) => b[field] > a[field] ? b : a, { name: "", goals: 0, assists: 0, cleanSheets: 0 });
             return { value: best[field], playerName: best.name || null, playerOvr: best.name ? findOvr(best.name) : null };
+          };
+
+          const bestAvgRating = (stats: { name: string; avgRating: number }[]) => {
+            const best = stats.reduce((a, b) => b.avgRating > a.avgRating ? b : a, { name: "", avgRating: 0 });
+            return { value: Math.round(best.avgRating * 10), playerName: best.name || null, playerOvr: best.name ? findOvr(best.name) : null };
           };
 
           const teamOvr = players.length > 0
@@ -628,28 +634,57 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           const uelWins = (season.uel?.leagueMatches.filter(m => m.result === "W").length ?? 0)
             + (season.uel?.knockoutTies.filter(t => t.result === "W").length ?? 0);
 
-          const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins;
+          const superCupWins = season.superCup?.result === 'W' ? 1 : 0;
+          const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins + superCupWins;
 
-          // Career goals: accumulate across all seasons
-          const careerGoalMap = new Map<string, { goals: number; ovr: number | null }>();
+          // All-comps goals conceded: PL + FA Cup + UCL/UEL
+          const faCupGoalsAgainst = season.faCup.matches.reduce((sum, m) => sum + m.goalsAgainst, 0);
+          const uclGoalsAgainst = (season.ucl?.leagueMatches.reduce((s, m) => s + m.goalsAgainst, 0) ?? 0)
+            + (season.ucl?.knockoutTies.reduce((s, t) => s + t.leg1.goalsAgainst + (t.leg2?.goalsAgainst ?? 0), 0) ?? 0);
+          const uelGoalsAgainst = (season.uel?.leagueMatches.reduce((s, m) => s + m.goalsAgainst, 0) ?? 0)
+            + (season.uel?.knockoutTies.reduce((s, t) => s + t.leg1.goalsAgainst + (t.leg2?.goalsAgainst ?? 0), 0) ?? 0);
+          const allGoalsAgainst = season.teamRecord.goalsAgainst + faCupGoalsAgainst + uclGoalsAgainst + uelGoalsAgainst;
+
+          // Career stats: accumulate across all seasons
+          const careerGoalMap = new Map<string, { goals: number; assists: number; ovr: number | null; totalRating: number; matchCount: number }>();
           for (const s of allSeasonResults ?? []) {
             for (const ps of s.playerStats) {
-              const prev = careerGoalMap.get(ps.name) ?? { goals: 0, ovr: null };
-              careerGoalMap.set(ps.name, { goals: prev.goals + ps.goals, ovr: null });
+              const prev = careerGoalMap.get(ps.name) ?? { goals: 0, assists: 0, ovr: null, totalRating: 0, matchCount: 0 };
+              careerGoalMap.set(ps.name, {
+                goals: prev.goals + ps.goals,
+                assists: prev.assists + ps.assists,
+                ovr: null,
+                totalRating: prev.totalRating + ps.avgRating * ps.appearances,
+                matchCount: prev.matchCount + ps.appearances,
+              });
             }
           }
           for (const ps of season.playerStats) {
-            const prev = careerGoalMap.get(ps.name) ?? { goals: 0, ovr: null };
-            careerGoalMap.set(ps.name, { goals: prev.goals + ps.goals, ovr: findOvr(ps.name) });
+            const prev = careerGoalMap.get(ps.name) ?? { goals: 0, assists: 0, ovr: null, totalRating: 0, matchCount: 0 };
+            careerGoalMap.set(ps.name, {
+              goals: prev.goals + ps.goals,
+              assists: prev.assists + ps.assists,
+              ovr: findOvr(ps.name),
+              totalRating: prev.totalRating + ps.avgRating * ps.appearances,
+              matchCount: prev.matchCount + ps.appearances,
+            });
           }
-          let topCareerGoals = 0;
-          let topCareerScorer = "";
-          let topCareerOvr: number | null = null;
-          Array.from(careerGoalMap.entries()).forEach(([name, { goals, ovr }]) => {
-            if (goals > topCareerGoals) {
-              topCareerGoals = goals;
-              topCareerScorer = name;
-              topCareerOvr = ovr;
+
+          let topCareerGoals = 0, topCareerScorer = "", topCareerGoalsOvr: number | null = null;
+          let topCareerAssists = 0, topCareerAssister = "", topCareerAssistsOvr: number | null = null;
+          let topCareerAvgRating = 0, topCareerRatingPlayer = "", topCareerRatingOvr: number | null = null;
+          Array.from(careerGoalMap.entries()).forEach(([name, data]) => {
+            if (data.goals > topCareerGoals) {
+              topCareerGoals = data.goals; topCareerScorer = name; topCareerGoalsOvr = data.ovr;
+            }
+            if (data.assists > topCareerAssists) {
+              topCareerAssists = data.assists; topCareerAssister = name; topCareerAssistsOvr = data.ovr;
+            }
+            if (data.matchCount > 0) {
+              const avg = data.totalRating / data.matchCount;
+              if (avg > topCareerAvgRating) {
+                topCareerAvgRating = avg; topCareerRatingPlayer = name; topCareerRatingOvr = data.ovr;
+              }
             }
           });
 
@@ -658,13 +693,15 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             (s.actualFinish === 1 ? 1 : 0) +
             (s.faCup.winner ? 1 : 0) +
             (s.ucl?.winner ? 1 : 0) +
-            (s.uel?.winner ? 1 : 0);
+            (s.uel?.winner ? 1 : 0) +
+            (s.superCup?.result === 'W' ? 1 : 0);
           const totalTrophies = [...(allSeasonResults ?? []), season].reduce((sum, s) => sum + countTrophies(s), 0);
 
           await fetch("/api/draft/records", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              hasDevPlayers,
               pl: {
                 wins: { value: season.teamRecord.wins, teamOvr },
                 unbeaten: { value: season.longestUnbeatenRun, teamOvr },
@@ -672,6 +709,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 assists: topBy(season.plPlayerStats, "assists"),
                 cleanSheets: topBy(gkPlStats.length > 0 ? gkPlStats : season.plPlayerStats, "cleanSheets"),
                 goalsConceded: { value: season.teamRecord.goalsAgainst, teamOvr },
+                avgRating: bestAvgRating(season.plPlayerStats),
               },
               all: {
                 wins: { value: allWins, teamOvr },
@@ -679,10 +717,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 goals: topBy(season.playerStats, "goals"),
                 assists: topBy(season.playerStats, "assists"),
                 cleanSheets: topBy(gkAllStats.length > 0 ? gkAllStats : season.playerStats, "cleanSheets"),
+                goalsConceded: { value: allGoalsAgainst, teamOvr },
+                avgRating: bestAvgRating(season.playerStats),
               },
               career: {
-                goals: { value: topCareerGoals, playerName: topCareerScorer || null, playerOvr: topCareerOvr },
+                goals: { value: topCareerGoals, playerName: topCareerScorer || null, playerOvr: topCareerGoalsOvr },
+                assists: { value: topCareerAssists, playerName: topCareerAssister || null, playerOvr: topCareerAssistsOvr },
                 trophies: totalTrophies,
+                avgRating: { value: Math.round(topCareerAvgRating * 10), playerName: topCareerRatingPlayer || null, playerOvr: topCareerRatingOvr },
               },
               seasonNumber,
             }),

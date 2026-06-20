@@ -390,13 +390,13 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
         <div className="flex gap-2 mt-4">
           <Link
             href="/draft/history"
-            className="flex-1 py-3 text-center text-sm font-bold text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex-1 py-3 text-center text-sm font-bold text-white hover:text-emerald-300 bg-gray-800 hover:bg-gray-700 border border-gray-600/60 hover:border-emerald-600/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md"
           >
             History &amp; Achievements &rarr;
           </Link>
           <Link
             href="/draft/records"
-            className="flex-1 py-3 text-center text-sm font-bold text-amber-400 hover:text-amber-300 bg-amber-900/10 hover:bg-amber-900/20 border border-amber-700/30 hover:border-amber-600/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex-1 py-3 text-center text-sm font-bold text-amber-300 hover:text-amber-200 bg-amber-900/30 hover:bg-amber-900/40 border border-amber-600/50 hover:border-amber-500/60 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-amber-900/30"
           >
             📋 Hall of Records &rarr;
           </Link>

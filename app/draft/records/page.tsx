@@ -8,6 +8,7 @@ interface RecordEntry {
   playerOvr: number | null;
   username: string;
   seasonNumber: number | null;
+  clubName?: string | null;
 }
 
 interface RecordType {
@@ -16,36 +17,39 @@ interface RecordType {
   emoji: string;
   isTeam: boolean;
   ascending?: boolean;
-  plOnly?: boolean;
+  isDecimal?: boolean;
 }
 
-const RECORD_TYPES: RecordType[] = [
-  { key: "wins",          label: "Most Wins",           emoji: "🏆", isTeam: true },
-  { key: "goals",         label: "Golden Boot",         emoji: "👟", isTeam: false },
-  { key: "assists",       label: "Most Assists",        emoji: "🎯", isTeam: false },
-  { key: "clean_sheets",  label: "Golden Glove",        emoji: "🧤", isTeam: false },
-  { key: "unbeaten",      label: "Longest Unbeaten",    emoji: "🛡️", isTeam: true },
-  { key: "goals_conceded",label: "Least Goals Conceded",emoji: "🔒", isTeam: true, ascending: true, plOnly: true },
+const SEASON_RECORD_TYPES: RecordType[] = [
+  { key: "wins",           label: "Most Wins",            emoji: "🏆", isTeam: true },
+  { key: "goals",          label: "Golden Boot",          emoji: "👟", isTeam: false },
+  { key: "assists",        label: "Most Assists",         emoji: "🎯", isTeam: false },
+  { key: "clean_sheets",   label: "Golden Glove",         emoji: "🧤", isTeam: false },
+  { key: "unbeaten",       label: "Longest Unbeaten",     emoji: "🛡️", isTeam: true },
+  { key: "goals_conceded", label: "Least Goals Conceded", emoji: "🔒", isTeam: true, ascending: true },
+  { key: "avg_rating",     label: "Highest Average Rating", emoji: "⭐", isTeam: false, isDecimal: true },
 ];
 
 const CAREER_RECORD_TYPES: RecordType[] = [
-  { key: "career_goals",    label: "Most Career Goals",  emoji: "⚽", isTeam: false },
-  { key: "career_trophies", label: "Most Trophies Won",  emoji: "🏅", isTeam: true },
+  { key: "career_goals",      label: "Most Career Goals",         emoji: "⚽", isTeam: false },
+  { key: "career_assists",    label: "Most Career Assists",       emoji: "🎯", isTeam: false },
+  { key: "career_trophies",   label: "Most Trophies Won",         emoji: "🏅", isTeam: true },
+  { key: "career_avg_rating", label: "Highest Career Avg Rating", emoji: "⭐", isTeam: false, isDecimal: true },
 ];
 
-// Official real-world records — shown until a player beats them
-const OFFICIAL: Record<string, { value: number; playerName: string | null; playerOvr: number | null }> = {
-  "pl_wins":           { value: 32, playerName: null,              playerOvr: null },
-  "pl_goals":          { value: 36, playerName: "E. Haaland",      playerOvr: 91 },
+const OFFICIAL: Record<string, { value: number; playerName: string | null; playerOvr: number | null; clubName?: string }> = {
+  "pl_wins":           { value: 32, playerName: null, playerOvr: null, clubName: "Man City" },
+  "pl_goals":          { value: 36, playerName: "E. Haaland", playerOvr: 91 },
   "pl_assists":        { value: 21, playerName: "Bruno Fernandes", playerOvr: 88 },
-  "pl_clean_sheets":   { value: 24, playerName: "P. Čech",         playerOvr: 88 },
-  "pl_unbeaten":       { value: 49, playerName: null,              playerOvr: null },
-  "pl_goals_conceded": { value: 15, playerName: "P. Čech",         playerOvr: 88 },
-  "all_wins":          { value: 32, playerName: null,              playerOvr: null },
-  "all_goals":         { value: 36, playerName: "E. Haaland",      playerOvr: 91 },
+  "pl_clean_sheets":   { value: 24, playerName: "P. Čech", playerOvr: 88 },
+  "pl_unbeaten":       { value: 49, playerName: null, playerOvr: null, clubName: "Arsenal" },
+  "pl_goals_conceded": { value: 15, playerName: null, playerOvr: null, clubName: "Chelsea" },
+  "all_wins":          { value: 32, playerName: null, playerOvr: null, clubName: "Man City" },
+  "all_goals":         { value: 36, playerName: "E. Haaland", playerOvr: 91 },
   "all_assists":       { value: 21, playerName: "Bruno Fernandes", playerOvr: 88 },
-  "all_clean_sheets":  { value: 24, playerName: "P. Čech",         playerOvr: 88 },
-  "all_unbeaten":      { value: 49, playerName: null,              playerOvr: null },
+  "all_clean_sheets":  { value: 24, playerName: "P. Čech", playerOvr: 88 },
+  "all_unbeaten":      { value: 49, playerName: null, playerOvr: null, clubName: "Arsenal" },
+  "all_goals_conceded":{ value: 15, playerName: null, playerOvr: null, clubName: "Chelsea" },
 };
 
 function mergeWithOfficial(
@@ -87,6 +91,11 @@ function OvrBadge({ ovr }: { ovr: number }) {
   );
 }
 
+function formatValue(value: number, rt: RecordType): string {
+  if (rt.isDecimal) return (value / 10).toFixed(1);
+  return String(value);
+}
+
 function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }) {
   if (entries.length === 0) {
     return (
@@ -119,7 +128,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
               {!rt.isTeam && entry.playerName && (
                 <div className="text-sm font-bold text-white truncate">
                   {entry.playerName}
-                  {entry.playerOvr !== null && (
+                  {!isOfficial && entry.playerOvr !== null && (
                     <span className="ml-2"><OvrBadge ovr={entry.playerOvr} /></span>
                   )}
                 </div>
@@ -127,26 +136,27 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
               <div className="text-xs text-gray-400 truncate">
                 {rt.isTeam ? (
                   <span className="flex items-center gap-2 flex-wrap">
-                    <span className="text-white font-bold text-sm">{entry.value}</span>
-                    {entry.playerOvr !== null && <OvrBadge ovr={entry.playerOvr} />}
-                    <span className="text-gray-400 text-xs font-normal">by</span>
+                    <span className="text-white font-bold text-sm">{formatValue(entry.value, rt)}</span>
                     {isOfficial ? (
-                      <span className="text-amber-400 font-bold">⭐ Official</span>
+                      <>
+                        {entry.clubName && <span className="text-gray-300 font-bold">{entry.clubName}</span>}
+                        <span className="text-amber-400 font-bold">⭐ Official</span>
+                      </>
                     ) : (
                       <span className="text-emerald-400 font-bold">{entry.username}</span>
                     )}
                   </span>
                 ) : (
-                  <>
+                  <span className="flex items-center gap-2 flex-wrap">
                     {isOfficial ? (
                       <span className="text-amber-400 font-bold">⭐ Official</span>
                     ) : (
                       <span className="text-emerald-400 font-bold">{entry.username}</span>
                     )}
                     {!isOfficial && entry.seasonNumber && (
-                      <span className="text-gray-400 ml-1">· S{entry.seasonNumber}</span>
+                      <span className="text-gray-400">· S{entry.seasonNumber}</span>
                     )}
-                  </>
+                  </span>
                 )}
               </div>
             </div>
@@ -154,7 +164,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
               <div className={`text-xl font-black tabular-nums shrink-0 ${
                 i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-gray-400"
               }`}>
-                {entry.value}
+                {formatValue(entry.value, rt)}
               </div>
             )}
           </div>
@@ -181,8 +191,6 @@ export default function DraftRecordsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const visibleRecords = RECORD_TYPES.filter(rt => !(rt.plOnly && competition === "all"));
-
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -190,7 +198,7 @@ export default function DraftRecordsPage() {
         <div className="mb-8">
           <Link
             href="/draft"
-            className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium mb-6 transition-colors"
+            className="inline-flex items-center gap-1.5 text-white hover:text-emerald-400 text-sm font-medium mb-6 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -241,7 +249,7 @@ export default function DraftRecordsPage() {
 
         {!loading && !error && (
           <div className="space-y-6">
-            {visibleRecords.map(rt => {
+            {SEASON_RECORD_TYPES.map(rt => {
               const key = `${competition}_${rt.key}`;
               const entries = mergeWithOfficial(records[key] ?? [], key, rt);
               return (
@@ -265,36 +273,38 @@ export default function DraftRecordsPage() {
               );
             })}
 
-            {/* Career records */}
-            <div className="pt-2">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-lg">🌟</span>
-                <h2 className="text-xs font-extrabold tracking-[0.2em] text-gray-300 uppercase">Career Records</h2>
-                <div className="flex-1 h-px bg-gray-800" />
-              </div>
-              <div className="space-y-4">
-                {CAREER_RECORD_TYPES.map(rt => {
-                  const key = `career_${rt.key}`;
-                  const entries = records[key] ?? [];
-                  return (
-                    <div key={rt.key} className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-xl">{rt.emoji}</span>
-                        <div>
-                          <h2 className="text-sm font-extrabold tracking-wide text-white uppercase">
-                            {rt.label}
-                          </h2>
-                          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
-                            Career · All competitions
-                          </p>
+            {/* Career records — only in All Comps tab */}
+            {competition === "all" && (
+              <div className="pt-2">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-lg">🌟</span>
+                  <h2 className="text-xs font-extrabold tracking-[0.2em] text-gray-300 uppercase">Career Records</h2>
+                  <div className="flex-1 h-px bg-gray-800" />
+                </div>
+                <div className="space-y-4">
+                  {CAREER_RECORD_TYPES.map(rt => {
+                    const key = `career_${rt.key}`;
+                    const entries = records[key] ?? [];
+                    return (
+                      <div key={rt.key} className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-xl">{rt.emoji}</span>
+                          <div>
+                            <h2 className="text-sm font-extrabold tracking-wide text-white uppercase">
+                              {rt.label}
+                            </h2>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+                              Career · All competitions
+                            </p>
+                          </div>
                         </div>
+                        <Leaderboard entries={entries} rt={rt} />
                       </div>
-                      <Leaderboard entries={entries} rt={rt} />
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             <p className="text-center text-gray-500 text-xs pb-4">
               Only signed-in players appear on these boards. ⭐ Official = real-world PL benchmark.
