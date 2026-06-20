@@ -212,9 +212,9 @@ export default function CollectionSquad({ progression }: Props) {
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         {/* Pitch */}
-        <div className="relative w-full max-w-3xl mx-auto rounded-xl overflow-hidden mb-5"
+        <div className="relative w-full mx-auto rounded-xl overflow-hidden mb-5"
           style={{
-            paddingBottom: "50%",
+            paddingBottom: "65%",
             background: "linear-gradient(180deg, #0d380d 0%, #0a2a0a 45%, #06190a 100%)",
           }}
         >
@@ -273,7 +273,7 @@ export default function CollectionSquad({ progression }: Props) {
         <DragOverlay dropAnimation={null}>
           {activeCard && activeStyle ? (
             <div
-              className="w-14 h-20 rounded-xl overflow-hidden shadow-2xl pointer-events-none ring-2 ring-amber-400/60"
+              className="w-20 h-[104px] rounded-xl overflow-hidden shadow-2xl pointer-events-none ring-2 ring-amber-400/60"
               style={{ transform: "rotate(3deg) scale(1.05)" }}
             >
               {activeStyle.image ? (
@@ -327,7 +327,7 @@ function PitchSlot({
         <button
           onClick={onRemove}
           title="Click to remove"
-          className="group relative w-12 h-[62px] rounded-lg overflow-hidden shadow-lg ring-1 ring-white/10 hover:ring-red-500/70 transition-all"
+          className="group relative w-[72px] h-[96px] sm:w-[88px] sm:h-[116px] rounded-xl overflow-hidden shadow-lg ring-1 ring-white/10 hover:ring-red-500/70 transition-all"
         >
           {frameStyle.image ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -355,13 +355,13 @@ function PitchSlot({
         </button>
       ) : (
         <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
             isOver
               ? "border-amber-400 bg-amber-400/25 shadow-lg shadow-amber-400/40"
               : "border-white/25 bg-black/35 hover:border-white/40"
           }`}
         >
-          <span className="text-[7px] font-black text-white/75 leading-none text-center">
+          <span className="text-[9px] sm:text-[10px] font-black text-white/75 leading-none text-center">
             {slot.label}
           </span>
         </div>
@@ -394,7 +394,7 @@ function BenchCard({
           : undefined
       }
     >
-      <div className="w-14 h-[74px] rounded-xl overflow-hidden shadow-md ring-1 ring-white/10">
+      <div className="w-16 h-[84px] rounded-xl overflow-hidden shadow-md ring-1 ring-white/10">
         {frameStyle.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -409,7 +409,7 @@ function BenchCard({
           />
         )}
       </div>
-      <span className="text-[8px] text-gray-400 font-medium text-center max-w-[56px] truncate leading-tight">
+      <span className="text-[9px] text-gray-400 font-medium text-center max-w-[64px] truncate leading-tight">
         {card.name}
       </span>
     </div>
