@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason } from "@/lib/seasonSimulator";
-import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch, SuperCupResult } from "@/lib/seasonSimulator";
+import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch, SuperCupResult, CharityShieldResult } from "@/lib/seasonSimulator";
 import { XP_AWARDS, FRAME_STYLES } from "@/lib/xp";
 import XPPopup from "./XPPopup";
 import { getPositionColor, getPositionTextColor } from "./formations";
@@ -267,7 +267,25 @@ type RevealEvent = {
 function buildSchedule(season: SeasonResult): RevealEvent[] {
   const events: RevealEvent[] = [];
 
-  // Super Cup — first event of the season
+  // Charity Shield — first event of the season
+  if (season.charityShield?.played) {
+    const cs = season.charityShield;
+    events.push({
+      kind: 'fa-cup' as const,
+      match: {
+        opponent: cs.opponent,
+        isHome: true,
+        goalsFor: cs.goalsFor,
+        goalsAgainst: cs.goalsAgainst,
+        goalScorers: cs.goalScorers,
+        assistProviders: cs.assistProviders,
+        result: cs.result as 'W' | 'D' | 'L',
+      },
+      label: 'Charity Shield',
+    });
+  }
+
+  // Super Cup — before the season
   if (season.superCup?.played) {
     const sc = season.superCup;
     events.push({
@@ -290,7 +308,7 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
   const compPrefix = isUCL ? 'UCL' : 'UEL';
 
   // FA Cup events — inserted at fixed PL weeks
-  const faCupSlots = [3, 8, 14, 20, 28, 36]; // R3, R4, R5, QF, SF placed during season; Final after MW38
+  const faCupSlots = [5, 12, 22, 30, 36]; // R32, R16, QF, SF placed during season; Final after MW38
   const faCupEvents: RevealEvent[] = season.faCup.matches.map((m, i) => ({
     kind: 'fa-cup' as const,
     match: {
@@ -453,6 +471,7 @@ export interface DraftRunRecord {
   uclWinner?: boolean;
   uelWinner?: boolean;
   superCupWinner?: boolean;
+  charityShieldWinner?: boolean;
 }
 
 async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
@@ -574,6 +593,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         uclWinner: season.ucl?.winner || false,
         uelWinner: season.uel?.winner || false,
         superCupWinner: season.superCup?.result === 'W' || false,
+        charityShieldWinner: season.charityShield?.result === 'W' || false,
       }, isSignedIn);
 
       if (isSignedIn) {
@@ -656,7 +676,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             + (season.uel?.knockoutTies.filter(t => t.result === "W").length ?? 0);
 
           const superCupWins = season.superCup?.result === 'W' ? 1 : 0;
-          const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins + superCupWins;
+          const charityShieldWins = season.charityShield?.result === 'W' ? 1 : 0;
+          const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins + superCupWins + charityShieldWins;
 
           // All-comps goals conceded: PL + FA Cup + UCL/UEL
           const faCupGoalsAgainst = season.faCup.matches.reduce((sum, m) => sum + m.goalsAgainst, 0);
@@ -715,7 +736,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             (s.faCup.winner ? 1 : 0) +
             (s.ucl?.winner ? 1 : 0) +
             (s.uel?.winner ? 1 : 0) +
-            (s.superCup?.result === 'W' ? 1 : 0);
+            (s.superCup?.result === 'W' ? 1 : 0) +
+            (s.charityShield?.result === 'W' ? 1 : 0);
           const totalTrophies = [...(allSeasonResults ?? []), season].reduce((sum, s) => sum + countTrophies(s), 0);
 
           await fetch("/api/draft/records", {
@@ -838,7 +860,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const getLeaguePositionStyle = (pos: number, isPlayer: boolean) => {
     if (isPlayer) return "";
     if (pos === 1) return "border-l-2 border-l-yellow-500";
-    if (pos <= 4) return "border-l-2 border-l-blue-500";
+    if (pos <= 5) return "border-l-2 border-l-blue-500";
     if (pos <= 7) return "border-l-2 border-l-emerald-500";
     if (pos >= 18) return "border-l-2 border-l-red-500";
     return "";
@@ -846,7 +868,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
   const getLeaguePositionBadge = (pos: number) => {
     if (pos === 1) return "bg-yellow-500/20 text-yellow-400";
-    if (pos <= 4) return "bg-blue-500/20 text-blue-400";
+    if (pos <= 5) return "bg-blue-500/20 text-blue-400";
     if (pos <= 7) return "bg-emerald-500/20 text-emerald-400";
     if (pos >= 18) return "bg-red-500/20 text-red-400";
     return "text-gray-500";
@@ -1297,7 +1319,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               return (
                 <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer)}`}`}>
                   <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos)}`}>{pos}</span>
-                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>{team.isPlayer ? "Knowitball FC" : team.name}</span>
+                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-gray-300"}`}>{team.name}</span>
                   <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.won}</span>
                   <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.drawn}</span>
                   <span className="w-7 text-center text-gray-500 text-xs shrink-0">{team.lost}</span>
@@ -1470,6 +1492,46 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           ))}
         </div>
       </div>
+
+      {/* Charity Shield */}
+      {season.charityShield?.played && (() => {
+        const cs = season.charityShield!;
+        const won = cs.result === 'W';
+        return (
+          <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">&#127942;</span>
+              <h3 className="text-[10px] font-bold tracking-widest text-purple-400 uppercase">Charity Shield</h3>
+              <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded ${
+                won
+                  ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
+                {won ? "WINNER" : "DEFEATED"}
+              </span>
+            </div>
+            <div className="text-[10px] text-gray-500 mb-2">
+              {cs.playerRole} vs {cs.opponentRole}
+            </div>
+            <div className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg ${won ? "bg-emerald-900/20" : "bg-red-900/20"}`}>
+              <span className="flex-1 font-medium truncate">{cs.opponent}</span>
+              <span className={`font-black tabular-nums ${won ? "text-emerald-400" : "text-red-400"}`}>
+                {cs.goalsFor}-{cs.goalsAgainst}
+              </span>
+              {cs.penalties && cs.penaltyScore && (
+                <span className="text-[9px] font-bold text-purple-400/70 bg-purple-500/10 px-1 py-0.5 rounded">
+                  PEN {cs.penaltyScore.player}-{cs.penaltyScore.opponent}
+                </span>
+              )}
+            </div>
+            {cs.goalScorers.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-gray-500">
+                Goals: {cs.goalScorers.map(gs => `${gs.player} ${gs.minute}'`).join(", ")}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Super Cup */}
       {season.superCup?.played && (() => {
@@ -1675,7 +1737,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                             isTop8 ? "text-blue-400" : isPlayoff ? "text-cyan-400/70" : "text-gray-600"
                           }`}>{pos}</span>
                           <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-blue-300" : "text-gray-400"}`}>
-                            {team.isPlayer ? "Knowitball FC" : team.name}
+                            {team.name}
                           </span>
                           <span className="w-6 text-center text-gray-600 shrink-0">{team.won}</span>
                           <span className="w-6 text-center text-gray-600 shrink-0">{team.drawn}</span>
@@ -1871,7 +1933,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                             isTop8 ? "text-orange-400" : isPlayoff ? "text-amber-400/70" : "text-gray-600"
                           }`}>{pos}</span>
                           <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-orange-300" : "text-gray-400"}`}>
-                            {team.isPlayer ? "Knowitball FC" : team.name}
+                            {team.name}
                           </span>
                           <span className="w-6 text-center text-gray-600 shrink-0">{team.won}</span>
                           <span className="w-6 text-center text-gray-600 shrink-0">{team.drawn}</span>

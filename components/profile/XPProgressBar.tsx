@@ -31,11 +31,11 @@ export default function XPProgressBar({ progression }: Props) {
   const [animatedLevelPct, setAnimatedLevelPct] = useState(0);
   const [animatedMilestonePct, setAnimatedMilestonePct] = useState(0);
 
-  // Sorted frame rewards from progression
+  // Sorted frame rewards from progression — only level-based cards contribute to Road to Legend
   const frameRewards = useMemo(
     () =>
       (progression?.rewards ?? [])
-        .filter((r) => r.category === "frame")
+        .filter((r) => r.category === "frame" && r.unlock_type === "level")
         .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0)),
     [progression?.rewards]
   );

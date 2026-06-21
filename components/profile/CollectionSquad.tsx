@@ -156,8 +156,6 @@ function remapSlots(
 
 const STORAGE_KEY = "collection-squad-v1";
 const FORMATION_KEY = "collection-squad-formation-v1";
-const REMOVE_COOLDOWN_MS = 1000;
-
 interface Props {
   progression: UserProgression | null;
 }
@@ -167,7 +165,6 @@ export default function CollectionSquad({ progression }: Props) {
   const [slots, setSlots] = useState<Record<string, string | null>>({});
   const [activeFrameId, setActiveFrameId] = useState<string | null>(null);
   const [dragSourceSlot, setDragSourceSlot] = useState<string | null>(null);
-  const [droppedAt, setDroppedAt] = useState<Record<string, number>>({});
   const [selectedBenchCard, setSelectedBenchCard] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -208,7 +205,6 @@ export default function CollectionSquad({ progression }: Props) {
     setFormation(f);
     setSlots(remapped);
     persist(f, remapped);
-    setDroppedAt({});
     setSelectedBenchCard(null);
   }
 
@@ -231,23 +227,26 @@ export default function CollectionSquad({ progression }: Props) {
 
     setSlots((prev) => {
       const next = { ...prev };
-      if (dragSourceSlot) next[dragSourceSlot] = null;
-      next[targetId] = frameId;
+      const displacedFrameId = next[targetId] ?? null;
+
+      // If dragging from a pitch slot to another pitch slot that has a card, swap them
+      if (dragSourceSlot && displacedFrameId && dragSourceSlot !== targetId) {
+        next[targetId] = frameId;
+        next[dragSourceSlot] = displacedFrameId;
+      } else {
+        if (dragSourceSlot) next[dragSourceSlot] = null;
+        next[targetId] = frameId;
+      }
+
       persist(formation, next);
       return next;
     });
-    setDroppedAt((prev) => ({ ...prev, [targetId]: Date.now() }));
   }
 
   function removeFromSlot(slotId: string) {
     setSlots((prev) => {
       const next = { ...prev, [slotId]: null };
       persist(formation, next);
-      return next;
-    });
-    setDroppedAt((prev) => {
-      const next = { ...prev };
-      delete next[slotId];
       return next;
     });
   }
@@ -259,7 +258,6 @@ export default function CollectionSquad({ progression }: Props) {
       persist(formation, next);
       return next;
     });
-    setDroppedAt((prev) => ({ ...prev, [slotId]: Date.now() }));
     setSelectedBenchCard(null);
   }
 
@@ -340,10 +338,8 @@ export default function CollectionSquad({ progression }: Props) {
               <PitchSlot
                 key={slot.id}
                 slot={slot}
-                frameId={frameId}
                 card={card ?? null}
                 frameStyle={style}
-                dropTime={droppedAt[slot.id] ?? 0}
                 hasBenchSelection={!!selectedBenchCard}
                 onRemove={() => removeFromSlot(slot.id)}
                 onTap={() => handleSlotTap(slot.id)}
@@ -401,36 +397,20 @@ export default function CollectionSquad({ progression }: Props) {
 
 function PitchSlot({
   slot,
-  frameId,
   card,
   frameStyle,
-  dropTime,
   hasBenchSelection,
   onRemove,
   onTap,
 }: {
   slot: SlotDef;
-  frameId: string | null;
   card: { id: string; name: string } | null;
   frameStyle: { border: string; shadow: string; gradient?: string; image?: string } | null;
-  dropTime: number;
   hasBenchSelection: boolean;
   onRemove: () => void;
   onTap: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
-  const [, forceUpdate] = useState(0);
-
-  // Re-render once cooldown expires so remove overlay becomes visible
-  useEffect(() => {
-    if (!dropTime) return;
-    const elapsed = Date.now() - dropTime;
-    if (elapsed >= REMOVE_COOLDOWN_MS) return;
-    const t = setTimeout(() => forceUpdate(n => n + 1), REMOVE_COOLDOWN_MS - elapsed + 50);
-    return () => clearTimeout(t);
-  }, [dropTime]);
-
-  const removeReady = !dropTime || (Date.now() - dropTime) >= REMOVE_COOLDOWN_MS;
 
   return (
     <div
@@ -445,48 +425,51 @@ function PitchSlot({
       }}
     >
       {card && frameStyle ? (
-        <button
-          onClick={hasBenchSelection ? onTap : (removeReady ? onRemove : undefined)}
-          title={hasBenchSelection ? "Place here" : removeReady ? "Click to remove" : ""}
-          className={`group relative w-[58px] h-[77px] sm:w-[88px] sm:h-[117px] md:w-[106px] md:h-[141px] rounded-xl overflow-hidden shadow-lg ring-1 transition-all ${
+        <div
+          onClick={hasBenchSelection ? onTap : undefined}
+          className={`group relative w-[62px] h-[82px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px] rounded-xl overflow-visible shadow-lg ring-1 transition-all cursor-pointer ${
             hasBenchSelection
               ? "ring-amber-400/80 hover:ring-amber-400 hover:scale-105"
-              : removeReady
-              ? "ring-white/10 hover:ring-red-500/70"
               : "ring-white/10"
           }`}
         >
-          {frameStyle.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={frameStyle.image}
-              alt={card.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div
-              className={`w-full h-full bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"}`}
-            />
-          )}
-          {removeReady && !hasBenchSelection && (
-            <div className="absolute inset-0 bg-red-900/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <div className="w-full h-full rounded-xl overflow-hidden">
+            {frameStyle.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={frameStyle.image}
+                alt={card.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className={`w-full h-full bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"}`}
+              />
+            )}
+          </div>
+          {!hasBenchSelection && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+              title="Remove"
+              className="absolute top-0 right-0 translate-x-1 -translate-y-1 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30 hover:bg-red-600"
+            >
+              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </div>
+            </button>
           )}
           {hasBenchSelection && (
-            <div className="absolute inset-0 bg-amber-500/25 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-xl bg-amber-500/25 flex items-center justify-center">
               <svg className="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             </div>
           )}
-        </button>
+        </div>
       ) : (
         <button
           onClick={hasBenchSelection ? onTap : undefined}
-          className={`w-9 h-9 sm:w-[52px] sm:h-[52px] md:w-[64px] md:h-[64px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+          className={`w-10 h-10 sm:w-[56px] sm:h-[56px] md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
             hasBenchSelection
               ? "border-amber-400 bg-amber-400/25 shadow-lg shadow-amber-400/40 hover:scale-110 cursor-pointer"
               : isOver
