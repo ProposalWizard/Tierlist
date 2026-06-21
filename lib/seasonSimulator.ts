@@ -107,6 +107,7 @@ export interface UCLResult {
   knockoutTies: UCLKnockoutTie[];
   winner: boolean;
   exitStage: string | null;
+  tournamentWinner: string;
 }
 
 export interface PlayerStats {
@@ -1331,6 +1332,34 @@ function generateGoalScorers(
   return { goals, assists };
 }
 
+// --- AI vs AI knockout tie (two-legged or single final) ---
+
+function simulateAIvAIKnockoutTie(
+  teamA: { name: string; strength: number },
+  teamB: { name: string; strength: number },
+  rng: () => number,
+  isFinal: boolean,
+): string {
+  if (isFinal) {
+    const result = simulateAIvAICupMatch(teamA, teamB, rng);
+    return result.winner;
+  }
+  const leg1 = simulateNeutralMatch(teamA, teamB, rng);
+  const leg2 = simulateNeutralMatch(teamB, teamA, rng);
+  let aggA = leg1.homeGoals + leg2.awayGoals;
+  let aggB = leg1.awayGoals + leg2.homeGoals;
+  if (aggA === aggB) {
+    const et1 = poisson(computeExpectedGoals(teamB.strength, teamB.strength * 0.95, teamA.strength) * 0.33, rng);
+    const et2 = poisson(computeExpectedGoals(teamA.strength, teamA.strength * 0.95, teamB.strength) * 0.33, rng);
+    aggA += et2;
+    aggB += et1;
+    if (aggA === aggB) {
+      return rng() > 0.5 ? teamA.name : teamB.name;
+    }
+  }
+  return aggA > aggB ? teamA.name : teamB.name;
+}
+
 // --- UCL knockout tie simulation ---
 
 function simulateUCLKnockoutTie(
@@ -1455,7 +1484,7 @@ function simulateChampionsLeague(
   if (!qualifiesThroughLeague && !uelWinnerQualifies) {
     return {
       qualified: false, leagueMatches: [], leaguePosition: 0,
-      leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+      leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
     };
   }
 
@@ -1590,74 +1619,160 @@ function simulateChampionsLeague(
 
   const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
 
+  const notQualified: UCLResult = {
+    qualified: true, leagueMatches, leaguePosition, leagueTable,
+    knockoutTies: [], winner: false, exitStage: 'League Phase', tournamentWinner: '',
+  };
+
   if (leaguePosition > 24) {
-    return {
-      qualified: true, leagueMatches, leaguePosition, leagueTable,
-      knockoutTies: [], winner: false, exitStage: 'League Phase',
-    };
+    // Player eliminated in league phase — simulate rest of bracket to find winner
+    const r32Teams: { name: string; strength: number }[] = [];
+    for (let i = 8; i < 24; i++) {
+      r32Teams.push({ name: leagueTable[i].name, strength: strengthMap.get(leagueTable[i].name) || 75 });
+    }
+    let r16Survivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < 8; i++) {
+      const hi = r32Teams[i];
+      const lo = r32Teams[15 - i];
+      const w = simulateAIvAIKnockoutTie(hi, lo, rng, false);
+      r16Survivors.push(w === hi.name ? hi : lo);
+    }
+    for (let i = 0; i < 8; i++) {
+      r16Survivors.push({ name: leagueTable[i].name, strength: strengthMap.get(leagueTable[i].name) || 75 });
+    }
+    r16Survivors.sort(() => rng() - 0.5);
+    let qfSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < r16Survivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(r16Survivors[i], r16Survivors[i + 1], rng, false);
+      qfSurvivors.push(w === r16Survivors[i].name ? r16Survivors[i] : r16Survivors[i + 1]);
+    }
+    let sfSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < qfSurvivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(qfSurvivors[i], qfSurvivors[i + 1], rng, false);
+      sfSurvivors.push(w === qfSurvivors[i].name ? qfSurvivors[i] : qfSurvivors[i + 1]);
+    }
+    let finalSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < sfSurvivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(sfSurvivors[i], sfSurvivors[i + 1], rng, false);
+      finalSurvivors.push(w === sfSurvivors[i].name ? sfSurvivors[i] : sfSurvivors[i + 1]);
+    }
+    const champion = simulateAIvAIKnockoutTie(finalSurvivors[0], finalSurvivors[1], rng, true);
+    notQualified.tournamentWinner = champion;
+    return notQualified;
   }
 
-  // --- Knockout phase ---
+  // --- Knockout phase (full bracket) ---
   const knockoutTies: UCLKnockoutTie[] = [];
-  const eliminatedTeams = new Set<string>();
 
-  // Round of 32 (positions 9–24, paired: 9th vs 24th, 10th vs 23rd, etc.)
-  if (leaguePosition >= 9) {
-    const r32OppPos = 33 - leaguePosition;
-    const r32Opp = leagueTable[r32OppPos - 1];
-    const r32Str = strengthMap.get(r32Opp.name) || 75;
-    const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, players, ratings, rng, false);
-    knockoutTies.push(r32);
-    eliminatedTeams.add(r32Opp.name);
-    if (r32.result === 'L') {
-      return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 32' };
+  // R32: positions 9-24 paired: 9v24, 10v23, etc.
+  type BracketTeam = { name: string; strength: number };
+  const r32Pairs: [BracketTeam, BracketTeam][] = [];
+  for (let i = 0; i < 8; i++) {
+    const hiPos = 8 + i;
+    const loPos = 23 - i;
+    r32Pairs.push([
+      { name: leagueTable[hiPos].name, strength: strengthMap.get(leagueTable[hiPos].name) || 75 },
+      { name: leagueTable[loPos].name, strength: strengthMap.get(leagueTable[loPos].name) || 75 },
+    ]);
+  }
+
+  // Simulate all R32 ties
+  const r32Winners: BracketTeam[] = [];
+  let playerEliminated = false;
+  let playerExitStage: string | null = null;
+  for (const [hi, lo] of r32Pairs) {
+    const playerInvolved = hi.name === playerTeamName || lo.name === playerTeamName;
+    if (playerInvolved) {
+      const oppName = hi.name === playerTeamName ? lo.name : hi.name;
+      const oppStr = hi.name === playerTeamName ? lo.strength : hi.strength;
+      const tie = simulateUCLKnockoutTie('Round of 32', oppName, oppStr, players, ratings, rng, false);
+      knockoutTies.push(tie);
+      if (tie.result === 'L') {
+        playerEliminated = true;
+        playerExitStage = 'Round of 32';
+        r32Winners.push({ name: oppName, strength: oppStr });
+      } else {
+        r32Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
+      }
+    } else {
+      const w = simulateAIvAIKnockoutTie(hi, lo, rng, false);
+      r32Winners.push(w === hi.name ? hi : lo);
     }
   }
 
-  // Round of 16
-  const r16Pool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 16);
-  const r16Opp = r16Pool[Math.floor(rng() * r16Pool.length)];
-  const r16Str = strengthMap.get(r16Opp.name) || 75;
-  const r16 = simulateUCLKnockoutTie('Round of 16', r16Opp.name, r16Str, players, ratings, rng, false);
-  knockoutTies.push(r16);
-  eliminatedTeams.add(r16Opp.name);
-  if (r16.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 16' };
+  // R16: top 8 auto-qualifiers paired with R32 winners (8v R32W[0], 7v R32W[1], etc.)
+  const r16Pairs: [BracketTeam, BracketTeam][] = [];
+  for (let i = 0; i < 8; i++) {
+    const autoQ: BracketTeam = { name: leagueTable[7 - i].name, strength: strengthMap.get(leagueTable[7 - i].name) || 75 };
+    if (leagueTable[7 - i].isPlayer) {
+      r16Pairs.push([{ name: playerTeamName, strength: ratings.teamStrength }, r32Winners[i]]);
+    } else if (r32Winners[i].name === playerTeamName) {
+      r16Pairs.push([r32Winners[i], autoQ]);
+    } else {
+      r16Pairs.push([autoQ, r32Winners[i]]);
+    }
   }
 
-  // Quarter-Final
-  const qfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 8);
-  const qfOpp = qfPool[Math.floor(rng() * qfPool.length)];
-  const qfStr = strengthMap.get(qfOpp.name) || 75;
-  const qf = simulateUCLKnockoutTie('Quarter-Final', qfOpp.name, qfStr, players, ratings, rng, false);
-  knockoutTies.push(qf);
-  eliminatedTeams.add(qfOpp.name);
-  if (qf.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Quarter-Final' };
+  const r16Winners: BracketTeam[] = [];
+  for (const [a, b] of r16Pairs) {
+    const playerInvolved = a.name === playerTeamName || b.name === playerTeamName;
+    if (playerInvolved && !playerEliminated) {
+      const oppName = a.name === playerTeamName ? b.name : a.name;
+      const oppStr = a.name === playerTeamName ? b.strength : a.strength;
+      const tie = simulateUCLKnockoutTie('Round of 16', oppName, oppStr, players, ratings, rng, false);
+      knockoutTies.push(tie);
+      if (tie.result === 'L') {
+        playerEliminated = true;
+        playerExitStage = 'Round of 16';
+        r16Winners.push({ name: oppName, strength: oppStr });
+      } else {
+        r16Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
+      }
+    } else {
+      const w = simulateAIvAIKnockoutTie(a, b, rng, false);
+      r16Winners.push(w === a.name ? a : b);
+    }
   }
 
-  // Semi-Final
-  const sfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 4);
-  const sfOpp = sfPool[Math.floor(rng() * sfPool.length)];
-  const sfStr = strengthMap.get(sfOpp.name) || 75;
-  const sf = simulateUCLKnockoutTie('Semi-Final', sfOpp.name, sfStr, players, ratings, rng, false);
-  knockoutTies.push(sf);
-  eliminatedTeams.add(sfOpp.name);
-  if (sf.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Semi-Final' };
+  // QF, SF, Final — same pattern
+  const roundNames = ['Quarter-Final', 'Semi-Final', 'Final'];
+  let currentRound = r16Winners;
+  for (let ri = 0; ri < roundNames.length; ri++) {
+    const roundName = roundNames[ri];
+    const isFinal = ri === 2;
+    const nextRound: BracketTeam[] = [];
+    for (let i = 0; i < currentRound.length; i += 2) {
+      const a = currentRound[i];
+      const b = currentRound[i + 1];
+      const playerInvolved = (a.name === playerTeamName || b.name === playerTeamName) && !playerEliminated;
+      if (playerInvolved) {
+        const oppName = a.name === playerTeamName ? b.name : a.name;
+        const oppStr = a.name === playerTeamName ? b.strength : a.strength;
+        const tie = simulateUCLKnockoutTie(roundName, oppName, oppStr, players, ratings, rng, isFinal);
+        knockoutTies.push(tie);
+        if (tie.result === 'L') {
+          playerEliminated = true;
+          playerExitStage = roundName;
+          nextRound.push({ name: oppName, strength: oppStr });
+        } else {
+          nextRound.push({ name: playerTeamName, strength: ratings.teamStrength });
+        }
+      } else {
+        const w = simulateAIvAIKnockoutTie(a, b, rng, isFinal);
+        nextRound.push(w === a.name ? a : b);
+      }
+    }
+    currentRound = nextRound;
   }
 
-  // Final (single match)
-  const finalPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 3);
-  const finalOpp = finalPool[Math.floor(rng() * finalPool.length)];
-  const finalStr = strengthMap.get(finalOpp.name) || 75;
-  const final_ = simulateUCLKnockoutTie('Final', finalOpp.name, finalStr, players, ratings, rng, true);
-  knockoutTies.push(final_);
+  const tournamentWinner = currentRound[0].name;
+  const playerWon = tournamentWinner === playerTeamName;
 
   return {
     qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies,
-    winner: final_.result === 'W',
-    exitStage: final_.result === 'L' ? 'Final' : null,
+    winner: playerWon,
+    exitStage: playerWon ? null : playerExitStage,
+    tournamentWinner,
   };
 }
 
@@ -1675,7 +1790,7 @@ function simulateEuropaLeague(
   if (!faCupWinnerQualifies && (playerFinish < 6 || playerFinish > 7)) {
     return {
       qualified: false, leagueMatches: [], leaguePosition: 0,
-      leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+      leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
     };
   }
 
@@ -1799,68 +1914,155 @@ function simulateEuropaLeague(
 
   const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
 
+  const uelNotQualified: UCLResult = {
+    qualified: true, leagueMatches, leaguePosition, leagueTable,
+    knockoutTies: [], winner: false, exitStage: 'League Phase', tournamentWinner: '',
+  };
+
   if (leaguePosition > 24) {
-    return {
-      qualified: true, leagueMatches, leaguePosition, leagueTable,
-      knockoutTies: [], winner: false, exitStage: 'League Phase',
-    };
+    const r32Teams: { name: string; strength: number }[] = [];
+    for (let i = 8; i < 24; i++) {
+      r32Teams.push({ name: leagueTable[i].name, strength: strengthMap.get(leagueTable[i].name) || 70 });
+    }
+    let r16Survivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < 8; i++) {
+      const hi = r32Teams[i];
+      const lo = r32Teams[15 - i];
+      const w = simulateAIvAIKnockoutTie(hi, lo, rng, false);
+      r16Survivors.push(w === hi.name ? hi : lo);
+    }
+    for (let i = 0; i < 8; i++) {
+      r16Survivors.push({ name: leagueTable[i].name, strength: strengthMap.get(leagueTable[i].name) || 70 });
+    }
+    r16Survivors.sort(() => rng() - 0.5);
+    let qfSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < r16Survivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(r16Survivors[i], r16Survivors[i + 1], rng, false);
+      qfSurvivors.push(w === r16Survivors[i].name ? r16Survivors[i] : r16Survivors[i + 1]);
+    }
+    let sfSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < qfSurvivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(qfSurvivors[i], qfSurvivors[i + 1], rng, false);
+      sfSurvivors.push(w === qfSurvivors[i].name ? qfSurvivors[i] : qfSurvivors[i + 1]);
+    }
+    let finalSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < sfSurvivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(sfSurvivors[i], sfSurvivors[i + 1], rng, false);
+      finalSurvivors.push(w === sfSurvivors[i].name ? sfSurvivors[i] : sfSurvivors[i + 1]);
+    }
+    const champion = simulateAIvAIKnockoutTie(finalSurvivors[0], finalSurvivors[1], rng, true);
+    uelNotQualified.tournamentWinner = champion;
+    return uelNotQualified;
   }
 
+  // --- Knockout phase (full bracket) ---
   const knockoutTies: UCLKnockoutTie[] = [];
-  const eliminatedTeams = new Set<string>();
 
-  if (leaguePosition >= 9) {
-    const r32OppPos = 33 - leaguePosition;
-    const r32Opp = leagueTable[r32OppPos - 1];
-    const r32Str = strengthMap.get(r32Opp.name) || 70;
-    const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, players, ratings, rng, false);
-    knockoutTies.push(r32);
-    eliminatedTeams.add(r32Opp.name);
-    if (r32.result === 'L') {
-      return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 32' };
+  type UELBracketTeam = { name: string; strength: number };
+  const r32Pairs: [UELBracketTeam, UELBracketTeam][] = [];
+  for (let i = 0; i < 8; i++) {
+    const hiPos = 8 + i;
+    const loPos = 23 - i;
+    r32Pairs.push([
+      { name: leagueTable[hiPos].name, strength: strengthMap.get(leagueTable[hiPos].name) || 70 },
+      { name: leagueTable[loPos].name, strength: strengthMap.get(leagueTable[loPos].name) || 70 },
+    ]);
+  }
+
+  const r32Winners: UELBracketTeam[] = [];
+  let playerEliminated = false;
+  let playerExitStage: string | null = null;
+  for (const [hi, lo] of r32Pairs) {
+    const playerInvolved = hi.name === playerTeamName || lo.name === playerTeamName;
+    if (playerInvolved) {
+      const oppName = hi.name === playerTeamName ? lo.name : hi.name;
+      const oppStr = hi.name === playerTeamName ? lo.strength : hi.strength;
+      const tie = simulateUCLKnockoutTie('Round of 32', oppName, oppStr, players, ratings, rng, false);
+      knockoutTies.push(tie);
+      if (tie.result === 'L') {
+        playerEliminated = true;
+        playerExitStage = 'Round of 32';
+        r32Winners.push({ name: oppName, strength: oppStr });
+      } else {
+        r32Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
+      }
+    } else {
+      const w = simulateAIvAIKnockoutTie(hi, lo, rng, false);
+      r32Winners.push(w === hi.name ? hi : lo);
     }
   }
 
-  const r16Pool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 16);
-  const r16Opp = r16Pool[Math.floor(rng() * r16Pool.length)];
-  const r16Str = strengthMap.get(r16Opp.name) || 70;
-  const r16 = simulateUCLKnockoutTie('Round of 16', r16Opp.name, r16Str, players, ratings, rng, false);
-  knockoutTies.push(r16);
-  eliminatedTeams.add(r16Opp.name);
-  if (r16.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 16' };
+  const r16Pairs: [UELBracketTeam, UELBracketTeam][] = [];
+  for (let i = 0; i < 8; i++) {
+    const autoQ: UELBracketTeam = { name: leagueTable[7 - i].name, strength: strengthMap.get(leagueTable[7 - i].name) || 70 };
+    if (leagueTable[7 - i].isPlayer) {
+      r16Pairs.push([{ name: playerTeamName, strength: ratings.teamStrength }, r32Winners[i]]);
+    } else if (r32Winners[i].name === playerTeamName) {
+      r16Pairs.push([r32Winners[i], autoQ]);
+    } else {
+      r16Pairs.push([autoQ, r32Winners[i]]);
+    }
   }
 
-  const qfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 8);
-  const qfOpp = qfPool[Math.floor(rng() * qfPool.length)];
-  const qfStr = strengthMap.get(qfOpp.name) || 70;
-  const qf = simulateUCLKnockoutTie('Quarter-Final', qfOpp.name, qfStr, players, ratings, rng, false);
-  knockoutTies.push(qf);
-  eliminatedTeams.add(qfOpp.name);
-  if (qf.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Quarter-Final' };
+  const r16Winners: UELBracketTeam[] = [];
+  for (const [a, b] of r16Pairs) {
+    const playerInvolved = (a.name === playerTeamName || b.name === playerTeamName) && !playerEliminated;
+    if (playerInvolved) {
+      const oppName = a.name === playerTeamName ? b.name : a.name;
+      const oppStr = a.name === playerTeamName ? b.strength : a.strength;
+      const tie = simulateUCLKnockoutTie('Round of 16', oppName, oppStr, players, ratings, rng, false);
+      knockoutTies.push(tie);
+      if (tie.result === 'L') {
+        playerEliminated = true;
+        playerExitStage = 'Round of 16';
+        r16Winners.push({ name: oppName, strength: oppStr });
+      } else {
+        r16Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
+      }
+    } else {
+      const w = simulateAIvAIKnockoutTie(a, b, rng, false);
+      r16Winners.push(w === a.name ? a : b);
+    }
   }
 
-  const sfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 4);
-  const sfOpp = sfPool[Math.floor(rng() * sfPool.length)];
-  const sfStr = strengthMap.get(sfOpp.name) || 70;
-  const sf = simulateUCLKnockoutTie('Semi-Final', sfOpp.name, sfStr, players, ratings, rng, false);
-  knockoutTies.push(sf);
-  eliminatedTeams.add(sfOpp.name);
-  if (sf.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Semi-Final' };
+  const roundNames = ['Quarter-Final', 'Semi-Final', 'Final'];
+  let currentRound = r16Winners;
+  for (let ri = 0; ri < roundNames.length; ri++) {
+    const roundName = roundNames[ri];
+    const isFinal = ri === 2;
+    const nextRound: UELBracketTeam[] = [];
+    for (let i = 0; i < currentRound.length; i += 2) {
+      const a = currentRound[i];
+      const b = currentRound[i + 1];
+      const playerInvolved = (a.name === playerTeamName || b.name === playerTeamName) && !playerEliminated;
+      if (playerInvolved) {
+        const oppName = a.name === playerTeamName ? b.name : a.name;
+        const oppStr = a.name === playerTeamName ? b.strength : a.strength;
+        const tie = simulateUCLKnockoutTie(roundName, oppName, oppStr, players, ratings, rng, isFinal);
+        knockoutTies.push(tie);
+        if (tie.result === 'L') {
+          playerEliminated = true;
+          playerExitStage = roundName;
+          nextRound.push({ name: oppName, strength: oppStr });
+        } else {
+          nextRound.push({ name: playerTeamName, strength: ratings.teamStrength });
+        }
+      } else {
+        const w = simulateAIvAIKnockoutTie(a, b, rng, isFinal);
+        nextRound.push(w === a.name ? a : b);
+      }
+    }
+    currentRound = nextRound;
   }
 
-  const finalPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 3);
-  const finalOpp = finalPool[Math.floor(rng() * finalPool.length)];
-  const finalStr = strengthMap.get(finalOpp.name) || 70;
-  const final_ = simulateUCLKnockoutTie('Final', finalOpp.name, finalStr, players, ratings, rng, true);
-  knockoutTies.push(final_);
+  const tournamentWinner = currentRound[0].name;
+  const playerWon = tournamentWinner === playerTeamName;
 
   return {
     qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies,
-    winner: final_.result === 'W',
-    exitStage: final_.result === 'L' ? 'Final' : null,
+    winner: playerWon,
+    exitStage: playerWon ? null : playerExitStage,
+    tournamentWinner,
   };
 }
 
@@ -1878,16 +2080,10 @@ function determinePreviousWinners(
   if (prevResult.ucl?.winner) {
     uclWinner = 'KNOWITBALL FC';
     uclWinnerStrength = prevResult.phaseRatings.teamStrength;
-  } else if (prevResult.ucl?.qualified) {
-    const uclTable = prevResult.ucl.leagueTable;
-    const eliminated = new Set(prevResult.ucl.knockoutTies.filter(t => t.result === 'L').map(t => t.opponent));
-    const candidates = uclTable.filter(t => !t.isPlayer && !eliminated.has(t.name));
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => b.points - a.points);
-      uclWinner = candidates[0].name;
-      const oppStrength = opponents.find(o => o.name === uclWinner)?.strength;
-      uclWinnerStrength = oppStrength ?? UCL_TEAMS.find(t => t.name === uclWinner)?.strength ?? 82;
-    }
+  } else if (prevResult.ucl?.tournamentWinner) {
+    uclWinner = prevResult.ucl.tournamentWinner;
+    const oppStrength = opponents.find(o => o.name === uclWinner)?.strength;
+    uclWinnerStrength = oppStrength ?? UCL_TEAMS.find(t => t.name === uclWinner)?.strength ?? 82;
   }
   if (!uclWinner) {
     const topUcl = [...UCL_TEAMS].sort((a, b) => b.strength - a.strength);
@@ -1900,16 +2096,10 @@ function determinePreviousWinners(
   if (prevResult.uel?.winner) {
     uelWinner = 'KNOWITBALL FC';
     uelWinnerStrength = prevResult.phaseRatings.teamStrength;
-  } else if (prevResult.uel?.qualified) {
-    const uelTable = prevResult.uel.leagueTable;
-    const eliminated = new Set(prevResult.uel.knockoutTies.filter(t => t.result === 'L').map(t => t.opponent));
-    const candidates = uelTable.filter(t => !t.isPlayer && !eliminated.has(t.name));
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => b.points - a.points);
-      uelWinner = candidates[0].name;
-      const oppStrength = opponents.find(o => o.name === uelWinner)?.strength;
-      uelWinnerStrength = oppStrength ?? UEL_TEAMS.find(t => t.name === uelWinner)?.strength ?? 74;
-    }
+  } else if (prevResult.uel?.tournamentWinner) {
+    uelWinner = prevResult.uel.tournamentWinner;
+    const oppStrength = opponents.find(o => o.name === uelWinner)?.strength;
+    uelWinnerStrength = oppStrength ?? UEL_TEAMS.find(t => t.name === uelWinner)?.strength ?? 74;
   }
   if (!uelWinner) {
     const topUel = [...UEL_TEAMS].sort((a, b) => b.strength - a.strength);
@@ -3177,7 +3367,7 @@ function simulateSharedUCL(
     if (!lp.qualified) {
       results.set(h.userId, {
         qualified: false, leagueMatches: [], leaguePosition: 0,
-        leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+        leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
       });
     }
   }
@@ -3189,7 +3379,7 @@ function simulateSharedUCL(
     if (lp.leaguePosition > 24) {
       results.set(h.userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
-        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase',
+        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase', tournamentWinner: '',
       });
       return false;
     }
@@ -3222,7 +3412,7 @@ function simulateSharedUCL(
         results.set(h.userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(h.userId)!,
-          winner: false, exitStage: 'Round of 32',
+          winner: false, exitStage: 'Round of 32', tournamentWinner: '',
         });
       }
     }
@@ -3288,7 +3478,7 @@ function simulateSharedUCL(
         results.set(userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(userId)!,
-          winner: false, exitStage: roundName,
+          winner: false, exitStage: roundName, tournamentWinner: '',
         });
       }
     }
@@ -3347,7 +3537,7 @@ function simulateSharedUCL(
       results.set(loserId, {
         qualified: true, leagueMatches: loserLp.leagueMatches, leaguePosition: loserLp.leaguePosition,
         leagueTable: loserLp.leagueTable, knockoutTies: humanKnockoutTies.get(loserId)!,
-        winner: false, exitStage: roundName,
+        winner: false, exitStage: roundName, tournamentWinner: '',
       });
     }
   }
@@ -3362,7 +3552,7 @@ function simulateSharedUCL(
       results.set(userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
         leagueTable: lp.leagueTable, knockoutTies: ties,
-        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null,
+        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null, tournamentWinner: '',
       });
     }
   });
@@ -3393,7 +3583,7 @@ function simulateSharedUEL(
     if (!lp.qualified) {
       results.set(h.userId, {
         qualified: false, leagueMatches: [], leaguePosition: 0,
-        leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+        leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
       });
     }
   }
@@ -3404,7 +3594,7 @@ function simulateSharedUEL(
     if (lp.leaguePosition > 24) {
       results.set(h.userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
-        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase',
+        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase', tournamentWinner: '',
       });
       return false;
     }
@@ -3437,7 +3627,7 @@ function simulateSharedUEL(
         results.set(h.userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(h.userId)!,
-          winner: false, exitStage: 'Round of 32',
+          winner: false, exitStage: 'Round of 32', tournamentWinner: '',
         });
       }
     }
@@ -3493,7 +3683,7 @@ function simulateSharedUEL(
         results.set(userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(userId)!,
-          winner: false, exitStage: roundName,
+          winner: false, exitStage: roundName, tournamentWinner: '',
         });
       }
     }
@@ -3543,7 +3733,7 @@ function simulateSharedUEL(
       results.set(loserId, {
         qualified: true, leagueMatches: loserLp.leagueMatches, leaguePosition: loserLp.leaguePosition,
         leagueTable: loserLp.leagueTable, knockoutTies: humanKnockoutTies.get(loserId)!,
-        winner: false, exitStage: roundName,
+        winner: false, exitStage: roundName, tournamentWinner: '',
       });
     }
   }
@@ -3557,7 +3747,7 @@ function simulateSharedUEL(
       results.set(userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
         leagueTable: lp.leagueTable, knockoutTies: ties,
-        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null,
+        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null, tournamentWinner: '',
       });
     }
   });
