@@ -1072,7 +1072,7 @@ export default function DraftPick({
                     <div className="shrink-0" />
                     <div className="flex gap-0 shrink-0">
                       {displayStats.map((ks) => (
-                        <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-600 uppercase">
+                        <span key={ks.label} className="w-9 text-center text-[9px] font-bold tracking-wider text-gray-400 uppercase">
                           {ks.label}
                         </span>
                       ))}
@@ -1163,7 +1163,7 @@ export default function DraftPick({
                               const val = ks.pick(player);
                               return (
                                 <span key={ks.label} className={`text-[10px] font-bold tabular-nums ${statColor(val)}`}>
-                                  <span className="text-gray-600">{ks.label}</span> {val > 0 ? val : "-"}
+                                  <span className="text-gray-300">{ks.label}</span> {val > 0 ? val : "-"}
                                 </span>
                               );
                             })}
@@ -1190,7 +1190,7 @@ export default function DraftPick({
                             const val = ks.pick(player);
                             return (
                               <span key={ks.label} className={`w-9 text-center text-[11px] font-bold tabular-nums ${statColor(val)}`}>
-                                <span className="block text-[8px] text-gray-600 font-normal leading-none">{ks.label}</span>
+                                <span className="block text-[8px] text-gray-400 font-normal leading-none">{ks.label}</span>
                                 {val > 0 ? val : "-"}
                               </span>
                             );

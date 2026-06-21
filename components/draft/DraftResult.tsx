@@ -910,9 +910,28 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       for (const gs of e.match.goalScorers) liveGoals[gs.player] = (liveGoals[gs.player] || 0) + 1;
       for (const ap of e.match.assistProviders ?? []) liveAssists[ap.player] = (liveAssists[ap.player] || 0) + 1;
     }
-    // Pre-computed avg ratings per player (PL only)
-    const plRatingsByName: Record<string, number> = {};
-    for (const s of season.plPlayerStats) plRatingsByName[s.name] = s.avgRating;
+    // Live running average rating computed from revealed PL matches
+    const liveAvgRatings: Record<string, { total: number; count: number }> = {};
+    for (const e of revealedPL) {
+      const base = e.match.result === 'W' ? 7.2 : e.match.result === 'D' ? 6.8 : 6.2;
+      const isCS = e.match.goalsAgainst === 0;
+      for (const p of players.filter(pp => !pp.isSub)) {
+        const goals = e.match.goalScorers.filter(g => g.player === p.name).length;
+        const assists = (e.match.assistProviders ?? []).filter(a => a.player === p.name).length;
+        let r = base + goals * 1.5 + assists * 0.8;
+        const isDefensive = ['GK','CB','LB','RB','LWB','RWB'].includes(p.assignedPosition);
+        if (isCS && isDefensive) r += 0.4;
+        r = Math.min(9.5, Math.max(4.0, r));
+        if (!liveAvgRatings[p.name]) liveAvgRatings[p.name] = { total: 0, count: 0 };
+        liveAvgRatings[p.name].total += r;
+        liveAvgRatings[p.name].count++;
+      }
+    }
+    const liveRating = (name: string) => {
+      const r = liveAvgRatings[name];
+      if (!r || r.count === 0) return null;
+      return r.total / r.count;
+    };
 
     return (
       <div className="max-w-2xl mx-auto p-4 pb-20">
@@ -940,15 +959,15 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
                     {p.assignedPosition}
                   </span>
-                  <span className="flex-1 ml-1 font-medium">{p.name}</span>
+                  <span className="flex-1 ml-1 font-medium">{p.name}{plWeek > 0 && <span className="text-emerald-400 font-bold text-xs"> {p.overall}</span>}</span>
                   {plWeek > 0 ? (
-                    <>
+                    <div className="flex shrink-0">
                       <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
                       <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
-                      <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(plRatingsByName[p.name] || 0) >= 7.5 ? "text-emerald-400" : (plRatingsByName[p.name] || 0) >= 6.5 ? "text-gray-300" : "text-gray-500"}`}>
-                        {plRatingsByName[p.name] ? plRatingsByName[p.name].toFixed(1) : "-"}
+                      <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(liveRating(p.name) ?? 0) >= 7.5 ? "text-emerald-400" : (liveRating(p.name) ?? 0) >= 6.5 ? "text-gray-300" : "text-gray-500"}`}>
+                        {liveRating(p.name) !== null ? liveRating(p.name)!.toFixed(1) : "-"}
                       </span>
-                    </>
+                    </div>
                   ) : (
                     <>
                       <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
@@ -967,12 +986,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   return (
                     <div key={`sub-${i}`} className="flex items-center gap-2 text-sm py-1 px-1 opacity-70">
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-700 text-white w-8 text-center">SUB</span>
-                      <span className="flex-1 ml-1 font-medium text-gray-400">{p.name}</span>
-                      <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
-                      <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
-                      <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(plRatingsByName[p.name] || 0) >= 7.5 ? "text-emerald-400" : "text-gray-500"}`}>
-                        {plRatingsByName[p.name] ? plRatingsByName[p.name].toFixed(1) : "-"}
-                      </span>
+                      <span className="flex-1 ml-1 font-medium text-gray-400">{p.name}<span className="text-emerald-400 font-bold text-xs"> {p.overall}</span></span>
+                      <div className="flex shrink-0">
+                        <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-gray-700"}`}>{g || "-"}</span>
+                        <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-gray-700"}`}>{a || "-"}</span>
+                        <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(liveRating(p.name) ?? 0) >= 7.5 ? "text-emerald-400" : "text-gray-500"}`}>
+                          {liveRating(p.name) !== null ? liveRating(p.name)!.toFixed(1) : "-"}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
@@ -1211,7 +1232,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
         {/* Finish Cards */}
         <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4">
-          <div className="bg-gray-900 rounded-xl px-6 py-3 text-center border border-gray-800/50">
+          <div className="bg-gray-900 rounded-xl px-6 py-3 text-center">
             <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Finished</div>
             <div className={`text-3xl font-black ${
               season.actualFinish === 1 ? "text-yellow-400" :
@@ -1220,16 +1241,16 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               season.actualFinish >= 18 ? "text-red-400" : "text-white"
             }`}>{ordinal(season.actualFinish)}</div>
           </div>
-          <div className="bg-gray-900 rounded-xl px-6 py-3 text-center border border-gray-800/50">
+          <div className="bg-gray-900 rounded-xl px-6 py-3 text-center">
             <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Projected</div>
             <div className="text-3xl font-black text-gray-300">{ordinal(season.projectedFinish)}</div>
           </div>
-          <div className={`rounded-xl px-4 py-3 flex items-center border ${
+          <div className={`rounded-xl px-4 py-3 flex items-center ${
             season.performance === "OVERPERFORMED"
-              ? "bg-emerald-900/30 text-emerald-400 border-emerald-700/40"
+              ? "bg-emerald-900/30 text-emerald-400"
               : season.performance === "UNDERPERFORMED"
-                ? "bg-red-900/30 text-red-400 border-red-700/40"
-                : "bg-gray-900 text-gray-400 border-gray-800/50"
+                ? "bg-red-900/30 text-red-400"
+                : "bg-gray-900 text-gray-400"
           }`}>
             <span className="text-xs font-bold tracking-wide">{season.performance}</span>
           </div>
@@ -1944,8 +1965,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </div>
         <div className="flex items-center text-[10px] font-bold tracking-widest text-gray-600 mb-2 px-1 uppercase">
           <span className="w-7 shrink-0"></span>
-          <span className="flex-1 ml-1 min-w-0">Player</span>
-          <span className="w-7 text-right shrink-0">OVR</span>
+          <span className="flex-1 ml-2 min-w-0">Player</span>
           <span className="w-7 text-center shrink-0">APP</span>
           <span className="w-6 text-center shrink-0">G</span>
           <span className="w-6 text-center shrink-0">A</span>
@@ -1958,8 +1978,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             return (
               <div key={i} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition">
                 <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-7 text-center shrink-0`}>{p.assignedPosition}</span>
-                <span className="flex-1 ml-1 font-medium truncate min-w-0">{p.name}</span>
-                <span className="w-7 text-right text-xs font-black tabular-nums text-emerald-400 shrink-0">{p.overall}</span>
+                <span className="flex-1 ml-2 font-medium truncate min-w-0">{p.name} <span className="text-emerald-400 font-black text-xs">{p.overall}</span></span>
                 <span className="w-7 text-center text-xs font-bold shrink-0 text-gray-500">{ps?.appearances ?? "-"}</span>
                 <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.goals ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.goals ?? 0) > 0 ? ps!.goals : "-"}</span>
                 <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.assists ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.assists ?? 0) > 0 ? ps!.assists : "-"}</span>
@@ -1979,8 +1998,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 return (
                   <div key={`sub-${i}`} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition opacity-80">
                     <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-purple-700 text-white w-7 text-center shrink-0">SUB</span>
-                    <span className="flex-1 ml-1 font-medium truncate min-w-0 text-gray-300">{p.name}</span>
-                    <span className="w-7 text-right text-xs font-black tabular-nums text-emerald-400/70 shrink-0">{p.overall}</span>
+                    <span className="flex-1 ml-2 font-medium truncate min-w-0 text-gray-300">{p.name} <span className="text-emerald-400/70 font-black text-xs">{p.overall}</span></span>
                     <span className="w-7 text-center text-xs font-bold shrink-0 text-gray-500">{ps?.appearances ?? "-"}</span>
                     <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.goals ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.goals ?? 0) > 0 ? ps!.goals : "-"}</span>
                     <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.assists ?? 0) > 0 ? "text-emerald-400" : "text-gray-700"}`}>{(ps?.assists ?? 0) > 0 ? ps!.assists : "-"}</span>
@@ -2045,7 +2063,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               </div>
               <div className="font-bold text-sm">{season.awards.playerOfSeason.name}</div>
               <div className="text-emerald-400 text-sm font-bold">
-                {season.awards.playerOfSeason.goals}G &middot; {season.awards.playerOfSeason.assists}A
+                {season.awards.playerOfSeason.avgRating.toFixed(1)} avg rating
               </div>
             </div>
           </div>
