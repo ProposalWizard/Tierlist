@@ -265,6 +265,8 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     let bestCleanSheets = { name: "", cleanSheets: 0, season: 0 };
     let mostGoalsMatch = { opponent: "", goalsFor: 0, goalsAgainst: 0, season: 0 };
     let worstDefeatAll = { opponent: "", goalsFor: 99, goalsAgainst: 0, season: 0 };
+    let fewestConceded = { goals: 999, season: 0 };
+    let mostPoints = { points: 0, season: 0 };
 
     for (let si = 0; si < allSeasons.length; si++) {
       const season = allSeasons[si];
@@ -274,6 +276,9 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
         if (ps.avgRating > bestRating.rating && ps.appearances >= 10) bestRating = { name: ps.name, rating: ps.avgRating, season: si + 1 };
         if (ps.cleanSheets > bestCleanSheets.cleanSheets) bestCleanSheets = { name: ps.name, cleanSheets: ps.cleanSheets, season: si + 1 };
       }
+      const seasonGA = season.teamRecord.goalsAgainst;
+      if (seasonGA < fewestConceded.goals) fewestConceded = { goals: seasonGA, season: si + 1 };
+      if (season.teamRecord.points > mostPoints.points) mostPoints = { points: season.teamRecord.points, season: si + 1 };
       for (const m of season.matches) {
         if (m.goalsFor > mostGoalsMatch.goalsFor) {
           mostGoalsMatch = { opponent: m.opponent, goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst, season: si + 1 };
@@ -288,8 +293,10 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
 
     records.push({ label: "Most Goals (Season)", value: `${bestGoals.goals}`, detail: `${bestGoals.name} (S${bestGoals.season})` });
     records.push({ label: "Most Assists (Season)", value: `${bestAssists.assists}`, detail: `${bestAssists.name} (S${bestAssists.season})` });
-    records.push({ label: "Best Avg Rating", value: `${bestRating.rating}`, detail: `${bestRating.name} (S${bestRating.season})` });
+    records.push({ label: "Best Avg Rating", value: bestRating.rating > 0 ? bestRating.rating.toFixed(2) : "—", detail: bestRating.name ? `${bestRating.name} (S${bestRating.season})` : "No data" });
     records.push({ label: "Most Clean Sheets", value: `${bestCleanSheets.cleanSheets}`, detail: `${bestCleanSheets.name} (S${bestCleanSheets.season})` });
+    if (fewestConceded.season > 0) records.push({ label: "Fewest Goals Conceded", value: `${fewestConceded.goals}`, detail: `Season ${fewestConceded.season}` });
+    if (mostPoints.season > 0) records.push({ label: "Most Points", value: `${mostPoints.points}`, detail: `Season ${mostPoints.season}` });
     records.push({ label: "Most Goals in a Match", value: `${mostGoalsMatch.goalsFor}-${mostGoalsMatch.goalsAgainst}`, detail: `vs ${mostGoalsMatch.opponent} (S${mostGoalsMatch.season})` });
     if (worstDefeatAll.goalsAgainst > worstDefeatAll.goalsFor) {
       records.push({ label: "Worst Defeat", value: `${worstDefeatAll.goalsFor}-${worstDefeatAll.goalsAgainst}`, detail: `vs ${worstDefeatAll.opponent} (S${worstDefeatAll.season})` });
