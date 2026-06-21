@@ -191,10 +191,13 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                 </div>
               </div>
 
-              {/* Row 2 — Objectives (full width) */}
+              {/* Row 2 — Custom Objectives (full width) */}
+              <CustomObjectivesSection />
+
+              {/* Row 3 — Auto Objectives (full width) */}
               <ObjectivesSection rewards={progression?.rewards ?? []} stats={progression?.stats ?? null} level={progression?.level ?? 1} />
 
-              {/* Row 3 — Collection Squad (full width) */}
+              {/* Row 4 — Collection Squad (full width) */}
               <CollectionSquad progression={progression} />
             </div>
           )}
@@ -361,6 +364,142 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Custom Objectives Section (admin-controlled) ── */
+
+interface AdminObjective {
+  id: string;
+  title: string;
+  description: string | null;
+  xp_reward: number;
+  card_image_url: string | null;
+  card_name: string | null;
+}
+
+function CustomObjectivesSection() {
+  const [objectives, setObjectives] = useState<AdminObjective[]>([]);
+  const [completed, setCompleted] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/objectives")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setObjectives(data.objectives ?? []);
+          setCompleted(data.completed ?? []);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading || objectives.length === 0) return null;
+
+  const completedCount = objectives.filter(o => completed.includes(o.id)).length;
+  const selected = objectives.find(o => o.id === selectedId) ?? objectives[0];
+
+  return (
+    <div className="rounded-xl border border-gray-800/50 bg-gray-900 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <h3 className="text-[10px] font-bold tracking-[0.25em] text-gray-400 uppercase">
+          Objectives
+        </h3>
+        <span className="text-[10px] font-bold text-amber-400">
+          {completedCount}/{objectives.length}
+        </span>
+      </div>
+
+      <div className="flex min-h-[200px]">
+        {/* Left sidebar — objective list */}
+        <div className="w-48 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[400px]">
+          {objectives.map((obj) => {
+            const done = completed.includes(obj.id);
+            const isSelected = (selectedId ?? objectives[0]?.id) === obj.id;
+            return (
+              <button
+                key={obj.id}
+                onClick={() => setSelectedId(obj.id)}
+                className={`w-full text-left px-3 py-3 border-b border-gray-800/30 transition-all ${
+                  isSelected
+                    ? "bg-gray-800/80 border-l-2 border-l-emerald-500"
+                    : "hover:bg-gray-800/40 border-l-2 border-l-transparent"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {done ? (
+                    <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <div className="w-3.5 h-3.5 rounded-full border border-gray-600 shrink-0" />
+                  )}
+                  <span className={`text-xs font-bold leading-tight line-clamp-2 ${done ? "text-emerald-400" : "text-white"}`}>
+                    {obj.title}
+                  </span>
+                </div>
+                {obj.xp_reward > 0 && (
+                  <div className="mt-1 ml-5.5">
+                    <span className={`text-[9px] font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>
+                      {obj.xp_reward} XP
+                    </span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right content — selected objective details */}
+        {selected && (
+          <div className="flex-1 p-5 flex gap-6">
+            <div className="flex-1 min-w-0">
+              <h4 className="text-lg font-black text-white mb-2">{selected.title}</h4>
+              {selected.description && (
+                <p className="text-sm text-gray-400 mb-4 leading-relaxed">{selected.description}</p>
+              )}
+              <div className="flex items-center gap-3 flex-wrap">
+                {selected.xp_reward > 0 && (
+                  <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
+                    <span className="text-amber-400 text-xs font-black">{selected.xp_reward} XP</span>
+                  </div>
+                )}
+                {completed.includes(selected.id) ? (
+                  <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
+                    <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-emerald-400 text-xs font-bold">Completed</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-1.5">
+                    <span className="text-gray-400 text-xs font-bold">In Progress</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Card reward preview */}
+            {selected.card_image_url && (
+              <div className="shrink-0 text-center">
+                <div className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Reward</div>
+                <img
+                  src={selected.card_image_url}
+                  alt={selected.card_name || "Card Reward"}
+                  className="w-24 h-32 object-cover rounded-xl border border-gray-700 shadow-lg"
+                />
+                {selected.card_name && (
+                  <div className="text-[10px] font-bold text-gray-300 mt-1.5">{selected.card_name}</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

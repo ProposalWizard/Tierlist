@@ -37,7 +37,7 @@ export interface DraftPlayer {
   attrs?: PlayerAttributes;
 }
 
-type GamePhase = "setup" | "lobby" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
+type GamePhase = "setup" | "lobby" | "formation-pick" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
 
 const STORAGE_KEY = "pl-draft-progress";
 const MAX_SEASONS = 5;
@@ -247,16 +247,18 @@ export default function DraftPage() {
   const handleCreateRoom = useCallback(async (s: DraftSettings) => {
     clearProgress();
     setResume(null);
+    // Store room settings without formation (each player picks their own)
+    const roomSettings = { ...s, formation: "4-3-3" };
     const res = await fetch("/api/draft/rooms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ settings: s }),
+      body: JSON.stringify({ settings: roomSettings }),
     });
     if (!res.ok) { alert("Failed to create room"); return; }
     const { code } = await res.json();
     setRoomCode(code);
     setIsHost(true);
-    setSettings(s);
+    setSettings(roomSettings);
     setPlayers([]);
     setSquadSubmitted(false);
     setPreComputedSeason(null);
@@ -266,10 +268,10 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop]);
 
-  const handleJoinRoom = useCallback(async (code: string, ownSettings: DraftSettings) => {
+  const handleJoinRoom = useCallback(async (code: string, _ownSettings: DraftSettings) => {
     clearProgress();
     setResume(null);
-    // Fetch host's settings but keep player's own formation
+    // Fetch host's settings; formation is picked later in formation-pick phase
     const res = await fetch(`/api/draft/rooms/${code}`);
     if (res.ok) {
       const data = await res.json();
@@ -277,14 +279,14 @@ export default function DraftPage() {
         const hostSettings = data.room.settings as DraftSettings;
         setSettings({
           ...hostSettings,
-          formation: ownSettings.formation, // each player picks their own formation
+          formation: "4-3-3", // default; overridden in formation-pick phase
         });
         setRespinsRemaining(hostSettings.respins ?? 0);
       } else {
-        setSettings(ownSettings);
+        setSettings(_ownSettings);
       }
     } else {
-      setSettings(ownSettings);
+      setSettings(_ownSettings);
     }
     setRoomCode(code);
     setIsHost(false);
@@ -297,9 +299,13 @@ export default function DraftPage() {
   }, [scrollTop]);
 
   const handleStartFromLobby = useCallback(() => {
-    setPhase("draft");
+    if (currentSeason === 1) {
+      setPhase("formation-pick");
+    } else {
+      setPhase("draft");
+    }
     scrollTop();
-  }, [scrollTop]);
+  }, [scrollTop, currentSeason]);
 
   const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[]) => {
     setPreComputedSeason(myResult);
@@ -330,12 +336,14 @@ export default function DraftPage() {
   }, [scrollTop, userId]);
 
   const handleLeaveRoom = useCallback(() => {
+    setPhase("setup");
     setRoomCode(null);
     setIsHost(false);
     setSquadSubmitted(false);
     setPreComputedSeason(null);
     setRoomPlayers(null);
-    setPhase("setup");
+    setPlayers([]);
+    setSettings(null);
     scrollTop();
   }, [scrollTop]);
 
@@ -791,6 +799,43 @@ export default function DraftPage() {
           onCareerComplete={isAdminUser ? handleCareerComplete : undefined}
           onLeave={handleLeaveRoom}
         />
+      )}
+      {phase === "formation-pick" && settings && (
+        <div className="flex flex-col items-center justify-center min-h-screen px-3 sm:px-4 py-6">
+          <div className="max-w-lg w-full">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/5 mb-4">
+                <span className="text-xs font-bold tracking-widest uppercase text-emerald-400">Step 1</span>
+              </div>
+              <h1 className="text-3xl font-black tracking-tight mb-2">Choose Your Formation</h1>
+              <p className="text-gray-400 text-sm">Pick your formation before the draft begins</p>
+            </div>
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2 mb-8">
+              {FORMATIONS.map((f) => (
+                <button
+                  key={f.name}
+                  onClick={() => setSettings(prev => prev ? { ...prev, formation: f.name } : prev)}
+                  className={`relative py-2.5 sm:py-3 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 ${
+                    settings.formation === f.name
+                      ? "bg-emerald-600 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
+                      : "bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700/50"
+                  }`}
+                >
+                  {f.name}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => { setPhase("draft"); scrollTop(); }}
+              className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-lg transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+              Start Draft
+            </button>
+          </div>
+        </div>
       )}
       {phase === "draft" && settings && (
         <DraftPick
