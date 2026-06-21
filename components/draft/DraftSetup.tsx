@@ -16,7 +16,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
   const [eraStart, setEraStart] = useState(2007);
   const [eraEnd, setEraEnd] = useState(2026);
   const [mode, setMode] = useState<"normal" | "prime">("normal");
-  const [draftOrder, setDraftOrder] = useState<"position-first" | "club-first">("position-first");
+  const [draftOrder, setDraftOrder] = useState<"position-first" | "club-first">("club-first");
   const [respins, setRespins] = useState<0 | 1 | 3>(3);
   const [hiddenRatings, setHiddenRatings] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
@@ -222,33 +222,33 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
           </label>
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             <button
-              onClick={() => setDraftOrder("position-first")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                draftOrder === "position-first"
-                  ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className={`text-xs sm:text-sm font-bold ${draftOrder === "position-first" ? "text-white" : "text-gray-300"}`}>
-                Position First
-              </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-emerald-100" : "text-gray-400"}`}>
-                Fill each position slot in order
-              </div>
-            </button>
-            <button
               onClick={() => setDraftOrder("club-first")}
               className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
                 draftOrder === "club-first"
-                  ? "bg-sky-600 ring-2 ring-sky-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-sky-900/50"
+                  ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
                   : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
               }`}
             >
               <div className={`text-xs sm:text-sm font-bold ${draftOrder === "club-first" ? "text-white" : "text-gray-300"}`}>
                 Club First
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-sky-100" : "text-gray-400"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-emerald-100" : "text-gray-400"}`}>
                 Pick a player, then choose their position
+              </div>
+            </button>
+            <button
+              onClick={() => setDraftOrder("position-first")}
+              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
+                draftOrder === "position-first"
+                  ? "bg-sky-600 ring-2 ring-sky-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-sky-900/50"
+                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
+              }`}
+            >
+              <div className={`text-xs sm:text-sm font-bold ${draftOrder === "position-first" ? "text-white" : "text-gray-300"}`}>
+                Position First
+              </div>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-sky-100" : "text-gray-400"}`}>
+                Fill each position slot in order
               </div>
             </button>
           </div>

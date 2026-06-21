@@ -1,0 +1,343 @@
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+interface Objective {
+  id: string;
+  title: string;
+  description: string | null;
+  xp_reward: number;
+  card_image_url: string | null;
+  card_name: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export default function ObjectivesAdmin() {
+  const [objectives, setObjectives] = useState<Objective[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    xp_reward: 100,
+    card_name: "",
+    is_active: true,
+  });
+  const [cardFile, setCardFile] = useState<File | null>(null);
+  const [cardPreview, setCardPreview] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const loadObjectives = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/admin/objectives");
+    if (res.ok) {
+      const data = await res.json();
+      setObjectives(data);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadObjectives(); }, [loadObjectives]);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true });
+    setCardFile(null);
+    setCardPreview(null);
+  };
+
+  const handleEdit = (obj: Objective) => {
+    setEditingId(obj.id);
+    setForm({
+      title: obj.title,
+      description: obj.description || "",
+      xp_reward: obj.xp_reward,
+      card_name: obj.card_name || "",
+      is_active: obj.is_active,
+    });
+    setCardPreview(obj.card_image_url);
+    setCardFile(null);
+  };
+
+  const handleCardFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCardFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setCardPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const uploadCardImage = async (): Promise<string | null> => {
+    if (!cardFile) return null;
+    const supabase = createClient();
+    const ext = cardFile.name.split(".").pop() || "webp";
+    const filename = `objective-cards/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("tierlist-images")
+      .upload(filename, cardFile, { contentType: cardFile.type, upsert: true });
+    if (error) { alert("Failed to upload card image: " + error.message); return null; }
+    const { data: { publicUrl } } = supabase.storage.from("tierlist-images").getPublicUrl(filename);
+    return publicUrl;
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim()) { alert("Title is required"); return; }
+    setSaving(true);
+    let card_image_url = editingId
+      ? objectives.find(o => o.id === editingId)?.card_image_url ?? null
+      : null;
+    if (cardFile) {
+      const uploaded = await uploadCardImage();
+      if (uploaded) card_image_url = uploaded;
+    }
+    const body = {
+      ...(editingId ? { id: editingId } : {}),
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      xp_reward: form.xp_reward,
+      card_image_url,
+      card_name: form.card_name.trim() || null,
+      is_active: form.is_active,
+      sort_order: editingId
+        ? objectives.find(o => o.id === editingId)?.sort_order ?? 0
+        : objectives.length,
+    };
+    const res = await fetch("/api/admin/objectives", {
+      method: editingId ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      resetForm();
+      loadObjectives();
+    } else {
+      const err = await res.text();
+      alert("Failed to save: " + err);
+    }
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Delete this objective?")) return;
+    await fetch(`/api/admin/objectives?id=${id}`, { method: "DELETE" });
+    loadObjectives();
+  };
+
+  const handleRemoveCard = () => {
+    setCardFile(null);
+    setCardPreview(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">
+          Objectives {!loading && `(${objectives.length})`}
+        </h2>
+      </div>
+
+      {/* Form */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <h3 className="text-sm font-bold text-gray-300">
+          {editingId ? "Edit Objective" : "Add New Objective"}
+        </h3>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+            Title *
+          </label>
+          <input
+            type="text"
+            value={form.title}
+            onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
+            placeholder="e.g. Win the league with only English players"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+            Description (optional)
+          </label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
+            placeholder="Detailed description of how to complete this objective..."
+            rows={3}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+              XP Reward
+            </label>
+            <input
+              type="number"
+              value={form.xp_reward}
+              onChange={(e) => setForm(f => ({ ...f, xp_reward: parseInt(e.target.value) || 0 }))}
+              min={0}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <p className="text-[10px] text-gray-600 mt-1">0 = hidden from users</p>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+              Active
+            </label>
+            <button
+              onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
+                form.is_active
+                  ? "bg-emerald-600 text-white"
+                  : "bg-gray-700 text-gray-400"
+              }`}
+            >
+              {form.is_active ? "Active" : "Inactive"}
+            </button>
+          </div>
+        </div>
+
+        {/* Card Reward */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+            Card Reward (optional)
+          </label>
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={form.card_name}
+                onChange={(e) => setForm(f => ({ ...f, card_name: e.target.value }))}
+                placeholder="Card name (e.g. Wayne Rooney)"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+              />
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCardFileChange}
+                  className="hidden"
+                />
+                <span className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:border-gray-500 transition cursor-pointer">
+                  Upload Card Image
+                </span>
+              </label>
+            </div>
+            {cardPreview && (
+              <div className="relative shrink-0">
+                <img
+                  src={cardPreview}
+                  alt="Card preview"
+                  className="w-20 h-28 object-cover rounded-lg border border-gray-700"
+                />
+                <button
+                  onClick={handleRemoveCard}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white rounded-full text-[10px] flex items-center justify-center font-bold hover:bg-red-500"
+                >
+                  x
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={handleSave}
+            disabled={saving || !form.title.trim()}
+            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-lg transition disabled:opacity-50"
+          >
+            {saving ? "Saving..." : editingId ? "Update Objective" : "Add Objective"}
+          </button>
+          {editingId && (
+            <button
+              onClick={resetForm}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 font-bold text-sm rounded-lg transition"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Objectives List */}
+      {loading ? (
+        <div className="text-gray-600 text-sm text-center py-8">Loading...</div>
+      ) : objectives.length === 0 ? (
+        <div className="text-gray-600 text-sm text-center py-8">
+          No objectives yet. Add one above.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {objectives.map((obj) => (
+            <div
+              key={obj.id}
+              className={`flex items-center gap-4 bg-gray-900 border rounded-xl px-4 py-3 transition ${
+                obj.is_active ? "border-gray-800" : "border-gray-800/50 opacity-50"
+              }`}
+            >
+              {/* Card image */}
+              {obj.card_image_url ? (
+                <img
+                  src={obj.card_image_url}
+                  alt={obj.card_name || "Card"}
+                  className="w-12 h-16 object-cover rounded-lg border border-gray-700 shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-16 bg-gray-800 rounded-lg border border-gray-700 shrink-0 flex items-center justify-center text-gray-700 text-lg">
+                  ?
+                </div>
+              )}
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm text-white truncate">{obj.title}</div>
+                {obj.description && (
+                  <div className="text-[10px] text-gray-500 truncate">{obj.description}</div>
+                )}
+                <div className="flex items-center gap-2 mt-1">
+                  {obj.xp_reward > 0 && (
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                      {obj.xp_reward} XP
+                    </span>
+                  )}
+                  {obj.card_name && (
+                    <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                      {obj.card_name}
+                    </span>
+                  )}
+                  {!obj.is_active && (
+                    <span className="text-[10px] font-bold text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
+                      Hidden
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => handleEdit(obj)}
+                  className="px-2 py-1 text-xs font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(obj.id)}
+                  className="px-2 py-1 text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

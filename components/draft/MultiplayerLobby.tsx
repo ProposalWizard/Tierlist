@@ -460,7 +460,10 @@ export default function MultiplayerLobby({
       )}
 
       <button
-        onClick={onLeave}
+        onClick={(e) => {
+          e.stopPropagation();
+          onLeave();
+        }}
         className="w-full py-2.5 text-sm font-bold text-gray-600 hover:text-gray-400 transition"
       >
         Leave Room
