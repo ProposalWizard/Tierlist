@@ -62,6 +62,7 @@ export interface FaCupResult {
   matches: FaCupMatch[];
   winner: boolean;
   exitRound: string | null;
+  faCupWinner: string;
 }
 
 export interface UCLMatch {
@@ -106,6 +107,7 @@ export interface UCLResult {
   knockoutTies: UCLKnockoutTie[];
   winner: boolean;
   exitStage: string | null;
+  tournamentWinner: string;
 }
 
 export interface PlayerStats {
@@ -136,6 +138,21 @@ export interface SuperCupResult {
   opponent: string;
   opponentRole: 'UCL Winner' | 'UEL Winner';
   playerRole: 'UCL Winner' | 'UEL Winner';
+  goalsFor: number;
+  goalsAgainst: number;
+  result: 'W' | 'L';
+  goalScorers: { player: string; minute: number }[];
+  assistProviders: { player: string; minute: number }[];
+  extraTime?: boolean;
+  penalties?: boolean;
+  penaltyScore?: { player: number; opponent: number };
+}
+
+export interface CharityShieldResult {
+  played: boolean;
+  opponent: string;
+  opponentRole: 'PL Winner' | 'FA Cup Winner' | 'PL Runner-Up';
+  playerRole: 'PL Winner' | 'FA Cup Winner';
   goalsFor: number;
   goalsAgainst: number;
   result: 'W' | 'L';
@@ -182,6 +199,7 @@ export interface SeasonResult {
   ucl?: UCLResult;
   uel?: UCLResult;
   superCup?: SuperCupResult;
+  charityShield?: CharityShieldResult;
 }
 
 // --- Seeded PRNG (mulberry32) ---
@@ -222,14 +240,24 @@ export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
 
 export const RESERVE_TEAMS: { name: string; strength: number }[] = [
   { name: 'Wolves', strength: 73 },
+  { name: 'Millwall', strength: 73 },
+  { name: 'Southampton', strength: 73 },
+  { name: 'Middlesbrough', strength: 73 },
+  { name: 'Wrexham', strength: 73 },
   { name: 'Burnley', strength: 72 },
-  { name: 'West Ham', strength: 71 },
+  { name: 'West Ham', strength: 72 },
+  { name: 'Stoke', strength: 72 },
+  { name: 'Norwich', strength: 72 },
+  { name: 'Swansea', strength: 72 },
+  { name: 'Sheffield', strength: 72 },
+  { name: 'Watford', strength: 72 },
 ];
 
 const ALL_TEAMS_POOL: { name: string; strength: number }[] = [...DEFAULT_PL_TEAMS, ...RESERVE_TEAMS];
 
 export function getSeasonTeams(
   previousLeagueTable?: LeagueTeam[] | { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
+  promotionSeed?: number,
 ): { name: string; strength: number }[] {
   if (!previousLeagueTable || previousLeagueTable.length === 0) {
     return DEFAULT_PL_TEAMS;
@@ -242,9 +270,23 @@ export function getSeasonTeams(
   const relegated = aiTeamsInTable.slice(-3).map(t => t.name);
 
   const currentAiNames = new Set(aiTeamsInTable.map(t => t.name));
-  const promoted = ALL_TEAMS_POOL
-    .filter(t => !currentAiNames.has(t.name))
-    .slice(0, relegated.length);
+  const candidates = ALL_TEAMS_POOL.filter(t => !currentAiNames.has(t.name));
+
+  // Weighted random promotion: higher strength = higher chance
+  const rng = createRng(promotionSeed ?? 12345);
+  const promoted: { name: string; strength: number }[] = [];
+  const remaining = [...candidates];
+  for (let i = 0; i < Math.min(relegated.length, remaining.length); i++) {
+    const totalWeight = remaining.reduce((sum, t) => sum + t.strength, 0);
+    let roll = rng() * totalWeight;
+    let picked = remaining.length - 1;
+    for (let j = 0; j < remaining.length; j++) {
+      roll -= remaining[j].strength;
+      if (roll <= 0) { picked = j; break; }
+    }
+    promoted.push(remaining[picked]);
+    remaining.splice(picked, 1);
+  }
 
   const relegatedSet = new Set(relegated);
   const remainingTeams = aiTeamsInTable
@@ -913,146 +955,103 @@ function matchRating(
 
 // --- FA Cup simulation ---
 
-const FA_CUP_ROUNDS = ['Round 3', 'Round 4', 'Round 5', 'Quarter-Final', 'Semi-Final', 'Final'];
-const BIG_CLUBS = ['Liverpool', 'Man City', 'Man United', 'Arsenal', 'Chelsea'];
-
-function pickFaCupOpponent(
-  opponents: { name: string; strength: number }[],
-  usedOpponents: Set<string>,
-  round: number,
+const FA_CUP_ROUNDS = ['Round of 32', 'Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
+function simulateAIvAICupMatch(
+  teamA: { name: string; strength: number },
+  teamB: { name: string; strength: number },
   rng: () => number,
-): { name: string; strength: number } {
-  const available = opponents.filter(o => !usedOpponents.has(o.name));
-  if (available.length === 0) return opponents[Math.floor(rng() * opponents.length)];
+): { winner: string; scoreA: number; scoreB: number; extraTime: boolean; penalties: boolean } {
+  const homeBonus = HOME_ADVANTAGE;
+  const aStr = teamA.strength + homeBonus * 0.5;
+  const bStr = teamB.strength;
+  const aXg = computeExpectedGoals(aStr, aStr * 0.95, bStr);
+  const bXg = computeExpectedGoals(bStr, bStr * 0.95, aStr);
 
-  if (round === 5 && rng() < 0.75) {
-    const bigAvail = available.filter(o => BIG_CLUBS.includes(o.name));
-    if (bigAvail.length > 0) return bigAvail[Math.floor(rng() * bigAvail.length)];
+  let scoreA = poisson(aXg, rng);
+  let scoreB = poisson(bXg, rng);
+  let extraTime = false;
+  let penalties = false;
+
+  if (scoreA === scoreB) {
+    extraTime = true;
+    scoreA += poisson(aXg * 0.33, rng);
+    scoreB += poisson(bXg * 0.33, rng);
+    if (scoreA === scoreB) {
+      penalties = true;
+      if (rng() > 0.5) scoreA++; else scoreB++;
+    }
   }
-  return available[Math.floor(rng() * available.length)];
+
+  return { winner: scoreA > scoreB ? teamA.name : teamB.name, scoreA, scoreB, extraTime, penalties };
 }
 
 function simulateFaCup(
   players: DraftPlayer[],
   ratings: PhaseRatings,
-  opponents: { name: string; strength: number }[],
+  allCupTeams: { name: string; strength: number }[],
   rng: () => number,
 ): FaCupResult {
-  const matches: FaCupMatch[] = [];
-  const usedOpponents = new Set<string>();
+  const playerTeamName = 'KNOWITBALL FC';
 
-  for (let round = 0; round < 6; round++) {
-    const roundName = FA_CUP_ROUNDS[round];
-    const opponent = pickFaCupOpponent(opponents, usedOpponents, round, rng);
-    usedOpponents.add(opponent.name);
-
-    const isHome = round < 5 ? rng() > 0.5 : false;
-    const homeBonus = isHome ? HOME_ADVANTAGE : 0;
-
-    const myAttack = ratings.attack + homeBonus * 0.6;
-    const myMidfield = ratings.midfield + homeBonus * 0.4;
-    const myDefense = ratings.defense + homeBonus * 0.3;
-    const myGk = ratings.gk;
-    const oppStrength = opponent.strength + (isHome ? 0 : HOME_ADVANTAGE);
-
-    const myXg = computeExpectedGoals(myAttack, myMidfield, oppStrength);
-    const ourDefPower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
-    const oppXg = computeExpectedGoals(oppStrength, oppStrength * 0.95, ourDefPower);
-
-    let goalsFor = poisson(myXg, rng);
-    let goalsAgainst = poisson(oppXg, rng);
-    let extraTime = false;
-    let penalties = false;
-    let penaltyScore: { player: number; opponent: number } | undefined;
-
-    const goalScorers: { player: string; minute: number }[] = [];
-    const assistProviders: { player: string; minute: number }[] = [];
-
-    const cupPenaltyTaker = [...players]
-      .sort((a, b) => goalScoringWeight(b) - goalScoringWeight(a))[0];
-
-    for (let i = 0; i < goalsFor; i++) {
-      const minute = Math.floor(rng() * 90) + 1;
-      const isPenalty = rng() < 0.10;
-      const scorer = isPenalty ? cupPenaltyTaker : weightedPick(players, goalScoringWeight, rng);
-      goalScorers.push({ player: scorer.name, minute });
-      if (!isPenalty && rng() < 0.75) {
-        const eligible = players.filter(p => p.name !== scorer.name);
-        if (eligible.length > 0) {
-          assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
-        }
-      }
-    }
-
-    if (goalsFor === goalsAgainst) {
-      extraTime = true;
-      const etMyXg = myXg * 0.33;
-      const etOppXg = oppXg * 0.33;
-      const etFor = poisson(etMyXg, rng);
-      const etAgainst = poisson(etOppXg, rng);
-      goalsFor += etFor;
-      goalsAgainst += etAgainst;
-
-      for (let i = 0; i < etFor; i++) {
-        const minute = 90 + Math.floor(rng() * 30) + 1;
-        const isPenalty = rng() < 0.10;
-        const scorer = isPenalty ? cupPenaltyTaker : weightedPick(players, goalScoringWeight, rng);
-        goalScorers.push({ player: scorer.name, minute });
-        if (!isPenalty && rng() < 0.75) {
-          const eligible = players.filter(p => p.name !== scorer.name);
-          if (eligible.length > 0) {
-            assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
-          }
-        }
-      }
-
-      if (goalsFor === goalsAgainst) {
-        penalties = true;
-        const myPens = Math.floor(rng() * 3) + 3;
-        const oppPens = Math.floor(rng() * 3) + 3;
-        if (myPens === oppPens) {
-          penaltyScore = rng() > 0.5
-            ? { player: myPens + 1, opponent: oppPens }
-            : { player: myPens, opponent: oppPens + 1 };
-        } else {
-          penaltyScore = { player: myPens, opponent: oppPens };
-        }
-      }
-    }
-
-    goalScorers.sort((a, b) => a.minute - b.minute);
-    assistProviders.sort((a, b) => a.minute - b.minute);
-
-    let result: 'W' | 'L';
-    if (penalties && penaltyScore) {
-      result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
-    } else {
-      result = goalsFor > goalsAgainst ? 'W' : 'L';
-    }
-
-    matches.push({
-      round: roundName,
-      opponent: opponent.name,
-      goalsFor,
-      goalsAgainst,
-      extraTime,
-      penalties,
-      penaltyScore,
-      goalScorers,
-      assistProviders,
-      result,
-    });
-
-    if (result === 'L') {
-      return { matches, winner: false, exitRound: roundName };
-    }
+  // Build 32-team bracket with random seeded draw
+  const bracket = allCupTeams.map(t => ({ ...t }));
+  // Shuffle bracket
+  for (let i = bracket.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [bracket[i], bracket[j]] = [bracket[j], bracket[i]];
   }
 
-  return { matches, winner: true, exitRound: null };
+  // Ensure we have exactly 32 teams; pad with generic teams if needed
+  while (bracket.length < 32) {
+    bracket.push({ name: `Lower League ${bracket.length - 31}`, strength: 65 });
+  }
+
+  const playerMatches: FaCupMatch[] = [];
+  let remaining = bracket.map(t => ({ name: t.name, strength: t.strength }));
+  let playerEliminated = false;
+
+  for (let roundIdx = 0; roundIdx < 5; roundIdx++) {
+    const roundName = FA_CUP_ROUNDS[roundIdx];
+    const nextRound: { name: string; strength: number }[] = [];
+
+    for (let i = 0; i < remaining.length; i += 2) {
+      const teamA = remaining[i];
+      const teamB = remaining[i + 1];
+
+      const isPlayerMatch = teamA.name === playerTeamName || teamB.name === playerTeamName;
+
+      if (isPlayerMatch && !playerEliminated) {
+        const opponent = teamA.name === playerTeamName ? teamB : teamA;
+        const match = simulateFaCupMatchForHuman(players, ratings, opponent, roundIdx, rng);
+        playerMatches.push(match);
+
+        if (match.result === 'W') {
+          nextRound.push({ name: playerTeamName, strength: ratings.teamStrength });
+        } else {
+          playerEliminated = true;
+          nextRound.push(opponent);
+        }
+      } else {
+        const result = simulateAIvAICupMatch(teamA, teamB, rng);
+        nextRound.push(remaining.find(t => t.name === result.winner) ?? teamA);
+      }
+    }
+
+    remaining = nextRound;
+  }
+
+  const faCupWinner = remaining[0].name;
+
+  return {
+    matches: playerMatches,
+    winner: faCupWinner === playerTeamName,
+    exitRound: playerEliminated ? playerMatches[playerMatches.length - 1]?.round ?? null : null,
+    faCupWinner,
+  };
 }
 
-// Number of teams in each FA Cup round (Round 3 through Final)
-const FA_CUP_TEAMS_IN_ROUND = [64, 32, 16, 8, 4, 2];
+// Number of teams in each FA Cup round (Round of 32 through Final)
+const FA_CUP_TEAMS_IN_ROUND = [32, 16, 8, 4, 2];
 
 function simulateSharedFaCup(
   humanTeams: {
@@ -1062,166 +1061,181 @@ function simulateSharedFaCup(
     ratings: PhaseRatings;
     rng: () => number;
   }[],
-  aiOpponents: { name: string; strength: number }[],
+  allCupTeams: { name: string; strength: number }[],
   drawRng: () => number,
-): Map<string, FaCupResult> {
-  const results = new Map<string, FaCupResult>();
-  const humanMatches = new Map<string, FaCupMatch[]>();
-  const humanUsedOpponents = new Map<string, Set<string>>();
+): { results: Map<string, FaCupResult>; faCupWinner: string } {
+  // Build 32-team bracket: human teams + AI teams
+  type BracketEntry = { name: string; strength: number; userId?: string };
+  const humanMap = new Map(humanTeams.map(h => [`${h.displayName} FC`, h]));
 
-  const surviving = new Map(humanTeams.map(h => [h.userId, h]));
-  for (const h of humanTeams) {
-    humanMatches.set(h.userId, []);
-    humanUsedOpponents.set(h.userId, new Set());
-  }
-
-  for (let round = 0; round < 6; round++) {
-    const roundName = FA_CUP_ROUNDS[round];
-    const teamsInRound = FA_CUP_TEAMS_IN_ROUND[round];
-    const survivorIds = Array.from(surviving.keys());
-    if (survivorIds.length === 0) break;
-
-    const pairedHumans = new Set<string>();
-    const humanVsHuman: [string, string][] = [];
-
-    // From QF onwards, surviving humans can draw each other
-    if (survivorIds.length >= 2 && round >= 3) {
-      const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
-      for (let i = 0; i + 1 < shuffled.length; i += 2) {
-        // Probability two specific teams meet = 1/(teamsInRound-1)
-        if (drawRng() < 1 / (teamsInRound - 1)) {
-          humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
-          pairedHumans.add(shuffled[i]);
-          pairedHumans.add(shuffled[i + 1]);
-        }
-      }
-    }
-
-    // Draw AI opponents for unpaired humans (no overlap across humans, no repeats per human)
-    const usedAIThisRound = new Set<string>();
-    const humansVsAI = survivorIds.filter(id => !pairedHumans.has(id));
-
-    for (const userId of humansVsAI) {
-      const playerUsed = humanUsedOpponents.get(userId)!;
-      const combined = new Set(Array.from(usedAIThisRound).concat(Array.from(playerUsed)));
-      const opponent = pickFaCupOpponent(aiOpponents, combined, round, drawRng);
-      usedAIThisRound.add(opponent.name);
-      playerUsed.add(opponent.name);
-
-      const h = surviving.get(userId)!;
-      const match = simulateFaCupMatchForHuman(h.starters, h.ratings, opponent, round, h.rng);
-      humanMatches.get(userId)!.push(match);
-
-      if (match.result === 'L') {
-        surviving.delete(userId);
-        results.set(userId, { matches: humanMatches.get(userId)!, winner: false, exitRound: roundName });
-      }
-    }
-
-    // Human-vs-human matches
-    for (const [id1, id2] of humanVsHuman) {
-      if (!surviving.has(id1) || !surviving.has(id2)) continue;
-      const h1 = surviving.get(id1)!;
-      const h2 = surviving.get(id2)!;
-
-      const isH1Home = round < 5 ? drawRng() > 0.5 : false;
-      const homeBonus = HOME_ADVANTAGE;
-
-      const h1Atk = h1.ratings.attack + (isH1Home ? homeBonus * 0.6 : 0);
-      const h1Mid = h1.ratings.midfield + (isH1Home ? homeBonus * 0.4 : 0);
-      const h1Def = h1.ratings.defense + (isH1Home ? homeBonus * 0.3 : 0);
-      const h1Gk = h1.ratings.gk;
-      const h2Atk = h2.ratings.attack + (isH1Home ? 0 : homeBonus * 0.6);
-      const h2Mid = h2.ratings.midfield + (isH1Home ? 0 : homeBonus * 0.4);
-      const h2Def = h2.ratings.defense + (isH1Home ? 0 : homeBonus * 0.3);
-      const h2Gk = h2.ratings.gk;
-
-      const h1DefPower = h1Def * 0.55 + h1Gk * 0.30 + h1Mid * 0.15;
-      const h2DefPower = h2Def * 0.55 + h2Gk * 0.30 + h2Mid * 0.15;
-
-      const h1Xg = computeExpectedGoals(h1Atk, h1Mid, h2DefPower);
-      const h2Xg = computeExpectedGoals(h2Atk, h2Mid, h1DefPower);
-
-      const h1Form = 0.85 + drawRng() * 0.30;
-      const h2Form = 0.85 + drawRng() * 0.30;
-
-      let h1Goals = poisson(h1Xg * h1Form, drawRng);
-      let h2Goals = poisson(h2Xg * h2Form, drawRng);
-
-      // Generate goal scorers for both sides
-      const h1Scorers = generateGoalScorers(h1.starters, h1Goals, h1.rng);
-      const h2Scorers = generateGoalScorers(h2.starters, h2Goals, h2.rng);
-
-      let extraTime = false;
-      let penalties = false;
-      let penaltyScore: { player: number; opponent: number } | undefined;
-
-      if (h1Goals === h2Goals) {
-        extraTime = true;
-        const etH1 = poisson(h1Xg * 0.33, drawRng);
-        const etH2 = poisson(h2Xg * 0.33, drawRng);
-        h1Goals += etH1;
-        h2Goals += etH2;
-        const etH1Scorers = generateGoalScorers(h1.starters, etH1, h1.rng, 90);
-        const etH2Scorers = generateGoalScorers(h2.starters, etH2, h2.rng, 90);
-        h1Scorers.goals.push(...etH1Scorers.goals);
-        h1Scorers.assists.push(...etH1Scorers.assists);
-        h2Scorers.goals.push(...etH2Scorers.goals);
-        h2Scorers.assists.push(...etH2Scorers.assists);
-
-        if (h1Goals === h2Goals) {
-          penalties = true;
-          const p1 = Math.floor(drawRng() * 3) + 3;
-          const p2 = Math.floor(drawRng() * 3) + 3;
-          if (p1 === p2) {
-            penaltyScore = drawRng() > 0.5 ? { player: p1 + 1, opponent: p2 } : { player: p1, opponent: p2 + 1 };
-          } else {
-            penaltyScore = { player: p1, opponent: p2 };
-          }
-        }
-      }
-
-      let h1Result: 'W' | 'L';
-      if (penalties && penaltyScore) {
-        h1Result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
-      } else {
-        h1Result = h1Goals > h2Goals ? 'W' : 'L';
-      }
-
-      h1Scorers.goals.sort((a, b) => a.minute - b.minute);
-      h1Scorers.assists.sort((a, b) => a.minute - b.minute);
-      h2Scorers.goals.sort((a, b) => a.minute - b.minute);
-      h2Scorers.assists.sort((a, b) => a.minute - b.minute);
-
-      humanMatches.get(id1)!.push({
-        round: roundName, opponent: h2.displayName,
-        goalsFor: h1Goals, goalsAgainst: h2Goals,
-        extraTime, penalties, penaltyScore,
-        goalScorers: h1Scorers.goals, assistProviders: h1Scorers.assists,
-        result: h1Result,
-      });
-      humanMatches.get(id2)!.push({
-        round: roundName, opponent: h1.displayName,
-        goalsFor: h2Goals, goalsAgainst: h1Goals,
-        extraTime, penalties,
-        penaltyScore: penaltyScore ? { player: penaltyScore.opponent, opponent: penaltyScore.player } : undefined,
-        goalScorers: h2Scorers.goals, assistProviders: h2Scorers.assists,
-        result: h1Result === 'W' ? 'L' : 'W',
-      });
-
-      const loserId = h1Result === 'W' ? id2 : id1;
-      surviving.delete(loserId);
-      results.set(loserId, { matches: humanMatches.get(loserId)!, winner: false, exitRound: roundName });
-    }
-  }
-
-  surviving.forEach((_, userId) => {
-    if (!results.has(userId)) {
-      results.set(userId, { matches: humanMatches.get(userId)!, winner: true, exitRound: null });
-    }
+  const bracket: BracketEntry[] = allCupTeams.map(t => {
+    const human = humanMap.get(t.name);
+    return { name: t.name, strength: t.strength, userId: human?.userId };
   });
 
-  return results;
+  // Shuffle bracket
+  for (let i = bracket.length - 1; i > 0; i--) {
+    const j = Math.floor(drawRng() * (i + 1));
+    [bracket[i], bracket[j]] = [bracket[j], bracket[i]];
+  }
+
+  // Pad to 32 if needed
+  while (bracket.length < 32) {
+    bracket.push({ name: `Lower League ${bracket.length - 31}`, strength: 65 });
+  }
+
+  const humanMatches = new Map<string, FaCupMatch[]>();
+  const humanEliminated = new Map<string, string>(); // userId -> exitRound
+  for (const h of humanTeams) {
+    humanMatches.set(h.userId, []);
+  }
+
+  let remaining = bracket.slice(0, 32);
+
+  for (let roundIdx = 0; roundIdx < 5; roundIdx++) {
+    const roundName = FA_CUP_ROUNDS[roundIdx];
+    const nextRound: BracketEntry[] = [];
+
+    for (let i = 0; i < remaining.length; i += 2) {
+      const teamA = remaining[i];
+      const teamB = remaining[i + 1];
+
+      const humanA = teamA.userId ? humanTeams.find(h => h.userId === teamA.userId) : undefined;
+      const humanB = teamB.userId ? humanTeams.find(h => h.userId === teamB.userId) : undefined;
+
+      if (humanA && humanB) {
+        // Human vs Human
+        const isH1Home = roundIdx < 4 ? drawRng() > 0.5 : false;
+        const homeBonus = HOME_ADVANTAGE;
+
+        const h1Atk = humanA.ratings.attack + (isH1Home ? homeBonus * 0.6 : 0);
+        const h1Mid = humanA.ratings.midfield + (isH1Home ? homeBonus * 0.4 : 0);
+        const h1Def = humanA.ratings.defense + (isH1Home ? homeBonus * 0.3 : 0);
+        const h1Gk = humanA.ratings.gk;
+        const h2Atk = humanB.ratings.attack + (isH1Home ? 0 : homeBonus * 0.6);
+        const h2Mid = humanB.ratings.midfield + (isH1Home ? 0 : homeBonus * 0.4);
+        const h2Def = humanB.ratings.defense + (isH1Home ? 0 : homeBonus * 0.3);
+        const h2Gk = humanB.ratings.gk;
+
+        const h1DefPower = h1Def * 0.55 + h1Gk * 0.30 + h1Mid * 0.15;
+        const h2DefPower = h2Def * 0.55 + h2Gk * 0.30 + h2Mid * 0.15;
+
+        const h1Xg = computeExpectedGoals(h1Atk, h1Mid, h2DefPower);
+        const h2Xg = computeExpectedGoals(h2Atk, h2Mid, h1DefPower);
+
+        const h1Form = 0.85 + drawRng() * 0.30;
+        const h2Form = 0.85 + drawRng() * 0.30;
+
+        let h1Goals = poisson(h1Xg * h1Form, drawRng);
+        let h2Goals = poisson(h2Xg * h2Form, drawRng);
+
+        const h1Scorers = generateGoalScorers(humanA.starters, h1Goals, humanA.rng);
+        const h2Scorers = generateGoalScorers(humanB.starters, h2Goals, humanB.rng);
+
+        let extraTime = false;
+        let penalties = false;
+        let penaltyScore: { player: number; opponent: number } | undefined;
+
+        if (h1Goals === h2Goals) {
+          extraTime = true;
+          const etH1 = poisson(h1Xg * 0.33, drawRng);
+          const etH2 = poisson(h2Xg * 0.33, drawRng);
+          h1Goals += etH1;
+          h2Goals += etH2;
+          const etH1Scorers = generateGoalScorers(humanA.starters, etH1, humanA.rng, 90);
+          const etH2Scorers = generateGoalScorers(humanB.starters, etH2, humanB.rng, 90);
+          h1Scorers.goals.push(...etH1Scorers.goals);
+          h1Scorers.assists.push(...etH1Scorers.assists);
+          h2Scorers.goals.push(...etH2Scorers.goals);
+          h2Scorers.assists.push(...etH2Scorers.assists);
+
+          if (h1Goals === h2Goals) {
+            penalties = true;
+            const p1 = Math.floor(drawRng() * 3) + 3;
+            const p2 = Math.floor(drawRng() * 3) + 3;
+            if (p1 === p2) {
+              penaltyScore = drawRng() > 0.5 ? { player: p1 + 1, opponent: p2 } : { player: p1, opponent: p2 + 1 };
+            } else {
+              penaltyScore = { player: p1, opponent: p2 };
+            }
+          }
+        }
+
+        let h1Result: 'W' | 'L';
+        if (penalties && penaltyScore) {
+          h1Result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
+        } else {
+          h1Result = h1Goals > h2Goals ? 'W' : 'L';
+        }
+
+        h1Scorers.goals.sort((a, b) => a.minute - b.minute);
+        h1Scorers.assists.sort((a, b) => a.minute - b.minute);
+        h2Scorers.goals.sort((a, b) => a.minute - b.minute);
+        h2Scorers.assists.sort((a, b) => a.minute - b.minute);
+
+        humanMatches.get(humanA.userId)!.push({
+          round: roundName, opponent: humanB.displayName,
+          goalsFor: h1Goals, goalsAgainst: h2Goals,
+          extraTime, penalties, penaltyScore,
+          goalScorers: h1Scorers.goals, assistProviders: h1Scorers.assists,
+          result: h1Result,
+        });
+        humanMatches.get(humanB.userId)!.push({
+          round: roundName, opponent: humanA.displayName,
+          goalsFor: h2Goals, goalsAgainst: h1Goals,
+          extraTime, penalties,
+          penaltyScore: penaltyScore ? { player: penaltyScore.opponent, opponent: penaltyScore.player } : undefined,
+          goalScorers: h2Scorers.goals, assistProviders: h2Scorers.assists,
+          result: h1Result === 'W' ? 'L' : 'W',
+        });
+
+        if (h1Result === 'W') {
+          nextRound.push(teamA);
+          humanEliminated.set(humanB.userId, roundName);
+        } else {
+          nextRound.push(teamB);
+          humanEliminated.set(humanA.userId, roundName);
+        }
+      } else if (humanA || humanB) {
+        // Human vs AI
+        const human = (humanA ?? humanB)!;
+        const aiTeam = humanA ? teamB : teamA;
+        const match = simulateFaCupMatchForHuman(human.starters, human.ratings, aiTeam, roundIdx, human.rng);
+        humanMatches.get(human.userId)!.push(match);
+
+        if (match.result === 'W') {
+          nextRound.push(humanA ? teamA : teamB);
+        } else {
+          nextRound.push(aiTeam);
+          humanEliminated.set(human.userId, roundName);
+        }
+      } else {
+        // AI vs AI
+        const result = simulateAIvAICupMatch(teamA, teamB, drawRng);
+        nextRound.push(result.winner === teamA.name ? teamA : teamB);
+      }
+    }
+
+    remaining = nextRound;
+  }
+
+  const faCupWinner = remaining[0].name;
+
+  // Build results for each human
+  const results = new Map<string, FaCupResult>();
+  for (const h of humanTeams) {
+    const matches = humanMatches.get(h.userId)!;
+    const exitRound = humanEliminated.get(h.userId);
+    const isWinner = faCupWinner === `${h.displayName} FC`;
+    results.set(h.userId, {
+      matches,
+      winner: isWinner,
+      exitRound: exitRound ?? null,
+      faCupWinner,
+    });
+  }
+
+  return { results, faCupWinner };
 }
 
 function simulateFaCupMatchForHuman(
@@ -1232,7 +1246,7 @@ function simulateFaCupMatchForHuman(
   rng: () => number,
 ): FaCupMatch {
   const roundName = FA_CUP_ROUNDS[round];
-  const isHome = round < 5 ? rng() > 0.5 : false;
+  const isHome = round < 4 ? rng() > 0.5 : false;
   const homeBonus = isHome ? HOME_ADVANTAGE : 0;
 
   const myAttack = ratings.attack + homeBonus * 0.6;
@@ -1316,6 +1330,34 @@ function generateGoalScorers(
     }
   }
   return { goals, assists };
+}
+
+// --- AI vs AI knockout tie (two-legged or single final) ---
+
+function simulateAIvAIKnockoutTie(
+  teamA: { name: string; strength: number },
+  teamB: { name: string; strength: number },
+  rng: () => number,
+  isFinal: boolean,
+): string {
+  if (isFinal) {
+    const result = simulateAIvAICupMatch(teamA, teamB, rng);
+    return result.winner;
+  }
+  const leg1 = simulateNeutralMatch(teamA, teamB, rng);
+  const leg2 = simulateNeutralMatch(teamB, teamA, rng);
+  let aggA = leg1.homeGoals + leg2.awayGoals;
+  let aggB = leg1.awayGoals + leg2.homeGoals;
+  if (aggA === aggB) {
+    const et1 = poisson(computeExpectedGoals(teamB.strength, teamB.strength * 0.95, teamA.strength) * 0.33, rng);
+    const et2 = poisson(computeExpectedGoals(teamA.strength, teamA.strength * 0.95, teamB.strength) * 0.33, rng);
+    aggA += et2;
+    aggB += et1;
+    if (aggA === aggB) {
+      return rng() > 0.5 ? teamA.name : teamB.name;
+    }
+  }
+  return aggA > aggB ? teamA.name : teamB.name;
 }
 
 // --- UCL knockout tie simulation ---
@@ -1435,14 +1477,14 @@ function simulateChampionsLeague(
   rng: () => number,
   uelWinnerQualifies?: boolean,
 ): UCLResult {
-  const playerTeamName = 'Knowitball FC';
+  const playerTeamName = 'KNOWITBALL FC';
   const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
 
   const qualifiesThroughLeague = playerFinish >= 1 && playerFinish <= 5;
   if (!qualifiesThroughLeague && !uelWinnerQualifies) {
     return {
       qualified: false, leagueMatches: [], leaguePosition: 0,
-      leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+      leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
     };
   }
 
@@ -1577,74 +1619,160 @@ function simulateChampionsLeague(
 
   const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
 
+  const notQualified: UCLResult = {
+    qualified: true, leagueMatches, leaguePosition, leagueTable,
+    knockoutTies: [], winner: false, exitStage: 'League Phase', tournamentWinner: '',
+  };
+
   if (leaguePosition > 24) {
-    return {
-      qualified: true, leagueMatches, leaguePosition, leagueTable,
-      knockoutTies: [], winner: false, exitStage: 'League Phase',
-    };
+    // Player eliminated in league phase — simulate rest of bracket to find winner
+    const r32Teams: { name: string; strength: number }[] = [];
+    for (let i = 8; i < 24; i++) {
+      r32Teams.push({ name: leagueTable[i].name, strength: strengthMap.get(leagueTable[i].name) || 75 });
+    }
+    let r16Survivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < 8; i++) {
+      const hi = r32Teams[i];
+      const lo = r32Teams[15 - i];
+      const w = simulateAIvAIKnockoutTie(hi, lo, rng, false);
+      r16Survivors.push(w === hi.name ? hi : lo);
+    }
+    for (let i = 0; i < 8; i++) {
+      r16Survivors.push({ name: leagueTable[i].name, strength: strengthMap.get(leagueTable[i].name) || 75 });
+    }
+    r16Survivors.sort(() => rng() - 0.5);
+    let qfSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < r16Survivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(r16Survivors[i], r16Survivors[i + 1], rng, false);
+      qfSurvivors.push(w === r16Survivors[i].name ? r16Survivors[i] : r16Survivors[i + 1]);
+    }
+    let sfSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < qfSurvivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(qfSurvivors[i], qfSurvivors[i + 1], rng, false);
+      sfSurvivors.push(w === qfSurvivors[i].name ? qfSurvivors[i] : qfSurvivors[i + 1]);
+    }
+    let finalSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < sfSurvivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(sfSurvivors[i], sfSurvivors[i + 1], rng, false);
+      finalSurvivors.push(w === sfSurvivors[i].name ? sfSurvivors[i] : sfSurvivors[i + 1]);
+    }
+    const champion = simulateAIvAIKnockoutTie(finalSurvivors[0], finalSurvivors[1], rng, true);
+    notQualified.tournamentWinner = champion;
+    return notQualified;
   }
 
-  // --- Knockout phase ---
+  // --- Knockout phase (full bracket) ---
   const knockoutTies: UCLKnockoutTie[] = [];
-  const eliminatedTeams = new Set<string>();
 
-  // Round of 32 (positions 9–24, paired: 9th vs 24th, 10th vs 23rd, etc.)
-  if (leaguePosition >= 9) {
-    const r32OppPos = 33 - leaguePosition;
-    const r32Opp = leagueTable[r32OppPos - 1];
-    const r32Str = strengthMap.get(r32Opp.name) || 75;
-    const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, players, ratings, rng, false);
-    knockoutTies.push(r32);
-    eliminatedTeams.add(r32Opp.name);
-    if (r32.result === 'L') {
-      return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 32' };
+  // R32: positions 9-24 paired: 9v24, 10v23, etc.
+  type BracketTeam = { name: string; strength: number };
+  const r32Pairs: [BracketTeam, BracketTeam][] = [];
+  for (let i = 0; i < 8; i++) {
+    const hiPos = 8 + i;
+    const loPos = 23 - i;
+    r32Pairs.push([
+      { name: leagueTable[hiPos].name, strength: strengthMap.get(leagueTable[hiPos].name) || 75 },
+      { name: leagueTable[loPos].name, strength: strengthMap.get(leagueTable[loPos].name) || 75 },
+    ]);
+  }
+
+  // Simulate all R32 ties
+  const r32Winners: BracketTeam[] = [];
+  let playerEliminated = false;
+  let playerExitStage: string | null = null;
+  for (const [hi, lo] of r32Pairs) {
+    const playerInvolved = hi.name === playerTeamName || lo.name === playerTeamName;
+    if (playerInvolved) {
+      const oppName = hi.name === playerTeamName ? lo.name : hi.name;
+      const oppStr = hi.name === playerTeamName ? lo.strength : hi.strength;
+      const tie = simulateUCLKnockoutTie('Round of 32', oppName, oppStr, players, ratings, rng, false);
+      knockoutTies.push(tie);
+      if (tie.result === 'L') {
+        playerEliminated = true;
+        playerExitStage = 'Round of 32';
+        r32Winners.push({ name: oppName, strength: oppStr });
+      } else {
+        r32Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
+      }
+    } else {
+      const w = simulateAIvAIKnockoutTie(hi, lo, rng, false);
+      r32Winners.push(w === hi.name ? hi : lo);
     }
   }
 
-  // Round of 16
-  const r16Pool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 16);
-  const r16Opp = r16Pool[Math.floor(rng() * r16Pool.length)];
-  const r16Str = strengthMap.get(r16Opp.name) || 75;
-  const r16 = simulateUCLKnockoutTie('Round of 16', r16Opp.name, r16Str, players, ratings, rng, false);
-  knockoutTies.push(r16);
-  eliminatedTeams.add(r16Opp.name);
-  if (r16.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 16' };
+  // R16: top 8 auto-qualifiers paired with R32 winners (8v R32W[0], 7v R32W[1], etc.)
+  const r16Pairs: [BracketTeam, BracketTeam][] = [];
+  for (let i = 0; i < 8; i++) {
+    const autoQ: BracketTeam = { name: leagueTable[7 - i].name, strength: strengthMap.get(leagueTable[7 - i].name) || 75 };
+    if (leagueTable[7 - i].isPlayer) {
+      r16Pairs.push([{ name: playerTeamName, strength: ratings.teamStrength }, r32Winners[i]]);
+    } else if (r32Winners[i].name === playerTeamName) {
+      r16Pairs.push([r32Winners[i], autoQ]);
+    } else {
+      r16Pairs.push([autoQ, r32Winners[i]]);
+    }
   }
 
-  // Quarter-Final
-  const qfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 8);
-  const qfOpp = qfPool[Math.floor(rng() * qfPool.length)];
-  const qfStr = strengthMap.get(qfOpp.name) || 75;
-  const qf = simulateUCLKnockoutTie('Quarter-Final', qfOpp.name, qfStr, players, ratings, rng, false);
-  knockoutTies.push(qf);
-  eliminatedTeams.add(qfOpp.name);
-  if (qf.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Quarter-Final' };
+  const r16Winners: BracketTeam[] = [];
+  for (const [a, b] of r16Pairs) {
+    const playerInvolved = a.name === playerTeamName || b.name === playerTeamName;
+    if (playerInvolved && !playerEliminated) {
+      const oppName = a.name === playerTeamName ? b.name : a.name;
+      const oppStr = a.name === playerTeamName ? b.strength : a.strength;
+      const tie = simulateUCLKnockoutTie('Round of 16', oppName, oppStr, players, ratings, rng, false);
+      knockoutTies.push(tie);
+      if (tie.result === 'L') {
+        playerEliminated = true;
+        playerExitStage = 'Round of 16';
+        r16Winners.push({ name: oppName, strength: oppStr });
+      } else {
+        r16Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
+      }
+    } else {
+      const w = simulateAIvAIKnockoutTie(a, b, rng, false);
+      r16Winners.push(w === a.name ? a : b);
+    }
   }
 
-  // Semi-Final
-  const sfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 4);
-  const sfOpp = sfPool[Math.floor(rng() * sfPool.length)];
-  const sfStr = strengthMap.get(sfOpp.name) || 75;
-  const sf = simulateUCLKnockoutTie('Semi-Final', sfOpp.name, sfStr, players, ratings, rng, false);
-  knockoutTies.push(sf);
-  eliminatedTeams.add(sfOpp.name);
-  if (sf.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Semi-Final' };
+  // QF, SF, Final — same pattern
+  const roundNames = ['Quarter-Final', 'Semi-Final', 'Final'];
+  let currentRound = r16Winners;
+  for (let ri = 0; ri < roundNames.length; ri++) {
+    const roundName = roundNames[ri];
+    const isFinal = ri === 2;
+    const nextRound: BracketTeam[] = [];
+    for (let i = 0; i < currentRound.length; i += 2) {
+      const a = currentRound[i];
+      const b = currentRound[i + 1];
+      const playerInvolved = (a.name === playerTeamName || b.name === playerTeamName) && !playerEliminated;
+      if (playerInvolved) {
+        const oppName = a.name === playerTeamName ? b.name : a.name;
+        const oppStr = a.name === playerTeamName ? b.strength : a.strength;
+        const tie = simulateUCLKnockoutTie(roundName, oppName, oppStr, players, ratings, rng, isFinal);
+        knockoutTies.push(tie);
+        if (tie.result === 'L') {
+          playerEliminated = true;
+          playerExitStage = roundName;
+          nextRound.push({ name: oppName, strength: oppStr });
+        } else {
+          nextRound.push({ name: playerTeamName, strength: ratings.teamStrength });
+        }
+      } else {
+        const w = simulateAIvAIKnockoutTie(a, b, rng, isFinal);
+        nextRound.push(w === a.name ? a : b);
+      }
+    }
+    currentRound = nextRound;
   }
 
-  // Final (single match)
-  const finalPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 3);
-  const finalOpp = finalPool[Math.floor(rng() * finalPool.length)];
-  const finalStr = strengthMap.get(finalOpp.name) || 75;
-  const final_ = simulateUCLKnockoutTie('Final', finalOpp.name, finalStr, players, ratings, rng, true);
-  knockoutTies.push(final_);
+  const tournamentWinner = currentRound[0].name;
+  const playerWon = tournamentWinner === playerTeamName;
 
   return {
     qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies,
-    winner: final_.result === 'W',
-    exitStage: final_.result === 'L' ? 'Final' : null,
+    winner: playerWon,
+    exitStage: playerWon ? null : playerExitStage,
+    tournamentWinner,
   };
 }
 
@@ -1654,32 +1782,44 @@ function simulateEuropaLeague(
   previousLeagueTable: LeagueTeam[],
   opponents: { name: string; strength: number }[],
   rng: () => number,
+  faCupWinnerQualifies?: boolean,
 ): UCLResult {
-  const playerTeamName = 'Knowitball FC';
+  const playerTeamName = 'KNOWITBALL FC';
   const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
 
-  if (playerFinish < 6 || playerFinish > 7) {
+  if (!faCupWinnerQualifies && (playerFinish < 6 || playerFinish > 7)) {
     return {
       qualified: false, leagueMatches: [], leaguePosition: 0,
-      leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+      leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
     };
   }
 
-  const playerPot = playerFinish === 6 ? 1 : 2;
+  const playerPot = faCupWinnerQualifies ? 2 : (playerFinish === 6 ? 1 : 2);
 
   const pots: { name: string; strength: number; isPlayer: boolean }[][] = [[], [], [], []];
   pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
 
   const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
-  const otherPLSlot = playerFinish === 6 ? 7 : 6;
-  const otherPLPot = otherPLSlot === 6 ? 1 : 2;
-  for (let i = 0; i < previousLeagueTable.length; i++) {
-    const team = previousLeagueTable[i];
-    if (team.isPlayer) continue;
-    if (i + 1 === otherPLSlot) {
-      const strength = opponentMap.get(team.name) || 75;
-      pots[otherPLPot - 1].push({ name: team.name, strength, isPlayer: false });
-      break;
+  if (!faCupWinnerQualifies) {
+    const otherPLSlot = playerFinish === 6 ? 7 : 6;
+    const otherPLPot = otherPLSlot === 6 ? 1 : 2;
+    for (let i = 0; i < previousLeagueTable.length; i++) {
+      const team = previousLeagueTable[i];
+      if (team.isPlayer) continue;
+      if (i + 1 === otherPLSlot) {
+        const strength = opponentMap.get(team.name) || 75;
+        pots[otherPLPot - 1].push({ name: team.name, strength, isPlayer: false });
+        break;
+      }
+    }
+  } else {
+    for (const slot of [6, 7]) {
+      const team = previousLeagueTable[slot - 1];
+      if (team && !team.isPlayer) {
+        const pot = slot === 6 ? 1 : 2;
+        const strength = opponentMap.get(team.name) || 75;
+        pots[pot - 1].push({ name: team.name, strength, isPlayer: false });
+      }
     }
   }
 
@@ -1774,68 +1914,155 @@ function simulateEuropaLeague(
 
   const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
 
+  const uelNotQualified: UCLResult = {
+    qualified: true, leagueMatches, leaguePosition, leagueTable,
+    knockoutTies: [], winner: false, exitStage: 'League Phase', tournamentWinner: '',
+  };
+
   if (leaguePosition > 24) {
-    return {
-      qualified: true, leagueMatches, leaguePosition, leagueTable,
-      knockoutTies: [], winner: false, exitStage: 'League Phase',
-    };
+    const r32Teams: { name: string; strength: number }[] = [];
+    for (let i = 8; i < 24; i++) {
+      r32Teams.push({ name: leagueTable[i].name, strength: strengthMap.get(leagueTable[i].name) || 70 });
+    }
+    let r16Survivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < 8; i++) {
+      const hi = r32Teams[i];
+      const lo = r32Teams[15 - i];
+      const w = simulateAIvAIKnockoutTie(hi, lo, rng, false);
+      r16Survivors.push(w === hi.name ? hi : lo);
+    }
+    for (let i = 0; i < 8; i++) {
+      r16Survivors.push({ name: leagueTable[i].name, strength: strengthMap.get(leagueTable[i].name) || 70 });
+    }
+    r16Survivors.sort(() => rng() - 0.5);
+    let qfSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < r16Survivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(r16Survivors[i], r16Survivors[i + 1], rng, false);
+      qfSurvivors.push(w === r16Survivors[i].name ? r16Survivors[i] : r16Survivors[i + 1]);
+    }
+    let sfSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < qfSurvivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(qfSurvivors[i], qfSurvivors[i + 1], rng, false);
+      sfSurvivors.push(w === qfSurvivors[i].name ? qfSurvivors[i] : qfSurvivors[i + 1]);
+    }
+    let finalSurvivors: { name: string; strength: number }[] = [];
+    for (let i = 0; i < sfSurvivors.length; i += 2) {
+      const w = simulateAIvAIKnockoutTie(sfSurvivors[i], sfSurvivors[i + 1], rng, false);
+      finalSurvivors.push(w === sfSurvivors[i].name ? sfSurvivors[i] : sfSurvivors[i + 1]);
+    }
+    const champion = simulateAIvAIKnockoutTie(finalSurvivors[0], finalSurvivors[1], rng, true);
+    uelNotQualified.tournamentWinner = champion;
+    return uelNotQualified;
   }
 
+  // --- Knockout phase (full bracket) ---
   const knockoutTies: UCLKnockoutTie[] = [];
-  const eliminatedTeams = new Set<string>();
 
-  if (leaguePosition >= 9) {
-    const r32OppPos = 33 - leaguePosition;
-    const r32Opp = leagueTable[r32OppPos - 1];
-    const r32Str = strengthMap.get(r32Opp.name) || 70;
-    const r32 = simulateUCLKnockoutTie('Round of 32', r32Opp.name, r32Str, players, ratings, rng, false);
-    knockoutTies.push(r32);
-    eliminatedTeams.add(r32Opp.name);
-    if (r32.result === 'L') {
-      return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 32' };
+  type UELBracketTeam = { name: string; strength: number };
+  const r32Pairs: [UELBracketTeam, UELBracketTeam][] = [];
+  for (let i = 0; i < 8; i++) {
+    const hiPos = 8 + i;
+    const loPos = 23 - i;
+    r32Pairs.push([
+      { name: leagueTable[hiPos].name, strength: strengthMap.get(leagueTable[hiPos].name) || 70 },
+      { name: leagueTable[loPos].name, strength: strengthMap.get(leagueTable[loPos].name) || 70 },
+    ]);
+  }
+
+  const r32Winners: UELBracketTeam[] = [];
+  let playerEliminated = false;
+  let playerExitStage: string | null = null;
+  for (const [hi, lo] of r32Pairs) {
+    const playerInvolved = hi.name === playerTeamName || lo.name === playerTeamName;
+    if (playerInvolved) {
+      const oppName = hi.name === playerTeamName ? lo.name : hi.name;
+      const oppStr = hi.name === playerTeamName ? lo.strength : hi.strength;
+      const tie = simulateUCLKnockoutTie('Round of 32', oppName, oppStr, players, ratings, rng, false);
+      knockoutTies.push(tie);
+      if (tie.result === 'L') {
+        playerEliminated = true;
+        playerExitStage = 'Round of 32';
+        r32Winners.push({ name: oppName, strength: oppStr });
+      } else {
+        r32Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
+      }
+    } else {
+      const w = simulateAIvAIKnockoutTie(hi, lo, rng, false);
+      r32Winners.push(w === hi.name ? hi : lo);
     }
   }
 
-  const r16Pool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 16);
-  const r16Opp = r16Pool[Math.floor(rng() * r16Pool.length)];
-  const r16Str = strengthMap.get(r16Opp.name) || 70;
-  const r16 = simulateUCLKnockoutTie('Round of 16', r16Opp.name, r16Str, players, ratings, rng, false);
-  knockoutTies.push(r16);
-  eliminatedTeams.add(r16Opp.name);
-  if (r16.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Round of 16' };
+  const r16Pairs: [UELBracketTeam, UELBracketTeam][] = [];
+  for (let i = 0; i < 8; i++) {
+    const autoQ: UELBracketTeam = { name: leagueTable[7 - i].name, strength: strengthMap.get(leagueTable[7 - i].name) || 70 };
+    if (leagueTable[7 - i].isPlayer) {
+      r16Pairs.push([{ name: playerTeamName, strength: ratings.teamStrength }, r32Winners[i]]);
+    } else if (r32Winners[i].name === playerTeamName) {
+      r16Pairs.push([r32Winners[i], autoQ]);
+    } else {
+      r16Pairs.push([autoQ, r32Winners[i]]);
+    }
   }
 
-  const qfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 8);
-  const qfOpp = qfPool[Math.floor(rng() * qfPool.length)];
-  const qfStr = strengthMap.get(qfOpp.name) || 70;
-  const qf = simulateUCLKnockoutTie('Quarter-Final', qfOpp.name, qfStr, players, ratings, rng, false);
-  knockoutTies.push(qf);
-  eliminatedTeams.add(qfOpp.name);
-  if (qf.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Quarter-Final' };
+  const r16Winners: UELBracketTeam[] = [];
+  for (const [a, b] of r16Pairs) {
+    const playerInvolved = (a.name === playerTeamName || b.name === playerTeamName) && !playerEliminated;
+    if (playerInvolved) {
+      const oppName = a.name === playerTeamName ? b.name : a.name;
+      const oppStr = a.name === playerTeamName ? b.strength : a.strength;
+      const tie = simulateUCLKnockoutTie('Round of 16', oppName, oppStr, players, ratings, rng, false);
+      knockoutTies.push(tie);
+      if (tie.result === 'L') {
+        playerEliminated = true;
+        playerExitStage = 'Round of 16';
+        r16Winners.push({ name: oppName, strength: oppStr });
+      } else {
+        r16Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
+      }
+    } else {
+      const w = simulateAIvAIKnockoutTie(a, b, rng, false);
+      r16Winners.push(w === a.name ? a : b);
+    }
   }
 
-  const sfPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 4);
-  const sfOpp = sfPool[Math.floor(rng() * sfPool.length)];
-  const sfStr = strengthMap.get(sfOpp.name) || 70;
-  const sf = simulateUCLKnockoutTie('Semi-Final', sfOpp.name, sfStr, players, ratings, rng, false);
-  knockoutTies.push(sf);
-  eliminatedTeams.add(sfOpp.name);
-  if (sf.result === 'L') {
-    return { qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies, winner: false, exitStage: 'Semi-Final' };
+  const roundNames = ['Quarter-Final', 'Semi-Final', 'Final'];
+  let currentRound = r16Winners;
+  for (let ri = 0; ri < roundNames.length; ri++) {
+    const roundName = roundNames[ri];
+    const isFinal = ri === 2;
+    const nextRound: UELBracketTeam[] = [];
+    for (let i = 0; i < currentRound.length; i += 2) {
+      const a = currentRound[i];
+      const b = currentRound[i + 1];
+      const playerInvolved = (a.name === playerTeamName || b.name === playerTeamName) && !playerEliminated;
+      if (playerInvolved) {
+        const oppName = a.name === playerTeamName ? b.name : a.name;
+        const oppStr = a.name === playerTeamName ? b.strength : a.strength;
+        const tie = simulateUCLKnockoutTie(roundName, oppName, oppStr, players, ratings, rng, isFinal);
+        knockoutTies.push(tie);
+        if (tie.result === 'L') {
+          playerEliminated = true;
+          playerExitStage = roundName;
+          nextRound.push({ name: oppName, strength: oppStr });
+        } else {
+          nextRound.push({ name: playerTeamName, strength: ratings.teamStrength });
+        }
+      } else {
+        const w = simulateAIvAIKnockoutTie(a, b, rng, isFinal);
+        nextRound.push(w === a.name ? a : b);
+      }
+    }
+    currentRound = nextRound;
   }
 
-  const finalPool = leagueTable.filter(t => !t.isPlayer && !eliminatedTeams.has(t.name)).slice(0, 3);
-  const finalOpp = finalPool[Math.floor(rng() * finalPool.length)];
-  const finalStr = strengthMap.get(finalOpp.name) || 70;
-  const final_ = simulateUCLKnockoutTie('Final', finalOpp.name, finalStr, players, ratings, rng, true);
-  knockoutTies.push(final_);
+  const tournamentWinner = currentRound[0].name;
+  const playerWon = tournamentWinner === playerTeamName;
 
   return {
     qualified: true, leagueMatches, leaguePosition, leagueTable, knockoutTies,
-    winner: final_.result === 'W',
-    exitStage: final_.result === 'L' ? 'Final' : null,
+    winner: playerWon,
+    exitStage: playerWon ? null : playerExitStage,
+    tournamentWinner,
   };
 }
 
@@ -1851,18 +2078,12 @@ function determinePreviousWinners(
   let uclWinner: string | null = null;
   let uclWinnerStrength = 80;
   if (prevResult.ucl?.winner) {
-    uclWinner = 'Knowitball FC';
+    uclWinner = 'KNOWITBALL FC';
     uclWinnerStrength = prevResult.phaseRatings.teamStrength;
-  } else if (prevResult.ucl?.qualified) {
-    const uclTable = prevResult.ucl.leagueTable;
-    const eliminated = new Set(prevResult.ucl.knockoutTies.filter(t => t.result === 'L').map(t => t.opponent));
-    const candidates = uclTable.filter(t => !t.isPlayer && !eliminated.has(t.name));
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => b.points - a.points);
-      uclWinner = candidates[0].name;
-      const oppStrength = opponents.find(o => o.name === uclWinner)?.strength;
-      uclWinnerStrength = oppStrength ?? UCL_TEAMS.find(t => t.name === uclWinner)?.strength ?? 82;
-    }
+  } else if (prevResult.ucl?.tournamentWinner) {
+    uclWinner = prevResult.ucl.tournamentWinner;
+    const oppStrength = opponents.find(o => o.name === uclWinner)?.strength;
+    uclWinnerStrength = oppStrength ?? UCL_TEAMS.find(t => t.name === uclWinner)?.strength ?? 82;
   }
   if (!uclWinner) {
     const topUcl = [...UCL_TEAMS].sort((a, b) => b.strength - a.strength);
@@ -1873,18 +2094,12 @@ function determinePreviousWinners(
   let uelWinner: string | null = null;
   let uelWinnerStrength = 74;
   if (prevResult.uel?.winner) {
-    uelWinner = 'Knowitball FC';
+    uelWinner = 'KNOWITBALL FC';
     uelWinnerStrength = prevResult.phaseRatings.teamStrength;
-  } else if (prevResult.uel?.qualified) {
-    const uelTable = prevResult.uel.leagueTable;
-    const eliminated = new Set(prevResult.uel.knockoutTies.filter(t => t.result === 'L').map(t => t.opponent));
-    const candidates = uelTable.filter(t => !t.isPlayer && !eliminated.has(t.name));
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => b.points - a.points);
-      uelWinner = candidates[0].name;
-      const oppStrength = opponents.find(o => o.name === uelWinner)?.strength;
-      uelWinnerStrength = oppStrength ?? UEL_TEAMS.find(t => t.name === uelWinner)?.strength ?? 74;
-    }
+  } else if (prevResult.uel?.tournamentWinner) {
+    uelWinner = prevResult.uel.tournamentWinner;
+    const oppStrength = opponents.find(o => o.name === uelWinner)?.strength;
+    uelWinnerStrength = oppStrength ?? UEL_TEAMS.find(t => t.name === uelWinner)?.strength ?? 74;
   }
   if (!uelWinner) {
     const topUel = [...UEL_TEAMS].sort((a, b) => b.strength - a.strength);
@@ -1951,6 +2166,138 @@ function simulateSuperCup(
   return result;
 }
 
+// --- Charity Shield simulation ---
+
+function simulateCharityShield(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  previousLeagueTable: LeagueTeam[] | undefined,
+  previousFaCupWinner: string | undefined,
+  opponents: { name: string; strength: number }[],
+  rng: () => number,
+): CharityShieldResult | undefined {
+  if (!previousLeagueTable || !previousFaCupWinner) return undefined;
+
+  const playerTeamName = 'KNOWITBALL FC';
+  const plWinner = previousLeagueTable[0]?.name;
+  const plRunnerUp = previousLeagueTable[1]?.name;
+  if (!plWinner) return undefined;
+
+  const playerWonPL = previousLeagueTable[0]?.isPlayer === true;
+  const playerWonFACup = previousFaCupWinner === playerTeamName;
+
+  if (!playerWonPL && !playerWonFACup) return undefined;
+
+  let opponent: string;
+  let opponentRole: 'PL Winner' | 'FA Cup Winner' | 'PL Runner-Up';
+  let playerRole: 'PL Winner' | 'FA Cup Winner';
+
+  if (playerWonPL && playerWonFACup) {
+    // Player won both: play vs PL runner-up
+    opponent = plRunnerUp ?? 'Arsenal';
+    opponentRole = 'PL Runner-Up';
+    playerRole = 'PL Winner';
+  } else if (playerWonPL) {
+    opponent = previousFaCupWinner;
+    opponentRole = 'FA Cup Winner';
+    playerRole = 'PL Winner';
+  } else {
+    opponent = plWinner;
+    opponentRole = 'PL Winner';
+    playerRole = 'FA Cup Winner';
+  }
+
+  const oppStrength = opponents.find(o => o.name === opponent)?.strength ?? 80;
+  const isHome = rng() > 0.5;
+  const homeBonus = isHome ? HOME_ADVANTAGE : 0;
+
+  const myAttack = ratings.attack + homeBonus * 0.6;
+  const myMidfield = ratings.midfield + homeBonus * 0.4;
+  const myDefense = ratings.defense + homeBonus * 0.3;
+  const myGk = ratings.gk;
+  const oppStr = oppStrength + (isHome ? 0 : HOME_ADVANTAGE);
+
+  const myXg = computeExpectedGoals(myAttack, myMidfield, oppStr);
+  const ourDefPower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
+  const oppXg = computeExpectedGoals(oppStr, oppStr * 0.95, ourDefPower);
+
+  let goalsFor = poisson(myXg, rng);
+  let goalsAgainst = poisson(oppXg, rng);
+  let extraTime = false;
+  let penalties = false;
+  let penaltyScore: { player: number; opponent: number } | undefined;
+
+  const goalScorers: { player: string; minute: number }[] = [];
+  const assistProviders: { player: string; minute: number }[] = [];
+  const starters = players.filter(p => !p.isSub);
+
+  for (let i = 0; i < goalsFor; i++) {
+    const minute = Math.floor(rng() * 90) + 1;
+    goalScorers.push({ player: weightedPick(starters, goalScoringWeight, rng).name, minute });
+    if (rng() < 0.75) {
+      const scorer = goalScorers[goalScorers.length - 1].player;
+      const eligible = starters.filter(p => p.name !== scorer);
+      if (eligible.length > 0) {
+        assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
+      }
+    }
+  }
+
+  if (goalsFor === goalsAgainst) {
+    extraTime = true;
+    const etFor = poisson(myXg * 0.33, rng);
+    const etAgainst = poisson(oppXg * 0.33, rng);
+    goalsFor += etFor;
+    goalsAgainst += etAgainst;
+    for (let i = 0; i < etFor; i++) {
+      const minute = 90 + Math.floor(rng() * 30) + 1;
+      goalScorers.push({ player: weightedPick(starters, goalScoringWeight, rng).name, minute });
+      if (rng() < 0.75) {
+        const scorer = goalScorers[goalScorers.length - 1].player;
+        const eligible = starters.filter(p => p.name !== scorer);
+        if (eligible.length > 0) {
+          assistProviders.push({ player: weightedPick(eligible, assistWeight, rng).name, minute });
+        }
+      }
+    }
+    if (goalsFor === goalsAgainst) {
+      penalties = true;
+      const myPens = Math.floor(rng() * 3) + 3;
+      const oppPens = Math.floor(rng() * 3) + 3;
+      if (myPens === oppPens) {
+        penaltyScore = rng() > 0.5 ? { player: myPens + 1, opponent: oppPens } : { player: myPens, opponent: oppPens + 1 };
+      } else {
+        penaltyScore = { player: myPens, opponent: oppPens };
+      }
+    }
+  }
+
+  goalScorers.sort((a, b) => a.minute - b.minute);
+  assistProviders.sort((a, b) => a.minute - b.minute);
+
+  let result: 'W' | 'L';
+  if (penalties && penaltyScore) {
+    result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
+  } else {
+    result = goalsFor > goalsAgainst ? 'W' : 'L';
+  }
+
+  return {
+    played: true,
+    opponent,
+    opponentRole,
+    playerRole,
+    goalsFor,
+    goalsAgainst,
+    result,
+    goalScorers,
+    assistProviders,
+    extraTime,
+    penalties,
+    penaltyScore,
+  };
+}
+
 // --- Main export ---
 
 function rollInjuryLength(rng: () => number): number {
@@ -1988,7 +2335,7 @@ export function simulateSeason(
 
   const ratings = computePhaseRatings(starters);
 
-  const playerTeamName = 'Knowitball FC';
+  const playerTeamName = 'KNOWITBALL FC';
 
   // Season-wide form modifiers: each team (including player) gets a random
   // modifier that persists all season, simulating good/bad campaigns.
@@ -2059,13 +2406,31 @@ export function simulateSeason(
     if (i >= 0) gkInjuredMatchIndices.add(i);
   }
 
-  // FA Cup
-  const faCup = simulateFaCup(starters, ratings, opponents, rng);
+  // FA Cup: all 32 teams (20 PL + championship) compete
+  const allFaCupTeams: { name: string; strength: number }[] = [
+    { name: playerTeamName, strength: ratings.teamStrength },
+    ...opponents,
+    ...RESERVE_TEAMS.filter(t => !opponents.some(o => o.name === t.name) && t.name !== playerTeamName),
+  ];
+  while (allFaCupTeams.length < 32) {
+    allFaCupTeams.push({ name: `Lower League ${allFaCupTeams.length}`, strength: 65 });
+  }
+  const faCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
 
   // Super Cup (if won UCL or UEL last season)
   let superCup: SuperCupResult | undefined;
   if (previousSeasonResult) {
     superCup = simulateSuperCup(players, ratings, previousSeasonResult, opponents, rng);
+  }
+
+  // Charity Shield (PL Winner vs FA Cup Winner from previous season)
+  let charityShield: CharityShieldResult | undefined;
+  if (previousLeagueTable && previousSeasonResult) {
+    charityShield = simulateCharityShield(
+      players, ratings, previousLeagueTable,
+      previousSeasonResult.faCup.faCupWinner,
+      opponents, rng,
+    );
   }
 
   // Champions League / Europa League (if qualified from previous season)
@@ -2074,12 +2439,18 @@ export function simulateSeason(
   if (previousLeagueTable) {
     const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
     const wonUELLastSeason = previousSeasonResult?.uel?.winner === true;
+    const wonFACupLastSeason = previousSeasonResult?.faCup?.winner === true;
     const qualifiesThroughLeague = playerFinish >= 1 && playerFinish <= 5;
     const uelWinnerQualifies = wonUELLastSeason && !qualifiesThroughLeague;
+    const faCupWinnerQualifiesForEL = wonFACupLastSeason && playerFinish > 7;
 
     ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng, uelWinnerQualifies);
     if (!ucl.qualified) {
-      uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng);
+      if (playerFinish >= 6 && playerFinish <= 7) {
+        uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng);
+      } else if (faCupWinnerQualifiesForEL) {
+        uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng, true);
+      }
     }
   }
 
@@ -2476,6 +2847,7 @@ export function simulateSeason(
     ucl,
     uel,
     superCup,
+    charityShield,
   };
 }
 
@@ -2508,7 +2880,7 @@ export function calculateSeasonOdds(
     : DEFAULT_PL_TEAMS;
 
   const ratings = computePhaseRatings(starters);
-  const playerTeamName = 'Knowitball FC';
+  const playerTeamName = 'KNOWITBALL FC';
 
   let winCount = 0;
   let top4Count = 0;
@@ -2708,7 +3080,7 @@ function simulateUCLLeaguePhase(
   opponents: { name: string; strength: number }[],
   rng: () => number,
 ): UCLLeaguePhaseResult {
-  const playerTeamName = 'Knowitball FC';
+  const playerTeamName = 'KNOWITBALL FC';
   const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
 
   if (playerFinish < 1 || playerFinish > 5) {
@@ -2840,7 +3212,7 @@ function simulateUELLeaguePhase(
   opponents: { name: string; strength: number }[],
   rng: () => number,
 ): UCLLeaguePhaseResult {
-  const playerTeamName = 'Knowitball FC';
+  const playerTeamName = 'KNOWITBALL FC';
   const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
 
   if (playerFinish < 6 || playerFinish > 7) {
@@ -2995,7 +3367,7 @@ function simulateSharedUCL(
     if (!lp.qualified) {
       results.set(h.userId, {
         qualified: false, leagueMatches: [], leaguePosition: 0,
-        leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+        leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
       });
     }
   }
@@ -3007,7 +3379,7 @@ function simulateSharedUCL(
     if (lp.leaguePosition > 24) {
       results.set(h.userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
-        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase',
+        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase', tournamentWinner: '',
       });
       return false;
     }
@@ -3040,7 +3412,7 @@ function simulateSharedUCL(
         results.set(h.userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(h.userId)!,
-          winner: false, exitStage: 'Round of 32',
+          winner: false, exitStage: 'Round of 32', tournamentWinner: '',
         });
       }
     }
@@ -3106,7 +3478,7 @@ function simulateSharedUCL(
         results.set(userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(userId)!,
-          winner: false, exitStage: roundName,
+          winner: false, exitStage: roundName, tournamentWinner: '',
         });
       }
     }
@@ -3165,7 +3537,7 @@ function simulateSharedUCL(
       results.set(loserId, {
         qualified: true, leagueMatches: loserLp.leagueMatches, leaguePosition: loserLp.leaguePosition,
         leagueTable: loserLp.leagueTable, knockoutTies: humanKnockoutTies.get(loserId)!,
-        winner: false, exitStage: roundName,
+        winner: false, exitStage: roundName, tournamentWinner: '',
       });
     }
   }
@@ -3180,7 +3552,7 @@ function simulateSharedUCL(
       results.set(userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
         leagueTable: lp.leagueTable, knockoutTies: ties,
-        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null,
+        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null, tournamentWinner: '',
       });
     }
   });
@@ -3211,7 +3583,7 @@ function simulateSharedUEL(
     if (!lp.qualified) {
       results.set(h.userId, {
         qualified: false, leagueMatches: [], leaguePosition: 0,
-        leagueTable: [], knockoutTies: [], winner: false, exitStage: null,
+        leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
       });
     }
   }
@@ -3222,7 +3594,7 @@ function simulateSharedUEL(
     if (lp.leaguePosition > 24) {
       results.set(h.userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
-        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase',
+        leagueTable: lp.leagueTable, knockoutTies: [], winner: false, exitStage: 'League Phase', tournamentWinner: '',
       });
       return false;
     }
@@ -3255,7 +3627,7 @@ function simulateSharedUEL(
         results.set(h.userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(h.userId)!,
-          winner: false, exitStage: 'Round of 32',
+          winner: false, exitStage: 'Round of 32', tournamentWinner: '',
         });
       }
     }
@@ -3311,7 +3683,7 @@ function simulateSharedUEL(
         results.set(userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(userId)!,
-          winner: false, exitStage: roundName,
+          winner: false, exitStage: roundName, tournamentWinner: '',
         });
       }
     }
@@ -3361,7 +3733,7 @@ function simulateSharedUEL(
       results.set(loserId, {
         qualified: true, leagueMatches: loserLp.leagueMatches, leaguePosition: loserLp.leaguePosition,
         leagueTable: loserLp.leagueTable, knockoutTies: humanKnockoutTies.get(loserId)!,
-        winner: false, exitStage: roundName,
+        winner: false, exitStage: roundName, tournamentWinner: '',
       });
     }
   }
@@ -3375,7 +3747,7 @@ function simulateSharedUEL(
       results.set(userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
         leagueTable: lp.leagueTable, knockoutTies: ties,
-        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null,
+        winner: isWinner, exitStage: isWinner ? null : lastTie?.round ?? null, tournamentWinner: '',
       });
     }
   });
@@ -3404,7 +3776,7 @@ export function simulateSharedSeason(
     const subs     = ht.squad.filter(p => p.isSub);
     return {
       ...ht,
-      teamName: `${ht.displayName}'s XI`,
+      teamName: `${ht.displayName} FC`,
       ratings: computePhaseRatings(starters.length > 0 ? starters : ht.squad),
       starters,
       subs,
@@ -3516,7 +3888,7 @@ export function simulateSharedSeason(
       rng: createRng(playerSeed + 55555),
     };
   });
-  const sharedFaCupResults = simulateSharedFaCup(sharedFaCupTeams, aiOppForCups, faCupDrawRng);
+  const { results: sharedFaCupResultsMap, faCupWinner: sharedFaCupWinner } = simulateSharedFaCup(sharedFaCupTeams, aiOppForCups, faCupDrawRng);
 
   // Shared European competitions (only from season 2+ when previousLeagueTable is provided)
   // Convert previousLeagueTable to LeagueTeam[] format, mapping human team names back
@@ -3611,7 +3983,7 @@ export function simulateSharedSeason(
     }
 
     // FA Cup from shared simulation; European competitions from shared UCL/UEL (if available)
-    const faCup = sharedFaCupResults.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round 3' };
+    const faCup = sharedFaCupResultsMap.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round of 32', faCupWinner: sharedFaCupWinner };
     const ucl = sharedUCLResults.get(hd.userId);
     const uel = sharedUELResults.get(hd.userId);
 

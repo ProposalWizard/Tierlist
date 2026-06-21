@@ -64,6 +64,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     const uclWins = allSeasons.filter(r => r.ucl?.winner).length;
     const uelWins = allSeasons.filter(r => r.uel?.winner).length;
     const superCups = allSeasons.filter(r => r.superCup?.result === 'W').length;
+    const charityShields = allSeasons.filter(r => r.charityShield?.result === 'W').length;
 
     const bestPoints = Math.max(...allSeasons.map(r => r.teamRecord.points));
     const bestPointsSeason = allSeasons.findIndex(r => r.teamRecord.points === bestPoints) + 1;
@@ -75,7 +76,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
       totalWins, totalDraws, totalLosses,
       totalGoalsFor, totalGoalsAgainst, winRate,
       bestFinish, worstFinish, titles, topFour,
-      faCups, uclWins, uelWins, superCups,
+      faCups, uclWins, uelWins, superCups, charityShields,
       bestPoints, bestPointsSeason, bestWinStreak, bestUnbeaten,
     };
   }, [allSeasons]);
@@ -385,7 +386,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   };
 
-  const trophyCount = stats.titles + stats.faCups + stats.uclWins + stats.uelWins + stats.superCups;
+  const trophyCount = stats.titles + stats.faCups + stats.uclWins + stats.uelWins + stats.superCups + stats.charityShields;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-y-auto py-4 px-3">
@@ -455,6 +456,12 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                       <div className="text-center">
                         <div className="text-3xl mb-1">{"\u{1F3C5}"}</div>
                         <div className="text-xs font-bold text-amber-400">{stats.superCups}x Super Cup{stats.superCups > 1 ? "s" : ""}</div>
+                      </div>
+                    )}
+                    {stats.charityShields > 0 && (
+                      <div className="text-center">
+                        <div className="text-3xl mb-1">{"\u{1F3C5}"}</div>
+                        <div className="text-xs font-bold text-gray-300">{stats.charityShields}x Charity Shield{stats.charityShields > 1 ? "s" : ""}</div>
                       </div>
                     )}
                   </div>
