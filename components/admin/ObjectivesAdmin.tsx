@@ -74,7 +74,7 @@ export default function ObjectivesAdmin() {
     if (!cardFile) return null;
     const supabase = createClient();
     const ext = cardFile.name.split(".").pop() || "webp";
-    const filename = `objective-cards/${crypto.randomUUID()}.${ext}`;
+    const filename = `${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage
       .from("tierlist-images")
       .upload(filename, cardFile, { contentType: cardFile.type, upsert: true });
