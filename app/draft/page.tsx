@@ -273,6 +273,7 @@ export default function DraftPage() {
           ...hostSettings,
           formation: ownSettings.formation, // each player picks their own formation
         });
+        setRespinsRemaining(hostSettings.respins ?? 0);
       } else {
         setSettings(ownSettings);
       }

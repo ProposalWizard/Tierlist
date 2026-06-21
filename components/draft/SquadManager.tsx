@@ -259,10 +259,11 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
                       : "hover:bg-gray-800/50 border-2 border-transparent"
                 }`}
               >
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-9 text-center`}>
-                  {p.assignedPosition}
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-800 text-white w-9 text-center">
+                  SUB
                 </span>
                 <span className="flex-1 ml-1 font-medium">{p.name}</span>
+                <span className="text-gray-500 text-[9px] font-medium">{naturalPositions(p).join(" / ") || p.assignedPosition}</span>
                 <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
                 <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
               </button>

@@ -2131,6 +2131,64 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           </div>
         </div>
 
+      {/* Competition Winners */}
+      {(() => {
+        const myTeamName = season.leagueTable.find(t => t.isPlayer)?.name ?? 'KNOWITBALL FC';
+        const plWinner = season.actualFinish === 1
+          ? myTeamName
+          : (season.leagueTable[0]?.name ?? '—');
+        const faCupWin = season.faCup.faCupWinner || '—';
+        const uclWin = season.ucl?.tournamentWinner || '—';
+        const uelWin = season.uel?.tournamentWinner || '—';
+        const hasSuperCup = season.superCup?.played;
+        const hasCharityShield = season.charityShield?.played;
+        const superCupWin = hasSuperCup ? (season.superCup!.result === 'W'
+          ? myTeamName
+          : season.superCup!.opponent) : null;
+        const charityShieldWin = hasCharityShield ? (season.charityShield!.result === 'W'
+          ? myTeamName
+          : season.charityShield!.opponent) : null;
+        return (
+          <div className="mb-6">
+            <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">Competition Winners</h3>
+            <div className="space-y-1.5">
+              {hasCharityShield && charityShieldWin && (
+                <div className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2 border border-gray-800/50">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Charity Shield</span>
+                  <span className="text-xs font-bold text-gray-300">{charityShieldWin}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2 border border-gray-800/50">
+                <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-wide">Premier League</span>
+                <span className="text-xs font-bold text-yellow-300">{plWinner}</span>
+              </div>
+              <div className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2 border border-gray-800/50">
+                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">FA Cup</span>
+                <span className="text-xs font-bold text-emerald-300">{faCupWin}</span>
+              </div>
+              {uclWin && uclWin !== '—' && (
+                <div className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2 border border-blue-900/30">
+                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wide">Champions League</span>
+                  <span className="text-xs font-bold text-blue-300">{uclWin}</span>
+                </div>
+              )}
+              {uelWin && uelWin !== '—' && (
+                <div className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2 border border-orange-900/30">
+                  <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wide">Europa League</span>
+                  <span className="text-xs font-bold text-orange-300">{uelWin}</span>
+                </div>
+              )}
+              {hasSuperCup && superCupWin && (
+                <div className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2 border border-amber-900/30">
+                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">Super Cup</span>
+                  <span className="text-xs font-bold text-amber-300">{superCupWin}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Season comparison */}
       {seasonNumber > 1 && previousResult && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
