@@ -115,8 +115,18 @@ export async function POST(
     }));
 
     const sharedSeed = hashStr(room.id) ^ (seasonNumber) * 0x9e3779b9;
-
-    const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined);
+    const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean }> = {};
+    for (const rp of readyPlayers) {
+      const prev = rp.season_result as Record<string, unknown> | null | undefined;
+      if (prev) {
+        previousResults[rp.user_id] = {
+          uclWinner: (prev.ucl as Record<string, unknown> | undefined)?.winner === true,
+          uelWinner: (prev.uel as Record<string, unknown> | undefined)?.winner === true,
+          faCupWinner: (prev.faCup as Record<string, unknown> | undefined)?.winner === true,
+        };
+      }
+    }
+    const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined, Object.keys(previousResults).length > 0 ? previousResults : undefined);
 
     for (const rp of readyPlayers) {
       const result = results.get(rp.user_id);

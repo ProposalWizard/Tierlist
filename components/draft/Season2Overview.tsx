@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { getPositionColor } from "./formations";
+import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/app/draft/page";
 
 interface DepartedPlayer {
@@ -169,7 +170,18 @@ export default function Season2Overview({
           Season Review &mdash; Rating Changes
         </h3>
         <div className="space-y-1">
-          {ratingChanges.map((rc, i) => {
+          {[...ratingChanges].sort((a, b) => {
+            if (a.player.isSub && !b.player.isSub) return 1;
+            if (!a.player.isSub && b.player.isSub) return -1;
+            const posOrder = (pos: string) => {
+              const p = pos.toUpperCase();
+              if (p === 'GK') return 0;
+              if (['CB','LB','RB','LWB','RWB','SW'].includes(p)) return 1;
+              if (['CM','CDM','CAM','LM','RM','DM','AM'].includes(p)) return 2;
+              return 3;
+            };
+            return posOrder(a.player.assignedPosition) - posOrder(b.player.assignedPosition);
+          }).map((rc, i) => {
             const revealed = revealStep > i + departedPlayers.length;
             return (
               <div
@@ -279,6 +291,29 @@ export default function Season2Overview({
           </div>
         </div>
       )}
+
+      {/* Squad Summary */}
+      {allRevealed && season2Players.length > 0 && (() => {
+        const { teamStrength, avgOvr } = computeTeamStrength(season2Players);
+        return (
+          <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50 flex items-center justify-around">
+            <div className="text-center">
+              <div className="text-2xl font-black text-white">{avgOvr}</div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Avg OVR</div>
+            </div>
+            <div className="w-px h-10 bg-gray-800" />
+            <div className="text-center">
+              <div className="text-2xl font-black text-blue-400">{Math.round(teamStrength)}</div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Team Rating</div>
+            </div>
+            <div className="w-px h-10 bg-gray-800" />
+            <div className="text-center">
+              <div className="text-2xl font-black text-gray-300">{season2Players.filter(p => !p.isSub).length}</div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Starters</div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* UCL Qualification Notice */}
       {previousFinish !== undefined && previousFinish <= 5 && (

@@ -68,6 +68,27 @@ function classifyPos(pos: string): "GK" | "DEF" | "MID" | "ATT" {
   return "ATT";
 }
 
+function slotFitness(playerPositions: string[], slotPos: string): number {
+  const assigned = slotPos.toUpperCase().trim();
+  const natural = playerPositions.map(p => p.trim().toUpperCase()).filter(Boolean);
+  if (natural.length === 0) return 1.0;
+  if (natural.includes(assigned)) return 1.0;
+  const assignedRole = classifyPos(assigned);
+  if (natural.some(p => classifyPos(p) === assignedRole)) return 0.96;
+  const mediumPairs: [string[], string[]][] = [
+    [["LB", "LWB"], ["LM"]],
+    [["RB", "RWB"], ["RM"]],
+    [["CDM", "DM"], ["CB"]],
+  ];
+  for (const [groupA, groupB] of mediumPairs) {
+    if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.88;
+    if (groupB.includes(assigned) && natural.some(p => groupA.includes(p))) return 0.88;
+  }
+  const adjacent: Record<string, string[]> = { ATT: ["MID"], MID: ["ATT", "DEF"], DEF: ["MID"], GK: [] };
+  if (natural.some(p => (adjacent[assignedRole] ?? []).includes(classifyPos(p)))) return 0.82;
+  return 0.6;
+}
+
 function keyStatForSlot(slotLabel: string): { label: string; pick: (p: RosterPlayer) => number }[] {
   const s = slotLabel.toUpperCase().trim();
 
@@ -1106,6 +1127,9 @@ export default function DraftPick({
                   const isCompatible = !isClubFirst && currentSlot?.compatiblePositions.some((cp) =>
                     playerPositions.includes(cp)
                   );
+                  const fitness = (!isClubFirst && !isSubPick && !isSeason2Draft && currentSlot)
+                    ? slotFitness(playerPositions, currentSlot.label)
+                    : null;
                   const alreadyPicked = pickedPlayers.some(
                     (p) => p.sofifa_id === player.sofifa_id || p.name === player.name
                   ) || (existingSquad?.some(
@@ -1170,19 +1194,30 @@ export default function DraftPick({
                           </div>
                         )}
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        {playerPositions.map((pos) => (
-                          <span
-                            key={pos}
-                            className={`text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded ${
-                              isClubFirst || isSubPick || isSeason2Draft || currentSlot?.compatiblePositions.includes(pos)
-                                ? getPositionColor(pos) + " text-white"
-                                : "bg-gray-800 text-gray-500"
-                            }`}
-                          >
-                            {pos}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <div className="flex gap-1">
+                          {playerPositions.map((pos) => (
+                            <span
+                              key={pos}
+                              className={`text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded ${
+                                isClubFirst || isSubPick || isSeason2Draft || currentSlot?.compatiblePositions.includes(pos)
+                                  ? getPositionColor(pos) + " text-white"
+                                  : "bg-gray-800 text-gray-500"
+                              }`}
+                            >
+                              {pos}
+                            </span>
+                          ))}
+                        </div>
+                        {fitness !== null && fitness < 1.0 && (
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                            fitness >= 0.92 ? "bg-yellow-900/40 text-yellow-400" :
+                            fitness >= 0.80 ? "bg-orange-900/40 text-orange-400" :
+                            "bg-red-900/40 text-red-400"
+                          }`}>
+                            {Math.round(fitness * 100)}% fit
                           </span>
-                        ))}
+                        )}
                       </div>
                       {hasStats && !settings.hiddenRatings && (
                         <div className="hidden sm:flex gap-0 shrink-0">

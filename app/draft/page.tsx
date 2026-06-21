@@ -205,6 +205,12 @@ export default function DraftPage() {
   const [roomPlayers, setRoomPlayers] = useState<RoomPlayer[] | null>(null);
   const [allRoomPlayerSeasons, setAllRoomPlayerSeasons] = useState<Record<string, SeasonResult[]> | null>(null);
 
+  // Update URL to reflect room code when playing online (so it's shareable/bookmarkable)
+  useEffect(() => {
+    const url = roomCode ? `/draft?room=${roomCode}` : '/draft';
+    window.history.replaceState(null, '', url);
+  }, [roomCode]);
+
   useEffect(() => {
     setResume(loadProgress());
     const supabase = createClient();
@@ -273,6 +279,7 @@ export default function DraftPage() {
           ...hostSettings,
           formation: ownSettings.formation, // each player picks their own formation
         });
+        setRespinsRemaining(hostSettings.respins ?? 0);
       } else {
         setSettings(ownSettings);
       }

@@ -71,8 +71,21 @@ export async function POST(
       squad: (rp.squad ?? []) as DraftPlayer[],
     }));
 
+    // Build previous season results map for Super Cup / Charity Shield / EL/UCL qualification
+    const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean }> = {};
+    for (const rp of roomPlayers) {
+      const prev = rp.season_result as Record<string, unknown> | null | undefined;
+      if (prev) {
+        previousResults[rp.user_id] = {
+          uclWinner: (prev.ucl as Record<string, unknown> | undefined)?.winner === true,
+          uelWinner: (prev.uel as Record<string, unknown> | undefined)?.winner === true,
+          faCupWinner: (prev.faCup as Record<string, unknown> | undefined)?.winner === true,
+        };
+      }
+    }
+
     const sharedSeed = hashRoomId(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
-    const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined);
+    const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined, Object.keys(previousResults).length > 0 ? previousResults : undefined);
 
     // Write all player results in parallel
     await Promise.all(roomPlayers.map(async (rp) => {

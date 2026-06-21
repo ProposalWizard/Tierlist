@@ -2570,16 +2570,25 @@ export function simulateSeason(
     allCompsRatings[p.name].push(matchRating(p, m as MatchResult, seasonForm[p.name] || 0, cupRng));
   };
 
+  // Bench GK plays FA Cup only if team won a trophy last season (cup rotation).
+  // Otherwise the starting GK plays all rounds (bench GK still covers if starter is injured).
+  const wonTrophyLastSeason = previousSeasonResult && (
+    previousSeasonResult.actualFinish === 1 ||
+    previousSeasonResult.faCup.winner ||
+    previousSeasonResult.ucl?.winner ||
+    previousSeasonResult.uel?.winner
+  );
+  const benchGkPlaysFaCup = !!benchGk && !!wonTrophyLastSeason;
+
   // Count FA Cup stats (added to all-comps totals)
-  // Bench GK starts all FA Cup games — starter GK gets a rest.
   for (const cm of faCup.matches) {
     const matchForRating = { goalScorers: cm.goalScorers, assistProviders: cm.assistProviders, goalsAgainst: cm.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.goalsFor, opponent: cm.opponent, isHome: false };
     for (const p of starters) {
-      if (p === gk && benchGk) continue; // bench GK starts FA Cup
+      if (p === gk && benchGkPlaysFaCup) continue; // bench GK rotated in when team won trophy
       statsMap[p.name].appearances++;
       rateMatchForPlayer(p, matchForRating);
     }
-    if (benchGk && statsMap[benchGk.name]) {
+    if (benchGkPlaysFaCup && benchGk && statsMap[benchGk.name]) {
       statsMap[benchGk.name].appearances++;
       rateMatchForPlayer(benchGk, matchForRating);
     }
@@ -2590,7 +2599,7 @@ export function simulateSeason(
       if (statsMap[ap.player]) statsMap[ap.player].assists++;
     }
     if (cm.goalsAgainst === 0) {
-      if (benchGk && statsMap[benchGk.name]) {
+      if (benchGkPlaysFaCup && benchGk && statsMap[benchGk.name]) {
         statsMap[benchGk.name].cleanSheets++;
       } else if (gk) {
         statsMap[gk.name].cleanSheets++;
@@ -3767,6 +3776,7 @@ export function simulateSharedSeason(
   sharedSeed: number,
   seasonNumber: number = 1,
   previousLeagueTable?: { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
+  previousResults?: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean }>,
 ): Map<string, SeasonResult> {
   const sharedRng = createRng(sharedSeed);
 
@@ -3872,11 +3882,9 @@ export function simulateSharedSeason(
     b.goalsFor - a.goalsFor
   );
 
-  // Shared FA Cup: draw opponents together so humans don't face the same AI, and can face each other
+  // Shared FA Cup: include ALL teams (human + AI) so human teams appear in the bracket
   const faCupDrawRng = createRng(sharedSeed ^ 0xFAC09);
-  const aiOppForCups = allTeams
-    .filter(t => !t.isHuman)
-    .map(t => ({ name: t.name, strength: t.ratings.teamStrength }));
+  const allCupTeams = allTeams.map(t => ({ name: t.name, strength: t.ratings.teamStrength }));
 
   const sharedFaCupTeams = humanData.map(hd => {
     const playerSeed = hd.squad.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonNumber * 100);
@@ -3888,7 +3896,7 @@ export function simulateSharedSeason(
       rng: createRng(playerSeed + 55555),
     };
   });
-  const { results: sharedFaCupResultsMap, faCupWinner: sharedFaCupWinner } = simulateSharedFaCup(sharedFaCupTeams, aiOppForCups, faCupDrawRng);
+  const { results: sharedFaCupResultsMap, faCupWinner: sharedFaCupWinner } = simulateSharedFaCup(sharedFaCupTeams, allCupTeams, faCupDrawRng);
 
   // Shared European competitions (only from season 2+ when previousLeagueTable is provided)
   // Convert previousLeagueTable to LeagueTeam[] format, mapping human team names back
@@ -3933,9 +3941,18 @@ export function simulateSharedSeason(
         oppForCups,
       };
 
-      if (myFinish >= 1 && myFinish <= 5) {
+      const prevResults = previousResults?.[hd.userId];
+      const wonUELLast = prevResults?.uelWinner === true;
+      const wonFACupLast = prevResults?.faCupWinner === true;
+      const qualifiesThroughLeague = myFinish >= 1 && myFinish <= 5;
+      const uelWinnerQualifiesForUCL = wonUELLast && !qualifiesThroughLeague;
+      const faCupWinnerQualifiesForEL = wonFACupLast && myFinish > 7;
+
+      if (qualifiesThroughLeague || uelWinnerQualifiesForUCL) {
         uclEntrants.push(entrant);
       } else if (myFinish >= 6 && myFinish <= 7) {
+        uelEntrants.push(entrant);
+      } else if (faCupWinnerQualifiesForEL) {
         uelEntrants.push(entrant);
       }
     }
@@ -3944,6 +3961,78 @@ export function simulateSharedSeason(
     const uelDrawRng = createRng(sharedSeed ^ 0xDE102);
     sharedUCLResults = simulateSharedUCL(uclEntrants, uclDrawRng);
     sharedUELResults = simulateSharedUEL(uelEntrants, uelDrawRng);
+  }
+
+  // Simulate Super Cup per player (if they won UCL or UEL last season)
+  const sharedSuperCupResults = new Map<string, SuperCupResult>();
+  const sharedCharityShieldResults = new Map<string, CharityShieldResult>();
+  if (previousResults && previousLeagueTable) {
+    const superCupRng = createRng(sharedSeed ^ 0x5C09);
+    const charityShieldRng = createRng(sharedSeed ^ 0xC5AD);
+    const aiOpponentsForCups = aiTeams;
+
+    for (const hd of humanData) {
+      const prevRes = previousResults[hd.userId];
+      if (!prevRes) continue;
+      const prevTable = previousLeagueTable.map(row => ({
+        name: row.name, played: row.played, won: row.won, drawn: row.drawn, lost: row.lost,
+        goalsFor: row.gf, goalsAgainst: row.ga, goalDifference: row.gf - row.ga,
+        points: row.points, isPlayer: row.name === hd.teamName,
+      }));
+
+      if (prevRes.uclWinner || prevRes.uelWinner) {
+        const uclWinnerTeam = prevRes.uclWinner ? hd.teamName : (aiOpponentsForCups.sort((a, b) => b.strength - a.strength)[0]?.name ?? 'Real Madrid');
+        const uelWinnerTeam = prevRes.uelWinner ? hd.teamName : (UCL_TEAMS.slice().sort((a, b) => b.strength - a.strength)[2]?.name ?? 'Atletico Madrid');
+        const uclStr = prevRes.uclWinner ? hd.ratings.teamStrength : (aiOpponentsForCups.find(o => o.name === uclWinnerTeam)?.strength ?? 84);
+        const uelStr = prevRes.uelWinner ? hd.ratings.teamStrength : (UEL_TEAMS.find(t => t.name === uelWinnerTeam)?.strength ?? 76);
+
+        const playerRole: 'UCL Winner' | 'UEL Winner' = prevRes.uclWinner ? 'UCL Winner' : 'UEL Winner';
+        const oppName = prevRes.uclWinner ? uelWinnerTeam : uclWinnerTeam;
+        const oppStr = prevRes.uclWinner ? uelStr : uclStr;
+        const oppRole: 'UCL Winner' | 'UEL Winner' = prevRes.uclWinner ? 'UEL Winner' : 'UCL Winner';
+        const starters = hd.starters;
+        const superBenchGk = hd.subs.find(p => classifyPosition(p.assignedPosition) === 'GK');
+        const activeSubs = hd.subs.filter(s => { const r = superCupRng(); return s !== superBenchGk && r < 0.5; });
+        const matchPlayers = [...starters, ...activeSubs];
+        const m = simulateMatch(matchPlayers, hd.ratings, { name: oppName, strength: oppStr }, superCupRng() > 0.5, superCupRng);
+        let result: 'W' | 'D' | 'L' = m.result;
+        if (result === 'D') {
+          const etFor = poisson(computeExpectedGoals(hd.ratings.attack, hd.ratings.midfield, oppStr) * 0.33, superCupRng);
+          const etAg = poisson(computeExpectedGoals(oppStr, oppStr * 0.95, hd.ratings.defense) * 0.33, superCupRng);
+          result = etFor > etAg ? 'W' : etFor < etAg ? 'L' : (superCupRng() > 0.5 ? 'W' : 'L');
+        }
+        sharedSuperCupResults.set(hd.userId, {
+          played: true, opponent: oppName, playerRole, opponentRole: oppRole,
+          goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst,
+          goalScorers: m.goalScorers, assistProviders: m.assistProviders, result,
+        });
+      }
+
+      if (prevRes.faCupWinner) {
+        const plWinner = prevTable[0]?.name ?? '';
+        const plRunnerUp = prevTable[1]?.name ?? '';
+        const playerWonPL = prevTable[0]?.isPlayer === true;
+        const opponent = playerWonPL ? plRunnerUp : plWinner;
+        const oppStr = aiOpponentsForCups.find(o => o.name === opponent)?.strength ?? 80;
+        const opponentIsPlayer = !playerWonPL;
+        if (!opponentIsPlayer || !opponent) {
+          const starters = hd.starters;
+          const charBenchGk = hd.subs.find(p => classifyPosition(p.assignedPosition) === 'GK');
+          const activeSubs = hd.subs.filter(s => { const r = charityShieldRng(); return s !== charBenchGk && r < 0.5; });
+          const matchPlayers = [...starters, ...activeSubs];
+          const m = simulateMatch(matchPlayers, hd.ratings, { name: opponent || 'Unknown', strength: oppStr }, charityShieldRng() > 0.5, charityShieldRng);
+          let result: 'W' | 'D' | 'L' = m.result;
+          if (result === 'D') result = charityShieldRng() > 0.5 ? 'W' : 'L';
+          const playerRole: 'PL Winner' | 'FA Cup Winner' = playerWonPL ? 'PL Winner' : 'FA Cup Winner';
+          const oppRole: 'PL Winner' | 'FA Cup Winner' = playerRole === 'PL Winner' ? 'FA Cup Winner' : 'PL Winner';
+          sharedCharityShieldResults.set(hd.userId, {
+            played: true, opponent, playerRole, opponentRole: oppRole,
+            goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst,
+            goalScorers: m.goalScorers, assistProviders: m.assistProviders, result,
+          });
+        }
+      }
+    }
   }
 
   // Build SeasonResult for each human team
@@ -3960,6 +4049,9 @@ export function simulateSharedSeason(
     const subAppearances: Record<string, number> = {};
     for (const s of hd.subs) subAppearances[s.name] = 0;
 
+    // Bench GK excluded from PL/cup rotation — only plays when starting GK is injured
+    const plBenchGk = hd.subs.find(p => classifyPosition(p.assignedPosition) === 'GK');
+
     // Build 38 matches from the shared round-robin schedule
     const matches: MatchResult[] = [];
     const matchSubSets: Set<string>[] = [];
@@ -3969,7 +4061,8 @@ export function simulateSharedSeason(
       const isHome = fixture.home === myIdx;
       const oppIdx = isHome ? fixture.away : fixture.home;
       const oppName = allTeams[oppIdx].name;
-      const activeSubs = hd.subs.filter(() => playerRng() < 0.6);
+      // Always advance RNG for bench GK to keep deterministic seed stream, but don't include them
+      const activeSubs = hd.subs.filter(s => { const r = playerRng(); return s !== plBenchGk && r < 0.6; });
       const matchPlayers = [...hd.starters, ...activeSubs];
       if (isHome) {
         const sc = matchScores[myIdx][oppIdx];
@@ -4142,6 +4235,8 @@ export function simulateSharedSeason(
       projectedFinish, actualFinish, performance,
       phaseRatings: hd.ratings,
       faCup, ucl, uel,
+      superCup: sharedSuperCupResults.get(hd.userId),
+      charityShield: sharedCharityShieldResults.get(hd.userId),
     });
   }
 

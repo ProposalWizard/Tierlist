@@ -122,10 +122,21 @@ export async function POST(
       }));
 
       const sharedSeed = hashStr(room.id) ^ seasonNumber * 0x9e3779b9;
+      const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean }> = {};
+      for (const rp of readyPlayers) {
+        const prev = rp.season_result as Record<string, unknown> | null | undefined;
+        if (prev) {
+          previousResults[rp.user_id] = {
+            uclWinner: (prev.ucl as Record<string, unknown> | undefined)?.winner === true,
+            uelWinner: (prev.uel as Record<string, unknown> | undefined)?.winner === true,
+            faCupWinner: (prev.faCup as Record<string, unknown> | undefined)?.winner === true,
+          };
+        }
+      }
 
       await service.from("draft_rooms").update({ status: "simulating" }).eq("id", room.id);
 
-      const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined);
+      const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined, Object.keys(previousResults).length > 0 ? previousResults : undefined);
 
       // Save all results to DB in parallel
       await Promise.all(readyPlayers.map(async (rp) => {

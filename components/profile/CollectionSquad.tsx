@@ -307,7 +307,7 @@ export default function CollectionSquad({ progression }: Props) {
         <div
           className="relative w-full mx-auto rounded-xl overflow-hidden mb-5"
           style={{
-            paddingBottom: "65%",
+            paddingBottom: "90%",
             background: "linear-gradient(180deg, #0d380d 0%, #0a2a0a 45%, #06190a 100%)",
           }}
         >

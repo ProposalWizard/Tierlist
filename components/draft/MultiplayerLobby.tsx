@@ -306,10 +306,15 @@ export default function MultiplayerLobby({
                       {p.display_name}
                       {isMe && <span className="text-gray-600 font-normal text-xs ml-1">(you)</span>}
                     </span>
-                    {/* Avg OVR */}
+                    {/* Avg OVR + Team Rating */}
                     {p.avg_ovr !== null && (
                       <span className="text-xs font-bold text-gray-400 bg-gray-800 px-2 py-0.5 rounded">
                         OVR {p.avg_ovr}
+                      </span>
+                    )}
+                    {p.team_strength !== null && (
+                      <span className="text-xs font-bold text-blue-400 bg-blue-900/30 border border-blue-800/40 px-2 py-0.5 rounded">
+                        STR {Math.round(p.team_strength)}
                       </span>
                     )}
                     {/* Status badge */}
@@ -336,8 +341,8 @@ export default function MultiplayerLobby({
                       <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">
                         Squad
                         {p.team_strength !== null && (
-                          <span className="ml-2 text-gray-500 normal-case font-normal">
-                            Str: {p.team_strength}
+                          <span className="ml-2 text-blue-400 normal-case font-bold">
+                            STR {Math.round(p.team_strength)}
                           </span>
                         )}
                       </div>
