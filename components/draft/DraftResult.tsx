@@ -377,16 +377,18 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
     positive: euroComp.leaguePosition <= 24,
   });
 
+  const roundAbbr = (r: string) => {
+    if (r === 'Round of 32') return 'R32';
+    if (r === 'Round of 16') return 'R16';
+    if (r === 'Quarter-Final') return 'QF';
+    if (r === 'Semi-Final') return 'SF';
+    if (r === 'Final') return 'FINAL';
+    return r;
+  };
   for (const tie of euroComp.knockoutTies) {
     if (tie.leg2) {
-      euroEvents.push({ kind: 'ucl', match: tie.leg1, label: `${tie.round} — L1` });
-      const aggF = tie.leg1.goalsFor + tie.leg2.goalsFor;
-      const aggA = tie.leg1.goalsAgainst + tie.leg2.goalsAgainst;
-      euroEvents.push({
-        kind: 'ucl',
-        match: tie.leg2,
-        label: `${tie.round} — L2 (${aggF}-${aggA} agg)`,
-      });
+      euroEvents.push({ kind: 'ucl', match: tie.leg1, label: `${compPrefix} ${roundAbbr(tie.round)} L1` });
+      euroEvents.push({ kind: 'ucl', match: tie.leg2, label: `${compPrefix} ${roundAbbr(tie.round)} L2` });
     } else {
       euroEvents.push({ kind: 'ucl', match: tie.leg1, label: `${compPrefix} FINAL` });
     }
