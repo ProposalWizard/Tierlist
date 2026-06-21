@@ -26,7 +26,7 @@ export default async function GlobalNav() {
         <div className="flex items-center gap-2">
           <GameSidebar />
           <Link href="/" className="text-lg font-bold tracking-tight text-white">
-            Knowitball
+            KNOWITBALL
           </Link>
         </div>
         <div className="flex justify-center">

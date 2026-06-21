@@ -163,7 +163,7 @@ export interface SeasonResult {
     goldenBoot: { name: string; goals: number };
     playmaker: { name: string; assists: number };
     goldenGlove: { name: string; cleanSheets: number };
-    playerOfSeason: { name: string; goals: number; assists: number };
+    playerOfSeason: { name: string; avgRating: number };
   };
   biggestWin: { opponent: string; score: string };
   worstDefeat: { opponent: string; score: string };
@@ -2355,15 +2355,13 @@ export function simulateSeason(
   const topScorer = [...playerStats].sort((a, b) => b.goals - a.goals)[0];
   const topAssister = [...playerStats].sort((a, b) => b.assists - a.assists)[0];
   const topGk = gk ? statsMap[gk.name] : playerStats[0];
-  const pots = [...playerStats].sort(
-    (a, b) => (b.goals + b.assists) - (a.goals + a.assists),
-  )[0];
+  const pots = [...playerStats].sort((a, b) => b.avgRating - a.avgRating)[0];
 
   const awards = {
     goldenBoot: { name: topScorer.name, goals: topScorer.goals },
     playmaker: { name: topAssister.name, assists: topAssister.assists },
     goldenGlove: { name: topGk.name, cleanSheets: topGk.cleanSheets },
-    playerOfSeason: { name: pots.name, goals: pots.goals, assists: pots.assists },
+    playerOfSeason: { name: pots.name, avgRating: pots.avgRating },
   };
 
   // Biggest win
@@ -3720,12 +3718,12 @@ export function simulateSharedSeason(
     const topScorer = [...playerStats].sort((a, b) => b.goals - a.goals)[0];
     const topAssister = [...playerStats].sort((a, b) => b.assists - a.assists)[0];
     const topGk = gk ? statsMap[gk.name] : playerStats[0];
-    const pots = [...playerStats].sort((a, b) => (b.goals + b.assists) - (a.goals + a.assists))[0];
+    const pots = [...playerStats].sort((a, b) => b.avgRating - a.avgRating)[0];
     const awards = {
       goldenBoot: { name: topScorer.name, goals: topScorer.goals },
       playmaker: { name: topAssister.name, assists: topAssister.assists },
       goldenGlove: { name: topGk.name, cleanSheets: topGk.cleanSheets },
-      playerOfSeason: { name: pots.name, goals: pots.goals, assists: pots.assists },
+      playerOfSeason: { name: pots.name, avgRating: pots.avgRating },
     };
 
     // Match highlights

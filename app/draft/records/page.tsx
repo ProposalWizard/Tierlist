@@ -27,7 +27,7 @@ const SEASON_RECORD_TYPES: RecordType[] = [
   { key: "clean_sheets",   label: "Golden Glove",         emoji: "🧤", isTeam: false },
   { key: "unbeaten",       label: "Longest Unbeaten",     emoji: "🛡️", isTeam: true },
   { key: "goals_conceded", label: "Least Goals Conceded", emoji: "🔒", isTeam: true, ascending: true },
-  { key: "avg_rating",     label: "Highest Average Rating", emoji: "⭐", isTeam: false, isDecimal: true },
+  { key: "avg_rating",     label: "Player of the Season Rating", emoji: "⭐", isTeam: false, isDecimal: true },
 ];
 
 const CAREER_RECORD_TYPES: RecordType[] = [
