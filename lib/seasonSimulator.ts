@@ -2570,16 +2570,25 @@ export function simulateSeason(
     allCompsRatings[p.name].push(matchRating(p, m as MatchResult, seasonForm[p.name] || 0, cupRng));
   };
 
+  // Bench GK plays FA Cup only if team won a trophy last season (cup rotation).
+  // Otherwise the starting GK plays all rounds (bench GK still covers if starter is injured).
+  const wonTrophyLastSeason = previousSeasonResult && (
+    previousSeasonResult.actualFinish === 1 ||
+    previousSeasonResult.faCup.winner ||
+    previousSeasonResult.ucl?.winner ||
+    previousSeasonResult.uel?.winner
+  );
+  const benchGkPlaysFaCup = !!benchGk && !!wonTrophyLastSeason;
+
   // Count FA Cup stats (added to all-comps totals)
-  // Bench GK starts all FA Cup games — starter GK gets a rest.
   for (const cm of faCup.matches) {
     const matchForRating = { goalScorers: cm.goalScorers, assistProviders: cm.assistProviders, goalsAgainst: cm.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.goalsFor, opponent: cm.opponent, isHome: false };
     for (const p of starters) {
-      if (p === gk && benchGk) continue; // bench GK starts FA Cup
+      if (p === gk && benchGkPlaysFaCup) continue; // bench GK rotated in when team won trophy
       statsMap[p.name].appearances++;
       rateMatchForPlayer(p, matchForRating);
     }
-    if (benchGk && statsMap[benchGk.name]) {
+    if (benchGkPlaysFaCup && benchGk && statsMap[benchGk.name]) {
       statsMap[benchGk.name].appearances++;
       rateMatchForPlayer(benchGk, matchForRating);
     }
@@ -2590,7 +2599,7 @@ export function simulateSeason(
       if (statsMap[ap.player]) statsMap[ap.player].assists++;
     }
     if (cm.goalsAgainst === 0) {
-      if (benchGk && statsMap[benchGk.name]) {
+      if (benchGkPlaysFaCup && benchGk && statsMap[benchGk.name]) {
         statsMap[benchGk.name].cleanSheets++;
       } else if (gk) {
         statsMap[gk.name].cleanSheets++;
@@ -3982,7 +3991,8 @@ export function simulateSharedSeason(
         const oppStr = prevRes.uclWinner ? uelStr : uclStr;
         const oppRole: 'UCL Winner' | 'UEL Winner' = prevRes.uclWinner ? 'UEL Winner' : 'UCL Winner';
         const starters = hd.starters;
-        const activeSubs = hd.subs.filter(() => superCupRng() < 0.5);
+        const superBenchGk = hd.subs.find(p => classifyPosition(p.assignedPosition) === 'GK');
+        const activeSubs = hd.subs.filter(s => { const r = superCupRng(); return s !== superBenchGk && r < 0.5; });
         const matchPlayers = [...starters, ...activeSubs];
         const m = simulateMatch(matchPlayers, hd.ratings, { name: oppName, strength: oppStr }, superCupRng() > 0.5, superCupRng);
         let result: 'W' | 'D' | 'L' = m.result;
@@ -4007,7 +4017,8 @@ export function simulateSharedSeason(
         const opponentIsPlayer = !playerWonPL;
         if (!opponentIsPlayer || !opponent) {
           const starters = hd.starters;
-          const activeSubs = hd.subs.filter(() => charityShieldRng() < 0.5);
+          const charBenchGk = hd.subs.find(p => classifyPosition(p.assignedPosition) === 'GK');
+          const activeSubs = hd.subs.filter(s => { const r = charityShieldRng(); return s !== charBenchGk && r < 0.5; });
           const matchPlayers = [...starters, ...activeSubs];
           const m = simulateMatch(matchPlayers, hd.ratings, { name: opponent || 'Unknown', strength: oppStr }, charityShieldRng() > 0.5, charityShieldRng);
           let result: 'W' | 'D' | 'L' = m.result;
@@ -4038,6 +4049,9 @@ export function simulateSharedSeason(
     const subAppearances: Record<string, number> = {};
     for (const s of hd.subs) subAppearances[s.name] = 0;
 
+    // Bench GK excluded from PL/cup rotation — only plays when starting GK is injured
+    const plBenchGk = hd.subs.find(p => classifyPosition(p.assignedPosition) === 'GK');
+
     // Build 38 matches from the shared round-robin schedule
     const matches: MatchResult[] = [];
     const matchSubSets: Set<string>[] = [];
@@ -4047,7 +4061,8 @@ export function simulateSharedSeason(
       const isHome = fixture.home === myIdx;
       const oppIdx = isHome ? fixture.away : fixture.home;
       const oppName = allTeams[oppIdx].name;
-      const activeSubs = hd.subs.filter(() => playerRng() < 0.6);
+      // Always advance RNG for bench GK to keep deterministic seed stream, but don't include them
+      const activeSubs = hd.subs.filter(s => { const r = playerRng(); return s !== plBenchGk && r < 0.6; });
       const matchPlayers = [...hd.starters, ...activeSubs];
       if (isHome) {
         const sc = matchScores[myIdx][oppIdx];
