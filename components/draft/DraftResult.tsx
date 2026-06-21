@@ -838,16 +838,16 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const getLeaguePositionStyle = (pos: number, isPlayer: boolean) => {
     if (isPlayer) return "";
     if (pos === 1) return "border-l-2 border-l-yellow-500";
-    if (pos <= 5) return "border-l-2 border-l-blue-500";
-    if (pos <= 6) return "border-l-2 border-l-emerald-500";
+    if (pos <= 4) return "border-l-2 border-l-blue-500";
+    if (pos <= 7) return "border-l-2 border-l-emerald-500";
     if (pos >= 18) return "border-l-2 border-l-red-500";
     return "";
   };
 
   const getLeaguePositionBadge = (pos: number) => {
     if (pos === 1) return "bg-yellow-500/20 text-yellow-400";
-    if (pos <= 5) return "bg-blue-500/20 text-blue-400";
-    if (pos <= 6) return "bg-emerald-500/20 text-emerald-400";
+    if (pos <= 4) return "bg-blue-500/20 text-blue-400";
+    if (pos <= 7) return "bg-emerald-500/20 text-emerald-400";
     if (pos >= 18) return "bg-red-500/20 text-red-400";
     return "text-gray-500";
   };

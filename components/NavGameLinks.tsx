@@ -28,7 +28,7 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
               className={`flex-shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
                 isActive
                   ? "bg-purple-700/40 text-purple-300"
-                  : "text-gray-300 hover:text-white hover:bg-gray-800/70"
+                  : "text-white hover:bg-gray-800/70"
               }`}
             >
               {g.name}
@@ -50,7 +50,7 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
             className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
               isActive
                 ? "bg-purple-700/40 text-purple-300"
-                : "text-gray-400 hover:text-white hover:bg-gray-800/70"
+                : "text-white hover:bg-gray-800/70"
             }`}
           >
             {g.name}
