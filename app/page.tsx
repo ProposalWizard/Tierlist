@@ -13,7 +13,7 @@ const games = [
   { name: "Draft", href: "/draft" },
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
-  { name: "Blind Rankings", href: "/blind-rankings" },
+  { name: "Blind Rank", href: "/blind-rankings" },
 ];
 
 export default function HomePage() {

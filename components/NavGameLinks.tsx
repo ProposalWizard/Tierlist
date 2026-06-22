@@ -7,7 +7,7 @@ const LIVE_GAMES = [
   { name: "Draft", href: "/draft" },
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
-  { name: "Blind Rankings", href: "/blind-rankings" },
+  { name: "Blind Rank", href: "/blind-rankings" },
 ];
 
 export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
@@ -40,7 +40,7 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
   }
 
   return (
-    <div className="hidden md:flex items-center gap-0.5 overflow-x-auto" style={{ scrollbarWidth: "none" } as React.CSSProperties}>
+    <div className="hidden md:flex items-center gap-0.5 overflow-x-auto w-full" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
       {LIVE_GAMES.map(g => {
         const isActive = pathname === g.href || pathname.startsWith(g.href + "/");
         return (
