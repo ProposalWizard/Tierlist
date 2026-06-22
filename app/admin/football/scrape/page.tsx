@@ -258,7 +258,7 @@ export default function ScrapeSofifaPage() {
                   <div className="font-medium">
                     {year >= 2024 ? "FC" : "FIFA"} {String(year % 100).padStart(2, "0")}
                   </div>
-                  <div className={count > 0 ? "text-green-400" : "text-gray-300"}>
+                  <div className={count > 0 ? "text-green-400" : "text-white"}>
                     {count > 0 ? `${count.toLocaleString()}` : "—"}
                   </div>
                 </div>
@@ -336,7 +336,7 @@ export default function ScrapeSofifaPage() {
             accept=".csv,.json"
             className="text-sm text-white"
           />
-          <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer select-none">
+          <label className="flex items-center gap-1.5 text-sm text-white cursor-pointer select-none">
             <input
               type="checkbox"
               checked={replaceAll}

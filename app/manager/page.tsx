@@ -274,7 +274,7 @@ export default function ManagerPage() {
         <div className="max-w-md w-full text-center">
           <div className="text-7xl mb-4">{isWinner ? "🏆" : isCl ? "🌟" : playerPos >= 18 ? "📉" : "⚽"}</div>
           <h1 className="text-3xl font-black text-white mb-1">Season {season} Complete</h1>
-          <p className="text-gray-200 text-sm mb-6">
+          <p className="text-white text-sm mb-6">
             {isWinner ? "Champions of England!" :
              isCl ? `${playerPos}${playerPos === 2 ? "nd" : playerPos === 3 ? "rd" : "th"} place — Champions League!` :
              playerPos >= 18 ? "Relegated. A rebuild beckons." :
@@ -284,19 +284,19 @@ export default function ManagerPage() {
           <div className="bg-gray-900 rounded-2xl border border-gray-800/50 p-5 mb-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-[10px] text-gray-300 uppercase">Points</div>
+                <div className="text-[10px] text-white uppercase">Points</div>
                 <div className="text-3xl font-black text-amber-400">{playerRow?.points ?? 0}</div>
               </div>
               <div className="text-center">
-                <div className="text-[10px] text-gray-300 uppercase">Position</div>
+                <div className="text-[10px] text-white uppercase">Position</div>
                 <div className="text-3xl font-black text-white">{playerPos}</div>
               </div>
               <div className="text-center">
-                <div className="text-[10px] text-gray-300 uppercase">Goals For</div>
+                <div className="text-[10px] text-white uppercase">Goals For</div>
                 <div className="text-xl font-black text-emerald-400">{playerRow?.goalsFor ?? 0}</div>
               </div>
               <div className="text-center">
-                <div className="text-[10px] text-gray-300 uppercase">Goals Against</div>
+                <div className="text-[10px] text-white uppercase">Goals Against</div>
                 <div className="text-xl font-black text-red-400">{playerRow?.goalsAgainst ?? 0}</div>
               </div>
             </div>
@@ -311,7 +311,7 @@ export default function ManagerPage() {
             </button>
             <button
               onClick={() => { setPhase("setup"); setSeason(1); setSquad([]); setBudget(0); }}
-              className="w-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-300 font-bold py-3 rounded-xl text-sm"
+              className="w-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-white font-bold py-3 rounded-xl text-sm"
             >
               New Career
             </button>

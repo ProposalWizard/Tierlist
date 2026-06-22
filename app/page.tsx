@@ -28,7 +28,7 @@ export default function HomePage() {
           <Link
             key={game.href}
             href={game.href}
-            className="text-lg font-bold text-gray-300 transition-colors hover:text-white md:text-xl"
+            className="text-lg font-bold text-white transition-colors hover:text-white md:text-xl"
           >
             {game.name}
           </Link>

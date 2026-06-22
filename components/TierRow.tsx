@@ -149,7 +149,7 @@ export default function TierRow({
           ))}
         </SortableContext>
         {players.length === 0 && !isMobile && (
-          <span className="flex items-center text-xs text-gray-300 italic">
+          <span className="flex items-center text-xs text-white italic">
             Drop images here
           </span>
         )}
@@ -160,7 +160,7 @@ export default function TierRow({
         <button
           onClick={() => setShowSettings((v) => !v)}
           className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-colors ${
-            showSettings ? "bg-gray-700 text-white" : "text-gray-200 hover:bg-gray-700 hover:text-white"
+            showSettings ? "bg-gray-700 text-white" : "text-white hover:bg-gray-700 hover:text-white"
           }`}
           title="Row settings"
         >
@@ -191,13 +191,13 @@ export default function TierRow({
 
             <button
               onClick={() => { onAddAbove(); setShowSettings(false); }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-white transition-colors hover:bg-gray-800 hover:text-white"
             >
               ↑ Add Row Above
             </button>
             <button
               onClick={() => { onAddBelow(); setShowSettings(false); }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-white transition-colors hover:bg-gray-800 hover:text-white"
             >
               ↓ Add Row Below
             </button>

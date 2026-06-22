@@ -128,13 +128,13 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
         <h1 className="text-2xl font-black tracking-tight text-white">
           Sell a Player?
         </h1>
-        <p className="text-gray-200 text-sm mt-1">
+        <p className="text-white text-sm mt-1">
           Tap a player to sell them and spin for a replacement.
         </p>
       </div>
 
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-        <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">
+        <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">
           Season {seasonNumber} Squad
         </h3>
         <div className="space-y-1">
@@ -155,7 +155,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
                     SUB
                   </span>
                 )}
-                <span className="text-gray-300 text-[10px] font-medium">{p.clubYear}</span>
+                <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
                 <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
               </button>
             );
@@ -801,7 +801,7 @@ export default function DraftPage() {
             <button
               onClick={handleSkipToTest}
               disabled={autoFilling}
-              className="text-xs text-gray-300 hover:text-gray-500 underline transition disabled:cursor-wait"
+              className="text-xs text-white hover:text-gray-500 underline transition disabled:cursor-wait"
             >
               {autoFilling ? "auto-drafting squad…" : "[test] skip draft → auto-fill squad"}
             </button>

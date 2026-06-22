@@ -93,7 +93,7 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
         </button>
       </div>
 
-      <p className="text-xs text-gray-200">
+      <p className="text-xs text-white">
         Each image is placed in the tier matching its average community vote.
       </p>
 
@@ -131,7 +131,7 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
                   </div>
                 ))}
                 {items.length === 0 && (
-                  <span className="flex items-center text-xs text-gray-300 italic px-2">
+                  <span className="flex items-center text-xs text-white italic px-2">
                     No images
                   </span>
                 )}
@@ -144,7 +144,7 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
       {/* Unvoted images */}
       {unvoted.length > 0 && (
         <div className="rounded-xl border border-dashed border-gray-700 p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-200">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white">
             Not yet voted ({unvoted.length})
           </p>
           <div className="flex flex-wrap gap-1">

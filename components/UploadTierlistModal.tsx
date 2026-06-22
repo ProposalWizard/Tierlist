@@ -203,7 +203,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5 space-y-5">
           {/* Title */}
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-300">
+            <label className="mb-1 block text-sm font-semibold text-white">
               Tierlist Name
             </label>
             <input
@@ -216,7 +216,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
 
           {/* Category */}
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-300">
+            <label className="mb-1 block text-sm font-semibold text-white">
               Category
             </label>
             <select
@@ -232,12 +232,12 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
 
           {/* Cover photo */}
           <div>
-            <label className="mb-2 block text-sm font-semibold text-gray-300">
+            <label className="mb-2 block text-sm font-semibold text-white">
               Cover Photo
             </label>
 
             {/* Preview — matches homepage card dimensions exactly */}
-            <p className="mb-1 text-[10px] text-gray-200">This is how it will look on the homepage</p>
+            <p className="mb-1 text-[10px] text-white">This is how it will look on the homepage</p>
             <div
               className={`mb-3 h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
                 coverPreviewUrl ? "border-indigo-500" : "border-gray-700 bg-gray-800"
@@ -247,7 +247,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={coverPreviewUrl} alt="Cover preview" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-200">
+                <div className="flex h-full w-full items-center justify-center text-xs italic text-white">
                   No cover selected
                 </div>
               )}
@@ -287,14 +287,14 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
                 <button
                   type="button"
                   onClick={() => setShowCrop(true)}
-                  className="rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white"
+                  className="rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-xs font-semibold text-white transition-colors hover:border-indigo-500 hover:text-white"
                 >
                   Crop Cover
                 </button>
               )}
               <label
                 htmlFor={coverInputId}
-                className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white"
+                className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-xs font-semibold text-white transition-colors hover:border-indigo-500 hover:text-white"
               >
                 Upload custom cover
               </label>
@@ -324,10 +324,10 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
 
           {/* Images summary */}
           <div>
-            <p className="text-sm font-semibold text-gray-300">
+            <p className="text-sm font-semibold text-white">
               Images ({images.length})
             </p>
-            <p className="mt-0.5 text-xs text-gray-200">
+            <p className="mt-0.5 text-xs text-white">
               All {images.length} image{images.length !== 1 ? "s" : ""} from your
               board will be included.
             </p>

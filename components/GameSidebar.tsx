@@ -105,7 +105,7 @@ export default function GameSidebar() {
                       className="group mx-3 my-0.5 rounded-lg px-3 py-3 opacity-50"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-gray-200">{game.name}</span>
+                        <span className="text-sm font-bold text-white">{game.name}</span>
                         <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
                           Soon
                         </span>
@@ -122,7 +122,7 @@ export default function GameSidebar() {
                     className={`group mx-3 my-0.5 block rounded-lg px-3 py-3 transition-colors ${
                       isActive
                         ? "bg-purple-900/30 text-white"
-                        : "text-gray-300 hover:bg-gray-900 hover:text-white"
+                        : "text-white hover:bg-gray-900 hover:text-white"
                     }`}
                   >
                     <span className="text-sm font-bold">{game.name}</span>
@@ -136,7 +136,7 @@ export default function GameSidebar() {
 
             {/* Footer */}
             <div className="border-t border-gray-800 px-5 py-4">
-              <p className="text-[10px] text-gray-200">knowitball.co.uk</p>
+              <p className="text-[10px] text-white">knowitball.co.uk</p>
             </div>
           </div>
         </>,

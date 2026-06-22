@@ -201,7 +201,7 @@ function ModeSelection({
 
       {selected === "2player" && (
         <div className="mb-8 rounded-xl bg-gray-900 border border-gray-700 p-5 text-left">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-200 mb-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-white mb-4">
             Player Names
           </p>
           <div className="flex gap-3">
@@ -299,30 +299,30 @@ function TwoPlayerScoreboard({
   return (
     <div className="aspect-square rounded-md bg-gray-900 border border-gray-700 flex flex-col justify-between p-2 md:p-3 overflow-hidden">
       <div className={`rounded-md px-2 py-1 transition-all md:px-3 md:py-1.5 ${cp === 0 ? "bg-green-600" : "bg-gray-800"}`}>
-        <p className="text-[9px] font-bold uppercase tracking-wide text-gray-200 truncate md:text-xs">
+        <p className="text-[9px] font-bold uppercase tracking-wide text-white truncate md:text-xs">
           {p1}
         </p>
         <p className={`font-display text-base font-black leading-tight md:text-xl ${cp === 0 ? "text-white" : "text-white"}`}>
           {s1}
         </p>
-        <p className="text-[8px] font-mono font-bold text-gray-300/70 md:text-[10px]">{formatTime(playerTimers[0])}</p>
+        <p className="text-[8px] font-mono font-bold text-white/70 md:text-[10px]">{formatTime(playerTimers[0])}</p>
         {gameState.playerBonusAwarded[0] && (
           <p className="text-[8px] font-bold text-yellow-300 md:text-[10px]">+{bonusValue} TTT!</p>
         )}
       </div>
 
-      <p className="text-center text-[8px] font-bold uppercase tracking-wider text-gray-200 md:text-[10px]">
+      <p className="text-center text-[8px] font-bold uppercase tracking-wider text-white md:text-[10px]">
         {cp === 0 ? p1 : p2}&apos;s turn
       </p>
 
       <div className={`rounded-md px-2 py-1 transition-all md:px-3 md:py-1.5 ${cp === 1 ? "bg-yellow-500" : "bg-gray-800"}`}>
-        <p className={`text-[9px] font-bold uppercase tracking-wide truncate md:text-xs ${cp === 1 ? "text-yellow-900" : "text-gray-200"}`}>
+        <p className={`text-[9px] font-bold uppercase tracking-wide truncate md:text-xs ${cp === 1 ? "text-yellow-900" : "text-white"}`}>
           {p2}
         </p>
         <p className={`font-display text-base font-black leading-tight md:text-xl ${cp === 1 ? "text-yellow-900" : "text-white"}`}>
           {s2}
         </p>
-        <p className={`text-[8px] font-mono font-bold md:text-[10px] ${cp === 1 ? "text-yellow-800/70" : "text-gray-300/70"}`}>{formatTime(playerTimers[1])}</p>
+        <p className={`text-[8px] font-mono font-bold md:text-[10px] ${cp === 1 ? "text-yellow-800/70" : "text-white/70"}`}>{formatTime(playerTimers[1])}</p>
         {gameState.playerBonusAwarded[1] && (
           <p className="text-[8px] font-bold text-yellow-900 md:text-[10px]">+{bonusValue} TTT!</p>
         )}
@@ -629,13 +629,13 @@ export default function TicTacToeGame({ puzzle }: Props) {
           <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-gray-900 rounded-t-2xl">
               <h2 className="text-base font-black text-white">How to Play</h2>
-              <button onClick={() => setShowTutorial(false)} className="text-gray-200 hover:text-white transition-colors">
+              <button onClick={() => setShowTutorial(false)} className="text-white hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="px-5 py-4 space-y-5 text-sm text-gray-300">
+            <div className="px-5 py-4 space-y-5 text-sm text-white">
 
               <section>
                 <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">The Grid</h3>
@@ -728,7 +728,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
             const colHasHint = !!colExtra?.hint;
             return (
               <div key={c} className="relative aspect-square">
-                <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+                <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-white md:text-sm md:px-3 md:tracking-wide">
                   {label}
                 </div>
                 {colHasInfo && (
@@ -777,7 +777,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
               const rowHasHint = !!rowExtra?.hint;
               return (
                 <div className="relative aspect-square">
-                  <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-gray-200 md:text-sm md:px-3 md:tracking-wide">
+                  <div className="w-full h-full flex items-center justify-center rounded-md bg-gray-800/70 px-1.5 py-2 text-center text-[10px] font-bold uppercase tracking-tight text-white md:text-sm md:px-3 md:tracking-wide">
                     {puzzle.row_labels[r]}
                   </div>
                   {rowHasInfo && (
@@ -857,7 +857,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                     >
                       <p
                         className={`text-[8px] font-bold leading-tight md:text-[10px] ${
-                          isFilled ? filledTextDark : "text-gray-300"
+                          isFilled ? filledTextDark : "text-white"
                         }`}
                       >
                         {square.customType
@@ -890,7 +890,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                         <p className="font-display text-base font-black text-gray-900 md:text-2xl">
                           {availableCount}
                         </p>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-gray-200 md:text-[11px]">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-white md:text-[11px]">
                           Player{availableCount !== 1 ? "s" : ""}
                         </p>
                       </div>
@@ -1056,7 +1056,7 @@ function SquareModal({
             ) : (
               <>
                 <p className="text-base font-bold text-gray-900 md:text-lg">{square.conditions[0]}</p>
-                <p className="text-sm font-semibold text-gray-300 md:text-base">
+                <p className="text-sm font-semibold text-white md:text-base">
                   + {square.conditions[1]}
                 </p>
               </>
@@ -1071,11 +1071,11 @@ function SquareModal({
         </div>
 
         <div className="mb-4 flex items-center justify-between rounded-lg bg-gray-100 px-3 py-2 text-sm">
-          <span className="text-gray-300">
+          <span className="text-white">
             Score: <span className="font-display font-black text-gray-900">{sqScore}</span>{" "}
             <span className="text-white">/</span> {sqScore + availableMax}
           </span>
-          <span className="text-gray-300">
+          <span className="text-white">
             Available:{" "}
             <span className="font-display font-black text-gray-900">{availableCount}</span>{" "}
             <span className="text-white">({availableMax} pts)</span>
@@ -1118,7 +1118,7 @@ function SquareModal({
 
         {found.length > 0 && (
           <div className="space-y-1 max-h-56 overflow-y-auto">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-200">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-white">
               Found ({found.length})
             </p>
             {[...found]
@@ -1237,7 +1237,7 @@ function ResultsScreen({
                 {s1}
               </p>
               {playerTimers && (
-                <p className="text-xs font-mono font-bold text-gray-200 mt-1">{formatTime(playerTimers[0])}</p>
+                <p className="text-xs font-mono font-bold text-white mt-1">{formatTime(playerTimers[0])}</p>
               )}
               {gameState.playerBonusAwarded[0] && (
                 <p className="text-xs font-bold text-yellow-400 mt-1">
@@ -1259,7 +1259,7 @@ function ResultsScreen({
                 {s2}
               </p>
               {playerTimers && (
-                <p className="text-xs font-mono font-bold text-gray-200 mt-1">{formatTime(playerTimers[1])}</p>
+                <p className="text-xs font-mono font-bold text-white mt-1">{formatTime(playerTimers[1])}</p>
               )}
               {gameState.playerBonusAwarded[1] && (
                 <p className="text-xs font-bold text-yellow-400 mt-1">
@@ -1280,7 +1280,7 @@ function ResultsScreen({
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">{squaresCompleted}/9</p>
-            <p className="text-gray-200">Squares</p>
+            <p className="text-white">Squares</p>
           </div>
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">
@@ -1292,16 +1292,16 @@ function ResultsScreen({
                 ? "Yes"
                 : "No"}
             </p>
-            <p className="text-gray-200">3-in-a-row</p>
+            <p className="text-white">3-in-a-row</p>
           </div>
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-indigo-400 font-mono">{formatTime(elapsed)}</p>
-            <p className="text-gray-200">Time</p>
+            <p className="text-white">Time</p>
           </div>
           {hintsUsed > 0 && (
             <div className="rounded-lg bg-gray-800 p-3">
               <p className="text-2xl font-black text-amber-400">{hintsUsed}</p>
-              <p className="text-gray-200">Hints</p>
+              <p className="text-white">Hints</p>
             </div>
           )}
         </div>
@@ -1328,7 +1328,7 @@ function ResultsScreen({
               <div key={m.name} className="flex items-center justify-between text-sm">
                 <div>
                   <span className="text-white">{m.name}</span>
-                  <span className="ml-2 text-[10px] text-gray-200">{m.conditions}</span>
+                  <span className="ml-2 text-[10px] text-white">{m.conditions}</span>
                 </div>
                 <span className="font-bold text-red-400">{m.points} pts</span>
               </div>
@@ -1355,7 +1355,7 @@ function ResultsScreen({
                       <div
                         key={a.name}
                         className={`flex justify-between text-xs ${
-                          foundNames.has(a.name) ? "text-green-400" : "text-gray-200"
+                          foundNames.has(a.name) ? "text-green-400" : "text-white"
                         }`}
                       >
                         <span>

@@ -46,7 +46,7 @@ function Stars({ count }: { count: number }) {
         <svg
           key={i}
           viewBox="0 0 20 20"
-          className={`h-3 w-3 ${i < count ? "text-amber-400" : "text-gray-300"}`}
+          className={`h-3 w-3 ${i < count ? "text-amber-400" : "text-white"}`}
           fill="currentColor"
         >
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.176 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.063 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.957z" />
@@ -197,14 +197,14 @@ export default async function ArchivePage() {
       <div className="border-b border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 px-4 py-10 text-center">
         <Link
           href="/tic-tac-toe"
-          className="mb-3 inline-block text-xs font-bold text-gray-200 transition-colors hover:text-gray-300"
+          className="mb-3 inline-block text-xs font-bold text-white transition-colors hover:text-gray-300"
         >
           &larr; Back to Tic Tac Toe
         </Link>
         <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
           Daily Archive
         </h1>
-        <p className="mx-auto mt-2 max-w-md text-sm text-gray-200">
+        <p className="mx-auto mt-2 max-w-md text-sm text-white">
           Every daily challenge so far. How many have you completed?
         </p>
       </div>
@@ -216,12 +216,12 @@ export default async function ArchivePage() {
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-center">
               <p className="text-2xl font-black text-white">
                 {totalPlayed}
-                <span className="text-sm font-bold text-gray-300">
+                <span className="text-sm font-bold text-white">
                   {" "}
                   / {totalPuzzles}
                 </span>
               </p>
-              <p className="mt-1 text-xs font-bold uppercase text-gray-200">
+              <p className="mt-1 text-xs font-bold uppercase text-white">
                 Played
               </p>
             </div>
@@ -229,7 +229,7 @@ export default async function ArchivePage() {
               <p className={`text-2xl font-black ${scoreColor(avgPct)}`}>
                 {avgPct}%
               </p>
-              <p className="mt-1 text-xs font-bold uppercase text-gray-200">
+              <p className="mt-1 text-xs font-bold uppercase text-white">
                 Avg Score
               </p>
             </div>
@@ -237,7 +237,7 @@ export default async function ArchivePage() {
               <p className={`text-2xl font-black ${scoreColor(bestPct)}`}>
                 {bestPct}%
               </p>
-              <p className="mt-1 text-xs font-bold uppercase text-gray-200">
+              <p className="mt-1 text-xs font-bold uppercase text-white">
                 Best Score
               </p>
             </div>
@@ -245,7 +245,7 @@ export default async function ArchivePage() {
               <p className="text-2xl font-black text-amber-400">
                 {perfectCount}
               </p>
-              <p className="mt-1 text-xs font-bold uppercase text-gray-200">
+              <p className="mt-1 text-xs font-bold uppercase text-white">
                 Perfect
               </p>
             </div>
@@ -269,7 +269,7 @@ export default async function ArchivePage() {
         {/* Time played stat - subtle, below main stats */}
         {user && totalTimeSec > 0 && (
           <div className="mb-6 text-center">
-            <span className="text-xs font-bold text-gray-300">
+            <span className="text-xs font-bold text-white">
               Total time played:{" "}
               <span className="font-mono text-white">
                 {totalTimeSec >= 3600
@@ -282,7 +282,7 @@ export default async function ArchivePage() {
 
         {/* Puzzle grid */}
         {items.length === 0 ? (
-          <div className="py-24 text-center text-gray-200">
+          <div className="py-24 text-center text-white">
             No puzzles available yet.
           </div>
         ) : (
@@ -359,12 +359,12 @@ export default async function ArchivePage() {
                             />
                           </div>
                           {/* Score detail */}
-                          <span className="mt-1 text-[9px] font-bold text-gray-200 sm:text-[10px]">
+                          <span className="mt-1 text-[9px] font-bold text-white sm:text-[10px]">
                             {userScore.score}/{userScore.max_score}
                           </span>
                           {/* Time */}
                           {userScore.time_seconds != null && (
-                            <span className="mt-0.5 font-mono text-[8px] text-gray-300 sm:text-[9px]">
+                            <span className="mt-0.5 font-mono text-[8px] text-white sm:text-[9px]">
                               {formatTime(userScore.time_seconds)}
                             </span>
                           )}
@@ -380,7 +380,7 @@ export default async function ArchivePage() {
                             />
                           </div>
                           {/* Question mark overlay */}
-                          <span className="absolute inset-0 flex items-center justify-center text-4xl font-black text-gray-300 transition-colors group-hover:text-gray-500 sm:text-5xl">
+                          <span className="absolute inset-0 flex items-center justify-center text-4xl font-black text-white transition-colors group-hover:text-gray-500 sm:text-5xl">
                             ?
                           </span>
                         </>
@@ -391,7 +391,7 @@ export default async function ArchivePage() {
                   {/* Below card: stars + title */}
                   <div className="mt-1.5 flex flex-col items-center gap-0.5 px-1">
                     <Stars count={stars} />
-                    <p className="w-full truncate text-center text-[10px] font-bold text-gray-200 group-hover:text-gray-300 sm:text-xs">
+                    <p className="w-full truncate text-center text-[10px] font-bold text-white group-hover:text-gray-300 sm:text-xs">
                       {puzzle.title}
                     </p>
                   </div>

@@ -44,7 +44,7 @@ export default async function TierlistPage() {
             <form action="/api/auth/signout" method="POST">
               <button
                 type="submit"
-                className="rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-700 transition-colors"
+                className="rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
               >
                 Sign out
               </button>

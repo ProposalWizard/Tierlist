@@ -350,7 +350,7 @@ export default function CollectionSquad({ progression }: Props) {
 
         {/* Bench */}
         <div>
-          <p className="text-[9px] font-bold tracking-widest text-gray-300 uppercase mb-2.5">
+          <p className="text-[9px] font-bold tracking-widest text-white uppercase mb-2.5">
             {unlockedCards.length === 0
               ? "Unlock cards by levelling up"
               : benchCards.length === 0

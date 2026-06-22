@@ -226,7 +226,7 @@ export default function TenableAdmin() {
   };
 
   if (loading) {
-    return <p className="py-8 text-center text-gray-200">Loading...</p>;
+    return <p className="py-8 text-center text-white">Loading...</p>;
   }
 
   if (editing) {
@@ -285,7 +285,7 @@ export default function TenableAdmin() {
 
         {/* Settings row */}
         <div className="flex flex-wrap items-center gap-6">
-          <label className="flex items-center gap-2 text-sm text-gray-300">
+          <label className="flex items-center gap-2 text-sm text-white">
             <input
               type="checkbox"
               checked={isOrdered}
@@ -300,7 +300,7 @@ export default function TenableAdmin() {
             Answers are ordered (1 = best, 10 = 10th)
           </label>
 
-          <label className="flex items-center gap-2 text-sm text-gray-300">
+          <label className="flex items-center gap-2 text-sm text-white">
             <input
               type="checkbox"
               checked={isActive}
@@ -356,7 +356,7 @@ export default function TenableAdmin() {
               Answers ({filledCount} filled{!isOrdered && filledCount > 10 ? ` — ${filledCount - 10} bonus` : ""})
             </label>
             {!isOrdered && (
-              <span className="text-[10px] text-gray-200">
+              <span className="text-[10px] text-white">
                 Unordered — can have more than 10 answers
               </span>
             )}
@@ -364,7 +364,7 @@ export default function TenableAdmin() {
           <div className="space-y-2">
             {answers.map((a) => (
               <div key={a.position} className="flex items-center gap-2">
-                <span className="w-8 text-center text-sm font-black text-gray-200">{a.position}</span>
+                <span className="w-8 text-center text-sm font-black text-white">{a.position}</span>
                 <input
                   type="text"
                   value={a.name}
@@ -444,7 +444,7 @@ export default function TenableAdmin() {
       )}
 
       {puzzles.length === 0 ? (
-        <p className="py-12 text-center text-gray-200">No Ten-A-Ball puzzles yet.</p>
+        <p className="py-12 text-center text-white">No Ten-A-Ball puzzles yet.</p>
       ) : (
         <div className="space-y-2">
           {puzzles.map((p) => (
@@ -466,7 +466,7 @@ export default function TenableAdmin() {
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-200">
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-white">
                   <span>{p.category}</span>
                   {p.daily_date && <span>Day: {p.daily_date}</span>}
                 </div>
@@ -474,7 +474,7 @@ export default function TenableAdmin() {
               <div className="flex items-center gap-2 ml-3">
                 <button
                   onClick={() => openEdit(p.id)}
-                  className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-gray-300 hover:bg-gray-700 hover:text-white"
+                  className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-700 hover:text-white"
                 >
                   Edit
                 </button>

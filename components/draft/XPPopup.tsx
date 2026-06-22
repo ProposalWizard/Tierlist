@@ -73,7 +73,7 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, onDism
           {/* Close button */}
           <button
             onClick={handleDismiss}
-            className="absolute top-2 right-2 z-10 w-5 h-5 flex items-center justify-center rounded-full text-gray-200 hover:text-white hover:bg-gray-700 transition-colors"
+            className="absolute top-2 right-2 z-10 w-5 h-5 flex items-center justify-center rounded-full text-white hover:text-white hover:bg-gray-700 transition-colors"
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -90,7 +90,7 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, onDism
                 <div className="text-lg font-black text-amber-400 leading-none">
                   +{totalXp} XP
                 </div>
-                <div className="text-[10px] text-gray-200 font-medium mt-0.5">
+                <div className="text-[10px] text-white font-medium mt-0.5">
                   {events.map(e => e.label).join(" + ")}
                 </div>
               </div>

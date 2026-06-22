@@ -231,7 +231,7 @@ export default function ProfileHeader({
               >
                 {/* Inner avatar circle */}
                 <div
-                  className={`w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-4xl font-black text-gray-200 ${frameStyle?.shadow ?? ""}`}
+                  className={`w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-4xl font-black text-white ${frameStyle?.shadow ?? ""}`}
                 >
                   {frameStyle?.image ? (
                     <img
@@ -304,8 +304,8 @@ export default function ProfileHeader({
                 <span className="text-[10px] font-semibold text-emerald-400/80">
                   {currentXp.toLocaleString()}
                 </span>
-                <span className="text-[10px] text-gray-200">/</span>
-                <span className="text-[10px] font-semibold text-gray-200">
+                <span className="text-[10px] text-white">/</span>
+                <span className="text-[10px] font-semibold text-white">
                   {xpToNext.toLocaleString()} XP
                 </span>
               </div>
@@ -332,7 +332,7 @@ export default function ProfileHeader({
                   <div className="text-sm font-black text-white leading-none">
                     {s.value}
                   </div>
-                  <div className="text-[7px] text-gray-200 mt-1.5 font-bold uppercase tracking-widest">
+                  <div className="text-[7px] text-white mt-1.5 font-bold uppercase tracking-widest">
                     {s.label}
                   </div>
                 </div>

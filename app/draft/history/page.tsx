@@ -103,7 +103,7 @@ export default function DraftHistoryPage() {
         <h1 className="text-3xl font-black mb-2">Your Draft History</h1>
         <div className="flex items-center gap-2 mt-8 justify-center">
           <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-gray-200 text-sm">Loading history...</span>
+          <span className="text-white text-sm">Loading history...</span>
         </div>
       </div>
     );
@@ -139,7 +139,7 @@ export default function DraftHistoryPage() {
           &larr; Back to Draft
         </Link>
         <h1 className="text-3xl font-black mb-2">Your Draft History</h1>
-        <p className="text-gray-200">No completed runs yet. Play a draft to see your history here.</p>
+        <p className="text-white">No completed runs yet. Play a draft to see your history here.</p>
       </div>
     );
   }
@@ -150,66 +150,66 @@ export default function DraftHistoryPage() {
         &larr; Back to Draft
       </Link>
       <h1 className="text-3xl font-black mb-1">Your Draft History</h1>
-      <p className="text-gray-200 text-sm mb-6">Your seasons, records, and stats.</p>
+      <p className="text-white text-sm mb-6">Your seasons, records, and stats.</p>
 
       {stats && (
         <>
           {/* Career Stats */}
-          <h2 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">Career Stats</h2>
+          <h2 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">Career Stats</h2>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.seasons}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Seasons</div>
+              <div className="text-[10px] text-white font-bold uppercase">Seasons</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.bestPoints}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Best Points</div>
+              <div className="text-[10px] text-white font-bold uppercase">Best Points</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-lg sm:text-2xl font-black">{stats.bestRecord.record.wins}W {stats.bestRecord.record.draws}D {stats.bestRecord.record.losses}L</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Best Record</div>
+              <div className="text-[10px] text-white font-bold uppercase">Best Record</div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.winRate}%</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Win Rate</div>
+              <div className="text-[10px] text-white font-bold uppercase">Win Rate</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.mostGoals}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Most Goals</div>
+              <div className="text-[10px] text-white font-bold uppercase">Most Goals</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.topOvr}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Top-rated XI</div>
+              <div className="text-[10px] text-white font-bold uppercase">Top-rated XI</div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.titles}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Titles</div>
+              <div className="text-[10px] text-white font-bold uppercase">Titles</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.topFour}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Top Four</div>
+              <div className="text-[10px] text-white font-bold uppercase">Top Four</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.faCups}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">FA Cups</div>
+              <div className="text-[10px] text-white font-bold uppercase">FA Cups</div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 mb-6">
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.uclWins}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">UCL Wins</div>
+              <div className="text-[10px] text-white font-bold uppercase">UCL Wins</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.uelWins}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">UEL Wins</div>
+              <div className="text-[10px] text-white font-bold uppercase">UEL Wins</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
               <div className="text-2xl font-black">{stats.bestGD >= 0 ? '+' : ''}{stats.bestGD}</div>
-              <div className="text-[10px] text-gray-200 font-bold uppercase">Best GD</div>
+              <div className="text-[10px] text-white font-bold uppercase">Best GD</div>
             </div>
           </div>
 
@@ -220,11 +220,11 @@ export default function DraftHistoryPage() {
               <div className="text-2xl font-black text-orange-400">{streak}</div>
               <div className="text-[10px] font-bold tracking-widest text-orange-400/60 uppercase">Day Streak</div>
             </div>
-            <div className="ml-auto text-xs text-gray-200">{history.length} total seasons played</div>
+            <div className="ml-auto text-xs text-white">{history.length} total seasons played</div>
           </div>
 
           {/* Achievements */}
-          <h2 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">
+          <h2 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">
             Achievements &mdash; {ACHIEVEMENTS.filter(a => a.check(history)).length}/{ACHIEVEMENTS.length} unlocked
           </h2>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6">
@@ -236,8 +236,8 @@ export default function DraftHistoryPage() {
                   className={`rounded-xl p-3 text-center transition-all ${unlocked ? 'bg-yellow-900/20 border-2 border-yellow-600/40' : 'bg-gray-900 border border-gray-800/50 opacity-40'}`}
                 >
                   <div className="text-2xl mb-1">{achievement.icon}</div>
-                  <div className={`text-[10px] font-bold ${unlocked ? 'text-yellow-400' : 'text-gray-300'}`}>{achievement.name}</div>
-                  <div className="text-[9px] text-gray-200 mt-0.5">{achievement.description}</div>
+                  <div className={`text-[10px] font-bold ${unlocked ? 'text-yellow-400' : 'text-white'}`}>{achievement.name}</div>
+                  <div className="text-[9px] text-white mt-0.5">{achievement.description}</div>
                 </div>
               );
             })}
@@ -246,8 +246,8 @@ export default function DraftHistoryPage() {
       )}
 
       {/* Recent runs */}
-      <h2 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">Recent Runs</h2>
-      <p className="text-[10px] text-gray-300 mb-3">Tap a run to see the XI you fielded.</p>
+      <h2 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">Recent Runs</h2>
+      <p className="text-[10px] text-white mb-3">Tap a run to see the XI you fielded.</p>
 
       <div className="space-y-2">
         {history.map((run) => {
@@ -267,17 +267,17 @@ export default function DraftHistoryPage() {
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <span className={`text-lg font-black ${finishColor}`}>{run.points} pts</span>
-                    <span className="text-gray-200 text-sm">&middot; {ordinal(run.finish)}</span>
+                    <span className="text-white text-sm">&middot; {ordinal(run.finish)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {run.finish === 1 && <span className="text-yellow-400">&#127942;</span>}
                     {run.finish <= 4 && run.finish > 1 && <span className="text-blue-400">&#11088;</span>}
-                    <span className="text-[10px] text-gray-300">
+                    <span className="text-[10px] text-white">
                       {new Date(run.date).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
-                <div className="text-xs text-gray-200">
+                <div className="text-xs text-white">
                   Won {run.record.wins} &middot; Drew {run.record.draws} &middot; Lost {run.record.losses}
                   &middot; Scored {run.goalsFor} &middot; Conceded {run.goalsAgainst}
                   {run.formation ? ` &middot; ${run.formation}` : ""}

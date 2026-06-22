@@ -256,7 +256,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             <svg
               key={i}
               className={`h-8 w-8 transition-colors ${
-                i < lives ? "text-red-500" : "text-gray-300"
+                i < lives ? "text-red-500" : "text-white"
               }`}
               fill="currentColor"
               viewBox="0 0 24 24"
@@ -311,7 +311,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             } else if (isAnimHighlight) {
               bgClass = "bg-gray-600";
               textContent = (
-                <span className="text-lg font-black text-gray-300">{pos}</span>
+                <span className="text-lg font-black text-white">{pos}</span>
               );
             } else if (gameOver && !isRevealed) {
               bgClass = "bg-gray-800/60";

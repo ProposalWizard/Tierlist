@@ -70,7 +70,7 @@ function ImageField({
           placeholder="Text or image URL"
           className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
         />
-        <label className={`cursor-pointer rounded-lg bg-gray-700 px-2.5 py-2 text-xs font-bold text-gray-300 hover:bg-gray-600 ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+        <label className={`cursor-pointer rounded-lg bg-gray-700 px-2.5 py-2 text-xs font-bold text-white hover:bg-gray-600 ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
           {uploading ? "..." : "Upload"}
           <input type="file" accept={ACCEPT_IMAGE_TYPES} onChange={handleFile} className="hidden" />
         </label>
@@ -78,7 +78,7 @@ function ImageField({
           <button
             type="button"
             onClick={() => onCropRequest(value)}
-            className="rounded-lg bg-gray-700 px-2.5 py-2 text-xs font-bold text-gray-300 hover:bg-gray-600"
+            className="rounded-lg bg-gray-700 px-2.5 py-2 text-xs font-bold text-white hover:bg-gray-600"
           >
             Crop
           </button>
@@ -182,7 +182,7 @@ function SquareEditor({
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-sm font-bold text-white">{rowLabel || "Row"} + {colLabel || "Col"}</p>
-            <p className="text-xs text-gray-200">{answers.length} answer{answers.length !== 1 ? "s" : ""} · {calcMaxScore(answers)} pts</p>
+            <p className="text-xs text-white">{answers.length} answer{answers.length !== 1 ? "s" : ""} · {calcMaxScore(answers)} pts</p>
           </div>
           <button onClick={onClose} className="text-white hover:text-white text-xl">&times;</button>
         </div>
@@ -301,13 +301,13 @@ function SquareEditor({
                 e.target.value = "";
               }}
             />
-            <p className="mt-1 text-[10px] text-gray-200">One name per line. Click outside to add all (default 3pts each).</p>
+            <p className="mt-1 text-[10px] text-white">One name per line. Click outside to add all (default 3pts each).</p>
           </div>
         </details>
 
         {/* Custom square toggle */}
         <div className="mb-3 space-y-2">
-          <label className="flex items-center gap-2 text-xs text-gray-300">
+          <label className="flex items-center gap-2 text-xs text-white">
             <input type="checkbox" checked={isCustom} onChange={(e) => setIsCustom(e.target.checked)} />
             Custom requirement
           </label>
@@ -583,7 +583,7 @@ export default function TicTacToeAdmin() {
     return total;
   })();
 
-  if (loading) return <p className="text-gray-200 py-8 text-center">Loading puzzles...</p>;
+  if (loading) return <p className="text-white py-8 text-center">Loading puzzles...</p>;
 
   /* ── Easy TTT Builder ── */
   if (showEasyBuilder) {
@@ -633,17 +633,17 @@ export default function TicTacToeAdmin() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <label className="flex items-center gap-2 text-xs text-gray-300">
+          <label className="flex items-center gap-2 text-xs text-white">
             <input type="checkbox" checked={isDaily} onChange={(e) => setIsDaily(e.target.checked)} /> Daily
           </label>
-          <label className="flex items-center gap-2 text-xs text-gray-300">
+          <label className="flex items-center gap-2 text-xs text-white">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} /> Active
           </label>
           {isDaily && (
             <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)}
               className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white" />
           )}
-          <span className="text-xs text-gray-200 ml-auto">Total: {totalPossibleScore} pts</span>
+          <span className="text-xs text-white ml-auto">Total: {totalPossibleScore} pts</span>
         </div>
 
         {/* Info */}
@@ -668,7 +668,7 @@ export default function TicTacToeAdmin() {
                 {cl ? (
                   <p className="text-[10px] font-black text-white leading-tight break-words line-clamp-3">{cl}</p>
                 ) : (
-                  <p className="text-[9px] text-gray-300">Col {c + 1}</p>
+                  <p className="text-[9px] text-white">Col {c + 1}</p>
                 )}
                 {(labelExtras.cols[c].info || labelExtras.cols[c].hint) && (
                   <div className="flex gap-0.5 mt-0.5">
@@ -692,7 +692,7 @@ export default function TicTacToeAdmin() {
                   {rowLabels[r] ? (
                     <p className="text-[10px] font-black text-white leading-tight break-words line-clamp-3">{rowLabels[r]}</p>
                   ) : (
-                    <p className="text-[9px] text-gray-300">Row {r + 1}</p>
+                    <p className="text-[9px] text-white">Row {r + 1}</p>
                   )}
                   {(labelExtras.rows[r].info || labelExtras.rows[r].hint) && (
                     <div className="flex gap-0.5 mt-0.5">
@@ -727,7 +727,7 @@ export default function TicTacToeAdmin() {
                           )}
                         </>
                       ) : (
-                        <p className="text-[9px] text-gray-300">+</p>
+                        <p className="text-[9px] text-white">+</p>
                       )}
                     </button>
                   );
@@ -744,7 +744,7 @@ export default function TicTacToeAdmin() {
             {saving ? "Saving..." : "Save Puzzle"}
           </button>
           <button onClick={() => setEditing(null)}
-            className="rounded-lg border border-gray-600 px-5 py-2.5 text-sm text-gray-300 hover:text-white">
+            className="rounded-lg border border-gray-600 px-5 py-2.5 text-sm text-white hover:text-white">
             Cancel
           </button>
         </div>
@@ -834,7 +834,7 @@ export default function TicTacToeAdmin() {
         <div className="flex gap-2">
           {puzzles.length > 0 && (
             <button onClick={exportAll}
-              className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-bold text-gray-300 hover:text-white hover:border-gray-500">
+              className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-bold text-white hover:text-white hover:border-gray-500">
               Export All
             </button>
           )}
@@ -850,14 +850,14 @@ export default function TicTacToeAdmin() {
       </div>
 
       {puzzles.length === 0 ? (
-        <p className="py-8 text-center text-gray-200">No puzzles yet.</p>
+        <p className="py-8 text-center text-white">No puzzles yet.</p>
       ) : (
         <div className="space-y-2">
           {puzzles.map((p) => (
             <div key={p.id} className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900 px-4 py-3">
               <div>
                 <p className="font-bold text-white">{p.title}</p>
-                <div className="flex items-center gap-2 text-xs text-gray-200">
+                <div className="flex items-center gap-2 text-xs text-white">
                   <span className={`rounded-full px-2 py-0.5 font-bold ${
                     p.difficulty === "easy" ? "bg-green-900/50 text-green-400" :
                     p.difficulty === "medium" ? "bg-yellow-900/50 text-yellow-400" :
@@ -869,7 +869,7 @@ export default function TicTacToeAdmin() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => exportPuzzle(p.id)}
-                  className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-gray-300 hover:bg-gray-700">
+                  className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-700">
                   Export
                 </button>
                 <button onClick={() => openEdit(p.id)}

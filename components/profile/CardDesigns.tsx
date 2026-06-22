@@ -39,7 +39,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
           Collection
         </h3>
         {equippedReward && (
-          <span className="text-[10px] font-bold text-gray-200">
+          <span className="text-[10px] font-bold text-white">
             Equipped:{" "}
             <span className="text-amber-400">{equippedReward.name}</span>
           </span>
@@ -105,7 +105,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
                       />
                       {isLocked && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900/60">
-                          <svg className="w-7 h-7 text-gray-200" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                           </svg>
                         </div>
@@ -170,7 +170,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
                       {isLocked && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900/60">
                           <svg
-                            className="w-7 h-7 text-gray-200"
+                            className="w-7 h-7 text-white"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >
@@ -192,7 +192,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
                 {/* Frame name */}
                 <p
                   className={`text-[11px] font-bold leading-tight mb-1 ${
-                    isLocked ? "text-gray-300" : "text-gray-200"
+                    isLocked ? "text-white" : "text-white"
                   }`}
                 >
                   {isLocked ? "???" : reward.name}
@@ -202,7 +202,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
                 <span
                   className={`inline-block text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider border ${
                     isLocked
-                      ? "text-gray-300 border-gray-700/50 bg-gray-800/30"
+                      ? "text-white border-gray-700/50 bg-gray-800/30"
                       : `${rarity.text} ${rarity.border} ${rarity.bg}`
                   }`}
                 >
@@ -218,7 +218,7 @@ export default function CardDesigns({ rewards, equippedFrame, onEquip }: Props) 
 
                 {/* Unlock requirement for locked items */}
                 {isLocked && (
-                  <p className="text-[8px] text-gray-300 mt-1.5 leading-tight">
+                  <p className="text-[8px] text-white mt-1.5 leading-tight">
                     {getUnlockText(reward)}
                   </p>
                 )}

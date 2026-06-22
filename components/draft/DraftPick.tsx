@@ -146,8 +146,8 @@ function statColor(val: number): string {
   if (val >= 85) return "text-emerald-400";
   if (val >= 75) return "text-yellow-400";
   if (val >= 60) return "text-orange-400";
-  if (val > 0) return "text-gray-200";
-  return "text-gray-300";
+  if (val > 0) return "text-white";
+  return "text-white";
 }
 
 export default function DraftPick({
@@ -491,7 +491,7 @@ export default function DraftPick({
               <>
                 <button
                   onClick={() => isMultiplayer ? setConfirmExit(true) : onBack()}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-200 hover:text-white hover:bg-gray-800 transition"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white hover:text-white hover:bg-gray-800 transition"
                   aria-label="Back"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -502,7 +502,7 @@ export default function DraftPick({
                     <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl">
                       <div className="text-2xl mb-3">🚪</div>
                       <h3 className="text-white font-black text-lg mb-2">Leave the Draft?</h3>
-                      <p className="text-gray-200 text-sm mb-5">You'll go back to the lobby. Any picks you've made will be lost.</p>
+                      <p className="text-white text-sm mb-5">You'll go back to the lobby. Any picks you've made will be lost.</p>
                       <div className="flex gap-3">
                         <button
                           onClick={() => setConfirmExit(false)}
@@ -527,7 +527,7 @@ export default function DraftPick({
                 <span className="text-white">PL</span>{" "}
                 <span className="text-emerald-400">DRAFT</span>
               </h1>
-              <p className="text-gray-200 text-xs">
+              <p className="text-white text-xs">
                 {settings.formation}
                 {settings.mode === "prime" && (
                   <span className="ml-1.5 text-amber-400 font-bold">· PRIME</span>
@@ -541,7 +541,7 @@ export default function DraftPick({
           <div className="text-right">
             {isSeason2Draft ? (
               <>
-                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase">
+                <div className="text-[10px] font-bold tracking-widest text-white uppercase">
                   New Signing
                 </div>
                 <div className="text-lg font-extrabold text-amber-400">
@@ -550,7 +550,7 @@ export default function DraftPick({
               </>
             ) : isSubPick ? (
               <>
-                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase">
+                <div className="text-[10px] font-bold tracking-widest text-white uppercase">
                   Substitute
                 </div>
                 <div className="text-lg font-extrabold text-purple-400">
@@ -559,7 +559,7 @@ export default function DraftPick({
               </>
             ) : isClubFirst ? (
               <>
-                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase">
+                <div className="text-[10px] font-bold tracking-widest text-white uppercase">
                   Pick
                 </div>
                 <div className="text-lg font-extrabold text-sky-400">
@@ -568,7 +568,7 @@ export default function DraftPick({
               </>
             ) : chosenSlotIdx !== null ? (
               <>
-                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase">
+                <div className="text-[10px] font-bold tracking-widest text-white uppercase">
                   Picking for
                 </div>
                 <div className={`text-lg font-extrabold ${getPositionTextColor(currentSlot?.label ?? "")}`}>
@@ -577,7 +577,7 @@ export default function DraftPick({
               </>
             ) : (
               <>
-                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase">
+                <div className="text-[10px] font-bold tracking-widest text-white uppercase">
                   Choose position
                 </div>
                 <div className="text-lg font-extrabold text-emerald-400">
@@ -606,7 +606,7 @@ export default function DraftPick({
               </div>
             ))}
           </div>
-          <span className="text-xs font-bold text-gray-200 tabular-nums">
+          <span className="text-xs font-bold text-white tabular-nums">
             {pickedPlayers.length}/{maxPicks}
           </span>
         </div>
@@ -660,7 +660,7 @@ export default function DraftPick({
                               ? "bg-gray-700/80 border-sky-500/60 text-sky-300 hover:bg-sky-900/40 hover:border-sky-400"
                               : isPickable
                                 ? "bg-gray-700/80 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/30 hover:border-emerald-400"
-                                : "bg-gray-800/80 border-gray-600/50 text-gray-200"
+                                : "bg-gray-800/80 border-gray-600/50 text-white"
                     }`}
                   >
                     {displayPlayer ? (
@@ -671,7 +671,7 @@ export default function DraftPick({
                   </div>
                   <span
                     className={`text-[8px] mt-0.5 max-w-[56px] sm:max-w-[64px] truncate text-center font-medium ${
-                      displayPlayer ? "text-white/90" : "text-gray-300"
+                      displayPlayer ? "text-white/90" : "text-white"
                     }`}
                   >
                     {displayPlayer ? displayPlayer.name.split(" ").pop() : ""}
@@ -710,7 +710,7 @@ export default function DraftPick({
                           <span className="font-extrabold text-emerald-400">{sub.overall}</span>
                         </>
                       ) : (
-                        <span className="text-gray-200 font-medium">Sub {i + 1}</span>
+                        <span className="text-white font-medium">Sub {i + 1}</span>
                       )}
                     </div>
                   );
@@ -733,8 +733,8 @@ export default function DraftPick({
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
                     {p.assignedPosition}
                   </span>
-                  <span className="flex-1 truncate font-medium text-gray-300">{p.name}</span>
-                  <span className="text-gray-300 text-[10px] font-medium">{p.clubYear}</span>
+                  <span className="flex-1 truncate font-medium text-white">{p.name}</span>
+                  <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
                   <span className="font-extrabold text-purple-400 text-sm">{p.overall}</span>
                 </div>
               ))}
@@ -774,7 +774,7 @@ export default function DraftPick({
                     {p.assignedPosition}
                   </span>
                   <span className="flex-1 truncate font-medium">{p.name}</span>
-                  <span className="text-gray-300 text-[10px] font-medium">{p.clubYear}</span>
+                  <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
                   <span className="font-extrabold text-emerald-400 text-sm">{p.overall}</span>
                 </div>
               ))}
@@ -796,7 +796,7 @@ export default function DraftPick({
                         {p.assignedPosition}
                       </span>
                       <span className="flex-1 truncate font-medium">{p.name}</span>
-                      <span className="text-gray-300 text-[10px] font-medium">{p.clubYear}</span>
+                      <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
                       <span className="font-extrabold text-emerald-400 text-sm">{p.overall}</span>
                     </div>
                   ))}
@@ -815,8 +815,8 @@ export default function DraftPick({
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
                         {p.assignedPosition}
                       </span>
-                      <span className="flex-1 truncate font-medium text-gray-300">{p.name}</span>
-                      <span className="text-gray-300 text-[10px] font-medium">{p.clubYear}</span>
+                      <span className="flex-1 truncate font-medium text-white">{p.name}</span>
+                      <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
                       <span className="font-extrabold text-purple-400 text-sm">{p.overall}</span>
                     </div>
                   ))}
@@ -883,7 +883,7 @@ export default function DraftPick({
                     Pick {pickedPlayers.filter(p => !p.isSub).length + 1} of 11
                   </span>
                 </div>
-                <p className="text-gray-200 text-sm">Choose a position to spin for</p>
+                <p className="text-white text-sm">Choose a position to spin for</p>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-w-lg mx-auto w-full px-4">
                 {formation.slots.map((slot, i) => {
@@ -900,13 +900,13 @@ export default function DraftPick({
                           : "bg-gray-800/80 border-2 border-emerald-600/40 hover:bg-emerald-900/30 hover:border-emerald-400 hover:scale-105 active:scale-95"
                       }`}
                     >
-                      <div className={`text-lg font-extrabold ${filled ? "text-gray-300" : getPositionTextColor(slot.label)}`}>
+                      <div className={`text-lg font-extrabold ${filled ? "text-white" : getPositionTextColor(slot.label)}`}>
                         {slot.label}
                       </div>
                       {filled && player ? (
-                        <div className="text-[10px] text-gray-300 truncate mt-0.5">{player.name.split(" ").pop()}</div>
+                        <div className="text-[10px] text-white truncate mt-0.5">{player.name.split(" ").pop()}</div>
                       ) : !filled ? (
-                        <div className="text-[10px] text-gray-200 mt-0.5">Available</div>
+                        <div className="text-[10px] text-white mt-0.5">Available</div>
                       ) : null}
                     </button>
                   );
@@ -935,7 +935,7 @@ export default function DraftPick({
                     }
                   </span>
                 </div>
-                <p className="text-gray-200 text-sm">
+                <p className="text-white text-sm">
                   {isSeason2Draft
                     ? "Spin to sign a replacement player"
                     : "Spin to get a random Premier League club & season"
@@ -944,7 +944,7 @@ export default function DraftPick({
                 {!isClubFirst && !isSubPick && !isSeason2Draft && chosenSlotIdx !== null && (
                   <button
                     onClick={() => setChosenSlotIdx(null)}
-                    className="mt-2 text-xs text-gray-200 hover:text-emerald-400 underline transition"
+                    className="mt-2 text-xs text-white hover:text-emerald-400 underline transition"
                   >
                     Change position
                   </button>
@@ -1016,7 +1016,7 @@ export default function DraftPick({
                 </div>
               </div>
 
-              <p className="text-gray-200 text-sm animate-pulse">Spinning...</p>
+              <p className="text-white text-sm animate-pulse">Spinning...</p>
             </div>
           )}
 
@@ -1029,7 +1029,7 @@ export default function DraftPick({
                     {formatSeasonYear(spinDisplay.year)}
                   </span>
                 </div>
-                <p className="text-gray-200 text-sm">
+                <p className="text-white text-sm">
                   {isSeason2Draft ? (
                     "Sign a player from this roster"
                   ) : isClubFirst ? (
@@ -1059,8 +1059,8 @@ export default function DraftPick({
                     disabled={spinning || respinsRemaining <= 0}
                     className={`px-5 py-2 rounded-lg font-bold text-sm transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
                       respinsRemaining > 0
-                        ? "bg-gray-800 hover:bg-gray-700 border border-gray-700/50 text-gray-300"
-                        : "bg-gray-900 border border-gray-800/30 text-gray-300 cursor-not-allowed"
+                        ? "bg-gray-800 hover:bg-gray-700 border border-gray-700/50 text-white"
+                        : "bg-gray-900 border border-gray-800/30 text-white cursor-not-allowed"
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -1068,7 +1068,7 @@ export default function DraftPick({
                     <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ml-1 ${
                       respinsRemaining > 0
                         ? "bg-emerald-500/20 text-emerald-400"
-                        : "bg-gray-800 text-gray-300"
+                        : "bg-gray-800 text-white"
                     }`}>
                       {respinsRemaining}/{maxRespins}
                     </span>
@@ -1079,7 +1079,7 @@ export default function DraftPick({
               {!spinResult && (
                 <div className="flex flex-col items-center justify-center py-8 sm:py-16">
                   <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-                  <p className="text-gray-200 text-sm">Loading roster...</p>
+                  <p className="text-white text-sm">Loading roster...</p>
                 </div>
               )}
 
@@ -1178,7 +1178,7 @@ export default function DraftPick({
                         <div className="font-semibold text-sm truncate group-hover:text-white transition-colors">
                           {player.name}
                         </div>
-                        <div className="text-[11px] sm:text-xs text-gray-200">
+                        <div className="text-[11px] sm:text-xs text-white">
                           {player.nationality} &middot; Age {player.age}
                         </div>
                         {hasStats && !settings.hiddenRatings && (
@@ -1187,7 +1187,7 @@ export default function DraftPick({
                               const val = ks.pick(player);
                               return (
                                 <span key={ks.label} className={`text-[10px] font-bold tabular-nums ${statColor(val)}`}>
-                                  <span className="text-gray-300">{ks.label}</span> {val > 0 ? val : "-"}
+                                  <span className="text-white">{ks.label}</span> {val > 0 ? val : "-"}
                                 </span>
                               );
                             })}
@@ -1202,7 +1202,7 @@ export default function DraftPick({
                               className={`text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded ${
                                 isClubFirst || isSubPick || isSeason2Draft || currentSlot?.compatiblePositions.includes(pos)
                                   ? getPositionColor(pos) + " text-white"
-                                  : "bg-gray-800 text-gray-200"
+                                  : "bg-gray-800 text-white"
                               }`}
                             >
                               {pos}
@@ -1265,7 +1265,7 @@ export default function DraftPick({
                     </div>
                   </div>
                 </div>
-                <p className="text-gray-200 text-sm">Choose a position to assign this player</p>
+                <p className="text-white text-sm">Choose a position to assign this player</p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-md mx-auto">
@@ -1299,7 +1299,7 @@ export default function DraftPick({
               {/* Bench option — only in club-first, only when bench isn't full */}
               {pickedPlayers.filter(p => p.isSub).length < 3 && (
                 <div className="mt-4 max-w-md mx-auto">
-                  <div className="text-[10px] font-bold tracking-widest text-gray-300 uppercase text-center mb-2">or</div>
+                  <div className="text-[10px] font-bold tracking-widest text-white uppercase text-center mb-2">or</div>
                   <button
                     onClick={() => {
                       if (!pendingPlayer) return;
@@ -1319,7 +1319,7 @@ export default function DraftPick({
               <div className="flex justify-center mt-6">
                 <button
                   onClick={() => { setPendingPlayer(null); setPhase("pick"); }}
-                  className="px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-lg font-bold text-sm transition-all text-gray-300"
+                  className="px-5 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-lg font-bold text-sm transition-all text-white"
                 >
                   Back to roster
                 </button>

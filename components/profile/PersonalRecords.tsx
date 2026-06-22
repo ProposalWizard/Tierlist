@@ -44,7 +44,7 @@ export default function PersonalRecords() {
             className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
               competition === "pl"
                 ? "bg-purple-600 text-white"
-                : "text-gray-200 hover:text-gray-300"
+                : "text-white hover:text-gray-300"
             }`}
           >
             PL
@@ -54,7 +54,7 @@ export default function PersonalRecords() {
             className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
               competition === "all"
                 ? "bg-purple-600 text-white"
-                : "text-gray-200 hover:text-gray-300"
+                : "text-white hover:text-gray-300"
             }`}
           >
             All
@@ -67,7 +67,7 @@ export default function PersonalRecords() {
           <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : !hasAny ? (
-        <p className="text-center text-gray-300 text-xs py-4">
+        <p className="text-center text-white text-xs py-4">
           Play a draft season to set your records!
         </p>
       ) : (
@@ -78,8 +78,8 @@ export default function PersonalRecords() {
             if (!rec) return (
               <div key={rt.key} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-800/30 border border-gray-800/30">
                 <span className="text-base">{rt.emoji}</span>
-                <span className="flex-1 text-xs font-bold text-gray-300">{rt.label}</span>
-                <span className="text-sm font-black text-gray-300">—</span>
+                <span className="flex-1 text-xs font-bold text-white">{rt.label}</span>
+                <span className="text-sm font-black text-white">—</span>
               </div>
             );
             return (
@@ -88,7 +88,7 @@ export default function PersonalRecords() {
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-white">{rt.label}</div>
                   {!rt.isTeam && rec.playerName && (
-                    <div className="text-[10px] text-gray-200 truncate">
+                    <div className="text-[10px] text-white truncate">
                       {rec.playerName}
                       {rec.playerOvr !== null && (
                         <span className="ml-1 text-emerald-500/70">{rec.playerOvr} OVR</span>

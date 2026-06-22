@@ -1481,7 +1481,7 @@ export default function AdminPanel({
                     {catSaving ? "…" : "Save"}
                   </button>
                   <button onClick={() => setEditingCatId(null)}
-                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-gray-400">
+                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400">
                     Cancel
                   </button>
                 </>
@@ -1491,7 +1491,7 @@ export default function AdminPanel({
                   <button
                     onClick={() => moveCategory(cat.id, "up")}
                     disabled={categories.indexOf(cat) === 0}
-                    className="rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-gray-300 hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-white hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Move up"
                   >
                     ↑
@@ -1499,13 +1499,13 @@ export default function AdminPanel({
                   <button
                     onClick={() => moveCategory(cat.id, "down")}
                     disabled={categories.indexOf(cat) === categories.length - 1}
-                    className="rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-gray-300 hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-white hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Move down"
                   >
                     ↓
                   </button>
                   <button onClick={() => { setEditingCatId(cat.id); setCatEditName(cat.name); }}
-                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-indigo-500 hover:text-white">
+                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-indigo-500 hover:text-white">
                     Rename
                   </button>
                   <button onClick={() => deleteCategory(cat.id)}
@@ -1536,7 +1536,7 @@ export default function AdminPanel({
           {categories.length > 0 && (
             <div className="mt-6">
               <h3 className="mb-3 text-sm font-bold text-white">Homepage Display Order</h3>
-              <p className="mb-4 text-xs text-gray-200">
+              <p className="mb-4 text-xs text-white">
                 Control how tierlists are ordered in each category on the homepage (max 6 shown).
               </p>
               <div className="space-y-2">
@@ -1559,7 +1559,7 @@ export default function AdminPanel({
                           <option value="likes">Most liked</option>
                           <option value="manual">Manual (pin specific tierlists)</option>
                         </select>
-                        {isSaving && <span className="text-xs text-gray-200">Saving…</span>}
+                        {isSaving && <span className="text-xs text-white">Saving…</span>}
                       </div>
                       {method === "manual" && (() => {
                         const pinnedIds = setting?.pinned_ids ?? [];
@@ -1569,7 +1569,7 @@ export default function AdminPanel({
                         );
                         return (
                           <div className="mt-3">
-                            <p className="mb-2 text-[10px] text-gray-200">
+                            <p className="mb-2 text-[10px] text-white">
                               Select up to 6 tierlists to pin (in order). Click to add/remove. Vote tierlists are labelled.
                             </p>
                             {/* Pinned order */}
@@ -1604,12 +1604,12 @@ export default function AdminPanel({
                               value={pinPickerSearch[cat.name] ?? ""}
                               onChange={(e) => setPinPickerSearch((prev) => ({ ...prev, [cat.name]: e.target.value }))}
                               placeholder="Search tierlists and vote tierlists…"
-                              className="mb-2 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 focus:border-indigo-500 focus:outline-none"
+                              className="mb-2 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
                             />
                             {/* Results */}
                             <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800">
                               {filtered.length === 0 ? (
-                                <p className="px-3 py-2 text-[10px] text-gray-300">No results.</p>
+                                <p className="px-3 py-2 text-[10px] text-white">No results.</p>
                               ) : filtered.slice(0, 30).map((item) => {
                                 const pinned = pinnedIds.includes(item.id);
                                 const canAdd = !pinned && pinnedIds.length < 6;
@@ -1631,8 +1631,8 @@ export default function AdminPanel({
                                       pinned
                                         ? "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-900/50"
                                         : canAdd
-                                        ? "text-gray-300 hover:bg-gray-700"
-                                        : "cursor-not-allowed text-gray-300"
+                                        ? "text-white hover:bg-gray-700"
+                                        : "cursor-not-allowed text-white"
                                     }`}
                                   >
                                     <span className={`h-3.5 w-3.5 flex-shrink-0 rounded border text-[9px] flex items-center justify-center ${pinned ? "border-indigo-500 bg-indigo-600 text-white" : "border-gray-600"}`}>
@@ -1672,7 +1672,7 @@ export default function AdminPanel({
       </p>
 
       {tierlists.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-gray-300">
+        <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-white">
           No tierlists yet.
         </div>
       )}
@@ -1702,7 +1702,7 @@ export default function AdminPanel({
                     <span className="flex-shrink-0 text-yellow-400 text-sm" title={`Also in: ${(tl as Tierlist & { additional_categories?: string[] }).additional_categories!.join(", ")}`}>★</span>
                   )}
                 </div>
-                <p className="text-xs text-gray-200">
+                <p className="text-xs text-white">
                   {tl.category ?? "—"} ·{" "}
                   {new Date(tl.created_at).toLocaleDateString()} ·{" "}
                   👁 {(tl.view_count ?? 0).toLocaleString()}
@@ -1714,14 +1714,14 @@ export default function AdminPanel({
                 {editingId === tl.id ? (
                   <button
                     onClick={closeEdit}
-                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-gray-400 hover:text-white"
+                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-gray-400 hover:text-white"
                   >
                     Cancel
                   </button>
                 ) : (
                   <button
                     onClick={() => openEdit(tl)}
-                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white"
+                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-indigo-500 hover:text-white"
                   >
                     Edit
                   </button>
@@ -1787,7 +1787,7 @@ export default function AdminPanel({
                       <label className="mb-1 block text-xs font-semibold text-white">
                         Additional Categories
                       </label>
-                      <p className="mb-2 text-[10px] text-gray-200">
+                      <p className="mb-2 text-[10px] text-white">
                         Select extra categories this tierlist should also appear in (besides the primary one above).
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -1842,7 +1842,7 @@ export default function AdminPanel({
                       <div className="flex gap-4 items-start">
                         {/* Preview — matches homepage card dimensions exactly */}
                         <div className="flex-shrink-0">
-                          <p className="mb-1 text-[10px] text-gray-200">Homepage preview</p>
+                          <p className="mb-1 text-[10px] text-white">Homepage preview</p>
                           <div
                             className={`h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
                               editCoverPreview
@@ -1854,7 +1854,7 @@ export default function AdminPanel({
                               <ImageWithFallback src={editCoverPreview} alt="cover preview"
                                 className="h-full w-full object-cover" />
                             ) : (
-                              <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-300">
+                              <div className="flex h-full w-full items-center justify-center text-xs italic text-white">
                                 No cover
                               </div>
                             )}
@@ -1863,7 +1863,7 @@ export default function AdminPanel({
 
                         {/* Controls */}
                         <div className="flex flex-col gap-2 pt-1">
-                          <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white">
+                          <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-indigo-500 hover:text-white">
                             Upload new cover
                             <input
                               type="file"
@@ -1881,7 +1881,7 @@ export default function AdminPanel({
                           {editCoverPreview && (
                             <button
                               onClick={() => setAdminCoverCrop({ imageUrl: editCoverPreview, tierlistId: tl.id })}
-                              className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white"
+                              className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-indigo-500 hover:text-white"
                             >
                               Crop cover
                             </button>
@@ -1896,7 +1896,7 @@ export default function AdminPanel({
                           )}
                           {editState.images.length > 0 &&
                             !editState.customCoverPreview && (
-                              <p className="text-xs text-gray-300">
+                              <p className="text-xs text-white">
                                 Or click an image below
                               </p>
                             )}
@@ -1929,7 +1929,7 @@ export default function AdminPanel({
                           <option key={vl.id} value={vl.id}>{vl.title}</option>
                         ))}
                       </select>
-                      <p className="mt-1 text-[10px] text-gray-300">
+                      <p className="mt-1 text-[10px] text-white">
                         Links this tierlist to a vote tierlist for cross-navigation.
                       </p>
                     </div>
@@ -1959,7 +1959,7 @@ export default function AdminPanel({
                           <option key={br.id} value={br.id}>{br.title}</option>
                         ))}
                       </select>
-                      <p className="mt-1 text-[10px] text-gray-300">
+                      <p className="mt-1 text-[10px] text-white">
                         Adds a &ldquo;Blind Rank This&rdquo; button on the play page that links to this blind ranking.
                       </p>
                     </div>
@@ -2071,7 +2071,7 @@ export default function AdminPanel({
                         </label>
                       </div>
                       {editState.images.length === 0 && editState.stagedNewImages.length === 0 ? (
-                        <p className="text-xs italic text-gray-300">
+                        <p className="text-xs italic text-white">
                           No images in this tierlist.
                         </p>
                       ) : (
@@ -2154,7 +2154,7 @@ export default function AdminPanel({
                                             ✂
                                           </button>
                                         </div>
-                                        <p className="max-w-[80px] truncate text-center text-[10px] text-gray-200">
+                                        <p className="max-w-[80px] truncate text-center text-[10px] text-white">
                                           {img.name}
                                         </p>
                                       </div>
@@ -2186,7 +2186,7 @@ export default function AdminPanel({
                                     >
                                       ×
                                     </button>
-                                    <p className="max-w-[80px] truncate text-center text-[10px] text-gray-200 mt-1">
+                                    <p className="max-w-[80px] truncate text-center text-[10px] text-white mt-1">
                                       {img.name}
                                     </p>
                                   </div>
@@ -2194,7 +2194,7 @@ export default function AdminPanel({
                               </div>
                             </SortableContext>
                           </DndContext>
-                          <p className="mt-1.5 text-xs text-gray-300">
+                          <p className="mt-1.5 text-xs text-white">
                             Drag to reorder · click to set as cover · hover × to remove
                           </p>
                         </>
@@ -2216,7 +2216,7 @@ export default function AdminPanel({
                         />
                         <div className="h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-gray-400 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:translate-x-full peer-checked:after:bg-white" />
                       </label>
-                      <span className="text-xs text-gray-300">
+                      <span className="text-xs text-white">
                         Face detection {editState.face_detection_enabled ? "ON" : "OFF"}
                       </span>
                     </div>
@@ -2237,7 +2237,7 @@ export default function AdminPanel({
                       </button>
                       <button
                         onClick={closeEdit}
-                        className="rounded-lg border border-gray-600 px-5 py-2 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-400 hover:text-white"
+                        className="rounded-lg border border-gray-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:border-gray-400 hover:text-white"
                       >
                         Cancel
                       </button>
@@ -2270,7 +2270,7 @@ export default function AdminPanel({
               <button
                 onClick={() => setDeleteConfirmId(null)}
                 disabled={deleting}
-                className="flex-1 rounded-lg border border-gray-600 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-gray-400 hover:text-white disabled:opacity-50"
+                className="flex-1 rounded-lg border border-gray-600 py-2.5 text-sm font-semibold text-white transition-colors hover:border-gray-400 hover:text-white disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -2320,7 +2320,7 @@ export default function AdminPanel({
                       <option key={tl.id} value={tl.id}>{tl.title}</option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-gray-200">
+                  <p className="text-[10px] text-white">
                     Creates a new vote tierlist with the same title, category, cover, tiers, and images. The original tierlist is kept.
                   </p>
                   <div className="flex gap-2">
@@ -2334,7 +2334,7 @@ export default function AdminPanel({
                     <button
                       onClick={() => { setShowConvertPicker(false); setConvertSourceId(""); }}
                       disabled={converting}
-                      className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:text-white disabled:opacity-40"
+                      className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:text-white disabled:opacity-40"
                     >
                       Cancel
                     </button>
@@ -2374,7 +2374,7 @@ export default function AdminPanel({
                     >×</button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                  <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-white hover:border-purple-500 hover:text-white">
                     Upload cover (optional)
                     <input type="file" accept={ACCEPT_IMAGE_TYPES} className="sr-only"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) { const p = URL.createObjectURL(f); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(f); setNewVoteCoverPreview(p); e.target.value = ""; } }}
@@ -2444,7 +2444,7 @@ export default function AdminPanel({
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                  <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-semibold text-white hover:border-purple-500 hover:text-white">
                     + Add images
                     <input
                       type="file"
@@ -2458,7 +2458,7 @@ export default function AdminPanel({
                       }}
                     />
                   </label>
-                  <span className="text-xs text-gray-200">
+                  <span className="text-xs text-white">
                     {newVoteImageFiles.length > 0 ? `${newVoteImageFiles.length} image${newVoteImageFiles.length === 1 ? "" : "s"} ready` : "Optional — add after creation too"}
                   </span>
                 </div>
@@ -2507,16 +2507,16 @@ export default function AdminPanel({
                   {newVoteCreating ? "Creating…" : "Create"}
                 </button>
                 <button onClick={() => { setShowCreateVote(false); setNewVoteTitle(""); setNewVoteCategory(""); setNewVoteTiers(DEFAULT_VOTE_TIERS); setNewVoteImageFiles([]); setNewVoteImportSourceId(""); setNewVoteShowImport(false); if (newVoteCoverPreview) URL.revokeObjectURL(newVoteCoverPreview); setNewVoteCoverFile(null); setNewVoteCoverPreview(null); }}
-                  className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-300 hover:border-gray-400">
+                  className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-white hover:border-gray-400">
                   Cancel
                 </button>
               </div>
             </div>
           )}
 
-          {!votelistsLoaded && <p className="text-sm text-gray-200">Loading…</p>}
+          {!votelistsLoaded && <p className="text-sm text-white">Loading…</p>}
           {votelistsLoaded && votelists.length === 0 && (
-            <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-gray-300">
+            <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-white">
               No vote tierlists yet.
             </div>
           )}
@@ -2556,23 +2556,23 @@ export default function AdminPanel({
                         title="Click to rename"
                       >
                         <p className="truncate text-sm font-semibold text-white group-hover:text-purple-300">{vl.title}</p>
-                        <span className="text-[10px] text-gray-300 opacity-0 group-hover:opacity-100">✏️</span>
+                        <span className="text-[10px] text-white opacity-0 group-hover:opacity-100">✏️</span>
                       </button>
                     )}
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-xs font-semibold ${vl.is_active ? "text-green-400" : "text-gray-200"}`}>
+                      <span className={`text-xs font-semibold ${vl.is_active ? "text-green-400" : "text-white"}`}>
                         {vl.is_active ? "Active" : "Inactive"}
                       </span>
-                      <span className="text-xs text-gray-300">· {new Date(vl.created_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-white">· {new Date(vl.created_at).toLocaleDateString()}</span>
                       {voteImagesMap[vl.id] !== undefined && (
-                        <span className="text-xs text-gray-300">· {voteImagesMap[vl.id].length} images</span>
+                        <span className="text-xs text-white">· {voteImagesMap[vl.id].length} images</span>
                       )}
                     </div>
                   </div>
                   <div className="flex flex-shrink-0 items-center gap-2">
                     <button
                       onClick={() => handleExpandVote(vl.id)}
-                      className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                      className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-purple-500 hover:text-white">
                       {expandedVoteId === vl.id ? "Close" : "Manage"}
                     </button>
                     <button
@@ -2597,7 +2597,7 @@ export default function AdminPanel({
                 {expandedVoteId === vl.id && voteEditState && voteEditState.voteId === vl.id && (
                   <div className="border-t border-gray-700/60 p-4 space-y-4">
                     {voteEditState.loading ? (
-                      <p className="text-sm text-gray-200">Loading…</p>
+                      <p className="text-sm text-white">Loading…</p>
                     ) : (
                       <>
                         {/* Cover photo */}
@@ -2605,7 +2605,7 @@ export default function AdminPanel({
                           <p className="mb-2 text-xs font-semibold text-white">Cover Photo</p>
                           <div className="flex gap-4 items-start">
                             <div className="flex-shrink-0">
-                              <p className="mb-1 text-[10px] text-gray-200">Homepage preview</p>
+                              <p className="mb-1 text-[10px] text-white">Homepage preview</p>
                               <div className={`h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
                                 getVoteCoverPreview() ? "border-purple-500" : "border-gray-700 bg-gray-800"
                               }`}>
@@ -2613,7 +2613,7 @@ export default function AdminPanel({
                                   <ImageWithFallback src={getVoteCoverPreview()!} alt="cover preview"
                                     className="h-full w-full object-cover" />
                                 ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-300">No cover</div>
+                                  <div className="flex h-full w-full items-center justify-center text-xs italic text-white">No cover</div>
                                 )}
                               </div>
                             </div>
@@ -2634,7 +2634,7 @@ export default function AdminPanel({
                                   </button>
                                 </div>
                               ) : (
-                                <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white">
+                                <label className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-white hover:border-purple-500 hover:text-white">
                                   {voteEditState.cover_image_url ? "Upload new cover" : "Upload cover"}
                                   <input type="file" accept={ACCEPT_IMAGE_TYPES} className="sr-only"
                                     onChange={(e) => {
@@ -2654,7 +2654,7 @@ export default function AdminPanel({
                               {getVoteCoverPreview() && (
                                 <button
                                   onClick={() => setAdminCoverCrop({ imageUrl: getVoteCoverPreview()!, tierlistId: vl.id, isVote: true })}
-                                  className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-purple-500 hover:text-white">
+                                  className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-purple-500 hover:text-white">
                                   Crop cover
                                 </button>
                               )}
@@ -2663,7 +2663,7 @@ export default function AdminPanel({
                           {/* Pick cover from existing images */}
                           {voteEditState.images.filter((i) => !i.isNew).length > 0 && (
                             <div className="mt-2">
-                              <p className="mb-1.5 text-[10px] text-gray-200">Or pick from existing images:</p>
+                              <p className="mb-1.5 text-[10px] text-white">Or pick from existing images:</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {voteEditState.images.filter((i) => !i.isNew).map((img) => {
                                   const isSelected = voteEditState.selectedCoverImageId === img.id;
@@ -2733,7 +2733,7 @@ export default function AdminPanel({
                             />
                             <div className="h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-gray-400 after:transition-all peer-checked:bg-purple-600 peer-checked:after:translate-x-full peer-checked:after:bg-white" />
                           </label>
-                          <span className="text-xs text-gray-300">
+                          <span className="text-xs text-white">
                             Face detection {voteEditState.face_detection_enabled ? "ON" : "OFF"}
                           </span>
                         </div>
@@ -2808,7 +2808,7 @@ export default function AdminPanel({
 
                         <p className="text-xs font-semibold text-white">Images ({voteEditState.images.length})</p>
                         {voteEditState.images.length === 0 ? (
-                          <p className="text-xs italic text-gray-300">No images yet. Add some below.</p>
+                          <p className="text-xs italic text-white">No images yet. Add some below.</p>
                         ) : (
                           <>
                             <DndContext
@@ -2894,7 +2894,7 @@ export default function AdminPanel({
                                 </div>
                               </SortableContext>
                             </DndContext>
-                            <p className="mt-1.5 text-xs text-gray-300">
+                            <p className="mt-1.5 text-xs text-white">
                               Drag to reorder · hover × to remove · ✂ to crop · green border = new, amber = cropped
                             </p>
                           </>
@@ -2902,7 +2902,7 @@ export default function AdminPanel({
 
                         {/* Add images — staged only, uploaded on Save Changes */}
                         <div className="rounded-xl border border-dashed border-gray-700 p-3 space-y-2">
-                          <label className="cursor-pointer block rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-purple-500 hover:text-white text-center">
+                          <label className="cursor-pointer block rounded-lg border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-semibold text-white hover:border-purple-500 hover:text-white text-center">
                             Choose images to add
                             <input
                               type="file"
@@ -2928,7 +2928,7 @@ export default function AdminPanel({
                               }}
                             />
                           </label>
-                          <p className="text-[10px] text-gray-200 text-center">
+                          <p className="text-[10px] text-white text-center">
                             New images upload when you click Save Changes.
                           </p>
                         </div>
@@ -2999,14 +2999,14 @@ export default function AdminPanel({
                             ) : voteEditState.isDirty ? (
                               <span className="text-yellow-400">● Unsaved changes</span>
                             ) : (
-                              <span className="text-gray-200">No unsaved changes</span>
+                              <span className="text-white">No unsaved changes</span>
                             )}
                           </div>
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleCloseVoteEdit()}
                               disabled={voteEditState.saving}
-                              className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:border-gray-400 disabled:opacity-40">
+                              className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 disabled:opacity-40">
                               {voteEditState.isDirty ? "Discard" : "Close"}
                             </button>
                             <button
@@ -3039,7 +3039,7 @@ export default function AdminPanel({
                     {deletingVote ? "Deleting…" : "Delete"}
                   </button>
                   <button onClick={() => setDeleteVoteConfirmId(null)} disabled={deletingVote}
-                    className="flex-1 rounded-lg border border-gray-600 py-2.5 text-sm font-semibold text-gray-300 hover:border-gray-400 disabled:opacity-50">
+                    className="flex-1 rounded-lg border border-gray-600 py-2.5 text-sm font-semibold text-white hover:border-gray-400 disabled:opacity-50">
                     Cancel
                   </button>
                 </div>
@@ -3076,7 +3076,7 @@ export default function AdminPanel({
                   <option key={tl.id} value={tl.id}>{tl.title}</option>
                 ))}
               </select>
-              <p className="text-[10px] text-gray-200">
+              <p className="text-[10px] text-white">
                 Creates a new blind ranking with 10 slots, copying the title, category, cover, images, and face detection setting. The original tierlist is kept and auto-linked. If you want more or fewer slots, edit the blind ranking after creating it.
               </p>
               <div className="flex gap-2">
@@ -3090,7 +3090,7 @@ export default function AdminPanel({
                 <button
                   onClick={() => { setShowConvertBlindPicker(false); setConvertBlindSourceId(""); }}
                   disabled={convertingBlind}
-                  className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:text-white disabled:opacity-40"
+                  className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:text-white disabled:opacity-40"
                 >
                   Cancel
                 </button>

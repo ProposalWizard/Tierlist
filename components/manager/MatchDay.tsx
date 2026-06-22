@@ -132,7 +132,7 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
             <h1 className="text-3xl font-black text-white">
               {isHome ? "Home" : "Away"} vs {opponent.name}
             </h1>
-            <p className="text-gray-200 text-sm mt-2">Strength rating · {opponent.strength}</p>
+            <p className="text-white text-sm mt-2">Strength rating · {opponent.strength}</p>
           </div>
 
           <div className="bg-gradient-to-br from-gray-900 to-gray-900/50 rounded-2xl p-6 mb-5 border border-gray-800/50">
@@ -142,13 +142,13 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
                 <div className="text-3xl font-black text-white">
                   {Math.round(starters.reduce((s, p) => s + p.overall, 0) / Math.max(1, starters.length))}
                 </div>
-                <div className="text-[10px] text-gray-300 mt-0.5">Avg OVR</div>
+                <div className="text-[10px] text-white mt-0.5">Avg OVR</div>
               </div>
-              <div className="text-2xl font-black text-gray-300">VS</div>
+              <div className="text-2xl font-black text-white">VS</div>
               <div className="text-center">
                 <div className="text-[10px] font-bold tracking-widest text-red-400 uppercase mb-1">{opponent.name.slice(0, 8)}</div>
                 <div className="text-3xl font-black text-white">{opponent.strength}</div>
-                <div className="text-[10px] text-gray-300 mt-0.5">Rating</div>
+                <div className="text-[10px] text-white mt-0.5">Rating</div>
               </div>
             </div>
           </div>
@@ -173,10 +173,10 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
           <div className="flex items-center justify-between gap-3">
             {/* Minute */}
             <div className="text-center min-w-[60px]">
-              <div className={`text-2xl font-black ${phase === "fulltime" ? "text-gray-200" : "text-emerald-400"}`}>
+              <div className={`text-2xl font-black ${phase === "fulltime" ? "text-white" : "text-emerald-400"}`}>
                 {phase === "halftime" ? "HT" : phase === "fulltime" ? "FT" : `${Math.floor(currentMinute)}'`}
               </div>
-              <div className="text-[9px] text-gray-300 uppercase tracking-wider">
+              <div className="text-[9px] text-white uppercase tracking-wider">
                 {phase === "first-half" ? "1st Half" : phase === "second-half" ? "2nd Half" : phase === "halftime" ? "Halftime" : "Final"}
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
                 <div className="text-xs font-bold text-emerald-400 truncate">YOU</div>
               </div>
               <div className="text-3xl font-black text-white tabular-nums px-2">{goalsFor}</div>
-              <div className="text-2xl font-black text-gray-300">-</div>
+              <div className="text-2xl font-black text-white">-</div>
               <div className="text-3xl font-black text-white tabular-nums px-2">{goalsAgainst}</div>
               <div className="text-left flex-1 min-w-0">
                 <div className="text-xs font-bold text-red-400 truncate">{opponent.name.slice(0, 10)}</div>
@@ -223,7 +223,7 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
             <div className="bg-gradient-to-br from-amber-900/30 to-amber-950/20 border border-amber-700/30 rounded-2xl p-6 text-center mb-4">
               <div className="text-[10px] font-bold tracking-widest text-amber-400 uppercase mb-3">Halftime</div>
               <div className="text-5xl font-black text-white mb-2 tabular-nums">{goalsFor} - {goalsAgainst}</div>
-              <p className="text-sm text-gray-200">
+              <p className="text-sm text-white">
                 {goalsFor > goalsAgainst ? "You're winning. Hold the lead." :
                  goalsFor < goalsAgainst ? "Down at the break. Time to change it up?" :
                  "All level. Make it count in the second half."}
@@ -256,19 +256,19 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
               <h2 className="text-lg font-black text-white">Halftime Subs</h2>
               <button
                 onClick={() => setShowSubSheet(false)}
-                className="text-xs text-gray-200 hover:text-gray-300"
+                className="text-xs text-white hover:text-gray-300"
               >
                 ✕ Cancel
               </button>
             </div>
-            <p className="text-xs text-gray-200 mb-4">
+            <p className="text-xs text-white mb-4">
               Tap a starter, then a sub to swap them. Up to 3 changes.
               <span className="text-amber-400"> Fresh subs get a chance-creation bonus.</span>
             </p>
 
             <div className="space-y-4">
               <div>
-                <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Currently On</h3>
+                <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Currently On</h3>
                 <div className="space-y-1.5">
                   {starters.map(p => {
                     const beingSubbed = pendingSubs.find(s => s.off === p.name);
@@ -282,8 +282,8 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
                         <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
                           {p.assignedPosition}
                         </span>
-                        <span className="flex-1 text-sm text-gray-200 truncate">{p.name}</span>
-                        <span className="text-xs text-gray-200">{p.overall}</span>
+                        <span className="flex-1 text-sm text-white truncate">{p.name}</span>
+                        <span className="text-xs text-white">{p.overall}</span>
                         {beingSubbed && <span className="text-[10px] text-red-400 font-bold">→ {beingSubbed.on.split(" ").slice(-1)[0]}</span>}
                       </div>
                     );
@@ -292,7 +292,7 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
               </div>
 
               <div>
-                <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Bench</h3>
+                <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Bench</h3>
                 <div className="space-y-1.5">
                   {subs.map(p => {
                     const beingBroughtOn = pendingSubs.find(s => s.on === p.name);
@@ -300,8 +300,8 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
                       <div key={p.name} className={`bg-gray-900 rounded-lg border ${beingBroughtOn ? "border-emerald-500/40 bg-emerald-950/20" : "border-gray-800"} p-2`}>
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-700 text-white">SUB</span>
-                          <span className="flex-1 text-sm text-gray-200 truncate">{p.name}</span>
-                          <span className="text-xs text-gray-200">{p.overall}</span>
+                          <span className="flex-1 text-sm text-white truncate">{p.name}</span>
+                          <span className="text-xs text-white">{p.overall}</span>
                         </div>
                         <div className="grid grid-cols-3 gap-1.5">
                           {starters
@@ -316,7 +316,7 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
                                   className={`text-[10px] py-1.5 rounded border transition-all ${
                                     active
                                       ? "border-emerald-500 bg-emerald-500/20 text-emerald-300 font-bold"
-                                      : "border-gray-800 bg-gray-950 text-gray-200 hover:border-gray-700"
+                                      : "border-gray-800 bg-gray-950 text-white hover:border-gray-700"
                                   }`}
                                 >
                                   ⇄ {s.name.split(" ").slice(-1)[0]}
@@ -359,11 +359,11 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
                 </span>
               </div>
               <div className="text-7xl font-black text-white mb-2 tabular-nums">{goalsFor} - {goalsAgainst}</div>
-              <p className="text-gray-200 text-sm mb-6">{isHome ? "Home" : "Away"} · vs {opponent.name}</p>
+              <p className="text-white text-sm mb-6">{isHome ? "Home" : "Away"} · vs {opponent.name}</p>
 
               {result.scorers.length > 0 && (
                 <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 mb-6">
-                  <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Scorers</h3>
+                  <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Scorers</h3>
                   <div className="space-y-1">
                     {result.scorers.map(s => (
                       <div key={s.name} className="text-sm text-white flex items-center justify-between">
@@ -391,7 +391,7 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
         <div ref={scrollRef} className="flex-1 overflow-y-auto max-w-2xl mx-auto w-full px-4 pb-6">
           <div className="space-y-2 pt-3">
             {shownEvents.length === 0 && (
-              <div className="text-center text-gray-300 text-xs py-12">Match underway...</div>
+              <div className="text-center text-white text-xs py-12">Match underway...</div>
             )}
             {shownEvents.map((e, i) => {
               const isGoal = e.type === "goal";
@@ -409,10 +409,10 @@ export default function MatchDay({ squad: initialSquad, opponent, isHome, matchw
                   }`}
                 >
                   <div className="shrink-0 w-10 text-center">
-                    <div className={`text-xs font-black ${isGoal ? "text-white" : "text-gray-200"}`}>{e.minute}'</div>
+                    <div className={`text-xs font-black ${isGoal ? "text-white" : "text-white"}`}>{e.minute}'</div>
                     {isGoal && <div className="text-[9px] font-bold text-amber-400 tabular-nums">{e.goalsFor}-{e.goalsAgainst}</div>}
                   </div>
-                  <div className="flex-1 text-sm text-gray-200">{e.description}</div>
+                  <div className="flex-1 text-sm text-white">{e.description}</div>
                 </div>
               );
             })}

@@ -139,7 +139,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
                     <span className="text-white font-bold text-sm">{formatValue(entry.value, rt)}</span>
                     {isOfficial ? (
                       <>
-                        {entry.clubName && <span className="text-gray-300 font-bold">{entry.clubName}</span>}
+                        {entry.clubName && <span className="text-white font-bold">{entry.clubName}</span>}
                         <span className="text-amber-400 font-bold">⭐ Official</span>
                       </>
                     ) : (
@@ -162,7 +162,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
             </div>
             {!rt.isTeam && (
               <div className={`text-xl font-black tabular-nums shrink-0 ${
-                i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-600" : "text-white"
+                i === 0 ? "text-amber-400" : i === 1 ? "text-white" : i === 2 ? "text-amber-600" : "text-white"
               }`}>
                 {formatValue(entry.value, rt)}
               </div>
@@ -278,7 +278,7 @@ export default function DraftRecordsPage() {
               <div className="pt-2">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-lg">🌟</span>
-                  <h2 className="text-xs font-extrabold tracking-[0.2em] text-gray-300 uppercase">Career Records</h2>
+                  <h2 className="text-xs font-extrabold tracking-[0.2em] text-white uppercase">Career Records</h2>
                   <div className="flex-1 h-px bg-gray-800" />
                 </div>
                 <div className="space-y-4">
@@ -306,7 +306,7 @@ export default function DraftRecordsPage() {
               </div>
             )}
 
-            <p className="text-center text-gray-200 text-xs pb-4">
+            <p className="text-center text-white text-xs pb-4">
               Only signed-in players appear on these boards. ⭐ Official = real-world PL benchmark.
             </p>
           </div>
