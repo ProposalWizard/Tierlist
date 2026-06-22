@@ -89,7 +89,7 @@ export default function LabelOverlay({
           </button>
         </div>
 
-        <p className="text-center text-xs text-gray-500">Enter to save · Esc to cancel</p>
+        <p className="text-center text-xs text-gray-200">Enter to save · Esc to cancel</p>
       </div>
     </div>
   );

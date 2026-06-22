@@ -512,7 +512,7 @@ export default function FootballDataPage() {
 
   /* ── Breadcrumb ── */
   const crumbs = (
-    <div className="flex items-center gap-2 text-sm text-gray-400 mb-6 flex-wrap">
+    <div className="flex items-center gap-2 text-sm text-gray-200 mb-6 flex-wrap">
       <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
       <span>/</span>
       <button onClick={() => { setView("home"); setSquadClub(null); setPlayerProfile(null); }}
@@ -557,15 +557,15 @@ export default function FootballDataPage() {
         {/* Tab bar */}
         <div className="mb-6 flex gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1 w-fit">
           <button onClick={() => setTab("browse")}
-            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "browse" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"}`}>
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "browse" ? "bg-indigo-600 text-white" : "text-gray-200 hover:text-white"}`}>
             Browse
           </button>
           <button onClick={() => setTab("helper")}
-            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "helper" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"}`}>
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "helper" ? "bg-indigo-600 text-white" : "text-gray-200 hover:text-white"}`}>
             TTT Helper
           </button>
           <button onClick={() => { setTab("database"); if (!dbStats) loadDbStats(); }}
-            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "database" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"}`}>
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${tab === "database" ? "bg-indigo-600 text-white" : "text-gray-200 hover:text-white"}`}>
             Database
           </button>
         </div>
@@ -579,7 +579,7 @@ export default function FootballDataPage() {
           <>
             <div className="mb-6">
               <h1 className="text-2xl font-black">TTT Grid Builder</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-300">
                 Set 3 row clubs and 3 column clubs, then generate a full grid of answers.
               </p>
             </div>
@@ -588,7 +588,7 @@ export default function FootballDataPage() {
             <div className="mb-6 grid gap-6 lg:grid-cols-2">
               {/* Row clubs */}
               <div>
-                <h3 className="mb-3 text-xs font-bold uppercase text-gray-500">Row Clubs</h3>
+                <h3 className="mb-3 text-xs font-bold uppercase text-gray-200">Row Clubs</h3>
                 <div className="space-y-2">
                   {[0, 1, 2].map((idx) => (
                     <div key={`row-${idx}`}>
@@ -596,7 +596,7 @@ export default function FootballDataPage() {
                         <div className="flex items-center gap-2 rounded-lg border border-indigo-600 bg-indigo-900/20 px-3 py-2">
                           <Img src={gridRows[idx]!.image} alt={gridRows[idx]!.name} size={24} />
                           <span className="font-bold text-white flex-1 truncate text-sm">{gridRows[idx]!.name}</span>
-                          <button onClick={() => clearGridClub("row", idx)} className="text-gray-400 hover:text-white">&times;</button>
+                          <button onClick={() => clearGridClub("row", idx)} className="text-gray-200 hover:text-white">&times;</button>
                         </div>
                       ) : (
                         <div className="relative">
@@ -618,7 +618,7 @@ export default function FootballDataPage() {
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-800">
                                   <Img src={c.image} alt={c.name} size={20} />
                                   <span className="text-white truncate">{c.name}</span>
-                                  <span className="text-xs text-gray-500 ml-auto shrink-0">{c.country}</span>
+                                  <span className="text-xs text-gray-300 ml-auto shrink-0">{c.country}</span>
                                 </button>
                               ))}
                             </div>
@@ -632,7 +632,7 @@ export default function FootballDataPage() {
 
               {/* Column clubs */}
               <div>
-                <h3 className="mb-3 text-xs font-bold uppercase text-gray-500">Column Clubs</h3>
+                <h3 className="mb-3 text-xs font-bold uppercase text-gray-200">Column Clubs</h3>
                 <div className="space-y-2">
                   {[0, 1, 2].map((idx) => (
                     <div key={`col-${idx}`}>
@@ -640,7 +640,7 @@ export default function FootballDataPage() {
                         <div className="flex items-center gap-2 rounded-lg border border-indigo-600 bg-indigo-900/20 px-3 py-2">
                           <Img src={gridCols[idx]!.image} alt={gridCols[idx]!.name} size={24} />
                           <span className="font-bold text-white flex-1 truncate text-sm">{gridCols[idx]!.name}</span>
-                          <button onClick={() => clearGridClub("col", idx)} className="text-gray-400 hover:text-white">&times;</button>
+                          <button onClick={() => clearGridClub("col", idx)} className="text-gray-200 hover:text-white">&times;</button>
                         </div>
                       ) : (
                         <div className="relative">
@@ -662,7 +662,7 @@ export default function FootballDataPage() {
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-800">
                                   <Img src={c.image} alt={c.name} size={20} />
                                   <span className="text-white truncate">{c.name}</span>
-                                  <span className="text-xs text-gray-500 ml-auto shrink-0">{c.country}</span>
+                                  <span className="text-xs text-gray-300 ml-auto shrink-0">{c.country}</span>
                                 </button>
                               ))}
                             </div>
@@ -683,7 +683,7 @@ export default function FootballDataPage() {
             </button>
 
             {gridLoading && (
-              <div className="py-12 text-center text-gray-500">
+              <div className="py-12 text-center text-gray-300">
                 Querying Wikidata for all 6 clubs and finding intersections...
                 <br />
                 <span className="text-xs">This may take 15-30 seconds.</span>
@@ -716,12 +716,12 @@ export default function FootballDataPage() {
                             <td key={ci} className="p-1 align-top">
                               <div className="rounded-lg border border-gray-800 bg-gray-900 p-2 min-h-[80px]">
                                 {cellPlayers.length === 0 ? (
-                                  <div className="flex items-center justify-center h-[80px] text-xs text-gray-600">
+                                  <div className="flex items-center justify-center h-[80px] text-xs text-gray-300">
                                     No players
                                   </div>
                                 ) : (
                                   <div className="space-y-1">
-                                    <div className="text-[10px] font-bold text-gray-500 mb-1">
+                                    <div className="text-[10px] font-bold text-gray-200 mb-1">
                                       {cellPlayers.length} player{cellPlayers.length !== 1 ? "s" : ""}
                                     </div>
                                     {cellPlayers.map((p) => (
@@ -754,7 +754,7 @@ export default function FootballDataPage() {
           <>
             <div className="mb-6">
               <h1 className="text-2xl font-black">Football Data</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-300">
                 Search players and clubs via Wikidata. Full career histories, nationalities, positions — free and unlimited.
               </p>
             </div>
@@ -794,7 +794,7 @@ export default function FootballDataPage() {
                 {acOpen && (
                   <div className="absolute z-20 mt-1 w-full max-h-80 overflow-y-auto rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
                     {acLoading && acResults.length === 0 && (
-                      <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+                      <div className="px-4 py-3 text-sm text-gray-300">Searching...</div>
                     )}
                     {searchType === "player" ? (
                       (acResults as Player[]).map((p) => (
@@ -803,7 +803,7 @@ export default function FootballDataPage() {
                           <Img src={p.image} alt={p.name} size={32} />
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-white text-sm truncate">{p.name}</p>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <div className="flex items-center gap-2 text-xs text-gray-200">
                               {p.position && <span>{p.position}</span>}
                               {p.nationality && <span>· {p.nationality}</span>}
                               {p.dob && <span>· {calcAge(p.dob)}y</span>}
@@ -818,7 +818,7 @@ export default function FootballDataPage() {
                           <Img src={c.image} alt={c.name} size={32} />
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-white text-sm truncate">{c.name}</p>
-                            <p className="text-xs text-gray-500">{c.country}{c.league ? ` · ${c.league}` : ""}</p>
+                            <p className="text-xs text-gray-200">{c.country}{c.league ? ` · ${c.league}` : ""}</p>
                           </div>
                         </button>
                       ))
@@ -831,7 +831,7 @@ export default function FootballDataPage() {
             {/* Player search results */}
             {playerResults.length > 0 && (
               <div className="mb-6">
-                <h2 className="mb-3 text-xs font-bold uppercase text-gray-500">Players ({playerResults.length})</h2>
+                <h2 className="mb-3 text-xs font-bold uppercase text-gray-200">Players ({playerResults.length})</h2>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {playerResults.map((p) => (
                     <button key={p.id} onClick={() => loadPlayer(p.id)}
@@ -839,7 +839,7 @@ export default function FootballDataPage() {
                       <Img src={p.image} alt={p.name} size={44} />
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-white truncate">{p.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <div className="flex items-center gap-2 text-xs text-gray-200">
                           {p.position && <span>{p.position}</span>}
                           {p.nationality && <span>· {p.nationality}</span>}
                           {p.dob && <span>· {calcAge(p.dob)}y</span>}
@@ -854,7 +854,7 @@ export default function FootballDataPage() {
             {/* Club search results */}
             {clubResults.length > 0 && (
               <div className="mb-6">
-                <h2 className="mb-3 text-xs font-bold uppercase text-gray-500">Clubs ({clubResults.length})</h2>
+                <h2 className="mb-3 text-xs font-bold uppercase text-gray-200">Clubs ({clubResults.length})</h2>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {clubResults.map((c) => (
                     <button key={c.id} onClick={() => loadSquad(c.id, c.name)}
@@ -862,7 +862,7 @@ export default function FootballDataPage() {
                       <Img src={c.image} alt={c.name} size={40} />
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-white truncate">{c.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-200">
                           {c.country}{c.league ? ` · ${c.league}` : ""}
                         </p>
                       </div>
@@ -874,7 +874,7 @@ export default function FootballDataPage() {
 
             {/* Popular clubs */}
             <div>
-              <h2 className="mb-3 text-xs font-bold uppercase text-gray-500">Popular Clubs</h2>
+              <h2 className="mb-3 text-xs font-bold uppercase text-gray-200">Popular Clubs</h2>
               <div className="flex flex-wrap gap-2">
                 {POPULAR.map((c) => (
                   <button key={c.id} onClick={() => loadSquad(c.id, c.name)}
@@ -895,7 +895,7 @@ export default function FootballDataPage() {
                 <Img src={squadClub.image} alt={squadClub.name} size={48} />
                 <div>
                   <h1 className="text-2xl font-black">{squadClub.name}</h1>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-300">
                     {squadClub.country}{squadClub.league ? ` · ${squadClub.league}` : ""}
                     {" · "}{squadPlayers.length} players
                   </p>
@@ -914,9 +914,9 @@ export default function FootballDataPage() {
             </div>
 
             {loading ? (
-              <div className="py-12 text-center text-gray-500">Loading{showHistory ? " all-time players" : " current squad"}...</div>
+              <div className="py-12 text-center text-gray-300">Loading{showHistory ? " all-time players" : " current squad"}...</div>
             ) : squadPlayers.length === 0 ? (
-              <div className="py-12 text-center text-gray-500">No players found. Try &quot;Show All-Time&quot; for historical data.</div>
+              <div className="py-12 text-center text-gray-300">No players found. Try &quot;Show All-Time&quot; for historical data.</div>
             ) : showHistory ? (
               /* All-time: flat list sorted by date */
               <div className="space-y-1">
@@ -926,12 +926,12 @@ export default function FootballDataPage() {
                     <Img src={p.image} alt={p.name} size={36} />
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-white truncate">{p.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-gray-200">
                         {p.position && <span>{p.position}</span>}
                         {p.nationality && <span>· {p.nationality}</span>}
                       </div>
                     </div>
-                    <div className="shrink-0 text-right text-xs text-gray-500">
+                    <div className="shrink-0 text-right text-xs text-gray-200">
                       {p.startDate && <span>{formatDate(p.startDate)}</span>}
                       {(p.startDate || p.endDate) && <span> — </span>}
                       {p.endDate ? <span>{formatDate(p.endDate)}</span> : p.startDate ? <span className="text-green-400">Present</span> : null}
@@ -943,7 +943,7 @@ export default function FootballDataPage() {
               /* Current squad: grouped by position */
               Object.entries(grouped).map(([group, players]) => (
                 <div key={group} className="mb-6">
-                  <h3 className="mb-2 text-xs font-bold uppercase text-gray-500">{group} ({players.length})</h3>
+                  <h3 className="mb-2 text-xs font-bold uppercase text-gray-200">{group} ({players.length})</h3>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {players.map((p) => (
                       <button key={p.id} onClick={() => loadPlayer(p.id)}
@@ -951,7 +951,7 @@ export default function FootballDataPage() {
                         <Img src={p.image} alt={p.name} size={44} />
                         <div className="min-w-0 flex-1">
                           <p className="font-bold text-white truncate">{p.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-2 text-xs text-gray-200">
                             {p.position && <span>{p.position}</span>}
                             {p.nationality && <span>· {p.nationality}</span>}
                             {p.dob && <span>· {calcAge(p.dob)}y</span>}
@@ -970,9 +970,9 @@ export default function FootballDataPage() {
         {tab === "browse" && view === "player" && (
           <>
             {loading ? (
-              <div className="py-12 text-center text-gray-500">Loading player...</div>
+              <div className="py-12 text-center text-gray-300">Loading player...</div>
             ) : !playerProfile ? (
-              <div className="py-12 text-center text-gray-500">Player not found.</div>
+              <div className="py-12 text-center text-gray-300">Player not found.</div>
             ) : (
               <>
                 {/* Profile card */}
@@ -980,7 +980,7 @@ export default function FootballDataPage() {
                   <Img src={playerProfile.image} alt={playerProfile.name} size={80} />
                   <div className="flex-1 min-w-0">
                     <h1 className="text-2xl font-black">{playerProfile.name}</h1>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white">
                       {playerProfile.position && <span>{playerProfile.position}</span>}
                       {playerProfile.nationality && <span>{playerProfile.nationality}</span>}
                       {playerProfile.dob && (
@@ -992,11 +992,11 @@ export default function FootballDataPage() {
 
                 {/* Career */}
                 <div>
-                  <h2 className="mb-3 text-sm font-bold uppercase text-gray-400">
+                  <h2 className="mb-3 text-sm font-bold uppercase text-white">
                     Career ({playerCareer.length} clubs)
                   </h2>
                   {playerCareer.length === 0 ? (
-                    <p className="py-8 text-center text-gray-500">No career data found.</p>
+                    <p className="py-8 text-center text-gray-300">No career data found.</p>
                   ) : (
                     <div className="space-y-1">
                       {playerCareer.map((c, i) => (
@@ -1008,7 +1008,7 @@ export default function FootballDataPage() {
                               {c.team}
                             </button>
                           </div>
-                          <div className="shrink-0 text-right text-sm text-gray-500">
+                          <div className="shrink-0 text-right text-sm text-gray-300">
                             {c.startDate && <span>{formatDate(c.startDate)}</span>}
                             {(c.startDate || c.endDate) && <span> — </span>}
                             {c.endDate ? (
@@ -1032,7 +1032,7 @@ export default function FootballDataPage() {
           <>
             <div className="mb-6">
               <h1 className="text-2xl font-black">Football Database</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-300">
                 Import player and club data from Wikidata into your own database for instant search.
               </p>
             </div>
@@ -1044,7 +1044,7 @@ export default function FootballDataPage() {
                   <p className="text-2xl font-black text-white">
                     {dbLoading ? "..." : dbStats ? dbStats[key].toLocaleString() : "—"}
                   </p>
-                  <p className="mt-1 text-xs font-bold uppercase text-gray-500">{key}</p>
+                  <p className="mt-1 text-xs font-bold uppercase text-gray-200">{key}</p>
                 </div>
               ))}
             </div>
@@ -1059,7 +1059,7 @@ export default function FootballDataPage() {
                 Refresh Stats
               </button>
               <div className="flex items-center gap-2">
-                <label className="text-xs font-bold text-gray-500">Start year:</label>
+                <label className="text-xs font-bold text-gray-200">Start year:</label>
                 <input
                   type="number"
                   min={1920}
@@ -1091,7 +1091,7 @@ export default function FootballDataPage() {
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="font-bold text-gray-300">{importPhase}</span>
-                  <span className="font-mono text-gray-500">{importProgress}%</span>
+                  <span className="font-mono text-gray-200">{importProgress}%</span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-gray-800">
                   <div
@@ -1105,11 +1105,11 @@ export default function FootballDataPage() {
             {/* Logs */}
             {importLogs.length > 0 && (
               <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-                <h3 className="mb-3 text-xs font-bold uppercase text-gray-500">Import Log</h3>
+                <h3 className="mb-3 text-xs font-bold uppercase text-gray-200">Import Log</h3>
                 <div className="max-h-64 overflow-y-auto space-y-1 font-mono text-xs">
                   {importLogs.map((log, i) => (
-                    <div key={i} className={`${log.message.startsWith("ERROR") ? "text-red-400" : "text-gray-400"}`}>
-                      <span className="text-gray-600">[{log.time}]</span> {log.message}
+                    <div key={i} className={`${log.message.startsWith("ERROR") ? "text-red-400" : "text-white"}`}>
+                      <span className="text-gray-300">[{log.time}]</span> {log.message}
                     </div>
                   ))}
                 </div>
@@ -1117,8 +1117,8 @@ export default function FootballDataPage() {
             )}
 
             {/* Info */}
-            <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-sm text-gray-500">
-              <p className="font-bold text-gray-400 mb-2">How it works</p>
+            <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-sm text-gray-300">
+              <p className="font-bold text-white mb-2">How it works</p>
               <ul className="space-y-1 list-disc list-inside">
                 <li>Phase 1: Downloads all footballers from Wikidata (name, DOB, nationality, position, photo)</li>
                 <li>Phase 2: Downloads career records (which clubs each player played for, with dates)</li>

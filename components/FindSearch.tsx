@@ -62,7 +62,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* Search input */}
         <div className="relative flex-1">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500">
+          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-200">
             🔍
           </span>
           <input
@@ -77,7 +77,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-white"
+              className="absolute inset-y-0 right-3 flex items-center text-gray-200 hover:text-white"
             >
               ×
             </button>
@@ -98,7 +98,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
       </div>
 
       {/* ── Results count ── */}
-      <p className="mt-4 text-xs text-gray-500">
+      <p className="mt-4 text-xs text-gray-200">
         {filtered.length} {filtered.length === 1 ? "result" : "results"}
         {query && ` for "${query}"`}
         {selectedCategory && ` in ${selectedCategory}`}
@@ -106,7 +106,7 @@ export default function FindSearch({ items, categories, initialCategory, likedId
 
       {/* ── Results grid ── */}
       {filtered.length === 0 ? (
-        <div className="mt-16 text-center text-gray-500">
+        <div className="mt-16 text-center text-gray-200">
           No tierlists found. Try a different search or category.
         </div>
       ) : (
@@ -147,12 +147,12 @@ export default function FindSearch({ items, categories, initialCategory, likedId
                 <div className="p-2.5">
                   <p className="truncate text-xs font-semibold text-white">{item.title}</p>
                   {item.category && (
-                    <p className="mt-0.5 truncate text-[10px] text-gray-500">{item.category}</p>
+                    <p className="mt-0.5 truncate text-[10px] text-gray-200">{item.category}</p>
                   )}
                   {item.creator && (
-                    <p className="mt-0.5 truncate text-[10px] text-gray-600">by {item.creator}</p>
+                    <p className="mt-0.5 truncate text-[10px] text-gray-300">by {item.creator}</p>
                   )}
-                  <div className="mt-1.5 flex items-center justify-between text-[10px] text-gray-500">
+                  <div className="mt-1.5 flex items-center justify-between text-[10px] text-gray-200">
                     <span>{new Date(item.created_at).toLocaleDateString()}</span>
                     <div className="flex items-center gap-2">
                       {item.like_count > 0 && <span className="text-red-400">❤ {item.like_count}</span>}

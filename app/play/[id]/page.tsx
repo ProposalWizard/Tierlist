@@ -125,9 +125,9 @@ export default async function PlayPage({ params }: Props) {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white md:text-3xl">{tierlist.title}</h1>
-            <p className="mt-1 text-sm text-gray-400">
+            <p className="mt-1 text-sm text-white">
               By <span className="font-medium text-gray-300">{creatorName}</span>
-              <span className="mx-1.5 text-gray-600">·</span>
+              <span className="mx-1.5 text-gray-300">·</span>
               {tierlist.category}
             </p>
           </div>

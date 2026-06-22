@@ -149,7 +149,7 @@ export default function TierRow({
           ))}
         </SortableContext>
         {players.length === 0 && !isMobile && (
-          <span className="flex items-center text-xs text-gray-600 italic">
+          <span className="flex items-center text-xs text-gray-300 italic">
             Drop images here
           </span>
         )}
@@ -160,7 +160,7 @@ export default function TierRow({
         <button
           onClick={() => setShowSettings((v) => !v)}
           className={`flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-colors ${
-            showSettings ? "bg-gray-700 text-white" : "text-gray-500 hover:bg-gray-700 hover:text-white"
+            showSettings ? "bg-gray-700 text-white" : "text-gray-200 hover:bg-gray-700 hover:text-white"
           }`}
           title="Row settings"
         >
@@ -170,7 +170,7 @@ export default function TierRow({
         {showSettings && (
           <div className="absolute right-0 top-10 z-50 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-700 bg-gray-900 p-3 shadow-2xl">
             {/* Colour picker */}
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white">
               Colour
             </p>
             <div className="mb-3 flex flex-wrap gap-1.5">

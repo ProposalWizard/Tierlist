@@ -22,7 +22,7 @@ export default async function EasyModePage() {
       <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-black mb-2">No Easy Puzzles Yet</h1>
-          <p className="text-gray-400 text-sm">Easy puzzles are coming soon!</p>
+          <p className="text-white text-sm">Easy puzzles are coming soon!</p>
           <a href="/tic-tac-toe" className="mt-4 inline-block rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white hover:bg-indigo-500">
             Back to Tic Tac Toe
           </a>

@@ -53,7 +53,7 @@ export default function ZoomOverlay({ imageUrl, imageName, onClose }: Props) {
         />
       </div>
 
-      <p className="pointer-events-none absolute bottom-4 text-xs text-gray-400 select-none">
+      <p className="pointer-events-none absolute bottom-4 text-xs text-white select-none">
         Scroll to zoom · Click outside to close · Press Esc to exit
       </p>
     </div>

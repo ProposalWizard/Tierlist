@@ -287,7 +287,7 @@ export default function CollectionSquad({ progression }: Props) {
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                 formation === f
                   ? "bg-amber-500 text-black shadow-md shadow-amber-500/30"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700/60"
+                  : "bg-gray-800 text-white hover:bg-gray-700 hover:text-white border border-gray-700/60"
               }`}
             >
               {f}
@@ -350,7 +350,7 @@ export default function CollectionSquad({ progression }: Props) {
 
         {/* Bench */}
         <div>
-          <p className="text-[9px] font-bold tracking-widest text-gray-600 uppercase mb-2.5">
+          <p className="text-[9px] font-bold tracking-widest text-gray-300 uppercase mb-2.5">
             {unlockedCards.length === 0
               ? "Unlock cards by levelling up"
               : benchCards.length === 0
@@ -395,6 +395,76 @@ export default function CollectionSquad({ progression }: Props) {
   );
 }
 
+function DraggablePitchCard({
+  card,
+  frameStyle,
+  hasBenchSelection,
+  onRemove,
+  onTap,
+}: {
+  card: { id: string; name: string };
+  frameStyle: { border: string; shadow: string; gradient?: string; image?: string };
+  hasBenchSelection: boolean;
+  onRemove: () => void;
+  onTap: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: card.id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...(hasBenchSelection ? {} : { ...listeners, ...attributes })}
+      onClick={hasBenchSelection ? onTap : undefined}
+      className={`group relative w-[62px] h-[82px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px] rounded-xl overflow-visible shadow-lg ring-1 transition-all ${
+        hasBenchSelection
+          ? "ring-amber-400/80 hover:ring-amber-400 hover:scale-105 cursor-pointer"
+          : "ring-white/10 cursor-grab active:cursor-grabbing"
+      } ${isDragging ? "opacity-30 scale-95" : ""}`}
+      style={
+        transform
+          ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` }
+          : undefined
+      }
+    >
+      <div className="w-full h-full rounded-xl overflow-hidden">
+        {frameStyle.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={frameStyle.image}
+            alt={card.name}
+            className="w-full h-full object-cover"
+            draggable={false}
+          />
+        ) : (
+          <div
+            className={`w-full h-full bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"}`}
+          />
+        )}
+      </div>
+      {!hasBenchSelection && !isDragging && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          title="Remove"
+          className="absolute top-0 right-0 translate-x-1 -translate-y-1 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30 hover:bg-red-600"
+        >
+          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+      {hasBenchSelection && (
+        <div className="absolute inset-0 rounded-xl bg-amber-500/25 flex items-center justify-center">
+          <svg className="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PitchSlot({
   slot,
   card,
@@ -425,47 +495,13 @@ function PitchSlot({
       }}
     >
       {card && frameStyle ? (
-        <div
-          onClick={hasBenchSelection ? onTap : undefined}
-          className={`group relative w-[62px] h-[82px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px] rounded-xl overflow-visible shadow-lg ring-1 transition-all cursor-pointer ${
-            hasBenchSelection
-              ? "ring-amber-400/80 hover:ring-amber-400 hover:scale-105"
-              : "ring-white/10"
-          }`}
-        >
-          <div className="w-full h-full rounded-xl overflow-hidden">
-            {frameStyle.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={frameStyle.image}
-                alt={card.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div
-                className={`w-full h-full bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"}`}
-              />
-            )}
-          </div>
-          {!hasBenchSelection && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              title="Remove"
-              className="absolute top-0 right-0 translate-x-1 -translate-y-1 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30 hover:bg-red-600"
-            >
-              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-          {hasBenchSelection && (
-            <div className="absolute inset-0 rounded-xl bg-amber-500/25 flex items-center justify-center">
-              <svg className="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-          )}
-        </div>
+        <DraggablePitchCard
+          card={card}
+          frameStyle={frameStyle}
+          hasBenchSelection={hasBenchSelection}
+          onRemove={onRemove}
+          onTap={onTap}
+        />
       ) : (
         <button
           onClick={hasBenchSelection ? onTap : undefined}
@@ -533,7 +569,7 @@ function BenchCard({
         )}
       </div>
       <span className={`text-[9px] font-medium text-center max-w-[64px] truncate leading-tight ${
-        selected ? "text-amber-400" : "text-gray-400"
+        selected ? "text-amber-400" : "text-white"
       }`}>
         {card.name}
       </span>

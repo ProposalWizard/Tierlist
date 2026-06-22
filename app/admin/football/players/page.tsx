@@ -333,7 +333,7 @@ export default function PlayerSearchPage() {
 
     if (entries.length === 0) {
       return (
-        <p className="text-sm text-gray-500">No attributes available.</p>
+        <p className="text-sm text-gray-200">No attributes available.</p>
       );
     }
 
@@ -344,11 +344,11 @@ export default function PlayerSearchPage() {
           const displayValue = typeof value === "object" ? JSON.stringify(value) : String(value);
           return (
             <div key={key} className="flex items-baseline gap-2 py-0.5">
-              <span className="shrink-0 text-xs font-mono text-gray-500" title={key}>
+              <span className="shrink-0 text-xs font-mono text-gray-200" title={key}>
                 {key}
               </span>
               {label && (
-                <span className="shrink-0 text-xs text-gray-400">
+                <span className="shrink-0 text-xs text-white">
                   ({label})
                 </span>
               )}
@@ -366,7 +366,7 @@ export default function PlayerSearchPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto max-w-7xl px-4 py-8">
         {/* Back link */}
-        <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
+        <div className="mb-6 flex items-center gap-2 text-sm text-white">
           <Link href="/admin" className="hover:text-white transition-colors">
             Admin
           </Link>
@@ -384,7 +384,7 @@ export default function PlayerSearchPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-black">SoFIFA Player Search</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-200">
             Search the sofifa_players database. View all player attributes from
             any FIFA edition.
           </p>
@@ -392,7 +392,7 @@ export default function PlayerSearchPage() {
 
         {/* Data availability */}
         {dataStats && (
-          <div className="mb-4 rounded-lg border border-gray-800/60 bg-gray-900/60 px-4 py-2.5 text-xs text-gray-400">
+          <div className="mb-4 rounded-lg border border-gray-800/60 bg-gray-900/60 px-4 py-2.5 text-xs text-white">
             <span className="font-bold text-gray-300">Imported data: </span>
             {Object.entries(dataStats)
               .filter(([, v]) => v > 0)
@@ -400,7 +400,7 @@ export default function PlayerSearchPage() {
               .map(([y, v]) => (
                 <span key={y} className="inline-block mr-3">
                   <span className="text-emerald-400 font-bold">{yearLabel(parseInt(y, 10))}</span>
-                  <span className="text-gray-600 ml-1">({(v as number).toLocaleString()})</span>
+                  <span className="text-gray-300 ml-1">({(v as number).toLocaleString()})</span>
                 </span>
               ))
             }
@@ -415,7 +415,7 @@ export default function PlayerSearchPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             {/* Player name */}
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-bold uppercase text-gray-500">
+              <label className="mb-1 block text-xs font-bold uppercase text-gray-200">
                 Player Name
               </label>
               <input
@@ -430,7 +430,7 @@ export default function PlayerSearchPage() {
 
             {/* FIFA year */}
             <div className="w-full sm:w-44">
-              <label className="mb-1 block text-xs font-bold uppercase text-gray-500">
+              <label className="mb-1 block text-xs font-bold uppercase text-gray-200">
                 FIFA Year
               </label>
               <select
@@ -456,7 +456,7 @@ export default function PlayerSearchPage() {
 
             {/* Club name */}
             <div className="flex-1 relative">
-              <label className="mb-1 block text-xs font-bold uppercase text-gray-500">
+              <label className="mb-1 block text-xs font-bold uppercase text-gray-200">
                 Club Name
               </label>
               <input
@@ -491,7 +491,7 @@ export default function PlayerSearchPage() {
                       </button>
                     ))}
                     {filtered.length > 30 && (
-                      <div className="px-3 py-1.5 text-xs text-gray-500">...{filtered.length - 30} more</div>
+                      <div className="px-3 py-1.5 text-xs text-gray-200">...{filtered.length - 30} more</div>
                     )}
                   </div>
                 );
@@ -500,7 +500,7 @@ export default function PlayerSearchPage() {
 
             {/* Position */}
             <div className="w-full sm:w-32">
-              <label className="mb-1 block text-xs font-bold uppercase text-gray-500">
+              <label className="mb-1 block text-xs font-bold uppercase text-gray-200">
                 Position
               </label>
               <input
@@ -533,7 +533,7 @@ export default function PlayerSearchPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="py-12 text-center text-gray-500">
+          <div className="py-12 text-center text-gray-200">
             Searching sofifa_players...
           </div>
         )}
@@ -541,7 +541,7 @@ export default function PlayerSearchPage() {
         {/* Results */}
         {!loading && count !== null && (
           <>
-            <div className="mb-4 text-sm text-gray-400">
+            <div className="mb-4 text-sm text-white">
               <span className="font-bold text-white">{count}</span> result
               {count !== 1 ? "s" : ""} across{" "}
               <span className="font-bold text-white">{grouped.length}</span> player
@@ -554,13 +554,13 @@ export default function PlayerSearchPage() {
             </div>
 
             {grouped.length === 0 ? (
-              <div className="py-12 text-center text-gray-500">
+              <div className="py-12 text-center text-gray-200">
                 <p>No players match your search criteria.</p>
                 {yearFilter && dataStats && !dataStats[parseInt(yearFilter, 10)] && (
                   <p className="mt-2 text-xs text-yellow-500">No data has been imported for {yearLabel(parseInt(yearFilter, 10))} yet. Import data first via the Scrape Data page.</p>
                 )}
                 {!yearFilter && dataStats && (
-                  <p className="mt-2 text-xs text-gray-600">
+                  <p className="mt-2 text-xs text-gray-300">
                     Data available for: {Object.entries(dataStats).filter(([,v]) => v > 0).map(([y]) => yearLabel(parseInt(y, 10))).join(", ") || "none"}
                   </p>
                 )}
@@ -581,16 +581,16 @@ export default function PlayerSearchPage() {
                       >
                         <div className="flex-1 min-w-0">
                           <span className="font-bold text-white text-base">{group.name}</span>
-                          <span className="ml-3 text-xs text-gray-500">ID: {group.sofifa_id}</span>
+                          <span className="ml-3 text-xs text-gray-200">ID: {group.sofifa_id}</span>
                         </div>
-                        <div className="text-sm text-gray-400">{editionRange}</div>
+                        <div className="text-sm text-white">{editionRange}</div>
                         <div className="px-2 py-0.5 rounded bg-emerald-900/50 text-emerald-400 text-sm font-bold">
                           Peak {bestOvr}
                         </div>
-                        <div className="text-sm text-gray-400 font-medium">
+                        <div className="text-sm text-white font-medium">
                           {group.editions.length} edition{group.editions.length !== 1 ? "s" : ""}
                         </div>
-                        <div className="text-gray-500">{isOpen ? "▲" : "▼"}</div>
+                        <div className="text-gray-200">{isOpen ? "▲" : "▼"}</div>
                       </button>
 
                       {isOpen && (
@@ -598,13 +598,13 @@ export default function PlayerSearchPage() {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="bg-gray-900/80 border-b border-gray-800/50">
-                                <th className="px-5 py-2 text-left text-xs font-bold uppercase text-gray-500">Edition</th>
-                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-gray-500">Club</th>
-                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-gray-500">Positions</th>
-                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">OVR</th>
-                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">POT</th>
-                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Age</th>
-                                <th className="px-3 py-2 text-right text-xs font-bold uppercase text-gray-500 pr-4">Actions</th>
+                                <th className="px-5 py-2 text-left text-xs font-bold uppercase text-gray-200">Edition</th>
+                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-gray-200">Club</th>
+                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-gray-200">Positions</th>
+                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-200">OVR</th>
+                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-200">POT</th>
+                                <th className="px-3 py-2 text-center text-xs font-bold uppercase text-gray-200">Age</th>
+                                <th className="px-3 py-2 text-right text-xs font-bold uppercase text-gray-200 pr-4">Actions</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -719,10 +719,10 @@ export default function PlayerSearchPage() {
                                         <div className="px-3 py-2.5 text-center text-gray-300 min-w-[50px]">
                                           {p.potential ?? "--"}
                                         </div>
-                                        <div className="px-3 py-2.5 text-center text-gray-400 min-w-[50px]">
+                                        <div className="px-3 py-2.5 text-center text-white min-w-[50px]">
                                           {p.age ?? "--"}
                                         </div>
-                                        <div className="px-3 py-2.5 text-center text-gray-600 min-w-[40px]">
+                                        <div className="px-3 py-2.5 text-center text-gray-300 min-w-[40px]">
                                           {edExpanded ? "▲" : "▼"}
                                         </div>
                                         <div
@@ -776,13 +776,13 @@ export default function PlayerSearchPage() {
 
                                       {edExpanded && (
                                         <div className="border-t border-gray-700 bg-gray-900/40 px-6 py-4">
-                                          <h4 className="mb-3 text-xs font-bold uppercase text-gray-500">
+                                          <h4 className="mb-3 text-xs font-bold uppercase text-gray-200">
                                             All Attributes ({p.attributes ? Object.keys(p.attributes).length : 0} keys)
                                           </h4>
                                           {p.attributes && Object.keys(p.attributes).length > 0 ? (
                                             renderAttributes(p.attributes)
                                           ) : (
-                                            <p className="text-sm text-gray-500">
+                                            <p className="text-sm text-gray-200">
                                               No attributes stored for this player.
                                             </p>
                                           )}
@@ -796,7 +796,7 @@ export default function PlayerSearchPage() {
                                           </h4>
                                           <div className="flex flex-wrap items-end gap-3">
                                             <div>
-                                              <label className="block text-xs text-gray-500 mb-1">Target Year</label>
+                                              <label className="block text-xs text-gray-200 mb-1">Target Year</label>
                                               <select
                                                 value={cloneTargetYear}
                                                 onChange={(e) => setCloneTargetYear(parseInt(e.target.value, 10))}
@@ -812,8 +812,8 @@ export default function PlayerSearchPage() {
                                               </select>
                                             </div>
                                             <div>
-                                              <label className="block text-xs text-gray-500 mb-1">
-                                                OVR <span className="text-gray-600">(blank = copy source)</span>
+                                              <label className="block text-xs text-gray-200 mb-1">
+                                                OVR <span className="text-gray-300">(blank = copy source)</span>
                                               </label>
                                               <input
                                                 type="number"
@@ -826,8 +826,8 @@ export default function PlayerSearchPage() {
                                               />
                                             </div>
                                             <div>
-                                              <label className="block text-xs text-gray-500 mb-1">
-                                                Club <span className="text-gray-600">(blank = copy source)</span>
+                                              <label className="block text-xs text-gray-200 mb-1">
+                                                Club <span className="text-gray-300">(blank = copy source)</span>
                                               </label>
                                               <input
                                                 type="text"
@@ -838,8 +838,8 @@ export default function PlayerSearchPage() {
                                               />
                                             </div>
                                             <div>
-                                              <label className="block text-xs text-gray-500 mb-1">
-                                                Positions <span className="text-gray-600">(blank = copy source)</span>
+                                              <label className="block text-xs text-gray-200 mb-1">
+                                                Positions <span className="text-gray-300">(blank = copy source)</span>
                                               </label>
                                               <input
                                                 type="text"

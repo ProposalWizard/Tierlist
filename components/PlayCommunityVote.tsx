@@ -50,7 +50,7 @@ export default function PlayCommunityVote({ tiers, images, votelistTitle, voteli
             </svg>
             Vote Here
           </Link>
-          <p className="mb-3 text-xs text-gray-500">
+          <p className="mb-3 text-xs text-gray-200">
             Based on community votes from: <span className="text-gray-300 font-medium">{votelistTitle}</span>
           </p>
           <CommunityVote

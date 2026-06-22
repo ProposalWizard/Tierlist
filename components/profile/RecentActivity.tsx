@@ -25,11 +25,11 @@ export default function RecentActivity({ events }: Props) {
   return (
     <div className="rounded-xl border border-gray-800/50 bg-gray-900 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[10px] font-bold tracking-[0.25em] text-gray-500 uppercase">
+        <h3 className="text-[10px] font-bold tracking-[0.25em] text-gray-200 uppercase">
           Recent Activity
         </h3>
         {events.length > 0 && (
-          <span className="text-[10px] font-bold text-gray-600">
+          <span className="text-[10px] font-bold text-gray-300">
             {events.length} event{events.length !== 1 ? "s" : ""}
           </span>
         )}
@@ -38,7 +38,7 @@ export default function RecentActivity({ events }: Props) {
       {events.length === 0 ? (
         <div className="py-8 text-center">
           <div className="text-3xl mb-2 opacity-30">&#9889;</div>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-300">
             No activity yet. Play a draft or create a tierlist to earn XP!
           </p>
         </div>
@@ -48,7 +48,7 @@ export default function RecentActivity({ events }: Props) {
             const config = EVENT_CONFIG[event.event_type];
             const icon = config?.icon ?? "\u{2753}";
             const label = config?.label ?? event.event_type;
-            const color = config?.color ?? "text-gray-400";
+            const color = config?.color ?? "text-white";
 
             return (
               <div
@@ -61,7 +61,7 @@ export default function RecentActivity({ events }: Props) {
                     <span className={`text-xs font-semibold ${color}`}>
                       {label}
                     </span>
-                    <span className="text-[9px] text-gray-600 flex-shrink-0">
+                    <span className="text-[9px] text-gray-300 flex-shrink-0">
                       {formatTimeAgo(event.created_at)}
                     </span>
                   </div>

@@ -119,7 +119,7 @@ function UnrankedPool({
       }`}
     >
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+        <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-200">
           {isMobile ? "Unranked — tap image, then tap a tier" : "Unranked — drag into a tier"}
         </h3>
         <input
@@ -172,7 +172,7 @@ function UnrankedPool({
           ))}
         </SortableContext>
         {players.length === 0 && (
-          <span className="flex items-center text-xs text-gray-600 italic">
+          <span className="flex items-center text-xs text-gray-300 italic">
             {isMobile ? "Tap \"+ Add Images\" to get started" : "Click \"+ Add Images\" to get started"}
           </span>
         )}
@@ -876,7 +876,7 @@ export default function TierlistBoard({
           />
 
           {/* Zoom hint */}
-          <p className="text-center text-xs text-gray-600 italic">
+          <p className="text-center text-xs text-gray-300 italic">
             Use the Zoom Feature to see Full Size Images
           </p>
 
@@ -913,7 +913,7 @@ export default function TierlistBoard({
               </div>
               <button
                 onClick={() => setTapSelectedId(null)}
-                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
+                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-white hover:text-white"
               >
                 ✕
               </button>
@@ -976,7 +976,7 @@ export default function TierlistBoard({
             </div>
           </div>
         ) : totalImages > 0 ? (
-          <p className="text-right text-xs text-gray-500">
+          <p className="text-right text-xs text-gray-200">
             {rankedCount} / {totalImages} images ranked
           </p>
         ) : null}
@@ -991,7 +991,7 @@ export default function TierlistBoard({
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                   zoomMode
                     ? "bg-sky-600 text-white"
-                    : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                    : "border border-gray-700 text-white hover:border-gray-500 hover:text-white"
                 }`}
                 title="Click an image to zoom in."
               >
@@ -1002,7 +1002,7 @@ export default function TierlistBoard({
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                   cropMode
                     ? "bg-amber-600 text-white"
-                    : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                    : "border border-gray-700 text-white hover:border-gray-500 hover:text-white"
                 }`}
                 title="Click an image to open the crop editor."
               >
@@ -1013,7 +1013,7 @@ export default function TierlistBoard({
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                   labelMode
                     ? "bg-emerald-600 text-white"
-                    : "border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white"
+                    : "border border-gray-700 text-white hover:border-gray-500 hover:text-white"
                 }`}
                 title="Click an image to add a text label."
               >
@@ -1024,7 +1024,7 @@ export default function TierlistBoard({
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                   removeMode
                     ? "bg-red-600 text-white"
-                    : "border border-gray-700 text-gray-400 hover:border-red-600 hover:text-red-400"
+                    : "border border-gray-700 text-white hover:border-red-600 hover:text-red-400"
                 }`}
                 title="Select images to remove them."
               >

@@ -169,7 +169,7 @@ function ModeSelection({
       <h1 className="font-display text-3xl font-black tracking-wide text-white md:text-5xl mb-2">
         {puzzle.title}
       </h1>
-      <p className="text-sm text-gray-400 mb-10">Choose how you want to play</p>
+      <p className="text-sm text-white mb-10">Choose how you want to play</p>
 
       <div className="grid grid-cols-2 gap-4 mb-8">
         <button
@@ -182,7 +182,7 @@ function ModeSelection({
         >
           <div className="text-3xl mb-2">🎮</div>
           <p className="font-display text-lg font-bold text-white">Solo</p>
-          <p className="text-xs text-gray-400 mt-1">Play on your own, beat your high score</p>
+          <p className="text-xs text-white mt-1">Play on your own, beat your high score</p>
         </button>
 
         <button
@@ -195,18 +195,18 @@ function ModeSelection({
         >
           <div className="text-3xl mb-2">👥</div>
           <p className="font-display text-lg font-bold text-white">2 Player</p>
-          <p className="text-xs text-gray-400 mt-1">Take turns, compete head-to-head</p>
+          <p className="text-xs text-white mt-1">Take turns, compete head-to-head</p>
         </button>
       </div>
 
       {selected === "2player" && (
         <div className="mb-8 rounded-xl bg-gray-900 border border-gray-700 p-5 text-left">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-200 mb-4">
             Player Names
           </p>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-400 mb-1">Player 1</label>
+              <label className="block text-xs font-semibold text-white mb-1">Player 1</label>
               <input
                 type="text"
                 value={names[0]}
@@ -217,7 +217,7 @@ function ModeSelection({
               />
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-400 mb-1">Player 2</label>
+              <label className="block text-xs font-semibold text-white mb-1">Player 2</label>
               <input
                 type="text"
                 value={names[1]}
@@ -264,7 +264,7 @@ function SoloScoreboard({
       <p className="font-display text-xl font-black text-white leading-tight md:text-3xl">
         {score}
       </p>
-      <p className="text-[9px] font-bold text-gray-400 leading-tight md:text-xs">
+      <p className="text-[9px] font-bold text-white leading-tight md:text-xs">
         / {maxScore}
       </p>
       {bonusAwarded && (
@@ -302,7 +302,7 @@ function TwoPlayerScoreboard({
         <p className="text-[9px] font-bold uppercase tracking-wide text-gray-200 truncate md:text-xs">
           {p1}
         </p>
-        <p className={`font-display text-base font-black leading-tight md:text-xl ${cp === 0 ? "text-white" : "text-gray-400"}`}>
+        <p className={`font-display text-base font-black leading-tight md:text-xl ${cp === 0 ? "text-white" : "text-white"}`}>
           {s1}
         </p>
         <p className="text-[8px] font-mono font-bold text-gray-300/70 md:text-[10px]">{formatTime(playerTimers[0])}</p>
@@ -311,7 +311,7 @@ function TwoPlayerScoreboard({
         )}
       </div>
 
-      <p className="text-center text-[8px] font-bold uppercase tracking-wider text-gray-500 md:text-[10px]">
+      <p className="text-center text-[8px] font-bold uppercase tracking-wider text-gray-200 md:text-[10px]">
         {cp === 0 ? p1 : p2}&apos;s turn
       </p>
 
@@ -319,7 +319,7 @@ function TwoPlayerScoreboard({
         <p className={`text-[9px] font-bold uppercase tracking-wide truncate md:text-xs ${cp === 1 ? "text-yellow-900" : "text-gray-200"}`}>
           {p2}
         </p>
-        <p className={`font-display text-base font-black leading-tight md:text-xl ${cp === 1 ? "text-yellow-900" : "text-gray-400"}`}>
+        <p className={`font-display text-base font-black leading-tight md:text-xl ${cp === 1 ? "text-yellow-900" : "text-white"}`}>
           {s2}
         </p>
         <p className={`text-[8px] font-mono font-bold md:text-[10px] ${cp === 1 ? "text-yellow-800/70" : "text-gray-300/70"}`}>{formatTime(playerTimers[1])}</p>
@@ -614,7 +614,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
         )}
         <button
           onClick={() => setShowTutorial(true)}
-          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold text-white hover:text-white hover:border-gray-500 transition-colors"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -629,7 +629,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
           <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-gray-900 rounded-t-2xl">
               <h2 className="text-base font-black text-white">How to Play</h2>
-              <button onClick={() => setShowTutorial(false)} className="text-gray-500 hover:text-white transition-colors">
+              <button onClick={() => setShowTutorial(false)} className="text-gray-200 hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -658,7 +658,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                     <strong className="text-indigo-400">Or Replace Left / Or Replace Above</strong> — The sub-requirement gives you an <strong className="text-white">alternative</strong> for one of the labels. Your answer can match either the original row/column label <em>or</em> the sub-requirement text. For example: Row = <em>Arsenal</em>, Column = <em>France</em>, Sub = <em>Or Replace Left: Chelsea</em> — the player could have played for Arsenal <em>or</em> Chelsea, and be French.
                   </li>
                 </ul>
-                <p className="mt-2 text-gray-400">If a square has no sub-requirement text inside it, it&apos;s a normal square — just match the row and column labels.</p>
+                <p className="mt-2 text-white">If a square has no sub-requirement text inside it, it&apos;s a normal square — just match the row and column labels.</p>
               </section>
 
               <section>
@@ -692,7 +692,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
 
               <section>
                 <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Tips</h3>
-                <ul className="space-y-1 list-disc list-inside text-gray-400">
+                <ul className="space-y-1 list-disc list-inside text-white">
                   <li>Think of obscure players for rarer squares — they score more points.</li>
                   <li>Plan ahead so you don&apos;t use a key player in the wrong square.</li>
                   <li>In 2-player, block your opponent&apos;s three-in-a-row by claiming a key square.</li>
@@ -857,7 +857,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                     >
                       <p
                         className={`text-[8px] font-bold leading-tight md:text-[10px] ${
-                          isFilled ? filledTextDark : "text-gray-700"
+                          isFilled ? filledTextDark : "text-gray-300"
                         }`}
                       >
                         {square.customType
@@ -890,7 +890,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                         <p className="font-display text-base font-black text-gray-900 md:text-2xl">
                           {availableCount}
                         </p>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-gray-500 md:text-[11px]">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-gray-200 md:text-[11px]">
                           Player{availableCount !== 1 ? "s" : ""}
                         </p>
                       </div>
@@ -900,7 +900,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                   <div className="w-full text-center mt-1">
                     <p
                       className={`font-display text-xs font-black md:text-sm ${
-                        isFilled ? filledTextDark : "text-gray-400"
+                        isFilled ? filledTextDark : "text-white"
                       }`}
                     >
                       {isFilled ? `${sqScore} / ${sqScore + availableMax}` : `${availableMax} pts`}
@@ -976,7 +976,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
             <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-lg font-black text-gray-900">{popup.title}</p>
-                <button onClick={() => setPopup(null)} className="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
+                <button onClick={() => setPopup(null)} className="text-white hover:text-gray-900 text-2xl leading-none">&times;</button>
               </div>
               {isImage ? (
                 <img src={popup.text} alt={popup.isHint ? "Hint" : "Info"} className="w-full rounded-lg" />
@@ -1056,7 +1056,7 @@ function SquareModal({
             ) : (
               <>
                 <p className="text-base font-bold text-gray-900 md:text-lg">{square.conditions[0]}</p>
-                <p className="text-sm font-semibold text-gray-600 md:text-base">
+                <p className="text-sm font-semibold text-gray-300 md:text-base">
                   + {square.conditions[1]}
                 </p>
               </>
@@ -1064,21 +1064,21 @@ function SquareModal({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-900 text-2xl leading-none -mt-1"
+            className="text-white hover:text-gray-900 text-2xl leading-none -mt-1"
           >
             &times;
           </button>
         </div>
 
         <div className="mb-4 flex items-center justify-between rounded-lg bg-gray-100 px-3 py-2 text-sm">
-          <span className="text-gray-600">
+          <span className="text-gray-300">
             Score: <span className="font-display font-black text-gray-900">{sqScore}</span>{" "}
-            <span className="text-gray-400">/</span> {sqScore + availableMax}
+            <span className="text-white">/</span> {sqScore + availableMax}
           </span>
-          <span className="text-gray-600">
+          <span className="text-gray-300">
             Available:{" "}
             <span className="font-display font-black text-gray-900">{availableCount}</span>{" "}
-            <span className="text-gray-400">({availableMax} pts)</span>
+            <span className="text-white">({availableMax} pts)</span>
           </span>
         </div>
 
@@ -1118,7 +1118,7 @@ function SquareModal({
 
         {found.length > 0 && (
           <div className="space-y-1 max-h-56 overflow-y-auto">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-200">
               Found ({found.length})
             </p>
             {[...found]
@@ -1228,7 +1228,7 @@ function ResultsScreen({
                 winner === 0 ? "bg-indigo-900 border-2 border-indigo-400" : "bg-gray-800"
               }`}
             >
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">{n1}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-white mb-1">{n1}</p>
               <p
                 className={`text-4xl font-black ${
                   winner === 0 ? "text-indigo-300" : "text-white"
@@ -1237,7 +1237,7 @@ function ResultsScreen({
                 {s1}
               </p>
               {playerTimers && (
-                <p className="text-xs font-mono font-bold text-gray-500 mt-1">{formatTime(playerTimers[0])}</p>
+                <p className="text-xs font-mono font-bold text-gray-200 mt-1">{formatTime(playerTimers[0])}</p>
               )}
               {gameState.playerBonusAwarded[0] && (
                 <p className="text-xs font-bold text-yellow-400 mt-1">
@@ -1250,7 +1250,7 @@ function ResultsScreen({
                 winner === 1 ? "bg-purple-900 border-2 border-purple-400" : "bg-gray-800"
               }`}
             >
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">{n2}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-white mb-1">{n2}</p>
               <p
                 className={`text-4xl font-black ${
                   winner === 1 ? "text-purple-300" : "text-white"
@@ -1259,7 +1259,7 @@ function ResultsScreen({
                 {s2}
               </p>
               {playerTimers && (
-                <p className="text-xs font-mono font-bold text-gray-500 mt-1">{formatTime(playerTimers[1])}</p>
+                <p className="text-xs font-mono font-bold text-gray-200 mt-1">{formatTime(playerTimers[1])}</p>
               )}
               {gameState.playerBonusAwarded[1] && (
                 <p className="text-xs font-bold text-yellow-400 mt-1">
@@ -1271,7 +1271,7 @@ function ResultsScreen({
         ) : (
           <>
             <p className="text-5xl font-black text-indigo-400">{soloCurrentScore}</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-white">
               out of {totalMaxScore} ({pct}%)
             </p>
           </>
@@ -1280,7 +1280,7 @@ function ResultsScreen({
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">{squaresCompleted}/9</p>
-            <p className="text-gray-500">Squares</p>
+            <p className="text-gray-200">Squares</p>
           </div>
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">
@@ -1292,16 +1292,16 @@ function ResultsScreen({
                 ? "Yes"
                 : "No"}
             </p>
-            <p className="text-gray-500">3-in-a-row</p>
+            <p className="text-gray-200">3-in-a-row</p>
           </div>
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-indigo-400 font-mono">{formatTime(elapsed)}</p>
-            <p className="text-gray-500">Time</p>
+            <p className="text-gray-200">Time</p>
           </div>
           {hintsUsed > 0 && (
             <div className="rounded-lg bg-gray-800 p-3">
               <p className="text-2xl font-black text-amber-400">{hintsUsed}</p>
-              <p className="text-gray-500">Hints</p>
+              <p className="text-gray-200">Hints</p>
             </div>
           )}
         </div>
@@ -1328,7 +1328,7 @@ function ResultsScreen({
               <div key={m.name} className="flex items-center justify-between text-sm">
                 <div>
                   <span className="text-white">{m.name}</span>
-                  <span className="ml-2 text-[10px] text-gray-500">{m.conditions}</span>
+                  <span className="ml-2 text-[10px] text-gray-200">{m.conditions}</span>
                 </div>
                 <span className="font-bold text-red-400">{m.points} pts</span>
               </div>
@@ -1338,7 +1338,7 @@ function ResultsScreen({
       )}
 
       <div className="mt-6 rounded-xl border border-gray-700 bg-gray-900 p-4 text-left">
-        <h3 className="mb-3 text-sm font-bold text-gray-400 uppercase">All Answers</h3>
+        <h3 className="mb-3 text-sm font-bold text-white uppercase">All Answers</h3>
         {puzzle.grid.map((row, r) =>
           row.map((sq, c) => {
             const found = gameState.guesses.get(squareKey(r, c)) ?? [];
@@ -1355,7 +1355,7 @@ function ResultsScreen({
                       <div
                         key={a.name}
                         className={`flex justify-between text-xs ${
-                          foundNames.has(a.name) ? "text-green-400" : "text-gray-500"
+                          foundNames.has(a.name) ? "text-green-400" : "text-gray-200"
                         }`}
                       >
                         <span>

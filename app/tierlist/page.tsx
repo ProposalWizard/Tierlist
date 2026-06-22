@@ -34,12 +34,12 @@ export default async function TierlistPage() {
         <div className="flex items-center justify-between mb-3">
           <Link
             href="/tierlists"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
+            className="text-sm text-white hover:text-white transition-colors"
           >
             ← Tierlists
           </Link>
 
-          <div className="flex items-center gap-3 text-sm text-gray-400">
+          <div className="flex items-center gap-3 text-sm text-white">
             <span className="hidden md:inline">{user.email}</span>
             <form action="/api/auth/signout" method="POST">
               <button
@@ -55,7 +55,7 @@ export default async function TierlistPage() {
         <h1 className="text-2xl font-bold text-white md:text-3xl">
           My Tierlist
         </h1>
-        <p className="mt-1 text-sm text-gray-400">
+        <p className="mt-1 text-sm text-white">
           Add images below, then drag them into a tier.
         </p>
       </header>

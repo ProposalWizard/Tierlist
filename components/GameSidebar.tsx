@@ -57,7 +57,7 @@ export default function GameSidebar() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:text-white"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:text-white"
         aria-label="Open game menu"
       >
         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +84,7 @@ export default function GameSidebar() {
               </span>
               <button
                 onClick={() => setOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors hover:text-white"
                 aria-label="Close menu"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,12 +105,12 @@ export default function GameSidebar() {
                       className="group mx-3 my-0.5 rounded-lg px-3 py-3 opacity-50"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-gray-400">{game.name}</span>
-                        <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gray-500">
+                        <span className="text-sm font-bold text-gray-200">{game.name}</span>
+                        <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
                           Soon
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-gray-500">{game.description}</p>
+                      <p className="mt-0.5 text-xs text-white">{game.description}</p>
                     </div>
                   );
                 }
@@ -126,7 +126,7 @@ export default function GameSidebar() {
                     }`}
                   >
                     <span className="text-sm font-bold">{game.name}</span>
-                    <p className={`mt-0.5 text-xs ${isActive ? "text-purple-300" : "text-gray-400 group-hover:text-gray-300"}`}>
+                    <p className={`mt-0.5 text-xs ${isActive ? "text-purple-300" : "text-white group-hover:text-gray-300"}`}>
                       {game.description}
                     </p>
                   </Link>
@@ -136,7 +136,7 @@ export default function GameSidebar() {
 
             {/* Footer */}
             <div className="border-t border-gray-800 px-5 py-4">
-              <p className="text-[10px] text-gray-500">knowitball.co.uk</p>
+              <p className="text-[10px] text-gray-200">knowitball.co.uk</p>
             </div>
           </div>
         </>,

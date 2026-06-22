@@ -163,7 +163,7 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
         <h1 className="text-2xl font-black tracking-tight text-white">
           {subtitle || "Arrange Your Squad"}
         </h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-gray-200 text-sm mt-1">
           Tap two players to swap them
         </p>
       </div>
@@ -210,7 +210,7 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
                     OOP
                   </span>
                 )}
-                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                <span className="text-gray-300 text-[10px] font-medium">{p.clubYear}</span>
                 <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
               </button>
             );
@@ -229,10 +229,10 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
                       : "hover:bg-gray-800/30 border-2 border-dashed border-gray-600/50"
                 }`}
               >
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-700 text-gray-400 w-9 text-center">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-700 text-white w-9 text-center">
                   {slot.label}
                 </span>
-                <span className="flex-1 ml-1 font-medium text-gray-600 italic">Vacant</span>
+                <span className="flex-1 ml-1 font-medium text-gray-300 italic">Vacant</span>
               </button>
             );
           })}
@@ -263,15 +263,15 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
                   SUB
                 </span>
                 <span className="flex-1 ml-1 font-medium">{p.name}</span>
-                <span className="text-gray-500 text-[9px] font-medium">{naturalPositions(p).join(" / ") || p.assignedPosition}</span>
-                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                <span className="text-gray-200 text-[9px] font-medium">{naturalPositions(p).join(" / ") || p.assignedPosition}</span>
+                <span className="text-gray-300 text-[10px] font-medium">{p.clubYear}</span>
                 <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
               </button>
             );
           })}
         </div>
         {subs.length === 0 && (
-          <div className="text-gray-600 text-sm text-center py-2">No substitutes</div>
+          <div className="text-gray-300 text-sm text-center py-2">No substitutes</div>
         )}
       </div>
 
@@ -279,10 +279,10 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
       <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">&#128202;</span>
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase">
             Pre-Season Predictions
           </h3>
-          {!odds && <span className="text-[10px] text-gray-600 animate-pulse ml-auto">Calculating...</span>}
+          {!odds && <span className="text-[10px] text-gray-300 animate-pulse ml-auto">Calculating...</span>}
         </div>
         {odds ? (
           <>
@@ -291,41 +291,41 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
                 <div className={`text-2xl font-black ${odds.winLeague >= 50 ? "text-yellow-400" : odds.winLeague >= 20 ? "text-emerald-400" : "text-gray-300"}`}>
                   {odds.winLeague.toFixed(1)}%
                 </div>
-                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Win League</div>
+                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mt-0.5">Win League</div>
               </div>
               <div className="bg-gray-800/50 rounded-lg p-3 text-center">
                 <div className={`text-2xl font-black ${odds.top4 >= 70 ? "text-blue-400" : odds.top4 >= 40 ? "text-emerald-400" : "text-gray-300"}`}>
                   {odds.top4.toFixed(1)}%
                 </div>
-                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 4</div>
+                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mt-0.5">Top 4</div>
               </div>
               <div className="bg-gray-800/50 rounded-lg p-3 text-center">
                 <div className={`text-2xl font-black ${odds.top7 >= 80 ? "text-emerald-400" : odds.top7 >= 50 ? "text-emerald-400/70" : "text-gray-300"}`}>
                   {odds.top7.toFixed(1)}%
                 </div>
-                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Top 7</div>
+                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mt-0.5">Top 7</div>
               </div>
               <div className="bg-gray-800/50 rounded-lg p-3 text-center">
                 <div className={`text-2xl font-black ${odds.relegation >= 30 ? "text-red-400" : odds.relegation >= 10 ? "text-orange-400" : "text-gray-300"}`}>
                   {odds.relegation.toFixed(1)}%
                 </div>
-                <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Relegation</div>
+                <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mt-0.5">Relegation</div>
               </div>
             </div>
-            <div className="mt-3 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-500">
+            <div className="mt-3 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-gray-200">
               <span>Predicted Points</span>
               <span className="font-bold text-white">{odds.avgPoints}</span>
             </div>
-            <div className="mt-1 flex justify-between text-xs text-gray-500">
+            <div className="mt-1 flex justify-between text-xs text-gray-200">
               <span>Predicted Finish</span>
               <span className="font-bold text-white">{ordinal(Math.round(odds.avgFinish))}</span>
             </div>
-            <div className="mt-1 flex justify-between text-xs text-gray-500">
+            <div className="mt-1 flex justify-between text-xs text-gray-200">
               <span>Avg Wins</span>
               <span className="font-bold text-white">{odds.avgWins}/38</span>
             </div>
             <div className="mt-3 pt-2 border-t border-gray-800/50">
-              <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">Milestone Odds</div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-300 uppercase mb-2">Milestone Odds</div>
               <div className="space-y-1.5">
                 {[
                   { label: "100+ Points (Centurion)", pct: odds.centurion, color: "text-yellow-400" },
@@ -334,7 +334,7 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
                 ].map((m) => (
                   <div key={m.label} className="flex items-center gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-400">{m.label}</div>
+                      <div className="text-xs text-white">{m.label}</div>
                       <div className="w-full h-1 bg-gray-800 rounded-full mt-0.5 overflow-hidden">
                         <div
                           className={`h-full rounded-full ${m.pct > 0 ? "bg-gradient-to-r from-gray-600 to-gray-500" : ""}`}
@@ -342,7 +342,7 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
                         />
                       </div>
                     </div>
-                    <span className={`text-sm font-black w-14 text-right tabular-nums ${m.pct > 0 ? m.color : "text-gray-700"}`}>
+                    <span className={`text-sm font-black w-14 text-right tabular-nums ${m.pct > 0 ? m.color : "text-gray-300"}`}>
                       {m.pct > 0 ? `${m.pct}%` : "0%"}
                     </span>
                   </div>
@@ -352,7 +352,7 @@ export default function SquadManager({ players, onConfirm, title, subtitle, form
           </>
         ) : (
           <div className="py-6 text-center">
-            <div className="text-sm text-gray-600 animate-pulse">Simulating seasons...</div>
+            <div className="text-sm text-gray-300 animate-pulse">Simulating seasons...</div>
           </div>
         )}
       </div>

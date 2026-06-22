@@ -36,6 +36,7 @@ interface Props {
   onSimulationComplete: (myResult: SeasonResult, allPlayers: RoomPlayer[]) => void;
   onCareerComplete?: (seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[], allRoomPlayerSeasons?: Record<string, SeasonResult[]>) => void;
   onLeave: () => void;
+  onUpdateSettings?: (settings: Partial<DraftSettings>) => void;
 }
 
 export default function MultiplayerLobby({
@@ -50,6 +51,7 @@ export default function MultiplayerLobby({
   onSimulationComplete,
   onCareerComplete,
   onLeave,
+  onUpdateSettings,
 }: Props) {
   const [room, setRoom] = useState<RoomData | null>(null);
   const [players, setPlayers] = useState<RoomPlayer[]>([]);
@@ -226,14 +228,14 @@ export default function MultiplayerLobby({
           <span className="text-xs font-bold tracking-widest uppercase text-emerald-400">Multiplayer</span>
         </div>
         <h1 className="text-2xl font-black tracking-tight text-white mb-1">Lobby</h1>
-        <p className="text-gray-500 text-sm">
+        <p className="text-gray-200 text-sm">
           {currentSeason > 1 ? `Season ${currentSeason} — submit your squad to continue` : "Share the code so friends can join"}
         </p>
       </div>
 
       {/* Room Code */}
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-        <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Room Code</div>
+        <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Room Code</div>
         <div className="flex items-center gap-3">
           <div className="flex-1 text-3xl font-black tracking-[0.3em] text-emerald-400 font-mono" style={{ fontFeatureSettings: '"zero" 1' }}>
             {roomCode}
@@ -250,19 +252,186 @@ export default function MultiplayerLobby({
       {/* Room Settings */}
       {settings && currentSeason === 1 && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-1">Rules</div>
-          <div className="text-[10px] text-gray-600 mb-2">Formation is chosen individually</div>
-          <div className="flex flex-wrap gap-2">
-            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">FIFA {settings.eraStart}–{settings.eraEnd}</span>
-            {settings.mode === "prime" && (
-              <span className="text-xs font-bold bg-yellow-500/15 text-yellow-400 px-2.5 py-1 rounded border border-yellow-500/30">Prime</span>
+          <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-1">Settings</div>
+          <div className="text-[10px] text-gray-300 mb-3">Formation is chosen individually</div>
+
+          {/* Era Range */}
+          <div className="mb-3">
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Era Range</div>
+            {isHost && onUpdateSettings ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <select
+                    value={settings.eraStart}
+                    onChange={(e) => onUpdateSettings({ eraStart: Number(e.target.value) })}
+                    className="w-full appearance-none bg-gray-800 border border-gray-700/50 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                  >
+                    {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
+                      <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-200">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </div>
+                <span className="text-gray-300 text-[10px] font-bold">to</span>
+                <div className="flex-1 relative">
+                  <select
+                    value={settings.eraEnd}
+                    onChange={(e) => onUpdateSettings({ eraEnd: Number(e.target.value) })}
+                    className="w-full appearance-none bg-gray-800 border border-gray-700/50 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                  >
+                    {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
+                      <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-200">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">
+                FIFA {settings.eraStart}–{settings.eraEnd}
+              </span>
             )}
-            {settings.draftOrder === "club-first" && (
-              <span className="text-xs font-bold bg-blue-500/15 text-blue-400 px-2.5 py-1 rounded border border-blue-500/30">Club First</span>
+          </div>
+
+          {/* Game Mode */}
+          <div className="mb-3">
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Game Mode</div>
+            {isHost && onUpdateSettings ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => onUpdateSettings({ mode: "normal" })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.mode === "normal"
+                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Normal
+                </button>
+                <button
+                  onClick={() => onUpdateSettings({ mode: "prime" })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.mode === "prime"
+                      ? "bg-amber-600 text-white ring-1 ring-amber-400"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Prime
+                </button>
+              </div>
+            ) : (
+              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+                settings.mode === "prime"
+                  ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
+                  : "bg-gray-800 text-gray-300"
+              }`}>
+                {settings.mode === "prime" ? "Prime" : "Normal"}
+              </span>
             )}
-            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">
-              {settings.respins === 0 ? "No Re-spins" : settings.respins === 1 ? "1 Re-spin" : "3 Re-spins"}
-            </span>
+          </div>
+
+          {/* Draft Order */}
+          <div className="mb-3">
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Draft Order</div>
+            {isHost && onUpdateSettings ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => onUpdateSettings({ draftOrder: "club-first" })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.draftOrder === "club-first"
+                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Club First
+                </button>
+                <button
+                  onClick={() => onUpdateSettings({ draftOrder: "position-first" })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.draftOrder === "position-first"
+                      ? "bg-sky-600 text-white ring-1 ring-sky-400"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Position First
+                </button>
+              </div>
+            ) : (
+              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+                settings.draftOrder === "club-first"
+                  ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                  : "bg-sky-500/15 text-sky-400 border border-sky-500/30"
+              }`}>
+                {settings.draftOrder === "club-first" ? "Club First" : "Position First"}
+              </span>
+            )}
+          </div>
+
+          {/* Re-spins */}
+          <div className="mb-3">
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Re-spins</div>
+            {isHost && onUpdateSettings ? (
+              <div className="grid grid-cols-3 gap-1.5">
+                {([3, 1, 0] as const).map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => onUpdateSettings({ respins: n })}
+                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                      settings.respins === n
+                        ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
+                        : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                    }`}
+                  >
+                    {n === 0 ? "None" : n}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">
+                {settings.respins === 0 ? "No Re-spins" : settings.respins === 1 ? "1 Re-spin" : "3 Re-spins"}
+              </span>
+            )}
+          </div>
+
+          {/* Hidden Ratings */}
+          <div>
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Rating Visibility</div>
+            {isHost && onUpdateSettings ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => onUpdateSettings({ hiddenRatings: false })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    !settings.hiddenRatings
+                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Normal
+                </button>
+                <button
+                  onClick={() => onUpdateSettings({ hiddenRatings: true })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.hiddenRatings
+                      ? "bg-purple-600 text-white ring-1 ring-purple-400"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Hidden
+                </button>
+              </div>
+            ) : (
+              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+                settings.hiddenRatings
+                  ? "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                  : "bg-gray-800 text-gray-300"
+              }`}>
+                {settings.hiddenRatings ? "Hidden" : "Normal"}
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -282,11 +451,11 @@ export default function MultiplayerLobby({
 
       {/* Players list */}
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-        <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+        <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">
           Players ({players.length})
         </div>
         {loading ? (
-          <div className="text-gray-600 text-sm text-center py-4">Loading...</div>
+          <div className="text-gray-300 text-sm text-center py-4">Loading...</div>
         ) : (
           <div className="space-y-2">
             {players.map((p) => {
@@ -304,11 +473,11 @@ export default function MultiplayerLobby({
                     )}
                     <span className={`flex-1 font-bold text-sm ${isMe ? "text-emerald-400" : "text-white"}`}>
                       {p.display_name}
-                      {isMe && <span className="text-gray-600 font-normal text-xs ml-1">(you)</span>}
+                      {isMe && <span className="text-gray-300 font-normal text-xs ml-1">(you)</span>}
                     </span>
                     {/* Avg OVR + Team Rating */}
                     {p.avg_ovr !== null && (
-                      <span className="text-xs font-bold text-gray-400 bg-gray-800 px-2 py-0.5 rounded">
+                      <span className="text-xs font-bold text-white bg-gray-800 px-2 py-0.5 rounded">
                         OVR {p.avg_ovr}
                       </span>
                     )}
@@ -329,7 +498,7 @@ export default function MultiplayerLobby({
                     </span>
                     {/* Expand arrow */}
                     {p.squad && (
-                      <svg className={`w-3 h-3 text-gray-600 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className={`w-3 h-3 text-gray-300 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     )}
@@ -338,7 +507,7 @@ export default function MultiplayerLobby({
                   {/* Squad preview */}
                   {isExpanded && p.squad && (
                     <div className="px-3 pb-3 pt-1 border-t border-gray-800/50 bg-gray-800/20">
-                      <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">
+                      <div className="text-[10px] font-bold tracking-widest text-gray-300 uppercase mb-2">
                         Squad
                         {p.team_strength !== null && (
                           <span className="ml-2 text-blue-400 normal-case font-bold">
@@ -361,7 +530,7 @@ export default function MultiplayerLobby({
                               {player.assignedPosition}
                             </span>
                             <span className="truncate text-gray-300">{player.name}</span>
-                            <span className="text-gray-600 font-bold shrink-0">{player.overall}</span>
+                            <span className="text-gray-300 font-bold shrink-0">{player.overall}</span>
                           </div>
                         ))}
                       </div>
@@ -371,7 +540,7 @@ export default function MultiplayerLobby({
               );
             })}
             {players.length < 2 && (
-              <div className="text-center text-gray-600 text-xs py-2">
+              <div className="text-center text-gray-300 text-xs py-2">
                 Waiting for others to join...
               </div>
             )}
@@ -395,7 +564,7 @@ export default function MultiplayerLobby({
       {squadSubmitted && !isSimulating && (
         <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl p-4 mb-3 text-center">
           <div className="text-emerald-400 font-bold text-sm mb-0.5">Squad Submitted</div>
-          <div className="text-gray-500 text-xs">
+          <div className="text-gray-200 text-xs">
             {allReady
               ? isHost
                 ? "All players ready — you can start the simulation!"
@@ -454,7 +623,7 @@ export default function MultiplayerLobby({
       )}
 
       {!isHost && squadSubmitted && (
-        <p className="text-center text-xs text-gray-600 mb-3">
+        <p className="text-center text-xs text-gray-300 mb-3">
           {myPlayer?.display_name && `${players.find(p => p.user_id === room?.host_id)?.display_name ?? "Host"} will start the simulation`}
         </p>
       )}
@@ -464,7 +633,7 @@ export default function MultiplayerLobby({
           e.stopPropagation();
           onLeave();
         }}
-        className="w-full py-2.5 text-sm font-bold text-gray-600 hover:text-gray-400 transition"
+        className="w-full py-2.5 text-sm font-bold text-gray-300 hover:text-gray-400 transition"
       >
         Leave Room
       </button>

@@ -256,7 +256,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             <svg
               key={i}
               className={`h-8 w-8 transition-colors ${
-                i < lives ? "text-red-500" : "text-gray-700"
+                i < lives ? "text-red-500" : "text-gray-300"
               }`}
               fill="currentColor"
               viewBox="0 0 24 24"
@@ -269,9 +269,9 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
         {/* Score */}
         <div className="text-center mb-4">
           <span className="text-2xl font-black text-white">{score}</span>
-          <span className="text-lg text-gray-400"> / 10</span>
+          <span className="text-lg text-white"> / 10</span>
           {hasBank && (
-            <span className="ml-2 text-xs text-gray-400">({answers.length} in bank)</span>
+            <span className="ml-2 text-xs text-white">({answers.length} in bank)</span>
           )}
         </div>
 
@@ -290,7 +290,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
 
             let bgClass = "bg-gray-800";
             let textContent: React.ReactNode = (
-              <span className="text-lg font-black text-gray-400">{pos}</span>
+              <span className="text-lg font-black text-white">{pos}</span>
             );
 
             if (isRevealed) {
@@ -318,8 +318,8 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
               if (!hasBank) {
                 textContent = (
                   <div className="flex items-center justify-between w-full px-2">
-                    <span className="text-lg font-black text-gray-400">{pos}</span>
-                    <span className="text-sm font-semibold text-gray-400">{slot.name}</span>
+                    <span className="text-lg font-black text-white">{pos}</span>
+                    <span className="text-sm font-semibold text-white">{slot.name}</span>
                   </div>
                 );
               }
@@ -339,14 +339,14 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
         {/* Show remaining answers from bank on game over */}
         {gameOver && hasBank && !won && (
           <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-4">
-            <p className="text-xs font-bold text-gray-400 mb-2">
+            <p className="text-xs font-bold text-white mb-2">
               Remaining answers ({answers.length - guessedNames.size} of {answers.length}):
             </p>
             <div className="flex flex-wrap gap-1.5">
               {answers
                 .filter((a) => !guessedNames.has(a.name))
                 .map((a) => (
-                  <span key={a.name} className="rounded-full bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-400">
+                  <span key={a.name} className="rounded-full bg-gray-800 px-2.5 py-1 text-xs font-semibold text-white">
                     {a.name}
                   </span>
                 ))}
@@ -357,7 +357,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
         {/* Description */}
         {puzzle.description && (
           <div className="mb-6 rounded-lg border border-gray-800 bg-gray-900 p-4">
-            <p className="text-xs text-gray-400 italic">{puzzle.description}</p>
+            <p className="text-xs text-white italic">{puzzle.description}</p>
           </div>
         )}
 
@@ -367,12 +367,12 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             {won ? (
               <div>
                 <p className="text-2xl font-black text-green-400">You got all 10!</p>
-                <p className="mt-1 text-sm text-gray-400">Perfect score!</p>
+                <p className="mt-1 text-sm text-white">Perfect score!</p>
               </div>
             ) : (
               <div>
                 <p className="text-2xl font-black text-red-400">Game Over</p>
-                <p className="mt-1 text-sm text-gray-400">
+                <p className="mt-1 text-sm text-white">
                   You got {score} out of 10 correct.
                 </p>
               </div>
@@ -408,7 +408,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
         )}
 
         {/* Navigation */}
-        <div className="mt-8 flex items-center justify-between text-xs text-gray-400">
+        <div className="mt-8 flex items-center justify-between text-xs text-white">
           {puzzle.daily_date && (
             <span>#{puzzle.daily_date}</span>
           )}

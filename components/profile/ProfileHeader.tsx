@@ -193,11 +193,11 @@ export default function ProfileHeader({
             </span>
             <button
               onClick={onOpenSettings}
-              className="text-gray-500 hover:text-amber-400 transition-colors p-1.5 rounded-lg hover:bg-white/5"
+              className="text-white hover:text-amber-400 transition-colors p-2 rounded-lg hover:bg-white/5"
               title="Settings"
             >
               <svg
-                className="w-4 h-4"
+                className="w-5 h-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -304,8 +304,8 @@ export default function ProfileHeader({
                 <span className="text-[10px] font-semibold text-emerald-400/80">
                   {currentXp.toLocaleString()}
                 </span>
-                <span className="text-[10px] text-gray-600">/</span>
-                <span className="text-[10px] font-semibold text-gray-400">
+                <span className="text-[10px] text-gray-200">/</span>
+                <span className="text-[10px] font-semibold text-gray-200">
                   {xpToNext.toLocaleString()} XP
                 </span>
               </div>
@@ -332,7 +332,7 @@ export default function ProfileHeader({
                   <div className="text-sm font-black text-white leading-none">
                     {s.value}
                   </div>
-                  <div className="text-[7px] text-gray-500 mt-1.5 font-bold uppercase tracking-widest">
+                  <div className="text-[7px] text-gray-200 mt-1.5 font-bold uppercase tracking-widest">
                     {s.label}
                   </div>
                 </div>

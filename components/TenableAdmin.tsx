@@ -226,7 +226,7 @@ export default function TenableAdmin() {
   };
 
   if (loading) {
-    return <p className="py-8 text-center text-gray-500">Loading...</p>;
+    return <p className="py-8 text-center text-gray-200">Loading...</p>;
   }
 
   if (editing) {
@@ -239,7 +239,7 @@ export default function TenableAdmin() {
           </h3>
           <button
             onClick={() => { setEditing(null); resetForm(); }}
-            className="text-sm text-gray-400 hover:text-white"
+            className="text-sm text-white hover:text-white"
           >
             Cancel
           </button>
@@ -248,7 +248,7 @@ export default function TenableAdmin() {
         {/* Title & Category */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Title</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-white mb-1">Title</label>
             <input
               type="text"
               value={title}
@@ -258,7 +258,7 @@ export default function TenableAdmin() {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Category</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-white mb-1">Category</label>
             <input
               type="text"
               value={category}
@@ -271,7 +271,7 @@ export default function TenableAdmin() {
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-white mb-1">
             Description (shown below the board)
           </label>
           <input
@@ -311,7 +311,7 @@ export default function TenableAdmin() {
           </label>
 
           <div className="flex items-center gap-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Daily Date</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-white">Daily Date</label>
             <input
               type="date"
               value={dailyDate}
@@ -352,11 +352,11 @@ export default function TenableAdmin() {
         {/* Answers */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            <label className="text-xs font-bold uppercase tracking-wider text-white">
               Answers ({filledCount} filled{!isOrdered && filledCount > 10 ? ` — ${filledCount - 10} bonus` : ""})
             </label>
             {!isOrdered && (
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-gray-200">
                 Unordered — can have more than 10 answers
               </span>
             )}
@@ -364,7 +364,7 @@ export default function TenableAdmin() {
           <div className="space-y-2">
             {answers.map((a) => (
               <div key={a.position} className="flex items-center gap-2">
-                <span className="w-8 text-center text-sm font-black text-gray-500">{a.position}</span>
+                <span className="w-8 text-center text-sm font-black text-gray-200">{a.position}</span>
                 <input
                   type="text"
                   value={a.name}
@@ -393,7 +393,7 @@ export default function TenableAdmin() {
           {!isOrdered && (
             <button
               onClick={addAnswerSlot}
-              className="mt-2 rounded-lg border border-dashed border-gray-700 px-4 py-2 text-xs font-bold text-gray-400 hover:border-emerald-600 hover:text-emerald-400 transition-colors w-full"
+              className="mt-2 rounded-lg border border-dashed border-gray-700 px-4 py-2 text-xs font-bold text-white hover:border-emerald-600 hover:text-emerald-400 transition-colors w-full"
             >
               + Add answer slot
             </button>
@@ -444,7 +444,7 @@ export default function TenableAdmin() {
       )}
 
       {puzzles.length === 0 ? (
-        <p className="py-12 text-center text-gray-500">No Ten-A-Ball puzzles yet.</p>
+        <p className="py-12 text-center text-gray-200">No Ten-A-Ball puzzles yet.</p>
       ) : (
         <div className="space-y-2">
           {puzzles.map((p) => (
@@ -461,12 +461,12 @@ export default function TenableAdmin() {
                     </span>
                   )}
                   {p.is_ordered && (
-                    <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-bold text-gray-400">
+                    <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-bold text-white">
                       Ordered
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-200">
                   <span>{p.category}</span>
                   {p.daily_date && <span>Day: {p.daily_date}</span>}
                 </div>

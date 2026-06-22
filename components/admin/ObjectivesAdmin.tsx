@@ -180,12 +180,12 @@ export default function ObjectivesAdmin() {
 
       {/* Form */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
-        <h3 className="text-sm font-bold text-gray-300">
+        <h3 className="text-sm font-bold text-white">
           {editingId ? "Edit Objective" : "Add New Objective"}
         </h3>
 
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider mb-1">
             Title *
           </label>
           <input
@@ -198,7 +198,7 @@ export default function ObjectivesAdmin() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider mb-1">
             Description (optional)
           </label>
           <textarea
@@ -212,7 +212,7 @@ export default function ObjectivesAdmin() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider mb-1">
               XP Reward
             </label>
             <input
@@ -222,10 +222,10 @@ export default function ObjectivesAdmin() {
               min={0}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
-            <p className="text-[10px] text-gray-600 mt-1">0 = hidden from users</p>
+            <p className="text-[10px] text-gray-300 mt-1">0 = hidden from users</p>
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider mb-1">
               Active
             </label>
             <button
@@ -233,7 +233,7 @@ export default function ObjectivesAdmin() {
               className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
                 form.is_active
                   ? "bg-emerald-600 text-white"
-                  : "bg-gray-700 text-gray-400"
+                  : "bg-gray-700 text-gray-200"
               }`}
             >
               {form.is_active ? "Active" : "Inactive"}
@@ -243,7 +243,7 @@ export default function ObjectivesAdmin() {
 
         {/* Time Limit */}
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider mb-1">
             Time Limit
           </label>
           <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ export default function ObjectivesAdmin() {
             {form.expires_at ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-amber-400 font-bold">{formatDeadline(form.expires_at)}</span>
-                <span className="text-[10px] text-gray-500">({new Date(form.expires_at).toLocaleDateString()})</span>
+                <span className="text-[10px] text-gray-300">({new Date(form.expires_at).toLocaleDateString()})</span>
                 <button
                   onClick={() => { setForm(f => ({ ...f, expires_at: null })); setDurationSelect(""); }}
                   className="text-[10px] text-red-400 hover:text-red-300 font-bold px-2 py-0.5 bg-red-500/10 rounded transition"
@@ -269,14 +269,14 @@ export default function ObjectivesAdmin() {
                 </button>
               </div>
             ) : (
-              <span className="text-xs text-gray-600">No time limit</span>
+              <span className="text-xs text-gray-300">No time limit</span>
             )}
           </div>
         </div>
 
         {/* Card Reward */}
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+          <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider mb-1">
             Card Reward (optional)
           </label>
           <div className="flex items-start gap-4">
@@ -295,7 +295,7 @@ export default function ObjectivesAdmin() {
                   onChange={handleCardFileChange}
                   className="hidden"
                 />
-                <span className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:border-gray-500 transition cursor-pointer">
+                <span className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-gray-200 hover:text-white hover:border-gray-500 transition cursor-pointer">
                   Upload Card Image
                 </span>
               </label>
@@ -329,7 +329,7 @@ export default function ObjectivesAdmin() {
           {editingId && (
             <button
               onClick={resetForm}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 font-bold text-sm rounded-lg transition"
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold text-sm rounded-lg transition"
             >
               Cancel
             </button>
@@ -339,9 +339,9 @@ export default function ObjectivesAdmin() {
 
       {/* Objectives List */}
       {loading ? (
-        <div className="text-gray-600 text-sm text-center py-8">Loading...</div>
+        <div className="text-gray-300 text-sm text-center py-8">Loading...</div>
       ) : objectives.length === 0 ? (
-        <div className="text-gray-600 text-sm text-center py-8">
+        <div className="text-gray-300 text-sm text-center py-8">
           No objectives yet. Add one above.
         </div>
       ) : (
@@ -363,7 +363,7 @@ export default function ObjectivesAdmin() {
                     className="w-12 h-16 object-cover rounded-lg border border-gray-700 shrink-0"
                   />
                 ) : (
-                  <div className="w-12 h-16 bg-gray-800 rounded-lg border border-gray-700 shrink-0 flex items-center justify-center text-gray-700 text-lg">
+                  <div className="w-12 h-16 bg-gray-800 rounded-lg border border-gray-700 shrink-0 flex items-center justify-center text-white text-lg">
                     ?
                   </div>
                 )}
@@ -372,7 +372,7 @@ export default function ObjectivesAdmin() {
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm text-white truncate">{obj.title}</div>
                   {obj.description && (
-                    <div className="text-[10px] text-gray-500 truncate">{obj.description}</div>
+                    <div className="text-[10px] text-gray-300 truncate">{obj.description}</div>
                   )}
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {obj.xp_reward > 0 && (
@@ -386,7 +386,7 @@ export default function ObjectivesAdmin() {
                       </span>
                     )}
                     {!obj.is_active && (
-                      <span className="text-[10px] font-bold text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-bold text-gray-300 bg-gray-800 px-1.5 py-0.5 rounded">
                         Hidden
                       </span>
                     )}
@@ -407,7 +407,7 @@ export default function ObjectivesAdmin() {
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => handleEdit(obj)}
-                    className="px-2 py-1 text-xs font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
+                    className="px-2 py-1 text-xs font-bold text-gray-200 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
                   >
                     Edit
                   </button>

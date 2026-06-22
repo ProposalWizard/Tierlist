@@ -29,7 +29,7 @@ export default class ClientErrorBoundary extends Component<Props, State> {
             fontFamily: "monospace",
           }}
         >
-          <h1 style={{ color: "#f87171", marginBottom: 16 }}>
+          <h1 style={{ color: "#f87171", marginBottom: 16, fontWeight: 700 }}>
             Error caught
           </h1>
           <pre

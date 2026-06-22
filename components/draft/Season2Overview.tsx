@@ -100,7 +100,7 @@ export default function Season2Overview({
           <span className="text-white">SEASON</span>{" "}
           <span className="text-amber-400">{seasonNumber}</span>
         </h1>
-        <p className="text-gray-500 text-sm mt-1">Off-season changes to your squad</p>
+        <p className="text-gray-200 text-sm mt-1">Off-season changes to your squad</p>
       </div>
 
       {/* Departures */}
@@ -127,7 +127,7 @@ export default function Season2Overview({
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm">{dp.player.name}</div>
-                  <div className="text-xs text-gray-500">{dp.player.clubYear} &middot; OVR {dp.player.overall}</div>
+                  <div className="text-xs text-gray-200">{dp.player.clubYear} &middot; OVR {dp.player.overall}</div>
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
                   {!isConvinceable && (
@@ -166,7 +166,7 @@ export default function Season2Overview({
 
       {/* Rating Changes */}
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-        <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+        <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">
           Season Review &mdash; Rating Changes
         </h3>
         <div className="space-y-1">
@@ -200,19 +200,19 @@ export default function Season2Overview({
                   {rc.player.assignedPosition}
                 </span>
                 <span className="flex-1 ml-1 font-medium truncate">{rc.player.name}</span>
-                <span className="text-gray-500 text-sm font-bold w-7 text-right">
+                <span className="text-gray-200 text-sm font-bold w-7 text-right">
                   {rc.oldOverall}
                 </span>
-                <span className="text-gray-600 mx-1">&rarr;</span>
+                <span className="text-gray-300 mx-1">&rarr;</span>
                 <span className={`text-sm font-black w-7 text-right ${
                   rc.change > 0 ? "text-emerald-400" :
-                  rc.change < 0 ? "text-red-400" : "text-gray-400"
+                  rc.change < 0 ? "text-red-400" : "text-white"
                 }`}>
                   {rc.newOverall}
                 </span>
                 <span className={`text-xs font-bold w-8 text-right ${
                   rc.change > 0 ? "text-emerald-500" :
-                  rc.change < 0 ? "text-red-500" : "text-gray-600"
+                  rc.change < 0 ? "text-red-500" : "text-gray-300"
                 }`}>
                   {rc.change > 0 ? `+${rc.change}` : rc.change < 0 ? `${rc.change}` : "—"}
                 </span>
@@ -220,7 +220,7 @@ export default function Season2Overview({
             );
           })}
         </div>
-        <div className="mt-3 pt-2 border-t border-gray-800/50 text-[10px] text-gray-600">
+        <div className="mt-3 pt-2 border-t border-gray-800/50 text-[10px] text-gray-300">
           Based on last season&apos;s avg ratings: 8.5+ = +3, 7.7+ = +2, 7.0+ = +1, &le;6.5 = -1
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function Season2Overview({
           <h3 className="text-[10px] font-bold tracking-widest text-cyan-400 uppercase mb-1">
             Off-Season Training
           </h3>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-gray-200 mb-3">
             Choose one of your youngest players for intensive training (random +1 to +3; max +2 if 90+ OVR)
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -265,10 +265,10 @@ export default function Season2Overview({
                   </span>
                   <div className="mt-2">
                     <div className="font-bold text-sm">{p.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">Age {p.age} &middot; OVR {p.overall}</div>
+                    <div className="text-xs text-gray-200 mt-0.5">Age {p.age} &middot; OVR {p.overall}</div>
                   </div>
                   {isMaxed ? (
-                    <div className="mt-2 text-xs font-bold text-gray-600">
+                    <div className="mt-2 text-xs font-bold text-gray-300">
                       Max rating reached
                     </div>
                   ) : isSelected ? (
@@ -286,7 +286,7 @@ export default function Season2Overview({
       {/* Both maxed — auto-skipping */}
       {allRevealed && allMaxed && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50 text-center animate-[fadeIn_0.5s_ease-in]">
-          <div className="text-gray-500 text-sm font-medium">
+          <div className="text-gray-200 text-sm font-medium">
             Both training candidates are at max rating &mdash; skipping training
           </div>
         </div>
@@ -299,17 +299,17 @@ export default function Season2Overview({
           <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50 flex items-center justify-around">
             <div className="text-center">
               <div className="text-2xl font-black text-white">{avgOvr}</div>
-              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Avg OVR</div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mt-0.5">Avg OVR</div>
             </div>
             <div className="w-px h-10 bg-gray-800" />
             <div className="text-center">
               <div className="text-2xl font-black text-blue-400">{Math.round(teamStrength)}</div>
-              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Team Rating</div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mt-0.5">Team Rating</div>
             </div>
             <div className="w-px h-10 bg-gray-800" />
             <div className="text-center">
               <div className="text-2xl font-black text-gray-300">{season2Players.filter(p => !p.isSub).length}</div>
-              <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mt-0.5">Starters</div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mt-0.5">Starters</div>
             </div>
           </div>
         );
@@ -322,7 +322,7 @@ export default function Season2Overview({
           <p className="text-sm text-blue-300 font-bold mt-1">
             Champions League Qualified!
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-200 mt-0.5">
             Your team will compete in the UCL this season
           </p>
         </div>
@@ -335,7 +335,7 @@ export default function Season2Overview({
           <p className="text-sm text-orange-300 font-bold mt-1">
             Europa League Qualified!
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-200 mt-0.5">
             Your team will compete in the UEL this season
           </p>
         </div>
@@ -357,7 +357,7 @@ export default function Season2Overview({
                 You need to sign <span className="font-black">{signingsNeeded} replacement player{signingsNeeded !== 1 ? "s" : ""}</span> to fill your squad.
               </p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-200 mt-1">
               New signings receive a random +1 to +3 boost. You can also sell a player afterwards.
             </p>
           </div>

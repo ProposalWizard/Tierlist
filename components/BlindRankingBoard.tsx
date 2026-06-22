@@ -115,12 +115,12 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
             Blind Ranking
           </div>
           <h2 className="text-3xl font-black text-white">{title}</h2>
-          <p className="mt-3 text-sm text-gray-400">
+          <p className="mt-3 text-sm text-white">
             You&apos;ll be shown {numSlots} random players one at a time.
             Rank each one from {ordinal(1)} to {ordinal(numSlots)} — but you
             can&apos;t see who&apos;s coming next!
           </p>
-          <p className="mt-2 text-xs text-gray-600">
+          <p className="mt-2 text-xs text-gray-300">
             {images.length} players in the pool
           </p>
           <button
@@ -166,7 +166,7 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
             </div>
           </div>
           <h2 className="text-3xl font-black text-white md:text-4xl">Your Ranking</h2>
-          <p className="mt-2 text-sm text-gray-400">Here&apos;s how you ranked them blind!</p>
+          <p className="mt-2 text-sm text-white">Here&apos;s how you ranked them blind!</p>
         </div>
 
         <div className="mx-auto max-w-2xl space-y-3">
@@ -218,7 +218,7 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
     <div className="py-6 px-4">
       {/* Progress */}
       <div className="mx-auto mb-8 max-w-4xl">
-        <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+        <div className="flex items-center justify-between text-sm text-white mb-2">
           <span className="font-semibold">Player {filledCount + 1} of {numSlots}</span>
           <span>{numSlots - filledCount - 1} remaining after this</span>
         </div>
@@ -246,7 +246,7 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
                 </div>
                 <div className="px-4 py-4 text-center">
                   <p className="text-lg font-bold text-white">{displayName(currentPlayer)}</p>
-                  <p className="mt-1 text-xs text-gray-500">Tap a slot to place</p>
+                  <p className="mt-1 text-xs text-gray-200">Tap a slot to place</p>
                 </div>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
                     <span className="text-sm font-semibold text-white">{player.name}</span>
                   </>
                 ) : (
-                  <span className={`text-sm ${isHovered ? "text-amber-300 font-medium" : "text-gray-600"}`}>
+                  <span className={`text-sm ${isHovered ? "text-amber-300 font-medium" : "text-gray-300"}`}>
                     {isHovered && currentPlayer ? `Place ${displayName(currentPlayer)} here` : "Empty"}
                   </span>
                 )}

@@ -23,7 +23,7 @@ export default async function CreateBlindRankingPage() {
         <h1 className="text-2xl font-black tracking-tight text-white md:text-3xl">
           New Blind Ranking
         </h1>
-        <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">
+        <p className="mx-auto mt-2 max-w-md text-sm text-white">
           Upload a bank of players. Others will rank them one at a time without knowing who&apos;s next!
         </p>
       </div>

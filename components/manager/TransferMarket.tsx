@@ -192,13 +192,13 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
           <span className="text-xs font-bold tracking-widest uppercase text-green-400">Transfer Market</span>
         </div>
         <h1 className="text-2xl font-black text-white">Build Your Squad</h1>
-        <p className="text-gray-500 text-sm mt-1">Choose one player per position</p>
+        <p className="text-gray-200 text-sm mt-1">Choose one player per position</p>
       </div>
 
       {/* Budget bar */}
       <div className="bg-gray-900 rounded-xl p-4 mb-5 border border-gray-800/50">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Budget Remaining</span>
+          <span className="text-xs font-bold text-gray-200 uppercase tracking-widest">Budget Remaining</span>
           <span className={`text-xl font-black ${budget < 50 ? "text-red-400" : budget < 150 ? "text-yellow-400" : "text-emerald-400"}`}>
             £{budget}M
           </span>
@@ -210,8 +210,8 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
           />
         </div>
         <div className="flex justify-between mt-1">
-          <span className="text-[10px] text-gray-700">£0</span>
-          <span className="text-[10px] text-gray-700">£{BUDGET_START}M</span>
+          <span className="text-[10px] text-gray-300">£0</span>
+          <span className="text-[10px] text-gray-300">£{BUDGET_START}M</span>
         </div>
       </div>
 
@@ -229,7 +229,7 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
                   ? "bg-emerald-900/30 border-emerald-700/50 text-emerald-400"
                   : isActive
                     ? "bg-amber-500/10 border-amber-500/50 text-amber-400 animate-pulse"
-                    : "bg-gray-900 border-gray-800 text-gray-600"
+                    : "bg-gray-900 border-gray-800 text-gray-300"
               }`}
             >
               <span className={`px-1 py-0.5 rounded text-[9px] ${isSub_ ? "bg-purple-700" : getPositionColor(slotLabel(i))} text-white`}>
@@ -250,13 +250,13 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
           <span className="text-sm font-bold text-white">
             {isSub(currentSlot) ? "Pick a Substitute" : `Pick your ${slotLabel(currentSlot)}`}
           </span>
-          <span className="text-xs text-gray-600 ml-auto">
+          <span className="text-xs text-gray-300 ml-auto">
             {currentSlot + 1} / {totalSlots}
           </span>
         </div>
 
         {currentState?.loading && (
-          <div className="flex items-center justify-center gap-2 py-12 text-gray-600">
+          <div className="flex items-center justify-center gap-2 py-12 text-gray-300">
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -286,7 +286,7 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
                       opt.player.overall >= 90 ? "bg-amber-500/20 border-amber-500/40 text-amber-400" :
                       opt.player.overall >= 85 ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" :
                       opt.player.overall >= 80 ? "bg-blue-500/20 border-blue-500/40 text-blue-400" :
-                      "bg-gray-800 border-gray-700 text-gray-400"
+                      "bg-gray-800 border-gray-700 text-white"
                     }`}>
                       <span className="text-lg leading-none">{opt.player.overall}</span>
                       <span className="text-[9px] text-current opacity-60">OVR</span>
@@ -294,29 +294,29 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
 
                     <div className="flex-1 min-w-0">
                       <div className="font-bold text-sm text-white">{opt.player.name}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{opt.club} · {opt.year} · Age {opt.player.age}</div>
+                      <div className="text-xs text-gray-200 mt-0.5">{opt.club} · {opt.year} · Age {opt.player.age}</div>
                       {/* Key stats */}
                       {opt.player.attrs && (
                         <div className="flex gap-3 mt-2">
                           {isSub(currentSlot) || slotLabel(currentSlot) === "GK" ? (
                             opt.player.attrs.gkReflexes > 0 ? (
                               <>
-                                <span className="text-[10px] text-gray-500">DIV <span className="text-gray-300 font-bold">{opt.player.attrs.gkDiving}</span></span>
-                                <span className="text-[10px] text-gray-500">REF <span className="text-gray-300 font-bold">{opt.player.attrs.gkReflexes}</span></span>
+                                <span className="text-[10px] text-gray-200">DIV <span className="text-gray-300 font-bold">{opt.player.attrs.gkDiving}</span></span>
+                                <span className="text-[10px] text-gray-200">REF <span className="text-gray-300 font-bold">{opt.player.attrs.gkReflexes}</span></span>
                               </>
                             ) : (
                               <>
-                                <span className="text-[10px] text-gray-500">PAC <span className="text-gray-300 font-bold">{opt.player.attrs.pace}</span></span>
-                                <span className="text-[10px] text-gray-500">SHO <span className="text-gray-300 font-bold">{opt.player.attrs.shooting}</span></span>
-                                <span className="text-[10px] text-gray-500">PAS <span className="text-gray-300 font-bold">{opt.player.attrs.passing}</span></span>
+                                <span className="text-[10px] text-gray-200">PAC <span className="text-gray-300 font-bold">{opt.player.attrs.pace}</span></span>
+                                <span className="text-[10px] text-gray-200">SHO <span className="text-gray-300 font-bold">{opt.player.attrs.shooting}</span></span>
+                                <span className="text-[10px] text-gray-200">PAS <span className="text-gray-300 font-bold">{opt.player.attrs.passing}</span></span>
                               </>
                             )
                           ) : (
                             <>
-                              <span className="text-[10px] text-gray-500">PAC <span className="text-gray-300 font-bold">{opt.player.attrs.pace}</span></span>
-                              <span className="text-[10px] text-gray-500">SHO <span className="text-gray-300 font-bold">{opt.player.attrs.shooting}</span></span>
-                              <span className="text-[10px] text-gray-500">PAS <span className="text-gray-300 font-bold">{opt.player.attrs.passing}</span></span>
-                              <span className="text-[10px] text-gray-500">DEF <span className="text-gray-300 font-bold">{opt.player.attrs.defending}</span></span>
+                              <span className="text-[10px] text-gray-200">PAC <span className="text-gray-300 font-bold">{opt.player.attrs.pace}</span></span>
+                              <span className="text-[10px] text-gray-200">SHO <span className="text-gray-300 font-bold">{opt.player.attrs.shooting}</span></span>
+                              <span className="text-[10px] text-gray-200">PAS <span className="text-gray-300 font-bold">{opt.player.attrs.passing}</span></span>
+                              <span className="text-[10px] text-gray-200">DEF <span className="text-gray-300 font-bold">{opt.player.attrs.defending}</span></span>
                             </>
                           )}
                         </div>
@@ -344,7 +344,7 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
             </svg>
             <div>
               <div className="font-bold text-sm text-emerald-400">{currentState.picked.name} signed!</div>
-              <div className="text-xs text-gray-500">{currentState.picked.overall} OVR · {currentState.picked.clubYear}</div>
+              <div className="text-xs text-gray-200">{currentState.picked.overall} OVR · {currentState.picked.clubYear}</div>
             </div>
           </div>
         )}
@@ -353,7 +353,7 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
       {/* Squad so far */}
       {squad.length > 0 && (
         <div className="bg-gray-900 rounded-xl p-4 border border-gray-800/50">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Squad So Far</h3>
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Squad So Far</h3>
           <div className="space-y-1">
             {squad.map((p, i) => (
               <div key={i} className="flex items-center gap-2 text-xs">
@@ -361,7 +361,7 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
                   {p.assignedPosition}
                 </span>
                 <span className="flex-1 text-gray-300 truncate">{p.name}</span>
-                <span className="text-gray-500">{p.overall}</span>
+                <span className="text-gray-200">{p.overall}</span>
               </div>
             ))}
           </div>

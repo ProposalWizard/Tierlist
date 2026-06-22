@@ -310,7 +310,7 @@ export default function EasyTTTBuilder({ onBack }: EasyTTTBuilderProps) {
           </span>
           <button
             onClick={() => clearGridClub(type, idx)}
-            className="text-gray-400 hover:text-white text-lg leading-none"
+            className="text-white hover:text-white text-lg leading-none"
           >
             &times;
           </button>
@@ -353,7 +353,7 @@ export default function EasyTTTBuilder({ onBack }: EasyTTTBuilderProps) {
               >
                 <Img src={c.image} alt={c.name} size={20} />
                 <span className="text-white truncate">{c.name}</span>
-                <span className="text-xs text-gray-500 ml-auto shrink-0">
+                <span className="text-xs text-gray-200 ml-auto shrink-0">
                   {c.country}
                 </span>
               </button>
@@ -371,7 +371,7 @@ export default function EasyTTTBuilder({ onBack }: EasyTTTBuilderProps) {
       {onBack && (
         <button
           onClick={onBack}
-          className="mb-4 flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors"
+          className="mb-4 flex items-center gap-1 text-sm text-white hover:text-white transition-colors"
         >
           <span>&larr;</span> Back
         </button>
@@ -380,7 +380,7 @@ export default function EasyTTTBuilder({ onBack }: EasyTTTBuilderProps) {
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-black text-white">Easy TTT Builder</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-200">
           Pick 3 row clubs and 3 column clubs, generate the grid, then submit as
           an Easy TTT puzzle.
         </p>
@@ -402,7 +402,7 @@ export default function EasyTTTBuilder({ onBack }: EasyTTTBuilderProps) {
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         {/* Row clubs */}
         <div>
-          <h3 className="mb-3 text-xs font-bold uppercase text-gray-500">
+          <h3 className="mb-3 text-xs font-bold uppercase text-gray-200">
             Row Clubs
           </h3>
           <div className="space-y-2">
@@ -416,7 +416,7 @@ export default function EasyTTTBuilder({ onBack }: EasyTTTBuilderProps) {
 
         {/* Column clubs */}
         <div>
-          <h3 className="mb-3 text-xs font-bold uppercase text-gray-500">
+          <h3 className="mb-3 text-xs font-bold uppercase text-gray-200">
             Column Clubs
           </h3>
           <div className="space-y-2">
@@ -440,7 +440,7 @@ export default function EasyTTTBuilder({ onBack }: EasyTTTBuilderProps) {
 
       {/* Loading indicator */}
       {gridLoading && (
-        <div className="py-12 text-center text-gray-500">
+        <div className="py-12 text-center text-gray-200">
           Querying Wikidata... ~15-30 seconds
         </div>
       )}
@@ -489,7 +489,7 @@ export default function EasyTTTBuilder({ onBack }: EasyTTTBuilderProps) {
                               </div>
                             ) : (
                               <div className="space-y-1">
-                                <div className="text-[10px] font-bold text-gray-500 mb-1">
+                                <div className="text-[10px] font-bold text-gray-200 mb-1">
                                   {cellPlayers.length} player
                                   {cellPlayers.length !== 1 ? "s" : ""}
                                 </div>

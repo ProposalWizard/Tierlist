@@ -193,7 +193,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
           <h2 className="text-lg font-bold text-white">Upload Tierlist</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors hover:bg-gray-800 hover:text-white"
           >
             ✕
           </button>
@@ -237,7 +237,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
             </label>
 
             {/* Preview — matches homepage card dimensions exactly */}
-            <p className="mb-1 text-[10px] text-gray-500">This is how it will look on the homepage</p>
+            <p className="mb-1 text-[10px] text-gray-200">This is how it will look on the homepage</p>
             <div
               className={`mb-3 h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
                 coverPreviewUrl ? "border-indigo-500" : "border-gray-700 bg-gray-800"
@@ -247,7 +247,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={coverPreviewUrl} alt="Cover preview" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-500">
+                <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-200">
                   No cover selected
                 </div>
               )}
@@ -256,7 +256,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
             {/* Pick from images on board */}
             {images.length > 0 && !customCover && (
               <div className="mb-3">
-                <p className="mb-1.5 text-xs text-gray-400">
+                <p className="mb-1.5 text-xs text-white">
                   Click an image to use it as the cover:
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -327,7 +327,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
             <p className="text-sm font-semibold text-gray-300">
               Images ({images.length})
             </p>
-            <p className="mt-0.5 text-xs text-gray-500">
+            <p className="mt-0.5 text-xs text-gray-200">
               All {images.length} image{images.length !== 1 ? "s" : ""} from your
               board will be included.
             </p>

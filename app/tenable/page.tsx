@@ -43,7 +43,7 @@ export default async function TenableListPage() {
         <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
           Ten-A-Ball
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm text-gray-400">
+        <p className="mx-auto mt-3 max-w-md text-sm text-white">
           Guess all 10 answers before you lose your 3 lives. A new challenge every day!
         </p>
       </div>
@@ -59,7 +59,7 @@ export default async function TenableListPage() {
             >
               <h3 className="text-xl font-black text-white group-hover:text-emerald-300">{daily.title}</h3>
               {daily.daily_date && (
-                <p className="mt-1 text-xs text-gray-400">{daily.daily_date}</p>
+                <p className="mt-1 text-xs text-white">{daily.daily_date}</p>
               )}
               <div className="mt-3">
                 <span className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-white">
@@ -73,7 +73,7 @@ export default async function TenableListPage() {
         {/* Previous puzzles */}
         {previous.length > 0 && (
           <div className="mb-8">
-            <h2 className="mb-3 text-sm font-bold uppercase text-gray-400">
+            <h2 className="mb-3 text-sm font-bold uppercase text-white">
               {daily ? "Previous Challenges" : "All Challenges"}
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -86,7 +86,7 @@ export default async function TenableListPage() {
                   <div>
                     <h3 className="font-bold text-white group-hover:text-emerald-300">{p.title}</h3>
                     {p.daily_date && (
-                      <p className="mt-1 text-xs text-gray-500">{p.daily_date}</p>
+                      <p className="mt-1 text-xs text-gray-200">{p.daily_date}</p>
                     )}
                   </div>
                   <span className="shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-700/50 px-4 py-1.5 text-xs font-bold text-emerald-400 group-hover:bg-emerald-600/30">
@@ -99,7 +99,7 @@ export default async function TenableListPage() {
         )}
 
         {items.length === 0 && (
-          <div className="py-24 text-center text-gray-400">
+          <div className="py-24 text-center text-white">
             No challenges available yet. Check back soon!
           </div>
         )}

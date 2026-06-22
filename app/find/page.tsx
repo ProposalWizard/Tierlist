@@ -110,7 +110,7 @@ export default async function FindPage({
       <div className="border-b border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 px-4 py-8">
         <div className="mx-auto max-w-7xl">
           <h1 className="text-3xl font-black tracking-tight text-white">Find a Tierlist</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-white">
             {allItems.length} tierlists available
           </p>
         </div>

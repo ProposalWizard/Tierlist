@@ -85,7 +85,7 @@ export default function StatsGrid({ stats, loginStreak, longestStreak, tierlists
     <div className="rounded-xl border border-gray-800/50 bg-gray-900 p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.03),inset_0_0_40px_rgba(0,0,0,0.3)]">
       {/* Title */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[10px] font-bold tracking-[0.25em] text-gray-500 uppercase">
+        <h3 className="text-[10px] font-bold tracking-[0.25em] text-gray-200 uppercase">
           Career Stats
         </h3>
         {draftsPlayed > 0 && (
@@ -119,7 +119,7 @@ export default function StatsGrid({ stats, loginStreak, longestStreak, tierlists
             <div className={`text-2xl sm:text-3xl font-black ${stat.glow} ${stat.glowShadow} leading-none`}>
               {stat.value.toLocaleString()}
             </div>
-            <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1.5 leading-tight font-semibold tracking-wide uppercase">
+            <div className="text-[9px] sm:text-[10px] text-gray-200 mt-1.5 leading-tight font-semibold tracking-wide uppercase">
               {stat.label}
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function StatsGrid({ stats, loginStreak, longestStreak, tierlists
             <div className={`text-xl sm:text-2xl font-black ${stat.glow} ${stat.glowShadow} leading-none`}>
               {stat.value.toLocaleString()}
             </div>
-            <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1.5 leading-tight font-semibold tracking-wide uppercase">
+            <div className="text-[9px] sm:text-[10px] text-gray-200 mt-1.5 leading-tight font-semibold tracking-wide uppercase">
               {stat.label}
             </div>
           </div>

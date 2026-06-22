@@ -370,7 +370,7 @@ export default function BlindRankingsAdmin() {
   const totalImageCount = visibleExistingImages.length + (editState?.stagedImages.length ?? 0);
 
   if (!loaded) {
-    return <div className="py-8 text-center text-gray-500">Loading blind rankings...</div>;
+    return <div className="py-8 text-center text-gray-200">Loading blind rankings...</div>;
   }
 
   return (
@@ -394,7 +394,7 @@ export default function BlindRankingsAdmin() {
       {/* Create new */}
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-700 bg-gray-900 p-4">
         <div className="flex-1 min-w-[200px]">
-          <label className="mb-1 block text-xs font-semibold text-gray-400">Title</label>
+          <label className="mb-1 block text-xs font-semibold text-white">Title</label>
           <input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
@@ -404,7 +404,7 @@ export default function BlindRankingsAdmin() {
           />
         </div>
         <div className="w-24">
-          <label className="mb-1 block text-xs font-semibold text-gray-400">Slots</label>
+          <label className="mb-1 block text-xs font-semibold text-white">Slots</label>
           <input
             type="number"
             value={newSlots}
@@ -436,9 +436,9 @@ export default function BlindRankingsAdmin() {
               )}
               <div>
                 <span className="font-semibold text-white">{r.title}</span>
-                <span className="ml-3 text-xs text-gray-500">{r.num_slots} slots</span>
+                <span className="ml-3 text-xs text-gray-200">{r.num_slots} slots</span>
                 {typeof r.view_count === "number" && r.view_count > 0 && (
-                  <span className="ml-2 text-xs text-gray-600">{r.view_count} views</span>
+                  <span className="ml-2 text-xs text-gray-300">{r.view_count} views</span>
                 )}
                 {!r.is_active && (
                   <span className="ml-2 rounded bg-red-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
@@ -456,7 +456,7 @@ export default function BlindRankingsAdmin() {
               <a
                 href={`/blind-rankings/${r.id}`}
                 target="_blank"
-                className="rounded border border-gray-600 px-2 py-1 text-xs text-gray-400 hover:text-white"
+                className="rounded border border-gray-600 px-2 py-1 text-xs text-white hover:text-white"
                 onClick={(e) => e.stopPropagation()}
               >
                 View
@@ -476,7 +476,7 @@ export default function BlindRankingsAdmin() {
               {/* Title + settings */}
               <div className="flex flex-wrap gap-3">
                 <div className="flex-1 min-w-[200px]">
-                  <label className="mb-1 block text-xs font-semibold text-gray-400">Title</label>
+                  <label className="mb-1 block text-xs font-semibold text-white">Title</label>
                   <input
                     value={editState.title}
                     onChange={(e) => { setEditState((s) => s && { ...s, title: e.target.value }); markDirty(); }}
@@ -484,7 +484,7 @@ export default function BlindRankingsAdmin() {
                   />
                 </div>
                 <div className="w-24">
-                  <label className="mb-1 block text-xs font-semibold text-gray-400">Slots</label>
+                  <label className="mb-1 block text-xs font-semibold text-white">Slots</label>
                   <input
                     type="number"
                     value={editState.num_slots}
@@ -495,7 +495,7 @@ export default function BlindRankingsAdmin() {
                   />
                 </div>
                 <div className="w-32">
-                  <label className="mb-1 block text-xs font-semibold text-gray-400">Category</label>
+                  <label className="mb-1 block text-xs font-semibold text-white">Category</label>
                   <input
                     value={editState.category}
                     onChange={(e) => { setEditState((s) => s && { ...s, category: e.target.value }); markDirty(); }}
@@ -505,7 +505,7 @@ export default function BlindRankingsAdmin() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-400">Description</label>
+                <label className="mb-1 block text-xs font-semibold text-white">Description</label>
                 <input
                   value={editState.description}
                   onChange={(e) => { setEditState((s) => s && { ...s, description: e.target.value }); markDirty(); }}
@@ -516,7 +516,7 @@ export default function BlindRankingsAdmin() {
 
               {/* Cover image */}
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-400">Cover Image</label>
+                <label className="mb-1 block text-xs font-semibold text-white">Cover Image</label>
                 {(editState.pendingCoverCropDataUrl || editState.newCoverPreview || editState.cover_image_url) ? (
                   <div className="relative inline-block">
                     <img
@@ -545,7 +545,7 @@ export default function BlindRankingsAdmin() {
                 ) : (
                   <button
                     onClick={() => coverRef.current?.click()}
-                    className="rounded-lg border border-dashed border-gray-600 px-4 py-2 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-300"
+                    className="rounded-lg border border-dashed border-gray-600 px-4 py-2 text-xs text-gray-200 hover:border-gray-400 hover:text-gray-300"
                   >
                     + Add cover
                   </button>
@@ -583,7 +583,7 @@ export default function BlindRankingsAdmin() {
               {/* Images */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-400">
+                  <span className="text-xs font-semibold text-white">
                     Player Bank ({totalImageCount} images)
                   </span>
                   <label className="cursor-pointer rounded-lg border border-amber-700 bg-amber-900/30 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-800/40 transition-colors">
@@ -599,7 +599,7 @@ export default function BlindRankingsAdmin() {
                 </div>
 
                 {totalImageCount === 0 ? (
-                  <p className="py-4 text-center text-sm text-gray-600">
+                  <p className="py-4 text-center text-sm text-gray-300">
                     No images yet. Upload player photos to build the bank.
                   </p>
                 ) : (
@@ -713,7 +713,7 @@ export default function BlindRankingsAdmin() {
       ))}
 
       {rankings.length === 0 && (
-        <p className="py-8 text-center text-gray-500">No blind rankings yet. Create one above.</p>
+        <p className="py-8 text-center text-gray-200">No blind rankings yet. Create one above.</p>
       )}
     </div>
   );
