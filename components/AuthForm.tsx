@@ -104,7 +104,7 @@ export default function AuthForm() {
             className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
               mode === m
                 ? "bg-white text-gray-900 shadow"
-                : "text-gray-200 hover:text-white"
+                : "text-white hover:text-white"
             }`}
           >
             {m === "signin" ? "Sign In" : "Sign Up"}
@@ -118,7 +118,7 @@ export default function AuthForm() {
         <div>
           <label
             htmlFor="email"
-            className="mb-1 block text-sm font-medium text-gray-300"
+            className="mb-1 block text-sm font-medium text-white"
           >
             Email
           </label>
@@ -138,7 +138,7 @@ export default function AuthForm() {
         <div>
           <label
             htmlFor="password"
-            className="mb-1 block text-sm font-medium text-gray-300"
+            className="mb-1 block text-sm font-medium text-white"
           >
             Password
           </label>
@@ -154,7 +154,7 @@ export default function AuthForm() {
             className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
           />
           {mode === "signup" && (
-            <p className="mt-1 text-xs text-gray-200">Minimum 6 characters</p>
+            <p className="mt-1 text-xs text-white">Minimum 6 characters</p>
           )}
         </div>
 
@@ -189,7 +189,7 @@ export default function AuthForm() {
       {/* Divider */}
       <div className="my-5 flex items-center gap-3">
         <div className="h-px flex-1 bg-gray-700" />
-        <span className="text-xs text-gray-200">or</span>
+        <span className="text-xs text-white">or</span>
         <div className="h-px flex-1 bg-gray-700" />
       </div>
 

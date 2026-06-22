@@ -28,7 +28,7 @@ export default function WaysToEarnXP({ compact = false }: { compact?: boolean })
   const trigger = compact ? (
     <button
       onClick={() => setOpen(true)}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-800/60 bg-gray-900/40 hover:bg-gray-900 hover:border-gray-700/60 transition-all group text-xs font-bold text-gray-200 hover:text-gray-300 whitespace-nowrap"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-800/60 bg-gray-900/40 hover:bg-gray-900 hover:border-gray-700/60 transition-all group text-xs font-bold text-white hover:text-gray-300 whitespace-nowrap"
     >
       <span className="text-amber-400/70">✨</span>
       Ways to Earn XP
@@ -44,7 +44,7 @@ export default function WaysToEarnXP({ compact = false }: { compact?: boolean })
           Ways to Earn XP
         </span>
       </div>
-      <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <svg className="w-3.5 h-3.5 text-white group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
       </svg>
     </button>
@@ -85,7 +85,7 @@ export default function WaysToEarnXP({ compact = false }: { compact?: boolean })
                 >
                   <div className={`absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full ${activity.accent} opacity-50 group-hover:opacity-80 transition-opacity`} />
                   <span className="text-lg flex-shrink-0 w-7 text-center">{activity.icon}</span>
-                  <span className="flex-1 text-sm text-gray-300 font-medium min-w-0 truncate">{activity.label}</span>
+                  <span className="flex-1 text-sm text-white font-medium min-w-0 truncate">{activity.label}</span>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {activity.xp >= 500 && <span className="text-amber-400/60 text-xs">✨</span>}
                     <span className="text-sm font-black text-amber-400">+{activity.xp} XP</span>

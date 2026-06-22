@@ -34,7 +34,7 @@ export default async function AuthPage() {
           <h1 className="text-4xl font-extrabold tracking-tight text-white">
             ⚽ Football Tierlist
           </h1>
-          <p className="mt-2 text-gray-200">
+          <p className="mt-2 text-white">
             Sign in to build and save your player rankings
           </p>
         </div>

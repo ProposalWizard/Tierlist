@@ -239,13 +239,13 @@ export default function TicTacToeBuilder() {
           <div className="grid grid-cols-4 gap-1.5 md:gap-2">
             <div />
             {colLabels.map((l, c) => (
-              <div key={c} className="flex items-center justify-center rounded-md bg-gray-800 p-2 text-center text-[10px] font-bold uppercase text-gray-300 aspect-square md:text-xs">
+              <div key={c} className="flex items-center justify-center rounded-md bg-gray-800 p-2 text-center text-[10px] font-bold uppercase text-white aspect-square md:text-xs">
                 {l || `Col ${c + 1}`}
               </div>
             ))}
             {grid.map((row, r) => (
               <>
-                <div key={`rl-${r}`} className="flex items-center justify-center rounded-md bg-gray-800 p-2 text-center text-[10px] font-bold uppercase text-gray-300 aspect-square md:text-xs">
+                <div key={`rl-${r}`} className="flex items-center justify-center rounded-md bg-gray-800 p-2 text-center text-[10px] font-bold uppercase text-white aspect-square md:text-xs">
                   {rowLabels[r] || `Row ${r + 1}`}
                 </div>
                 {row.map((sq, c) => {
@@ -267,7 +267,7 @@ export default function TicTacToeBuilder() {
                       <p className="text-[9px] font-bold text-white md:text-xs">
                         {sq.answers.length} answer{sq.answers.length !== 1 ? "s" : ""}
                       </p>
-                      <p className="text-[8px] text-gray-300 md:text-[10px]">
+                      <p className="text-[8px] text-white md:text-[10px]">
                         {sq.answers.reduce((s, a) => s + a.points, 0)} pts
                       </p>
                     </button>
@@ -287,7 +287,7 @@ export default function TicTacToeBuilder() {
               </h3>
               <button
                 onClick={() => setEditingCell(null)}
-                className="text-gray-200 hover:text-white text-lg"
+                className="text-white hover:text-white text-lg"
               >
                 &times;
               </button>
@@ -324,7 +324,7 @@ export default function TicTacToeBuilder() {
             {/* Answer list */}
             {grid[ec.r][ec.c].answers.length > 0 && (
               <div className="mt-4 space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-200">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-white">
                   Answers ({grid[ec.r][ec.c].answers.length})
                 </p>
                 {grid[ec.r][ec.c].answers.map((a, i) => (

@@ -50,11 +50,11 @@ export default function FeedbackForm() {
         }}
         placeholder="Report a bug or suggest an improvement..."
         rows={2}
-        className="w-full resize-none rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+        className="w-full resize-none rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
       />
 
       <div className="mt-1.5 flex items-center justify-between">
-        <span className="text-[10px] text-gray-300">
+        <span className="text-[10px] text-white">
           {message.trim().length}/{MAX_LENGTH}
         </span>
 

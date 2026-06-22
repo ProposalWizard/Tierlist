@@ -119,7 +119,7 @@ function UnrankedPool({
       }`}
     >
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-200">
+        <h3 className="text-xs font-semibold uppercase tracking-widest text-white">
           {isMobile ? "Unranked — tap image, then tap a tier" : "Unranked — drag into a tier"}
         </h3>
         <input
@@ -172,7 +172,7 @@ function UnrankedPool({
           ))}
         </SortableContext>
         {players.length === 0 && (
-          <span className="flex items-center text-xs text-gray-300 italic">
+          <span className="flex items-center text-xs text-white italic">
             {isMobile ? "Tap \"+ Add Images\" to get started" : "Click \"+ Add Images\" to get started"}
           </span>
         )}
@@ -876,7 +876,7 @@ export default function TierlistBoard({
           />
 
           {/* Zoom hint */}
-          <p className="text-center text-xs text-gray-300 italic">
+          <p className="text-center text-xs text-white italic">
             Use the Zoom Feature to see Full Size Images
           </p>
 
@@ -976,7 +976,7 @@ export default function TierlistBoard({
             </div>
           </div>
         ) : totalImages > 0 ? (
-          <p className="text-right text-xs text-gray-200">
+          <p className="text-right text-xs text-white">
             {rankedCount} / {totalImages} images ranked
           </p>
         ) : null}
@@ -1047,14 +1047,14 @@ export default function TierlistBoard({
           <button
             onClick={handleDownload}
             disabled={isDownloading || totalImages === 0}
-            className="rounded-xl border border-gray-700 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl border border-gray-700 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-white transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isDownloading ? "Generating…" : "⬇ Download"}
           </button>
           <button
             onClick={handleShareX}
             disabled={isSharing || totalImages === 0}
-            className="rounded-xl border border-gray-700 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-gray-300 transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl border border-gray-700 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-white transition-colors hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSharing ? "Sharing…" : "𝕏 Share on X"}
           </button>
@@ -1065,7 +1065,7 @@ export default function TierlistBoard({
               className={`rounded-xl px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 savedToProfile
                   ? "border border-green-500 bg-green-500/10 text-green-400"
-                  : "border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white"
+                  : "border border-gray-700 text-white hover:border-gray-500 hover:text-white"
               }`}
             >
               {isSavingToProfile ? "Saving…" : savedToProfile ? "✓ Saved to Profile" : "💾 Save to Profile"}

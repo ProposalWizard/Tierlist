@@ -404,7 +404,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
             <h2 className="text-xl font-black">Career Recap</h2>
             <p className="text-xs text-white">{stats.totalSeasons} seasons completed</p>
           </div>
-          <button onClick={onClose} className="text-gray-200 hover:text-white transition p-1">
+          <button onClick={onClose} className="text-white hover:text-white transition p-1">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -468,7 +468,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     {stats.charityShields > 0 && (
                       <div className="text-center">
                         <div className="text-3xl mb-1">{"\u{1F3C5}"}</div>
-                        <div className="text-xs font-bold text-gray-300">{stats.charityShields}x Charity Shield{stats.charityShields > 1 ? "s" : ""}</div>
+                        <div className="text-xs font-bold text-white">{stats.charityShields}x Charity Shield{stats.charityShields > 1 ? "s" : ""}</div>
                       </div>
                     )}
                   </div>
@@ -524,16 +524,16 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                         </span>
                         <span className="w-9 text-center text-emerald-400 shrink-0">{s.teamRecord.goalsFor}</span>
                         <span className="w-9 text-center text-red-400 shrink-0">{s.teamRecord.goalsAgainst}</span>
-                        <span className={`w-10 text-center shrink-0 font-bold ${fa === "W" ? "text-yellow-400" : fa === "F" ? "text-gray-300" : "text-white"}`}>
+                        <span className={`w-10 text-center shrink-0 font-bold ${fa === "W" ? "text-yellow-400" : fa === "F" ? "text-white" : "text-white"}`}>
                           {fa}
                         </span>
                         {hasAnyUCL && (
-                          <span className={`w-12 text-center shrink-0 font-bold ${ucl === "W" ? "text-yellow-400" : ucl === "F" || ucl === "SF" ? "text-blue-300" : ucl ? "text-blue-400/70" : "text-gray-300"}`}>
+                          <span className={`w-12 text-center shrink-0 font-bold ${ucl === "W" ? "text-yellow-400" : ucl === "F" || ucl === "SF" ? "text-blue-300" : ucl ? "text-blue-400/70" : "text-white"}`}>
                             {ucl || "-"}
                           </span>
                         )}
                         {hasAnyUEL && (
-                          <span className={`w-12 text-center shrink-0 font-bold ${uel === "W" ? "text-yellow-400" : uel === "F" || uel === "SF" ? "text-orange-300" : uel ? "text-orange-400/70" : "text-gray-300"}`}>
+                          <span className={`w-12 text-center shrink-0 font-bold ${uel === "W" ? "text-yellow-400" : uel === "F" || uel === "SF" ? "text-orange-300" : uel ? "text-orange-400/70" : "text-white"}`}>
                             {uel || "-"}
                           </span>
                         )}
@@ -550,7 +550,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                   {funStats.map((f, i) => (
                     <div key={i} className="bg-gray-900/50 rounded-lg px-3 py-2 border border-gray-800/50">
                       <div className="text-sm font-black">{f.value}</div>
-                      <div className="text-[10px] text-gray-300">{f.label}</div>
+                      <div className="text-[10px] text-white">{f.label}</div>
                     </div>
                   ))}
                 </div>
@@ -568,7 +568,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     <div key={i} className="bg-gray-900/50 rounded-xl px-4 py-3 border border-gray-800/50 flex items-center justify-between">
                       <div>
                         <div className="text-xs font-bold text-white">{r.label}</div>
-                        <div className="text-[10px] text-gray-300">{r.detail}</div>
+                        <div className="text-[10px] text-white">{r.detail}</div>
                       </div>
                       <div className="text-xl font-black">{r.value}</div>
                     </div>
@@ -593,10 +593,10 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                   <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
                     {topRatings.map((p, i) => (
                       <div key={i} className={`flex items-center text-sm px-4 py-2.5 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                        <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                         <span className="flex-1 font-bold truncate">{p.name}</span>
-                        <span className="text-xs text-gray-300 mr-3">{p.appearances} apps</span>
-                        <span className={`text-sm font-black ${p.avgRating >= 7.5 ? "text-emerald-400" : p.avgRating >= 7.0 ? "text-yellow-400" : "text-gray-300"}`}>
+                        <span className="text-xs text-white mr-3">{p.appearances} apps</span>
+                        <span className={`text-sm font-black ${p.avgRating >= 7.5 ? "text-emerald-400" : p.avgRating >= 7.0 ? "text-yellow-400" : "text-white"}`}>
                           {p.avgRating.toFixed(1)}
                         </span>
                       </div>
@@ -613,7 +613,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     {clubLegends.map((p, i) => (
                       <div key={i} className={`flex items-center text-sm px-4 py-2.5 ${i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className="flex-1 font-bold">{p.name}</span>
-                        <span className="text-xs text-gray-300 mr-3">{p.seasons} seasons</span>
+                        <span className="text-xs text-white mr-3">{p.seasons} seasons</span>
                         <span className="text-xs text-emerald-400 font-bold mr-2">{p.goals}G</span>
                         <span className="text-xs text-blue-400 font-bold">{p.assists}A</span>
                       </div>
@@ -673,7 +673,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                       <div key={i} className="bg-gray-900/50 rounded-xl px-4 py-3 border border-gray-800/50">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-bold text-sm">vs {r.name}</span>
-                          <span className="text-[10px] text-gray-300">{played} games</span>
+                          <span className="text-[10px] text-white">{played} games</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs">
                           <span className="text-emerald-400 font-bold">{r.wins}W</span>
@@ -743,10 +743,10 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                         <span className="w-8 font-black text-white">{s.slot}</span>
                         <span className="flex-1 font-bold truncate">{s.player?.name ?? "-"}</span>
                         {allRoomPlayerSeasons && (
-                          <span className="w-16 text-center text-[10px] text-gray-300 truncate">{s.player?.owner ?? "-"}</span>
+                          <span className="w-16 text-center text-[10px] text-white truncate">{s.player?.owner ?? "-"}</span>
                         )}
-                        <span className="w-10 text-center text-gray-300">{s.player ? `S${s.player.bestRatingSeason}` : "-"}</span>
-                        <span className={`w-12 text-center font-black ${(s.player?.bestRating ?? 0) >= 7.5 ? "text-emerald-400" : (s.player?.bestRating ?? 0) >= 7.0 ? "text-yellow-400" : "text-gray-300"}`}>
+                        <span className="w-10 text-center text-white">{s.player ? `S${s.player.bestRatingSeason}` : "-"}</span>
+                        <span className={`w-12 text-center font-black ${(s.player?.bestRating ?? 0) >= 7.5 ? "text-emerald-400" : (s.player?.bestRating ?? 0) >= 7.0 ? "text-yellow-400" : "text-white"}`}>
                           {s.player ? s.player.bestRating.toFixed(1) : "-"}
                         </span>
                       </div>
@@ -768,9 +768,9 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     </div>
                     {activeSeasonRecords.goals.map((r, i) => (
                       <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                        <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                         <span className="flex-1 font-bold truncate">{r.name}{r.owner && <span className="text-[9px] text-white ml-1">({r.owner})</span>}</span>
-                        <span className="w-10 text-center text-gray-300">S{r.season}</span>
+                        <span className="w-10 text-center text-white">S{r.season}</span>
                         <span className="w-10 text-center font-black text-emerald-400">{r.value}</span>
                       </div>
                     ))}
@@ -791,9 +791,9 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     </div>
                     {activeSeasonRecords.assists.map((r, i) => (
                       <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-blue-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className={`w-6 font-black ${i === 0 ? "text-blue-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                        <span className={`w-6 font-black ${i === 0 ? "text-blue-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                         <span className="flex-1 font-bold truncate">{r.name}{r.owner && <span className="text-[9px] text-white ml-1">({r.owner})</span>}</span>
-                        <span className="w-10 text-center text-gray-300">S{r.season}</span>
+                        <span className="w-10 text-center text-white">S{r.season}</span>
                         <span className="w-12 text-center font-black text-blue-400">{r.value}</span>
                       </div>
                     ))}
@@ -814,9 +814,9 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     </div>
                     {activeSeasonRecords.cleanSheets.map((r, i) => (
                       <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-cyan-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className={`w-6 font-black ${i === 0 ? "text-cyan-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                        <span className={`w-6 font-black ${i === 0 ? "text-cyan-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                         <span className="flex-1 font-bold truncate">{r.name}{r.owner && <span className="text-[9px] text-white ml-1">({r.owner})</span>}</span>
-                        <span className="w-10 text-center text-gray-300">S{r.season}</span>
+                        <span className="w-10 text-center text-white">S{r.season}</span>
                         <span className="w-10 text-center font-black text-cyan-400">{r.value}</span>
                       </div>
                     ))}
@@ -837,10 +837,10 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     </div>
                     {activeSeasonRecords.ratings.map((r, i) => (
                       <div key={`${r.name}-${r.season}-${i}`} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-amber-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className={`w-6 font-black ${i === 0 ? "text-amber-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                        <span className={`w-6 font-black ${i === 0 ? "text-amber-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                         <span className="flex-1 font-bold truncate">{r.name}{r.owner && <span className="text-[9px] text-white ml-1">({r.owner})</span>}</span>
-                        <span className="w-10 text-center text-gray-300">S{r.season}</span>
-                        <span className={`w-12 text-center font-black ${r.value >= 7.5 ? "text-emerald-400" : r.value >= 7.0 ? "text-yellow-400" : "text-gray-300"}`}>{r.value.toFixed(2)}</span>
+                        <span className="w-10 text-center text-white">S{r.season}</span>
+                        <span className={`w-12 text-center font-black ${r.value >= 7.5 ? "text-emerald-400" : r.value >= 7.0 ? "text-yellow-400" : "text-white"}`}>{r.value.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -860,14 +860,14 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                   </div>
                   {topScorers.map((p, i) => (
                     <div key={i} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                      <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                      <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                       <span className="flex-1 font-bold truncate">
                         {p.name}
                         {p.owner ? <span className="text-[9px] text-white ml-1">({p.owner})</span> : p.seasons > 1 && <span className="text-[9px] text-white ml-1">({p.seasons}yr)</span>}
                       </span>
-                      <span className="w-10 text-center text-gray-300">{p.appearances}</span>
+                      <span className="w-10 text-center text-white">{p.appearances}</span>
                       <span className="w-10 text-center font-black text-emerald-400">{p.goals}</span>
-                      <span className="w-12 text-center text-gray-300">{p.appearances > 0 ? (p.goals / p.appearances).toFixed(2) : "-"}</span>
+                      <span className="w-12 text-center text-white">{p.appearances > 0 ? (p.goals / p.appearances).toFixed(2) : "-"}</span>
                     </div>
                   ))}
                 </div>
@@ -886,14 +886,14 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                   </div>
                   {topAssisters.map((p, i) => (
                     <div key={i} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-blue-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                      <span className={`w-6 font-black ${i === 0 ? "text-blue-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                      <span className={`w-6 font-black ${i === 0 ? "text-blue-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                       <span className="flex-1 font-bold truncate">
                         {p.name}
                         {p.owner ? <span className="text-[9px] text-white ml-1">({p.owner})</span> : p.seasons > 1 && <span className="text-[9px] text-white ml-1">({p.seasons}yr)</span>}
                       </span>
-                      <span className="w-10 text-center text-gray-300">{p.appearances}</span>
+                      <span className="w-10 text-center text-white">{p.appearances}</span>
                       <span className="w-12 text-center font-black text-blue-400">{p.assists}</span>
-                      <span className="w-12 text-center text-gray-300">{p.appearances > 0 ? (p.assists / p.appearances).toFixed(2) : "-"}</span>
+                      <span className="w-12 text-center text-white">{p.appearances > 0 ? (p.assists / p.appearances).toFixed(2) : "-"}</span>
                     </div>
                   ))}
                 </div>
@@ -916,12 +916,12 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     .slice(0, 10)
                     .map((p, i) => (
                       <div key={i} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-purple-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className={`w-6 font-black ${i === 0 ? "text-purple-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                        <span className={`w-6 font-black ${i === 0 ? "text-purple-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                         <span className="flex-1 font-bold truncate">{p.name}{p.owner && <span className="text-[9px] text-white ml-1">({p.owner})</span>}</span>
                         <span className="w-8 text-center text-emerald-400 font-bold">{p.goals}</span>
                         <span className="w-8 text-center text-blue-400 font-bold">{p.assists}</span>
                         <span className="w-10 text-center font-black">{p.goals + p.assists}</span>
-                        <span className="w-10 text-center text-gray-300">{p.seasons}</span>
+                        <span className="w-10 text-center text-white">{p.seasons}</span>
                       </div>
                     ))}
                 </div>
@@ -941,11 +941,11 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     </div>
                     {topCleanSheets.map((p, i) => (
                       <div key={i} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-cyan-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className={`w-6 font-black ${i === 0 ? "text-cyan-400" : i < 3 ? "text-gray-300" : "text-white"}`}>{i + 1}</span>
+                        <span className={`w-6 font-black ${i === 0 ? "text-cyan-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
                         <span className="flex-1 font-bold truncate">{p.name}{p.owner && <span className="text-[9px] text-white ml-1">({p.owner})</span>}</span>
-                        <span className="w-10 text-center text-gray-300">{p.appearances}</span>
+                        <span className="w-10 text-center text-white">{p.appearances}</span>
                         <span className="w-10 text-center font-black text-cyan-400">{p.cleanSheets}</span>
-                        <span className="w-10 text-center text-gray-300">{p.seasons}</span>
+                        <span className="w-10 text-center text-white">{p.seasons}</span>
                       </div>
                     ))}
                   </div>
@@ -969,8 +969,8 @@ function StatBox({ label, value, sub, highlight, small }: {
   return (
     <div className={`rounded-xl px-3 py-2 border ${highlight ? "bg-yellow-900/20 border-yellow-700/30" : "bg-gray-900/50 border-gray-800/50"}`}>
       <div className={`font-black ${small ? "text-sm" : "text-lg"} ${highlight ? "text-yellow-400" : ""}`}>{value}</div>
-      <div className="text-[10px] text-gray-300">{label}</div>
-      {sub && <div className="text-[9px] text-gray-300">{sub}</div>}
+      <div className="text-[10px] text-white">{label}</div>
+      {sub && <div className="text-[9px] text-white">{sub}</div>}
     </div>
   );
 }

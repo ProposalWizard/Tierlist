@@ -145,13 +145,13 @@ function FreeformCrop({ imageUrl, imageName, onCrop, onCancel }: { imageUrl: str
       onPointerCancel={onPointerUp}
     >
       <div className="mb-4 flex items-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5">
-        <p className="text-sm text-gray-300">Drag corners/edges to resize · drag inside to move</p>
+        <p className="text-sm text-white">Drag corners/edges to resize · drag inside to move</p>
         <button onClick={applyCrop} disabled={!naturalSize || applying}
           className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">
           {applying ? "Applying..." : "Apply Crop"}
         </button>
         <button onClick={onCancel}
-          className="rounded-lg border border-gray-600 px-4 py-1.5 text-sm text-gray-300 transition-colors hover:border-gray-400 hover:text-white">
+          className="rounded-lg border border-gray-600 px-4 py-1.5 text-sm text-white transition-colors hover:border-gray-400 hover:text-white">
           Cancel
         </button>
       </div>
@@ -224,8 +224,8 @@ function FreeformCrop({ imageUrl, imageName, onCrop, onCancel }: { imageUrl: str
         </div>
       )}
 
-      {!naturalSize && !error && <p className="text-sm text-gray-200">Loading image...</p>}
-      <p className="mt-3 text-xs text-gray-200">Press Esc to cancel</p>
+      {!naturalSize && !error && <p className="text-sm text-white">Loading image...</p>}
+      <p className="mt-3 text-xs text-white">Press Esc to cancel</p>
     </div>
   );
 }
@@ -349,13 +349,13 @@ function FixedCrop({ imageUrl, imageName, onCrop, onCancel, aspectRatio }: { ima
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/92 backdrop-blur-sm p-4">
       <div className="mb-4 flex items-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5">
-        <p className="text-sm text-gray-300">Drag image to position · scroll to zoom</p>
+        <p className="text-sm text-white">Drag image to position · scroll to zoom</p>
         <button onClick={applyCrop} disabled={!naturalSize || applying}
           className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">
           {applying ? "Applying..." : "Apply Crop"}
         </button>
         <button onClick={onCancel}
-          className="rounded-lg border border-gray-600 px-4 py-1.5 text-sm text-gray-300 transition-colors hover:border-gray-400 hover:text-white">
+          className="rounded-lg border border-gray-600 px-4 py-1.5 text-sm text-white transition-colors hover:border-gray-400 hover:text-white">
           Cancel
         </button>
       </div>
@@ -387,11 +387,11 @@ function FixedCrop({ imageUrl, imageName, onCrop, onCancel, aspectRatio }: { ima
         </div>
       )}
 
-      {!naturalSize && !error && <p className="text-sm text-gray-200">Loading image...</p>}
+      {!naturalSize && !error && <p className="text-sm text-white">Loading image...</p>}
 
       {naturalSize && (
         <div className="mt-3 flex items-center gap-3">
-          <span className="text-xs text-gray-200">Zoom</span>
+          <span className="text-xs text-white">Zoom</span>
           <input type="range" min={Math.max(CROP_W / naturalSize.w, CROP_H / naturalSize.h)} max={5} step={0.01} value={zoom}
             onChange={(e) => { const z = parseFloat(e.target.value); setZoom(z); setOffset((prev) => clampOffset(prev.x, prev.y, z)); }}
             className="w-40 accent-indigo-500" />
@@ -399,7 +399,7 @@ function FixedCrop({ imageUrl, imageName, onCrop, onCancel, aspectRatio }: { ima
         </div>
       )}
 
-      <p className="mt-3 text-xs text-gray-200">Press Esc to cancel</p>
+      <p className="mt-3 text-xs text-white">Press Esc to cancel</p>
     </div>
   );
 }

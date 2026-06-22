@@ -370,7 +370,7 @@ export default function BlindRankingsAdmin() {
   const totalImageCount = visibleExistingImages.length + (editState?.stagedImages.length ?? 0);
 
   if (!loaded) {
-    return <div className="py-8 text-center text-gray-200">Loading blind rankings...</div>;
+    return <div className="py-8 text-center text-white">Loading blind rankings...</div>;
   }
 
   return (
@@ -436,9 +436,9 @@ export default function BlindRankingsAdmin() {
               )}
               <div>
                 <span className="font-semibold text-white">{r.title}</span>
-                <span className="ml-3 text-xs text-gray-200">{r.num_slots} slots</span>
+                <span className="ml-3 text-xs text-white">{r.num_slots} slots</span>
                 {typeof r.view_count === "number" && r.view_count > 0 && (
-                  <span className="ml-2 text-xs text-gray-300">{r.view_count} views</span>
+                  <span className="ml-2 text-xs text-white">{r.view_count} views</span>
                 )}
                 {!r.is_active && (
                   <span className="ml-2 rounded bg-red-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
@@ -530,13 +530,13 @@ export default function BlindRankingsAdmin() {
                           const src = editState.newCoverPreview || editState.cover_image_url;
                           if (src) setCropTarget({ imageUrl: src, imageName: "Cover", type: "cover", id: "cover", aspectRatio: 3 / 2 });
                         }}
-                        className="rounded bg-gray-800/80 px-2 py-0.5 text-[10px] text-gray-300 hover:text-white"
+                        className="rounded bg-gray-800/80 px-2 py-0.5 text-[10px] text-white hover:text-white"
                       >
                         Crop
                       </button>
                       <button
                         onClick={() => { coverRef.current?.click(); }}
-                        className="rounded bg-gray-800/80 px-2 py-0.5 text-[10px] text-gray-300 hover:text-white"
+                        className="rounded bg-gray-800/80 px-2 py-0.5 text-[10px] text-white hover:text-white"
                       >
                         Change
                       </button>
@@ -545,7 +545,7 @@ export default function BlindRankingsAdmin() {
                 ) : (
                   <button
                     onClick={() => coverRef.current?.click()}
-                    className="rounded-lg border border-dashed border-gray-600 px-4 py-2 text-xs text-gray-200 hover:border-gray-400 hover:text-gray-300"
+                    className="rounded-lg border border-dashed border-gray-600 px-4 py-2 text-xs text-white hover:border-gray-400 hover:text-gray-300"
                   >
                     + Add cover
                   </button>
@@ -560,7 +560,7 @@ export default function BlindRankingsAdmin() {
               </div>
 
               <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 text-sm text-gray-300">
+                <label className="flex items-center gap-2 text-sm text-white">
                   <input
                     type="checkbox"
                     checked={editState.is_active}
@@ -569,7 +569,7 @@ export default function BlindRankingsAdmin() {
                   />
                   Active
                 </label>
-                <label className="flex items-center gap-2 text-sm text-gray-300">
+                <label className="flex items-center gap-2 text-sm text-white">
                   <input
                     type="checkbox"
                     checked={editState.face_detection_enabled}
@@ -599,7 +599,7 @@ export default function BlindRankingsAdmin() {
                 </div>
 
                 {totalImageCount === 0 ? (
-                  <p className="py-4 text-center text-sm text-gray-300">
+                  <p className="py-4 text-center text-sm text-white">
                     No images yet. Upload player photos to build the bank.
                   </p>
                 ) : (
@@ -629,7 +629,7 @@ export default function BlindRankingsAdmin() {
                               });
                             }}
                             placeholder="Name (optional)"
-                            className="w-full bg-transparent text-[11px] text-gray-300 placeholder-gray-600 focus:text-white focus:outline-none truncate"
+                            className="w-full bg-transparent text-[11px] text-white placeholder-gray-600 focus:text-white focus:outline-none truncate"
                           />
                         </div>
                         <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
@@ -669,7 +669,7 @@ export default function BlindRankingsAdmin() {
                               });
                             }}
                             placeholder="Name (optional)"
-                            className="w-full bg-transparent text-[11px] text-gray-300 placeholder-gray-600 focus:text-white focus:outline-none truncate"
+                            className="w-full bg-transparent text-[11px] text-white placeholder-gray-600 focus:text-white focus:outline-none truncate"
                           />
                         </div>
                         <span className="absolute top-1 left-1 rounded bg-amber-600/80 px-1 text-[9px] font-bold text-white">NEW</span>
@@ -713,7 +713,7 @@ export default function BlindRankingsAdmin() {
       ))}
 
       {rankings.length === 0 && (
-        <p className="py-8 text-center text-gray-200">No blind rankings yet. Create one above.</p>
+        <p className="py-8 text-center text-white">No blind rankings yet. Create one above.</p>
       )}
     </div>
   );

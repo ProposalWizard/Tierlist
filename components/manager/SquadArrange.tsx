@@ -46,21 +46,21 @@ export default function SquadArrange({ squad: initialSquad, formationName, budge
             <span className="text-[10px] font-bold tracking-widest uppercase text-amber-400">Pre-Season</span>
           </div>
           <h1 className="text-2xl font-black text-white">Arrange Your Squad</h1>
-          <p className="text-gray-200 text-xs mt-1">Tap two players to swap positions</p>
+          <p className="text-white text-xs mt-1">Tap two players to swap positions</p>
         </div>
 
         {/* Stats bar */}
         <div className="grid grid-cols-3 gap-2 mb-5">
           <div className="bg-gray-900 rounded-lg p-3 border border-gray-800/50 text-center">
-            <div className="text-[9px] text-gray-300 uppercase tracking-wider">Squad OVR</div>
+            <div className="text-[9px] text-white uppercase tracking-wider">Squad OVR</div>
             <div className="text-xl font-black text-white">{avgOvr}</div>
           </div>
           <div className="bg-gray-900 rounded-lg p-3 border border-gray-800/50 text-center">
-            <div className="text-[9px] text-gray-300 uppercase tracking-wider">Starters</div>
+            <div className="text-[9px] text-white uppercase tracking-wider">Starters</div>
             <div className="text-xl font-black text-emerald-400">{starterAvg}</div>
           </div>
           <div className="bg-gray-900 rounded-lg p-3 border border-gray-800/50 text-center">
-            <div className="text-[9px] text-gray-300 uppercase tracking-wider">Budget Left</div>
+            <div className="text-[9px] text-white uppercase tracking-wider">Budget Left</div>
             <div className="text-xl font-black text-amber-400">£{budgetLeft}M</div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function SquadArrange({ squad: initialSquad, formationName, budge
 
         {/* Subs */}
         <div className="bg-gray-900 rounded-xl border border-gray-800/50 p-4">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">Substitutes</h3>
+          <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">Substitutes</h3>
           <div className="grid grid-cols-3 gap-2">
             {subs.map((p) => {
               const squadIdx = squad.indexOf(p);
@@ -121,7 +121,7 @@ export default function SquadArrange({ squad: initialSquad, formationName, budge
                     </span>
                     <span className="text-[10px] font-bold text-white ml-auto">{p.overall}</span>
                   </div>
-                  <div className="text-[10px] text-gray-300 truncate text-left">{p.name}</div>
+                  <div className="text-[10px] text-white truncate text-left">{p.name}</div>
                 </button>
               );
             })}

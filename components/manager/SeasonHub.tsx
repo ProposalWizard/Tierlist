@@ -61,7 +61,7 @@ export default function SeasonHub({ table, fixtures, matchweek, budget, squadAvg
               <h1 className="text-2xl font-black text-white">Season Hub</h1>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-gray-300 uppercase tracking-wider">Budget</div>
+              <div className="text-[10px] text-white uppercase tracking-wider">Budget</div>
               <div className="text-lg font-black text-amber-400">£{budget}M</div>
             </div>
           </div>
@@ -69,15 +69,15 @@ export default function SeasonHub({ table, fixtures, matchweek, budget, squadAvg
           {/* Quick stats */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gray-900 rounded-lg p-2.5 border border-gray-800/50 text-center">
-              <div className="text-[9px] text-gray-300 uppercase tracking-wider">Position</div>
+              <div className="text-[9px] text-white uppercase tracking-wider">Position</div>
               <div className="text-lg font-black text-white">{playerPos > 0 ? `${playerPos}${playerPos === 1 ? "st" : playerPos === 2 ? "nd" : playerPos === 3 ? "rd" : "th"}` : "—"}</div>
             </div>
             <div className="bg-gray-900 rounded-lg p-2.5 border border-gray-800/50 text-center">
-              <div className="text-[9px] text-gray-300 uppercase tracking-wider">Points</div>
+              <div className="text-[9px] text-white uppercase tracking-wider">Points</div>
               <div className="text-lg font-black text-emerald-400">{playerRow?.points ?? 0}</div>
             </div>
             <div className="bg-gray-900 rounded-lg p-2.5 border border-gray-800/50 text-center">
-              <div className="text-[9px] text-gray-300 uppercase tracking-wider">Squad OVR</div>
+              <div className="text-[9px] text-white uppercase tracking-wider">Squad OVR</div>
               <div className="text-lg font-black text-white">{squadAvg}</div>
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function SeasonHub({ table, fixtures, matchweek, budget, squadAvg
         {/* Form */}
         {recentResults.length > 0 && (
           <div className="bg-gray-900 rounded-xl border border-gray-800/50 p-4">
-            <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">Recent Form</h3>
+            <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">Recent Form</h3>
             <div className="flex gap-1.5 flex-wrap">
               {recentResults.map((f, i) => {
                 const gf = f.goalsFor ?? 0;
@@ -116,12 +116,12 @@ export default function SeasonHub({ table, fixtures, matchweek, budget, squadAvg
         {/* League table */}
         <div className="bg-gray-900 rounded-xl border border-gray-800/50 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-800/50 flex items-center justify-between">
-            <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase">Premier League</h3>
-            <span className="text-[10px] text-gray-300">{playerRow?.played ?? 0} / 38 played</span>
+            <h3 className="text-[10px] font-bold tracking-widest text-white uppercase">Premier League</h3>
+            <span className="text-[10px] text-white">{playerRow?.played ?? 0} / 38 played</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="text-[10px] text-gray-300">
+              <thead className="text-[10px] text-white">
                 <tr className="border-b border-gray-800/50">
                   <th className="text-left px-3 py-2 w-8">#</th>
                   <th className="text-left px-2 py-2">Team</th>
@@ -153,7 +153,7 @@ export default function SeasonHub({ table, fixtures, matchweek, budget, squadAvg
                           {pos}
                         </div>
                       </td>
-                      <td className={`px-2 py-2 truncate max-w-[120px] ${row.isPlayer ? "text-amber-300 font-bold" : "text-gray-300"}`}>
+                      <td className={`px-2 py-2 truncate max-w-[120px] ${row.isPlayer ? "text-amber-300 font-bold" : "text-white"}`}>
                         {row.name}
                       </td>
                       <td className="text-center text-white tabular-nums">{row.played}</td>
@@ -175,15 +175,15 @@ export default function SeasonHub({ table, fixtures, matchweek, budget, squadAvg
         {/* Upcoming fixtures preview */}
         {!isSeasonOver && (
           <div className="bg-gray-900 rounded-xl border border-gray-800/50 p-4">
-            <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">Upcoming Fixtures</h3>
+            <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">Upcoming Fixtures</h3>
             <div className="space-y-1.5">
               {fixtures.filter(f => !f.played).slice(0, 4).map((f, i) => (
                 <div key={i} className="flex items-center gap-3 text-xs py-1.5 px-2 rounded bg-gray-950/50">
-                  <span className="text-[10px] font-bold text-gray-300 w-8">MW{f.matchweek}</span>
+                  <span className="text-[10px] font-bold text-white w-8">MW{f.matchweek}</span>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${f.isHome ? "bg-emerald-900/40 text-emerald-300" : "bg-blue-900/40 text-blue-300"}`}>
                     {f.isHome ? "H" : "A"}
                   </span>
-                  <span className="text-gray-300 flex-1 truncate">{f.opponent}</span>
+                  <span className="text-white flex-1 truncate">{f.opponent}</span>
                 </div>
               ))}
             </div>

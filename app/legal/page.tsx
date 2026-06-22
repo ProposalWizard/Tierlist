@@ -18,9 +18,9 @@ export default function LegalPage() {
         <h1 className="mb-2 text-3xl font-black tracking-tight text-white">
           Privacy Policy &amp; Terms of Use
         </h1>
-        <p className="mb-10 text-sm text-gray-200">Last Updated: March 2026</p>
+        <p className="mb-10 text-sm text-white">Last Updated: March 2026</p>
 
-        <div className="space-y-10 text-sm leading-relaxed text-gray-300">
+        <div className="space-y-10 text-sm leading-relaxed text-white">
 
           {/* 1 */}
           <section>

@@ -55,7 +55,7 @@ export default async function BlindRankingsPage() {
         </div>
 
         {items.length === 0 ? (
-          <div className="py-24 text-center text-gray-200">
+          <div className="py-24 text-center text-white">
             No blind rankings available yet. Create one above!
           </div>
         ) : (
@@ -82,7 +82,7 @@ export default async function BlindRankingsPage() {
                   {r.description && (
                     <p className="mt-1 text-sm text-white line-clamp-2">{r.description}</p>
                   )}
-                  <div className="mt-3 flex items-center gap-3 text-xs text-gray-200">
+                  <div className="mt-3 flex items-center gap-3 text-xs text-white">
                     <span>{r.num_slots} slots</span>
                     {r.category && <span>{r.category}</span>}
                     {typeof r.view_count === "number" && r.view_count > 0 && (

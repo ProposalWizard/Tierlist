@@ -221,7 +221,7 @@ export default function CreateTierlistForm() {
     <div className="space-y-6">
       {/* Title */}
       <div>
-        <label className="mb-1 block text-sm font-semibold text-gray-300">
+        <label className="mb-1 block text-sm font-semibold text-white">
           Tierlist Name
         </label>
         <input
@@ -234,7 +234,7 @@ export default function CreateTierlistForm() {
 
       {/* Category */}
       <div>
-        <label className="mb-1 block text-sm font-semibold text-gray-300">
+        <label className="mb-1 block text-sm font-semibold text-white">
           Category
         </label>
         <select
@@ -251,7 +251,7 @@ export default function CreateTierlistForm() {
       {/* Images + Cover Photo (combined section) */}
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-300">
+          <span className="text-sm font-semibold text-white">
             Images{images.length > 0 && ` (${images.length})`}
           </span>
           <label
@@ -308,7 +308,7 @@ export default function CreateTierlistForm() {
                     >
                       ×
                     </button>
-                    <p className="mt-0.5 max-w-[88px] truncate text-center text-[10px] text-gray-200">
+                    <p className="mt-0.5 max-w-[88px] truncate text-center text-[10px] text-white">
                       {img.name}
                     </p>
                   </div>
@@ -316,13 +316,13 @@ export default function CreateTierlistForm() {
               })}
             </div>
             {!customCover && (
-              <p className="mt-2 text-xs text-gray-200">
+              <p className="mt-2 text-xs text-white">
                 Click any image to set it as the cover photo.
               </p>
             )}
           </div>
         ) : (
-          <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-gray-700 bg-gray-900/50 text-xs italic text-gray-300">
+          <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-gray-700 bg-gray-900/50 text-xs italic text-white">
             No images yet — click &quot;+ Add Images&quot; to get started
           </div>
         )}
@@ -330,7 +330,7 @@ export default function CreateTierlistForm() {
 
       {/* Cover Photo */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-gray-300">
+        <label className="mb-2 block text-sm font-semibold text-white">
           Cover Photo
         </label>
 
@@ -343,7 +343,7 @@ export default function CreateTierlistForm() {
         >
           {!coverPreviewUrl && (
             <div className="flex h-full w-full items-center justify-center">
-              <span className="text-xs italic text-gray-200 px-4 text-center leading-relaxed">
+              <span className="text-xs italic text-white px-4 text-center leading-relaxed">
                 Add images above — the first one becomes the cover automatically.
                 <br />
                 Click any image to pick a different one, or upload a custom cover below.
@@ -356,7 +356,7 @@ export default function CreateTierlistForm() {
         <div className="flex items-center gap-3">
           <label
             htmlFor={coverInputId}
-            className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-xs font-semibold text-gray-300 transition-colors hover:border-indigo-500 hover:text-white"
+            className="cursor-pointer rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-xs font-semibold text-white transition-colors hover:border-indigo-500 hover:text-white"
           >
             Upload custom cover image
           </label>

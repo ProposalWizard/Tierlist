@@ -115,12 +115,12 @@ export default function XPProgressBar({ progression }: Props) {
           <div className="flex items-center gap-4 flex-shrink-0">
             <div className="text-right">
               <div className="text-3xl font-black text-amber-400 leading-none">Lv {level}</div>
-              <div className="text-[11px] text-gray-200 mt-0.5">
+              <div className="text-[11px] text-white mt-0.5">
                 {totalXp.toLocaleString()} XP total
               </div>
             </div>
             <span
-              className={`text-[10px] font-bold tabular-nums ${daysLeft <= 14 ? "text-red-400" : "text-gray-200"}`}
+              className={`text-[10px] font-bold tabular-nums ${daysLeft <= 14 ? "text-red-400" : "text-white"}`}
             >
               {daysLeft}d left
             </span>
@@ -151,7 +151,7 @@ export default function XPProgressBar({ progression }: Props) {
             <div className="flex-1 flex flex-col gap-2 min-w-0">
               <div className="flex justify-between text-xs font-black">
                 <span className="text-amber-400">Lv {leftCard.unlock_value}</span>
-                {rightCard && <span className="text-gray-200">Lv {rightCard.unlock_value}</span>}
+                {rightCard && <span className="text-white">Lv {rightCard.unlock_value}</span>}
               </div>
               <div className="relative h-3.5 bg-gray-800 rounded-full overflow-hidden">
                 <div
@@ -162,7 +162,7 @@ export default function XPProgressBar({ progression }: Props) {
               </div>
               <div className="text-center text-[11px] font-semibold">
                 {rightCard && level < (rightCard.unlock_value ?? 999) ? (
-                  <span className="text-gray-200">
+                  <span className="text-white">
                     {(rightCard.unlock_value ?? 0) - level} level
                     {(rightCard.unlock_value ?? 0) - level !== 1 ? "s" : ""} to next card
                   </span>
@@ -198,10 +198,10 @@ export default function XPProgressBar({ progression }: Props) {
         {/* Per-level XP bar */}
         <div className="relative pt-4 border-t border-gray-800/40">
           <div className="flex justify-between mb-1.5">
-            <span className="text-[11px] text-gray-200 font-semibold">
+            <span className="text-[11px] text-white font-semibold">
               {currentXp.toLocaleString()} / {xpToNext.toLocaleString()} XP this level
             </span>
-            <span className="text-[11px] text-gray-200">
+            <span className="text-[11px] text-white">
               Lv {level} &rarr; {level + 1}
             </span>
           </div>
@@ -269,7 +269,7 @@ export default function XPProgressBar({ progression }: Props) {
               <p className="text-white font-bold text-lg">
                 {expandedReward.unlocked ? expandedReward.name : "???"}
               </p>
-              <p className="text-gray-200 text-sm mt-1">
+              <p className="text-white text-sm mt-1">
                 {expandedReward.unlocked
                   ? "Unlocked!"
                   : `Unlocks at Level ${expandedReward.unlock_value}`}
@@ -277,7 +277,7 @@ export default function XPProgressBar({ progression }: Props) {
             </div>
             <button
               onClick={() => setExpandedId(null)}
-              className="px-7 py-2.5 rounded-xl bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-300 hover:text-white hover:border-gray-500 transition-all"
+              className="px-7 py-2.5 rounded-xl bg-gray-800 border border-gray-700 text-sm font-semibold text-white hover:text-white hover:border-gray-500 transition-all"
             >
               Close
             </button>
@@ -348,7 +348,7 @@ function MilestoneCard({
       </div>
       <p
         className={`text-[10px] font-bold text-center leading-tight max-w-[72px] sm:max-w-[112px] ${
-          isUnlocked ? "text-gray-200" : "text-gray-200"
+          isUnlocked ? "text-white" : "text-white"
         }`}
       >
         {isUnlocked ? reward.name : "???"}

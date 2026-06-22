@@ -36,7 +36,7 @@ export default function LabelOverlay({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="w-full max-w-xs rounded-2xl border border-gray-700 bg-gray-900 p-5 shadow-2xl space-y-4">
-        <p className="text-sm font-semibold text-gray-300">Add label to image</p>
+        <p className="text-sm font-semibold text-white">Add label to image</p>
 
         {/* Image preview with live label preview */}
         <div className="relative mx-auto overflow-hidden rounded-xl border border-gray-700" style={{ maxWidth: 240 }}>
@@ -83,13 +83,13 @@ export default function LabelOverlay({
           )}
           <button
             onClick={onCancel}
-            className="rounded-lg border border-gray-600 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-gray-400 hover:text-white"
+            className="rounded-lg border border-gray-600 px-3 py-2 text-sm text-white transition-colors hover:border-gray-400 hover:text-white"
           >
             Cancel
           </button>
         </div>
 
-        <p className="text-center text-xs text-gray-200">Enter to save · Esc to cancel</p>
+        <p className="text-center text-xs text-white">Enter to save · Esc to cancel</p>
       </div>
     </div>
   );

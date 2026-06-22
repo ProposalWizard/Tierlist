@@ -129,7 +129,7 @@ export default memo(function PlayerCard({
           />
         </>
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-gray-800 text-[10px] text-gray-200">
+        <div className="flex h-full w-full items-center justify-center bg-gray-800 text-[10px] text-white">
           {player.image_url ? "Image unavailable" : initials}
         </div>
       )}

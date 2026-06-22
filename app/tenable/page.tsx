@@ -86,7 +86,7 @@ export default async function TenableListPage() {
                   <div>
                     <h3 className="font-bold text-white group-hover:text-emerald-300">{p.title}</h3>
                     {p.daily_date && (
-                      <p className="mt-1 text-xs text-gray-200">{p.daily_date}</p>
+                      <p className="mt-1 text-xs text-white">{p.daily_date}</p>
                     )}
                   </div>
                   <span className="shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-700/50 px-4 py-1.5 text-xs font-bold text-emerald-400 group-hover:bg-emerald-600/30">

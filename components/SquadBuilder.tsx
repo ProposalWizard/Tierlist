@@ -525,7 +525,7 @@ export default function SquadBuilder() {
           </select>
 
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-200">Color</label>
+            <label className="text-xs text-white">Color</label>
             <input
               type="color"
               value={mainColor}
@@ -557,7 +557,7 @@ export default function SquadBuilder() {
             </button>
             <button
               onClick={handleShare}
-              className="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-bold text-gray-300 hover:text-white transition-colors"
+              className="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:text-white transition-colors"
             >
               Share on X
             </button>
@@ -606,7 +606,7 @@ export default function SquadBuilder() {
             ) : (
               <p
                 onClick={() => setEditingSubtitle(true)}
-                className="mt-1 cursor-pointer text-sm text-gray-200 hover:text-gray-400 transition-colors"
+                className="mt-1 cursor-pointer text-sm text-white hover:text-gray-400 transition-colors"
               >
                 {subtitle || "Click to add subtitle"}
               </p>
@@ -753,7 +753,7 @@ export default function SquadBuilder() {
           </div>
 
           {/* Watermark */}
-          <p className="mt-2 text-right text-[10px] text-gray-300">
+          <p className="mt-2 text-right text-[10px] text-white">
             knowitball.co.uk
           </p>
         </div>
@@ -769,13 +769,13 @@ export default function SquadBuilder() {
                 >
                   {selectedPlayer.label}
                 </span>
-                <span className="text-sm font-bold text-gray-300">
+                <span className="text-sm font-bold text-white">
                   Edit Player — {selectedPlayer.label}
                 </span>
               </div>
               <button
                 onClick={() => setSelected(null)}
-                className="text-gray-200 hover:text-white transition-colors text-lg"
+                className="text-white hover:text-white transition-colors text-lg"
               >
                 &times;
               </button>
@@ -824,7 +824,7 @@ export default function SquadBuilder() {
                 autoFocus
               />
               {searchLoading && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-200">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white">
                   ...
                 </div>
               )}
@@ -855,7 +855,7 @@ export default function SquadBuilder() {
                           {countryFlag(r.nationality)}{" "}
                           {r.name}
                         </p>
-                        <p className="text-xs text-gray-200">
+                        <p className="text-xs text-white">
                           {r.position}
                           {r.nationality ? ` · ${r.nationality}` : ""}
                         </p>
@@ -885,7 +885,7 @@ export default function SquadBuilder() {
                   <p className="text-sm font-bold text-white truncate">
                     {selectedPlayer.dbPlayer.name}
                   </p>
-                  <p className="text-xs text-gray-200">
+                  <p className="text-xs text-white">
                     {selectedPlayer.dbPlayer.position}
                     {selectedPlayer.dbPlayer.nationality
                       ? ` · ${countryFlag(selectedPlayer.dbPlayer.nationality)} ${selectedPlayer.dbPlayer.nationality}`
@@ -903,7 +903,7 @@ export default function SquadBuilder() {
 
             {!selectedPlayer.dbPlayer && selectedPlayer.customName && (
               <div className="mt-3 flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2">
-                <span className="text-sm text-gray-300">
+                <span className="text-sm text-white">
                   Custom name: <span className="font-bold text-white">{selectedPlayer.customName}</span>
                 </span>
                 <button
@@ -919,7 +919,7 @@ export default function SquadBuilder() {
 
         {/* ─── Instructions ─── */}
         {!selectedPlayer && (
-          <div className="mt-4 text-center text-sm text-gray-300">
+          <div className="mt-4 text-center text-sm text-white">
             Drag players to reposition them. Click a player to edit their name or assign from the database.
           </div>
         )}

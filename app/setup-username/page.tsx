@@ -108,7 +108,7 @@ export default function SetupUsernamePage() {
 
         <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-800 bg-gray-900 p-8 shadow-xl space-y-5">
           <div>
-            <label htmlFor="username" className="mb-1 block text-sm font-medium text-gray-300">
+            <label htmlFor="username" className="mb-1 block text-sm font-medium text-white">
               Username
             </label>
             <input
@@ -123,7 +123,7 @@ export default function SetupUsernamePage() {
               maxLength={20}
               className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
-            <p className="mt-1 text-xs text-gray-200">3-20 characters, letters, numbers, underscores only</p>
+            <p className="mt-1 text-xs text-white">3-20 characters, letters, numbers, underscores only</p>
           </div>
 
           {error && (

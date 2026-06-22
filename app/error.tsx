@@ -18,7 +18,7 @@ export default function Error({
       <div className="text-center max-w-md">
         <div className="text-5xl mb-4">&#9888;&#65039;</div>
         <h1 className="text-2xl font-extrabold mb-2">Something went wrong</h1>
-        <p className="text-gray-200 text-sm mb-6">
+        <p className="text-white text-sm mb-6">
           An unexpected error occurred. You can try again, or head back to the
           homepage.
         </p>

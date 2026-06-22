@@ -101,7 +101,7 @@ export default function PLClubsPage() {
                         {year >= 2024 ? "FC" : "FIFA"}{" "}
                         {String(year % 100).padStart(2, "0")}
                       </span>
-                      <span className="text-sm text-gray-200">
+                      <span className="text-sm text-white">
                         {yearClubs.length} clubs
                       </span>
                       <span
@@ -124,7 +124,7 @@ export default function PLClubsPage() {
                       {yearClubs.map((club) => (
                         <span
                           key={club}
-                          className="px-2 py-1 bg-gray-800 rounded text-xs text-gray-300"
+                          className="px-2 py-1 bg-gray-800 rounded text-xs text-white"
                         >
                           {club}
                         </span>
@@ -144,7 +144,7 @@ export default function PLClubsPage() {
                   className="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded px-4 py-2"
                 >
                   <span className="font-medium w-48 shrink-0">{club.name}</span>
-                  <span className="text-xs text-gray-200 w-20 shrink-0">
+                  <span className="text-xs text-white w-20 shrink-0">
                     {club.seasons.length} seasons
                   </span>
                   <div className="flex gap-1 flex-wrap">

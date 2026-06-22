@@ -120,7 +120,7 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
             Rank each one from {ordinal(1)} to {ordinal(numSlots)} — but you
             can&apos;t see who&apos;s coming next!
           </p>
-          <p className="mt-2 text-xs text-gray-300">
+          <p className="mt-2 text-xs text-white">
             {images.length} players in the pool
           </p>
           <button
@@ -246,7 +246,7 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
                 </div>
                 <div className="px-4 py-4 text-center">
                   <p className="text-lg font-bold text-white">{displayName(currentPlayer)}</p>
-                  <p className="mt-1 text-xs text-gray-200">Tap a slot to place</p>
+                  <p className="mt-1 text-xs text-white">Tap a slot to place</p>
                 </div>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function BlindRankingBoard({ title, numSlots, images, faceDetecti
                     <span className="text-sm font-semibold text-white">{player.name}</span>
                   </>
                 ) : (
-                  <span className={`text-sm ${isHovered ? "text-amber-300 font-medium" : "text-gray-300"}`}>
+                  <span className={`text-sm ${isHovered ? "text-amber-300 font-medium" : "text-white"}`}>
                     {isHovered && currentPlayer ? `Place ${displayName(currentPlayer)} here` : "Empty"}
                   </span>
                 )}

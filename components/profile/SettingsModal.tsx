@@ -103,7 +103,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
             </button>
             <button
               onClick={() => { setPreviewFrame(equippedFrame); setShowPicturePicker(false); }}
-              className="flex-1 rounded-xl border border-gray-600 py-2.5 text-sm font-bold text-gray-300 hover:border-gray-400 hover:text-white transition-colors"
+              className="flex-1 rounded-xl border border-gray-600 py-2.5 text-sm font-bold text-white hover:border-gray-400 hover:text-white transition-colors"
             >
               Cancel
             </button>
@@ -122,12 +122,12 @@ export default function SettingsModal({ username: initialUsername, email, unlock
         onClick={e => e.stopPropagation()}
       >
         <h3 className="text-lg font-bold text-white mb-4">Account Settings</h3>
-        <p className="text-sm text-gray-200 mb-4">{email}</p>
+        <p className="text-sm text-white mb-4">{email}</p>
 
         <div className="space-y-4">
           {/* Profile Picture */}
           <div>
-            <label className="mb-2 block text-sm font-semibold text-gray-300">Profile Picture</label>
+            <label className="mb-2 block text-sm font-semibold text-white">Profile Picture</label>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-amber-500/40 shrink-0">
                 {currentStyle.image ? (
@@ -143,7 +143,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
               </div>
               <button
                 onClick={() => setShowPicturePicker(true)}
-                className="px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-sm font-bold text-gray-300 hover:text-white hover:border-gray-500 transition-all"
+                className="px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-sm font-bold text-white hover:text-white hover:border-gray-500 transition-all"
               >
                 Change Picture
               </button>
@@ -152,7 +152,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
 
           {/* Username */}
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-300">Username</label>
+            <label className="mb-1 block text-sm font-semibold text-white">Username</label>
             <input
               value={username}
               onChange={e => setUsername(e.target.value)}
@@ -160,7 +160,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
               maxLength={32}
               className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:outline-none"
             />
-            <p className="mt-1 text-xs text-gray-200">
+            <p className="mt-1 text-xs text-white">
               You can only change your username once every 30 days.
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
             <button
               onClick={onClose}
               disabled={saving}
-              className="flex-1 rounded-xl border border-gray-600 py-2.5 text-sm font-bold text-gray-300 hover:border-gray-400 hover:text-white disabled:opacity-50 transition-colors"
+              className="flex-1 rounded-xl border border-gray-600 py-2.5 text-sm font-bold text-white hover:border-gray-400 hover:text-white disabled:opacity-50 transition-colors"
             >
               Cancel
             </button>

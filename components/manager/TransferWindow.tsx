@@ -153,7 +153,7 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
               <h1 className="text-2xl font-black text-white">Make Moves</h1>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-gray-300 uppercase tracking-wider">Budget</div>
+              <div className="text-[10px] text-white uppercase tracking-wider">Budget</div>
               <div className="text-xl font-black text-amber-400">£{budget}M</div>
             </div>
           </div>
@@ -165,7 +165,7 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
           <div className="space-y-4">
             {activity.length > 0 && (
               <div className="bg-gray-900 rounded-xl border border-gray-800/50 p-3">
-                <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Recent Activity</h3>
+                <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Recent Activity</h3>
                 <div className="space-y-0.5">
                   {activity.map((a, i) => (
                     <div key={i} className="text-xs text-white">{a}</div>
@@ -181,7 +181,7 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
               >
                 <div className="text-2xl mb-1">🛒</div>
                 <div className="font-black text-emerald-300">Sign a Player</div>
-                <div className="text-[10px] text-gray-200 mt-1">Browse the market for a new addition</div>
+                <div className="text-[10px] text-white mt-1">Browse the market for a new addition</div>
               </button>
               <button
                 onClick={() => setView("sell")}
@@ -189,20 +189,20 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
               >
                 <div className="text-2xl mb-1">💸</div>
                 <div className="font-black text-red-300">Sell a Player</div>
-                <div className="text-[10px] text-gray-200 mt-1">Free up budget — sells at 70% of value</div>
+                <div className="text-[10px] text-white mt-1">Free up budget — sells at 70% of value</div>
               </button>
             </div>
 
             <div className="bg-gray-900 rounded-xl border border-gray-800/50 p-4">
-              <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Current Squad ({squad.length}/14)</h3>
+              <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Current Squad ({squad.length}/14)</h3>
               <div className="grid grid-cols-2 gap-1.5">
                 {squad.map(p => (
                   <div key={p.name + p.club + p.clubYear} className="flex items-center gap-2 px-2 py-1.5 rounded bg-gray-950 text-xs">
                     <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${p.isSub ? "bg-purple-700" : getPositionColor(p.assignedPosition)} text-white w-7 text-center`}>
                       {p.isSub ? "SUB" : p.assignedPosition}
                     </span>
-                    <span className="flex-1 text-gray-300 truncate">{p.name}</span>
-                    <span className="text-gray-200">{p.overall}</span>
+                    <span className="flex-1 text-white truncate">{p.name}</span>
+                    <span className="text-white">{p.overall}</span>
                   </div>
                 ))}
               </div>
@@ -212,8 +212,8 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
 
         {view === "sell" && (
           <div className="space-y-2">
-            <button onClick={() => setView("hub")} className="text-xs text-gray-200 hover:text-gray-300 mb-3">← Back</button>
-            <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Tap a player to sell</h3>
+            <button onClick={() => setView("hub")} className="text-xs text-white hover:text-gray-300 mb-3">← Back</button>
+            <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Tap a player to sell</h3>
             <div>
               <div className="text-[10px] font-bold text-emerald-400 uppercase mt-3 mb-1">Starters</div>
               {starters.map(p => (
@@ -227,11 +227,11 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-white truncate">{p.name}</div>
-                    <div className="text-[10px] text-gray-300">{p.clubYear} · {p.overall} OVR</div>
+                    <div className="text-[10px] text-white">{p.clubYear} · {p.overall} OVR</div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-black text-emerald-400">£{Math.round(playerPrice(p.overall) * 0.7)}M</div>
-                    <div className="text-[9px] text-gray-300">sell value</div>
+                    <div className="text-[9px] text-white">sell value</div>
                   </div>
                 </button>
               ))}
@@ -245,11 +245,11 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-700 text-white w-9 text-center">SUB</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-white truncate">{p.name}</div>
-                    <div className="text-[10px] text-gray-300">{p.clubYear} · {p.overall} OVR</div>
+                    <div className="text-[10px] text-white">{p.clubYear} · {p.overall} OVR</div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-black text-emerald-400">£{Math.round(playerPrice(p.overall) * 0.7)}M</div>
-                    <div className="text-[9px] text-gray-300">sell value</div>
+                    <div className="text-[9px] text-white">sell value</div>
                   </div>
                 </button>
               ))}
@@ -259,14 +259,14 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
 
         {view === "buy" && (
           <div className="space-y-3">
-            <button onClick={() => { setView("hub"); setReplaceTarget(null); setMarketOptions(null); }} className="text-xs text-gray-200 hover:text-gray-300 mb-3">← Back</button>
+            <button onClick={() => { setView("hub"); setReplaceTarget(null); setMarketOptions(null); }} className="text-xs text-white hover:text-gray-300 mb-3">← Back</button>
             {replaceTarget && (
               <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 text-xs text-amber-200">
                 Replacing <span className="font-bold">{replaceTarget.name}</span> ({replaceTarget.assignedPosition}). Pick a replacement below.
               </div>
             )}
             {loading && (
-              <div className="flex items-center justify-center gap-2 py-12 text-gray-300">
+              <div className="flex items-center justify-center gap-2 py-12 text-white">
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -301,7 +301,7 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-sm text-white">{mp.player.name}</div>
-                          <div className="text-xs text-gray-200 mt-0.5">{mp.club} · {mp.year}</div>
+                          <div className="text-xs text-white mt-0.5">{mp.club} · {mp.year}</div>
                         </div>
                         <div className="text-right">
                           <div className={`text-base font-black ${canAfford ? "text-emerald-400" : "text-red-400"}`}>£{mp.price}M</div>
@@ -311,7 +311,7 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
                     </button>
                   );
                 })}
-                <button onClick={() => loadMarketFor(replaceTarget)} className="w-full text-xs text-gray-200 hover:text-gray-300 py-2">↻ Scout again</button>
+                <button onClick={() => loadMarketFor(replaceTarget)} className="w-full text-xs text-white hover:text-gray-300 py-2">↻ Scout again</button>
               </div>
             )}
           </div>
@@ -327,7 +327,7 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
             className={`w-full font-black py-3.5 rounded-xl text-base tracking-wide transition-all ${
               squad.length === 14
                 ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:scale-[1.01] shadow-xl shadow-amber-500/20"
-                : "bg-gray-800 text-gray-300 cursor-not-allowed"
+                : "bg-gray-800 text-white cursor-not-allowed"
             }`}
           >
             {squad.length === 14 ? "Close Window — Back to Season" : `Squad must be 14 players (currently ${squad.length})`}
