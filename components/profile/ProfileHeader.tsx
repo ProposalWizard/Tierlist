@@ -193,11 +193,11 @@ export default function ProfileHeader({
             </span>
             <button
               onClick={onOpenSettings}
-              className="text-gray-500 hover:text-amber-400 transition-colors p-1.5 rounded-lg hover:bg-white/5"
+              className="text-white hover:text-amber-400 transition-colors p-2 rounded-lg hover:bg-white/5"
               title="Settings"
             >
               <svg
-                className="w-4 h-4"
+                className="w-5 h-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"

@@ -12,8 +12,7 @@ import PersonalRecords from "@/components/profile/PersonalRecords";
 import CollectionSquad from "@/components/profile/CollectionSquad";
 import SettingsModal from "@/components/profile/SettingsModal";
 import type { UserProfile } from "@/lib/types";
-import type { UserProgression, Reward } from "@/lib/xp";
-import { RARITY_COLORS } from "@/lib/xp";
+import type { UserProgression } from "@/lib/xp";
 
 interface TierlistSummary {
   id: string;
@@ -88,16 +87,15 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
     }
   }
 
-  async function handleSaveSettings(newUsername: string, newIsAnon: boolean): Promise<{ ok: boolean; error?: string }> {
+  async function handleSaveSettings(newUsername: string): Promise<{ ok: boolean; error?: string }> {
     const res = await fetch("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: newUsername || null, is_anonymous: newIsAnon }),
+      body: JSON.stringify({ username: newUsername || null, is_anonymous: isAnon }),
     });
     const data = await res.json();
     if (res.ok) {
       setUsername(newUsername);
-      setIsAnon(newIsAnon);
       return { ok: true };
     }
     return { ok: false, error: data.error ?? "Something went wrong" };
@@ -307,9 +305,11 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
       {showSettings && (
         <SettingsModal
           username={username}
-          isAnonymous={isAnon}
           email={userEmail}
+          unlockedCards={progression?.rewards ?? []}
+          equippedFrame={progression?.equippedFrame ?? "frame_default"}
           onSave={handleSaveSettings}
+          onEquipFrame={(frameId) => handleEquip("frame", frameId)}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -566,173 +566,6 @@ function CustomObjectivesSection() {
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-/* ── Objectives Section ── */
-
-const OBJECTIVE_ICONS: Record<string, string> = {
-  trophy_first_draft: "\u{1F4CB}",
-  trophy_10_drafts: "\u{1F4CB}",
-  trophy_50_drafts: "\u{1F3C5}",
-  trophy_first_win: "\u{1F3C6}",
-  trophy_10_wins: "\u{1F3C6}",
-  trophy_50_wins: "\u{1F451}",
-  trophy_invincible: "\u{1F6E1}",
-  trophy_100_goals: "\u{26BD}",
-  trophy_500_goals: "\u{26A1}",
-  trophy_1000_goals: "\u{1F525}",
-  trophy_tierlist_maker: "\u{1F5BC}",
-  trophy_popular: "\u{2764}",
-  trophy_voter: "\u{1F5F3}",
-  trophy_streak_7: "\u{1F525}",
-  trophy_streak_30: "\u{1F4A5}",
-  frame_default: "\u{1F5BC}",
-  frame_silver: "\u{1FA9F}",
-  frame_gold: "\u{1F7E8}",
-  frame_champions: "\u{2B50}",
-  frame_diamond: "\u{1F48E}",
-  frame_invincibles: "\u{1F6E1}",
-  frame_future_stars: "\u{2728}",
-  frame_ballon_dor: "\u{1F3C6}",
-  title_rookie: "\u{1F464}",
-  title_rising: "\u{1F4C8}",
-  title_promising: "\u{1F3C5}",
-  title_established: "\u{1F6E1}",
-  title_tactical: "\u{1F9E0}",
-  title_elite: "\u{1F451}",
-  title_mastermind: "\u{2728}",
-  title_world_class: "\u{1F30D}",
-  title_legend: "\u{1F3C6}",
-};
-
-const STAT_LABELS: Record<string, string> = {
-  drafts_played: "drafts",
-  draft_wins: "league wins",
-  draft_invincibles: "invincible season",
-  total_goals_scored: "goals scored",
-  tierlists_created: "tierlists created",
-  tierlists_likes_received: "likes received",
-  votes_cast: "votes cast",
-  longest_streak: "day login streak",
-};
-
-function getObjectiveDescription(reward: Reward): string {
-  if (reward.unlock_type === "level") {
-    return `Reach Level ${reward.unlock_value}`;
-  }
-  const label = reward.unlock_stat ? STAT_LABELS[reward.unlock_stat] ?? reward.unlock_stat : "???";
-  return `${reward.unlock_value} ${label}`;
-}
-
-function getObjectiveProgress(
-  reward: Reward,
-  stats: import("@/lib/xp").UserStats | null,
-  level: number,
-): { current: number; target: number; percent: number } | null {
-  if (reward.unlock_type === "stat" && reward.unlock_stat && reward.unlock_value && stats) {
-    const val = stats[reward.unlock_stat as keyof import("@/lib/xp").UserStats];
-    if (typeof val === "number") {
-      return { current: val, target: reward.unlock_value, percent: (val / reward.unlock_value) * 100 };
-    }
-  }
-  return null;
-}
-
-function ObjectivesSection({ rewards, stats, level }: {
-  rewards: (Reward & { unlocked: boolean; unlocked_at: string | null })[];
-  stats: import("@/lib/xp").UserStats | null;
-  level: number;
-}) {
-  const statRewards = rewards.filter(r => r.unlock_type === "stat").sort((a, b) => a.sort_order - b.sort_order);
-
-  if (statRewards.length === 0) return null;
-
-  const unlockedCount = statRewards.filter(r => r.unlocked).length;
-
-  return (
-    <div className="rounded-xl border border-gray-800/50 bg-gray-900 p-5">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[10px] font-bold tracking-[0.25em] text-gray-500 uppercase">
-          Objectives
-        </h3>
-        <span className="text-[10px] font-bold text-amber-400">
-          {unlockedCount}/{statRewards.length} completed
-        </span>
-      </div>
-
-      {/* Objectives grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {statRewards.map(reward => {
-          const rarity = RARITY_COLORS[reward.rarity as keyof typeof RARITY_COLORS] ?? RARITY_COLORS.bronze;
-          const progress = getObjectiveProgress(reward, stats, level);
-          const icon = OBJECTIVE_ICONS[reward.id] ?? "\u{2753}";
-
-          return (
-            <div
-              key={reward.id}
-              className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${
-                reward.unlocked
-                  ? `${rarity.bg} ${rarity.border} hover:scale-[1.02]`
-                  : "bg-gray-800/30 border-gray-800/50 opacity-50"
-              }`}
-            >
-              {/* Lock overlay for locked cards */}
-              {!reward.unlocked && (
-                <div className="absolute top-2 right-2">
-                  <svg className="w-3.5 h-3.5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
-
-              {/* Icon */}
-              <div className={`text-2xl ${reward.unlocked ? "" : "grayscale"}`}>
-                {icon}
-              </div>
-
-              {/* Name */}
-              <span className={`text-[10px] font-bold text-center leading-tight ${
-                reward.unlocked ? rarity.text : "text-gray-600"
-              }`}>
-                {reward.unlocked ? reward.name : "???"}
-              </span>
-
-              {/* Objective description */}
-              <span className="text-[9px] text-gray-500 text-center leading-tight">
-                {getObjectiveDescription(reward)}
-              </span>
-
-              {/* Progress bar for locked objectives */}
-              {!reward.unlocked && progress && (
-                <div className="w-full mt-1">
-                  <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-gray-600 to-gray-500 rounded-full transition-all"
-                      style={{ width: `${Math.min(progress.percent, 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-[8px] text-gray-600 text-center mt-0.5">
-                    {progress.current}/{progress.target}
-                  </p>
-                </div>
-              )}
-
-              {/* Completed badge for unlocked */}
-              {reward.unlocked && (
-                <div className="flex items-center gap-1">
-                  <svg className="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-[8px] font-bold text-emerald-400">COMPLETE</span>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

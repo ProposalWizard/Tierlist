@@ -36,6 +36,7 @@ interface Props {
   onSimulationComplete: (myResult: SeasonResult, allPlayers: RoomPlayer[]) => void;
   onCareerComplete?: (seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[], allRoomPlayerSeasons?: Record<string, SeasonResult[]>) => void;
   onLeave: () => void;
+  onUpdateSettings?: (settings: Partial<DraftSettings>) => void;
 }
 
 export default function MultiplayerLobby({
@@ -50,6 +51,7 @@ export default function MultiplayerLobby({
   onSimulationComplete,
   onCareerComplete,
   onLeave,
+  onUpdateSettings,
 }: Props) {
   const [room, setRoom] = useState<RoomData | null>(null);
   const [players, setPlayers] = useState<RoomPlayer[]>([]);
@@ -250,19 +252,186 @@ export default function MultiplayerLobby({
       {/* Room Settings */}
       {settings && currentSeason === 1 && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-1">Rules</div>
-          <div className="text-[10px] text-gray-600 mb-2">Formation is chosen individually</div>
-          <div className="flex flex-wrap gap-2">
-            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">FIFA {settings.eraStart}–{settings.eraEnd}</span>
-            {settings.mode === "prime" && (
-              <span className="text-xs font-bold bg-yellow-500/15 text-yellow-400 px-2.5 py-1 rounded border border-yellow-500/30">Prime</span>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-1">Settings</div>
+          <div className="text-[10px] text-gray-600 mb-3">Formation is chosen individually</div>
+
+          {/* Era Range */}
+          <div className="mb-3">
+            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Era Range</div>
+            {isHost && onUpdateSettings ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <select
+                    value={settings.eraStart}
+                    onChange={(e) => onUpdateSettings({ eraStart: Number(e.target.value) })}
+                    className="w-full appearance-none bg-gray-800 border border-gray-700/50 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                  >
+                    {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
+                      <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </div>
+                <span className="text-gray-600 text-[10px] font-bold">to</span>
+                <div className="flex-1 relative">
+                  <select
+                    value={settings.eraEnd}
+                    onChange={(e) => onUpdateSettings({ eraEnd: Number(e.target.value) })}
+                    className="w-full appearance-none bg-gray-800 border border-gray-700/50 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                  >
+                    {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
+                      <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">
+                FIFA {settings.eraStart}–{settings.eraEnd}
+              </span>
             )}
-            {settings.draftOrder === "club-first" && (
-              <span className="text-xs font-bold bg-blue-500/15 text-blue-400 px-2.5 py-1 rounded border border-blue-500/30">Club First</span>
+          </div>
+
+          {/* Game Mode */}
+          <div className="mb-3">
+            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Game Mode</div>
+            {isHost && onUpdateSettings ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => onUpdateSettings({ mode: "normal" })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.mode === "normal"
+                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Normal
+                </button>
+                <button
+                  onClick={() => onUpdateSettings({ mode: "prime" })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.mode === "prime"
+                      ? "bg-amber-600 text-white ring-1 ring-amber-400"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Prime
+                </button>
+              </div>
+            ) : (
+              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+                settings.mode === "prime"
+                  ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
+                  : "bg-gray-800 text-gray-300"
+              }`}>
+                {settings.mode === "prime" ? "Prime" : "Normal"}
+              </span>
             )}
-            <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">
-              {settings.respins === 0 ? "No Re-spins" : settings.respins === 1 ? "1 Re-spin" : "3 Re-spins"}
-            </span>
+          </div>
+
+          {/* Draft Order */}
+          <div className="mb-3">
+            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Draft Order</div>
+            {isHost && onUpdateSettings ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => onUpdateSettings({ draftOrder: "club-first" })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.draftOrder === "club-first"
+                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Club First
+                </button>
+                <button
+                  onClick={() => onUpdateSettings({ draftOrder: "position-first" })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.draftOrder === "position-first"
+                      ? "bg-sky-600 text-white ring-1 ring-sky-400"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Position First
+                </button>
+              </div>
+            ) : (
+              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+                settings.draftOrder === "club-first"
+                  ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                  : "bg-sky-500/15 text-sky-400 border border-sky-500/30"
+              }`}>
+                {settings.draftOrder === "club-first" ? "Club First" : "Position First"}
+              </span>
+            )}
+          </div>
+
+          {/* Re-spins */}
+          <div className="mb-3">
+            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Re-spins</div>
+            {isHost && onUpdateSettings ? (
+              <div className="grid grid-cols-3 gap-1.5">
+                {([3, 1, 0] as const).map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => onUpdateSettings({ respins: n })}
+                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                      settings.respins === n
+                        ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
+                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                    }`}
+                  >
+                    {n === 0 ? "None" : n}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="text-xs font-bold bg-gray-800 text-gray-300 px-2.5 py-1 rounded">
+                {settings.respins === 0 ? "No Re-spins" : settings.respins === 1 ? "1 Re-spin" : "3 Re-spins"}
+              </span>
+            )}
+          </div>
+
+          {/* Hidden Ratings */}
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Rating Visibility</div>
+            {isHost && onUpdateSettings ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => onUpdateSettings({ hiddenRatings: false })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    !settings.hiddenRatings
+                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Normal
+                </button>
+                <button
+                  onClick={() => onUpdateSettings({ hiddenRatings: true })}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                    settings.hiddenRatings
+                      ? "bg-purple-600 text-white ring-1 ring-purple-400"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                  }`}
+                >
+                  Hidden
+                </button>
+              </div>
+            ) : (
+              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
+                settings.hiddenRatings
+                  ? "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                  : "bg-gray-800 text-gray-300"
+              }`}>
+                {settings.hiddenRatings ? "Hidden" : "Normal"}
+              </span>
+            )}
           </div>
         </div>
       )}

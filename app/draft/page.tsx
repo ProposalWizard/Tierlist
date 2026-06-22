@@ -347,6 +347,29 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop]);
 
+  const handleUpdateRoomSettings = useCallback(async (update: Partial<DraftSettings>) => {
+    if (!roomCode) return;
+    // Optimistically update local settings
+    setSettings(prev => prev ? { ...prev, ...update } : prev);
+    // Also update respins if that changed
+    if (update.respins !== undefined) {
+      setRespinsRemaining(update.respins);
+    }
+    // Persist to server
+    try {
+      const res = await fetch(`/api/draft/rooms/${roomCode}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: update }),
+      });
+      if (!res.ok) {
+        console.error("Failed to update room settings");
+      }
+    } catch (e) {
+      console.error("Error updating room settings:", e);
+    }
+  }, [roomCode]);
+
   const handleResume = useCallback(() => {
     if (!resume) return;
     setSettings(resume.settings);
@@ -798,6 +821,7 @@ export default function DraftPage() {
           onSimulationComplete={handleSimulationComplete}
           onCareerComplete={isAdminUser ? handleCareerComplete : undefined}
           onLeave={handleLeaveRoom}
+          onUpdateSettings={isHost ? handleUpdateRoomSettings : undefined}
         />
       )}
       {phase === "formation-pick" && settings && (
@@ -841,7 +865,7 @@ export default function DraftPage() {
         <DraftPick
           settings={settings}
           onComplete={handleDraftComplete}
-          onBack={roomCode ? handleStartFromLobby : handleNewRun}
+          onBack={roomCode ? handleLeaveRoom : handleNewRun}
           isMultiplayer={!!roomCode}
           initialPicked={resume?.players}
           initialUsedClubYears={resume?.usedClubYears}
