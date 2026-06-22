@@ -26,7 +26,7 @@ export default function ImageWithFallback({
   if (failed) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-800 text-[10px] text-gray-500 ${className ?? ""}`}
+        className={`flex items-center justify-center bg-gray-800 text-[10px] text-gray-200 ${className ?? ""}`}
         style={style}
         title={alt}
       >

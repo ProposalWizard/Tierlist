@@ -182,7 +182,7 @@ export default function CreateBlindRanking() {
 
       {/* Description */}
       <div>
-        <label className="mb-1.5 block text-sm font-semibold text-gray-300">Description <span className="text-gray-600">(optional)</span></label>
+        <label className="mb-1.5 block text-sm font-semibold text-gray-300">Description <span className="text-gray-300">(optional)</span></label>
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -205,12 +205,12 @@ export default function CreateBlindRanking() {
           />
           <span className="w-10 text-center text-lg font-bold text-amber-400">{numSlots}</span>
         </div>
-        <p className="mt-1 text-xs text-gray-600">Players will rank their top {numSlots}</p>
+        <p className="mt-1 text-xs text-gray-300">Players will rank their top {numSlots}</p>
       </div>
 
       {/* Cover image */}
       <div>
-        <label className="mb-1.5 block text-sm font-semibold text-gray-300">Cover Image <span className="text-gray-600">(optional)</span></label>
+        <label className="mb-1.5 block text-sm font-semibold text-gray-300">Cover Image <span className="text-gray-300">(optional)</span></label>
         {coverPreview ? (
           <div className="relative inline-block">
             <img src={coverCropDataUrl || coverPreview} alt="Cover" className="h-32 w-48 rounded-xl object-cover border border-gray-700" />
@@ -232,7 +232,7 @@ export default function CreateBlindRanking() {
         ) : (
           <button
             onClick={() => coverRef.current?.click()}
-            className="rounded-xl border-2 border-dashed border-gray-700 px-6 py-4 text-sm text-gray-500 hover:border-gray-500 hover:text-gray-400 transition-colors"
+            className="rounded-xl border-2 border-dashed border-gray-700 px-6 py-4 text-sm text-gray-200 hover:border-gray-500 hover:text-gray-400 transition-colors"
           >
             + Add cover photo
           </button>
@@ -250,7 +250,7 @@ export default function CreateBlindRanking() {
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label className="text-sm font-semibold text-gray-300">
-            Player Images * <span className="text-gray-600">({images.length} added, need at least {numSlots})</span>
+            Player Images * <span className="text-gray-300">({images.length} added, need at least {numSlots})</span>
           </label>
           <button
             onClick={() => fileRef.current?.click()}
@@ -273,8 +273,8 @@ export default function CreateBlindRanking() {
             onClick={() => fileRef.current?.click()}
             className="cursor-pointer rounded-xl border-2 border-dashed border-gray-700 py-12 text-center hover:border-gray-500 transition-colors"
           >
-            <p className="text-sm text-gray-500">Click to upload player photos</p>
-            <p className="mt-1 text-xs text-gray-600">Add more images than slots for variety</p>
+            <p className="text-sm text-gray-200">Click to upload player photos</p>
+            <p className="mt-1 text-xs text-gray-300">Add more images than slots for variety</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">

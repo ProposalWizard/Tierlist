@@ -17,7 +17,7 @@ export default function TicTacToeMainPage() {
         <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl mb-3">
           Football Tic Tac Toe
         </h1>
-        <p className="mx-auto max-w-sm text-sm text-gray-400 mb-10">
+        <p className="mx-auto max-w-sm text-sm text-white mb-10">
           Name players that match two conditions per square. Score points for rare answers!
         </p>
 
@@ -53,7 +53,7 @@ export default function TicTacToeMainPage() {
             <div className="text-2xl font-black text-gray-300 group-hover:text-white">
               Daily Archive
             </div>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-200">
               Browse the archive and see your stats
             </p>
           </Link>

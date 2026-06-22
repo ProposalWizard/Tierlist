@@ -26,7 +26,7 @@ export default function GlobalError({
             <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.5rem" }}>
               Something went wrong
             </h1>
-            <p style={{ color: "#9ca3af", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
+            <p style={{ color: "#e5e7eb", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
               The site hit an unexpected error. Please try again.
             </p>
             <button

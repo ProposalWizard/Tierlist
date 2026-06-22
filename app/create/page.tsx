@@ -37,7 +37,7 @@ export default async function CreatePage() {
         <h1 className="text-2xl font-bold text-white md:text-3xl">
           Create New Tierlist
         </h1>
-        <p className="mt-1 text-sm text-gray-400">
+        <p className="mt-1 text-sm text-white">
           Add images, arrange the tiers, then press{" "}
           <span className="font-semibold text-indigo-400">Upload Tierlist</span>{" "}
           to publish it to the homepage.

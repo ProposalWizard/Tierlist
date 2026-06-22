@@ -128,13 +128,13 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
         <h1 className="text-2xl font-black tracking-tight text-white">
           Sell a Player?
         </h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-gray-200 text-sm mt-1">
           Tap a player to sell them and spin for a replacement.
         </p>
       </div>
 
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-        <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+        <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">
           Season {seasonNumber} Squad
         </h3>
         <div className="space-y-1">
@@ -155,7 +155,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
                     SUB
                   </span>
                 )}
-                <span className="text-gray-600 text-[10px] font-medium">{p.clubYear}</span>
+                <span className="text-gray-300 text-[10px] font-medium">{p.clubYear}</span>
                 <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
               </button>
             );
@@ -771,7 +771,7 @@ export default function DraftPage() {
                   <div className="text-sm font-bold text-emerald-400">
                     Draft in progress
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-white">
                     {totalPicked}/14 picked &middot; {resume.settings.formation}
                     {resume.settings.mode === "prime" && " · Prime"}
                     {resume.settings.draftOrder === "club-first" && " · Club First"}
@@ -779,7 +779,7 @@ export default function DraftPage() {
                 </div>
                 <button
                   onClick={handleDiscardResume}
-                  className="px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition"
+                  className="px-3 py-1.5 text-xs font-bold text-white hover:text-white rounded-lg hover:bg-gray-800 transition"
                 >
                   Discard
                 </button>
@@ -801,7 +801,7 @@ export default function DraftPage() {
             <button
               onClick={handleSkipToTest}
               disabled={autoFilling}
-              className="text-xs text-gray-700 hover:text-gray-500 underline transition disabled:cursor-wait"
+              className="text-xs text-gray-300 hover:text-gray-500 underline transition disabled:cursor-wait"
             >
               {autoFilling ? "auto-drafting squad…" : "[test] skip draft → auto-fill squad"}
             </button>
@@ -832,7 +832,7 @@ export default function DraftPage() {
                 <span className="text-xs font-bold tracking-widest uppercase text-emerald-400">Step 1</span>
               </div>
               <h1 className="text-3xl font-black tracking-tight mb-2">Choose Your Formation</h1>
-              <p className="text-gray-400 text-sm">Pick your formation before the draft begins</p>
+              <p className="text-white text-sm">Pick your formation before the draft begins</p>
             </div>
             <div className="grid grid-cols-4 gap-1.5 sm:gap-2 mb-8">
               {FORMATIONS.map((f) => (
@@ -842,7 +842,7 @@ export default function DraftPage() {
                   className={`relative py-2.5 sm:py-3 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 ${
                     settings.formation === f.name
                       ? "bg-emerald-600 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                      : "bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700/50"
+                      : "bg-gray-800/80 text-white hover:bg-gray-700 hover:text-gray-200 border border-gray-700/50"
                   }`}
                 >
                   {f.name}

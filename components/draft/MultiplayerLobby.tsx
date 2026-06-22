@@ -228,14 +228,14 @@ export default function MultiplayerLobby({
           <span className="text-xs font-bold tracking-widest uppercase text-emerald-400">Multiplayer</span>
         </div>
         <h1 className="text-2xl font-black tracking-tight text-white mb-1">Lobby</h1>
-        <p className="text-gray-500 text-sm">
+        <p className="text-gray-200 text-sm">
           {currentSeason > 1 ? `Season ${currentSeason} — submit your squad to continue` : "Share the code so friends can join"}
         </p>
       </div>
 
       {/* Room Code */}
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-        <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Room Code</div>
+        <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-2">Room Code</div>
         <div className="flex items-center gap-3">
           <div className="flex-1 text-3xl font-black tracking-[0.3em] text-emerald-400 font-mono" style={{ fontFeatureSettings: '"zero" 1' }}>
             {roomCode}
@@ -252,12 +252,12 @@ export default function MultiplayerLobby({
       {/* Room Settings */}
       {settings && currentSeason === 1 && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-1">Settings</div>
-          <div className="text-[10px] text-gray-600 mb-3">Formation is chosen individually</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-1">Settings</div>
+          <div className="text-[10px] text-gray-300 mb-3">Formation is chosen individually</div>
 
           {/* Era Range */}
           <div className="mb-3">
-            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Era Range</div>
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Era Range</div>
             {isHost && onUpdateSettings ? (
               <div className="flex items-center gap-2">
                 <div className="flex-1 relative">
@@ -270,11 +270,11 @@ export default function MultiplayerLobby({
                       <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">
+                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-200">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                   </div>
                 </div>
-                <span className="text-gray-600 text-[10px] font-bold">to</span>
+                <span className="text-gray-300 text-[10px] font-bold">to</span>
                 <div className="flex-1 relative">
                   <select
                     value={settings.eraEnd}
@@ -285,7 +285,7 @@ export default function MultiplayerLobby({
                       <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">
+                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-200">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                   </div>
                 </div>
@@ -299,7 +299,7 @@ export default function MultiplayerLobby({
 
           {/* Game Mode */}
           <div className="mb-3">
-            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Game Mode</div>
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Game Mode</div>
             {isHost && onUpdateSettings ? (
               <div className="grid grid-cols-2 gap-1.5">
                 <button
@@ -307,7 +307,7 @@ export default function MultiplayerLobby({
                   className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
                     settings.mode === "normal"
                       ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
                   }`}
                 >
                   Normal
@@ -317,7 +317,7 @@ export default function MultiplayerLobby({
                   className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
                     settings.mode === "prime"
                       ? "bg-amber-600 text-white ring-1 ring-amber-400"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
                   }`}
                 >
                   Prime
@@ -336,7 +336,7 @@ export default function MultiplayerLobby({
 
           {/* Draft Order */}
           <div className="mb-3">
-            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Draft Order</div>
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Draft Order</div>
             {isHost && onUpdateSettings ? (
               <div className="grid grid-cols-2 gap-1.5">
                 <button
@@ -344,7 +344,7 @@ export default function MultiplayerLobby({
                   className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
                     settings.draftOrder === "club-first"
                       ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
                   }`}
                 >
                   Club First
@@ -354,7 +354,7 @@ export default function MultiplayerLobby({
                   className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
                     settings.draftOrder === "position-first"
                       ? "bg-sky-600 text-white ring-1 ring-sky-400"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
                   }`}
                 >
                   Position First
@@ -373,7 +373,7 @@ export default function MultiplayerLobby({
 
           {/* Re-spins */}
           <div className="mb-3">
-            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Re-spins</div>
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Re-spins</div>
             {isHost && onUpdateSettings ? (
               <div className="grid grid-cols-3 gap-1.5">
                 {([3, 1, 0] as const).map((n) => (
@@ -383,7 +383,7 @@ export default function MultiplayerLobby({
                     className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
                       settings.respins === n
                         ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                        : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
                     }`}
                   >
                     {n === 0 ? "None" : n}
@@ -399,7 +399,7 @@ export default function MultiplayerLobby({
 
           {/* Hidden Ratings */}
           <div>
-            <div className="text-[10px] font-bold text-gray-500 mb-1.5">Rating Visibility</div>
+            <div className="text-[10px] font-bold text-gray-200 mb-1.5">Rating Visibility</div>
             {isHost && onUpdateSettings ? (
               <div className="grid grid-cols-2 gap-1.5">
                 <button
@@ -407,7 +407,7 @@ export default function MultiplayerLobby({
                   className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
                     !settings.hiddenRatings
                       ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
                   }`}
                 >
                   Normal
@@ -417,7 +417,7 @@ export default function MultiplayerLobby({
                   className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
                     settings.hiddenRatings
                       ? "bg-purple-600 text-white ring-1 ring-purple-400"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700/50"
+                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
                   }`}
                 >
                   Hidden
@@ -451,11 +451,11 @@ export default function MultiplayerLobby({
 
       {/* Players list */}
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-        <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">
+        <div className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">
           Players ({players.length})
         </div>
         {loading ? (
-          <div className="text-gray-600 text-sm text-center py-4">Loading...</div>
+          <div className="text-gray-300 text-sm text-center py-4">Loading...</div>
         ) : (
           <div className="space-y-2">
             {players.map((p) => {
@@ -473,11 +473,11 @@ export default function MultiplayerLobby({
                     )}
                     <span className={`flex-1 font-bold text-sm ${isMe ? "text-emerald-400" : "text-white"}`}>
                       {p.display_name}
-                      {isMe && <span className="text-gray-600 font-normal text-xs ml-1">(you)</span>}
+                      {isMe && <span className="text-gray-300 font-normal text-xs ml-1">(you)</span>}
                     </span>
                     {/* Avg OVR + Team Rating */}
                     {p.avg_ovr !== null && (
-                      <span className="text-xs font-bold text-gray-400 bg-gray-800 px-2 py-0.5 rounded">
+                      <span className="text-xs font-bold text-white bg-gray-800 px-2 py-0.5 rounded">
                         OVR {p.avg_ovr}
                       </span>
                     )}
@@ -498,7 +498,7 @@ export default function MultiplayerLobby({
                     </span>
                     {/* Expand arrow */}
                     {p.squad && (
-                      <svg className={`w-3 h-3 text-gray-600 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className={`w-3 h-3 text-gray-300 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     )}
@@ -507,7 +507,7 @@ export default function MultiplayerLobby({
                   {/* Squad preview */}
                   {isExpanded && p.squad && (
                     <div className="px-3 pb-3 pt-1 border-t border-gray-800/50 bg-gray-800/20">
-                      <div className="text-[10px] font-bold tracking-widest text-gray-600 uppercase mb-2">
+                      <div className="text-[10px] font-bold tracking-widest text-gray-300 uppercase mb-2">
                         Squad
                         {p.team_strength !== null && (
                           <span className="ml-2 text-blue-400 normal-case font-bold">
@@ -530,7 +530,7 @@ export default function MultiplayerLobby({
                               {player.assignedPosition}
                             </span>
                             <span className="truncate text-gray-300">{player.name}</span>
-                            <span className="text-gray-600 font-bold shrink-0">{player.overall}</span>
+                            <span className="text-gray-300 font-bold shrink-0">{player.overall}</span>
                           </div>
                         ))}
                       </div>
@@ -540,7 +540,7 @@ export default function MultiplayerLobby({
               );
             })}
             {players.length < 2 && (
-              <div className="text-center text-gray-600 text-xs py-2">
+              <div className="text-center text-gray-300 text-xs py-2">
                 Waiting for others to join...
               </div>
             )}
@@ -564,7 +564,7 @@ export default function MultiplayerLobby({
       {squadSubmitted && !isSimulating && (
         <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl p-4 mb-3 text-center">
           <div className="text-emerald-400 font-bold text-sm mb-0.5">Squad Submitted</div>
-          <div className="text-gray-500 text-xs">
+          <div className="text-gray-200 text-xs">
             {allReady
               ? isHost
                 ? "All players ready — you can start the simulation!"
@@ -623,7 +623,7 @@ export default function MultiplayerLobby({
       )}
 
       {!isHost && squadSubmitted && (
-        <p className="text-center text-xs text-gray-600 mb-3">
+        <p className="text-center text-xs text-gray-300 mb-3">
           {myPlayer?.display_name && `${players.find(p => p.user_id === room?.host_id)?.display_name ?? "Host"} will start the simulation`}
         </p>
       )}
@@ -633,7 +633,7 @@ export default function MultiplayerLobby({
           e.stopPropagation();
           onLeave();
         }}
-        className="w-full py-2.5 text-sm font-bold text-gray-600 hover:text-gray-400 transition"
+        className="w-full py-2.5 text-sm font-bold text-gray-300 hover:text-gray-400 transition"
       >
         Leave Room
       </button>

@@ -279,7 +279,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
             Easy Mode
           </div>
           <h1 className="text-2xl font-black mb-2">{puzzle.title}</h1>
-          <p className="text-sm text-gray-400 mb-8">Name players who played for both clubs in each square.</p>
+          <p className="text-sm text-white mb-8">Name players who played for both clubs in each square.</p>
 
           {!mode && (
             <div className="space-y-3">
@@ -296,7 +296,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
 
           {mode === "solo" && !gameStarted && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-400 mb-2">Choose your time limit:</p>
+              <p className="text-sm text-white mb-2">Choose your time limit:</p>
               <button onClick={() => startSoloGame(180)}
                 className="w-full rounded-xl border border-gray-700 bg-gray-900 py-3 text-base font-bold text-white hover:border-green-600 hover:bg-gray-800 transition-colors">
                 3 Minute Timer
@@ -309,7 +309,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                 className="w-full rounded-xl border border-gray-700 bg-gray-900 py-3 text-base font-bold text-white hover:border-green-600 hover:bg-gray-800 transition-colors">
                 Unlimited Time
               </button>
-              <button onClick={() => setMode(null)} className="text-sm text-gray-500 hover:text-white mt-2">
+              <button onClick={() => setMode(null)} className="text-sm text-gray-200 hover:text-white mt-2">
                 Back
               </button>
             </div>
@@ -340,15 +340,15 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
               <div className="flex items-center justify-center gap-6 text-center">
                 <div>
                   <div className="text-3xl font-black text-green-400">{squaresWithCorrect}/9</div>
-                  <div className="text-xs text-gray-500">Squares</div>
+                  <div className="text-xs text-gray-200">Squares</div>
                 </div>
                 <div>
                   <div className="text-3xl font-black text-indigo-400">{totalFound}/{totalAnswers}</div>
-                  <div className="text-xs text-gray-500">Players Found</div>
+                  <div className="text-xs text-gray-200">Players Found</div>
                 </div>
                 <div>
                   <div className="text-3xl font-black text-amber-400">{pct}%</div>
-                  <div className="text-xs text-gray-500">Complete</div>
+                  <div className="text-xs text-gray-200">Complete</div>
                 </div>
               </div>
             </div>
@@ -392,7 +392,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                             <p key={a.name} className={`text-[8px] leading-tight truncate md:text-[10px] ${
                               found.includes(a.name) || (mode === "multi" && owner !== undefined)
                                 ? "text-white font-bold"
-                                : "text-gray-500"
+                                : "text-gray-200"
                             }`}>
                               {a.name}
                             </p>
@@ -439,16 +439,16 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                 {mode === "solo" ? (
                   <>
                     <div className="text-center">
-                      <div className="text-[10px] text-gray-400 md:text-xs">
+                      <div className="text-[10px] text-white md:text-xs">
                         <span className="font-bold text-green-400">{squaresWithCorrect}</span>/9
                       </div>
-                      <div className="text-[8px] text-gray-500 md:text-[10px]">Squares</div>
+                      <div className="text-[8px] text-gray-200 md:text-[10px]">Squares</div>
                     </div>
                     <div className="text-center mt-0.5">
-                      <div className="text-[10px] text-gray-400 md:text-xs">
+                      <div className="text-[10px] text-white md:text-xs">
                         <span className="font-bold text-indigo-400">{totalFound}</span>/{totalAnswers}
                       </div>
-                      <div className="text-[8px] text-gray-500 md:text-[10px]">Players</div>
+                      <div className="text-[8px] text-gray-200 md:text-[10px]">Players</div>
                     </div>
                     {timerOption !== 0 ? (
                       <div className={`text-sm font-black tabular-nums mt-0.5 md:text-base ${timeLeft <= 30 ? "text-red-400" : "text-white"}`}>
@@ -466,7 +466,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                     <div className={`text-xs font-black md:text-sm ${playerTextColors[currentPlayer]}`}>
                       {playerNames[currentPlayer]}
                     </div>
-                    <div className="text-[8px] text-gray-500 md:text-[10px]">
+                    <div className="text-[8px] text-gray-200 md:text-[10px]">
                       {currentPlayer === 0 ? "Green" : "Red"}&apos;s Turn
                     </div>
                   </div>
@@ -526,7 +526,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                             <p className="text-base font-black text-gray-300 md:text-2xl">
                               {sq.answers.length}
                             </p>
-                            <p className="text-[8px] font-bold uppercase tracking-wider text-gray-500 md:text-[10px]">
+                            <p className="text-[8px] font-bold uppercase tracking-wider text-gray-200 md:text-[10px]">
                               Player{sq.answers.length !== 1 ? "s" : ""}
                             </p>
                           </div>
@@ -577,7 +577,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                             <p className="text-base font-black text-gray-900 md:text-2xl">
                               {sq.answers.length}
                             </p>
-                            <p className="text-[8px] font-bold uppercase tracking-wider text-gray-500 md:text-[10px]">
+                            <p className="text-[8px] font-bold uppercase tracking-wider text-gray-200 md:text-[10px]">
                               Player{sq.answers.length !== 1 ? "s" : ""}
                             </p>
                           </div>
@@ -585,7 +585,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                       </div>
                       <div className="w-full text-center">
                         <span className={`text-[8px] font-bold md:text-[10px] ${
-                          allFound ? "text-amber-800" : found.length > 0 ? "text-green-800" : "text-gray-400"
+                          allFound ? "text-amber-800" : found.length > 0 ? "text-green-800" : "text-white"
                         }`}>
                           {found.length}/{sq.answers.length}
                         </span>

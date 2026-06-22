@@ -525,7 +525,7 @@ export default function SquadBuilder() {
           </select>
 
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500">Color</label>
+            <label className="text-xs text-gray-200">Color</label>
             <input
               type="color"
               value={mainColor}
@@ -536,7 +536,7 @@ export default function SquadBuilder() {
 
           <button
             onClick={resetPositions}
-            className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+            className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-bold text-white hover:text-white transition-colors"
           >
             Reset Positions
           </button>
@@ -600,13 +600,13 @@ export default function SquadBuilder() {
                   e.key === "Enter" && setEditingSubtitle(false)
                 }
                 autoFocus
-                className="mt-1 w-full bg-transparent text-center text-sm text-gray-400 outline-none border-b border-gray-700"
+                className="mt-1 w-full bg-transparent text-center text-sm text-white outline-none border-b border-gray-700"
                 placeholder="Subtitle..."
               />
             ) : (
               <p
                 onClick={() => setEditingSubtitle(true)}
-                className="mt-1 cursor-pointer text-sm text-gray-500 hover:text-gray-400 transition-colors"
+                className="mt-1 cursor-pointer text-sm text-gray-200 hover:text-gray-400 transition-colors"
               >
                 {subtitle || "Click to add subtitle"}
               </p>
@@ -753,7 +753,7 @@ export default function SquadBuilder() {
           </div>
 
           {/* Watermark */}
-          <p className="mt-2 text-right text-[10px] text-gray-600">
+          <p className="mt-2 text-right text-[10px] text-gray-300">
             knowitball.co.uk
           </p>
         </div>
@@ -775,7 +775,7 @@ export default function SquadBuilder() {
               </div>
               <button
                 onClick={() => setSelected(null)}
-                className="text-gray-500 hover:text-white transition-colors text-lg"
+                className="text-gray-200 hover:text-white transition-colors text-lg"
               >
                 &times;
               </button>
@@ -792,7 +792,7 @@ export default function SquadBuilder() {
                 className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
                   !allTime
                     ? "bg-emerald-600 text-white"
-                    : "bg-gray-800 text-gray-400 hover:text-white"
+                    : "bg-gray-800 text-white hover:text-white"
                 }`}
               >
                 Current
@@ -807,7 +807,7 @@ export default function SquadBuilder() {
                 className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
                   allTime
                     ? "bg-emerald-600 text-white"
-                    : "bg-gray-800 text-gray-400 hover:text-white"
+                    : "bg-gray-800 text-white hover:text-white"
                 }`}
               >
                 All-Time
@@ -824,7 +824,7 @@ export default function SquadBuilder() {
                 autoFocus
               />
               {searchLoading && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-200">
                   ...
                 </div>
               )}
@@ -855,7 +855,7 @@ export default function SquadBuilder() {
                           {countryFlag(r.nationality)}{" "}
                           {r.name}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-200">
                           {r.position}
                           {r.nationality ? ` · ${r.nationality}` : ""}
                         </p>
@@ -885,7 +885,7 @@ export default function SquadBuilder() {
                   <p className="text-sm font-bold text-white truncate">
                     {selectedPlayer.dbPlayer.name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-200">
                     {selectedPlayer.dbPlayer.position}
                     {selectedPlayer.dbPlayer.nationality
                       ? ` · ${countryFlag(selectedPlayer.dbPlayer.nationality)} ${selectedPlayer.dbPlayer.nationality}`
@@ -894,7 +894,7 @@ export default function SquadBuilder() {
                 </div>
                 <button
                   onClick={clearSlot}
-                  className="shrink-0 rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+                  className="shrink-0 rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-bold text-white hover:text-white transition-colors"
                 >
                   Clear
                 </button>
@@ -908,7 +908,7 @@ export default function SquadBuilder() {
                 </span>
                 <button
                   onClick={clearSlot}
-                  className="shrink-0 rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+                  className="shrink-0 rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-bold text-white hover:text-white transition-colors"
                 >
                   Clear
                 </button>
@@ -919,7 +919,7 @@ export default function SquadBuilder() {
 
         {/* ─── Instructions ─── */}
         {!selectedPlayer && (
-          <div className="mt-4 text-center text-sm text-gray-600">
+          <div className="mt-4 text-center text-sm text-gray-300">
             Drag players to reposition them. Click a player to edit their name or assign from the database.
           </div>
         )}

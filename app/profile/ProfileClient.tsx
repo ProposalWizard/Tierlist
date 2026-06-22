@@ -135,7 +135,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
             className={`group flex items-center gap-2 px-5 py-3 text-xs font-bold tracking-wide transition-all duration-300 rounded-t-xl relative ${
               activeTab === tab.key
                 ? "text-amber-400 bg-gradient-to-b from-amber-500/10 to-transparent border border-gray-800/50 border-b-transparent -mb-px"
-                : "text-gray-500 hover:text-gray-300 hover:bg-gray-900/50"
+                : "text-gray-300 hover:text-gray-300 hover:bg-gray-900/50"
             }`}
           >
             <span className="text-sm">{tab.icon}</span>
@@ -167,7 +167,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                   <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-400 animate-spin" />
                   <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-amber-500/50 animate-spin" style={{ animationDirection: "reverse", animationDuration: "1.5s" }} />
                 </div>
-                <p className="text-sm font-bold text-gray-500 animate-pulse">Loading your profile...</p>
+                <p className="text-sm font-bold text-gray-200 animate-pulse">Loading your profile...</p>
               </div>
             </div>
           ) : (
@@ -210,7 +210,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                   <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-400 animate-spin" />
                   <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-amber-500/50 animate-spin" style={{ animationDirection: "reverse", animationDuration: "1.5s" }} />
                 </div>
-                <p className="text-sm font-bold text-gray-500 animate-pulse">Loading draft data...</p>
+                <p className="text-sm font-bold text-gray-200 animate-pulse">Loading draft data...</p>
               </div>
             </div>
           ) : (
@@ -255,25 +255,25 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
       {activeTab === "saved" && (
         <div className="max-w-5xl mx-auto space-y-6">
           <section>
-            <h3 className="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
               <span className="text-base">📌</span> Bookmarked Tierlists
             </h3>
             <TierlistGrid items={saved} emptyMsg="No bookmarked tierlists." />
           </section>
 
           <section>
-            <h3 className="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
               <span className="text-base">❤️</span> Liked Tierlists
             </h3>
             <TierlistGrid items={liked} emptyMsg="No liked tierlists." />
           </section>
 
           <section>
-            <h3 className="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
               <span className="text-base">📷</span> Saved Images ({profileImages.length})
             </h3>
             {profileImages.length === 0 ? (
-              <p className="py-6 text-center text-xs italic text-gray-600">
+              <p className="py-6 text-center text-xs italic text-gray-200">
                 No saved images yet. Use &quot;Save to Profile&quot; when playing a tierlist.
               </p>
             ) : (
@@ -285,7 +285,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                     </div>
                     <div className="p-1.5">
                       {img.tierlist_title && <p className="truncate text-[10px] font-semibold text-white">{img.tierlist_title}</p>}
-                      <p className="text-[9px] text-gray-500">{new Date(img.created_at).toLocaleDateString()}</p>
+                      <p className="text-[9px] text-gray-200">{new Date(img.created_at).toLocaleDateString()}</p>
                     </div>
                     <button
                       onClick={e => { e.stopPropagation(); setConfirmDeleteImageId(img.id); }}
@@ -335,7 +335,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
             <h3 className="text-lg font-bold text-white">Delete this saved image?</h3>
-            <p className="mt-2 text-sm text-gray-400">This permanently removes the image. This cannot be undone.</p>
+            <p className="mt-2 text-sm text-gray-200">This permanently removes the image. This cannot be undone.</p>
             <div className="mt-5 flex gap-3">
               <button onClick={() => deleteProfileImage(confirmDeleteImageId)} disabled={!!deletingImageId} className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50">
                 {deletingImageId ? "Deleting..." : "Delete"}
@@ -351,7 +351,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
             <h3 className="text-lg font-bold text-white">Delete this tierlist?</h3>
-            <p className="mt-2 text-sm text-gray-400">This permanently deletes the tierlist and all its images. This cannot be undone.</p>
+            <p className="mt-2 text-sm text-gray-200">This permanently deletes the tierlist and all its images. This cannot be undone.</p>
             <div className="mt-5 flex gap-3">
               <button onClick={() => deleteTierlist(confirmId)} disabled={!!deletingId} className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50">
                 {deletingId ? "Deleting..." : "Delete"}
@@ -393,7 +393,7 @@ function ObjectiveDetail({ obj, isDone }: { obj: AdminObjective; isDone: boolean
       <div className="flex-1 min-w-0">
         <h4 className="text-lg font-black text-white mb-2">{obj.title}</h4>
         {obj.description && (
-          <p className="text-sm text-gray-400 mb-4 leading-relaxed">{obj.description}</p>
+          <p className="text-sm text-gray-200 mb-4 leading-relaxed">{obj.description}</p>
         )}
         <div className="flex items-center gap-3 flex-wrap">
           {obj.xp_reward > 0 && (
@@ -410,7 +410,7 @@ function ObjectiveDetail({ obj, isDone }: { obj: AdminObjective; isDone: boolean
             </div>
           ) : (
             <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-1.5">
-              <span className="text-gray-400 text-xs font-bold">In Progress</span>
+              <span className="text-gray-200 text-xs font-bold">In Progress</span>
             </div>
           )}
           {!isDone && obj.expires_at && (
@@ -422,7 +422,7 @@ function ObjectiveDetail({ obj, isDone }: { obj: AdminObjective; isDone: boolean
       </div>
       {obj.card_image_url && (
         <div className="shrink-0 text-center">
-          <div className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Reward</div>
+          <div className="text-[9px] font-bold text-gray-200 uppercase tracking-wider mb-2">Reward</div>
           <img
             src={obj.card_image_url}
             alt={obj.card_name || "Card Reward"}
@@ -478,7 +478,7 @@ function CustomObjectivesSection() {
     <div className="rounded-xl border border-gray-800/50 bg-gray-900 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-4 pb-0">
-        <h3 className="text-[10px] font-bold tracking-[0.25em] text-gray-400 uppercase">
+        <h3 className="text-[10px] font-bold tracking-[0.25em] text-gray-200 uppercase">
           Objectives
         </h3>
         <span className="text-[10px] font-bold text-amber-400">
@@ -493,7 +493,7 @@ function CustomObjectivesSection() {
           className={`px-4 py-2 text-xs font-bold transition border-b-2 -mb-px ${
             activeTab === "active"
               ? "text-white border-emerald-500"
-              : "text-gray-500 border-transparent hover:text-gray-300"
+              : "text-gray-300 border-transparent hover:text-gray-300"
           }`}
         >
           Active {activeList.length > 0 && <span className="ml-1 text-[10px] opacity-70">({activeList.length})</span>}
@@ -503,7 +503,7 @@ function CustomObjectivesSection() {
           className={`px-4 py-2 text-xs font-bold transition border-b-2 -mb-px ${
             activeTab === "completed"
               ? "text-white border-emerald-500"
-              : "text-gray-500 border-transparent hover:text-gray-300"
+              : "text-gray-300 border-transparent hover:text-gray-300"
           }`}
         >
           Completed {completedList.length > 0 && <span className="ml-1 text-[10px] opacity-70">({completedList.length})</span>}
@@ -511,7 +511,7 @@ function CustomObjectivesSection() {
       </div>
 
       {currentList.length === 0 ? (
-        <div className="px-5 py-10 text-center text-xs text-gray-600">
+        <div className="px-5 py-10 text-center text-xs text-gray-200">
           {activeTab === "active" ? "No active objectives right now." : "No completed objectives yet."}
         </div>
       ) : (
@@ -580,7 +580,7 @@ function TierlistGrid({ items, showDelete = false, emptyMsg, onDelete }: {
     return (
       <div className="py-12 text-center">
         <div className="text-4xl mb-3 opacity-30">🖼️</div>
-        <p className="text-xs italic text-gray-600">{emptyMsg}</p>
+        <p className="text-xs italic text-gray-200">{emptyMsg}</p>
       </div>
     );
   }
@@ -598,9 +598,9 @@ function TierlistGrid({ items, showDelete = false, emptyMsg, onDelete }: {
             </div>
             <div className="p-1.5">
               <p className="truncate text-[10px] font-semibold text-white">{tl.title}</p>
-              <p className="text-[9px] text-gray-500">{new Date(tl.created_at).toLocaleDateString()}</p>
+              <p className="text-[9px] text-gray-200">{new Date(tl.created_at).toLocaleDateString()}</p>
               {tl.view_count !== undefined && (
-                <p className="text-[9px] text-gray-600">{tl.view_count.toLocaleString()} views</p>
+                <p className="text-[9px] text-gray-200">{tl.view_count.toLocaleString()} views</p>
               )}
             </div>
           </Link>

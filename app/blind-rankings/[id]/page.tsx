@@ -90,7 +90,7 @@ export default async function BlindRankingPage({ params }: Props) {
     return (
       <div className="min-h-screen bg-gray-950 text-white">
         <div className="py-24 text-center">
-          <p className="text-gray-500">This blind ranking doesn&apos;t have enough players yet.</p>
+          <p className="text-gray-200">This blind ranking doesn&apos;t have enough players yet.</p>
         </div>
       </div>
     );
@@ -106,7 +106,7 @@ export default async function BlindRankingPage({ params }: Props) {
           {ranking.title}
         </h1>
         {ranking.description && (
-          <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">{ranking.description}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-white">{ranking.description}</p>
         )}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
           <LikeButton
@@ -114,7 +114,7 @@ export default async function BlindRankingPage({ params }: Props) {
             endpoint={`/api/blind-rankings/${id}/like`}
           />
           {typeof ranking.view_count === "number" && (
-            <span className="flex items-center gap-1.5 text-sm text-gray-500">
+            <span className="flex items-center gap-1.5 text-sm text-gray-200">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />

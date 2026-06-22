@@ -1365,7 +1365,7 @@ export default function AdminPanel({
         <button
           onClick={() => setTab("tierlists")}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === "tierlists" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"
+            tab === "tierlists" ? "bg-indigo-600 text-white" : "text-white hover:text-white"
           }`}
         >
           Tierlists ({tierlists.length})
@@ -1373,7 +1373,7 @@ export default function AdminPanel({
         <button
           onClick={() => setTab("categories")}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === "categories" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"
+            tab === "categories" ? "bg-indigo-600 text-white" : "text-white hover:text-white"
           }`}
         >
           Categories ({categories.length})
@@ -1381,7 +1381,7 @@ export default function AdminPanel({
         <button
           onClick={() => { setTab("vote-tierlists"); loadVotelists(); }}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === "vote-tierlists" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
+            tab === "vote-tierlists" ? "bg-purple-600 text-white" : "text-white hover:text-white"
           }`}
         >
           Vote Tierlists {votelistsLoaded ? `(${votelists.length})` : ""}
@@ -1389,7 +1389,7 @@ export default function AdminPanel({
         <button
           onClick={() => setTab("blind-rankings")}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === "blind-rankings" ? "bg-amber-600 text-white" : "text-gray-400 hover:text-white"
+            tab === "blind-rankings" ? "bg-amber-600 text-white" : "text-white hover:text-white"
           }`}
         >
           Blind Rankings
@@ -1397,7 +1397,7 @@ export default function AdminPanel({
         <button
           onClick={() => setTab("tictactoe")}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === "tictactoe" ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"
+            tab === "tictactoe" ? "bg-indigo-600 text-white" : "text-white hover:text-white"
           }`}
         >
           Tic Tac Toe
@@ -1405,7 +1405,7 @@ export default function AdminPanel({
         <button
           onClick={() => setTab("tenable")}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === "tenable" ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white"
+            tab === "tenable" ? "bg-emerald-600 text-white" : "text-white hover:text-white"
           }`}
         >
           Ten-A-Ball
@@ -1413,7 +1413,7 @@ export default function AdminPanel({
         <button
           onClick={() => setTab("objectives")}
           className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            tab === "objectives" ? "bg-amber-600 text-white" : "text-gray-400 hover:text-white"
+            tab === "objectives" ? "bg-amber-600 text-white" : "text-white hover:text-white"
           }`}
         >
           Objectives
@@ -1421,19 +1421,19 @@ export default function AdminPanel({
         <div className="ml-auto flex items-center gap-2">
           <a
             href="/admin/football/scrape"
-            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
+            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 hover:text-white transition-colors"
           >
             ⚽ Scrape Data
           </a>
           <a
             href="/admin/football/players"
-            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
+            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 hover:text-white transition-colors"
           >
             👥 Players DB
           </a>
           <a
             href="/admin/xp"
-            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
+            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 hover:text-white transition-colors"
           >
             ✨ XP & Rewards
           </a>
@@ -1454,7 +1454,7 @@ export default function AdminPanel({
                 showSaveConfirmation("Export failed");
               }
             }}
-            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
+            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 hover:text-white transition-colors"
           >
             Export Backup
           </button>
@@ -1536,7 +1536,7 @@ export default function AdminPanel({
           {categories.length > 0 && (
             <div className="mt-6">
               <h3 className="mb-3 text-sm font-bold text-white">Homepage Display Order</h3>
-              <p className="mb-4 text-xs text-gray-500">
+              <p className="mb-4 text-xs text-gray-200">
                 Control how tierlists are ordered in each category on the homepage (max 6 shown).
               </p>
               <div className="space-y-2">
@@ -1559,7 +1559,7 @@ export default function AdminPanel({
                           <option value="likes">Most liked</option>
                           <option value="manual">Manual (pin specific tierlists)</option>
                         </select>
-                        {isSaving && <span className="text-xs text-gray-500">Saving…</span>}
+                        {isSaving && <span className="text-xs text-gray-200">Saving…</span>}
                       </div>
                       {method === "manual" && (() => {
                         const pinnedIds = setting?.pinned_ids ?? [];
@@ -1569,7 +1569,7 @@ export default function AdminPanel({
                         );
                         return (
                           <div className="mt-3">
-                            <p className="mb-2 text-[10px] text-gray-500">
+                            <p className="mb-2 text-[10px] text-gray-200">
                               Select up to 6 tierlists to pin (in order). Click to add/remove. Vote tierlists are labelled.
                             </p>
                             {/* Pinned order */}
@@ -1609,7 +1609,7 @@ export default function AdminPanel({
                             {/* Results */}
                             <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800">
                               {filtered.length === 0 ? (
-                                <p className="px-3 py-2 text-[10px] text-gray-600">No results.</p>
+                                <p className="px-3 py-2 text-[10px] text-gray-300">No results.</p>
                               ) : filtered.slice(0, 30).map((item) => {
                                 const pinned = pinnedIds.includes(item.id);
                                 const canAdd = !pinned && pinnedIds.length < 6;
@@ -1632,7 +1632,7 @@ export default function AdminPanel({
                                         ? "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-900/50"
                                         : canAdd
                                         ? "text-gray-300 hover:bg-gray-700"
-                                        : "cursor-not-allowed text-gray-600"
+                                        : "cursor-not-allowed text-gray-300"
                                     }`}
                                   >
                                     <span className={`h-3.5 w-3.5 flex-shrink-0 rounded border text-[9px] flex items-center justify-center ${pinned ? "border-indigo-500 bg-indigo-600 text-white" : "border-gray-600"}`}>
@@ -1667,12 +1667,12 @@ export default function AdminPanel({
       {/* ── Tierlists tab ──────────────────────────────────────────────── */}
       {tab === "tierlists" && (
       <div>
-      <p className="mb-4 text-sm text-gray-400">
+      <p className="mb-4 text-sm text-white">
         {tierlists.length} tierlist{tierlists.length !== 1 ? "s" : ""} total
       </p>
 
       {tierlists.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-gray-600">
+        <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-gray-300">
           No tierlists yet.
         </div>
       )}
@@ -1702,7 +1702,7 @@ export default function AdminPanel({
                     <span className="flex-shrink-0 text-yellow-400 text-sm" title={`Also in: ${(tl as Tierlist & { additional_categories?: string[] }).additional_categories!.join(", ")}`}>★</span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-200">
                   {tl.category ?? "—"} ·{" "}
                   {new Date(tl.created_at).toLocaleDateString()} ·{" "}
                   👁 {(tl.view_count ?? 0).toLocaleString()}
@@ -1739,14 +1739,14 @@ export default function AdminPanel({
             {editingId === tl.id && editState && (
               <div className="border-t border-gray-700/60 p-4">
                 {editState.loading ? (
-                  <p className="py-6 text-center text-sm text-gray-400">
+                  <p className="py-6 text-center text-sm text-white">
                     Loading images…
                   </p>
                 ) : (
                   <div className="space-y-5">
                     {/* Title */}
                     <div>
-                      <label className="mb-1 block text-xs font-semibold text-gray-400">
+                      <label className="mb-1 block text-xs font-semibold text-white">
                         Title
                       </label>
                       <input
@@ -1762,7 +1762,7 @@ export default function AdminPanel({
 
                     {/* Category */}
                     <div>
-                      <label className="mb-1 block text-xs font-semibold text-gray-400">
+                      <label className="mb-1 block text-xs font-semibold text-white">
                         Category
                       </label>
                       <select
@@ -1784,10 +1784,10 @@ export default function AdminPanel({
 
                     {/* Additional Categories */}
                     <div>
-                      <label className="mb-1 block text-xs font-semibold text-gray-400">
+                      <label className="mb-1 block text-xs font-semibold text-white">
                         Additional Categories
                       </label>
-                      <p className="mb-2 text-[10px] text-gray-500">
+                      <p className="mb-2 text-[10px] text-gray-200">
                         Select extra categories this tierlist should also appear in (besides the primary one above).
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -1801,7 +1801,7 @@ export default function AdminPanel({
                                 className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                                   checked
                                     ? "border-indigo-500 bg-indigo-900/40 text-indigo-300"
-                                    : "border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-300"
+                                    : "border-gray-700 text-white hover:border-gray-500 hover:text-gray-300"
                                 }`}
                               >
                                 <input
@@ -1836,13 +1836,13 @@ export default function AdminPanel({
 
                     {/* Cover Photo */}
                     <div>
-                      <label className="mb-2 block text-xs font-semibold text-gray-400">
+                      <label className="mb-2 block text-xs font-semibold text-white">
                         Cover Photo
                       </label>
                       <div className="flex gap-4 items-start">
                         {/* Preview — matches homepage card dimensions exactly */}
                         <div className="flex-shrink-0">
-                          <p className="mb-1 text-[10px] text-gray-500">Homepage preview</p>
+                          <p className="mb-1 text-[10px] text-gray-200">Homepage preview</p>
                           <div
                             className={`h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
                               editCoverPreview
@@ -1854,7 +1854,7 @@ export default function AdminPanel({
                               <ImageWithFallback src={editCoverPreview} alt="cover preview"
                                 className="h-full w-full object-cover" />
                             ) : (
-                              <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-600">
+                              <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-300">
                                 No cover
                               </div>
                             )}
@@ -1896,7 +1896,7 @@ export default function AdminPanel({
                           )}
                           {editState.images.length > 0 &&
                             !editState.customCoverPreview && (
-                              <p className="text-xs text-gray-600">
+                              <p className="text-xs text-gray-300">
                                 Or click an image below
                               </p>
                             )}
@@ -1906,7 +1906,7 @@ export default function AdminPanel({
 
                     {/* Linked Vote Tierlist */}
                     <div>
-                      <label className="mb-1 block text-xs font-semibold text-gray-400">
+                      <label className="mb-1 block text-xs font-semibold text-white">
                         Linked Vote Tierlist
                       </label>
                       <select
@@ -1929,14 +1929,14 @@ export default function AdminPanel({
                           <option key={vl.id} value={vl.id}>{vl.title}</option>
                         ))}
                       </select>
-                      <p className="mt-1 text-[10px] text-gray-600">
+                      <p className="mt-1 text-[10px] text-gray-300">
                         Links this tierlist to a vote tierlist for cross-navigation.
                       </p>
                     </div>
 
                     {/* Linked Blind Ranking */}
                     <div>
-                      <label className="mb-1 block text-xs font-semibold text-gray-400">
+                      <label className="mb-1 block text-xs font-semibold text-white">
                         Linked Blind Ranking
                       </label>
                       <select
@@ -1959,14 +1959,14 @@ export default function AdminPanel({
                           <option key={br.id} value={br.id}>{br.title}</option>
                         ))}
                       </select>
-                      <p className="mt-1 text-[10px] text-gray-600">
+                      <p className="mt-1 text-[10px] text-gray-300">
                         Adds a &ldquo;Blind Rank This&rdquo; button on the play page that links to this blind ranking.
                       </p>
                     </div>
 
                     {/* Tiers */}
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-gray-400">Tiers</label>
+                      <label className="mb-1.5 block text-xs font-semibold text-white">Tiers</label>
                       <div className="space-y-1.5">
                         {editState.tiers.map((tier, idx) => (
                           <div key={idx} className="flex items-center gap-2">
@@ -2045,7 +2045,7 @@ export default function AdminPanel({
                     {/* Images */}
                     <div>
                       <div className="mb-2 flex items-center justify-between">
-                        <label className="block text-xs font-semibold text-gray-400">
+                        <label className="block text-xs font-semibold text-white">
                           Images ({editState.images.length + editState.stagedNewImages.length})
                         </label>
                         <label className="cursor-pointer rounded-lg border border-indigo-700 bg-indigo-900/30 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-800/40 transition-colors">
@@ -2071,7 +2071,7 @@ export default function AdminPanel({
                         </label>
                       </div>
                       {editState.images.length === 0 && editState.stagedNewImages.length === 0 ? (
-                        <p className="text-xs italic text-gray-600">
+                        <p className="text-xs italic text-gray-300">
                           No images in this tierlist.
                         </p>
                       ) : (
@@ -2154,7 +2154,7 @@ export default function AdminPanel({
                                             ✂
                                           </button>
                                         </div>
-                                        <p className="max-w-[80px] truncate text-center text-[10px] text-gray-500">
+                                        <p className="max-w-[80px] truncate text-center text-[10px] text-gray-200">
                                           {img.name}
                                         </p>
                                       </div>
@@ -2186,7 +2186,7 @@ export default function AdminPanel({
                                     >
                                       ×
                                     </button>
-                                    <p className="max-w-[80px] truncate text-center text-[10px] text-gray-500 mt-1">
+                                    <p className="max-w-[80px] truncate text-center text-[10px] text-gray-200 mt-1">
                                       {img.name}
                                     </p>
                                   </div>
@@ -2194,7 +2194,7 @@ export default function AdminPanel({
                               </div>
                             </SortableContext>
                           </DndContext>
-                          <p className="mt-1.5 text-xs text-gray-600">
+                          <p className="mt-1.5 text-xs text-gray-300">
                             Drag to reorder · click to set as cover · hover × to remove
                           </p>
                         </>
@@ -2255,7 +2255,7 @@ export default function AdminPanel({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
             <h3 className="text-lg font-bold text-white">Delete Tierlist?</h3>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="mt-2 text-sm text-white">
               This will permanently delete the tierlist, all its images, and the
               associated storage files. This cannot be undone.
             </p>
@@ -2320,7 +2320,7 @@ export default function AdminPanel({
                       <option key={tl.id} value={tl.id}>{tl.title}</option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-gray-500">
+                  <p className="text-[10px] text-gray-200">
                     Creates a new vote tierlist with the same title, category, cover, tiers, and images. The original tierlist is kept.
                   </p>
                   <div className="flex gap-2">
@@ -2384,7 +2384,7 @@ export default function AdminPanel({
               </div>
               {/* Tier editor */}
               <div>
-                <p className="mb-1.5 text-xs font-semibold text-gray-400">Tiers</p>
+                <p className="mb-1.5 text-xs font-semibold text-white">Tiers</p>
                 <div className="space-y-1.5">
                   {newVoteTiers.map((tier, idx) => (
                     <div key={idx} className="flex items-center gap-2">
@@ -2428,7 +2428,7 @@ export default function AdminPanel({
 
               {/* Images section */}
               <div>
-                <p className="mb-1.5 text-xs font-semibold text-gray-400">Images</p>
+                <p className="mb-1.5 text-xs font-semibold text-white">Images</p>
                 {newVoteImageFiles.length > 0 && (
                   <div className="mb-2 flex flex-wrap gap-1.5">
                     {newVoteImageFiles.map((f, i) => (
@@ -2458,7 +2458,7 @@ export default function AdminPanel({
                       }}
                     />
                   </label>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-200">
                     {newVoteImageFiles.length > 0 ? `${newVoteImageFiles.length} image${newVoteImageFiles.length === 1 ? "" : "s"} ready` : "Optional — add after creation too"}
                   </span>
                 </div>
@@ -2493,7 +2493,7 @@ export default function AdminPanel({
                     </select>
                     <button
                       onClick={() => { setNewVoteShowImport(false); setNewVoteImportSourceId(""); }}
-                      className="text-xs text-gray-400 hover:text-white"
+                      className="text-xs text-white hover:text-white"
                     >
                       Cancel import
                     </button>
@@ -2514,9 +2514,9 @@ export default function AdminPanel({
             </div>
           )}
 
-          {!votelistsLoaded && <p className="text-sm text-gray-500">Loading…</p>}
+          {!votelistsLoaded && <p className="text-sm text-gray-200">Loading…</p>}
           {votelistsLoaded && votelists.length === 0 && (
-            <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-gray-600">
+            <div className="rounded-xl border border-dashed border-gray-700 p-16 text-center text-sm italic text-gray-300">
               No vote tierlists yet.
             </div>
           )}
@@ -2545,7 +2545,7 @@ export default function AdminPanel({
                           {savingVoteTitle ? "…" : "Save"}
                         </button>
                         <button onClick={() => setEditingVoteTitleId(null)}
-                          className="rounded border border-gray-600 px-2 py-1 text-xs text-gray-400 hover:text-white">
+                          className="rounded border border-gray-600 px-2 py-1 text-xs text-white hover:text-white">
                           ✕
                         </button>
                       </div>
@@ -2556,16 +2556,16 @@ export default function AdminPanel({
                         title="Click to rename"
                       >
                         <p className="truncate text-sm font-semibold text-white group-hover:text-purple-300">{vl.title}</p>
-                        <span className="text-[10px] text-gray-600 opacity-0 group-hover:opacity-100">✏️</span>
+                        <span className="text-[10px] text-gray-300 opacity-0 group-hover:opacity-100">✏️</span>
                       </button>
                     )}
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-xs font-semibold ${vl.is_active ? "text-green-400" : "text-gray-500"}`}>
+                      <span className={`text-xs font-semibold ${vl.is_active ? "text-green-400" : "text-gray-200"}`}>
                         {vl.is_active ? "Active" : "Inactive"}
                       </span>
-                      <span className="text-xs text-gray-600">· {new Date(vl.created_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-gray-300">· {new Date(vl.created_at).toLocaleDateString()}</span>
                       {voteImagesMap[vl.id] !== undefined && (
-                        <span className="text-xs text-gray-600">· {voteImagesMap[vl.id].length} images</span>
+                        <span className="text-xs text-gray-300">· {voteImagesMap[vl.id].length} images</span>
                       )}
                     </div>
                   </div>
@@ -2597,15 +2597,15 @@ export default function AdminPanel({
                 {expandedVoteId === vl.id && voteEditState && voteEditState.voteId === vl.id && (
                   <div className="border-t border-gray-700/60 p-4 space-y-4">
                     {voteEditState.loading ? (
-                      <p className="text-sm text-gray-500">Loading…</p>
+                      <p className="text-sm text-gray-200">Loading…</p>
                     ) : (
                       <>
                         {/* Cover photo */}
                         <div>
-                          <p className="mb-2 text-xs font-semibold text-gray-400">Cover Photo</p>
+                          <p className="mb-2 text-xs font-semibold text-white">Cover Photo</p>
                           <div className="flex gap-4 items-start">
                             <div className="flex-shrink-0">
-                              <p className="mb-1 text-[10px] text-gray-500">Homepage preview</p>
+                              <p className="mb-1 text-[10px] text-gray-200">Homepage preview</p>
                               <div className={`h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
                                 getVoteCoverPreview() ? "border-purple-500" : "border-gray-700 bg-gray-800"
                               }`}>
@@ -2613,7 +2613,7 @@ export default function AdminPanel({
                                   <ImageWithFallback src={getVoteCoverPreview()!} alt="cover preview"
                                     className="h-full w-full object-cover" />
                                 ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-600">No cover</div>
+                                  <div className="flex h-full w-full items-center justify-center text-xs italic text-gray-300">No cover</div>
                                 )}
                               </div>
                             </div>
@@ -2663,7 +2663,7 @@ export default function AdminPanel({
                           {/* Pick cover from existing images */}
                           {voteEditState.images.filter((i) => !i.isNew).length > 0 && (
                             <div className="mt-2">
-                              <p className="mb-1.5 text-[10px] text-gray-500">Or pick from existing images:</p>
+                              <p className="mb-1.5 text-[10px] text-gray-200">Or pick from existing images:</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {voteEditState.images.filter((i) => !i.isNew).map((img) => {
                                   const isSelected = voteEditState.selectedCoverImageId === img.id;
@@ -2705,7 +2705,7 @@ export default function AdminPanel({
 
                         {/* Category */}
                         <div>
-                          <p className="mb-2 text-xs font-semibold text-gray-400">Category</p>
+                          <p className="mb-2 text-xs font-semibold text-white">Category</p>
                           <select
                             value={voteEditState.category || (categories.length > 0 ? categories[0].name : "General")}
                             onChange={(e) => setVoteEditState((p) => p ? { ...p, category: e.target.value, isDirty: true } : p)}
@@ -2740,7 +2740,7 @@ export default function AdminPanel({
 
                         {/* Tier editing */}
                         <div>
-                          <p className="mb-2 text-xs font-semibold text-gray-400">Tiers</p>
+                          <p className="mb-2 text-xs font-semibold text-white">Tiers</p>
                           <div className="space-y-1.5 mb-3">
                             {voteEditState.tiers.map((tier, idx) => (
                               <div key={idx} className="flex items-center gap-2">
@@ -2806,9 +2806,9 @@ export default function AdminPanel({
                           </div>
                         </div>
 
-                        <p className="text-xs font-semibold text-gray-400">Images ({voteEditState.images.length})</p>
+                        <p className="text-xs font-semibold text-white">Images ({voteEditState.images.length})</p>
                         {voteEditState.images.length === 0 ? (
-                          <p className="text-xs italic text-gray-600">No images yet. Add some below.</p>
+                          <p className="text-xs italic text-gray-300">No images yet. Add some below.</p>
                         ) : (
                           <>
                             <DndContext
@@ -2883,7 +2883,7 @@ export default function AdminPanel({
                                               });
                                             }}
                                             placeholder="Name"
-                                            className="mt-0.5 w-20 rounded border border-transparent bg-transparent px-0.5 text-center text-[10px] text-gray-400 placeholder-gray-600 hover:border-gray-600 focus:border-purple-500 focus:bg-gray-800 focus:outline-none"
+                                            className="mt-0.5 w-20 rounded border border-transparent bg-transparent px-0.5 text-center text-[10px] text-white placeholder-gray-600 hover:border-gray-600 focus:border-purple-500 focus:bg-gray-800 focus:outline-none"
                                             onClick={(e) => e.stopPropagation()}
                                             onPointerDown={(e) => e.stopPropagation()}
                                           />
@@ -2894,7 +2894,7 @@ export default function AdminPanel({
                                 </div>
                               </SortableContext>
                             </DndContext>
-                            <p className="mt-1.5 text-xs text-gray-600">
+                            <p className="mt-1.5 text-xs text-gray-300">
                               Drag to reorder · hover × to remove · ✂ to crop · green border = new, amber = cropped
                             </p>
                           </>
@@ -2928,7 +2928,7 @@ export default function AdminPanel({
                               }}
                             />
                           </label>
-                          <p className="text-[10px] text-gray-500 text-center">
+                          <p className="text-[10px] text-gray-200 text-center">
                             New images upload when you click Save Changes.
                           </p>
                         </div>
@@ -2978,7 +2978,7 @@ export default function AdminPanel({
                               </button>
                               <button
                                 onClick={() => { setImportingVoteId(null); setImportSourceId(""); }}
-                                className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:text-white">
+                                className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:text-white">
                                 Cancel
                               </button>
                             </div>
@@ -2986,7 +2986,7 @@ export default function AdminPanel({
                         ) : (
                           <button
                             onClick={() => setImportingVoteId(vl.id)}
-                            className="w-full rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:border-purple-600 hover:text-purple-300 text-left">
+                            className="w-full rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-semibold text-white hover:border-purple-600 hover:text-purple-300 text-left">
                             ↙ Import images from existing tierlist
                           </button>
                         )}
@@ -2999,7 +2999,7 @@ export default function AdminPanel({
                             ) : voteEditState.isDirty ? (
                               <span className="text-yellow-400">● Unsaved changes</span>
                             ) : (
-                              <span className="text-gray-500">No unsaved changes</span>
+                              <span className="text-gray-200">No unsaved changes</span>
                             )}
                           </div>
                           <div className="flex gap-2">
@@ -3030,7 +3030,7 @@ export default function AdminPanel({
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
               <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
                 <h3 className="text-lg font-bold text-white">Delete Vote Tierlist?</h3>
-                <p className="mt-2 text-sm text-gray-400">
+                <p className="mt-2 text-sm text-white">
                   This will permanently delete the vote tierlist, all its images, and all votes. This cannot be undone.
                 </p>
                 <div className="mt-5 flex gap-3">
@@ -3076,7 +3076,7 @@ export default function AdminPanel({
                   <option key={tl.id} value={tl.id}>{tl.title}</option>
                 ))}
               </select>
-              <p className="text-[10px] text-gray-500">
+              <p className="text-[10px] text-gray-200">
                 Creates a new blind ranking with 10 slots, copying the title, category, cover, images, and face detection setting. The original tierlist is kept and auto-linked. If you want more or fewer slots, edit the blind ranking after creating it.
               </p>
               <div className="flex gap-2">

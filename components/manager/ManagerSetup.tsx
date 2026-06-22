@@ -15,8 +15,8 @@ export default function ManagerSetup({ onStart }: Props) {
       {/* Subtle nav */}
       <div className="border-b border-gray-900/50 backdrop-blur-sm sticky top-0 z-10 bg-black/60">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">← knowitball</Link>
-          <Link href="/draft" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">draft mode →</Link>
+          <Link href="/" className="text-xs text-gray-300 hover:text-gray-400 transition-colors">← knowitball</Link>
+          <Link href="/draft" className="text-xs text-gray-300 hover:text-gray-400 transition-colors">draft mode →</Link>
         </div>
       </div>
 
@@ -30,14 +30,14 @@ export default function ManagerSetup({ onStart }: Props) {
           <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
             The Chairman
           </h1>
-          <p className="text-gray-500 text-sm mt-3 max-w-md mx-auto">
+          <p className="text-gray-200 text-sm mt-3 max-w-md mx-auto">
             £500M to build your squad. 38 matches to prove yourself.
           </p>
         </div>
 
         {/* How it works */}
         <div className="bg-gradient-to-br from-gray-900 to-gray-900/50 rounded-2xl border border-gray-800/50 p-5 mb-6">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">How it works</h3>
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">How it works</h3>
           <div className="space-y-2.5 text-sm">
             <div className="flex gap-3">
               <span className="text-amber-400 font-black">1</span>
@@ -60,7 +60,7 @@ export default function ManagerSetup({ onStart }: Props) {
 
         {/* Formation picker */}
         <div className="bg-gray-900 rounded-2xl border border-gray-800/50 p-5 mb-6">
-          <h3 className="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-3">Formation</h3>
+          <h3 className="text-[10px] font-bold tracking-widest text-gray-200 uppercase mb-3">Formation</h3>
           <div className="grid grid-cols-4 gap-2">
             {FORMATIONS.map(f => (
               <button
@@ -69,7 +69,7 @@ export default function ManagerSetup({ onStart }: Props) {
                 className={`py-3 rounded-lg text-sm font-bold transition-all border-2 ${
                   formation === f.name
                     ? "border-amber-500 bg-amber-500/10 text-amber-300 scale-105"
-                    : "border-gray-800 bg-gray-950 text-gray-500 hover:border-gray-700"
+                    : "border-gray-800 bg-gray-950 text-gray-200 hover:border-gray-700"
                 }`}
               >
                 {f.name}
@@ -86,7 +86,7 @@ export default function ManagerSetup({ onStart }: Props) {
           Start Career →
         </button>
 
-        <p className="text-center text-[10px] text-gray-700 mt-4">
+        <p className="text-center text-[10px] text-gray-300 mt-4">
           A separate experiment from <Link href="/draft" className="underline">Draft Mode</Link> — your draft progress is safe.
         </p>
       </div>

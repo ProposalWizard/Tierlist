@@ -198,7 +198,7 @@ export default function ScrapeSofifaPage() {
       <div className="flex items-center gap-3 mb-6">
         <Link
           href="/admin/football"
-          className="text-gray-400 hover:text-white text-sm"
+          className="text-white hover:text-white text-sm"
         >
           &larr; Football Admin
         </Link>
@@ -230,7 +230,7 @@ export default function ScrapeSofifaPage() {
 
       {/* Available versions */}
       {versions && (
-        <div className="mb-6 text-sm text-gray-400">
+        <div className="mb-6 text-sm text-white">
           <p className="mb-1">
             Available editions ({versions.length}): {columnCount} data columns
           </p>
@@ -258,7 +258,7 @@ export default function ScrapeSofifaPage() {
                   <div className="font-medium">
                     {year >= 2024 ? "FC" : "FIFA"} {String(year % 100).padStart(2, "0")}
                   </div>
-                  <div className={count > 0 ? "text-green-400" : "text-gray-600"}>
+                  <div className={count > 0 ? "text-green-400" : "text-gray-300"}>
                     {count > 0 ? `${count.toLocaleString()}` : "—"}
                   </div>
                 </div>
@@ -271,7 +271,7 @@ export default function ScrapeSofifaPage() {
       {/* Scrape buttons */}
       <div className="mb-8">
         <h2 className="text-lg font-semibold mb-3">Scrape from SoFIFA</h2>
-        <p className="text-sm text-gray-400 mb-3">
+        <p className="text-sm text-white mb-3">
           Each edition takes 2-5 minutes (~300 pages of 60 players). Click one
           at a time.
         </p>
@@ -314,7 +314,7 @@ export default function ScrapeSofifaPage() {
         <h2 className="text-lg font-semibold mb-3">
           Import from File (Fallback)
         </h2>
-        <p className="text-sm text-gray-400 mb-3">
+        <p className="text-sm text-white mb-3">
           If SoFIFA blocks server requests, scrape using Google Colab or the
           Python scraper, then upload the CSV/JSON here.
         </p>
@@ -334,7 +334,7 @@ export default function ScrapeSofifaPage() {
             ref={fileRef}
             type="file"
             accept=".csv,.json"
-            className="text-sm text-gray-400"
+            className="text-sm text-white"
           />
           <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer select-none">
             <input

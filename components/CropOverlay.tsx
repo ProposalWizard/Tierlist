@@ -224,8 +224,8 @@ function FreeformCrop({ imageUrl, imageName, onCrop, onCancel }: { imageUrl: str
         </div>
       )}
 
-      {!naturalSize && !error && <p className="text-sm text-gray-500">Loading image...</p>}
-      <p className="mt-3 text-xs text-gray-500">Press Esc to cancel</p>
+      {!naturalSize && !error && <p className="text-sm text-gray-200">Loading image...</p>}
+      <p className="mt-3 text-xs text-gray-200">Press Esc to cancel</p>
     </div>
   );
 }
@@ -387,19 +387,19 @@ function FixedCrop({ imageUrl, imageName, onCrop, onCancel, aspectRatio }: { ima
         </div>
       )}
 
-      {!naturalSize && !error && <p className="text-sm text-gray-500">Loading image...</p>}
+      {!naturalSize && !error && <p className="text-sm text-gray-200">Loading image...</p>}
 
       {naturalSize && (
         <div className="mt-3 flex items-center gap-3">
-          <span className="text-xs text-gray-500">Zoom</span>
+          <span className="text-xs text-gray-200">Zoom</span>
           <input type="range" min={Math.max(CROP_W / naturalSize.w, CROP_H / naturalSize.h)} max={5} step={0.01} value={zoom}
             onChange={(e) => { const z = parseFloat(e.target.value); setZoom(z); setOffset((prev) => clampOffset(prev.x, prev.y, z)); }}
             className="w-40 accent-indigo-500" />
-          <span className="w-10 text-right text-xs text-gray-400">{Math.round(zoom * 100)}%</span>
+          <span className="w-10 text-right text-xs text-white">{Math.round(zoom * 100)}%</span>
         </div>
       )}
 
-      <p className="mt-3 text-xs text-gray-500">Press Esc to cancel</p>
+      <p className="mt-3 text-xs text-gray-200">Press Esc to cancel</p>
     </div>
   );
 }

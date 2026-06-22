@@ -115,12 +115,12 @@ export default function XPProgressBar({ progression }: Props) {
           <div className="flex items-center gap-4 flex-shrink-0">
             <div className="text-right">
               <div className="text-3xl font-black text-amber-400 leading-none">Lv {level}</div>
-              <div className="text-[11px] text-gray-500 mt-0.5">
+              <div className="text-[11px] text-gray-200 mt-0.5">
                 {totalXp.toLocaleString()} XP total
               </div>
             </div>
             <span
-              className={`text-[10px] font-bold tabular-nums ${daysLeft <= 14 ? "text-red-400" : "text-gray-600"}`}
+              className={`text-[10px] font-bold tabular-nums ${daysLeft <= 14 ? "text-red-400" : "text-gray-200"}`}
             >
               {daysLeft}d left
             </span>
@@ -134,7 +134,7 @@ export default function XPProgressBar({ progression }: Props) {
             <button
               onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
               disabled={pageIndex === 0}
-              className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-white hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -151,7 +151,7 @@ export default function XPProgressBar({ progression }: Props) {
             <div className="flex-1 flex flex-col gap-2 min-w-0">
               <div className="flex justify-between text-xs font-black">
                 <span className="text-amber-400">Lv {leftCard.unlock_value}</span>
-                {rightCard && <span className="text-gray-500">Lv {rightCard.unlock_value}</span>}
+                {rightCard && <span className="text-gray-200">Lv {rightCard.unlock_value}</span>}
               </div>
               <div className="relative h-3.5 bg-gray-800 rounded-full overflow-hidden">
                 <div
@@ -162,7 +162,7 @@ export default function XPProgressBar({ progression }: Props) {
               </div>
               <div className="text-center text-[11px] font-semibold">
                 {rightCard && level < (rightCard.unlock_value ?? 999) ? (
-                  <span className="text-gray-400">
+                  <span className="text-gray-200">
                     {(rightCard.unlock_value ?? 0) - level} level
                     {(rightCard.unlock_value ?? 0) - level !== 1 ? "s" : ""} to next card
                   </span>
@@ -186,7 +186,7 @@ export default function XPProgressBar({ progression }: Props) {
             <button
               onClick={() => setPageIndex((p) => Math.min(pairs.length - 1, p + 1))}
               disabled={pageIndex === pairs.length - 1}
-              className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-white hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -198,10 +198,10 @@ export default function XPProgressBar({ progression }: Props) {
         {/* Per-level XP bar */}
         <div className="relative pt-4 border-t border-gray-800/40">
           <div className="flex justify-between mb-1.5">
-            <span className="text-[11px] text-gray-500 font-semibold">
+            <span className="text-[11px] text-gray-200 font-semibold">
               {currentXp.toLocaleString()} / {xpToNext.toLocaleString()} XP this level
             </span>
-            <span className="text-[11px] text-gray-600">
+            <span className="text-[11px] text-gray-200">
               Lv {level} &rarr; {level + 1}
             </span>
           </div>
@@ -255,7 +255,7 @@ export default function XPProgressBar({ progression }: Props) {
               )}
               {!expandedReward.unlocked && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-900/65 rounded-2xl">
-                  <svg className="w-14 h-14 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-14 h-14 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
                       d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
@@ -269,7 +269,7 @@ export default function XPProgressBar({ progression }: Props) {
               <p className="text-white font-bold text-lg">
                 {expandedReward.unlocked ? expandedReward.name : "???"}
               </p>
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-gray-200 text-sm mt-1">
                 {expandedReward.unlocked
                   ? "Unlocked!"
                   : `Unlocks at Level ${expandedReward.unlock_value}`}
@@ -325,7 +325,7 @@ function MilestoneCard({
         )}
         {!isUnlocked && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-900/55 rounded-xl">
-            <svg className="w-7 h-7 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
@@ -348,7 +348,7 @@ function MilestoneCard({
       </div>
       <p
         className={`text-[10px] font-bold text-center leading-tight max-w-[72px] sm:max-w-[112px] ${
-          isUnlocked ? "text-gray-200" : "text-gray-600"
+          isUnlocked ? "text-gray-200" : "text-gray-200"
         }`}
       >
         {isUnlocked ? reward.name : "???"}

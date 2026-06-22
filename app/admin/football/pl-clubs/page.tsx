@@ -44,14 +44,14 @@ export default function PLClubsPage() {
       <div className="flex items-center gap-3 mb-6">
         <Link
           href="/admin/football"
-          className="text-gray-400 hover:text-white text-sm"
+          className="text-white hover:text-white text-sm"
         >
           &larr; Football Admin
         </Link>
         <h1 className="text-2xl font-bold">PL Clubs by Season</h1>
       </div>
 
-      {loading && <p className="text-gray-400">Loading clubs...</p>}
+      {loading && <p className="text-white">Loading clubs...</p>}
       {error && (
         <p className="text-red-400 bg-red-900/20 border border-red-800/50 rounded p-3">
           {error}
@@ -66,7 +66,7 @@ export default function PLClubsPage() {
               className={`px-4 py-2 rounded text-sm font-medium ${
                 viewMode === "bySeason"
                   ? "bg-emerald-600 text-white"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  : "bg-gray-800 text-white hover:bg-gray-700"
               }`}
             >
               By Season ({allYears.length})
@@ -76,14 +76,14 @@ export default function PLClubsPage() {
               className={`px-4 py-2 rounded text-sm font-medium ${
                 viewMode === "byClub"
                   ? "bg-emerald-600 text-white"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  : "bg-gray-800 text-white hover:bg-gray-700"
               }`}
             >
               By Club ({clubs.length})
             </button>
           </div>
 
-          <div className="text-sm text-gray-400 mb-4">
+          <div className="text-sm text-white mb-4">
             {clubs.length} total PL clubs across {allYears.length} seasons
           </div>
 
@@ -101,7 +101,7 @@ export default function PLClubsPage() {
                         {year >= 2024 ? "FC" : "FIFA"}{" "}
                         {String(year % 100).padStart(2, "0")}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-200">
                         {yearClubs.length} clubs
                       </span>
                       <span
@@ -144,14 +144,14 @@ export default function PLClubsPage() {
                   className="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded px-4 py-2"
                 >
                   <span className="font-medium w-48 shrink-0">{club.name}</span>
-                  <span className="text-xs text-gray-500 w-20 shrink-0">
+                  <span className="text-xs text-gray-200 w-20 shrink-0">
                     {club.seasons.length} seasons
                   </span>
                   <div className="flex gap-1 flex-wrap">
                     {club.seasons.map((y) => (
                       <span
                         key={y}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400"
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-white"
                       >
                         {String(y % 100).padStart(2, "0")}
                       </span>

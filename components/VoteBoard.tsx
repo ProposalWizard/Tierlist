@@ -228,7 +228,7 @@ export default function VoteBoard({
 
           {/* Pool */}
           <div className="bg-gray-900/30 p-3 border-t border-gray-800">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-200">
               {pool.length > 0 ? `${pool.length} remaining — tap to vote` : `All ${images.length} voted ✓`}
             </p>
             {pool.length > 0 && (
@@ -257,7 +257,7 @@ export default function VoteBoard({
           {/* Progress */}
           <div className="rounded-lg border border-gray-800 bg-gray-900/60 px-4 py-3">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-gray-500">Progress</span>
+              <span className="text-xs text-gray-200">Progress</span>
               <span className="text-sm font-semibold text-white">{votedCount}/{images.length}</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-gray-800">
@@ -299,12 +299,12 @@ export default function VoteBoard({
                           style={{ width: `${pct}%`, backgroundColor: tier.color, opacity: 0.85 }}
                         />
                       </div>
-                      <span className="w-9 flex-shrink-0 text-right text-xs text-gray-400">{pct}%</span>
+                      <span className="w-9 flex-shrink-0 text-right text-xs text-gray-200">{pct}%</span>
                       {isMyVote && <span className="text-xs text-white">✓</span>}
                     </div>
                   );
                 })}
-                <p className="mt-1 text-right text-[10px] text-gray-600">
+                <p className="mt-1 text-right text-[10px] text-gray-200">
                   {selectedImg.total_votes === 0
                     ? "No votes yet"
                     : `${selectedImg.total_votes} vote${selectedImg.total_votes === 1 ? "" : "s"}`}
@@ -312,7 +312,7 @@ export default function VoteBoard({
               </div>
 
               {/* Vote buttons */}
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-200">
                 Your vote
               </p>
               <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(tiers.length, 3)}, 1fr)` }}>
@@ -338,14 +338,14 @@ export default function VoteBoard({
               </div>
               <button
                 onClick={() => skipImage(selectedImg.id)}
-                className="w-full mt-2 rounded-lg border border-gray-600 py-2.5 text-xs font-bold text-gray-400 transition-all hover:border-gray-400 hover:text-white"
+                className="w-full mt-2 rounded-lg border border-gray-600 py-2.5 text-xs font-bold text-white transition-all hover:border-gray-400 hover:text-white"
               >
                 SKIP
               </button>
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-gray-800 p-6 text-center">
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-300">
                 Click any image to see how others voted and cast your vote
               </p>
             </div>
@@ -355,7 +355,7 @@ export default function VoteBoard({
         {/* ── Mobile progress bar (visible on mobile, hidden on desktop) ── */}
         <div className="md:hidden rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-gray-500">Progress</span>
+            <span className="text-xs text-gray-200">Progress</span>
             <span className="text-xs font-semibold text-white">{votedCount}/{images.length}</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-gray-800">
@@ -378,7 +378,7 @@ export default function VoteBoard({
               style={faceStyle(selectedImg)}
             />
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] text-gray-500">
+              <p className="text-[10px] text-gray-200">
                 {selectedImg.total_votes > 0
                   ? `${selectedImg.total_votes} vote${selectedImg.total_votes === 1 ? "" : "s"}`
                   : "No votes yet"}
@@ -389,14 +389,14 @@ export default function VoteBoard({
               className={`flex h-7 px-2 flex-shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors ${
                 showMobileStats
                   ? "border-purple-500 bg-purple-900/40 text-purple-300"
-                  : "border-gray-700 text-gray-400"
+                  : "border-gray-700 text-white"
               }`}
             >
               Stats
             </button>
             <button
               onClick={() => { setSelectedId(null); setShowMobileStats(false); }}
-              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-white"
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-white hover:text-white"
             >
               ✕
             </button>
@@ -423,7 +423,7 @@ export default function VoteBoard({
                         style={{ width: `${pct}%`, backgroundColor: tier.color, opacity: 0.85 }}
                       />
                     </div>
-                    <span className="w-8 flex-shrink-0 text-right text-[10px] text-gray-400">{pct}%</span>
+                    <span className="w-8 flex-shrink-0 text-right text-[10px] text-white">{pct}%</span>
                     {isMyVote && <span className="text-[10px] text-white">✓</span>}
                   </div>
                 );
@@ -451,7 +451,7 @@ export default function VoteBoard({
             })}
             <button
               onClick={() => skipImage(selectedImg.id)}
-              className="h-9 rounded-lg border border-gray-600 text-[10px] font-bold text-gray-400 active:scale-95"
+              className="h-9 rounded-lg border border-gray-600 text-[10px] font-bold text-white active:scale-95"
             >
               SKIP
             </button>

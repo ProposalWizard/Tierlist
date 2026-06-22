@@ -139,14 +139,14 @@ export default function AdminXPPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
+        <div className="mb-6 flex items-center gap-2 text-sm text-white">
           <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
           <span>/</span>
           <span className="text-white font-bold">XP & Rewards</span>
         </div>
 
         <h1 className="text-2xl font-black mb-2">XP & Rewards Management</h1>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-gray-200 mb-6">
           Configure level rewards, XP curve, and award amounts.
         </p>
 
@@ -159,7 +159,7 @@ export default function AdminXPPage() {
               className={`px-5 py-2.5 text-xs font-bold tracking-wide transition-all rounded-t-lg ${
                 tab === t.key
                   ? "text-amber-400 bg-gray-900 border border-gray-800/50 border-b-transparent -mb-px"
-                  : "text-gray-500 hover:text-gray-300"
+                  : "text-gray-200 hover:text-gray-300"
               }`}
             >
               {t.label}
@@ -198,7 +198,7 @@ export default function AdminXPPage() {
             )}
 
             {loading ? (
-              <div className="py-12 text-center text-gray-500">Loading rewards...</div>
+              <div className="py-12 text-center text-gray-200">Loading rewards...</div>
             ) : (
               <>
                 {/* Card Frames */}
@@ -289,11 +289,11 @@ function RewardSection({
     <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
       <div className="px-5 py-3 border-b border-gray-800 bg-gray-900/80">
         <h2 className="text-sm font-bold text-white">{title}</h2>
-        <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+        <p className="text-xs text-gray-200 mt-0.5">{subtitle}</p>
       </div>
       <div className="divide-y divide-gray-800/50">
         {rewards.length === 0 && (
-          <div className="px-5 py-6 text-center text-gray-600 text-sm">No rewards in this category</div>
+          <div className="px-5 py-6 text-center text-gray-300 text-sm">No rewards in this category</div>
         )}
         {rewards.map((r) => {
           const isEditing = editingId === r.id;
@@ -321,14 +321,14 @@ function RewardSection({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-white text-sm">{r.name}</span>
-                      <span className="text-[10px] text-gray-600 font-mono">{r.id}</span>
+                      <span className="text-[10px] text-gray-300 font-mono">{r.id}</span>
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
+                    <div className="flex items-center gap-3 mt-0.5 text-xs text-white">
                       <span className={`font-bold ${rarityColor(r.rarity)}`}>{r.rarity}</span>
                       <span>
                         {r.unlock_type === "level" ? `Level ${r.unlock_value}` : `${r.unlock_value} ${r.unlock_stat}`}
                       </span>
-                      <span className="text-gray-600">order: {r.sort_order}</span>
+                      <span className="text-gray-300">order: {r.sort_order}</span>
                     </div>
                   </div>
 
@@ -378,7 +378,7 @@ function RewardForm({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {isNew && (
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">ID</label>
+            <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">ID</label>
             <input
               value={form.id ?? ""}
               onChange={(e) => set("id", e.target.value)}
@@ -388,7 +388,7 @@ function RewardForm({
           </div>
         )}
         <div>
-          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Name</label>
+          <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">Name</label>
           <input
             value={form.name ?? ""}
             onChange={(e) => set("name", e.target.value)}
@@ -396,7 +396,7 @@ function RewardForm({
           />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Category</label>
+          <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">Category</label>
           <select
             value={form.category ?? "frame"}
             onChange={(e) => set("category", e.target.value)}
@@ -408,7 +408,7 @@ function RewardForm({
           </select>
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Rarity</label>
+          <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">Rarity</label>
           <select
             value={form.rarity ?? "bronze"}
             onChange={(e) => set("rarity", e.target.value)}
@@ -423,7 +423,7 @@ function RewardForm({
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
-          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Unlock Type</label>
+          <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">Unlock Type</label>
           <select
             value={form.unlock_type ?? "level"}
             onChange={(e) => set("unlock_type", e.target.value)}
@@ -434,7 +434,7 @@ function RewardForm({
           </select>
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Unlock Stat</label>
+          <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">Unlock Stat</label>
           <select
             value={form.unlock_stat ?? "level"}
             onChange={(e) => set("unlock_stat", e.target.value)}
@@ -452,7 +452,7 @@ function RewardForm({
           </select>
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Unlock Value</label>
+          <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">Unlock Value</label>
           <input
             type="number"
             value={form.unlock_value ?? ""}
@@ -461,7 +461,7 @@ function RewardForm({
           />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Sort Order</label>
+          <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">Sort Order</label>
           <input
             type="number"
             value={form.sort_order ?? ""}
@@ -471,7 +471,7 @@ function RewardForm({
         </div>
       </div>
       <div>
-        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Description</label>
+        <label className="block text-[10px] font-bold text-gray-200 uppercase mb-1">Description</label>
         <input
           value={form.description ?? ""}
           onChange={(e) => set("description", e.target.value || null)}
@@ -505,18 +505,18 @@ function XPCurveTab() {
     <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
       <div className="px-5 py-3 border-b border-gray-800">
         <h2 className="text-sm font-bold text-white">XP Curve (Levels 1–50)</h2>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <p className="text-xs text-gray-200 mt-0.5">
           Formula: <code className="text-amber-400">100 * level + 50 * (level - 1)</code> XP per level.
-          Modify in <code className="text-gray-400">lib/xp.ts → xpForLevel()</code>.
+          Modify in <code className="text-white">lib/xp.ts → xpForLevel()</code>.
         </p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-800/50 border-b border-gray-800">
-              <th className="px-4 py-2 text-left text-xs font-bold text-gray-500">Level</th>
-              <th className="px-4 py-2 text-right text-xs font-bold text-gray-500">XP This Level</th>
-              <th className="px-4 py-2 text-right text-xs font-bold text-gray-500">Cumulative XP</th>
+              <th className="px-4 py-2 text-left text-xs font-bold text-gray-200">Level</th>
+              <th className="px-4 py-2 text-right text-xs font-bold text-gray-200">XP This Level</th>
+              <th className="px-4 py-2 text-right text-xs font-bold text-gray-200">Cumulative XP</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-800/30">
@@ -533,7 +533,7 @@ function XPCurveTab() {
                     {lv}
                     {isMultipleOf5 && <span className="text-xs text-amber-600 ml-2">★</span>}
                   </td>
-                  <td className="px-4 py-1.5 text-right text-gray-400 tabular-nums">
+                  <td className="px-4 py-1.5 text-right text-white tabular-nums">
                     {lv <= 1 ? "—" : xpThis.toLocaleString()}
                   </td>
                   <td className="px-4 py-1.5 text-right text-gray-300 tabular-nums font-medium">
@@ -566,8 +566,8 @@ function XPAwardsTab() {
     <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
       <div className="px-5 py-3 border-b border-gray-800">
         <h2 className="text-sm font-bold text-white">XP Award Amounts</h2>
-        <p className="text-xs text-gray-500 mt-0.5">
-          How much XP is awarded per activity. Modify in <code className="text-gray-400">lib/xp.ts → XP_AWARDS</code>.
+        <p className="text-xs text-gray-200 mt-0.5">
+          How much XP is awarded per activity. Modify in <code className="text-white">lib/xp.ts → XP_AWARDS</code>.
         </p>
       </div>
       <div className="divide-y divide-gray-800/30">
@@ -575,7 +575,7 @@ function XPAwardsTab() {
           <div key={key} className="flex items-center justify-between px-5 py-3">
             <div>
               <span className="text-sm text-white font-medium">{labels[key] ?? key}</span>
-              <span className="text-xs text-gray-600 ml-2 font-mono">{key}</span>
+              <span className="text-xs text-gray-300 ml-2 font-mono">{key}</span>
             </div>
             <span className="text-sm font-black text-amber-400">+{xp} XP</span>
           </div>

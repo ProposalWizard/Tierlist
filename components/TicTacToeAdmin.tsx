@@ -61,7 +61,7 @@ function ImageField({
   };
   return (
     <div>
-      <label className="text-xs font-bold text-gray-400">{label}</label>
+      <label className="text-xs font-bold text-white">{label}</label>
       <div className="mt-1 flex gap-1.5">
         <input
           type="text"
@@ -182,9 +182,9 @@ function SquareEditor({
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-sm font-bold text-white">{rowLabel || "Row"} + {colLabel || "Col"}</p>
-            <p className="text-xs text-gray-500">{answers.length} answer{answers.length !== 1 ? "s" : ""} · {calcMaxScore(answers)} pts</p>
+            <p className="text-xs text-gray-200">{answers.length} answer{answers.length !== 1 ? "s" : ""} · {calcMaxScore(answers)} pts</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">&times;</button>
+          <button onClick={onClose} className="text-white hover:text-white text-xl">&times;</button>
         </div>
 
         {/* Quick answer input */}
@@ -243,7 +243,7 @@ function SquareEditor({
                     className={`rounded px-2 py-1 text-[10px] font-bold transition-colors ${
                       expandedAlias === a.name || (a.aliases && a.aliases.length > 0)
                         ? "bg-amber-700/40 text-amber-300"
-                        : "bg-gray-700 text-gray-400 hover:text-gray-300"
+                        : "bg-gray-700 text-white hover:text-gray-300"
                     }`}
                     title="Aliases"
                   >
@@ -278,7 +278,7 @@ function SquareEditor({
 
         {/* Bulk paste */}
         <details className="mb-4">
-          <summary className="cursor-pointer text-xs font-bold text-gray-400 hover:text-gray-300">Bulk paste answers</summary>
+          <summary className="cursor-pointer text-xs font-bold text-white hover:text-gray-300">Bulk paste answers</summary>
           <div className="mt-2">
             <textarea
               placeholder="Paste names (one per line)..."
@@ -301,7 +301,7 @@ function SquareEditor({
                 e.target.value = "";
               }}
             />
-            <p className="mt-1 text-[10px] text-gray-500">One name per line. Click outside to add all (default 3pts each).</p>
+            <p className="mt-1 text-[10px] text-gray-200">One name per line. Click outside to add all (default 3pts each).</p>
           </div>
         </details>
 
@@ -379,7 +379,7 @@ function LabelEditor({
       >
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-bold text-white">{type === "row" ? "Row" : "Column"} {index + 1}</p>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">&times;</button>
+          <button onClick={onClose} className="text-white hover:text-white text-xl">&times;</button>
         </div>
 
         <input
@@ -583,7 +583,7 @@ export default function TicTacToeAdmin() {
     return total;
   })();
 
-  if (loading) return <p className="text-gray-500 py-8 text-center">Loading puzzles...</p>;
+  if (loading) return <p className="text-gray-200 py-8 text-center">Loading puzzles...</p>;
 
   /* ── Easy TTT Builder ── */
   if (showEasyBuilder) {
@@ -596,7 +596,7 @@ export default function TicTacToeAdmin() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-white">{editing === "new" ? "New Puzzle" : "Edit Puzzle"}</h3>
-          <button onClick={() => setEditing(null)} className="text-sm text-gray-400 hover:text-white">Cancel</button>
+          <button onClick={() => setEditing(null)} className="text-sm text-white hover:text-white">Cancel</button>
         </div>
 
         {error && <p className="text-sm text-red-400 bg-red-900/20 rounded-lg px-3 py-2">{error}</p>}
@@ -605,13 +605,13 @@ export default function TicTacToeAdmin() {
         {/* Top bar: title + settings */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold text-gray-400">Title</label>
+            <label className="text-xs font-bold text-white">Title</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)}
               className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white" />
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-xs font-bold text-gray-400">Difficulty</label>
+              <label className="text-xs font-bold text-white">Difficulty</label>
               <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
                 className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white">
                 <option value="easy">Easy</option>
@@ -620,12 +620,12 @@ export default function TicTacToeAdmin() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-400">Bonus</label>
+              <label className="text-xs font-bold text-white">Bonus</label>
               <input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))}
                 className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white" />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-400">Order</label>
+              <label className="text-xs font-bold text-white">Order</label>
               <input type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value))}
                 className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-2 text-sm text-white" />
             </div>
@@ -643,7 +643,7 @@ export default function TicTacToeAdmin() {
             <input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)}
               className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white" />
           )}
-          <span className="text-xs text-gray-500 ml-auto">Total: {totalPossibleScore} pts</span>
+          <span className="text-xs text-gray-200 ml-auto">Total: {totalPossibleScore} pts</span>
         </div>
 
         {/* Info */}
@@ -668,7 +668,7 @@ export default function TicTacToeAdmin() {
                 {cl ? (
                   <p className="text-[10px] font-black text-white leading-tight break-words line-clamp-3">{cl}</p>
                 ) : (
-                  <p className="text-[9px] text-gray-600">Col {c + 1}</p>
+                  <p className="text-[9px] text-gray-300">Col {c + 1}</p>
                 )}
                 {(labelExtras.cols[c].info || labelExtras.cols[c].hint) && (
                   <div className="flex gap-0.5 mt-0.5">
@@ -692,7 +692,7 @@ export default function TicTacToeAdmin() {
                   {rowLabels[r] ? (
                     <p className="text-[10px] font-black text-white leading-tight break-words line-clamp-3">{rowLabels[r]}</p>
                   ) : (
-                    <p className="text-[9px] text-gray-600">Row {r + 1}</p>
+                    <p className="text-[9px] text-gray-300">Row {r + 1}</p>
                   )}
                   {(labelExtras.rows[r].info || labelExtras.rows[r].hint) && (
                     <div className="flex gap-0.5 mt-0.5">
@@ -720,14 +720,14 @@ export default function TicTacToeAdmin() {
                       {hasAnswers ? (
                         <>
                           <p className="text-sm font-black text-white leading-none">{sq.answers.length}</p>
-                          <p className="text-[8px] text-gray-400">{sq.answers.length === 1 ? "answer" : "answers"}</p>
+                          <p className="text-[8px] text-white">{sq.answers.length === 1 ? "answer" : "answers"}</p>
                           <p className="text-[8px] font-bold text-indigo-400">{calcMaxScore(sq.answers)}pts</p>
                           {sq.type === "custom" && (
                             <span className="text-[7px] font-bold text-amber-500">★</span>
                           )}
                         </>
                       ) : (
-                        <p className="text-[9px] text-gray-600">+</p>
+                        <p className="text-[9px] text-gray-300">+</p>
                       )}
                     </button>
                   );
@@ -850,14 +850,14 @@ export default function TicTacToeAdmin() {
       </div>
 
       {puzzles.length === 0 ? (
-        <p className="py-8 text-center text-gray-500">No puzzles yet.</p>
+        <p className="py-8 text-center text-gray-200">No puzzles yet.</p>
       ) : (
         <div className="space-y-2">
           {puzzles.map((p) => (
             <div key={p.id} className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900 px-4 py-3">
               <div>
                 <p className="font-bold text-white">{p.title}</p>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex items-center gap-2 text-xs text-gray-200">
                   <span className={`rounded-full px-2 py-0.5 font-bold ${
                     p.difficulty === "easy" ? "bg-green-900/50 text-green-400" :
                     p.difficulty === "medium" ? "bg-yellow-900/50 text-yellow-400" :

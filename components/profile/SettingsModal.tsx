@@ -81,7 +81,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
                       <div className={`w-full h-full bg-gradient-to-br ${style.gradient ?? "from-gray-700 to-gray-900"}`} />
                     )}
                   </div>
-                  <span className={`text-[9px] font-bold text-center leading-tight ${isSelected ? "text-amber-400" : "text-gray-400"}`}>
+                  <span className={`text-[9px] font-bold text-center leading-tight ${isSelected ? "text-amber-400" : "text-white"}`}>
                     {card.name}
                   </span>
                 </button>
@@ -122,7 +122,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
         onClick={e => e.stopPropagation()}
       >
         <h3 className="text-lg font-bold text-white mb-4">Account Settings</h3>
-        <p className="text-sm text-gray-500 mb-4">{email}</p>
+        <p className="text-sm text-gray-200 mb-4">{email}</p>
 
         <div className="space-y-4">
           {/* Profile Picture */}
@@ -160,7 +160,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
               maxLength={32}
               className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:outline-none"
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-200">
               You can only change your username once every 30 days.
             </p>
           </div>

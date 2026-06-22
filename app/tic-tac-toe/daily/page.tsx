@@ -44,7 +44,7 @@ export default async function DailyTicTacToePage() {
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
       <div className="text-center">
         <h1 className="text-2xl font-black mb-2">No Daily Puzzle Yet</h1>
-        <p className="text-gray-400 text-sm mb-6">Check back soon for a new daily challenge!</p>
+        <p className="text-white text-sm mb-6">Check back soon for a new daily challenge!</p>
         <Link
           href="/tic-tac-toe"
           className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-500 inline-block"

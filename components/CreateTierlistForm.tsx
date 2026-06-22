@@ -308,7 +308,7 @@ export default function CreateTierlistForm() {
                     >
                       ×
                     </button>
-                    <p className="mt-0.5 max-w-[88px] truncate text-center text-[10px] text-gray-500">
+                    <p className="mt-0.5 max-w-[88px] truncate text-center text-[10px] text-gray-200">
                       {img.name}
                     </p>
                   </div>
@@ -316,13 +316,13 @@ export default function CreateTierlistForm() {
               })}
             </div>
             {!customCover && (
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-gray-200">
                 Click any image to set it as the cover photo.
               </p>
             )}
           </div>
         ) : (
-          <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-gray-700 bg-gray-900/50 text-xs italic text-gray-600">
+          <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-gray-700 bg-gray-900/50 text-xs italic text-gray-300">
             No images yet — click &quot;+ Add Images&quot; to get started
           </div>
         )}
@@ -343,7 +343,7 @@ export default function CreateTierlistForm() {
         >
           {!coverPreviewUrl && (
             <div className="flex h-full w-full items-center justify-center">
-              <span className="text-xs italic text-gray-500 px-4 text-center leading-relaxed">
+              <span className="text-xs italic text-gray-200 px-4 text-center leading-relaxed">
                 Add images above — the first one becomes the cover automatically.
                 <br />
                 Click any image to pick a different one, or upload a custom cover below.

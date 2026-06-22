@@ -101,7 +101,7 @@ export default function SetupUsernamePage() {
           <h1 className="text-3xl font-black tracking-tight text-white">
             Welcome to Knowitball
           </h1>
-          <p className="mt-2 text-gray-400">
+          <p className="mt-2 text-white">
             Choose a username to get started
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function SetupUsernamePage() {
               maxLength={20}
               className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
-            <p className="mt-1 text-xs text-gray-500">3-20 characters, letters, numbers, underscores only</p>
+            <p className="mt-1 text-xs text-gray-200">3-20 characters, letters, numbers, underscores only</p>
           </div>
 
           {error && (

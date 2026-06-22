@@ -81,7 +81,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
             <br />
             <span className="text-emerald-400">DRAFT</span>
           </h1>
-          <p className="text-gray-400 text-xs sm:text-sm max-w-sm mx-auto">
+          <p className="text-gray-200 text-xs sm:text-sm max-w-sm mx-auto">
             Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
           </p>
         </div>
@@ -93,7 +93,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               <span className="text-lg mt-0.5">&#128274;</span>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-bold text-white mb-1">Sign in to save your history</div>
-                <p className="text-xs text-gray-500 mb-3">
+                <p className="text-xs text-gray-200 mb-3">
                   Your draft runs and stats are saved when you&apos;re signed in. Play as a guest or sign in to track your progress.
                 </p>
                 <Link
@@ -110,7 +110,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
         {/* Formation */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+          <label className="block text-xs font-bold tracking-widest text-gray-200 uppercase mb-3">
             Choose Formation
           </label>
           <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
@@ -121,7 +121,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                 className={`relative py-2.5 sm:py-3 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 ${
                   formation === f.name
                     ? "bg-emerald-600 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                    : "bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700/50"
+                    : "bg-gray-800/80 text-white hover:bg-gray-700 hover:text-gray-200 border border-gray-700/50"
                 }`}
               >
                 {f.name}
@@ -132,7 +132,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
         {/* Era Range */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+          <label className="block text-xs font-bold tracking-widest text-gray-200 uppercase mb-3">
             Era Range
           </label>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -148,13 +148,13 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-200">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-px bg-gray-600" />
-              <span className="text-gray-500 font-bold text-[10px] sm:text-xs tracking-widest uppercase">to</span>
+              <span className="text-gray-200 font-bold text-[10px] sm:text-xs tracking-widest uppercase">to</span>
               <div className="w-2 h-px bg-gray-600" />
             </div>
             <div className="flex-1 relative">
@@ -169,7 +169,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-200">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </div>
             </div>
@@ -178,7 +178,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
         {/* Game Mode */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+          <label className="block text-xs font-bold tracking-widest text-gray-200 uppercase mb-3">
             Game Mode
           </label>
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
@@ -193,7 +193,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               <div className={`text-xs sm:text-sm font-bold ${mode === "normal" ? "text-white" : "text-gray-300"}`}>
                 Normal
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "normal" ? "text-emerald-100" : "text-gray-400"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "normal" ? "text-emerald-100" : "text-gray-200"}`}>
                 Players rated as they were that season
               </div>
             </button>
@@ -208,7 +208,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               <div className={`text-xs sm:text-sm font-bold ${mode === "prime" ? "text-white" : "text-gray-300"}`}>
                 Prime
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "prime" ? "text-amber-100" : "text-gray-400"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "prime" ? "text-amber-100" : "text-gray-200"}`}>
                 Every player uses their best-ever rating
               </div>
             </button>
@@ -217,7 +217,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
         {/* Draft Order */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+          <label className="block text-xs font-bold tracking-widest text-gray-200 uppercase mb-3">
             Draft Order
           </label>
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
@@ -232,7 +232,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               <div className={`text-xs sm:text-sm font-bold ${draftOrder === "club-first" ? "text-white" : "text-gray-300"}`}>
                 Club First
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-emerald-100" : "text-gray-400"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-emerald-100" : "text-gray-200"}`}>
                 Pick a player, then choose their position
               </div>
             </button>
@@ -247,7 +247,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               <div className={`text-xs sm:text-sm font-bold ${draftOrder === "position-first" ? "text-white" : "text-gray-300"}`}>
                 Position First
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-sky-100" : "text-gray-400"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-sky-100" : "text-gray-200"}`}>
                 Fill each position slot in order
               </div>
             </button>
@@ -256,7 +256,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
         {/* Rating Visibility */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+          <label className="block text-xs font-bold tracking-widest text-gray-200 uppercase mb-3">
             Rating Visibility
           </label>
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
@@ -271,7 +271,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               <div className={`text-xs sm:text-sm font-bold ${!hiddenRatings ? "text-white" : "text-gray-300"}`}>
                 Normal
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${!hiddenRatings ? "text-emerald-100" : "text-gray-400"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${!hiddenRatings ? "text-emerald-100" : "text-gray-200"}`}>
                 Ratings visible while picking
               </div>
             </button>
@@ -286,7 +286,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               <div className={`text-xs sm:text-sm font-bold ${hiddenRatings ? "text-white" : "text-gray-300"}`}>
                 Hidden Ratings
               </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${hiddenRatings ? "text-purple-200/70" : "text-gray-400"}`}>
+              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${hiddenRatings ? "text-purple-200/70" : "text-gray-200"}`}>
                 All ratings hidden until you pick
               </div>
             </button>
@@ -295,7 +295,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
         {/* Re-spins */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">
+          <label className="block text-xs font-bold tracking-widest text-gray-200 uppercase mb-3">
             Re-spins Per Draft
           </label>
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
@@ -309,10 +309,10 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                     : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
                 }`}
               >
-                <div className={`text-sm font-bold ${respins === n ? "text-white" : "text-gray-400"}`}>
+                <div className={`text-sm font-bold ${respins === n ? "text-white" : "text-gray-200"}`}>
                   {n === 0 ? "None" : n === 1 ? "1 Re-spin" : "3 Re-spins"}
                 </div>
-                <div className={`text-[9px] sm:text-[10px] mt-0.5 ${respins === n ? "text-emerald-200/70" : "text-gray-600"}`}>
+                <div className={`text-[9px] sm:text-[10px] mt-0.5 ${respins === n ? "text-emerald-200/70" : "text-gray-200"}`}>
                   {n === 0 ? "No second chances" : n === 1 ? "One total" : "Three total"}
                 </div>
               </button>
@@ -325,7 +325,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center gap-2 mb-3">
               <div className="h-px flex-1 bg-gray-800" />
-              <label className="text-xs font-bold tracking-widest text-gray-500 uppercase">
+              <label className="text-xs font-bold tracking-widest text-gray-200 uppercase">
                 Multiplayer
               </label>
               <div className="h-px flex-1 bg-gray-800" />
@@ -384,7 +384,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
           </span>
         </button>
 
-        <p className="text-center text-gray-600 text-xs mt-4">
+        <p className="text-center text-gray-200 text-xs mt-4">
           14 spins. 11 starters + 3 subs. 38 matches.
         </p>
         <div className="flex gap-2 mt-4">

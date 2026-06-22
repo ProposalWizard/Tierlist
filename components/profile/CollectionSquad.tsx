@@ -287,7 +287,7 @@ export default function CollectionSquad({ progression }: Props) {
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                 formation === f
                   ? "bg-amber-500 text-black shadow-md shadow-amber-500/30"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700/60"
+                  : "bg-gray-800 text-white hover:bg-gray-700 hover:text-white border border-gray-700/60"
               }`}
             >
               {f}
@@ -350,7 +350,7 @@ export default function CollectionSquad({ progression }: Props) {
 
         {/* Bench */}
         <div>
-          <p className="text-[9px] font-bold tracking-widest text-gray-600 uppercase mb-2.5">
+          <p className="text-[9px] font-bold tracking-widest text-gray-300 uppercase mb-2.5">
             {unlockedCards.length === 0
               ? "Unlock cards by levelling up"
               : benchCards.length === 0
@@ -569,7 +569,7 @@ function BenchCard({
         )}
       </div>
       <span className={`text-[9px] font-medium text-center max-w-[64px] truncate leading-tight ${
-        selected ? "text-amber-400" : "text-gray-400"
+        selected ? "text-amber-400" : "text-white"
       }`}>
         {card.name}
       </span>

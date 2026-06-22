@@ -46,7 +46,7 @@ export default async function AdminPage() {
             ADMIN
           </span>
         </div>
-        <p className="mt-1 text-sm text-gray-400">
+        <p className="mt-1 text-sm text-gray-200">
           Manage all tierlists — edit titles, categories, cover photos, remove images, or delete tierlists entirely.
         </p>
       </header>

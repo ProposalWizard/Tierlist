@@ -39,7 +39,7 @@ export default function FeedbackForm() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto text-center">
-      <p className="text-xs font-medium text-gray-400 mb-2">
+      <p className="text-xs font-medium text-white mb-2">
         Any Feedback Good or Bad is Very Appreciated!
       </p>
 
@@ -54,7 +54,7 @@ export default function FeedbackForm() {
       />
 
       <div className="mt-1.5 flex items-center justify-between">
-        <span className="text-[10px] text-gray-600">
+        <span className="text-[10px] text-gray-300">
           {message.trim().length}/{MAX_LENGTH}
         </span>
 

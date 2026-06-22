@@ -119,9 +119,9 @@ export default async function VotePage({ params }: Props) {
           {tierlist.title}
         </h1>
         {tierlist.description && (
-          <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">{tierlist.description}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-gray-200">{tierlist.description}</p>
         )}
-        <p className="mt-2 text-xs text-gray-600">
+        <p className="mt-2 text-xs text-gray-200">
           Tap an image to cast your vote. You can change it at any time.
         </p>
         <div className="mt-4 flex flex-wrap justify-center gap-3">
@@ -158,7 +158,7 @@ export default async function VotePage({ params }: Props) {
       {/* ── Vote board ── */}
       <main className="mx-auto max-w-6xl px-4 py-6">
         {enrichedImages.length === 0 ? (
-          <div className="py-24 text-center text-gray-500">
+          <div className="py-24 text-center text-gray-200">
             No items to vote on yet.
           </div>
         ) : (

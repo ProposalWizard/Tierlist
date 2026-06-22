@@ -39,7 +39,7 @@ export default async function BlindRankingsPage() {
         <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
           Blind Rankings
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm text-gray-400">
+        <p className="mx-auto mt-3 max-w-md text-sm text-white">
           Players appear one at a time. Rank them without knowing who&apos;s coming next!
         </p>
       </div>
@@ -55,7 +55,7 @@ export default async function BlindRankingsPage() {
         </div>
 
         {items.length === 0 ? (
-          <div className="py-24 text-center text-gray-500">
+          <div className="py-24 text-center text-gray-200">
             No blind rankings available yet. Create one above!
           </div>
         ) : (
@@ -80,9 +80,9 @@ export default async function BlindRankingsPage() {
                     {r.title}
                   </h2>
                   {r.description && (
-                    <p className="mt-1 text-sm text-gray-400 line-clamp-2">{r.description}</p>
+                    <p className="mt-1 text-sm text-white line-clamp-2">{r.description}</p>
                   )}
-                  <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
+                  <div className="mt-3 flex items-center gap-3 text-xs text-gray-200">
                     <span>{r.num_slots} slots</span>
                     {r.category && <span>{r.category}</span>}
                     {typeof r.view_count === "number" && r.view_count > 0 && (

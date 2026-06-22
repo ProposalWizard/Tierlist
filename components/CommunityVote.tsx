@@ -87,13 +87,13 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
         <h2 className="text-lg font-bold text-white">Community&apos;s Vote</h2>
         <button
           onClick={onClose}
-          className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+          className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-semibold text-white hover:text-white hover:border-gray-500 transition-colors"
         >
           Back to Voting
         </button>
       </div>
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-gray-200">
         Each image is placed in the tier matching its average community vote.
       </p>
 
@@ -131,7 +131,7 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
                   </div>
                 ))}
                 {items.length === 0 && (
-                  <span className="flex items-center text-xs text-gray-600 italic px-2">
+                  <span className="flex items-center text-xs text-gray-300 italic px-2">
                     No images
                   </span>
                 )}
@@ -144,7 +144,7 @@ export default function CommunityVote({ tiers, images, onClose }: Props) {
       {/* Unvoted images */}
       {unvoted.length > 0 && (
         <div className="rounded-xl border border-dashed border-gray-700 p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-200">
             Not yet voted ({unvoted.length})
           </p>
           <div className="flex flex-wrap gap-1">

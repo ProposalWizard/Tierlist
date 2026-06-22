@@ -131,7 +131,7 @@ export default function TicTacToeBuilder() {
         <h1 className="font-display text-3xl font-black tracking-wide text-white md:text-4xl">
           Create a Tic Tac Toe
         </h1>
-        <p className="mt-2 text-sm text-gray-400">
+        <p className="mt-2 text-sm text-white">
           Set 3 row labels + 3 column labels, then add player answers to each square.
         </p>
       </div>
@@ -140,7 +140,7 @@ export default function TicTacToeBuilder() {
         {/* Title & difficulty */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-white mb-1">
               Puzzle Title
             </label>
             <input
@@ -153,7 +153,7 @@ export default function TicTacToeBuilder() {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-white mb-1">
               Difficulty
             </label>
             <div className="flex gap-2">
@@ -166,7 +166,7 @@ export default function TicTacToeBuilder() {
                       ? d === "easy" ? "bg-green-600 text-white"
                       : d === "medium" ? "bg-yellow-600 text-white"
                       : "bg-red-600 text-white"
-                      : "border border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                      : "border border-gray-700 bg-gray-900 text-white hover:border-gray-600"
                   }`}
                 >
                   {d}
@@ -178,7 +178,7 @@ export default function TicTacToeBuilder() {
 
         {/* TTT Bonus */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-white mb-1">
             Three-in-a-row bonus points
           </label>
           <input
@@ -194,7 +194,7 @@ export default function TicTacToeBuilder() {
         {/* Labels */}
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-white mb-2">
               Row Labels (left side)
             </label>
             <div className="flex gap-2">
@@ -212,7 +212,7 @@ export default function TicTacToeBuilder() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-white mb-2">
               Column Labels (top)
             </label>
             <div className="flex gap-2">
@@ -233,7 +233,7 @@ export default function TicTacToeBuilder() {
 
         {/* Grid preview */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+          <label className="block text-xs font-bold uppercase tracking-wider text-white mb-3">
             Grid — click each square to add player answers
           </label>
           <div className="grid grid-cols-4 gap-1.5 md:gap-2">
@@ -287,7 +287,7 @@ export default function TicTacToeBuilder() {
               </h3>
               <button
                 onClick={() => setEditingCell(null)}
-                className="text-gray-500 hover:text-white text-lg"
+                className="text-gray-200 hover:text-white text-lg"
               >
                 &times;
               </button>
@@ -324,7 +324,7 @@ export default function TicTacToeBuilder() {
             {/* Answer list */}
             {grid[ec.r][ec.c].answers.length > 0 && (
               <div className="mt-4 space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-200">
                   Answers ({grid[ec.r][ec.c].answers.length})
                 </p>
                 {grid[ec.r][ec.c].answers.map((a, i) => (
