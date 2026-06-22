@@ -423,7 +423,7 @@ function DraggablePitchCard({
           : "ring-white/10 cursor-grab active:cursor-grabbing"
       } ${isDragging ? "opacity-30 scale-95" : ""}`}
       style={
-        transform
+        transform && !isDragging
           ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` }
           : undefined
       }
@@ -546,7 +546,7 @@ function BenchCard({
         isDragging ? "opacity-30 scale-95" : selected ? "scale-110" : "hover:scale-105"
       }`}
       style={
-        transform
+        transform && !isDragging
           ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` }
           : undefined
       }
