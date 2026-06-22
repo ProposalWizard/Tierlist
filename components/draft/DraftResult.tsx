@@ -21,6 +21,7 @@ interface Props {
   roomPlayers?: import("@/components/draft/MultiplayerLobby").RoomPlayer[];
   roomCode?: string;
   allRoomPlayerSeasons?: Record<string, SeasonResult[]>;
+  mode?: "normal" | "prime";
 }
 
 interface PLRecord {
@@ -498,7 +499,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal" }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined),
     [players, seasonNumber, previousResult, preComputedSeason],
@@ -747,6 +748,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               hasDevPlayers,
+              mode,
               pl: {
                 wins: { value: season.teamRecord.wins, teamOvr },
                 unbeaten: { value: season.longestUnbeatenRun, teamOvr },

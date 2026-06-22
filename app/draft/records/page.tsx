@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface RecordEntry {
   value: number;
@@ -176,12 +177,25 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
 
 export default function DraftRecordsPage() {
   const [competition, setCompetition] = useState<"pl" | "all">("pl");
+  const [mode, setMode] = useState<"normal" | "prime">("normal");
   const [records, setRecords] = useState<Record<string, RecordEntry[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetch("/api/draft/records")
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsSignedIn(!!user);
+      if (!user) setLoading(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isSignedIn !== true) return;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/draft/records?mode=${mode}`)
       .then(r => r.json())
       .then(d => {
         if (d.error) throw new Error(d.error);
@@ -189,7 +203,52 @@ export default function DraftRecordsPage() {
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isSignedIn, mode]);
+
+  if (isSignedIn === null) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-white text-sm">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSignedIn === false) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <Link
+            href="/draft"
+            className="inline-flex items-center gap-1.5 text-white hover:text-emerald-400 text-sm font-medium mb-6 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Draft
+          </Link>
+          <h1 className="text-2xl font-black tracking-tight text-white mb-4">Hall of Fame</h1>
+          <div className="bg-gray-900 rounded-xl p-6 border border-gray-800/50 text-center mt-4">
+            <div className="text-3xl mb-3">&#128274;</div>
+            <p className="text-lg font-bold text-white mb-2">Sign in to view the Hall of Fame</p>
+            <p className="text-white text-sm mb-4">
+              Sign in to see all-time records and leaderboards.
+            </p>
+            <Link
+              href="/auth?next=/draft/records"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -208,13 +267,33 @@ export default function DraftRecordsPage() {
           <div className="flex items-center gap-3 mb-2">
             <span className="text-3xl">📋</span>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Hall of Records</h1>
+              <h1 className="text-2xl font-black tracking-tight text-white">Hall of Fame</h1>
               <p className="text-white text-sm">All-time season records · <span className="text-amber-400">⭐ Official</span> = real-world PL record to beat</p>
             </div>
           </div>
         </div>
 
-        {/* PL / All Comps toggle */}
+        {/* Normal / Prime toggle (primary) */}
+        <div className="flex gap-1.5 mb-4 bg-gray-900/50 border border-gray-800/50 rounded-xl p-1 max-w-xs">
+          <button
+            onClick={() => setMode("normal")}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+              mode === "normal" ? "bg-emerald-600 text-white shadow-lg" : "text-white hover:text-white"
+            }`}
+          >
+            Normal
+          </button>
+          <button
+            onClick={() => setMode("prime")}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+              mode === "prime" ? "bg-amber-600 text-white shadow-lg" : "text-white hover:text-white"
+            }`}
+          >
+            Prime
+          </button>
+        </div>
+
+        {/* PL / All Comps toggle (secondary) */}
         <div className="flex gap-1.5 mb-8 bg-gray-900/50 border border-gray-800/50 rounded-xl p-1 max-w-xs">
           <button
             onClick={() => setCompetition("pl")}

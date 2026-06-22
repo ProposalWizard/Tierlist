@@ -13,6 +13,7 @@ function isDevPlayer(name: string | null): boolean {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const personal = url.searchParams.get("personal");
+  const mode = url.searchParams.get("mode") === "prime" ? "prime" : "normal";
 
   if (personal === "true") {
     const authClient = await createClient();
@@ -21,10 +22,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
     const svc = createServiceClient();
-    const { data, error } = await svc
+    let query = svc
       .from("draft_personal_records")
       .select("competition, record_type, value, player_name, player_ovr, season_number")
       .eq("user_id", user.id);
+    try { query = query.eq("mode", mode); } catch { /* mode column may not exist yet */ }
+
+    const { data, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -47,10 +51,13 @@ export async function GET(req: Request) {
   // Global leaderboard
   const supabase = createServiceClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("draft_records")
     .select("competition, record_type, value, player_name, player_ovr, username, season_number, created_at")
     .order("value", { ascending: false });
+  try { query = query.eq("mode", mode); } catch { /* mode column may not exist yet */ }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -121,6 +128,7 @@ interface RecordPayload {
   };
   seasonNumber?: number;
   hasDevPlayers?: boolean;
+  mode?: "normal" | "prime";
 }
 
 interface CandidateRow {
@@ -132,6 +140,7 @@ interface CandidateRow {
   player_name: string | null;
   player_ovr: number | null;
   season_number: number | null;
+  mode: string;
 }
 
 export async function POST(req: Request) {
@@ -152,7 +161,8 @@ export async function POST(req: Request) {
   const username = profile?.username || user.email?.split("@")[0] || "Player";
 
   const body: RecordPayload = await req.json();
-  const { pl, all, career, seasonNumber, hasDevPlayers } = body;
+  const { pl, all, career, seasonNumber, hasDevPlayers, mode: bodyMode } = body;
+  const mode = bodyMode === "prime" ? "prime" : "normal";
 
   if (hasDevPlayers) {
     return NextResponse.json({ ok: true, inserted: 0, skipped: "dev_team" });
@@ -169,6 +179,7 @@ export async function POST(req: Request) {
       player_name: stat.playerName,
       player_ovr: stat.playerOvr,
       season_number: seasonNumber ?? null,
+      mode,
     });
   };
 
@@ -180,6 +191,7 @@ export async function POST(req: Request) {
       player_name: null,
       player_ovr: null,
       season_number: seasonNumber ?? null,
+      mode,
     });
   };
 
@@ -207,6 +219,7 @@ export async function POST(req: Request) {
         user_id: user.id, username, competition: "career", record_type: "career_trophies",
         value: career.trophies, player_name: null, player_ovr: null,
         season_number: seasonNumber ?? null,
+        mode,
       });
     }
     if (career.avgRating && career.avgRating.value > 0) pushEntry("career", "career_avg_rating", career.avgRating);
@@ -221,11 +234,13 @@ export async function POST(req: Request) {
   for (const candidate of candidates) {
     const ascending = ASCENDING_RECORD_TYPES.has(candidate.record_type);
 
-    const { data: existing, error: fetchErr } = await serviceClient
+    let fetchQuery = serviceClient
       .from("draft_records")
       .select("id, value")
       .eq("competition", candidate.competition)
-      .eq("record_type", candidate.record_type)
+      .eq("record_type", candidate.record_type);
+    try { fetchQuery = fetchQuery.eq("mode", candidate.mode); } catch { /* mode column may not exist yet */ }
+    const { data: existing, error: fetchErr } = await fetchQuery
       .order("value", { ascending })
       .limit(MAX_PER_CATEGORY);
 
@@ -269,13 +284,14 @@ export async function POST(req: Request) {
   for (const candidate of candidates) {
     const ascending = ASCENDING_RECORD_TYPES.has(candidate.record_type);
 
-    const { data: existing } = await serviceClient
+    let personalQuery = serviceClient
       .from("draft_personal_records")
       .select("id, value")
       .eq("user_id", user.id)
       .eq("competition", candidate.competition)
-      .eq("record_type", candidate.record_type)
-      .maybeSingle();
+      .eq("record_type", candidate.record_type);
+    try { personalQuery = personalQuery.eq("mode", candidate.mode); } catch { /* mode column may not exist yet */ }
+    const { data: existing } = await personalQuery.maybeSingle();
 
     if (!existing) {
       await serviceClient.from("draft_personal_records").insert({
@@ -286,6 +302,7 @@ export async function POST(req: Request) {
         player_name: candidate.player_name,
         player_ovr: candidate.player_ovr,
         season_number: candidate.season_number,
+        mode: candidate.mode,
       });
     } else {
       const isNewBest = ascending ? candidate.value < existing.value : candidate.value > existing.value;
