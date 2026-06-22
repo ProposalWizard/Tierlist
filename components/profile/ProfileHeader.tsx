@@ -300,13 +300,15 @@ export default function ProfileHeader({
                   }}
                 />
               </div>
-              <div className="flex items-center justify-center gap-1.5 mt-1.5">
-                <span className="text-[10px] font-semibold text-emerald-400/80">
-                  {currentXp.toLocaleString()}
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-[10px] font-bold text-white">
+                  Lv {level}
                 </span>
-                <span className="text-[10px] text-white">/</span>
-                <span className="text-[10px] font-semibold text-white">
-                  {xpToNext.toLocaleString()} XP
+                <span className="text-[10px] font-semibold text-emerald-400/80">
+                  {currentXp.toLocaleString()} / {xpToNext.toLocaleString()} XP
+                </span>
+                <span className="text-[10px] font-bold text-white">
+                  Lv {level + 1}
                 </span>
               </div>
             </div>

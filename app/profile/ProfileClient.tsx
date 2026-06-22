@@ -515,56 +515,157 @@ function CustomObjectivesSection() {
           {activeTab === "active" ? "No active objectives right now." : "No completed objectives yet."}
         </div>
       ) : (
-        <div className="flex min-h-[200px]">
-          {/* Left sidebar */}
-          <div className="w-48 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[400px]">
+        <>
+          {/* Mobile: stacked expandable cards */}
+          <div className="md:hidden overflow-y-auto max-h-[400px]">
             {currentList.map((obj) => {
               const done = completedIds.includes(obj.id);
               const isSelected = (selectedId ?? currentList[0]?.id) === obj.id;
               return (
-                <button
-                  key={obj.id}
-                  onClick={() => setSelectedId(obj.id)}
-                  className={`w-full text-left px-3 py-3 border-b border-gray-800/30 transition-all ${
-                    isSelected
-                      ? "bg-gray-800/80 border-l-2 border-l-emerald-500"
-                      : "hover:bg-gray-800/40 border-l-2 border-l-transparent"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {done ? (
-                      <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <div key={obj.id}>
+                  <button
+                    onClick={() => setSelectedId(isSelected ? null : obj.id)}
+                    className={`w-full text-left px-4 py-3 border-b border-gray-800/30 transition-all ${
+                      isSelected
+                        ? "bg-gray-800/80"
+                        : "hover:bg-gray-800/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {done ? (
+                        <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <div className="w-3.5 h-3.5 rounded-full border border-gray-600 shrink-0" />
+                      )}
+                      <span className={`text-sm font-bold leading-tight ${done ? "text-emerald-400" : "text-white"}`}>
+                        {obj.title}
+                      </span>
+                      <svg
+                        className={`w-4 h-4 ml-auto shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
-                    ) : (
-                      <div className="w-3.5 h-3.5 rounded-full border border-gray-600 shrink-0" />
-                    )}
-                    <span className={`text-xs font-bold leading-tight line-clamp-2 ${done ? "text-emerald-400" : "text-white"}`}>
-                      {obj.title}
-                    </span>
-                  </div>
-                  <div className="mt-1 pl-5 flex items-center gap-1.5 flex-wrap">
-                    {obj.xp_reward > 0 && (
-                      <span className={`text-[9px] font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>
-                        {obj.xp_reward} XP
-                      </span>
-                    )}
-                    {!done && obj.expires_at && (
-                      <span className="text-[9px] font-bold text-orange-400">
-                        ⏱ {getTimeRemaining(obj.expires_at)}
-                      </span>
-                    )}
-                  </div>
-                </button>
+                    </div>
+                    <div className="mt-1 pl-5 flex items-center gap-1.5 flex-wrap">
+                      {obj.xp_reward > 0 && (
+                        <span className={`text-[9px] font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>
+                          {obj.xp_reward} XP
+                        </span>
+                      )}
+                      {!done && obj.expires_at && (
+                        <span className="text-[9px] font-bold text-orange-400">
+                          ⏱ {getTimeRemaining(obj.expires_at)}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                  {/* Expanded inline detail */}
+                  {isSelected && (
+                    <div className="px-4 py-3 bg-gray-800/50 border-b border-gray-800/30">
+                      {obj.description && (
+                        <p className="text-xs text-white mb-3 leading-relaxed">{obj.description}</p>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {obj.xp_reward > 0 && (
+                          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
+                            <span className="text-amber-400 text-xs font-black">{obj.xp_reward} XP</span>
+                          </div>
+                        )}
+                        {done ? (
+                          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
+                            <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-emerald-400 text-xs font-bold">Completed</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-1.5">
+                            <span className="text-white text-xs font-bold">In Progress</span>
+                          </div>
+                        )}
+                        {!done && obj.expires_at && (
+                          <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-1.5">
+                            <span className="text-orange-400 text-xs font-bold">⏱ {getTimeRemaining(obj.expires_at)}</span>
+                          </div>
+                        )}
+                      </div>
+                      {obj.card_image_url && (
+                        <div className="mt-3 flex items-center gap-3">
+                          <img
+                            src={obj.card_image_url}
+                            alt={obj.card_name || "Card Reward"}
+                            className="w-16 h-20 object-cover rounded-lg border border-gray-700 shadow-lg"
+                          />
+                          <div>
+                            <div className="text-[9px] font-bold text-white uppercase tracking-wider">Reward</div>
+                            {obj.card_name && (
+                              <div className="text-xs font-bold text-white mt-0.5">{obj.card_name}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
 
-          {/* Right content */}
-          {selected && (
-            <ObjectiveDetail obj={selected} isDone={completedIds.includes(selected.id)} />
-          )}
-        </div>
+          {/* Desktop: side-by-side layout */}
+          <div className="hidden md:flex min-h-[200px]">
+            {/* Left sidebar */}
+            <div className="w-48 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[400px]">
+              {currentList.map((obj) => {
+                const done = completedIds.includes(obj.id);
+                const isSelected = (selectedId ?? currentList[0]?.id) === obj.id;
+                return (
+                  <button
+                    key={obj.id}
+                    onClick={() => setSelectedId(obj.id)}
+                    className={`w-full text-left px-3 py-3 border-b border-gray-800/30 transition-all ${
+                      isSelected
+                        ? "bg-gray-800/80 border-l-2 border-l-emerald-500"
+                        : "hover:bg-gray-800/40 border-l-2 border-l-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {done ? (
+                        <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <div className="w-3.5 h-3.5 rounded-full border border-gray-600 shrink-0" />
+                      )}
+                      <span className={`text-xs font-bold leading-tight line-clamp-2 ${done ? "text-emerald-400" : "text-white"}`}>
+                        {obj.title}
+                      </span>
+                    </div>
+                    <div className="mt-1 pl-5 flex items-center gap-1.5 flex-wrap">
+                      {obj.xp_reward > 0 && (
+                        <span className={`text-[9px] font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>
+                          {obj.xp_reward} XP
+                        </span>
+                      )}
+                      {!done && obj.expires_at && (
+                        <span className="text-[9px] font-bold text-orange-400">
+                          ⏱ {getTimeRemaining(obj.expires_at)}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right content */}
+            {selected && (
+              <ObjectiveDetail obj={selected} isDone={completedIds.includes(selected.id)} />
+            )}
+          </div>
+        </>
       )}
     </div>
   );
