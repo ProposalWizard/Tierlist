@@ -11,7 +11,27 @@ interface Objective {
   card_name: string | null;
   is_active: boolean;
   sort_order: number;
+  expires_at: string | null;
   created_at: string;
+}
+
+const DURATION_OPTIONS = [
+  { label: "No Time Limit", days: 0 },
+  { label: "1 Day", days: 1 },
+  { label: "7 Days", days: 7 },
+  { label: "30 Days", days: 30 },
+  { label: "60 Days", days: 60 },
+  { label: "90 Days", days: 90 },
+];
+
+function formatDeadline(expiresAt: string): string {
+  const d = new Date(expiresAt);
+  const diff = d.getTime() - Date.now();
+  if (diff <= 0) return "Expired";
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  if (days > 0) return `${days}d ${hours}h remaining`;
+  return `${hours}h remaining`;
 }
 
 export default function ObjectivesAdmin() {
@@ -24,7 +44,9 @@ export default function ObjectivesAdmin() {
     xp_reward: 100,
     card_name: "",
     is_active: true,
+    expires_at: null as string | null,
   });
+  const [durationSelect, setDurationSelect] = useState("");
   const [cardFile, setCardFile] = useState<File | null>(null);
   const [cardPreview, setCardPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -43,7 +65,8 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true });
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true, expires_at: null });
+    setDurationSelect("");
     setCardFile(null);
     setCardPreview(null);
   };
@@ -56,9 +79,24 @@ export default function ObjectivesAdmin() {
       xp_reward: obj.xp_reward,
       card_name: obj.card_name || "",
       is_active: obj.is_active,
+      expires_at: obj.expires_at,
     });
+    setDurationSelect("");
     setCardPreview(obj.card_image_url);
     setCardFile(null);
+  };
+
+  const handleDurationChange = (val: string) => {
+    setDurationSelect(val);
+    const days = parseInt(val);
+    if (!val || isNaN(days)) return;
+    if (days === 0) {
+      setForm(f => ({ ...f, expires_at: null }));
+    } else {
+      const expiresAt = new Date(Date.now() + days * 86400000).toISOString();
+      setForm(f => ({ ...f, expires_at: expiresAt }));
+    }
+    setDurationSelect("");
   };
 
   const handleCardFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +112,7 @@ export default function ObjectivesAdmin() {
     if (!cardFile) return null;
     const supabase = createClient();
     const ext = cardFile.name.split(".").pop() || "webp";
-    const filename = `objective-cards/${crypto.randomUUID()}.${ext}`;
+    const filename = `${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage
       .from("tierlist-images")
       .upload(filename, cardFile, { contentType: cardFile.type, upsert: true });
@@ -101,6 +139,7 @@ export default function ObjectivesAdmin() {
       card_image_url,
       card_name: form.card_name.trim() || null,
       is_active: form.is_active,
+      expires_at: form.expires_at,
       sort_order: editingId
         ? objectives.find(o => o.id === editingId)?.sort_order ?? 0
         : objectives.length,
@@ -202,6 +241,39 @@ export default function ObjectivesAdmin() {
           </div>
         </div>
 
+        {/* Time Limit */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+            Time Limit
+          </label>
+          <div className="flex items-center gap-3">
+            <select
+              value={durationSelect}
+              onChange={(e) => handleDurationChange(e.target.value)}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="">— Set duration from now —</option>
+              {DURATION_OPTIONS.map(opt => (
+                <option key={opt.days} value={opt.days}>{opt.label}</option>
+              ))}
+            </select>
+            {form.expires_at ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-amber-400 font-bold">{formatDeadline(form.expires_at)}</span>
+                <span className="text-[10px] text-gray-500">({new Date(form.expires_at).toLocaleDateString()})</span>
+                <button
+                  onClick={() => { setForm(f => ({ ...f, expires_at: null })); setDurationSelect(""); }}
+                  className="text-[10px] text-red-400 hover:text-red-300 font-bold px-2 py-0.5 bg-red-500/10 rounded transition"
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs text-gray-600">No time limit</span>
+            )}
+          </div>
+        </div>
+
         {/* Card Reward */}
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -274,68 +346,81 @@ export default function ObjectivesAdmin() {
         </div>
       ) : (
         <div className="space-y-2">
-          {objectives.map((obj) => (
-            <div
-              key={obj.id}
-              className={`flex items-center gap-4 bg-gray-900 border rounded-xl px-4 py-3 transition ${
-                obj.is_active ? "border-gray-800" : "border-gray-800/50 opacity-50"
-              }`}
-            >
-              {/* Card image */}
-              {obj.card_image_url ? (
-                <img
-                  src={obj.card_image_url}
-                  alt={obj.card_name || "Card"}
-                  className="w-12 h-16 object-cover rounded-lg border border-gray-700 shrink-0"
-                />
-              ) : (
-                <div className="w-12 h-16 bg-gray-800 rounded-lg border border-gray-700 shrink-0 flex items-center justify-center text-gray-700 text-lg">
-                  ?
-                </div>
-              )}
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-sm text-white truncate">{obj.title}</div>
-                {obj.description && (
-                  <div className="text-[10px] text-gray-500 truncate">{obj.description}</div>
+          {objectives.map((obj) => {
+            const isExpired = obj.expires_at ? new Date(obj.expires_at) < new Date() : false;
+            return (
+              <div
+                key={obj.id}
+                className={`flex items-center gap-4 bg-gray-900 border rounded-xl px-4 py-3 transition ${
+                  !obj.is_active || isExpired ? "border-gray-800/50 opacity-50" : "border-gray-800"
+                }`}
+              >
+                {/* Card image */}
+                {obj.card_image_url ? (
+                  <img
+                    src={obj.card_image_url}
+                    alt={obj.card_name || "Card"}
+                    className="w-12 h-16 object-cover rounded-lg border border-gray-700 shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-16 bg-gray-800 rounded-lg border border-gray-700 shrink-0 flex items-center justify-center text-gray-700 text-lg">
+                    ?
+                  </div>
                 )}
-                <div className="flex items-center gap-2 mt-1">
-                  {obj.xp_reward > 0 && (
-                    <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                      {obj.xp_reward} XP
-                    </span>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm text-white truncate">{obj.title}</div>
+                  {obj.description && (
+                    <div className="text-[10px] text-gray-500 truncate">{obj.description}</div>
                   )}
-                  {obj.card_name && (
-                    <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
-                      {obj.card_name}
-                    </span>
-                  )}
-                  {!obj.is_active && (
-                    <span className="text-[10px] font-bold text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
-                      Hidden
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {obj.xp_reward > 0 && (
+                      <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                        {obj.xp_reward} XP
+                      </span>
+                    )}
+                    {obj.card_name && (
+                      <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                        {obj.card_name}
+                      </span>
+                    )}
+                    {!obj.is_active && (
+                      <span className="text-[10px] font-bold text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
+                        Hidden
+                      </span>
+                    )}
+                    {obj.expires_at && !isExpired && (
+                      <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">
+                        ⏱ {formatDeadline(obj.expires_at)}
+                      </span>
+                    )}
+                    {isExpired && (
+                      <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">
+                        Expired
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => handleEdit(obj)}
+                    className="px-2 py-1 text-xs font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(obj.id)}
+                    className="px-2 py-1 text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() => handleEdit(obj)}
-                  className="px-2 py-1 text-xs font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(obj.id)}
-                  className="px-2 py-1 text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
