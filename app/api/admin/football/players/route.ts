@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     try {
       const { data } = await service
         .from("football_players")
-        .select("wikidata_id, name, date_of_birth, country_id, position, image_url")
+        .select("wikidata_id, name, country_id, position")
         .ilike("name", `%${query}%`)
         .limit(200);
 
@@ -54,12 +54,6 @@ export async function GET(req: Request) {
           else score = 1000;
 
           score += Math.min(200, (careerCounts.get(p.wikidata_id) ?? 0) * 25);
-          if (p.image_url) score += 50;
-          if (p.date_of_birth) {
-            const year = parseInt(p.date_of_birth.substring(0, 4));
-            if (!isNaN(year) && year > 1960)
-              score += Math.min(30, (year - 1960) / 2);
-          }
 
           return { ...p, _score: score };
         })
@@ -69,25 +63,14 @@ export async function GET(req: Request) {
       const countryIds = Array.from(new Set(ranked.map((p) => p.country_id).filter(Boolean))) as string[];
       const countryMap = await getCountryMap(service, countryIds);
 
-      const players = ranked.map((p) => {
-        let image = p.image_url ?? null;
-        if (image) {
-          const fileMatch = image.match(/Special:FilePath\/(.+)$/);
-          if (fileMatch) {
-            image = `https://commons.wikimedia.org/w/thumb.php?f=${encodeURIComponent(decodeURIComponent(fileMatch[1]))}&w=200`;
-          } else if (image.startsWith("http://")) {
-            image = image.replace("http://", "https://");
-          }
-        }
-        return {
-          id: p.wikidata_id,
-          name: p.name,
-          nationality: countryMap.get(p.country_id ?? "") ?? "",
-          position: p.position ?? "",
-          dob: p.date_of_birth ?? "",
-          image,
-        };
-      });
+      const players = ranked.map((p) => ({
+        id: p.wikidata_id,
+        name: p.name,
+        nationality: countryMap.get(p.country_id ?? "") ?? "",
+        position: p.position ?? "",
+        dob: "",
+        image: null,
+      }));
 
       return NextResponse.json({ players });
     } catch (e: unknown) {
@@ -100,7 +83,7 @@ export async function GET(req: Request) {
     try {
       const { data: playerRow } = await service
         .from("football_players")
-        .select("wikidata_id, name, date_of_birth, country_id, position, image_url")
+        .select("wikidata_id, name, country_id, position")
         .eq("wikidata_id", playerId)
         .single();
 
@@ -110,22 +93,13 @@ export async function GET(req: Request) {
 
       const countryMap = await getCountryMap(service, playerRow.country_id ? [playerRow.country_id] : []);
 
-      let playerImage = playerRow.image_url ?? null;
-      if (playerImage) {
-        const fileMatch = playerImage.match(/Special:FilePath\/(.+)$/);
-        if (fileMatch) {
-          playerImage = `https://commons.wikimedia.org/w/thumb.php?f=${encodeURIComponent(decodeURIComponent(fileMatch[1]))}&w=200`;
-        } else if (playerImage.startsWith("http://")) {
-          playerImage = playerImage.replace("http://", "https://");
-        }
-      }
       const player = {
         id: playerRow.wikidata_id,
         name: playerRow.name,
         nationality: countryMap.get(playerRow.country_id ?? "") ?? "",
         position: playerRow.position ?? "",
-        dob: playerRow.date_of_birth ?? "",
-        image: playerImage,
+        dob: "",
+        image: null,
       };
 
       const { data: careerRows } = await service

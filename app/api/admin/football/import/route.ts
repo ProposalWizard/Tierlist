@@ -7,7 +7,6 @@ import {
   fetchPlayersNoDob,
   fetchPlayerDetails,
   fetchCareersForPlayers,
-  fetchCountryFlags,
   fetchClubDetails,
 } from "@/lib/footballImport";
 
@@ -53,6 +52,26 @@ async function upsertChunked(
   }
 }
 
+// Narrow upsert payloads to columns that still exist in the slimmed schema
+// (player photos, popularity, date_of_birth, updated_at, club logos and flags
+//  were dropped to save storage).
+function slimPlayer(p: Record<string, unknown>) {
+  return {
+    wikidata_id: p.wikidata_id,
+    name: p.name ?? null,
+    country_id: p.country_id ?? null,
+    position: p.position ?? null,
+  };
+}
+function slimClub(c: Record<string, unknown>) {
+  return {
+    wikidata_id: c.wikidata_id,
+    name: c.name ?? null,
+    country: c.country ?? null,
+    league: c.league ?? null,
+  };
+}
+
 export async function POST(req: NextRequest) {
   const user = await adminGuard();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -72,7 +91,7 @@ export async function POST(req: NextRequest) {
           await upsertChunked(
             service,
             "football_players",
-            players.map((p) => ({ ...p, updated_at: new Date().toISOString() })),
+            players.map(slimPlayer),
             "wikidata_id"
           );
         }
@@ -87,7 +106,7 @@ export async function POST(req: NextRequest) {
           await upsertChunked(
             service,
             "football_players",
-            players.map((p) => ({ ...p, updated_at: new Date().toISOString() })),
+            players.map(slimPlayer),
             "wikidata_id"
           );
         }
@@ -120,7 +139,7 @@ export async function POST(req: NextRequest) {
           await upsertChunked(
             service,
             "football_players",
-            details.map((d) => ({ ...d, updated_at: new Date().toISOString() })),
+            details.map(slimPlayer),
             "wikidata_id"
           );
         }
@@ -154,7 +173,7 @@ export async function POST(req: NextRequest) {
         const { careers, clubs } = await fetchCareersForPlayers(ids);
 
         if (clubs.length > 0) {
-          await upsertChunked(service, "football_clubs", clubs, "wikidata_id");
+          await upsertChunked(service, "football_clubs", clubs.map(slimClub), "wikidata_id");
         }
         if (careers.length > 0) {
           await upsertChunked(service, "football_careers", careers, "player_id,club_id,start_date");
@@ -172,27 +191,8 @@ export async function POST(req: NextRequest) {
       }
 
       case "flags": {
-        const { data: countryRows } = await service
-          .from("football_countries")
-          .select("wikidata_id");
-
-        const ids = (countryRows ?? []).map((c: { wikidata_id: string }) => c.wikidata_id);
-
-        let totalFlags = 0;
-        for (let i = 0; i < ids.length; i += 200) {
-          const batch = ids.slice(i, i + 200);
-          const flags = await fetchCountryFlags(batch);
-          const updates = flags
-            .filter((f) => f.flag_url)
-            .map((f) => ({ wikidata_id: f.wikidata_id, flag_url: f.flag_url }));
-
-          if (updates.length > 0) {
-            await upsertChunked(service, "football_countries", updates, "wikidata_id");
-            totalFlags += updates.length;
-          }
-        }
-
-        return NextResponse.json({ step: "flags", imported: totalFlags });
+        // Country flags were dropped to save storage — step retired.
+        return NextResponse.json({ step: "flags", imported: 0, removed: true });
       }
 
       case "club-details": {
@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
           await upsertChunked(
             service,
             "football_clubs",
-            details.map((d) => ({ ...d, updated_at: new Date().toISOString() })),
+            details.map(slimClub),
             "wikidata_id"
           );
         }
@@ -231,67 +231,8 @@ export async function POST(req: NextRequest) {
       }
 
       case "enrich-images": {
-        const offset = (body.offset as number) ?? 0;
-        const batchSize = 150;
-
-        // Find active/popular players who don't have images yet
-        // Join with careers to find players with recent activity, ordered by career count (popularity proxy)
-        const { data: candidates } = await service
-          .rpc("get_players_needing_images", { batch_offset: offset, batch_limit: batchSize });
-
-        // Fallback: if the RPC doesn't exist, query directly
-        let playerIds: string[];
-        if (candidates && candidates.length > 0) {
-          playerIds = candidates.map((r: { wikidata_id: string }) => r.wikidata_id);
-        } else if (offset === 0 && !candidates) {
-          // RPC doesn't exist — use direct query: players without images, with careers, ordered by career count
-          const { data: fallback } = await service
-            .from("football_players")
-            .select("wikidata_id")
-            .is("image_url", null)
-            .not("position", "is", null)
-            .order("wikidata_id")
-            .range(offset, offset + batchSize - 1);
-          playerIds = (fallback ?? []).map((r: { wikidata_id: string }) => r.wikidata_id);
-        } else {
-          const { data: fallback } = await service
-            .from("football_players")
-            .select("wikidata_id")
-            .is("image_url", null)
-            .not("position", "is", null)
-            .order("wikidata_id")
-            .range(offset, offset + batchSize - 1);
-          playerIds = (fallback ?? []).map((r: { wikidata_id: string }) => r.wikidata_id);
-        }
-
-        if (playerIds.length === 0) {
-          return NextResponse.json({ step: "enrich-images", enriched: 0, hasMore: false });
-        }
-
-        const { details } = await fetchPlayerDetails(playerIds);
-        const withImages = details.filter((d) => d.image_url);
-
-        if (withImages.length > 0) {
-          await upsertChunked(
-            service,
-            "football_players",
-            withImages.map((d) => ({
-              wikidata_id: d.wikidata_id,
-              image_url: d.image_url,
-              updated_at: new Date().toISOString(),
-            })),
-            "wikidata_id"
-          );
-        }
-
-        const hasMore = playerIds.length === batchSize;
-        return NextResponse.json({
-          step: "enrich-images",
-          checked: playerIds.length,
-          foundImages: withImages.length,
-          hasMore,
-          nextOffset: hasMore ? offset + batchSize : null,
-        });
+        // Player photos were dropped to save storage — step retired.
+        return NextResponse.json({ step: "enrich-images", enriched: 0, hasMore: false, removed: true });
       }
 
       case "clear": {

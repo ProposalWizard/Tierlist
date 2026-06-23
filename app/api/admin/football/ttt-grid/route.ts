@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
       const chunk = uniqueIds.slice(i, i + 500);
       const { data: playerRows } = await service
         .from("football_players")
-        .select("wikidata_id, name, date_of_birth, country_id, position, image_url")
+        .select("wikidata_id, name, country_id, position")
         .in("wikidata_id", chunk);
       if (playerRows) allPlayers.push(...playerRows);
     }
@@ -103,8 +103,8 @@ export async function GET(req: NextRequest) {
               name: p.name as string,
               nationality: countryMap.get((p.country_id as string) ?? "") ?? "",
               position: (p.position as string) ?? "",
-              dob: (p.date_of_birth as string) ?? "",
-              image: (p.image_url as string) ?? null,
+              dob: "",
+              image: null,
             };
           })
           .filter(Boolean);
