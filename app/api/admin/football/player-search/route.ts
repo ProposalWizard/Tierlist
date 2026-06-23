@@ -79,9 +79,13 @@ export async function GET(req: NextRequest) {
   try {
     let query = service.from("sofifa_players").select("*");
 
-    // Simple ilike — avoids issues with .or() chained with .eq()/.ilike()
     if (q) {
-      query = query.ilike("name", `%${q}%`);
+      const variants = generateAccentVariants(q);
+      if (variants.length <= 1) {
+        query = query.ilike("name", `%${q}%`);
+      } else {
+        query = query.or(variants.map(v => `name.ilike.%${v}%`).join(","));
+      }
     }
 
     if (year) {
