@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 interface Objective {
   id: string;
@@ -110,15 +109,16 @@ export default function ObjectivesAdmin() {
 
   const uploadCardImage = async (): Promise<string | null> => {
     if (!cardFile) return null;
-    const supabase = createClient();
-    const ext = cardFile.name.split(".").pop() || "webp";
-    const filename = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage
-      .from("tierlist-images")
-      .upload(filename, cardFile, { contentType: cardFile.type, upsert: true });
-    if (error) { alert("Failed to upload card image: " + error.message); return null; }
-    const { data: { publicUrl } } = supabase.storage.from("tierlist-images").getPublicUrl(filename);
-    return publicUrl;
+    const formData = new FormData();
+    formData.append("file", cardFile);
+    const res = await fetch("/api/admin/upload-image", { method: "POST", body: formData });
+    if (!res.ok) {
+      const { error } = await res.json();
+      alert("Failed to upload card image: " + error);
+      return null;
+    }
+    const { url } = await res.json();
+    return url;
   };
 
   const handleSave = async () => {
