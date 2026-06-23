@@ -69,11 +69,28 @@ export interface CLPlayerStats {
   avgRating: number;
 }
 
+export interface CLBracketEntry {
+  teamA: string;
+  teamB: string;
+  winner: string;
+  scoreDisplay: string;
+  isPlayerMatch: boolean;
+}
+
+export interface CLFullBracket {
+  playoffRound: CLBracketEntry[];
+  roundOf16: CLBracketEntry[];
+  quarterFinals: CLBracketEntry[];
+  semiFinals: CLBracketEntry[];
+  final: CLBracketEntry | null;
+}
+
 export interface CLSeasonResult {
   leagueMatches: CLMatchResult[];
   leagueTable: CLLeagueStanding[];
   leaguePosition: number;
   knockoutTies: CLKnockoutTie[];
+  bracket: CLFullBracket;
   winner: boolean;
   exitStage: string | null;
   tournamentWinner: string;
@@ -534,16 +551,32 @@ function simulateKnockoutTie(
   return { round, opponent: opponent.name, opponentStrength: opponent.strength, leg1, leg2, result: tieResult, aggFor, aggAgainst };
 }
 
+function tieScoreDisplay(tie: CLKnockoutTie): string {
+  if (!tie.leg2) {
+    let s = `${tie.leg1.goalsFor}-${tie.leg1.goalsAgainst}`;
+    if (tie.leg1.penalties) s += " (pens)";
+    else if (tie.leg1.extraTime) s += " (AET)";
+    return s;
+  }
+  let s = `${tie.aggFor}-${tie.aggAgainst} agg`;
+  if (tie.leg2.penalties) s += " (pens)";
+  else if (tie.leg2.extraTime) s += " (AET)";
+  return s;
+}
+
 function simulateAIKnockoutTie(
   teamA: { name: string; strength: number },
   teamB: { name: string; strength: number },
   rng: () => number,
   isFinal: boolean,
-): string {
+): { winner: string; scoreDisplay: string } {
   if (isFinal) {
     const { homeGoals, awayGoals } = simulateNeutralMatch(teamA, teamB, rng);
-    if (homeGoals === awayGoals) return rng() > 0.5 ? teamA.name : teamB.name;
-    return homeGoals > awayGoals ? teamA.name : teamB.name;
+    if (homeGoals === awayGoals) {
+      const w = rng() > 0.5 ? teamA.name : teamB.name;
+      return { winner: w, scoreDisplay: `${homeGoals}-${awayGoals} (pens)` };
+    }
+    return { winner: homeGoals > awayGoals ? teamA.name : teamB.name, scoreDisplay: `${homeGoals}-${awayGoals}` };
   }
   const leg1 = simulateNeutralMatch(teamA, teamB, rng);
   const leg2 = simulateNeutralMatch(teamB, teamA, rng);
@@ -554,9 +587,13 @@ function simulateAIKnockoutTie(
     const et2 = poisson(computeExpectedGoals(teamA.strength, teamA.strength * 0.95, teamB.strength) * 0.33, rng);
     aggA += et2;
     aggB += et1;
-    if (aggA === aggB) return rng() > 0.5 ? teamA.name : teamB.name;
+    if (aggA === aggB) {
+      const w = rng() > 0.5 ? teamA.name : teamB.name;
+      return { winner: w, scoreDisplay: `${aggA}-${aggB} agg (pens)` };
+    }
+    return { winner: aggA > aggB ? teamA.name : teamB.name, scoreDisplay: `${aggA}-${aggB} agg (AET)` };
   }
-  return aggA > aggB ? teamA.name : teamB.name;
+  return { winner: aggA > aggB ? teamA.name : teamB.name, scoreDisplay: `${aggA}-${aggB} agg` };
 }
 
 // ── Main CL season simulation ──
@@ -621,6 +658,7 @@ export function simulateCLSeason(
 
   const allTeams = [...pots[0], ...pots[1], ...pots[2], ...pots[3]];
   const strengthMap = new Map(allTeams.map(t => [t.name, t.strength]));
+  const bracket: CLFullBracket = { playoffRound: [], roundOf16: [], quarterFinals: [], semiFinals: [], final: null };
 
   // Draw player's 8 opponents (2 per pot, 1H 1A)
   const playerOpponents: { name: string; strength: number; isHome: boolean }[] = [];
@@ -714,7 +752,8 @@ export function simulateCLSeason(
     }
     let r16Sur: { name: string; strength: number }[] = [];
     for (let i = 0; i < 8; i++) {
-      const w = simulateAIKnockoutTie(r32Teams[i], r32Teams[15 - i], rng, false);
+      const { winner: w, scoreDisplay } = simulateAIKnockoutTie(r32Teams[i], r32Teams[15 - i], rng, false);
+      bracket.playoffRound.push({ teamA: r32Teams[i].name, teamB: r32Teams[15 - i].name, winner: w, scoreDisplay, isPlayerMatch: false });
       r16Sur.push(w === r32Teams[i].name ? r32Teams[i] : r32Teams[15 - i]);
     }
     for (let i = 0; i < 8; i++) {
@@ -722,10 +761,18 @@ export function simulateCLSeason(
     }
     r16Sur.sort(() => rng() - 0.5);
     let cur = r16Sur;
-    for (let ri = 0; ri < 3; ri++) {
+    const bracketRounds = [bracket.roundOf16, bracket.quarterFinals, bracket.semiFinals];
+    for (let ri = 0; ri < 4; ri++) {
+      const isFinal = ri === 3;
       const next: { name: string; strength: number }[] = [];
       for (let i = 0; i < cur.length; i += 2) {
-        const w = simulateAIKnockoutTie(cur[i], cur[i + 1], rng, ri === 2);
+        if (!cur[i + 1]) { next.push(cur[i]); continue; }
+        const { winner: w, scoreDisplay } = simulateAIKnockoutTie(cur[i], cur[i + 1], rng, isFinal);
+        if (isFinal) {
+          bracket.final = { teamA: cur[i].name, teamB: cur[i + 1].name, winner: w, scoreDisplay, isPlayerMatch: false };
+        } else {
+          bracketRounds[ri].push({ teamA: cur[i].name, teamB: cur[i + 1].name, winner: w, scoreDisplay, isPlayerMatch: false });
+        }
         next.push(w === cur[i].name ? cur[i] : cur[i + 1]);
       }
       cur = next;
@@ -733,7 +780,7 @@ export function simulateCLSeason(
     const stats = computePlayerStats(players, allMatches, rng);
     return {
       leagueMatches, leagueTable, leaguePosition,
-      knockoutTies: [], winner: false, exitStage: "League Phase",
+      knockoutTies: [], bracket, winner: false, exitStage: "League Phase",
       tournamentWinner: cur[0].name, playerStats: stats, allMatches,
     };
   }
@@ -764,6 +811,8 @@ export function simulateCLSeason(
       const tie = simulateKnockoutTie("Playoff Round", { name: oppName, strength: oppStr }, players, ratings, rng, false);
       knockoutTies.push(tie);
       for (const m of [tie.leg1, tie.leg2].filter(Boolean) as CLMatchResult[]) allMatches.push(m);
+      const winner = tie.result === "W" ? playerTeamName : oppName;
+      bracket.playoffRound.push({ teamA: hi.name, teamB: lo.name, winner, scoreDisplay: tieScoreDisplay(tie), isPlayerMatch: true });
       if (tie.result === "L") {
         playerEliminated = true;
         playerExitStage = "Playoff Round";
@@ -772,7 +821,8 @@ export function simulateCLSeason(
         r32Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
       }
     } else {
-      const w = simulateAIKnockoutTie(hi, lo, rng, false);
+      const { winner: w, scoreDisplay } = simulateAIKnockoutTie(hi, lo, rng, false);
+      bracket.playoffRound.push({ teamA: hi.name, teamB: lo.name, winner: w, scoreDisplay, isPlayerMatch: false });
       r32Winners.push(w === hi.name ? hi : lo);
     }
   }
@@ -799,6 +849,8 @@ export function simulateCLSeason(
       const tie = simulateKnockoutTie("Round of 16", { name: oppName, strength: oppStr }, players, ratings, rng, false);
       knockoutTies.push(tie);
       for (const m of [tie.leg1, tie.leg2].filter(Boolean) as CLMatchResult[]) allMatches.push(m);
+      const winner = tie.result === "W" ? playerTeamName : oppName;
+      bracket.roundOf16.push({ teamA: a.name, teamB: b.name, winner, scoreDisplay: tieScoreDisplay(tie), isPlayerMatch: true });
       if (tie.result === "L") {
         playerEliminated = true;
         playerExitStage = "Round of 16";
@@ -807,13 +859,15 @@ export function simulateCLSeason(
         r16Winners.push({ name: playerTeamName, strength: ratings.teamStrength });
       }
     } else {
-      const w = simulateAIKnockoutTie(a, b, rng, false);
+      const { winner: w, scoreDisplay } = simulateAIKnockoutTie(a, b, rng, false);
+      bracket.roundOf16.push({ teamA: a.name, teamB: b.name, winner: w, scoreDisplay, isPlayerMatch: false });
       r16Winners.push(w === a.name ? a : b);
     }
   }
 
   // QF, SF, Final
   const roundNames = ["Quarter-Final", "Semi-Final", "Final"];
+  const bracketRoundArrays = [bracket.quarterFinals, bracket.semiFinals];
   let currentRound = r16Winners;
   for (let ri = 0; ri < roundNames.length; ri++) {
     const roundName = roundNames[ri];
@@ -830,6 +884,10 @@ export function simulateCLSeason(
         const tie = simulateKnockoutTie(roundName, { name: oppName, strength: oppStr }, players, ratings, rng, isFinal);
         knockoutTies.push(tie);
         for (const m of [tie.leg1, tie.leg2].filter(Boolean) as CLMatchResult[]) allMatches.push(m);
+        const winner = tie.result === "W" ? playerTeamName : oppName;
+        const entry: CLBracketEntry = { teamA: a.name, teamB: b.name, winner, scoreDisplay: tieScoreDisplay(tie), isPlayerMatch: true };
+        if (isFinal) bracket.final = entry;
+        else bracketRoundArrays[ri].push(entry);
         if (tie.result === "L") {
           playerEliminated = true;
           playerExitStage = roundName;
@@ -838,7 +896,10 @@ export function simulateCLSeason(
           nextRound.push({ name: playerTeamName, strength: ratings.teamStrength });
         }
       } else {
-        const w = simulateAIKnockoutTie(a, b, rng, isFinal);
+        const { winner: w, scoreDisplay } = simulateAIKnockoutTie(a, b, rng, isFinal);
+        const entry: CLBracketEntry = { teamA: a.name, teamB: b.name, winner: w, scoreDisplay, isPlayerMatch: false };
+        if (isFinal) bracket.final = entry;
+        else bracketRoundArrays[ri].push(entry);
         nextRound.push(w === a.name ? a : b);
       }
     }
@@ -851,6 +912,7 @@ export function simulateCLSeason(
 
   return {
     leagueMatches, leagueTable, leaguePosition, knockoutTies,
+    bracket,
     winner: playerWon,
     exitStage: playerWon ? null : playerExitStage,
     tournamentWinner,

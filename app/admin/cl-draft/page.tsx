@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import CLDraftSetup, { type CLDraftSettings } from "@/components/cl-draft/CLDraftSetup";
 import CLDraftPick, { type CLDraftPlayer } from "@/components/cl-draft/CLDraftPick";
 import CLMatchViewer from "@/components/cl-draft/CLMatchViewer";
+import CLBracket from "@/components/cl-draft/CLBracket";
 import CLSeasonView from "@/components/cl-draft/CLSeasonView";
 import { simulateCLSeason } from "@/lib/clSimulator";
 import type { CLSeasonResult, CLMatchResult, CLKnockoutTie } from "@/lib/clSimulator";
@@ -55,6 +56,7 @@ export default function CLDraftPage() {
   const [simPhase, setSimPhase] = useState<"league" | "knockout" | "done">("league");
   const [simMatchIndex, setSimMatchIndex] = useState(0);
   const [fullResult, setFullResult] = useState<CLSeasonResult | null>(null);
+  const [betweenMatchView, setBetweenMatchView] = useState<"table" | "bracket" | null>(null);
 
   // Admin check
   useEffect(() => {
@@ -115,37 +117,54 @@ export default function CLDraftPage() {
     return null;
   };
 
-  const handleMatchFinished = () => {
+  const handleMatchFinished = (modifiedMatch: CLMatchResult) => {
     if (!fullResult) return;
+    setBetweenMatchView(null);
+
+    const updated = { ...fullResult };
+    if (simPhase === "league") {
+      updated.leagueMatches = fullResult.leagueMatches.map((m, i) =>
+        i === simMatchIndex ? modifiedMatch : m
+      );
+    } else if (simPhase === "knockout") {
+      let matchIdx = 0;
+      updated.knockoutTies = fullResult.knockoutTies.map(tie => {
+        const newTie = { ...tie };
+        if (matchIdx === simMatchIndex) newTie.leg1 = modifiedMatch;
+        matchIdx++;
+        if (tie.leg2) {
+          if (matchIdx === simMatchIndex) newTie.leg2 = modifiedMatch;
+          matchIdx++;
+        }
+        return newTie;
+      });
+    }
+    setFullResult(updated);
 
     if (simPhase === "league") {
       const nextIdx = simMatchIndex + 1;
-      if (nextIdx < fullResult.leagueMatches.length) {
+      if (nextIdx < updated.leagueMatches.length) {
         setSimMatchIndex(nextIdx);
       } else {
-        // League phase done
-        if (fullResult.knockoutTies.length > 0) {
+        if (updated.knockoutTies.length > 0) {
           setSimPhase("knockout");
           setSimMatchIndex(0);
         } else {
-          // Eliminated in league phase
           setSimPhase("done");
-          setSeasonResult(fullResult);
+          setSeasonResult(updated);
           setPhase("result");
         }
       }
     } else if (simPhase === "knockout") {
-      const knockoutMatches: unknown[] = [];
-      for (const tie of fullResult.knockoutTies) {
-        knockoutMatches.push(tie.leg1);
-        if (tie.leg2) knockoutMatches.push(tie.leg2);
-      }
+      const knockoutMatchCount = updated.knockoutTies.reduce(
+        (count, tie) => count + 1 + (tie.leg2 ? 1 : 0), 0
+      );
       const nextIdx = simMatchIndex + 1;
-      if (nextIdx < knockoutMatches.length) {
+      if (nextIdx < knockoutMatchCount) {
         setSimMatchIndex(nextIdx);
       } else {
         setSimPhase("done");
-        setSeasonResult(fullResult);
+        setSeasonResult(updated);
         setPhase("result");
       }
     }
@@ -232,7 +251,6 @@ export default function CLDraftPage() {
     const currentMatch = getCurrentMatch();
 
     if (!currentMatch) {
-      // No more matches — go to result
       if (fullResult) {
         setSeasonResult(fullResult);
         setPhase("result");
@@ -242,8 +260,8 @@ export default function CLDraftPage() {
 
     return (
       <div className="min-h-screen bg-gray-900 text-white p-4">
-        <div className="max-w-2xl mx-auto">
-          {/* Phase indicator */}
+        <div className="max-w-4xl mx-auto">
+          {/* Phase indicator + view toggle */}
           <div className="text-center mb-4">
             <div className="text-sm text-gray-400 mb-1">Season {currentSeason}</div>
             <div className="text-lg font-semibold text-blue-400">
@@ -251,14 +269,86 @@ export default function CLDraftPage() {
                 ? `League Phase — Match ${simMatchIndex + 1} of ${fullResult?.leagueMatches.length ?? 8}`
                 : `Knockout Stage — ${currentMatch.tie?.round ?? ""}`}
             </div>
+            <div className="flex justify-center gap-2 mt-2">
+              <button
+                onClick={() => setBetweenMatchView(betweenMatchView === "table" ? null : "table")}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                  betweenMatchView === "table" ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"
+                }`}
+              >
+                League Table
+              </button>
+              {fullResult?.bracket && (fullResult.bracket.roundOf16.length > 0 || fullResult.bracket.final) && (
+                <button
+                  onClick={() => setBetweenMatchView(betweenMatchView === "bracket" ? null : "bracket")}
+                  className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                    betweenMatchView === "bracket" ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"
+                  }`}
+                >
+                  Bracket
+                </button>
+              )}
+            </div>
           </div>
 
-          <CLMatchViewer
-            match={currentMatch.match}
-            knockoutTie={currentMatch.tie}
-            legNumber={currentMatch.leg}
-            onFinished={handleMatchFinished}
-          />
+          {/* Between-match views */}
+          {betweenMatchView === "table" && fullResult && (
+            <div className="mb-4 bg-gray-800 rounded-lg overflow-hidden">
+              <table className="w-full text-xs sm:text-sm">
+                <thead>
+                  <tr className="bg-gray-700 text-gray-400 text-xs">
+                    <th className="py-1.5 px-1 text-left w-6">#</th>
+                    <th className="py-1.5 px-1 text-left">Team</th>
+                    <th className="py-1.5 px-1 text-center w-6">P</th>
+                    <th className="py-1.5 px-1 text-center w-6">W</th>
+                    <th className="py-1.5 px-1 text-center w-6">D</th>
+                    <th className="py-1.5 px-1 text-center w-6">L</th>
+                    <th className="py-1.5 px-1 text-center w-8">GD</th>
+                    <th className="py-1.5 px-1 text-center w-8 font-bold">Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fullResult.leagueTable.map((team, i) => {
+                    let rowBg = "";
+                    if (i < 8) rowBg = "bg-blue-900/20";
+                    else if (i < 24) rowBg = "bg-yellow-900/10";
+                    else rowBg = "bg-red-900/10";
+                    if (team.isPlayer) rowBg = "bg-blue-600/30";
+                    return (
+                      <tr key={team.name} className={`border-t border-gray-700/50 ${rowBg}`}>
+                        <td className="py-1 px-1 text-gray-400">{i + 1}</td>
+                        <td className={`py-1 px-1 truncate max-w-[120px] ${team.isPlayer ? "font-bold text-blue-400" : ""}`}>{team.name}</td>
+                        <td className="py-1 px-1 text-center">{team.played}</td>
+                        <td className="py-1 px-1 text-center">{team.won}</td>
+                        <td className="py-1 px-1 text-center">{team.drawn}</td>
+                        <td className="py-1 px-1 text-center">{team.lost}</td>
+                        <td className="py-1 px-1 text-center">{team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}</td>
+                        <td className="py-1 px-1 text-center font-bold">{team.points}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {betweenMatchView === "bracket" && fullResult?.bracket && (
+            <div className="mb-4">
+              <CLBracket bracket={fullResult.bracket} />
+            </div>
+          )}
+
+          {/* Match viewer — hidden (not unmounted) when viewing table/bracket */}
+          <div style={{ display: betweenMatchView ? "none" : "block" }}>
+            <div className="max-w-2xl mx-auto">
+              <CLMatchViewer
+                match={currentMatch.match}
+                knockoutTie={currentMatch.tie}
+                legNumber={currentMatch.leg}
+                onFinished={handleMatchFinished}
+              />
+            </div>
+          </div>
         </div>
       </div>
     );

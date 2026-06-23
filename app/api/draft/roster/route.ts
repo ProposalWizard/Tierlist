@@ -129,6 +129,23 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Expand wing positions: LM↔LW, RM↔RW (but only if NOT a fullback).
+  // FIFA removed wingback positions and relabeled them as LM/RM, so we
+  // don't want defenders who list LM to also get LW. Only non-fullbacks.
+  for (const player of roster) {
+    const pos = player.positions.split(",").map((p: string) => p.trim().toUpperCase());
+    const hasLB = pos.includes("LB") || pos.includes("LWB");
+    const hasRB = pos.includes("RB") || pos.includes("RWB");
+    const added: string[] = [];
+    if (pos.includes("LM") && !hasLB && !pos.includes("LW")) added.push("LW");
+    if (pos.includes("LW") && !hasLB && !pos.includes("LM")) added.push("LM");
+    if (pos.includes("RM") && !hasRB && !pos.includes("RW")) added.push("RW");
+    if (pos.includes("RW") && !hasRB && !pos.includes("RM")) added.push("RM");
+    if (added.length > 0) {
+      player.positions = [...pos, ...added].join(", ");
+    }
+  }
+
   // Prime mode: replace each player's stats with their best-ever edition
   if (prime) {
     const ids = roster.map((p) => p.sofifa_id).filter(Boolean);
