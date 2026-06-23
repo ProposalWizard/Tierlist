@@ -1,7 +1,7 @@
 # Football Tierlist Website — Project Documentation
 
 > This file exists so context is never lost between sessions.
-> Last updated: 25 March 2026
+> Last updated: 23 June 2026
 
 ---
 
@@ -437,6 +437,35 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 
 ## Recent Session Changes
 
+### Session: 23 June 2026 — Database storage cleanup (1.02 GB → ~0.37 GB)
+
+Goal: get the Supabase database under the 500 MB free-tier limit without breaking any feature. Achieved ~0.37 GB total (was 1.02 GB) — roughly a two-thirds reduction with ~120 MB headroom to spare.
+
+**What was removed and why it's safe:**
+
+1. **sofifa_players JSONB slimming (745 MB → ~168 MB data):** Deleted unused/duplicate keys from the `attributes` JSONB in two waves.
+   - *Wave 1 (junk + duplicates):* keys that duplicated real table columns (`club`, `league`, `sofifa_id` already exist as columns and are the only copies the code reads) plus other junk. **Kept `attr_vl`** (market value) at user's request.
+   - *Wave 2 (real-but-unused stats):* 16 detailed FIFA stats that the season simulator never reads (e.g. finishing, positioning, vision, long shots, short passing, interceptions, standing tackle, marking, reactions, sprint speed, etc.).
+   - Done via batched `UPDATE ... SET attributes = attributes - ARRAY[...] LIMIT 30000` (Supabase SQL Editor ~2 min timeout requires batching), then `VACUUM FULL sofifa_players` to reclaim disk.
+
+2. **Goal/assist attribution simplified** (`lib/seasonSimulator.ts`): `goalScoringWeight()` and `assistWeight()` rewritten to use ONLY the 7 phase-rating stats (pace, shooting, passing, dribbling, defending, physical, crossing) instead of 14+ detailed stats. **Match win/draw/lose outcomes are completely unaffected** — only who gets credited the goal/assist changed. This let Wave 2 stats be deleted safely.
+
+3. **Wikidata tables pruned** (used by Tic-Tac-Toe / squad-builder helpers, NOT the draft game):
+   - Deleted all players born ≤1958 from `football_players` + `football_careers`.
+   - Dropped columns: `football_players.image_url`, `.popularity`, `.date_of_birth`, `.updated_at`; `football_clubs.image_url`; `football_countries.flag_url`.
+   - Code was updated to stop selecting these columns **before** they were dropped (see gotcha #1 — selecting a non-existent column errors the whole query). Player search/grids now return `image: null`, `dob: ""`; ranking is by name-match quality only.
+
+**Code changed this session** (all on `claude/recover-tierlist-website-3BajA`):
+- `lib/seasonSimulator.ts` — simplified attribution weights.
+- `app/api/football/search/route.ts`, `app/api/admin/football/{players,teams,crossclub,ttt-grid,leagues}/route.ts` — removed dropped columns from selects + ranking logic.
+- `app/api/admin/football/import/route.ts` — added `slimPlayer()`/`slimClub()` whitelist functions so re-imports only write columns that still exist; retired `flags` and `enrich-images` steps (return `{ removed: true }`).
+
+**Important gotchas:**
+- `VACUUM FULL` is **required** after big deletes — Postgres marks rows reusable but doesn't shrink files. It **cannot run inside a transaction**, so in the Supabase SQL Editor run each `VACUUM FULL <table>;` on its own (one statement at a time), never several semicolon-separated together.
+- `pg_total_relation_size` includes indexes; the dashboard "Large Objects" view shows data only — they won't match.
+- The roster API (`app/api/draft/roster/route.ts`) still extracts all 22 attrs from JSONB; deleted ones now read as 0, which is harmless (simulator ignores them). Minor dead-reference tech debt, not broken.
+- Easy future headroom if needed: drop unused sofifa indexes `idx_sofifa_name` (~14 MB), `idx_sofifa_overall`, `idx_sofifa_league_year` (~30–40 MB total) — won't affect the draft game.
+
 ### Session: ~June 2026
 
 1. **PL Draft game built** — Full game at `/draft` (see "PL Draft Game" section above). Linked from `GameSidebar`.
@@ -503,6 +532,7 @@ npm run lint   # Run ESLint
 - Custom domain: **knowitball.co.uk** (DNS at Hostinger → Vercel)
 - Supabase project provides the database + auth + storage backend
 - **Supabase project URL**: `https://cagkgfketucousksgtbk.supabase.co`
+- **Database size**: ~0.37 GB as of 23 June 2026 (was 1.02 GB — see the 23 June session notes for the cleanup that got it under the 500 MB free-tier limit). ~120 MB headroom remaining.
 
 ### Branding
 
