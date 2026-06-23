@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       is_active: body.is_active ?? true,
       sort_order: body.sort_order ?? 0,
       expires_at: body.expires_at ?? null,
+      conditions: body.conditions ?? [],
     })
     .select()
     .single();
@@ -57,6 +58,7 @@ export async function PATCH(req: Request) {
   if (body.is_active !== undefined) updates.is_active = body.is_active;
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order;
   if ("expires_at" in body) updates.expires_at = body.expires_at ?? null;
+  if (body.conditions !== undefined) updates.conditions = body.conditions;
   const { error } = await supabase
     .from("objectives")
     .update(updates)
