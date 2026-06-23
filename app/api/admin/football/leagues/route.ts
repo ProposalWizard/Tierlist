@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     const service = createServiceClient();
     const { data } = await service
       .from("football_clubs")
-      .select("wikidata_id, name, country, league, image_url")
+      .select("wikidata_id, name, country, league")
       .ilike("name", `%${query}%`)
       .limit(20);
 
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
       name: c.name as string,
       country: (c.country as string) ?? "",
       league: (c.league as string) ?? null,
-      image: (c.image_url as string) ?? null,
+      image: null,
     }));
 
     return NextResponse.json({ clubs });

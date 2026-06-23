@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
+import HowToPlayButton from "@/components/HowToPlayButton";
 
 export const metadata: Metadata = {
   title: "Ten-A-Ball — Knowitball",
@@ -46,6 +47,20 @@ export default async function TenableListPage() {
         <p className="mx-auto mt-3 max-w-md text-sm text-white">
           Guess all 10 answers before you lose your 3 lives. A new challenge every day!
         </p>
+        <HowToPlayButton>
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">The Challenge</h3>
+            <p>You&apos;re given a category with 10 answers. Try to guess all 10!</p>
+          </section>
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Lives</h3>
+            <p>You start with 3 lives. Each wrong answer loses a life. Run out of lives and the game ends.</p>
+          </section>
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Scoring</h3>
+            <p>Get as many correct answers as possible before your lives run out.</p>
+          </section>
+        </HowToPlayButton>
       </div>
 
       <main className="mx-auto max-w-4xl px-4 py-8">

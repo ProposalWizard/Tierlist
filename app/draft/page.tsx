@@ -899,6 +899,7 @@ export default function DraftPage() {
           roomPlayers={roomPlayers ?? undefined}
           roomCode={roomCode ?? undefined}
           allRoomPlayerSeasons={allRoomPlayerSeasons ?? undefined}
+          mode={settings?.mode}
         />
       )}
       {phase === "pre-season" && (

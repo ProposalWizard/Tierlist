@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     const { data: playerRows } = await service
       .from("football_players")
-      .select("wikidata_id, name, date_of_birth, country_id, position, image_url")
+      .select("wikidata_id, name, country_id, position")
       .in("wikidata_id", commonIds);
 
     const countryIds = Array.from(new Set((playerRows ?? []).map((p) => p.country_id).filter(Boolean))) as string[];
@@ -53,8 +53,8 @@ export async function GET(req: NextRequest) {
       name: p.name,
       nationality: countryMap.get(p.country_id ?? "") ?? "",
       position: p.position ?? "",
-      dob: p.date_of_birth ?? "",
-      image: p.image_url ?? null,
+      dob: "",
+      image: null,
     }));
 
     return NextResponse.json({ players });

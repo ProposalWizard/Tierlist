@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 
     const { data: clubRow } = await service
       .from("football_clubs")
-      .select("wikidata_id, name, country, league, image_url")
+      .select("wikidata_id, name, country, league")
       .eq("wikidata_id", clubId)
       .single();
 
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
           name: clubRow.name,
           country: clubRow.country ?? "",
           league: clubRow.league ?? null,
-          image: clubRow.image_url ?? null,
+          image: null,
         }
       : { id: clubId, name: clubId, country: "", league: null, image: null };
 
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
       const chunk = playerIds.slice(i, i + 500);
       const { data: rows } = await service
         .from("football_players")
-        .select("wikidata_id, name, date_of_birth, country_id, position, image_url")
+        .select("wikidata_id, name, country_id, position")
         .in("wikidata_id", chunk);
       if (rows) allPlayers.push(...rows);
     }
@@ -98,8 +98,8 @@ export async function GET(req: Request) {
           name: p.name as string,
           nationality: countryMap.get((p.country_id as string) ?? "") ?? "",
           position: (p.position as string) ?? "",
-          dob: (p.date_of_birth as string) ?? "",
-          image: (p.image_url as string) ?? null,
+          dob: "",
+          image: null,
           startDate: career?.startDate ?? null,
           endDate: career?.endDate ?? null,
         };

@@ -23,6 +23,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
   const [joinCode, setJoinCode] = useState("");
   const [joiningRoom, setJoiningRoom] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -84,6 +85,39 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
           <p className="text-white text-xs sm:text-sm max-w-sm mx-auto">
             Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
           </p>
+          <button
+            onClick={() => setShowHowToPlay(true)}
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold text-white hover:text-white hover:border-gray-500 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            How to Play
+          </button>
+          <div className="flex gap-2 mt-4">
+            <Link
+              href={isSignedIn === false ? "/auth?next=/draft/history" : "/draft/history"}
+              className={`flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md ${
+                isSignedIn === false
+                  ? "text-gray-400 hover:text-gray-300 bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700/40 hover:border-gray-600/50"
+                  : "text-white hover:text-emerald-300 bg-gray-800 hover:bg-gray-700 border border-gray-600/60 hover:border-emerald-600/50"
+              }`}
+            >
+              {isSignedIn === false && <span className="mr-1">&#128274;</span>}
+              History &amp; Achievements &rarr;
+            </Link>
+            <Link
+              href={isSignedIn === false ? "/auth?next=/draft/records" : "/draft/records"}
+              className={`flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md ${
+                isSignedIn === false
+                  ? "text-amber-400/60 hover:text-amber-300/70 bg-amber-900/15 hover:bg-amber-900/25 border border-amber-700/30 hover:border-amber-600/40 shadow-amber-900/20"
+                  : "text-amber-300 hover:text-amber-200 bg-amber-900/30 hover:bg-amber-900/40 border border-amber-600/50 hover:border-amber-500/60 shadow-amber-900/30"
+              }`}
+            >
+              {isSignedIn === false && <span className="mr-1">&#128274;</span>}
+              &#128203; Hall of Fame &rarr;
+            </Link>
+          </div>
         </div>
 
         {/* Sign-in prompt */}
@@ -387,21 +421,48 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
         <p className="text-center text-white text-xs mt-4">
           14 spins. 11 starters + 3 subs. 38 matches.
         </p>
-        <div className="flex gap-2 mt-4">
-          <Link
-            href="/draft/history"
-            className="flex-1 py-3 text-center text-sm font-bold text-white hover:text-emerald-300 bg-gray-800 hover:bg-gray-700 border border-gray-600/60 hover:border-emerald-600/50 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md"
-          >
-            History &amp; Achievements &rarr;
-          </Link>
-          <Link
-            href="/draft/records"
-            className="flex-1 py-3 text-center text-sm font-bold text-amber-300 hover:text-amber-200 bg-amber-900/30 hover:bg-amber-900/40 border border-amber-600/50 hover:border-amber-500/60 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-amber-900/30"
-          >
-            📋 Hall of Records &rarr;
-          </Link>
-        </div>
       </div>
+
+      {showHowToPlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowHowToPlay(false)}>
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-gray-900 rounded-t-2xl">
+              <h2 className="text-base font-black text-white">How to Play</h2>
+              <button onClick={() => setShowHowToPlay(false)} className="text-white hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-5 text-sm text-white">
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Draft Phase</h3>
+                <p>You get 14 spins. Each spin gives you a random Premier League club from a random FIFA edition. Pick one player from their roster for your squad.</p>
+              </section>
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Building Your XI</h3>
+                <p>Fill 11 starting positions + 3 subs. Players have real FIFA ratings and attributes.</p>
+              </section>
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Season Simulation</h3>
+                <p>Your squad plays a full 38-match Premier League season. Results are determined by your players&apos; ratings and attributes.</p>
+              </section>
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Competitions</h3>
+                <p>Beyond the league, compete in the FA Cup, Champions League, and more.</p>
+              </section>
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Career Mode</h3>
+                <p>Keep going across multiple seasons. Players age, ratings change, and you can sign new players.</p>
+              </section>
+              <section>
+                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Prime Mode</h3>
+                <p>In Prime mode, each player uses their best-ever FIFA rating instead of the rating from the specific year.</p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

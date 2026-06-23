@@ -8,10 +8,8 @@ function stripAccents(s: string): string {
 interface PlayerRow {
   wikidata_id: string;
   name: string;
-  date_of_birth: string | null;
   country_id: string | null;
   position: string | null;
-  image_url: string | null;
 }
 
 // Cache national team IDs in memory (refreshed every 10 minutes)
@@ -40,15 +38,14 @@ export async function GET(req: NextRequest) {
 
   const activeOnly = req.nextUrl.searchParams.get("active") === "1";
   const supabase = await createClient();
-  const cols = "wikidata_id, name, date_of_birth, country_id, position, image_url";
+  const cols = "wikidata_id, name, country_id, position";
   const qStripped = stripAccents(q);
 
-  // 1. Search players — order by popularity so famous players come first
+  // 1. Search players by name
   const { data: r1Data } = await supabase
     .from("football_players")
     .select(cols)
     .ilike("name", `%${q}%`)
-    .order("popularity", { ascending: false, nullsFirst: false })
     .limit(80);
 
   // Merge with accent-stripped search only if different
@@ -58,7 +55,6 @@ export async function GET(req: NextRequest) {
       .from("football_players")
       .select(cols)
       .ilike("name", `%${qStripped}%`)
-      .order("popularity", { ascending: false, nullsFirst: false })
       .limit(80);
     r2Data = (data ?? []) as PlayerRow[];
   }
@@ -99,23 +95,7 @@ export async function GET(req: NextRequest) {
     : rows;
   if (filteredRows.length === 0) return NextResponse.json({ players: [] });
 
-  // 3. Fetch popularity scores for candidates (safe if column doesn't exist yet)
-  const popMap = new Map<string, number>();
-  const candidateIds = filteredRows.map((p) => p.wikidata_id);
-  try {
-    const { data: popData } = await supabase
-      .from("football_players")
-      .select("wikidata_id, popularity")
-      .in("wikidata_id", candidateIds)
-      .not("popularity", "eq", 0);
-    for (const p of popData ?? []) {
-      popMap.set(p.wikidata_id, p.popularity ?? 0);
-    }
-  } catch {
-    // Column doesn't exist yet — skip
-  }
-
-  // 4. Rank and pick top 15
+  // 3. Rank by name-match quality and pick top 15
   const qNorm = stripAccents(q.trim());
   const ranked = filteredRows
     .map((p) => {
@@ -128,14 +108,6 @@ export async function GET(req: NextRequest) {
       else if (name.startsWith(qNorm)) score = 3000;
       else if (nameWords.some((w) => w.startsWith(qNorm))) score = 2000;
       else score = 1000;
-
-      score += popMap.get(p.wikidata_id) ?? 0;
-      if (p.image_url) score += 100;
-      if (p.date_of_birth) {
-        const year = parseInt(p.date_of_birth.substring(0, 4));
-        if (!isNaN(year) && year > 1960)
-          score += Math.min(30, (year - 1960) / 2);
-      }
 
       return { ...p, _score: score };
     })
@@ -155,24 +127,13 @@ export async function GET(req: NextRequest) {
     for (const c of countries ?? []) countryMap.set(c.wikidata_id, c.name);
   }
 
-  const players = ranked.map((p) => {
-    let image = p.image_url ?? null;
-    if (image) {
-      const fileMatch = image.match(/Special:FilePath\/(.+)$/);
-      if (fileMatch) {
-        image = `https://commons.wikimedia.org/w/thumb.php?f=${encodeURIComponent(decodeURIComponent(fileMatch[1]))}&w=200`;
-      } else if (image.startsWith("http://")) {
-        image = image.replace("http://", "https://");
-      }
-    }
-    return {
-      id: p.wikidata_id,
-      name: p.name,
-      nationality: countryMap.get(p.country_id ?? "") ?? "",
-      position: p.position ?? "",
-      image,
-    };
-  });
+  const players = ranked.map((p) => ({
+    id: p.wikidata_id,
+    name: p.name,
+    nationality: countryMap.get(p.country_id ?? "") ?? "",
+    position: p.position ?? "",
+    image: null,
+  }));
 
   return NextResponse.json({ players });
 }

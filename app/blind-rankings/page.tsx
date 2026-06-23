@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { BlindRanking } from "@/lib/types";
+import HowToPlayButton from "@/components/HowToPlayButton";
 
 export const metadata: Metadata = {
   title: "Blind Rankings",
@@ -42,6 +43,20 @@ export default async function BlindRankingsPage() {
         <p className="mx-auto mt-3 max-w-md text-sm text-white">
           Players appear one at a time. Rank them without knowing who&apos;s coming next!
         </p>
+        <HowToPlayButton>
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">The Concept</h3>
+            <p>Players appear one at a time, in random order. You don&apos;t know who&apos;s coming next.</p>
+          </section>
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Your Job</h3>
+            <p>Rank each player as they appear. Place them where you think they belong in your ranking.</p>
+          </section>
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">The Challenge</h3>
+            <p>Once placed, you can rearrange — but the fun is in committing to your gut feeling!</p>
+          </section>
+        </HowToPlayButton>
       </div>
 
       <main className="mx-auto max-w-4xl px-4 py-8">

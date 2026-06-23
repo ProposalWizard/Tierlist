@@ -614,17 +614,17 @@ function goalScoringWeight(p: DraftPlayer): number {
     const a = p.attrs;
     const o = p.overall;
     const sho = statOr(a.shooting, o);
-    const fin = a.finishing > 0 ? a.finishing : sho;
-    const pos = a.positioning > 0 ? a.positioning : sho * 0.7;
-    const head = a.heading > 0 ? a.heading : o * 0.5;
+    const dri = statOr(a.dribbling, o);
+    const pac = statOr(a.pace, o);
+    const phy = statOr(a.physical, o);
 
     switch (role) {
       case 'ATT':
-        return (fin * 3 + pos * 2 + sho * 1.5 + head * 0.8 + statOr(a.pace, o) * 0.5) * fit * qualityMult / 80;
+        return (sho * 3 + dri * 1 + pac * 0.5) * fit * qualityMult / 80;
       case 'MID':
-        return ((statOr(a.longShots, o) || sho * 0.7) * 1.5 + sho * 1 + pos * 0.5 + head * 0.3) * fit * qualityMult / 150;
+        return (sho * 2 + dri * 0.5) * fit * qualityMult / 150;
       case 'DEF':
-        return (head * 1.2 + sho * 0.3 + statOr(a.physical, o) * 0.2) * fit * qualityMult / 600;
+        return (phy * 1.2 + sho * 0.3) * fit * qualityMult / 600;
       case 'GK':
         return 0.02;
     }
@@ -637,20 +637,31 @@ function goalScoringWeight(p: DraftPlayer): number {
 
 function assistWeight(p: DraftPlayer): number {
   const role = classifyPosition(p.assignedPosition);
+  const pos = p.assignedPosition.toUpperCase().trim();
   const fit = positionFitness(p);
 
   if (hasAttrs(p)) {
     const a = p.attrs;
     const o = p.overall;
     const pas = statOr(a.passing, o);
-    const vis = a.vision > 0 ? a.vision : pas * 0.8;
-    const cross = a.crossing > 0 ? a.crossing : pas * 0.7;
-    const sp = a.shortPassing > 0 ? a.shortPassing : pas;
-    const lp = a.longPassing > 0 ? a.longPassing : pas * 0.7;
+    const crs = statOr(a.crossing, o);
+    const dri = statOr(a.dribbling, o);
 
-    const baseW = (vis * 2 + cross * 1.5 + sp * 1 + lp * 0.5) / 5;
-    const roleMult: Record<PositionRole, number> = { ATT: 1.0, MID: 1.3, DEF: 0.4, GK: 0.02 };
-    return baseW * roleMult[role] * fit / 10;
+    const isFullback = ['RB', 'LB', 'RWB', 'LWB'].includes(pos);
+    if (isFullback) {
+      return (crs * 3 + pas * 1) * fit / 40;
+    }
+
+    switch (role) {
+      case 'MID':
+        return (pas * 2 + crs * 1 + dri * 0.5) * fit / 30;
+      case 'ATT':
+        return (pas * 1.5 + dri * 1 + crs * 0.5) * fit / 40;
+      case 'DEF':
+        return (pas * 0.5) * fit / 100;
+      case 'GK':
+        return 0.1;
+    }
   }
 
   const ratingFactor = 0.5 + (p.overall / 99) * 0.5;

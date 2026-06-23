@@ -22,17 +22,17 @@ export default async function GlobalNav() {
 
   return (
     <nav className="relative sticky top-0 z-50 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
-      <div className="relative mx-auto grid max-w-7xl grid-cols-3 items-center px-4 py-3">
-        <div className="flex items-center gap-2">
+      <div className="relative mx-auto flex items-center max-w-7xl px-4 py-3 gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           <GameSidebar />
           <Link href="/" className="text-lg font-bold tracking-tight text-white">
             KNOWITBALL
           </Link>
         </div>
-        <div className="flex justify-center">
+        <div className="flex-1 min-w-0">
           <NavGameLinks />
         </div>
-        <div className="flex justify-end">
+        <div className="shrink-0">
           <NavMenu isLoggedIn={!!user} isAdmin={userIsAdmin} />
         </div>
       </div>

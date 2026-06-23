@@ -93,6 +93,24 @@ export default function XPProgressBar({ progression }: Props) {
   return (
     <>
       <div className="rounded-xl border border-gray-800/60 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 p-5 relative overflow-hidden h-full">
+        {/* Shimmer animation */}
+        <style jsx>{`
+          @keyframes rtl-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+          }
+          .rtl-shimmer::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            animation: rtl-shimmer 2.5s ease-in-out infinite;
+          }
+        `}</style>
+
         {/* Background glow */}
         <div
           className="absolute inset-0 opacity-[0.04] pointer-events-none"
@@ -106,25 +124,17 @@ export default function XPProgressBar({ progression }: Props) {
         <div className="relative flex items-start justify-between mb-5">
           <div>
             <h3 className="text-xs font-black tracking-[0.2em] text-amber-500/80 uppercase">
-              Road to Legend Season 1
+              Road to Legend <span className="font-semibold opacity-60">Season 1</span>
             </h3>
-            <div className={`text-base sm:text-2xl font-medium italic mt-0.5 leading-tight ${titleColor}`}>
-              {currentTitle.name}
+            <div className={`text-sm sm:text-base font-semibold mt-0.5 leading-tight ${titleColor}`}>
+              — {currentTitle.name}
             </div>
           </div>
-          <div className="flex items-center gap-4 flex-shrink-0">
-            <div className="text-right">
-              <div className="text-3xl font-black text-amber-400 leading-none">Lv {level}</div>
-              <div className="text-[11px] text-white mt-0.5">
-                {totalXp.toLocaleString()} XP total
-              </div>
-            </div>
-            <span
-              className={`text-[10px] font-bold tabular-nums ${daysLeft <= 14 ? "text-red-400" : "text-white"}`}
-            >
-              {daysLeft}d left
-            </span>
-          </div>
+          <span
+            className={`text-[10px] font-bold tabular-nums flex-shrink-0 ${daysLeft <= 14 ? "text-red-400" : "text-white"}`}
+          >
+            {daysLeft}d left
+          </span>
         </div>
 
         {/* Milestone pair view */}
@@ -149,26 +159,12 @@ export default function XPProgressBar({ progression }: Props) {
 
             {/* Bar column */}
             <div className="flex-1 flex flex-col gap-2 min-w-0">
-              <div className="flex justify-between text-xs font-black">
-                <span className="text-amber-400">Lv {leftCard.unlock_value}</span>
-                {rightCard && <span className="text-white">Lv {rightCard.unlock_value}</span>}
-              </div>
               <div className="relative h-3.5 bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-700 via-amber-500 to-amber-300 rounded-full transition-all duration-1000 ease-out"
+                  className="rtl-shimmer absolute inset-y-0 left-0 bg-gradient-to-r from-amber-700 via-amber-500 to-amber-300 rounded-full transition-all duration-1000 ease-out overflow-hidden"
                   style={{ width: `${animatedMilestonePct}%` }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-full pointer-events-none" />
-              </div>
-              <div className="text-center text-[11px] font-semibold">
-                {rightCard && level < (rightCard.unlock_value ?? 999) ? (
-                  <span className="text-white">
-                    {(rightCard.unlock_value ?? 0) - level} level
-                    {(rightCard.unlock_value ?? 0) - level !== 1 ? "s" : ""} to next card
-                  </span>
-                ) : (
-                  <span className="text-amber-400">✓ Reward unlocked!</span>
-                )}
               </div>
             </div>
 
