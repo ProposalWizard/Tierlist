@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { CLSeasonResult, CLMatchResult, CLKnockoutTie, CLLeagueStanding, CLPlayerStats } from "@/lib/clSimulator";
 import CLMatchViewer from "./CLMatchViewer";
+import CLBracket from "./CLBracket";
 
 interface Props {
   result: CLSeasonResult;
@@ -208,6 +209,10 @@ export default function CLSeasonView({ result, seasonNumber, totalSeasons, onPla
         {/* Knockout tab */}
         {tab === "knockout" && (
           <div className="space-y-4">
+            {result.bracket && (result.bracket.roundOf16.length > 0 || result.bracket.final) && (
+              <CLBracket bracket={result.bracket} />
+            )}
+
             {result.knockoutTies.length === 0 ? (
               <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
                 {result.leaguePosition > 24
