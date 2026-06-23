@@ -7,9 +7,8 @@ import CLMatchViewer from "@/components/cl-draft/CLMatchViewer";
 import CLBracket from "@/components/cl-draft/CLBracket";
 import CLSeasonView from "@/components/cl-draft/CLSeasonView";
 import { simulateCLSeason } from "@/lib/clSimulator";
-import type { CLSeasonResult, CLMatchResult, CLKnockoutTie } from "@/lib/clSimulator";
+import type { CLSeasonResult, CLMatchResult, CLKnockoutTie, CLLeagueStanding, CLFullBracket } from "@/lib/clSimulator";
 import type { DraftPlayer, PlayerAttributes } from "@/lib/seasonSimulator";
-import { getPositionColor, FORMATIONS } from "@/components/draft/formations";
 
 type GamePhase = "loading" | "unauthorized" | "setup" | "draft" | "simulate" | "result" | "career-end";
 
@@ -44,6 +43,70 @@ function applyStatChange(player: CLDraftPlayer, change: number): CLDraftPlayer {
   return p;
 }
 
+// Build partial league table from only the matches completed so far.
+// Player stats come from actual completed matches; AI teams are scaled proportionally.
+function computeLiveLeagueTable(fullResult: CLSeasonResult, completedMatches: number): CLLeagueStanding[] {
+  const total = Math.max(1, fullResult.leagueMatches.length);
+  const fraction = completedMatches / total;
+
+  const live = fullResult.leagueTable.map(team => {
+    if (team.isPlayer) {
+      const done = fullResult.leagueMatches.slice(0, completedMatches);
+      let won = 0, drawn = 0, lost = 0, gf = 0, ga = 0;
+      for (const m of done) {
+        if (m.result === "W") won++;
+        else if (m.result === "D") drawn++;
+        else lost++;
+        gf += m.goalsFor;
+        ga += m.goalsAgainst;
+      }
+      return { ...team, played: completedMatches, won, drawn, lost, goalsFor: gf, goalsAgainst: ga, goalDifference: gf - ga, points: won * 3 + drawn };
+    }
+    return {
+      ...team,
+      played: Math.round(team.played * fraction),
+      won: Math.round(team.won * fraction),
+      drawn: Math.round(team.drawn * fraction),
+      lost: Math.round(team.lost * fraction),
+      goalsFor: Math.round(team.goalsFor * fraction),
+      goalsAgainst: Math.round(team.goalsAgainst * fraction),
+      goalDifference: Math.round(team.goalDifference * fraction),
+      points: Math.round(team.points * fraction),
+    };
+  });
+
+  live.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+    return a.name.localeCompare(b.name);
+  });
+  return live;
+}
+
+// Build a bracket showing only rounds the player has entered so far.
+// Within revealed rounds, all pairings (including AI vs AI) are shown.
+function getPartialBracket(fullResult: CLSeasonResult, simMatchIdx: number): CLFullBracket {
+  const revealedRounds = new Set<string>();
+  let matchCount = 0;
+
+  for (const tie of fullResult.knockoutTies) {
+    revealedRounds.add(tie.round);
+    const tieMatchCount = tie.leg2 ? 2 : 1;
+    if (matchCount + tieMatchCount > simMatchIdx) break;
+    matchCount += tieMatchCount;
+  }
+
+  const b = fullResult.bracket;
+  return {
+    playoffRound: revealedRounds.has("Playoff Round") ? b.playoffRound : [],
+    roundOf16: revealedRounds.has("Round of 16") ? b.roundOf16 : [],
+    quarterFinals: revealedRounds.has("Quarter-Final") ? b.quarterFinals : [],
+    semiFinals: revealedRounds.has("Semi-Final") ? b.semiFinals : [],
+    final: revealedRounds.has("Final") ? b.final : null,
+  };
+}
+
 export default function CLDraftPage() {
   const [phase, setPhase] = useState<GamePhase>("loading");
   const [settings, setSettings] = useState<CLDraftSettings | null>(null);
@@ -56,7 +119,9 @@ export default function CLDraftPage() {
   const [simPhase, setSimPhase] = useState<"league" | "knockout" | "done">("league");
   const [simMatchIndex, setSimMatchIndex] = useState(0);
   const [fullResult, setFullResult] = useState<CLSeasonResult | null>(null);
-  const [betweenMatchView, setBetweenMatchView] = useState<"table" | "bracket" | null>(null);
+  // After each match finishes: hold it here, show between-match screen, advance only on user action
+  const [matchJustFinished, setMatchJustFinished] = useState<CLMatchResult | null>(null);
+  const [updatedResult, setUpdatedResult] = useState<CLSeasonResult | null>(null);
 
   // Admin check
   useEffect(() => {
@@ -85,26 +150,23 @@ export default function CLDraftPage() {
     const draftPlayers = squad.map(toDraftPlayer);
     const result = simulateCLSeason(draftPlayers, currentSeason, allResults.length > 0 ? allResults[allResults.length - 1] : undefined);
     setFullResult(result);
+    setUpdatedResult(result);
     setSimPhase("league");
     setSimMatchIndex(0);
+    setMatchJustFinished(null);
     setPhase("simulate");
   }, [currentSeason, allResults]);
 
-  // Get current match to display in the viewer
-  const getCurrentMatch = (): { match: CLMatchResult; tie?: CLKnockoutTie; leg?: 1 | 2 } | null => {
-    if (!fullResult) return null;
-
+  const getCurrentMatch = (result: CLSeasonResult): { match: CLMatchResult; tie?: CLKnockoutTie; leg?: 1 | 2 } | null => {
     if (simPhase === "league") {
-      if (simMatchIndex < fullResult.leagueMatches.length) {
-        return { match: fullResult.leagueMatches[simMatchIndex] };
+      if (simMatchIndex < result.leagueMatches.length) {
+        return { match: result.leagueMatches[simMatchIndex] };
       }
       return null;
     }
-
     if (simPhase === "knockout") {
-      // Flatten knockout ties into individual matches
       const knockoutMatches: { match: CLMatchResult; tie: CLKnockoutTie; leg: 1 | 2 }[] = [];
-      for (const tie of fullResult.knockoutTies) {
+      for (const tie of result.knockoutTies) {
         knockoutMatches.push({ match: tie.leg1, tie, leg: 1 });
         if (tie.leg2) knockoutMatches.push({ match: tie.leg2, tie, leg: 2 });
       }
@@ -113,13 +175,12 @@ export default function CLDraftPage() {
       }
       return null;
     }
-
     return null;
   };
 
+  // Match finished: apply decision-modified result, show between-match screen
   const handleMatchFinished = (modifiedMatch: CLMatchResult) => {
     if (!fullResult) return;
-    setBetweenMatchView(null);
 
     const updated = { ...fullResult };
     if (simPhase === "league") {
@@ -140,23 +201,30 @@ export default function CLDraftPage() {
       });
     }
     setFullResult(updated);
+    setUpdatedResult(updated);
+    setMatchJustFinished(modifiedMatch);
+  };
+
+  // User clicks "Next Match" from the between-match screen
+  const handleAdvanceMatch = () => {
+    const result = updatedResult ?? fullResult;
+    if (!result) return;
+    setMatchJustFinished(null);
 
     if (simPhase === "league") {
       const nextIdx = simMatchIndex + 1;
-      if (nextIdx < updated.leagueMatches.length) {
+      if (nextIdx < result.leagueMatches.length) {
         setSimMatchIndex(nextIdx);
+      } else if (result.knockoutTies.length > 0) {
+        setSimPhase("knockout");
+        setSimMatchIndex(0);
       } else {
-        if (updated.knockoutTies.length > 0) {
-          setSimPhase("knockout");
-          setSimMatchIndex(0);
-        } else {
-          setSimPhase("done");
-          setSeasonResult(updated);
-          setPhase("result");
-        }
+        setSimPhase("done");
+        setSeasonResult(result);
+        setPhase("result");
       }
     } else if (simPhase === "knockout") {
-      const knockoutMatchCount = updated.knockoutTies.reduce(
+      const knockoutMatchCount = result.knockoutTies.reduce(
         (count, tie) => count + 1 + (tie.leg2 ? 1 : 0), 0
       );
       const nextIdx = simMatchIndex + 1;
@@ -164,7 +232,7 @@ export default function CLDraftPage() {
         setSimMatchIndex(nextIdx);
       } else {
         setSimPhase("done");
-        setSeasonResult(updated);
+        setSeasonResult(result);
         setPhase("result");
       }
     }
@@ -174,7 +242,6 @@ export default function CLDraftPage() {
     if (!seasonResult) return;
     setAllResults(prev => [...prev, seasonResult]);
 
-    // Apply rating changes based on performance
     const updatedPlayers = players.map(p => {
       const stats = seasonResult.playerStats.find(s => s.name === p.name);
       if (!stats) return p;
@@ -186,23 +253,20 @@ export default function CLDraftPage() {
       return change !== 0 ? applyStatChange(p, change) : p;
     });
 
-    // Random departure (1-2 players)
     const numDepartures = Math.random() < 0.6 ? 2 : 1;
     const departedIndices: number[] = [];
     for (let i = 0; i < numDepartures; i++) {
-      const available = updatedPlayers
-        .map((_, idx) => idx)
-        .filter(idx => !departedIndices.includes(idx));
+      const available = updatedPlayers.map((_, idx) => idx).filter(idx => !departedIndices.includes(idx));
       if (available.length === 0) break;
-      const idx = available[Math.floor(Math.random() * available.length)];
-      departedIndices.push(idx);
+      departedIndices.push(available[Math.floor(Math.random() * available.length)]);
     }
 
-    const remaining = updatedPlayers.filter((_, i) => !departedIndices.includes(i));
-    setPlayers(remaining);
+    setPlayers(updatedPlayers.filter((_, i) => !departedIndices.includes(i)));
     setCurrentSeason(prev => prev + 1);
     setSeasonResult(null);
     setFullResult(null);
+    setUpdatedResult(null);
+    setMatchJustFinished(null);
     setPhase("draft");
   };
 
@@ -235,7 +299,6 @@ export default function CLDraftPage() {
   }
 
   if (phase === "draft" && settings) {
-    const totalPicks = 14 - players.length;
     return (
       <CLDraftPick
         settings={settings}
@@ -248,107 +311,147 @@ export default function CLDraftPage() {
   }
 
   if (phase === "simulate") {
-    const currentMatch = getCurrentMatch();
+    const result = updatedResult ?? fullResult;
+    if (!result) return null;
 
+    // ── Between-match screen ──
+    if (matchJustFinished !== null) {
+      const completedLeagueMatches = simPhase === "league"
+        ? simMatchIndex + 1
+        : result.leagueMatches.length;
+
+      const liveTable = computeLiveLeagueTable(result, completedLeagueMatches);
+      const partialBracket = simPhase === "knockout" ? getPartialBracket(result, simMatchIndex) : null;
+
+      // Determine next match label
+      const isLastLeagueMatch = simPhase === "league" && simMatchIndex + 1 >= result.leagueMatches.length;
+      const isLastKnockoutMatch = simPhase === "knockout" && (() => {
+        const total = result.knockoutTies.reduce((c, t) => c + 1 + (t.leg2 ? 1 : 0), 0);
+        return simMatchIndex + 1 >= total;
+      })();
+      let nextLabel = "Next Match →";
+      if (isLastLeagueMatch && result.knockoutTies.length > 0) nextLabel = "Into Knockout Stage →";
+      else if (isLastKnockoutMatch || (isLastLeagueMatch && result.knockoutTies.length === 0)) nextLabel = "See Season Results →";
+
+      return (
+        <div className="min-h-screen bg-gray-900 text-white p-4">
+          <div className="max-w-4xl mx-auto space-y-4">
+            {/* Last match result */}
+            <div className="bg-gray-800 rounded-xl p-5 text-center">
+              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Season {currentSeason} — {simPhase === "league" ? `Match ${simMatchIndex + 1} of ${result.leagueMatches.length}` : matchJustFinished.opponent}</div>
+              <div className={`text-3xl font-bold mb-1 ${
+                matchJustFinished.result === "W" ? "text-green-400" :
+                matchJustFinished.result === "L" ? "text-red-400" : "text-yellow-400"
+              }`}>
+                {matchJustFinished.result === "W" ? "Victory!" : matchJustFinished.result === "L" ? "Defeat" : "Draw"}
+              </div>
+              <div className="text-xl font-mono">
+                KNOWITBALL FC&nbsp;
+                <span className="font-bold">{matchJustFinished.goalsFor}</span>
+                &nbsp;–&nbsp;
+                <span className="font-bold">{matchJustFinished.goalsAgainst}</span>
+                &nbsp;{matchJustFinished.opponent}
+              </div>
+              {matchJustFinished.goalScorers.length > 0 && (
+                <div className="text-sm text-gray-400 mt-1">
+                  ⚽ {matchJustFinished.goalScorers.map(g => `${g.player} ${g.minute}′`).join(", ")}
+                </div>
+              )}
+            </div>
+
+            {/* Standings header */}
+            <div className="text-center text-sm font-semibold text-gray-300 uppercase tracking-wider">
+              {simPhase === "league" ? `Standings after ${completedLeagueMatches} of ${result.leagueMatches.length} matches` : "Knockout Bracket"}
+            </div>
+
+            {/* League table (league phase) */}
+            {simPhase === "league" && (
+              <div className="bg-gray-800 rounded-lg overflow-hidden">
+                <table className="w-full text-xs sm:text-sm">
+                  <thead>
+                    <tr className="bg-gray-700 text-gray-400 text-xs">
+                      <th className="py-1.5 px-1 text-left w-6">#</th>
+                      <th className="py-1.5 px-1 text-left">Team</th>
+                      <th className="py-1.5 px-1 text-center w-6">P</th>
+                      <th className="py-1.5 px-1 text-center w-6">W</th>
+                      <th className="py-1.5 px-1 text-center w-6">D</th>
+                      <th className="py-1.5 px-1 text-center w-6">L</th>
+                      <th className="py-1.5 px-1 text-center w-8">GD</th>
+                      <th className="py-1.5 px-1 text-center w-8 font-bold">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {liveTable.map((team, i) => {
+                      let rowBg = i < 8 ? "bg-blue-900/20" : i < 24 ? "bg-yellow-900/10" : "bg-red-900/10";
+                      if (team.isPlayer) rowBg = "bg-blue-600/30";
+                      return (
+                        <tr key={team.name} className={`border-t border-gray-700/50 ${rowBg}`}>
+                          <td className="py-1 px-1 text-gray-400">{i + 1}</td>
+                          <td className={`py-1 px-1 truncate max-w-[130px] ${team.isPlayer ? "font-bold text-blue-400" : ""}`}>{team.name}</td>
+                          <td className="py-1 px-1 text-center">{team.played}</td>
+                          <td className="py-1 px-1 text-center">{team.won}</td>
+                          <td className="py-1 px-1 text-center">{team.drawn}</td>
+                          <td className="py-1 px-1 text-center">{team.lost}</td>
+                          <td className="py-1 px-1 text-center">{team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}</td>
+                          <td className="py-1 px-1 text-center font-bold">{team.points}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="px-3 py-1.5 text-xs text-gray-500 flex gap-3">
+                  <span><span className="text-blue-400">■</span> R16</span>
+                  <span><span className="text-yellow-600">■</span> Playoff</span>
+                  <span><span className="text-red-800">■</span> Out</span>
+                </div>
+              </div>
+            )}
+
+            {/* Bracket (knockout phase) */}
+            {simPhase === "knockout" && partialBracket && (
+              <CLBracket bracket={partialBracket} />
+            )}
+
+            {/* Advance button */}
+            <div className="text-center pt-2">
+              <button
+                onClick={handleAdvanceMatch}
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-lg transition-colors"
+              >
+                {nextLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Active match viewer ──
+    const currentMatch = getCurrentMatch(result);
     if (!currentMatch) {
-      if (fullResult) {
-        setSeasonResult(fullResult);
-        setPhase("result");
-      }
+      setSeasonResult(result);
+      setPhase("result");
       return null;
     }
 
     return (
       <div className="min-h-screen bg-gray-900 text-white p-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Phase indicator + view toggle */}
+        <div className="max-w-2xl mx-auto">
           <div className="text-center mb-4">
             <div className="text-sm text-gray-400 mb-1">Season {currentSeason}</div>
             <div className="text-lg font-semibold text-blue-400">
               {simPhase === "league"
-                ? `League Phase — Match ${simMatchIndex + 1} of ${fullResult?.leagueMatches.length ?? 8}`
+                ? `League Phase — Match ${simMatchIndex + 1} of ${result.leagueMatches.length}`
                 : `Knockout Stage — ${currentMatch.tie?.round ?? ""}`}
             </div>
-            <div className="flex justify-center gap-2 mt-2">
-              <button
-                onClick={() => setBetweenMatchView(betweenMatchView === "table" ? null : "table")}
-                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                  betweenMatchView === "table" ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"
-                }`}
-              >
-                League Table
-              </button>
-              {fullResult?.bracket && (fullResult.bracket.roundOf16.length > 0 || fullResult.bracket.final) && (
-                <button
-                  onClick={() => setBetweenMatchView(betweenMatchView === "bracket" ? null : "bracket")}
-                  className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
-                    betweenMatchView === "bracket" ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"
-                  }`}
-                >
-                  Bracket
-                </button>
-              )}
-            </div>
           </div>
 
-          {/* Between-match views */}
-          {betweenMatchView === "table" && fullResult && (
-            <div className="mb-4 bg-gray-800 rounded-lg overflow-hidden">
-              <table className="w-full text-xs sm:text-sm">
-                <thead>
-                  <tr className="bg-gray-700 text-gray-400 text-xs">
-                    <th className="py-1.5 px-1 text-left w-6">#</th>
-                    <th className="py-1.5 px-1 text-left">Team</th>
-                    <th className="py-1.5 px-1 text-center w-6">P</th>
-                    <th className="py-1.5 px-1 text-center w-6">W</th>
-                    <th className="py-1.5 px-1 text-center w-6">D</th>
-                    <th className="py-1.5 px-1 text-center w-6">L</th>
-                    <th className="py-1.5 px-1 text-center w-8">GD</th>
-                    <th className="py-1.5 px-1 text-center w-8 font-bold">Pts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fullResult.leagueTable.map((team, i) => {
-                    let rowBg = "";
-                    if (i < 8) rowBg = "bg-blue-900/20";
-                    else if (i < 24) rowBg = "bg-yellow-900/10";
-                    else rowBg = "bg-red-900/10";
-                    if (team.isPlayer) rowBg = "bg-blue-600/30";
-                    return (
-                      <tr key={team.name} className={`border-t border-gray-700/50 ${rowBg}`}>
-                        <td className="py-1 px-1 text-gray-400">{i + 1}</td>
-                        <td className={`py-1 px-1 truncate max-w-[120px] ${team.isPlayer ? "font-bold text-blue-400" : ""}`}>{team.name}</td>
-                        <td className="py-1 px-1 text-center">{team.played}</td>
-                        <td className="py-1 px-1 text-center">{team.won}</td>
-                        <td className="py-1 px-1 text-center">{team.drawn}</td>
-                        <td className="py-1 px-1 text-center">{team.lost}</td>
-                        <td className="py-1 px-1 text-center">{team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}</td>
-                        <td className="py-1 px-1 text-center font-bold">{team.points}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {betweenMatchView === "bracket" && fullResult?.bracket && (
-            <div className="mb-4">
-              <CLBracket bracket={fullResult.bracket} />
-            </div>
-          )}
-
-          {/* Match viewer — hidden (not unmounted) when viewing table/bracket */}
-          <div style={{ display: betweenMatchView ? "none" : "block" }}>
-            <div className="max-w-2xl mx-auto">
-              <CLMatchViewer
-                match={currentMatch.match}
-                knockoutTie={currentMatch.tie}
-                legNumber={currentMatch.leg}
-                onFinished={handleMatchFinished}
-              />
-            </div>
-          </div>
+          <CLMatchViewer
+            match={currentMatch.match}
+            knockoutTie={currentMatch.tie}
+            legNumber={currentMatch.leg}
+            onFinished={handleMatchFinished}
+          />
         </div>
       </div>
     );
@@ -400,6 +503,8 @@ export default function CLDraftPage() {
                 setAllResults([]);
                 setSeasonResult(null);
                 setFullResult(null);
+                setUpdatedResult(null);
+                setMatchJustFinished(null);
                 setSettings(null);
               }}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition-colors"
