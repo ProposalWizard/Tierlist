@@ -21,21 +21,21 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="rounded-lg border border-indigo-700 px-3 py-2 text-xs font-semibold text-indigo-300 transition-colors hover:border-indigo-500 hover:text-white"
+                  className="rounded-lg border border-indigo-700 px-3 py-2 text-sm font-semibold text-indigo-300 transition-colors hover:border-indigo-500 hover:text-white"
                 >
                   Admin
                 </Link>
               )}
               <Link
                 href="/profile"
-                className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-gray-500"
+                className="rounded-lg border border-gray-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:border-gray-500"
               >
                 Profile
               </Link>
               <form action="/api/auth/signout" method="POST">
                 <button
                   type="submit"
-                  className="rounded-lg bg-gray-800 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-gray-700"
+                  className="rounded-lg bg-gray-800 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
                 >
                   Sign out
                 </button>
