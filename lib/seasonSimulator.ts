@@ -200,6 +200,8 @@ export interface SeasonResult {
   uel?: UCLResult;
   superCup?: SuperCupResult;
   charityShield?: CharityShieldResult;
+  uclTournamentWinner?: string;
+  uelTournamentWinner?: string;
 }
 
 // --- Seeded PRNG (mulberry32) ---
@@ -988,6 +990,31 @@ function matchRating(
 }
 
 // --- FA Cup simulation ---
+
+// Lightweight knockout to determine a tournament winner without player involvement.
+// Used to always show UCL/UEL winners even when the player didn't qualify.
+function pickBackgroundKnockoutWinner(
+  teams: { name: string; strength: number }[],
+  rng: () => number
+): string {
+  if (teams.length === 0) return '';
+  let remaining = [...teams];
+  // Fisher-Yates shuffle
+  for (let i = remaining.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+  }
+  while (remaining.length > 1) {
+    const next: { name: string; strength: number }[] = [];
+    for (let i = 0; i + 1 < remaining.length; i += 2) {
+      const a = remaining[i], b = remaining[i + 1];
+      next.push(rng() * (a.strength + b.strength) < a.strength ? a : b);
+    }
+    if (remaining.length % 2 === 1) next.push(remaining[remaining.length - 1]);
+    remaining = next;
+  }
+  return remaining[0]?.name ?? '';
+}
 
 const FA_CUP_ROUNDS = ['Round of 32', 'Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
 function simulateAIvAICupMatch(
@@ -2488,6 +2515,8 @@ export function simulateSeason(
   // Champions League / Europa League (if qualified from previous season)
   let ucl: UCLResult | undefined;
   let uel: UCLResult | undefined;
+  let uclTournamentWinner: string | undefined;
+  let uelTournamentWinner: string | undefined;
   if (previousLeagueTable) {
     const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
     const wonUELLastSeason = previousSeasonResult?.uel?.winner === true;
@@ -2504,6 +2533,30 @@ export function simulateSeason(
         uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng, true);
       }
     }
+
+    // Always determine tournament winners so the results screen can always show them.
+    // When the player participated, use the actual result; otherwise run a background bracket.
+    uclTournamentWinner = ucl.tournamentWinner || (() => {
+      const plQualifiers = opponents.filter(o => {
+        const pos = previousLeagueTable!.findIndex(t => t.name === o.name) + 1;
+        return pos >= 1 && pos <= 5;
+      });
+      return pickBackgroundKnockoutWinner(
+        [...UCL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...plQualifiers],
+        rng
+      );
+    })() || undefined;
+
+    uelTournamentWinner = uel?.tournamentWinner || (() => {
+      const plQualifiers = opponents.filter(o => {
+        const pos = previousLeagueTable!.findIndex(t => t.name === o.name) + 1;
+        return pos === 6 || pos === 7;
+      });
+      return pickBackgroundKnockoutWinner(
+        [...UEL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...plQualifiers],
+        rng
+      );
+    })() || undefined;
   }
 
   // Player stats
@@ -2909,6 +2962,8 @@ export function simulateSeason(
     uel,
     superCup,
     charityShield,
+    uclTournamentWinner,
+    uelTournamentWinner,
   };
 }
 
