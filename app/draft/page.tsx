@@ -62,6 +62,13 @@ interface RatingChange {
   change: number;
 }
 
+function getSigningBoost(season: number): number {
+  if (season >= 5) return Math.floor(Math.random() * 4) + 4; // +4 to +7
+  if (season >= 4) return Math.floor(Math.random() * 3) + 3; // +3 to +5
+  if (season >= 2) return Math.floor(Math.random() * 3) + 2; // +2 to +4
+  return Math.floor(Math.random() * 3) + 1;                  // +1 to +3
+}
+
 function applyStatChange(player: DraftPlayer, change: number): DraftPlayer {
   const newPlayer = {
     ...player,
@@ -272,6 +279,10 @@ export default function DraftPage() {
   const handleJoinRoom = useCallback(async (code: string, _ownSettings: DraftSettings) => {
     clearProgress();
     setResume(null);
+
+    let restoredSquad: DraftPlayer[] | null = null;
+    let restoredSeason = 1;
+
     // Fetch host's settings; formation is picked later in formation-pick phase
     const res = await fetch(`/api/draft/rooms/${code}`);
     if (res.ok) {
@@ -286,18 +297,40 @@ export default function DraftPage() {
       } else {
         setSettings(_ownSettings);
       }
+      // Restore season number so lobby shows correct season on rejoin
+      if (data.room?.season_number) {
+        restoredSeason = data.room.season_number as number;
+      }
+      // If this player already has a squad in the room (rejoin), restore it so they
+      // don't see "Waiting for host" in the wrong season or lose their submitted squad
+      if (userId && Array.isArray(data.players)) {
+        const myRoomPlayer = (data.players as Array<{ user_id: string; squad?: DraftPlayer[] | null }>)
+          .find(p => p.user_id === userId);
+        if (myRoomPlayer?.squad && Array.isArray(myRoomPlayer.squad) && myRoomPlayer.squad.length > 0) {
+          restoredSquad = myRoomPlayer.squad as DraftPlayer[];
+        }
+      }
     } else {
       setSettings(_ownSettings);
     }
+
     setRoomCode(code);
     setIsHost(false);
-    setPlayers([]);
-    setSquadSubmitted(false);
+    setCurrentSeason(restoredSeason);
     setPreComputedSeason(null);
     setRoomPlayers(null);
+
+    if (restoredSquad) {
+      setPlayers(restoredSquad);
+      setSquadSubmitted(true);
+    } else {
+      setPlayers([]);
+      setSquadSubmitted(false);
+    }
+
     setPhase("lobby");
     scrollTop();
-  }, [scrollTop]);
+  }, [scrollTop, userId]);
 
   const handleStartFromLobby = useCallback(() => {
     if (currentSeason === 1) {
@@ -578,17 +611,13 @@ export default function DraftPage() {
 
   const handleSigningComplete = useCallback(
     (newPlayers: DraftPlayer[]) => {
-      const boosted = newPlayers.map((p) => {
-        const boost = Math.floor(Math.random() * 3) + 1;
-        return applyStatChange(p, boost);
-      });
-
+      const boosted = newPlayers.map((p) => applyStatChange(p, getSigningBoost(currentSeason)));
       const fullSquad = [...nextSeasonPlayers, ...boosted];
       setPlayers(fullSquad);
       setPhase("sell");
       scrollTop();
     },
-    [nextSeasonPlayers, scrollTop]
+    [nextSeasonPlayers, scrollTop, currentSeason]
   );
 
   const handleSellPlayer = useCallback(
@@ -607,16 +636,12 @@ export default function DraftPage() {
 
   const handleSellSigningComplete = useCallback(
     (newPlayers: DraftPlayer[]) => {
-      const boosted = newPlayers.map((p) => {
-        const boost = Math.floor(Math.random() * 3) + 1;
-        return applyStatChange(p, boost);
-      });
-
+      const boosted = newPlayers.map((p) => applyStatChange(p, getSigningBoost(currentSeason)));
       setPlayers((prev) => [...prev, ...boosted]);
       setPhase("arrange");
       scrollTop();
     },
-    [scrollTop]
+    [scrollTop, currentSeason]
   );
 
   const handleArrangeConfirm = useCallback(async (arranged: DraftPlayer[]) => {

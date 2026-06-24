@@ -358,7 +358,11 @@ export default function Season2Overview({
               </p>
             )}
             <p className="text-xs text-white mt-1">
-              New signings receive a random +1 to +3 boost. You can also sell a player afterwards.
+              New signings receive a random {
+                seasonNumber >= 5 ? "+4 to +7" :
+                seasonNumber >= 4 ? "+3 to +5" :
+                "+2 to +4"
+              } boost. You can also sell a player afterwards.
             </p>
           </div>
         );
