@@ -16,11 +16,13 @@ export async function POST(req: NextRequest) {
 
   const service = createServiceClient();
 
-  const { data: objectives, error: objErr } = await service
+  let objQuery = service
     .from("objectives")
     .select("id, xp_reward, conditions")
     .eq("is_active", true)
     .or("expires_at.is.null,expires_at.gt.now()");
+  try { objQuery = objQuery.eq("is_published", true); } catch { /* column may not exist yet */ }
+  const { data: objectives, error: objErr } = await objQuery;
 
   if (objErr) return NextResponse.json({ error: objErr.message }, { status: 500 });
 

@@ -12,6 +12,7 @@ interface Objective {
   card_image_url: string | null;
   card_name: string | null;
   is_active: boolean;
+  is_published: boolean;
   sort_order: number;
   expires_at: string | null;
   created_at: string;
@@ -83,6 +84,7 @@ export default function ObjectivesAdmin() {
     xp_reward: 100,
     card_name: "",
     is_active: true,
+    is_published: false,
     expires_at: null as string | null,
   });
   const [conditions, setConditions] = useState<ObjectiveCondition[]>([]);
@@ -104,7 +106,7 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true, expires_at: null });
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true, is_published: false, expires_at: null });
     setConditions([]);
     setAddingCond(false);
     setNc({ ...EMPTY_COND });
@@ -121,6 +123,7 @@ export default function ObjectivesAdmin() {
       xp_reward: obj.xp_reward,
       card_name: obj.card_name || "",
       is_active: obj.is_active,
+      is_published: obj.is_published ?? false,
       expires_at: obj.expires_at,
     });
     setConditions(obj.conditions ?? []);
@@ -217,6 +220,7 @@ export default function ObjectivesAdmin() {
       card_image_url,
       card_name: form.card_name.trim() || null,
       is_active: form.is_active,
+      is_published: form.is_published,
       expires_at: form.expires_at,
       sort_order: editingId
         ? objectives.find(o => o.id === editingId)?.sort_order ?? 0
@@ -280,8 +284,8 @@ export default function ObjectivesAdmin() {
           />
         </div>
 
-        {/* XP + Active */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* XP + Active + Published */}
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">XP Reward</label>
             <input
@@ -301,6 +305,16 @@ export default function ObjectivesAdmin() {
             >
               {form.is_active ? "Active" : "Inactive"}
             </button>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Published</label>
+            <button
+              onClick={() => setForm(f => ({ ...f, is_published: !f.is_published }))}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition ${form.is_published ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400"}`}
+            >
+              {form.is_published ? "Published" : "Draft"}
+            </button>
+            <p className="text-[10px] text-gray-500 mt-1">Draft = invisible to players</p>
           </div>
         </div>
 
@@ -708,7 +722,7 @@ export default function ObjectivesAdmin() {
             return (
               <div
                 key={obj.id}
-                className={`bg-gray-900 border rounded-xl px-4 py-3 transition ${!obj.is_active || isExpired ? "border-gray-800/50 opacity-50" : "border-gray-800"}`}
+                className={`bg-gray-900 border rounded-xl px-4 py-3 transition ${!obj.is_active || isExpired ? "border-gray-800/50 opacity-50" : !obj.is_published ? "border-yellow-800/30" : "border-gray-800"}`}
               >
                 <div className="flex items-center gap-4">
                   {obj.card_image_url ? (
@@ -725,12 +739,30 @@ export default function ObjectivesAdmin() {
                       {obj.card_name && <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">{obj.card_name}</span>}
                       {conds.length > 0 && <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">{conds.length} condition{conds.length !== 1 ? "s" : ""}</span>}
                       {!obj.is_active && <span className="text-[10px] font-bold text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">Hidden</span>}
+                      {obj.is_published ? (
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">Published</span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded">Draft</span>
+                      )}
                       {obj.expires_at && !isExpired && <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">⏱ {formatDeadline(obj.expires_at)}</span>}
                       {isExpired && <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">Expired</span>}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/admin/objectives", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: obj.id, is_published: !obj.is_published }),
+                        });
+                        loadObjectives();
+                      }}
+                      className={`px-2 py-1 text-xs font-bold rounded-lg transition ${obj.is_published ? "text-yellow-400 hover:text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20" : "text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20"}`}
+                    >
+                      {obj.is_published ? "Unpublish" : "Publish"}
+                    </button>
                     <button
                       onClick={() => handleEdit(obj)}
                       className="px-2 py-1 text-xs font-bold text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"

@@ -34,6 +34,7 @@ export async function POST(req: Request) {
       card_image_url: body.card_image_url || null,
       card_name: body.card_name || null,
       is_active: body.is_active ?? true,
+      is_published: body.is_published ?? false,
       sort_order: body.sort_order ?? 0,
       expires_at: body.expires_at ?? null,
       conditions: body.conditions ?? [],
@@ -56,6 +57,7 @@ export async function PATCH(req: Request) {
   if (body.card_image_url !== undefined) updates.card_image_url = body.card_image_url;
   if (body.card_name !== undefined) updates.card_name = body.card_name;
   if (body.is_active !== undefined) updates.is_active = body.is_active;
+  if (body.is_published !== undefined) updates.is_published = body.is_published;
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order;
   if ("expires_at" in body) updates.expires_at = body.expires_at ?? null;
   if (body.conditions !== undefined) updates.conditions = body.conditions;
