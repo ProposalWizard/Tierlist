@@ -386,6 +386,7 @@ interface AdminObjective {
 }
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string; border: string; bg: string }> = {
+  standard:   { label: "Objectives",   icon: "🎯", color: "text-white",        border: "border-gray-700/50",    bg: "bg-gray-800/30" },
   daily:      { label: "Daily",        icon: "📅", color: "text-sky-400",     border: "border-sky-800/50",     bg: "bg-sky-950/30" },
   weekly:     { label: "Weekly",       icon: "📆", color: "text-violet-400",  border: "border-violet-800/50",  bg: "bg-violet-950/30" },
   monthly:    { label: "Monthly",      icon: "🗓️", color: "text-pink-400",    border: "border-pink-800/50",    bg: "bg-pink-950/30" },
@@ -394,7 +395,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: stri
   goat:       { label: "GOAT Manager", icon: "🐐", color: "text-amber-400",   border: "border-amber-800/50",   bg: "bg-amber-950/30" },
 };
 
-const CATEGORY_ORDER = ["daily", "weekly", "monthly", "foundation", "elite", "goat"];
+const CATEGORY_ORDER = ["standard", "daily", "weekly", "monthly", "foundation", "elite", "goat"];
 
 function getTimeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
@@ -542,7 +543,7 @@ function CustomObjectivesSection() {
           <div className="md:hidden overflow-y-auto max-h-[480px]">
             {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
               const group = activeTab === "active"
-                ? currentList.filter(o => (o.category ?? "foundation") === catKey)
+                ? currentList.filter(o => (o.category ?? "standard") === catKey)
                 : currentList;
               if (group.length === 0) return null;
               const cat = CATEGORY_CONFIG[catKey];
@@ -630,7 +631,7 @@ function CustomObjectivesSection() {
             <div className="w-52 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[420px]">
               {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
                 const group = activeTab === "active"
-                  ? currentList.filter(o => (o.category ?? "foundation") === catKey)
+                  ? currentList.filter(o => (o.category ?? "standard") === catKey)
                   : currentList;
                 if (group.length === 0) return null;
                 const cat = CATEGORY_CONFIG[catKey];

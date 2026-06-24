@@ -434,31 +434,24 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                 </svg>
               </button>
             </div>
-            <div className="px-5 py-4 space-y-5 text-sm text-white">
-              <section>
-                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Draft Phase</h3>
-                <p>You get 14 spins. Each spin gives you a random Premier League club from a random FIFA edition. Pick one player from their roster for your squad.</p>
-              </section>
-              <section>
-                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Building Your XI</h3>
-                <p>Fill 11 starting positions + 3 subs. Players have real FIFA ratings and attributes.</p>
-              </section>
-              <section>
-                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Season Simulation</h3>
-                <p>Your squad plays a full 38-match Premier League season. Results are determined by your players&apos; ratings and attributes.</p>
-              </section>
-              <section>
-                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Competitions</h3>
-                <p>Beyond the league, compete in the FA Cup, Champions League, and more.</p>
-              </section>
-              <section>
-                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Career Mode</h3>
-                <p>Keep going across multiple seasons. Players age, ratings change, and you can sign new players.</p>
-              </section>
-              <section>
-                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Prime Mode</h3>
-                <p>In Prime mode, each player uses their best-ever FIFA rating instead of the rating from the specific year.</p>
-              </section>
+            <div className="px-5 py-4 space-y-0 text-sm text-white">
+              {[
+                { n: 1, title: "Spin the wheel", desc: "Each spin lands on a random English top-flight club from a real FIFA season." },
+                { n: 2, title: "Pick a player", desc: "Choose one player from that club’s roster and slot them into your formation." },
+                { n: 3, title: "Build your XI", desc: "Keep spinning and picking until all 11 positions are filled." },
+                { n: 4, title: "Simulate the season", desc: "Play out a full 38-game league season and chase an unbeaten 38-0 record." },
+                { n: 5, title: "Break records", desc: "Set personal bests for goals, assists, clean sheets, and climb the global leaderboard." },
+              ].map(step => (
+                <div key={step.n} className="flex items-start gap-4 py-4 border-b border-gray-800/50 last:border-b-0">
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-sm font-black text-white shrink-0">
+                    {step.n}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-white">{step.title}</div>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
