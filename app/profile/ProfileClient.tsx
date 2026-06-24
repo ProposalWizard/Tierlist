@@ -540,7 +540,7 @@ function CustomObjectivesSection() {
       ) : (
         <>
           {/* Mobile: stacked expandable cards grouped by category */}
-          <div className="md:hidden overflow-y-auto max-h-[480px]">
+          <div className="md:hidden overflow-y-auto max-h-[600px]">
             {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
               const group = activeTab === "active"
                 ? currentList.filter(o => (o.category ?? "standard") === catKey)
@@ -627,8 +627,8 @@ function CustomObjectivesSection() {
           </div>
 
           {/* Desktop: side-by-side with category groups in sidebar */}
-          <div className="hidden md:flex min-h-[240px]">
-            <div className="w-64 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[480px]">
+          <div className="hidden md:flex min-h-[340px]">
+            <div className="w-64 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[600px]">
               {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
                 const group = activeTab === "active"
                   ? currentList.filter(o => (o.category ?? "standard") === catKey)

@@ -303,7 +303,8 @@ export default function CollectionSquad({ progression }: Props) {
       )}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        {/* Pitch */}
+        {/* Pitch — capped on desktop so it doesn't dominate the page */}
+        <div className="lg:max-w-md lg:mx-auto">
         <div
           className="relative w-full mx-auto rounded-xl overflow-hidden mb-5"
           style={{
@@ -346,6 +347,7 @@ export default function CollectionSquad({ progression }: Props) {
               />
             );
           })}
+        </div>
         </div>
 
         {/* Bench */}
