@@ -22,15 +22,23 @@ export async function POST() {
   const { current_streak, longest_streak } = profile;
 
   // Fetch published, active, non-expired objectives with login_streak conditions
-  let objQuery = service
+  let { data: objectives, error: objErr } = await service
     .from("objectives")
     .select("id, xp_reward, conditions")
     .eq("is_active", true)
+    .eq("is_published", true)
     .or("expires_at.is.null,expires_at.gt.now()");
-  try { objQuery = objQuery.eq("is_published", true); } catch { /* column may not exist yet */ }
 
-  const { data: objectives, error: objErr } = await objQuery;
-  if (objErr) return NextResponse.json({ error: objErr.message }, { status: 500 });
+  if (objErr) {
+    // is_published column may not exist yet — fall back without the filter
+    const fallback = await service
+      .from("objectives")
+      .select("id, xp_reward, conditions")
+      .eq("is_active", true)
+      .or("expires_at.is.null,expires_at.gt.now()");
+    if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
+    objectives = fallback.data;
+  }
 
   const eligible = (objectives ?? []).filter(o => {
     const conds = o.conditions as ObjectiveCondition[] | null;
