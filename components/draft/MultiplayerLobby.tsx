@@ -558,9 +558,9 @@ export default function MultiplayerLobby({
                           .map((player, i) => (
                           <div key={i} className="flex items-center gap-1.5 text-xs">
                             <span className={`text-[9px] font-bold px-1 py-0.5 rounded w-8 text-center shrink-0 ${
-                              player.isSub ? "bg-purple-600 text-white" : "bg-gray-700 text-white"
+                              player.isSub ? "bg-gray-700 text-white" : "bg-purple-600 text-white"
                             }`}>
-                              {player.assignedPosition}
+                              {player.isSub ? "SUB" : player.assignedPosition}
                             </span>
                             <span className="truncate text-white">{player.name}</span>
                             <span className="text-white font-bold shrink-0">{player.overall}</span>
