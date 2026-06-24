@@ -631,33 +631,35 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
               {finishComparison.length > 0 && (
                 <div>
                   <div className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Who Came Out on Top?</div>
-                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
-                    <div className="flex items-center text-[9px] font-bold tracking-widest text-white px-4 py-2 border-b border-gray-800/50 uppercase">
-                      <span className="w-6">#</span>
-                      <span className="flex-1">Player</span>
-                      <span className="w-10 text-center">Pts</span>
-                      <span className="w-10 text-center">Best</span>
-                      <span className="w-8 text-center">
-                        {"\u{1F3C6}"}
-                      </span>
-                      {allSeasons.map((_, i) => (
-                        <span key={i} className="w-8 text-center">S{i + 1}</span>
-                      ))}
-                    </div>
-                    {finishComparison.map((fc, i) => (
-                      <div key={i} className={`flex items-center text-xs px-4 py-2 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className={`w-6 font-black ${i === 0 ? "text-yellow-400" : "text-white"}`}>{i + 1}</span>
-                        <span className="flex-1 font-bold truncate">{fc.name}</span>
-                        <span className="w-10 text-center font-black">{fc.totalPoints}</span>
-                        <span className="w-10 text-center text-emerald-400 font-bold">{ordinal(fc.bestFinish)}</span>
-                        <span className="w-8 text-center font-bold text-yellow-400">{fc.titles || "-"}</span>
-                        {fc.finishes.map((f, fi) => (
-                          <span key={fi} className={`w-8 text-center font-bold ${f === 1 ? "text-yellow-400" : (f ?? 0) <= 4 ? "text-blue-400" : (f ?? 20) >= 18 ? "text-red-400" : "text-white"}`}>
-                            {f !== null ? ordinal(f) : "-"}
-                          </span>
+                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-x-auto">
+                    <div className="min-w-fit">
+                      <div className="flex items-center text-[9px] font-bold tracking-widest text-white px-3 sm:px-4 py-2 border-b border-gray-800/50 uppercase">
+                        <span className="w-5 shrink-0">#</span>
+                        <span className="w-20 sm:w-28 shrink-0">Player</span>
+                        <span className="w-9 text-center shrink-0">Pts</span>
+                        <span className="w-9 text-center shrink-0">Best</span>
+                        <span className="w-7 text-center shrink-0">
+                          {"\u{1F3C6}"}
+                        </span>
+                        {allSeasons.map((_, i) => (
+                          <span key={i} className="w-8 text-center shrink-0">S{i + 1}</span>
                         ))}
                       </div>
-                    ))}
+                      {finishComparison.map((fc, i) => (
+                        <div key={i} className={`flex items-center text-xs px-3 sm:px-4 py-2 ${i === 0 ? "bg-yellow-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
+                          <span className={`w-5 shrink-0 font-black ${i === 0 ? "text-yellow-400" : "text-white"}`}>{i + 1}</span>
+                          <span className="w-20 sm:w-28 shrink-0 font-bold truncate">{fc.name}</span>
+                          <span className="w-9 text-center font-black shrink-0">{fc.totalPoints}</span>
+                          <span className="w-9 text-center text-emerald-400 font-bold shrink-0">{ordinal(fc.bestFinish)}</span>
+                          <span className="w-7 text-center font-bold text-yellow-400 shrink-0">{fc.titles || "-"}</span>
+                          {fc.finishes.map((f, fi) => (
+                            <span key={fi} className={`w-8 text-center font-bold shrink-0 ${f === 1 ? "text-yellow-400" : (f ?? 0) <= 4 ? "text-blue-400" : (f ?? 20) >= 18 ? "text-red-400" : "text-white"}`}>
+                              {f !== null ? ordinal(f) : "-"}
+                            </span>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

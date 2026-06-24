@@ -315,6 +315,18 @@ export default function DraftPage() {
     if (myRoomPlayer?.squad && (myRoomPlayer.squad as DraftPlayer[]).length > 0) {
       setPlayers(myRoomPlayer.squad as DraftPlayer[]);
     }
+    // Accumulate all room players' season results for group stats in CareerRecap
+    setAllRoomPlayerSeasons(prev => {
+      const next = { ...(prev ?? {}) };
+      for (const rp of allPlayers) {
+        if (rp.season_result) {
+          const key = rp.display_name;
+          if (!next[key]) next[key] = [];
+          next[key] = [...next[key], rp.season_result];
+        }
+      }
+      return next;
+    });
     setPhase("result");
     scrollTop();
   }, [scrollTop, userId]);
@@ -369,6 +381,13 @@ export default function DraftPage() {
       console.error("Error updating room settings:", e);
     }
   }, [roomCode]);
+
+  const handleSettingsSync = useCallback((update: Partial<DraftSettings>) => {
+    setSettings(prev => prev ? { ...prev, ...update } : prev);
+    if (update.respins !== undefined) {
+      setRespinsRemaining(update.respins as number);
+    }
+  }, []);
 
   const handleResume = useCallback(() => {
     if (!resume) return;
@@ -822,6 +841,7 @@ export default function DraftPage() {
           onCareerComplete={isAdminUser ? handleCareerComplete : undefined}
           onLeave={handleLeaveRoom}
           onUpdateSettings={isHost ? handleUpdateRoomSettings : undefined}
+          onSettingsSync={!isHost ? handleSettingsSync : undefined}
         />
       )}
       {phase === "formation-pick" && settings && (

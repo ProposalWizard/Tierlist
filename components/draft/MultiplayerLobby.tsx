@@ -21,7 +21,8 @@ export interface RoomData {
   id: string;
   code: string;
   host_id: string;
-  status: "lobby" | "simulating" | "complete";
+  status: "lobby" | "started" | "simulating" | "complete";
+  settings?: Record<string, unknown>;
 }
 
 interface Props {
@@ -37,6 +38,7 @@ interface Props {
   onCareerComplete?: (seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[], allRoomPlayerSeasons?: Record<string, SeasonResult[]>) => void;
   onLeave: () => void;
   onUpdateSettings?: (settings: Partial<DraftSettings>) => void;
+  onSettingsSync?: (settings: Partial<DraftSettings>) => void;
 }
 
 export default function MultiplayerLobby({
@@ -52,6 +54,7 @@ export default function MultiplayerLobby({
   onCareerComplete,
   onLeave,
   onUpdateSettings,
+  onSettingsSync,
 }: Props) {
   const [room, setRoom] = useState<RoomData | null>(null);
   const [players, setPlayers] = useState<RoomPlayer[]>([]);
@@ -64,9 +67,11 @@ export default function MultiplayerLobby({
   const roomCodeRef = useRef(roomCode);
   const userIdRef = useRef(userId);
   const onSimCompleteRef = useRef(onSimulationComplete);
+  const onSettingsSyncRef = useRef(onSettingsSync);
   roomCodeRef.current = roomCode;
   userIdRef.current = userId;
   onSimCompleteRef.current = onSimulationComplete;
+  onSettingsSyncRef.current = onSettingsSync;
 
   const fetchRoom = useCallback(async () => {
     const res = await fetch(`/api/draft/rooms/${roomCodeRef.current}`);
@@ -120,6 +125,9 @@ export default function MultiplayerLobby({
             const updated = payload.new as RoomData;
             setRoom(updated);
             if (updated.status === "complete") checkComplete();
+            if (updated.settings && onSettingsSyncRef.current) {
+              onSettingsSyncRef.current(updated.settings as Partial<DraftSettings>);
+            }
           }
         )
         .on(
@@ -219,6 +227,31 @@ export default function MultiplayerLobby({
   const allReady = players.length > 1 && players.every(p => p.status === "ready" || p.status === "simulated");
   const myPlayer = players.find(p => p.user_id === userId);
   const isSimulating = room?.status === "simulating";
+  const gameStarted = room?.status === "started";
+
+  // When room transitions to "started", all players auto-transition to formation pick
+  const gameStartedHandled = useRef(false);
+  useEffect(() => {
+    if (gameStarted && !gameStartedHandled.current && !squadSubmitted) {
+      gameStartedHandled.current = true;
+      onStartDraft();
+    }
+  }, [gameStarted, squadSubmitted, onStartDraft]);
+
+  const handleStartGame = async () => {
+    if (!isHost || players.length < 2) return;
+    try {
+      await fetch(`/api/draft/rooms/${roomCode}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "started" }),
+      });
+      onStartDraft();
+    } catch {
+      // Fallback: just start locally
+      onStartDraft();
+    }
+  };
 
   return (
     <div className="max-w-lg mx-auto p-4 pb-20">
@@ -549,16 +582,36 @@ export default function MultiplayerLobby({
       </div>
 
       {/* Actions */}
-      {!squadSubmitted && !isSimulating && (
-        <button
-          onClick={onStartDraft}
-          className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-lg transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] mb-3 mt-6 flex items-center justify-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-          {currentSeason > 1 ? `Arrange Season ${currentSeason} Squad` : "Start My Draft"}
-        </button>
+      {!squadSubmitted && !isSimulating && !gameStarted && (
+        currentSeason === 1 ? (
+          isHost ? (
+            <button
+              onClick={handleStartGame}
+              disabled={players.length < 2}
+              className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-lg transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] mb-3 mt-6 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+              Start Game
+            </button>
+          ) : (
+            <div className="bg-gray-900/50 border border-gray-800/50 rounded-xl p-4 mb-3 mt-6 text-center">
+              <div className="text-white font-bold text-sm mb-0.5">Waiting for host</div>
+              <div className="text-white text-xs">The host will start the game when everyone is ready</div>
+            </div>
+          )
+        ) : (
+          <button
+            onClick={onStartDraft}
+            className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-lg transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] mb-3 mt-6 flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+            Arrange Season {currentSeason} Squad
+          </button>
+        )
       )}
 
       {squadSubmitted && !isSimulating && (

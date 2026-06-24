@@ -554,7 +554,16 @@ export default function ObjectivesAdmin() {
               {/* Player filters (stat types + squad_count) */}
               {hasPlayerFilters(nc.type) && (
                 <div className="border-t border-gray-700 pt-3">
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Player filters (all optional — leave blank for any player)</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Player filters (all optional — leave blank for any player)</label>
+                  <p className="text-[10px] text-amber-400/80 mb-2">
+                    Matching is case-insensitive and partial (typing &quot;franc&quot; finds &quot;France&quot;).
+                    Use the <span className="font-bold">country name</span>, not the adjective —
+                    type <span className="font-bold">France</span> not French,{" "}
+                    <span className="font-bold">Germany</span> not German,{" "}
+                    <span className="font-bold">England</span> not English,{" "}
+                    <span className="font-bold">Spain</span> not Spanish.
+                    Club is the one that came up on the spin wheel, not the player&apos;s career clubs. Must match SoFIFA spelling (e.g. &quot;Manchester City&quot; not &quot;Man City&quot;).
+                  </p>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="block text-[10px] text-gray-500 mb-0.5">Nationality</label>
@@ -562,12 +571,12 @@ export default function ObjectivesAdmin() {
                         type="text"
                         value={nc.nationality}
                         onChange={e => setNc(n => ({ ...n, nationality: e.target.value }))}
-                        placeholder="e.g. French"
+                        placeholder="e.g. France"
                         className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-gray-500 mb-0.5">Club (drafted from)</label>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Club spun on the wheel</label>
                       <input
                         type="text"
                         value={nc.club}

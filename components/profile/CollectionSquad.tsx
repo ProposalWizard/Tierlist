@@ -417,7 +417,7 @@ function DraggablePitchCard({
       ref={setNodeRef}
       {...(hasBenchSelection ? {} : { ...listeners, ...attributes })}
       onClick={hasBenchSelection ? onTap : undefined}
-      className={`group relative w-[62px] h-[82px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px] rounded-xl overflow-visible shadow-lg ring-1 transition-all ${
+      className={`group relative w-[76px] h-[100px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px] rounded-xl overflow-visible shadow-lg ring-1 transition-all ${
         hasBenchSelection
           ? "ring-amber-400/80 hover:ring-amber-400 hover:scale-105 cursor-pointer"
           : "ring-white/10 cursor-grab active:cursor-grabbing"
@@ -505,7 +505,7 @@ function PitchSlot({
       ) : (
         <button
           onClick={hasBenchSelection ? onTap : undefined}
-          className={`w-10 h-10 sm:w-[56px] sm:h-[56px] md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+          className={`w-12 h-12 sm:w-[56px] sm:h-[56px] md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
             hasBenchSelection
               ? "border-amber-400 bg-amber-400/25 shadow-lg shadow-amber-400/40 hover:scale-110 cursor-pointer"
               : isOver
@@ -513,7 +513,7 @@ function PitchSlot({
               : "border-white/25 bg-black/35 hover:border-white/40"
           }`}
         >
-          <span className="text-[7px] sm:text-[9px] md:text-[10px] font-black text-white/75 leading-none text-center">
+          <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-white/75 leading-none text-center">
             {slot.label}
           </span>
         </button>
@@ -551,7 +551,7 @@ function BenchCard({
           : undefined
       }
     >
-      <div className={`w-16 h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
+      <div className={`w-[72px] h-[96px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
         selected ? "ring-amber-400 shadow-lg shadow-amber-500/30" : "ring-white/10"
       }`}>
         {frameStyle.image ? (

@@ -197,7 +197,7 @@ export default function Season2Overview({
                 }`}
               >
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${rc.player.isSub ? "bg-purple-600" : getPositionColor(rc.player.assignedPosition)} text-white w-8 text-center`}>
-                  {rc.player.assignedPosition}
+                  {rc.player.isSub ? "SUB" : rc.player.assignedPosition}
                 </span>
                 <span className="flex-1 ml-1 font-medium truncate">{rc.player.name}</span>
                 <span className="text-white text-sm font-bold w-7 text-right">

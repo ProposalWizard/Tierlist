@@ -1013,9 +1013,10 @@ function simulateFaCup(
   }
 
   // Ensure we have exactly 32 teams; pad with generic teams if needed
+  { let padIdx = 1;
   while (bracket.length < 32) {
-    bracket.push({ name: `Lower League ${bracket.length - 31}`, strength: 65 });
-  }
+    bracket.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+  } }
 
   const playerMatches: FaCupMatch[] = [];
   let remaining = bracket.map(t => ({ name: t.name, strength: t.strength }));
@@ -1091,9 +1092,10 @@ function simulateSharedFaCup(
   }
 
   // Pad to 32 if needed
+  { let padIdx = 1;
   while (bracket.length < 32) {
-    bracket.push({ name: `Lower League ${bracket.length - 31}`, strength: 65 });
-  }
+    bracket.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+  } }
 
   const humanMatches = new Map<string, FaCupMatch[]>();
   const humanEliminated = new Map<string, string>(); // userId -> exitRound
@@ -2423,9 +2425,10 @@ export function simulateSeason(
     ...opponents,
     ...RESERVE_TEAMS.filter(t => !opponents.some(o => o.name === t.name) && t.name !== playerTeamName),
   ];
+  { let padIdx = 1;
   while (allFaCupTeams.length < 32) {
-    allFaCupTeams.push({ name: `Lower League ${allFaCupTeams.length}`, strength: 65 });
-  }
+    allFaCupTeams.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+  } }
   const faCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
 
   // Super Cup (if won UCL or UEL last season)
@@ -3453,12 +3456,15 @@ function simulateSharedUCL(
     const humanVsHuman: [string, string][] = [];
 
     // From QF onwards, surviving humans can draw each other
+    // Higher probability than pure random to make H2H exciting in multiplayer
     if (survivorIds.length >= 2 && ri >= 1) {
       const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
-      // Approximate probability: similar to FA Cup logic
-      const teamsInRound = poolSize * 2; // rough estimate
+      const teamsInRound = poolSize * 2;
+      // Base probability = 1/(teams-1), boosted so human matchups happen more often
+      const baseProbability = 1 / Math.max(1, teamsInRound - 1);
+      const boostedProbability = Math.min(0.8, baseProbability * 3);
       for (let i = 0; i + 1 < shuffled.length; i += 2) {
-        if (drawRng() < 1 / Math.max(1, teamsInRound - 1)) {
+        if (drawRng() < boostedProbability) {
           humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
           pairedHumans.add(shuffled[i]);
           pairedHumans.add(shuffled[i + 1]);
@@ -3669,8 +3675,10 @@ function simulateSharedUEL(
     if (survivorIds.length >= 2 && ri >= 1) {
       const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
       const teamsInRound = poolSize * 2;
+      const baseProbability = 1 / Math.max(1, teamsInRound - 1);
+      const boostedProbability = Math.min(0.8, baseProbability * 3);
       for (let i = 0; i + 1 < shuffled.length; i += 2) {
-        if (drawRng() < 1 / Math.max(1, teamsInRound - 1)) {
+        if (drawRng() < boostedProbability) {
           humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
           pairedHumans.add(shuffled[i]);
           pairedHumans.add(shuffled[i + 1]);

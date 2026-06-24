@@ -23,22 +23,33 @@ export async function PATCH(
   if (room.host_id !== user.id) return new Response("Only the host can update settings", { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const newSettings = body.settings;
-  if (!newSettings || typeof newSettings !== "object") {
-    return new Response("Invalid settings", { status: 400 });
+
+  const updates: Record<string, unknown> = {};
+
+  // Allow host to set room status to "started" to kick off the game for all players
+  if (body.status === "started") {
+    updates.status = "started";
   }
 
-  // Merge with existing settings (preserve formation and any fields not sent)
-  const merged = { ...(room.settings as Record<string, unknown> ?? {}), ...newSettings };
+  const newSettings = body.settings;
+  if (newSettings && typeof newSettings === "object") {
+    const merged = { ...(room.settings as Record<string, unknown> ?? {}), ...newSettings };
+    updates.settings = merged;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return new Response("No valid updates", { status: 400 });
+  }
 
   const { error } = await service
     .from("draft_rooms")
-    .update({ settings: merged })
+    .update(updates)
     .eq("id", room.id);
 
-  if (error) return new Response("Failed to update settings", { status: 500 });
+  if (error) return new Response("Failed to update room", { status: 500 });
 
-  return Response.json({ settings: merged });
+  const merged = updates.settings ?? room.settings;
+  return Response.json({ settings: merged, status: updates.status });
 }
 
 export async function GET(
