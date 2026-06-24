@@ -13,6 +13,7 @@ import CollectionSquad from "@/components/profile/CollectionSquad";
 import SettingsModal from "@/components/profile/SettingsModal";
 import type { UserProfile } from "@/lib/types";
 import type { UserProgression } from "@/lib/xp";
+import type { SeasonLevelReward } from "@/components/profile/XPProgressBar";
 
 interface TierlistSummary {
   id: string;
@@ -46,6 +47,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
   const [showSettings, setShowSettings] = useState(false);
   const [progression, setProgression] = useState<UserProgression | null>(null);
   const [loadingProgression, setLoadingProgression] = useState(true);
+  const [seasonRewards, setSeasonRewards] = useState<SeasonLevelReward[]>([]);
 
   const [username, setUsername] = useState(profile?.username ?? "");
   const [isAnon, setIsAnon] = useState(profile?.is_anonymous ?? false);
@@ -67,6 +69,11 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
         setLoadingProgression(false);
       })
       .catch(() => setLoadingProgression(false));
+
+    fetch("/api/season-rewards")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.rewards?.length) setSeasonRewards(data.rewards); })
+      .catch(() => {});
   }, []);
 
   async function handleEquip(type: "frame" | "title", id: string) {
@@ -185,7 +192,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                   />
                 </div>
                 <div className="lg:col-span-9">
-                  <XPProgressBar progression={progression} />
+                  <XPProgressBar progression={progression} seasonRewards={seasonRewards} />
                 </div>
               </div>
 

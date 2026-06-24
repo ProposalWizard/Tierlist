@@ -5,6 +5,7 @@ import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS } from "@/l
 import { conditionSummary } from "@/lib/objectiveEvaluator";
 import CardLibraryPicker from "./CardLibraryPicker";
 import type { LibraryCard } from "./CardLibraryPicker";
+import SeasonAdmin from "./SeasonAdmin";
 
 interface Objective {
   id: string;
@@ -79,6 +80,7 @@ const EMPTY_COND: NewCondState = {
 };
 
 export default function ObjectivesAdmin() {
+  const [subTab, setSubTab] = useState<"objectives" | "season">("objectives");
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -264,6 +266,25 @@ export default function ObjectivesAdmin() {
 
   return (
     <div className="space-y-6">
+      {/* Sub-tabs */}
+      <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1 self-start w-fit">
+        <button
+          onClick={() => setSubTab("objectives")}
+          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition ${subTab === "objectives" ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white"}`}
+        >
+          Objectives {subTab === "objectives" && !loading ? `(${objectives.length})` : ""}
+        </button>
+        <button
+          onClick={() => setSubTab("season")}
+          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition ${subTab === "season" ? "bg-amber-600 text-white" : "text-gray-400 hover:text-white"}`}
+        >
+          Season 1
+        </button>
+      </div>
+
+      {subTab === "season" && <SeasonAdmin />}
+
+      {subTab === "objectives" && <>
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">
           Objectives {!loading && `(${objectives.length})`}
@@ -878,6 +899,7 @@ export default function ObjectivesAdmin() {
           })}
         </div>
       )}
+      </>}
     </div>
   );
 }
