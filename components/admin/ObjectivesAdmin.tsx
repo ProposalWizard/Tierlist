@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat } from "@/lib/objectiveTypes";
 import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS } from "@/lib/objectiveTypes";
 import { conditionSummary } from "@/lib/objectiveEvaluator";
+import CardLibraryPicker from "./CardLibraryPicker";
+import type { LibraryCard } from "./CardLibraryPicker";
 
 interface Objective {
   id: string;
@@ -95,6 +97,8 @@ export default function ObjectivesAdmin() {
   const [durationSelect, setDurationSelect] = useState("");
   const [cardFile, setCardFile] = useState<File | null>(null);
   const [cardPreview, setCardPreview] = useState<string | null>(null);
+  const [cardLibraryUrl, setCardLibraryUrl] = useState<string | null>(null);
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const loadObjectives = useCallback(async () => {
@@ -115,6 +119,7 @@ export default function ObjectivesAdmin() {
     setDurationSelect("");
     setCardFile(null);
     setCardPreview(null);
+    setCardLibraryUrl(null);
   };
 
   const handleEdit = (obj: Objective) => {
@@ -134,6 +139,7 @@ export default function ObjectivesAdmin() {
     setDurationSelect("");
     setCardPreview(obj.card_image_url);
     setCardFile(null);
+    setCardLibraryUrl(null);
   };
 
   const handleDurationChange = (val: string) => {
@@ -221,6 +227,8 @@ export default function ObjectivesAdmin() {
     if (cardFile) {
       const uploaded = await uploadCardImage();
       if (uploaded) card_image_url = uploaded;
+    } else if (cardLibraryUrl) {
+      card_image_url = cardLibraryUrl;
     }
     const body = {
       ...(editingId ? { id: editingId } : {}),
@@ -361,26 +369,35 @@ export default function ObjectivesAdmin() {
         <div>
           <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Card Reward (optional)</label>
           <div className="flex items-start gap-4">
-            <div className="flex-1">
+            <div className="flex-1 space-y-2">
               <input
                 type="text"
                 value={form.card_name}
                 onChange={e => setForm(f => ({ ...f, card_name: e.target.value }))}
                 placeholder="Card name (e.g. Wayne Rooney)"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="file" accept="image/*" onChange={handleCardFileChange} className="hidden" />
-                <span className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:border-gray-500 transition cursor-pointer">
-                  Upload Card Image
-                </span>
-              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowLibraryPicker(true)}
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg transition"
+                >
+                  Choose from Library
+                </button>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="file" accept="image/*" onChange={handleCardFileChange} className="hidden" />
+                  <span className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:border-gray-500 transition cursor-pointer">
+                    Upload New Image
+                  </span>
+                </label>
+              </div>
             </div>
             {cardPreview && (
               <div className="relative shrink-0">
                 <img src={cardPreview} alt="Card preview" className="w-20 h-28 object-cover rounded-lg border border-gray-700" />
                 <button
-                  onClick={() => { setCardFile(null); setCardPreview(null); }}
+                  onClick={() => { setCardFile(null); setCardPreview(null); setCardLibraryUrl(null); }}
                   className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white rounded-full text-[10px] flex items-center justify-center font-bold hover:bg-red-500"
                 >
                   ×
@@ -389,6 +406,20 @@ export default function ObjectivesAdmin() {
             )}
           </div>
         </div>
+
+        {/* Card Library Picker modal */}
+        {showLibraryPicker && (
+          <CardLibraryPicker
+            onSelect={(card: LibraryCard) => {
+              setCardLibraryUrl(card.image_url);
+              setCardPreview(card.image_url);
+              setCardFile(null);
+              if (!form.card_name.trim()) setForm(f => ({ ...f, card_name: card.name }));
+              setShowLibraryPicker(false);
+            }}
+            onClose={() => setShowLibraryPicker(false)}
+          />
+        )}
 
         {/* ───── CONDITIONS ───── */}
         <div>

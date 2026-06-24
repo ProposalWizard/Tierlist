@@ -27,6 +27,7 @@ import BlindRankingsAdmin from "./BlindRankingsAdmin";
 import TicTacToeAdmin from "./TicTacToeAdmin";
 import TenableAdmin from "./TenableAdmin";
 import ObjectivesAdmin from "./admin/ObjectivesAdmin";
+import CardLibraryAdmin from "./admin/CardLibraryAdmin";
 
 interface VotelistAdmin {
   id: string;
@@ -159,7 +160,7 @@ export default function AdminPanel({
 }: {
   initialTierlists: Tierlist[];
 }) {
-  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings" | "tictactoe" | "tenable" | "objectives">("tierlists");
+  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings" | "tictactoe" | "tenable" | "objectives" | "cards">("tierlists");
   const adminDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
 
@@ -1417,6 +1418,14 @@ export default function AdminPanel({
           }`}
         >
           Objectives
+        </button>
+        <button
+          onClick={() => setTab("cards")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === "cards" ? "bg-rose-600 text-white" : "text-white hover:text-white"
+          }`}
+        >
+          Cards
         </button>
         <div className="ml-auto flex items-center gap-2">
           <a
@@ -3117,6 +3126,8 @@ export default function AdminPanel({
       {tab === "tenable" && <TenableAdmin />}
 
       {tab === "objectives" && <ObjectivesAdmin />}
+
+      {tab === "cards" && <CardLibraryAdmin />}
 
       {/* Admin cover crop overlay (landscape 3:2) */}
       {adminCoverCrop && (
