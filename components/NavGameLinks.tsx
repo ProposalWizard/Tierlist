@@ -47,7 +47,7 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
           <Link
             key={g.href}
             href={g.href}
-            className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
+            className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap ${
               isActive
                 ? "bg-purple-700/40 text-purple-300"
                 : "text-white hover:bg-gray-800/70"

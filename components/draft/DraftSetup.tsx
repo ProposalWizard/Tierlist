@@ -66,7 +66,15 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-3 sm:px-4 py-6">
+    <div className="flex flex-col items-center justify-center min-h-screen px-3 sm:px-4 py-6 relative">
+      {/* Objectives badge */}
+      <Link
+        href="/profile"
+        className="fixed top-20 right-4 z-40 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-lg shadow-amber-900/40 transition-all hover:scale-105 active:scale-95 group"
+      >
+        <span className="text-xs font-black text-white">Objectives</span>
+        <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[9px] font-black text-white uppercase tracking-wider">New</span>
+      </Link>
       <div className="max-w-lg w-full">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-10">
@@ -354,9 +362,32 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
           </div>
         </div>
 
+        {/* Era validation warning */}
+        {eraStart > eraEnd && (
+          <div className="mb-4 bg-red-900/20 border border-red-800/50 rounded-lg p-3 text-sm text-red-400 text-center">
+            Start year must be before or equal to end year
+          </div>
+        )}
+
+        {/* Start Button */}
+        <button
+          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder, respins, hiddenRatings })}
+          disabled={eraStart > eraEnd}
+          className="group relative w-full py-3.5 sm:py-4 rounded-xl text-base sm:text-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98] disabled:from-gray-700 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed"
+        >
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            Start Draft
+            <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+          </span>
+        </button>
+
+        <p className="text-center text-white text-xs mt-4">
+          14 spins. 11 starters + 3 subs. 38 matches.
+        </p>
+
         {/* Multiplayer */}
         {isSignedIn === true && onCreateRoom && onJoinRoom && (
-          <div className="mb-6 sm:mb-8">
+          <div className="mt-6 sm:mt-8">
             <div className="flex items-center gap-2 mb-3">
               <div className="h-px flex-1 bg-gray-800" />
               <label className="text-xs font-bold tracking-widest text-white uppercase">
@@ -380,9 +411,9 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                   value={joinCode}
                   onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinError(null); }}
                   onKeyDown={e => e.key === "Enter" && handleJoin()}
-                  placeholder="Room code"
+                  placeholder="Enter Room Code"
                   maxLength={6}
-                  className="flex-1 bg-gray-800/80 border border-gray-700/50 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-sky-500 tracking-widest uppercase"
+                  className="flex-1 bg-gray-800/80 border border-gray-700/50 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-sky-500 tracking-widest uppercase"
                 />
                 <button
                   onClick={handleJoin}
@@ -398,29 +429,6 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
             </div>
           </div>
         )}
-
-        {/* Era validation warning */}
-        {eraStart > eraEnd && (
-          <div className="mb-4 bg-red-900/20 border border-red-800/50 rounded-lg p-3 text-sm text-red-400 text-center">
-            Start year must be before or equal to end year
-          </div>
-        )}
-
-        {/* Start Button */}
-        <button
-          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder, respins, hiddenRatings })}
-          disabled={eraStart > eraEnd}
-          className="group relative w-full py-3.5 sm:py-4 rounded-xl text-base sm:text-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98] disabled:from-gray-700 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed"
-        >
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            Start Draft
-            <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-          </span>
-        </button>
-
-        <p className="text-center text-white text-xs mt-4">
-          14 spins. 11 starters + 3 subs. 38 matches.
-        </p>
       </div>
 
       {showHowToPlay && (

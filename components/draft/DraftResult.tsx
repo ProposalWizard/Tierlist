@@ -2304,8 +2304,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           ? myTeamName
           : (season.leagueTable[0]?.name ?? '—');
         const faCupWin = season.faCup.faCupWinner || '—';
-        const uclWin = season.ucl?.tournamentWinner || '—';
-        const uelWin = season.uel?.tournamentWinner || '—';
+        const uclWin = season.ucl?.tournamentWinner || season.uclTournamentWinner || null;
+        const uelWin = season.uel?.tournamentWinner || season.uelTournamentWinner || null;
         const hasSuperCup = season.superCup?.played;
         const hasCharityShield = season.charityShield?.played;
         const superCupWin = hasSuperCup ? (season.superCup!.result === 'W'
@@ -2332,13 +2332,13 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">FA Cup</span>
                 <span className="text-xs font-bold text-emerald-300">{faCupWin}</span>
               </div>
-              {uclWin && uclWin !== '—' && (
+              {uclWin && (
                 <div className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2 border border-blue-900/30">
                   <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wide">Champions League</span>
                   <span className="text-xs font-bold text-blue-300">{uclWin}</span>
                 </div>
               )}
-              {uelWin && uelWin !== '—' && (
+              {uelWin && (
                 <div className="flex items-center justify-between bg-gray-900 rounded-lg px-3 py-2 border border-orange-900/30">
                   <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wide">Europa League</span>
                   <span className="text-xs font-bold text-orange-300">{uelWin}</span>
