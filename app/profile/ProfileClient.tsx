@@ -447,6 +447,9 @@ function CustomObjectivesSection() {
   const [selectedCompletedId, setSelectedCompletedId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Fire login streak check (silent, fire-and-forget)
+    fetch("/api/objectives/check-login", { method: "POST" }).catch(() => {});
+
     fetch("/api/objectives")
       .then(res => res.ok ? res.json() : null)
       .then(data => {

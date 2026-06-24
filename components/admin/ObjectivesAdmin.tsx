@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe } from "@/lib/objectiveTypes";
-import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS } from "@/lib/objectiveTypes";
+import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat } from "@/lib/objectiveTypes";
+import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS } from "@/lib/objectiveTypes";
 import { conditionSummary } from "@/lib/objectiveEvaluator";
 
 interface Objective {
@@ -58,6 +58,7 @@ interface NewCondState {
   club: string;
   position: string;
   event: WinEvent | "";
+  matchStat: MatchStat;
 }
 
 const EMPTY_COND: NewCondState = {
@@ -72,6 +73,7 @@ const EMPTY_COND: NewCondState = {
   club: "",
   position: "",
   event: "",
+  matchStat: "goals_scored",
 };
 
 export default function ObjectivesAdmin() {
@@ -195,6 +197,14 @@ export default function ObjectivesAdmin() {
     if (nc.type === "win_event") {
       cond.event = nc.event as WinEvent;
       if (nc.consecutive) cond.consecutive = true;
+    }
+
+    if (nc.type === "single_match") {
+      cond.matchStat = nc.matchStat;
+    }
+
+    if (nc.type === "login_streak") {
+      cond.timeframe = nc.timeframe;
     }
 
     setConditions(prev => [...prev, cond]);
@@ -422,7 +432,7 @@ export default function ObjectivesAdmin() {
                   value={nc.type}
                   onChange={e => {
                     const t = e.target.value as ConditionType;
-                    setNc({ ...EMPTY_COND, type: t, timeframe: t === "squad_count" ? "season" : "career" });
+                    setNc({ ...EMPTY_COND, type: t, timeframe: t === "squad_count" ? "season" : "career", count: t === "login_streak" ? 7 : 1 });
                   }}
                   className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                 >
@@ -436,7 +446,11 @@ export default function ObjectivesAdmin() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
-                    {nc.type === "squad_count" ? "Minimum players" : nc.type === "win_event" ? "How many times" : "Target count"}
+                    {nc.type === "squad_count" ? "Minimum players"
+                      : nc.type === "win_event" ? "How many times"
+                      : nc.type === "single_match" ? (nc.matchStat === "win_margin" ? "Min win margin (goals)" : "Min goals in one match")
+                      : nc.type === "login_streak" ? "Days in a row"
+                      : "Target count"}
                   </label>
                   <input
                     type="number"
@@ -537,6 +551,55 @@ export default function ObjectivesAdmin() {
                 </div>
               )}
 
+              {/* Single-match stat selector */}
+              {nc.type === "single_match" && (
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">What to achieve</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {(Object.keys(MATCH_STAT_LABELS) as MatchStat[]).map(ms => (
+                      <button
+                        key={ms}
+                        onClick={() => setNc(n => ({ ...n, matchStat: ms }))}
+                        className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.matchStat === ms ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                      >
+                        {MATCH_STAT_LABELS[ms]}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {nc.matchStat === "goals_scored"
+                      ? `Score ${nc.count} or more goals in a single match. Tracks your best-ever game across all seasons.`
+                      : `Win a match by ${nc.count} or more goals (e.g. ${nc.count}-0 or ${nc.count + 1}-1). Tracks your biggest-ever win margin.`}
+                  </p>
+                </div>
+              )}
+
+              {/* Login streak timeframe */}
+              {nc.type === "login_streak" && (
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Which streak?</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setNc(n => ({ ...n, timeframe: "season" }))}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.timeframe === "season" ? "bg-orange-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                    >
+                      Current streak
+                    </button>
+                    <button
+                      onClick={() => setNc(n => ({ ...n, timeframe: "career" }))}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.timeframe === "career" ? "bg-orange-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                    >
+                      Longest ever streak
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {nc.timeframe === "season"
+                      ? `Player must currently have a ${nc.count}-day login streak active right now.`
+                      : `Player must have achieved a ${nc.count}-day streak at some point (even if broken now).`}
+                  </p>
+                </div>
+              )}
+
               {/* Consecutive toggle (win_event only, count > 1) */}
               {nc.type === "win_event" && nc.count > 1 && (
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -551,7 +614,8 @@ export default function ObjectivesAdmin() {
                 </label>
               )}
 
-              {/* Competition scope */}
+              {/* Competition scope — not relevant for login_streak */}
+              {nc.type !== "login_streak" && (
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Competition scope</label>
                 <select
@@ -564,6 +628,7 @@ export default function ObjectivesAdmin() {
                   <option value="cl_draft">CL Draft only</option>
                 </select>
               </div>
+              )}
 
               {/* Player filters (stat types + squad_count) */}
               {hasPlayerFilters(nc.type) && (
@@ -650,13 +715,14 @@ export default function ObjectivesAdmin() {
                       count: nc.count,
                       scope: isStatType(nc.type) ? nc.scope : undefined,
                       positionMatch: nc.position.trim() ? nc.positionMatch : undefined,
-                      timeframe: isStatType(nc.type) ? nc.timeframe : undefined,
+                      timeframe: (isStatType(nc.type) || nc.type === "login_streak") ? nc.timeframe : undefined,
                       consecutive: nc.type === "win_event" && nc.count > 1 ? nc.consecutive : undefined,
-                      competition: nc.competition || "any",
+                      competition: nc.type !== "login_streak" ? (nc.competition || "any") : undefined,
                       ...(nc.nationality.trim() ? { nationality: nc.nationality.trim() } : {}),
                       ...(nc.club.trim() ? { club: nc.club.trim() } : {}),
                       ...(nc.position.trim() ? { position: nc.position.trim().toUpperCase() } : {}),
                       ...(nc.type === "win_event" && nc.event ? { event: nc.event as WinEvent } : {}),
+                      ...(nc.type === "single_match" ? { matchStat: nc.matchStat } : {}),
                     })}
                   </span>
                 </div>

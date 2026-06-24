@@ -640,6 +640,85 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             lastResult = await awardXp("draft_invincible", runId, XP_AWARDS.draft_invincible, "Invincible Season!");
           }
 
+          // Check objectives
+          try {
+            const competition: "pl_draft" | "cl_draft" = (season.ucl || season.uel) ? "cl_draft" : "pl_draft";
+
+            const winEvents: import("@/lib/objectiveTypes").WinEvent[] = [];
+            winEvents.push("pl_complete");
+            if (season.actualFinish === 1) winEvents.push("pl_win");
+            if (season.actualFinish <= 4) winEvents.push("pl_top4");
+            if (season.actualFinish <= 10) winEvents.push("pl_top_half");
+            if (season.teamRecord.losses === 0) winEvents.push("unbeaten");
+            if (season.faCup.winner) winEvents.push("fa_cup_win");
+            if (season.charityShield?.result === "W") winEvents.push("community_shield_win");
+            if (season.actualFinish === 1 && season.faCup.winner) winEvents.push("double");
+            if (season.ucl) {
+              winEvents.push("cl_complete");
+              if (season.ucl.knockoutTies.length > 0) { winEvents.push("cl_qualify"); winEvents.push("cl_r16"); }
+              const uclExitStages = ["Quarter-Final", "Semi-Final", "Final"];
+              if (season.ucl.winner || uclExitStages.slice(1).some(s => s === season.ucl!.exitStage)) winEvents.push("cl_sf");
+              if (season.ucl.winner || season.ucl.exitStage === "Final") { winEvents.push("cl_final"); }
+              if (season.ucl.winner || uclExitStages.some(s => s === season.ucl!.exitStage)) winEvents.push("cl_qf");
+              if (season.ucl.winner) winEvents.push("cl_win");
+              if (season.actualFinish === 1 && season.ucl.winner) winEvents.push("treble");
+            }
+            if (season.uel) {
+              if (season.uel.winner) winEvents.push("europa_win");
+              if (season.uel.winner || season.uel.exitStage === "Final") winEvents.push("europa_final");
+              if (season.uel.winner || season.uel.exitStage === "Final" || season.uel.exitStage === "Semi-Final") winEvents.push("europa_sf");
+              if (season.actualFinish === 1 && season.uel.winner) winEvents.push("double");
+            }
+
+            const matchResults: { goalsFor: number; goalsAgainst: number }[] = [
+              ...season.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
+              ...season.faCup.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
+              ...(season.ucl?.leagueMatches ?? []).map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
+              ...(season.ucl?.knockoutTies ?? []).flatMap(t => [
+                { goalsFor: t.leg1.goalsFor, goalsAgainst: t.leg1.goalsAgainst },
+                ...(t.leg2 ? [{ goalsFor: t.leg2.goalsFor, goalsAgainst: t.leg2.goalsAgainst }] : []),
+              ]),
+              ...(season.uel?.leagueMatches ?? []).map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
+              ...(season.uel?.knockoutTies ?? []).flatMap(t => [
+                { goalsFor: t.leg1.goalsFor, goalsAgainst: t.leg1.goalsAgainst },
+                ...(t.leg2 ? [{ goalsFor: t.leg2.goalsFor, goalsAgainst: t.leg2.goalsAgainst }] : []),
+              ]),
+            ];
+
+            const objRes = await fetch("/api/objectives/check", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                competition,
+                squad: players.map(p => ({
+                  name: p.name,
+                  nationality: p.nationality ?? "",
+                  club: p.club,
+                  assignedPosition: p.assignedPosition,
+                  naturalPositions: p.positions,
+                  isSub: p.isSub ?? false,
+                })),
+                playerStats: season.playerStats.map(ps => ({
+                  name: ps.name,
+                  goals: ps.goals,
+                  assists: ps.assists,
+                  cleanSheets: ps.cleanSheets,
+                })),
+                events: winEvents,
+                matchResults,
+              }),
+            });
+            if (objRes.ok) {
+              const objData = await objRes.json();
+              const completed = objData.completed as { id: string; xp_reward: number }[] ?? [];
+              for (const obj of completed) {
+                if (obj.xp_reward > 0) {
+                  lastResult = await awardXp(`objective_${obj.id}`, `${runId}_obj_${obj.id}`, obj.xp_reward, "Objective Complete!");
+                }
+              }
+            }
+          } catch { /* objectives check is non-critical */ }
+
           fetch("/api/stats", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
