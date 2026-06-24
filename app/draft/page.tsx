@@ -204,6 +204,7 @@ export default function DraftPage() {
   const [preComputedSeason, setPreComputedSeason] = useState<SeasonResult | null>(null);
   const [roomPlayers, setRoomPlayers] = useState<RoomPlayer[] | null>(null);
   const [allRoomPlayerSeasons, setAllRoomPlayerSeasons] = useState<Record<string, SeasonResult[]> | null>(null);
+  const [revealStartTime, setRevealStartTime] = useState<number | undefined>(undefined);
 
   // Update URL to reflect room code when playing online (so it's shareable/bookmarkable)
   useEffect(() => {
@@ -308,6 +309,7 @@ export default function DraftPage() {
   }, [scrollTop, currentSeason]);
 
   const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[]) => {
+    setRevealStartTime(Date.now());
     setPreComputedSeason(myResult);
     setRoomPlayers(allPlayers);
     // Populate players from the user's room squad so handlePlayNextSeason has a squad to work with
@@ -920,6 +922,7 @@ export default function DraftPage() {
           roomCode={roomCode ?? undefined}
           allRoomPlayerSeasons={allRoomPlayerSeasons ?? undefined}
           mode={settings?.mode}
+          revealStartTime={revealStartTime}
         />
       )}
       {phase === "pre-season" && (

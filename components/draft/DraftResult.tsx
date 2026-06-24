@@ -22,6 +22,7 @@ interface Props {
   roomCode?: string;
   allRoomPlayerSeasons?: Record<string, SeasonResult[]>;
   mode?: "normal" | "prime";
+  revealStartTime?: number;
 }
 
 interface PLRecord {
@@ -499,7 +500,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal" }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined),
     [players, seasonNumber, previousResult, preComputedSeason],
@@ -533,18 +534,32 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const schedule = useMemo(() => buildSchedule(season), [season]);
   const totalEvents = schedule.length;
 
-  // Match-by-match reveal
+  // Match-by-match reveal — wall-clock anchored so background tab throttling can't cause drift
+  const revealStartRef = useRef<number>(revealStartTime ?? Date.now());
+  // If a revealStartTime prop arrives (multiplayer: set when simulation completed), update the anchor
+  useEffect(() => {
+    if (revealStartTime !== undefined) revealStartRef.current = revealStartTime;
+  }, [revealStartTime]);
+
   const [revealedIdx, setRevealedIdx] = useState(0);
   const [seasonComplete, setSeasonComplete] = useState(false);
   const matchListRef = useRef<HTMLDivElement>(null);
 
+  // Poll every 100ms using real wall-clock time — immune to background-tab setTimeout throttling
   useEffect(() => {
     if (seasonComplete) return;
-    if (revealedIdx < totalEvents) {
-      const timer = setTimeout(() => setRevealedIdx(i => i + 1), 900);
-      return () => clearTimeout(timer);
-    }
-    if (revealedIdx >= totalEvents) {
+    const tick = () => {
+      const elapsed = Date.now() - revealStartRef.current;
+      const idx = Math.min(totalEvents, Math.floor(elapsed / 900));
+      setRevealedIdx(idx);
+    };
+    tick(); // run immediately in case we need to fast-forward (e.g. tab was backgrounded)
+    const interval = setInterval(tick, 100);
+    return () => clearInterval(interval);
+  }, [seasonComplete, totalEvents]);
+
+  useEffect(() => {
+    if (!seasonComplete && revealedIdx >= totalEvents) {
       const timer = setTimeout(() => setSeasonComplete(true), 600);
       return () => clearTimeout(timer);
     }
@@ -824,6 +839,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
 
   const handleSkip = useCallback(() => {
+    // Push anchor far into the past so the interval also computes idx = totalEvents
+    revealStartRef.current = Date.now() - totalEvents * 900 - 1000;
     setRevealedIdx(totalEvents);
     setSeasonComplete(true);
   }, [totalEvents]);
