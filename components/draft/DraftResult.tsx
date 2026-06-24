@@ -2430,6 +2430,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           roomPlayers={roomPlayers}
           allRoomPlayerSeasons={allRoomPlayerSeasons}
           onClose={() => setShowCareerRecap(false)}
+          onNewRun={onNewRun}
         />
       )}
 
