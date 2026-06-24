@@ -6,16 +6,27 @@ export async function GET() {
   const supabase = createServiceClient();
 
   // Active, published, non-expired objectives with visible XP
-  let query = supabase
+  let { data: objectives, error } = await supabase
     .from("objectives")
     .select("*")
     .eq("is_active", true)
+    .eq("is_published", true)
     .gt("xp_reward", 0)
     .or("expires_at.is.null,expires_at.gt.now()")
     .order("sort_order", { ascending: true });
-  try { query = query.eq("is_published", true); } catch { /* column may not exist yet */ }
-  const { data: objectives, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (error) {
+    // is_published column may not exist yet — fall back without the filter
+    const fallback = await supabase
+      .from("objectives")
+      .select("*")
+      .eq("is_active", true)
+      .gt("xp_reward", 0)
+      .or("expires_at.is.null,expires_at.gt.now()")
+      .order("sort_order", { ascending: true });
+    if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
+    objectives = fallback.data;
+  }
 
   const serverSupabase = await createClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
