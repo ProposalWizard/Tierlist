@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import type { ObjectiveCondition, Competition, ConditionType, WinEvent } from "@/lib/objectiveTypes";
+import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe } from "@/lib/objectiveTypes";
 import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS } from "@/lib/objectiveTypes";
 import { conditionSummary } from "@/lib/objectiveEvaluator";
 
@@ -37,19 +37,41 @@ function formatDeadline(expiresAt: string): string {
   return `${hours}h remaining`;
 }
 
-const EMPTY_NEW_COND = {
-  type: "goals" as ConditionType,
+function isStatType(t: ConditionType) {
+  return t === "goals" || t === "assists" || t === "clean_sheets";
+}
+
+function hasPlayerFilters(t: ConditionType) {
+  return isStatType(t) || t === "squad_count";
+}
+
+interface NewCondState {
+  type: ConditionType;
+  count: number;
+  scope: StatScope;
+  positionMatch: PositionMatch;
+  timeframe: Timeframe;
+  consecutive: boolean;
+  competition: Competition;
+  nationality: string;
+  club: string;
+  position: string;
+  event: WinEvent | "";
+}
+
+const EMPTY_COND: NewCondState = {
+  type: "goals",
   count: 1,
-  competition: "any" as Competition,
+  scope: "squad_total",
+  positionMatch: "assigned",
+  timeframe: "career",
+  consecutive: false,
+  competition: "any",
   nationality: "",
   club: "",
   position: "",
-  event: undefined as WinEvent | undefined,
+  event: "",
 };
-
-function isStatType(t: ConditionType) {
-  return t === "goals" || t === "assists" || t === "clean_sheets" || t === "squad_count";
-}
 
 export default function ObjectivesAdmin() {
   const [objectives, setObjectives] = useState<Objective[]>([]);
@@ -65,7 +87,7 @@ export default function ObjectivesAdmin() {
   });
   const [conditions, setConditions] = useState<ObjectiveCondition[]>([]);
   const [addingCond, setAddingCond] = useState(false);
-  const [newCond, setNewCond] = useState({ ...EMPTY_NEW_COND });
+  const [nc, setNc] = useState<NewCondState>({ ...EMPTY_COND });
   const [durationSelect, setDurationSelect] = useState("");
   const [cardFile, setCardFile] = useState<File | null>(null);
   const [cardPreview, setCardPreview] = useState<string | null>(null);
@@ -74,10 +96,7 @@ export default function ObjectivesAdmin() {
   const loadObjectives = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/admin/objectives");
-    if (res.ok) {
-      const data = await res.json();
-      setObjectives(data);
-    }
+    if (res.ok) setObjectives(await res.json());
     setLoading(false);
   }, []);
 
@@ -88,7 +107,7 @@ export default function ObjectivesAdmin() {
     setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true, expires_at: null });
     setConditions([]);
     setAddingCond(false);
-    setNewCond({ ...EMPTY_NEW_COND });
+    setNc({ ...EMPTY_COND });
     setDurationSelect("");
     setCardFile(null);
     setCardPreview(null);
@@ -106,7 +125,7 @@ export default function ObjectivesAdmin() {
     });
     setConditions(obj.conditions ?? []);
     setAddingCond(false);
-    setNewCond({ ...EMPTY_NEW_COND });
+    setNc({ ...EMPTY_COND });
     setDurationSelect("");
     setCardPreview(obj.card_image_url);
     setCardFile(null);
@@ -119,8 +138,7 @@ export default function ObjectivesAdmin() {
     if (days === 0) {
       setForm(f => ({ ...f, expires_at: null }));
     } else {
-      const expiresAt = new Date(Date.now() + days * 86400000).toISOString();
-      setForm(f => ({ ...f, expires_at: expiresAt }));
+      setForm(f => ({ ...f, expires_at: new Date(Date.now() + days * 86400000).toISOString() }));
     }
     setDurationSelect("");
   };
@@ -144,27 +162,40 @@ export default function ObjectivesAdmin() {
       alert("Failed to upload card image: " + error);
       return null;
     }
-    const { url } = await res.json();
-    return url;
+    return (await res.json()).url;
   };
 
   const handleAddCondition = () => {
-    if (newCond.type === "win_event" && !newCond.event) {
-      alert("Select an event");
-      return;
-    }
+    if (nc.type === "win_event" && !nc.event) { alert("Select an event"); return; }
+
     const cond: ObjectiveCondition = {
       id: crypto.randomUUID(),
-      type: newCond.type,
-      count: newCond.count,
-      competition: newCond.competition || "any",
-      ...(isStatType(newCond.type) && newCond.nationality?.trim() ? { nationality: newCond.nationality.trim() } : {}),
-      ...(isStatType(newCond.type) && newCond.club?.trim() ? { club: newCond.club.trim() } : {}),
-      ...(isStatType(newCond.type) && newCond.position?.trim() ? { position: newCond.position.trim().toUpperCase() } : {}),
-      ...(newCond.type === "win_event" && newCond.event ? { event: newCond.event } : {}),
+      type: nc.type,
+      count: nc.count,
+      competition: nc.competition || "any",
     };
+
+    if (isStatType(nc.type)) {
+      cond.scope = nc.scope;
+      cond.timeframe = nc.timeframe;
+    }
+
+    if (hasPlayerFilters(nc.type)) {
+      if (nc.nationality.trim()) cond.nationality = nc.nationality.trim();
+      if (nc.club.trim()) cond.club = nc.club.trim();
+      if (nc.position.trim()) {
+        cond.position = nc.position.trim().toUpperCase();
+        cond.positionMatch = nc.positionMatch;
+      }
+    }
+
+    if (nc.type === "win_event") {
+      cond.event = nc.event as WinEvent;
+      if (nc.consecutive) cond.consecutive = true;
+    }
+
     setConditions(prev => [...prev, cond]);
-    setNewCond({ ...EMPTY_NEW_COND });
+    setNc({ ...EMPTY_COND });
     setAddingCond(false);
   };
 
@@ -197,13 +228,8 @@ export default function ObjectivesAdmin() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (res.ok) {
-      resetForm();
-      loadObjectives();
-    } else {
-      const err = await res.text();
-      alert("Failed to save: " + err);
-    }
+    if (res.ok) { resetForm(); loadObjectives(); }
+    else alert("Failed to save: " + await res.text());
     setSaving(false);
   };
 
@@ -213,10 +239,8 @@ export default function ObjectivesAdmin() {
     loadObjectives();
   };
 
-  const handleRemoveCard = () => {
-    setCardFile(null);
-    setCardPreview(null);
-  };
+  const availableEvents = WIN_EVENT_OPTIONS.filter(o => o.available);
+  const futureEvents = WIN_EVENT_OPTIONS.filter(o => !o.available);
 
   return (
     <div className="space-y-6">
@@ -232,35 +256,38 @@ export default function ObjectivesAdmin() {
           {editingId ? "Edit Objective" : "Add New Objective"}
         </h3>
 
+        {/* Title */}
         <div>
           <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Title *</label>
           <input
             type="text"
             value={form.title}
-            onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
-            placeholder="e.g. Win the league with only English players"
+            onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+            placeholder="e.g. The French Connection"
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
+        {/* Description */}
         <div>
           <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Description (optional)</label>
           <textarea
             value={form.description}
-            onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
-            placeholder="Detailed description of how to complete this objective..."
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+            placeholder="e.g. Score 30 goals with French players and win the Premier League"
             rows={2}
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
           />
         </div>
 
+        {/* XP + Active */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">XP Reward</label>
             <input
               type="number"
               value={form.xp_reward}
-              onChange={(e) => setForm(f => ({ ...f, xp_reward: parseInt(e.target.value) || 0 }))}
+              onChange={e => setForm(f => ({ ...f, xp_reward: parseInt(e.target.value) || 0 }))}
               min={0}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
@@ -270,9 +297,7 @@ export default function ObjectivesAdmin() {
             <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Active</label>
             <button
               onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
-                form.is_active ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400"
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition ${form.is_active ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400"}`}
             >
               {form.is_active ? "Active" : "Inactive"}
             </button>
@@ -282,16 +307,14 @@ export default function ObjectivesAdmin() {
         {/* Time Limit */}
         <div>
           <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Time Limit</label>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <select
               value={durationSelect}
-              onChange={(e) => handleDurationChange(e.target.value)}
+              onChange={e => handleDurationChange(e.target.value)}
               className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="">— Set duration from now —</option>
-              {DURATION_OPTIONS.map(opt => (
-                <option key={opt.days} value={opt.days}>{opt.label}</option>
-              ))}
+              <option value="">— Set duration —</option>
+              {DURATION_OPTIONS.map(opt => <option key={opt.days} value={opt.days}>{opt.label}</option>)}
             </select>
             {form.expires_at ? (
               <div className="flex items-center gap-2">
@@ -318,7 +341,7 @@ export default function ObjectivesAdmin() {
               <input
                 type="text"
                 value={form.card_name}
-                onChange={(e) => setForm(f => ({ ...f, card_name: e.target.value }))}
+                onChange={e => setForm(f => ({ ...f, card_name: e.target.value }))}
                 placeholder="Card name (e.g. Wayne Rooney)"
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
               />
@@ -333,7 +356,7 @@ export default function ObjectivesAdmin() {
               <div className="relative shrink-0">
                 <img src={cardPreview} alt="Card preview" className="w-20 h-28 object-cover rounded-lg border border-gray-700" />
                 <button
-                  onClick={handleRemoveCard}
+                  onClick={() => { setCardFile(null); setCardPreview(null); }}
                   className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white rounded-full text-[10px] flex items-center justify-center font-bold hover:bg-red-500"
                 >
                   ×
@@ -343,18 +366,25 @@ export default function ObjectivesAdmin() {
           </div>
         </div>
 
-        {/* Conditions Builder */}
+        {/* ───── CONDITIONS ───── */}
         <div>
-          <label className="block text-xs font-bold text-white uppercase tracking-wider mb-2">Conditions</label>
+          <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">
+            Conditions
+            <span className="text-gray-500 font-normal normal-case ml-2">All conditions must be met to complete</span>
+          </label>
 
+          {/* Existing conditions list */}
           {conditions.length > 0 && (
             <div className="space-y-1 mb-3">
-              {conditions.map(cond => (
-                <div key={cond.id} className="flex items-center justify-between bg-gray-800 border border-gray-700 rounded-lg px-3 py-2">
-                  <span className="text-xs text-white">{conditionSummary(cond)}</span>
+              {conditions.map((cond, i) => (
+                <div key={cond.id} className="flex items-center justify-between bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[10px] font-bold text-gray-500 shrink-0">{i + 1}.</span>
+                    <span className="text-xs text-white truncate">{conditionSummary(cond)}</span>
+                  </div>
                   <button
                     onClick={() => setConditions(prev => prev.filter(c => c.id !== cond.id))}
-                    className="text-red-400 hover:text-red-300 text-sm font-bold ml-3 shrink-0 leading-none"
+                    className="text-red-400 hover:text-red-300 text-sm font-bold shrink-0 leading-none"
                   >
                     ×
                   </button>
@@ -364,66 +394,155 @@ export default function ObjectivesAdmin() {
           )}
 
           {conditions.length === 0 && !addingCond && (
-            <p className="text-xs text-gray-500 mb-3">No conditions — must be marked complete manually.</p>
+            <p className="text-xs text-gray-500 mb-3">No conditions — objective must be completed manually.</p>
           )}
 
+          {/* Add condition form */}
           {addingCond ? (
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 space-y-3">
-              {/* Type + Count */}
+            <div className="bg-gray-800 border border-emerald-800/50 rounded-lg p-4 space-y-3">
+
+              {/* Row 1: Type */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Condition type</label>
+                <select
+                  value={nc.type}
+                  onChange={e => {
+                    const t = e.target.value as ConditionType;
+                    setNc({ ...EMPTY_COND, type: t, timeframe: t === "squad_count" ? "season" : "career" });
+                  }}
+                  className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
+                >
+                  {(Object.keys(CONDITION_TYPE_LABELS) as ConditionType[]).map(t => (
+                    <option key={t} value={t}>{CONDITION_TYPE_LABELS[t]}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Row 2: Count + Scope (for stat types) */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Type</label>
-                  <select
-                    value={newCond.type}
-                    onChange={e => setNewCond({ ...EMPTY_NEW_COND, type: e.target.value as ConditionType })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
-                  >
-                    {(Object.keys(CONDITION_TYPE_LABELS) as ConditionType[]).map(t => (
-                      <option key={t} value={t}>{CONDITION_TYPE_LABELS[t]}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
-                    {newCond.type === "squad_count" ? "Min players" : newCond.type === "win_event" ? "Times" : "Count"}
+                    {nc.type === "squad_count" ? "Minimum players" : nc.type === "win_event" ? "How many times" : "Target count"}
                   </label>
                   <input
                     type="number"
-                    value={newCond.count}
-                    onChange={e => setNewCond(n => ({ ...n, count: parseInt(e.target.value) || 1 }))}
+                    value={nc.count}
+                    onChange={e => setNc(n => ({ ...n, count: parseInt(e.target.value) || 1 }))}
                     min={1}
                     className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                   />
                 </div>
+
+                {isStatType(nc.type) && (
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Who counts?</label>
+                    <select
+                      value={nc.scope}
+                      onChange={e => setNc(n => ({ ...n, scope: e.target.value as StatScope }))}
+                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
+                    >
+                      <option value="squad_total">All matching players combined</option>
+                      <option value="any_player">One single player must reach it</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
+              {/* Scope explanation */}
+              {isStatType(nc.type) && (
+                <p className="text-[10px] text-gray-500 -mt-1">
+                  {nc.scope === "squad_total"
+                    ? `Total ${nc.type === "clean_sheets" ? "clean sheets" : nc.type} across all matching players in your squad are added together.`
+                    : `A single player matching the filters below must individually reach ${nc.count} ${nc.type === "clean_sheets" ? "clean sheets" : nc.type}.`}
+                </p>
+              )}
+
+              {/* Timeframe (stats only) */}
+              {isStatType(nc.type) && (
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Timeframe</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setNc(n => ({ ...n, timeframe: "career" }))}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.timeframe === "career" ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                    >
+                      Career total (all drafts)
+                    </button>
+                    <button
+                      onClick={() => setNc(n => ({ ...n, timeframe: "season" }))}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.timeframe === "season" ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                    >
+                      In one season
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {nc.timeframe === "career"
+                      ? "Accumulates across every draft you play. E.g. score 500 goals total across all drafts forever."
+                      : "Must happen within a single season. E.g. score 35 goals in one PL season."}
+                  </p>
+                </div>
+              )}
+
               {/* Win event selector */}
-              {newCond.type === "win_event" && (
+              {nc.type === "win_event" && (
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Event</label>
                   <select
-                    value={newCond.event || ""}
+                    value={nc.event}
                     onChange={e => {
                       const ev = e.target.value as WinEvent;
                       const opt = WIN_EVENT_OPTIONS.find(o => o.value === ev);
-                      setNewCond(n => ({ ...n, event: ev, competition: opt?.competition || "any" }));
+                      setNc(n => ({ ...n, event: ev, competition: opt?.competition || "any" }));
                     }}
                     className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                   >
                     <option value="">— Select event —</option>
-                    {WIN_EVENT_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
+                    <optgroup label="Champions League">
+                      {availableEvents.filter(o => o.competition === "cl_draft").map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Premier League">
+                      {availableEvents.filter(o => o.competition === "pl_draft").map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="General">
+                      {availableEvents.filter(o => o.competition === "any").map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </optgroup>
+                    {futureEvents.length > 0 && (
+                      <optgroup label="Coming Soon (not yet simulated)">
+                        {futureEvents.map(o => (
+                          <option key={o.value} value={o.value} disabled>{o.label}</option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
+              )}
+
+              {/* Consecutive toggle (win_event only, count > 1) */}
+              {nc.type === "win_event" && nc.count > 1 && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={nc.consecutive}
+                    onChange={e => setNc(n => ({ ...n, consecutive: e.target.checked }))}
+                    className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
+                  />
+                  <span className="text-xs text-white font-bold">Must be consecutive seasons</span>
+                  <span className="text-[10px] text-gray-500">(streak resets if you fail a season)</span>
+                </label>
               )}
 
               {/* Competition scope */}
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Competition scope</label>
                 <select
-                  value={newCond.competition || "any"}
-                  onChange={e => setNewCond(n => ({ ...n, competition: e.target.value as Competition }))}
+                  value={nc.competition}
+                  onChange={e => setNc(n => ({ ...n, competition: e.target.value as Competition }))}
                   className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                 >
                   <option value="any">Any competition</option>
@@ -432,51 +551,105 @@ export default function ObjectivesAdmin() {
                 </select>
               </div>
 
-              {/* Player filters (not for win_event) */}
-              {isStatType(newCond.type) && (
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nationality</label>
-                    <input
-                      type="text"
-                      value={newCond.nationality || ""}
-                      onChange={e => setNewCond(n => ({ ...n, nationality: e.target.value }))}
-                      placeholder="e.g. French"
-                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
-                    />
+              {/* Player filters (stat types + squad_count) */}
+              {hasPlayerFilters(nc.type) && (
+                <div className="border-t border-gray-700 pt-3">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Player filters (all optional — leave blank for any player)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Nationality</label>
+                      <input
+                        type="text"
+                        value={nc.nationality}
+                        onChange={e => setNc(n => ({ ...n, nationality: e.target.value }))}
+                        placeholder="e.g. French"
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Club (drafted from)</label>
+                      <input
+                        type="text"
+                        value={nc.club}
+                        onChange={e => setNc(n => ({ ...n, club: e.target.value }))}
+                        placeholder="e.g. Arsenal"
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Position</label>
+                      <input
+                        type="text"
+                        value={nc.position}
+                        onChange={e => setNc(n => ({ ...n, position: e.target.value }))}
+                        placeholder="e.g. ST, GK, CM"
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Club (drafted from)</label>
-                    <input
-                      type="text"
-                      value={newCond.club || ""}
-                      onChange={e => setNewCond(n => ({ ...n, club: e.target.value }))}
-                      placeholder="e.g. Arsenal"
-                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Position</label>
-                    <input
-                      type="text"
-                      value={newCond.position || ""}
-                      onChange={e => setNewCond(n => ({ ...n, position: e.target.value }))}
-                      placeholder="e.g. ST, GK, CM"
-                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
-                    />
-                  </div>
+
+                  {/* Position match type — only shown when position is filled */}
+                  {nc.position.trim() && (
+                    <div className="mt-2">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">What does &quot;{nc.position.trim().toUpperCase()}&quot; mean?</label>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setNc(n => ({ ...n, positionMatch: "assigned" }))}
+                          className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.positionMatch === "assigned" ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                        >
+                          Playing position
+                        </button>
+                        <button
+                          onClick={() => setNc(n => ({ ...n, positionMatch: "natural" }))}
+                          className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.positionMatch === "natural" ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                        >
+                          Natural position
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        {nc.positionMatch === "assigned"
+                          ? "The slot they're placed in your formation. A ST who you play at CAM counts as CAM."
+                          : "Any position listed on the player's card. A player with ST, CF, LW counts as all three regardless of where you play them."}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
+              {/* Live preview */}
+              {(nc.type !== "win_event" || nc.event) && (
+                <div className="bg-gray-900 rounded-lg px-3 py-2 border border-gray-700">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Preview: </span>
+                  <span className="text-xs text-emerald-400 font-bold">
+                    {conditionSummary({
+                      id: "preview",
+                      type: nc.type,
+                      count: nc.count,
+                      scope: isStatType(nc.type) ? nc.scope : undefined,
+                      positionMatch: nc.position.trim() ? nc.positionMatch : undefined,
+                      timeframe: isStatType(nc.type) ? nc.timeframe : undefined,
+                      consecutive: nc.type === "win_event" && nc.count > 1 ? nc.consecutive : undefined,
+                      competition: nc.competition || "any",
+                      ...(nc.nationality.trim() ? { nationality: nc.nationality.trim() } : {}),
+                      ...(nc.club.trim() ? { club: nc.club.trim() } : {}),
+                      ...(nc.position.trim() ? { position: nc.position.trim().toUpperCase() } : {}),
+                      ...(nc.type === "win_event" && nc.event ? { event: nc.event as WinEvent } : {}),
+                    })}
+                  </span>
+                </div>
+              )}
+
+              {/* Add / Cancel */}
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={handleAddCondition}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition"
+                  disabled={nc.type === "win_event" && !nc.event}
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition disabled:opacity-50"
                 >
-                  Add
+                  Add Condition
                 </button>
                 <button
-                  onClick={() => { setAddingCond(false); setNewCond({ ...EMPTY_NEW_COND }); }}
+                  onClick={() => { setAddingCond(false); setNc({ ...EMPTY_COND }); }}
                   className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-bold rounded-lg transition"
                 >
                   Cancel
@@ -493,6 +666,7 @@ export default function ObjectivesAdmin() {
           )}
         </div>
 
+        {/* Save / Cancel buttons */}
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleSave}
@@ -512,64 +686,67 @@ export default function ObjectivesAdmin() {
         </div>
       </div>
 
-      {/* Objectives List */}
+      {/* ───── OBJECTIVES LIST ───── */}
       {loading ? (
         <div className="text-gray-500 text-sm text-center py-8">Loading...</div>
       ) : objectives.length === 0 ? (
         <div className="text-gray-500 text-sm text-center py-8">No objectives yet. Add one above.</div>
       ) : (
         <div className="space-y-2">
-          {objectives.map((obj) => {
+          {objectives.map(obj => {
             const isExpired = obj.expires_at ? new Date(obj.expires_at) < new Date() : false;
-            const condCount = obj.conditions?.length ?? 0;
+            const conds = obj.conditions ?? [];
             return (
               <div
                 key={obj.id}
-                className={`flex items-center gap-4 bg-gray-900 border rounded-xl px-4 py-3 transition ${
-                  !obj.is_active || isExpired ? "border-gray-800/50 opacity-50" : "border-gray-800"
-                }`}
+                className={`bg-gray-900 border rounded-xl px-4 py-3 transition ${!obj.is_active || isExpired ? "border-gray-800/50 opacity-50" : "border-gray-800"}`}
               >
-                {obj.card_image_url ? (
-                  <img src={obj.card_image_url} alt={obj.card_name || "Card"} className="w-12 h-16 object-cover rounded-lg border border-gray-700 shrink-0" />
-                ) : (
-                  <div className="w-12 h-16 bg-gray-800 rounded-lg border border-gray-700 shrink-0 flex items-center justify-center text-gray-600 text-lg">?</div>
-                )}
+                <div className="flex items-center gap-4">
+                  {obj.card_image_url ? (
+                    <img src={obj.card_image_url} alt={obj.card_name || "Card"} className="w-12 h-16 object-cover rounded-lg border border-gray-700 shrink-0" />
+                  ) : (
+                    <div className="w-12 h-16 bg-gray-800 rounded-lg border border-gray-700 shrink-0 flex items-center justify-center text-gray-600 text-lg">?</div>
+                  )}
 
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm text-white truncate">{obj.title}</div>
-                  {obj.description && <div className="text-[10px] text-gray-500 truncate">{obj.description}</div>}
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {obj.xp_reward > 0 && (
-                      <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{obj.xp_reward} XP</span>
-                    )}
-                    {obj.card_name && (
-                      <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">{obj.card_name}</span>
-                    )}
-                    {condCount > 0 && (
-                      <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">{condCount} condition{condCount !== 1 ? "s" : ""}</span>
-                    )}
-                    {!obj.is_active && <span className="text-[10px] font-bold text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">Hidden</span>}
-                    {obj.expires_at && !isExpired && (
-                      <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">⏱ {formatDeadline(obj.expires_at)}</span>
-                    )}
-                    {isExpired && <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">Expired</span>}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-sm text-white truncate">{obj.title}</div>
+                    {obj.description && <div className="text-[10px] text-gray-500 truncate">{obj.description}</div>}
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {obj.xp_reward > 0 && <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{obj.xp_reward} XP</span>}
+                      {obj.card_name && <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">{obj.card_name}</span>}
+                      {conds.length > 0 && <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">{conds.length} condition{conds.length !== 1 ? "s" : ""}</span>}
+                      {!obj.is_active && <span className="text-[10px] font-bold text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">Hidden</span>}
+                      {obj.expires_at && !isExpired && <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">⏱ {formatDeadline(obj.expires_at)}</span>}
+                      {isExpired && <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">Expired</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleEdit(obj)}
+                      className="px-2 py-1 text-xs font-bold text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(obj.id)}
+                      className="px-2 py-1 text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => handleEdit(obj)}
-                    className="px-2 py-1 text-xs font-bold text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(obj.id)}
-                    className="px-2 py-1 text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition"
-                  >
-                    Delete
-                  </button>
-                </div>
+                {/* Show conditions under the card */}
+                {conds.length > 0 && (
+                  <div className="mt-2 pl-16 space-y-0.5">
+                    {conds.map((c, i) => (
+                      <div key={c.id} className="text-[10px] text-gray-400">
+                        <span className="text-gray-600">{i + 1}.</span> {conditionSummary(c)}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
