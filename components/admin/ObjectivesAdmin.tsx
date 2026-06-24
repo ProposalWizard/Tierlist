@@ -7,18 +7,19 @@ import CardLibraryPicker from "./CardLibraryPicker";
 import type { LibraryCard } from "./CardLibraryPicker";
 import SeasonAdmin from "./SeasonAdmin";
 
-type ObjCategory = "daily" | "weekly" | "monthly" | "foundation" | "elite" | "goat";
+type ObjCategory = "standard" | "daily" | "weekly" | "monthly" | "foundation" | "elite" | "goat";
 
 const CATEGORIES: { value: ObjCategory; label: string; icon: string; color: string; border: string; bg: string; hint: string }[] = [
-  { value: "daily",      label: "Daily",        icon: "📅", color: "text-sky-400",    border: "border-sky-700/50",    bg: "bg-sky-900/20",    hint: "Resets daily" },
-  { value: "weekly",     label: "Weekly",       icon: "📆", color: "text-violet-400", border: "border-violet-700/50", bg: "bg-violet-900/20", hint: "Resets weekly" },
-  { value: "monthly",    label: "Monthly",      icon: "🗓️", color: "text-pink-400",   border: "border-pink-700/50",   bg: "bg-pink-900/20",   hint: "Resets monthly" },
-  { value: "foundation", label: "Foundation",   icon: "🏗️", color: "text-emerald-400",border: "border-emerald-700/50",bg: "bg-emerald-900/20",hint: "Easy / beginner" },
-  { value: "elite",      label: "Elite",        icon: "⚡", color: "text-blue-400",   border: "border-blue-700/50",   bg: "bg-blue-900/20",   hint: "Hard challenges" },
-  { value: "goat",       label: "GOAT Manager", icon: "🐐", color: "text-amber-400",  border: "border-amber-700/50",  bg: "bg-amber-900/20",  hint: "The hardest" },
+  { value: "standard",   label: "Objectives",   icon: "🎯", color: "text-white",        border: "border-gray-600",       bg: "bg-gray-800",       hint: "Main objectives — shown to all players" },
+  { value: "daily",      label: "Daily",        icon: "📅", color: "text-sky-400",     border: "border-sky-700/50",     bg: "bg-sky-900/20",     hint: "Resets daily" },
+  { value: "weekly",     label: "Weekly",       icon: "📆", color: "text-violet-400",  border: "border-violet-700/50",  bg: "bg-violet-900/20",  hint: "Resets weekly" },
+  { value: "monthly",    label: "Monthly",      icon: "🗓️", color: "text-pink-400",    border: "border-pink-700/50",    bg: "bg-pink-900/20",    hint: "Resets monthly" },
+  { value: "foundation", label: "Foundation",   icon: "🏗️", color: "text-emerald-400", border: "border-emerald-700/50", bg: "bg-emerald-900/20", hint: "Easy / beginner" },
+  { value: "elite",      label: "Elite",        icon: "⚡", color: "text-blue-400",    border: "border-blue-700/50",    bg: "bg-blue-900/20",    hint: "Hard challenges" },
+  { value: "goat",       label: "GOAT Manager", icon: "🐐", color: "text-amber-400",   border: "border-amber-700/50",   bg: "bg-amber-900/20",   hint: "The hardest" },
 ];
 
-const CATEGORY_ORDER: ObjCategory[] = ["daily", "weekly", "monthly", "foundation", "elite", "goat"];
+const CATEGORY_ORDER: ObjCategory[] = ["standard", "daily", "weekly", "monthly", "foundation", "elite", "goat"];
 
 interface Objective {
   id: string;
@@ -103,7 +104,7 @@ export default function ObjectivesAdmin() {
     description: "",
     xp_reward: 100,
     card_name: "",
-    category: "foundation" as ObjCategory,
+    category: "standard" as ObjCategory,
     is_published: false,
     expires_at: null as string | null,
   });
@@ -128,7 +129,7 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "foundation", is_published: false, expires_at: null });
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "standard", is_published: false, expires_at: null });
     setConditions([]);
     setAddingCond(false);
     setNc({ ...EMPTY_COND });
@@ -145,7 +146,7 @@ export default function ObjectivesAdmin() {
       description: obj.description || "",
       xp_reward: obj.xp_reward,
       card_name: obj.card_name || "",
-      category: (obj.category as ObjCategory) ?? "foundation",
+      category: (obj.category as ObjCategory) ?? "standard",
       is_published: obj.is_published ?? false,
       expires_at: obj.expires_at,
     });
@@ -865,7 +866,7 @@ export default function ObjectivesAdmin() {
       ) : (
         <div className="space-y-6">
           {CATEGORY_ORDER.map(catValue => {
-            const catObjs = objectives.filter(o => (o.category ?? "foundation") === catValue);
+            const catObjs = objectives.filter(o => (o.category ?? "standard") === catValue);
             if (catObjs.length === 0) return null;
             const cat = CATEGORIES.find(c => c.value === catValue)!;
             return (
