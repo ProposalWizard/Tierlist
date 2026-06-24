@@ -123,11 +123,11 @@ export default function XPProgressBar({ progression }: Props) {
         {/* Header row */}
         <div className="relative flex items-start justify-between mb-5">
           <div>
-            <h3 className="text-xs font-black tracking-[0.2em] text-amber-500/80 uppercase">
-              Road to Legend <span className="font-semibold opacity-60">Season 1</span>
+            <h3 className="text-sm sm:text-base font-black tracking-[0.2em] text-amber-500/80 uppercase">
+              Road to Legend <span className="font-semibold text-orange-400/70">Season 1</span>
             </h3>
             <div className={`text-sm sm:text-base font-semibold mt-0.5 leading-tight ${titleColor}`}>
-              — {currentTitle.name}
+              {currentTitle.name}
             </div>
           </div>
           <span
