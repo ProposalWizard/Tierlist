@@ -112,6 +112,26 @@ export function evaluateObjective(
       }
       seasonValues[cond.id] = newProgress[cond.id] ?? 0;
     }
+
+    if (cond.type === "single_match") {
+      const matchStat = cond.matchStat ?? "goals_scored";
+      const matchResults = seasonData.matchResults ?? [];
+      let bestThisSeason = 0;
+      for (const m of matchResults) {
+        const val = matchStat === "goals_scored"
+          ? m.goalsFor
+          : Math.max(0, m.goalsFor - m.goalsAgainst);
+        if (val > bestThisSeason) bestThisSeason = val;
+      }
+      const career = Math.max(currentProgress[cond.id] ?? 0, bestThisSeason);
+      newProgress[cond.id] = career;
+      seasonValues[cond.id] = career;
+    }
+
+    // login_streak: managed by /api/objectives/check-login, leave progress unchanged
+    if (cond.type === "login_streak") {
+      seasonValues[cond.id] = newProgress[cond.id] ?? 0;
+    }
   }
 
   const complete = conditions.every(cond => {
@@ -134,6 +154,14 @@ function isConditionMet(
   }
 
   if (cond.type === "win_event") {
+    return (progress[cond.id] ?? 0) >= cond.count;
+  }
+
+  if (cond.type === "single_match") {
+    return (progress[cond.id] ?? 0) >= cond.count;
+  }
+
+  if (cond.type === "login_streak") {
     return (progress[cond.id] ?? 0) >= cond.count;
   }
 
@@ -203,6 +231,20 @@ export function conditionSummary(cond: ObjectiveCondition): string {
       if (cond.count <= 1) return label + comp;
       const consec = cond.consecutive ? " in a row" : "";
       return `${label} ${cond.count} time${p ? "s" : ""}${consec}${comp}`;
+    }
+
+    case "single_match": {
+      const matchStat = cond.matchStat ?? "goals_scored";
+      if (matchStat === "goals_scored") {
+        return `Score ${cond.count}+ goals in a single match${comp}`;
+      }
+      return `Win a match by ${cond.count}+ goals${comp}`;
+    }
+
+    case "login_streak": {
+      const tf = cond.timeframe ?? "season";
+      const which = tf === "career" ? "longest ever login streak" : "current login streak";
+      return `Reach a ${which} of ${cond.count} day${p ? "s" : ""}`;
     }
   }
 }

@@ -1,10 +1,12 @@
-export type ConditionType = "goals" | "assists" | "clean_sheets" | "squad_count" | "win_event";
+export type ConditionType = "goals" | "assists" | "clean_sheets" | "squad_count" | "win_event" | "single_match" | "login_streak";
 
 export type StatScope = "any_player" | "squad_total";
 
 export type PositionMatch = "assigned" | "natural";
 
 export type Timeframe = "season" | "career";
+
+export type MatchStat = "goals_scored" | "win_margin";
 
 export type WinEvent =
   | "cl_win"
@@ -43,6 +45,7 @@ export interface ObjectiveCondition {
   position?: string;
   event?: WinEvent;
   competition?: Competition;
+  matchStat?: MatchStat;
 }
 
 export type ObjectiveProgress = Record<string, number>;
@@ -52,6 +55,7 @@ export interface SeasonCheckData {
   squad: SquadPlayer[];
   playerStats: PlayerSeasonStats[];
   events: WinEvent[];
+  matchResults?: { goalsFor: number; goalsAgainst: number }[];
 }
 
 export interface SquadPlayer {
@@ -83,14 +87,14 @@ export const WIN_EVENT_OPTIONS: { value: WinEvent; label: string; competition: C
   { value: "pl_top_half", label: "Finish Top Half in PL",              competition: "pl_draft", available: true },
   { value: "pl_complete", label: "Complete a PL Season",               competition: "pl_draft", available: true },
   { value: "unbeaten",    label: "Go Unbeaten in a Season",            competition: "any",      available: true },
-  { value: "fa_cup_win",           label: "Win the FA Cup",                     competition: "pl_draft", available: false },
+  { value: "fa_cup_win",           label: "Win the FA Cup",                     competition: "pl_draft", available: true },
+  { value: "community_shield_win", label: "Win the Community Shield",           competition: "pl_draft", available: true },
+  { value: "europa_win",           label: "Win the Europa League",              competition: "cl_draft", available: true },
+  { value: "europa_final",         label: "Reach the Europa League Final",      competition: "cl_draft", available: true },
+  { value: "europa_sf",            label: "Reach the Europa League Semi-Final", competition: "cl_draft", available: true },
+  { value: "double",               label: "Win the Double (PL + FA Cup / PL + Europa)", competition: "any",  available: true },
+  { value: "treble",               label: "Win the Treble (PL + UCL + ...)",   competition: "cl_draft", available: true },
   { value: "efl_cup_win",          label: "Win the EFL Cup",                    competition: "pl_draft", available: false },
-  { value: "community_shield_win", label: "Win the Community Shield",           competition: "pl_draft", available: false },
-  { value: "europa_win",           label: "Win the Europa League",              competition: "cl_draft", available: false },
-  { value: "europa_final",         label: "Reach the Europa League Final",      competition: "cl_draft", available: false },
-  { value: "europa_sf",            label: "Reach the Europa League Semi-Final", competition: "cl_draft", available: false },
-  { value: "double",               label: "Win the Double (League + Cup)",      competition: "any",      available: false },
-  { value: "treble",               label: "Win the Treble",                     competition: "any",      available: false },
 ];
 
 export const CONDITION_TYPE_LABELS: Record<ConditionType, string> = {
@@ -99,6 +103,13 @@ export const CONDITION_TYPE_LABELS: Record<ConditionType, string> = {
   clean_sheets: "Keep clean sheets",
   squad_count:  "Have N players in squad",
   win_event:    "Achieve an event",
+  single_match: "Single-match achievement",
+  login_streak: "Login streak",
+};
+
+export const MATCH_STAT_LABELS: Record<MatchStat, string> = {
+  goals_scored: "Goals scored in one match",
+  win_margin:   "Win margin in one match",
 };
 
 export const STAT_SCOPE_LABELS: Record<StatScope, string> = {

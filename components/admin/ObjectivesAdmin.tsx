@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe } from "@/lib/objectiveTypes";
-import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS } from "@/lib/objectiveTypes";
+import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat } from "@/lib/objectiveTypes";
+import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS } from "@/lib/objectiveTypes";
 import { conditionSummary } from "@/lib/objectiveEvaluator";
+import CardLibraryPicker from "./CardLibraryPicker";
+import type { LibraryCard } from "./CardLibraryPicker";
 
 interface Objective {
   id: string;
@@ -12,6 +14,7 @@ interface Objective {
   card_image_url: string | null;
   card_name: string | null;
   is_active: boolean;
+  is_published: boolean;
   sort_order: number;
   expires_at: string | null;
   created_at: string;
@@ -57,6 +60,7 @@ interface NewCondState {
   club: string;
   position: string;
   event: WinEvent | "";
+  matchStat: MatchStat;
 }
 
 const EMPTY_COND: NewCondState = {
@@ -71,6 +75,7 @@ const EMPTY_COND: NewCondState = {
   club: "",
   position: "",
   event: "",
+  matchStat: "goals_scored",
 };
 
 export default function ObjectivesAdmin() {
@@ -83,6 +88,7 @@ export default function ObjectivesAdmin() {
     xp_reward: 100,
     card_name: "",
     is_active: true,
+    is_published: false,
     expires_at: null as string | null,
   });
   const [conditions, setConditions] = useState<ObjectiveCondition[]>([]);
@@ -91,6 +97,8 @@ export default function ObjectivesAdmin() {
   const [durationSelect, setDurationSelect] = useState("");
   const [cardFile, setCardFile] = useState<File | null>(null);
   const [cardPreview, setCardPreview] = useState<string | null>(null);
+  const [cardLibraryUrl, setCardLibraryUrl] = useState<string | null>(null);
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const loadObjectives = useCallback(async () => {
@@ -104,13 +112,14 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true, expires_at: null });
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true, is_published: false, expires_at: null });
     setConditions([]);
     setAddingCond(false);
     setNc({ ...EMPTY_COND });
     setDurationSelect("");
     setCardFile(null);
     setCardPreview(null);
+    setCardLibraryUrl(null);
   };
 
   const handleEdit = (obj: Objective) => {
@@ -121,6 +130,7 @@ export default function ObjectivesAdmin() {
       xp_reward: obj.xp_reward,
       card_name: obj.card_name || "",
       is_active: obj.is_active,
+      is_published: obj.is_published ?? false,
       expires_at: obj.expires_at,
     });
     setConditions(obj.conditions ?? []);
@@ -129,6 +139,7 @@ export default function ObjectivesAdmin() {
     setDurationSelect("");
     setCardPreview(obj.card_image_url);
     setCardFile(null);
+    setCardLibraryUrl(null);
   };
 
   const handleDurationChange = (val: string) => {
@@ -194,6 +205,14 @@ export default function ObjectivesAdmin() {
       if (nc.consecutive) cond.consecutive = true;
     }
 
+    if (nc.type === "single_match") {
+      cond.matchStat = nc.matchStat;
+    }
+
+    if (nc.type === "login_streak") {
+      cond.timeframe = nc.timeframe;
+    }
+
     setConditions(prev => [...prev, cond]);
     setNc({ ...EMPTY_COND });
     setAddingCond(false);
@@ -208,6 +227,8 @@ export default function ObjectivesAdmin() {
     if (cardFile) {
       const uploaded = await uploadCardImage();
       if (uploaded) card_image_url = uploaded;
+    } else if (cardLibraryUrl) {
+      card_image_url = cardLibraryUrl;
     }
     const body = {
       ...(editingId ? { id: editingId } : {}),
@@ -217,6 +238,7 @@ export default function ObjectivesAdmin() {
       card_image_url,
       card_name: form.card_name.trim() || null,
       is_active: form.is_active,
+      is_published: form.is_published,
       expires_at: form.expires_at,
       sort_order: editingId
         ? objectives.find(o => o.id === editingId)?.sort_order ?? 0
@@ -280,8 +302,8 @@ export default function ObjectivesAdmin() {
           />
         </div>
 
-        {/* XP + Active */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* XP + Active + Published */}
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">XP Reward</label>
             <input
@@ -301,6 +323,16 @@ export default function ObjectivesAdmin() {
             >
               {form.is_active ? "Active" : "Inactive"}
             </button>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Published</label>
+            <button
+              onClick={() => setForm(f => ({ ...f, is_published: !f.is_published }))}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition ${form.is_published ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400"}`}
+            >
+              {form.is_published ? "Published" : "Draft"}
+            </button>
+            <p className="text-[10px] text-gray-500 mt-1">Draft = invisible to players</p>
           </div>
         </div>
 
@@ -337,26 +369,35 @@ export default function ObjectivesAdmin() {
         <div>
           <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Card Reward (optional)</label>
           <div className="flex items-start gap-4">
-            <div className="flex-1">
+            <div className="flex-1 space-y-2">
               <input
                 type="text"
                 value={form.card_name}
                 onChange={e => setForm(f => ({ ...f, card_name: e.target.value }))}
                 placeholder="Card name (e.g. Wayne Rooney)"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="file" accept="image/*" onChange={handleCardFileChange} className="hidden" />
-                <span className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:border-gray-500 transition cursor-pointer">
-                  Upload Card Image
-                </span>
-              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowLibraryPicker(true)}
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg transition"
+                >
+                  Choose from Library
+                </button>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="file" accept="image/*" onChange={handleCardFileChange} className="hidden" />
+                  <span className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:border-gray-500 transition cursor-pointer">
+                    Upload New Image
+                  </span>
+                </label>
+              </div>
             </div>
             {cardPreview && (
               <div className="relative shrink-0">
                 <img src={cardPreview} alt="Card preview" className="w-20 h-28 object-cover rounded-lg border border-gray-700" />
                 <button
-                  onClick={() => { setCardFile(null); setCardPreview(null); }}
+                  onClick={() => { setCardFile(null); setCardPreview(null); setCardLibraryUrl(null); }}
                   className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white rounded-full text-[10px] flex items-center justify-center font-bold hover:bg-red-500"
                 >
                   ×
@@ -365,6 +406,20 @@ export default function ObjectivesAdmin() {
             )}
           </div>
         </div>
+
+        {/* Card Library Picker modal */}
+        {showLibraryPicker && (
+          <CardLibraryPicker
+            onSelect={(card: LibraryCard) => {
+              setCardLibraryUrl(card.image_url);
+              setCardPreview(card.image_url);
+              setCardFile(null);
+              if (!form.card_name.trim()) setForm(f => ({ ...f, card_name: card.name }));
+              setShowLibraryPicker(false);
+            }}
+            onClose={() => setShowLibraryPicker(false)}
+          />
+        )}
 
         {/* ───── CONDITIONS ───── */}
         <div>
@@ -408,7 +463,7 @@ export default function ObjectivesAdmin() {
                   value={nc.type}
                   onChange={e => {
                     const t = e.target.value as ConditionType;
-                    setNc({ ...EMPTY_COND, type: t, timeframe: t === "squad_count" ? "season" : "career" });
+                    setNc({ ...EMPTY_COND, type: t, timeframe: t === "squad_count" ? "season" : "career", count: t === "login_streak" ? 7 : 1 });
                   }}
                   className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                 >
@@ -422,7 +477,11 @@ export default function ObjectivesAdmin() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
-                    {nc.type === "squad_count" ? "Minimum players" : nc.type === "win_event" ? "How many times" : "Target count"}
+                    {nc.type === "squad_count" ? "Minimum players"
+                      : nc.type === "win_event" ? "How many times"
+                      : nc.type === "single_match" ? (nc.matchStat === "win_margin" ? "Min win margin (goals)" : "Min goals in one match")
+                      : nc.type === "login_streak" ? "Days in a row"
+                      : "Target count"}
                   </label>
                   <input
                     type="number"
@@ -523,6 +582,55 @@ export default function ObjectivesAdmin() {
                 </div>
               )}
 
+              {/* Single-match stat selector */}
+              {nc.type === "single_match" && (
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">What to achieve</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {(Object.keys(MATCH_STAT_LABELS) as MatchStat[]).map(ms => (
+                      <button
+                        key={ms}
+                        onClick={() => setNc(n => ({ ...n, matchStat: ms }))}
+                        className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.matchStat === ms ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                      >
+                        {MATCH_STAT_LABELS[ms]}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {nc.matchStat === "goals_scored"
+                      ? `Score ${nc.count} or more goals in a single match. Tracks your best-ever game across all seasons.`
+                      : `Win a match by ${nc.count} or more goals (e.g. ${nc.count}-0 or ${nc.count + 1}-1). Tracks your biggest-ever win margin.`}
+                  </p>
+                </div>
+              )}
+
+              {/* Login streak timeframe */}
+              {nc.type === "login_streak" && (
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Which streak?</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setNc(n => ({ ...n, timeframe: "season" }))}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.timeframe === "season" ? "bg-orange-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                    >
+                      Current streak
+                    </button>
+                    <button
+                      onClick={() => setNc(n => ({ ...n, timeframe: "career" }))}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.timeframe === "career" ? "bg-orange-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                    >
+                      Longest ever streak
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {nc.timeframe === "season"
+                      ? `Player must currently have a ${nc.count}-day login streak active right now.`
+                      : `Player must have achieved a ${nc.count}-day streak at some point (even if broken now).`}
+                  </p>
+                </div>
+              )}
+
               {/* Consecutive toggle (win_event only, count > 1) */}
               {nc.type === "win_event" && nc.count > 1 && (
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -537,7 +645,8 @@ export default function ObjectivesAdmin() {
                 </label>
               )}
 
-              {/* Competition scope */}
+              {/* Competition scope — not relevant for login_streak */}
+              {nc.type !== "login_streak" && (
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Competition scope</label>
                 <select
@@ -550,6 +659,7 @@ export default function ObjectivesAdmin() {
                   <option value="cl_draft">CL Draft only</option>
                 </select>
               </div>
+              )}
 
               {/* Player filters (stat types + squad_count) */}
               {hasPlayerFilters(nc.type) && (
@@ -636,13 +746,14 @@ export default function ObjectivesAdmin() {
                       count: nc.count,
                       scope: isStatType(nc.type) ? nc.scope : undefined,
                       positionMatch: nc.position.trim() ? nc.positionMatch : undefined,
-                      timeframe: isStatType(nc.type) ? nc.timeframe : undefined,
+                      timeframe: (isStatType(nc.type) || nc.type === "login_streak") ? nc.timeframe : undefined,
                       consecutive: nc.type === "win_event" && nc.count > 1 ? nc.consecutive : undefined,
-                      competition: nc.competition || "any",
+                      competition: nc.type !== "login_streak" ? (nc.competition || "any") : undefined,
                       ...(nc.nationality.trim() ? { nationality: nc.nationality.trim() } : {}),
                       ...(nc.club.trim() ? { club: nc.club.trim() } : {}),
                       ...(nc.position.trim() ? { position: nc.position.trim().toUpperCase() } : {}),
                       ...(nc.type === "win_event" && nc.event ? { event: nc.event as WinEvent } : {}),
+                      ...(nc.type === "single_match" ? { matchStat: nc.matchStat } : {}),
                     })}
                   </span>
                 </div>
@@ -708,7 +819,7 @@ export default function ObjectivesAdmin() {
             return (
               <div
                 key={obj.id}
-                className={`bg-gray-900 border rounded-xl px-4 py-3 transition ${!obj.is_active || isExpired ? "border-gray-800/50 opacity-50" : "border-gray-800"}`}
+                className={`bg-gray-900 border rounded-xl px-4 py-3 transition ${!obj.is_active || isExpired ? "border-gray-800/50 opacity-50" : !obj.is_published ? "border-yellow-800/30" : "border-gray-800"}`}
               >
                 <div className="flex items-center gap-4">
                   {obj.card_image_url ? (
@@ -725,12 +836,30 @@ export default function ObjectivesAdmin() {
                       {obj.card_name && <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">{obj.card_name}</span>}
                       {conds.length > 0 && <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">{conds.length} condition{conds.length !== 1 ? "s" : ""}</span>}
                       {!obj.is_active && <span className="text-[10px] font-bold text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">Hidden</span>}
+                      {obj.is_published ? (
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">Published</span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded">Draft</span>
+                      )}
                       {obj.expires_at && !isExpired && <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">⏱ {formatDeadline(obj.expires_at)}</span>}
                       {isExpired && <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">Expired</span>}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/admin/objectives", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: obj.id, is_published: !obj.is_published }),
+                        });
+                        loadObjectives();
+                      }}
+                      className={`px-2 py-1 text-xs font-bold rounded-lg transition ${obj.is_published ? "text-yellow-400 hover:text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20" : "text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20"}`}
+                    >
+                      {obj.is_published ? "Unpublish" : "Publish"}
+                    </button>
                     <button
                       onClick={() => handleEdit(obj)}
                       className="px-2 py-1 text-xs font-bold text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"

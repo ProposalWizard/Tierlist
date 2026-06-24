@@ -14,32 +14,24 @@ export async function GET() {
   if (!(await checkAdmin())) return new NextResponse("Forbidden", { status: 403 });
   const supabase = createServiceClient();
   const { data, error } = await supabase
-    .from("objectives")
-    .select("*")
-    .order("sort_order", { ascending: true });
+    .from("card_library")
+    .select("id, name, image_url, tags, created_at")
+    .order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(req: Request) {
   if (!(await checkAdmin())) return new NextResponse("Forbidden", { status: 403 });
   const body = await req.json();
+  if (!body.name?.trim() || !body.image_url) {
+    return new NextResponse("Missing name or image_url", { status: 400 });
+  }
   const supabase = createServiceClient();
   const { data, error } = await supabase
-    .from("objectives")
-    .insert({
-      title: body.title,
-      description: body.description || null,
-      xp_reward: body.xp_reward ?? 0,
-      card_image_url: body.card_image_url || null,
-      card_name: body.card_name || null,
-      is_active: body.is_active ?? true,
-      is_published: body.is_published ?? false,
-      sort_order: body.sort_order ?? 0,
-      expires_at: body.expires_at ?? null,
-      conditions: body.conditions ?? [],
-    })
-    .select()
+    .from("card_library")
+    .insert({ name: body.name.trim(), image_url: body.image_url, tags: body.tags ?? [] })
+    .select("id, name, image_url, tags, created_at")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
@@ -51,20 +43,9 @@ export async function PATCH(req: Request) {
   if (!body.id) return new NextResponse("Missing id", { status: 400 });
   const supabase = createServiceClient();
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (body.title !== undefined) updates.title = body.title;
-  if (body.description !== undefined) updates.description = body.description;
-  if (body.xp_reward !== undefined) updates.xp_reward = body.xp_reward;
-  if (body.card_image_url !== undefined) updates.card_image_url = body.card_image_url;
-  if (body.card_name !== undefined) updates.card_name = body.card_name;
-  if (body.is_active !== undefined) updates.is_active = body.is_active;
-  if (body.is_published !== undefined) updates.is_published = body.is_published;
-  if (body.sort_order !== undefined) updates.sort_order = body.sort_order;
-  if ("expires_at" in body) updates.expires_at = body.expires_at ?? null;
-  if (body.conditions !== undefined) updates.conditions = body.conditions;
-  const { error } = await supabase
-    .from("objectives")
-    .update(updates)
-    .eq("id", body.id);
+  if (body.name !== undefined) updates.name = body.name.trim();
+  if (body.tags !== undefined) updates.tags = body.tags;
+  const { error } = await supabase.from("card_library").update(updates).eq("id", body.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
@@ -74,8 +55,26 @@ export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   if (!id) return new NextResponse("Missing id", { status: 400 });
+
   const supabase = createServiceClient();
-  const { error } = await supabase.from("objectives").delete().eq("id", id);
+
+  // Fetch image_url before deleting so we can remove from storage
+  const { data: card } = await supabase
+    .from("card_library")
+    .select("image_url")
+    .eq("id", id)
+    .maybeSingle();
+
+  const { error } = await supabase.from("card_library").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Best-effort storage cleanup
+  if (card?.image_url) {
+    const pathMatch = card.image_url.split("/object/public/tierlist-images/")[1];
+    if (pathMatch) {
+      await supabase.storage.from("tierlist-images").remove([pathMatch]);
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
