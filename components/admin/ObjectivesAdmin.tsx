@@ -562,7 +562,7 @@ export default function ObjectivesAdmin() {
                     <span className="font-bold">Germany</span> not German,{" "}
                     <span className="font-bold">England</span> not English,{" "}
                     <span className="font-bold">Spain</span> not Spanish.
-                    Club must match SoFIFA spelling (e.g. &quot;Manchester City&quot; not &quot;Man City&quot;).
+                    Club is the one that came up on the spin wheel, not the player&apos;s career clubs. Must match SoFIFA spelling (e.g. &quot;Manchester City&quot; not &quot;Man City&quot;).
                   </p>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
@@ -576,7 +576,7 @@ export default function ObjectivesAdmin() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-gray-500 mb-0.5">Club (drafted from)</label>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Club spun on the wheel</label>
                       <input
                         type="text"
                         value={nc.club}
