@@ -87,7 +87,6 @@ export default function ObjectivesAdmin() {
     description: "",
     xp_reward: 100,
     card_name: "",
-    is_active: true,
     is_published: false,
     expires_at: null as string | null,
   });
@@ -112,7 +111,7 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_active: true, is_published: false, expires_at: null });
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_published: false, expires_at: null });
     setConditions([]);
     setAddingCond(false);
     setNc({ ...EMPTY_COND });
@@ -129,7 +128,6 @@ export default function ObjectivesAdmin() {
       description: obj.description || "",
       xp_reward: obj.xp_reward,
       card_name: obj.card_name || "",
-      is_active: obj.is_active,
       is_published: obj.is_published ?? false,
       expires_at: obj.expires_at,
     });
@@ -237,7 +235,7 @@ export default function ObjectivesAdmin() {
       xp_reward: form.xp_reward,
       card_image_url,
       card_name: form.card_name.trim() || null,
-      is_active: form.is_active,
+      is_active: true,
       is_published: form.is_published,
       expires_at: form.expires_at,
       sort_order: editingId
@@ -302,8 +300,8 @@ export default function ObjectivesAdmin() {
           />
         </div>
 
-        {/* XP + Active + Published */}
-        <div className="grid grid-cols-3 gap-4">
+        {/* XP + Published */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">XP Reward</label>
             <input
@@ -316,23 +314,14 @@ export default function ObjectivesAdmin() {
             <p className="text-[10px] text-gray-500 mt-1">0 = hidden from users</p>
           </div>
           <div>
-            <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Active</label>
-            <button
-              onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition ${form.is_active ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400"}`}
-            >
-              {form.is_active ? "Active" : "Inactive"}
-            </button>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Published</label>
+            <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Status</label>
             <button
               onClick={() => setForm(f => ({ ...f, is_published: !f.is_published }))}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition ${form.is_published ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400"}`}
             >
               {form.is_published ? "Published" : "Draft"}
             </button>
-            <p className="text-[10px] text-gray-500 mt-1">Draft = invisible to players</p>
+            <p className="text-[10px] text-gray-500 mt-1">Draft = invisible to players until you publish</p>
           </div>
         </div>
 
@@ -819,7 +808,7 @@ export default function ObjectivesAdmin() {
             return (
               <div
                 key={obj.id}
-                className={`bg-gray-900 border rounded-xl px-4 py-3 transition ${!obj.is_active || isExpired ? "border-gray-800/50 opacity-50" : !obj.is_published ? "border-yellow-800/30" : "border-gray-800"}`}
+                className={`bg-gray-900 border rounded-xl px-4 py-3 transition ${isExpired ? "border-gray-800/50 opacity-50" : !obj.is_published ? "border-yellow-800/30" : "border-gray-800"}`}
               >
                 <div className="flex items-center gap-4">
                   {obj.card_image_url ? (
@@ -835,7 +824,6 @@ export default function ObjectivesAdmin() {
                       {obj.xp_reward > 0 && <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{obj.xp_reward} XP</span>}
                       {obj.card_name && <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">{obj.card_name}</span>}
                       {conds.length > 0 && <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">{conds.length} condition{conds.length !== 1 ? "s" : ""}</span>}
-                      {!obj.is_active && <span className="text-[10px] font-bold text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">Hidden</span>}
                       {obj.is_published ? (
                         <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">Published</span>
                       ) : (
