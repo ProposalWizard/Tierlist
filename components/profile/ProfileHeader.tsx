@@ -186,7 +186,7 @@ export default function ProfileHeader({
           {/* Top row: label + gear */}
           <div className="flex items-center justify-between mb-5">
             <span
-              className="text-[9px] font-bold tracking-[0.25em] uppercase"
+              className="text-base font-bold tracking-[0.25em] uppercase"
               style={{ color: "rgba(251,191,36,0.55)" }}
             >
               Manager Profile
