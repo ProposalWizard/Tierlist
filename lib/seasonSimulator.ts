@@ -3456,12 +3456,15 @@ function simulateSharedUCL(
     const humanVsHuman: [string, string][] = [];
 
     // From QF onwards, surviving humans can draw each other
+    // Higher probability than pure random to make H2H exciting in multiplayer
     if (survivorIds.length >= 2 && ri >= 1) {
       const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
-      // Approximate probability: similar to FA Cup logic
-      const teamsInRound = poolSize * 2; // rough estimate
+      const teamsInRound = poolSize * 2;
+      // Base probability = 1/(teams-1), boosted so human matchups happen more often
+      const baseProbability = 1 / Math.max(1, teamsInRound - 1);
+      const boostedProbability = Math.min(0.8, baseProbability * 3);
       for (let i = 0; i + 1 < shuffled.length; i += 2) {
-        if (drawRng() < 1 / Math.max(1, teamsInRound - 1)) {
+        if (drawRng() < boostedProbability) {
           humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
           pairedHumans.add(shuffled[i]);
           pairedHumans.add(shuffled[i + 1]);
@@ -3672,8 +3675,10 @@ function simulateSharedUEL(
     if (survivorIds.length >= 2 && ri >= 1) {
       const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
       const teamsInRound = poolSize * 2;
+      const baseProbability = 1 / Math.max(1, teamsInRound - 1);
+      const boostedProbability = Math.min(0.8, baseProbability * 3);
       for (let i = 0; i + 1 < shuffled.length; i += 2) {
-        if (drawRng() < 1 / Math.max(1, teamsInRound - 1)) {
+        if (drawRng() < boostedProbability) {
           humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
           pairedHumans.add(shuffled[i]);
           pairedHumans.add(shuffled[i + 1]);

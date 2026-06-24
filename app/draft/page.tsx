@@ -315,6 +315,18 @@ export default function DraftPage() {
     if (myRoomPlayer?.squad && (myRoomPlayer.squad as DraftPlayer[]).length > 0) {
       setPlayers(myRoomPlayer.squad as DraftPlayer[]);
     }
+    // Accumulate all room players' season results for group stats in CareerRecap
+    setAllRoomPlayerSeasons(prev => {
+      const next = { ...(prev ?? {}) };
+      for (const rp of allPlayers) {
+        if (rp.season_result) {
+          const key = rp.display_name;
+          if (!next[key]) next[key] = [];
+          next[key] = [...next[key], rp.season_result];
+        }
+      }
+      return next;
+    });
     setPhase("result");
     scrollTop();
   }, [scrollTop, userId]);
