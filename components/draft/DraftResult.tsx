@@ -682,6 +682,46 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           const charityShieldWins = season.charityShield?.result === 'W' ? 1 : 0;
           const allWins = season.teamRecord.wins + faCupWins + uclWins + uelWins + superCupWins + charityShieldWins;
 
+          // Biggest win (goal difference) — PL only and all comps
+          let plBiggestWin = 0;
+          for (const m of season.matches) {
+            const diff = m.goalsFor - m.goalsAgainst;
+            if (diff > plBiggestWin) plBiggestWin = diff;
+          }
+          let allBiggestWin = plBiggestWin;
+          for (const m of season.faCup.matches) {
+            const diff = m.goalsFor - m.goalsAgainst;
+            if (diff > allBiggestWin) allBiggestWin = diff;
+          }
+          if (season.ucl) {
+            for (const m of season.ucl.leagueMatches) {
+              const diff = m.goalsFor - m.goalsAgainst;
+              if (diff > allBiggestWin) allBiggestWin = diff;
+            }
+            for (const t of season.ucl.knockoutTies) {
+              const diff1 = t.leg1.goalsFor - t.leg1.goalsAgainst;
+              if (diff1 > allBiggestWin) allBiggestWin = diff1;
+              if (t.leg2) {
+                const diff2 = t.leg2.goalsFor - t.leg2.goalsAgainst;
+                if (diff2 > allBiggestWin) allBiggestWin = diff2;
+              }
+            }
+          }
+          if (season.uel) {
+            for (const m of season.uel.leagueMatches) {
+              const diff = m.goalsFor - m.goalsAgainst;
+              if (diff > allBiggestWin) allBiggestWin = diff;
+            }
+            for (const t of season.uel.knockoutTies) {
+              const diff1 = t.leg1.goalsFor - t.leg1.goalsAgainst;
+              if (diff1 > allBiggestWin) allBiggestWin = diff1;
+              if (t.leg2) {
+                const diff2 = t.leg2.goalsFor - t.leg2.goalsAgainst;
+                if (diff2 > allBiggestWin) allBiggestWin = diff2;
+              }
+            }
+          }
+
           // All-comps goals conceded: PL + FA Cup + UCL/UEL
           const faCupGoalsAgainst = season.faCup.matches.reduce((sum, m) => sum + m.goalsAgainst, 0);
           const uclGoalsAgainst = (season.ucl?.leagueMatches.reduce((s, m) => s + m.goalsAgainst, 0) ?? 0)
@@ -756,6 +796,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 assists: topBy(season.plPlayerStats, "assists"),
                 cleanSheets: topBy(gkPlStats.length > 0 ? gkPlStats : season.plPlayerStats, "cleanSheets"),
                 goalsConceded: { value: season.teamRecord.goalsAgainst, teamOvr },
+                biggestWin: { value: plBiggestWin, teamOvr },
                 avgRating: bestAvgRating(season.plPlayerStats),
               },
               all: {
@@ -765,6 +806,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 assists: topBy(season.playerStats, "assists"),
                 cleanSheets: topBy(gkAllStats.length > 0 ? gkAllStats : season.playerStats, "cleanSheets"),
                 goalsConceded: { value: allGoalsAgainst, teamOvr },
+                biggestWin: { value: allBiggestWin, teamOvr },
                 avgRating: bestAvgRating(season.playerStats),
               },
               career: {
@@ -1281,6 +1323,30 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             <span className="text-xs font-bold tracking-wide">{season.performance}</span>
           </div>
         </div>
+
+        {/* Trophy shelf — shows all cup trophies won this season */}
+        {(season.faCup.winner || season.superCup?.result === 'W' || season.charityShield?.result === 'W') && (
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+            {season.faCup.winner && (
+              <div className="bg-gray-900 rounded-xl px-4 py-2 text-center border border-gray-800/50">
+                <div className="text-lg">🏆</div>
+                <div className="text-[9px] font-bold tracking-widest text-amber-400 uppercase">FA Cup</div>
+              </div>
+            )}
+            {season.superCup?.result === 'W' && (
+              <div className="bg-gray-900 rounded-xl px-4 py-2 text-center border border-gray-800/50">
+                <div className="text-lg">🏆</div>
+                <div className="text-[9px] font-bold tracking-widest text-blue-400 uppercase">Super Cup</div>
+              </div>
+            )}
+            {season.charityShield?.result === 'W' && (
+              <div className="bg-gray-900 rounded-xl px-4 py-2 text-center border border-gray-800/50">
+                <div className="text-lg">🏆</div>
+                <div className="text-[9px] font-bold tracking-widest text-emerald-400 uppercase">Community Shield</div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Title message (only when no big banner) */}
         {season.actualFinish > 1 && season.actualFinish < 18 && !season.ucl?.winner && !season.uel?.winner && (

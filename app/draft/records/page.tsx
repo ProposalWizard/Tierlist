@@ -28,6 +28,7 @@ const SEASON_RECORD_TYPES: RecordType[] = [
   { key: "clean_sheets",   label: "Golden Glove",         emoji: "🧤", isTeam: false },
   { key: "unbeaten",       label: "Longest Unbeaten",     emoji: "🛡️", isTeam: true },
   { key: "goals_conceded", label: "Least Goals Conceded", emoji: "🔒", isTeam: true, ascending: true },
+  { key: "biggest_win",    label: "Biggest Win",          emoji: "💥", isTeam: true },
   { key: "avg_rating",     label: "Player of the Season Rating", emoji: "⭐", isTeam: false, isDecimal: true },
 ];
 
@@ -51,6 +52,8 @@ const OFFICIAL: Record<string, { value: number; playerName: string | null; playe
   "all_clean_sheets":  { value: 24, playerName: "P. Čech", playerOvr: 88 },
   "all_unbeaten":      { value: 49, playerName: null, playerOvr: null, clubName: "Arsenal" },
   "all_goals_conceded":{ value: 15, playerName: null, playerOvr: null, clubName: "Chelsea" },
+  "pl_biggest_win":    { value: 9, playerName: null, playerOvr: null, clubName: "Man Utd" },
+  "all_biggest_win":   { value: 9, playerName: null, playerOvr: null, clubName: "Man Utd" },
 };
 
 function mergeWithOfficial(
@@ -144,7 +147,10 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
                         <span className="text-amber-400 font-bold">⭐ Official</span>
                       </>
                     ) : (
-                      <span className="text-emerald-400 font-bold">{entry.username}</span>
+                      <>
+                        <span className="text-emerald-400 font-bold">{entry.username}</span>
+                        {entry.playerOvr !== null && <OvrBadge ovr={entry.playerOvr} />}
+                      </>
                     )}
                   </span>
                 ) : (

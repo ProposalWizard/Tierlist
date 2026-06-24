@@ -1013,9 +1013,10 @@ function simulateFaCup(
   }
 
   // Ensure we have exactly 32 teams; pad with generic teams if needed
+  { let padIdx = 1;
   while (bracket.length < 32) {
-    bracket.push({ name: `Lower League ${bracket.length - 31}`, strength: 65 });
-  }
+    bracket.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+  } }
 
   const playerMatches: FaCupMatch[] = [];
   let remaining = bracket.map(t => ({ name: t.name, strength: t.strength }));
@@ -1091,9 +1092,10 @@ function simulateSharedFaCup(
   }
 
   // Pad to 32 if needed
+  { let padIdx = 1;
   while (bracket.length < 32) {
-    bracket.push({ name: `Lower League ${bracket.length - 31}`, strength: 65 });
-  }
+    bracket.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+  } }
 
   const humanMatches = new Map<string, FaCupMatch[]>();
   const humanEliminated = new Map<string, string>(); // userId -> exitRound
@@ -2423,9 +2425,10 @@ export function simulateSeason(
     ...opponents,
     ...RESERVE_TEAMS.filter(t => !opponents.some(o => o.name === t.name) && t.name !== playerTeamName),
   ];
+  { let padIdx = 1;
   while (allFaCupTeams.length < 32) {
-    allFaCupTeams.push({ name: `Lower League ${allFaCupTeams.length}`, strength: 65 });
-  }
+    allFaCupTeams.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+  } }
   const faCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
 
   // Super Cup (if won UCL or UEL last season)

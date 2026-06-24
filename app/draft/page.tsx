@@ -370,6 +370,13 @@ export default function DraftPage() {
     }
   }, [roomCode]);
 
+  const handleSettingsSync = useCallback((update: Partial<DraftSettings>) => {
+    setSettings(prev => prev ? { ...prev, ...update } : prev);
+    if (update.respins !== undefined) {
+      setRespinsRemaining(update.respins as number);
+    }
+  }, []);
+
   const handleResume = useCallback(() => {
     if (!resume) return;
     setSettings(resume.settings);
@@ -822,6 +829,7 @@ export default function DraftPage() {
           onCareerComplete={isAdminUser ? handleCareerComplete : undefined}
           onLeave={handleLeaveRoom}
           onUpdateSettings={isHost ? handleUpdateRoomSettings : undefined}
+          onSettingsSync={!isHost ? handleSettingsSync : undefined}
         />
       )}
       {phase === "formation-pick" && settings && (

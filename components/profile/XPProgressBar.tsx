@@ -144,7 +144,7 @@ export default function XPProgressBar({ progression }: Props) {
             <button
               onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
               disabled={pageIndex === 0}
-              className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-white hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-white hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -182,7 +182,7 @@ export default function XPProgressBar({ progression }: Props) {
             <button
               onClick={() => setPageIndex((p) => Math.min(pairs.length - 1, p + 1))}
               disabled={pageIndex === pairs.length - 1}
-              className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-white hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-white hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -301,7 +301,7 @@ function MilestoneCard({
       className="flex-shrink-0 flex flex-col items-center gap-1.5 group"
     >
       <div
-        className={`relative w-[72px] h-24 sm:w-28 sm:h-36 rounded-xl overflow-hidden shadow-xl transition-transform duration-200 group-hover:scale-105 ${
+        className={`relative w-20 h-[108px] sm:w-28 sm:h-36 rounded-xl overflow-hidden shadow-xl transition-transform duration-200 group-hover:scale-105 ${
           !isUnlocked ? "opacity-40" : ""
         }`}
       >
@@ -343,7 +343,7 @@ function MilestoneCard({
         )}
       </div>
       <p
-        className={`text-[10px] font-bold text-center leading-tight max-w-[72px] sm:max-w-[112px] ${
+        className={`text-[10px] font-bold text-center leading-tight max-w-20 sm:max-w-[112px] ${
           isUnlocked ? "text-white" : "text-white"
         }`}
       >
