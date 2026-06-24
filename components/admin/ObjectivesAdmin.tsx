@@ -7,6 +7,19 @@ import CardLibraryPicker from "./CardLibraryPicker";
 import type { LibraryCard } from "./CardLibraryPicker";
 import SeasonAdmin from "./SeasonAdmin";
 
+type ObjCategory = "daily" | "weekly" | "monthly" | "foundation" | "elite" | "goat";
+
+const CATEGORIES: { value: ObjCategory; label: string; icon: string; color: string; border: string; bg: string; hint: string }[] = [
+  { value: "daily",      label: "Daily",        icon: "📅", color: "text-sky-400",    border: "border-sky-700/50",    bg: "bg-sky-900/20",    hint: "Resets daily" },
+  { value: "weekly",     label: "Weekly",       icon: "📆", color: "text-violet-400", border: "border-violet-700/50", bg: "bg-violet-900/20", hint: "Resets weekly" },
+  { value: "monthly",    label: "Monthly",      icon: "🗓️", color: "text-pink-400",   border: "border-pink-700/50",   bg: "bg-pink-900/20",   hint: "Resets monthly" },
+  { value: "foundation", label: "Foundation",   icon: "🏗️", color: "text-emerald-400",border: "border-emerald-700/50",bg: "bg-emerald-900/20",hint: "Easy / beginner" },
+  { value: "elite",      label: "Elite",        icon: "⚡", color: "text-blue-400",   border: "border-blue-700/50",   bg: "bg-blue-900/20",   hint: "Hard challenges" },
+  { value: "goat",       label: "GOAT Manager", icon: "🐐", color: "text-amber-400",  border: "border-amber-700/50",  bg: "bg-amber-900/20",  hint: "The hardest" },
+];
+
+const CATEGORY_ORDER: ObjCategory[] = ["daily", "weekly", "monthly", "foundation", "elite", "goat"];
+
 interface Objective {
   id: string;
   title: string;
@@ -14,6 +27,7 @@ interface Objective {
   xp_reward: number;
   card_image_url: string | null;
   card_name: string | null;
+  category: ObjCategory;
   is_active: boolean;
   is_published: boolean;
   sort_order: number;
@@ -89,6 +103,7 @@ export default function ObjectivesAdmin() {
     description: "",
     xp_reward: 100,
     card_name: "",
+    category: "foundation" as ObjCategory,
     is_published: false,
     expires_at: null as string | null,
   });
@@ -113,7 +128,7 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", xp_reward: 100, card_name: "", is_published: false, expires_at: null });
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "foundation", is_published: false, expires_at: null });
     setConditions([]);
     setAddingCond(false);
     setNc({ ...EMPTY_COND });
@@ -130,6 +145,7 @@ export default function ObjectivesAdmin() {
       description: obj.description || "",
       xp_reward: obj.xp_reward,
       card_name: obj.card_name || "",
+      category: (obj.category as ObjCategory) ?? "foundation",
       is_published: obj.is_published ?? false,
       expires_at: obj.expires_at,
     });
@@ -237,6 +253,7 @@ export default function ObjectivesAdmin() {
       xp_reward: form.xp_reward,
       card_image_url,
       card_name: form.card_name.trim() || null,
+      category: form.category,
       is_active: true,
       is_published: form.is_published,
       expires_at: form.expires_at,
@@ -296,6 +313,30 @@ export default function ObjectivesAdmin() {
         <h3 className="text-sm font-bold text-white">
           {editingId ? "Edit Objective" : "Add New Objective"}
         </h3>
+
+        {/* Category */}
+        <div>
+          <label className="block text-xs font-bold text-white uppercase tracking-wider mb-2">Category</label>
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => setForm(f => ({ ...f, category: cat.value }))}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
+                  form.category === cat.value
+                    ? `${cat.color} ${cat.border} ${cat.bg}`
+                    : "text-gray-500 border-gray-700 bg-gray-800 hover:text-gray-300"
+                }`}
+              >
+                <span>{cat.icon}</span> {cat.label}
+              </button>
+            ))}
+          </div>
+          {CATEGORIES.find(c => c.value === form.category) && (
+            <p className="text-[10px] text-gray-500 mt-1">{CATEGORIES.find(c => c.value === form.category)!.hint}</p>
+          )}
+        </div>
 
         {/* Title */}
         <div>
@@ -822,8 +863,20 @@ export default function ObjectivesAdmin() {
       ) : objectives.length === 0 ? (
         <div className="text-gray-500 text-sm text-center py-8">No objectives yet. Add one above.</div>
       ) : (
-        <div className="space-y-2">
-          {objectives.map(obj => {
+        <div className="space-y-6">
+          {CATEGORY_ORDER.map(catValue => {
+            const catObjs = objectives.filter(o => (o.category ?? "foundation") === catValue);
+            if (catObjs.length === 0) return null;
+            const cat = CATEGORIES.find(c => c.value === catValue)!;
+            return (
+              <div key={catValue}>
+                <div className={`flex items-center gap-2 mb-2 px-1`}>
+                  <span className="text-sm">{cat.icon}</span>
+                  <span className={`text-xs font-black uppercase tracking-widest ${cat.color}`}>{cat.label}</span>
+                  <span className="text-[10px] text-gray-600 font-normal">({catObjs.length})</span>
+                </div>
+                <div className="space-y-2">
+          {catObjs.map(obj => {
             const isExpired = obj.expires_at ? new Date(obj.expires_at) < new Date() : false;
             const conds = obj.conditions ?? [];
             return (
@@ -894,6 +947,10 @@ export default function ObjectivesAdmin() {
                     ))}
                   </div>
                 )}
+              </div>
+            );
+          })}
+                </div>
               </div>
             );
           })}

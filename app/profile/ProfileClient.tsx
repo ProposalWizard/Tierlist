@@ -381,8 +381,20 @@ interface AdminObjective {
   xp_reward: number;
   card_image_url: string | null;
   card_name: string | null;
+  category: string;
   expires_at: string | null;
 }
+
+const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string; border: string; bg: string }> = {
+  daily:      { label: "Daily",        icon: "📅", color: "text-sky-400",     border: "border-sky-800/50",     bg: "bg-sky-950/30" },
+  weekly:     { label: "Weekly",       icon: "📆", color: "text-violet-400",  border: "border-violet-800/50",  bg: "bg-violet-950/30" },
+  monthly:    { label: "Monthly",      icon: "🗓️", color: "text-pink-400",    border: "border-pink-800/50",    bg: "bg-pink-950/30" },
+  foundation: { label: "Foundation",   icon: "🏗️", color: "text-emerald-400", border: "border-emerald-800/50", bg: "bg-emerald-950/30" },
+  elite:      { label: "Elite",        icon: "⚡", color: "text-blue-400",    border: "border-blue-800/50",    bg: "bg-blue-950/30" },
+  goat:       { label: "GOAT Manager", icon: "🐐", color: "text-amber-400",   border: "border-amber-800/50",   bg: "bg-amber-950/30" },
+};
+
+const CATEGORY_ORDER = ["daily", "weekly", "monthly", "foundation", "elite", "goat"];
 
 function getTimeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
@@ -526,154 +538,141 @@ function CustomObjectivesSection() {
         </div>
       ) : (
         <>
-          {/* Mobile: stacked expandable cards */}
-          <div className="md:hidden overflow-y-auto max-h-[400px]">
-            {currentList.map((obj) => {
-              const done = completedIds.includes(obj.id);
-              const isSelected = (selectedId ?? currentList[0]?.id) === obj.id;
+          {/* Mobile: stacked expandable cards grouped by category */}
+          <div className="md:hidden overflow-y-auto max-h-[480px]">
+            {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
+              const group = activeTab === "active"
+                ? currentList.filter(o => (o.category ?? "foundation") === catKey)
+                : currentList;
+              if (group.length === 0) return null;
+              const cat = CATEGORY_CONFIG[catKey];
               return (
-                <div key={obj.id}>
-                  <button
-                    onClick={() => setSelectedId(isSelected ? null : obj.id)}
-                    className={`w-full text-left px-4 py-3 border-b border-gray-800/30 transition-all ${
-                      isSelected
-                        ? "bg-gray-800/80"
-                        : "hover:bg-gray-800/40"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {done ? (
-                        <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <div className="w-3.5 h-3.5 rounded-full border border-gray-600 shrink-0" />
-                      )}
-                      <span className={`text-sm font-bold leading-tight ${done ? "text-emerald-400" : "text-white"}`}>
-                        {obj.title}
-                      </span>
-                      <svg
-                        className={`w-4 h-4 ml-auto shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`}
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
+                <div key={catKey}>
+                  {activeTab === "active" && cat && (
+                    <div className={`flex items-center gap-2 px-4 py-2 border-b border-gray-800/30 ${cat.bg}`}>
+                      <span className="text-sm">{cat.icon}</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${cat.color}`}>{cat.label}</span>
                     </div>
-                    <div className="mt-1 pl-5 flex items-center gap-1.5 flex-wrap">
-                      {obj.xp_reward > 0 && (
-                        <span className={`text-[9px] font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>
-                          {obj.xp_reward} XP
-                        </span>
-                      )}
-                      {!done && obj.expires_at && (
-                        <span className="text-[9px] font-bold text-orange-400">
-                          ⏱ {getTimeRemaining(obj.expires_at)}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                  {/* Expanded inline detail */}
-                  {isSelected && (
-                    <div className="px-4 py-3 bg-gray-800/50 border-b border-gray-800/30">
-                      {obj.description && (
-                        <p className="text-xs text-white mb-3 leading-relaxed">{obj.description}</p>
-                      )}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {obj.xp_reward > 0 && (
-                          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
-                            <span className="text-amber-400 text-xs font-black">{obj.xp_reward} XP</span>
-                          </div>
-                        )}
-                        {done ? (
-                          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
-                            <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  )}
+                  {group.map((obj) => {
+                    const done = completedIds.includes(obj.id);
+                    const isSelected = (selectedId ?? currentList[0]?.id) === obj.id;
+                    return (
+                      <div key={obj.id}>
+                        <button
+                          onClick={() => setSelectedId(isSelected ? null : obj.id)}
+                          className={`w-full text-left px-4 py-3 border-b border-gray-800/30 transition-all ${isSelected ? "bg-gray-800/80" : "hover:bg-gray-800/40"}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {done ? (
+                              <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <div className="w-3.5 h-3.5 rounded-full border border-gray-600 shrink-0" />
+                            )}
+                            <span className={`text-sm font-bold leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
+                            <svg className={`w-4 h-4 ml-auto shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
-                            <span className="text-emerald-400 text-xs font-bold">Completed</span>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-1.5">
-                            <span className="text-white text-xs font-bold">In Progress</span>
+                          <div className="mt-1 pl-5 flex items-center gap-1.5 flex-wrap">
+                            {obj.xp_reward > 0 && <span className={`text-[9px] font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
+                            {!done && obj.expires_at && <span className="text-[9px] font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
                           </div>
-                        )}
-                        {!done && obj.expires_at && (
-                          <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-1.5">
-                            <span className="text-orange-400 text-xs font-bold">⏱ {getTimeRemaining(obj.expires_at)}</span>
+                        </button>
+                        {isSelected && (
+                          <div className="px-4 py-3 bg-gray-800/50 border-b border-gray-800/30">
+                            {obj.description && <p className="text-xs text-white mb-3 leading-relaxed">{obj.description}</p>}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {obj.xp_reward > 0 && (
+                                <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
+                                  <span className="text-amber-400 text-xs font-black">{obj.xp_reward} XP</span>
+                                </div>
+                              )}
+                              {done ? (
+                                <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
+                                  <svg className="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                  <span className="text-emerald-400 text-xs font-bold">Completed</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-1.5">
+                                  <span className="text-white text-xs font-bold">In Progress</span>
+                                </div>
+                              )}
+                              {!done && obj.expires_at && (
+                                <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-1.5">
+                                  <span className="text-orange-400 text-xs font-bold">⏱ {getTimeRemaining(obj.expires_at)}</span>
+                                </div>
+                              )}
+                            </div>
+                            {obj.card_image_url && (
+                              <div className="mt-3 flex items-center gap-3">
+                                <img src={obj.card_image_url} alt={obj.card_name || "Card Reward"} className="w-16 h-20 object-cover rounded-lg border border-gray-700 shadow-lg" />
+                                <div>
+                                  <div className="text-[9px] font-bold text-white uppercase tracking-wider">Reward</div>
+                                  {obj.card_name && <div className="text-xs font-bold text-white mt-0.5">{obj.card_name}</div>}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                      {obj.card_image_url && (
-                        <div className="mt-3 flex items-center gap-3">
-                          <img
-                            src={obj.card_image_url}
-                            alt={obj.card_name || "Card Reward"}
-                            className="w-16 h-20 object-cover rounded-lg border border-gray-700 shadow-lg"
-                          />
-                          <div>
-                            <div className="text-[9px] font-bold text-white uppercase tracking-wider">Reward</div>
-                            {obj.card_name && (
-                              <div className="text-xs font-bold text-white mt-0.5">{obj.card_name}</div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
               );
             })}
           </div>
 
-          {/* Desktop: side-by-side layout */}
+          {/* Desktop: side-by-side with category groups in sidebar */}
           <div className="hidden md:flex min-h-[200px]">
-            {/* Left sidebar */}
-            <div className="w-48 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[400px]">
-              {currentList.map((obj) => {
-                const done = completedIds.includes(obj.id);
-                const isSelected = (selectedId ?? currentList[0]?.id) === obj.id;
+            <div className="w-52 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[420px]">
+              {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
+                const group = activeTab === "active"
+                  ? currentList.filter(o => (o.category ?? "foundation") === catKey)
+                  : currentList;
+                if (group.length === 0) return null;
+                const cat = CATEGORY_CONFIG[catKey];
                 return (
-                  <button
-                    key={obj.id}
-                    onClick={() => setSelectedId(obj.id)}
-                    className={`w-full text-left px-3 py-3 border-b border-gray-800/30 transition-all ${
-                      isSelected
-                        ? "bg-gray-800/80 border-l-2 border-l-emerald-500"
-                        : "hover:bg-gray-800/40 border-l-2 border-l-transparent"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {done ? (
-                        <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <div className="w-3.5 h-3.5 rounded-full border border-gray-600 shrink-0" />
-                      )}
-                      <span className={`text-xs font-bold leading-tight line-clamp-2 ${done ? "text-emerald-400" : "text-white"}`}>
-                        {obj.title}
-                      </span>
-                    </div>
-                    <div className="mt-1 pl-5 flex items-center gap-1.5 flex-wrap">
-                      {obj.xp_reward > 0 && (
-                        <span className={`text-[9px] font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>
-                          {obj.xp_reward} XP
-                        </span>
-                      )}
-                      {!done && obj.expires_at && (
-                        <span className="text-[9px] font-bold text-orange-400">
-                          ⏱ {getTimeRemaining(obj.expires_at)}
-                        </span>
-                      )}
-                    </div>
-                  </button>
+                  <div key={catKey}>
+                    {activeTab === "active" && cat && (
+                      <div className={`flex items-center gap-1.5 px-3 py-1.5 border-b border-gray-800/30 ${cat.bg}`}>
+                        <span className="text-[11px]">{cat.icon}</span>
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${cat.color}`}>{cat.label}</span>
+                      </div>
+                    )}
+                    {group.map((obj) => {
+                      const done = completedIds.includes(obj.id);
+                      const isSelected = (selectedId ?? currentList[0]?.id) === obj.id;
+                      return (
+                        <button
+                          key={obj.id}
+                          onClick={() => setSelectedId(obj.id)}
+                          className={`w-full text-left px-3 py-3 border-b border-gray-800/30 transition-all ${
+                            isSelected ? "bg-gray-800/80 border-l-2 border-l-emerald-500" : "hover:bg-gray-800/40 border-l-2 border-l-transparent"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {done ? (
+                              <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                            ) : (
+                              <div className="w-3.5 h-3.5 rounded-full border border-gray-600 shrink-0" />
+                            )}
+                            <span className={`text-xs font-bold leading-tight line-clamp-2 ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
+                          </div>
+                          <div className="mt-1 pl-5 flex items-center gap-1.5 flex-wrap">
+                            {obj.xp_reward > 0 && <span className={`text-[9px] font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
+                            {!done && obj.expires_at && <span className="text-[9px] font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 );
               })}
             </div>
-
-            {/* Right content */}
-            {selected && (
-              <ObjectiveDetail obj={selected} isDone={completedIds.includes(selected.id)} />
-            )}
+            {selected && <ObjectiveDetail obj={selected} isDone={completedIds.includes(selected.id)} />}
           </div>
         </>
       )}
