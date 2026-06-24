@@ -19,7 +19,6 @@ export async function POST(
     .maybeSingle();
 
   if (!room) return new Response("Room not found", { status: 404 });
-  if (room.status !== "lobby") return new Response("Room is not accepting players", { status: 400 });
 
   const { data: existingPlayers } = await service
     .from("draft_room_players")
@@ -27,6 +26,12 @@ export async function POST(
     .eq("room_id", room.id);
 
   const alreadyInRoom = existingPlayers?.some(p => p.user_id === user.id);
+
+  // Existing players can always rejoin (e.g. after navigating away mid-season).
+  // New players can only join when the room is in lobby state.
+  if (!alreadyInRoom && room.status !== "lobby") {
+    return new Response("Room is not accepting players", { status: 400 });
+  }
   if (!alreadyInRoom && (existingPlayers?.length ?? 0) >= 6) {
     return new Response("Room is full (max 6 players)", { status: 400 });
   }

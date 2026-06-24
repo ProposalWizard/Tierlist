@@ -24,69 +24,69 @@ interface SlotDef {
 
 const FORMATIONS: Record<string, SlotDef[]> = {
   "4-3-3": [
-    { id: "GK",  label: "GK",  x: 50, y: 90 },
-    { id: "LB",  label: "LB",  x: 10, y: 72 },
-    { id: "LCB", label: "CB",  x: 33, y: 72 },
-    { id: "RCB", label: "CB",  x: 67, y: 72 },
-    { id: "RB",  label: "RB",  x: 90, y: 72 },
-    { id: "LCM", label: "CM",  x: 22, y: 48 },
+    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "LB",  label: "LB",  x: 8,  y: 74 },
+    { id: "LCB", label: "CB",  x: 32, y: 74 },
+    { id: "RCB", label: "CB",  x: 68, y: 74 },
+    { id: "RB",  label: "RB",  x: 92, y: 74 },
+    { id: "LCM", label: "CM",  x: 20, y: 48 },
     { id: "CM",  label: "CM",  x: 50, y: 48 },
-    { id: "RCM", label: "CM",  x: 78, y: 48 },
-    { id: "LW",  label: "LW",  x: 18, y: 18 },
+    { id: "RCM", label: "CM",  x: 80, y: 48 },
+    { id: "LW",  label: "LW",  x: 14, y: 20 },
     { id: "ST",  label: "ST",  x: 50, y: 10 },
-    { id: "RW",  label: "RW",  x: 82, y: 18 },
+    { id: "RW",  label: "RW",  x: 86, y: 20 },
   ],
   "4-4-2": [
-    { id: "GK",  label: "GK",  x: 50, y: 90 },
-    { id: "LB",  label: "LB",  x: 10, y: 72 },
-    { id: "LCB", label: "CB",  x: 33, y: 72 },
-    { id: "RCB", label: "CB",  x: 67, y: 72 },
-    { id: "RB",  label: "RB",  x: 90, y: 72 },
-    { id: "LM",  label: "LM",  x: 12, y: 48 },
-    { id: "LCM", label: "CM",  x: 37, y: 48 },
-    { id: "RCM", label: "CM",  x: 63, y: 48 },
-    { id: "RM",  label: "RM",  x: 88, y: 48 },
-    { id: "ST1", label: "ST",  x: 35, y: 14 },
-    { id: "ST2", label: "ST",  x: 65, y: 14 },
+    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "LB",  label: "LB",  x: 8,  y: 74 },
+    { id: "LCB", label: "CB",  x: 32, y: 74 },
+    { id: "RCB", label: "CB",  x: 68, y: 74 },
+    { id: "RB",  label: "RB",  x: 92, y: 74 },
+    { id: "LM",  label: "LM",  x: 8,  y: 48 },
+    { id: "LCM", label: "CM",  x: 36, y: 48 },
+    { id: "RCM", label: "CM",  x: 64, y: 48 },
+    { id: "RM",  label: "RM",  x: 92, y: 48 },
+    { id: "ST1", label: "ST",  x: 34, y: 14 },
+    { id: "ST2", label: "ST",  x: 66, y: 14 },
   ],
   "4-2-3-1": [
-    { id: "GK",  label: "GK",  x: 50, y: 90 },
-    { id: "LB",  label: "LB",  x: 10, y: 72 },
-    { id: "LCB", label: "CB",  x: 33, y: 72 },
-    { id: "RCB", label: "CB",  x: 67, y: 72 },
-    { id: "RB",  label: "RB",  x: 90, y: 72 },
-    { id: "LDM", label: "CDM", x: 34, y: 52 },
-    { id: "RDM", label: "CDM", x: 66, y: 52 },
-    { id: "LW",  label: "LW",  x: 18, y: 30 },
-    { id: "CAM", label: "CAM", x: 50, y: 30 },
-    { id: "RW",  label: "RW",  x: 82, y: 30 },
-    { id: "ST",  label: "ST",  x: 50, y: 8 },
+    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "LB",  label: "LB",  x: 8,  y: 74 },
+    { id: "LCB", label: "CB",  x: 32, y: 74 },
+    { id: "RCB", label: "CB",  x: 68, y: 74 },
+    { id: "RB",  label: "RB",  x: 92, y: 74 },
+    { id: "LDM", label: "CDM", x: 34, y: 56 },
+    { id: "RDM", label: "CDM", x: 66, y: 56 },
+    { id: "LW",  label: "LW",  x: 14, y: 32 },
+    { id: "CAM", label: "CAM", x: 50, y: 32 },
+    { id: "RW",  label: "RW",  x: 86, y: 32 },
+    { id: "ST",  label: "ST",  x: 50, y: 10 },
   ],
   "3-4-3": [
-    { id: "GK",  label: "GK",  x: 50, y: 90 },
-    { id: "LCB", label: "CB",  x: 22, y: 72 },
-    { id: "CB",  label: "CB",  x: 50, y: 72 },
-    { id: "RCB", label: "CB",  x: 78, y: 72 },
-    { id: "LM",  label: "LM",  x: 14, y: 48 },
-    { id: "LCM", label: "CM",  x: 38, y: 48 },
-    { id: "RCM", label: "CM",  x: 62, y: 48 },
-    { id: "RM",  label: "RM",  x: 86, y: 48 },
-    { id: "LW",  label: "LW",  x: 18, y: 18 },
+    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "LCB", label: "CB",  x: 20, y: 74 },
+    { id: "CB",  label: "CB",  x: 50, y: 74 },
+    { id: "RCB", label: "CB",  x: 80, y: 74 },
+    { id: "LM",  label: "LM",  x: 8,  y: 48 },
+    { id: "LCM", label: "CM",  x: 36, y: 48 },
+    { id: "RCM", label: "CM",  x: 64, y: 48 },
+    { id: "RM",  label: "RM",  x: 92, y: 48 },
+    { id: "LW",  label: "LW",  x: 14, y: 20 },
     { id: "ST",  label: "ST",  x: 50, y: 10 },
-    { id: "RW",  label: "RW",  x: 82, y: 18 },
+    { id: "RW",  label: "RW",  x: 86, y: 20 },
   ],
   "5-3-2": [
-    { id: "GK",  label: "GK",  x: 50, y: 90 },
-    { id: "LCB", label: "CB",  x: 22, y: 72 },
-    { id: "CB",  label: "CB",  x: 50, y: 72 },
-    { id: "RCB", label: "CB",  x: 78, y: 72 },
-    { id: "LWB", label: "LWB", x:  8, y: 48 },
+    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "LCB", label: "CB",  x: 20, y: 74 },
+    { id: "CB",  label: "CB",  x: 50, y: 74 },
+    { id: "RCB", label: "CB",  x: 80, y: 74 },
+    { id: "LWB", label: "LWB", x: 6,  y: 48 },
     { id: "LCM", label: "CM",  x: 30, y: 48 },
     { id: "CM",  label: "CM",  x: 50, y: 48 },
     { id: "RCM", label: "CM",  x: 70, y: 48 },
-    { id: "RWB", label: "RWB", x: 92, y: 48 },
-    { id: "ST1", label: "ST",  x: 35, y: 14 },
-    { id: "ST2", label: "ST",  x: 65, y: 14 },
+    { id: "RWB", label: "RWB", x: 94, y: 48 },
+    { id: "ST1", label: "ST",  x: 34, y: 14 },
+    { id: "ST2", label: "ST",  x: 66, y: 14 },
   ],
 };
 
@@ -307,7 +307,7 @@ export default function CollectionSquad({ progression }: Props) {
         <div
           className="relative w-full mx-auto rounded-xl overflow-hidden mb-5"
           style={{
-            paddingBottom: "110%",
+            paddingBottom: "140%",
             background: "linear-gradient(180deg, #0d380d 0%, #0a2a0a 45%, #06190a 100%)",
           }}
         >
@@ -372,7 +372,7 @@ export default function CollectionSquad({ progression }: Props) {
         <DragOverlay dropAnimation={null}>
           {activeCard && activeStyle ? (
             <div
-              className="w-20 h-[104px] rounded-xl overflow-hidden shadow-2xl pointer-events-none ring-2 ring-amber-400/60"
+              className="w-16 h-[84px] sm:w-20 sm:h-[104px] rounded-xl overflow-hidden shadow-2xl pointer-events-none ring-2 ring-amber-400/60"
               style={{ transform: "rotate(3deg) scale(1.05)" }}
             >
               {activeStyle.image ? (
@@ -417,7 +417,7 @@ function DraggablePitchCard({
       ref={setNodeRef}
       {...(hasBenchSelection ? {} : { ...listeners, ...attributes })}
       onClick={hasBenchSelection ? onTap : undefined}
-      className={`group relative w-[76px] h-[100px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px] rounded-xl overflow-visible shadow-lg ring-1 transition-all ${
+      className={`group relative w-[60px] h-[80px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px] rounded-xl overflow-visible shadow-lg ring-1 transition-all ${
         hasBenchSelection
           ? "ring-amber-400/80 hover:ring-amber-400 hover:scale-105 cursor-pointer"
           : "ring-white/10 cursor-grab active:cursor-grabbing"
@@ -505,7 +505,7 @@ function PitchSlot({
       ) : (
         <button
           onClick={hasBenchSelection ? onTap : undefined}
-          className={`w-12 h-12 sm:w-[56px] sm:h-[56px] md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+          className={`w-10 h-10 sm:w-[56px] sm:h-[56px] md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
             hasBenchSelection
               ? "border-amber-400 bg-amber-400/25 shadow-lg shadow-amber-400/40 hover:scale-110 cursor-pointer"
               : isOver
@@ -551,7 +551,7 @@ function BenchCard({
           : undefined
       }
     >
-      <div className={`w-[72px] h-[96px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
+      <div className={`w-14 h-[72px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
         selected ? "ring-amber-400 shadow-lg shadow-amber-500/30" : "ring-white/10"
       }`}>
         {frameStyle.image ? (

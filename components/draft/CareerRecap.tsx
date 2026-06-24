@@ -8,6 +8,7 @@ interface Props {
   roomPlayers?: RoomPlayer[];
   allRoomPlayerSeasons?: Record<string, SeasonResult[]>;
   onClose: () => void;
+  onNewRun?: () => void;
 }
 
 interface H2HRecord {
@@ -34,7 +35,7 @@ interface AllTimePlayer {
   avgRating: number;
 }
 
-export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeasons, onClose }: Props) {
+export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeasons, onClose, onNewRun }: Props) {
   const [tab, setTab] = useState<"overview" | "records" | "h2h" | "players">(
     roomPlayers && roomPlayers.length > 1 ? "h2h" : "overview"
   );
@@ -354,8 +355,8 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     return items;
   }, [allSeasons, stats]);
 
-  const topScorers = [...activeAllTime].sort((a, b) => b.goals - a.goals).slice(0, 10);
-  const topAssisters = [...activeAllTime].sort((a, b) => b.assists - a.assists).slice(0, 10);
+  const topScorers = [...activeAllTime].sort((a, b) => b.goals - a.goals).slice(0, 5);
+  const topAssisters = [...activeAllTime].sort((a, b) => b.assists - a.assists).slice(0, 5);
   const topRatings = [...activeAllTime].filter(p => p.appearances >= 15).sort((a, b) => b.avgRating - a.avgRating).slice(0, 5);
   const clubLegends = [...activeAllTime].filter(p => p.seasons >= 2).sort((a, b) => b.seasons - a.seasons || (b.goals + b.assists) - (a.goals + a.assists)).slice(0, 5);
   const topCleanSheets = [...activeAllTime].filter(p => p.cleanSheets > 0).sort((a, b) => b.cleanSheets - a.cleanSheets).slice(0, 5);
@@ -915,7 +916,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                   </div>
                   {[...allTimePlayers]
                     .sort((a, b) => (b.goals + b.assists) - (a.goals + a.assists))
-                    .slice(0, 10)
+                    .slice(0, 5)
                     .map((p, i) => (
                       <div key={i} className={`flex items-center text-xs px-3 py-2 ${i === 0 ? "bg-purple-900/10" : i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className={`w-6 font-black ${i === 0 ? "text-purple-400" : i < 3 ? "text-white" : "text-white"}`}>{i + 1}</span>
@@ -954,6 +955,25 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                 </div>
               )}
             </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-800 px-5 py-4 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700/50 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Close
+          </button>
+          {onNewRun && (
+            <button
+              onClick={onNewRun}
+              className="flex-1 py-3 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 rounded-xl font-bold text-sm transition-all shadow-lg shadow-sky-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              New Draft
+            </button>
           )}
         </div>
       </div>

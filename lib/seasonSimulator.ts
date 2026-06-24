@@ -255,6 +255,29 @@ export const RESERVE_TEAMS: { name: string; strength: number }[] = [
 
 const ALL_TEAMS_POOL: { name: string; strength: number }[] = [...DEFAULT_PL_TEAMS, ...RESERVE_TEAMS];
 
+const LOWER_LEAGUE_CLUBS: { name: string; strength: number }[] = [
+  { name: 'Sunderland', strength: 70 },
+  { name: 'Bristol City', strength: 69 },
+  { name: 'QPR', strength: 69 },
+  { name: 'Derby', strength: 68 },
+  { name: 'Cardiff', strength: 68 },
+  { name: 'Plymouth', strength: 67 },
+  { name: 'Luton', strength: 67 },
+  { name: 'Blackburn', strength: 67 },
+  { name: 'Preston', strength: 66 },
+  { name: 'Oxford Utd', strength: 66 },
+  { name: 'Portsmouth', strength: 66 },
+  { name: 'Wigan', strength: 65 },
+  { name: 'Bolton', strength: 65 },
+  { name: 'Charlton', strength: 65 },
+  { name: 'Reading', strength: 64 },
+  { name: 'Barnsley', strength: 64 },
+  { name: 'Exeter City', strength: 63 },
+  { name: 'Stockport', strength: 63 },
+  { name: 'MK Dons', strength: 62 },
+  { name: 'Mansfield', strength: 62 },
+];
+
 export function getSeasonTeams(
   previousLeagueTable?: LeagueTeam[] | { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
   promotionSeed?: number,
@@ -1012,10 +1035,15 @@ function simulateFaCup(
     [bracket[i], bracket[j]] = [bracket[j], bracket[i]];
   }
 
-  // Ensure we have exactly 32 teams; pad with generic teams if needed
-  { let padIdx = 1;
+  // Ensure we have exactly 32 teams; pad with real lower-league clubs
+  { const usedNames = new Set(bracket.map(t => t.name));
+  let padIdx = 0;
   while (bracket.length < 32) {
-    bracket.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+    const club = LOWER_LEAGUE_CLUBS[padIdx % LOWER_LEAGUE_CLUBS.length];
+    padIdx++;
+    if (usedNames.has(club.name)) continue;
+    usedNames.add(club.name);
+    bracket.push({ name: club.name, strength: club.strength });
   } }
 
   const playerMatches: FaCupMatch[] = [];
@@ -1091,10 +1119,15 @@ function simulateSharedFaCup(
     [bracket[i], bracket[j]] = [bracket[j], bracket[i]];
   }
 
-  // Pad to 32 if needed
-  { let padIdx = 1;
+  // Pad to 32 with real lower-league clubs
+  { const usedNames = new Set(bracket.map(t => t.name));
+  let padIdx = 0;
   while (bracket.length < 32) {
-    bracket.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+    const club = LOWER_LEAGUE_CLUBS[padIdx % LOWER_LEAGUE_CLUBS.length];
+    padIdx++;
+    if (usedNames.has(club.name)) continue;
+    usedNames.add(club.name);
+    bracket.push({ name: club.name, strength: club.strength });
   } }
 
   const humanMatches = new Map<string, FaCupMatch[]>();
@@ -2425,9 +2458,14 @@ export function simulateSeason(
     ...opponents,
     ...RESERVE_TEAMS.filter(t => !opponents.some(o => o.name === t.name) && t.name !== playerTeamName),
   ];
-  { let padIdx = 1;
+  { const usedNames = new Set(allFaCupTeams.map(t => t.name));
+  let padIdx = 0;
   while (allFaCupTeams.length < 32) {
-    allFaCupTeams.push({ name: `Lower League Side ${padIdx++}`, strength: 65 });
+    const club = LOWER_LEAGUE_CLUBS[padIdx % LOWER_LEAGUE_CLUBS.length];
+    padIdx++;
+    if (usedNames.has(club.name)) continue;
+    usedNames.add(club.name);
+    allFaCupTeams.push({ name: club.name, strength: club.strength });
   } }
   const faCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
 
@@ -3462,7 +3500,7 @@ function simulateSharedUCL(
       const teamsInRound = poolSize * 2;
       // Base probability = 1/(teams-1), boosted so human matchups happen more often
       const baseProbability = 1 / Math.max(1, teamsInRound - 1);
-      const boostedProbability = Math.min(0.8, baseProbability * 3);
+      const boostedProbability = Math.min(0.8, baseProbability * 1.5);
       for (let i = 0; i + 1 < shuffled.length; i += 2) {
         if (drawRng() < boostedProbability) {
           humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
@@ -3676,7 +3714,7 @@ function simulateSharedUEL(
       const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
       const teamsInRound = poolSize * 2;
       const baseProbability = 1 / Math.max(1, teamsInRound - 1);
-      const boostedProbability = Math.min(0.8, baseProbability * 3);
+      const boostedProbability = Math.min(0.8, baseProbability * 1.5);
       for (let i = 0; i + 1 < shuffled.length; i += 2) {
         if (drawRng() < boostedProbability) {
           humanVsHuman.push([shuffled[i], shuffled[i + 1]]);
