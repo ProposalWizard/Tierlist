@@ -5,13 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET() {
   const supabase = createServiceClient();
 
-  // Active, published, non-expired objectives with visible XP
+  // Active, published, non-expired objectives (XP or card reward)
   let { data: objectives, error } = await supabase
     .from("objectives")
     .select("*")
     .eq("is_active", true)
     .eq("is_published", true)
-    .gt("xp_reward", 0)
     .or("expires_at.is.null,expires_at.gt.now()")
     .order("sort_order", { ascending: true });
 
@@ -21,7 +20,6 @@ export async function GET() {
       .from("objectives")
       .select("*")
       .eq("is_active", true)
-      .gt("xp_reward", 0)
       .or("expires_at.is.null,expires_at.gt.now()")
       .order("sort_order", { ascending: true });
     if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });

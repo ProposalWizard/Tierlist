@@ -33,6 +33,7 @@ export async function POST(req: Request) {
       xp_reward: body.xp_reward ?? 0,
       card_image_url: body.card_image_url || null,
       card_name: body.card_name || null,
+      category: body.category ?? "foundation",
       is_active: body.is_active ?? true,
       is_published: body.is_published ?? false,
       sort_order: body.sort_order ?? 0,
@@ -61,6 +62,7 @@ export async function PATCH(req: Request) {
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order;
   if ("expires_at" in body) updates.expires_at = body.expires_at ?? null;
   if (body.conditions !== undefined) updates.conditions = body.conditions;
+  if (body.category !== undefined) updates.category = body.category;
   const { error } = await supabase
     .from("objectives")
     .update(updates)

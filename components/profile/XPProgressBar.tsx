@@ -2,11 +2,21 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { getTitleForLevel, RARITY_COLORS, FRAME_STYLES, cumulativeXpForLevel } from "@/lib/xp";
+import { getTitleForLevel, RARITY_COLORS, cumulativeXpForLevel } from "@/lib/xp";
 import type { UserProgression } from "@/lib/xp";
+
+export interface SeasonLevelReward {
+  id: string;
+  season: number;
+  level: number;
+  card_name: string | null;
+  subtitle: string | null;
+  image_url: string | null;
+}
 
 interface Props {
   progression: UserProgression | null;
+  seasonRewards?: SeasonLevelReward[];
 }
 
 const SEASON_EXPIRY = new Date("2026-09-16T00:00:00Z");
@@ -15,7 +25,16 @@ function getDaysLeft(): number {
   return Math.max(0, Math.ceil((SEASON_EXPIRY.getTime() - Date.now()) / 86400000));
 }
 
-export default function XPProgressBar({ progression }: Props) {
+interface Milestone {
+  id: string;
+  name: string;
+  subtitle: string | null;
+  imageUrl: string | null;
+  levelValue: number;
+  unlocked: boolean;
+}
+
+export default function XPProgressBar({ progression, seasonRewards }: Props) {
   const level = progression?.level ?? 1;
   const totalXp = progression?.xp ?? 0;
   const currentXp = progression?.currentLevelXp ?? 0;
@@ -31,24 +50,44 @@ export default function XPProgressBar({ progression }: Props) {
   const [animatedLevelPct, setAnimatedLevelPct] = useState(0);
   const [animatedMilestonePct, setAnimatedMilestonePct] = useState(0);
 
-  // Sorted frame rewards from progression — only level-based cards contribute to Road to Legend
-  const frameRewards = useMemo(
-    () =>
-      (progression?.rewards ?? [])
-        .filter((r) => r.category === "frame" && r.unlock_type === "level")
-        .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0)),
-    [progression?.rewards]
-  );
+  // Build milestone list from season rewards (if any), otherwise fall back to frame rewards
+  const milestones = useMemo<Milestone[]>(() => {
+    if (seasonRewards && seasonRewards.length > 0) {
+      return seasonRewards
+        .filter(r => r.image_url)
+        .sort((a, b) => a.level - b.level)
+        .map(r => ({
+          id: `season-${r.level}`,
+          name: r.card_name ?? `Level ${r.level}`,
+          subtitle: r.subtitle ?? null,
+          imageUrl: r.image_url,
+          levelValue: r.level,
+          unlocked: level >= r.level,
+        }));
+    }
 
-  // Pairs: (frameRewards[0],frameRewards[1]), (frameRewards[1],frameRewards[2]), …
-  // Each pair = one page showing left card, bar, right card
+    // Fall back to frame rewards from progression
+    return (progression?.rewards ?? [])
+      .filter(r => r.category === "frame" && r.unlock_type === "level")
+      .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0))
+      .map(r => ({
+        id: r.id,
+        name: r.name,
+        subtitle: null,
+        imageUrl: null,
+        levelValue: r.unlock_value ?? 0,
+        unlocked: r.unlocked,
+      }));
+  }, [seasonRewards, progression?.rewards, level]);
+
+  // Each page = (milestones[i], milestones[i+1]) pair
   const pairs = useMemo(() => {
-    const out: [typeof frameRewards[0], typeof frameRewards[0] | null][] = [];
-    for (let i = 0; i < frameRewards.length; i++) {
-      out.push([frameRewards[i], frameRewards[i + 1] ?? null]);
+    const out: [Milestone, Milestone | null][] = [];
+    for (let i = 0; i < milestones.length; i++) {
+      out.push([milestones[i], milestones[i + 1] ?? null]);
     }
     return out;
-  }, [frameRewards]);
+  }, [milestones]);
 
   // Auto-navigate to the pair containing the current level
   useEffect(() => {
@@ -56,7 +95,7 @@ export default function XPProgressBar({ progression }: Props) {
     let idx = pairs.length - 1;
     for (let i = 0; i < pairs.length; i++) {
       const [, right] = pairs[i];
-      if (right === null || level < (right.unlock_value ?? Infinity)) {
+      if (right === null || level < right.levelValue) {
         idx = i;
         break;
       }
@@ -66,11 +105,11 @@ export default function XPProgressBar({ progression }: Props) {
 
   const [leftCard, rightCard] = pairs[pageIndex] ?? [null, null];
 
-  // Progress between the two milestone levels shown on the current page
+  // Progress between the two milestone levels on the current page
   const milestonePct = useMemo(() => {
     if (!leftCard) return 0;
-    const lv0 = leftCard.unlock_value ?? 0;
-    const lv1 = rightCard?.unlock_value ?? lv0 + 1;
+    const lv0 = leftCard.levelValue;
+    const lv1 = rightCard?.levelValue ?? lv0 + 1;
     if (level >= lv1) return 1;
     if (level < lv0) return 0;
     const xp0 = cumulativeXpForLevel(lv0);
@@ -78,7 +117,6 @@ export default function XPProgressBar({ progression }: Props) {
     return xp1 > xp0 ? Math.min((totalXp - xp0) / (xp1 - xp0), 1) : 1;
   }, [leftCard, rightCard, level, totalXp]);
 
-  // Per-level bar fill
   const levelPct = xpToNext > 0 ? Math.min(currentXp / xpToNext, 1) : 1;
 
   useEffect(() => {
@@ -87,13 +125,11 @@ export default function XPProgressBar({ progression }: Props) {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [levelPct, milestonePct]);
 
-  const expandedReward = expandedId ? frameRewards.find((r) => r.id === expandedId) ?? null : null;
-  const expandedStyle = expandedId ? (FRAME_STYLES[expandedId] ?? FRAME_STYLES.frame_default) : null;
+  const expandedMilestone = expandedId ? milestones.find(m => m.id === expandedId) ?? null : null;
 
   return (
     <>
       <div className="rounded-xl border border-gray-800/60 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 p-5 relative overflow-hidden h-full">
-        {/* Shimmer animation */}
         <style jsx>{`
           @keyframes rtl-shimmer {
             0% { transform: translateX(-100%); }
@@ -120,19 +156,17 @@ export default function XPProgressBar({ progression }: Props) {
           }}
         />
 
-        {/* Header row */}
+        {/* Header */}
         <div className="relative flex items-start justify-between mb-5">
           <div>
             <h3 className="text-sm sm:text-base font-black tracking-[0.2em] text-amber-500/80 uppercase">
-              Road to Legend <span className="font-semibold text-orange-400/70">Season 1</span>
+              Road to Legend <span className="font-semibold text-orange-400/70 underline underline-offset-4 decoration-orange-400/40">Season 1</span>
             </h3>
             <div className={`text-sm sm:text-base font-semibold mt-0.5 leading-tight ${titleColor}`}>
               {currentTitle.name}
             </div>
           </div>
-          <span
-            className={`text-[10px] font-bold tabular-nums flex-shrink-0 ${daysLeft <= 14 ? "text-red-400" : "text-white"}`}
-          >
+          <span className={`text-[10px] font-bold tabular-nums flex-shrink-0 ${daysLeft <= 14 ? "text-red-400" : "text-white"}`}>
             {daysLeft}d left
           </span>
         </div>
@@ -140,9 +174,9 @@ export default function XPProgressBar({ progression }: Props) {
         {/* Milestone pair view */}
         {pairs.length > 0 && leftCard && (
           <div className="relative flex items-center gap-2 sm:gap-4 mb-5">
-            {/* Prev arrow */}
+            {/* Prev */}
             <button
-              onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+              onClick={() => setPageIndex(p => Math.max(0, p - 1))}
               disabled={pageIndex === 0}
               className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-white hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
             >
@@ -151,13 +185,9 @@ export default function XPProgressBar({ progression }: Props) {
               </svg>
             </button>
 
-            {/* Left card */}
-            <MilestoneCard
-              reward={leftCard}
-              onClick={() => setExpandedId(leftCard.id)}
-            />
+            <MilestoneCard milestone={leftCard} onClick={() => setExpandedId(leftCard.id)} />
 
-            {/* Bar column */}
+            {/* Progress bar */}
             <div className="flex-1 flex flex-col gap-2 min-w-0">
               <div className="relative h-3.5 bg-gray-800 rounded-full overflow-hidden">
                 <div
@@ -168,19 +198,15 @@ export default function XPProgressBar({ progression }: Props) {
               </div>
             </div>
 
-            {/* Right card */}
             {rightCard ? (
-              <MilestoneCard
-                reward={rightCard}
-                onClick={() => setExpandedId(rightCard.id)}
-              />
+              <MilestoneCard milestone={rightCard} onClick={() => setExpandedId(rightCard.id)} />
             ) : (
               <div className="flex-shrink-0 w-28" />
             )}
 
-            {/* Next arrow */}
+            {/* Next */}
             <button
-              onClick={() => setPageIndex((p) => Math.min(pairs.length - 1, p + 1))}
+              onClick={() => setPageIndex(p => Math.min(pairs.length - 1, p + 1))}
               disabled={pageIndex === pairs.length - 1}
               className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-white hover:text-white hover:border-gray-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
             >
@@ -228,47 +254,44 @@ export default function XPProgressBar({ progression }: Props) {
       </div>
 
       {/* Expanded card modal */}
-      {expandedReward && expandedStyle && (
+      {expandedMilestone && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-6"
           onClick={() => setExpandedId(null)}
         >
-          <div className="flex flex-col items-center gap-5" onClick={(e) => e.stopPropagation()}>
-            <div className="relative w-56 h-[290px] rounded-2xl overflow-hidden shadow-2xl">
-              {expandedStyle.image ? (
+          <div className="flex flex-col items-center gap-5" onClick={e => e.stopPropagation()}>
+            <div className="relative w-56 h-[290px] rounded-2xl overflow-hidden shadow-2xl border border-gray-700">
+              {expandedMilestone.imageUrl ? (
                 <Image
-                  src={expandedStyle.image}
-                  alt={expandedReward.unlocked ? expandedReward.name : "Locked"}
+                  src={expandedMilestone.imageUrl}
+                  alt={expandedMilestone.unlocked ? expandedMilestone.name : "Locked"}
                   fill
                   className="object-cover"
                   sizes="224px"
                   quality={100}
                 />
               ) : (
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${expandedStyle.gradient ?? "from-gray-700 to-gray-900"}`}
-                />
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
               )}
-              {!expandedReward.unlocked && (
+              {!expandedMilestone.unlocked && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-900/65 rounded-2xl">
                   <svg className="w-14 h-14 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                      clipRule="evenodd"
-                    />
+                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                   </svg>
                 </div>
               )}
             </div>
             <div className="text-center">
               <p className="text-white font-bold text-lg">
-                {expandedReward.unlocked ? expandedReward.name : "???"}
+                {expandedMilestone.unlocked ? expandedMilestone.name : "???"}
               </p>
-              <p className="text-white text-sm mt-1">
-                {expandedReward.unlocked
+              {expandedMilestone.subtitle && expandedMilestone.unlocked && (
+                <p className="text-gray-400 text-sm mt-0.5">{expandedMilestone.subtitle}</p>
+              )}
+              <p className="text-gray-500 text-sm mt-1">
+                {expandedMilestone.unlocked
                   ? "Unlocked!"
-                  : `Unlocks at Level ${expandedReward.unlock_value}`}
+                  : `Unlocks at Level ${expandedMilestone.levelValue}`}
               </p>
             </div>
             <button
@@ -284,16 +307,8 @@ export default function XPProgressBar({ progression }: Props) {
   );
 }
 
-function MilestoneCard({
-  reward,
-  onClick,
-}: {
-  reward: { id: string; name: string; unlock_value: number | null; unlocked: boolean; rarity: string };
-  onClick: () => void;
-}) {
-  const frameStyle = FRAME_STYLES[reward.id] ?? FRAME_STYLES.frame_default;
-  const isUnlocked = reward.unlocked;
-  const rarity = RARITY_COLORS[reward.rarity as keyof typeof RARITY_COLORS] ?? RARITY_COLORS.bronze;
+function MilestoneCard({ milestone, onClick }: { milestone: Milestone; onClick: () => void }) {
+  const isUnlocked = milestone.unlocked;
 
   return (
     <button
@@ -305,54 +320,49 @@ function MilestoneCard({
           !isUnlocked ? "opacity-40" : ""
         }`}
       >
-        {frameStyle.image ? (
+        {milestone.imageUrl ? (
           <Image
-            src={frameStyle.image}
-            alt={isUnlocked ? reward.name : "Locked"}
+            src={milestone.imageUrl}
+            alt={isUnlocked ? milestone.name : "Locked"}
             fill
             className="object-cover"
             sizes="112px"
             quality={100}
           />
         ) : (
-          <div
-            className={`absolute inset-0 bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"}`}
-          />
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
         )}
         {!isUnlocked && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-900/55 rounded-xl">
             <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                clipRule="evenodd"
-              />
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
           </div>
         )}
         {isUnlocked && (
           <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center shadow-md">
             <svg className="w-3 h-3 text-black" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           </div>
         )}
       </div>
-      <p
-        className={`text-[10px] font-bold text-center leading-tight max-w-20 sm:max-w-[112px] ${
-          isUnlocked ? "text-white" : "text-white"
-        }`}
-      >
-        {isUnlocked ? reward.name : "???"}
+
+      {/* Card name */}
+      <p className="text-[10px] font-bold text-center leading-tight max-w-20 sm:max-w-[112px] text-white truncate w-full">
+        {isUnlocked ? milestone.name : "???"}
       </p>
-      <span
-        className={`text-[9px] font-black px-1.5 sm:px-2 py-0.5 rounded border ${rarity.text} ${rarity.border} ${rarity.bg}`}
-      >
-        Lv {reward.unlock_value}
+
+      {/* Subtitle */}
+      {milestone.subtitle && isUnlocked && (
+        <p className="text-[9px] text-gray-400 text-center leading-tight max-w-20 sm:max-w-[112px] truncate w-full">
+          {milestone.subtitle}
+        </p>
+      )}
+
+      {/* Level badge */}
+      <span className="text-[9px] font-black px-1.5 sm:px-2 py-0.5 rounded border text-amber-400 border-amber-700/40 bg-amber-900/20">
+        Lv {milestone.levelValue}
       </span>
     </button>
   );
