@@ -99,6 +99,7 @@ interface RecordEntry {
 interface TeamStat {
   value: number;
   teamOvr?: number | null;
+  score?: string;
 }
 
 interface RecordPayload {
@@ -190,7 +191,7 @@ export async function POST(req: Request) {
     candidates.push({
       user_id: user.id, username, competition, record_type,
       value: stat.value,
-      player_name: null,
+      player_name: stat.score ?? null,
       player_ovr: stat.teamOvr ?? null,
       season_number: seasonNumber ?? null,
       mode,
