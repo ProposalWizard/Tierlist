@@ -2,7 +2,7 @@
 Scrape ALL SoFIFA players across every FIFA edition (07-26).
 
 Captures, for every player in every edition:
-  - identity: sofifa_id, name, positions, nationality, age, overall, potential
+  - identity: sofifa_id, name, positions, nationality, nationality_flag_url, age, overall, potential
   - club (from the player list) + league (joined from the Teams list, because
     SoFIFA no longer exposes league as a column on the players page)
   - EVERY stat column SoFIFA exposes (pulled dynamically so nothing is missed)
@@ -24,10 +24,16 @@ Flags:
   --force            Re-scrape all editions, even complete ones
   --year=YYYY        Scrape only that edition
   --download-faces   Also download face images to sofifa_data/faces/
-  --patch-positions  Fast mode: only scrape positions, patch into existing JSON.
-                     Skips league map + face downloads. ~300 pages per edition.
+  --patch-positions  Fast mode: only scrape positions + nationality flags, patch
+                     into existing JSON. Skips league map + face downloads.
+                     ~300 pages per edition (10 pages with --league=ID).
   --league=ID        Filter to one league (use with --patch-positions for speed).
-                     Premier League = 13. Cuts pages from ~300 to ~10.
+                     Big 5 league IDs (consistent across all FIFA editions):
+                       Premier League (England):  13
+                       La Liga (Spain):           53
+                       Bundesliga (Germany):      19
+                       Serie A (Italy):           31
+                       Ligue 1 (France):          16
 """
 
 import asyncio
@@ -63,6 +69,15 @@ PROFILE_DIR.mkdir(exist_ok=True)
 FACES_DIR = OUTPUT_DIR / "faces"
 
 ALL_YEARS = list(range(2026, 2006, -1))
+
+# Big 5 league IDs on SoFIFA (stable across all editions)
+BIG_5_LEAGUES = {
+    "Premier League": "13",
+    "La Liga":        "53",
+    "Bundesliga":     "19",
+    "Serie A":        "31",
+    "Ligue 1":        "16",
+}
 
 VERSION_CODES = {
     2026: "240034", 2025: "240007", 2024: "230054", 2023: "230017",
@@ -225,6 +240,11 @@ def _extract_pi_cell(td, player: dict):
         flag = td.select_one("img[title]")
     if flag:
         player["nationality"] = flag.get("title", "")
+        src = flag.get("src", "")
+        if src and not src.startswith("http"):
+            src = "https://cdn.sofifa.net" + src
+        if src:
+            player["nationality_flag_url"] = src
 
 
 def _extract_td_value(col_id: str, td, player: dict):
@@ -662,8 +682,8 @@ def _positions_url(year: int, league_id: str | None = None) -> str:
     return url
 
 
-def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, str]:
-    """Parse a list page and return {sofifa_id: positions} for players that have positions."""
+def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, dict]:
+    """Parse a list page and return {sofifa_id: {positions, nationality, nationality_flag_url}}."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html, "html.parser")
 
@@ -676,14 +696,13 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, st
     if not table:
         return {}
 
-    results: dict[str, str] = {}
+    results: dict[str, dict] = {}
     dumped = False
     for row in table.select("tbody tr") or table.select("tr"):
         name_link = row.select_one('a[href*="/player/"]')
         if not name_link:
             continue
 
-        # Dump first row HTML so we can debug selectors
         if dump_first and not dumped:
             dumped = True
             print("\n  ─── POSITION DIAGNOSTIC: First player row ───")
@@ -691,7 +710,6 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, st
             for i, td in enumerate(tds):
                 cls = td.get("class", [])
                 dc = td.get("data-col", "")
-                # Show inner HTML (first 300 chars)
                 inner = str(td)[:300]
                 print(f"  TD[{i}] class={cls} data-col='{dc}'")
                 print(f"    HTML: {inner}")
@@ -708,7 +726,6 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, st
             continue
 
         player: dict = {}
-        # First try: find the pi column specifically
         for td in row.select("td"):
             col_id = ""
             for cls in td.get("class", []):
@@ -721,21 +738,24 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, st
                 _extract_pi_cell(td, player)
                 break
 
-        # Fallback: search ALL tds for position-like spans if pi column didn't yield positions
         if not player.get("positions"):
             for td in row.select("td"):
                 _extract_pi_cell(td, player)
                 if player.get("positions"):
                     break
 
-        if player.get("positions"):
-            results[sofifa_id] = player["positions"]
+        if player.get("positions") or player.get("nationality_flag_url"):
+            results[sofifa_id] = {
+                "positions": player.get("positions", ""),
+                "nationality": player.get("nationality", ""),
+                "nationality_flag_url": player.get("nationality_flag_url", ""),
+            }
 
     return results
 
 
 async def patch_positions(page, years: list[int], league_id: str | None = None):
-    """Scrape only positions and patch into existing JSON files."""
+    """Scrape positions + nationality flags and patch into existing JSON files."""
     await ensure_discovery(page)
 
     for idx, year in enumerate(years):
@@ -747,13 +767,15 @@ async def patch_positions(page, years: list[int], league_id: str | None = None):
             continue
 
         existing_count = len(existing)
-        already_have = sum(1 for p in existing if p.get("positions"))
-        if already_have == existing_count:
-            print(f"\n  {fp.name}: all {existing_count} players already have positions ✓")
+        already_have_pos = sum(1 for p in existing if p.get("positions"))
+        already_have_flags = sum(1 for p in existing if p.get("nationality_flag_url"))
+        # Skip only if ALL players have both positions and flags
+        if already_have_pos == existing_count and already_have_flags == existing_count:
+            print(f"\n  {fp.name}: all {existing_count} players already have positions + flags ✓")
             continue
 
         print(f"\n{'=' * 50}")
-        print(f"Patching positions for {label} ({already_have}/{existing_count} already have positions)")
+        print(f"Patching {label}: positions {already_have_pos}/{existing_count}, flags {already_have_flags}/{existing_count}")
         print(f"{'=' * 50}")
 
         if idx > 0:
@@ -770,24 +792,24 @@ async def patch_positions(page, years: list[int], league_id: str | None = None):
             print(f"  Could not load {label}, skipping")
             continue
 
-        all_positions: dict[str, str] = {}
+        all_patches: dict[str, dict] = {}
         page_num = 1
         while True:
             html = await page.content()
             batch = _extract_positions_only(html, dump_first=(page_num == 1))
             if not batch:
-                print(f"  Page {page_num}: no positions found, stopping.")
+                print(f"  Page {page_num}: nothing found, stopping.")
                 break
 
-            new_in_batch = sum(1 for sid in batch if sid not in all_positions)
+            new_in_batch = sum(1 for sid in batch if sid not in all_patches)
             if new_in_batch == 0:
                 print(f"  Page {page_num}: all duplicates, stopping.")
                 break
 
-            all_positions.update(batch)
+            all_patches.update(batch)
 
             if page_num == 1 or page_num % 5 == 0:
-                print(f"  Page {page_num}: {len(batch)} players with positions (total: {len(all_positions)})")
+                print(f"  Page {page_num}: {len(batch)} players (total: {len(all_patches)})")
 
             if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
                 break
@@ -795,15 +817,23 @@ async def patch_positions(page, years: list[int], league_id: str | None = None):
 
         # Patch into existing data
         lookup = {str(p.get("sofifa_id", "")): p for p in existing}
-        patched = 0
-        for sid, pos in all_positions.items():
-            if sid in lookup and not lookup[sid].get("positions"):
-                lookup[sid]["positions"] = pos
-                patched += 1
+        patched_pos = 0
+        patched_flags = 0
+        for sid, patch in all_patches.items():
+            if sid not in lookup:
+                continue
+            if patch.get("positions") and not lookup[sid].get("positions"):
+                lookup[sid]["positions"] = patch["positions"]
+                patched_pos += 1
+            if patch.get("nationality") and not lookup[sid].get("nationality"):
+                lookup[sid]["nationality"] = patch["nationality"]
+            if patch.get("nationality_flag_url") and not lookup[sid].get("nationality_flag_url"):
+                lookup[sid]["nationality_flag_url"] = patch["nationality_flag_url"]
+                patched_flags += 1
 
         with open(fp, "w", encoding="utf-8") as f:
             json.dump(existing, f, ensure_ascii=False, indent=2)
-        print(f"  Patched {patched} players. Scraped {len(all_positions)} positions across {page_num} pages.")
+        print(f"  Patched {patched_pos} positions, {patched_flags} flags across {page_num} pages.")
         print(f"  SAVED -> {fp.name}")
 
     print("\nDone! Re-import patched files at: https://knowitball.co.uk/admin/football/scrape")

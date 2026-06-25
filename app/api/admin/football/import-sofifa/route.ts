@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       name: string;
       positions?: string;
       nationality?: string;
+      nationality_flag_url?: string;
       club?: string;
       league?: string;
       overall?: number;
@@ -139,6 +140,29 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Upsert nationality → flag URL pairs into nationality_flags table.
+  // Uses the first flag URL seen for each nationality across this batch.
+  // Silently skips if the table doesn't exist yet (migration not run).
+  const flagMap = new Map<string, string>();
+  for (const p of validPlayers) {
+    const nat = p.nationality?.trim();
+    const url = p.nationality_flag_url?.trim();
+    if (nat && url && !flagMap.has(nat)) flagMap.set(nat, url);
+  }
+  if (flagMap.size > 0) {
+    const flagRows = Array.from(flagMap.entries()).map(([nationality, flag_url]) => ({
+      nationality,
+      flag_url,
+      updated_at: new Date().toISOString(),
+    }));
+    await service
+      .from("nationality_flags")
+      .upsert(flagRows, { onConflict: "nationality" })
+      .then(({ error }) => {
+        if (error) console.warn("[import-sofifa] nationality_flags upsert skipped:", error.message);
+      });
+  }
+
   return NextResponse.json({
     saved,
     total: players.length,
@@ -146,5 +170,6 @@ export async function POST(req: NextRequest) {
     failed,
     deleted,
     validCount: validPlayers.length,
+    flagsUpserted: flagMap.size,
   });
 }
