@@ -5,22 +5,34 @@ const WIN_EVENT_LABELS: Record<string, string> = Object.fromEntries(
   WIN_EVENT_OPTIONS.map(o => [o.value, o.label])
 );
 
+function multiMatch(value: string | undefined, filter: string): boolean {
+  if (!value) return false;
+  const parts = filter.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  const lower = value.toLowerCase();
+  return parts.some(p => lower.includes(p));
+}
+
 function playerMatchesFilter(player: SquadPlayer, cond: ObjectiveCondition): boolean {
   if (cond.nationality) {
-    if (!player.nationality?.toLowerCase().includes(cond.nationality.toLowerCase())) return false;
+    if (!multiMatch(player.nationality, cond.nationality)) return false;
   }
   if (cond.club) {
-    if (!player.club?.toLowerCase().includes(cond.club.toLowerCase())) return false;
+    if (!multiMatch(player.club, cond.club)) return false;
   }
   if (cond.position) {
     const posMatch = cond.positionMatch ?? "assigned";
+    const parts = cond.position.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
     if (posMatch === "assigned") {
-      if (!player.assignedPosition?.toUpperCase().includes(cond.position.toUpperCase())) return false;
+      if (!parts.some(p => player.assignedPosition?.toUpperCase().includes(p))) return false;
     } else {
       const natural = (player.naturalPositions ?? player.assignedPosition ?? "").toUpperCase();
-      if (!natural.includes(cond.position.toUpperCase())) return false;
+      if (!parts.some(p => natural.includes(p))) return false;
     }
   }
+  if (cond.minAge != null && (player.age == null || player.age < cond.minAge)) return false;
+  if (cond.maxAge != null && (player.age == null || player.age > cond.maxAge)) return false;
+  if (cond.minOvr != null && (player.overall == null || player.overall < cond.minOvr)) return false;
+  if (cond.maxOvr != null && (player.overall == null || player.overall > cond.maxOvr)) return false;
   return true;
 }
 
@@ -63,6 +75,7 @@ export function evaluateObjective(
   conditions: ObjectiveCondition[],
   currentProgress: ObjectiveProgress,
   seasonData: SeasonCheckData,
+  sameSeason?: boolean,
 ): { newProgress: ObjectiveProgress; complete: boolean } {
   const newProgress: ObjectiveProgress = { ...currentProgress };
 
@@ -92,19 +105,19 @@ export function evaluateObjective(
 
       if (scope === "squad_total") {
         const seasonTotal = perPlayer.reduce((s, pp) => s + pp.value, 0);
+        seasonValues[cond.id] = seasonTotal;
         if (timeframe === "career") {
           newProgress[cond.id] = (currentProgress[cond.id] ?? 0) + seasonTotal;
         } else {
-          seasonValues[cond.id] = seasonTotal;
           newProgress[cond.id] = Math.max(currentProgress[cond.id] ?? 0, seasonTotal);
         }
       } else {
         for (const pp of perPlayer) {
           const key = `${cond.id}__${pp.name}`;
+          seasonValues[key] = pp.value;
           if (timeframe === "career") {
             newProgress[key] = (currentProgress[key] ?? 0) + pp.value;
           } else {
-            seasonValues[key] = pp.value;
             newProgress[key] = Math.max(currentProgress[key] ?? 0, pp.value);
           }
         }
@@ -188,7 +201,10 @@ export function evaluateObjective(
 
   const complete = conditions.every(cond => {
     if (!competitionMatches(cond.competition, seasonData.competition)) {
-      return isConditionMet(cond, newProgress, {});
+      return sameSeason ? false : isConditionMet(cond, newProgress, {});
+    }
+    if (sameSeason) {
+      return isConditionMetThisSeason(cond, seasonData, seasonValues);
     }
     return isConditionMet(cond, newProgress, seasonValues);
   });
@@ -243,6 +259,44 @@ function isConditionMet(
   return false;
 }
 
+function isConditionMetThisSeason(
+  cond: ObjectiveCondition,
+  seasonData: SeasonCheckData,
+  seasonValues: Record<string, number>,
+): boolean {
+  if (cond.type === "win_event") {
+    const happened = cond.event ? seasonData.events.includes(cond.event as WinEvent) : false;
+    return happened;
+  }
+
+  if (cond.type === "squad_count") {
+    return (seasonValues[cond.id] ?? 0) >= cond.count;
+  }
+
+  if (cond.type === "single_match") {
+    return (seasonValues[cond.id] ?? 0) >= cond.count;
+  }
+
+  if (cond.type === "season_stat") {
+    if (cond.atMost) {
+      const val = seasonValues[cond.id] as number | undefined;
+      return val !== undefined && val <= cond.count;
+    }
+    return (seasonValues[cond.id] ?? 0) >= cond.count;
+  }
+
+  // goals/assists/clean_sheets: use season values
+  const scope = cond.scope ?? "squad_total";
+  if (scope === "squad_total") {
+    return (seasonValues[cond.id] ?? 0) >= cond.count;
+  }
+  const prefix = `${cond.id}__`;
+  for (const key of Object.keys(seasonValues)) {
+    if (key.startsWith(prefix) && seasonValues[key] >= cond.count) return true;
+  }
+  return false;
+}
+
 export function conditionSummary(cond: ObjectiveCondition): string {
   const scope = cond.scope ?? "squad_total";
   const timeframe = cond.timeframe ?? (cond.type === "squad_count" ? "season" : "career");
@@ -254,6 +308,11 @@ export function conditionSummary(cond: ObjectiveCondition): string {
   if (cond.position) {
     playerFilters.push(posMatch === "natural" ? `natural ${cond.position}` : `playing at ${cond.position}`);
   }
+  if (cond.maxAge != null) playerFilters.push(`aged ${cond.maxAge} or under`);
+  else if (cond.minAge != null) playerFilters.push(`aged ${cond.minAge}+`);
+  if (cond.minOvr != null && cond.maxOvr != null) playerFilters.push(`OVR ${cond.minOvr}–${cond.maxOvr}`);
+  else if (cond.minOvr != null) playerFilters.push(`OVR ${cond.minOvr}+`);
+  else if (cond.maxOvr != null) playerFilters.push(`OVR ${cond.maxOvr} or under`);
 
   const comp = cond.competition && cond.competition !== "any"
     ? ` (${cond.competition === "pl_draft" ? "PL Draft" : "CL Draft"})`

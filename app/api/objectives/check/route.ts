@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   let { data: objectives, error: objErr } = await service
     .from("objectives")
-    .select("id, title, xp_reward, card_image_url, card_name, conditions")
+    .select("id, title, xp_reward, card_image_url, card_name, conditions, same_season")
     .eq("is_active", true)
     .eq("is_published", true)
     .or("expires_at.is.null,expires_at.gt.now()");
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // is_published column may not exist yet — fall back without the filter
     const fallback = await service
       .from("objectives")
-      .select("id, title, xp_reward, card_image_url, card_name, conditions")
+      .select("id, title, xp_reward, card_image_url, card_name, conditions, same_season")
       .eq("is_active", true)
       .or("expires_at.is.null,expires_at.gt.now()");
     if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
@@ -63,7 +63,8 @@ export async function POST(req: NextRequest) {
 
     const conditions = obj.conditions as ObjectiveCondition[];
     const currentProgress = existing?.progress ?? {};
-    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body);
+    const sameSeason = (obj as Record<string, unknown>).same_season === true;
+    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason);
 
     if (complete) {
       await service.from("user_objectives").upsert({

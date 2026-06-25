@@ -36,6 +36,7 @@ interface Objective {
   expires_at: string | null;
   created_at: string;
   conditions: ObjectiveCondition[] | null;
+  same_season?: boolean;
 }
 
 const DURATION_OPTIONS = [
@@ -82,6 +83,11 @@ interface NewCondState {
   seasonStat: SeasonStatType;
   atMost: boolean;
   seasonCount: number;
+  minAge: string;
+  maxAge: string;
+  minOvr: string;
+  maxOvr: string;
+  editingCondId: string | null;
 }
 
 const EMPTY_COND: NewCondState = {
@@ -101,6 +107,11 @@ const EMPTY_COND: NewCondState = {
   seasonStat: "wins",
   atMost: false,
   seasonCount: 1,
+  minAge: "",
+  maxAge: "",
+  minOvr: "",
+  maxOvr: "",
+  editingCondId: null,
 };
 
 export default function ObjectivesAdmin() {
@@ -116,6 +127,7 @@ export default function ObjectivesAdmin() {
     category: "standard" as ObjCategory,
     is_published: false,
     expires_at: null as string | null,
+    same_season: false,
   });
   const [conditions, setConditions] = useState<ObjectiveCondition[]>([]);
   const [addingCond, setAddingCond] = useState(false);
@@ -138,7 +150,7 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "standard", is_published: false, expires_at: null });
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "standard", is_published: false, expires_at: null, same_season: false });
     setConditions([]);
     setAddingCond(false);
     setNc({ ...EMPTY_COND });
@@ -158,6 +170,7 @@ export default function ObjectivesAdmin() {
       category: (obj.category as ObjCategory) ?? "standard",
       is_published: obj.is_published ?? false,
       expires_at: obj.expires_at,
+      same_season: obj.same_season === true,
     });
     setConditions(obj.conditions ?? []);
     setAddingCond(false);
@@ -206,7 +219,7 @@ export default function ObjectivesAdmin() {
     if (nc.type === "win_event" && !nc.event) { alert("Select an event"); return; }
 
     const cond: ObjectiveCondition = {
-      id: crypto.randomUUID(),
+      id: nc.editingCondId ?? crypto.randomUUID(),
       type: nc.type,
       count: nc.count,
       competition: nc.competition || "any",
@@ -225,6 +238,14 @@ export default function ObjectivesAdmin() {
         cond.position = nc.position.trim().toUpperCase();
         cond.positionMatch = nc.positionMatch;
       }
+      const minAge = parseInt(nc.minAge);
+      const maxAge = parseInt(nc.maxAge);
+      const minOvr = parseInt(nc.minOvr);
+      const maxOvr = parseInt(nc.maxOvr);
+      if (!isNaN(minAge) && minAge > 0) cond.minAge = minAge;
+      if (!isNaN(maxAge) && maxAge > 0) cond.maxAge = maxAge;
+      if (!isNaN(minOvr) && minOvr > 0) cond.minOvr = minOvr;
+      if (!isNaN(maxOvr) && maxOvr > 0) cond.maxOvr = maxOvr;
     }
 
     if (nc.type === "win_event") {
@@ -247,9 +268,40 @@ export default function ObjectivesAdmin() {
       if ((nc.seasonCount ?? 1) > 1) cond.seasonCount = nc.seasonCount;
     }
 
-    setConditions(prev => [...prev, cond]);
+    if (nc.editingCondId) {
+      setConditions(prev => prev.map(c => c.id === nc.editingCondId ? cond : c));
+    } else {
+      setConditions(prev => [...prev, cond]);
+    }
     setNc({ ...EMPTY_COND });
     setAddingCond(false);
+  };
+
+  const handleEditCondition = (cond: ObjectiveCondition) => {
+    setNc({
+      type: cond.type,
+      count: cond.count,
+      scope: cond.scope ?? "squad_total",
+      positionMatch: cond.positionMatch ?? "assigned",
+      timeframe: cond.timeframe ?? (cond.type === "squad_count" ? "season" : "career"),
+      consecutive: cond.consecutive ?? false,
+      competition: cond.competition ?? "any",
+      withinCompetition: cond.withinCompetition ?? "any",
+      nationality: cond.nationality ?? "",
+      club: cond.club ?? "",
+      position: cond.position ?? "",
+      event: (cond.event ?? "") as WinEvent | "",
+      matchStat: cond.matchStat ?? "goals_scored",
+      seasonStat: cond.seasonStat ?? "wins",
+      atMost: cond.atMost ?? false,
+      seasonCount: cond.seasonCount ?? 1,
+      minAge: cond.minAge != null ? String(cond.minAge) : "",
+      maxAge: cond.maxAge != null ? String(cond.maxAge) : "",
+      minOvr: cond.minOvr != null ? String(cond.minOvr) : "",
+      maxOvr: cond.maxOvr != null ? String(cond.maxOvr) : "",
+      editingCondId: cond.id,
+    });
+    setAddingCond(true);
   };
 
   const handleSave = async () => {
@@ -275,6 +327,7 @@ export default function ObjectivesAdmin() {
       is_active: true,
       is_published: form.is_published,
       expires_at: form.expires_at,
+      same_season: form.same_season,
       sort_order: editingId
         ? objectives.find(o => o.id === editingId)?.sort_order ?? 0
         : objectives.length,
@@ -403,6 +456,16 @@ export default function ObjectivesAdmin() {
             </button>
             <p className="text-[10px] text-gray-500 mt-1">Draft = invisible to players until you publish</p>
           </div>
+          <div>
+            <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Same Season</label>
+            <button
+              onClick={() => setForm(f => ({ ...f, same_season: !f.same_season }))}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition ${form.same_season ? "bg-amber-600 text-white" : "bg-gray-700 text-gray-400"}`}
+            >
+              {form.same_season ? "Same Season" : "Any Time"}
+            </button>
+            <p className="text-[10px] text-gray-500 mt-1">Same Season = ALL conditions must be met in a single season (e.g. Treble)</p>
+          </div>
         </div>
 
         {/* Time Limit */}
@@ -506,12 +569,20 @@ export default function ObjectivesAdmin() {
                     <span className="text-[10px] font-bold text-gray-500 shrink-0">{i + 1}.</span>
                     <span className="text-xs text-white truncate">{conditionSummary(cond)}</span>
                   </div>
-                  <button
-                    onClick={() => setConditions(prev => prev.filter(c => c.id !== cond.id))}
-                    className="text-red-400 hover:text-red-300 text-sm font-bold shrink-0 leading-none"
-                  >
-                    ×
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleEditCondition(cond)}
+                      className="text-blue-400 hover:text-blue-300 text-[10px] font-bold px-1.5 py-0.5 bg-blue-500/10 rounded transition"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => setConditions(prev => prev.filter(c => c.id !== cond.id))}
+                      className="text-red-400 hover:text-red-300 text-sm font-bold leading-none"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -835,13 +906,12 @@ export default function ObjectivesAdmin() {
                 <div className="border-t border-gray-700 pt-3">
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Player filters (all optional — leave blank for any player)</label>
                   <p className="text-[10px] text-amber-400/80 mb-2">
-                    Matching is case-insensitive and partial (typing &quot;franc&quot; finds &quot;France&quot;).
+                    Matching is case-insensitive and partial. <span className="font-bold">Comma-separated</span> values work as OR —
+                    e.g. &quot;France, Germany, Brazil&quot; matches any of those.
                     Use the <span className="font-bold">country name</span>, not the adjective —
                     type <span className="font-bold">France</span> not French,{" "}
-                    <span className="font-bold">Germany</span> not German,{" "}
-                    <span className="font-bold">England</span> not English,{" "}
-                    <span className="font-bold">Spain</span> not Spanish.
-                    Club is the one that came up on the spin wheel, not the player&apos;s career clubs. Must match SoFIFA spelling (e.g. &quot;Manchester City&quot; not &quot;Man City&quot;).
+                    <span className="font-bold">Germany</span> not German.
+                    Club is the one that came up on the spin wheel (SoFIFA spelling).
                   </p>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
@@ -850,7 +920,7 @@ export default function ObjectivesAdmin() {
                         type="text"
                         value={nc.nationality}
                         onChange={e => setNc(n => ({ ...n, nationality: e.target.value }))}
-                        placeholder="e.g. France"
+                        placeholder="e.g. France, Germany, Brazil"
                         className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
                       />
                     </div>
@@ -860,7 +930,7 @@ export default function ObjectivesAdmin() {
                         type="text"
                         value={nc.club}
                         onChange={e => setNc(n => ({ ...n, club: e.target.value }))}
-                        placeholder="e.g. Arsenal"
+                        placeholder="e.g. Arsenal, Chelsea"
                         className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
                       />
                     </div>
@@ -871,6 +941,56 @@ export default function ObjectivesAdmin() {
                         value={nc.position}
                         onChange={e => setNc(n => ({ ...n, position: e.target.value }))}
                         placeholder="e.g. ST, GK, CM"
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Age and OVR filters */}
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    <div>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Min age</label>
+                      <input
+                        type="number"
+                        value={nc.minAge}
+                        onChange={e => setNc(n => ({ ...n, minAge: e.target.value }))}
+                        placeholder="e.g. 30"
+                        min={1}
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Max age</label>
+                      <input
+                        type="number"
+                        value={nc.maxAge}
+                        onChange={e => setNc(n => ({ ...n, maxAge: e.target.value }))}
+                        placeholder="e.g. 21"
+                        min={1}
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Min OVR</label>
+                      <input
+                        type="number"
+                        value={nc.minOvr}
+                        onChange={e => setNc(n => ({ ...n, minOvr: e.target.value }))}
+                        placeholder="e.g. 85"
+                        min={1}
+                        max={99}
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 mb-0.5">Max OVR</label>
+                      <input
+                        type="number"
+                        value={nc.maxOvr}
+                        onChange={e => setNc(n => ({ ...n, maxOvr: e.target.value }))}
+                        placeholder="e.g. 75"
+                        min={1}
+                        max={99}
                         className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
                       />
                     </div>
@@ -925,6 +1045,10 @@ export default function ObjectivesAdmin() {
                       ...(nc.type === "win_event" && nc.event ? { event: nc.event as WinEvent } : {}),
                       ...(nc.type === "single_match" ? { matchStat: nc.matchStat } : {}),
                       ...(nc.type === "season_stat" ? { seasonStat: nc.seasonStat, atMost: nc.atMost, withinCompetition: nc.withinCompetition, seasonCount: nc.seasonCount ?? 1 } : {}),
+                      ...(nc.minAge && parseInt(nc.minAge) > 0 ? { minAge: parseInt(nc.minAge) } : {}),
+                      ...(nc.maxAge && parseInt(nc.maxAge) > 0 ? { maxAge: parseInt(nc.maxAge) } : {}),
+                      ...(nc.minOvr && parseInt(nc.minOvr) > 0 ? { minOvr: parseInt(nc.minOvr) } : {}),
+                      ...(nc.maxOvr && parseInt(nc.maxOvr) > 0 ? { maxOvr: parseInt(nc.maxOvr) } : {}),
                     })}
                   </span>
                 </div>
@@ -935,9 +1059,9 @@ export default function ObjectivesAdmin() {
                 <button
                   onClick={handleAddCondition}
                   disabled={nc.type === "win_event" && !nc.event}
-                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition disabled:opacity-50"
+                  className={`px-4 py-1.5 text-white text-xs font-bold rounded-lg transition disabled:opacity-50 ${nc.editingCondId ? "bg-blue-600 hover:bg-blue-500" : "bg-emerald-600 hover:bg-emerald-500"}`}
                 >
-                  Add Condition
+                  {nc.editingCondId ? "Update Condition" : "Add Condition"}
                 </button>
                 <button
                   onClick={() => { setAddingCond(false); setNc({ ...EMPTY_COND }); }}
