@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 
 const FIFA_YEARS = Array.from({ length: 20 }, (_, i) => 2007 + i);
@@ -31,6 +31,9 @@ export default function ScrapeSofifaPage() {
   const [importYear, setImportYear] = useState(2020);
   const [replaceAll, setReplaceAll] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const clubLogosRef = useRef<HTMLInputElement>(null);
+  const leagueLogosRef = useRef<HTMLInputElement>(null);
+  const [logoStatus, setLogoStatus] = useState("");
   const [dbStats, setDbStats] = useState<
     { fifa_year: number; count: number }[] | null
   >(null);
@@ -181,6 +184,29 @@ export default function ScrapeSofifaPage() {
       (totalSkipped > 0 ? ` (${totalSkipped.toLocaleString()} skipped — no name/id)` : "")
     );
   }
+
+  const handleLogosImport = useCallback(async () => {
+    const clubFile = clubLogosRef.current?.files?.[0];
+    const leagueFile = leagueLogosRef.current?.files?.[0];
+    if (!clubFile && !leagueFile) { setLogoStatus("Select at least one JSON file."); return; }
+
+    const readJson = async (f: File) => JSON.parse(await f.text()) as Record<string, string>;
+
+    setLogoStatus("Reading files...");
+    const body: { clubs?: Record<string, string>; leagues?: Record<string, string> } = {};
+    if (clubFile) body.clubs = await readJson(clubFile);
+    if (leagueFile) body.leagues = await readJson(leagueFile);
+
+    setLogoStatus(`Importing ${Object.keys(body.clubs ?? {}).length} clubs + ${Object.keys(body.leagues ?? {}).length} leagues...`);
+    const res = await fetch("/api/admin/football/import-logos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.error) { setLogoStatus(`Error: ${data.error}`); return; }
+    setLogoStatus(`Done! ${data.clubsSaved} club logos + ${data.leaguesSaved} league logos saved.`);
+  }, []);
 
   async function loadStats() {
     setStatus("Loading database stats...");
@@ -377,6 +403,37 @@ export default function ScrapeSofifaPage() {
             className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 text-sm font-medium"
           >
             Import
+          </button>
+        </div>
+      </div>
+
+      {/* Club + League logo import */}
+      <div className="border-t border-gray-800 pt-6">
+        <h2 className="text-lg font-semibold mb-2">Import Club &amp; League Logos</h2>
+        <p className="text-sm text-gray-400 mb-3">
+          After running a full scrape, upload <code className="text-green-400">club_logos.json</code> and/or{" "}
+          <code className="text-green-400">league_logos.json</code> from your{" "}
+          <code className="text-gray-300">sofifa_data/</code> folder.
+        </p>
+        {logoStatus && (
+          <div className="bg-gray-900 border border-gray-700 rounded p-2 mb-3 text-sm font-mono">
+            {logoStatus}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-sm text-gray-400">
+            Club logos:
+            <input ref={clubLogosRef} type="file" accept=".json" className="ml-2 text-sm text-white" />
+          </label>
+          <label className="text-sm text-gray-400">
+            League logos:
+            <input ref={leagueLogosRef} type="file" accept=".json" className="ml-2 text-sm text-white" />
+          </label>
+          <button
+            onClick={handleLogosImport}
+            className="px-4 py-2 bg-purple-600 rounded hover:bg-purple-500 text-sm font-medium"
+          >
+            Import Logos
           </button>
         </div>
       </div>
