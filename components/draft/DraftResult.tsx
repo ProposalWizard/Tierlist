@@ -671,6 +671,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             }
 
             const plMatchResults = season.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst }));
+            const historicalPlMatchResults = (allSeasonResults ?? []).map(s =>
+              s.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst }))
+            );
 
             const matchResults: { goalsFor: number; goalsAgainst: number }[] = [
               ...plMatchResults,
@@ -715,6 +718,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 events: winEvents,
                 matchResults,
                 plMatchResults,
+                historicalPlMatchResults,
               }),
             });
             if (objRes.ok) {
