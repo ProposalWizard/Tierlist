@@ -34,6 +34,9 @@ Flags:
                        Bundesliga (Germany):      19
                        Serie A (Italy):           31
                        Ligue 1 (France):          16
+                     Use --list-leagues to see all available leagues + IDs.
+  --list-leagues     Print all SoFIFA leagues and their IDs, then exit.
+                     Use with --year=YYYY to check a specific edition.
 """
 
 import asyncio
@@ -445,7 +448,7 @@ def parse_teams(html: str, dump_first: bool = False) -> list[dict]:
 
 
 def parse_leagues_page(html: str) -> list[dict]:
-    """Return list of {league, league_logo_url} from a Leagues list page."""
+    """Return list of {league, league_logo_url, league_id} from a Leagues list page."""
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
@@ -471,6 +474,13 @@ def parse_leagues_page(html: str) -> list[dict]:
 
         league = llink.get_text(strip=True)
 
+        # Extract league ID from href like /league/13
+        league_id = ""
+        href = llink.get("href", "")
+        m = re.search(r"/league/(\d+)", href)
+        if m:
+            league_id = m.group(1)
+
         logo_img = llink.select_one("img")
         if not logo_img:
             for img in row.select("img"):
@@ -481,7 +491,7 @@ def parse_leagues_page(html: str) -> list[dict]:
         league_logo_url = _abs_cdn(logo_img.get("src", "")) if logo_img else ""
 
         if league:
-            out.append({"league": league, "league_logo_url": league_logo_url})
+            out.append({"league": league, "league_logo_url": league_logo_url, "league_id": league_id})
 
     return out
 
@@ -979,6 +989,51 @@ async def main():
 
     patch_pos = "--patch-positions" in sys.argv
     league_arg = next((arg.split("=")[1] for arg in sys.argv[1:] if arg.startswith("--league=")), None)
+
+    list_leagues = "--list-leagues" in sys.argv
+
+    if list_leagues:
+        print("Mode: LIST ALL LEAGUES (use the ID with --league=ID)\n")
+        async with async_playwright() as pw:
+            context = await pw.chromium.launch_persistent_context(
+                str(PROFILE_DIR),
+                headless=False,
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                viewport={"width": 1440, "height": 900},
+                locale="en-GB",
+                timezone_id="Europe/London",
+                args=["--disable-blink-features=AutomationControlled"],
+            )
+            page = context.pages[0] if context.pages else await context.new_page()
+            if stealth_async:
+                await stealth_async(page)
+
+            year = years[0] if years else 2026
+            await page.goto(leagues_url(year), wait_until="commit")
+            if await wait_for(page, 'a[href*="/league/"]', "leagues list", timeout=60):
+                all_leagues: list[dict] = []
+                page_num = 1
+                while True:
+                    html = await page.content()
+                    batch = parse_leagues_page(html)
+                    if not batch:
+                        break
+                    all_leagues.extend(batch)
+                    if not await click_next(page, 'a[href*="/league/"]'):
+                        break
+                    page_num += 1
+
+                print(f"{'ID':<6} {'League Name'}")
+                print("-" * 50)
+                for lg in all_leagues:
+                    print(f"{lg['league_id']:<6} {lg['league']}")
+                print(f"\n{len(all_leagues)} leagues found.")
+                print("Use: python scrape_missing.py --patch-positions --league=<ID>")
+            else:
+                print("Could not load leagues list.")
+
+            await context.close()
+        return
 
     if patch_pos:
         print(f"Mode: PATCH POSITIONS ONLY" + (f" (league filter: {league_arg})" if league_arg else ""))
