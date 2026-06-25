@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat } from "@/lib/objectiveTypes";
+import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat, WithinCompetition } from "@/lib/objectiveTypes";
 import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS } from "@/lib/objectiveTypes";
 import { conditionSummary } from "@/lib/objectiveEvaluator";
 import CardLibraryPicker from "./CardLibraryPicker";
@@ -73,6 +73,7 @@ interface NewCondState {
   timeframe: Timeframe;
   consecutive: boolean;
   competition: Competition;
+  withinCompetition: WithinCompetition;
   nationality: string;
   club: string;
   position: string;
@@ -88,6 +89,7 @@ const EMPTY_COND: NewCondState = {
   timeframe: "career",
   consecutive: false,
   competition: "any",
+  withinCompetition: "any",
   nationality: "",
   club: "",
   position: "",
@@ -207,6 +209,7 @@ export default function ObjectivesAdmin() {
     if (isStatType(nc.type)) {
       cond.scope = nc.scope;
       cond.timeframe = nc.timeframe;
+      if (nc.withinCompetition !== "any") cond.withinCompetition = nc.withinCompetition;
     }
 
     if (hasPlayerFilters(nc.type)) {
@@ -595,6 +598,32 @@ export default function ObjectivesAdmin() {
                 </div>
               )}
 
+              {/* Within-competition filter — stat types only */}
+              {isStatType(nc.type) && (
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Counts in</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setNc(n => ({ ...n, withinCompetition: "any" }))}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.withinCompetition === "any" ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                    >
+                      All competitions
+                    </button>
+                    <button
+                      onClick={() => setNc(n => ({ ...n, withinCompetition: "pl_only" }))}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.withinCompetition === "pl_only" ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                    >
+                      Premier League only
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {nc.withinCompetition === "pl_only"
+                      ? "Only Premier League stats count — FA Cup, UCL, UEL goals/assists etc. are excluded."
+                      : "Stats from all competitions (PL + FA Cup + UCL/UEL) count together."}
+                  </p>
+                </div>
+              )}
+
               {/* Win event selector */}
               {nc.type === "win_event" && (
                 <div>
@@ -802,6 +831,7 @@ export default function ObjectivesAdmin() {
                       timeframe: (isStatType(nc.type) || nc.type === "login_streak") ? nc.timeframe : undefined,
                       consecutive: nc.type === "win_event" && nc.count > 1 ? nc.consecutive : undefined,
                       competition: nc.type !== "login_streak" ? (nc.competition || "any") : undefined,
+                      ...(isStatType(nc.type) && nc.withinCompetition !== "any" ? { withinCompetition: nc.withinCompetition } : {}),
                       ...(nc.nationality.trim() ? { nationality: nc.nationality.trim() } : {}),
                       ...(nc.club.trim() ? { club: nc.club.trim() } : {}),
                       ...(nc.position.trim() ? { position: nc.position.trim().toUpperCase() } : {}),

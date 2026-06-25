@@ -8,6 +8,8 @@ export type Timeframe = "season" | "career";
 
 export type MatchStat = "goals_scored" | "win_margin";
 
+export type WithinCompetition = "any" | "pl_only";
+
 export type WinEvent =
   | "cl_win"
   | "cl_final"
@@ -45,6 +47,7 @@ export interface ObjectiveCondition {
   position?: string;
   event?: WinEvent;
   competition?: Competition;
+  withinCompetition?: WithinCompetition;
   matchStat?: MatchStat;
 }
 
@@ -54,6 +57,7 @@ export interface SeasonCheckData {
   competition: "pl_draft" | "cl_draft";
   squad: SquadPlayer[];
   playerStats: PlayerSeasonStats[];
+  plPlayerStats?: PlayerSeasonStats[];
   events: WinEvent[];
   matchResults?: { goalsFor: number; goalsAgainst: number }[];
 }

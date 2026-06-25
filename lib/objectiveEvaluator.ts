@@ -54,9 +54,13 @@ export function evaluateObjective(
     if (cond.type === "goals" || cond.type === "assists" || cond.type === "clean_sheets") {
       const scope = cond.scope ?? "squad_total";
       const timeframe = cond.timeframe ?? "career";
+      const statsSource =
+        cond.withinCompetition === "pl_only" && seasonData.plPlayerStats
+          ? seasonData.plPlayerStats
+          : seasonData.playerStats;
 
       const perPlayer: { name: string; value: number }[] = [];
-      for (const stats of seasonData.playerStats) {
+      for (const stats of statsSource) {
         const p = squadByName.get(stats.name);
         if (!p || !playerMatchesFilter(p, cond)) continue;
         const val = getStatValue(stats, cond.type);
@@ -199,6 +203,8 @@ export function conditionSummary(cond: ObjectiveCondition): string {
     ? ` (${cond.competition === "pl_draft" ? "PL Draft" : "CL Draft"})`
     : "";
 
+  const withinComp = cond.withinCompetition === "pl_only" ? " · PL only" : "";
+
   const p = cond.count !== 1;
 
   switch (cond.type) {
@@ -217,7 +223,7 @@ export function conditionSummary(cond: ObjectiveCondition): string {
         desc += ` with ${playerFilters.join(", ")} players`;
       }
       if (timeframe === "season") desc += " in one season";
-      return desc + comp;
+      return desc + withinComp + comp;
     }
 
     case "squad_count": {

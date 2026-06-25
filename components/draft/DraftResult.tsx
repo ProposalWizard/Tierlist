@@ -704,6 +704,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   assists: ps.assists,
                   cleanSheets: ps.cleanSheets,
                 })),
+                plPlayerStats: season.plPlayerStats.map(ps => ({
+                  name: ps.name,
+                  goals: ps.goals,
+                  assists: ps.assists,
+                  cleanSheets: ps.cleanSheets,
+                })),
                 events: winEvents,
                 matchResults,
               }),
