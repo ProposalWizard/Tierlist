@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface Props {
@@ -10,6 +10,45 @@ interface Props {
 
 export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
   const [open, setOpen] = useState(false);
+  const [unclaimedCount, setUnclaimedCount] = useState(0);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetch("/api/objectives/unclaimed-count")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.count) setUnclaimedCount(d.count); })
+      .catch(() => {});
+  }, [isLoggedIn]);
+
+  const ProfileLink = ({ onClick }: { onClick?: () => void }) => (
+    <Link
+      href="/profile"
+      onClick={onClick}
+      className="relative rounded-lg border border-gray-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:border-gray-500"
+    >
+      Profile
+      {unclaimedCount > 0 && (
+        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-1 ring-gray-950">
+          {unclaimedCount > 9 ? "9+" : unclaimedCount}
+        </span>
+      )}
+    </Link>
+  );
+
+  const MobileProfileLink = () => (
+    <Link
+      href="/profile"
+      onClick={() => setOpen(false)}
+      className="relative flex items-center px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-900"
+    >
+      Profile
+      {unclaimedCount > 0 && (
+        <span className="ml-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white">
+          {unclaimedCount > 9 ? "9+" : unclaimedCount}
+        </span>
+      )}
+    </Link>
+  );
 
   return (
     <>
@@ -26,12 +65,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                   Admin
                 </Link>
               )}
-              <Link
-                href="/profile"
-                className="rounded-lg border border-gray-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:border-gray-500"
-              >
-                Profile
-              </Link>
+              <ProfileLink />
               <form action="/api/auth/signout" method="POST">
                 <button
                   type="submit"
@@ -66,6 +100,9 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           )}
+          {unclaimedCount > 0 && !open && (
+            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-gray-950" />
+          )}
         </button>
 
         {/* Mobile dropdown */}
@@ -85,13 +122,7 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                       Admin
                     </Link>
                   )}
-                  <Link
-                    href="/profile"
-                    onClick={() => setOpen(false)}
-                    className="px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-900"
-                  >
-                    Profile
-                  </Link>
+                  <MobileProfileLink />
                   <div className="mx-4 my-1 border-t border-gray-800" />
                   <form action="/api/auth/signout" method="POST">
                     <button

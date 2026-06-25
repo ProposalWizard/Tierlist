@@ -408,7 +408,13 @@ function getTimeRemaining(expiresAt: string): string {
   return "< 1h left";
 }
 
-function ObjectiveDetail({ obj, isDone }: { obj: AdminObjective; isDone: boolean }) {
+function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
+  obj: AdminObjective;
+  isDone: boolean;
+  isUnclaimed?: boolean;
+  onClaim?: () => void;
+  claiming?: boolean;
+}) {
   return (
     <div className="flex-1 p-6 flex gap-6">
       <div className="flex-1 min-w-0">
@@ -422,24 +428,33 @@ function ObjectiveDetail({ obj, isDone }: { obj: AdminObjective; isDone: boolean
               <span className="text-amber-400 text-sm font-black">{obj.xp_reward} XP</span>
             </div>
           )}
-          {isDone ? (
+          {isDone && !isUnclaimed ? (
             <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-2">
               <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
               <span className="text-emerald-400 text-sm font-bold">Completed</span>
             </div>
-          ) : (
+          ) : !isDone ? (
             <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-4 py-2">
               <span className="text-white text-sm font-bold">In Progress</span>
             </div>
-          )}
+          ) : null}
           {!isDone && obj.expires_at && (
             <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 rounded-lg px-4 py-2">
               <span className="text-orange-400 text-sm font-bold">⏱ {getTimeRemaining(obj.expires_at)}</span>
             </div>
           )}
         </div>
+        {isUnclaimed && onClaim && (
+          <button
+            onClick={onClaim}
+            disabled={claiming}
+            className="mt-4 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-60 text-sm font-black text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            {claiming ? "Claiming…" : "Claim Reward"}
+          </button>
+        )}
       </div>
       {obj.card_image_url && (
         <div className="shrink-0 text-center">
@@ -458,14 +473,70 @@ function ObjectiveDetail({ obj, isDone }: { obj: AdminObjective; isDone: boolean
   );
 }
 
+interface ClaimResult {
+  title: string;
+  xp_reward: number;
+  card_image_url: string | null;
+  card_name: string | null;
+}
+
+function ObjectiveClaimModal({ result, onClose }: { result: ClaimResult; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="relative w-full max-w-sm rounded-2xl border border-amber-500/30 bg-gray-900 shadow-2xl shadow-amber-900/30 overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500/60 via-amber-400 to-amber-500/60" />
+        <div className="px-6 py-8 text-center">
+          <div className="text-4xl mb-3">🎉</div>
+          <div className="text-xs font-black uppercase tracking-[0.3em] text-amber-400 mb-1">Objective Complete</div>
+          <h2 className="text-lg font-black text-white mb-6 leading-tight">{result.title}</h2>
+
+          <div className="text-xs font-bold text-white uppercase tracking-wider mb-4">You earned</div>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            {result.xp_reward > 0 && (
+              <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2.5">
+                <span className="text-xl">⚡</span>
+                <span className="text-xl font-black text-amber-400">{result.xp_reward} XP</span>
+              </div>
+            )}
+            {result.card_image_url && (
+              <div className="flex flex-col items-center gap-2">
+                <img
+                  src={result.card_image_url}
+                  alt={result.card_name || "Card"}
+                  className="w-24 h-32 object-cover rounded-xl border-2 border-amber-400/50 shadow-xl shadow-amber-900/30"
+                />
+                {result.card_name && <span className="text-sm font-bold text-white">{result.card_name}</span>}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="px-6 pb-6">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-sm font-black text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Awesome!
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CustomObjectivesSection() {
   const [objectives, setObjectives] = useState<AdminObjective[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [unclaimedIds, setUnclaimedIds] = useState<string[]>([]);
   const [completedObjectives, setCompletedObjectives] = useState<AdminObjective[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedActiveId, setSelectedActiveId] = useState<string | null>(null);
   const [selectedCompletedId, setSelectedCompletedId] = useState<string | null>(null);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [claimModal, setClaimModal] = useState<ClaimResult | null>(null);
 
   useEffect(() => {
     // Fire login streak check (silent, fire-and-forget)
@@ -477,12 +548,29 @@ function CustomObjectivesSection() {
         if (data) {
           setObjectives(data.objectives ?? []);
           setCompletedIds(data.completed ?? []);
+          setUnclaimedIds(data.unclaimed ?? []);
           setCompletedObjectives(data.completedObjectives ?? []);
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
+
+  async function handleClaim(objId: string, obj: AdminObjective) {
+    if (claimingId) return;
+    setClaimingId(objId);
+    try {
+      const res = await fetch(`/api/objectives/${objId}/claim`, { method: "POST" });
+      if (res.ok || res.status === 400) {
+        // 400 = already claimed — still dismiss the dot
+        setUnclaimedIds(prev => prev.filter(id => id !== objId));
+        if (res.ok) {
+          setClaimModal({ title: obj.title, xp_reward: obj.xp_reward, card_image_url: obj.card_image_url, card_name: obj.card_name });
+        }
+      }
+    } catch { /* non-critical */ }
+    setClaimingId(null);
+  }
 
   if (loading) return null;
   if (objectives.length === 0 && completedObjectives.length === 0) return null;
@@ -540,12 +628,13 @@ function CustomObjectivesSection() {
           if (!cat) return null;
           const catObjs = allObjectives.filter(o => (o.category ?? "standard") === catKey);
           const catCompleted = catObjs.filter(o => completedIds.includes(o.id)).length;
+          const catUnclaimed = catObjs.filter(o => unclaimedIds.includes(o.id)).length;
           const isActive = currentCategory === catKey;
           return (
             <button
               key={catKey}
               onClick={() => { setSelectedCategory(catKey); setSelectedId(null); }}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition border-b-2 -mb-px whitespace-nowrap ${
+              className={`relative flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition border-b-2 -mb-px whitespace-nowrap ${
                 isActive
                   ? `${cat.color} border-current`
                   : "text-white border-transparent hover:text-gray-300"
@@ -554,6 +643,11 @@ function CustomObjectivesSection() {
               <span className="text-sm">{cat.icon}</span>
               {cat.label}
               <span className="ml-1 text-xs opacity-70">({catCompleted}/{catObjs.length})</span>
+              {catUnclaimed > 0 && (
+                <span className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white">
+                  {catUnclaimed}
+                </span>
+              )}
             </button>
           );
         })}
@@ -569,6 +663,7 @@ function CustomObjectivesSection() {
           <div className="md:hidden overflow-y-auto max-h-[600px]">
             {categoryObjectives.map((obj) => {
               const done = completedIds.includes(obj.id);
+              const unclaimed = unclaimedIds.includes(obj.id);
               const isSelected = (selectedId ?? categoryObjectives[0]?.id) === obj.id;
               return (
                 <div key={obj.id}>
@@ -586,36 +681,38 @@ function CustomObjectivesSection() {
                       ) : (
                         <div className="w-4.5 h-4.5 rounded-full border border-gray-600 shrink-0" />
                       )}
-                      <span className={`text-base font-bold leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
-                      <svg className={`w-5 h-5 ml-auto shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <span className={`text-base font-bold leading-tight flex-1 ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
+                      {unclaimed && <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />}
+                      <svg className={`w-5 h-5 shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                     <div className="mt-1.5 pl-7 flex items-center gap-2 flex-wrap">
                       {obj.xp_reward > 0 && <span className={`text-xs font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
                       {!done && obj.expires_at && <span className="text-xs font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
-                      {done && <span className="text-xs font-bold text-emerald-500/60">Completed</span>}
+                      {done && !unclaimed && <span className="text-xs font-bold text-emerald-500/60">Completed</span>}
+                      {unclaimed && <span className="text-xs font-bold text-red-400">Claim reward!</span>}
                     </div>
                   </button>
                   {isSelected && (
                     <div className="px-4 py-4 bg-gray-800/50 border-b border-gray-800/30">
                       {obj.description && <p className="text-sm text-white mb-3 leading-relaxed">{obj.description}</p>}
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap mb-3">
                         {obj.xp_reward > 0 && (
                           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
                             <span className="text-amber-400 text-sm font-black">{obj.xp_reward} XP</span>
                           </div>
                         )}
-                        {done ? (
+                        {done && !unclaimed ? (
                           <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
                             <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                             <span className="text-emerald-400 text-sm font-bold">Completed</span>
                           </div>
-                        ) : (
+                        ) : !done ? (
                           <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-1.5">
                             <span className="text-white text-sm font-bold">In Progress</span>
                           </div>
-                        )}
+                        ) : null}
                         {!done && obj.expires_at && (
                           <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-1.5">
                             <span className="text-orange-400 text-sm font-bold">⏱ {getTimeRemaining(obj.expires_at)}</span>
@@ -623,13 +720,22 @@ function CustomObjectivesSection() {
                         )}
                       </div>
                       {obj.card_image_url && (
-                        <div className="mt-4 flex items-center gap-4">
+                        <div className="mb-3 flex items-center gap-4">
                           <img src={obj.card_image_url} alt={obj.card_name || "Card Reward"} className="w-20 h-24 object-cover rounded-lg border border-gray-700 shadow-lg" />
                           <div>
                             <div className="text-xs font-bold text-white uppercase tracking-wider">Reward</div>
                             {obj.card_name && <div className="text-sm font-bold text-white mt-1">{obj.card_name}</div>}
                           </div>
                         </div>
+                      )}
+                      {unclaimed && (
+                        <button
+                          onClick={() => handleClaim(obj.id, obj)}
+                          disabled={claimingId === obj.id}
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-60 text-sm font-black text-white transition-all"
+                        >
+                          {claimingId === obj.id ? "Claiming…" : "Claim Reward"}
+                        </button>
                       )}
                     </div>
                   )}
@@ -643,6 +749,7 @@ function CustomObjectivesSection() {
             <div className="w-64 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[600px]">
               {categoryObjectives.map((obj) => {
                 const done = completedIds.includes(obj.id);
+                const unclaimed = unclaimedIds.includes(obj.id);
                 const isSelected = (selectedId ?? categoryObjectives[0]?.id) === obj.id;
                 return (
                   <button
@@ -660,20 +767,33 @@ function CustomObjectivesSection() {
                       ) : (
                         <div className="w-4 h-4 rounded-full border border-gray-600 shrink-0" />
                       )}
-                      <span className={`text-sm font-bold leading-tight line-clamp-2 ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
+                      <span className={`text-sm font-bold leading-tight line-clamp-2 flex-1 ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
+                      {unclaimed && <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />}
                     </div>
                     <div className="mt-1.5 pl-6 flex items-center gap-2 flex-wrap">
                       {obj.xp_reward > 0 && <span className={`text-xs font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
                       {!done && obj.expires_at && <span className="text-xs font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
-                      {done && <span className="text-xs font-bold text-emerald-500/60">Completed</span>}
+                      {done && !unclaimed && <span className="text-xs font-bold text-emerald-500/60">Completed</span>}
+                      {unclaimed && <span className="text-xs font-bold text-red-400">Claim!</span>}
                     </div>
                   </button>
                 );
               })}
             </div>
-            {selected && <ObjectiveDetail obj={selected} isDone={completedIds.includes(selected.id)} />}
+            {selected && (
+              <ObjectiveDetail
+                obj={selected}
+                isDone={completedIds.includes(selected.id)}
+                isUnclaimed={unclaimedIds.includes(selected.id)}
+                onClaim={() => handleClaim(selected.id, selected)}
+                claiming={claimingId === selected.id}
+              />
+            )}
           </div>
         </>
+      )}
+      {claimModal && (
+        <ObjectiveClaimModal result={claimModal} onClose={() => setClaimModal(null)} />
       )}
     </div>
   );

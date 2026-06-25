@@ -716,10 +716,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             });
             if (objRes.ok) {
               const objData = await objRes.json();
-              const completed = objData.completed as { id: string; xp_reward: number }[] ?? [];
+              const completed = objData.completed as { id: string; xp_reward: number; title: string; card_image_url: string | null; card_name: string | null }[] ?? [];
               for (const obj of completed) {
                 if (obj.xp_reward > 0) {
-                  lastResult = await awardXp(`objective_${obj.id}`, `${runId}_obj_${obj.id}`, obj.xp_reward, "Objective Complete!");
+                  lastResult = await awardXp(`objective_${obj.id}`, `${runId}_obj_${obj.id}`, obj.xp_reward, obj.title || "Objective Complete!");
                 }
               }
             }
