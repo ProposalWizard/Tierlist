@@ -44,6 +44,39 @@ import json, os, random, re, sys, time
 from pathlib import Path
 from playwright.async_api import async_playwright
 
+
+def _beep():
+    """Play an audible alert. Works on Windows (winsound) and Linux/Mac (bell char)."""
+    try:
+        import winsound
+        for _ in range(4):
+            winsound.Beep(1000, 400)
+            time.sleep(0.15)
+    except Exception:
+        for _ in range(4):
+            print("\a", end="", flush=True)
+            time.sleep(0.4)
+
+
+async def _is_cf_challenge(page) -> bool:
+    """Return True if the current page is a Cloudflare challenge."""
+    try:
+        title = (await page.title()).lower()
+        if "just a moment" in title or "checking your browser" in title:
+            return True
+        for sel in [
+            "#challenge-running",
+            ".cf-browser-verification",
+            "iframe[src*='challenges.cloudflare.com']",
+            "iframe[src*='turnstile']",
+            "[data-translate='checking_browser']",
+        ]:
+            if await page.query_selector(sel):
+                return True
+    except Exception:
+        pass
+    return False
+
 # playwright-stealth v2.x API
 stealth_async = None
 try:
@@ -507,20 +540,35 @@ async def _count(page, selector: str) -> int:
 
 
 async def wait_for(page, selector: str, what: str, timeout: int = 180) -> bool:
-    print(f"  Waiting for {what} (solve captcha if shown)...")
+    print(f"  Waiting for {what}...")
     deadline = time.time() + timeout
     last = -1
+    alerted = False
     while time.time() < deadline:
         c = await _count(page, selector)
-        if c != last:
-            print(f"  ...seeing {c} links")
-            last = c
         if c >= 10:
             await asyncio.sleep(3)
             if await _count(page, selector) >= 10:
                 print(f"  {what} ready.")
+                alerted = False
                 return True
             last = -1
+            continue
+        # Check for Cloudflare challenge and alert if found
+        if await _is_cf_challenge(page):
+            if not alerted:
+                print("\n" + "=" * 60)
+                print("  *** CLOUDFLARE CHALLENGE — SOLVE IN BROWSER ***")
+                print("=" * 60 + "\n")
+                _beep()
+                alerted = True
+        else:
+            if alerted:
+                print("  Challenge cleared, continuing...")
+                alerted = False
+            if c != last:
+                print(f"  ...seeing {c} {selector} links")
+                last = c
         await asyncio.sleep(2)
     return False
 
