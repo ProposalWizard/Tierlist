@@ -1,5 +1,7 @@
 export type ConditionType = "goals" | "assists" | "clean_sheets" | "squad_count" | "win_event" | "single_match" | "login_streak" | "season_stat";
 
+export type AgeComparison = "at_most" | "at_least";
+
 export type SeasonStatType =
   | "wins"            // total wins in a PL season
   | "losses"          // total losses (use atMost for "fewest defeats")
@@ -63,6 +65,10 @@ export interface ObjectiveCondition {
   seasonStat?: SeasonStatType;
   atMost?: boolean;
   seasonCount?: number; // 1 = current season only (default), 2–5 = aggregate across N seasons
+  minAge?: number;
+  maxAge?: number;
+  minOvr?: number;
+  maxOvr?: number;
 }
 
 export type ObjectiveProgress = Record<string, number>;
@@ -89,6 +95,8 @@ export interface SquadPlayer {
   assignedPosition: string;
   naturalPositions?: string;
   isSub?: boolean;
+  age?: number;
+  overall?: number;
 }
 
 export interface PlayerSeasonStats {

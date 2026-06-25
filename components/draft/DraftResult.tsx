@@ -702,6 +702,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   assignedPosition: p.assignedPosition,
                   naturalPositions: p.positions,
                   isSub: p.isSub ?? false,
+                  age: p.age ?? 0,
+                  overall: p.overall ?? 0,
                 })),
                 playerStats: season.playerStats.map(ps => ({
                   name: ps.name,

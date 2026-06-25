@@ -5,22 +5,34 @@ const WIN_EVENT_LABELS: Record<string, string> = Object.fromEntries(
   WIN_EVENT_OPTIONS.map(o => [o.value, o.label])
 );
 
+function multiMatch(value: string | undefined, filter: string): boolean {
+  if (!value) return false;
+  const parts = filter.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  const lower = value.toLowerCase();
+  return parts.some(p => lower.includes(p));
+}
+
 function playerMatchesFilter(player: SquadPlayer, cond: ObjectiveCondition): boolean {
   if (cond.nationality) {
-    if (!player.nationality?.toLowerCase().includes(cond.nationality.toLowerCase())) return false;
+    if (!multiMatch(player.nationality, cond.nationality)) return false;
   }
   if (cond.club) {
-    if (!player.club?.toLowerCase().includes(cond.club.toLowerCase())) return false;
+    if (!multiMatch(player.club, cond.club)) return false;
   }
   if (cond.position) {
     const posMatch = cond.positionMatch ?? "assigned";
+    const parts = cond.position.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
     if (posMatch === "assigned") {
-      if (!player.assignedPosition?.toUpperCase().includes(cond.position.toUpperCase())) return false;
+      if (!parts.some(p => player.assignedPosition?.toUpperCase().includes(p))) return false;
     } else {
       const natural = (player.naturalPositions ?? player.assignedPosition ?? "").toUpperCase();
-      if (!natural.includes(cond.position.toUpperCase())) return false;
+      if (!parts.some(p => natural.includes(p))) return false;
     }
   }
+  if (cond.minAge != null && (player.age == null || player.age < cond.minAge)) return false;
+  if (cond.maxAge != null && (player.age == null || player.age > cond.maxAge)) return false;
+  if (cond.minOvr != null && (player.overall == null || player.overall < cond.minOvr)) return false;
+  if (cond.maxOvr != null && (player.overall == null || player.overall > cond.maxOvr)) return false;
   return true;
 }
 
@@ -296,6 +308,11 @@ export function conditionSummary(cond: ObjectiveCondition): string {
   if (cond.position) {
     playerFilters.push(posMatch === "natural" ? `natural ${cond.position}` : `playing at ${cond.position}`);
   }
+  if (cond.maxAge != null) playerFilters.push(`aged ${cond.maxAge} or under`);
+  else if (cond.minAge != null) playerFilters.push(`aged ${cond.minAge}+`);
+  if (cond.minOvr != null && cond.maxOvr != null) playerFilters.push(`OVR ${cond.minOvr}–${cond.maxOvr}`);
+  else if (cond.minOvr != null) playerFilters.push(`OVR ${cond.minOvr}+`);
+  else if (cond.maxOvr != null) playerFilters.push(`OVR ${cond.maxOvr} or under`);
 
   const comp = cond.competition && cond.competition !== "any"
     ? ` (${cond.competition === "pl_draft" ? "PL Draft" : "CL Draft"})`
