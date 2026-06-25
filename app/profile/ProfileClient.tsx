@@ -463,7 +463,7 @@ function CustomObjectivesSection() {
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [completedObjectives, setCompletedObjectives] = useState<AdminObjective[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedActiveId, setSelectedActiveId] = useState<string | null>(null);
   const [selectedCompletedId, setSelectedCompletedId] = useState<string | null>(null);
 
@@ -487,16 +487,39 @@ function CustomObjectivesSection() {
   if (loading) return null;
   if (objectives.length === 0 && completedObjectives.length === 0) return null;
 
-  // Active tab: objectives not yet completed
-  const activeList = objectives.filter(o => !completedIds.includes(o.id));
-  // Completed tab: full details of completed objectives
-  const completedList = completedObjectives;
+  // Merge all objectives (active + completed-only) into a single list
+  const allObjectives = [
+    ...objectives,
+    ...completedObjectives.filter(co => !objectives.some(o => o.id === co.id)),
+  ];
 
-  const currentList = activeTab === "active" ? activeList : completedList;
-  const selectedId = activeTab === "active" ? selectedActiveId : selectedCompletedId;
-  const setSelectedId = activeTab === "active" ? setSelectedActiveId : setSelectedCompletedId;
+  // Find categories that have at least one objective
+  const availableCategories = CATEGORY_ORDER.filter(catKey =>
+    allObjectives.some(o => (o.category ?? "standard") === catKey)
+  );
 
-  const selected = currentList.find(o => o.id === selectedId) ?? currentList[0] ?? null;
+  // Default to first available category
+  const currentCategory = selectedCategory && availableCategories.includes(selectedCategory)
+    ? selectedCategory
+    : availableCategories[0] ?? null;
+
+  if (!currentCategory) return null;
+
+  // Get objectives for the current category, sorted: active first, completed last
+  const categoryObjectives = allObjectives
+    .filter(o => (o.category ?? "standard") === currentCategory)
+    .sort((a, b) => {
+      const aDone = completedIds.includes(a.id) ? 1 : 0;
+      const bDone = completedIds.includes(b.id) ? 1 : 0;
+      return aDone - bDone;
+    });
+
+  const totalCompleted = allObjectives.filter(o => completedIds.includes(o.id)).length;
+  const catConfig = CATEGORY_CONFIG[currentCategory];
+
+  const selectedId = selectedActiveId ?? selectedCompletedId;
+  const setSelectedId = (id: string | null) => { setSelectedActiveId(id); setSelectedCompletedId(id); };
+  const selected = categoryObjectives.find(o => o.id === selectedId) ?? categoryObjectives[0] ?? null;
 
   return (
     <div className="rounded-xl border border-gray-800/50 bg-gray-900 overflow-hidden">
@@ -506,171 +529,145 @@ function CustomObjectivesSection() {
           Objectives
         </h3>
         <span className="text-sm font-bold text-amber-400">
-          {completedList.length}/{objectives.length + completedList.length} completed
+          {totalCompleted}/{allObjectives.length} completed
         </span>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-0 px-5 pt-3 border-b border-gray-800/50">
-        <button
-          onClick={() => setActiveTab("active")}
-          className={`px-4 py-2 text-sm font-bold transition border-b-2 -mb-px ${
-            activeTab === "active"
-              ? "text-white border-emerald-500"
-              : "text-white border-transparent hover:text-gray-300"
-          }`}
-        >
-          Active {activeList.length > 0 && <span className="ml-1 text-xs opacity-70">({activeList.length})</span>}
-        </button>
-        <button
-          onClick={() => setActiveTab("completed")}
-          className={`px-4 py-2 text-sm font-bold transition border-b-2 -mb-px ${
-            activeTab === "completed"
-              ? "text-white border-emerald-500"
-              : "text-white border-transparent hover:text-gray-300"
-          }`}
-        >
-          Completed {completedList.length > 0 && <span className="ml-1 text-xs opacity-70">({completedList.length})</span>}
-        </button>
+      {/* Category Tabs */}
+      <div className="flex gap-0 px-5 pt-3 border-b border-gray-800/50 overflow-x-auto">
+        {availableCategories.map(catKey => {
+          const cat = CATEGORY_CONFIG[catKey];
+          if (!cat) return null;
+          const catObjs = allObjectives.filter(o => (o.category ?? "standard") === catKey);
+          const catCompleted = catObjs.filter(o => completedIds.includes(o.id)).length;
+          const isActive = currentCategory === catKey;
+          return (
+            <button
+              key={catKey}
+              onClick={() => { setSelectedCategory(catKey); setSelectedId(null); }}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition border-b-2 -mb-px whitespace-nowrap ${
+                isActive
+                  ? `${cat.color} border-current`
+                  : "text-white border-transparent hover:text-gray-300"
+              }`}
+            >
+              <span className="text-sm">{cat.icon}</span>
+              {cat.label}
+              <span className="ml-1 text-xs opacity-70">({catCompleted}/{catObjs.length})</span>
+            </button>
+          );
+        })}
       </div>
 
-      {currentList.length === 0 ? (
+      {categoryObjectives.length === 0 ? (
         <div className="px-5 py-10 text-center text-sm text-white">
-          {activeTab === "active" ? "No active objectives right now." : "No completed objectives yet."}
+          No objectives in this category.
         </div>
       ) : (
         <>
-          {/* Mobile: stacked expandable cards grouped by category */}
+          {/* Mobile: stacked expandable cards */}
           <div className="md:hidden overflow-y-auto max-h-[600px]">
-            {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
-              const group = activeTab === "active"
-                ? currentList.filter(o => (o.category ?? "standard") === catKey)
-                : currentList;
-              if (group.length === 0) return null;
-              const cat = CATEGORY_CONFIG[catKey];
+            {categoryObjectives.map((obj) => {
+              const done = completedIds.includes(obj.id);
+              const isSelected = (selectedId ?? categoryObjectives[0]?.id) === obj.id;
               return (
-                <div key={catKey}>
-                  {activeTab === "active" && cat && (
-                    <div className={`flex items-center gap-2 px-4 py-2.5 border-b border-gray-800/30 ${cat.bg}`}>
-                      <span className="text-base">{cat.icon}</span>
-                      <span className={`text-sm font-black uppercase tracking-widest ${cat.color}`}>{cat.label}</span>
+                <div key={obj.id}>
+                  <button
+                    onClick={() => setSelectedId(isSelected ? null : obj.id)}
+                    className={`w-full text-left px-4 py-3.5 border-b border-gray-800/30 transition-all ${
+                      done ? "bg-emerald-950/20" : ""
+                    } ${isSelected ? "bg-gray-800/80" : "hover:bg-gray-800/40"}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {done ? (
+                        <svg className="w-4.5 h-4.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <div className="w-4.5 h-4.5 rounded-full border border-gray-600 shrink-0" />
+                      )}
+                      <span className={`text-base font-bold leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
+                      <svg className={`w-5 h-5 ml-auto shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
-                  )}
-                  {group.map((obj) => {
-                    const done = completedIds.includes(obj.id);
-                    const isSelected = (selectedId ?? currentList[0]?.id) === obj.id;
-                    return (
-                      <div key={obj.id}>
-                        <button
-                          onClick={() => setSelectedId(isSelected ? null : obj.id)}
-                          className={`w-full text-left px-4 py-3.5 border-b border-gray-800/30 transition-all ${isSelected ? "bg-gray-800/80" : "hover:bg-gray-800/40"}`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            {done ? (
-                              <svg className="w-4.5 h-4.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            ) : (
-                              <div className="w-4.5 h-4.5 rounded-full border border-gray-600 shrink-0" />
-                            )}
-                            <span className={`text-base font-bold leading-tight ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
-                            <svg className={`w-5 h-5 ml-auto shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
+                    <div className="mt-1.5 pl-7 flex items-center gap-2 flex-wrap">
+                      {obj.xp_reward > 0 && <span className={`text-xs font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
+                      {!done && obj.expires_at && <span className="text-xs font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
+                      {done && <span className="text-xs font-bold text-emerald-500/60">Completed</span>}
+                    </div>
+                  </button>
+                  {isSelected && (
+                    <div className="px-4 py-4 bg-gray-800/50 border-b border-gray-800/30">
+                      {obj.description && <p className="text-sm text-white mb-3 leading-relaxed">{obj.description}</p>}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {obj.xp_reward > 0 && (
+                          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
+                            <span className="text-amber-400 text-sm font-black">{obj.xp_reward} XP</span>
                           </div>
-                          <div className="mt-1.5 pl-7 flex items-center gap-2 flex-wrap">
-                            {obj.xp_reward > 0 && <span className={`text-xs font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
-                            {!done && obj.expires_at && <span className="text-xs font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
+                        )}
+                        {done ? (
+                          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
+                            <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                            <span className="text-emerald-400 text-sm font-bold">Completed</span>
                           </div>
-                        </button>
-                        {isSelected && (
-                          <div className="px-4 py-4 bg-gray-800/50 border-b border-gray-800/30">
-                            {obj.description && <p className="text-sm text-white mb-3 leading-relaxed">{obj.description}</p>}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {obj.xp_reward > 0 && (
-                                <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
-                                  <span className="text-amber-400 text-sm font-black">{obj.xp_reward} XP</span>
-                                </div>
-                              )}
-                              {done ? (
-                                <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
-                                  <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                  <span className="text-emerald-400 text-sm font-bold">Completed</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-1.5">
-                                  <span className="text-white text-sm font-bold">In Progress</span>
-                                </div>
-                              )}
-                              {!done && obj.expires_at && (
-                                <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-1.5">
-                                  <span className="text-orange-400 text-sm font-bold">⏱ {getTimeRemaining(obj.expires_at)}</span>
-                                </div>
-                              )}
-                            </div>
-                            {obj.card_image_url && (
-                              <div className="mt-4 flex items-center gap-4">
-                                <img src={obj.card_image_url} alt={obj.card_name || "Card Reward"} className="w-20 h-24 object-cover rounded-lg border border-gray-700 shadow-lg" />
-                                <div>
-                                  <div className="text-xs font-bold text-white uppercase tracking-wider">Reward</div>
-                                  {obj.card_name && <div className="text-sm font-bold text-white mt-1">{obj.card_name}</div>}
-                                </div>
-                              </div>
-                            )}
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-1.5">
+                            <span className="text-white text-sm font-bold">In Progress</span>
+                          </div>
+                        )}
+                        {!done && obj.expires_at && (
+                          <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-1.5">
+                            <span className="text-orange-400 text-sm font-bold">⏱ {getTimeRemaining(obj.expires_at)}</span>
                           </div>
                         )}
                       </div>
-                    );
-                  })}
+                      {obj.card_image_url && (
+                        <div className="mt-4 flex items-center gap-4">
+                          <img src={obj.card_image_url} alt={obj.card_name || "Card Reward"} className="w-20 h-24 object-cover rounded-lg border border-gray-700 shadow-lg" />
+                          <div>
+                            <div className="text-xs font-bold text-white uppercase tracking-wider">Reward</div>
+                            {obj.card_name && <div className="text-sm font-bold text-white mt-1">{obj.card_name}</div>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          {/* Desktop: side-by-side with category groups in sidebar */}
+          {/* Desktop: side-by-side */}
           <div className="hidden md:flex min-h-[340px]">
             <div className="w-64 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[600px]">
-              {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
-                const group = activeTab === "active"
-                  ? currentList.filter(o => (o.category ?? "standard") === catKey)
-                  : currentList;
-                if (group.length === 0) return null;
-                const cat = CATEGORY_CONFIG[catKey];
+              {categoryObjectives.map((obj) => {
+                const done = completedIds.includes(obj.id);
+                const isSelected = (selectedId ?? categoryObjectives[0]?.id) === obj.id;
                 return (
-                  <div key={catKey}>
-                    {activeTab === "active" && cat && (
-                      <div className={`flex items-center gap-2 px-4 py-2 border-b border-gray-800/30 ${cat.bg}`}>
-                        <span className="text-base">{cat.icon}</span>
-                        <span className={`text-xs font-black uppercase tracking-widest ${cat.color}`}>{cat.label}</span>
-                      </div>
-                    )}
-                    {group.map((obj) => {
-                      const done = completedIds.includes(obj.id);
-                      const isSelected = (selectedId ?? currentList[0]?.id) === obj.id;
-                      return (
-                        <button
-                          key={obj.id}
-                          onClick={() => setSelectedId(obj.id)}
-                          className={`w-full text-left px-4 py-3.5 border-b border-gray-800/30 transition-all ${
-                            isSelected ? "bg-gray-800/80 border-l-2 border-l-emerald-500" : "hover:bg-gray-800/40 border-l-2 border-l-transparent"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            {done ? (
-                              <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                            ) : (
-                              <div className="w-4 h-4 rounded-full border border-gray-600 shrink-0" />
-                            )}
-                            <span className={`text-sm font-bold leading-tight line-clamp-2 ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
-                          </div>
-                          <div className="mt-1.5 pl-6 flex items-center gap-2 flex-wrap">
-                            {obj.xp_reward > 0 && <span className={`text-xs font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
-                            {!done && obj.expires_at && <span className="text-xs font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <button
+                    key={obj.id}
+                    onClick={() => setSelectedId(obj.id)}
+                    className={`w-full text-left px-4 py-3.5 border-b border-gray-800/30 transition-all ${
+                      done ? "bg-emerald-950/20" : ""
+                    } ${
+                      isSelected ? "bg-gray-800/80 border-l-2 border-l-emerald-500" : "hover:bg-gray-800/40 border-l-2 border-l-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {done ? (
+                        <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border border-gray-600 shrink-0" />
+                      )}
+                      <span className={`text-sm font-bold leading-tight line-clamp-2 ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
+                    </div>
+                    <div className="mt-1.5 pl-6 flex items-center gap-2 flex-wrap">
+                      {obj.xp_reward > 0 && <span className={`text-xs font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
+                      {!done && obj.expires_at && <span className="text-xs font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
+                      {done && <span className="text-xs font-bold text-emerald-500/60">Completed</span>}
+                    </div>
+                  </button>
                 );
               })}
             </div>
