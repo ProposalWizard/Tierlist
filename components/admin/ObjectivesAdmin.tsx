@@ -7,19 +7,20 @@ import CardLibraryPicker from "./CardLibraryPicker";
 import type { LibraryCard } from "./CardLibraryPicker";
 import SeasonAdmin from "./SeasonAdmin";
 
-type ObjCategory = "standard" | "daily" | "weekly" | "monthly" | "foundation" | "elite" | "goat";
+type ObjCategory = "standard" | "daily" | "weekly" | "monthly" | "foundation" | "elite" | "goat" | "record_breaker";
 
 const CATEGORIES: { value: ObjCategory; label: string; icon: string; color: string; border: string; bg: string; hint: string }[] = [
-  { value: "standard",   label: "Objectives",   icon: "🎯", color: "text-white",        border: "border-gray-600",       bg: "bg-gray-800",       hint: "Main objectives — shown to all players" },
-  { value: "daily",      label: "Daily",        icon: "📅", color: "text-sky-400",     border: "border-sky-700/50",     bg: "bg-sky-900/20",     hint: "Resets daily" },
-  { value: "weekly",     label: "Weekly",       icon: "📆", color: "text-violet-400",  border: "border-violet-700/50",  bg: "bg-violet-900/20",  hint: "Resets weekly" },
-  { value: "monthly",    label: "Monthly",      icon: "🗓️", color: "text-pink-400",    border: "border-pink-700/50",    bg: "bg-pink-900/20",    hint: "Resets monthly" },
-  { value: "foundation", label: "Foundation",   icon: "🏗️", color: "text-emerald-400", border: "border-emerald-700/50", bg: "bg-emerald-900/20", hint: "Easy / beginner" },
-  { value: "elite",      label: "Elite",        icon: "⚡", color: "text-blue-400",    border: "border-blue-700/50",    bg: "bg-blue-900/20",    hint: "Hard challenges" },
-  { value: "goat",       label: "GOAT Manager", icon: "🐐", color: "text-amber-400",   border: "border-amber-700/50",   bg: "bg-amber-900/20",   hint: "The hardest" },
+  { value: "standard",       label: "Objectives",      icon: "🎯", color: "text-white",        border: "border-gray-600",       bg: "bg-gray-800",       hint: "Main objectives — shown to all players" },
+  { value: "daily",          label: "Daily",           icon: "📅", color: "text-sky-400",     border: "border-sky-700/50",     bg: "bg-sky-900/20",     hint: "Resets daily" },
+  { value: "weekly",         label: "Weekly",          icon: "📆", color: "text-violet-400",  border: "border-violet-700/50",  bg: "bg-violet-900/20",  hint: "Resets weekly" },
+  { value: "monthly",        label: "Monthly",         icon: "🗓️", color: "text-pink-400",    border: "border-pink-700/50",    bg: "bg-pink-900/20",    hint: "Resets monthly" },
+  { value: "foundation",     label: "Foundation",      icon: "🏗️", color: "text-emerald-400", border: "border-emerald-700/50", bg: "bg-emerald-900/20", hint: "Easy / beginner" },
+  { value: "elite",          label: "Elite",           icon: "⚡", color: "text-blue-400",    border: "border-blue-700/50",    bg: "bg-blue-900/20",    hint: "Hard challenges" },
+  { value: "goat",           label: "GOAT Manager",    icon: "🐐", color: "text-amber-400",   border: "border-amber-700/50",   bg: "bg-amber-900/20",   hint: "The hardest" },
+  { value: "record_breaker", label: "Record Breakers", icon: "📋", color: "text-red-400",     border: "border-red-700/50",     bg: "bg-red-900/20",     hint: "Beat official PL records from the Hall of Fame" },
 ];
 
-const CATEGORY_ORDER: ObjCategory[] = ["standard", "daily", "weekly", "monthly", "foundation", "elite", "goat"];
+const CATEGORY_ORDER: ObjCategory[] = ["standard", "daily", "weekly", "monthly", "foundation", "elite", "goat", "record_breaker"];
 
 interface Objective {
   id: string;

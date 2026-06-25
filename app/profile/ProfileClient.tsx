@@ -386,16 +386,17 @@ interface AdminObjective {
 }
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string; border: string; bg: string }> = {
-  standard:   { label: "Objectives",   icon: "🎯", color: "text-white",        border: "border-gray-700/50",    bg: "bg-gray-800/30" },
-  daily:      { label: "Daily",        icon: "📅", color: "text-sky-400",     border: "border-sky-800/50",     bg: "bg-sky-950/30" },
-  weekly:     { label: "Weekly",       icon: "📆", color: "text-violet-400",  border: "border-violet-800/50",  bg: "bg-violet-950/30" },
-  monthly:    { label: "Monthly",      icon: "🗓️", color: "text-pink-400",    border: "border-pink-800/50",    bg: "bg-pink-950/30" },
-  foundation: { label: "Foundation",   icon: "🏗️", color: "text-emerald-400", border: "border-emerald-800/50", bg: "bg-emerald-950/30" },
-  elite:      { label: "Elite",        icon: "⚡", color: "text-blue-400",    border: "border-blue-800/50",    bg: "bg-blue-950/30" },
-  goat:       { label: "GOAT Manager", icon: "🐐", color: "text-amber-400",   border: "border-amber-800/50",   bg: "bg-amber-950/30" },
+  standard:       { label: "Objectives",      icon: "🎯", color: "text-white",        border: "border-gray-700/50",    bg: "bg-gray-800/30" },
+  daily:          { label: "Daily",           icon: "📅", color: "text-sky-400",     border: "border-sky-800/50",     bg: "bg-sky-950/30" },
+  weekly:         { label: "Weekly",          icon: "📆", color: "text-violet-400",  border: "border-violet-800/50",  bg: "bg-violet-950/30" },
+  monthly:        { label: "Monthly",         icon: "🗓️", color: "text-pink-400",    border: "border-pink-800/50",    bg: "bg-pink-950/30" },
+  foundation:     { label: "Foundation",      icon: "🏗️", color: "text-emerald-400", border: "border-emerald-800/50", bg: "bg-emerald-950/30" },
+  elite:          { label: "Elite",           icon: "⚡", color: "text-blue-400",    border: "border-blue-800/50",    bg: "bg-blue-950/30" },
+  goat:           { label: "GOAT Manager",    icon: "🐐", color: "text-amber-400",   border: "border-amber-800/50",   bg: "bg-amber-950/30" },
+  record_breaker: { label: "Record Breakers", icon: "📋", color: "text-red-400",     border: "border-red-800/50",     bg: "bg-red-950/30" },
 };
 
-const CATEGORY_ORDER = ["standard", "daily", "weekly", "monthly", "foundation", "elite", "goat"];
+const CATEGORY_ORDER = ["standard", "daily", "weekly", "monthly", "foundation", "elite", "goat", "record_breaker"];
 
 function getTimeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
@@ -540,7 +541,7 @@ function CustomObjectivesSection() {
       ) : (
         <>
           {/* Mobile: stacked expandable cards grouped by category */}
-          <div className="md:hidden overflow-y-auto max-h-[480px]">
+          <div className="md:hidden overflow-y-auto max-h-[600px]">
             {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
               const group = activeTab === "active"
                 ? currentList.filter(o => (o.category ?? "standard") === catKey)
@@ -627,8 +628,8 @@ function CustomObjectivesSection() {
           </div>
 
           {/* Desktop: side-by-side with category groups in sidebar */}
-          <div className="hidden md:flex min-h-[240px]">
-            <div className="w-64 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[480px]">
+          <div className="hidden md:flex min-h-[340px]">
+            <div className="w-64 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[600px]">
               {(activeTab === "active" ? CATEGORY_ORDER : ["completed"]).map(catKey => {
                 const group = activeTab === "active"
                   ? currentList.filter(o => (o.category ?? "standard") === catKey)
