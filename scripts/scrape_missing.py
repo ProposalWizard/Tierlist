@@ -2,7 +2,7 @@
 Scrape ALL SoFIFA players across every FIFA edition (07-26).
 
 Captures, for every player in every edition:
-  - identity: sofifa_id, name, positions, nationality, age, overall, potential
+  - identity: sofifa_id, name, positions, nationality, nationality_flag_url, age, overall, potential
   - club (from the player list) + league (joined from the Teams list, because
     SoFIFA no longer exposes league as a column on the players page)
   - EVERY stat column SoFIFA exposes (pulled dynamically so nothing is missed)
@@ -24,10 +24,16 @@ Flags:
   --force            Re-scrape all editions, even complete ones
   --year=YYYY        Scrape only that edition
   --download-faces   Also download face images to sofifa_data/faces/
-  --patch-positions  Fast mode: only scrape positions, patch into existing JSON.
-                     Skips league map + face downloads. ~300 pages per edition.
+  --patch-positions  Fast mode: only scrape positions + nationality flags, patch
+                     into existing JSON. Skips league map + face downloads.
+                     ~300 pages per edition (10 pages with --league=ID).
   --league=ID        Filter to one league (use with --patch-positions for speed).
-                     Premier League = 13. Cuts pages from ~300 to ~10.
+                     Big 5 league IDs (consistent across all FIFA editions):
+                       Premier League (England):  13
+                       La Liga (Spain):           53
+                       Bundesliga (Germany):      19
+                       Serie A (Italy):           31
+                       Ligue 1 (France):          16
 """
 
 import asyncio
@@ -63,6 +69,15 @@ PROFILE_DIR.mkdir(exist_ok=True)
 FACES_DIR = OUTPUT_DIR / "faces"
 
 ALL_YEARS = list(range(2026, 2006, -1))
+
+# Big 5 league IDs on SoFIFA (stable across all editions)
+BIG_5_LEAGUES = {
+    "Premier League": "13",
+    "La Liga":        "53",
+    "Bundesliga":     "19",
+    "Serie A":        "31",
+    "Ligue 1":        "16",
+}
 
 VERSION_CODES = {
     2026: "240034", 2025: "240007", 2024: "230054", 2023: "230017",
@@ -106,6 +121,7 @@ def code_for_year(year: int) -> str:
 
 BASE_URL = "https://sofifa.com/players"
 TEAMS_URL = "https://sofifa.com/teams"
+LEAGUES_URL = "https://sofifa.com/leagues"
 
 
 def build_url(year: int) -> str:
@@ -118,6 +134,11 @@ def build_url(year: int) -> str:
 def teams_url(year: int) -> str:
     vc = code_for_year(year)
     return f"{TEAMS_URL}?type=club&r={vc}&set=true"
+
+
+def leagues_url(year: int) -> str:
+    vc = code_for_year(year)
+    return f"{LEAGUES_URL}?type=domestic&r={vc}&set=true"
 
 
 def upscale_face_url(url: str | None) -> str | None:
@@ -225,6 +246,11 @@ def _extract_pi_cell(td, player: dict):
         flag = td.select_one("img[title]")
     if flag:
         player["nationality"] = flag.get("title", "")
+        src = flag.get("src", "")
+        if src and not src.startswith("http"):
+            src = "https://cdn.sofifa.net" + src
+        if src:
+            player["nationality_flag_url"] = src
 
 
 def _extract_td_value(col_id: str, td, player: dict):
@@ -342,8 +368,17 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
 # ── HTML parsing: teams (for the club -> league map) ──────────────────────────
 
 
-def parse_teams(html: str, dump_first: bool = False) -> list[tuple[str, str | None]]:
-    """Return [(club_name, league_name)] from a Teams list page."""
+def _abs_cdn(src: str) -> str:
+    """Make a SoFIFA CDN path absolute."""
+    if not src:
+        return ""
+    if src.startswith("http"):
+        return src
+    return "https://cdn.sofifa.net" + src
+
+
+def parse_teams(html: str, dump_first: bool = False) -> list[dict]:
+    """Return list of {club, league, club_logo_url} from a Teams list page."""
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
@@ -361,7 +396,7 @@ def parse_teams(html: str, dump_first: bool = False) -> list[tuple[str, str | No
     if not rows:
         rows = table.select("tr")
 
-    out: list[tuple[str, str | None]] = []
+    out: list[dict] = []
     for row_idx, row in enumerate(rows):
         tlink = row.select_one('a[href*="/team/"]')
         if not tlink:
@@ -381,12 +416,22 @@ def parse_teams(html: str, dump_first: bool = False) -> list[tuple[str, str | No
 
         club = tlink.get_text(strip=True)
 
+        # Club logo: img inside or near the team link
+        logo_img = tlink.select_one("img") or row.select_one('td a[href*="/team/"] img')
+        if not logo_img:
+            # Wider search — first img in the row that looks like a badge
+            for img in row.select("img"):
+                src = img.get("src", "")
+                if "/teams/" in src or "team" in src.lower():
+                    logo_img = img
+                    break
+        club_logo_url = _abs_cdn(logo_img.get("src", "")) if logo_img else ""
+
         league = None
         llink = row.select_one('a[href*="/league/"]')
         if llink:
             league = llink.get_text(strip=True)
         else:
-            # Fallback: any link that looks like a league filter
             for a in row.select("a"):
                 h = a.get("href", "")
                 if "/league/" in h or "lg=" in h:
@@ -394,7 +439,49 @@ def parse_teams(html: str, dump_first: bool = False) -> list[tuple[str, str | No
                     break
 
         if club:
-            out.append((club, league))
+            out.append({"club": club, "league": league, "club_logo_url": club_logo_url})
+
+    return out
+
+
+def parse_leagues_page(html: str) -> list[dict]:
+    """Return list of {league, league_logo_url} from a Leagues list page."""
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    table = soup.select_one("table.table")
+    if not table:
+        for t in soup.select("table"):
+            if t.select_one('a[href*="/league/"]'):
+                table = t
+                break
+    if not table:
+        return []
+
+    rows = table.select("tbody tr")
+    if not rows:
+        rows = table.select("tr")
+
+    out: list[dict] = []
+    for row in rows:
+        llink = row.select_one('a[href*="/league/"]')
+        if not llink:
+            continue
+
+        league = llink.get_text(strip=True)
+
+        logo_img = llink.select_one("img")
+        if not logo_img:
+            for img in row.select("img"):
+                src = img.get("src", "")
+                if "/leagues/" in src or "league" in src.lower():
+                    logo_img = img
+                    break
+        league_logo_url = _abs_cdn(logo_img.get("src", "")) if logo_img else ""
+
+        if league:
+            out.append({"league": league, "league_logo_url": league_logo_url})
 
     return out
 
@@ -481,33 +568,87 @@ async def download_face(context, url: str, year: int, sofifa_id: str) -> bool:
 
 
 async def build_club_league_map(page, year: int, dump: bool) -> dict[str, str]:
-    print("  Building club -> league map from the Teams list...")
+    """Sweep the teams list; returns club→league map. Also writes/merges club_logos.json."""
+    print("  Building club -> league map + logos from the Teams list...")
     await page.goto(teams_url(year), wait_until="commit")
     if not await wait_for(page, 'a[href*="/team/"]', "teams list"):
         print("  ⚠ Could not load teams list — league will stay blank.")
         return {}
 
-    mapping: dict[str, str] = {}
+    league_map: dict[str, str] = {}
+    logo_map: dict[str, str] = {}   # club → logo URL
     page_num = 1
     while True:
         html = await page.content()
         rows = parse_teams(html, dump_first=(dump and page_num == 1))
         if not rows:
             break
-        for club, league in rows:
-            if club and league and club not in mapping:
-                mapping[club] = league
+        for r in rows:
+            club, league, logo = r["club"], r["league"], r["club_logo_url"]
+            if club and league and club not in league_map:
+                league_map[club] = league
+            if club and logo and club not in logo_map:
+                logo_map[club] = logo
         if page_num == 1:
-            with_league = sum(1 for _, lg in rows if lg)
-            print(f"  Teams page 1: {len(rows)} clubs, {with_league} with a league link")
+            with_league = sum(1 for r in rows if r["league"])
+            with_logo = sum(1 for r in rows if r["club_logo_url"])
+            print(f"  Teams page 1: {len(rows)} clubs, {with_league} with league, {with_logo} with logo")
             if with_league == 0:
                 print("  ⚠ No league links on the teams page — paste the TEAMS DIAGNOSTIC above.")
         if not await click_next(page, 'a[href*="/team/"]'):
             break
         page_num += 1
 
-    print(f"  Mapped {len(mapping)} clubs to leagues.")
-    return mapping
+    print(f"  Mapped {len(league_map)} clubs to leagues, {len(logo_map)} club logos.")
+
+    # Merge into persistent club_logos.json (accumulates across all editions)
+    logos_fp = OUTPUT_DIR / "club_logos.json"
+    existing_logos: dict[str, str] = {}
+    if logos_fp.exists():
+        try:
+            existing_logos = json.loads(logos_fp.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    merged = {**existing_logos, **logo_map}   # new wins on conflict (fresher data)
+    logos_fp.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"  club_logos.json: {len(merged)} total clubs.")
+
+    return league_map
+
+
+async def scrape_league_logos(page, year: int) -> None:
+    """Sweep the leagues list for one edition; writes/merges league_logos.json."""
+    print("  Scraping league logos...")
+    await page.goto(leagues_url(year), wait_until="commit")
+    if not await wait_for(page, 'a[href*="/league/"]', "leagues list", timeout=60):
+        print("  ⚠ Could not load leagues list — skipping league logos.")
+        return
+
+    logo_map: dict[str, str] = {}
+    page_num = 1
+    while True:
+        html = await page.content()
+        rows = parse_leagues_page(html)
+        if not rows:
+            break
+        for r in rows:
+            lg, logo = r["league"], r["league_logo_url"]
+            if lg and logo and lg not in logo_map:
+                logo_map[lg] = logo
+        if not await click_next(page, 'a[href*="/league/"]'):
+            break
+        page_num += 1
+
+    logos_fp = OUTPUT_DIR / "league_logos.json"
+    existing: dict[str, str] = {}
+    if logos_fp.exists():
+        try:
+            existing = json.loads(logos_fp.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    merged = {**existing, **logo_map}
+    logos_fp.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"  league_logos.json: {len(merged)} total leagues ({len(logo_map)} from this edition).")
 
 
 def apply_leagues(players: list[dict], club_league: dict[str, str]) -> int:
@@ -662,8 +803,8 @@ def _positions_url(year: int, league_id: str | None = None) -> str:
     return url
 
 
-def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, str]:
-    """Parse a list page and return {sofifa_id: positions} for players that have positions."""
+def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, dict]:
+    """Parse a list page and return {sofifa_id: {positions, nationality, nationality_flag_url}}."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html, "html.parser")
 
@@ -676,14 +817,13 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, st
     if not table:
         return {}
 
-    results: dict[str, str] = {}
+    results: dict[str, dict] = {}
     dumped = False
     for row in table.select("tbody tr") or table.select("tr"):
         name_link = row.select_one('a[href*="/player/"]')
         if not name_link:
             continue
 
-        # Dump first row HTML so we can debug selectors
         if dump_first and not dumped:
             dumped = True
             print("\n  ─── POSITION DIAGNOSTIC: First player row ───")
@@ -691,7 +831,6 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, st
             for i, td in enumerate(tds):
                 cls = td.get("class", [])
                 dc = td.get("data-col", "")
-                # Show inner HTML (first 300 chars)
                 inner = str(td)[:300]
                 print(f"  TD[{i}] class={cls} data-col='{dc}'")
                 print(f"    HTML: {inner}")
@@ -708,7 +847,6 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, st
             continue
 
         player: dict = {}
-        # First try: find the pi column specifically
         for td in row.select("td"):
             col_id = ""
             for cls in td.get("class", []):
@@ -721,21 +859,24 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, st
                 _extract_pi_cell(td, player)
                 break
 
-        # Fallback: search ALL tds for position-like spans if pi column didn't yield positions
         if not player.get("positions"):
             for td in row.select("td"):
                 _extract_pi_cell(td, player)
                 if player.get("positions"):
                     break
 
-        if player.get("positions"):
-            results[sofifa_id] = player["positions"]
+        if player.get("positions") or player.get("nationality_flag_url"):
+            results[sofifa_id] = {
+                "positions": player.get("positions", ""),
+                "nationality": player.get("nationality", ""),
+                "nationality_flag_url": player.get("nationality_flag_url", ""),
+            }
 
     return results
 
 
 async def patch_positions(page, years: list[int], league_id: str | None = None):
-    """Scrape only positions and patch into existing JSON files."""
+    """Scrape positions + nationality flags and patch into existing JSON files."""
     await ensure_discovery(page)
 
     for idx, year in enumerate(years):
@@ -747,13 +888,15 @@ async def patch_positions(page, years: list[int], league_id: str | None = None):
             continue
 
         existing_count = len(existing)
-        already_have = sum(1 for p in existing if p.get("positions"))
-        if already_have == existing_count:
-            print(f"\n  {fp.name}: all {existing_count} players already have positions ✓")
+        already_have_pos = sum(1 for p in existing if p.get("positions"))
+        already_have_flags = sum(1 for p in existing if p.get("nationality_flag_url"))
+        # Skip only if ALL players have both positions and flags
+        if already_have_pos == existing_count and already_have_flags == existing_count:
+            print(f"\n  {fp.name}: all {existing_count} players already have positions + flags ✓")
             continue
 
         print(f"\n{'=' * 50}")
-        print(f"Patching positions for {label} ({already_have}/{existing_count} already have positions)")
+        print(f"Patching {label}: positions {already_have_pos}/{existing_count}, flags {already_have_flags}/{existing_count}")
         print(f"{'=' * 50}")
 
         if idx > 0:
@@ -770,24 +913,24 @@ async def patch_positions(page, years: list[int], league_id: str | None = None):
             print(f"  Could not load {label}, skipping")
             continue
 
-        all_positions: dict[str, str] = {}
+        all_patches: dict[str, dict] = {}
         page_num = 1
         while True:
             html = await page.content()
             batch = _extract_positions_only(html, dump_first=(page_num == 1))
             if not batch:
-                print(f"  Page {page_num}: no positions found, stopping.")
+                print(f"  Page {page_num}: nothing found, stopping.")
                 break
 
-            new_in_batch = sum(1 for sid in batch if sid not in all_positions)
+            new_in_batch = sum(1 for sid in batch if sid not in all_patches)
             if new_in_batch == 0:
                 print(f"  Page {page_num}: all duplicates, stopping.")
                 break
 
-            all_positions.update(batch)
+            all_patches.update(batch)
 
             if page_num == 1 or page_num % 5 == 0:
-                print(f"  Page {page_num}: {len(batch)} players with positions (total: {len(all_positions)})")
+                print(f"  Page {page_num}: {len(batch)} players (total: {len(all_patches)})")
 
             if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
                 break
@@ -795,15 +938,23 @@ async def patch_positions(page, years: list[int], league_id: str | None = None):
 
         # Patch into existing data
         lookup = {str(p.get("sofifa_id", "")): p for p in existing}
-        patched = 0
-        for sid, pos in all_positions.items():
-            if sid in lookup and not lookup[sid].get("positions"):
-                lookup[sid]["positions"] = pos
-                patched += 1
+        patched_pos = 0
+        patched_flags = 0
+        for sid, patch in all_patches.items():
+            if sid not in lookup:
+                continue
+            if patch.get("positions") and not lookup[sid].get("positions"):
+                lookup[sid]["positions"] = patch["positions"]
+                patched_pos += 1
+            if patch.get("nationality") and not lookup[sid].get("nationality"):
+                lookup[sid]["nationality"] = patch["nationality"]
+            if patch.get("nationality_flag_url") and not lookup[sid].get("nationality_flag_url"):
+                lookup[sid]["nationality_flag_url"] = patch["nationality_flag_url"]
+                patched_flags += 1
 
         with open(fp, "w", encoding="utf-8") as f:
             json.dump(existing, f, ensure_ascii=False, indent=2)
-        print(f"  Patched {patched} players. Scraped {len(all_positions)} positions across {page_num} pages.")
+        print(f"  Patched {patched_pos} positions, {patched_flags} flags across {page_num} pages.")
         print(f"  SAVED -> {fp.name}")
 
     print("\nDone! Re-import patched files at: https://knowitball.co.uk/admin/football/scrape")
@@ -925,8 +1076,11 @@ async def main():
                 print(f"  No players for {label}. Restart later — finished years are skipped.")
                 continue
 
-            # Build club -> league map and stamp it on
+            # Build club -> league map + club logos; stamp league onto players
             club_league = await build_club_league_map(page, year, dump=first_teams_dump)
+            if first_teams_dump:
+                # Also grab league logos on the very first edition we process
+                await scrape_league_logos(page, year)
             first_teams_dump = False
             matched = apply_leagues(players, club_league)
             print(f"  League stamped onto {matched}/{len(players)} players.")
