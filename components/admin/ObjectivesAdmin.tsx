@@ -81,6 +81,7 @@ interface NewCondState {
   matchStat: MatchStat;
   seasonStat: SeasonStatType;
   atMost: boolean;
+  seasonCount: number;
 }
 
 const EMPTY_COND: NewCondState = {
@@ -99,6 +100,7 @@ const EMPTY_COND: NewCondState = {
   matchStat: "goals_scored",
   seasonStat: "wins",
   atMost: false,
+  seasonCount: 1,
 };
 
 export default function ObjectivesAdmin() {
@@ -242,6 +244,7 @@ export default function ObjectivesAdmin() {
       cond.seasonStat = nc.seasonStat;
       if (nc.atMost) cond.atMost = true;
       if (nc.withinCompetition !== "any") cond.withinCompetition = nc.withinCompetition;
+      if ((nc.seasonCount ?? 1) > 1) cond.seasonCount = nc.seasonCount;
     }
 
     setConditions(prev => [...prev, cond]);
@@ -775,6 +778,25 @@ export default function ObjectivesAdmin() {
                       Season stats always track across the whole PL season. &ldquo;PL only&rdquo; excludes FA Cup / UCL / UEL matches.
                     </p>
                   </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Spans how many seasons?</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setNc(prev => ({ ...prev, seasonCount: n }))}
+                          className={`px-3 py-1.5 rounded text-xs font-bold transition ${(nc.seasonCount ?? 1) === n ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                        >
+                          {n === 1 ? "1 (single)" : n === 5 ? "5 (career)" : n}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      {(nc.seasonCount ?? 1) === 1
+                        ? "Stat is measured within a single season."
+                        : `Stat aggregates across ${nc.seasonCount} consecutive seasons. Streaks can span season boundaries.`}
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -902,7 +924,7 @@ export default function ObjectivesAdmin() {
                       ...(nc.position.trim() ? { position: nc.position.trim().toUpperCase() } : {}),
                       ...(nc.type === "win_event" && nc.event ? { event: nc.event as WinEvent } : {}),
                       ...(nc.type === "single_match" ? { matchStat: nc.matchStat } : {}),
-                      ...(nc.type === "season_stat" ? { seasonStat: nc.seasonStat, atMost: nc.atMost, withinCompetition: nc.withinCompetition } : {}),
+                      ...(nc.type === "season_stat" ? { seasonStat: nc.seasonStat, atMost: nc.atMost, withinCompetition: nc.withinCompetition, seasonCount: nc.seasonCount ?? 1 } : {}),
                     })}
                   </span>
                 </div>

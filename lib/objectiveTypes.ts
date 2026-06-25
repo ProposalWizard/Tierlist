@@ -62,6 +62,7 @@ export interface ObjectiveCondition {
   matchStat?: MatchStat;
   seasonStat?: SeasonStatType;
   atMost?: boolean;
+  seasonCount?: number; // 1 = current season only (default), 2–5 = aggregate across N seasons
 }
 
 export type ObjectiveProgress = Record<string, number>;
@@ -77,6 +78,8 @@ export interface SeasonCheckData {
   events: WinEvent[];
   matchResults?: { goalsFor: number; goalsAgainst: number }[];
   plMatchResults?: { goalsFor: number; goalsAgainst: number }[];
+  // Previous seasons' PL match results (oldest first). Used for multi-season season_stat conditions.
+  historicalPlMatchResults?: { goalsFor: number; goalsAgainst: number }[][];
 }
 
 export interface SquadPlayer {

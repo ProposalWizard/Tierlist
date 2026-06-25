@@ -161,13 +161,22 @@ export function evaluateObjective(
     }
 
     if (cond.type === "season_stat" && cond.seasonStat) {
-      const matchSource = cond.withinCompetition === "pl_only" && seasonData.plMatchResults
-        ? seasonData.plMatchResults
-        : (seasonData.plMatchResults ?? seasonData.matchResults ?? []);
+      const currentMatches = seasonData.plMatchResults ?? seasonData.matchResults ?? [];
+      const seasonCount = cond.seasonCount ?? 1;
+
+      let matchSource: { goalsFor: number; goalsAgainst: number }[];
+      if (seasonCount > 1 && seasonData.historicalPlMatchResults) {
+        // Take the last (seasonCount - 1) historical seasons + current season, concatenated in order.
+        // For streaks this correctly spans season boundaries; for cumulative stats it sums across seasons.
+        const history = seasonData.historicalPlMatchResults.slice(-(seasonCount - 1));
+        matchSource = [...history.flat(), ...currentMatches];
+      } else {
+        matchSource = currentMatches;
+      }
+
       const stat = computeSeasonStat(cond.seasonStat, matchSource);
 
       if (cond.atMost) {
-        // Track best (lowest) value seen across all seasons
         const prev = currentProgress[cond.id] as number | undefined;
         newProgress[cond.id] = prev === undefined ? stat : Math.min(prev, stat);
       } else {
@@ -303,29 +312,31 @@ export function conditionSummary(cond: ObjectiveCondition): string {
     case "season_stat": {
       const stat = cond.seasonStat ?? "wins";
       const compLabel = comp || (cond.withinCompetition === "pl_only" ? " (PL only)" : "");
+      const sc = cond.seasonCount ?? 1;
+      const spanLabel = sc > 1 ? ` (across any ${sc} consecutive seasons)` : " in a single PL season";
       switch (stat) {
         case "wins":
-          return `Win ${cond.count}+ matches in a single PL season${compLabel}`;
+          return `Win ${cond.count}+ matches${spanLabel}${compLabel}`;
         case "losses":
           return cond.atMost
-            ? `Lose ${cond.count} or fewer matches in a single PL season${compLabel}`
-            : `Lose ${cond.count}+ matches in a single PL season${compLabel}`;
+            ? `Lose ${cond.count} or fewer matches${spanLabel}${compLabel}`
+            : `Lose ${cond.count}+ matches${spanLabel}${compLabel}`;
         case "draws":
-          return `Draw ${cond.count}+ matches in a single PL season${compLabel}`;
+          return `Draw ${cond.count}+ matches${spanLabel}${compLabel}`;
         case "points":
-          return `Earn ${cond.count}+ points in a single PL season${compLabel}`;
+          return `Earn ${cond.count}+ points${spanLabel}${compLabel}`;
         case "goals_scored":
-          return `Score ${cond.count}+ team goals in a single PL season${compLabel}`;
+          return `Score ${cond.count}+ team goals${spanLabel}${compLabel}`;
         case "goals_conceded":
           return cond.atMost
-            ? `Concede ${cond.count} or fewer goals in a single PL season${compLabel}`
-            : `Concede ${cond.count}+ goals in a single PL season${compLabel}`;
+            ? `Concede ${cond.count} or fewer goals${spanLabel}${compLabel}`
+            : `Concede ${cond.count}+ goals${spanLabel}${compLabel}`;
         case "goal_difference":
-          return `Reach a goal difference of +${cond.count} in a single PL season${compLabel}`;
+          return `Reach a goal difference of +${cond.count}${spanLabel}${compLabel}`;
         case "unbeaten_run":
-          return `Go ${cond.count}+ games unbeaten in a row during a PL season${compLabel}`;
+          return `Go ${cond.count}+ games unbeaten in a row${sc > 1 ? ` (spanning up to ${sc} seasons)` : " in a PL season"}${compLabel}`;
         case "win_streak":
-          return `Win ${cond.count}+ matches in a row during a PL season${compLabel}`;
+          return `Win ${cond.count}+ matches in a row${sc > 1 ? ` (spanning up to ${sc} seasons)` : " in a PL season"}${compLabel}`;
       }
     }
   }

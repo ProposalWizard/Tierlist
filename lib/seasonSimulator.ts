@@ -1008,7 +1008,8 @@ function pickBackgroundKnockoutWinner(
     const next: { name: string; strength: number }[] = [];
     for (let i = 0; i + 1 < remaining.length; i += 2) {
       const a = remaining[i], b = remaining[i + 1];
-      next.push(rng() * (a.strength + b.strength) < a.strength ? a : b);
+      const winner = simulateAIvAIKnockoutTie(a, b, rng, remaining.length === 2);
+      next.push(winner === a.name ? a : b);
     }
     if (remaining.length % 2 === 1) next.push(remaining[remaining.length - 1]);
     remaining = next;
@@ -2520,12 +2521,14 @@ export function simulateSeason(
   if (previousLeagueTable) {
     const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
     const wonUELLastSeason = previousSeasonResult?.uel?.winner === true;
+    const wonUCLLastSeason = previousSeasonResult?.ucl?.winner === true;
     const wonFACupLastSeason = previousSeasonResult?.faCup?.winner === true;
     const qualifiesThroughLeague = playerFinish >= 1 && playerFinish <= 5;
     const uelWinnerQualifies = wonUELLastSeason && !qualifiesThroughLeague;
+    const uclWinnerQualifies = wonUCLLastSeason && !qualifiesThroughLeague;
     const faCupWinnerQualifiesForEL = wonFACupLastSeason && playerFinish > 7;
 
-    ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng, uelWinnerQualifies);
+    ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng, uelWinnerQualifies || uclWinnerQualifies);
     if (!ucl.qualified) {
       if (playerFinish >= 6 && playerFinish <= 7) {
         uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng);
