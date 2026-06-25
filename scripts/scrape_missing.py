@@ -28,6 +28,9 @@ Flags:
                      into existing JSON. Skips league map + face downloads.
                      ~300 pages per edition (10 pages with --league=ID).
   --league=ID        Filter to one league (use with --patch-positions for speed).
+                     Accepts a comma-separated list to run multiple leagues in
+                     one session (e.g. --league=19,31,16 does Bundesliga, Serie A,
+                     Ligue 1 back-to-back with a single Cloudflare solve).
                      Big 5 league IDs (consistent across all FIFA editions):
                        Premier League (England):  13
                        La Liga (Spain):           53
@@ -1036,7 +1039,10 @@ async def main():
     force_years = force or bool(requested_years)
 
     patch_pos = "--patch-positions" in sys.argv
-    league_arg = next((arg.split("=")[1] for arg in sys.argv[1:] if arg.startswith("--league=")), None)
+    _league_raw = next((arg.split("=")[1] for arg in sys.argv[1:] if arg.startswith("--league=")), None)
+    # Support comma-separated list: --league=19,31,16
+    league_ids: list[str] = [x.strip() for x in _league_raw.split(",") if x.strip()] if _league_raw else []
+    league_arg = league_ids[0] if len(league_ids) == 1 else (_league_raw if league_ids else None)
 
     list_leagues = "--list-leagues" in sys.argv
 
@@ -1084,7 +1090,8 @@ async def main():
         return
 
     if patch_pos:
-        print(f"Mode: PATCH POSITIONS ONLY" + (f" (league filter: {league_arg})" if league_arg else ""))
+        league_display = ", ".join(league_ids) if league_ids else "all"
+        print(f"Mode: PATCH POSITIONS ONLY" + (f" (leagues: {league_display})" if league_ids else ""))
         print(f"Output directory: {OUTPUT_DIR}\n")
 
         async with async_playwright() as pw:
@@ -1101,7 +1108,16 @@ async def main():
             if stealth_async:
                 await stealth_async(page)
 
-            await patch_positions(page, years, league_id=league_arg)
+            if len(league_ids) > 1:
+                # Multiple leagues: run them all in the same browser session
+                for lid in league_ids:
+                    print(f"\n{'#' * 60}")
+                    print(f"# Starting league ID: {lid}")
+                    print(f"{'#' * 60}\n")
+                    await patch_positions(page, years, league_id=lid)
+                print("\nAll leagues complete!")
+            else:
+                await patch_positions(page, years, league_id=league_ids[0] if league_ids else None)
             await context.close()
         return
 
