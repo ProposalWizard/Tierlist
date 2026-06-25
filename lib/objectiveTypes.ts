@@ -1,4 +1,15 @@
-export type ConditionType = "goals" | "assists" | "clean_sheets" | "squad_count" | "win_event" | "single_match" | "login_streak";
+export type ConditionType = "goals" | "assists" | "clean_sheets" | "squad_count" | "win_event" | "single_match" | "login_streak" | "season_stat";
+
+export type SeasonStatType =
+  | "wins"            // total wins in a PL season
+  | "losses"          // total losses (use atMost for "fewest defeats")
+  | "draws"           // total draws
+  | "points"          // total points (e.g. beat the 100-point record)
+  | "goals_scored"    // team total goals scored in a season
+  | "goals_conceded"  // goals conceded — use atMost for "concede at most X"
+  | "goal_difference" // season goal difference
+  | "unbeaten_run"    // longest consecutive W/D streak in a season
+  | "win_streak";     // longest consecutive W streak in a season
 
 export type StatScope = "any_player" | "squad_total";
 
@@ -49,9 +60,14 @@ export interface ObjectiveCondition {
   competition?: Competition;
   withinCompetition?: WithinCompetition;
   matchStat?: MatchStat;
+  seasonStat?: SeasonStatType;
+  atMost?: boolean;
 }
 
 export type ObjectiveProgress = Record<string, number>;
+
+// plMatchResults = PL season matches only (no cups/UCL). Used for season_stat conditions.
+
 
 export interface SeasonCheckData {
   competition: "pl_draft" | "cl_draft";
@@ -60,6 +76,7 @@ export interface SeasonCheckData {
   plPlayerStats?: PlayerSeasonStats[];
   events: WinEvent[];
   matchResults?: { goalsFor: number; goalsAgainst: number }[];
+  plMatchResults?: { goalsFor: number; goalsAgainst: number }[];
 }
 
 export interface SquadPlayer {
@@ -109,6 +126,19 @@ export const CONDITION_TYPE_LABELS: Record<ConditionType, string> = {
   win_event:    "Achieve an event",
   single_match: "Single-match achievement",
   login_streak: "Login streak",
+  season_stat:  "Season team stat (wins / goals conceded / etc.)",
+};
+
+export const SEASON_STAT_LABELS: Record<SeasonStatType, string> = {
+  wins:            "Wins in a season",
+  losses:          "Losses in a season (use 'at most' for fewest defeats)",
+  draws:           "Draws in a season",
+  points:          "Points in a season",
+  goals_scored:    "Team goals scored in a season",
+  goals_conceded:  "Goals conceded in a season (use 'at most' for best defence records)",
+  goal_difference: "Goal difference in a season",
+  unbeaten_run:    "Longest unbeaten run in a season (W or D streak)",
+  win_streak:      "Longest winning streak in a season",
 };
 
 export const MATCH_STAT_LABELS: Record<MatchStat, string> = {

@@ -670,8 +670,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               if (season.actualFinish === 1 && season.uel.winner) winEvents.push("double");
             }
 
+            const plMatchResults = season.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst }));
+
             const matchResults: { goalsFor: number; goalsAgainst: number }[] = [
-              ...season.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
+              ...plMatchResults,
               ...season.faCup.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
               ...(season.ucl?.leagueMatches ?? []).map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
               ...(season.ucl?.knockoutTies ?? []).flatMap(t => [
@@ -712,6 +714,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 })),
                 events: winEvents,
                 matchResults,
+                plMatchResults,
               }),
             });
             if (objRes.ok) {

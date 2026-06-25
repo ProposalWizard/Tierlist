@@ -1,4 +1,4 @@
-import type { ObjectiveCondition, ObjectiveProgress, SeasonCheckData, SquadPlayer, WinEvent } from "./objectiveTypes";
+import type { ObjectiveCondition, ObjectiveProgress, SeasonCheckData, SeasonStatType, SquadPlayer, WinEvent } from "./objectiveTypes";
 import { WIN_EVENT_OPTIONS } from "./objectiveTypes";
 
 const WIN_EVENT_LABELS: Record<string, string> = Object.fromEntries(
@@ -34,6 +34,29 @@ function getStatValue(stats: { goals: number; assists: number; cleanSheets: numb
   if (type === "assists") return stats.assists;
   if (type === "clean_sheets") return stats.cleanSheets;
   return 0;
+}
+
+function longestStreak(matches: { goalsFor: number; goalsAgainst: number }[], pred: (m: { goalsFor: number; goalsAgainst: number }) => boolean): number {
+  let best = 0, cur = 0;
+  for (const m of matches) {
+    if (pred(m)) { cur++; if (cur > best) best = cur; }
+    else cur = 0;
+  }
+  return best;
+}
+
+function computeSeasonStat(stat: SeasonStatType, matches: { goalsFor: number; goalsAgainst: number }[]): number {
+  switch (stat) {
+    case "wins":            return matches.filter(m => m.goalsFor > m.goalsAgainst).length;
+    case "losses":          return matches.filter(m => m.goalsFor < m.goalsAgainst).length;
+    case "draws":           return matches.filter(m => m.goalsFor === m.goalsAgainst).length;
+    case "points":          return matches.reduce((s, m) => s + (m.goalsFor > m.goalsAgainst ? 3 : m.goalsFor === m.goalsAgainst ? 1 : 0), 0);
+    case "goals_scored":    return matches.reduce((s, m) => s + m.goalsFor, 0);
+    case "goals_conceded":  return matches.reduce((s, m) => s + m.goalsAgainst, 0);
+    case "goal_difference": return matches.reduce((s, m) => s + (m.goalsFor - m.goalsAgainst), 0);
+    case "unbeaten_run":    return longestStreak(matches, m => m.goalsFor >= m.goalsAgainst);
+    case "win_streak":      return longestStreak(matches, m => m.goalsFor > m.goalsAgainst);
+  }
 }
 
 export function evaluateObjective(
@@ -136,6 +159,22 @@ export function evaluateObjective(
     if (cond.type === "login_streak") {
       seasonValues[cond.id] = newProgress[cond.id] ?? 0;
     }
+
+    if (cond.type === "season_stat" && cond.seasonStat) {
+      const matchSource = cond.withinCompetition === "pl_only" && seasonData.plMatchResults
+        ? seasonData.plMatchResults
+        : (seasonData.plMatchResults ?? seasonData.matchResults ?? []);
+      const stat = computeSeasonStat(cond.seasonStat, matchSource);
+
+      if (cond.atMost) {
+        // Track best (lowest) value seen across all seasons
+        const prev = currentProgress[cond.id] as number | undefined;
+        newProgress[cond.id] = prev === undefined ? stat : Math.min(prev, stat);
+      } else {
+        newProgress[cond.id] = Math.max(currentProgress[cond.id] ?? 0, stat);
+      }
+      seasonValues[cond.id] = stat;
+    }
   }
 
   const complete = conditions.every(cond => {
@@ -166,6 +205,14 @@ function isConditionMet(
   }
 
   if (cond.type === "login_streak") {
+    return (progress[cond.id] ?? 0) >= cond.count;
+  }
+
+  if (cond.type === "season_stat") {
+    if (cond.atMost) {
+      const best = progress[cond.id] as number | undefined;
+      return best !== undefined && best <= cond.count;
+    }
     return (progress[cond.id] ?? 0) >= cond.count;
   }
 
@@ -251,6 +298,35 @@ export function conditionSummary(cond: ObjectiveCondition): string {
       const tf = cond.timeframe ?? "season";
       const which = tf === "career" ? "longest ever login streak" : "current login streak";
       return `Reach a ${which} of ${cond.count} day${p ? "s" : ""}`;
+    }
+
+    case "season_stat": {
+      const stat = cond.seasonStat ?? "wins";
+      const compLabel = comp || (cond.withinCompetition === "pl_only" ? " (PL only)" : "");
+      switch (stat) {
+        case "wins":
+          return `Win ${cond.count}+ matches in a single PL season${compLabel}`;
+        case "losses":
+          return cond.atMost
+            ? `Lose ${cond.count} or fewer matches in a single PL season${compLabel}`
+            : `Lose ${cond.count}+ matches in a single PL season${compLabel}`;
+        case "draws":
+          return `Draw ${cond.count}+ matches in a single PL season${compLabel}`;
+        case "points":
+          return `Earn ${cond.count}+ points in a single PL season${compLabel}`;
+        case "goals_scored":
+          return `Score ${cond.count}+ team goals in a single PL season${compLabel}`;
+        case "goals_conceded":
+          return cond.atMost
+            ? `Concede ${cond.count} or fewer goals in a single PL season${compLabel}`
+            : `Concede ${cond.count}+ goals in a single PL season${compLabel}`;
+        case "goal_difference":
+          return `Reach a goal difference of +${cond.count} in a single PL season${compLabel}`;
+        case "unbeaten_run":
+          return `Go ${cond.count}+ games unbeaten in a row during a PL season${compLabel}`;
+        case "win_streak":
+          return `Win ${cond.count}+ matches in a row during a PL season${compLabel}`;
+      }
     }
   }
 }
