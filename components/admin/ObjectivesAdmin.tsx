@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat, WithinCompetition } from "@/lib/objectiveTypes";
-import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS } from "@/lib/objectiveTypes";
+import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat, WithinCompetition, SeasonStatType } from "@/lib/objectiveTypes";
+import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS, SEASON_STAT_LABELS } from "@/lib/objectiveTypes";
 import { conditionSummary } from "@/lib/objectiveEvaluator";
 import CardLibraryPicker from "./CardLibraryPicker";
 import type { LibraryCard } from "./CardLibraryPicker";
@@ -79,6 +79,8 @@ interface NewCondState {
   position: string;
   event: WinEvent | "";
   matchStat: MatchStat;
+  seasonStat: SeasonStatType;
+  atMost: boolean;
 }
 
 const EMPTY_COND: NewCondState = {
@@ -95,6 +97,8 @@ const EMPTY_COND: NewCondState = {
   position: "",
   event: "",
   matchStat: "goals_scored",
+  seasonStat: "wins",
+  atMost: false,
 };
 
 export default function ObjectivesAdmin() {
@@ -232,6 +236,12 @@ export default function ObjectivesAdmin() {
 
     if (nc.type === "login_streak") {
       cond.timeframe = nc.timeframe;
+    }
+
+    if (nc.type === "season_stat") {
+      cond.seasonStat = nc.seasonStat;
+      if (nc.atMost) cond.atMost = true;
+      if (nc.withinCompetition !== "any") cond.withinCompetition = nc.withinCompetition;
     }
 
     setConditions(prev => [...prev, cond]);
@@ -537,6 +547,7 @@ export default function ObjectivesAdmin() {
                       : nc.type === "win_event" ? "How many times"
                       : nc.type === "single_match" ? (nc.matchStat === "win_margin" ? "Min win margin (goals)" : "Min goals in one match")
                       : nc.type === "login_streak" ? "Days in a row"
+                      : nc.type === "season_stat" ? (nc.atMost ? "Max value (at most)" : "Min value (at least)")
                       : "Target count"}
                   </label>
                   <input
@@ -713,6 +724,60 @@ export default function ObjectivesAdmin() {
                 </div>
               )}
 
+              {/* Season stat selector */}
+              {nc.type === "season_stat" && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Which stat?</label>
+                    <select
+                      value={nc.seasonStat}
+                      onChange={e => setNc(n => ({ ...n, seasonStat: e.target.value as SeasonStatType, atMost: false }))}
+                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
+                    >
+                      {(Object.keys(SEASON_STAT_LABELS) as SeasonStatType[]).map(s => (
+                        <option key={s} value={s}>{SEASON_STAT_LABELS[s]}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {(nc.seasonStat === "goals_conceded" || nc.seasonStat === "losses") && (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={nc.atMost}
+                        onChange={e => setNc(n => ({ ...n, atMost: e.target.checked }))}
+                        className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
+                      />
+                      <span className="text-xs text-white font-bold">&ldquo;At most&rdquo; mode</span>
+                      <span className="text-[10px] text-gray-500">
+                        {nc.seasonStat === "goals_conceded"
+                          ? `Concede ${nc.count} or fewer goals (for least goals conceded records)`
+                          : `Lose ${nc.count} or fewer matches (for fewest defeats records)`}
+                      </span>
+                    </label>
+                  )}
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Counts in</label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setNc(n => ({ ...n, withinCompetition: "any" }))}
+                        className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.withinCompetition === "any" ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                      >
+                        All competitions
+                      </button>
+                      <button
+                        onClick={() => setNc(n => ({ ...n, withinCompetition: "pl_only" }))}
+                        className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.withinCompetition === "pl_only" ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                      >
+                        PL only
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Season stats always track across the whole PL season. &ldquo;PL only&rdquo; excludes FA Cup / UCL / UEL matches.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Consecutive toggle (win_event only, count > 1) */}
               {nc.type === "win_event" && nc.count > 1 && (
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -727,8 +792,8 @@ export default function ObjectivesAdmin() {
                 </label>
               )}
 
-              {/* Competition scope — not relevant for login_streak */}
-              {nc.type !== "login_streak" && (
+              {/* Competition scope — not relevant for login_streak or season_stat */}
+              {nc.type !== "login_streak" && nc.type !== "season_stat" && (
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Competition scope</label>
                 <select
@@ -830,13 +895,14 @@ export default function ObjectivesAdmin() {
                       positionMatch: nc.position.trim() ? nc.positionMatch : undefined,
                       timeframe: (isStatType(nc.type) || nc.type === "login_streak") ? nc.timeframe : undefined,
                       consecutive: nc.type === "win_event" && nc.count > 1 ? nc.consecutive : undefined,
-                      competition: nc.type !== "login_streak" ? (nc.competition || "any") : undefined,
+                      competition: nc.type !== "login_streak" && nc.type !== "season_stat" ? (nc.competition || "any") : undefined,
                       ...(isStatType(nc.type) && nc.withinCompetition !== "any" ? { withinCompetition: nc.withinCompetition } : {}),
                       ...(nc.nationality.trim() ? { nationality: nc.nationality.trim() } : {}),
                       ...(nc.club.trim() ? { club: nc.club.trim() } : {}),
                       ...(nc.position.trim() ? { position: nc.position.trim().toUpperCase() } : {}),
                       ...(nc.type === "win_event" && nc.event ? { event: nc.event as WinEvent } : {}),
                       ...(nc.type === "single_match" ? { matchStat: nc.matchStat } : {}),
+                      ...(nc.type === "season_stat" ? { seasonStat: nc.seasonStat, atMost: nc.atMost, withinCompetition: nc.withinCompetition } : {}),
                     })}
                   </span>
                 </div>

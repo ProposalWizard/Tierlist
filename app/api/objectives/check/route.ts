@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   let { data: objectives, error: objErr } = await service
     .from("objectives")
-    .select("id, xp_reward, conditions")
+    .select("id, title, xp_reward, card_image_url, card_name, conditions")
     .eq("is_active", true)
     .eq("is_published", true)
     .or("expires_at.is.null,expires_at.gt.now()");
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // is_published column may not exist yet — fall back without the filter
     const fallback = await service
       .from("objectives")
-      .select("id, xp_reward, conditions")
+      .select("id, title, xp_reward, card_image_url, card_name, conditions")
       .eq("is_active", true)
       .or("expires_at.is.null,expires_at.gt.now()");
     if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     ])
   );
 
-  const newlyCompleted: { id: string; xp_reward: number }[] = [];
+  const newlyCompleted: { id: string; xp_reward: number; title: string; card_image_url: string | null; card_name: string | null }[] = [];
 
   for (const obj of eligible) {
     const existing = recordMap.get(obj.id);
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         progress: newProgress,
       }, { onConflict: "user_id,objective_id" });
 
-      newlyCompleted.push({ id: obj.id, xp_reward: obj.xp_reward });
+      newlyCompleted.push({ id: obj.id, xp_reward: obj.xp_reward, title: obj.title ?? "", card_image_url: obj.card_image_url ?? null, card_name: obj.card_name ?? null });
     } else {
       await service.from("user_objectives").upsert({
         user_id: user.id,

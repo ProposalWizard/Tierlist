@@ -30,14 +30,16 @@ export async function GET() {
   const { data: { user } } = await serverSupabase.auth.getUser();
 
   let completed: string[] = [];
+  let unclaimed: string[] = [];
   let completedObjectives: typeof objectives = [];
 
   if (user) {
     const { data: userObjs } = await supabase
       .from("user_objectives")
-      .select("objective_id")
+      .select("objective_id, claimed_at")
       .eq("user_id", user.id);
     completed = (userObjs ?? []).map(o => o.objective_id);
+    unclaimed = (userObjs ?? []).filter(o => !o.claimed_at).map(o => o.objective_id);
 
     // Fetch full details for completed objectives (even if expired)
     if (completed.length > 0) {
@@ -52,6 +54,7 @@ export async function GET() {
   return NextResponse.json({
     objectives: objectives ?? [],
     completed,
+    unclaimed,
     completedObjectives,
   });
 }

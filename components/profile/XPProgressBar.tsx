@@ -264,7 +264,7 @@ export default function XPProgressBar({ progression, seasonRewards }: Props) {
               {expandedMilestone.imageUrl ? (
                 <Image
                   src={expandedMilestone.imageUrl}
-                  alt={expandedMilestone.unlocked ? expandedMilestone.name : "Locked"}
+                  alt={expandedMilestone.name}
                   fill
                   className="object-cover"
                   sizes="224px"
@@ -274,18 +274,25 @@ export default function XPProgressBar({ progression, seasonRewards }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
               )}
               {!expandedMilestone.unlocked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-900/65 rounded-2xl">
-                  <svg className="w-14 h-14 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                <div className="absolute top-2.5 right-2.5 w-7 h-7 bg-red-600 rounded-full flex items-center justify-center shadow-md">
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+              {expandedMilestone.unlocked && (
+                <div className="absolute top-2.5 right-2.5 w-7 h-7 bg-amber-500 rounded-full flex items-center justify-center shadow-md">
+                  <svg className="w-4 h-4 text-black" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
               )}
             </div>
             <div className="text-center">
               <p className="text-white font-bold text-lg">
-                {expandedMilestone.unlocked ? expandedMilestone.name : "???"}
+                {expandedMilestone.name}
               </p>
-              {expandedMilestone.subtitle && expandedMilestone.unlocked && (
+              {expandedMilestone.subtitle && (
                 <p className="text-gray-400 text-sm mt-0.5">{expandedMilestone.subtitle}</p>
               )}
               <p className="text-gray-500 text-sm mt-1">
@@ -316,14 +323,12 @@ function MilestoneCard({ milestone, onClick }: { milestone: Milestone; onClick: 
       className="flex-shrink-0 flex flex-col items-center gap-1.5 group"
     >
       <div
-        className={`relative w-20 h-[108px] sm:w-28 sm:h-36 rounded-xl overflow-hidden shadow-xl transition-transform duration-200 group-hover:scale-105 ${
-          !isUnlocked ? "opacity-40" : ""
-        }`}
+        className="relative w-20 h-[108px] sm:w-28 sm:h-36 rounded-xl overflow-hidden shadow-xl transition-transform duration-200 group-hover:scale-105"
       >
         {milestone.imageUrl ? (
           <Image
             src={milestone.imageUrl}
-            alt={isUnlocked ? milestone.name : "Locked"}
+            alt={milestone.name}
             fill
             className="object-cover"
             sizes="112px"
@@ -333,9 +338,9 @@ function MilestoneCard({ milestone, onClick }: { milestone: Milestone; onClick: 
           <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
         )}
         {!isUnlocked && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-900/55 rounded-xl">
-            <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center shadow-md">
+            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </div>
         )}
@@ -350,7 +355,7 @@ function MilestoneCard({ milestone, onClick }: { milestone: Milestone; onClick: 
 
       {/* Card name */}
       <p className="text-[10px] font-bold text-center leading-tight max-w-20 sm:max-w-[112px] text-white truncate w-full">
-        {isUnlocked ? milestone.name : "???"}
+        {milestone.name}
       </p>
 
       {/* Subtitle */}
