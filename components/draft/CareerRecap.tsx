@@ -480,15 +480,37 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
               <div>
                 <div className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Career Numbers</div>
                 <div className="grid grid-cols-3 gap-2">
-                  <StatBox label="Total Points" value={`${stats.totalPoints}`} />
-                  <StatBox label="Avg Points/Season" value={`${stats.avgPoints}`} />
-                  <StatBox label="Win Rate" value={`${stats.winRate}%`} />
-                  <StatBox label="Overall Record" value={`${stats.totalWins}W ${stats.totalDraws}D ${stats.totalLosses}L`} small />
-                  <StatBox label="Goals Scored" value={`${stats.totalGoalsFor}`} />
-                  <StatBox label="Goals Conceded" value={`${stats.totalGoalsAgainst}`} />
-                  <StatBox label="Best Finish" value={ordinal(stats.bestFinish)} highlight={stats.bestFinish === 1} />
-                  <StatBox label="Worst Finish" value={ordinal(stats.worstFinish)} />
-                  <StatBox label="Top-4 Finishes" value={`${stats.topFour}/${stats.totalSeasons}`} />
+                  <StatBox label="Total Points" value={`${stats.totalPoints}`} color="purple" />
+                  <StatBox label="Avg Points/Season" value={`${stats.avgPoints}`} color="purple" />
+                  <StatBox label="Win Rate" value={`${stats.winRate}%`} color={stats.winRate >= 60 ? "green" : stats.winRate >= 40 ? "amber" : "red"} />
+                  <div className="rounded-xl px-3 py-2 border bg-gray-900/50 border-gray-800/50 col-span-3">
+                    <div className="text-[10px] text-white mb-1.5">Overall Record</div>
+                    <div className="flex gap-1.5 items-end">
+                      <div className="flex-1 rounded-lg bg-emerald-900/30 border border-emerald-700/30 px-2 py-1.5 text-center">
+                        <div className="text-lg font-black text-emerald-400">{stats.totalWins}</div>
+                        <div className="text-[9px] text-emerald-400/80 font-bold">WINS</div>
+                      </div>
+                      <div className="flex-1 rounded-lg bg-yellow-900/30 border border-yellow-700/30 px-2 py-1.5 text-center">
+                        <div className="text-lg font-black text-yellow-400">{stats.totalDraws}</div>
+                        <div className="text-[9px] text-yellow-400/80 font-bold">DRAWS</div>
+                      </div>
+                      <div className="flex-1 rounded-lg bg-red-900/30 border border-red-700/30 px-2 py-1.5 text-center">
+                        <div className="text-lg font-black text-red-400">{stats.totalLosses}</div>
+                        <div className="text-[9px] text-red-400/80 font-bold">LOSSES</div>
+                      </div>
+                    </div>
+                    <div className="mt-1.5 h-2 rounded-full overflow-hidden flex bg-gray-800">
+                      <div className="bg-emerald-500 h-full" style={{ width: `${(stats.totalWins / (stats.totalWins + stats.totalDraws + stats.totalLosses) * 100)}%` }} />
+                      <div className="bg-yellow-500 h-full" style={{ width: `${(stats.totalDraws / (stats.totalWins + stats.totalDraws + stats.totalLosses) * 100)}%` }} />
+                      <div className="bg-red-500 h-full" style={{ width: `${(stats.totalLosses / (stats.totalWins + stats.totalDraws + stats.totalLosses) * 100)}%` }} />
+                    </div>
+                  </div>
+                  <StatBox label="Goals Scored" value={`${stats.totalGoalsFor}`} color="green" />
+                  <StatBox label="Goals Conceded" value={`${stats.totalGoalsAgainst}`} color="red" />
+                  <StatBox label="Goal Difference" value={`${stats.totalGoalsFor - stats.totalGoalsAgainst >= 0 ? "+" : ""}${stats.totalGoalsFor - stats.totalGoalsAgainst}`} color={stats.totalGoalsFor >= stats.totalGoalsAgainst ? "green" : "red"} />
+                  <StatBox label="Best Finish" value={ordinal(stats.bestFinish)} highlight={stats.bestFinish === 1} color={stats.bestFinish <= 4 ? "blue" : "default"} />
+                  <StatBox label="Worst Finish" value={ordinal(stats.worstFinish)} color={stats.worstFinish >= 18 ? "red" : "default"} />
+                  <StatBox label="Top-4 Finishes" value={`${stats.topFour}/${stats.totalSeasons}`} color="blue" />
                 </div>
               </div>
 
@@ -548,12 +570,30 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
               <div>
                 <div className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Fun Stats</div>
                 <div className="grid grid-cols-2 gap-2">
-                  {funStats.map((f, i) => (
-                    <div key={i} className="bg-gray-900/50 rounded-lg px-3 py-2 border border-gray-800/50">
-                      <div className="text-sm font-black">{f.value}</div>
-                      <div className="text-[10px] text-white">{f.label}</div>
-                    </div>
-                  ))}
+                  {funStats.map((f, i) => {
+                    const colors = [
+                      "bg-blue-900/15 border-blue-800/30",
+                      "bg-emerald-900/15 border-emerald-800/30",
+                      "bg-cyan-900/15 border-cyan-800/30",
+                      "bg-purple-900/15 border-purple-800/30",
+                      "bg-amber-900/15 border-amber-800/30",
+                      "bg-pink-900/15 border-pink-800/30",
+                      "bg-teal-900/15 border-teal-800/30",
+                      "bg-indigo-900/15 border-indigo-800/30",
+                      "bg-orange-900/15 border-orange-800/30",
+                    ];
+                    const textColors = [
+                      "text-blue-400", "text-emerald-400", "text-cyan-400",
+                      "text-purple-400", "text-amber-400", "text-pink-400",
+                      "text-teal-400", "text-indigo-400", "text-orange-400",
+                    ];
+                    return (
+                      <div key={i} className={`rounded-lg px-3 py-2 border ${colors[i % colors.length]}`}>
+                        <div className={`text-sm font-black ${textColors[i % textColors.length]}`}>{f.value}</div>
+                        <div className="text-[10px] text-white">{f.label}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </>
@@ -565,25 +605,37 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
               <div>
                 <div className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Single-Season Records</div>
                 <div className="space-y-2">
-                  {singleSeasonRecords.map((r, i) => (
-                    <div key={i} className="bg-gray-900/50 rounded-xl px-4 py-3 border border-gray-800/50 flex items-center justify-between">
-                      <div>
-                        <div className="text-xs font-bold text-white">{r.label}</div>
-                        <div className="text-[10px] text-white">{r.detail}</div>
+                  {singleSeasonRecords.map((r, i) => {
+                    const accents = [
+                      "border-l-yellow-500", "border-l-emerald-500", "border-l-blue-500",
+                      "border-l-purple-500", "border-l-cyan-500", "border-l-amber-500",
+                      "border-l-pink-500", "border-l-teal-500",
+                    ];
+                    const valueColors = [
+                      "text-yellow-400", "text-emerald-400", "text-blue-400",
+                      "text-purple-400", "text-cyan-400", "text-amber-400",
+                      "text-pink-400", "text-teal-400",
+                    ];
+                    return (
+                      <div key={i} className={`bg-gray-900/50 rounded-xl px-4 py-3 border border-gray-800/50 border-l-4 ${accents[i % accents.length]} flex items-center justify-between`}>
+                        <div>
+                          <div className="text-xs font-bold text-white">{r.label}</div>
+                          <div className="text-[10px] text-white">{r.detail}</div>
+                        </div>
+                        <div className={`text-xl font-black ${valueColors[i % valueColors.length]}`}>{r.value}</div>
                       </div>
-                      <div className="text-xl font-black">{r.value}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               <div>
                 <div className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Career Milestones</div>
                 <div className="grid grid-cols-2 gap-2">
-                  <StatBox label="Best Points Tally" value={`${stats.bestPoints}`} sub={`Season ${stats.bestPointsSeason}`} />
-                  <StatBox label="Longest Win Streak" value={`${stats.bestWinStreak}`} sub="consecutive" />
-                  <StatBox label="Longest Unbeaten" value={`${stats.bestUnbeaten}`} sub="consecutive" />
-                  <StatBox label="Total Goal Diff" value={`${stats.totalGoalsFor - stats.totalGoalsAgainst >= 0 ? "+" : ""}${stats.totalGoalsFor - stats.totalGoalsAgainst}`} />
+                  <StatBox label="Best Points Tally" value={`${stats.bestPoints}`} sub={`Season ${stats.bestPointsSeason}`} color="purple" />
+                  <StatBox label="Longest Win Streak" value={`${stats.bestWinStreak}`} sub="consecutive" color="green" />
+                  <StatBox label="Longest Unbeaten" value={`${stats.bestUnbeaten}`} sub="consecutive" color="blue" />
+                  <StatBox label="Total Goal Diff" value={`${stats.totalGoalsFor - stats.totalGoalsAgainst >= 0 ? "+" : ""}${stats.totalGoalsFor - stats.totalGoalsAgainst}`} color={stats.totalGoalsFor >= stats.totalGoalsAgainst ? "green" : "red"} />
                 </div>
               </div>
 
@@ -981,16 +1033,29 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
   );
 }
 
-function StatBox({ label, value, sub, highlight, small }: {
+type StatColor = "default" | "green" | "red" | "blue" | "yellow" | "amber" | "purple";
+const STAT_COLORS: Record<StatColor, { bg: string; border: string; text: string }> = {
+  default: { bg: "bg-gray-900/50", border: "border-gray-800/50", text: "" },
+  green:   { bg: "bg-emerald-900/20", border: "border-emerald-700/30", text: "text-emerald-400" },
+  red:     { bg: "bg-red-900/20", border: "border-red-700/30", text: "text-red-400" },
+  blue:    { bg: "bg-blue-900/20", border: "border-blue-700/30", text: "text-blue-400" },
+  yellow:  { bg: "bg-yellow-900/20", border: "border-yellow-700/30", text: "text-yellow-400" },
+  amber:   { bg: "bg-amber-900/20", border: "border-amber-700/30", text: "text-amber-400" },
+  purple:  { bg: "bg-purple-900/20", border: "border-purple-700/30", text: "text-purple-400" },
+};
+
+function StatBox({ label, value, sub, highlight, small, color = "default" }: {
   label: string;
   value: string;
   sub?: string;
   highlight?: boolean;
   small?: boolean;
+  color?: StatColor;
 }) {
+  const c = highlight ? STAT_COLORS.yellow : STAT_COLORS[color];
   return (
-    <div className={`rounded-xl px-3 py-2 border ${highlight ? "bg-yellow-900/20 border-yellow-700/30" : "bg-gray-900/50 border-gray-800/50"}`}>
-      <div className={`font-black ${small ? "text-sm" : "text-lg"} ${highlight ? "text-yellow-400" : ""}`}>{value}</div>
+    <div className={`rounded-xl px-3 py-2 border ${c.bg} ${c.border}`}>
+      <div className={`font-black ${small ? "text-sm" : "text-lg"} ${c.text}`}>{value}</div>
       <div className="text-[10px] text-white">{label}</div>
       {sub && <div className="text-[9px] text-white">{sub}</div>}
     </div>
