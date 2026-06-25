@@ -778,40 +778,45 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
           // Biggest win (goal difference) — PL only and all comps
           let plBiggestWin = 0;
+          let plBiggestWinScore = "";
           for (const m of season.matches) {
             const diff = m.goalsFor - m.goalsAgainst;
-            if (diff > plBiggestWin) plBiggestWin = diff;
+            if (diff > plBiggestWin || (diff === plBiggestWin && m.goalsFor > parseInt(plBiggestWinScore))) {
+              plBiggestWin = diff;
+              plBiggestWinScore = `${m.goalsFor}-${m.goalsAgainst}`;
+            }
           }
           let allBiggestWin = plBiggestWin;
+          let allBiggestWinScore = plBiggestWinScore;
           for (const m of season.faCup.matches) {
             const diff = m.goalsFor - m.goalsAgainst;
-            if (diff > allBiggestWin) allBiggestWin = diff;
+            if (diff > allBiggestWin) { allBiggestWin = diff; allBiggestWinScore = `${m.goalsFor}-${m.goalsAgainst}`; }
           }
           if (season.ucl) {
             for (const m of season.ucl.leagueMatches) {
               const diff = m.goalsFor - m.goalsAgainst;
-              if (diff > allBiggestWin) allBiggestWin = diff;
+              if (diff > allBiggestWin) { allBiggestWin = diff; allBiggestWinScore = `${m.goalsFor}-${m.goalsAgainst}`; }
             }
             for (const t of season.ucl.knockoutTies) {
               const diff1 = t.leg1.goalsFor - t.leg1.goalsAgainst;
-              if (diff1 > allBiggestWin) allBiggestWin = diff1;
+              if (diff1 > allBiggestWin) { allBiggestWin = diff1; allBiggestWinScore = `${t.leg1.goalsFor}-${t.leg1.goalsAgainst}`; }
               if (t.leg2) {
                 const diff2 = t.leg2.goalsFor - t.leg2.goalsAgainst;
-                if (diff2 > allBiggestWin) allBiggestWin = diff2;
+                if (diff2 > allBiggestWin) { allBiggestWin = diff2; allBiggestWinScore = `${t.leg2.goalsFor}-${t.leg2.goalsAgainst}`; }
               }
             }
           }
           if (season.uel) {
             for (const m of season.uel.leagueMatches) {
               const diff = m.goalsFor - m.goalsAgainst;
-              if (diff > allBiggestWin) allBiggestWin = diff;
+              if (diff > allBiggestWin) { allBiggestWin = diff; allBiggestWinScore = `${m.goalsFor}-${m.goalsAgainst}`; }
             }
             for (const t of season.uel.knockoutTies) {
               const diff1 = t.leg1.goalsFor - t.leg1.goalsAgainst;
-              if (diff1 > allBiggestWin) allBiggestWin = diff1;
+              if (diff1 > allBiggestWin) { allBiggestWin = diff1; allBiggestWinScore = `${t.leg1.goalsFor}-${t.leg1.goalsAgainst}`; }
               if (t.leg2) {
                 const diff2 = t.leg2.goalsFor - t.leg2.goalsAgainst;
-                if (diff2 > allBiggestWin) allBiggestWin = diff2;
+                if (diff2 > allBiggestWin) { allBiggestWin = diff2; allBiggestWinScore = `${t.leg2.goalsFor}-${t.leg2.goalsAgainst}`; }
               }
             }
           }
@@ -890,7 +895,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 assists: topBy(season.plPlayerStats, "assists"),
                 cleanSheets: topBy(gkPlStats.length > 0 ? gkPlStats : season.plPlayerStats, "cleanSheets"),
                 goalsConceded: { value: season.teamRecord.goalsAgainst, teamOvr },
-                biggestWin: { value: plBiggestWin, teamOvr },
+                biggestWin: { value: plBiggestWin, teamOvr, score: plBiggestWinScore || undefined },
                 avgRating: bestAvgRating(season.plPlayerStats),
               },
               all: {
@@ -900,7 +905,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 assists: topBy(season.playerStats, "assists"),
                 cleanSheets: topBy(gkAllStats.length > 0 ? gkAllStats : season.playerStats, "cleanSheets"),
                 goalsConceded: { value: allGoalsAgainst, teamOvr },
-                biggestWin: { value: allBiggestWin, teamOvr },
+                biggestWin: { value: allBiggestWin, teamOvr, score: allBiggestWinScore || undefined },
                 avgRating: bestAvgRating(season.playerStats),
               },
               career: {

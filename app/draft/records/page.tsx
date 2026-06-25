@@ -52,8 +52,8 @@ const OFFICIAL: Record<string, { value: number; playerName: string | null; playe
   "all_clean_sheets":  { value: 24, playerName: "P. Čech", playerOvr: 88 },
   "all_unbeaten":      { value: 49, playerName: null, playerOvr: null, clubName: "Arsenal" },
   "all_goals_conceded":{ value: 15, playerName: null, playerOvr: null, clubName: "Chelsea" },
-  "pl_biggest_win":    { value: 9, playerName: null, playerOvr: null, clubName: "Man Utd" },
-  "all_biggest_win":   { value: 9, playerName: null, playerOvr: null, clubName: "Man Utd" },
+  "pl_biggest_win":    { value: 9, playerName: "9-0", playerOvr: null, clubName: "Man Utd" },
+  "all_biggest_win":   { value: 9, playerName: "9-0", playerOvr: null, clubName: "Man Utd" },
 };
 
 function mergeWithOfficial(
@@ -95,7 +95,8 @@ function OvrBadge({ ovr }: { ovr: number }) {
   );
 }
 
-function formatValue(value: number, rt: RecordType): string {
+function formatValue(value: number, rt: RecordType, score?: string | null): string {
+  if (rt.key === "biggest_win" && score) return score;
   if (rt.isDecimal) return (value / 10).toFixed(1);
   return String(value);
 }
@@ -140,7 +141,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
               <div className="text-xs text-white truncate">
                 {rt.isTeam ? (
                   <span className="flex items-center gap-2 flex-wrap">
-                    <span className="text-white font-bold text-sm">{formatValue(entry.value, rt)}</span>
+                    <span className="text-white font-bold text-sm">{formatValue(entry.value, rt, entry.playerName)}</span>
                     {isOfficial ? (
                       <>
                         {entry.clubName && <span className="text-white font-bold">{entry.clubName}</span>}
