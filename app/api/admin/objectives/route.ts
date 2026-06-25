@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       sort_order: body.sort_order ?? 0,
       expires_at: body.expires_at ?? null,
       conditions: body.conditions ?? [],
+      same_season: body.same_season ?? false,
     })
     .select()
     .single();
@@ -63,6 +64,7 @@ export async function PATCH(req: Request) {
   if ("expires_at" in body) updates.expires_at = body.expires_at ?? null;
   if (body.conditions !== undefined) updates.conditions = body.conditions;
   if (body.category !== undefined) updates.category = body.category;
+  if (body.same_season !== undefined) updates.same_season = body.same_season;
   const { error } = await supabase
     .from("objectives")
     .update(updates)

@@ -36,6 +36,7 @@ interface Objective {
   expires_at: string | null;
   created_at: string;
   conditions: ObjectiveCondition[] | null;
+  same_season?: boolean;
 }
 
 const DURATION_OPTIONS = [
@@ -116,6 +117,7 @@ export default function ObjectivesAdmin() {
     category: "standard" as ObjCategory,
     is_published: false,
     expires_at: null as string | null,
+    same_season: false,
   });
   const [conditions, setConditions] = useState<ObjectiveCondition[]>([]);
   const [addingCond, setAddingCond] = useState(false);
@@ -138,7 +140,7 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "standard", is_published: false, expires_at: null });
+    setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "standard", is_published: false, expires_at: null, same_season: false });
     setConditions([]);
     setAddingCond(false);
     setNc({ ...EMPTY_COND });
@@ -158,6 +160,7 @@ export default function ObjectivesAdmin() {
       category: (obj.category as ObjCategory) ?? "standard",
       is_published: obj.is_published ?? false,
       expires_at: obj.expires_at,
+      same_season: obj.same_season === true,
     });
     setConditions(obj.conditions ?? []);
     setAddingCond(false);
@@ -275,6 +278,7 @@ export default function ObjectivesAdmin() {
       is_active: true,
       is_published: form.is_published,
       expires_at: form.expires_at,
+      same_season: form.same_season,
       sort_order: editingId
         ? objectives.find(o => o.id === editingId)?.sort_order ?? 0
         : objectives.length,
@@ -402,6 +406,16 @@ export default function ObjectivesAdmin() {
               {form.is_published ? "Published" : "Draft"}
             </button>
             <p className="text-[10px] text-gray-500 mt-1">Draft = invisible to players until you publish</p>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">Same Season</label>
+            <button
+              onClick={() => setForm(f => ({ ...f, same_season: !f.same_season }))}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition ${form.same_season ? "bg-amber-600 text-white" : "bg-gray-700 text-gray-400"}`}
+            >
+              {form.same_season ? "Same Season" : "Any Time"}
+            </button>
+            <p className="text-[10px] text-gray-500 mt-1">Same Season = ALL conditions must be met in a single season (e.g. Treble)</p>
           </div>
         </div>
 

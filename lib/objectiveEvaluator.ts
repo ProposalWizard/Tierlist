@@ -63,6 +63,7 @@ export function evaluateObjective(
   conditions: ObjectiveCondition[],
   currentProgress: ObjectiveProgress,
   seasonData: SeasonCheckData,
+  sameSeason?: boolean,
 ): { newProgress: ObjectiveProgress; complete: boolean } {
   const newProgress: ObjectiveProgress = { ...currentProgress };
 
@@ -92,19 +93,19 @@ export function evaluateObjective(
 
       if (scope === "squad_total") {
         const seasonTotal = perPlayer.reduce((s, pp) => s + pp.value, 0);
+        seasonValues[cond.id] = seasonTotal;
         if (timeframe === "career") {
           newProgress[cond.id] = (currentProgress[cond.id] ?? 0) + seasonTotal;
         } else {
-          seasonValues[cond.id] = seasonTotal;
           newProgress[cond.id] = Math.max(currentProgress[cond.id] ?? 0, seasonTotal);
         }
       } else {
         for (const pp of perPlayer) {
           const key = `${cond.id}__${pp.name}`;
+          seasonValues[key] = pp.value;
           if (timeframe === "career") {
             newProgress[key] = (currentProgress[key] ?? 0) + pp.value;
           } else {
-            seasonValues[key] = pp.value;
             newProgress[key] = Math.max(currentProgress[key] ?? 0, pp.value);
           }
         }
@@ -188,7 +189,10 @@ export function evaluateObjective(
 
   const complete = conditions.every(cond => {
     if (!competitionMatches(cond.competition, seasonData.competition)) {
-      return isConditionMet(cond, newProgress, {});
+      return sameSeason ? false : isConditionMet(cond, newProgress, {});
+    }
+    if (sameSeason) {
+      return isConditionMetThisSeason(cond, seasonData, seasonValues);
     }
     return isConditionMet(cond, newProgress, seasonValues);
   });
@@ -239,6 +243,44 @@ function isConditionMet(
   const source = timeframe === "season" ? seasonValues : progress;
   for (const key of Object.keys(source)) {
     if (key.startsWith(prefix) && source[key] >= cond.count) return true;
+  }
+  return false;
+}
+
+function isConditionMetThisSeason(
+  cond: ObjectiveCondition,
+  seasonData: SeasonCheckData,
+  seasonValues: Record<string, number>,
+): boolean {
+  if (cond.type === "win_event") {
+    const happened = cond.event ? seasonData.events.includes(cond.event as WinEvent) : false;
+    return happened;
+  }
+
+  if (cond.type === "squad_count") {
+    return (seasonValues[cond.id] ?? 0) >= cond.count;
+  }
+
+  if (cond.type === "single_match") {
+    return (seasonValues[cond.id] ?? 0) >= cond.count;
+  }
+
+  if (cond.type === "season_stat") {
+    if (cond.atMost) {
+      const val = seasonValues[cond.id] as number | undefined;
+      return val !== undefined && val <= cond.count;
+    }
+    return (seasonValues[cond.id] ?? 0) >= cond.count;
+  }
+
+  // goals/assists/clean_sheets: use season values
+  const scope = cond.scope ?? "squad_total";
+  if (scope === "squad_total") {
+    return (seasonValues[cond.id] ?? 0) >= cond.count;
+  }
+  const prefix = `${cond.id}__`;
+  for (const key of Object.keys(seasonValues)) {
+    if (key.startsWith(prefix) && seasonValues[key] >= cond.count) return true;
   }
   return false;
 }
