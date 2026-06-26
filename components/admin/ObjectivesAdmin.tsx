@@ -718,7 +718,7 @@ export default function ObjectivesAdmin() {
                     onChange={e => {
                       const ev = e.target.value as WinEvent;
                       const opt = WIN_EVENT_OPTIONS.find(o => o.value === ev);
-                      setNc(n => ({ ...n, event: ev, competition: opt?.competition || "any" }));
+                      setNc(n => ({ ...n, event: ev }));
                     }}
                     className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                   >
