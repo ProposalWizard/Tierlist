@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FORMATIONS } from "./formations";
 import { createClient } from "@/lib/supabase/client";
+import ObjectivesToast from "@/components/ObjectivesToast";
 import type { DraftSettings } from "@/app/draft/page";
 
 interface Props {
@@ -67,14 +68,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-3 sm:px-4 py-6 relative">
-      {/* Objectives badge */}
-      <Link
-        href="/profile"
-        className="fixed top-20 right-4 z-40 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-lg shadow-amber-900/40 transition-all hover:scale-105 active:scale-95 group"
-      >
-        <span className="text-xs font-black text-white">Objectives</span>
-        <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[9px] font-black text-white uppercase tracking-wider">New</span>
-      </Link>
+      <ObjectivesToast />
       <div className="max-w-lg w-full">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-10">

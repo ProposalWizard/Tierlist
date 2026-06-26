@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { FORMATIONS, getPositionColor } from "./formations";
 import { calculateSeasonOdds } from "@/lib/seasonSimulator";
 import ImageWithFallback from "@/components/ImageWithFallback";
@@ -25,17 +25,24 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const formation = formationName ? FORMATIONS.find(f => f.name === formationName) : null;
 
+  const [flagMap, setFlagMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    fetch("/api/draft/flags")
+      .then(r => r.json())
+      .then(d => { if (d.flags) setFlagMap(d.flags); })
+      .catch(() => {});
+  }, []);
+
+  // Drag state — ref so it doesn't cause re-renders during drag
+  const dragSrcIdx = useRef<number | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+
   const starters = useMemo(
-    () => squad
-      .map((p, i) => ({ player: p, idx: i }))
-      .filter(({ player }) => !player.isSub),
+    () => squad.map((p, i) => ({ player: p, idx: i })).filter(({ player }) => !player.isSub),
     [squad]
   );
-
   const subs = useMemo(
-    () => squad
-      .map((p, i) => ({ player: p, idx: i }))
-      .filter(({ player }) => player.isSub),
+    () => squad.map((p, i) => ({ player: p, idx: i })).filter(({ player }) => player.isSub),
     [squad]
   );
 
@@ -48,19 +55,12 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
       const slotIdx = formation.slots.findIndex((slot, i) =>
         !usedSlots.has(i) && slot.label === s.player.assignedPosition
       );
-      if (slotIdx >= 0) {
-        usedSlots.add(slotIdx);
-        map.set(slotIdx, s);
-      }
+      if (slotIdx >= 0) { usedSlots.add(slotIdx); map.set(slotIdx, s); }
     }
-    // Any starters that didn't match a slot exactly — place in first available
     for (const s of starters) {
       if (!Array.from(map.values()).some(v => v.idx === s.idx)) {
         const emptySlotIdx = formation.slots.findIndex((_, i) => !usedSlots.has(i));
-        if (emptySlotIdx >= 0) {
-          usedSlots.add(emptySlotIdx);
-          map.set(emptySlotIdx, s);
-        }
+        if (emptySlotIdx >= 0) { usedSlots.add(emptySlotIdx); map.set(emptySlotIdx, s); }
       }
     }
     return map;
@@ -74,54 +74,82 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
     return nat.length === 0 || nat.includes(p.assignedPosition);
   };
 
-  const handleTap = (idx: number) => {
-    if (selectedIdx === null) {
-      setSelectedIdx(idx);
-      return;
-    }
-    if (selectedIdx === idx) {
-      setSelectedIdx(null);
-      return;
-    }
-
-    const a = squad[selectedIdx];
-    const b = squad[idx];
-
+  // Core swap — shared by tap and drag
+  const performSwap = useCallback((aIdx: number, bIdx: number) => {
     setSquad(prev => {
       const next = [...prev];
+      const a = next[aIdx];
+      const b = next[bIdx];
       const aIsStarter = !a.isSub;
       const bIsStarter = !b.isSub;
-
       if (aIsStarter && bIsStarter) {
-        next[selectedIdx] = { ...a, assignedPosition: b.assignedPosition };
-        next[idx] = { ...b, assignedPosition: a.assignedPosition };
+        next[aIdx] = { ...a, assignedPosition: b.assignedPosition };
+        next[bIdx] = { ...b, assignedPosition: a.assignedPosition };
       } else if (aIsStarter && !bIsStarter) {
-        next[selectedIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
-        next[idx] = { ...a, isSub: true };
+        next[aIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
+        next[bIdx] = { ...a, assignedPosition: a.assignedPosition, isSub: true };
       } else if (!aIsStarter && bIsStarter) {
-        next[idx] = { ...a, assignedPosition: b.assignedPosition, isSub: false };
-        next[selectedIdx] = { ...b, isSub: true };
+        next[bIdx] = { ...a, assignedPosition: b.assignedPosition, isSub: false };
+        next[aIdx] = { ...b, assignedPosition: b.assignedPosition, isSub: true };
       } else {
-        next[selectedIdx] = { ...b };
-        next[idx] = { ...a };
+        next[aIdx] = { ...b };
+        next[bIdx] = { ...a };
       }
       return next;
     });
+  }, []);
+
+  // Move any player to a vacant slot
+  const performMoveToVacantSlot = useCallback((playerIdx: number, slotIdx: number) => {
+    if (!formation) return;
+    const slot = formation.slots[slotIdx];
+    setSquad(prev => {
+      const next = [...prev];
+      next[playerIdx] = { ...next[playerIdx], assignedPosition: slot.label, isSub: false };
+      return next;
+    });
+  }, [formation]);
+
+  // Tap handlers
+  const handleTap = (idx: number) => {
+    if (selectedIdx === null) { setSelectedIdx(idx); return; }
+    if (selectedIdx === idx) { setSelectedIdx(null); return; }
+    performSwap(selectedIdx, idx);
     setSelectedIdx(null);
   };
 
   const handleTapVacantSlot = (slotIdx: number) => {
-    if (!formation) return;
     if (selectedIdx === null) return;
     const player = squad[selectedIdx];
-    if (!player.isSub) return; // only subs can fill vacant slots
-    const slot = formation.slots[slotIdx];
-    setSquad(prev => {
-      const next = [...prev];
-      next[selectedIdx] = { ...player, assignedPosition: slot.label, isSub: false };
-      return next;
-    });
+    if (!player.isSub) return;
+    performMoveToVacantSlot(selectedIdx, slotIdx);
     setSelectedIdx(null);
+  };
+
+  // Drag handlers (mouse only — HTML5 drag API doesn't fire on touch)
+  const onDragStart = (e: React.DragEvent, idx: number) => {
+    dragSrcIdx.current = idx;
+    e.dataTransfer.effectAllowed = "move";
+    // Clear tap selection so drag and tap don't conflict
+    setSelectedIdx(null);
+  };
+  const onDragEnd = () => {
+    dragSrcIdx.current = null;
+    setDragOverTarget(null);
+  };
+  const onDropOnPlayer = (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    setDragOverTarget(null);
+    if (dragSrcIdx.current === null || dragSrcIdx.current === targetIdx) return;
+    performSwap(dragSrcIdx.current, targetIdx);
+    dragSrcIdx.current = null;
+  };
+  const onDropOnVacantSlot = (e: React.DragEvent, slotIdx: number) => {
+    e.preventDefault();
+    setDragOverTarget(null);
+    if (dragSrcIdx.current === null) return;
+    performMoveToVacantSlot(dragSrcIdx.current, slotIdx);
+    dragSrcIdx.current = null;
   };
 
   // Season odds
@@ -147,7 +175,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
           {subtitle || "Arrange Your Squad"}
         </h1>
         <p className="text-white text-sm mt-1">
-          Tap two players to swap them
+          Tap two players to swap · drag on desktop
         </p>
       </div>
 
@@ -179,17 +207,25 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
               const entry = slotMap.get(i);
               const isVacant = !entry;
               const isSelected = entry ? selectedIdx === entry.idx : false;
+              const isDragOver = dragOverTarget === `slot-${i}`;
 
               if (isVacant) {
                 return (
                   <div
                     key={i}
-                    className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer`}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer"
                     style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
                     onClick={() => handleTapVacantSlot(i)}
+                    onDragOver={(e) => { e.preventDefault(); setDragOverTarget(`slot-${i}`); }}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={(e) => onDropOnVacantSlot(e, i)}
                   >
-                    <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center border-2 border-dashed border-gray-500/50 bg-gray-800/60 ${
-                      selectedIdx !== null ? "hover:border-emerald-400 hover:bg-emerald-900/30" : ""
+                    <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center border-2 border-dashed transition-colors ${
+                      isDragOver
+                        ? "border-emerald-400 bg-emerald-900/50"
+                        : selectedIdx !== null
+                          ? "border-gray-400/70 bg-gray-800/60 hover:border-emerald-400 hover:bg-emerald-900/30"
+                          : "border-gray-500/50 bg-gray-800/60"
                     }`}>
                       <span className="text-[10px] sm:text-xs font-bold text-gray-400">{slot.label}</span>
                     </div>
@@ -199,21 +235,30 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
 
               const p = entry.player;
               const fit = isFit(p);
+              const isDragOverPlayer = dragOverTarget === `player-${entry.idx}`;
 
               return (
                 <div
                   key={i}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer"
+                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-grab active:cursor-grabbing"
                   style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                  draggable
+                  onDragStart={(e) => onDragStart(e, entry.idx)}
+                  onDragEnd={onDragEnd}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverTarget(`player-${entry.idx}`); }}
+                  onDragLeave={() => setDragOverTarget(null)}
+                  onDrop={(e) => onDropOnPlayer(e, entry.idx)}
                   onClick={() => handleTap(entry.idx)}
                 >
                   {/* Player face circle */}
-                  <div className={`relative w-11 h-11 sm:w-14 sm:h-14 rounded-full border-2 overflow-hidden transition-all duration-200 ${
-                    isSelected
-                      ? "border-emerald-400 ring-2 ring-emerald-400/50 scale-110 shadow-lg shadow-emerald-500/30"
-                      : !fit
-                        ? "border-amber-400/70"
-                        : "border-white/60"
+                  <div className={`relative w-11 h-11 sm:w-14 sm:h-14 rounded-full border-2 overflow-hidden transition-all duration-150 ${
+                    isDragOverPlayer
+                      ? "border-emerald-400 ring-2 ring-emerald-400/50 scale-110"
+                      : isSelected
+                        ? "border-emerald-400 ring-2 ring-emerald-400/50 scale-110 shadow-lg shadow-emerald-500/30"
+                        : !fit
+                          ? "border-amber-400/70"
+                          : "border-white/60"
                   }`}>
                     {p.image_url ? (
                       <ImageWithFallback
@@ -223,7 +268,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                         fallbackText={p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
                       />
                     ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
+                      <div className={`w-full h-full flex items-center justify-center ${getPositionColor(naturalPositions(p)[0] || p.assignedPosition)}`}>
                         <span className="text-xs sm:text-sm font-black text-white">
                           {p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
                         </span>
@@ -236,14 +281,19 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                       </div>
                     )}
                   </div>
-                  {/* Name + Rating */}
+                  {/* Name + Rating + Flag */}
                   <div className="flex flex-col items-center mt-0.5 max-w-[60px] sm:max-w-[72px]">
                     <span className="text-[8px] sm:text-[10px] font-bold text-white truncate w-full text-center leading-tight">
                       {p.name.split(" ").pop()}
                     </span>
-                    <span className="text-[8px] sm:text-[10px] font-bold text-emerald-400 leading-tight">
-                      {p.overall}
-                    </span>
+                    <div className="flex items-center gap-0.5">
+                      {flagMap[p.nationality] && (
+                        <img src={flagMap[p.nationality]} alt={p.nationality} className="w-3 h-2 object-cover rounded-[1px]" />
+                      )}
+                      <span className="text-[8px] sm:text-[10px] font-bold text-emerald-400 leading-tight">
+                        {p.overall}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -260,16 +310,25 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
         <div className="flex gap-3 flex-wrap justify-center">
           {subs.map(({ player: p, idx }) => {
             const isSelected = selectedIdx === idx;
+            const isDragOverBench = dragOverTarget === `player-${idx}`;
             return (
               <button
                 key={idx}
+                draggable
+                onDragStart={(e) => onDragStart(e, idx)}
+                onDragEnd={onDragEnd}
+                onDragOver={(e) => { e.preventDefault(); setDragOverTarget(`player-${idx}`); }}
+                onDragLeave={() => setDragOverTarget(null)}
+                onDrop={(e) => onDropOnPlayer(e, idx)}
                 onClick={() => handleTap(idx)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
-                  isSelected
-                    ? "bg-purple-900/40 ring-2 ring-purple-400 scale-105"
-                    : selectedIdx !== null
-                      ? "bg-gray-800/50 hover:bg-gray-800 hover:ring-1 hover:ring-gray-600"
-                      : "bg-gray-800/30 hover:bg-gray-800/50"
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all cursor-grab active:cursor-grabbing ${
+                  isDragOverBench
+                    ? "bg-emerald-900/40 ring-2 ring-emerald-400 scale-105"
+                    : isSelected
+                      ? "bg-purple-900/40 ring-2 ring-purple-400 scale-105"
+                      : selectedIdx !== null
+                        ? "bg-gray-800/50 hover:bg-gray-800 hover:ring-1 hover:ring-gray-600"
+                        : "bg-gray-800/30 hover:bg-gray-800/50"
                 }`}
               >
                 {/* Face */}
@@ -291,17 +350,22 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                     </div>
                   )}
                 </div>
-                {/* Position badge */}
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
+                {/* Position badge — use natural position for color */}
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(naturalPositions(p)[0] || p.assignedPosition)} text-white`}>
                   {naturalPositions(p).join("/") || p.assignedPosition}
                 </span>
-                {/* Name + OVR */}
+                {/* Name + OVR + Flag */}
                 <span className="text-[9px] sm:text-[10px] font-bold text-white truncate max-w-[64px] text-center">
                   {p.name.split(" ").pop()}
                 </span>
-                <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400">
-                  {p.overall}
-                </span>
+                <div className="flex items-center gap-0.5">
+                  {flagMap[p.nationality] && (
+                    <img src={flagMap[p.nationality]} alt={p.nationality} className="w-3.5 h-2.5 object-cover rounded-[1px]" />
+                  )}
+                  <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400">
+                    {p.overall}
+                  </span>
+                </div>
               </button>
             );
           })}
