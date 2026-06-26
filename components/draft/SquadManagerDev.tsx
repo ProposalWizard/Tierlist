@@ -150,7 +150,8 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
   const onDragStart = (e: React.DragEvent, idx: number) => {
     dragSrcIdx.current = idx;
     e.dataTransfer.effectAllowed = "move";
-    // Clear tap selection so drag and tap don't conflict
+    // Force the whole card (not just its face img) to be the drag ghost
+    e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 20, 20);
     setSelectedIdx(null);
   };
   const onDragEnd = () => {

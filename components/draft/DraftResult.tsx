@@ -1524,9 +1524,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                     : "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent"
             }`} />
             <div className="relative">
-              {(season.actualFinish === 1 || season.ucl?.winner || season.uel?.winner) && (
-                <div className="text-3xl mb-2">&#9733;</div>
-              )}
+              {(() => {
+                const tc = [season.actualFinish === 1, season.faCup.winner, season.leagueCup.winner, season.ucl?.winner, season.uel?.winner, season.superCup?.result === 'W', season.charityShield?.result === 'W'].filter(Boolean).length;
+                return tc > 0 ? <div className="text-2xl mb-2 tracking-widest">{"★".repeat(tc)}</div> : null;
+              })()}
               <h1 className={`text-4xl font-black tracking-tighter ${
                 season.ucl?.winner && season.actualFinish === 1 ? "text-yellow-400" :
                 season.ucl?.winner ? "text-blue-300" :
@@ -1581,9 +1582,27 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           </div>
         </div>
 
-        {/* Trophy shelf — shows all cup trophies won this season */}
-        {(season.faCup.winner || season.leagueCup.winner || season.superCup?.result === 'W' || season.charityShield?.result === 'W') && (
+        {/* Trophy shelf — shows every trophy won this season */}
+        {(season.actualFinish === 1 || season.faCup.winner || season.leagueCup.winner || season.ucl?.winner || season.uel?.winner || season.superCup?.result === 'W' || season.charityShield?.result === 'W') && (
           <div className="flex flex-wrap justify-center gap-2 mb-4">
+            {season.actualFinish === 1 && (
+              <div className="bg-gray-900 rounded-xl px-4 py-2 text-center border border-yellow-700/30">
+                <div className="text-lg">🏆</div>
+                <div className="text-[9px] font-bold tracking-widest text-yellow-400 uppercase">Premier League</div>
+              </div>
+            )}
+            {season.ucl?.winner && (
+              <div className="bg-gray-900 rounded-xl px-4 py-2 text-center border border-blue-700/30">
+                <div className="text-lg">🏆</div>
+                <div className="text-[9px] font-bold tracking-widest text-blue-400 uppercase">Champions League</div>
+              </div>
+            )}
+            {season.uel?.winner && (
+              <div className="bg-gray-900 rounded-xl px-4 py-2 text-center border border-orange-700/30">
+                <div className="text-lg">🏆</div>
+                <div className="text-[9px] font-bold tracking-widest text-orange-400 uppercase">Europa League</div>
+              </div>
+            )}
             {season.faCup.winner && (
               <div className="bg-gray-900 rounded-xl px-4 py-2 text-center border border-gray-800/50">
                 <div className="text-lg">🏆</div>

@@ -153,15 +153,10 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
                 onClick={() => onSell(p)}
                 className="w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left hover:bg-red-900/30 border-2 border-transparent hover:border-red-400/50 active:scale-[0.98]"
               >
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-9 text-center`}>
-                  {p.assignedPosition}
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-9 text-center ${isSub ? "bg-purple-500/20 text-purple-400" : `${getPositionColor(p.assignedPosition)} text-white`}`}>
+                  {isSub ? "SUB" : p.assignedPosition}
                 </span>
                 <span className="flex-1 ml-1 font-medium">{p.name}</span>
-                {isSub && (
-                  <span className="text-[9px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
-                    SUB
-                  </span>
-                )}
                 <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
                 <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
               </button>
