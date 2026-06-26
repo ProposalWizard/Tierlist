@@ -384,9 +384,9 @@ const UCL_TEAMS: { pot: number; name: string; strength: number }[] = [
   { pot: 4, name: 'Athletic Bilbao', strength: 77 },
   { pot: 4, name: 'Monaco', strength: 78 },
   { pot: 4, name: 'Galatasaray', strength: 79 },
-  { pot: 4, name: 'Copenhagen', strength: 76 },
+  { pot: 4, name: 'Copenhagen', strength: 71 },
   { pot: 4, name: 'Union Saint-Gilloise', strength: 69 },
-  { pot: 4, name: 'Como', strength: 68 },
+  { pot: 4, name: 'Como', strength: 76 },
   { pot: 4, name: 'Qarabağ', strength: 65 },
   { pot: 4, name: 'Pafos', strength: 70 },
 ];
