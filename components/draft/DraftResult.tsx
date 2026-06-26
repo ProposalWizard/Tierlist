@@ -1082,20 +1082,59 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     }
   }, [sharing, season.actualFinish, season.teamRecord.points, season.performance, players]);
 
-  const getLeaguePositionStyle = (pos: number, isPlayer: boolean) => {
+  // Compute actual qualification spots accounting for cup winners displacing PL spots
+  const tableQualification = useMemo(() => {
+    const table = season.leagueTable;
+    const n = table.length;
+    // Base: positions 1-4 UCL, 5-7 UEL, bottom 3 relegated (20-team league)
+    const clNames = new Set<string>(table.slice(0, 4).map(t => t.name));
+    // pl5, pl6, pl7 are the three PL-based UEL slots (may be displaced by cup winners)
+    const plUelSlots = [table[4]?.name, table[5]?.name, table[6]?.name].filter(Boolean) as string[];
+    const uelNames = new Set<string>(plUelSlots);
+    const relegNames = new Set<string>(table.slice(Math.max(n - 3, 0)).map(t => t.name));
+
+    // Track how many PL UEL slots get displaced (lowest first: index 2 = 7th, then 1 = 6th)
+    let displaced = 0;
+    const faCupWinner = season.faCup.faCupWinner;
+    const lcWinner = season.leagueCup.faCupWinner;
+    const cupWinnersGrantingEL = new Set<string>();
+
+    const faCupPos = table.findIndex(t => t.name === faCupWinner) + 1;
+    if (faCupWinner && faCupPos > 7) {
+      cupWinnersGrantingEL.add(faCupWinner);
+      displaced++;
+    }
+    const lcPos = table.findIndex(t => t.name === lcWinner) + 1;
+    if (lcWinner && lcWinner !== faCupWinner && lcPos > 7) {
+      cupWinnersGrantingEL.add(lcWinner);
+      displaced++;
+    }
+
+    // Remove displaced PL slots from the bottom up (7th first, then 6th)
+    for (let i = 0; i < displaced; i++) {
+      const removeIdx = plUelSlots.length - 1 - i;
+      if (removeIdx >= 0) uelNames.delete(plUelSlots[removeIdx]);
+    }
+    // Add cup winners
+    cupWinnersGrantingEL.forEach(name => uelNames.add(name));
+
+    return { clNames, uelNames, relegNames };
+  }, [season.leagueTable, season.faCup.faCupWinner, season.leagueCup.faCupWinner]);
+
+  const getLeaguePositionStyle = (pos: number, isPlayer: boolean, teamName: string) => {
     if (isPlayer) return "";
     if (pos === 1) return "border-l-2 border-l-yellow-500";
-    if (pos <= 5) return "border-l-2 border-l-blue-500";
-    if (pos <= 7) return "border-l-2 border-l-emerald-500";
-    if (pos >= 18) return "border-l-2 border-l-red-500";
+    if (tableQualification.clNames.has(teamName)) return "border-l-2 border-l-blue-500";
+    if (tableQualification.uelNames.has(teamName)) return "border-l-2 border-l-emerald-500";
+    if (tableQualification.relegNames.has(teamName)) return "border-l-2 border-l-red-500";
     return "";
   };
 
-  const getLeaguePositionBadge = (pos: number) => {
+  const getLeaguePositionBadge = (pos: number, teamName: string) => {
     if (pos === 1) return "bg-yellow-500/20 text-yellow-400";
-    if (pos <= 5) return "bg-blue-500/20 text-blue-400";
-    if (pos <= 7) return "bg-emerald-500/20 text-emerald-400";
-    if (pos >= 18) return "bg-red-500/20 text-red-400";
+    if (tableQualification.clNames.has(teamName)) return "bg-blue-500/20 text-blue-400";
+    if (tableQualification.uelNames.has(teamName)) return "bg-emerald-500/20 text-emerald-400";
+    if (tableQualification.relegNames.has(teamName)) return "bg-red-500/20 text-red-400";
     return "text-white";
   };
 
@@ -1578,8 +1617,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             {season.leagueTable.map((team, i) => {
               const pos = i + 1;
               return (
-                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer)}`}`}>
-                  <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos)}`}>{pos}</span>
+                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer, team.name)}`}`}>
+                  <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos, team.name)}`}>{pos}</span>
                   <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.won}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.drawn}</span>
