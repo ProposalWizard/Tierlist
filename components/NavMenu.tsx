@@ -85,6 +85,27 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
           )}
         </div>
 
+        {/* Mobile: profile link visible in top bar */}
+        {isLoggedIn ? (
+          <Link
+            href="/profile"
+            className="relative flex h-9 items-center px-3 rounded-lg border border-gray-700 text-sm font-semibold text-white hover:border-gray-500 md:hidden"
+          >
+            Profile
+            {unclaimedCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-1 ring-gray-950">
+                {unclaimedCount > 9 ? "9+" : unclaimedCount}
+              </span>
+            )}
+          </Link>
+        ) : (
+          <Link
+            href="/auth"
+            className="flex h-9 items-center px-3 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-500 md:hidden"
+          >
+            Sign in
+          </Link>
+        )}
         {/* Mobile hamburger button */}
         <button
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-700 text-white hover:border-gray-500 md:hidden"

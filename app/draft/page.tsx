@@ -4,7 +4,7 @@ import DraftSetup from "@/components/draft/DraftSetup";
 import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";
-import SquadManager from "@/components/draft/SquadManager";
+import SquadManager from "@/components/draft/SquadManagerDev";
 import MultiplayerLobby from "@/components/draft/MultiplayerLobby";
 import { createClient } from "@/lib/supabase/client";
 import { getPositionColor, FORMATIONS, formatSeasonYear } from "@/components/draft/formations";
