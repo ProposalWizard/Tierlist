@@ -281,6 +281,7 @@ export default function DraftPage() {
     setResume(null);
 
     let restoredSquad: DraftPlayer[] | null = null;
+    let restoredAlreadySubmitted = false;
     let restoredSeason = 1;
 
     // Fetch host's settings; formation is picked later in formation-pick phase
@@ -304,10 +305,11 @@ export default function DraftPage() {
       // If this player already has a squad in the room (rejoin), restore it so they
       // don't see "Waiting for host" in the wrong season or lose their submitted squad
       if (userId && Array.isArray(data.players)) {
-        const myRoomPlayer = (data.players as Array<{ user_id: string; squad?: DraftPlayer[] | null }>)
+        const myRoomPlayer = (data.players as Array<{ user_id: string; squad?: DraftPlayer[] | null; status?: string }>)
           .find(p => p.user_id === userId);
         if (myRoomPlayer?.squad && Array.isArray(myRoomPlayer.squad) && myRoomPlayer.squad.length > 0) {
           restoredSquad = myRoomPlayer.squad as DraftPlayer[];
+          restoredAlreadySubmitted = myRoomPlayer.status === "ready";
         }
       }
     } else {
@@ -322,7 +324,7 @@ export default function DraftPage() {
 
     if (restoredSquad) {
       setPlayers(restoredSquad);
-      setSquadSubmitted(true);
+      setSquadSubmitted(restoredAlreadySubmitted);
     } else {
       setPlayers([]);
       setSquadSubmitted(false);
@@ -335,11 +337,14 @@ export default function DraftPage() {
   const handleStartFromLobby = useCallback(() => {
     if (currentSeason === 1) {
       setPhase("formation-pick");
+    } else if (players.length > 0) {
+      // Season 2+ with an existing squad (preserved from last season) — go straight to arrange
+      setPhase("arrange");
     } else {
       setPhase("draft");
     }
     scrollTop();
-  }, [scrollTop, currentSeason]);
+  }, [scrollTop, currentSeason, players]);
 
   const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[], revealStartAt?: number) => {
     setRevealStartTime(revealStartAt ?? Date.now());

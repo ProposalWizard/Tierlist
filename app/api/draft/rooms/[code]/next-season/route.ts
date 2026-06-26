@@ -60,7 +60,7 @@ export async function POST(
       .eq("id", room.id),
     service
       .from("draft_room_players")
-      .update({ status: "drafting", squad: null, avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })
+      .update({ status: "drafting", avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })
       .eq("room_id", room.id),
   ]);
 

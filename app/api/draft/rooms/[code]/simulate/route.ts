@@ -72,7 +72,7 @@ export async function POST(
     }));
 
     // Build previous season results map for Super Cup / Charity Shield / EL/UCL qualification
-    const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean }> = {};
+    const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean; leagueCupWinner?: boolean }> = {};
     for (const rp of roomPlayers) {
       const prev = rp.season_result as Record<string, unknown> | null | undefined;
       if (prev) {
@@ -80,6 +80,7 @@ export async function POST(
           uclWinner: (prev.ucl as Record<string, unknown> | undefined)?.winner === true,
           uelWinner: (prev.uel as Record<string, unknown> | undefined)?.winner === true,
           faCupWinner: (prev.faCup as Record<string, unknown> | undefined)?.winner === true,
+          leagueCupWinner: (prev.leagueCup as Record<string, unknown> | undefined)?.winner === true,
         };
       }
     }

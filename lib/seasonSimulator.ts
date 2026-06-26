@@ -1153,8 +1153,9 @@ function simulateLeagueCup(
   ratings: PhaseRatings,
   allCupTeams: { name: string; strength: number }[],
   rng: () => number,
+  playerTeamOverride?: string,
 ): FaCupResult {
-  const playerTeamName = 'KNOWITBALL FC';
+  const playerTeamName = playerTeamOverride ?? 'KNOWITBALL FC';
   const bracket = allCupTeams.map(t => ({ ...t }));
   for (let i = bracket.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -4192,7 +4193,7 @@ export function simulateSharedSeason(
   sharedSeed: number,
   seasonNumber: number = 1,
   previousLeagueTable?: { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
-  previousResults?: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean }>,
+  previousResults?: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean; leagueCupWinner?: boolean }>,
 ): Map<string, SeasonResult> {
   const sharedRng = createRng(sharedSeed);
 
@@ -4360,15 +4361,17 @@ export function simulateSharedSeason(
       const prevResults = previousResults?.[hd.userId];
       const wonUELLast = prevResults?.uelWinner === true;
       const wonFACupLast = prevResults?.faCupWinner === true;
+      const wonLeagueCupLast = prevResults?.leagueCupWinner === true;
       const qualifiesThroughLeague = myFinish >= 1 && myFinish <= 5;
       const uelWinnerQualifiesForUCL = wonUELLast && !qualifiesThroughLeague;
       const faCupWinnerQualifiesForEL = wonFACupLast && myFinish > 7;
+      const leagueCupWinnerQualifiesForEL = wonLeagueCupLast && myFinish > 7;
 
       if (qualifiesThroughLeague || uelWinnerQualifiesForUCL) {
         uclEntrants.push(entrant);
       } else if (myFinish >= 6 && myFinish <= 7) {
         uelEntrants.push(entrant);
-      } else if (faCupWinnerQualifiesForEL) {
+      } else if (faCupWinnerQualifiesForEL || leagueCupWinnerQualifiesForEL) {
         uelEntrants.push(entrant);
       }
     }
@@ -4509,8 +4512,8 @@ export function simulateSharedSeason(
 
     // FA Cup from shared simulation; European competitions from shared UCL/UEL (if available)
     const faCup = sharedFaCupResultsMap.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round of 32', faCupWinner: sharedFaCupWinner };
-    // League Cup: separate draw per player using their own rng
-    const leagueCup = simulateLeagueCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng);
+    // League Cup: separate draw per player; pass teamName so the player is found in the shared bracket
+    const leagueCup = simulateLeagueCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng, hd.teamName);
     const ucl = sharedUCLResults.get(hd.userId);
     const uel = sharedUELResults.get(hd.userId);
 
