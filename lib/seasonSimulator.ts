@@ -56,6 +56,17 @@ export interface FaCupMatch {
   goalScorers: { player: string; minute: number }[];
   assistProviders: { player: string; minute: number }[];
   result: 'W' | 'L';
+  // Two-legged tie (League Cup semi-final): leg2 holds the second leg details
+  leg2?: {
+    goalsFor: number;
+    goalsAgainst: number;
+    isHome: boolean;
+    extraTime: boolean;
+    penalties: boolean;
+    penaltyScore?: { player: number; opponent: number };
+    goalScorers: { player: string; minute: number }[];
+  };
+  isHome?: boolean; // which leg was home for leg1 in a 2-legged tie
 }
 
 export interface FaCupResult {
@@ -97,6 +108,7 @@ export interface UCLLeagueStanding {
   goalDifference: number;
   points: number;
   isPlayer: boolean;
+  strength: number;
 }
 
 export interface UCLResult {
@@ -1119,6 +1131,234 @@ function simulateFaCup(
   };
 }
 
+// League Cup: same structure as FA Cup but semi-final is a 2-legged tie
+const LEAGUE_CUP_ROUNDS = ['Round of 32', 'Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
+
+function simulateLeagueCup(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  allCupTeams: { name: string; strength: number }[],
+  rng: () => number,
+): FaCupResult {
+  const playerTeamName = 'KNOWITBALL FC';
+  const bracket = allCupTeams.map(t => ({ ...t }));
+  for (let i = bracket.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [bracket[i], bracket[j]] = [bracket[j], bracket[i]];
+  }
+  { const usedNames = new Set(bracket.map(t => t.name));
+  let padIdx = 0;
+  while (bracket.length < 32) {
+    const club = LOWER_LEAGUE_CLUBS[padIdx % LOWER_LEAGUE_CLUBS.length];
+    padIdx++;
+    if (usedNames.has(club.name)) continue;
+    usedNames.add(club.name);
+    bracket.push({ name: club.name, strength: club.strength });
+  } }
+
+  const playerMatches: FaCupMatch[] = [];
+  let remaining = bracket.map(t => ({ name: t.name, strength: t.strength }));
+  let playerEliminated = false;
+
+  for (let roundIdx = 0; roundIdx < 5; roundIdx++) {
+    const roundName = LEAGUE_CUP_ROUNDS[roundIdx];
+    const isSemiFinal = roundIdx === 3;
+    const nextRound: { name: string; strength: number }[] = [];
+
+    for (let i = 0; i < remaining.length; i += 2) {
+      const teamA = remaining[i];
+      const teamB = remaining[i + 1];
+      const isPlayerMatch = teamA.name === playerTeamName || teamB.name === playerTeamName;
+
+      if (isPlayerMatch && !playerEliminated) {
+        const opponent = teamA.name === playerTeamName ? teamB : teamA;
+
+        if (isSemiFinal) {
+          // Two-legged semi: leg1 away, leg2 home (or vice versa randomly)
+          const leg1IsHome = rng() > 0.5;
+          const leg1 = simulateFaCupLeg(players, ratings, opponent, roundIdx, rng, leg1IsHome, LEAGUE_CUP_ROUNDS);
+          const leg2 = simulateFaCupLeg(players, ratings, opponent, roundIdx, rng, !leg1IsHome, LEAGUE_CUP_ROUNDS);
+
+          const aggFor = leg1.goalsFor + leg2.goalsFor;
+          const aggAgainst = leg1.goalsAgainst + leg2.goalsAgainst;
+
+          let result: 'W' | 'L';
+          let extraTime = false;
+          let penalties = false;
+          let penaltyScore: { player: number; opponent: number } | undefined;
+
+          if (aggFor > aggAgainst) {
+            result = 'W';
+          } else if (aggAgainst > aggFor) {
+            result = 'L';
+          } else {
+            // Aggregate level — AET then penalties on the night of leg2
+            extraTime = true;
+            const etFor = poisson(leg2.xg * 0.33, rng);
+            const etAgainst = poisson(leg2.oppXg * 0.33, rng);
+            if (etFor > etAgainst) {
+              result = 'W';
+              leg2.goalsFor += etFor;
+              leg2.goalsAgainst += etAgainst;
+            } else if (etAgainst > etFor) {
+              result = 'L';
+              leg2.goalsFor += etFor;
+              leg2.goalsAgainst += etAgainst;
+            } else {
+              leg2.goalsFor += etFor;
+              leg2.goalsAgainst += etAgainst;
+              penalties = true;
+              const myPens = Math.floor(rng() * 3) + 3;
+              const oppPens = Math.floor(rng() * 3) + 3;
+              if (myPens === oppPens) {
+                penaltyScore = rng() > 0.5 ? { player: myPens + 1, opponent: oppPens } : { player: myPens, opponent: oppPens + 1 };
+              } else {
+                penaltyScore = { player: myPens, opponent: oppPens };
+              }
+              result = (penaltyScore!.player > penaltyScore!.opponent) ? 'W' : 'L';
+            }
+          }
+
+          const allScorers = [...leg1.scorers.goals, ...leg2.scorers.goals];
+          const allAssists = [...leg1.scorers.assists, ...leg2.scorers.assists];
+
+          playerMatches.push({
+            round: roundName, opponent: opponent.name,
+            goalsFor: leg1.goalsFor, goalsAgainst: leg1.goalsAgainst,
+            extraTime: false, penalties: false,
+            goalScorers: leg1.scorers.goals, assistProviders: leg1.scorers.assists,
+            result,
+            isHome: leg1IsHome,
+            leg2: {
+              goalsFor: leg2.goalsFor, goalsAgainst: leg2.goalsAgainst,
+              isHome: !leg1IsHome, extraTime, penalties, penaltyScore,
+              goalScorers: leg2.scorers.goals,
+            },
+          });
+          // unused vars suppressed
+          void allScorers; void allAssists;
+
+          if (result === 'W') {
+            nextRound.push({ name: playerTeamName, strength: ratings.teamStrength });
+          } else {
+            playerEliminated = true;
+            nextRound.push(opponent);
+          }
+        } else {
+          const match = simulateFaCupMatchForHumanNamed(players, ratings, opponent, roundIdx, rng, LEAGUE_CUP_ROUNDS);
+          playerMatches.push(match);
+          if (match.result === 'W') {
+            nextRound.push({ name: playerTeamName, strength: ratings.teamStrength });
+          } else {
+            playerEliminated = true;
+            nextRound.push(opponent);
+          }
+        }
+      } else {
+        const result = simulateAIvAICupMatch(teamA, teamB, rng);
+        nextRound.push(remaining.find(t => t.name === result.winner) ?? teamA);
+      }
+    }
+    remaining = nextRound;
+  }
+
+  const winner = remaining[0].name;
+  return {
+    matches: playerMatches,
+    winner: winner === playerTeamName,
+    exitRound: playerEliminated ? playerMatches[playerMatches.length - 1]?.round ?? null : null,
+    faCupWinner: winner,
+  };
+}
+
+// Simulate a single cup leg, returning goals + xg for aggregate resolution
+function simulateFaCupLeg(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  opponent: { name: string; strength: number },
+  round: number,
+  rng: () => number,
+  isHome: boolean,
+  roundNames: string[],
+): { goalsFor: number; goalsAgainst: number; xg: number; oppXg: number; scorers: { goals: { player: string; minute: number }[]; assists: { player: string; minute: number }[] } } {
+  const homeBonus = isHome ? HOME_ADVANTAGE : 0;
+  const myAttack = ratings.attack + homeBonus * 0.6;
+  const myMidfield = ratings.midfield + homeBonus * 0.4;
+  const myDefense = ratings.defense + homeBonus * 0.3;
+  const myGk = ratings.gk;
+  const oppStrength = opponent.strength + (isHome ? 0 : HOME_ADVANTAGE);
+  const xg = computeExpectedGoals(myAttack, myMidfield, oppStrength);
+  const ourDefPower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
+  const oppXg = computeExpectedGoals(oppStrength, oppStrength * 0.95, ourDefPower);
+  const goalsFor = poisson(xg, rng);
+  const goalsAgainst = poisson(oppXg, rng);
+  const scorers = generateGoalScorers(players, goalsFor, rng);
+  void round; void roundNames;
+  return { goalsFor, goalsAgainst, xg, oppXg, scorers };
+}
+
+// Same as simulateFaCupMatchForHuman but accepts a custom round names array
+function simulateFaCupMatchForHumanNamed(
+  players: DraftPlayer[],
+  ratings: PhaseRatings,
+  opponent: { name: string; strength: number },
+  round: number,
+  rng: () => number,
+  roundNames: string[],
+): FaCupMatch {
+  const roundName = roundNames[round];
+  const isHome = round < 4 ? rng() > 0.5 : false;
+  const homeBonus = isHome ? HOME_ADVANTAGE : 0;
+  const myAttack = ratings.attack + homeBonus * 0.6;
+  const myMidfield = ratings.midfield + homeBonus * 0.4;
+  const myDefense = ratings.defense + homeBonus * 0.3;
+  const myGk = ratings.gk;
+  const oppStrength = opponent.strength + (isHome ? 0 : HOME_ADVANTAGE);
+  const myXg = computeExpectedGoals(myAttack, myMidfield, oppStrength);
+  const ourDefPower = myDefense * 0.55 + myGk * 0.30 + myMidfield * 0.15;
+  const oppXg = computeExpectedGoals(oppStrength, oppStrength * 0.95, ourDefPower);
+  let goalsFor = poisson(myXg, rng);
+  let goalsAgainst = poisson(oppXg, rng);
+  let extraTime = false;
+  let penalties = false;
+  let penaltyScore: { player: number; opponent: number } | undefined;
+  const scorers = generateGoalScorers(players, goalsFor, rng);
+  if (goalsFor === goalsAgainst) {
+    extraTime = true;
+    const etFor = poisson(myXg * 0.33, rng);
+    const etAgainst = poisson(oppXg * 0.33, rng);
+    goalsFor += etFor;
+    goalsAgainst += etAgainst;
+    const etScorers = generateGoalScorers(players, etFor, rng, 90);
+    scorers.goals.push(...etScorers.goals);
+    scorers.assists.push(...etScorers.assists);
+    if (goalsFor === goalsAgainst) {
+      penalties = true;
+      const myPens = Math.floor(rng() * 3) + 3;
+      const oppPens = Math.floor(rng() * 3) + 3;
+      if (myPens === oppPens) {
+        penaltyScore = rng() > 0.5 ? { player: myPens + 1, opponent: oppPens } : { player: myPens, opponent: oppPens + 1 };
+      } else {
+        penaltyScore = { player: myPens, opponent: oppPens };
+      }
+    }
+  }
+  scorers.goals.sort((a, b) => a.minute - b.minute);
+  scorers.assists.sort((a, b) => a.minute - b.minute);
+  let result: 'W' | 'L';
+  if (penalties && penaltyScore) {
+    result = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
+  } else {
+    result = goalsFor > goalsAgainst ? 'W' : 'L';
+  }
+  return {
+    round: roundName, opponent: opponent.name,
+    goalsFor, goalsAgainst, extraTime, penalties, penaltyScore,
+    goalScorers: scorers.goals, assistProviders: scorers.assists,
+    result,
+  };
+}
+
 // Number of teams in each FA Cup round (Round of 32 through Final)
 const FA_CUP_TEAMS_IN_ROUND = [32, 16, 8, 4, 2];
 
@@ -1641,7 +1881,7 @@ function simulateChampionsLeague(
     tableData[team.name] = {
       name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
       goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
-      isPlayer: team.isPlayer,
+      isPlayer: team.isPlayer, strength: team.strength,
     };
   }
 
@@ -1937,7 +2177,7 @@ function simulateEuropaLeague(
     tableData[team.name] = {
       name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
       goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
-      isPlayer: team.isPlayer,
+      isPlayer: team.isPlayer, strength: team.strength,
     };
   }
 
@@ -2498,8 +2738,8 @@ export function simulateSeason(
   } }
   const faCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
 
-  // League Cup: same 32 teams, separate draw via rng
-  const leagueCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
+  // League Cup: same 32 teams, separate draw via rng; semi-final is 2-legged
+  const leagueCup = simulateLeagueCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
 
   // Super Cup (if won UCL or UEL last season)
   let superCup: SuperCupResult | undefined;
@@ -3303,7 +3543,7 @@ function simulateUCLLeaguePhase(
     tableData[team.name] = {
       name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
       goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
-      isPlayer: team.isPlayer,
+      isPlayer: team.isPlayer, strength: team.strength,
     };
   }
 
@@ -3435,7 +3675,7 @@ function simulateUELLeaguePhase(
     tableData[team.name] = {
       name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
       goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
-      isPlayer: team.isPlayer,
+      isPlayer: team.isPlayer, strength: team.strength,
     };
   }
 
@@ -4230,7 +4470,7 @@ export function simulateSharedSeason(
     // FA Cup from shared simulation; European competitions from shared UCL/UEL (if available)
     const faCup = sharedFaCupResultsMap.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round of 32', faCupWinner: sharedFaCupWinner };
     // League Cup: separate draw per player using their own rng
-    const leagueCup = simulateFaCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng);
+    const leagueCup = simulateLeagueCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng);
     const ucl = sharedUCLResults.get(hd.userId);
     const uel = sharedUELResults.get(hd.userId);
 
