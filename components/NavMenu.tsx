@@ -85,33 +85,33 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
           )}
         </div>
 
-        {/* Mobile: profile link visible in top bar */}
-        {isLoggedIn ? (
-          <Link
-            href="/profile"
-            className="relative flex h-9 items-center px-3 rounded-lg border border-gray-700 text-sm font-semibold text-white hover:border-gray-500 md:hidden"
+        {/* Mobile: profile (or sign-in) + hamburger in one flex row */}
+        <div className="flex items-center gap-1.5 md:hidden">
+          {isLoggedIn ? (
+            <Link
+              href="/profile"
+              className="relative flex h-9 items-center px-3 rounded-lg border border-gray-700 text-sm font-semibold text-white hover:border-gray-500"
+            >
+              Profile
+              {unclaimedCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-1 ring-gray-950">
+                  {unclaimedCount > 9 ? "9+" : unclaimedCount}
+                </span>
+              )}
+            </Link>
+          ) : (
+            <Link
+              href="/auth"
+              className="flex h-9 items-center px-3 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-500"
+            >
+              Sign in
+            </Link>
+          )}
+          <button
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-700 text-white hover:border-gray-500"
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Menu"
           >
-            Profile
-            {unclaimedCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-1 ring-gray-950">
-                {unclaimedCount > 9 ? "9+" : unclaimedCount}
-              </span>
-            )}
-          </Link>
-        ) : (
-          <Link
-            href="/auth"
-            className="flex h-9 items-center px-3 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-500 md:hidden"
-          >
-            Sign in
-          </Link>
-        )}
-        {/* Mobile hamburger button */}
-        <button
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-700 text-white hover:border-gray-500 md:hidden"
-          onClick={() => setOpen((o) => !o)}
-          aria-label="Menu"
-        >
           {open ? (
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -124,7 +124,8 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
           {unclaimedCount > 0 && !open && (
             <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-1 ring-gray-950" />
           )}
-        </button>
+          </button>
+        </div>{/* end mobile flex row */}
 
         {/* Mobile dropdown */}
         {open && (

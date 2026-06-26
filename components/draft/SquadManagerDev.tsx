@@ -20,18 +20,38 @@ const ordinal = (n: number) => {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
+const NATIONALITY_FLAGS: Record<string, string> = {
+  "England": "gb-eng", "Scotland": "gb-sct", "Wales": "gb-wls",
+  "Northern Ireland": "gb-nir", "Republic of Ireland": "ie", "Ireland": "ie",
+  "Spain": "es", "Germany": "de", "France": "fr", "Italy": "it",
+  "Netherlands": "nl", "Belgium": "be", "Portugal": "pt",
+  "Brazil": "br", "Argentina": "ar", "Uruguay": "uy", "Colombia": "co",
+  "Chile": "cl", "Mexico": "mx", "United States": "us", "Canada": "ca",
+  "Senegal": "sn", "Nigeria": "ng", "Ghana": "gh", "Ivory Coast": "ci",
+  "Cameroon": "cm", "Morocco": "ma", "Egypt": "eg", "Algeria": "dz",
+  "Tunisia": "tn", "Mali": "ml", "Guinea": "gn", "Benin": "bj",
+  "Croatia": "hr", "Serbia": "rs", "Poland": "pl", "Czech Republic": "cz",
+  "Slovakia": "sk", "Hungary": "hu", "Austria": "at", "Switzerland": "ch",
+  "Denmark": "dk", "Sweden": "se", "Norway": "no", "Finland": "fi",
+  "Iceland": "is", "Russia": "ru", "Ukraine": "ua", "Turkey": "tr",
+  "Greece": "gr", "Romania": "ro", "Bulgaria": "bg", "Montenegro": "me",
+  "Bosnia and Herzegovina": "ba", "North Macedonia": "mk", "Albania": "al",
+  "Kosovo": "xk", "Slovenia": "si", "Japan": "jp", "South Korea": "kr",
+  "Australia": "au", "New Zealand": "nz", "China": "cn",
+  "United Arab Emirates": "ae", "Saudi Arabia": "sa", "Jamaica": "jm",
+  "Costa Rica": "cr", "Ecuador": "ec", "Venezuela": "ve", "Peru": "pe",
+  "Paraguay": "py", "Bolivia": "bo", "Georgia": "ge", "Israel": "il",
+  "Cyprus": "cy", "Luxembourg": "lu",
+};
+const getFlagUrl = (nationality: string) => {
+  const code = NATIONALITY_FLAGS[nationality];
+  return code ? `https://flagcdn.com/16x12/${code}.png` : null;
+};
+
 export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1 }: Props) {
   const [squad, setSquad] = useState<DraftPlayer[]>(() => [...players]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const formation = formationName ? FORMATIONS.find(f => f.name === formationName) : null;
-
-  const [flagMap, setFlagMap] = useState<Record<string, string>>({});
-  useEffect(() => {
-    fetch("/api/draft/flags")
-      .then(r => r.json())
-      .then(d => { if (d.flags) setFlagMap(d.flags); })
-      .catch(() => {});
-  }, []);
 
   // Drag state — ref so it doesn't cause re-renders during drag
   const dragSrcIdx = useRef<number | null>(null);
@@ -83,8 +103,8 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
       const aIsStarter = !a.isSub;
       const bIsStarter = !b.isSub;
       if (aIsStarter && bIsStarter) {
-        next[aIdx] = { ...a, assignedPosition: b.assignedPosition };
-        next[bIdx] = { ...b, assignedPosition: a.assignedPosition };
+        next[aIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
+        next[bIdx] = { ...a, assignedPosition: b.assignedPosition, isSub: false };
       } else if (aIsStarter && !bIsStarter) {
         next[aIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
         next[bIdx] = { ...a, assignedPosition: a.assignedPosition, isSub: true };
@@ -130,7 +150,8 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
   const onDragStart = (e: React.DragEvent, idx: number) => {
     dragSrcIdx.current = idx;
     e.dataTransfer.effectAllowed = "move";
-    // Clear tap selection so drag and tap don't conflict
+    // Force the whole card (not just its face img) to be the drag ghost
+    e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 20, 20);
     setSelectedIdx(null);
   };
   const onDragEnd = () => {
@@ -287,8 +308,8 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                       {p.name.split(" ").pop()}
                     </span>
                     <div className="flex items-center gap-0.5">
-                      {flagMap[p.nationality] && (
-                        <img src={flagMap[p.nationality]} alt={p.nationality} className="w-3 h-2 object-cover rounded-[1px]" />
+                      {getFlagUrl(p.nationality) && (
+                        <img src={getFlagUrl(p.nationality)!} alt={p.nationality} className="w-3 h-2 object-cover rounded-[1px]" />
                       )}
                       <span className="text-[8px] sm:text-[10px] font-bold text-emerald-400 leading-tight">
                         {p.overall}
@@ -359,8 +380,8 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                   {p.name.split(" ").pop()}
                 </span>
                 <div className="flex items-center gap-0.5">
-                  {flagMap[p.nationality] && (
-                    <img src={flagMap[p.nationality]} alt={p.nationality} className="w-3.5 h-2.5 object-cover rounded-[1px]" />
+                  {getFlagUrl(p.nationality) && (
+                    <img src={getFlagUrl(p.nationality)!} alt={p.nationality} className="w-3.5 h-2.5 object-cover rounded-[1px]" />
                   )}
                   <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400">
                     {p.overall}

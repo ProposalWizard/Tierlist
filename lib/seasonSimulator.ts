@@ -231,6 +231,20 @@ function createRng(seed: number): () => number {
 
 // --- Default PL teams ---
 
+// Fixed English representatives for Season 1 European competitions (no previous table yet)
+export const SEASON1_UCL_PL_TEAMS: { name: string; strength: number }[] = [
+  { name: 'Arsenal', strength: 88 },
+  { name: 'Man City', strength: 88 },
+  { name: 'Liverpool', strength: 86 },
+  { name: 'Man United', strength: 83 },
+  { name: 'Aston Villa', strength: 82 },
+];
+export const SEASON1_UEL_PL_TEAMS: { name: string; strength: number }[] = [
+  { name: 'Bournemouth', strength: 78 },
+  { name: 'Crystal Palace', strength: 77 },
+  { name: 'Sunderland', strength: 70 },
+];
+
 export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
   { name: 'Man City', strength: 88 },
   { name: 'Arsenal', strength: 88 },
@@ -1139,8 +1153,9 @@ function simulateLeagueCup(
   ratings: PhaseRatings,
   allCupTeams: { name: string; strength: number }[],
   rng: () => number,
+  playerTeamOverride?: string,
 ): FaCupResult {
-  const playerTeamName = 'KNOWITBALL FC';
+  const playerTeamName = playerTeamOverride ?? 'KNOWITBALL FC';
   const bracket = allCupTeams.map(t => ({ ...t }));
   for (let i = bracket.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -2806,6 +2821,16 @@ export function simulateSeason(
         rng
       );
     })() || undefined;
+  } else {
+    // Season 1: no previous table — run background European brackets with predetermined English teams
+    uclTournamentWinner = pickBackgroundKnockoutWinner(
+      [...UCL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...SEASON1_UCL_PL_TEAMS],
+      rng
+    ) || undefined;
+    uelTournamentWinner = pickBackgroundKnockoutWinner(
+      [...UEL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...SEASON1_UEL_PL_TEAMS],
+      rng
+    ) || undefined;
   }
 
   // Player stats
@@ -4168,7 +4193,7 @@ export function simulateSharedSeason(
   sharedSeed: number,
   seasonNumber: number = 1,
   previousLeagueTable?: { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
-  previousResults?: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean }>,
+  previousResults?: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean; leagueCupWinner?: boolean }>,
 ): Map<string, SeasonResult> {
   const sharedRng = createRng(sharedSeed);
 
@@ -4336,15 +4361,17 @@ export function simulateSharedSeason(
       const prevResults = previousResults?.[hd.userId];
       const wonUELLast = prevResults?.uelWinner === true;
       const wonFACupLast = prevResults?.faCupWinner === true;
+      const wonLeagueCupLast = prevResults?.leagueCupWinner === true;
       const qualifiesThroughLeague = myFinish >= 1 && myFinish <= 5;
       const uelWinnerQualifiesForUCL = wonUELLast && !qualifiesThroughLeague;
       const faCupWinnerQualifiesForEL = wonFACupLast && myFinish > 7;
+      const leagueCupWinnerQualifiesForEL = wonLeagueCupLast && myFinish > 7;
 
       if (qualifiesThroughLeague || uelWinnerQualifiesForUCL) {
         uclEntrants.push(entrant);
       } else if (myFinish >= 6 && myFinish <= 7) {
         uelEntrants.push(entrant);
-      } else if (faCupWinnerQualifiesForEL) {
+      } else if (faCupWinnerQualifiesForEL || leagueCupWinnerQualifiesForEL) {
         uelEntrants.push(entrant);
       }
     }
@@ -4353,6 +4380,22 @@ export function simulateSharedSeason(
     const uelDrawRng = createRng(sharedSeed ^ 0xDE102);
     sharedUCLResults = simulateSharedUCL(uclEntrants, uclDrawRng);
     sharedUELResults = simulateSharedUEL(uelEntrants, uelDrawRng);
+  }
+
+  // Season 1 background European competitions (no previous table yet)
+  let season1UclWinner: string | undefined;
+  let season1UelWinner: string | undefined;
+  if (!previousLeagueTable) {
+    const s1UclRng = createRng(sharedSeed ^ 0xDC101);
+    const s1UelRng = createRng(sharedSeed ^ 0xDE102);
+    season1UclWinner = pickBackgroundKnockoutWinner(
+      [...UCL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...SEASON1_UCL_PL_TEAMS],
+      s1UclRng
+    ) || undefined;
+    season1UelWinner = pickBackgroundKnockoutWinner(
+      [...UEL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...SEASON1_UEL_PL_TEAMS],
+      s1UelRng
+    ) || undefined;
   }
 
   // Simulate Super Cup per player (if they won UCL or UEL last season)
@@ -4469,8 +4512,8 @@ export function simulateSharedSeason(
 
     // FA Cup from shared simulation; European competitions from shared UCL/UEL (if available)
     const faCup = sharedFaCupResultsMap.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round of 32', faCupWinner: sharedFaCupWinner };
-    // League Cup: separate draw per player using their own rng
-    const leagueCup = simulateLeagueCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng);
+    // League Cup: separate draw per player; pass teamName so the player is found in the shared bracket
+    const leagueCup = simulateLeagueCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng, hd.teamName);
     const ucl = sharedUCLResults.get(hd.userId);
     const uel = sharedUELResults.get(hd.userId);
 
@@ -4629,6 +4672,8 @@ export function simulateSharedSeason(
       projectedFinish, actualFinish, performance,
       phaseRatings: hd.ratings,
       faCup, leagueCup, ucl, uel,
+      uclTournamentWinner: ucl?.tournamentWinner || season1UclWinner,
+      uelTournamentWinner: uel?.tournamentWinner || season1UelWinner,
       superCup: sharedSuperCupResults.get(hd.userId),
       charityShield: sharedCharityShieldResults.get(hd.userId),
     });

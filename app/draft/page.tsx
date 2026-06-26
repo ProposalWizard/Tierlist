@@ -153,15 +153,10 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
                 onClick={() => onSell(p)}
                 className="w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left hover:bg-red-900/30 border-2 border-transparent hover:border-red-400/50 active:scale-[0.98]"
               >
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-9 text-center`}>
-                  {p.assignedPosition}
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-9 text-center ${isSub ? "bg-purple-500/20 text-purple-400" : `${getPositionColor(p.assignedPosition)} text-white`}`}>
+                  {isSub ? "SUB" : p.assignedPosition}
                 </span>
                 <span className="flex-1 ml-1 font-medium">{p.name}</span>
-                {isSub && (
-                  <span className="text-[9px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
-                    SUB
-                  </span>
-                )}
                 <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
                 <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
               </button>
@@ -281,6 +276,7 @@ export default function DraftPage() {
     setResume(null);
 
     let restoredSquad: DraftPlayer[] | null = null;
+    let restoredAlreadySubmitted = false;
     let restoredSeason = 1;
 
     // Fetch host's settings; formation is picked later in formation-pick phase
@@ -304,10 +300,11 @@ export default function DraftPage() {
       // If this player already has a squad in the room (rejoin), restore it so they
       // don't see "Waiting for host" in the wrong season or lose their submitted squad
       if (userId && Array.isArray(data.players)) {
-        const myRoomPlayer = (data.players as Array<{ user_id: string; squad?: DraftPlayer[] | null }>)
+        const myRoomPlayer = (data.players as Array<{ user_id: string; squad?: DraftPlayer[] | null; status?: string }>)
           .find(p => p.user_id === userId);
         if (myRoomPlayer?.squad && Array.isArray(myRoomPlayer.squad) && myRoomPlayer.squad.length > 0) {
           restoredSquad = myRoomPlayer.squad as DraftPlayer[];
+          restoredAlreadySubmitted = myRoomPlayer.status === "ready";
         }
       }
     } else {
@@ -322,7 +319,7 @@ export default function DraftPage() {
 
     if (restoredSquad) {
       setPlayers(restoredSquad);
-      setSquadSubmitted(true);
+      setSquadSubmitted(restoredAlreadySubmitted);
     } else {
       setPlayers([]);
       setSquadSubmitted(false);
@@ -335,14 +332,17 @@ export default function DraftPage() {
   const handleStartFromLobby = useCallback(() => {
     if (currentSeason === 1) {
       setPhase("formation-pick");
+    } else if (players.length > 0) {
+      // Season 2+ with an existing squad (preserved from last season) — go straight to arrange
+      setPhase("arrange");
     } else {
       setPhase("draft");
     }
     scrollTop();
-  }, [scrollTop, currentSeason]);
+  }, [scrollTop, currentSeason, players]);
 
-  const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[]) => {
-    setRevealStartTime(Date.now());
+  const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[], revealStartAt?: number) => {
+    setRevealStartTime(revealStartAt ?? Date.now());
     setPreComputedSeason(myResult);
     setRoomPlayers(allPlayers);
     // Populate players from the user's room squad so handlePlayNextSeason has a squad to work with

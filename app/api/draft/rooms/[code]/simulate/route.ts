@@ -25,7 +25,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, host_id, status, season_number, previous_league_table")
+    .select("id, host_id, status, season_number, previous_league_table, settings")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -72,7 +72,7 @@ export async function POST(
     }));
 
     // Build previous season results map for Super Cup / Charity Shield / EL/UCL qualification
-    const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean }> = {};
+    const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean; leagueCupWinner?: boolean }> = {};
     for (const rp of roomPlayers) {
       const prev = rp.season_result as Record<string, unknown> | null | undefined;
       if (prev) {
@@ -80,6 +80,7 @@ export async function POST(
           uclWinner: (prev.ucl as Record<string, unknown> | undefined)?.winner === true,
           uelWinner: (prev.uel as Record<string, unknown> | undefined)?.winner === true,
           faCupWinner: (prev.faCup as Record<string, unknown> | undefined)?.winner === true,
+          leagueCupWinner: (prev.leagueCup as Record<string, unknown> | undefined)?.winner === true,
         };
       }
     }
@@ -101,9 +102,14 @@ export async function POST(
         .eq("id", rp.id);
     }));
 
-    await service.from("draft_rooms").update({ status: "complete" }).eq("id", room.id);
+    const revealStartAt = Date.now();
+    const existingSettings = (room as Record<string, unknown>).settings as Record<string, unknown> | null | undefined;
+    await service.from("draft_rooms").update({
+      status: "complete",
+      settings: { ...(existingSettings ?? {}), revealStartAt },
+    }).eq("id", room.id);
 
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, revealStartAt });
   } catch (e) {
     await service.from("draft_rooms").update({ status: "lobby" }).eq("id", room.id);
     console.error("Simulation error:", e);
