@@ -83,8 +83,8 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
       const aIsStarter = !a.isSub;
       const bIsStarter = !b.isSub;
       if (aIsStarter && bIsStarter) {
-        next[aIdx] = { ...a, assignedPosition: b.assignedPosition };
-        next[bIdx] = { ...b, assignedPosition: a.assignedPosition };
+        next[aIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
+        next[bIdx] = { ...a, assignedPosition: b.assignedPosition, isSub: false };
       } else if (aIsStarter && !bIsStarter) {
         next[aIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
         next[bIdx] = { ...a, assignedPosition: a.assignedPosition, isSub: true };
