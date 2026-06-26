@@ -92,11 +92,10 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
       return;
     }
 
-    const a = squad[selectedIdx];
-    const b = squad[idx];
-
     setSquad(prev => {
       const next = [...prev];
+      const a = next[selectedIdx];
+      const b = next[idx];
       const aIsStarter = !a.isSub;
       const bIsStarter = !b.isSub;
 
@@ -105,10 +104,10 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
         next[idx] = { ...b, assignedPosition: a.assignedPosition };
       } else if (aIsStarter && !bIsStarter) {
         next[selectedIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
-        next[idx] = { ...a, isSub: true };
+        next[idx] = { ...a, assignedPosition: a.assignedPosition, isSub: true };
       } else if (!aIsStarter && bIsStarter) {
         next[idx] = { ...a, assignedPosition: b.assignedPosition, isSub: false };
-        next[selectedIdx] = { ...b, isSub: true };
+        next[selectedIdx] = { ...b, assignedPosition: b.assignedPosition, isSub: true };
       } else {
         next[selectedIdx] = { ...b };
         next[idx] = { ...a };
@@ -231,7 +230,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                         fallbackText={p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
                       />
                     ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
+                      <div className={`w-full h-full flex items-center justify-center ${getPositionColor(naturalPositions(p)[0] || p.assignedPosition)}`}>
                         <span className="text-xs sm:text-sm font-black text-white">
                           {p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
                         </span>
@@ -305,7 +304,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                   )}
                 </div>
                 {/* Position badge */}
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(naturalPositions(p)[0] || p.assignedPosition)} text-white`}>
                   {naturalPositions(p).join("/") || p.assignedPosition}
                 </span>
                 {/* Name + OVR + Flag */}
