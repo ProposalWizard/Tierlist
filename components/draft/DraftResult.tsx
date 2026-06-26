@@ -342,29 +342,61 @@ function buildSchedule(season: SeasonResult): RevealEvent[] {
   }
 
   // League Cup events — different weeks to FA Cup
-  const leagueCupSlots = [3, 8, 16, 25, 33]; // R32, R16, QF, SF; Final after MW38
-  const leagueCupEvents: RevealEvent[] = season.leagueCup.matches.map((m, i) => ({
-    kind: 'league-cup' as const,
-    match: {
-      opponent: m.opponent,
-      isHome: false,
-      goalsFor: m.goalsFor,
-      goalsAgainst: m.goalsAgainst,
-      goalScorers: m.goalScorers,
-      assistProviders: m.assistProviders,
-      result: m.result as 'W' | 'D' | 'L',
-    },
-    label: `League Cup ${m.round}`,
-  }));
+  // Semi-final is 2-legged: slots are [R32, R16, QF, SF-L1, SF-L2, Final]
+  const leagueCupSlots = [3, 8, 16, 25, 28, 33]; // R32, R16, QF, SF-L1, SF-L2; Final after MW38
+  const leagueCupEvents: RevealEvent[] = [];
+  let lcSlotIdx = 0;
+  for (const m of season.leagueCup.matches) {
+    leagueCupEvents.push({
+      kind: 'league-cup' as const,
+      match: {
+        opponent: m.opponent,
+        isHome: m.isHome ?? false,
+        goalsFor: m.goalsFor,
+        goalsAgainst: m.goalsAgainst,
+        goalScorers: m.goalScorers,
+        assistProviders: m.assistProviders,
+        result: m.result as 'W' | 'D' | 'L',
+      },
+      label: m.leg2 ? `League Cup ${m.round} (L1)` : `League Cup ${m.round}`,
+    });
+    lcSlotIdx++;
+    if (m.leg2) {
+      // Second leg of semi-final
+      leagueCupEvents.push({
+        kind: 'league-cup' as const,
+        match: {
+          opponent: m.opponent,
+          isHome: m.leg2.isHome,
+          goalsFor: m.leg2.goalsFor,
+          goalsAgainst: m.leg2.goalsAgainst,
+          goalScorers: m.leg2.goalScorers,
+          assistProviders: [],
+          result: m.result as 'W' | 'D' | 'L',
+        },
+        label: `League Cup ${m.round} (L2)`,
+      });
+      lcSlotIdx++;
+    }
+  }
 
   const leagueCupInsertMap = new Map<number, number>();
-  for (let i = 0; i < leagueCupEvents.length; i++) {
-    const round = season.leagueCup.matches[i];
-    if (round.round === 'Final') {
+  let lcEvtIdx = 0;
+  for (const m of season.leagueCup.matches) {
+    if (m.round === 'Final') {
       leagueCupInsertMap.set(39, (leagueCupInsertMap.get(39) || 0) + 1);
+      lcEvtIdx++;
+    } else if (m.leg2) {
+      // Two events for 2-legged semi
+      const slot1 = leagueCupSlots[lcEvtIdx] ?? 25;
+      const slot2 = leagueCupSlots[lcEvtIdx + 1] ?? 28;
+      leagueCupInsertMap.set(slot1, (leagueCupInsertMap.get(slot1) || 0) + 1);
+      leagueCupInsertMap.set(slot2, (leagueCupInsertMap.get(slot2) || 0) + 1);
+      lcEvtIdx += 2;
     } else {
-      const slot = leagueCupSlots[i] ?? 38;
+      const slot = leagueCupSlots[lcEvtIdx] ?? 38;
       leagueCupInsertMap.set(slot, (leagueCupInsertMap.get(slot) || 0) + 1);
+      lcEvtIdx++;
     }
   }
 
@@ -731,7 +763,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             const matchResults: { goalsFor: number; goalsAgainst: number }[] = [
               ...plMatchResults,
               ...season.faCup.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
-              ...season.leagueCup.matches.map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
+              ...season.leagueCup.matches.flatMap(m => [
+                { goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst },
+                ...(m.leg2 ? [{ goalsFor: m.leg2.goalsFor, goalsAgainst: m.leg2.goalsAgainst }] : []),
+              ]),
               ...(season.ucl?.leagueMatches ?? []).map(m => ({ goalsFor: m.goalsFor, goalsAgainst: m.goalsAgainst })),
               ...(season.ucl?.knockoutTies ?? []).flatMap(t => [
                 { goalsFor: t.leg1.goalsFor, goalsAgainst: t.leg1.goalsAgainst },
@@ -836,9 +871,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           const faCupWins = season.faCup.matches.filter(m =>
             m.goalsFor > m.goalsAgainst || (m.penalties && m.penaltyScore && m.penaltyScore.player > m.penaltyScore.opponent)
           ).length;
-          const leagueCupWins = season.leagueCup.matches.filter(m =>
-            m.goalsFor > m.goalsAgainst || (m.penalties && m.penaltyScore && m.penaltyScore.player > m.penaltyScore.opponent)
-          ).length;
+          const leagueCupWins = season.leagueCup.matches.filter(m => m.result === 'W').length;
           const uclWins = (season.ucl?.leagueMatches.filter(m => m.result === "W").length ?? 0)
             + (season.ucl?.knockoutTies.filter(t => t.result === "W").length ?? 0);
           const uelWins = (season.uel?.leagueMatches.filter(m => m.result === "W").length ?? 0)
@@ -899,7 +932,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
           // All-comps goals conceded: PL + FA Cup + League Cup + UCL/UEL
           const faCupGoalsAgainst = season.faCup.matches.reduce((sum, m) => sum + m.goalsAgainst, 0);
-          const leagueCupGoalsAgainst = season.leagueCup.matches.reduce((sum, m) => sum + m.goalsAgainst, 0);
+          const leagueCupGoalsAgainst = season.leagueCup.matches.reduce((sum, m) => sum + m.goalsAgainst + (m.leg2?.goalsAgainst ?? 0), 0);
           const uclGoalsAgainst = (season.ucl?.leagueMatches.reduce((s, m) => s + m.goalsAgainst, 0) ?? 0)
             + (season.ucl?.knockoutTies.reduce((s, t) => s + t.leg1.goalsAgainst + (t.leg2?.goalsAgainst ?? 0), 0) ?? 0);
           const uelGoalsAgainst = (season.uel?.leagueMatches.reduce((s, m) => s + m.goalsAgainst, 0) ?? 0)
@@ -1082,20 +1115,59 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     }
   }, [sharing, season.actualFinish, season.teamRecord.points, season.performance, players]);
 
-  const getLeaguePositionStyle = (pos: number, isPlayer: boolean) => {
+  // Compute actual qualification spots accounting for cup winners displacing PL spots
+  const tableQualification = useMemo(() => {
+    const table = season.leagueTable;
+    const n = table.length;
+    // Base: positions 1-4 UCL, 5-7 UEL, bottom 3 relegated (20-team league)
+    const clNames = new Set<string>(table.slice(0, 4).map(t => t.name));
+    // pl5, pl6, pl7 are the three PL-based UEL slots (may be displaced by cup winners)
+    const plUelSlots = [table[4]?.name, table[5]?.name, table[6]?.name].filter(Boolean) as string[];
+    const uelNames = new Set<string>(plUelSlots);
+    const relegNames = new Set<string>(table.slice(Math.max(n - 3, 0)).map(t => t.name));
+
+    // Track how many PL UEL slots get displaced (lowest first: index 2 = 7th, then 1 = 6th)
+    let displaced = 0;
+    const faCupWinner = season.faCup.faCupWinner;
+    const lcWinner = season.leagueCup.faCupWinner;
+    const cupWinnersGrantingEL = new Set<string>();
+
+    const faCupPos = table.findIndex(t => t.name === faCupWinner) + 1;
+    if (faCupWinner && faCupPos > 7) {
+      cupWinnersGrantingEL.add(faCupWinner);
+      displaced++;
+    }
+    const lcPos = table.findIndex(t => t.name === lcWinner) + 1;
+    if (lcWinner && lcWinner !== faCupWinner && lcPos > 7) {
+      cupWinnersGrantingEL.add(lcWinner);
+      displaced++;
+    }
+
+    // Remove displaced PL slots from the bottom up (7th first, then 6th)
+    for (let i = 0; i < displaced; i++) {
+      const removeIdx = plUelSlots.length - 1 - i;
+      if (removeIdx >= 0) uelNames.delete(plUelSlots[removeIdx]);
+    }
+    // Add cup winners
+    cupWinnersGrantingEL.forEach(name => uelNames.add(name));
+
+    return { clNames, uelNames, relegNames };
+  }, [season.leagueTable, season.faCup.faCupWinner, season.leagueCup.faCupWinner]);
+
+  const getLeaguePositionStyle = (pos: number, isPlayer: boolean, teamName: string) => {
     if (isPlayer) return "";
     if (pos === 1) return "border-l-2 border-l-yellow-500";
-    if (pos <= 5) return "border-l-2 border-l-blue-500";
-    if (pos <= 7) return "border-l-2 border-l-emerald-500";
-    if (pos >= 18) return "border-l-2 border-l-red-500";
+    if (tableQualification.clNames.has(teamName)) return "border-l-2 border-l-blue-500";
+    if (tableQualification.uelNames.has(teamName)) return "border-l-2 border-l-emerald-500";
+    if (tableQualification.relegNames.has(teamName)) return "border-l-2 border-l-red-500";
     return "";
   };
 
-  const getLeaguePositionBadge = (pos: number) => {
+  const getLeaguePositionBadge = (pos: number, teamName: string) => {
     if (pos === 1) return "bg-yellow-500/20 text-yellow-400";
-    if (pos <= 5) return "bg-blue-500/20 text-blue-400";
-    if (pos <= 7) return "bg-emerald-500/20 text-emerald-400";
-    if (pos >= 18) return "bg-red-500/20 text-red-400";
+    if (tableQualification.clNames.has(teamName)) return "bg-blue-500/20 text-blue-400";
+    if (tableQualification.uelNames.has(teamName)) return "bg-emerald-500/20 text-emerald-400";
+    if (tableQualification.relegNames.has(teamName)) return "bg-red-500/20 text-red-400";
     return "text-white";
   };
 
@@ -1578,8 +1650,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             {season.leagueTable.map((team, i) => {
               const pos = i + 1;
               return (
-                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer)}`}`}>
-                  <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos)}`}>{pos}</span>
+                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer, team.name)}`}`}>
+                  <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos, team.name)}`}>{pos}</span>
                   <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.won}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.drawn}</span>
@@ -1916,36 +1988,62 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             </span>
           </div>
           <div className="space-y-1.5">
-            {season.leagueCup.matches.map((m, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg ${
-                  m.result === "W" ? "bg-emerald-900/20" : "bg-red-900/20"
-                }`}
-              >
-                <span className="text-[10px] font-bold text-white w-20 shrink-0">{m.round}</span>
-                <span className="flex-1 font-medium truncate">{m.opponent}</span>
-                <span className={`font-black tabular-nums ${m.result === "W" ? "text-emerald-400" : "text-red-400"}`}>
-                  {m.goalsFor}-{m.goalsAgainst}
-                </span>
-                {m.extraTime && !m.penalties && (
-                  <span className="text-[9px] font-bold text-yellow-400/70 bg-yellow-500/10 px-1 py-0.5 rounded">AET</span>
-                )}
-                {m.penalties && m.penaltyScore && (
-                  <span className="text-[9px] font-bold text-purple-400/70 bg-purple-500/10 px-1 py-0.5 rounded">
-                    PEN {m.penaltyScore.player}-{m.penaltyScore.opponent}
+            {season.leagueCup.matches.map((m, i) => {
+              if (m.leg2) {
+                // 2-legged semi-final
+                const aggFor = m.goalsFor + m.leg2.goalsFor;
+                const aggAgainst = m.goalsAgainst + m.leg2.goalsAgainst;
+                return (
+                  <div key={i} className={`rounded-lg px-2 py-2 ${m.result === "W" ? "bg-emerald-900/20" : "bg-red-900/20"}`}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] font-bold text-white w-20 shrink-0">{m.round}</span>
+                      <span className="flex-1 font-medium text-sm truncate">{m.opponent}</span>
+                      <span className={`text-[10px] font-bold ${m.result === "W" ? "text-emerald-400" : "text-red-400"}`}>
+                        Agg {aggFor}-{aggAgainst}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white pl-20">
+                      <span>L1 ({m.isHome ? "H" : "A"}): {m.goalsFor}-{m.goalsAgainst}</span>
+                      <span>L2 ({m.leg2.isHome ? "H" : "A"}): {m.leg2.goalsFor}-{m.leg2.goalsAgainst}</span>
+                      {m.leg2.extraTime && <span className="text-yellow-400/70 font-bold">AET</span>}
+                      {m.leg2.penalties && m.leg2.penaltyScore && (
+                        <span className="text-purple-400/70 font-bold">PEN {m.leg2.penaltyScore.player}-{m.leg2.penaltyScore.opponent}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg ${
+                    m.result === "W" ? "bg-emerald-900/20" : "bg-red-900/20"
+                  }`}
+                >
+                  <span className="text-[10px] font-bold text-white w-20 shrink-0">{m.round}</span>
+                  <span className="flex-1 font-medium truncate">{m.opponent}</span>
+                  <span className={`font-black tabular-nums ${m.result === "W" ? "text-emerald-400" : "text-red-400"}`}>
+                    {m.goalsFor}-{m.goalsAgainst}
                   </span>
-                )}
-              </div>
-            ))}
+                  {m.extraTime && !m.penalties && (
+                    <span className="text-[9px] font-bold text-yellow-400/70 bg-yellow-500/10 px-1 py-0.5 rounded">AET</span>
+                  )}
+                  {m.penalties && m.penaltyScore && (
+                    <span className="text-[9px] font-bold text-purple-400/70 bg-purple-500/10 px-1 py-0.5 rounded">
+                      PEN {m.penaltyScore.player}-{m.penaltyScore.opponent}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
           {season.leagueCup.matches.length > 0 && (
             <div className="mt-2 pt-2 border-t border-gray-800/50 flex gap-4 text-[10px] text-white">
               <span>
-                Goals: {season.leagueCup.matches.reduce((s, m) => s + m.goalsFor, 0)}
+                Goals: {season.leagueCup.matches.reduce((s, m) => s + m.goalsFor + (m.leg2?.goalsFor ?? 0), 0)}
               </span>
               <span>
-                Conceded: {season.leagueCup.matches.reduce((s, m) => s + m.goalsAgainst, 0)}
+                Conceded: {season.leagueCup.matches.reduce((s, m) => s + m.goalsAgainst + (m.leg2?.goalsAgainst ?? 0), 0)}
               </span>
             </div>
           )}
@@ -2036,6 +2134,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <div className="flex items-center text-[9px] font-bold tracking-widest text-white mb-1 px-1 uppercase">
                     <span className="w-5 text-center shrink-0">#</span>
                     <span className="flex-1 ml-1 min-w-0">Club</span>
+                    <span className="w-7 text-right shrink-0">OVR</span>
                     <span className="w-6 text-center shrink-0">W</span>
                     <span className="w-6 text-center shrink-0">D</span>
                     <span className="w-6 text-center shrink-0">L</span>
@@ -2067,6 +2166,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           }`}>{pos}</span>
                           <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-blue-300" : "text-white"}`}>
                             {team.name}
+                          </span>
+                          <span className={`w-7 text-right text-[10px] font-bold shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-gray-400"}`}>
+                            {team.isPlayer ? Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length) : team.strength}
                           </span>
                           <span className="w-6 text-center text-white shrink-0">{team.won}</span>
                           <span className="w-6 text-center text-white shrink-0">{team.drawn}</span>
@@ -2114,19 +2216,18 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           </div>
                           <div className="text-sm font-bold text-white mb-1">vs {tie.opponent}</div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white">
-                            <span>
-                              L1: {tie.leg1.goalsFor}-{tie.leg1.goalsAgainst} ({tie.leg1.isHome ? "H" : "A"})
-                            </span>
-                            {tie.leg2 && (
+                            {isFinal ? (
+                              <span className="font-bold">{tie.leg1.goalsFor}-{tie.leg1.goalsAgainst}</span>
+                            ) : (
                               <>
-                                <span>
-                                  L2: {tie.leg2.goalsFor}-{tie.leg2.goalsAgainst} ({tie.leg2.isHome ? "H" : "A"})
-                                </span>
-                                <span className="font-bold text-white">Agg: {aggFor}-{aggAgainst}</span>
+                                <span>L1: {tie.leg1.goalsFor}-{tie.leg1.goalsAgainst} ({tie.leg1.isHome ? "H" : "A"})</span>
+                                {tie.leg2 && (
+                                  <>
+                                    <span>L2: {tie.leg2.goalsFor}-{tie.leg2.goalsAgainst} ({tie.leg2.isHome ? "H" : "A"})</span>
+                                    <span className="font-bold text-white">Agg: {aggFor}-{aggAgainst}</span>
+                                  </>
+                                )}
                               </>
-                            )}
-                            {isFinal && (
-                              <span>{tie.leg1.goalsFor}-{tie.leg1.goalsAgainst}</span>
                             )}
                             {(tie.leg2?.extraTime || tie.leg1.extraTime) && (
                               <span className="text-yellow-400/70 font-bold">AET</span>
@@ -2310,19 +2411,18 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           </div>
                           <div className="text-sm font-bold text-white mb-1">vs {tie.opponent}</div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white">
-                            <span>
-                              L1: {tie.leg1.goalsFor}-{tie.leg1.goalsAgainst} ({tie.leg1.isHome ? "H" : "A"})
-                            </span>
-                            {tie.leg2 && (
+                            {isFinal ? (
+                              <span className="font-bold">{tie.leg1.goalsFor}-{tie.leg1.goalsAgainst}</span>
+                            ) : (
                               <>
-                                <span>
-                                  L2: {tie.leg2.goalsFor}-{tie.leg2.goalsAgainst} ({tie.leg2.isHome ? "H" : "A"})
-                                </span>
-                                <span className="font-bold text-white">Agg: {aggFor}-{aggAgainst}</span>
+                                <span>L1: {tie.leg1.goalsFor}-{tie.leg1.goalsAgainst} ({tie.leg1.isHome ? "H" : "A"})</span>
+                                {tie.leg2 && (
+                                  <>
+                                    <span>L2: {tie.leg2.goalsFor}-{tie.leg2.goalsAgainst} ({tie.leg2.isHome ? "H" : "A"})</span>
+                                    <span className="font-bold text-white">Agg: {aggFor}-{aggAgainst}</span>
+                                  </>
+                                )}
                               </>
-                            )}
-                            {isFinal && (
-                              <span>{tie.leg1.goalsFor}-{tie.leg1.goalsAgainst}</span>
                             )}
                             {(tie.leg2?.extraTime || tie.leg1.extraTime) && (
                               <span className="text-yellow-400/70 font-bold">AET</span>

@@ -7,7 +7,7 @@
  * when the image fails to load (e.g. missing storage object).
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
   /** Fallback text shown when the image cannot be loaded */
@@ -19,9 +19,14 @@ export default function ImageWithFallback({
   className,
   alt,
   style,
+  src,
   ...rest
 }: Props) {
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
 
   if (failed) {
     return (
@@ -39,6 +44,7 @@ export default function ImageWithFallback({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       {...rest}
+      src={src}
       alt={alt}
       className={className}
       style={style}
