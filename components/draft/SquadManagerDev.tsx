@@ -25,6 +25,14 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const formation = formationName ? FORMATIONS.find(f => f.name === formationName) : null;
 
+  const [flagMap, setFlagMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    fetch("/api/draft/flags")
+      .then(r => r.json())
+      .then(d => { if (d.flags) setFlagMap(d.flags); })
+      .catch(() => {});
+  }, []);
+
   const starters = useMemo(
     () => squad
       .map((p, i) => ({ player: p, idx: i }))
@@ -236,14 +244,19 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                       </div>
                     )}
                   </div>
-                  {/* Name + Rating */}
+                  {/* Name + Rating + Flag */}
                   <div className="flex flex-col items-center mt-0.5 max-w-[60px] sm:max-w-[72px]">
                     <span className="text-[8px] sm:text-[10px] font-bold text-white truncate w-full text-center leading-tight">
                       {p.name.split(" ").pop()}
                     </span>
-                    <span className="text-[8px] sm:text-[10px] font-bold text-emerald-400 leading-tight">
-                      {p.overall}
-                    </span>
+                    <div className="flex items-center gap-0.5">
+                      {flagMap[p.nationality] && (
+                        <img src={flagMap[p.nationality]} alt={p.nationality} className="w-3 h-2 object-cover rounded-[1px]" />
+                      )}
+                      <span className="text-[8px] sm:text-[10px] font-bold text-emerald-400 leading-tight">
+                        {p.overall}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -295,13 +308,18 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
                   {naturalPositions(p).join("/") || p.assignedPosition}
                 </span>
-                {/* Name + OVR */}
+                {/* Name + OVR + Flag */}
                 <span className="text-[9px] sm:text-[10px] font-bold text-white truncate max-w-[64px] text-center">
                   {p.name.split(" ").pop()}
                 </span>
-                <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400">
-                  {p.overall}
-                </span>
+                <div className="flex items-center gap-0.5">
+                  {flagMap[p.nationality] && (
+                    <img src={flagMap[p.nationality]} alt={p.nationality} className="w-3.5 h-2.5 object-cover rounded-[1px]" />
+                  )}
+                  <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400">
+                    {p.overall}
+                  </span>
+                </div>
               </button>
             );
           })}
