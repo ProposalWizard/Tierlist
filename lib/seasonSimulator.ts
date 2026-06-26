@@ -196,6 +196,7 @@ export interface SeasonResult {
   performance: 'OVERPERFORMED' | 'AS EXPECTED' | 'UNDERPERFORMED';
   phaseRatings: PhaseRatings;
   faCup: FaCupResult;
+  leagueCup: FaCupResult;
   ucl?: UCLResult;
   uel?: UCLResult;
   superCup?: SuperCupResult;
@@ -2497,6 +2498,9 @@ export function simulateSeason(
   } }
   const faCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
 
+  // League Cup: same 32 teams, separate draw via rng
+  const leagueCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
+
   // Super Cup (if won UCL or UEL last season)
   let superCup: SuperCupResult | undefined;
   if (previousSeasonResult) {
@@ -2523,16 +2527,18 @@ export function simulateSeason(
     const wonUELLastSeason = previousSeasonResult?.uel?.winner === true;
     const wonUCLLastSeason = previousSeasonResult?.ucl?.winner === true;
     const wonFACupLastSeason = previousSeasonResult?.faCup?.winner === true;
+    const wonLeagueCupLastSeason = previousSeasonResult?.leagueCup?.winner === true;
     const qualifiesThroughLeague = playerFinish >= 1 && playerFinish <= 5;
     const uelWinnerQualifies = wonUELLastSeason && !qualifiesThroughLeague;
     const uclWinnerQualifies = wonUCLLastSeason && !qualifiesThroughLeague;
     const faCupWinnerQualifiesForEL = wonFACupLastSeason && playerFinish > 7;
+    const leagueCupWinnerQualifiesForEL = wonLeagueCupLastSeason && playerFinish > 7;
 
     ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng, uelWinnerQualifies || uclWinnerQualifies);
     if (!ucl.qualified) {
       if (playerFinish >= 6 && playerFinish <= 7) {
         uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng);
-      } else if (faCupWinnerQualifiesForEL) {
+      } else if (faCupWinnerQualifiesForEL || leagueCupWinnerQualifiesForEL) {
         uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng, true);
       }
     }
@@ -2693,6 +2699,36 @@ export function simulateSeason(
     const matchForRating = { goalScorers: cm.goalScorers, assistProviders: cm.assistProviders, goalsAgainst: cm.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.goalsFor, opponent: cm.opponent, isHome: false };
     for (const p of starters) {
       if (p === gk && benchGkPlaysFaCup) continue; // bench GK rotated in when team won trophy
+      statsMap[p.name].appearances++;
+      rateMatchForPlayer(p, matchForRating);
+    }
+    if (benchGkPlaysFaCup && benchGk && statsMap[benchGk.name]) {
+      statsMap[benchGk.name].appearances++;
+      rateMatchForPlayer(benchGk, matchForRating);
+    }
+    for (const gs of cm.goalScorers) {
+      if (statsMap[gs.player]) statsMap[gs.player].goals++;
+    }
+    for (const ap of cm.assistProviders) {
+      if (statsMap[ap.player]) statsMap[ap.player].assists++;
+    }
+    if (cm.goalsAgainst === 0) {
+      if (benchGkPlaysFaCup && benchGk && statsMap[benchGk.name]) {
+        statsMap[benchGk.name].cleanSheets++;
+      } else if (gk) {
+        statsMap[gk.name].cleanSheets++;
+      }
+      for (const def of defenders) {
+        statsMap[def.name].cleanSheets++;
+      }
+    }
+  }
+
+  // Count League Cup stats (added to all-comps totals)
+  for (const cm of leagueCup.matches) {
+    const matchForRating = { goalScorers: cm.goalScorers, assistProviders: cm.assistProviders, goalsAgainst: cm.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.goalsFor, opponent: cm.opponent, isHome: false };
+    for (const p of starters) {
+      if (p === gk && benchGkPlaysFaCup) continue;
       statsMap[p.name].appearances++;
       rateMatchForPlayer(p, matchForRating);
     }
@@ -2961,6 +2997,7 @@ export function simulateSeason(
     performance,
     phaseRatings: ratings,
     faCup,
+    leagueCup,
     ucl,
     uel,
     superCup,
@@ -4192,6 +4229,8 @@ export function simulateSharedSeason(
 
     // FA Cup from shared simulation; European competitions from shared UCL/UEL (if available)
     const faCup = sharedFaCupResultsMap.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round of 32', faCupWinner: sharedFaCupWinner };
+    // League Cup: separate draw per player using their own rng
+    const leagueCup = simulateFaCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng);
     const ucl = sharedUCLResults.get(hd.userId);
     const uel = sharedUELResults.get(hd.userId);
 
@@ -4349,7 +4388,7 @@ export function simulateSharedSeason(
       longestWinStreak, longestUnbeatenRun, trailingWinStreak, trailingUnbeatenRun, leadingWinStreak, leadingUnbeatenRun,
       projectedFinish, actualFinish, performance,
       phaseRatings: hd.ratings,
-      faCup, ucl, uel,
+      faCup, leagueCup, ucl, uel,
       superCup: sharedSuperCupResults.get(hd.userId),
       charityShield: sharedCharityShieldResults.get(hd.userId),
     });

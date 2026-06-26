@@ -126,7 +126,7 @@ export const WIN_EVENT_OPTIONS: { value: WinEvent; label: string; competition: C
   { value: "europa_sf",            label: "Reach the Europa League Semi-Final", competition: "cl_draft", available: true },
   { value: "double",               label: "Win the Double (PL + FA Cup / PL + Europa)", competition: "any",  available: true },
   { value: "treble",               label: "Win the Treble (PL + UCL + ...)",   competition: "cl_draft", available: true },
-  { value: "efl_cup_win",          label: "Win the EFL Cup",                    competition: "pl_draft", available: false },
+  { value: "efl_cup_win",          label: "Win the League Cup",                 competition: "pl_draft", available: true },
 ];
 
 export const CONDITION_TYPE_LABELS: Record<ConditionType, string> = {
