@@ -34,7 +34,7 @@ interface Props {
   currentSeason?: number;
   settings?: DraftSettings | null;
   onStartDraft: () => void;
-  onSimulationComplete: (myResult: SeasonResult, allPlayers: RoomPlayer[]) => void;
+  onSimulationComplete: (myResult: SeasonResult, allPlayers: RoomPlayer[], revealStartAt?: number) => void;
   onCareerComplete?: (seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[], allRoomPlayerSeasons?: Record<string, SeasonResult[]>) => void;
   onLeave: () => void;
   onUpdateSettings?: (settings: Partial<DraftSettings>) => void;
@@ -64,6 +64,7 @@ export default function MultiplayerLobby({
   const [copied, setCopied] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
   const completedRef = useRef(false);
+  const revealStartAtRef = useRef<number | undefined>(undefined);
   const roomCodeRef = useRef(roomCode);
   const userIdRef = useRef(userId);
   const onSimCompleteRef = useRef(onSimulationComplete);
@@ -82,12 +83,12 @@ export default function MultiplayerLobby({
     return data;
   }, []);
 
-  const tryComplete = useCallback((roomPlayers: RoomPlayer[]) => {
+  const tryComplete = useCallback((roomPlayers: RoomPlayer[], revealStartAt?: number) => {
     if (completedRef.current) return;
     const myPlayer = roomPlayers.find(p => p.user_id === userIdRef.current);
     if (!myPlayer?.season_result) return;
     completedRef.current = true;
-    onSimCompleteRef.current(myPlayer.season_result, roomPlayers);
+    onSimCompleteRef.current(myPlayer.season_result, roomPlayers, revealStartAt ?? revealStartAtRef.current);
   }, []);
 
   // Realtime subscription + polling fallback (stable — no deps that change on re-render)
@@ -101,6 +102,8 @@ export default function MultiplayerLobby({
       if (cancelled || completedRef.current) return;
       const d = await fetchRoom();
       if (d?.room?.status === "complete" && d.players) {
+        const rsa = (d.room?.settings as Record<string, unknown> | undefined)?.revealStartAt;
+        if (typeof rsa === "number") revealStartAtRef.current = rsa;
         tryComplete(d.players);
       }
     };
@@ -124,9 +127,17 @@ export default function MultiplayerLobby({
           (payload) => {
             const updated = payload.new as RoomData;
             setRoom(updated);
-            if (updated.status === "complete") checkComplete();
+            if (updated.status === "complete") {
+              // Capture the server-side anchor time so all players animate in sync
+              const rsa = (updated.settings as Record<string, unknown> | undefined)?.revealStartAt;
+              if (typeof rsa === "number") revealStartAtRef.current = rsa;
+              checkComplete();
+            }
             if (updated.settings && onSettingsSyncRef.current) {
-              onSettingsSyncRef.current(updated.settings as Partial<DraftSettings>);
+              // Strip internal fields before syncing game settings to parent
+              const { revealStartAt: _rsa, ...gameSettings } = updated.settings as Record<string, unknown>;
+              void _rsa;
+              onSettingsSyncRef.current(gameSettings as Partial<DraftSettings>);
             }
           }
         )
@@ -171,10 +182,12 @@ export default function MultiplayerLobby({
         setSimulating(false);
         return;
       }
-      // Simulation succeeded on the server — immediately fetch and complete
+      // Capture server-side anchor time for synchronized animation
+      const data = await res.json().catch(() => ({}));
+      if (typeof data.revealStartAt === "number") revealStartAtRef.current = data.revealStartAt;
       const d = await fetchRoom();
       if (d?.room?.status === "complete" && d.players) {
-        tryComplete(d.players);
+        tryComplete(d.players, revealStartAtRef.current);
       }
     } catch {
       setSimError("Network error — try again");
@@ -283,191 +296,132 @@ export default function MultiplayerLobby({
       </div>
 
       {/* Room Settings */}
-      {settings && currentSeason === 1 && (
-        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase mb-1">Settings</div>
-          <div className="text-[10px] text-white mb-3">Formation is chosen individually</div>
+      {settings && currentSeason === 1 && (() => {
+        const canEdit = isHost && !!onUpdateSettings && room?.status === "lobby";
+        const respinLabel = settings.respins === 0 ? "No re-spins" : settings.respins === 1 ? "1 re-spin" : "3 re-spins";
+        return (
+          <div className="bg-gray-900 rounded-xl p-3 mb-4 border border-gray-800/50">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="text-[10px] font-bold tracking-widest text-white uppercase">Settings</div>
+              <div className="text-[10px] text-gray-500">Formation chosen individually</div>
+            </div>
 
-          {/* Era Range */}
-          <div className="mb-3">
-            <div className="text-[10px] font-bold text-white mb-1.5">Era Range</div>
-            {isHost && onUpdateSettings ? (
-              <div className="flex items-center gap-2">
-                <div className="flex-1 relative">
+            {/* Era row — always shows dropdowns for host in lobby, badges otherwise */}
+            {canEdit ? (
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-[10px] font-bold text-gray-400 shrink-0">Era</span>
+                <div className="relative flex-1">
                   <select
                     value={settings.eraStart}
-                    onChange={(e) => onUpdateSettings({ eraStart: Number(e.target.value) })}
-                    className="w-full appearance-none bg-gray-800 border border-gray-700/50 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                    onChange={(e) => onUpdateSettings!({ eraStart: Number(e.target.value) })}
+                    className="w-full appearance-none bg-gray-800 border border-gray-700/50 rounded px-2 py-1 text-[11px] font-medium text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   >
                     {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
                       <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  <div className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                   </div>
                 </div>
-                <span className="text-white text-[10px] font-bold">to</span>
-                <div className="flex-1 relative">
+                <span className="text-[10px] text-gray-400 shrink-0">to</span>
+                <div className="relative flex-1">
                   <select
                     value={settings.eraEnd}
-                    onChange={(e) => onUpdateSettings({ eraEnd: Number(e.target.value) })}
-                    className="w-full appearance-none bg-gray-800 border border-gray-700/50 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                    onChange={(e) => onUpdateSettings!({ eraEnd: Number(e.target.value) })}
+                    className="w-full appearance-none bg-gray-800 border border-gray-700/50 rounded px-2 py-1 text-[11px] font-medium text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   >
                     {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
                       <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  <div className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                   </div>
                 </div>
               </div>
-            ) : (
-              <span className="text-xs font-bold bg-gray-800 text-white px-2.5 py-1 rounded">
-                FIFA {settings.eraStart}–{settings.eraEnd}
-              </span>
-            )}
-          </div>
+            ) : null}
 
-          {/* Game Mode */}
-          <div className="mb-3">
-            <div className="text-[10px] font-bold text-white mb-1.5">Game Mode</div>
-            {isHost && onUpdateSettings ? (
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  onClick={() => onUpdateSettings({ mode: "normal" })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                    settings.mode === "normal"
-                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
-                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
-                  }`}
-                >
-                  Normal
-                </button>
-                <button
-                  onClick={() => onUpdateSettings({ mode: "prime" })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                    settings.mode === "prime"
-                      ? "bg-amber-600 text-white ring-1 ring-amber-400"
-                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
-                  }`}
-                >
-                  Prime
-                </button>
-              </div>
-            ) : (
-              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
-                settings.mode === "prime"
-                  ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
-                  : "bg-gray-800 text-white"
-              }`}>
-                {settings.mode === "prime" ? "Prime" : "Normal"}
-              </span>
-            )}
-          </div>
+            {/* Compact toggle grid — 2 rows of 3 */}
+            <div className="grid grid-cols-3 gap-1">
+              {/* Era badge (read-only view) */}
+              {!canEdit && (
+                <span className="col-span-3 text-center text-[11px] font-bold bg-gray-800 text-white px-2 py-1 rounded mb-0.5">
+                  FIFA {settings.eraStart}–{settings.eraEnd}
+                </span>
+              )}
 
-          {/* Draft Order */}
-          <div className="mb-3">
-            <div className="text-[10px] font-bold text-white mb-1.5">Draft Order</div>
-            {isHost && onUpdateSettings ? (
-              <div className="grid grid-cols-2 gap-1.5">
+              {/* Mode */}
+              {canEdit ? (
                 <button
-                  onClick={() => onUpdateSettings({ draftOrder: "club-first" })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                    settings.draftOrder === "club-first"
-                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
-                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                  onClick={() => onUpdateSettings!({ mode: settings.mode === "normal" ? "prime" : "normal" })}
+                  className={`py-1 px-1.5 rounded text-[11px] font-bold transition-all ${
+                    settings.mode === "prime" ? "bg-amber-600 text-white" : "bg-gray-800 text-white hover:bg-gray-700"
                   }`}
                 >
-                  Club First
+                  {settings.mode === "prime" ? "⭐ Prime" : "Normal"}
                 </button>
-                <button
-                  onClick={() => onUpdateSettings({ draftOrder: "position-first" })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                    settings.draftOrder === "position-first"
-                      ? "bg-sky-600 text-white ring-1 ring-sky-400"
-                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
-                  }`}
-                >
-                  Position First
-                </button>
-              </div>
-            ) : (
-              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
-                settings.draftOrder === "club-first"
-                  ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                  : "bg-sky-500/15 text-sky-400 border border-sky-500/30"
-              }`}>
-                {settings.draftOrder === "club-first" ? "Club First" : "Position First"}
-              </span>
-            )}
-          </div>
+              ) : (
+                <span className={`py-1 px-1.5 rounded text-[11px] font-bold text-center ${
+                  settings.mode === "prime" ? "bg-amber-600/20 text-amber-400" : "bg-gray-800 text-white"
+                }`}>
+                  {settings.mode === "prime" ? "⭐ Prime" : "Normal"}
+                </span>
+              )}
 
-          {/* Re-spins */}
-          <div className="mb-3">
-            <div className="text-[10px] font-bold text-white mb-1.5">Re-spins</div>
-            {isHost && onUpdateSettings ? (
-              <div className="grid grid-cols-3 gap-1.5">
-                {([3, 1, 0] as const).map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => onUpdateSettings({ respins: n })}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                      settings.respins === n
-                        ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
-                        : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
-                    }`}
-                  >
-                    {n === 0 ? "None" : n}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <span className="text-xs font-bold bg-gray-800 text-white px-2.5 py-1 rounded">
-                {settings.respins === 0 ? "No Re-spins" : settings.respins === 1 ? "1 Re-spin" : "3 Re-spins"}
-              </span>
-            )}
-          </div>
+              {/* Draft Order */}
+              {canEdit ? (
+                <button
+                  onClick={() => onUpdateSettings!({ draftOrder: settings.draftOrder === "club-first" ? "position-first" : "club-first" })}
+                  className="py-1 px-1.5 rounded text-[11px] font-bold bg-gray-800 text-white hover:bg-gray-700 transition-all"
+                >
+                  {settings.draftOrder === "club-first" ? "Club 1st" : "Pos 1st"}
+                </button>
+              ) : (
+                <span className="py-1 px-1.5 rounded text-[11px] font-bold text-center bg-gray-800 text-white">
+                  {settings.draftOrder === "club-first" ? "Club 1st" : "Pos 1st"}
+                </span>
+              )}
 
-          {/* Hidden Ratings */}
-          <div>
-            <div className="text-[10px] font-bold text-white mb-1.5">Rating Visibility</div>
-            {isHost && onUpdateSettings ? (
-              <div className="grid grid-cols-2 gap-1.5">
+              {/* Re-spins */}
+              {canEdit ? (
                 <button
-                  onClick={() => onUpdateSettings({ hiddenRatings: false })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                    !settings.hiddenRatings
-                      ? "bg-emerald-600 text-white ring-1 ring-emerald-400"
-                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
+                  onClick={() => onUpdateSettings!({ respins: settings.respins === 3 ? 1 : settings.respins === 1 ? 0 : 3 })}
+                  className="py-1 px-1.5 rounded text-[11px] font-bold bg-gray-800 text-white hover:bg-gray-700 transition-all"
+                >
+                  {respinLabel}
+                </button>
+              ) : (
+                <span className="py-1 px-1.5 rounded text-[11px] font-bold text-center bg-gray-800 text-white">
+                  {respinLabel}
+                </span>
+              )}
+
+              {/* Ratings */}
+              {canEdit ? (
+                <button
+                  onClick={() => onUpdateSettings!({ hiddenRatings: !settings.hiddenRatings })}
+                  className={`col-span-3 py-1 px-1.5 rounded text-[11px] font-bold transition-all ${
+                    settings.hiddenRatings ? "bg-purple-700/40 text-purple-300 hover:bg-purple-700/60" : "bg-gray-800 text-white hover:bg-gray-700"
                   }`}
                 >
-                  Normal
+                  {settings.hiddenRatings ? "Ratings: Hidden" : "Ratings: Visible"}
                 </button>
-                <button
-                  onClick={() => onUpdateSettings({ hiddenRatings: true })}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
-                    settings.hiddenRatings
-                      ? "bg-purple-600 text-white ring-1 ring-purple-400"
-                      : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700/50"
-                  }`}
-                >
-                  Hidden
-                </button>
-              </div>
-            ) : (
-              <span className={`text-xs font-bold px-2.5 py-1 rounded ${
-                settings.hiddenRatings
-                  ? "bg-purple-500/15 text-purple-400 border border-purple-500/30"
-                  : "bg-gray-800 text-white"
-              }`}>
-                {settings.hiddenRatings ? "Hidden" : "Normal"}
-              </span>
+              ) : (
+                <span className={`col-span-3 py-1 px-1.5 rounded text-[11px] font-bold text-center ${
+                  settings.hiddenRatings ? "bg-purple-700/20 text-purple-400" : "bg-gray-800 text-white"
+                }`}>
+                  {settings.hiddenRatings ? "Ratings: Hidden" : "Ratings: Visible"}
+                </span>
+              )}
+            </div>
+
+            {canEdit && (
+              <p className="text-[9px] text-gray-500 mt-2 text-center">Tap any setting to change · Settings lock when game starts</p>
             )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Simulating state */}
       {isSimulating && (

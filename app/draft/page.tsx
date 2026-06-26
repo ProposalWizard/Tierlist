@@ -341,8 +341,8 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop, currentSeason]);
 
-  const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[]) => {
-    setRevealStartTime(Date.now());
+  const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[], revealStartAt?: number) => {
+    setRevealStartTime(revealStartAt ?? Date.now());
     setPreComputedSeason(myResult);
     setRoomPlayers(allPlayers);
     // Populate players from the user's room squad so handlePlayNextSeason has a squad to work with

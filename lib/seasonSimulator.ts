@@ -231,6 +231,20 @@ function createRng(seed: number): () => number {
 
 // --- Default PL teams ---
 
+// Fixed English representatives for Season 1 European competitions (no previous table yet)
+export const SEASON1_UCL_PL_TEAMS: { name: string; strength: number }[] = [
+  { name: 'Arsenal', strength: 88 },
+  { name: 'Man City', strength: 88 },
+  { name: 'Liverpool', strength: 86 },
+  { name: 'Man United', strength: 83 },
+  { name: 'Aston Villa', strength: 82 },
+];
+export const SEASON1_UEL_PL_TEAMS: { name: string; strength: number }[] = [
+  { name: 'Bournemouth', strength: 78 },
+  { name: 'Crystal Palace', strength: 77 },
+  { name: 'Sunderland', strength: 70 },
+];
+
 export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
   { name: 'Man City', strength: 88 },
   { name: 'Arsenal', strength: 88 },
@@ -2806,6 +2820,16 @@ export function simulateSeason(
         rng
       );
     })() || undefined;
+  } else {
+    // Season 1: no previous table — run background European brackets with predetermined English teams
+    uclTournamentWinner = pickBackgroundKnockoutWinner(
+      [...UCL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...SEASON1_UCL_PL_TEAMS],
+      rng
+    ) || undefined;
+    uelTournamentWinner = pickBackgroundKnockoutWinner(
+      [...UEL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...SEASON1_UEL_PL_TEAMS],
+      rng
+    ) || undefined;
   }
 
   // Player stats
@@ -4355,6 +4379,22 @@ export function simulateSharedSeason(
     sharedUELResults = simulateSharedUEL(uelEntrants, uelDrawRng);
   }
 
+  // Season 1 background European competitions (no previous table yet)
+  let season1UclWinner: string | undefined;
+  let season1UelWinner: string | undefined;
+  if (!previousLeagueTable) {
+    const s1UclRng = createRng(sharedSeed ^ 0xDC101);
+    const s1UelRng = createRng(sharedSeed ^ 0xDE102);
+    season1UclWinner = pickBackgroundKnockoutWinner(
+      [...UCL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...SEASON1_UCL_PL_TEAMS],
+      s1UclRng
+    ) || undefined;
+    season1UelWinner = pickBackgroundKnockoutWinner(
+      [...UEL_TEAMS.map(t => ({ name: t.name, strength: t.strength })), ...SEASON1_UEL_PL_TEAMS],
+      s1UelRng
+    ) || undefined;
+  }
+
   // Simulate Super Cup per player (if they won UCL or UEL last season)
   const sharedSuperCupResults = new Map<string, SuperCupResult>();
   const sharedCharityShieldResults = new Map<string, CharityShieldResult>();
@@ -4629,6 +4669,8 @@ export function simulateSharedSeason(
       projectedFinish, actualFinish, performance,
       phaseRatings: hd.ratings,
       faCup, leagueCup, ucl, uel,
+      uclTournamentWinner: ucl?.tournamentWinner || season1UclWinner,
+      uelTournamentWinner: uel?.tournamentWinner || season1UelWinner,
       superCup: sharedSuperCupResults.get(hd.userId),
       charityShield: sharedCharityShieldResults.get(hd.userId),
     });
