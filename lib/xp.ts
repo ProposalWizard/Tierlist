@@ -4,7 +4,7 @@
 
 export function xpForLevel(level: number): number {
   if (level <= 1) return 0;
-  return 100 * level + 50 * (level - 1);
+  return 1000;
 }
 
 export function cumulativeXpForLevel(level: number): number {
