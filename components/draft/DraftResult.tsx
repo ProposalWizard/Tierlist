@@ -633,7 +633,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     if (seasonComplete) return;
     const tick = () => {
       const elapsed = Date.now() - revealStartRef.current;
-      const idx = Math.min(totalEvents, Math.floor(elapsed / 900));
+      // elapsed may be negative during the pre-reveal buffer — clamp to 0 so nothing shows early
+      const idx = Math.max(0, Math.min(totalEvents, Math.floor(elapsed / 900)));
       setRevealedIdx(idx);
     };
     tick(); // run immediately in case we need to fast-forward (e.g. tab was backgrounded)
