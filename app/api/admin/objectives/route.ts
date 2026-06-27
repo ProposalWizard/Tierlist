@@ -41,7 +41,8 @@ export async function POST(req: Request) {
       conditions: body.conditions ?? [],
       same_season: body.same_season ?? false,
       same_player: body.same_player ?? false,
-      or_groups: body.or_groups ?? null,
+      // Only write or_groups when non-empty so objectives work before the migration is run
+      ...(body.or_groups?.length ? { or_groups: body.or_groups } : {}),
     })
     .select()
     .single();
@@ -68,7 +69,8 @@ export async function PATCH(req: Request) {
   if (body.category !== undefined) updates.category = body.category;
   if (body.same_season !== undefined) updates.same_season = body.same_season;
   if (body.same_player !== undefined) updates.same_player = body.same_player;
-  if ("or_groups" in body) updates.or_groups = body.or_groups ?? null;
+  // Only write or_groups when non-empty so objectives work before the migration is run
+  if (body.or_groups?.length) updates.or_groups = body.or_groups;
   const { error } = await supabase
     .from("objectives")
     .update(updates)

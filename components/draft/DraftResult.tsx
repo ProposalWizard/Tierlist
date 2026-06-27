@@ -750,6 +750,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (season.faCup.winner) winEvents.push("fa_cup_win");
             if (season.leagueCup.winner) winEvents.push("efl_cup_win");
             if (season.charityShield?.result === "W") winEvents.push("community_shield_win");
+            if (season.superCup?.result === "W") winEvents.push("super_cup_win");
             if (season.actualFinish === 1 && season.faCup.winner) winEvents.push("double");
             if (season.ucl) {
               winEvents.push("cl_complete");
