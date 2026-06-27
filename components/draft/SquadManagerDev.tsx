@@ -91,7 +91,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
 
   const isFit = (p: DraftPlayer) => {
     const nat = naturalPositions(p);
-    return nat.length === 0 || nat.includes(p.assignedPosition);
+    return nat.length === 0 || nat.map(pos => pos.toUpperCase()).includes(p.assignedPosition.toUpperCase());
   };
 
   // Core swap — shared by tap and drag
@@ -179,7 +179,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
   useEffect(() => {
     if (oddsTimer.current) clearTimeout(oddsTimer.current);
     oddsTimer.current = setTimeout(() => {
-      setOdds(calculateSeasonOdds(squad, undefined, seasonNumber, 200));
+      setOdds(calculateSeasonOdds(squad, undefined, seasonNumber, 50));
     }, 400);
     return () => { if (oddsTimer.current) clearTimeout(oddsTimer.current); };
   }, [squad, seasonNumber]);
@@ -199,14 +199,6 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
           Tap two players to swap · drag on desktop
         </p>
       </div>
-
-      {selectedIdx !== null && (
-        <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl px-4 py-2.5 mb-4 text-center">
-          <span className="text-xs sm:text-sm text-emerald-400 font-medium">
-            Selected: <span className="font-bold truncate inline-block max-w-[150px] sm:max-w-none align-bottom">{squad[selectedIdx].name}</span> — tap another player to swap
-          </span>
-        </div>
-      )}
 
       {/* ────── PITCH VIEW ────── */}
       {formation && (

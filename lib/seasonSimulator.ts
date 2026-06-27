@@ -1568,6 +1568,341 @@ function simulateSharedFaCup(
   return { results, faCupWinner };
 }
 
+function simulateSharedLeagueCup(
+  humanTeams: {
+    userId: string;
+    displayName: string;
+    starters: DraftPlayer[];
+    ratings: PhaseRatings;
+    rng: () => number;
+  }[],
+  allCupTeams: { name: string; strength: number }[],
+  drawRng: () => number,
+): { results: Map<string, FaCupResult>; leagueCupWinner: string } {
+  type BracketEntry = { name: string; strength: number; userId?: string };
+  const humanMap = new Map(humanTeams.map(h => [`${h.displayName} FC`, h]));
+
+  const bracket: BracketEntry[] = allCupTeams.map(t => ({
+    name: t.name,
+    strength: t.strength,
+    userId: humanMap.get(t.name)?.userId,
+  }));
+
+  for (let i = bracket.length - 1; i > 0; i--) {
+    const j = Math.floor(drawRng() * (i + 1));
+    [bracket[i], bracket[j]] = [bracket[j], bracket[i]];
+  }
+
+  { const usedNames = new Set(bracket.map(t => t.name));
+  let padIdx = 0;
+  while (bracket.length < 32) {
+    const club = LOWER_LEAGUE_CLUBS[padIdx % LOWER_LEAGUE_CLUBS.length];
+    padIdx++;
+    if (usedNames.has(club.name)) continue;
+    usedNames.add(club.name);
+    bracket.push({ name: club.name, strength: club.strength });
+  } }
+
+  const humanMatches = new Map<string, FaCupMatch[]>();
+  const humanEliminated = new Map<string, string>();
+  for (const h of humanTeams) humanMatches.set(h.userId, []);
+
+  let remaining = bracket.slice(0, 32);
+
+  for (let roundIdx = 0; roundIdx < 5; roundIdx++) {
+    const roundName = LEAGUE_CUP_ROUNDS[roundIdx];
+    const isSemiFinal = roundIdx === 3;
+    const nextRound: BracketEntry[] = [];
+
+    for (let i = 0; i < remaining.length; i += 2) {
+      const teamA = remaining[i];
+      const teamB = remaining[i + 1];
+      const humanA = teamA.userId ? humanTeams.find(h => h.userId === teamA.userId) : undefined;
+      const humanB = teamB.userId ? humanTeams.find(h => h.userId === teamB.userId) : undefined;
+
+      if (humanA && humanB) {
+        if (isSemiFinal) {
+          // Two-legged semi: Human vs Human
+          const leg1AIsHome = drawRng() > 0.5;
+          const hb = HOME_ADVANTAGE;
+
+          const l1AAtk = humanA.ratings.attack + (leg1AIsHome ? hb * 0.6 : 0);
+          const l1AMid = humanA.ratings.midfield + (leg1AIsHome ? hb * 0.4 : 0);
+          const l1ADef = humanA.ratings.defense + (leg1AIsHome ? hb * 0.3 : 0);
+          const l1BAtk = humanB.ratings.attack + (leg1AIsHome ? 0 : hb * 0.6);
+          const l1BMid = humanB.ratings.midfield + (leg1AIsHome ? 0 : hb * 0.4);
+          const l1BDef = humanB.ratings.defense + (leg1AIsHome ? 0 : hb * 0.3);
+          const l1ADefPow = l1ADef * 0.55 + humanA.ratings.gk * 0.30 + l1AMid * 0.15;
+          const l1BDefPow = l1BDef * 0.55 + humanB.ratings.gk * 0.30 + l1BMid * 0.15;
+          const l1AXg = computeExpectedGoals(l1AAtk, l1AMid, l1BDefPow);
+          const l1BXg = computeExpectedGoals(l1BAtk, l1BMid, l1ADefPow);
+          let l1AGoals = poisson(l1AXg * (0.85 + drawRng() * 0.30), drawRng);
+          let l1BGoals = poisson(l1BXg * (0.85 + drawRng() * 0.30), drawRng);
+          const l1AScorers = generateGoalScorers(humanA.starters, l1AGoals, humanA.rng);
+          const l1BScorers = generateGoalScorers(humanB.starters, l1BGoals, humanB.rng);
+
+          const leg2AIsHome = !leg1AIsHome;
+          const l2AAtk = humanA.ratings.attack + (leg2AIsHome ? hb * 0.6 : 0);
+          const l2AMid = humanA.ratings.midfield + (leg2AIsHome ? hb * 0.4 : 0);
+          const l2ADef = humanA.ratings.defense + (leg2AIsHome ? hb * 0.3 : 0);
+          const l2BAtk = humanB.ratings.attack + (leg2AIsHome ? 0 : hb * 0.6);
+          const l2BMid = humanB.ratings.midfield + (leg2AIsHome ? 0 : hb * 0.4);
+          const l2BDef = humanB.ratings.defense + (leg2AIsHome ? 0 : hb * 0.3);
+          const l2ADefPow = l2ADef * 0.55 + humanA.ratings.gk * 0.30 + l2AMid * 0.15;
+          const l2BDefPow = l2BDef * 0.55 + humanB.ratings.gk * 0.30 + l2BMid * 0.15;
+          const l2AXg = computeExpectedGoals(l2AAtk, l2AMid, l2BDefPow);
+          const l2BXg = computeExpectedGoals(l2BAtk, l2BMid, l2ADefPow);
+          let l2AGoals = poisson(l2AXg * (0.85 + drawRng() * 0.30), drawRng);
+          let l2BGoals = poisson(l2BXg * (0.85 + drawRng() * 0.30), drawRng);
+          const l2AScorers = generateGoalScorers(humanA.starters, l2AGoals, humanA.rng);
+          const l2BScorers = generateGoalScorers(humanB.starters, l2BGoals, humanB.rng);
+
+          let aggA = l1AGoals + l2AGoals;
+          let aggB = l1BGoals + l2BGoals;
+          let extraTime = false;
+          let penalties = false;
+          let penaltyScore: { player: number; opponent: number } | undefined;
+          let aResult: 'W' | 'L';
+
+          if (aggA > aggB) {
+            aResult = 'W';
+          } else if (aggB > aggA) {
+            aResult = 'L';
+          } else {
+            extraTime = true;
+            const etA = poisson(l2AXg * 0.33, drawRng);
+            const etB = poisson(l2BXg * 0.33, drawRng);
+            l2AGoals += etA; l2BGoals += etB;
+            aggA = l1AGoals + l2AGoals; aggB = l1BGoals + l2BGoals;
+            const etAScorers = generateGoalScorers(humanA.starters, etA, humanA.rng, 90);
+            const etBScorers = generateGoalScorers(humanB.starters, etB, humanB.rng, 90);
+            l2AScorers.goals.push(...etAScorers.goals);
+            l2AScorers.assists.push(...etAScorers.assists);
+            l2BScorers.goals.push(...etBScorers.goals);
+            l2BScorers.assists.push(...etBScorers.assists);
+            if (aggA > aggB) {
+              aResult = 'W';
+            } else if (aggB > aggA) {
+              aResult = 'L';
+            } else {
+              penalties = true;
+              const pA = Math.floor(drawRng() * 3) + 3;
+              const pB = Math.floor(drawRng() * 3) + 3;
+              if (pA === pB) {
+                penaltyScore = drawRng() > 0.5 ? { player: pA + 1, opponent: pB } : { player: pA, opponent: pB + 1 };
+              } else {
+                penaltyScore = { player: pA, opponent: pB };
+              }
+              aResult = penaltyScore.player > penaltyScore.opponent ? 'W' : 'L';
+            }
+          }
+
+          l1AScorers.goals.sort((a, b) => a.minute - b.minute);
+          l1AScorers.assists.sort((a, b) => a.minute - b.minute);
+          l1BScorers.goals.sort((a, b) => a.minute - b.minute);
+          l1BScorers.assists.sort((a, b) => a.minute - b.minute);
+          l2AScorers.goals.sort((a, b) => a.minute - b.minute);
+          l2BScorers.goals.sort((a, b) => a.minute - b.minute);
+
+          humanMatches.get(humanA.userId)!.push({
+            round: roundName, opponent: humanB.displayName,
+            goalsFor: l1AGoals, goalsAgainst: l1BGoals,
+            extraTime: false, penalties: false,
+            goalScorers: l1AScorers.goals, assistProviders: l1AScorers.assists,
+            result: aResult, isHome: leg1AIsHome,
+            leg2: { goalsFor: l2AGoals, goalsAgainst: l2BGoals, isHome: leg2AIsHome, extraTime, penalties, penaltyScore, goalScorers: l2AScorers.goals },
+          });
+          humanMatches.get(humanB.userId)!.push({
+            round: roundName, opponent: humanA.displayName,
+            goalsFor: l1BGoals, goalsAgainst: l1AGoals,
+            extraTime: false, penalties: false,
+            goalScorers: l1BScorers.goals, assistProviders: l1BScorers.assists,
+            result: aResult === 'W' ? 'L' : 'W', isHome: !leg1AIsHome,
+            leg2: {
+              goalsFor: l2BGoals, goalsAgainst: l2AGoals, isHome: !leg2AIsHome,
+              extraTime, penalties,
+              penaltyScore: penaltyScore ? { player: penaltyScore.opponent, opponent: penaltyScore.player } : undefined,
+              goalScorers: l2BScorers.goals,
+            },
+          });
+
+          if (aResult === 'W') {
+            nextRound.push(teamA);
+            humanEliminated.set(humanB.userId, roundName);
+          } else {
+            nextRound.push(teamB);
+            humanEliminated.set(humanA.userId, roundName);
+          }
+        } else {
+          // Single-leg round: Human vs Human
+          const isH1Home = drawRng() > 0.5;
+          const hb = HOME_ADVANTAGE;
+          const h1Atk = humanA.ratings.attack + (isH1Home ? hb * 0.6 : 0);
+          const h1Mid = humanA.ratings.midfield + (isH1Home ? hb * 0.4 : 0);
+          const h1Def = humanA.ratings.defense + (isH1Home ? hb * 0.3 : 0);
+          const h2Atk = humanB.ratings.attack + (isH1Home ? 0 : hb * 0.6);
+          const h2Mid = humanB.ratings.midfield + (isH1Home ? 0 : hb * 0.4);
+          const h2Def = humanB.ratings.defense + (isH1Home ? 0 : hb * 0.3);
+          const h1DefPow = h1Def * 0.55 + humanA.ratings.gk * 0.30 + h1Mid * 0.15;
+          const h2DefPow = h2Def * 0.55 + humanB.ratings.gk * 0.30 + h2Mid * 0.15;
+          const h1Xg = computeExpectedGoals(h1Atk, h1Mid, h2DefPow);
+          const h2Xg = computeExpectedGoals(h2Atk, h2Mid, h1DefPow);
+          let h1Goals = poisson(h1Xg * (0.85 + drawRng() * 0.30), drawRng);
+          let h2Goals = poisson(h2Xg * (0.85 + drawRng() * 0.30), drawRng);
+          const h1Scorers = generateGoalScorers(humanA.starters, h1Goals, humanA.rng);
+          const h2Scorers = generateGoalScorers(humanB.starters, h2Goals, humanB.rng);
+
+          let extraTime = false;
+          let penalties = false;
+          let penaltyScore: { player: number; opponent: number } | undefined;
+          if (h1Goals === h2Goals) {
+            extraTime = true;
+            const etH1 = poisson(h1Xg * 0.33, drawRng);
+            const etH2 = poisson(h2Xg * 0.33, drawRng);
+            h1Goals += etH1; h2Goals += etH2;
+            const etH1Sc = generateGoalScorers(humanA.starters, etH1, humanA.rng, 90);
+            const etH2Sc = generateGoalScorers(humanB.starters, etH2, humanB.rng, 90);
+            h1Scorers.goals.push(...etH1Sc.goals); h1Scorers.assists.push(...etH1Sc.assists);
+            h2Scorers.goals.push(...etH2Sc.goals); h2Scorers.assists.push(...etH2Sc.assists);
+            if (h1Goals === h2Goals) {
+              penalties = true;
+              const p1 = Math.floor(drawRng() * 3) + 3;
+              const p2 = Math.floor(drawRng() * 3) + 3;
+              if (p1 === p2) {
+                penaltyScore = drawRng() > 0.5 ? { player: p1 + 1, opponent: p2 } : { player: p1, opponent: p2 + 1 };
+              } else {
+                penaltyScore = { player: p1, opponent: p2 };
+              }
+            }
+          }
+          const h1Result: 'W' | 'L' = (penalties && penaltyScore)
+            ? (penaltyScore.player > penaltyScore.opponent ? 'W' : 'L')
+            : (h1Goals > h2Goals ? 'W' : 'L');
+
+          h1Scorers.goals.sort((a, b) => a.minute - b.minute);
+          h1Scorers.assists.sort((a, b) => a.minute - b.minute);
+          h2Scorers.goals.sort((a, b) => a.minute - b.minute);
+          h2Scorers.assists.sort((a, b) => a.minute - b.minute);
+
+          humanMatches.get(humanA.userId)!.push({
+            round: roundName, opponent: humanB.displayName,
+            goalsFor: h1Goals, goalsAgainst: h2Goals,
+            extraTime, penalties, penaltyScore,
+            goalScorers: h1Scorers.goals, assistProviders: h1Scorers.assists,
+            result: h1Result,
+          });
+          humanMatches.get(humanB.userId)!.push({
+            round: roundName, opponent: humanA.displayName,
+            goalsFor: h2Goals, goalsAgainst: h1Goals,
+            extraTime, penalties,
+            penaltyScore: penaltyScore ? { player: penaltyScore.opponent, opponent: penaltyScore.player } : undefined,
+            goalScorers: h2Scorers.goals, assistProviders: h2Scorers.assists,
+            result: h1Result === 'W' ? 'L' : 'W',
+          });
+
+          if (h1Result === 'W') {
+            nextRound.push(teamA);
+            humanEliminated.set(humanB.userId, roundName);
+          } else {
+            nextRound.push(teamB);
+            humanEliminated.set(humanA.userId, roundName);
+          }
+        }
+      } else if (humanA || humanB) {
+        // Human vs AI
+        const human = (humanA ?? humanB)!;
+        const aiTeam = humanA ? teamB : teamA;
+        if (isSemiFinal) {
+          // Two-legged semi: Human vs AI
+          const leg1IsHome = human.rng() > 0.5;
+          const leg1 = simulateFaCupLeg(human.starters, human.ratings, aiTeam, roundIdx, human.rng, leg1IsHome, LEAGUE_CUP_ROUNDS);
+          const leg2 = simulateFaCupLeg(human.starters, human.ratings, aiTeam, roundIdx, human.rng, !leg1IsHome, LEAGUE_CUP_ROUNDS);
+
+          const aggFor = leg1.goalsFor + leg2.goalsFor;
+          const aggAgainst = leg1.goalsAgainst + leg2.goalsAgainst;
+          let result: 'W' | 'L';
+          let extraTime = false;
+          let penalties = false;
+          let penaltyScore: { player: number; opponent: number } | undefined;
+
+          if (aggFor > aggAgainst) {
+            result = 'W';
+          } else if (aggAgainst > aggFor) {
+            result = 'L';
+          } else {
+            extraTime = true;
+            const etFor = poisson(leg2.xg * 0.33, human.rng);
+            const etAgainst = poisson(leg2.oppXg * 0.33, human.rng);
+            if (etFor > etAgainst) {
+              result = 'W'; leg2.goalsFor += etFor; leg2.goalsAgainst += etAgainst;
+            } else if (etAgainst > etFor) {
+              result = 'L'; leg2.goalsFor += etFor; leg2.goalsAgainst += etAgainst;
+            } else {
+              leg2.goalsFor += etFor; leg2.goalsAgainst += etAgainst;
+              penalties = true;
+              const myPens = Math.floor(human.rng() * 3) + 3;
+              const oppPens = Math.floor(human.rng() * 3) + 3;
+              if (myPens === oppPens) {
+                penaltyScore = human.rng() > 0.5 ? { player: myPens + 1, opponent: oppPens } : { player: myPens, opponent: oppPens + 1 };
+              } else {
+                penaltyScore = { player: myPens, opponent: oppPens };
+              }
+              result = (penaltyScore!.player > penaltyScore!.opponent) ? 'W' : 'L';
+            }
+          }
+
+          humanMatches.get(human.userId)!.push({
+            round: roundName, opponent: aiTeam.name,
+            goalsFor: leg1.goalsFor, goalsAgainst: leg1.goalsAgainst,
+            extraTime: false, penalties: false,
+            goalScorers: leg1.scorers.goals, assistProviders: leg1.scorers.assists,
+            result, isHome: leg1IsHome,
+            leg2: { goalsFor: leg2.goalsFor, goalsAgainst: leg2.goalsAgainst, isHome: !leg1IsHome, extraTime, penalties, penaltyScore, goalScorers: leg2.scorers.goals },
+          });
+
+          if (result === 'W') {
+            nextRound.push(humanA ? teamA : teamB);
+          } else {
+            nextRound.push(aiTeam);
+            humanEliminated.set(human.userId, roundName);
+          }
+        } else {
+          const match = simulateFaCupMatchForHumanNamed(human.starters, human.ratings, aiTeam, roundIdx, human.rng, LEAGUE_CUP_ROUNDS);
+          humanMatches.get(human.userId)!.push(match);
+          if (match.result === 'W') {
+            nextRound.push(humanA ? teamA : teamB);
+          } else {
+            nextRound.push(aiTeam);
+            humanEliminated.set(human.userId, roundName);
+          }
+        }
+      } else {
+        // AI vs AI
+        const aiResult = simulateAIvAICupMatch(teamA, teamB, drawRng);
+        nextRound.push(aiResult.winner === teamA.name ? teamA : teamB);
+      }
+    }
+
+    remaining = nextRound;
+  }
+
+  const leagueCupWinner = remaining[0].name;
+  const results = new Map<string, FaCupResult>();
+  for (const h of humanTeams) {
+    const matches = humanMatches.get(h.userId)!;
+    const exitRound = humanEliminated.get(h.userId);
+    const isWinner = leagueCupWinner === `${h.displayName} FC`;
+    results.set(h.userId, {
+      matches,
+      winner: isWinner,
+      exitRound: exitRound ?? null,
+      faCupWinner: leagueCupWinner,
+    });
+  }
+
+  return { results, leagueCupWinner };
+}
+
 function simulateFaCupMatchForHuman(
   players: DraftPlayer[],
   ratings: PhaseRatings,
@@ -4315,6 +4650,20 @@ export function simulateSharedSeason(
   });
   const { results: sharedFaCupResultsMap, faCupWinner: sharedFaCupWinner } = simulateSharedFaCup(sharedFaCupTeams, allCupTeams, faCupDrawRng);
 
+  // Shared League Cup: same bracket for all players
+  const leagueCupDrawRng = createRng(sharedSeed ^ 0xCA5C09);
+  const sharedLeagueCupTeams = humanData.map(hd => {
+    const playerSeed = hd.squad.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonNumber * 100);
+    return {
+      userId: hd.userId,
+      displayName: hd.displayName,
+      starters: hd.starters,
+      ratings: hd.ratings,
+      rng: createRng(playerSeed + 77777),
+    };
+  });
+  const { results: sharedLeagueCupResultsMap } = simulateSharedLeagueCup(sharedLeagueCupTeams, allCupTeams, leagueCupDrawRng);
+
   // Shared European competitions (only from season 2+ when previousLeagueTable is provided)
   // Convert previousLeagueTable to LeagueTeam[] format, mapping human team names back
   let sharedUCLResults = new Map<string, UCLResult>();
@@ -4510,10 +4859,10 @@ export function simulateSharedSeason(
       for (const s of activeSubs) subAppearances[s.name]++;
     }
 
-    // FA Cup from shared simulation; European competitions from shared UCL/UEL (if available)
+    // FA Cup and League Cup from shared simulations (same bracket/winner for all players)
     const faCup = sharedFaCupResultsMap.get(hd.userId) ?? { matches: [], winner: false, exitRound: 'Round of 32', faCupWinner: sharedFaCupWinner };
-    // League Cup: separate draw per player; pass teamName so the player is found in the shared bracket
-    const leagueCup = simulateLeagueCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng, hd.teamName);
+    const leagueCupShared = sharedLeagueCupResultsMap.get(hd.userId);
+    const leagueCup = leagueCupShared ?? simulateLeagueCup(hd.starters, hd.ratings, allCupTeams.slice(0, 32), playerRng, hd.teamName);
     const ucl = sharedUCLResults.get(hd.userId);
     const uel = sharedUELResults.get(hd.userId);
 
