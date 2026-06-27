@@ -42,14 +42,23 @@ export function levelFromXp(totalXp: number): {
 // --- XP award amounts ---
 
 export const XP_AWARDS = {
-  draft_complete: 100,
-  draft_win: 250,
+  // Kept for existing backend awarding code (not shown in WaysToEarnXP)
   draft_invincible: 500,
-  tierlist_create: 25,
-  tierlist_likes_10: 50,
   vote_cast: 10,
+  tierlist_create: 25,
   streak_7: 200,
   streak_30: 500,
+  // Active awards
+  hall_of_fame_record: 1000,
+  daily_login: 150,
+  tierlist_likes_10: 100,
+  online_draft_complete: 100,
+  draft_win: 100,
+  live_tierlist_complete: 100,
+  daily_tictactoe: 50,
+  draft_complete: 50,
+  tenable_perfect: 50,
+  blind_ranking_complete: 50,
 } as const;
 
 export type XPEventType = keyof typeof XP_AWARDS;

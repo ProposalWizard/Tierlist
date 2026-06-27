@@ -9,17 +9,21 @@ interface Activity {
   icon: string;
   xp: number;
   accent: string;
+  note?: string;
 }
 
+// Sorted by XP (highest first)
 const ACTIVITIES: Activity[] = [
-  { key: "draft_invincible", label: "Invincible Season", icon: "\u{1F6E1}️", xp: XP_AWARDS.draft_invincible, accent: "bg-emerald-500" },
-  { key: "streak_30", label: "30-Day Login Streak", icon: "\u{1F4A5}", xp: XP_AWARDS.streak_30, accent: "bg-red-500" },
-  { key: "draft_win", label: "Win the League Title", icon: "\u{1F3C6}", xp: XP_AWARDS.draft_win, accent: "bg-amber-500" },
-  { key: "streak_7", label: "7-Day Login Streak", icon: "\u{1F525}", xp: XP_AWARDS.streak_7, accent: "bg-orange-500" },
-  { key: "draft_complete", label: "Complete a Draft Season", icon: "\u{1F3AE}", xp: XP_AWARDS.draft_complete, accent: "bg-blue-500" },
-  { key: "tierlist_likes_10", label: "Get 10 Likes on a Tierlist", icon: "❤️", xp: XP_AWARDS.tierlist_likes_10, accent: "bg-pink-500" },
-  { key: "tierlist_create", label: "Create a Tierlist", icon: "\u{1F5BC}️", xp: XP_AWARDS.tierlist_create, accent: "bg-purple-500" },
-  { key: "vote_cast", label: "Cast a Vote", icon: "\u{1F5F3}️", xp: XP_AWARDS.vote_cast, accent: "bg-cyan-500" },
+  { key: "hall_of_fame_record",   label: "Get a Record in Draft Hall of Fame",        icon: "🏅", xp: XP_AWARDS.hall_of_fame_record,   accent: "bg-amber-400" },
+  { key: "daily_login",           label: "Daily Login",                                icon: "📅", xp: XP_AWARDS.daily_login,           accent: "bg-blue-500" },
+  { key: "tierlist_likes_10",     label: "Create a Tierlist & Get 10 Likes",           icon: "❤️", xp: XP_AWARDS.tierlist_likes_10,     accent: "bg-pink-500" },
+  { key: "online_draft_complete", label: "Play an Online Draft (complete 1 season)",   icon: "🌐", xp: XP_AWARDS.online_draft_complete, accent: "bg-purple-500", note: "Max 10/day" },
+  { key: "draft_win",             label: "Win the Prem on Draft",                      icon: "🏆", xp: XP_AWARDS.draft_win,             accent: "bg-amber-500" },
+  { key: "live_tierlist_complete",label: "Complete a Live Tier List (75% of items)",   icon: "🗳️", xp: XP_AWARDS.live_tierlist_complete, accent: "bg-emerald-500" },
+  { key: "daily_tictactoe",       label: "Attempt Daily Tic-Tac-Toe",                  icon: "⚽", xp: XP_AWARDS.daily_tictactoe,       accent: "bg-green-500" },
+  { key: "draft_complete",        label: "Play a Draft (complete 1 season)",            icon: "🎮", xp: XP_AWARDS.draft_complete,        accent: "bg-blue-400" },
+  { key: "tenable_perfect",       label: "Get 10/10 on TenAble",                       icon: "🧠", xp: XP_AWARDS.tenable_perfect,       accent: "bg-cyan-500" },
+  { key: "blind_ranking_complete",label: "Play a Blind Ranking",                        icon: "🙈", xp: XP_AWARDS.blind_ranking_complete, accent: "bg-gray-400" },
 ];
 
 export default function WaysToEarnXP({ compact = false }: { compact?: boolean }) {
@@ -85,7 +89,10 @@ export default function WaysToEarnXP({ compact = false }: { compact?: boolean })
                 >
                   <div className={`absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full ${activity.accent} opacity-50 group-hover:opacity-80 transition-opacity`} />
                   <span className="text-lg flex-shrink-0 w-7 text-center">{activity.icon}</span>
-                  <span className="flex-1 text-sm text-white font-medium min-w-0 truncate">{activity.label}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-white font-medium leading-tight">{activity.label}</span>
+                    {activity.note && <div className="text-[10px] text-white/50 leading-tight mt-0.5">{activity.note}</div>}
+                  </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {activity.xp >= 500 && <span className="text-amber-400/60 text-xs">✨</span>}
                     <span className="text-sm font-black text-amber-400">+{activity.xp} XP</span>
