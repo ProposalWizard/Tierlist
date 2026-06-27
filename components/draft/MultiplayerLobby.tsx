@@ -185,9 +185,14 @@ export default function MultiplayerLobby({
       // Capture server-side anchor time for synchronized animation
       const data = await res.json().catch(() => ({}));
       if (typeof data.revealStartAt === "number") revealStartAtRef.current = data.revealStartAt;
-      const d = await fetchRoom();
-      if (d?.room?.status === "complete" && d.players) {
-        tryComplete(d.players, revealStartAtRef.current);
+      // Use players from simulate response to avoid an extra fetchRoom round-trip
+      if (data.players?.length) {
+        tryComplete(data.players, revealStartAtRef.current);
+      } else {
+        const d = await fetchRoom();
+        if (d?.room?.status === "complete" && d.players) {
+          tryComplete(d.players, revealStartAtRef.current);
+        }
       }
     } catch {
       setSimError("Network error — try again");
@@ -296,8 +301,8 @@ export default function MultiplayerLobby({
       </div>
 
       {/* Room Settings */}
-      {settings && currentSeason === 1 && (() => {
-        const canEdit = isHost && !!onUpdateSettings && room?.status === "lobby";
+      {settings && (() => {
+        const canEdit = isHost && !!onUpdateSettings && room?.status === "lobby" && currentSeason === 1;
         const respinLabel = settings.respins === 0 ? "No re-spins" : settings.respins === 1 ? "1 re-spin" : "3 re-spins";
         return (
           <div className="bg-gray-900 rounded-xl p-3 mb-4 border border-gray-800/50">

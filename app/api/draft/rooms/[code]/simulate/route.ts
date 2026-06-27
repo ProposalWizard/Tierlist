@@ -102,14 +102,23 @@ export async function POST(
         .eq("id", rp.id);
     }));
 
-    const revealStartAt = Date.now();
+    // 3-second buffer so all players load DraftResult before the animation starts
+    const revealStartAt = Date.now() + 3000;
     const existingSettings = (room as Record<string, unknown>).settings as Record<string, unknown> | null | undefined;
     await service.from("draft_rooms").update({
       status: "complete",
       settings: { ...(existingSettings ?? {}), revealStartAt },
     }).eq("id", room.id);
 
-    return Response.json({ ok: true, revealStartAt });
+    // Include updated players in response so the host skips an extra fetchRoom round-trip
+    const updatedPlayers = roomPlayers.map(rp => ({
+      ...rp,
+      season_result: results.get(rp.user_id) ?? null,
+      actual_finish: results.get(rp.user_id)?.actualFinish ?? null,
+      status: "simulated",
+    }));
+
+    return Response.json({ ok: true, revealStartAt, players: updatedPlayers });
   } catch (e) {
     await service.from("draft_rooms").update({ status: "lobby" }).eq("id", room.id);
     console.error("Simulation error:", e);

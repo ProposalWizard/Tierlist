@@ -7,8 +7,8 @@ export default function ObjectivesToast() {
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setFading(true), 4000);
-    const removeTimer = setTimeout(() => setVisible(false), 5000);
+    const timer = setTimeout(() => setFading(true), 3000);
+    const removeTimer = setTimeout(() => setVisible(false), 4000);
     return () => { clearTimeout(timer); clearTimeout(removeTimer); };
   }, []);
 
@@ -17,7 +17,7 @@ export default function ObjectivesToast() {
   return (
     <Link
       href="/profile"
-      className={`fixed top-28 right-4 z-40 flex flex-col items-end px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-lg shadow-amber-900/40 transition-all duration-1000 hover:scale-105 active:scale-95 ${
+      className={`fixed top-4 right-4 z-[55] flex flex-col items-end px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-lg shadow-amber-900/40 transition-all duration-1000 hover:scale-105 active:scale-95 ${
         fading ? "opacity-0 translate-x-4" : "opacity-100"
       }`}
     >

@@ -25,6 +25,18 @@ interface Props {
   revealStartTime?: number;
 }
 
+function formatGoalScorers(scorers: { player: string; minute: number }[]): string {
+  if (scorers.length === 0) return "";
+  const groups = new Map<string, number[]>();
+  for (const g of scorers) {
+    const lastName = g.player.split(" ").pop() ?? g.player;
+    if (!groups.has(lastName)) groups.set(lastName, []);
+    groups.get(lastName)!.push(g.minute);
+  }
+  const sorted = Array.from(groups.entries()).sort((a, b) => Math.min(...a[1]) - Math.min(...b[1]));
+  return sorted.map(([name, mins]) => `${name} ${mins.sort((x, y) => x - y).map(m => `${m}'`).join(", ")}`).join(" • ");
+}
+
 interface PLRecord {
   label: string;
   record: number;
@@ -633,7 +645,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     if (seasonComplete) return;
     const tick = () => {
       const elapsed = Date.now() - revealStartRef.current;
-      const idx = Math.min(totalEvents, Math.floor(elapsed / 900));
+      // elapsed may be negative during the pre-reveal buffer — clamp to 0 so nothing shows early
+      const idx = Math.max(0, Math.min(totalEvents, Math.floor(elapsed / 900)));
       setRevealedIdx(idx);
     };
     tick(); // run immediately in case we need to fast-forward (e.g. tab was backgrounded)
@@ -1429,7 +1442,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   </div>
                   {match.goalScorers.length > 0 && (
                     <div className="text-[11px] text-white truncate">
-                      &#9917; {match.goalScorers.map((g: { player: string; minute: number }) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}
+                      &#9917; {formatGoalScorers(match.goalScorers)}
                     </div>
                   )}
                 </div>
@@ -1707,7 +1720,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate"><span className="text-white text-xs mr-1">{match.isHome ? "H" : "A"}</span>{match.opponent}</div>
-                    {match.goalScorers.length > 0 && <div className="text-[10px] text-white truncate">{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</div>}
+                    {match.goalScorers.length > 0 && <div className="text-[10px] text-white truncate">{formatGoalScorers(match.goalScorers)}</div>}
                   </div>
                   <div className={`text-base font-black tabular-nums shrink-0 ${match.result === "W" ? "text-emerald-400" : match.result === "D" ? "text-yellow-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
                 </div>
@@ -1723,7 +1736,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate">{match.opponent}</div>
                     <div className="text-[10px] text-white truncate">
-                      {match.goalScorers.length > 0 && <span>{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</span>}
+                      {match.goalScorers.length > 0 && <span>{formatGoalScorers(match.goalScorers)}</span>}
                       {fcm?.extraTime && <span className="ml-1 text-purple-400/70">(AET)</span>}
                       {fcm?.penalties && fcm.penaltyScore && <span className="ml-1 text-purple-400/70">(Pens {fcm.penaltyScore.player}-{fcm.penaltyScore.opponent})</span>}
                     </div>
@@ -1742,7 +1755,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate">{match.opponent}</div>
                     <div className="text-[10px] text-white truncate">
-                      {match.goalScorers.length > 0 && <span>{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}</span>}
+                      {match.goalScorers.length > 0 && <span>{formatGoalScorers(match.goalScorers)}</span>}
                       {lcm?.extraTime && <span className="ml-1 text-teal-400/70">(AET)</span>}
                       {lcm?.penalties && lcm.penaltyScore && <span className="ml-1 text-teal-400/70">(Pens {lcm.penaltyScore.player}-{lcm.penaltyScore.opponent})</span>}
                     </div>
@@ -1760,7 +1773,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate">{match.opponent}<span className="text-white text-[10px] ml-1">({match.isHome ? "H" : "A"})</span></div>
-                    {match.goalScorers.length > 0 && <div className="text-[10px] text-white truncate">{match.goalScorers.map((g) => `${g.player.split(" ").pop()} ${g.minute}'`).join(", ")}{match.extraTime && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(AET)</span>}{match.penalties && match.penaltyScore && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(Pens {match.penaltyScore.player}-{match.penaltyScore.opponent})</span>}</div>}
+                    {match.goalScorers.length > 0 && <div className="text-[10px] text-white truncate">{formatGoalScorers(match.goalScorers)}{match.extraTime && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(AET)</span>}{match.penalties && match.penaltyScore && <span className={`ml-1 ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>(Pens {match.penaltyScore.player}-{match.penaltyScore.opponent})</span>}</div>}
                   </div>
                   <div className={`text-base font-black tabular-nums shrink-0 ${match.result === "W" ? "text-emerald-400" : match.result === "D" ? "text-yellow-400" : "text-red-400"}`}>{match.goalsFor}-{match.goalsAgainst}</div>
                 </div>
@@ -1897,7 +1910,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             </div>
             {cs.goalScorers.length > 0 && (
               <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-white">
-                Goals: {cs.goalScorers.map(gs => `${gs.player} ${gs.minute}'`).join(", ")}
+                Goals: {formatGoalScorers(cs.goalScorers)}
               </div>
             )}
           </div>
@@ -1937,7 +1950,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             </div>
             {sc.goalScorers.length > 0 && (
               <div className="mt-2 pt-2 border-t border-gray-800/50 text-[10px] text-white">
-                Goals: {sc.goalScorers.map(gs => `${gs.player} ${gs.minute}'`).join(", ")}
+                Goals: {formatGoalScorers(sc.goalScorers)}
               </div>
             )}
           </div>
