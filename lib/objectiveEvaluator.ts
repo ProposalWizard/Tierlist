@@ -71,11 +71,33 @@ function computeSeasonStat(stat: SeasonStatType, matches: { goalsFor: number; go
   }
 }
 
+function isStatType(t: string): boolean {
+  return t === "goals" || t === "assists" || t === "clean_sheets";
+}
+
+function anyPlayerMeetsAllStatConditions(
+  statConds: ObjectiveCondition[],
+  values: Record<string, number>,
+): boolean {
+  const playerNames = new Set<string>();
+  for (const cond of statConds) {
+    const prefix = `${cond.id}__`;
+    for (const key of Object.keys(values)) {
+      if (key.startsWith(prefix)) playerNames.add(key.slice(prefix.length));
+    }
+  }
+  for (const name of Array.from(playerNames)) {
+    if (statConds.every(cond => (values[`${cond.id}__${name}`] ?? 0) >= cond.count)) return true;
+  }
+  return false;
+}
+
 export function evaluateObjective(
   conditions: ObjectiveCondition[],
   currentProgress: ObjectiveProgress,
   seasonData: SeasonCheckData,
   sameSeason?: boolean,
+  samePlayer?: boolean,
 ): { newProgress: ObjectiveProgress; complete: boolean } {
   const newProgress: ObjectiveProgress = { ...currentProgress };
 
@@ -199,7 +221,15 @@ export function evaluateObjective(
     }
   }
 
-  const complete = conditions.every(cond => {
+  // When samePlayer is true, conditions with any_player scope must be met by one individual
+  const playerStatConds = samePlayer
+    ? conditions.filter(c => (c.scope ?? "squad_total") === "any_player" && isStatType(c.type))
+    : [];
+  const otherConds = samePlayer
+    ? conditions.filter(c => !((c.scope ?? "squad_total") === "any_player" && isStatType(c.type)))
+    : conditions;
+
+  const otherMet = otherConds.every(cond => {
     if (!competitionMatches(cond.competition, seasonData.competition)) {
       return sameSeason ? false : isConditionMet(cond, newProgress, {});
     }
@@ -208,6 +238,12 @@ export function evaluateObjective(
     }
     return isConditionMet(cond, newProgress, seasonValues);
   });
+
+  let complete = otherMet;
+  if (complete && playerStatConds.length > 0) {
+    const valuesForCheck = sameSeason ? seasonValues : newProgress;
+    complete = anyPlayerMeetsAllStatConditions(playerStatConds, valuesForCheck);
+  }
 
   return { newProgress, complete };
 }
