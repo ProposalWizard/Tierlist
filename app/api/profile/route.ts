@@ -29,7 +29,11 @@ export async function PUT(req: Request) {
 
   const service = createServiceClient();
 
-  // Rate-limit username changes to once per 30 days
+  // Each user gets one free username change (no cooldown). After that: once per 30 days.
+  // "First-time setup" = when they have no username yet (e.g. the /setup-username flow).
+  // That doesn't count against the free pass; the free pass is the first voluntary change
+  // made after a username already exists.
+  let isFirstTimeSetup = false;
   if (username !== null) {
     const { data: profile } = await service
       .from("user_profiles")
@@ -37,9 +41,11 @@ export async function PUT(req: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
 
+    isFirstTimeSetup = !profile?.username;
     const isActualChange = profile?.username !== username;
     const changedAt = profile?.username_changed_at as string | null | undefined;
-    if (isActualChange && changedAt) {
+    // Only enforce cooldown when changing an existing username and the free pass is used
+    if (isActualChange && !isFirstTimeSetup && changedAt) {
       const daysSince = (Date.now() - new Date(changedAt).getTime()) / (1000 * 60 * 60 * 24);
       if (daysSince < 30) {
         const daysLeft = Math.ceil(30 - daysSince);
@@ -56,7 +62,9 @@ export async function PUT(req: Request) {
     is_anonymous,
     updated_at: new Date().toISOString(),
   };
-  if (username !== null) {
+  // Don't stamp username_changed_at during first-time setup — that preserves the free pass.
+  // The timestamp is only written when the user voluntarily changes an existing username.
+  if (username !== null && !isFirstTimeSetup) {
     updatePayload.username_changed_at = new Date().toISOString();
   }
 

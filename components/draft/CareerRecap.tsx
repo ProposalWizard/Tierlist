@@ -58,7 +58,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     const bestFinish = Math.min(...allSeasons.map(r => r.actualFinish));
     const worstFinish = Math.max(...allSeasons.map(r => r.actualFinish));
     const titles = allSeasons.filter(r => r.actualFinish === 1).length;
-    const topFour = allSeasons.filter(r => r.actualFinish <= 4).length;
+    const topFour = allSeasons.filter(r => r.actualFinish <= 5).length;
     const faCups = allSeasons.filter(r => r.faCup.winner).length;
     const uclWins = allSeasons.filter(r => r.ucl?.winner).length;
     const uelWins = allSeasons.filter(r => r.uel?.winner).length;
@@ -507,9 +507,9 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                   <StatBox label="Goals Scored" value={`${stats.totalGoalsFor}`} color="green" />
                   <StatBox label="Goals Conceded" value={`${stats.totalGoalsAgainst}`} color="red" />
                   <StatBox label="Goal Difference" value={`${stats.totalGoalsFor - stats.totalGoalsAgainst >= 0 ? "+" : ""}${stats.totalGoalsFor - stats.totalGoalsAgainst}`} color={stats.totalGoalsFor >= stats.totalGoalsAgainst ? "green" : "red"} />
-                  <StatBox label="Best Finish" value={ordinal(stats.bestFinish)} highlight={stats.bestFinish === 1} color={stats.bestFinish <= 4 ? "blue" : "default"} />
+                  <StatBox label="Best Finish" value={ordinal(stats.bestFinish)} highlight={stats.bestFinish === 1} color={stats.bestFinish <= 5 ? "blue" : "default"} />
                   <StatBox label="Worst Finish" value={ordinal(stats.worstFinish)} color={stats.worstFinish >= 18 ? "red" : "default"} />
-                  <StatBox label="Top-4 Finishes" value={`${stats.topFour}/${stats.totalSeasons}`} color="blue" />
+                  <StatBox label="Top-5 Finishes" value={`${stats.topFour}/${stats.totalSeasons}`} color="blue" />
                 </div>
               </div>
 
@@ -535,7 +535,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     return (
                       <div key={i} className={`flex items-center text-xs px-3 py-2 min-w-0 ${i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
                         <span className="w-8 font-bold text-white shrink-0">S{i + 1}</span>
-                        <span className={`w-8 text-center font-black shrink-0 ${s.actualFinish === 1 ? "text-yellow-400" : s.actualFinish <= 4 ? "text-blue-400" : s.actualFinish >= 18 ? "text-red-400" : "text-white"}`}>
+                        <span className={`w-8 text-center font-black shrink-0 ${s.actualFinish === 1 ? "text-yellow-400" : s.actualFinish <= 5 ? "text-blue-400" : s.actualFinish >= 18 ? "text-red-400" : "text-white"}`}>
                           {ordinal(s.actualFinish)}
                         </span>
                         <span className="w-9 text-center font-bold shrink-0">{s.teamRecord.points}</span>
@@ -703,7 +703,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                           <span className="w-8 text-center text-emerald-400 font-bold shrink-0">{ordinal(fc.bestFinish)}</span>
                           <span className="w-6 text-center font-bold text-yellow-400 shrink-0">{fc.titles || "-"}</span>
                           {fc.finishes.map((f, fi) => (
-                            <span key={fi} className={`w-7 text-center font-bold shrink-0 ${f === 1 ? "text-yellow-400" : (f ?? 0) <= 4 ? "text-blue-400" : (f ?? 20) >= 18 ? "text-red-400" : "text-white"}`}>
+                            <span key={fi} className={`w-7 text-center font-bold shrink-0 ${f === 1 ? "text-yellow-400" : (f ?? 0) <= 5 ? "text-blue-400" : (f ?? 20) >= 18 ? "text-red-400" : "text-white"}`}>
                               {f !== null ? ordinal(f) : "-"}
                             </span>
                           ))}

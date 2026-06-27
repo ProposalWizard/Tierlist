@@ -1119,10 +1119,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const tableQualification = useMemo(() => {
     const table = season.leagueTable;
     const n = table.length;
-    // Base: positions 1-4 UCL, 5-7 UEL, bottom 3 relegated (20-team league)
-    const clNames = new Set<string>(table.slice(0, 4).map(t => t.name));
-    // pl5, pl6, pl7 are the three PL-based UEL slots (may be displaced by cup winners)
-    const plUelSlots = [table[4]?.name, table[5]?.name, table[6]?.name].filter(Boolean) as string[];
+    // Base: positions 1-5 UCL, 6-7 UEL, bottom 3 relegated (20-team league)
+    const clNames = new Set<string>(table.slice(0, 5).map(t => t.name));
+    // pl6, pl7 are the two PL-based UEL slots (may be displaced by cup winners)
+    const plUelSlots = [table[5]?.name, table[6]?.name].filter(Boolean) as string[];
     const uelNames = new Set<string>(plUelSlots);
     const relegNames = new Set<string>(table.slice(Math.max(n - 3, 0)).map(t => t.name));
 
@@ -1158,7 +1158,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     if (isPlayer) return "";
     if (pos === 1) return "border-l-2 border-l-yellow-500";
     if (tableQualification.clNames.has(teamName)) return "border-l-2 border-l-blue-500";
-    if (tableQualification.uelNames.has(teamName)) return "border-l-2 border-l-emerald-500";
+    if (tableQualification.uelNames.has(teamName)) return "border-l-2 border-l-orange-500";
     if (tableQualification.relegNames.has(teamName)) return "border-l-2 border-l-red-500";
     return "";
   };
@@ -1166,7 +1166,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const getLeaguePositionBadge = (pos: number, teamName: string) => {
     if (pos === 1) return "bg-yellow-500/20 text-yellow-400";
     if (tableQualification.clNames.has(teamName)) return "bg-blue-500/20 text-blue-400";
-    if (tableQualification.uelNames.has(teamName)) return "bg-emerald-500/20 text-emerald-400";
+    if (tableQualification.uelNames.has(teamName)) return "bg-orange-500/20 text-orange-400";
     if (tableQualification.relegNames.has(teamName)) return "bg-red-500/20 text-red-400";
     return "text-white";
   };

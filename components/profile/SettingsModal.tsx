@@ -161,7 +161,7 @@ export default function SettingsModal({ username: initialUsername, email, unlock
               className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:outline-none"
             />
             <p className="mt-1 text-xs text-white">
-              You can only change your username once every 30 days.
+              You get one free username change. After that, once every 30 days.
             </p>
           </div>
 
