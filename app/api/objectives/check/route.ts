@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   let { data: objectives, error: objErr } = await service
     .from("objectives")
-    .select("id, title, xp_reward, card_image_url, card_name, conditions, same_season, same_player")
+    .select("id, title, xp_reward, card_image_url, card_name, conditions, same_season, same_player, or_groups")
     .eq("is_active", true)
     .eq("is_published", true)
     .or("expires_at.is.null,expires_at.gt.now()");
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       .eq("is_active", true)
       .or("expires_at.is.null,expires_at.gt.now()");
     if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
-    objectives = (fallback.data ?? []).map(o => ({ ...o, same_player: false }));
+    objectives = (fallback.data ?? []).map(o => ({ ...o, same_player: false, or_groups: null }));
   }
 
   const eligible = (objectives ?? []).filter(o => {
@@ -65,7 +65,8 @@ export async function POST(req: NextRequest) {
     const currentProgress = existing?.progress ?? {};
     const sameSeason = (obj as Record<string, unknown>).same_season === true;
     const samePlayer = (obj as Record<string, unknown>).same_player === true;
-    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer);
+    const orGroups = ((obj as Record<string, unknown>).or_groups ?? null) as ObjectiveCondition[][] | null;
+    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer, orGroups ?? undefined);
 
     if (complete) {
       await service.from("user_objectives").upsert({

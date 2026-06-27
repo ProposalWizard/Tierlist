@@ -98,6 +98,7 @@ export function evaluateObjective(
   seasonData: SeasonCheckData,
   sameSeason?: boolean,
   samePlayer?: boolean,
+  orGroups?: ObjectiveCondition[][],
 ): { newProgress: ObjectiveProgress; complete: boolean } {
   const newProgress: ObjectiveProgress = { ...currentProgress };
 
@@ -106,7 +107,9 @@ export function evaluateObjective(
 
   const seasonValues: Record<string, number> = {};
 
-  for (const cond of conditions) {
+  // Process regular conditions + all OR-group conditions for progress tracking
+  const allCondsToProcess = [...conditions, ...(orGroups ?? []).flat()];
+  for (const cond of allCondsToProcess) {
     if (!competitionMatches(cond.competition, seasonData.competition)) continue;
 
     if (cond.type === "goals" || cond.type === "assists" || cond.type === "clean_sheets") {
@@ -243,6 +246,17 @@ export function evaluateObjective(
   if (complete && playerStatConds.length > 0) {
     const valuesForCheck = sameSeason ? seasonValues : newProgress;
     complete = anyPlayerMeetsAllStatConditions(playerStatConds, valuesForCheck);
+  }
+
+  // Each OR group requires at least one of its conditions to be met
+  if (complete && orGroups && orGroups.length > 0) {
+    complete = orGroups.every(group =>
+      group.some(cond => {
+        if (!competitionMatches(cond.competition, seasonData.competition)) return false;
+        if (sameSeason) return isConditionMetThisSeason(cond, seasonData, seasonValues);
+        return isConditionMet(cond, newProgress, seasonValues);
+      })
+    );
   }
 
   return { newProgress, complete };

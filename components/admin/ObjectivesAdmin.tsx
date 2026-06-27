@@ -38,6 +38,7 @@ interface Objective {
   conditions: ObjectiveCondition[] | null;
   same_season?: boolean;
   same_player?: boolean;
+  or_groups?: ObjectiveCondition[][] | null;
 }
 
 const DURATION_OPTIONS = [
@@ -132,7 +133,9 @@ export default function ObjectivesAdmin() {
     same_player: false,
   });
   const [conditions, setConditions] = useState<ObjectiveCondition[]>([]);
+  const [orGroups, setOrGroups] = useState<ObjectiveCondition[][]>([]);
   const [addingCond, setAddingCond] = useState(false);
+  const [activeOrGroupIdx, setActiveOrGroupIdx] = useState<number | null>(null);
   const [nc, setNc] = useState<NewCondState>({ ...EMPTY_COND });
   const [durationSelect, setDurationSelect] = useState("");
   const [cardFile, setCardFile] = useState<File | null>(null);
@@ -154,7 +157,9 @@ export default function ObjectivesAdmin() {
     setEditingId(null);
     setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "standard", is_published: false, expires_at: null, same_season: false, same_player: false });
     setConditions([]);
+    setOrGroups([]);
     setAddingCond(false);
+    setActiveOrGroupIdx(null);
     setNc({ ...EMPTY_COND });
     setDurationSelect("");
     setCardFile(null);
@@ -176,7 +181,9 @@ export default function ObjectivesAdmin() {
       same_player: obj.same_player === true,
     });
     setConditions(obj.conditions ?? []);
+    setOrGroups(obj.or_groups ?? []);
     setAddingCond(false);
+    setActiveOrGroupIdx(null);
     setNc({ ...EMPTY_COND });
     setDurationSelect("");
     setCardPreview(obj.card_image_url);
@@ -271,13 +278,22 @@ export default function ObjectivesAdmin() {
       if ((nc.seasonCount ?? 1) > 1) cond.seasonCount = nc.seasonCount;
     }
 
-    if (nc.editingCondId) {
+    if (activeOrGroupIdx !== null) {
+      // Add to the active OR group
+      setOrGroups(prev => prev.map((g, i) =>
+        i === activeOrGroupIdx ? [...g, cond] : g
+      ));
+      setNc({ ...EMPTY_COND });
+      setActiveOrGroupIdx(null);
+    } else if (nc.editingCondId) {
       setConditions(prev => prev.map(c => c.id === nc.editingCondId ? cond : c));
+      setNc({ ...EMPTY_COND });
+      setAddingCond(false);
     } else {
       setConditions(prev => [...prev, cond]);
+      setNc({ ...EMPTY_COND });
+      setAddingCond(false);
     }
-    setNc({ ...EMPTY_COND });
-    setAddingCond(false);
   };
 
   const handleEditCondition = (cond: ObjectiveCondition) => {
@@ -332,6 +348,7 @@ export default function ObjectivesAdmin() {
       expires_at: form.expires_at,
       same_season: form.same_season,
       same_player: form.same_player,
+      or_groups: orGroups.length > 0 ? orGroups : null,
       sort_order: editingId
         ? objectives.find(o => o.id === editingId)?.sort_order ?? 0
         : objectives.length,
@@ -1093,6 +1110,120 @@ export default function ObjectivesAdmin() {
               + Add Condition
             </button>
           )}
+        </div>
+
+        {/* ───── OR GROUPS ───── */}
+        <div>
+          <label className="block text-xs font-bold text-white uppercase tracking-wider mb-1">
+            OR Groups
+            <span className="text-gray-500 font-normal normal-case ml-2">At least one condition in each group must be met</span>
+          </label>
+
+          {orGroups.map((group, gi) => (
+            <div key={gi} className="mb-3 border border-purple-800/40 rounded-lg p-3 bg-purple-900/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Group {gi + 1} — any one of:</span>
+                <button
+                  onClick={() => { setOrGroups(prev => prev.filter((_, i) => i !== gi)); if (activeOrGroupIdx === gi) setActiveOrGroupIdx(null); }}
+                  className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-0.5 bg-red-500/10 rounded transition"
+                >
+                  Remove Group
+                </button>
+              </div>
+
+              {group.length === 0 && (
+                <p className="text-xs text-gray-500 mb-2">No conditions yet — add at least two.</p>
+              )}
+
+              <div className="space-y-1 mb-2">
+                {group.map((cond, ci) => (
+                  <div key={cond.id} className="flex items-center justify-between bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[10px] font-bold text-purple-400 shrink-0">○</span>
+                      <span className="text-xs text-white truncate">{conditionSummary(cond)}</span>
+                    </div>
+                    <button
+                      onClick={() => setOrGroups(prev => prev.map((g, i) => i === gi ? g.filter((_, j) => j !== ci) : g))}
+                      className="text-red-400 hover:text-red-300 text-sm font-bold leading-none shrink-0"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {activeOrGroupIdx === gi ? (
+                <div className="bg-gray-800 border border-purple-700/50 rounded-lg p-3 mt-2">
+                  <p className="text-[10px] font-bold text-purple-400 uppercase mb-2">Adding condition to Group {gi + 1}</p>
+                  <div className="space-y-2">
+                    <select
+                      value={nc.type}
+                      onChange={e => { const t = e.target.value as ConditionType; setNc({ ...EMPTY_COND, type: t, timeframe: t === "squad_count" ? "season" : "career", count: t === "login_streak" ? 7 : 1 }); }}
+                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
+                    >
+                      {(Object.keys(CONDITION_TYPE_LABELS) as ConditionType[]).map(t => (
+                        <option key={t} value={t}>{CONDITION_TYPE_LABELS[t]}</option>
+                      ))}
+                    </select>
+                    {nc.type === "win_event" && (
+                      <select
+                        value={nc.event}
+                        onChange={e => setNc(n => ({ ...n, event: e.target.value as WinEvent | "" }))}
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
+                      >
+                        <option value="">— Select event —</option>
+                        {availableEvents.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+                      </select>
+                    )}
+                    {nc.type !== "win_event" && (
+                      <input
+                        type="number"
+                        value={nc.count}
+                        onChange={e => setNc(n => ({ ...n, count: parseInt(e.target.value) || 1 }))}
+                        min={1}
+                        placeholder="Count"
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
+                      />
+                    )}
+                    {(nc.type !== "win_event" || nc.event) && (
+                      <p className="text-[10px] text-purple-300/70">
+                        Preview: {conditionSummary({ id: "preview", type: nc.type, count: nc.count, event: nc.type === "win_event" ? nc.event as WinEvent : undefined, competition: "any" })}
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleAddCondition}
+                        disabled={nc.type === "win_event" && !nc.event}
+                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition"
+                      >
+                        Add to Group
+                      </button>
+                      <button
+                        onClick={() => { setActiveOrGroupIdx(null); setNc({ ...EMPTY_COND }); }}
+                        className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-bold rounded-lg transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setActiveOrGroupIdx(gi); setAddingCond(false); setNc({ ...EMPTY_COND }); }}
+                  className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-purple-800/50 text-xs font-bold text-purple-300 hover:text-purple-200 rounded-lg transition"
+                >
+                  + Add Condition to Group
+                </button>
+              )}
+            </div>
+          ))}
+
+          <button
+            onClick={() => setOrGroups(prev => [...prev, []])}
+            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs font-bold text-gray-300 hover:text-white rounded-lg transition"
+          >
+            + Add OR Group
+          </button>
         </div>
 
         {/* Save / Cancel buttons */}

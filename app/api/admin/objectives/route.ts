@@ -41,6 +41,7 @@ export async function POST(req: Request) {
       conditions: body.conditions ?? [],
       same_season: body.same_season ?? false,
       same_player: body.same_player ?? false,
+      or_groups: body.or_groups ?? null,
     })
     .select()
     .single();
@@ -67,6 +68,7 @@ export async function PATCH(req: Request) {
   if (body.category !== undefined) updates.category = body.category;
   if (body.same_season !== undefined) updates.same_season = body.same_season;
   if (body.same_player !== undefined) updates.same_player = body.same_player;
+  if ("or_groups" in body) updates.or_groups = body.or_groups ?? null;
   const { error } = await supabase
     .from("objectives")
     .update(updates)
