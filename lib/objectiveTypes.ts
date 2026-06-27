@@ -43,7 +43,8 @@ export type WinEvent =
   | "europa_final"
   | "europa_sf"
   | "double"
-  | "treble";
+  | "treble"
+  | "super_cup_win";
 
 export type Competition = "any" | "pl_draft" | "cl_draft";
 
@@ -127,6 +128,7 @@ export const WIN_EVENT_OPTIONS: { value: WinEvent; label: string; competition: C
   { value: "double",               label: "Win the Double (PL + FA Cup / PL + Europa)", competition: "any",  available: true },
   { value: "treble",               label: "Win the Treble (PL + UCL + ...)",   competition: "cl_draft", available: true },
   { value: "efl_cup_win",          label: "Win the League Cup",                 competition: "pl_draft", available: true },
+  { value: "super_cup_win",        label: "Win the Super Cup",                  competition: "pl_draft", available: true },
 ];
 
 export const CONDITION_TYPE_LABELS: Record<ConditionType, string> = {
