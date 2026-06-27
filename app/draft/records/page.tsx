@@ -23,6 +23,7 @@ interface RecordType {
 }
 
 const SEASON_RECORD_TYPES: RecordType[] = [
+  { key: "most_points",    label: "Most Points",          emoji: "📊", isTeam: true },
   { key: "wins",           label: "Most Wins",            emoji: "🏆", isTeam: true },
   { key: "goals",          label: "Golden Boot",          emoji: "👟", isTeam: false },
   { key: "assists",        label: "Most Assists",         emoji: "🎯", isTeam: false },
@@ -41,6 +42,7 @@ const CAREER_RECORD_TYPES: RecordType[] = [
 ];
 
 const OFFICIAL: Record<string, { value: number; playerName: string | null; playerOvr: number | null; clubName?: string }> = {
+  "pl_most_points":    { value: 100, playerName: null, playerOvr: null, clubName: "Man City" },
   "pl_wins":           { value: 32, playerName: null, playerOvr: null, clubName: "Man City" },
   "pl_goals":          { value: 36, playerName: "E. Haaland", playerOvr: 91 },
   "pl_assists":        { value: 21, playerName: "Bruno Fernandes", playerOvr: 88 },

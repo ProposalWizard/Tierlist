@@ -112,6 +112,7 @@ interface RecordPayload {
     goalsConceded: TeamStat;
     biggestWin?: TeamStat;
     avgRating?: RecordEntry;
+    mostPoints?: TeamStat;
   };
   all: {
     wins: TeamStat;
@@ -206,6 +207,7 @@ export async function POST(req: Request) {
   pushTeam("pl", "goals_conceded", pl.goalsConceded);
   if (pl.biggestWin) pushTeam("pl", "biggest_win", pl.biggestWin);
   if (pl.avgRating) pushEntry("pl", "avg_rating", pl.avgRating);
+  if (pl.mostPoints) pushTeam("pl", "most_points", pl.mostPoints);
 
   pushTeam("all", "wins", all.wins);
   pushTeam("all", "unbeaten", all.unbeaten);

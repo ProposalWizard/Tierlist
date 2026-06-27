@@ -1021,6 +1021,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 goalsConceded: { value: season.teamRecord.goalsAgainst, teamOvr },
                 biggestWin: { value: plBiggestWin, teamOvr, score: plBiggestWinScore || undefined },
                 avgRating: bestAvgRating(season.plPlayerStats),
+                mostPoints: { value: season.teamRecord.points, teamOvr },
               },
               all: {
                 wins: { value: allWins, teamOvr },
@@ -1167,8 +1168,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     return { clNames, uelNames, relegNames };
   }, [season.leagueTable, season.faCup.faCupWinner, season.leagueCup.faCupWinner]);
 
-  const getLeaguePositionStyle = (pos: number, isPlayer: boolean, teamName: string) => {
-    if (isPlayer) return "";
+  const getLeaguePositionStyle = (pos: number, teamName: string) => {
     if (pos === 1) return "border-l-2 border-l-yellow-500";
     if (tableQualification.clNames.has(teamName)) return "border-l-2 border-l-blue-500";
     if (tableQualification.uelNames.has(teamName)) return "border-l-2 border-l-orange-500";
@@ -1682,7 +1682,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             {season.leagueTable.map((team, i) => {
               const pos = i + 1;
               return (
-                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : `hover:bg-gray-800/50 ${getLeaguePositionStyle(pos, team.isPlayer, team.name)}`}`}>
+                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${getLeaguePositionStyle(pos, team.name)} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : "hover:bg-gray-800/50"}`}>
                   <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos, team.name)}`}>{pos}</span>
                   <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.won}</span>
