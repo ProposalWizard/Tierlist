@@ -62,18 +62,24 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/profile/progression")
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data && !data.error) setProgression(data);
-        setLoadingProgression(false);
-      })
-      .catch(() => setLoadingProgression(false));
+    const loadProgression = async () => {
+      // Award join bonus on first ever visit — idempotent (server deduplicates via unique event_ref)
+      await fetch("/api/xp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "join", event_ref: "join", xp_amount: 1000 }),
+      }).catch(() => {});
 
-    fetch("/api/season-rewards")
-      .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data?.rewards?.length) setSeasonRewards(data.rewards); })
-      .catch(() => {});
+      const [progressData, rewardsData] = await Promise.all([
+        fetch("/api/profile/progression").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/season-rewards").then(r => r.ok ? r.json() : null).catch(() => null),
+      ]);
+
+      if (progressData && !progressData.error) setProgression(progressData);
+      if (rewardsData?.rewards?.length) setSeasonRewards(rewardsData.rewards);
+      setLoadingProgression(false);
+    };
+    loadProgression();
   }, []);
 
   async function handleEquip(type: "frame" | "title", id: string) {

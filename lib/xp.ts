@@ -2,14 +2,15 @@
 
 // --- XP curve ---
 
+// Each level costs exactly 1000 XP. Level 1 = 1,000 XP, Level 50 = 50,000 XP total.
 export function xpForLevel(level: number): number {
-  if (level <= 1) return 0;
-  return 100 * level + 50 * (level - 1);
+  if (level < 1) return 0;
+  return 1000;
 }
 
 export function cumulativeXpForLevel(level: number): number {
   let total = 0;
-  for (let i = 2; i <= level; i++) {
+  for (let i = 1; i <= level; i++) {
     total += xpForLevel(i);
   }
   return total;
@@ -21,7 +22,7 @@ export function levelFromXp(totalXp: number): {
   xpToNext: number;
   progress: number;
 } {
-  let level = 1;
+  let level = 0;
   let consumed = 0;
   while (true) {
     const needed = xpForLevel(level + 1);
@@ -43,6 +44,7 @@ export function levelFromXp(totalXp: number): {
 
 export const XP_AWARDS = {
   // Kept for existing backend awarding code (not shown in WaysToEarnXP)
+  join: 1000,
   draft_invincible: 500,
   vote_cast: 10,
   tierlist_create: 25,
