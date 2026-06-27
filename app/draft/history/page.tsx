@@ -254,8 +254,8 @@ export default function DraftHistoryPage() {
           const isExpanded = expandedId === run.id;
           const finishColor =
             run.finish === 1 ? "text-yellow-400" :
-            run.finish <= 4 ? "text-blue-400" :
-            run.finish <= 6 ? "text-emerald-400" :
+            run.finish <= 5 ? "text-blue-400" :
+            run.finish <= 7 ? "text-orange-400" :
             run.finish >= 18 ? "text-red-400" : "text-white";
 
           return (

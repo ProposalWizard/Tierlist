@@ -10,6 +10,7 @@ interface RecordEntry {
   username: string;
   seasonNumber: number | null;
   clubName?: string | null;
+  mode?: "normal" | "prime";
 }
 
 interface RecordType {
@@ -83,6 +84,18 @@ function mergeWithOfficial(
 
 const MEDALS = ["🥇", "🥈", "🥉", "4th", "5th"];
 
+function ModeBadge({ mode }: { mode: "normal" | "prime" }) {
+  return mode === "prime" ? (
+    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+      PRIME
+    </span>
+  ) : (
+    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+      NRM
+    </span>
+  );
+}
+
 function OvrBadge({ ovr }: { ovr: number }) {
   const colour =
     ovr >= 88 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" :
@@ -150,6 +163,7 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
                     ) : (
                       <>
                         <span className="text-emerald-400 font-bold">{entry.username}</span>
+                        {entry.mode && <ModeBadge mode={entry.mode} />}
                         {entry.playerOvr !== null && <OvrBadge ovr={entry.playerOvr} />}
                       </>
                     )}
@@ -159,7 +173,10 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
                     {isOfficial ? (
                       <span className="text-amber-400 font-bold">⭐ Official</span>
                     ) : (
-                      <span className="text-emerald-400 font-bold">{entry.username}</span>
+                      <>
+                        <span className="text-emerald-400 font-bold">{entry.username}</span>
+                        {entry.mode && <ModeBadge mode={entry.mode} />}
+                      </>
                     )}
                     {!isOfficial && entry.seasonNumber && (
                       <span className="text-white">· S{entry.seasonNumber}</span>
@@ -184,11 +201,16 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
 
 export default function DraftRecordsPage() {
   const [competition, setCompetition] = useState<"pl" | "all">("pl");
-  const [mode, setMode] = useState<"normal" | "prime">("normal");
+  const [mode, setMode] = useState<"normal" | "prime" | "best">("normal");
   const [records, setRecords] = useState<Record<string, RecordEntry[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
+
+  function handleModeChange(newMode: "normal" | "prime" | "best") {
+    setMode(newMode);
+    if (newMode === "best") setCompetition("all");
+  }
 
   useEffect(() => {
     const supabase = createClient();
@@ -202,14 +224,46 @@ export default function DraftRecordsPage() {
     if (isSignedIn !== true) return;
     setLoading(true);
     setError(null);
-    fetch(`/api/draft/records?mode=${mode}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.error) throw new Error(d.error);
-        setRecords(d.records ?? {});
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+
+    if (mode === "best") {
+      Promise.all([
+        fetch(`/api/draft/records?mode=normal`).then(r => r.json()),
+        fetch(`/api/draft/records?mode=prime`).then(r => r.json()),
+      ])
+        .then(([normalData, primeData]) => {
+          if (normalData.error) throw new Error(normalData.error);
+          if (primeData.error) throw new Error(primeData.error);
+
+          const normalRec: Record<string, RecordEntry[]> = normalData.records ?? {};
+          const primeRec: Record<string, RecordEntry[]> = primeData.records ?? {};
+
+          const allKeys = Array.from(new Set([...Object.keys(normalRec), ...Object.keys(primeRec)]));
+          const merged: Record<string, RecordEntry[]> = {};
+
+          for (const key of allKeys) {
+            const normal = (normalRec[key] ?? []).map(e => ({ ...e, mode: "normal" as const }));
+            const prime = (primeRec[key] ?? []).map(e => ({ ...e, mode: "prime" as const }));
+            const combined = [...normal, ...prime];
+            const recordType = key.split("_").slice(1).join("_");
+            const isAscending = recordType === "goals_conceded";
+            combined.sort((a, b) => isAscending ? a.value - b.value : b.value - a.value);
+            merged[key] = combined.slice(0, 5);
+          }
+
+          setRecords(merged);
+        })
+        .catch(e => setError(e.message))
+        .finally(() => setLoading(false));
+    } else {
+      fetch(`/api/draft/records?mode=${mode}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.error) throw new Error(d.error);
+          setRecords(d.records ?? {});
+        })
+        .catch(e => setError(e.message))
+        .finally(() => setLoading(false));
+    }
   }, [isSignedIn, mode]);
 
   if (isSignedIn === null) {
@@ -280,10 +334,10 @@ export default function DraftRecordsPage() {
           </div>
         </div>
 
-        {/* Normal / Prime toggle (primary) */}
+        {/* Normal / Prime / Best toggle (primary) */}
         <div className="flex gap-1.5 mb-4 bg-gray-900/50 border border-gray-800/50 rounded-xl p-1 max-w-xs">
           <button
-            onClick={() => setMode("normal")}
+            onClick={() => handleModeChange("normal")}
             className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
               mode === "normal" ? "bg-emerald-600 text-white shadow-lg" : "text-white hover:text-white"
             }`}
@@ -291,12 +345,20 @@ export default function DraftRecordsPage() {
             Normal
           </button>
           <button
-            onClick={() => setMode("prime")}
+            onClick={() => handleModeChange("prime")}
             className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
               mode === "prime" ? "bg-amber-600 text-white shadow-lg" : "text-white hover:text-white"
             }`}
           >
             Prime
+          </button>
+          <button
+            onClick={() => handleModeChange("best")}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+              mode === "best" ? "bg-purple-600 text-white shadow-lg" : "text-white hover:text-white"
+            }`}
+          >
+            Best
           </button>
         </div>
 
