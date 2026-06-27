@@ -18,20 +18,20 @@ export async function POST(req: NextRequest) {
 
   let { data: objectives, error: objErr } = await service
     .from("objectives")
-    .select("id, title, xp_reward, card_image_url, card_name, conditions, same_season")
+    .select("id, title, xp_reward, card_image_url, card_name, conditions, same_season, same_player")
     .eq("is_active", true)
     .eq("is_published", true)
     .or("expires_at.is.null,expires_at.gt.now()");
 
   if (objErr) {
-    // is_published column may not exist yet — fall back without the filter
+    // is_published or same_player column may not exist yet — fall back without the filter
     const fallback = await service
       .from("objectives")
       .select("id, title, xp_reward, card_image_url, card_name, conditions, same_season")
       .eq("is_active", true)
       .or("expires_at.is.null,expires_at.gt.now()");
     if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
-    objectives = fallback.data;
+    objectives = (fallback.data ?? []).map(o => ({ ...o, same_player: false }));
   }
 
   const eligible = (objectives ?? []).filter(o => {
@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
     const conditions = obj.conditions as ObjectiveCondition[];
     const currentProgress = existing?.progress ?? {};
     const sameSeason = (obj as Record<string, unknown>).same_season === true;
-    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason);
+    const samePlayer = (obj as Record<string, unknown>).same_player === true;
+    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer);
 
     if (complete) {
       await service.from("user_objectives").upsert({
