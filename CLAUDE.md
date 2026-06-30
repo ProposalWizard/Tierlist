@@ -441,7 +441,7 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 
 ## Recent Session Changes
 
-Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as context — read it only when you need historical detail). Latest session: 30 June 2026 — fixed the two remaining PL Draft multiplayer bugs (UCL/UEL shared league tables diverging per viewer; League Cup missing from Career Recap). See `SESSION_LOG.md` for full detail on this and all prior sessions.
+Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as context — read it only when you need historical detail). Latest session: 30 June 2026 — added a Starting XI rating display, out-of-position adjusted rating display, and a 0.5x/1x/1.5x simulation speed selector (solo + host-synced multiplayer) to the PL Draft game. See `SESSION_LOG.md` for full detail on this and all prior sessions.
 
 ---
 
