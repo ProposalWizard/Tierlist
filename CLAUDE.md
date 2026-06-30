@@ -290,7 +290,7 @@ A Premier League draft game inspired by 38-0/82-0.com. Player picks a formation,
 ### Season simulation (attribute-based)
 - Team strength = separate **attack/midfield/defense/GK phase ratings** computed from FIFA attributes (`attrs` on `DraftPlayer`), not a flat OVR average
 - Goal scorers weighted by finishing/positioning/shooting; assists by vision/crossing/passing
-- **Position fitness**: natural position 100%, same role 92%, adjacent role 78%, else 60%
+- **Position fitness**: natural position 100%, same role 96%, explicit "medium" pairs (e.g. LM↔LB) 88%, generic adjacent role 82%, else 60%
 - Defenders + GK earn clean sheets; per-match player ratings (4.0–10.0) → season average
 - Falls back to OVR-only when attributes are missing (e.g. data not yet imported)
 
@@ -442,7 +442,7 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 
 ## Recent Session Changes
 
-Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as context — read it only when you need historical detail). Latest session: 30 June 2026 (cont. 3) — implemented a live, all-20-team PL table during the season reveal animation (re-buckets already-simulated results into a matchweek schedule, no extra simulation cost); added player photos to the Career Recap "Average Best XI" pitch view; fixed a multiplayer rejoin bug where a returning player's status was silently reset, breaking the host's ready-check gate; added a persistent room-code badge visible on every PL Draft page. See `SESSION_LOG.md` for full detail on this and all prior sessions.
+Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as context — read it only when you need historical detail). Latest session: 30 June 2026 (cont. 4) — added editable multiplayer team names (replacing the hardcoded "{display_name} FC"); added continent-based and exclusion-based objective conditions; redesigned the multiplayer lobby host settings UI; fixed several objective-admin bugs (card removal, tab sizing, toast duration); fixed a real bug where XP/objectives/history weren't credited if a player navigated away during the season-result reveal animation (crediting was wrongly gated behind the animation finishing instead of the already-computed result). See `SESSION_LOG.md` for full detail on this and all prior sessions.
 
 ---
 

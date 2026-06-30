@@ -672,7 +672,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
   const historySaved = useRef(false);
   useEffect(() => {
-    if (seasonComplete && !historySaved.current) {
+    // Award XP/objectives/history as soon as the season result is computed — don't gate behind
+    // the visual reveal animation finishing, or a player who navigates away mid-animation loses credit
+    // for a season that already finished simulating.
+    if (!historySaved.current) {
       historySaved.current = true;
       const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
       const plPlayerGoals: Record<string, number> = {};
@@ -1056,7 +1059,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         })();
       }
     }
-  }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
+  }, [players, season, seasonNumber, isSignedIn]);
 
   const handleSkip = useCallback(() => {
     // Push anchor far into the past so the interval also computes idx = totalEvents

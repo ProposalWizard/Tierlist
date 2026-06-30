@@ -30,7 +30,7 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, onDism
     const timer = setTimeout(() => {
       setExiting(true);
       setTimeout(onDismiss, 400);
-    }, leveledUp ? 3000 : 1500);
+    }, leveledUp ? 6000 : 4000);
     return () => clearTimeout(timer);
   }, [onDismiss, leveledUp]);
 

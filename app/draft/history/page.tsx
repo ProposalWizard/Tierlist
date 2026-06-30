@@ -3,12 +3,11 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { loadDraftHistory } from "@/components/draft/DraftResult";
 import type { DraftRunRecord } from "@/components/draft/DraftResult";
-import { getPositionColor } from "@/components/draft/formations";
 import { createClient } from "@/lib/supabase/client";
+import PersonalRecords from "@/components/profile/PersonalRecords";
 
 export default function DraftHistoryPage() {
   const [history, setHistory] = useState<DraftRunRecord[]>([]);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSignedIn, setIsSignedIn] = useState(false);
 
@@ -26,12 +25,6 @@ export default function DraftHistoryPage() {
       }
     });
   }, []);
-
-  const ordinal = (n: number) => {
-    const s = ["th", "st", "nd", "rd"];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-  };
 
   const stats = useMemo(() => {
     if (history.length === 0) return null;
@@ -245,63 +238,9 @@ export default function DraftHistoryPage() {
         </>
       )}
 
-      {/* Recent runs */}
-      <h2 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">Recent Runs</h2>
-      <p className="text-[10px] text-white mb-3">Tap a run to see the XI you fielded.</p>
-
-      <div className="space-y-2">
-        {history.map((run) => {
-          const isExpanded = expandedId === run.id;
-          const finishColor =
-            run.finish === 1 ? "text-yellow-400" :
-            run.finish <= 5 ? "text-blue-400" :
-            run.finish <= 7 ? "text-orange-400" :
-            run.finish >= 18 ? "text-red-400" : "text-white";
-
-          return (
-            <div key={run.id}>
-              <button
-                onClick={() => setExpandedId(isExpanded ? null : run.id)}
-                className="w-full bg-gray-900 rounded-xl p-4 border border-gray-800/50 hover:bg-gray-800/80 transition text-left"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-lg font-black ${finishColor}`}>{run.points} pts</span>
-                    <span className="text-white text-sm">&middot; {ordinal(run.finish)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {run.finish === 1 && <span className="text-yellow-400">&#127942;</span>}
-                    {run.finish <= 4 && run.finish > 1 && <span className="text-blue-400">&#11088;</span>}
-                    <span className="text-[10px] text-white">
-                      {new Date(run.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-xs text-white">
-                  Won {run.record.wins} &middot; Drew {run.record.draws} &middot; Lost {run.record.losses}
-                  &middot; Scored {run.goalsFor} &middot; Conceded {run.goalsAgainst}
-                  {run.formation ? ` &middot; ${run.formation}` : ""}
-                </div>
-              </button>
-
-              {isExpanded && (
-                <div className="bg-gray-900/50 rounded-b-xl px-4 pb-4 pt-2 border-x border-b border-gray-800/50 -mt-1">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
-                    {run.players.map((p, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm py-0.5">
-                        <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-7 text-center`}>
-                          {p.assignedPosition}
-                        </span>
-                        <span className="flex-1 text-xs font-medium truncate">{p.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* Personal Bests */}
+      <h2 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">Personal Bests</h2>
+      <PersonalRecords />
     </div>
   );
 }

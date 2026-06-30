@@ -58,7 +58,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
 
   const humanTeamNames = useMemo(() => {
     if (!roomPlayers) return new Set<string>();
-    return new Set(roomPlayers.map(rp => `${rp.display_name} FC`));
+    return new Set(roomPlayers.map(rp => rp.team_name || `${rp.display_name} FC`));
   }, [roomPlayers]);
 
   const stats = useMemo(() => {
@@ -102,7 +102,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     if (!roomPlayers || roomPlayers.length <= 1) return [];
     const records: Record<string, H2HRecord> = {};
     for (const rp of roomPlayers) {
-      const teamName = `${rp.display_name} FC`;
+      const teamName = rp.team_name || `${rp.display_name} FC`;
       records[teamName] = { name: rp.display_name, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 };
     }
     for (const season of allSeasons) {
@@ -125,7 +125,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     if (!roomPlayers || roomPlayers.length <= 1) return [];
     const data: { name: string; finishes: (number | null)[]; totalPoints: number; bestFinish: number; titles: number }[] = [];
     for (const rp of roomPlayers) {
-      const teamName = `${rp.display_name} FC`;
+      const teamName = rp.team_name || `${rp.display_name} FC`;
       const finishes: (number | null)[] = [];
       let totalPoints = 0;
       for (const season of allSeasons) {

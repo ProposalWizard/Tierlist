@@ -1476,6 +1476,7 @@ function simulateSharedFaCup(
   humanTeams: {
     userId: string;
     displayName: string;
+    teamName: string;
     starters: DraftPlayer[];
     ratings: PhaseRatings;
     rng: () => number;
@@ -1485,7 +1486,7 @@ function simulateSharedFaCup(
 ): { results: Map<string, FaCupResult>; faCupWinner: string } {
   // Build 32-team bracket: human teams + AI teams
   type BracketEntry = { name: string; strength: number; userId?: string };
-  const humanMap = new Map(humanTeams.map(h => [`${h.displayName} FC`, h]));
+  const humanMap = new Map(humanTeams.map(h => [h.teamName, h]));
 
   const bracket: BracketEntry[] = allCupTeams.map(t => {
     const human = humanMap.get(t.name);
@@ -1651,7 +1652,7 @@ function simulateSharedFaCup(
   for (const h of humanTeams) {
     const matches = humanMatches.get(h.userId)!;
     const exitRound = humanEliminated.get(h.userId);
-    const isWinner = faCupWinner === `${h.displayName} FC`;
+    const isWinner = faCupWinner === h.teamName;
     results.set(h.userId, {
       matches,
       winner: isWinner,
@@ -1667,6 +1668,7 @@ function simulateSharedLeagueCup(
   humanTeams: {
     userId: string;
     displayName: string;
+    teamName: string;
     starters: DraftPlayer[];
     ratings: PhaseRatings;
     rng: () => number;
@@ -1675,7 +1677,7 @@ function simulateSharedLeagueCup(
   drawRng: () => number,
 ): { results: Map<string, FaCupResult>; leagueCupWinner: string } {
   type BracketEntry = { name: string; strength: number; userId?: string };
-  const humanMap = new Map(humanTeams.map(h => [`${h.displayName} FC`, h]));
+  const humanMap = new Map(humanTeams.map(h => [h.teamName, h]));
 
   const bracket: BracketEntry[] = allCupTeams.map(t => ({
     name: t.name,
@@ -1986,7 +1988,7 @@ function simulateSharedLeagueCup(
   for (const h of humanTeams) {
     const matches = humanMatches.get(h.userId)!;
     const exitRound = humanEliminated.get(h.userId);
-    const isWinner = leagueCupWinner === `${h.displayName} FC`;
+    const isWinner = leagueCupWinner === h.teamName;
     results.set(h.userId, {
       matches,
       winner: isWinner,
@@ -3913,6 +3915,7 @@ function aiRatings(strength: number): PhaseRatings {
 export interface SharedSeasonInput {
   userId: string;
   displayName: string;
+  teamName?: string;
   squad: DraftPlayer[];
 }
 
@@ -4710,7 +4713,7 @@ export function simulateSharedSeason(
     const subs     = ht.squad.filter(p => p.isSub);
     return {
       ...ht,
-      teamName: `${ht.displayName} FC`,
+      teamName: ht.teamName?.trim() || `${ht.displayName} FC`,
       ratings: computePhaseRatings(starters.length > 0 ? starters : ht.squad),
       starters,
       subs,
@@ -4825,6 +4828,7 @@ export function simulateSharedSeason(
     return {
       userId: hd.userId,
       displayName: hd.displayName,
+      teamName: hd.teamName,
       starters: hd.starters,
       ratings: hd.ratings,
       rng: createRng(playerSeed + 55555),
@@ -4839,6 +4843,7 @@ export function simulateSharedSeason(
     return {
       userId: hd.userId,
       displayName: hd.displayName,
+      teamName: hd.teamName,
       starters: hd.starters,
       ratings: hd.ratings,
       rng: createRng(playerSeed + 77777),
