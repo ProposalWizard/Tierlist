@@ -819,6 +819,12 @@ export default function DraftPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      {roomCode && phase !== "setup" && phase !== "lobby" && (
+        <div className="fixed top-2 right-2 z-50 flex items-center gap-1.5 bg-gray-900/90 backdrop-blur border border-gray-700/50 rounded-full px-3 py-1 shadow-lg">
+          <span className="text-[9px] font-bold tracking-widest text-white uppercase">Room</span>
+          <span className="text-xs font-black tracking-[0.2em] text-emerald-400 font-mono">{roomCode}</span>
+        </div>
+      )}
       {phase === "setup" && (
         <>
           {resume && (

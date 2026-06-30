@@ -442,7 +442,7 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 
 ## Recent Session Changes
 
-Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as context — read it only when you need historical detail). Latest session: 30 June 2026 — added a Starting XI rating display, out-of-position adjusted rating display, and a 0.5x/1x/1.5x simulation speed selector (solo + host-synced multiplayer) to the PL Draft game. See `SESSION_LOG.md` for full detail on this and all prior sessions.
+Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as context — read it only when you need historical detail). Latest session: 30 June 2026 (cont. 3) — implemented a live, all-20-team PL table during the season reveal animation (re-buckets already-simulated results into a matchweek schedule, no extra simulation cost); added player photos to the Career Recap "Average Best XI" pitch view; fixed a multiplayer rejoin bug where a returning player's status was silently reset, breaking the host's ready-check gate; added a persistent room-code badge visible on every PL Draft page. See `SESSION_LOG.md` for full detail on this and all prior sessions.
 
 ---
 

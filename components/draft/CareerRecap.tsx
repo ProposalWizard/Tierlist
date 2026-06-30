@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import type { SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
 import { getPositionColor } from "@/components/draft/formations";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 const BEST_XI_SLOT_COORDS = [
   { x: 50, y: 92 }, // GK
@@ -48,6 +49,7 @@ interface AllTimePlayer {
   bestRating: number;
   bestRatingSeason: number;
   avgRating: number;
+  image_url?: string | null;
 }
 
 export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeasons, onClose, onNewRun }: Props) {
@@ -170,7 +172,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
         for (const ps of stats) {
           const key = ownerName ? `${ps.name}::${ownerName}` : ps.name;
           if (!map[key]) {
-            map[key] = { name: ps.name, owner: ownerName, position: ps.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: 0, seasons: 0, bestRating: 0, bestRatingSeason: 0, avgRating: 0 };
+            map[key] = { name: ps.name, owner: ownerName, position: ps.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: 0, seasons: 0, bestRating: 0, bestRatingSeason: 0, avgRating: 0, image_url: ps.image_url };
           }
           const p = map[key];
           p.goals += ps.goals;
@@ -179,6 +181,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
           p.appearances += ps.appearances;
           p.seasons++;
           if (!p.position) p.position = ps.assignedPosition;
+          if (!p.image_url && ps.image_url) p.image_url = ps.image_url;
           if (ps.avgRating > p.bestRating) {
             p.bestRating = ps.avgRating;
             p.bestRatingSeason = si + 1;
@@ -837,7 +840,16 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                           style={{ left: `${coords.x}%`, top: `${coords.y}%` }}
                         >
                           <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white/60 overflow-hidden flex items-center justify-center ${p ? getPositionColor(s.slot) : "bg-gray-800"}`}>
-                            <span className="text-[10px] sm:text-sm font-black text-white">{p ? initials : s.slot}</span>
+                            {p && p.image_url ? (
+                              <ImageWithFallback
+                                src={p.image_url}
+                                alt={p.name}
+                                className="w-full h-full object-cover"
+                                fallbackText={initials}
+                              />
+                            ) : (
+                              <span className="text-[10px] sm:text-sm font-black text-white">{p ? initials : s.slot}</span>
+                            )}
                           </div>
                           <div className="flex flex-col items-center mt-0.5 max-w-[64px] sm:max-w-[84px]">
                             {p ? (

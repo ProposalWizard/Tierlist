@@ -44,9 +44,16 @@ export async function POST(
 
   const displayName = profile?.username || user.email?.split("@")[0] || "Player";
 
-  // Upsert so host joining doesn't error
+  // Upsert so host joining doesn't error. Only set status on a brand-new join —
+  // rejoining must NOT reset a player's status (e.g. "ready"/"simulated"), or the
+  // host's ready-check gate would hang waiting on someone who already finished.
+  const upsertPayload: { room_id: string; user_id: string; display_name: string; status?: string } = {
+    room_id: room.id, user_id: user.id, display_name: displayName,
+  };
+  if (!alreadyInRoom) upsertPayload.status = "drafting";
+
   const { error } = await service.from("draft_room_players").upsert(
-    { room_id: room.id, user_id: user.id, display_name: displayName, status: "drafting" },
+    upsertPayload,
     { onConflict: "room_id,user_id", ignoreDuplicates: false }
   );
 

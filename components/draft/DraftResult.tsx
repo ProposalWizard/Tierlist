@@ -604,6 +604,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const season = computedSeason;
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(true);
+  const [showLiveTable, setShowLiveTable] = useState(true);
   const [showUCLTable, setShowUCLTable] = useState(false);
   const [showUELTable, setShowUELTable] = useState(false);
   const [showCareerRecap, setShowCareerRecap] = useState(false);
@@ -1284,6 +1285,32 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       return r.total / r.count;
     };
 
+    // Live league table — all 20 teams, derived from allFixtures through the revealed matchweek
+    const liveTable = season.allFixtures ? (() => {
+      const table: Record<string, { name: string; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; goalDifference: number; points: number; isPlayer: boolean }> = {};
+      for (const t of season.leagueTable) {
+        table[t.name] = { name: t.name, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, isPlayer: t.isPlayer };
+      }
+      for (const wk of season.allFixtures!.slice(0, plWeek)) {
+        for (const fx of wk.matches) {
+          const ht = table[fx.home];
+          const at = table[fx.away];
+          if (!ht || !at) continue;
+          ht.goalsFor += fx.homeGoals; ht.goalsAgainst += fx.awayGoals;
+          at.goalsFor += fx.awayGoals; at.goalsAgainst += fx.homeGoals;
+          if (fx.homeGoals > fx.awayGoals) { ht.won++; ht.points += 3; at.lost++; }
+          else if (fx.homeGoals === fx.awayGoals) { ht.drawn++; ht.points += 1; at.drawn++; at.points += 1; }
+          else { ht.lost++; at.won++; at.points += 3; }
+        }
+      }
+      for (const t of Object.values(table)) t.goalDifference = t.goalsFor - t.goalsAgainst;
+      return Object.values(table).sort((a, b) =>
+        b.points !== a.points ? b.points - a.points :
+        b.goalDifference !== a.goalDifference ? b.goalDifference - a.goalDifference :
+        b.goalsFor - a.goalsFor
+      );
+    })() : null;
+
     return (
       <div className="max-w-2xl mx-auto p-4 pb-20">
         {/* Live squad stats */}
@@ -1495,6 +1522,46 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Live League Table — updates as matchweeks are revealed */}
+        {liveTable && plWeek > 0 && (
+          <div className="bg-gray-900 rounded-xl p-3 mb-3 border border-gray-800/50">
+            <button
+              onClick={() => setShowLiveTable(!showLiveTable)}
+              className="w-full flex items-center justify-between mb-1.5"
+            >
+              <span className="text-[10px] font-bold tracking-widest text-white uppercase">Live Table &middot; GW {plWeek}/38</span>
+              <svg className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${showLiveTable ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            {showLiveTable && (
+              <div className="space-y-0.5">
+                {liveTable.map((team, i) => {
+                  const pos = i + 1;
+                  const zoneClass = pos === 1
+                    ? "border-l-2 border-l-yellow-500"
+                    : pos <= 5
+                      ? "border-l-2 border-l-blue-500"
+                      : pos <= 7
+                        ? "border-l-2 border-l-orange-500"
+                        : pos >= 18
+                          ? "border-l-2 border-l-red-500"
+                          : "";
+                  return (
+                    <div key={team.name} className={`flex items-center text-xs py-1 px-1 rounded transition ${zoneClass} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : ""}`}>
+                      <span className="w-5 text-center text-[10px] font-bold text-white shrink-0">{pos}</span>
+                      <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
+                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.won}</span>
+                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.drawn}</span>
+                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.lost}</span>
+                      <span className={`w-7 text-right text-[10px] font-bold shrink-0 ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
+                      <span className={`w-7 text-right font-black text-xs shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

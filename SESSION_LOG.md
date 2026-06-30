@@ -5,6 +5,28 @@
 > `CLAUDE.md` keeps only the current architecture/state; this file is the archive.
 > New session summaries should be appended here, not to `CLAUDE.md`.
 
+## Session: 30 June 2026 (cont. 3) — Live league table, Best XI player photos, multiplayer rejoin fix
+
+Continuation of the same-day PL Draft session, implementing three more user-dictated requests (the live table had been investigated-but-skipped in the prior session; this picks it back up since the user asked for it to actually be built).
+
+1. **Live, all-20-team PL table during the season reveal — implemented** (`lib/seasonSimulator.ts`, `components/draft/DraftResult.tsx`). Solved without touching any existing RNG-driven simulation logic (so final results/balance are 100% unchanged):
+   - `simulateLeague()` gained an optional output param (`outScores`) that captures the full directed AI-vs-AI score matrix as it's computed, with zero change to RNG call order.
+   - New `buildAllFixtures()` re-buckets the already-computed results — the human's own 38 real matches plus the captured AI-vs-AI matrix — into a proper 38-matchweek circle-method round-robin schedule (classic fix-one-rotate-the-rest algorithm), using an isolated derived RNG seed (`seed ^ 0x5C4ED01E`) so it can't perturb anything else. Attached to `SeasonResult.allFixtures`.
+   - Solo path (`simulateSeason()`) and multiplayer path (`simulateSharedSeason()`, which already had a `fullSchedule`/`matchScores` structure) both populate `allFixtures`.
+   - `DraftResult.tsx`'s reveal-phase branch (the `!seasonComplete` JSX, which previously showed no table at all) now derives a live W/D/L/GF/GA/Pts/GD table for all 20 teams from `season.allFixtures.slice(0, plWeek)` and renders it as a new collapsible "Live League Table" section, with zone coloring computed from the live table's own current sort position (not the final table's zone sets, which would misclassify teams mid-season).
+   - Cost: this is pure client-side array math over already-simulated data, no extra simulation work — confirmed not to introduce any slowdown.
+
+2. **Player photos added to the Career Recap "Average Best XI" pitch view** (`components/draft/CareerRecap.tsx`, `lib/seasonSimulator.ts`). The earlier session's "no player photos exist in this data model" claim was wrong — `DraftPlayer.image_url` exists (from SoFIFA import) but wasn't being threaded through to the season-stats objects the Best XI is built from.
+   - `image_url` added to the multiplayer `statsMap` construction in `simulateSharedSeason()` (solo path already had it from the prior session).
+   - `CareerRecap.tsx`'s `AllTimePlayer` interface gained `image_url`, `buildAllTimePlayers()` now carries it through, and the Best XI pitch circles render an `ImageWithFallback` photo when available, falling back to the initials circle exactly as before when not.
+
+3. **Multiplayer rejoin bug fixed + room code always visible** — user reported that a player who accidentally leaves an online game and rejoins "doesn't count as the same player as before" and the game gets "messed up."
+   - **Root cause found and fixed**: `app/api/draft/rooms/[code]/join/route.ts`'s upsert unconditionally included `status: "drafting"` in its payload on every join call, including rejoins. Since Supabase upserts only overwrite columns present in the payload, this silently reset a returning player's status from `"ready"`/`"simulated"` back to `"drafting"` on every rejoin — which made the host's ready-check gate in `simulate/route.ts` (`notReady = roomPlayers.filter(p => p.status !== "ready")`) hang forever waiting on a player who had already finished. Fixed by only including `status: "drafting"` in the upsert payload for genuinely new joins (`!alreadyInRoom`); rejoins now omit the field entirely so the existing DB value (and thus the player's progress) is left untouched.
+   - **Investigated and confirmed already correct, no changes needed**: `season_number` persistence (written in `next-season/route.ts`, read back in `app/draft/page.tsx` to restore the correct season on rejoin); "let existing players join midway through" (the join route only blocks brand-new players when the room isn't in `lobby` status — returning players already bypass that check entirely); "wait at the lobby checkpoint before continuing" (rejoining already unconditionally routes to the lobby phase, where `MultiplayerLobby`'s polling will auto-advance them straight to the result screen, in sync with everyone else, if their season has already been simulated while they were away — this relies on the wall-clock-anchored `revealStartAt` shared via the room row, which was already correctly implemented).
+   - **Room code visibility**: rather than threading a `roomCode` prop through every phase component individually, added one persistent floating room-code badge (`app/draft/page.tsx`, top-level JSX, fixed top-right) shown on every phase except setup/lobby (which already display the code prominently) — guarantees it's visible everywhere per the user's explicit ask, with far less code than per-component threading.
+
+Verified via `npx tsc --noEmit` only (this sandbox still has no Supabase credentials — see prior session's note — so no live browser verification was possible).
+
 ## Session: 30 June 2026 (cont. 2) — Hall of Fame fix, multiplayer Skip removal, Career Recap pitch view
 
 Continuation of the same-day PL Draft session. Four more user-dictated requests:

@@ -33,6 +33,7 @@ export interface DraftPlayer {
   age: number;
   isSub?: boolean;
   attrs?: PlayerAttributes;
+  image_url?: string | null;
 }
 
 export interface MatchResult {
@@ -130,6 +131,7 @@ export interface PlayerStats {
   cleanSheets: number;
   appearances: number;
   avgRating: number;
+  image_url?: string | null;
 }
 
 export interface LeagueTeam {
@@ -215,6 +217,7 @@ export interface SeasonResult {
   charityShield?: CharityShieldResult;
   uclTournamentWinner?: string;
   uelTournamentWinner?: string;
+  allFixtures?: SeasonWeek[];
 }
 
 // --- Seeded PRNG (mulberry32) ---
@@ -874,6 +877,7 @@ function simulateLeague(
   playerMatches: MatchResult[],
   rng: () => number,
   oppSeasonMods?: Record<string, number>,
+  outScores?: Map<string, { homeGoals: number; awayGoals: number }>,
 ): LeagueTeam[] {
   const allTeams = [
     { name: playerTeamName, strength: playerTeamStrength },
@@ -923,6 +927,7 @@ function simulateLeague(
       const homeMod = oppSeasonMods?.[home.name] ?? 0;
       const awayMod = oppSeasonMods?.[away.name] ?? 0;
       const { homeGoals, awayGoals } = simulateNeutralMatch(home, away, rng, homeMod, awayMod);
+      outScores?.set(`${home.name}|${away.name}`, { homeGoals, awayGoals });
 
       const ht = table[home.name];
       ht.played++;
@@ -955,6 +960,96 @@ function simulateLeague(
   });
 
   return sorted;
+}
+
+export interface WeekFixture {
+  home: string;
+  away: string;
+  homeGoals: number;
+  awayGoals: number;
+}
+
+export interface SeasonWeek {
+  week: number;
+  matches: WeekFixture[];
+}
+
+/**
+ * Slots the player's 38 already-simulated matches and the already-simulated
+ * opponent-vs-opponent results into a valid 38-matchweek round-robin schedule
+ * (circle method) so a live, all-20-team table can be derived as matches are
+ * revealed. Purely a re-bucketing of existing results — does not change any
+ * outcome, just orders/groups them into simultaneous matchweeks.
+ */
+function buildAllFixtures(
+  playerTeamName: string,
+  playerMatches: MatchResult[],
+  opponents: { name: string; strength: number }[],
+  oppScores: Map<string, { homeGoals: number; awayGoals: number }>,
+  scheduleSeed: number,
+): SeasonWeek[] {
+  const rng = createRng(scheduleSeed);
+  const teamNames = [playerTeamName, ...opponents.map(o => o.name)];
+  const N = teamNames.length;
+
+  const playerHomeLeg = new Map<string, MatchResult>();
+  const playerAwayLeg = new Map<string, MatchResult>();
+  for (const m of playerMatches) {
+    if (m.isHome) playerHomeLeg.set(m.opponent, m);
+    else playerAwayLeg.set(m.opponent, m);
+  }
+
+  const rotating = Array.from({ length: N - 1 }, (_, i) => i + 1);
+  const firstHalfRounds: { home: number; away: number }[][] = [];
+  for (let r = 0; r < N - 1; r++) {
+    const round: { home: number; away: number }[] = [];
+    if (rng() > 0.5) round.push({ home: 0, away: rotating[0] });
+    else round.push({ home: rotating[0], away: 0 });
+    for (let i = 1; i < N / 2; i++) {
+      const mirrorIdx = N - 1 - i;
+      if (rng() > 0.5) round.push({ home: rotating[i], away: rotating[mirrorIdx] });
+      else round.push({ home: rotating[mirrorIdx], away: rotating[i] });
+    }
+    firstHalfRounds.push(round);
+    rotating.unshift(rotating.pop()!);
+  }
+  for (let i = firstHalfRounds.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [firstHalfRounds[i], firstHalfRounds[j]] = [firstHalfRounds[j], firstHalfRounds[i]];
+  }
+  const secondHalfRounds = firstHalfRounds.map(round => round.map(m => ({ home: m.away, away: m.home })));
+  for (let i = secondHalfRounds.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [secondHalfRounds[i], secondHalfRounds[j]] = [secondHalfRounds[j], secondHalfRounds[i]];
+  }
+  const fullSchedule = [...firstHalfRounds, ...secondHalfRounds];
+
+  const allFixtures: SeasonWeek[] = [];
+  for (let mw = 0; mw < fullSchedule.length; mw++) {
+    const weekMatches: WeekFixture[] = [];
+    for (const fx of fullSchedule[mw]) {
+      const homeName = teamNames[fx.home];
+      const awayName = teamNames[fx.away];
+      if (fx.home === 0 || fx.away === 0) {
+        const isPlayerHome = fx.home === 0;
+        const oppName = isPlayerHome ? awayName : homeName;
+        const m = isPlayerHome ? playerHomeLeg.get(oppName) : playerAwayLeg.get(oppName);
+        if (m) {
+          weekMatches.push({
+            home: isPlayerHome ? playerTeamName : oppName,
+            away: isPlayerHome ? oppName : playerTeamName,
+            homeGoals: isPlayerHome ? m.goalsFor : m.goalsAgainst,
+            awayGoals: isPlayerHome ? m.goalsAgainst : m.goalsFor,
+          });
+        }
+      } else {
+        const sc = oppScores.get(`${homeName}|${awayName}`);
+        if (sc) weekMatches.push({ home: homeName, away: awayName, homeGoals: sc.homeGoals, awayGoals: sc.awayGoals });
+      }
+    }
+    allFixtures.push({ week: mw + 1, matches: weekMatches });
+  }
+  return allFixtures;
 }
 
 // --- Projected finish ---
@@ -3179,6 +3274,7 @@ export function simulateSeason(
       cleanSheets: 0,
       appearances: 38,
       avgRating: 0,
+      image_url: p.image_url ?? null,
     };
   }
   for (const p of subs) {
@@ -3190,6 +3286,7 @@ export function simulateSeason(
       cleanSheets: 0,
       appearances: subAppearances[p.name] || 0,
       avgRating: 0,
+      image_url: p.image_url ?? null,
     };
   }
 
@@ -3452,6 +3549,7 @@ export function simulateSeason(
   const teamRecord = { wins, draws, losses, points, goalsFor, goalsAgainst };
 
   // League table
+  const oppMatchScores = new Map<string, { homeGoals: number; awayGoals: number }>();
   const leagueTable = simulateLeague(
     playerTeamName,
     ratings.teamStrength,
@@ -3459,7 +3557,9 @@ export function simulateSeason(
     matches,
     rng,
     oppSeasonMods,
+    oppMatchScores,
   );
+  const allFixtures = buildAllFixtures(playerTeamName, matches, opponents, oppMatchScores, seed ^ 0x5C4ED01E);
 
   const actualFinish = leagueTable.findIndex(t => t.isPlayer) + 1;
 
@@ -3604,6 +3704,7 @@ export function simulateSeason(
     charityShield,
     uclTournamentWinner,
     uelTournamentWinner,
+    allFixtures,
   };
 }
 
@@ -4705,6 +4806,16 @@ export function simulateSharedSeason(
     b.goalsFor - a.goalsFor
   );
 
+  // Build the live-table fixture-by-matchweek breakdown from the same schedule/scores
+  // already computed above — every human team shares this identical array.
+  const sharedAllFixtures: SeasonWeek[] = fullSchedule.map((round, mwIdx) => ({
+    week: mwIdx + 1,
+    matches: round.map(fx => {
+      const { homeGoals, awayGoals } = matchScores[fx.home][fx.away];
+      return { home: allTeams[fx.home].name, away: allTeams[fx.away].name, homeGoals, awayGoals };
+    }),
+  }));
+
   // Shared FA Cup: include ALL teams (human + AI) so human teams appear in the bracket
   const faCupDrawRng = createRng(sharedSeed ^ 0xFAC09);
   const allCupTeams = allTeams.map(t => ({ name: t.name, strength: t.ratings.teamStrength }));
@@ -4946,10 +5057,10 @@ export function simulateSharedSeason(
     // Player stats
     const statsMap: Record<string, PlayerStats> = {};
     for (const p of hd.starters) {
-      statsMap[p.name] = { name: p.name, assignedPosition: p.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: 38, avgRating: 0 };
+      statsMap[p.name] = { name: p.name, assignedPosition: p.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: 38, avgRating: 0, image_url: p.image_url ?? null };
     }
     for (const p of hd.subs) {
-      statsMap[p.name] = { name: p.name, assignedPosition: p.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: subAppearances[p.name] || 0, avgRating: 0 };
+      statsMap[p.name] = { name: p.name, assignedPosition: p.assignedPosition, goals: 0, assists: 0, cleanSheets: 0, appearances: subAppearances[p.name] || 0, avgRating: 0, image_url: p.image_url ?? null };
     }
     const allPlayers = [...hd.starters, ...hd.subs];
     const gk = hd.starters.find(p => classifyPosition(p.assignedPosition) === 'GK');
@@ -5116,6 +5227,7 @@ export function simulateSharedSeason(
       uelTournamentWinner: uel?.tournamentWinner || season1UelWinner,
       superCup: sharedSuperCupResults.get(hd.userId),
       charityShield: sharedCharityShieldResults.get(hd.userId),
+      allFixtures: sharedAllFixtures,
     });
   }
 
