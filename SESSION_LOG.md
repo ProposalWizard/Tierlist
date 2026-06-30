@@ -1,0 +1,91 @@
+# Session Log
+
+> Detailed history of past development sessions, moved out of `CLAUDE.md` to keep
+> that file lean (it's auto-loaded as context on every Claude Code prompt).
+> `CLAUDE.md` keeps only the current architecture/state; this file is the archive.
+> New session summaries should be appended here, not to `CLAUDE.md`.
+
+## Session: 23 June 2026 — Database storage cleanup (1.02 GB → ~0.37 GB)
+
+Goal: get the Supabase database under the 500 MB free-tier limit without breaking any feature. Achieved ~0.37 GB total (was 1.02 GB) — roughly a two-thirds reduction with ~120 MB headroom to spare.
+
+**What was removed and why it's safe:**
+
+1. **sofifa_players JSONB slimming (745 MB → ~168 MB data):** Deleted unused/duplicate keys from the `attributes` JSONB in two waves.
+   - *Wave 1 (junk + duplicates):* keys that duplicated real table columns (`club`, `league`, `sofifa_id` already exist as columns and are the only copies the code reads) plus other junk. **Kept `attr_vl`** (market value) at user's request.
+   - *Wave 2 (real-but-unused stats):* 16 detailed FIFA stats that the season simulator never reads (e.g. finishing, positioning, vision, long shots, short passing, interceptions, standing tackle, marking, reactions, sprint speed, etc.).
+   - Done via batched `UPDATE ... SET attributes = attributes - ARRAY[...] LIMIT 30000` (Supabase SQL Editor ~2 min timeout requires batching), then `VACUUM FULL sofifa_players` to reclaim disk.
+
+2. **Goal/assist attribution simplified** (`lib/seasonSimulator.ts`): `goalScoringWeight()` and `assistWeight()` rewritten to use ONLY the 7 phase-rating stats (pace, shooting, passing, dribbling, defending, physical, crossing) instead of 14+ detailed stats. **Match win/draw/lose outcomes are completely unaffected** — only who gets credited the goal/assist changed. This let Wave 2 stats be deleted safely.
+
+3. **Wikidata tables pruned** (used by Tic-Tac-Toe / squad-builder helpers, NOT the draft game):
+   - Deleted all players born ≤1958 from `football_players` + `football_careers`.
+   - Dropped columns: `football_players.image_url`, `.popularity`, `.date_of_birth`, `.updated_at`; `football_clubs.image_url`; `football_countries.flag_url`.
+   - Code was updated to stop selecting these columns **before** they were dropped (see gotcha #1 — selecting a non-existent column errors the whole query). Player search/grids now return `image: null`, `dob: ""`; ranking is by name-match quality only.
+
+**Code changed this session** (all on `claude/recover-tierlist-website-3BajA`):
+- `lib/seasonSimulator.ts` — simplified attribution weights.
+- `app/api/football/search/route.ts`, `app/api/admin/football/{players,teams,crossclub,ttt-grid,leagues}/route.ts` — removed dropped columns from selects + ranking logic.
+- `app/api/admin/football/import/route.ts` — added `slimPlayer()`/`slimClub()` whitelist functions so re-imports only write columns that still exist; retired `flags` and `enrich-images` steps (return `{ removed: true }`).
+
+**Important gotchas:**
+- `VACUUM FULL` is **required** after big deletes — Postgres marks rows reusable but doesn't shrink files. It **cannot run inside a transaction**, so in the Supabase SQL Editor run each `VACUUM FULL <table>;` on its own (one statement at a time), never several semicolon-separated together.
+- `pg_total_relation_size` includes indexes; the dashboard "Large Objects" view shows data only — they won't match.
+- The roster API (`app/api/draft/roster/route.ts`) still extracts all 22 attrs from JSONB; deleted ones now read as 0, which is harmless (simulator ignores them). Minor dead-reference tech debt, not broken.
+- Easy future headroom if needed: drop unused sofifa indexes `idx_sofifa_name` (~14 MB), `idx_sofifa_overall`, `idx_sofifa_league_year` (~30–40 MB total) — won't affect the draft game.
+
+## Session: ~June 2026
+
+1. **PL Draft game built** — Full game at `/draft` (see "PL Draft Game" section above). Linked from `GameSidebar`.
+2. **SoFIFA scraping pipeline** — `scripts/scrape_missing.py` for local Playwright scraping of FIFA 07–21; import via `/admin/football/scrape`. Scraper detection now counts player links (≥10) instead of relying on a `table.table` selector that no longer matches.
+3. **Attribute-based simulation** — `lib/seasonSimulator.ts` rewritten to use real FIFA attributes for phase ratings, scorer/assister weighting, position fitness, and per-match player ratings. Roster API extracts 22 attributes from JSONB.
+4. **Draft progress persistence** — picks save to localStorage after each pick; Resume/Discard banner on setup screen.
+5. **Error boundaries added** — `app/error.tsx`, `app/global-error.tsx`.
+6. **PL league filter fix** — clubs API patterns anchored so Scottish/Russian "Premier League" clubs are excluded (would have appeared once FIFA 07–13 data imported). New optional `draft_club_seasons.sql` migration adds a fast RPC.
+7. **Import route hardening** — row-by-row fallback when chunk upserts fail; FC 26 needs re-import (earlier bug saved only ~half).
+
+## Session: 25 March 2026
+
+1. **Admin image reordering** — Replaced arrow buttons (← →) with `@dnd-kit` drag-and-drop for both regular and vote tierlist image grids in admin. Crop button (✂) kept. Uses `PointerSensor` with 5px activation distance so clicks still work.
+
+2. **Tier editing in admin** — Added tier editing UI (labels, colors, add/remove rows) to regular tierlist admin edit form (saved via "Save Changes" button). Vote tierlist tier editing is now always visible when expanded (removed the "Edit tiers" toggle — tiers auto-load on expand).
+
+3. **Custom tiers for regular tierlists** — Added `tiers` JSONB column migration (`tierlist_tiers.sql`), updated admin PATCH API to accept `tiers`, added `initialTiers` prop to `TierlistBoard`, play page passes saved tiers. Falls back to default S/A/B/C/D if column doesn't exist.
+
+4. **Admin tierlists disappearing bug** — Adding `tiers` to the admin page `select()` query broke the page because the column didn't exist yet. Fixed by removing it from the query and fetching tiers lazily in `openEdit()`.
+
+5. **Export backup** — New `GET /api/admin/export` endpoint returns a JSON file with all tierlists (with images grouped inline), vote tierlists (with images), and categories. "Export Backup" button added to admin panel tab bar.
+
+## Session: ~11 April 2026
+
+1. **Face detection** — Added `face-api.js` (TinyFaceDetector) for client-side face detection. New `lib/faceDetection.ts` with `processImage()` (for uploads) and `detectFaceFromUrl()` (for existing images). Returns `FaceCenter { x, y }` as percentages. Results cached in localStorage. Positions bias upward by 50% of face-box height to keep the full head visible in cover-crop thumbnails.
+
+2. **Face detection toggle** — Added `face_detection_enabled` column to both `tierlists` and `vote_tierlists` tables. Admin panel shows on/off toggle per tierlist. When toggled on, face detection runs on image upload (regular tierlists) or on save (vote tierlists).
+
+3. **face-api.js webpack fallbacks** — Added `fs: false` and `encoding: false` webpack fallbacks in `next.config.mjs` because face-api.js imports node-only modules that aren't needed client-side.
+
+4. **`tierlist_tiers.sql` migration applied** — User ran the migration in Supabase SQL Editor. Custom tiers now persist for regular tierlists.
+
+## Session: 16 April 2026
+
+1. **Vote panel image sizing fix** — `components/VoteBoard.tsx`: Changed the selected-player thumbnail in the vote side-panel from a max-height container with `object-cover` (which cropped landscape images badly) to an `aspect-square` container matching the thumbnail grid below. Now shows the same framing, just bigger.
+
+2. **Admin vote tierlist batch save** — Major refactor of `components/AdminPanel.tsx`. The vote tierlist editor now uses a `VoteEditState` pattern where ALL changes (cover photo upload/pick/crop, tier labels/colors/add/remove, image add/crop/delete/reorder, face-detection toggle, category, import-from-tierlist) stage to local React state. Nothing persists to the DB until the user clicks "Save Changes". Unsaved changes show a yellow indicator. Closing with unsaved changes prompts a confirmation dialog. The comprehensive `handleSaveVoteEdit()` function handles: cover upload, image deletions, new image uploads (with face detection), staged crops, imports, scalar field PATCH, reorder, and auto face detection when newly toggled on.
+
+3. **Face detection "Run detection" button removed** — The separate "Run detection on all images" button next to the face detection toggle was removed. Now, toggling face detection ON and clicking Save automatically runs detection on every image that doesn't have a `face_center` yet.
+
+4. **Crop handlers updated for batch save** — `handleAdminCropResult` and `handleAdminCoverCropResult` now stage crops in `voteEditState` (as `pendingCropDataUrl` / `customCoverCropDataUrl`) instead of uploading immediately. Only uploaded when Save is clicked. Regular tierlist crop handlers remain unchanged (legacy immediate-upload flow).
+
+5. **Rebranding** — All user-facing "Tierlist Maker" text changed to "Knowitball Tierlists" (homepage hero, nav, footer, 404 page, browser tab title, Open Graph + Twitter meta tags). Contact email on legal page changed to `knowitballcontact@gmail.com`.
+
+6. **Custom domain** — `knowitball.co.uk` connected via Hostinger DNS → Vercel. Supabase Site URL and redirect URLs updated for the new domain.
+
+## Session: 30 June 2026 — PL Draft multiplayer bug fixes
+
+Continuation of a standing instruction to finish 6 reported multiplayer bugs from `/draft` testing (formation display, UCL shared league stage, League Cup stats, League Cup final reveal, out-of-position display, UCL knockout sharing). The last two outstanding items were completed this session:
+
+1. **UCL/UEL league tables diverging per viewer (`lib/seasonSimulator.ts`)** — Root cause: each human's own row used a hardcoded `'KNOWITBALL FC'` placeholder while appearing under their real name in *other* humans' views, and was treated as ordinary AI filler subject to non-deterministic background simulation rather than their own real computed record. Fixed via a two-pass redesign: `simulateUCL/UELPersonalPhase` computes each human's own matches once using their real team name, with pot construction built in perspective-independent (finish-position) order; `buildUCL/UELLeagueTable` then assembles each human's full table by copying other co-qualified humans' precomputed records directly (no re-simulation) and runs the shared background-filler RNG only over genuinely-AI rows. Verified empirically: 0 mismatches across 50,000+ shared-row checks spanning 2–5 human rooms and both UCL/UEL — down from up to 93.5% mismatches before the fix.
+
+2. **League Cup missing from `components/draft/CareerRecap.tsx`** — The Career Recap screen tracked FA Cup, UCL, UEL, Super Cup, and Charity Shield trophies/history but omitted League Cup entirely. Added `leagueCups` to the season stats, a `leagueCupAbbr()` helper (mirrors `faCupAbbr` round-name mapping), a Trophy Cabinet entry, and an "LC" column in the season-by-season table.
+
+---

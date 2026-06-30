@@ -418,7 +418,11 @@ export default function DraftPage() {
   }, [roomCode]);
 
   const handleSettingsSync = useCallback((update: Partial<DraftSettings>) => {
-    setSettings(prev => prev ? { ...prev, ...update } : prev);
+    // Formation is an individual choice, not shared from the host — never let
+    // a room settings sync overwrite the local player's own formation pick.
+    const { formation: _formation, ...safeUpdate } = update;
+    void _formation;
+    setSettings(prev => prev ? { ...prev, ...safeUpdate } : prev);
     if (update.respins !== undefined) {
       setRespinsRemaining(update.respins as number);
     }

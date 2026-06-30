@@ -14,6 +14,12 @@ function inferPositions(p: {
   crossing: number; finishing: number; interceptions: number;
   standingTackle: number; vision: number; marking: number;
 }): string {
+  // All key stats missing (e.g. detailed attrs were stripped from the DB) — can't
+  // reliably infer a position, so leave it blank rather than wrongly defaulting to CM.
+  if (!p.pace && !p.shooting && !p.passing && !p.dribbling && !p.defending && !p.physical && !p.gkDiving && !p.gkReflexes) {
+    return "";
+  }
+
   if (p.gkDiving > 50 || p.gkReflexes > 50) return "GK";
 
   const def = p.defending || 0;
