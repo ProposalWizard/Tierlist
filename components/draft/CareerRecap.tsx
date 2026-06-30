@@ -60,6 +60,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     const titles = allSeasons.filter(r => r.actualFinish === 1).length;
     const topFour = allSeasons.filter(r => r.actualFinish <= 5).length;
     const faCups = allSeasons.filter(r => r.faCup.winner).length;
+    const leagueCups = allSeasons.filter(r => r.leagueCup.winner).length;
     const uclWins = allSeasons.filter(r => r.ucl?.winner).length;
     const uelWins = allSeasons.filter(r => r.uel?.winner).length;
     const superCups = allSeasons.filter(r => r.superCup?.result === 'W').length;
@@ -75,7 +76,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
       totalWins, totalDraws, totalLosses,
       totalGoalsFor, totalGoalsAgainst, winRate,
       bestFinish, worstFinish, titles, topFour,
-      faCups, uclWins, uelWins, superCups, charityShields,
+      faCups, leagueCups, uclWins, uelWins, superCups, charityShields,
       bestPoints, bestPointsSeason, bestWinStreak, bestUnbeaten,
     };
   }, [allSeasons]);
@@ -372,6 +373,17 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     return exitRound;
   };
 
+  const leagueCupAbbr = (exitRound: string | null, winner: boolean): string => {
+    if (winner) return "W";
+    if (!exitRound) return "-";
+    if (exitRound === "Round of 32") return "Ro32";
+    if (exitRound === "Round of 16") return "Ro16";
+    if (exitRound === "Quarter-Final") return "QF";
+    if (exitRound === "Semi-Final") return "SF";
+    if (exitRound === "Final") return "F";
+    return exitRound;
+  };
+
   const euroAbbr = (exitStage: string | null, winner: boolean): string => {
     if (winner) return "W";
     if (!exitStage) return "-";
@@ -393,7 +405,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   };
 
-  const trophyCount = stats.titles + stats.faCups + stats.uclWins + stats.uelWins + stats.superCups + stats.charityShields;
+  const trophyCount = stats.titles + stats.faCups + stats.leagueCups + stats.uclWins + stats.uelWins + stats.superCups + stats.charityShields;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-y-auto py-4 px-3">
@@ -445,6 +457,12 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                       <div className="text-center">
                         <div className="text-3xl mb-1">{"\u{1F3C6}"}</div>
                         <div className="text-xs font-bold text-emerald-400">{stats.faCups}x FA Cup{stats.faCups > 1 ? "s" : ""}</div>
+                      </div>
+                    )}
+                    {stats.leagueCups > 0 && (
+                      <div className="text-center">
+                        <div className="text-3xl mb-1">{"\u{1F3C6}"}</div>
+                        <div className="text-xs font-bold text-teal-400">{stats.leagueCups}x League Cup{stats.leagueCups > 1 ? "s" : ""}</div>
                       </div>
                     )}
                     {stats.uclWins > 0 && (
@@ -525,11 +543,13 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     <span className="w-9 text-center shrink-0">GF</span>
                     <span className="w-9 text-center shrink-0">GA</span>
                     <span className="w-10 text-center shrink-0">FA</span>
+                    <span className="w-10 text-center shrink-0">LC</span>
                     {hasAnyUCL && <span className="w-12 text-center shrink-0">UCL</span>}
                     {hasAnyUEL && <span className="w-12 text-center shrink-0">UEL</span>}
                   </div>
                   {allSeasons.map((s, i) => {
                     const fa = faCupAbbr(s.faCup.exitRound, s.faCup.winner);
+                    const lc = leagueCupAbbr(s.leagueCup.exitRound, s.leagueCup.winner);
                     const ucl = s.ucl?.qualified ? euroAbbr(s.ucl.exitStage, s.ucl.winner) : null;
                     const uel = s.uel?.qualified ? euroAbbr(s.uel.exitStage, s.uel.winner) : null;
                     return (
@@ -548,6 +568,9 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                         <span className="w-9 text-center text-red-400 shrink-0">{s.teamRecord.goalsAgainst}</span>
                         <span className={`w-10 text-center shrink-0 font-bold ${fa === "W" ? "text-yellow-400" : fa === "F" ? "text-white" : "text-white"}`}>
                           {fa}
+                        </span>
+                        <span className={`w-10 text-center shrink-0 font-bold ${lc === "W" ? "text-yellow-400" : "text-teal-400"}`}>
+                          {lc}
                         </span>
                         {hasAnyUCL && (
                           <span className={`w-12 text-center shrink-0 font-bold ${ucl === "W" ? "text-yellow-400" : ucl === "F" || ucl === "SF" ? "text-blue-300" : ucl ? "text-blue-400/70" : "text-white"}`}>

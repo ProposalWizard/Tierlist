@@ -3825,69 +3825,84 @@ interface UCLLeaguePhaseResult {
   strengthMap: Map<string, number>;
 }
 
+interface OwnRecord {
+  played: number; won: number; drawn: number; lost: number;
+  goalsFor: number; goalsAgainst: number; points: number;
+}
+
+interface UCLPersonalPhaseResult {
+  qualified: boolean;
+  teamName: string;
+  leagueMatches: UCLMatch[];
+  pots: { name: string; strength: number }[][];
+  allTeams: { name: string; strength: number }[];
+  strengthMap: Map<string, number>;
+  ownRecord: OwnRecord;
+}
+
+const emptyOwnRecord = (): OwnRecord => ({ played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 });
+
 /**
- * Run UCL league phase only (no knockout) for a single human.
- * Returns intermediate state needed for the shared knockout draw.
+ * Run a human's own UCL league-phase matches only (no filler/background
+ * simulation, no knockout). Pot composition uses every team's REAL name
+ * (including other co-qualified humans), built in a perspective-independent
+ * order (finish-position order, not "self pushed first"), so two different
+ * humans calling this for the same room produce byte-identical pots/allTeams
+ * — required for the shared background filler simulation in
+ * buildUCLLeagueTable to stay in sync across viewers.
  */
-function simulateUCLLeaguePhase(
+function simulateUCLPersonalPhase(
+  teamName: string,
   players: DraftPlayer[],
   ratings: PhaseRatings,
   previousLeagueTable: LeagueTeam[],
   opponents: { name: string; strength: number }[],
   rng: () => number,
-): UCLLeaguePhaseResult {
-  const playerTeamName = 'KNOWITBALL FC';
-  const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
+): UCLPersonalPhaseResult {
+  const myFinish = previousLeagueTable.findIndex(t => t.name === teamName) + 1;
 
-  if (playerFinish < 1 || playerFinish > 5) {
+  if (myFinish < 1 || myFinish > 5) {
     return {
-      qualified: false, leagueMatches: [], leaguePosition: 0,
-      leagueTable: [], strengthMap: new Map(),
+      qualified: false, teamName, leagueMatches: [],
+      pots: [[], [], [], []], allTeams: [], strengthMap: new Map(), ownRecord: emptyOwnRecord(),
     };
   }
 
   const potForFinish = (f: number) => f <= 2 ? 1 : f === 3 ? 2 : f === 4 ? 3 : 4;
-  const playerPot = potForFinish(playerFinish);
-
-  const pots: { name: string; strength: number; isPlayer: boolean }[][] = [[], [], [], []];
-  pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
-
   const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
-  let plAdded = 0;
-  for (let i = 0; i < previousLeagueTable.length && plAdded < 4; i++) {
+
+  const pots: { name: string; strength: number }[][] = [[], [], [], []];
+  for (let i = 0; i < previousLeagueTable.length && i < 5; i++) {
     const team = previousLeagueTable[i];
-    if (team.isPlayer) continue;
-    if (i + 1 > 5) break;
-    const strength = opponentMap.get(team.name) || 75;
-    const pot = potForFinish(i + 1);
-    pots[pot - 1].push({ name: team.name, strength, isPlayer: false });
-    plAdded++;
+    const isSelf = team.name === teamName;
+    const strength = isSelf ? ratings.teamStrength : (opponentMap.get(team.name) ?? 75);
+    pots[potForFinish(i + 1) - 1].push({ name: team.name, strength });
   }
 
   for (const uclTeam of UCL_TEAMS) {
     if (pots[uclTeam.pot - 1].length < 9) {
-      pots[uclTeam.pot - 1].push({ name: uclTeam.name, strength: uclTeam.strength, isPlayer: false });
+      pots[uclTeam.pot - 1].push({ name: uclTeam.name, strength: uclTeam.strength });
     }
   }
 
-  const allUCLTeams = [...pots[0], ...pots[1], ...pots[2], ...pots[3]];
-  const strengthMap = new Map(allUCLTeams.map(t => [t.name, t.strength]));
+  const allTeams = [...pots[0], ...pots[1], ...pots[2], ...pots[3]];
+  const strengthMap = new Map(allTeams.map(t => [t.name, t.strength]));
 
-  const playerOpponents: { name: string; strength: number; isHome: boolean }[] = [];
+  const myOpponents: { name: string; strength: number; isHome: boolean }[] = [];
   for (const pot of pots) {
-    const available = pot.filter(t => !t.isPlayer);
+    const available = pot.filter(t => t.name !== teamName);
     const shuffled = [...available].sort(() => rng() - 0.5);
     const homeFirst = rng() > 0.5;
-    playerOpponents.push({ ...shuffled[0], isHome: homeFirst });
-    playerOpponents.push({ ...shuffled[1], isHome: !homeFirst });
+    myOpponents.push({ ...shuffled[0], isHome: homeFirst });
+    myOpponents.push({ ...shuffled[1], isHome: !homeFirst });
   }
-  playerOpponents.sort(() => rng() - 0.5);
+  myOpponents.sort(() => rng() - 0.5);
 
   const starters = players.filter(p => !p.isSub);
   const subs = players.filter(p => p.isSub);
   const leagueMatches: UCLMatch[] = [];
 
-  for (const opp of playerOpponents) {
+  for (const opp of myOpponents) {
     const activeSubs = subs.filter(() => rng() < 0.5);
     const matchPlayers = [...starters, ...activeSubs];
     const m = simulateMatch(matchPlayers, ratings, { name: opp.name, strength: opp.strength }, opp.isHome, rng);
@@ -3898,31 +3913,54 @@ function simulateUCLLeaguePhase(
     });
   }
 
+  const ownRecord = emptyOwnRecord();
+  for (const m of leagueMatches) {
+    ownRecord.played++;
+    ownRecord.goalsFor += m.goalsFor;
+    ownRecord.goalsAgainst += m.goalsAgainst;
+    if (m.result === 'W') { ownRecord.won++; ownRecord.points += 3; }
+    else if (m.result === 'D') { ownRecord.drawn++; ownRecord.points += 1; }
+    else { ownRecord.lost++; }
+  }
+
+  return { qualified: true, teamName, leagueMatches, pots, allTeams, strengthMap, ownRecord };
+}
+
+/**
+ * Build a human's full UCL league table from their own personal-phase result.
+ * Other co-qualified humans' rows are copied directly from their own
+ * precomputed ownRecord (NOT re-simulated), so every viewer sees the exact
+ * same record for them. Only genuinely-AI rows run the background filler
+ * simulation, using a freshly-seeded bgRng so the iteration is identical
+ * (same skip-set, same pot order) regardless of who's viewing.
+ */
+function buildUCLLeagueTable(
+  phase: UCLPersonalPhaseResult,
+  otherHumanRecords: Map<string, OwnRecord>,
+  bgRng: () => number,
+): { leagueTable: UCLLeagueStanding[]; leaguePosition: number } {
   const tableData: Record<string, UCLLeagueStanding> = {};
-  for (const team of allUCLTeams) {
+  for (const team of phase.allTeams) {
     tableData[team.name] = {
       name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
       goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
-      isPlayer: team.isPlayer, strength: team.strength,
+      isPlayer: team.name === phase.teamName, strength: team.strength,
     };
   }
 
-  for (const m of leagueMatches) {
-    const pt = tableData[playerTeamName];
-    pt.played++;
-    pt.goalsFor += m.goalsFor;
-    pt.goalsAgainst += m.goalsAgainst;
-    if (m.result === 'W') { pt.won++; pt.points += 3; }
-    else if (m.result === 'D') { pt.drawn++; pt.points += 1; }
-    else { pt.lost++; }
-  }
+  Object.assign(tableData[phase.teamName], phase.ownRecord);
+  otherHumanRecords.forEach((rec, name) => {
+    if (tableData[name]) Object.assign(tableData[name], rec);
+  });
 
-  for (const team of allUCLTeams) {
-    if (team.isPlayer) continue;
+  const humanNames = new Set<string>([phase.teamName]);
+  otherHumanRecords.forEach((_rec, name) => humanNames.add(name));
+  for (const team of phase.allTeams) {
+    if (humanNames.has(team.name)) continue;
     const td = tableData[team.name];
-    for (const pot of pots) {
+    for (const pot of phase.pots) {
       const available = pot.filter(t => t.name !== team.name);
-      const shuffled = [...available].sort(() => rng() - 0.5);
+      const shuffled = [...available].sort(() => bgRng() - 0.5);
       const picked = shuffled.slice(0, 2);
       for (let k = 0; k < picked.length; k++) {
         const isHome = k === 0;
@@ -3930,7 +3968,7 @@ function simulateUCLLeaguePhase(
         const away = isHome ? picked[k] : team;
         const { homeGoals, awayGoals } = simulateNeutralMatch(
           { name: home.name, strength: home.strength },
-          { name: away.name, strength: away.strength }, rng,
+          { name: away.name, strength: away.strength }, bgRng,
         );
         const gf = isHome ? homeGoals : awayGoals;
         const ga = isHome ? awayGoals : homeGoals;
@@ -3953,73 +3991,70 @@ function simulateUCLLeaguePhase(
     return a.name.localeCompare(b.name);
   });
 
-  const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
+  const leaguePosition = leagueTable.findIndex(t => t.name === phase.teamName) + 1;
 
-  return { qualified: true, leagueMatches, leaguePosition, leagueTable, strengthMap };
+  return { leagueTable, leaguePosition };
 }
 
 /**
- * Run UEL league phase only (no knockout) for a single human.
+ * UEL equivalent of simulateUCLPersonalPhase. See that function's comment
+ * for why pot order must be perspective-independent.
  */
-function simulateUELLeaguePhase(
+function simulateUELPersonalPhase(
+  teamName: string,
   players: DraftPlayer[],
   ratings: PhaseRatings,
   previousLeagueTable: LeagueTeam[],
   opponents: { name: string; strength: number }[],
   rng: () => number,
-): UCLLeaguePhaseResult {
-  const playerTeamName = 'KNOWITBALL FC';
-  const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
+): UCLPersonalPhaseResult {
+  const myFinish = previousLeagueTable.findIndex(t => t.name === teamName) + 1;
 
-  if (playerFinish < 6 || playerFinish > 7) {
+  if (myFinish < 6 || myFinish > 7) {
     return {
-      qualified: false, leagueMatches: [], leaguePosition: 0,
-      leagueTable: [], strengthMap: new Map(),
+      qualified: false, teamName, leagueMatches: [],
+      pots: [[], [], [], []], allTeams: [], strengthMap: new Map(), ownRecord: emptyOwnRecord(),
     };
   }
 
-  const playerPot = playerFinish === 6 ? 1 : 2;
-
-  const pots: { name: string; strength: number; isPlayer: boolean }[][] = [[], [], [], []];
-  pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
-
+  const myPot = myFinish === 6 ? 1 : 2;
   const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
-  const otherPLSlot = playerFinish === 6 ? 7 : 6;
+
+  const pots: { name: string; strength: number }[][] = [[], [], [], []];
+  pots[myPot - 1].push({ name: teamName, strength: ratings.teamStrength });
+
+  const otherPLSlot = myFinish === 6 ? 7 : 6;
   const otherPLPot = otherPLSlot === 6 ? 1 : 2;
-  for (let i = 0; i < previousLeagueTable.length; i++) {
-    const team = previousLeagueTable[i];
-    if (team.isPlayer) continue;
-    if (i + 1 === otherPLSlot) {
-      const strength = opponentMap.get(team.name) || 75;
-      pots[otherPLPot - 1].push({ name: team.name, strength, isPlayer: false });
-      break;
-    }
+  if (previousLeagueTable.length >= otherPLSlot) {
+    const team = previousLeagueTable[otherPLSlot - 1];
+    const strength = team.name === teamName ? ratings.teamStrength : (opponentMap.get(team.name) ?? 75);
+    pots[otherPLPot - 1].push({ name: team.name, strength });
   }
 
   for (const uelTeam of UEL_TEAMS) {
     if (pots[uelTeam.pot - 1].length < 9) {
-      pots[uelTeam.pot - 1].push({ name: uelTeam.name, strength: uelTeam.strength, isPlayer: false });
+      pots[uelTeam.pot - 1].push({ name: uelTeam.name, strength: uelTeam.strength });
     }
   }
 
-  const allUELTeams = [...pots[0], ...pots[1], ...pots[2], ...pots[3]];
-  const strengthMap = new Map(allUELTeams.map(t => [t.name, t.strength]));
+  const allTeams = [...pots[0], ...pots[1], ...pots[2], ...pots[3]];
+  const strengthMap = new Map(allTeams.map(t => [t.name, t.strength]));
 
-  const playerOpponents: { name: string; strength: number; isHome: boolean }[] = [];
+  const myOpponents: { name: string; strength: number; isHome: boolean }[] = [];
   for (const pot of pots) {
-    const available = pot.filter(t => !t.isPlayer);
+    const available = pot.filter(t => t.name !== teamName);
     const shuffled = [...available].sort(() => rng() - 0.5);
     const homeFirst = rng() > 0.5;
-    playerOpponents.push({ ...shuffled[0], isHome: homeFirst });
-    playerOpponents.push({ ...shuffled[1], isHome: !homeFirst });
+    myOpponents.push({ ...shuffled[0], isHome: homeFirst });
+    myOpponents.push({ ...shuffled[1], isHome: !homeFirst });
   }
-  playerOpponents.sort(() => rng() - 0.5);
+  myOpponents.sort(() => rng() - 0.5);
 
   const starters = players.filter(p => !p.isSub);
   const subs = players.filter(p => p.isSub);
   const leagueMatches: UCLMatch[] = [];
 
-  for (const opp of playerOpponents) {
+  for (const opp of myOpponents) {
     const activeSubs = subs.filter(() => rng() < 0.5);
     const matchPlayers = [...starters, ...activeSubs];
     const m = simulateMatch(matchPlayers, ratings, { name: opp.name, strength: opp.strength }, opp.isHome, rng);
@@ -4030,69 +4065,32 @@ function simulateUELLeaguePhase(
     });
   }
 
-  const tableData: Record<string, UCLLeagueStanding> = {};
-  for (const team of allUELTeams) {
-    tableData[team.name] = {
-      name: team.name, played: 0, won: 0, drawn: 0, lost: 0,
-      goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
-      isPlayer: team.isPlayer, strength: team.strength,
-    };
-  }
-
+  const ownRecord = emptyOwnRecord();
   for (const m of leagueMatches) {
-    const pt = tableData[playerTeamName];
-    pt.played++;
-    pt.goalsFor += m.goalsFor;
-    pt.goalsAgainst += m.goalsAgainst;
-    if (m.result === 'W') { pt.won++; pt.points += 3; }
-    else if (m.result === 'D') { pt.drawn++; pt.points += 1; }
-    else { pt.lost++; }
+    ownRecord.played++;
+    ownRecord.goalsFor += m.goalsFor;
+    ownRecord.goalsAgainst += m.goalsAgainst;
+    if (m.result === 'W') { ownRecord.won++; ownRecord.points += 3; }
+    else if (m.result === 'D') { ownRecord.drawn++; ownRecord.points += 1; }
+    else { ownRecord.lost++; }
   }
 
-  for (const team of allUELTeams) {
-    if (team.isPlayer) continue;
-    const td = tableData[team.name];
-    for (const pot of pots) {
-      const available = pot.filter(t => t.name !== team.name);
-      const shuffled = [...available].sort(() => rng() - 0.5);
-      const picked = shuffled.slice(0, 2);
-      for (let k = 0; k < picked.length; k++) {
-        const isHome = k === 0;
-        const home = isHome ? team : picked[k];
-        const away = isHome ? picked[k] : team;
-        const { homeGoals, awayGoals } = simulateNeutralMatch(
-          { name: home.name, strength: home.strength },
-          { name: away.name, strength: away.strength }, rng,
-        );
-        const gf = isHome ? homeGoals : awayGoals;
-        const ga = isHome ? awayGoals : homeGoals;
-        td.played++;
-        td.goalsFor += gf;
-        td.goalsAgainst += ga;
-        if (gf > ga) { td.won++; td.points += 3; }
-        else if (gf === ga) { td.drawn++; td.points += 1; }
-        else { td.lost++; }
-      }
-    }
-  }
+  return { qualified: true, teamName, leagueMatches, pots, allTeams, strengthMap, ownRecord };
+}
 
-  const leagueTable = Object.values(tableData);
-  for (const t of leagueTable) t.goalDifference = t.goalsFor - t.goalsAgainst;
-  leagueTable.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-    return a.name.localeCompare(b.name);
-  });
-
-  const leaguePosition = leagueTable.findIndex(t => t.isPlayer) + 1;
-
-  return { qualified: true, leagueMatches, leaguePosition, leagueTable, strengthMap };
+/** UEL equivalent of buildUCLLeagueTable. */
+function buildUELLeagueTable(
+  phase: UCLPersonalPhaseResult,
+  otherHumanRecords: Map<string, OwnRecord>,
+  bgRng: () => number,
+): { leagueTable: UCLLeagueStanding[]; leaguePosition: number } {
+  return buildUCLLeagueTable(phase, otherHumanRecords, bgRng);
 }
 
 interface SharedEuropeanHuman {
   userId: string;
   displayName: string;
+  teamName: string;
   squad: DraftPlayer[];
   ratings: PhaseRatings;
   rng: () => number;
@@ -4110,22 +4108,54 @@ function simulateSharedUCL(
     oppForCups: { name: string; strength: number }[];
   })[],
   drawRng: () => number,
+  // Seed (same for every human) for background match results — a fresh RNG
+  // instance is created from it per human so each call starts at the same
+  // point in the sequence, instead of one shared closure drifting out of
+  // sync as it's consumed across humans. Otherwise the same filler team's
+  // record diverges per viewer.
+  bgSeed: number,
 ): Map<string, UCLResult> {
   const results = new Map<string, UCLResult>();
 
   if (humanEntrants.length === 0) return results;
 
-  // 1. Run league phase independently per human
+  // 1a. Run each human's own personal league matches (their own rng).
+  // Pot composition is perspective-independent (see simulateUCLPersonalPhase),
+  // so every qualified human's ownRecord can be safely shared with everyone
+  // else's table-build pass without re-simulating it.
+  const personalPhases = new Map<string, UCLPersonalPhaseResult>();
+  for (const h of humanEntrants) {
+    personalPhases.set(h.userId, simulateUCLPersonalPhase(h.teamName, h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng));
+  }
+  const allRecordsByName = new Map<string, OwnRecord>();
+  for (const h of humanEntrants) {
+    const phase = personalPhases.get(h.userId)!;
+    if (phase.qualified) allRecordsByName.set(phase.teamName, phase.ownRecord);
+  }
+
+  // 1b. Build each qualified human's full table, sharing other humans'
+  // records and a freshly-seeded bgRng for the genuinely-AI filler teams.
   const phaseResults = new Map<string, UCLLeaguePhaseResult>();
   for (const h of humanEntrants) {
-    const lp = simulateUCLLeaguePhase(h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng);
-    phaseResults.set(h.userId, lp);
-    if (!lp.qualified) {
+    const phase = personalPhases.get(h.userId)!;
+    if (!phase.qualified) {
+      phaseResults.set(h.userId, {
+        qualified: false, leagueMatches: [], leaguePosition: 0,
+        leagueTable: [], strengthMap: new Map(),
+      });
       results.set(h.userId, {
         qualified: false, leagueMatches: [], leaguePosition: 0,
         leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
       });
+      continue;
     }
+    const otherRecords = new Map(allRecordsByName);
+    otherRecords.delete(phase.teamName);
+    const { leagueTable, leaguePosition } = buildUCLLeagueTable(phase, otherRecords, createRng(bgSeed));
+    phaseResults.set(h.userId, {
+      qualified: true, leagueMatches: phase.leagueMatches, leaguePosition,
+      leagueTable, strengthMap: phase.strengthMap,
+    });
   }
 
   // Filter to qualified humans who survived league phase
@@ -4336,22 +4366,51 @@ function simulateSharedUEL(
     oppForCups: { name: string; strength: number }[];
   })[],
   drawRng: () => number,
+  // Seed (same for every human) for background match results — a fresh RNG
+  // instance is created from it per human so each call starts at the same
+  // point in the sequence, instead of one shared closure drifting out of
+  // sync as it's consumed across humans. Otherwise the same filler team's
+  // record diverges per viewer.
+  bgSeed: number,
 ): Map<string, UCLResult> {
   const results = new Map<string, UCLResult>();
 
   if (humanEntrants.length === 0) return results;
 
-  // 1. Run league phase independently per human
+  // 1a. Run each human's own personal league matches (their own rng).
+  const personalPhases = new Map<string, UCLPersonalPhaseResult>();
+  for (const h of humanEntrants) {
+    personalPhases.set(h.userId, simulateUELPersonalPhase(h.teamName, h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng));
+  }
+  const allRecordsByName = new Map<string, OwnRecord>();
+  for (const h of humanEntrants) {
+    const phase = personalPhases.get(h.userId)!;
+    if (phase.qualified) allRecordsByName.set(phase.teamName, phase.ownRecord);
+  }
+
+  // 1b. Build each qualified human's full table, sharing other humans'
+  // records and a freshly-seeded bgRng for the genuinely-AI filler teams.
   const phaseResults = new Map<string, UCLLeaguePhaseResult>();
   for (const h of humanEntrants) {
-    const lp = simulateUELLeaguePhase(h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng);
-    phaseResults.set(h.userId, lp);
-    if (!lp.qualified) {
+    const phase = personalPhases.get(h.userId)!;
+    if (!phase.qualified) {
+      phaseResults.set(h.userId, {
+        qualified: false, leagueMatches: [], leaguePosition: 0,
+        leagueTable: [], strengthMap: new Map(),
+      });
       results.set(h.userId, {
         qualified: false, leagueMatches: [], leaguePosition: 0,
         leagueTable: [], knockoutTies: [], winner: false, exitStage: null, tournamentWinner: '',
       });
+      continue;
     }
+    const otherRecords = new Map(allRecordsByName);
+    otherRecords.delete(phase.teamName);
+    const { leagueTable, leaguePosition } = buildUELLeagueTable(phase, otherRecords, createRng(bgSeed));
+    phaseResults.set(h.userId, {
+      qualified: true, leagueMatches: phase.leagueMatches, leaguePosition,
+      leagueTable, strengthMap: phase.strengthMap,
+    });
   }
 
   const qualifiedHumans = humanEntrants.filter(h => {
@@ -4712,6 +4771,7 @@ export function simulateSharedSeason(
       const entrant = {
         userId: hd.userId,
         displayName: hd.displayName,
+        teamName: hd.teamName,
         squad: hd.squad,
         ratings: hd.ratings,
         rng: createRng(playerSeed + 88888), // separate RNG for European comps
@@ -4739,8 +4799,13 @@ export function simulateSharedSeason(
 
     const uclDrawRng = createRng(sharedSeed ^ 0xDC101);
     const uelDrawRng = createRng(sharedSeed ^ 0xDE102);
-    sharedUCLResults = simulateSharedUCL(uclEntrants, uclDrawRng);
-    sharedUELResults = simulateSharedUEL(uelEntrants, uelDrawRng);
+    // Shared background seed: drives non-player ("filler") match results inside
+    // the UCL/UEL league phase, so the same filler team shows an identical
+    // record to every human in the room instead of diverging per-viewer.
+    const uclBgSeed = sharedSeed ^ 0xB6C101;
+    const uelBgSeed = sharedSeed ^ 0xB6C102;
+    sharedUCLResults = simulateSharedUCL(uclEntrants, uclDrawRng, uclBgSeed);
+    sharedUELResults = simulateSharedUEL(uelEntrants, uelDrawRng, uelBgSeed);
   }
 
   // Season 1 background European competitions (no previous table yet)
