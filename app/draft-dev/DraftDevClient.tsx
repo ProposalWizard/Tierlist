@@ -19,6 +19,7 @@ export interface DraftSettings {
   draftOrder: "position-first" | "club-first";
   respins: 0 | 1 | 3;
   hiddenRatings?: boolean;
+  simulationSpeed?: 0.5 | 1 | 1.5;
 }
 
 export interface DraftPlayer {
@@ -223,8 +224,9 @@ export default function DraftDevClient() {
     scrollTop();
   }, [scrollTop]);
 
-  const handleManageConfirm = useCallback((arranged: DraftPlayer[]) => {
+  const handleManageConfirm = useCallback((arranged: DraftPlayer[], speed?: 0.5 | 1 | 1.5) => {
     setPlayers(arranged);
+    if (speed !== undefined) setSettings(prev => prev ? { ...prev, simulationSpeed: speed } : prev);
     setPhase("result");
     scrollTop();
   }, [scrollTop]);
@@ -351,8 +353,9 @@ export default function DraftDevClient() {
     scrollTop();
   }, [scrollTop, currentSeason]);
 
-  const handleArrangeConfirm = useCallback((arranged: DraftPlayer[]) => {
+  const handleArrangeConfirm = useCallback((arranged: DraftPlayer[], speed?: 0.5 | 1 | 1.5) => {
     setPlayers(arranged);
+    if (speed !== undefined) setSettings(prev => prev ? { ...prev, simulationSpeed: speed } : prev);
     setPhase("result");
     scrollTop();
   }, [scrollTop]);
@@ -538,6 +541,7 @@ export default function DraftDevClient() {
           formationName={settings?.formation}
           isSignedIn={isSignedIn}
           mode={settings?.mode}
+          speedMultiplier={settings?.simulationSpeed ?? 1}
         />
       )}
       {phase === "pre-season" && (

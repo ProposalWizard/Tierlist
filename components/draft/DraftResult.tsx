@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
-import { simulateSeason } from "@/lib/seasonSimulator";
+import { simulateSeason, positionFitness } from "@/lib/seasonSimulator";
 import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch, SuperCupResult, CharityShieldResult } from "@/lib/seasonSimulator";
 import { XP_AWARDS, FRAME_STYLES } from "@/lib/xp";
 import XPPopup from "./XPPopup";
@@ -23,6 +23,7 @@ interface Props {
   allRoomPlayerSeasons?: Record<string, SeasonResult[]>;
   mode?: "normal" | "prime";
   revealStartTime?: number;
+  speedMultiplier?: 0.5 | 1 | 1.5;
 }
 
 function formatGoalScorers(scorers: { player: string; minute: number }[]): string {
@@ -595,7 +596,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1 }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined),
     [players, seasonNumber, previousResult, preComputedSeason],
@@ -641,18 +642,19 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const matchListRef = useRef<HTMLDivElement>(null);
 
   // Poll every 100ms using real wall-clock time — immune to background-tab setTimeout throttling
+  const eventDurationMs = 900 / speedMultiplier;
   useEffect(() => {
     if (seasonComplete) return;
     const tick = () => {
       const elapsed = Date.now() - revealStartRef.current;
       // elapsed may be negative during the pre-reveal buffer — clamp to 0 so nothing shows early
-      const idx = Math.max(0, Math.min(totalEvents, Math.floor(elapsed / 900)));
+      const idx = Math.max(0, Math.min(totalEvents, Math.floor(elapsed / eventDurationMs)));
       setRevealedIdx(idx);
     };
     tick(); // run immediately in case we need to fast-forward (e.g. tab was backgrounded)
     const interval = setInterval(tick, 100);
     return () => clearInterval(interval);
-  }, [seasonComplete, totalEvents]);
+  }, [seasonComplete, totalEvents, eventDurationMs]);
 
   useEffect(() => {
     if (!seasonComplete && revealedIdx >= totalEvents) {
@@ -1050,10 +1052,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
   const handleSkip = useCallback(() => {
     // Push anchor far into the past so the interval also computes idx = totalEvents
-    revealStartRef.current = Date.now() - totalEvents * 900 - 1000;
+    revealStartRef.current = Date.now() - totalEvents * eventDurationMs - 1000;
     setRevealedIdx(totalEvents);
     setSeasonComplete(true);
-  }, [totalEvents]);
+  }, [totalEvents, eventDurationMs]);
 
   const ordinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"];
@@ -1095,6 +1097,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     players.filter(p => p.isSub),
     [players]
   );
+
+  const displayRating = useCallback((p: DraftPlayer) => {
+    const fitness = positionFitness(p);
+    if (fitness >= 1.0) return p.overall.toString();
+    return (Math.round(p.overall * fitness * 10) / 10).toFixed(1);
+  }, []);
 
   const sortedStats = useMemo(() => {
     const source = statsView === "pl" ? season.plPlayerStats : season.playerStats;
@@ -1295,7 +1303,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
                     {p.assignedPosition}
                   </span>
-                  <span className="flex-1 ml-1 font-medium">{p.name}{plWeek > 0 && <span className="text-emerald-400 font-bold text-xs"> {p.overall}</span>}</span>
+                  <span className="flex-1 ml-1 font-medium">{p.name}{plWeek > 0 && <span className="text-emerald-400 font-bold text-xs"> {displayRating(p)}</span>}</span>
                   {plWeek > 0 ? (
                     <div className="flex shrink-0">
                       <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-white"}`}>{g || "-"}</span>
@@ -1307,7 +1315,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   ) : (
                     <>
                       <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
-                      <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+                      <span className="font-black text-emerald-400 w-10 text-right tabular-nums">{displayRating(p)}</span>
                     </>
                   )}
                 </div>
@@ -2502,7 +2510,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             return (
               <div key={i} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition">
                 <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-7 text-center shrink-0`}>{p.assignedPosition}</span>
-                <span className="flex-1 ml-2 font-medium truncate min-w-0">{p.name} <span className="text-emerald-400 font-black text-xs">{p.overall}</span></span>
+                <span className="flex-1 ml-2 font-medium truncate min-w-0">{p.name} <span className="text-emerald-400 font-black text-xs">{displayRating(p)}</span></span>
                 <span className="w-7 text-center text-xs font-bold shrink-0 text-white">{ps?.appearances ?? "-"}</span>
                 <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.goals ?? 0) > 0 ? "text-emerald-400" : "text-white"}`}>{(ps?.goals ?? 0) > 0 ? ps!.goals : "-"}</span>
                 <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.assists ?? 0) > 0 ? "text-emerald-400" : "text-white"}`}>{(ps?.assists ?? 0) > 0 ? ps!.assists : "-"}</span>

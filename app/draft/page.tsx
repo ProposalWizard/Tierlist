@@ -20,6 +20,7 @@ export interface DraftSettings {
   draftOrder: "position-first" | "club-first";
   respins: 0 | 1 | 3;
   hiddenRatings?: boolean;
+  simulationSpeed?: 0.5 | 1 | 1.5;
 }
 
 export interface DraftPlayer {
@@ -463,8 +464,11 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop]);
 
-  const handleManageConfirm = useCallback(async (arranged: DraftPlayer[]) => {
+  const handleManageConfirm = useCallback(async (arranged: DraftPlayer[], speed?: 0.5 | 1 | 1.5) => {
     setPlayers(arranged);
+    if (!roomCode && speed !== undefined) {
+      setSettings(prev => prev ? { ...prev, simulationSpeed: speed } : prev);
+    }
     if (roomCode) {
       // Multiplayer: if this is a subsequent season, advance the room first (idempotent)
       if (currentSeason > 1) {
@@ -648,8 +652,11 @@ export default function DraftPage() {
     [scrollTop, currentSeason]
   );
 
-  const handleArrangeConfirm = useCallback(async (arranged: DraftPlayer[]) => {
+  const handleArrangeConfirm = useCallback(async (arranged: DraftPlayer[], speed?: 0.5 | 1 | 1.5) => {
     setPlayers(arranged);
+    if (!roomCode && speed !== undefined) {
+      setSettings(prev => prev ? { ...prev, simulationSpeed: speed } : prev);
+    }
     if (roomCode) {
       if (currentSeason > 1) {
         await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
@@ -934,6 +941,7 @@ export default function DraftPage() {
           subtitle="Arrange Your Squad"
           formationName={settings?.formation}
           seasonNumber={currentSeason}
+          isMultiplayer={!!roomCode}
         />
       )}
       {phase === "result" && (players.length > 0 || preComputedSeason !== null) && (
@@ -952,6 +960,7 @@ export default function DraftPage() {
           allRoomPlayerSeasons={allRoomPlayerSeasons ?? undefined}
           mode={settings?.mode}
           revealStartTime={revealStartTime}
+          speedMultiplier={settings?.simulationSpeed ?? 1}
         />
       )}
       {phase === "pre-season" && (
@@ -1000,6 +1009,7 @@ export default function DraftPage() {
           subtitle="Arrange Your Squad"
           formationName={settings?.formation}
           seasonNumber={currentSeason}
+          isMultiplayer={!!roomCode}
         />
       )}
     </div>

@@ -591,6 +591,22 @@ export default function MultiplayerLobby({
           {simError && (
             <div className="text-red-400 text-xs text-center mb-2">{simError}</div>
           )}
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <span className="text-[10px] font-bold tracking-widest text-white uppercase">Sim Speed</span>
+            <div className="flex rounded-lg overflow-hidden border border-gray-700/50">
+              {([0.5, 1, 1.5] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => onUpdateSettings!({ simulationSpeed: s })}
+                  className={`px-3 py-1 text-xs font-bold transition-all ${
+                    (settings?.simulationSpeed ?? 1) === s ? "bg-emerald-600 text-white" : "bg-gray-800 text-white hover:bg-gray-700"
+                  }`}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
+          </div>
           <button
             onClick={handleSimulate}
             disabled={simulating}

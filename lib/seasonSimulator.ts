@@ -448,7 +448,7 @@ function classifyPosition(pos: string): PositionRole {
 
 // --- Position fitness ---
 
-function positionFitness(player: DraftPlayer): number {
+export function positionFitness(player: DraftPlayer): number {
   const assigned = player.assignedPosition.toUpperCase().trim();
   const natural = (player.positions || '').split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
 
