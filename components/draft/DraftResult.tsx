@@ -1044,7 +1044,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               },
               seasonNumber,
             }),
-          }).catch(() => {});
+          })
+            .then(async (res) => {
+              if (!res.ok) {
+                const body = await res.json().catch(() => null);
+                console.error("Failed to save draft records:", res.status, body?.error);
+              }
+            })
+            .catch((err) => console.error("Failed to save draft records:", err));
         })();
       }
     }
@@ -1357,12 +1364,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             {hasUCL && <span className="text-blue-400 ml-2">+ UCL</span>}
             {hasUEL && !hasUCL && <span className="text-orange-400 ml-2">+ UEL</span>}
           </span>
-          <button
-            onClick={handleSkip}
-            className="text-xs font-bold text-white hover:text-white transition px-3 py-2 -mr-3 rounded-lg active:bg-gray-800"
-          >
-            Skip all &rarr;
-          </button>
+          {!roomCode && (
+            <button
+              onClick={handleSkip}
+              className="text-xs font-bold text-white hover:text-white transition px-3 py-2 -mr-3 rounded-lg active:bg-gray-800"
+            >
+              Skip all &rarr;
+            </button>
+          )}
         </div>
 
         {/* Progress bar */}

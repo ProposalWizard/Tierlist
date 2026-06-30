@@ -399,7 +399,7 @@ export default function DraftRecordsPage() {
 
         {!loading && !error && (
           <div className="space-y-6">
-            {SEASON_RECORD_TYPES.map(rt => {
+            {SEASON_RECORD_TYPES.filter(rt => !(rt.key === "most_points" && competition === "all")).map(rt => {
               const key = `${competition}_${rt.key}`;
               const entries = mergeWithOfficial(records[key] ?? [], key, rt);
               return (

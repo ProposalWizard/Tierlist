@@ -2,6 +2,21 @@
 import { useMemo, useState } from "react";
 import type { SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
+import { getPositionColor } from "@/components/draft/formations";
+
+const BEST_XI_SLOT_COORDS = [
+  { x: 50, y: 92 }, // GK
+  { x: 15, y: 72 }, // LB
+  { x: 38, y: 75 }, // CB
+  { x: 62, y: 75 }, // CB
+  { x: 85, y: 72 }, // RB
+  { x: 25, y: 48 }, // CM
+  { x: 50, y: 52 }, // CM
+  { x: 75, y: 48 }, // CM
+  { x: 18, y: 22 }, // LW
+  { x: 50, y: 18 }, // ST
+  { x: 82, y: 22 }, // RW
+];
 
 interface Props {
   allSeasons: SeasonResult[];
@@ -805,27 +820,45 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
               {bestXI.some(s => s.player !== null) && (
                 <div>
                   <div className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Best XI (Highest Season Rating)</div>
-                  <div className="bg-gray-900/50 rounded-xl border border-gray-800/50 overflow-hidden">
-                    <div className="flex items-center text-[9px] font-bold tracking-widest text-white px-3 py-2 border-b border-gray-800/50 uppercase">
-                      <span className="w-8">Pos</span>
-                      <span className="flex-1">Player</span>
-                      {allRoomPlayerSeasons && <span className="w-16 text-center">Manager</span>}
-                      <span className="w-10 text-center">Season</span>
-                      <span className="w-12 text-center">Rating</span>
-                    </div>
-                    {bestXI.map((s, i) => (
-                      <div key={i} className={`flex items-center text-xs px-3 py-2 ${i % 2 === 0 ? "" : "bg-gray-900/30"}`}>
-                        <span className="w-8 font-black text-white">{s.slot}</span>
-                        <span className="flex-1 font-bold truncate">{s.player?.name ?? "-"}</span>
-                        {allRoomPlayerSeasons && (
-                          <span className="w-16 text-center text-[10px] text-white truncate">{s.player?.owner ?? "-"}</span>
-                        )}
-                        <span className="w-10 text-center text-white">{s.player ? `S${s.player.bestRatingSeason}` : "-"}</span>
-                        <span className={`w-12 text-center font-black ${(s.player?.bestRating ?? 0) >= 7.5 ? "text-emerald-400" : (s.player?.bestRating ?? 0) >= 7.0 ? "text-yellow-400" : "text-white"}`}>
-                          {s.player ? s.player.bestRating.toFixed(1) : "-"}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="relative w-full aspect-[3/4] sm:aspect-[4/5] bg-gradient-to-b from-emerald-900/40 to-emerald-950/40 rounded-xl border border-emerald-800/40 overflow-hidden">
+                    {/* Pitch markings */}
+                    <div className="absolute left-1/2 top-0 -translate-x-1/2 w-full h-px bg-emerald-600/20" style={{ top: "50%" }} />
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border border-emerald-600/30" />
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-600/40" />
+
+                    {bestXI.map((s, i) => {
+                      const coords = BEST_XI_SLOT_COORDS[i] ?? { x: 50, y: 50 };
+                      const p = s.player;
+                      const initials = p ? p.name.split(" ").map(w => w[0]).join("").slice(0, 2) : "";
+                      return (
+                        <div
+                          key={i}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
+                          style={{ left: `${coords.x}%`, top: `${coords.y}%` }}
+                        >
+                          <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white/60 overflow-hidden flex items-center justify-center ${p ? getPositionColor(s.slot) : "bg-gray-800"}`}>
+                            <span className="text-[10px] sm:text-sm font-black text-white">{p ? initials : s.slot}</span>
+                          </div>
+                          <div className="flex flex-col items-center mt-0.5 max-w-[64px] sm:max-w-[84px]">
+                            {p ? (
+                              <>
+                                <span className="text-[8px] sm:text-[10px] font-bold text-white truncate w-full text-center leading-tight">
+                                  {p.name.split(" ").pop()}
+                                </span>
+                                <span className={`text-[8px] sm:text-[10px] font-black leading-tight ${p.bestRating >= 7.5 ? "text-emerald-400" : p.bestRating >= 7.0 ? "text-yellow-400" : "text-white"}`}>
+                                  {p.bestRating.toFixed(1)}
+                                </span>
+                                <span className="text-[7px] sm:text-[9px] text-white/70 truncate w-full text-center leading-tight">
+                                  S{p.bestRatingSeason}{p.owner ? ` — ${p.owner}` : ""}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-[8px] sm:text-[10px] font-bold text-white/40 leading-tight">-</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
