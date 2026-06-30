@@ -68,6 +68,7 @@ export async function POST(
     const humanTeams: SharedSeasonInput[] = roomPlayers.map(rp => ({
       userId: rp.user_id,
       displayName: rp.display_name,
+      teamName: (rp as Record<string, unknown>).team_name as string | undefined,
       squad: (rp.squad ?? []) as DraftPlayer[],
     }));
 

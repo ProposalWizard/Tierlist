@@ -1,17 +1,18 @@
 "use client";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { FORMATIONS, getPositionColor } from "./formations";
-import { calculateSeasonOdds } from "@/lib/seasonSimulator";
+import { calculateSeasonOdds, positionFitness } from "@/lib/seasonSimulator";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftPlayer } from "@/app/draft/page";
 
 interface Props {
   players: DraftPlayer[];
-  onConfirm: (players: DraftPlayer[]) => void;
+  onConfirm: (players: DraftPlayer[], speed?: 0.5 | 1 | 1.5) => void;
   title?: string;
   subtitle?: string;
   formationName?: string;
   seasonNumber?: number;
+  isMultiplayer?: boolean;
 }
 
 const ordinal = (n: number) => {
@@ -48,9 +49,10 @@ const getFlagUrl = (nationality: string) => {
   return code ? `https://flagcdn.com/16x12/${code}.png` : null;
 };
 
-export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1 }: Props) {
+export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1, isMultiplayer = false }: Props) {
   const [squad, setSquad] = useState<DraftPlayer[]>(() => [...players]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [simSpeed, setSimSpeed] = useState<0.5 | 1 | 1.5>(1);
   const formation = formationName ? FORMATIONS.find(f => f.name === formationName) : null;
 
   // Drag state — ref so it doesn't cause re-renders during drag
@@ -89,10 +91,18 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
   const naturalPositions = (p: DraftPlayer) =>
     (p.positions || "").split(",").map(s => s.trim()).filter(Boolean);
 
-  const isFit = (p: DraftPlayer) => {
-    const nat = naturalPositions(p);
-    return nat.length === 0 || nat.map(pos => pos.toUpperCase()).includes(p.assignedPosition.toUpperCase());
+  const isFit = (p: DraftPlayer) => positionFitness(p) >= 1.0;
+
+  const displayRating = (p: DraftPlayer) => {
+    const fitness = positionFitness(p);
+    if (fitness >= 1.0) return p.overall.toString();
+    return (Math.round(p.overall * fitness * 10) / 10).toFixed(1);
   };
+
+  const startingXIAvg = useMemo(
+    () => (starters.length > 0 ? starters.reduce((s, { player }) => s + player.overall, 0) / starters.length : 0),
+    [starters]
+  );
 
   // Core swap — shared by tap and drag
   const performSwap = useCallback((aIdx: number, bIdx: number) => {
@@ -200,6 +210,12 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
         </p>
       </div>
 
+      {/* ────── STARTING XI RATING ────── */}
+      <div className="flex items-center justify-center gap-2 mb-3">
+        <span className="text-[10px] font-bold tracking-widest text-white uppercase">Starting XI Rating</span>
+        <span className="text-xl font-black text-emerald-400 tabular-nums">{startingXIAvg.toFixed(1)}</span>
+      </div>
+
       {/* ────── PITCH VIEW ────── */}
       {formation && (
         <div className="mb-4">
@@ -304,7 +320,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                         <img src={getFlagUrl(p.nationality)!} alt={p.nationality} className="w-3 h-2 object-cover rounded-[1px]" />
                       )}
                       <span className="text-[8px] sm:text-[10px] font-bold text-emerald-400 leading-tight">
-                        {p.overall}
+                        {displayRating(p)}
                       </span>
                     </div>
                   </div>
@@ -468,9 +484,29 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
         )}
       </div>
 
+      {/* ────── SIM SPEED ────── */}
+      {!isMultiplayer && (
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <span className="text-[10px] font-bold tracking-widest text-white uppercase">Sim Speed</span>
+          <div className="flex rounded-lg overflow-hidden border border-gray-700/50">
+            {([0.5, 1, 1.5] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setSimSpeed(s)}
+                className={`px-3 py-1 text-xs font-bold transition-all ${
+                  simSpeed === s ? "bg-emerald-600 text-white" : "bg-gray-800 text-white hover:bg-gray-700"
+                }`}
+              >
+                {s}x
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ────── CONFIRM ────── */}
       <button
-        onClick={() => onConfirm(squad)}
+        onClick={() => onConfirm(squad, isMultiplayer ? undefined : simSpeed)}
         className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-lg transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

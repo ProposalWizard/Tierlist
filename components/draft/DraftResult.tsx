@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
-import { simulateSeason } from "@/lib/seasonSimulator";
+import { simulateSeason, positionFitness } from "@/lib/seasonSimulator";
 import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch, SuperCupResult, CharityShieldResult } from "@/lib/seasonSimulator";
 import { XP_AWARDS, FRAME_STYLES } from "@/lib/xp";
 import XPPopup from "./XPPopup";
@@ -23,6 +23,7 @@ interface Props {
   allRoomPlayerSeasons?: Record<string, SeasonResult[]>;
   mode?: "normal" | "prime";
   revealStartTime?: number;
+  speedMultiplier?: 0.5 | 1 | 1.5;
 }
 
 function formatGoalScorers(scorers: { player: string; minute: number }[]): string {
@@ -595,7 +596,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1 }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined),
     [players, seasonNumber, previousResult, preComputedSeason],
@@ -603,6 +604,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const season = computedSeason;
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(true);
+  const [showLiveTable, setShowLiveTable] = useState(true);
   const [showUCLTable, setShowUCLTable] = useState(false);
   const [showUELTable, setShowUELTable] = useState(false);
   const [showCareerRecap, setShowCareerRecap] = useState(false);
@@ -641,18 +643,19 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const matchListRef = useRef<HTMLDivElement>(null);
 
   // Poll every 100ms using real wall-clock time — immune to background-tab setTimeout throttling
+  const eventDurationMs = 900 / speedMultiplier;
   useEffect(() => {
     if (seasonComplete) return;
     const tick = () => {
       const elapsed = Date.now() - revealStartRef.current;
       // elapsed may be negative during the pre-reveal buffer — clamp to 0 so nothing shows early
-      const idx = Math.max(0, Math.min(totalEvents, Math.floor(elapsed / 900)));
+      const idx = Math.max(0, Math.min(totalEvents, Math.floor(elapsed / eventDurationMs)));
       setRevealedIdx(idx);
     };
     tick(); // run immediately in case we need to fast-forward (e.g. tab was backgrounded)
     const interval = setInterval(tick, 100);
     return () => clearInterval(interval);
-  }, [seasonComplete, totalEvents]);
+  }, [seasonComplete, totalEvents, eventDurationMs]);
 
   useEffect(() => {
     if (!seasonComplete && revealedIdx >= totalEvents) {
@@ -669,7 +672,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
   const historySaved = useRef(false);
   useEffect(() => {
-    if (seasonComplete && !historySaved.current) {
+    // Award XP/objectives/history as soon as the season result is computed — don't gate behind
+    // the visual reveal animation finishing, or a player who navigates away mid-animation loses credit
+    // for a season that already finished simulating.
+    if (!historySaved.current) {
       historySaved.current = true;
       const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
       const plPlayerGoals: Record<string, number> = {};
@@ -1042,18 +1048,25 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               },
               seasonNumber,
             }),
-          }).catch(() => {});
+          })
+            .then(async (res) => {
+              if (!res.ok) {
+                const body = await res.json().catch(() => null);
+                console.error("Failed to save draft records:", res.status, body?.error);
+              }
+            })
+            .catch((err) => console.error("Failed to save draft records:", err));
         })();
       }
     }
-  }, [seasonComplete, players, season, seasonNumber, isSignedIn]);
+  }, [players, season, seasonNumber, isSignedIn]);
 
   const handleSkip = useCallback(() => {
     // Push anchor far into the past so the interval also computes idx = totalEvents
-    revealStartRef.current = Date.now() - totalEvents * 900 - 1000;
+    revealStartRef.current = Date.now() - totalEvents * eventDurationMs - 1000;
     setRevealedIdx(totalEvents);
     setSeasonComplete(true);
-  }, [totalEvents]);
+  }, [totalEvents, eventDurationMs]);
 
   const ordinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"];
@@ -1095,6 +1108,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     players.filter(p => p.isSub),
     [players]
   );
+
+  const displayRating = useCallback((p: DraftPlayer) => {
+    const fitness = positionFitness(p);
+    if (fitness >= 1.0) return p.overall.toString();
+    return (Math.round(p.overall * fitness * 10) / 10).toFixed(1);
+  }, []);
 
   const sortedStats = useMemo(() => {
     const source = statsView === "pl" ? season.plPlayerStats : season.playerStats;
@@ -1269,6 +1288,32 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       return r.total / r.count;
     };
 
+    // Live league table — all 20 teams, derived from allFixtures through the revealed matchweek
+    const liveTable = season.allFixtures ? (() => {
+      const table: Record<string, { name: string; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; goalDifference: number; points: number; isPlayer: boolean }> = {};
+      for (const t of season.leagueTable) {
+        table[t.name] = { name: t.name, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, isPlayer: t.isPlayer };
+      }
+      for (const wk of season.allFixtures!.slice(0, plWeek)) {
+        for (const fx of wk.matches) {
+          const ht = table[fx.home];
+          const at = table[fx.away];
+          if (!ht || !at) continue;
+          ht.goalsFor += fx.homeGoals; ht.goalsAgainst += fx.awayGoals;
+          at.goalsFor += fx.awayGoals; at.goalsAgainst += fx.homeGoals;
+          if (fx.homeGoals > fx.awayGoals) { ht.won++; ht.points += 3; at.lost++; }
+          else if (fx.homeGoals === fx.awayGoals) { ht.drawn++; ht.points += 1; at.drawn++; at.points += 1; }
+          else { ht.lost++; at.won++; at.points += 3; }
+        }
+      }
+      for (const t of Object.values(table)) t.goalDifference = t.goalsFor - t.goalsAgainst;
+      return Object.values(table).sort((a, b) =>
+        b.points !== a.points ? b.points - a.points :
+        b.goalDifference !== a.goalDifference ? b.goalDifference - a.goalDifference :
+        b.goalsFor - a.goalsFor
+      );
+    })() : null;
+
     return (
       <div className="max-w-2xl mx-auto p-4 pb-20">
         {/* Live squad stats */}
@@ -1295,7 +1340,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
                     {p.assignedPosition}
                   </span>
-                  <span className="flex-1 ml-1 font-medium">{p.name}{plWeek > 0 && <span className="text-emerald-400 font-bold text-xs"> {p.overall}</span>}</span>
+                  <span className="flex-1 ml-1 font-medium">{p.name}{plWeek > 0 && <span className="text-emerald-400 font-bold text-xs"> {displayRating(p)}</span>}</span>
                   {plWeek > 0 ? (
                     <div className="flex shrink-0">
                       <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-white"}`}>{g || "-"}</span>
@@ -1307,7 +1352,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   ) : (
                     <>
                       <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
-                      <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
+                      <span className="font-black text-emerald-400 w-10 text-right tabular-nums">{displayRating(p)}</span>
                     </>
                   )}
                 </div>
@@ -1349,12 +1394,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             {hasUCL && <span className="text-blue-400 ml-2">+ UCL</span>}
             {hasUEL && !hasUCL && <span className="text-orange-400 ml-2">+ UEL</span>}
           </span>
-          <button
-            onClick={handleSkip}
-            className="text-xs font-bold text-white hover:text-white transition px-3 py-2 -mr-3 rounded-lg active:bg-gray-800"
-          >
-            Skip all &rarr;
-          </button>
+          {!roomCode && (
+            <button
+              onClick={handleSkip}
+              className="text-xs font-bold text-white hover:text-white transition px-3 py-2 -mr-3 rounded-lg active:bg-gray-800"
+            >
+              Skip all &rarr;
+            </button>
+          )}
         </div>
 
         {/* Progress bar */}
@@ -1478,6 +1525,46 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Live League Table — updates as matchweeks are revealed */}
+        {liveTable && plWeek > 0 && (
+          <div className="bg-gray-900 rounded-xl p-3 mb-3 border border-gray-800/50">
+            <button
+              onClick={() => setShowLiveTable(!showLiveTable)}
+              className="w-full flex items-center justify-between mb-1.5"
+            >
+              <span className="text-[10px] font-bold tracking-widest text-white uppercase">Live Table &middot; GW {plWeek}/38</span>
+              <svg className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${showLiveTable ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            {showLiveTable && (
+              <div className="space-y-0.5">
+                {liveTable.map((team, i) => {
+                  const pos = i + 1;
+                  const zoneClass = pos === 1
+                    ? "border-l-2 border-l-yellow-500"
+                    : pos <= 5
+                      ? "border-l-2 border-l-blue-500"
+                      : pos <= 7
+                        ? "border-l-2 border-l-orange-500"
+                        : pos >= 18
+                          ? "border-l-2 border-l-red-500"
+                          : "";
+                  return (
+                    <div key={team.name} className={`flex items-center text-xs py-1 px-1 rounded transition ${zoneClass} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : ""}`}>
+                      <span className="w-5 text-center text-[10px] font-bold text-white shrink-0">{pos}</span>
+                      <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
+                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.won}</span>
+                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.drawn}</span>
+                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.lost}</span>
+                      <span className={`w-7 text-right text-[10px] font-bold shrink-0 ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
+                      <span className={`w-7 text-right font-black text-xs shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -2502,7 +2589,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             return (
               <div key={i} className="flex items-center text-sm py-1.5 px-1 rounded hover:bg-gray-800/50 transition">
                 <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-7 text-center shrink-0`}>{p.assignedPosition}</span>
-                <span className="flex-1 ml-2 font-medium truncate min-w-0">{p.name} <span className="text-emerald-400 font-black text-xs">{p.overall}</span></span>
+                <span className="flex-1 ml-2 font-medium truncate min-w-0">{p.name} <span className="text-emerald-400 font-black text-xs">{displayRating(p)}</span></span>
                 <span className="w-7 text-center text-xs font-bold shrink-0 text-white">{ps?.appearances ?? "-"}</span>
                 <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.goals ?? 0) > 0 ? "text-emerald-400" : "text-white"}`}>{(ps?.goals ?? 0) > 0 ? ps!.goals : "-"}</span>
                 <span className={`w-6 text-center text-xs font-bold shrink-0 ${(ps?.assists ?? 0) > 0 ? "text-emerald-400" : "text-white"}`}>{(ps?.assists ?? 0) > 0 ? ps!.assists : "-"}</span>

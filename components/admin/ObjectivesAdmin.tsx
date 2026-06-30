@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat, WithinCompetition, SeasonStatType } from "@/lib/objectiveTypes";
 import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS, SEASON_STAT_LABELS } from "@/lib/objectiveTypes";
 import { conditionSummary } from "@/lib/objectiveEvaluator";
+import { CONTINENTS } from "@/lib/continents";
 import CardLibraryPicker from "./CardLibraryPicker";
 import type { LibraryCard } from "./CardLibraryPicker";
 import SeasonAdmin from "./SeasonAdmin";
@@ -80,6 +81,10 @@ interface NewCondState {
   nationality: string;
   club: string;
   position: string;
+  continent: string[];
+  excludeNationality: string;
+  excludeClub: string;
+  excludePosition: string;
   event: WinEvent | "";
   matchStat: MatchStat;
   seasonStat: SeasonStatType;
@@ -104,6 +109,10 @@ const EMPTY_COND: NewCondState = {
   nationality: "",
   club: "",
   position: "",
+  continent: [],
+  excludeNationality: "",
+  excludeClub: "",
+  excludePosition: "",
   event: "",
   matchStat: "goals_scored",
   seasonStat: "wins",
@@ -248,6 +257,10 @@ export default function ObjectivesAdmin() {
         cond.position = nc.position.trim().toUpperCase();
         cond.positionMatch = nc.positionMatch;
       }
+      if (nc.continent.length > 0) cond.continent = nc.continent.join(",");
+      if (nc.excludeNationality.trim()) cond.excludeNationality = nc.excludeNationality.trim();
+      if (nc.excludeClub.trim()) cond.excludeClub = nc.excludeClub.trim();
+      if (nc.excludePosition.trim()) cond.excludePosition = nc.excludePosition.trim().toUpperCase();
       const minAge = parseInt(nc.minAge);
       const maxAge = parseInt(nc.maxAge);
       const minOvr = parseInt(nc.minOvr);
@@ -309,6 +322,10 @@ export default function ObjectivesAdmin() {
       nationality: cond.nationality ?? "",
       club: cond.club ?? "",
       position: cond.position ?? "",
+      continent: cond.continent ? cond.continent.split(",").map(s => s.trim()).filter(Boolean) : [],
+      excludeNationality: cond.excludeNationality ?? "",
+      excludeClub: cond.excludeClub ?? "",
+      excludePosition: cond.excludePosition ?? "",
       event: (cond.event ?? "") as WinEvent | "",
       matchStat: cond.matchStat ?? "goals_scored",
       seasonStat: cond.seasonStat ?? "wins",
@@ -334,6 +351,9 @@ export default function ObjectivesAdmin() {
       if (uploaded) card_image_url = uploaded;
     } else if (cardLibraryUrl) {
       card_image_url = cardLibraryUrl;
+    } else if (cardPreview === null) {
+      // User clicked "remove" — explicitly clear the persisted card image
+      card_image_url = null;
     }
     const body = {
       ...(editingId ? { id: editingId } : {}),
@@ -1052,6 +1072,66 @@ export default function ObjectivesAdmin() {
                       </p>
                     </div>
                   )}
+
+                  {/* Continent filter */}
+                  <div className="mt-3">
+                    <label className="block text-[10px] text-gray-500 mb-1">Continent (any selected = OR)</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {CONTINENTS.map(c => {
+                        const active = nc.continent.includes(c);
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setNc(n => ({
+                              ...n,
+                              continent: active ? n.continent.filter(x => x !== c) : [...n.continent, c],
+                            }))}
+                            className={`px-2.5 py-1 rounded text-[11px] font-bold transition ${active ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
+                          >
+                            {c}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Exclusion filters */}
+                  <div className="mt-3 border-t border-gray-700/50 pt-2">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Exclude (optional — players matching these are excluded)</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-gray-500 mb-0.5">Not nationality</label>
+                        <input
+                          type="text"
+                          value={nc.excludeNationality}
+                          onChange={e => setNc(n => ({ ...n, excludeNationality: e.target.value }))}
+                          placeholder="e.g. Spain, Germany"
+                          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 mb-0.5">Not club</label>
+                        <input
+                          type="text"
+                          value={nc.excludeClub}
+                          onChange={e => setNc(n => ({ ...n, excludeClub: e.target.value }))}
+                          placeholder="e.g. Arsenal"
+                          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 mb-0.5">Not position</label>
+                        <input
+                          type="text"
+                          value={nc.excludePosition}
+                          onChange={e => setNc(n => ({ ...n, excludePosition: e.target.value }))}
+                          placeholder="e.g. GK"
+                          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1073,6 +1153,10 @@ export default function ObjectivesAdmin() {
                       ...(nc.nationality.trim() ? { nationality: nc.nationality.trim() } : {}),
                       ...(nc.club.trim() ? { club: nc.club.trim() } : {}),
                       ...(nc.position.trim() ? { position: nc.position.trim().toUpperCase() } : {}),
+                      ...(nc.continent.length > 0 ? { continent: nc.continent.join(",") } : {}),
+                      ...(nc.excludeNationality.trim() ? { excludeNationality: nc.excludeNationality.trim() } : {}),
+                      ...(nc.excludeClub.trim() ? { excludeClub: nc.excludeClub.trim() } : {}),
+                      ...(nc.excludePosition.trim() ? { excludePosition: nc.excludePosition.trim().toUpperCase() } : {}),
                       ...(nc.type === "win_event" && nc.event ? { event: nc.event as WinEvent } : {}),
                       ...(nc.type === "single_match" ? { matchStat: nc.matchStat } : {}),
                       ...(nc.type === "season_stat" ? { seasonStat: nc.seasonStat, atMost: nc.atMost, withinCompetition: nc.withinCompetition, seasonCount: nc.seasonCount ?? 1 } : {}),

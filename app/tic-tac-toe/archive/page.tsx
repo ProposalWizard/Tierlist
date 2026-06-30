@@ -132,10 +132,11 @@ export default async function ArchivePage() {
   const { data: puzzles } = await service
     .from("tictactoe_puzzles")
     .select(
-      "id, title, difficulty, is_daily, daily_date, created_at, row_labels, col_labels"
+      "id, title, difficulty, is_daily, daily_date, created_at, row_labels, col_labels, display_order"
     )
     .eq("is_active", true)
     .eq("is_daily", true)
+    .order("display_order", { ascending: false })
     .order("daily_date", { ascending: false });
 
   const items: PuzzleRow[] = (puzzles ?? []) as PuzzleRow[];

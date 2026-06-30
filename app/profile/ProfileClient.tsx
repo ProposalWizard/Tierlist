@@ -422,7 +422,7 @@ function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
   claiming?: boolean;
 }) {
   return (
-    <div className="flex-1 p-6 flex gap-6">
+    <div className="flex-1 p-6 flex gap-6 overflow-y-auto">
       <div className="flex-1 min-w-0">
         <h4 className="text-xl font-black text-white mb-2">{obj.title}</h4>
         {obj.description && (
@@ -468,10 +468,10 @@ function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
           <img
             src={obj.card_image_url}
             alt={obj.card_name || "Card Reward"}
-            className="w-28 h-36 object-cover rounded-xl border border-gray-700 shadow-lg"
+            className="w-40 h-52 object-cover rounded-xl border border-gray-700 shadow-lg"
           />
           {obj.card_name && (
-            <div className="text-sm font-bold text-white mt-2 truncate max-w-[7rem]">{obj.card_name}</div>
+            <div className="text-sm font-bold text-white mt-2 truncate max-w-[10rem]">{obj.card_name}</div>
           )}
         </div>
       )}
@@ -666,7 +666,7 @@ function CustomObjectivesSection() {
       ) : (
         <>
           {/* Mobile: stacked expandable cards */}
-          <div className="md:hidden overflow-y-auto max-h-[600px]">
+          <div className="md:hidden overflow-y-auto h-[600px]">
             {categoryObjectives.map((obj) => {
               const done = completedIds.includes(obj.id);
               const unclaimed = unclaimedIds.includes(obj.id);
@@ -727,7 +727,7 @@ function CustomObjectivesSection() {
                       </div>
                       {obj.card_image_url && (
                         <div className="mb-3 flex items-center gap-4">
-                          <img src={obj.card_image_url} alt={obj.card_name || "Card Reward"} className="w-20 h-24 object-cover rounded-lg border border-gray-700 shadow-lg" />
+                          <img src={obj.card_image_url} alt={obj.card_name || "Card Reward"} className="w-24 h-32 object-cover rounded-lg border border-gray-700 shadow-lg" />
                           <div>
                             <div className="text-xs font-bold text-white uppercase tracking-wider">Reward</div>
                             {obj.card_name && <div className="text-sm font-bold text-white mt-1">{obj.card_name}</div>}
@@ -751,8 +751,8 @@ function CustomObjectivesSection() {
           </div>
 
           {/* Desktop: side-by-side */}
-          <div className="hidden md:flex min-h-[340px]">
-            <div className="w-64 shrink-0 border-r border-gray-800/50 overflow-y-auto max-h-[600px]">
+          <div className="hidden md:flex h-[600px]">
+            <div className="w-64 shrink-0 border-r border-gray-800/50 overflow-y-auto h-full">
               {categoryObjectives.map((obj) => {
                 const done = completedIds.includes(obj.id);
                 const unclaimed = unclaimedIds.includes(obj.id);
