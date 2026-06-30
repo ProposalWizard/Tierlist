@@ -67,17 +67,16 @@ export async function GET(
 
   if (error || !room) return new Response("Room not found", { status: 404 });
 
-  // Fetch squad during lobby/simulating so the squad preview works while waiting
-  // Only omit season_result (heavy) until the room is complete
-  const columns = room.status === "complete"
-    ? "id, user_id, display_name, team_name, status, avg_ovr, team_strength, actual_finish, squad, season_result, joined_at"
-    : "id, user_id, display_name, team_name, status, avg_ovr, team_strength, actual_finish, squad, joined_at";
-
-  const { data: players } = await service
+  const { data: allPlayers } = await service
     .from("draft_room_players")
-    .select(columns)
+    .select("*")
     .eq("room_id", room.id)
     .order("joined_at", { ascending: true });
+
+  // Strip season_result (heavy payload) until the room is complete
+  const players = room.status !== "complete"
+    ? (allPlayers ?? []).map(({ season_result: _sr, ...rest }) => rest)
+    : (allPlayers ?? []);
 
   return Response.json(
     { room, players: players ?? [] },

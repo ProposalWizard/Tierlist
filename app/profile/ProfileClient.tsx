@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -532,7 +532,7 @@ function ObjectiveClaimModal({ result, onClose }: { result: ClaimResult; onClose
   );
 }
 
-function CustomObjectivesSection() {
+export function CustomObjectivesSection() {
   const [objectives, setObjectives] = useState<AdminObjective[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [unclaimedIds, setUnclaimedIds] = useState<string[]>([]);
@@ -619,16 +619,17 @@ function CustomObjectivesSection() {
     <div className="rounded-xl border border-gray-800/50 bg-gray-900 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-4 pb-0">
-        <h3 className="text-sm font-bold tracking-[0.25em] text-white uppercase">
-          Objectives
-        </h3>
+        <Link href="/objectives" className="text-sm font-bold tracking-[0.25em] text-white uppercase hover:text-blue-400 transition-colors">
+          Objectives ↗
+        </Link>
         <span className="text-sm font-bold text-amber-400">
           {totalCompleted}/{allObjectives.length} completed
         </span>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex gap-0 px-5 pt-3 border-b border-gray-800/50 overflow-x-auto">
+      {/* Category Tabs — scrollable on mobile; no native scrollbar */}
+      <div className="relative border-b border-gray-800/50">
+      <div className="flex gap-0 px-5 pt-3 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
         {availableCategories.map(catKey => {
           const cat = CATEGORY_CONFIG[catKey];
           if (!cat) return null;
@@ -658,6 +659,9 @@ function CustomObjectivesSection() {
           );
         })}
       </div>
+      {/* Right-edge fade — hint that more tabs exist off-screen on mobile */}
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-gray-900 to-transparent md:hidden" />
+      </div>
 
       {categoryObjectives.length === 0 ? (
         <div className="px-5 py-10 text-center text-sm text-white">
@@ -666,18 +670,18 @@ function CustomObjectivesSection() {
       ) : (
         <>
           {/* Mobile: stacked expandable cards */}
-          <div className="md:hidden overflow-y-auto h-[600px]">
+          <div className="md:hidden">
             {categoryObjectives.map((obj) => {
               const done = completedIds.includes(obj.id);
               const unclaimed = unclaimedIds.includes(obj.id);
-              const isSelected = (selectedId ?? categoryObjectives[0]?.id) === obj.id;
+              const isSelected = selectedId === obj.id;
               return (
                 <div key={obj.id}>
                   <button
                     onClick={() => setSelectedId(isSelected ? null : obj.id)}
-                    className={`w-full text-left px-4 py-3.5 border-b border-gray-800/30 transition-all ${
-                      done ? "bg-emerald-950/20" : ""
-                    } ${isSelected ? "bg-gray-800/80" : "hover:bg-gray-800/40"}`}
+                    className={`w-full text-left px-4 py-3.5 border-b border-gray-800/30 transition-all border-l-[3px] ${
+                      done && !isSelected ? "bg-emerald-950/20" : ""
+                    } ${isSelected ? "bg-blue-950/40 border-l-blue-500" : "border-l-transparent hover:bg-gray-800/40"}`}
                   >
                     <div className="flex items-center gap-2.5">
                       {done ? (
