@@ -262,13 +262,16 @@ export default function MultiplayerLobby({
     if (!trimmed) return;
     setTeamNameSaving(true);
     try {
-      await fetch(`/api/draft/rooms/${roomCode}/team-name`, {
+      const res = await fetch(`/api/draft/rooms/${roomCode}/team-name`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamName: trimmed }),
       });
-      setTeamNameEditedManually(false);
-      fetchRoom();
+      if (res.ok) {
+        setTeamNameEditedManually(false);
+        fetchRoom();
+      }
+      // On failure (e.g. migration not run) keep the user's typed value — don't revert
     } finally {
       setTeamNameSaving(false);
     }
