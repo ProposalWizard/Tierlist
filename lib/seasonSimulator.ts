@@ -4191,7 +4191,14 @@ function simulateSharedUCL(
     // From QF onwards, surviving humans can draw each other
     // Higher probability than pure random to make H2H exciting in multiplayer
     if (survivorIds.length >= 2 && ri >= 1) {
-      const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
+      // Fisher-Yates (not .sort(() => rng() - 0.5), which is a biased shuffle whose
+      // RNG-consumption pattern depends on the JS engine's sort implementation —
+      // that desynced the shared draw between players' clients)
+      const shuffled = [...survivorIds];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(drawRng() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
       const teamsInRound = poolSize * 2;
       // Base probability = 1/(teams-1), boosted so human matchups happen more often
       const baseProbability = 1 / Math.max(1, teamsInRound - 1);
@@ -4406,7 +4413,12 @@ function simulateSharedUEL(
     const humanVsHuman: [string, string][] = [];
 
     if (survivorIds.length >= 2 && ri >= 1) {
-      const shuffled = [...survivorIds].sort(() => drawRng() - 0.5);
+      // Fisher-Yates (not .sort(() => rng() - 0.5) — see comment in simulateSharedUCL)
+      const shuffled = [...survivorIds];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(drawRng() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
       const teamsInRound = poolSize * 2;
       const baseProbability = 1 / Math.max(1, teamsInRound - 1);
       const boostedProbability = Math.min(0.8, baseProbability * 1.5);
@@ -4925,6 +4937,20 @@ export function simulateSharedSeason(
       for (const gs of cm.goalScorers) { if (statsMap[gs.player]) statsMap[gs.player].goals++; }
       for (const ap of cm.assistProviders) { if (statsMap[ap.player]) statsMap[ap.player].assists++; }
       if (cm.goalsAgainst === 0) { if (gk) statsMap[gk.name].cleanSheets++; for (const d of defenders) statsMap[d.name].cleanSheets++; }
+    }
+
+    for (const cm of leagueCup.matches) {
+      const mr: MatchResult = { goalScorers: cm.goalScorers, assistProviders: cm.assistProviders, goalsAgainst: cm.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.goalsFor, opponent: cm.opponent, isHome: false };
+      for (const p of hd.starters) { statsMap[p.name].appearances++; rateMatchForPlayer(p, mr); }
+      for (const gs of cm.goalScorers) { if (statsMap[gs.player]) statsMap[gs.player].goals++; }
+      for (const ap of cm.assistProviders) { if (statsMap[ap.player]) statsMap[ap.player].assists++; }
+      if (cm.goalsAgainst === 0) { if (gk) statsMap[gk.name].cleanSheets++; for (const d of defenders) statsMap[d.name].cleanSheets++; }
+      if (cm.leg2) {
+        const mr2: MatchResult = { goalScorers: cm.leg2.goalScorers, assistProviders: [], goalsAgainst: cm.leg2.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.leg2.goalsFor, opponent: cm.opponent, isHome: cm.leg2.isHome };
+        for (const p of hd.starters) { statsMap[p.name].appearances++; rateMatchForPlayer(p, mr2); }
+        for (const gs of cm.leg2.goalScorers) { if (statsMap[gs.player]) statsMap[gs.player].goals++; }
+        if (cm.leg2.goalsAgainst === 0) { if (gk) statsMap[gk.name].cleanSheets++; for (const d of defenders) statsMap[d.name].cleanSheets++; }
+      }
     }
 
     const countUCLMatch = (m: UCLMatch) => {
