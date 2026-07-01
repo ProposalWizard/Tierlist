@@ -210,8 +210,13 @@ export async function GET(request: NextRequest) {
   // Re-sort by resolved overall (DB sort may put NULL-overall players at bottom)
   roster.sort((a, b) => b.overall - a.overall);
 
+  // Strip players with no usable data — overall=0 after all resolution attempts
+  // means the row has no stats at all (bad import), and empty position after
+  // inference means stats are also absent. These are ghost entries.
+  const cleanRoster = roster.filter(p => p.overall > 0 && p.positions.trim() !== "");
+
   return NextResponse.json(
-    { club, year, roster },
+    { club, year, roster: cleanRoster },
     {
       headers: { "Cache-Control": "public, max-age=3600" },
     }
