@@ -236,11 +236,11 @@ function createRng(seed: number): () => number {
 
 // Fixed English representatives for Season 1 European competitions (no previous table yet)
 export const SEASON1_UCL_PL_TEAMS: { name: string; strength: number }[] = [
-  { name: 'Arsenal', strength: 88 },
-  { name: 'Man City', strength: 88 },
+  { name: 'Arsenal', strength: 88.5 },
+  { name: 'Man City', strength: 88.5 },
   { name: 'Liverpool', strength: 87 },
   { name: 'Man United', strength: 84 },
-  { name: 'Aston Villa', strength: 82 },
+  { name: 'Aston Villa', strength: 82.5 },
 ];
 export const SEASON1_UEL_PL_TEAMS: { name: string; strength: number }[] = [
   { name: 'Bournemouth', strength: 80 },
@@ -249,12 +249,12 @@ export const SEASON1_UEL_PL_TEAMS: { name: string; strength: number }[] = [
 ];
 
 export const DEFAULT_PL_TEAMS: { name: string; strength: number }[] = [
-  { name: 'Man City', strength: 88 },
-  { name: 'Arsenal', strength: 88 },
+  { name: 'Man City', strength: 88.5 },
+  { name: 'Arsenal', strength: 88.5 },
   { name: 'Liverpool', strength: 87 },
   { name: 'Man United', strength: 84 },
   { name: 'Chelsea', strength: 83 },
-  { name: 'Aston Villa', strength: 82 },
+  { name: 'Aston Villa', strength: 82.5 },
   { name: 'Tottenham', strength: 82 },
   { name: 'Newcastle', strength: 81 },
   { name: 'Bournemouth', strength: 80 },
