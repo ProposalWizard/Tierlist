@@ -1107,21 +1107,21 @@ function SquareModal({
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:text-gray-900 text-2xl leading-none -mt-1"
+            className="text-gray-400 hover:text-gray-900 text-2xl leading-none -mt-1"
           >
             &times;
           </button>
         </div>
 
         <div className="mb-4 flex items-center justify-between rounded-lg bg-gray-100 px-3 py-2 text-sm">
-          <span className="text-white">
+          <span className="text-gray-700">
             Score: <span className="font-display font-black text-gray-900">{sqScore}</span>{" "}
-            <span className="text-white">/</span> {sqScore + availableMax}
+            <span className="text-gray-700">/</span> {sqScore + availableMax}
           </span>
-          <span className="text-white">
+          <span className="text-gray-700">
             Available:{" "}
             <span className="font-display font-black text-gray-900">{availableCount}</span>{" "}
-            <span className="text-white">({availableMax} pts)</span>
+            <span className="text-gray-700">({availableMax} pts)</span>
           </span>
         </div>
 
@@ -1161,7 +1161,7 @@ function SquareModal({
 
         {found.length > 0 && (
           <div className="space-y-1 max-h-56 overflow-y-auto">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-white">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-700">
               Found ({found.length})
             </p>
             {[...found]
