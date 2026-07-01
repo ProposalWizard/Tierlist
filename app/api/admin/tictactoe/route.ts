@@ -18,7 +18,8 @@ export async function GET() {
   const service = createServiceClient();
   const { data, error } = await service
     .from("tictactoe_puzzles")
-    .select("id, title, difficulty, is_daily, daily_date, is_active, created_at")
+    .select("id, title, difficulty, is_daily, daily_date, is_active, created_at, display_order")
+    .order("daily_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
