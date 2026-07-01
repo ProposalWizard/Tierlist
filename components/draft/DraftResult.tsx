@@ -1290,15 +1290,16 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
     // Live league table — all 20 teams, derived from allFixtures through the revealed matchweek
     const liveTable = season.allFixtures ? (() => {
-      const table: Record<string, { name: string; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; goalDifference: number; points: number; isPlayer: boolean }> = {};
+      const table: Record<string, { name: string; played: number; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; goalDifference: number; points: number; isPlayer: boolean }> = {};
       for (const t of season.leagueTable) {
-        table[t.name] = { name: t.name, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, isPlayer: t.isPlayer };
+        table[t.name] = { name: t.name, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, isPlayer: t.isPlayer };
       }
       for (const wk of season.allFixtures!.slice(0, plWeek)) {
         for (const fx of wk.matches) {
           const ht = table[fx.home];
           const at = table[fx.away];
           if (!ht || !at) continue;
+          ht.played++; at.played++;
           ht.goalsFor += fx.homeGoals; ht.goalsAgainst += fx.awayGoals;
           at.goalsFor += fx.awayGoals; at.goalsAgainst += fx.homeGoals;
           if (fx.homeGoals > fx.awayGoals) { ht.won++; ht.points += 3; at.lost++; }
@@ -1555,6 +1556,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                     <div key={team.name} className={`flex items-center text-xs py-1 px-1 rounded transition ${zoneClass} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : ""}`}>
                       <span className="w-5 text-center text-[10px] font-bold text-white shrink-0">{pos}</span>
                       <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
+                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.played}</span>
                       <span className="w-6 text-center text-white text-[10px] shrink-0">{team.won}</span>
                       <span className="w-6 text-center text-white text-[10px] shrink-0">{team.drawn}</span>
                       <span className="w-6 text-center text-white text-[10px] shrink-0">{team.lost}</span>
@@ -1760,6 +1762,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           <div className="flex items-center text-[10px] font-bold tracking-widest text-white mb-2 px-1 uppercase">
             <span className="w-6 text-center shrink-0">#</span>
             <span className="flex-1 ml-1 min-w-0">Club</span>
+            <span className="w-7 text-center shrink-0">GP</span>
             <span className="w-7 text-center shrink-0">W</span>
             <span className="w-7 text-center shrink-0">D</span>
             <span className="w-7 text-center shrink-0">L</span>
@@ -1773,6 +1776,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${getLeaguePositionStyle(pos, team.name)} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : "hover:bg-gray-800/50"}`}>
                   <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos, team.name)}`}>{pos}</span>
                   <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
+                  <span className="w-7 text-center text-white text-xs shrink-0">{team.played}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.won}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.drawn}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.lost}</span>

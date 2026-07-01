@@ -35,6 +35,11 @@ function playerMatchesFilter(player: SquadPlayer, cond: ObjectiveCondition): boo
     const parts = cond.continent.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     if (!playerContinent || !parts.includes(playerContinent.toLowerCase())) return false;
   }
+  if (cond.excludeContinent) {
+    const playerContinent = continentForNationality(player.nationality);
+    const parts = cond.excludeContinent.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (playerContinent && parts.includes(playerContinent.toLowerCase())) return false;
+  }
   if (cond.excludeNationality) {
     if (multiMatch(player.nationality, cond.excludeNationality)) return false;
   }
@@ -181,7 +186,13 @@ export function evaluateObjective(
     if (cond.type === "squad_count") {
       const count = seasonData.squad.filter(p => playerMatchesFilter(p, cond)).length;
       seasonValues[cond.id] = count;
-      newProgress[cond.id] = Math.max(newProgress[cond.id] ?? 0, count);
+      if (cond.atMost) {
+        // For atMost, track the minimum ever seen (best performance toward the goal)
+        const prev = newProgress[cond.id];
+        newProgress[cond.id] = prev === undefined ? count : Math.min(prev, count);
+      } else {
+        newProgress[cond.id] = Math.max(newProgress[cond.id] ?? 0, count);
+      }
     }
 
     if (cond.type === "win_event") {
@@ -290,7 +301,9 @@ function isConditionMet(
   seasonValues: Record<string, number>,
 ): boolean {
   if (cond.type === "squad_count") {
-    return (seasonValues[cond.id] ?? 0) >= cond.count;
+    const val = seasonValues[cond.id] ?? 0;
+    if (cond.atMost) return val <= cond.count;
+    return val >= cond.count;
   }
 
   if (cond.type === "win_event") {
@@ -342,7 +355,9 @@ function isConditionMetThisSeason(
   }
 
   if (cond.type === "squad_count") {
-    return (seasonValues[cond.id] ?? 0) >= cond.count;
+    const val = seasonValues[cond.id] ?? 0;
+    if (cond.atMost) return val <= cond.count;
+    return val >= cond.count;
   }
 
   if (cond.type === "single_match") {
@@ -386,6 +401,7 @@ export function conditionSummary(cond: ObjectiveCondition): string {
   if (cond.minOvr != null && cond.maxOvr != null) playerFilters.push(`OVR ${cond.minOvr}–${cond.maxOvr}`);
   else if (cond.minOvr != null) playerFilters.push(`OVR ${cond.minOvr}+`);
   else if (cond.maxOvr != null) playerFilters.push(`OVR ${cond.maxOvr} or under`);
+  if (cond.excludeContinent) playerFilters.push(`not from ${cond.excludeContinent}`);
   if (cond.excludeNationality) playerFilters.push(`not from ${cond.excludeNationality}`);
   if (cond.excludeClub) playerFilters.push(`not at ${cond.excludeClub}`);
   if (cond.excludePosition) playerFilters.push(`not playing ${cond.excludePosition}`);
@@ -419,6 +435,9 @@ export function conditionSummary(cond: ObjectiveCondition): string {
 
     case "squad_count": {
       const f = playerFilters.length > 0 ? ` ${playerFilters.join(", ")}` : "";
+      if (cond.atMost) {
+        return `Have at most ${cond.count}${f} player${p ? "s" : ""} in your squad${comp}`;
+      }
       return `Have ${cond.count}+${f} player${p ? "s" : ""} in your squad${comp}`;
     }
 

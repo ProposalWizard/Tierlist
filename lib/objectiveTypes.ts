@@ -60,6 +60,7 @@ export interface ObjectiveCondition {
   club?: string;
   position?: string;
   continent?: string; // comma-separated continent names (OR), e.g. "Europe,Africa"
+  excludeContinent?: string; // comma-separated continents to exclude (OR), e.g. "Europe"
   excludeNationality?: string; // comma-separated nationalities to exclude (OR)
   excludeClub?: string; // comma-separated clubs to exclude (OR)
   excludePosition?: string; // comma-separated positions to exclude (OR)
