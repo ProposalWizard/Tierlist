@@ -410,7 +410,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">&#128202;</span>
           <h3 className="text-[10px] font-bold tracking-widest text-white uppercase">
-            Pre-Season Predictions
+            1000 Reporters predicted...
           </h3>
           {!odds && <span className="text-[10px] text-white animate-pulse ml-auto">Calculating...</span>}
         </div>
