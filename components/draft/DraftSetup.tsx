@@ -473,8 +473,9 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
                 { n: 1, title: "Spin the wheel", desc: "Each spin lands on a random English top-flight club from a real FIFA season." },
                 { n: 2, title: "Pick a player", desc: "Choose one player from that club’s roster and slot them into your formation." },
                 { n: 3, title: "Build your XI", desc: "Keep spinning and picking until all 11 positions are filled." },
-                { n: 4, title: "Simulate the season", desc: "Play out a full 38-game league season and chase an unbeaten 38-0 record." },
-                { n: 5, title: "Break records", desc: "Set personal bests for goals, assists, clean sheets, and climb the global leaderboard." },
+                { n: 4, title: "Chase Hall of Fame Records", desc: "Play out a full 38-game league season and attempt to break worldwide records (Hall of Fame)." },
+                { n: 5, title: "Evolve Your Squad", desc: "Receive upgrades, replace and transfer in new players, and prepare for the next season." },
+                { n: 6, title: "Build Your Legacy", desc: "You have 5 seasons to win as much as you can and build your ultimate squad. Have Fun!" },
               ].map(step => (
                 <div key={step.n} className="flex items-start gap-4 py-4 border-b border-gray-800/50 last:border-b-0">
                   <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-sm font-black text-white shrink-0">
