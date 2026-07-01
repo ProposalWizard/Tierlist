@@ -417,6 +417,8 @@ export default function TicTacToeAdmin() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [showOrderView, setShowOrderView] = useState(false);
+  const [orderedDailies, setOrderedDailies] = useState<PuzzleListItem[]>([]);
   const [showEasyBuilder, setShowEasyBuilder] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -836,6 +838,101 @@ export default function TicTacToeAdmin() {
     );
   }
 
+  /* ── Daily archive order view ── */
+  if (showOrderView) {
+    const moveUp = (idx: number) => {
+      if (idx === 0) return;
+      setOrderedDailies((prev) => {
+        const next = [...prev];
+        [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+        return next;
+      });
+    };
+    const moveDown = (idx: number) => {
+      if (idx === orderedDailies.length - 1) return;
+      setOrderedDailies((prev) => {
+        const next = [...prev];
+        [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+        return next;
+      });
+    };
+    const saveOrder = async () => {
+      setSaving(true);
+      const total = orderedDailies.length;
+      await Promise.all(
+        orderedDailies.map((p, idx) =>
+          fetch(`/api/admin/tictactoe/${p.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ display_order: total - idx }),
+          })
+        )
+      );
+      setPuzzles((prev) =>
+        prev.map((p) => {
+          const pos = orderedDailies.findIndex((d) => d.id === p.id);
+          return pos >= 0 ? { ...p, display_order: total - pos } : p;
+        })
+      );
+      setSaving(false);
+      setConfirmation("Archive order saved!");
+      setTimeout(() => setConfirmation(""), 3000);
+      setShowOrderView(false);
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-white">Daily Archive Order</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Top of list = first in archive. Use arrows to reorder.</p>
+          </div>
+          <button onClick={() => setShowOrderView(false)} className="text-sm text-gray-400 hover:text-white">
+            ← Back
+          </button>
+        </div>
+        {orderedDailies.length === 0 ? (
+          <p className="py-8 text-center text-gray-400">No daily puzzles yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {orderedDailies.map((p, idx) => (
+              <div key={p.id} className="flex items-center gap-3 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3">
+                <span className="text-sm font-black text-gray-500 w-6 text-center">{idx + 1}</span>
+                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                  <p className="font-bold text-white text-sm truncate">{p.title}</p>
+                  <p className="text-xs text-amber-400">{p.daily_date ?? "No date"}</p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => moveUp(idx)}
+                    disabled={idx === 0}
+                    className="rounded bg-gray-800 px-2 py-1 text-xs font-bold text-white hover:bg-gray-700 disabled:opacity-30"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => moveDown(idx)}
+                    disabled={idx === orderedDailies.length - 1}
+                    className="rounded bg-gray-800 px-2 py-1 text-xs font-bold text-white hover:bg-gray-700 disabled:opacity-30"
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={saveOrder}
+          disabled={saving}
+          className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save Order"}
+        </button>
+      </div>
+    );
+  }
+
   /* ── Puzzle list ── */
   return (
     <div className="space-y-4">
@@ -854,6 +951,21 @@ export default function TicTacToeAdmin() {
               Export All
             </button>
           )}
+          <button
+            onClick={() => {
+              const dailies = puzzles
+                .filter((p) => p.is_daily)
+                .sort((a, b) => {
+                  if (b.display_order !== a.display_order) return b.display_order - a.display_order;
+                  if (a.daily_date && b.daily_date) return b.daily_date.localeCompare(a.daily_date);
+                  return 0;
+                });
+              setOrderedDailies(dailies);
+              setShowOrderView(true);
+            }}
+            className="rounded-lg border border-amber-600/50 bg-amber-900/20 px-4 py-2 text-sm font-bold text-amber-400 hover:bg-amber-900/30">
+            Archive Order
+          </button>
           <button onClick={() => setShowEasyBuilder(true)}
             className="rounded-lg border border-green-700 bg-green-900/30 px-4 py-2 text-sm font-bold text-green-400 hover:bg-green-900/50">
             + Easy TTT
