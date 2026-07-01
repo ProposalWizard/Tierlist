@@ -99,6 +99,7 @@ interface PuzzleListItem {
   daily_date: string | null;
   is_active: boolean;
   created_at: string;
+  display_order: number;
 }
 
 function emptySquare(): TicTacToeSquareData {
@@ -539,6 +540,21 @@ export default function TicTacToeAdmin() {
     } catch { /* ignore */ }
   };
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const quickPatch = async (id: string, updates: Record<string, unknown>) => {
+    try {
+      const res = await fetch(`/api/admin/tictactoe/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        setPuzzles((prev) => prev.map((p) => p.id === id ? { ...p, ...updates } as PuzzleListItem : p));
+      }
+    } catch { /* ignore */ }
+  };
+
   const downloadJson = (data: unknown, filename: string) => {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -853,36 +869,83 @@ export default function TicTacToeAdmin() {
         <p className="py-8 text-center text-white">No puzzles yet.</p>
       ) : (
         <div className="space-y-2">
-          {puzzles.map((p) => (
-            <div key={p.id} className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900 px-4 py-3">
-              <div>
-                <p className="font-bold text-white">{p.title}</p>
-                <div className="flex items-center gap-2 text-xs text-white">
-                  <span className={`rounded-full px-2 py-0.5 font-bold ${
-                    p.difficulty === "easy" ? "bg-green-900/50 text-green-400" :
-                    p.difficulty === "medium" ? "bg-yellow-900/50 text-yellow-400" :
-                    "bg-red-900/50 text-red-400"
-                  }`}>{p.difficulty}</span>
-                  {p.is_daily && <span className="text-amber-400">Daily{p.daily_date ? ` (${p.daily_date})` : ""}</span>}
-                  {!p.is_active && <span className="text-red-400">Inactive</span>}
+          {puzzles.map((p) => {
+            const isToday = p.daily_date === todayStr;
+            const isFuture = p.daily_date && p.daily_date > todayStr;
+            return (
+              <div key={p.id} className={`rounded-lg border px-4 py-3 ${
+                isToday ? "border-amber-500/60 bg-amber-900/10" : "border-gray-700 bg-gray-900"
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  {/* Left: title + badges */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-white truncate">{p.title}</p>
+                      {isToday && (
+                        <span className="shrink-0 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black text-black">TODAY</span>
+                      )}
+                      {isFuture && (
+                        <span className="shrink-0 rounded-full bg-blue-700/60 px-2 py-0.5 text-[10px] font-bold text-blue-200">UPCOMING</span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 flex-wrap text-xs">
+                      <span className={`rounded-full px-2 py-0.5 font-bold ${
+                        p.difficulty === "easy" ? "bg-green-900/50 text-green-400" :
+                        p.difficulty === "medium" ? "bg-yellow-900/50 text-yellow-400" :
+                        "bg-red-900/50 text-red-400"
+                      }`}>{p.difficulty}</span>
+                      {p.is_daily && p.daily_date && (
+                        <span className="text-amber-400 font-medium">📅 {p.daily_date}</span>
+                      )}
+                      {p.is_daily && !p.daily_date && (
+                        <span className="text-amber-400">Daily (no date)</span>
+                      )}
+                      {!p.is_active && <span className="text-red-400">Inactive</span>}
+                      <span className="text-gray-500 flex items-center gap-1">
+                        Archive order:
+                        <input
+                          type="number"
+                          defaultValue={p.display_order ?? 0}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val !== p.display_order) {
+                              quickPatch(p.id, { display_order: val });
+                            }
+                          }}
+                          className="w-14 rounded bg-gray-800 border border-gray-700 px-1.5 py-0.5 text-xs text-white text-center focus:border-indigo-500 focus:outline-none"
+                        />
+                      </span>
+                    </div>
+                  </div>
+                  {/* Right: actions */}
+                  <div className="flex flex-col gap-1.5 shrink-0">
+                    {!isToday && (
+                      <button
+                        onClick={() => quickPatch(p.id, { is_daily: true, daily_date: todayStr })}
+                        className="rounded-lg bg-amber-600/20 border border-amber-600/40 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-600/30"
+                      >
+                        Set Today
+                      </button>
+                    )}
+                    <div className="flex gap-1.5">
+                      <button onClick={() => exportPuzzle(p.id)}
+                        className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-700">
+                        Export
+                      </button>
+                      <button onClick={() => openEdit(p.id)}
+                        className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-700">
+                        Edit
+                      </button>
+                      <button onClick={() => handleDelete(p.id)}
+                        className="rounded-lg bg-red-900/50 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => exportPuzzle(p.id)}
-                  className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-700">
-                  Export
-                </button>
-                <button onClick={() => openEdit(p.id)}
-                  className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-700">
-                  Edit
-                </button>
-                <button onClick={() => handleDelete(p.id)}
-                  className="rounded-lg bg-red-900/50 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900">
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

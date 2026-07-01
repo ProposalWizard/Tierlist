@@ -857,7 +857,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                     >
                       <p
                         className={`text-[8px] font-bold leading-tight md:text-[10px] ${
-                          isFilled ? filledTextDark : "text-white"
+                          isFilled ? filledTextDark : "text-gray-900"
                         }`}
                       >
                         {square.customType
@@ -890,7 +890,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                         <p className="font-display text-base font-black text-gray-900 md:text-2xl">
                           {availableCount}
                         </p>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-white md:text-[11px]">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-gray-500 md:text-[11px]">
                           Player{availableCount !== 1 ? "s" : ""}
                         </p>
                       </div>
@@ -900,7 +900,7 @@ export default function TicTacToeGame({ puzzle }: Props) {
                   <div className="w-full text-center mt-1">
                     <p
                       className={`font-display text-xs font-black md:text-sm ${
-                        isFilled ? filledTextDark : "text-white"
+                        isFilled ? filledTextDark : "text-gray-900"
                       }`}
                     >
                       {isFilled ? `${sqScore} / ${sqScore + availableMax}` : `${availableMax} pts`}
@@ -1056,7 +1056,7 @@ function SquareModal({
             ) : (
               <>
                 <p className="text-base font-bold text-gray-900 md:text-lg">{square.conditions[0]}</p>
-                <p className="text-sm font-semibold text-white md:text-base">
+                <p className="text-sm font-semibold text-gray-700 md:text-base">
                   + {square.conditions[1]}
                 </p>
               </>

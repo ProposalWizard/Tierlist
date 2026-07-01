@@ -13,6 +13,7 @@ interface Props {
   formationName?: string;
   seasonNumber?: number;
   isMultiplayer?: boolean;
+  initialSpeed?: 0.5 | 1 | 1.5;
 }
 
 const ordinal = (n: number) => {
@@ -49,10 +50,10 @@ const getFlagUrl = (nationality: string) => {
   return code ? `https://flagcdn.com/16x12/${code}.png` : null;
 };
 
-export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1, isMultiplayer = false }: Props) {
+export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1, isMultiplayer = false, initialSpeed }: Props) {
   const [squad, setSquad] = useState<DraftPlayer[]>(() => [...players]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const [simSpeed, setSimSpeed] = useState<0.5 | 1 | 1.5>(1);
+  const [simSpeed, setSimSpeed] = useState<0.5 | 1 | 1.5>(initialSpeed ?? 1);
   const formation = formationName ? FORMATIONS.find(f => f.name === formationName) : null;
 
   // Drag state — ref so it doesn't cause re-renders during drag
@@ -409,7 +410,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">&#128202;</span>
           <h3 className="text-[10px] font-bold tracking-widest text-white uppercase">
-            Pre-Season Predictions
+            1000 Reporters predicted...
           </h3>
           {!odds && <span className="text-[10px] text-white animate-pulse ml-auto">Calculating...</span>}
         </div>

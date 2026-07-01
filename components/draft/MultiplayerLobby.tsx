@@ -40,6 +40,7 @@ interface Props {
   onLeave: () => void;
   onUpdateSettings?: (settings: Partial<DraftSettings>) => void;
   onSettingsSync?: (settings: Partial<DraftSettings>) => void;
+  defaultTeamName?: string;
 }
 
 export default function MultiplayerLobby({
@@ -48,6 +49,7 @@ export default function MultiplayerLobby({
   isAdmin = false,
   userId,
   squadSubmitted,
+  defaultTeamName,
   currentSeason = 1,
   settings,
   onStartDraft,
@@ -254,8 +256,8 @@ export default function MultiplayerLobby({
   // Sync the team name input from the server once loaded, unless the user is actively editing it
   useEffect(() => {
     if (!myPlayer || teamNameEditedManually) return;
-    setTeamNameInput(myPlayer.team_name || `${myPlayer.display_name} FC`);
-  }, [myPlayer, teamNameEditedManually]);
+    setTeamNameInput(myPlayer.team_name || defaultTeamName || `${myPlayer.display_name} FC`);
+  }, [myPlayer, teamNameEditedManually, defaultTeamName]);
 
   const handleSaveTeamName = async () => {
     const trimmed = teamNameInput.trim();

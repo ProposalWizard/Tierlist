@@ -6,13 +6,37 @@ import { createClient } from "@/lib/supabase/client";
 import ObjectivesToast from "@/components/ObjectivesToast";
 import type { DraftSettings } from "@/app/draft/page";
 
+function TeamNameInput({ value, onChange }: { value: string; onChange: (name: string) => void }) {
+  const [localValue, setLocalValue] = useState(value);
+  useEffect(() => { setLocalValue(value); }, [value]);
+  return (
+    <div className="mb-6 sm:mb-8">
+      <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
+        Your Team Name
+      </label>
+      <input
+        type="text"
+        value={localValue}
+        onChange={e => setLocalValue(e.target.value.slice(0, 50))}
+        onBlur={() => { const v = localValue.trim(); if (v) onChange(v); }}
+        placeholder="KNOWITBALL FC"
+        maxLength={50}
+        className="w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-sm font-bold text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+      />
+      <p className="text-[10px] text-gray-500 mt-1.5">Shown in league tables across all your drafts</p>
+    </div>
+  );
+}
+
 interface Props {
   onStart: (settings: DraftSettings) => void;
   onCreateRoom?: (settings: DraftSettings) => void;
   onJoinRoom?: (code: string, settings: DraftSettings) => void;
+  teamName?: string;
+  onTeamNameChange?: (name: string) => void;
 }
 
-export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props) {
+export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName, onTeamNameChange }: Props) {
   const [formation, setFormation] = useState("4-3-3");
   const [eraStart, setEraStart] = useState(2007);
   const [eraEnd, setEraEnd] = useState(2026);
@@ -142,6 +166,14 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               </div>
             </div>
           </div>
+        )}
+
+        {/* Team Name */}
+        {onTeamNameChange && (
+          <TeamNameInput
+            value={teamName ?? ""}
+            onChange={onTeamNameChange}
+          />
         )}
 
         {/* Formation */}
@@ -441,8 +473,9 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
                 { n: 1, title: "Spin the wheel", desc: "Each spin lands on a random English top-flight club from a real FIFA season." },
                 { n: 2, title: "Pick a player", desc: "Choose one player from that club’s roster and slot them into your formation." },
                 { n: 3, title: "Build your XI", desc: "Keep spinning and picking until all 11 positions are filled." },
-                { n: 4, title: "Simulate the season", desc: "Play out a full 38-game league season and chase an unbeaten 38-0 record." },
-                { n: 5, title: "Break records", desc: "Set personal bests for goals, assists, clean sheets, and climb the global leaderboard." },
+                { n: 4, title: "Fight for the Title", desc: "Play out a full 38-game league season and attempt to break worldwide records (Hall of Fame)." },
+                { n: 5, title: "Evolve Your Squad", desc: "Receive upgrades, replace and transfer in new players, and prepare for the next season." },
+                { n: 6, title: "Build Your Legacy", desc: "You have 5 seasons to win as much as you can and build your ultimate squad. Have Fun!" },
               ].map(step => (
                 <div key={step.n} className="flex items-start gap-4 py-4 border-b border-gray-800/50 last:border-b-0">
                   <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-sm font-black text-white shrink-0">

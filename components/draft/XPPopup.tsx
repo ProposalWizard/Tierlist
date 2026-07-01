@@ -66,7 +66,7 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, onDism
       `}</style>
 
       <div
-        className={`fixed top-4 right-4 z-50 ${exiting ? "toast-exit" : visible ? "toast-enter" : "opacity-0 translate-x-full"}`}
+        className={`fixed top-16 right-4 z-40 ${exiting ? "toast-exit" : visible ? "toast-enter" : "opacity-0 translate-x-full"}`}
         style={{ pointerEvents: "auto" }}
       >
         <div className="relative w-72 rounded-xl border border-amber-500/30 bg-gray-900/95 backdrop-blur-sm shadow-2xl shadow-amber-900/20 overflow-hidden">

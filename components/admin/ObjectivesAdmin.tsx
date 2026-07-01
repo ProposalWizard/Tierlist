@@ -82,6 +82,7 @@ interface NewCondState {
   club: string;
   position: string;
   continent: string[];
+  excludeContinent: string[];
   excludeNationality: string;
   excludeClub: string;
   excludePosition: string;
@@ -110,6 +111,7 @@ const EMPTY_COND: NewCondState = {
   club: "",
   position: "",
   continent: [],
+  excludeContinent: [],
   excludeNationality: "",
   excludeClub: "",
   excludePosition: "",
@@ -258,6 +260,7 @@ export default function ObjectivesAdmin() {
         cond.positionMatch = nc.positionMatch;
       }
       if (nc.continent.length > 0) cond.continent = nc.continent.join(",");
+      if (nc.excludeContinent.length > 0) cond.excludeContinent = nc.excludeContinent.join(",");
       if (nc.excludeNationality.trim()) cond.excludeNationality = nc.excludeNationality.trim();
       if (nc.excludeClub.trim()) cond.excludeClub = nc.excludeClub.trim();
       if (nc.excludePosition.trim()) cond.excludePosition = nc.excludePosition.trim().toUpperCase();
@@ -323,6 +326,7 @@ export default function ObjectivesAdmin() {
       club: cond.club ?? "",
       position: cond.position ?? "",
       continent: cond.continent ? cond.continent.split(",").map(s => s.trim()).filter(Boolean) : [],
+      excludeContinent: cond.excludeContinent ? cond.excludeContinent.split(",").map(s => s.trim()).filter(Boolean) : [],
       excludeNationality: cond.excludeNationality ?? "",
       excludeClub: cond.excludeClub ?? "",
       excludePosition: cond.excludePosition ?? "",
@@ -668,7 +672,7 @@ export default function ObjectivesAdmin() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
-                    {nc.type === "squad_count" ? "Minimum players"
+                    {nc.type === "squad_count" ? (nc.atMost ? "At most (max players)" : "Minimum players")
                       : nc.type === "win_event" ? "How many times"
                       : nc.type === "single_match" ? (nc.matchStat === "win_margin" ? "Min win margin (goals)" : "Min goals in one match")
                       : nc.type === "login_streak" ? "Days in a row"
@@ -678,8 +682,8 @@ export default function ObjectivesAdmin() {
                   <input
                     type="number"
                     value={nc.count}
-                    onChange={e => setNc(n => ({ ...n, count: parseInt(e.target.value) || 1 }))}
-                    min={1}
+                    onChange={e => setNc(n => ({ ...n, count: parseInt(e.target.value) || 0 }))}
+                    min={nc.type === "squad_count" && nc.atMost ? 0 : 1}
                     className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none"
                   />
                 </div>
@@ -952,6 +956,20 @@ export default function ObjectivesAdmin() {
               </div>
               )}
 
+              {/* At-most toggle for squad_count */}
+              {nc.type === "squad_count" && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={nc.atMost}
+                    onChange={e => setNc(n => ({ ...n, atMost: e.target.checked, count: e.target.checked ? 0 : Math.max(n.count, 1) }))}
+                    className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
+                  />
+                  <span className="text-xs text-white font-bold">&ldquo;At most&rdquo; mode</span>
+                  <span className="text-[10px] text-gray-500">e.g. have at most 0 Liverpool players</span>
+                </label>
+              )}
+
               {/* Player filters (stat types + squad_count) */}
               {hasPlayerFilters(nc.type) && (
                 <div className="border-t border-gray-700 pt-3">
@@ -1099,6 +1117,25 @@ export default function ObjectivesAdmin() {
                   {/* Exclusion filters */}
                   <div className="mt-3 border-t border-gray-700/50 pt-2">
                     <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Exclude (optional — players matching these are excluded)</label>
+                    {/* Exclude continent chips */}
+                    <div className="mb-2">
+                      <label className="block text-[10px] text-gray-500 mb-1">Not from continent</label>
+                      <div className="flex flex-wrap gap-1">
+                        {CONTINENTS.map(c => {
+                          const active = nc.excludeContinent.includes(c);
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setNc(n => ({ ...n, excludeContinent: active ? n.excludeContinent.filter(x => x !== c) : [...n.excludeContinent, c] }))}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${active ? "bg-red-600/30 border-red-500 text-red-300" : "bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400"}`}
+                            >
+                              {c}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="block text-[10px] text-gray-500 mb-0.5">Not nationality</label>
@@ -1154,12 +1191,14 @@ export default function ObjectivesAdmin() {
                       ...(nc.club.trim() ? { club: nc.club.trim() } : {}),
                       ...(nc.position.trim() ? { position: nc.position.trim().toUpperCase() } : {}),
                       ...(nc.continent.length > 0 ? { continent: nc.continent.join(",") } : {}),
+                      ...(nc.excludeContinent.length > 0 ? { excludeContinent: nc.excludeContinent.join(",") } : {}),
                       ...(nc.excludeNationality.trim() ? { excludeNationality: nc.excludeNationality.trim() } : {}),
                       ...(nc.excludeClub.trim() ? { excludeClub: nc.excludeClub.trim() } : {}),
                       ...(nc.excludePosition.trim() ? { excludePosition: nc.excludePosition.trim().toUpperCase() } : {}),
                       ...(nc.type === "win_event" && nc.event ? { event: nc.event as WinEvent } : {}),
                       ...(nc.type === "single_match" ? { matchStat: nc.matchStat } : {}),
                       ...(nc.type === "season_stat" ? { seasonStat: nc.seasonStat, atMost: nc.atMost, withinCompetition: nc.withinCompetition, seasonCount: nc.seasonCount ?? 1 } : {}),
+                      ...(nc.type === "squad_count" && nc.atMost ? { atMost: true } : {}),
                       ...(nc.minAge && parseInt(nc.minAge) > 0 ? { minAge: parseInt(nc.minAge) } : {}),
                       ...(nc.maxAge && parseInt(nc.maxAge) > 0 ? { maxAge: parseInt(nc.maxAge) } : {}),
                       ...(nc.minOvr && parseInt(nc.minOvr) > 0 ? { minOvr: parseInt(nc.minOvr) } : {}),

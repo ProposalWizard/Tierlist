@@ -197,6 +197,9 @@ export default function DraftPage() {
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
 
+  // Persistent team name
+  const [teamName, setTeamName] = useState("KNOWITBALL FC");
+
   // Respin counter — persists across all DraftPick phases in one save
   const [respinsRemaining, setRespinsRemaining] = useState(0);
 
@@ -222,16 +225,36 @@ export default function DraftPage() {
       setIsSignedIn(!!user);
       setUserId(user?.id ?? null);
       if (user) {
-        const res = await fetch("/api/profile/admin-check");
-        if (res.ok) {
-          const d = await res.json();
+        const [adminRes, teamNameRes] = await Promise.all([
+          fetch("/api/profile/admin-check"),
+          fetch("/api/profile/team-name"),
+        ]);
+        if (adminRes.ok) {
+          const d = await adminRes.json();
           setIsAdminUser(d.isAdmin === true);
+        }
+        if (teamNameRes.ok) {
+          const d = await teamNameRes.json();
+          if (d.teamName) setTeamName(d.teamName);
         }
       }
     });
   }, []);
 
   const scrollTop = useCallback(() => window.scrollTo({ top: 0 }), []);
+
+  // Called on blur from the team name input — saves to profile if signed in
+  const handleTeamNameChange = useCallback(async (name: string) => {
+    setTeamName(name);
+    if (!isSignedIn || !name.trim()) return;
+    try {
+      await fetch("/api/profile/team-name", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamName: name.trim() }),
+      });
+    } catch {}
+  }, [isSignedIn]);
 
   const handleStartDraft = useCallback((s: DraftSettings) => {
     clearProgress();
@@ -859,6 +882,8 @@ export default function DraftPage() {
             onStart={handleStartDraft}
             onCreateRoom={isSignedIn ? handleCreateRoom : undefined}
             onJoinRoom={isSignedIn ? handleJoinRoom : undefined}
+            teamName={isSignedIn ? teamName : undefined}
+            onTeamNameChange={isSignedIn ? handleTeamNameChange : undefined}
           />
           <div className="text-center pb-6">
             <button
@@ -886,6 +911,7 @@ export default function DraftPage() {
           onLeave={handleLeaveRoom}
           onUpdateSettings={isHost ? handleUpdateRoomSettings : undefined}
           onSettingsSync={!isHost ? handleSettingsSync : undefined}
+          defaultTeamName={teamName}
         />
       )}
       {phase === "formation-pick" && settings && (
@@ -948,6 +974,7 @@ export default function DraftPage() {
           formationName={settings?.formation}
           seasonNumber={currentSeason}
           isMultiplayer={!!roomCode}
+          initialSpeed={settings?.simulationSpeed ?? 1}
         />
       )}
       {phase === "result" && (players.length > 0 || preComputedSeason !== null) && (
@@ -967,6 +994,7 @@ export default function DraftPage() {
           mode={settings?.mode}
           revealStartTime={revealStartTime}
           speedMultiplier={settings?.simulationSpeed ?? 1}
+          playerTeamName={teamName}
         />
       )}
       {phase === "pre-season" && (
@@ -1016,6 +1044,7 @@ export default function DraftPage() {
           formationName={settings?.formation}
           seasonNumber={currentSeason}
           isMultiplayer={!!roomCode}
+          initialSpeed={settings?.simulationSpeed ?? 1}
         />
       )}
     </div>
