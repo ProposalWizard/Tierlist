@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/lib/types";
 import { CUSTOM_SQUARE_LABELS } from "@/lib/types";
 
@@ -333,9 +334,10 @@ function TwoPlayerScoreboard({
 
 interface Props {
   puzzle: TicTacToePuzzle;
+  isDaily?: boolean;
 }
 
-export default function TicTacToeGame({ puzzle }: Props) {
+export default function TicTacToeGame({ puzzle, isDaily }: Props) {
   const [mode, setMode] = useState<GameMode | null>(null);
   const [gameState, setGameState] = useState<GameState>(makeInitialState());
   const [selectedSquare, setSelectedSquare] = useState<{ r: number; c: number } | null>(null);
@@ -346,6 +348,8 @@ export default function TicTacToeGame({ puzzle }: Props) {
   } | null>(null);
   const [popup, setPopup] = useState<{ text: string; title: string; isHint: boolean } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const router = useRouter();
   const [revealedHints, setRevealedHints] = useState<Set<string>>(new Set());
   const [hintsUsed, setHintsUsed] = useState(0);
   const [scoreSaved, setScoreSaved] = useState(false);
@@ -577,6 +581,45 @@ export default function TicTacToeGame({ puzzle }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl px-3 py-6 md:px-4 md:py-8">
+      {/* Back button for daily puzzles */}
+      {isDaily && (
+        <div className="mb-4">
+          <button
+            onClick={() => setShowBackConfirm(true)}
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-white transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Home
+          </button>
+        </div>
+      )}
+
+      {/* Back confirmation modal */}
+      {showBackConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl text-center">
+            <p className="text-lg font-black text-white mb-1">Leave this puzzle?</p>
+            <p className="text-sm text-gray-400 mb-6">Your progress will be lost.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBackConfirm(false)}
+                className="flex-1 rounded-xl border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-gray-700"
+              >
+                Keep Playing
+              </button>
+              <button
+                onClick={() => router.push("/tic-tac-toe")}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-500"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6 text-center md:mb-8">
         <h1 className="font-display text-3xl font-black tracking-wide text-white md:text-5xl">
