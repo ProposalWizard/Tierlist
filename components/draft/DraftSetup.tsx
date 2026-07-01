@@ -473,7 +473,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
                 { n: 1, title: "Spin the wheel", desc: "Each spin lands on a random English top-flight club from a real FIFA season." },
                 { n: 2, title: "Pick a player", desc: "Choose one player from that club’s roster and slot them into your formation." },
                 { n: 3, title: "Build your XI", desc: "Keep spinning and picking until all 11 positions are filled." },
-                { n: 4, title: "Chase Hall of Fame Records", desc: "Play out a full 38-game league season and attempt to break worldwide records (Hall of Fame)." },
+                { n: 4, title: "Fight for the Title", desc: "Play out a full 38-game league season and attempt to break worldwide records (Hall of Fame)." },
                 { n: 5, title: "Evolve Your Squad", desc: "Receive upgrades, replace and transfer in new players, and prepare for the next season." },
                 { n: 6, title: "Build Your Legacy", desc: "You have 5 seasons to win as much as you can and build your ultimate squad. Have Fun!" },
               ].map(step => (
