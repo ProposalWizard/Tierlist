@@ -419,6 +419,8 @@ export default function TicTacToeAdmin() {
   const [confirmation, setConfirmation] = useState("");
   const [showOrderView, setShowOrderView] = useState(false);
   const [orderedDailies, setOrderedDailies] = useState<PuzzleListItem[]>([]);
+  const [queueDragSrc, setQueueDragSrc] = useState<number | null>(null);
+  const [queueDragOver, setQueueDragOver] = useState<number | null>(null);
   const [showEasyBuilder, setShowEasyBuilder] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -838,25 +840,30 @@ export default function TicTacToeAdmin() {
     );
   }
 
-  /* ── Daily archive order view ── */
+  /* ── Daily queue view ── */
   if (showOrderView) {
-    const moveUp = (idx: number) => {
-      if (idx === 0) return;
+    const updateQueueItem = (id: string, patch: Partial<PuzzleListItem>) =>
+      setOrderedDailies((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+
+    const onDragStart = (idx: number) => setQueueDragSrc(idx);
+    const onDragOver = (e: React.DragEvent, idx: number) => {
+      e.preventDefault();
+      setQueueDragOver(idx);
+    };
+    const onDrop = (idx: number) => {
+      if (queueDragSrc === null || queueDragSrc === idx) { setQueueDragSrc(null); setQueueDragOver(null); return; }
       setOrderedDailies((prev) => {
         const next = [...prev];
-        [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+        const [removed] = next.splice(queueDragSrc, 1);
+        next.splice(idx, 0, removed);
         return next;
       });
+      setQueueDragSrc(null);
+      setQueueDragOver(null);
     };
-    const moveDown = (idx: number) => {
-      if (idx === orderedDailies.length - 1) return;
-      setOrderedDailies((prev) => {
-        const next = [...prev];
-        [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-        return next;
-      });
-    };
-    const saveOrder = async () => {
+    const onDragEnd = () => { setQueueDragSrc(null); setQueueDragOver(null); };
+
+    const saveQueue = async () => {
       setSaving(true);
       const total = orderedDailies.length;
       await Promise.all(
@@ -864,18 +871,24 @@ export default function TicTacToeAdmin() {
           fetch(`/api/admin/tictactoe/${p.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ display_order: total - idx }),
+            body: JSON.stringify({
+              display_order: total - idx,
+              is_active: p.is_active,
+              daily_date: p.daily_date || null,
+            }),
           })
         )
       );
       setPuzzles((prev) =>
         prev.map((p) => {
-          const pos = orderedDailies.findIndex((d) => d.id === p.id);
-          return pos >= 0 ? { ...p, display_order: total - pos } : p;
+          const q = orderedDailies.find((d) => d.id === p.id);
+          if (!q) return p;
+          const pos = orderedDailies.indexOf(q);
+          return { ...p, display_order: total - pos, is_active: q.is_active, daily_date: q.daily_date };
         })
       );
       setSaving(false);
-      setConfirmation("Archive order saved!");
+      setConfirmation("Queue saved!");
       setTimeout(() => setConfirmation(""), 3000);
       setShowOrderView(false);
     };
@@ -884,50 +897,88 @@ export default function TicTacToeAdmin() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-white">Daily Archive Order</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Top of list = first in archive. Use arrows to reorder.</p>
+            <h3 className="text-lg font-bold text-white">Daily Queue</h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Drag to reorder. Set a date for when each goes live. Toggle <span className="text-emerald-400 font-bold">Live</span> to make it visible in the archive.
+            </p>
           </div>
           <button onClick={() => setShowOrderView(false)} className="text-sm text-gray-400 hover:text-white">
             ← Back
           </button>
         </div>
+
         {orderedDailies.length === 0 ? (
           <p className="py-8 text-center text-gray-400">No daily puzzles yet.</p>
         ) : (
-          <div className="space-y-2">
-            {orderedDailies.map((p, idx) => (
-              <div key={p.id} className="flex items-center gap-3 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3">
-                <span className="text-sm font-black text-gray-500 w-6 text-center">{idx + 1}</span>
-                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <p className="font-bold text-white text-sm truncate">{p.title}</p>
-                  <p className="text-xs text-amber-400">{p.daily_date ?? "No date"}</p>
-                </div>
-                <div className="flex flex-col gap-1">
+          <div className="space-y-1.5">
+            {orderedDailies.map((p, idx) => {
+              const isDragging = queueDragSrc === idx;
+              const isDragOver = queueDragOver === idx && queueDragSrc !== idx;
+              return (
+                <div
+                  key={p.id}
+                  draggable
+                  onDragStart={() => onDragStart(idx)}
+                  onDragOver={(e) => onDragOver(e, idx)}
+                  onDrop={() => onDrop(idx)}
+                  onDragEnd={onDragEnd}
+                  className={`flex items-center gap-3 rounded-lg border px-3 py-3 transition-all select-none ${
+                    isDragging
+                      ? "opacity-40 border-gray-600 bg-gray-800"
+                      : isDragOver
+                        ? "border-indigo-500 bg-indigo-900/20 scale-[1.01]"
+                        : p.is_active
+                          ? "border-emerald-800/50 bg-gray-900"
+                          : "border-gray-700/50 bg-gray-900/60 opacity-70"
+                  }`}
+                >
+                  {/* Drag handle */}
+                  <span className="cursor-grab text-gray-500 text-sm select-none px-0.5" title="Drag to reorder">⠿</span>
+
+                  {/* Day label */}
+                  <span className="text-xs font-black text-gray-400 w-10 shrink-0 text-center">
+                    Day {idx + 1}
+                  </span>
+
+                  {/* Title */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-white text-sm truncate">{p.title}</p>
+                    <p className="text-[10px] text-gray-500">{p.difficulty}</p>
+                  </div>
+
+                  {/* Date input */}
+                  <div className="shrink-0">
+                    <input
+                      type="date"
+                      value={p.daily_date ?? ""}
+                      onChange={(e) => updateQueueItem(p.id, { daily_date: e.target.value || null })}
+                      className="rounded bg-gray-800 border border-gray-700 px-2 py-1 text-xs text-white focus:border-indigo-500 focus:outline-none w-32"
+                    />
+                  </div>
+
+                  {/* Live toggle */}
                   <button
-                    onClick={() => moveUp(idx)}
-                    disabled={idx === 0}
-                    className="rounded bg-gray-800 px-2 py-1 text-xs font-bold text-white hover:bg-gray-700 disabled:opacity-30"
+                    onClick={() => updateQueueItem(p.id, { is_active: !p.is_active })}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold border transition-all ${
+                      p.is_active
+                        ? "bg-emerald-600/20 border-emerald-600/50 text-emerald-400"
+                        : "bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500"
+                    }`}
                   >
-                    ▲
-                  </button>
-                  <button
-                    onClick={() => moveDown(idx)}
-                    disabled={idx === orderedDailies.length - 1}
-                    className="rounded bg-gray-800 px-2 py-1 text-xs font-bold text-white hover:bg-gray-700 disabled:opacity-30"
-                  >
-                    ▼
+                    {p.is_active ? "Live" : "Hidden"}
                   </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
+
         <button
-          onClick={saveOrder}
+          onClick={saveQueue}
           disabled={saving}
           className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Save Order"}
+          {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
     );
@@ -958,13 +1009,17 @@ export default function TicTacToeAdmin() {
                 .sort((a, b) => {
                   if (b.display_order !== a.display_order) return b.display_order - a.display_order;
                   if (a.daily_date && b.daily_date) return b.daily_date.localeCompare(a.daily_date);
+                  if (a.daily_date) return -1;
+                  if (b.daily_date) return 1;
                   return 0;
                 });
+              setQueueDragSrc(null);
+              setQueueDragOver(null);
               setOrderedDailies(dailies);
               setShowOrderView(true);
             }}
             className="rounded-lg border border-amber-600/50 bg-amber-900/20 px-4 py-2 text-sm font-bold text-amber-400 hover:bg-amber-900/30">
-            Archive Order
+            Daily Queue
           </button>
           <button onClick={() => setShowEasyBuilder(true)}
             className="rounded-lg border border-green-700 bg-green-900/30 px-4 py-2 text-sm font-bold text-green-400 hover:bg-green-900/50">

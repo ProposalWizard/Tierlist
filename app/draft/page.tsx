@@ -48,6 +48,9 @@ interface SavedProgress {
   players: DraftPlayer[];
   usedClubYears: string[];
   slotAssignments?: (number | undefined)[];
+  savedPhase?: "manage" | "arrange";
+  currentSeason?: number;
+  previousResults?: SeasonResult[];
 }
 
 interface DepartedPlayer {
@@ -90,14 +93,13 @@ function loadProgress(): SavedProgress | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const saved = JSON.parse(raw) as SavedProgress;
-    if (
-      saved.settings?.formation &&
-      Array.isArray(saved.players) &&
-      saved.players.length > 0 &&
-      saved.players.length < 14
-    ) {
-      return saved;
+    if (!saved.settings?.formation || !Array.isArray(saved.players)) return null;
+    // Post-draft save: full squad stored
+    if (saved.savedPhase === "manage" || saved.savedPhase === "arrange") {
+      if (saved.players.length >= 11) return saved;
     }
+    // Draft save: mid-pick
+    if (saved.players.length > 0 && saved.players.length < 14) return saved;
   } catch {
     // corrupted saved state — ignore it
   }
@@ -242,6 +244,28 @@ export default function DraftPage() {
   }, []);
 
   const scrollTop = useCallback(() => window.scrollTo({ top: 0 }), []);
+
+  // Auto-save when entering the squad manager phases (solo only)
+  useEffect(() => {
+    if (!settings || roomCode) return;
+    if (phase === "manage" && players.length >= 11) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          settings, players, usedClubYears: [],
+          savedPhase: "manage", currentSeason: 1, previousResults: [],
+        }));
+      } catch {}
+    }
+    if (phase === "arrange" && players.length >= 11) {
+      try {
+        const compact = previousResults.map(({ allFixtures: _, ...r }) => r);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          settings, players, usedClubYears: [],
+          savedPhase: "arrange", currentSeason, previousResults: compact,
+        }));
+      } catch {}
+    }
+  }, [phase, players, settings, currentSeason, previousResults, roomCode]);
 
   // Called on blur from the team name input — saves to profile if signed in
   const handleTeamNameChange = useCallback(async (name: string) => {
@@ -455,9 +479,16 @@ export default function DraftPage() {
   const handleResume = useCallback(() => {
     if (!resume) return;
     setSettings(resume.settings);
-    setPlayers([]);
-    setRespinsRemaining(resume.settings.respins ?? 0);
-    setPhase("draft");
+    setCurrentSeason(resume.currentSeason ?? 1);
+    setPreviousResults((resume.previousResults ?? []) as SeasonResult[]);
+    if (resume.savedPhase === "manage" || resume.savedPhase === "arrange") {
+      setPlayers(resume.players);
+      setPhase(resume.savedPhase);
+    } else {
+      setPlayers([]);
+      setRespinsRemaining(resume.settings.respins ?? 0);
+      setPhase("draft");
+    }
     scrollTop();
   }, [resume, scrollTop]);
 
@@ -480,7 +511,6 @@ export default function DraftPage() {
   );
 
   const handleDraftComplete = useCallback((picked: DraftPlayer[]) => {
-    clearProgress();
     setResume(null);
     setPlayers(picked);
     setPhase("manage");
@@ -855,12 +885,16 @@ export default function DraftPage() {
               <div className="flex items-center gap-3 bg-emerald-900/20 border border-emerald-700/40 rounded-xl px-4 py-3">
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold text-emerald-400">
-                    Draft in progress
+                    {resume.savedPhase === "manage"
+                      ? "Squad ready — Season 1 waiting"
+                      : resume.savedPhase === "arrange"
+                        ? `Pre-season — Season ${resume.currentSeason} ready`
+                        : "Draft in progress"}
                   </div>
                   <div className="text-xs text-white">
-                    {totalPicked}/14 picked &middot; {resume.settings.formation}
-                    {resume.settings.mode === "prime" && " · Prime"}
-                    {resume.settings.draftOrder === "club-first" && " · Club First"}
+                    {resume.savedPhase
+                      ? `${resume.players.length} players · ${resume.settings.formation}${resume.settings.mode === "prime" ? " · Prime" : ""}`
+                      : `${totalPicked}/14 picked · ${resume.settings.formation}${resume.settings.mode === "prime" ? " · Prime" : ""}${resume.settings.draftOrder === "club-first" ? " · Club First" : ""}`}
                   </div>
                 </div>
                 <button
