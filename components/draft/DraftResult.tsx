@@ -2259,7 +2259,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <div className="flex items-center text-[9px] font-bold tracking-widest text-white mb-1 px-1 uppercase">
                     <span className="w-5 text-center shrink-0">#</span>
                     <span className="flex-1 ml-1 min-w-0">Club</span>
-                    <span className="w-7 text-right shrink-0">OVR</span>
                     <span className="w-6 text-center shrink-0">W</span>
                     <span className="w-6 text-center shrink-0">D</span>
                     <span className="w-6 text-center shrink-0">L</span>
@@ -2291,9 +2290,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           }`}>{pos}</span>
                           <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-blue-300" : "text-white"}`}>
                             {team.name}
-                          </span>
-                          <span className={`w-7 text-right text-[10px] font-bold shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-gray-400"}`}>
-                            {team.isPlayer ? Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length) : team.strength}
                           </span>
                           <span className="w-6 text-center text-white shrink-0">{team.won}</span>
                           <span className="w-6 text-center text-white shrink-0">{team.drawn}</span>
