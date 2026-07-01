@@ -122,8 +122,8 @@ export default function Season2Overview({
                   : "bg-red-900/10 border-red-800/30"
                 }`}
               >
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(dp.player.assignedPosition)} text-white`}>
-                  {dp.player.assignedPosition}
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${dp.player.isSub ? "bg-purple-600" : getPositionColor(dp.player.assignedPosition)} text-white`}>
+                  {dp.player.isSub ? "SUB" : dp.player.assignedPosition}
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm">{dp.player.name}</div>
@@ -260,8 +260,8 @@ export default function Season2Overview({
                       </svg>
                     </div>
                   )}
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
-                    {p.assignedPosition}
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${p.isSub ? "bg-purple-600" : getPositionColor(p.assignedPosition)} text-white`}>
+                    {p.isSub ? "SUB" : p.assignedPosition}
                   </span>
                   <div className="mt-2">
                     <div className="font-bold text-sm">{p.name}</div>

@@ -974,6 +974,7 @@ export default function DraftPage() {
           formationName={settings?.formation}
           seasonNumber={currentSeason}
           isMultiplayer={!!roomCode}
+          initialSpeed={settings?.simulationSpeed ?? 1}
         />
       )}
       {phase === "result" && (players.length > 0 || preComputedSeason !== null) && (
@@ -1043,6 +1044,7 @@ export default function DraftPage() {
           formationName={settings?.formation}
           seasonNumber={currentSeason}
           isMultiplayer={!!roomCode}
+          initialSpeed={settings?.simulationSpeed ?? 1}
         />
       )}
     </div>

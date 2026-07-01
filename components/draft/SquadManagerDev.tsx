@@ -13,6 +13,7 @@ interface Props {
   formationName?: string;
   seasonNumber?: number;
   isMultiplayer?: boolean;
+  initialSpeed?: 0.5 | 1 | 1.5;
 }
 
 const ordinal = (n: number) => {
@@ -49,10 +50,10 @@ const getFlagUrl = (nationality: string) => {
   return code ? `https://flagcdn.com/16x12/${code}.png` : null;
 };
 
-export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1, isMultiplayer = false }: Props) {
+export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1, isMultiplayer = false, initialSpeed }: Props) {
   const [squad, setSquad] = useState<DraftPlayer[]>(() => [...players]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const [simSpeed, setSimSpeed] = useState<0.5 | 1 | 1.5>(1);
+  const [simSpeed, setSimSpeed] = useState<0.5 | 1 | 1.5>(initialSpeed ?? 1);
   const formation = formationName ? FORMATIONS.find(f => f.name === formationName) : null;
 
   // Drag state — ref so it doesn't cause re-renders during drag

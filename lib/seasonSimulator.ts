@@ -3839,9 +3839,10 @@ export function calculateSeasonOdds(
 
 export function computeTeamStrength(players: DraftPlayer[]): { teamStrength: number; avgOvr: number } {
   const starters = players.filter(p => !p.isSub);
-  const ratings = computePhaseRatings(starters.length > 0 ? starters : players);
-  const total = players.reduce((sum, p) => sum + (Number(p.overall) || 70), 0);
-  const avgOvr = Math.round(total / (players.length || 1));
+  const starterSource = starters.length > 0 ? starters : players;
+  const ratings = computePhaseRatings(starterSource);
+  const total = starterSource.reduce((sum, p) => sum + (Number(p.overall) || 70), 0);
+  const avgOvr = Math.round(total / (starterSource.length || 1));
   return { teamStrength: Math.round(ratings.teamStrength * 10) / 10, avgOvr };
 }
 
