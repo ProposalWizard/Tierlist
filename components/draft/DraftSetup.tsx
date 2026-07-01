@@ -6,13 +6,37 @@ import { createClient } from "@/lib/supabase/client";
 import ObjectivesToast from "@/components/ObjectivesToast";
 import type { DraftSettings } from "@/app/draft/page";
 
+function TeamNameInput({ value, onChange }: { value: string; onChange: (name: string) => void }) {
+  const [localValue, setLocalValue] = useState(value);
+  useEffect(() => { setLocalValue(value); }, [value]);
+  return (
+    <div className="mb-6 sm:mb-8">
+      <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
+        Your Team Name
+      </label>
+      <input
+        type="text"
+        value={localValue}
+        onChange={e => setLocalValue(e.target.value.slice(0, 50))}
+        onBlur={() => { const v = localValue.trim(); if (v) onChange(v); }}
+        placeholder="KNOWITBALL FC"
+        maxLength={50}
+        className="w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-sm font-bold text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+      />
+      <p className="text-[10px] text-gray-500 mt-1.5">Shown in league tables across all your drafts</p>
+    </div>
+  );
+}
+
 interface Props {
   onStart: (settings: DraftSettings) => void;
   onCreateRoom?: (settings: DraftSettings) => void;
   onJoinRoom?: (code: string, settings: DraftSettings) => void;
+  teamName?: string;
+  onTeamNameChange?: (name: string) => void;
 }
 
-export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props) {
+export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName, onTeamNameChange }: Props) {
   const [formation, setFormation] = useState("4-3-3");
   const [eraStart, setEraStart] = useState(2007);
   const [eraEnd, setEraEnd] = useState(2026);
@@ -142,6 +166,14 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom }: Props)
               </div>
             </div>
           </div>
+        )}
+
+        {/* Team Name */}
+        {onTeamNameChange && (
+          <TeamNameInput
+            value={teamName ?? ""}
+            onChange={onTeamNameChange}
+          />
         )}
 
         {/* Formation */}

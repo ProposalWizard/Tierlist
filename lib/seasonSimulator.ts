@@ -1174,8 +1174,9 @@ function simulateFaCup(
   ratings: PhaseRatings,
   allCupTeams: { name: string; strength: number }[],
   rng: () => number,
+  playerTeamOverride?: string,
 ): FaCupResult {
-  const playerTeamName = 'KNOWITBALL FC';
+  const playerTeamName = playerTeamOverride ?? 'KNOWITBALL FC';
 
   // Build 32-team bracket with random seeded draw
   const bracket = allCupTeams.map(t => ({ ...t }));
@@ -2238,8 +2239,9 @@ function simulateChampionsLeague(
   opponents: { name: string; strength: number }[],
   rng: () => number,
   uelWinnerQualifies?: boolean,
+  playerTeamOverride?: string,
 ): UCLResult {
-  const playerTeamName = 'KNOWITBALL FC';
+  const playerTeamName = playerTeamOverride ?? 'KNOWITBALL FC';
   const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
 
   const qualifiesThroughLeague = playerFinish >= 1 && playerFinish <= 5;
@@ -2545,8 +2547,9 @@ function simulateEuropaLeague(
   opponents: { name: string; strength: number }[],
   rng: () => number,
   faCupWinnerQualifies?: boolean,
+  playerTeamOverride?: string,
 ): UCLResult {
-  const playerTeamName = 'KNOWITBALL FC';
+  const playerTeamName = playerTeamOverride ?? 'KNOWITBALL FC';
   const playerFinish = previousLeagueTable.findIndex(t => t.isPlayer) + 1;
 
   if (!faCupWinnerQualifies && (playerFinish < 6 || playerFinish > 7)) {
@@ -2878,6 +2881,7 @@ function simulateSuperCup(
   prevResult: SeasonResult,
   opponents: { name: string; strength: number }[],
   rng: () => number,
+  playerTeamOverride?: string,
 ): SuperCupResult | undefined {
   const { uclWinner, uelWinner, uclWinnerStrength, uelWinnerStrength } = determinePreviousWinners(prevResult, opponents, rng);
   if (!uclWinner || !uelWinner) return undefined;
@@ -2937,10 +2941,11 @@ function simulateCharityShield(
   previousFaCupWinner: string | undefined,
   opponents: { name: string; strength: number }[],
   rng: () => number,
+  playerTeamOverride?: string,
 ): CharityShieldResult | undefined {
   if (!previousLeagueTable || !previousFaCupWinner) return undefined;
 
-  const playerTeamName = 'KNOWITBALL FC';
+  const playerTeamName = playerTeamOverride ?? 'KNOWITBALL FC';
   const plWinner = previousLeagueTable[0]?.name;
   const plRunnerUp = previousLeagueTable[1]?.name;
   if (!plWinner) return undefined;
@@ -3080,6 +3085,7 @@ export function simulateSeason(
   seasonNumber?: number,
   previousLeagueTable?: LeagueTeam[],
   previousSeasonResult?: SeasonResult,
+  teamNameOverride?: string,
 ): SeasonResult {
   const seasonSeed = (seasonNumber ?? 1) * 100;
   const seed = players.reduce((acc, p) => acc + p.overall * 7 + p.name.length * 13, 42 + seasonSeed);
@@ -3097,7 +3103,7 @@ export function simulateSeason(
 
   const ratings = computePhaseRatings(starters);
 
-  const playerTeamName = 'KNOWITBALL FC';
+  const playerTeamName = teamNameOverride ?? 'KNOWITBALL FC';
 
   // Season-wide form modifiers: each team (including player) gets a random
   // modifier that persists all season, simulating good/bad campaigns.
@@ -3183,15 +3189,15 @@ export function simulateSeason(
     usedNames.add(club.name);
     allFaCupTeams.push({ name: club.name, strength: club.strength });
   } }
-  const faCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
+  const faCup = simulateFaCup(starters, ratings, allFaCupTeams.slice(0, 32), rng, playerTeamName);
 
   // League Cup: same 32 teams, separate draw via rng; semi-final is 2-legged
-  const leagueCup = simulateLeagueCup(starters, ratings, allFaCupTeams.slice(0, 32), rng);
+  const leagueCup = simulateLeagueCup(starters, ratings, allFaCupTeams.slice(0, 32), rng, playerTeamName);
 
   // Super Cup (if won UCL or UEL last season)
   let superCup: SuperCupResult | undefined;
   if (previousSeasonResult) {
-    superCup = simulateSuperCup(players, ratings, previousSeasonResult, opponents, rng);
+    superCup = simulateSuperCup(players, ratings, previousSeasonResult, opponents, rng, playerTeamName);
   }
 
   // Charity Shield (PL Winner vs FA Cup Winner from previous season)
@@ -3200,7 +3206,7 @@ export function simulateSeason(
     charityShield = simulateCharityShield(
       players, ratings, previousLeagueTable,
       previousSeasonResult.faCup.faCupWinner,
-      opponents, rng,
+      opponents, rng, playerTeamName,
     );
   }
 
@@ -3221,12 +3227,12 @@ export function simulateSeason(
     const faCupWinnerQualifiesForEL = wonFACupLastSeason && playerFinish > 7;
     const leagueCupWinnerQualifiesForEL = wonLeagueCupLastSeason && playerFinish > 7;
 
-    ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng, uelWinnerQualifies || uclWinnerQualifies);
+    ucl = simulateChampionsLeague(players, ratings, previousLeagueTable, opponents, rng, uelWinnerQualifies || uclWinnerQualifies, playerTeamName);
     if (!ucl.qualified) {
       if (playerFinish >= 6 && playerFinish <= 7) {
-        uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng);
+        uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng, false, playerTeamName);
       } else if (faCupWinnerQualifiesForEL || leagueCupWinnerQualifiesForEL) {
-        uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng, true);
+        uel = simulateEuropaLeague(players, ratings, previousLeagueTable, opponents, rng, true, playerTeamName);
       }
     }
 

@@ -24,6 +24,7 @@ interface Props {
   mode?: "normal" | "prime";
   revealStartTime?: number;
   speedMultiplier?: 0.5 | 1 | 1.5;
+  playerTeamName?: string;
 }
 
 function formatGoalScorers(scorers: { player: string; minute: number }[]): string {
@@ -596,10 +597,10 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1 }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1, playerTeamName }: Props) {
   const computedSeason = useMemo(
-    () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined),
-    [players, seasonNumber, previousResult, preComputedSeason],
+    () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined, playerTeamName),
+    [players, seasonNumber, previousResult, preComputedSeason, playerTeamName],
   );
   const season = computedSeason;
   const [showMatches, setShowMatches] = useState(false);
