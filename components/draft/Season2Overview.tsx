@@ -304,12 +304,7 @@ export default function Season2Overview({
             <div className="w-px h-10 bg-gray-800" />
             <div className="text-center">
               <div className="text-2xl font-black text-blue-400">{Math.round(teamStrength)}</div>
-              <div className="text-[10px] font-bold tracking-widest text-white uppercase mt-0.5">Team Rating</div>
-            </div>
-            <div className="w-px h-10 bg-gray-800" />
-            <div className="text-center">
-              <div className="text-2xl font-black text-white">{season2Players.filter(p => !p.isSub).length}</div>
-              <div className="text-[10px] font-bold tracking-widest text-white uppercase mt-0.5">Starters</div>
+              <div className="text-[10px] font-bold tracking-widest text-white uppercase mt-0.5">Starting 11</div>
             </div>
           </div>
         );
