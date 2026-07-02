@@ -11,13 +11,24 @@ export async function POST(req: Request) {
 
   const service = createServiceClient();
 
-  // Generate unique 6-char code
-  let code = "";
+  // Generate unique 6-char code. Build it char-by-char from a fixed alphabet —
+  // Math.random().toString(36).substring(2,8) can yield fewer than 6 chars when
+  // the random expansion is short, producing a room that the join screen (which
+  // requires exactly 6 chars) can never accept.
+  const CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const makeCode = () => {
+    let c = "";
+    for (let i = 0; i < 6; i++) {
+      c += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+    }
+    return c;
+  };
+  let code = makeCode();
   let attempts = 0;
   while (attempts < 10) {
-    code = Math.random().toString(36).substring(2, 8).toUpperCase();
     const { data: existing } = await service.from("draft_rooms").select("id").eq("code", code).maybeSingle();
     if (!existing) break;
+    code = makeCode();
     attempts++;
   }
 

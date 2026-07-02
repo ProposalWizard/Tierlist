@@ -85,32 +85,26 @@ export async function GET(req: NextRequest) {
 
     const playerMap = new Map(allPlayers.map((p) => [p.wikidata_id as string, p]));
 
-    // Build cells
+    // Build cells as a flat array of 9 (row-major order) to match the UI's gridCells[ri*3+ci] access
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cells: any[][][] = [];
-    let idx = 0;
-    for (let r = 0; r < 3; r++) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rowCells: any[][] = [];
-      for (let c = 0; c < 3; c++) {
-        const ids = cellIdArrays[idx++];
-        const players = ids
-          .map((pid) => {
-            const p = playerMap.get(pid);
-            if (!p) return null;
-            return {
-              id: p.wikidata_id as string,
-              name: p.name as string,
-              nationality: countryMap.get((p.country_id as string) ?? "") ?? "",
-              position: (p.position as string) ?? "",
-              dob: "",
-              image: null,
-            };
-          })
-          .filter(Boolean);
-        rowCells.push(players);
-      }
-      cells.push(rowCells);
+    const cells: any[][] = [];
+    for (let i = 0; i < cellIdArrays.length; i++) {
+      const ids = cellIdArrays[i];
+      const players = ids
+        .map((pid) => {
+          const p = playerMap.get(pid);
+          if (!p) return null;
+          return {
+            id: p.wikidata_id as string,
+            name: p.name as string,
+            nationality: countryMap.get((p.country_id as string) ?? "") ?? "",
+            position: (p.position as string) ?? "",
+            dob: "",
+            image: null,
+          };
+        })
+        .filter(Boolean);
+      cells.push(players);
     }
 
     return NextResponse.json({ cells, rowClubs, colClubs });

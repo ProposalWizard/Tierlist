@@ -159,13 +159,21 @@ export async function GET(request: NextRequest) {
       const { data: allEditions } = await supabase
         .from("sofifa_players")
         .select("sofifa_id, overall, manual_overall, potential, positions, manual_positions, age, attributes")
-        .in("sofifa_id", ids)
-        .order("overall", { ascending: false });
+        .in("sofifa_id", ids);
 
       if (allEditions) {
+        // Pick the highest-rated edition per player by RESOLVING each row's OVR
+        // in JS. We can't rely on `.order("overall")` because only FC26 rows
+        // have `overall` set — older editions keep OVR in attributes, and
+        // Postgres sorts NULLs first on DESC, so ordering would pick a blank row.
+        const rowOvr = (row: typeof allEditions[0]): number => {
+          const a = (row.attributes as Record<string, unknown>) ?? {};
+          return row.manual_overall || row.overall || parseAttr(a.overall) || parseAttr(a.attr_sort) || parseAttr(a.attr_oa) || 0;
+        };
         const bestById = new Map<string, typeof allEditions[0]>();
         for (const row of allEditions) {
-          if (!bestById.has(row.sofifa_id)) {
+          const existing = bestById.get(row.sofifa_id);
+          if (!existing || rowOvr(row) > rowOvr(existing)) {
             bestById.set(row.sofifa_id, row);
           }
         }

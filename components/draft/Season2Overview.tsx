@@ -80,13 +80,16 @@ export default function Season2Overview({
     }
   }, [allRevealed, upgradeablePlayers, selectedTraining]);
 
-  // Auto-continue if both players are maxed
+  // Auto-continue whenever no player can be trained. This covers both maxed
+  // squads AND the case where fewer than 2 players have known age (age is 0 for
+  // older FIFA imports) — otherwise `selectedTraining` can never be set and the
+  // Continue button stays permanently disabled, soft-locking the pre-season.
   useEffect(() => {
-    if (allRevealed && allMaxed) {
+    if (allRevealed && upgradeablePlayers.length === 0) {
       const timer = setTimeout(() => onContinue(""), 1500);
       return () => clearTimeout(timer);
     }
-  }, [allRevealed, allMaxed, onContinue]);
+  }, [allRevealed, upgradeablePlayers.length, onContinue]);
 
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">

@@ -19,6 +19,10 @@
 import type { MetadataRoute } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 
+// Generated on demand so newly created tierlists appear without a redeploy.
+// (Kept dynamic rather than ISR because the DB isn't reachable at build time.)
+export const dynamic = "force-dynamic";
+
 const BASE_URL = "https://knowitball.co.uk";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

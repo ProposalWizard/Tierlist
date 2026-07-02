@@ -119,6 +119,9 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
   const [squareOwner, setSquareOwner] = useState<Map<string, 0 | 1>>(new Map());
   const [winner, setWinner] = useState<0 | 1 | null>(null);
 
+  const scoreSavedRef = useRef(false);
+  const startedAtMs = useRef<number>(0);
+
   const totalAnswers = (() => {
     let total = 0;
     for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) total += puzzle.grid[r][c].answers.length;
@@ -143,6 +146,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
     setTimeLeft(timer || 0);
     setGameStarted(true);
     setFoundAnswers(new Map());
+    startedAtMs.current = Date.now();
   };
 
   const startMultiGame = () => {
@@ -169,6 +173,23 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [mode, gameStarted, gameOver, timerOption]);
+
+  // Save score to archive when solo game ends
+  useEffect(() => {
+    if (!gameOver || mode !== "solo" || scoreSavedRef.current) return;
+    scoreSavedRef.current = true;
+    const elapsedMs = startedAtMs.current > 0 ? Date.now() - startedAtMs.current : 0;
+    fetch(`/api/tictactoe/${puzzle.id}/score`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        score: totalFound,
+        max_score: totalAnswers,
+        hints_used: 0,
+        time_seconds: Math.round(elapsedMs / 1000),
+      }),
+    }).catch(() => {});
+  }, [gameOver, mode, totalFound, totalAnswers, puzzle.id]);
 
   const finishSoloGame = useCallback(() => {
     setGameOver(true);
@@ -577,7 +598,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                             <p className="text-base font-black text-gray-900 md:text-2xl">
                               {sq.answers.length}
                             </p>
-                            <p className="text-[8px] font-bold uppercase tracking-wider text-white md:text-[10px]">
+                            <p className="text-[8px] font-bold uppercase tracking-wider text-gray-900 md:text-[10px]">
                               Player{sq.answers.length !== 1 ? "s" : ""}
                             </p>
                           </div>
@@ -585,7 +606,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
                       </div>
                       <div className="w-full text-center">
                         <span className={`text-[8px] font-bold md:text-[10px] ${
-                          allFound ? "text-amber-800" : found.length > 0 ? "text-green-800" : "text-white"
+                          allFound ? "text-amber-800" : found.length > 0 ? "text-green-800" : "text-gray-900"
                         }`}>
                           {found.length}/{sq.answers.length}
                         </span>

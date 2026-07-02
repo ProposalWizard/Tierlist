@@ -45,6 +45,49 @@ export async function POST(
   // Use service client to bypass RLS for the upsert
   const service = createServiceClient();
 
+  // Validate the image actually belongs to this tierlist and the tier_label is
+  // one of the tierlist's real tiers — otherwise junk image_ids/labels pollute
+  // the aggregate vote counts.
+  const [{ data: image }, { data: tierlist }] = await Promise.all([
+    service
+      .from("vote_tierlist_images")
+      .select("id, vote_tierlist_id")
+      .eq("id", image_id)
+      .maybeSingle(),
+    service
+      .from("vote_tierlists")
+      .select("tiers")
+      .eq("id", id)
+      .maybeSingle(),
+  ]);
+
+  if (!image || image.vote_tierlist_id !== id) {
+    return NextResponse.json({ error: "Image does not belong to this tierlist" }, { status: 400 });
+  }
+
+  const validLabels = new Set(
+    Array.isArray(tierlist?.tiers)
+      ? (tierlist!.tiers as { label?: string }[]).map((t) => t?.label).filter(Boolean)
+      : []
+  );
+  if (validLabels.size > 0 && !validLabels.has(tier_label)) {
+    return NextResponse.json({ error: "Invalid tier label" }, { status: 400 });
+  }
+
+  // Prevent an anonymous request from overwriting a logged-in user's vote by
+  // passing their user_id (which is publicly discoverable) as voter_id.
+  if (isAnonymous) {
+    const { data: existingVote } = await service
+      .from("vote_tierlist_votes")
+      .select("is_anonymous")
+      .eq("image_id", image_id)
+      .eq("voter_id", voterId)
+      .maybeSingle();
+    if (existingVote && existingVote.is_anonymous === false) {
+      return NextResponse.json({ error: "Cannot modify this vote" }, { status: 403 });
+    }
+  }
+
   const { error: upsertError } = await service
     .from("vote_tierlist_votes")
     .upsert(

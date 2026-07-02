@@ -579,6 +579,7 @@ export default function TierlistBoard({
       ...prev,
       [playerId]: { ...prev[playerId], label: label || undefined },
     }));
+    setHasModified(true);
     setLabelingId(null);
   }
 
@@ -590,6 +591,7 @@ export default function TierlistBoard({
       [playerId]: { ...prev[playerId], image_url: dataUrl },
     }));
     setFileMap((prev) => ({ ...prev, [playerId]: file }));
+    setHasModified(true);
     setCroppingId(null);
   }
 

@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const maxDuration = 30;
+// Force dynamic: this route reads the live DB, so it must never be frozen into
+// a build-time static snapshot (which also can't reach Supabase during build).
+export const dynamic = "force-dynamic";
 
 // Match the English Premier League only. Older FIFA editions call it
 // "English Premier League"; newer ones "Premier League". A plain

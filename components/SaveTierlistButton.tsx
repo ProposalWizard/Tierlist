@@ -28,14 +28,20 @@ export default function SaveTierlistButton({ tierlistId, initialSaved = false, i
     setLoading(true);
     setSaved((v) => !v);
 
-    const res = await fetch(`/api/tierlists/${tierlistId}/save`, { method: "POST" });
-    if (res.ok) {
-      const data = await res.json();
-      setSaved(data.saved);
-    } else {
+    try {
+      const res = await fetch(`/api/tierlists/${tierlistId}/save`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setSaved(data.saved);
+      } else {
+        setSaved((v) => !v);
+      }
+    } catch {
+      // Network error — roll back the optimistic flip
       setSaved((v) => !v);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   if (!authed) return null;

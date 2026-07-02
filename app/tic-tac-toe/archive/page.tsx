@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/tic-tac-toe/archive" },
 };
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 interface PuzzleRow {
   id: string;

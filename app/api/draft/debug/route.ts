@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const maxDuration = 30;
+// Diagnostic endpoint — must always reflect the live DB, never a build-time snapshot.
+export const dynamic = "force-dynamic";
 
 // Diagnostic endpoint for the PL Draft game. Hit /api/draft/debug to see:
 //  - how many players are in the DB and per fifa_year

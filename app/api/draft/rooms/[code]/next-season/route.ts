@@ -21,6 +21,13 @@ export async function POST(
 
   if (!room) return new Response("Room not found", { status: 404 });
 
+  // Only the host may advance the room to the next season — otherwise any
+  // authenticated user who knows the 6-char code could reset an in-progress
+  // game and wipe every player's season result.
+  if (room.host_id !== user.id) {
+    return new Response("Only the host can start the next season", { status: 403 });
+  }
+
   // Idempotent: only advance if the room is complete and hasn't already moved to the next season
   if (room.status !== "complete" || (room.season_number ?? 1) >= nextSeasonNumber) {
     return Response.json({ ok: true, skipped: true });
