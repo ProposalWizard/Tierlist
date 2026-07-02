@@ -51,6 +51,7 @@ interface SavedProgress {
   savedPhase?: "manage" | "arrange";
   currentSeason?: number;
   previousResults?: SeasonResult[];
+  respinsRemaining?: number;
 }
 
 interface DepartedPlayer {
@@ -120,6 +121,8 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
   onSkip: () => void;
   seasonNumber: number;
 }) {
+  const [pendingSell, setPendingSell] = useState<DraftPlayer | null>(null);
+
   const sorted = useMemo(
     () => [...players].sort((a, b) =>
       (a.isSub === b.isSub ? (SELL_POSITION_ORDER[a.assignedPosition] ?? 5) - (SELL_POSITION_ORDER[b.assignedPosition] ?? 5) : a.isSub ? 1 : -1)
@@ -127,8 +130,45 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
     [players],
   );
 
+  const handleClick = (p: DraftPlayer) => {
+    if (!p.isSub) {
+      setPendingSell(p);
+    } else {
+      onSell(p);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">
+      {/* Confirmation modal for selling a starter */}
+      {pendingSell && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 border border-red-500/40 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h2 className="text-lg font-black text-white mb-1">Sell Starter?</h2>
+            <p className="text-gray-300 text-sm mb-1">
+              <span className="font-bold text-white">{pendingSell.name}</span> is in your starting XI.
+            </p>
+            <p className="text-gray-400 text-sm mb-5">
+              You&apos;ll spin for a replacement, but if your draft luck is poor you could end up with a weaker squad.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPendingSell(null)}
+                className="flex-1 py-3 rounded-xl border border-gray-700 text-gray-300 font-bold hover:bg-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { onSell(pendingSell); setPendingSell(null); }}
+                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-colors"
+              >
+                Sell
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-red-500/30 bg-red-500/5 mb-4">
           <span className="text-xs font-bold tracking-widest uppercase text-red-400">
@@ -153,7 +193,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
             return (
               <button
                 key={i}
-                onClick={() => onSell(p)}
+                onClick={() => handleClick(p)}
                 className="w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left hover:bg-red-900/30 border-2 border-transparent hover:border-red-400/50 active:scale-[0.98]"
               >
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-9 text-center ${isSub ? "bg-purple-500/20 text-purple-400" : `${getPositionColor(p.assignedPosition)} text-white`}`}>
@@ -486,7 +526,8 @@ export default function DraftPage() {
       setPhase(resume.savedPhase);
     } else {
       setPlayers([]);
-      setRespinsRemaining(resume.settings.respins ?? 0);
+      // Restore the actual remaining count saved mid-draft; fall back to full allocation only for old saves that lack it
+      setRespinsRemaining(resume.respinsRemaining ?? resume.settings.respins ?? 0);
       setPhase("draft");
     }
     scrollTop();
@@ -503,11 +544,11 @@ export default function DraftPage() {
       try {
         localStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify({ settings, players: picked, usedClubYears, slotAssignments })
+          JSON.stringify({ settings, players: picked, usedClubYears, slotAssignments, respinsRemaining })
         );
       } catch {}
     },
-    [settings]
+    [settings, respinsRemaining]
   );
 
   const handleDraftComplete = useCallback((picked: DraftPlayer[]) => {
