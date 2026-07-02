@@ -1,24 +1,24 @@
 /**
- * app/find/page.tsx — Find a Tierlist page
- * Shows all tierlists + vote tierlists with search & category filter.
+ * app/find/page.tsx — Find a Ranking page
+ * Shows all rankings (regular, vote, blind) with search & category filter.
  */
 
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Find a Tierlist",
+  title: "Find a Ranking",
   description:
-    "Browse and search all football tierlists and community vote rankings. Filter by category to find the tierlist you want to play.",
+    "Browse and search all football rankings, community vote rankings, and blind rankings. Filter by category.",
   openGraph: {
-    title: "Find a Tierlist",
+    title: "Find a Ranking",
     description:
-      "Browse and search all football tierlists and community vote rankings.",
+      "Browse and search all football rankings and community vote rankings.",
   },
   twitter: {
     card: "summary",
-    title: "Find a Tierlist",
+    title: "Find a Ranking",
     description:
-      "Browse and search all football tierlists and community vote rankings.",
+      "Browse and search all football rankings and community vote rankings.",
   },
   alternates: { canonical: "/find" },
 };
@@ -35,14 +35,19 @@ export default async function FindPage({
   const { category: initialCategory } = await searchParams;
   const service = createServiceClient();
 
-  const [tierlistsRes, votelistsRes, likesCountRes, profilesRes] = await Promise.all([
+  const [tierlistsRes, votelistsRes, blindsRes, likesCountRes, profilesRes] = await Promise.all([
     service
       .from("tierlists")
-      .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, created_by")
+      .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, created_by, linked_vote_tierlist_id, linked_blind_ranking_id")
       .order("created_at", { ascending: false }),
     service
       .from("vote_tierlists")
       .select("id, title, category, cover_image_url, created_at, created_by")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false }),
+    service
+      .from("blind_rankings")
+      .select("id, title, category, cover_image_url, created_at")
       .eq("is_active", true)
       .order("created_at", { ascending: false }),
     service.from("tierlist_likes").select("tierlist_id"),
@@ -61,43 +66,90 @@ export default async function FindPage({
     if (p.username) creatorMap.set(p.user_id, p.username);
   }
 
-  const likedIds = new Set<string>();
+  // Sets of vote/blind IDs linked to a regular ranking (to avoid duplicate cards)
+  type TierlistRow = {
+    id: string;
+    title: string;
+    category: string | null;
+    additional_categories?: string[] | null;
+    cover_image_url: string | null;
+    view_count: number | null;
+    created_at: string;
+    created_by: string | null;
+    linked_vote_tierlist_id: string | null;
+    linked_blind_ranking_id: string | null;
+  };
+  const tierlists = (tierlistsRes.data ?? []) as TierlistRow[];
 
-  // Build unified list
-  const tierlists: FindItem[] = (tierlistsRes.data ?? []).map((tl) => ({
-    id: tl.id,
-    title: tl.title,
-    category: tl.category,
-    additional_categories: (tl as typeof tl & { additional_categories?: string[] }).additional_categories ?? [],
-    cover_image_url: tl.cover_image_url,
-    view_count: tl.view_count ?? 0,
-    like_count: likeCountMap.get(tl.id) ?? 0,
-    created_at: tl.created_at,
-    creator: tl.created_by ? (creatorMap.get(tl.created_by) ?? null) : null,
-    is_live: false,
-  }));
+  const linkedVoteIds = new Set<string>(
+    tierlists.map(t => t.linked_vote_tierlist_id).filter((x): x is string => !!x)
+  );
+  const linkedBlindIds = new Set<string>(
+    tierlists.map(t => t.linked_blind_ranking_id).filter((x): x is string => !!x)
+  );
 
-  const votelists: FindItem[] = (votelistsRes.data ?? []).map((vl) => ({
-    id: vl.id,
-    title: vl.title,
-    category: vl.category,
-    cover_image_url: vl.cover_image_url,
-    view_count: 0,
-    like_count: 0,
-    created_at: vl.created_at,
-    creator: vl.created_by ? (creatorMap.get(vl.created_by) ?? null) : null,
-    is_live: true,
-  }));
+  const regularItems: FindItem[] = tierlists.map((tl) => {
+    const hasLinkedVote = !!(tl.linked_vote_tierlist_id && linkedVoteIds.has(tl.linked_vote_tierlist_id));
+    const hasLinkedBlind = !!(tl.linked_blind_ranking_id && linkedBlindIds.has(tl.linked_blind_ranking_id));
+    return {
+      id: tl.id,
+      title: tl.title,
+      category: tl.category,
+      additional_categories: tl.additional_categories ?? [],
+      cover_image_url: tl.cover_image_url,
+      view_count: tl.view_count ?? 0,
+      like_count: likeCountMap.get(tl.id) ?? 0,
+      created_at: tl.created_at,
+      creator: tl.created_by ? (creatorMap.get(tl.created_by) ?? null) : null,
+      is_live: false as const,
+      is_blind: false as const,
+      linked_vote_id: hasLinkedVote ? tl.linked_vote_tierlist_id : null,
+      linked_blind_id: hasLinkedBlind ? tl.linked_blind_ranking_id : null,
+    };
+  });
 
-  // All items: vote tierlists first (they're special), then regular
-  const allItems: FindItem[] = [...votelists, ...tierlists];
+  const voteItems: FindItem[] = (votelistsRes.data ?? [])
+    .filter(vl => !linkedVoteIds.has(vl.id))
+    .map((vl) => ({
+      id: vl.id,
+      title: vl.title,
+      category: vl.category,
+      cover_image_url: vl.cover_image_url,
+      view_count: 0,
+      like_count: 0,
+      created_at: vl.created_at,
+      creator: vl.created_by ? (creatorMap.get(vl.created_by) ?? null) : null,
+      is_live: true as const,
+      is_blind: false as const,
+      linked_vote_id: null,
+      linked_blind_id: null,
+    }));
+
+  const blindItems: FindItem[] = (blindsRes.data ?? [])
+    .filter(br => !linkedBlindIds.has(br.id))
+    .map((br) => ({
+      id: br.id,
+      title: br.title,
+      category: br.category,
+      cover_image_url: br.cover_image_url,
+      view_count: 0,
+      like_count: 0,
+      created_at: br.created_at,
+      creator: null,
+      is_live: false as const,
+      is_blind: true as const,
+      linked_vote_id: null,
+      linked_blind_id: null,
+    }));
+
+  const allItems: FindItem[] = [...voteItems, ...blindItems, ...regularItems];
 
   // Unique categories
   const categorySet = new Set<string>();
   for (const item of allItems) {
     if (item.category) categorySet.add(item.category);
-    if (!item.is_live) {
-      for (const extra of (item as typeof item & { additional_categories?: string[] }).additional_categories ?? []) {
+    if (!item.is_live && !item.is_blind) {
+      for (const extra of (item as Extract<FindItem, { is_live: false; is_blind: false }>).additional_categories ?? []) {
         if (extra) categorySet.add(extra);
       }
     }
@@ -109,9 +161,9 @@ export default async function FindPage({
       {/* ── Header ── */}
       <div className="border-b border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 px-4 py-8">
         <div className="mx-auto max-w-7xl">
-          <h1 className="text-3xl font-black tracking-tight text-white">Find a Tierlist</h1>
-          <p className="mt-1 text-sm text-white">
-            {allItems.length} tierlists available
+          <h1 className="text-3xl font-black tracking-tight text-white">Find a Ranking</h1>
+          <p className="mt-1 text-sm text-gray-400">
+            {allItems.length} {allItems.length === 1 ? "ranking" : "rankings"} available
           </p>
         </div>
       </div>
@@ -122,7 +174,7 @@ export default async function FindPage({
           items={allItems}
           categories={categories}
           initialCategory={initialCategory}
-          likedIds={likedIds}
+          likedIds={new Set()}
         />
       </main>
     </div>
