@@ -33,25 +33,34 @@ interface ScoreRow {
   completed_at: string;
 }
 
-const DIFFICULTY_STARS: Record<string, number> = {
-  easy: 1,
-  medium: 3,
-  extreme: 5,
-};
+interface RatingRow {
+  puzzle_id: string;
+  rating: number;
+}
 
-function Stars({ count }: { count: number }) {
+function Stars({ rating }: { rating: number }) {
+  const starPath = "M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.176 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.063 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.957z";
   return (
     <div className="flex gap-px">
-      {Array.from({ length: 5 }, (_, i) => (
-        <svg
-          key={i}
-          viewBox="0 0 20 20"
-          className={`h-3 w-3 ${i < count ? "text-amber-400" : "text-white"}`}
-          fill="currentColor"
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.176 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.063 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.957z" />
-        </svg>
-      ))}
+      {Array.from({ length: 5 }, (_, i) => {
+        const filled = Math.min(1, Math.max(0, rating - i));
+        const isHalf = filled > 0 && filled < 1;
+        const isFull = filled >= 1;
+        return (
+          <span key={i} className="relative h-3 w-3 flex-shrink-0">
+            <svg viewBox="0 0 20 20" className="absolute inset-0 h-full w-full text-gray-600" fill="currentColor">
+              <path d={starPath} />
+            </svg>
+            {(isFull || isHalf) && (
+              <span className={`absolute inset-0 overflow-hidden ${isHalf ? "w-1/2" : "w-full"}`}>
+                <svg viewBox="0 0 20 20" className="absolute inset-0 h-full w-full text-amber-400" fill="currentColor">
+                  <path d={starPath} />
+                </svg>
+              </span>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -147,17 +156,38 @@ export default async function ArchivePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user && items.length > 0) {
-    const ids = items.map((p) => p.id);
-    const { data: scoreData } = await service
-      .from("tictactoe_scores")
-      .select(
-        "puzzle_id, score, max_score, hints_used, time_seconds, completed_at"
-      )
-      .eq("user_id", user.id)
-      .in("puzzle_id", ids);
-    scores = (scoreData ?? []) as ScoreRow[];
+  const puzzleIds = items.map((p) => p.id);
+
+  const [scoreData, ratingsData] = await Promise.all([
+    user && puzzleIds.length > 0
+      ? service
+          .from("tictactoe_scores")
+          .select("puzzle_id, score, max_score, hints_used, time_seconds, completed_at")
+          .eq("user_id", user.id)
+          .in("puzzle_id", puzzleIds)
+      : Promise.resolve({ data: [] }),
+    puzzleIds.length > 0
+      ? service
+          .from("tictactoe_difficulty_ratings")
+          .select("puzzle_id, rating")
+          .in("puzzle_id", puzzleIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  scores = (scoreData.data ?? []) as ScoreRow[];
+
+  // Build average rating map: puzzle_id → average (rounded to nearest 0.5)
+  const rawRatings = (ratingsData.data ?? []) as RatingRow[];
+  const ratingAccum = new Map<string, { sum: number; count: number }>();
+  for (const r of rawRatings) {
+    const cur = ratingAccum.get(r.puzzle_id) ?? { sum: 0, count: 0 };
+    ratingAccum.set(r.puzzle_id, { sum: cur.sum + r.rating, count: cur.count + 1 });
   }
+  const avgRatingMap = new Map<string, number>();
+  ratingAccum.forEach(({ sum, count }, puzzleId) => {
+    const avg = sum / count;
+    avgRatingMap.set(puzzleId, Math.min(5, Math.max(0.5, Math.round(avg * 2) / 2)));
+  });
 
   const scoreMap = new Map(scores.map((s) => [s.puzzle_id, s]));
 
@@ -297,7 +327,8 @@ export default async function ArchivePage() {
                       (userScore.score / userScore.max_score) * 100
                     )
                   : 0;
-              const stars = DIFFICULTY_STARS[puzzle.difficulty] ?? 3;
+              const avgRating = avgRatingMap.get(puzzle.id);
+              const starRating = avgRating ?? { easy: 1, medium: 3, extreme: 5 }[puzzle.difficulty] ?? 3;
 
               return (
                 <Link
@@ -391,7 +422,7 @@ export default async function ArchivePage() {
 
                   {/* Below card: stars + title */}
                   <div className="mt-1.5 flex flex-col items-center gap-0.5 px-1">
-                    <Stars count={stars} />
+                    <Stars rating={starRating} />
                     <p className="w-full truncate text-center text-[10px] font-bold text-white group-hover:text-gray-300 sm:text-xs">
                       {puzzle.title}
                     </p>

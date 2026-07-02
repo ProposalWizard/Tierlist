@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { TicTacToePuzzle, TicTacToeAnswer } from "@/lib/types";
+import DifficultyRatingPopup from "./DifficultyRatingPopup";
 
 type Mode = "solo" | "multi";
 type TimerOption = 180 | 300 | 0;
@@ -119,6 +120,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
   const [squareOwner, setSquareOwner] = useState<Map<string, 0 | 1>>(new Map());
   const [winner, setWinner] = useState<0 | 1 | null>(null);
 
+  const [ratingDismissed, setRatingDismissed] = useState(false);
   const scoreSavedRef = useRef(false);
   const startedAtMs = useRef<number>(0);
 
@@ -345,7 +347,10 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
     const pct = totalAnswers > 0 ? Math.round((totalFound / totalAnswers) * 100) : 0;
 
     return (
-      <div className="min-h-screen bg-gray-950 text-white px-4 py-8">
+      <div className="relative min-h-screen bg-gray-950 text-white px-4 py-8">
+        {mode === "solo" && !ratingDismissed && (
+          <DifficultyRatingPopup puzzleId={puzzle.id} onDismiss={() => setRatingDismissed(true)} />
+        )}
         <div className="mx-auto max-w-lg">
           {mode === "multi" ? (
             <div className="text-center mb-6">
@@ -429,6 +434,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
 
           <div className="text-center">
             <a href="/tic-tac-toe/easy"
+              onClick={() => setRatingDismissed(false)}
               className="rounded-xl bg-green-600 px-8 py-3 text-sm font-bold text-white hover:bg-green-500 inline-block">
               Play Again
             </a>
