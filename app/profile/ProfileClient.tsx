@@ -116,18 +116,28 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
 
   async function deleteTierlist(id: string) {
     setDeletingId(id);
-    const res = await fetch(`/api/tierlists/${id}`, { method: "DELETE" });
-    setDeletingId(null);
-    setConfirmId(null);
-    if (res.ok) setCreated(prev => prev.filter(t => t.id !== id));
+    try {
+      const res = await fetch(`/api/tierlists/${id}`, { method: "DELETE" });
+      if (res.ok) setCreated(prev => prev.filter(t => t.id !== id));
+    } catch {
+      // Network error — modal recovers via finally so the user can retry
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
+    }
   }
 
   async function deleteProfileImage(id: string) {
     setDeletingImageId(id);
-    const res = await fetch(`/api/profile/images/${id}`, { method: "DELETE" });
-    setDeletingImageId(null);
-    setConfirmDeleteImageId(null);
-    if (res.ok) setProfileImages(prev => prev.filter(img => img.id !== id));
+    try {
+      const res = await fetch(`/api/profile/images/${id}`, { method: "DELETE" });
+      if (res.ok) setProfileImages(prev => prev.filter(img => img.id !== id));
+    } catch {
+      // Network error — modal recovers via finally so the user can retry
+    } finally {
+      setDeletingImageId(null);
+      setConfirmDeleteImageId(null);
+    }
   }
 
   const tabs: { key: ProfileTab; label: string; icon: string }[] = [

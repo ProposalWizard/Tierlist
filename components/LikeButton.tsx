@@ -37,17 +37,25 @@ export default function LikeButton({ tierlistId, initialCount = 0, initialLiked 
     setLiked((v) => !v);
     setCount((v) => (liked ? v - 1 : v + 1));
 
-    const res = await fetch(endpoint ?? `/api/tierlists/${tierlistId}/like`, { method: "POST" });
-    if (res.ok) {
-      const data = await res.json();
-      setLiked(data.liked);
-      setCount(data.count);
-    } else {
+    try {
+      const res = await fetch(endpoint ?? `/api/tierlists/${tierlistId}/like`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setLiked(data.liked);
+        setCount(data.count);
+      } else {
+        // Roll back the optimistic update
+        setLiked((v) => !v);
+        setCount((v) => (liked ? v + 1 : v - 1));
+      }
+    } catch {
+      // Network error — roll back so the UI matches the server
       setLiked((v) => !v);
       setCount((v) => (liked ? v + 1 : v - 1));
+    } finally {
+      setLoading(false);
+      toggleInFlight.current = false;
     }
-    setLoading(false);
-    toggleInFlight.current = false;
   }
 
   return (

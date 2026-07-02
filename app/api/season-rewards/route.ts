@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+// Admin edits to season rewards must show up immediately — without this the
+// route is statically cached at build time.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const supabase = createServiceClient();
 

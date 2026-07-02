@@ -164,22 +164,52 @@ export async function POST(req: Request) {
 
   const username = profile?.username || user.email?.split("@")[0] || "Player";
 
-  const body: RecordPayload = await req.json();
-  const { pl, all, career, seasonNumber, hasDevPlayers, mode: bodyMode } = body;
+  let body: RecordPayload;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const { pl, all, career, seasonNumber, hasDevPlayers, mode: bodyMode } = body ?? {};
   const mode = bodyMode === "prime" ? "prime" : "normal";
 
   if (hasDevPlayers) {
     return NextResponse.json({ ok: true, inserted: 0, skipped: "dev_team" });
   }
 
+  // A malformed body missing pl/all would crash on the dereferences below.
+  if (!pl || !all) {
+    return NextResponse.json({ error: "Missing pl/all record data" }, { status: 400 });
+  }
+
+  // Plausible upper bounds per record type. The values are entirely
+  // client-supplied, and because this route prunes the "worst" of the top-5
+  // when a new value beats it, an absurd value (e.g. 999999) would evict
+  // legitimate records. Capping to realistic maxima blocks that while leaving
+  // real records untouched. A season is 38 PL games; "all" includes cups.
+  const VALUE_CAPS: Record<string, number> = {
+    wins: 70, unbeaten: 70, goals: 150, assists: 150, clean_sheets: 70,
+    goals_conceded: 300, biggest_win: 30, avg_rating: 10, most_points: 114,
+    career_goals: 10000, career_assists: 10000, career_avg_rating: 10,
+    career_trophies: 2000,
+  };
+  const validValue = (record_type: string, value: unknown): number | null => {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    const cap = VALUE_CAPS[record_type] ?? 100000;
+    return n > cap ? null : n;
+  };
+
   const candidates: CandidateRow[] = [];
 
-  const pushEntry = (competition: string, record_type: string, stat: RecordEntry) => {
-    if (stat.value <= 0) return;
+  const pushEntry = (competition: string, record_type: string, stat: RecordEntry | undefined) => {
+    if (!stat) return;
+    const value = validValue(record_type, stat.value);
+    if (value == null) return;
     if (isDevPlayer(stat.playerName)) return;
     candidates.push({
       user_id: user.id, username, competition, record_type,
-      value: stat.value,
+      value,
       player_name: stat.playerName,
       player_ovr: stat.playerOvr,
       season_number: seasonNumber ?? null,
@@ -187,11 +217,13 @@ export async function POST(req: Request) {
     });
   };
 
-  const pushTeam = (competition: string, record_type: string, stat: TeamStat) => {
-    if (stat.value <= 0) return;
+  const pushTeam = (competition: string, record_type: string, stat: TeamStat | undefined) => {
+    if (!stat) return;
+    const value = validValue(record_type, stat.value);
+    if (value == null) return;
     candidates.push({
       user_id: user.id, username, competition, record_type,
-      value: stat.value,
+      value,
       player_name: stat.score ?? null,
       player_ovr: stat.teamOvr ?? null,
       season_number: seasonNumber ?? null,
@@ -219,17 +251,18 @@ export async function POST(req: Request) {
   if (all.avgRating) pushEntry("all", "avg_rating", all.avgRating);
 
   if (career) {
-    if (career.goals.value > 0) pushEntry("career", "career_goals", career.goals);
-    if (career.assists && career.assists.value > 0) pushEntry("career", "career_assists", career.assists);
-    if (career.trophies > 0) {
+    if (career.goals) pushEntry("career", "career_goals", career.goals);
+    if (career.assists) pushEntry("career", "career_assists", career.assists);
+    const trophies = validValue("career_trophies", career.trophies);
+    if (trophies != null) {
       candidates.push({
         user_id: user.id, username, competition: "career", record_type: "career_trophies",
-        value: career.trophies, player_name: null, player_ovr: null,
+        value: trophies, player_name: null, player_ovr: null,
         season_number: seasonNumber ?? null,
         mode,
       });
     }
-    if (career.avgRating && career.avgRating.value > 0) pushEntry("career", "career_avg_rating", career.avgRating);
+    if (career.avgRating) pushEntry("career", "career_avg_rating", career.avgRating);
   }
 
   if (candidates.length === 0) {

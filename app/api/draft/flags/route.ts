@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+// Force dynamic so the route is never frozen into a build-time snapshot (which
+// also can't reach Supabase during build). The Cache-Control header below still
+// lets the CDN/browser cache the response for a day.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const supabase = createServiceClient();
   const { data, error } = await supabase

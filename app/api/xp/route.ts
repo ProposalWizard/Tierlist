@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { levelFromXp, checkRewardUnlock, type Reward, type UserStats } from "@/lib/xp";
+import { levelFromXp, checkRewardUnlock, XP_AWARDS, type Reward, type UserStats } from "@/lib/xp";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -10,16 +10,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { event_type, event_ref, xp_amount } = body as {
-    event_type: string;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const { event_type, event_ref, xp_amount } = (body ?? {}) as {
+    event_type?: string;
     event_ref?: string;
-    xp_amount: number;
+    xp_amount?: number;
   };
 
-  if (!event_type || !xp_amount || xp_amount <= 0) {
+  if (!event_type || typeof event_type !== "string") {
     return NextResponse.json({ error: "Invalid event" }, { status: 400 });
   }
+
+  // Trust the server-side award table over the client where the event_type is
+  // known. Fall back to the client value only for unknown types, and always
+  // clamp to a sane ceiling — this endpoint is otherwise fully client-trusted,
+  // so an unclamped xp_amount lets a caller mint unlimited XP/levels/rewards.
+  const MAX_SINGLE_AWARD = 1000;
+  const knownAward = (XP_AWARDS as Record<string, number>)[event_type];
+  const requested = Number(xp_amount);
+  const resolved = knownAward ?? requested;
+  if (!Number.isFinite(resolved) || resolved <= 0) {
+    return NextResponse.json({ error: "Invalid event" }, { status: 400 });
+  }
+  const awardXp = Math.min(Math.floor(resolved), MAX_SINGLE_AWARD);
 
   const svc = createServiceClient();
 
@@ -27,7 +45,7 @@ export async function POST(request: Request) {
     user_id: user.id,
     event_type,
     event_ref: event_ref || event_type,
-    xp_awarded: xp_amount,
+    xp_awarded: awardXp,
   });
 
   if (eventError) {
@@ -44,7 +62,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   const oldXp = xpRow?.total_xp ?? 0;
-  const newXp = oldXp + xp_amount;
+  const newXp = oldXp + awardXp;
   const { level: newLevel } = levelFromXp(newXp);
   const { level: oldLevel } = levelFromXp(oldXp);
 
@@ -65,7 +83,7 @@ export async function POST(request: Request) {
     new_level: newLevel,
     leveled_up: newLevel > oldLevel,
     old_level: oldLevel,
-    xp_awarded: xp_amount,
+    xp_awarded: awardXp,
     new_rewards: newRewards,
   });
 }

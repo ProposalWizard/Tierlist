@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 
+// User-personalized and DB-backed — must run per request, never a build snapshot.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const supabase = createServiceClient();
 

@@ -95,7 +95,10 @@ export default function VoteBoard({
   async function castVote(imageId: string, tierLabel: string) {
     if (pending[imageId]) return;
     const previousVote = userVotes[imageId] ?? null;
-    const previousImages = images;
+    // Snapshot only THIS image, not the whole array — a whole-array rollback
+    // would clobber counts from concurrent votes on other images that were
+    // cast/reconciled while this request was in flight.
+    const previousImage = images.find((img) => img.id === imageId);
     const tierSet = new Set(tiers.map((t) => t.label));
 
     const newUserVotes = { ...userVotes, [imageId]: tierLabel };
@@ -145,7 +148,10 @@ export default function VoteBoard({
         else delete next[imageId];
         return next;
       });
-      setImages(previousImages);
+      // Restore only the affected image, preserving concurrent updates elsewhere
+      if (previousImage) {
+        setImages((prev) => prev.map((img) => (img.id === imageId ? previousImage : img)));
+      }
     } finally {
       setPending((p) => ({ ...p, [imageId]: false }));
     }

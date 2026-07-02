@@ -10,14 +10,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const increments = body as Partial<Record<keyof UserStats, number>>;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const increments = (body ?? {}) as Partial<Record<keyof UserStats, number>>;
 
   const allowedKeys: (keyof UserStats)[] = [
     "drafts_played", "draft_wins", "draft_invincibles",
     "total_goals_scored", "tierlists_created", "tierlists_likes_received",
     "votes_cast", "seasons_played",
   ];
+
+  // Per-call sanity cap. A single client action increments a stat by a small
+  // amount; anything larger is either a bug or self-serve cheating. Reject
+  // non-finite/negative values outright so a malformed body can't poison the
+  // row with NaN (which would break all future reward-unlock checks).
+  const MAX_INCREMENT = 1000;
+  const sanitizedIncrement = (raw: unknown): number => {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.min(Math.floor(n), MAX_INCREMENT);
+  };
 
   const svc = createServiceClient();
 
@@ -29,7 +45,7 @@ export async function POST(request: Request) {
 
   const current: Record<string, number> = {};
   for (const key of allowedKeys) {
-    current[key] = (existing?.[key] ?? 0) + (increments[key] ?? 0);
+    current[key] = (Number(existing?.[key]) || 0) + sanitizedIncrement(increments[key]);
   }
 
   await svc.from("user_stats").upsert({

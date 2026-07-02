@@ -1019,7 +1019,7 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
             <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-lg font-black text-gray-900">{popup.title}</p>
-                <button onClick={() => setPopup(null)} className="text-white hover:text-gray-900 text-2xl leading-none">&times;</button>
+                <button onClick={() => setPopup(null)} className="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
               </div>
               {isImage ? (
                 <img src={popup.text} alt={popup.isHint ? "Hint" : "Info"} className="w-full rounded-lg" />
@@ -1368,7 +1368,7 @@ function ResultsScreen({
           </h3>
           <div className="space-y-1.5">
             {missed.slice(0, 10).map((m) => (
-              <div key={m.name} className="flex items-center justify-between text-sm">
+              <div key={`${m.name}-${m.conditions}`} className="flex items-center justify-between text-sm">
                 <div>
                   <span className="text-white">{m.name}</span>
                   <span className="ml-2 text-[10px] text-white">{m.conditions}</span>
@@ -1392,7 +1392,7 @@ function ResultsScreen({
                   {sq.conditions.join(" + ")}
                 </p>
                 <div className="space-y-0.5">
-                  {sq.answers
+                  {[...sq.answers]
                     .sort((a, b) => b.points - a.points)
                     .map((a) => (
                       <div

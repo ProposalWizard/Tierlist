@@ -60,9 +60,22 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
           if (prev) URL.revokeObjectURL(prev.preview);
           return { file, preview: croppedDataUrl };
         });
+      })
+      .catch(() => {
+        setError("Failed to process cropped image. Please try again.");
+      })
+      .finally(() => {
+        // Always close the crop overlay so it can never get stuck open
         setShowCrop(false);
       });
   }, []);
+
+  // Ignore close requests while an upload is in progress — dismissing mid-upload
+  // orphans storage uploads and can create duplicate tierlists on reopen.
+  const handleClose = useCallback(() => {
+    if (saving) return;
+    onClose();
+  }, [saving, onClose]);
 
   function handleCustomCoverFile(file: File) {
     if (!isAllowedImageType(file)) {
@@ -184,7 +197,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
     /* Backdrop */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       {/* Panel */}
       <div className="relative w-full max-w-lg rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl">
@@ -192,8 +205,9 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
         <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
           <h2 className="text-lg font-bold text-white">Upload Tierlist</h2>
           <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors hover:bg-gray-800 hover:text-white"
+            onClick={handleClose}
+            disabled={saving}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ✕
           </button>
