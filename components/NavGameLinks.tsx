@@ -3,11 +3,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LIVE_GAMES = [
-  { name: "Tierlists", href: "/tierlists" },
   { name: "Draft", href: "/draft" },
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
-  { name: "Blind Rank", href: "/blind-rankings" },
+  { name: "Rankings", href: "/tierlists" },
 ];
 
 export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {

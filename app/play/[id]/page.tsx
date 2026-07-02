@@ -138,15 +138,15 @@ export default async function PlayPage({ params }: Props) {
             {linkedVoteTierlist && (
               <Link
                 href={`/vote/${linkedVoteTierlist.id}`}
-                className="rounded-lg border border-purple-700 bg-purple-900/30 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-800/40 transition-colors"
+                className="rounded-lg bg-purple-700 hover:bg-purple-600 px-4 py-2 text-sm font-bold text-white transition-colors shadow-md"
               >
-                See Vote Tierlist
+                Vote Ranking
               </Link>
             )}
             {linkedBlindRankingId && (
               <Link
                 href={`/blind-rankings/${linkedBlindRankingId}`}
-                className="rounded-lg border border-amber-700 bg-amber-900/30 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-800/40 transition-colors"
+                className="rounded-lg bg-amber-600 hover:bg-amber-500 px-4 py-2 text-sm font-bold text-white transition-colors shadow-md"
               >
                 Blind Rank This
               </Link>
