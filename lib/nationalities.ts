@@ -126,10 +126,12 @@ const NATIONALITY_ISO: Record<string, string> = {
 
 export function nationalityFlag(nationality: string | null | undefined): string {
   if (!nationality) return "";
-  // Check subdivision flags first
+  // Check subdivision flags first (England, Scotland, Wales, Northern Ireland)
   if (SUBDIVISION_FLAGS[nationality]) return SUBDIVISION_FLAGS[nationality];
-  // Standard ISO → emoji
+  // Full country name → ISO → emoji
   const iso = NATIONALITY_ISO[nationality];
   if (iso) return isoToFlagEmoji(iso);
+  // Direct ISO code fallback: some DB rows store "SN", "GW" etc. instead of the full name
+  if (nationality.length === 2) return isoToFlagEmoji(nationality.toUpperCase());
   return "";
 }
