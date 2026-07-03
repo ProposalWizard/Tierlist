@@ -216,7 +216,7 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
               <CustomObjectivesSection />
 
               {/* Row 3 — Collection Squad (full width) */}
-              <CollectionSquad progression={progression} />
+              <CollectionSquad progression={progression} seasonRewards={seasonRewards} />
             </div>
           )}
         </>

@@ -615,7 +615,11 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     oldLevel: number;
     newLevel: number;
     newRewards: string[];
+    newSeasonCards: { name: string; image_url: string | null }[];
   } | null>(null);
+  const seasonRewardsRef = useRef<{
+    id: string; level: number; card_name: string | null; image_url: string | null;
+  }[]>([]);
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [statsView, setStatsView] = useState<"pl" | "all">("all");
@@ -625,6 +629,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     fetch("/api/profile/progression")
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.equippedFrame) setEquippedFrame(data.equippedFrame); })
+      .catch(() => {});
+    fetch("/api/season-rewards")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.rewards) seasonRewardsRef.current = data.rewards; })
       .catch(() => {});
   }, [isSignedIn]);
 
@@ -857,11 +865,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           }).catch(() => {});
 
           if (xpEvents.length > 0) {
+            const oldLvl = lastResult?.old_level ?? 1;
+            const newLvl = lastResult?.new_level ?? 1;
+            const newSeasonCards = seasonRewardsRef.current
+              .filter(r => r.level > oldLvl && r.level <= newLvl)
+              .map(r => ({ name: r.card_name ?? "Season Card", image_url: r.image_url }));
             setXpPopup({
               events: xpEvents,
-              oldLevel: lastResult?.old_level ?? 1,
-              newLevel: lastResult?.new_level ?? 1,
+              oldLevel: oldLvl,
+              newLevel: newLvl,
               newRewards: lastResult?.new_rewards ?? [],
+              newSeasonCards,
             });
           }
         })();
@@ -2909,6 +2923,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           oldLevel={xpPopup.oldLevel}
           newLevel={xpPopup.newLevel}
           newRewards={xpPopup.newRewards}
+          newSeasonCards={xpPopup.newSeasonCards}
           onDismiss={() => setXpPopup(null)}
         />
       )}

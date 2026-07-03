@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { FRAME_STYLES } from "@/lib/xp";
 import type { UserProgression } from "@/lib/xp";
+import type { SeasonLevelReward } from "@/components/profile/XPProgressBar";
 
 interface SlotDef {
   id: string;
@@ -156,11 +157,20 @@ function remapSlots(
 
 const STORAGE_KEY = "collection-squad-v1";
 const FORMATION_KEY = "collection-squad-formation-v1";
-interface Props {
-  progression: UserProgression | null;
+
+interface CardEntry {
+  id: string;
+  name: string;
+  unlock_value: number | null;
+  card_image_url?: string | null;
 }
 
-export default function CollectionSquad({ progression }: Props) {
+interface Props {
+  progression: UserProgression | null;
+  seasonRewards?: SeasonLevelReward[];
+}
+
+export default function CollectionSquad({ progression, seasonRewards }: Props) {
   const [formation, setFormation] = useState("4-3-3");
   const [slots, setSlots] = useState<Record<string, string | null>>({});
   const [activeFrameId, setActiveFrameId] = useState<string | null>(null);
@@ -171,9 +181,26 @@ export default function CollectionSquad({ progression }: Props) {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
 
-  const unlockedCards = (progression?.rewards ?? [])
+  const level = progression?.level ?? 0;
+
+  const frameCards: CardEntry[] = (progression?.rewards ?? [])
     .filter((r) => r.category === "frame" && r.unlocked)
-    .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0));
+    .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0))
+    .map(r => ({ id: r.id, name: r.name, unlock_value: r.unlock_value }));
+
+  const unlockedSeasonCards: CardEntry[] = (seasonRewards ?? [])
+    .filter(r => level >= r.level)
+    .map(r => ({
+      id: `season_card_${r.id}`,
+      name: r.card_name ?? "Season Card",
+      unlock_value: r.level,
+      card_image_url: r.image_url,
+    }));
+
+  const unlockedCards: CardEntry[] = [
+    ...frameCards,
+    ...unlockedSeasonCards,
+  ].sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0));
 
   useEffect(() => {
     try {
@@ -268,8 +295,10 @@ export default function CollectionSquad({ progression }: Props) {
   const activeCard = activeFrameId
     ? unlockedCards.find((c) => c.id === activeFrameId)
     : null;
-  const activeStyle = activeFrameId
-    ? (FRAME_STYLES[activeFrameId] ?? FRAME_STYLES.frame_default)
+  const activeStyle = activeCard
+    ? (activeCard.card_image_url
+        ? { border: "border-2 border-amber-400", shadow: "shadow-lg shadow-amber-500/30", image: activeCard.card_image_url }
+        : (FRAME_STYLES[activeCard.id] ?? FRAME_STYLES.frame_default))
     : null;
 
   return (
@@ -334,7 +363,11 @@ export default function CollectionSquad({ progression }: Props) {
           {currentSlots.map((slot) => {
             const frameId = slots[slot.id] ?? null;
             const card = frameId ? unlockedCards.find((c) => c.id === frameId) : null;
-            const style = frameId ? (FRAME_STYLES[frameId] ?? FRAME_STYLES.frame_default) : null;
+            const style = frameId
+              ? (card?.card_image_url
+                  ? { border: "border-2 border-amber-400", shadow: "shadow-lg shadow-amber-500/30", image: card.card_image_url }
+                  : (FRAME_STYLES[frameId] ?? FRAME_STYLES.frame_default))
+              : null;
             return (
               <PitchSlot
                 key={slot.id}
@@ -529,14 +562,16 @@ function BenchCard({
   selected,
   onTap,
 }: {
-  card: { id: string; name: string; unlock_value: number | null };
+  card: CardEntry;
   selected: boolean;
   onTap: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
   });
-  const frameStyle = FRAME_STYLES[card.id] ?? FRAME_STYLES.frame_default;
+  const frameStyle = card.card_image_url
+    ? { border: "border-2 border-amber-400", shadow: "shadow-lg shadow-amber-500/30", image: card.card_image_url }
+    : (FRAME_STYLES[card.id] ?? FRAME_STYLES.frame_default);
 
   return (
     <div

@@ -7,15 +7,21 @@ interface XPEvent {
   xp: number;
 }
 
+interface SeasonCardUnlock {
+  name: string;
+  image_url: string | null;
+}
+
 interface Props {
   events: XPEvent[];
   oldLevel: number;
   newLevel: number;
   newRewards: string[];
+  newSeasonCards?: SeasonCardUnlock[];
   onDismiss: () => void;
 }
 
-export default function XPPopup({ events, oldLevel, newLevel, newRewards, onDismiss }: Props) {
+export default function XPPopup({ events, oldLevel, newLevel, newRewards, newSeasonCards = [], onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
@@ -30,9 +36,9 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, onDism
     const timer = setTimeout(() => {
       setExiting(true);
       setTimeout(onDismiss, 400);
-    }, leveledUp ? 6000 : 4000);
+    }, (leveledUp || newSeasonCards.length > 0) ? 6000 : 4000);
     return () => clearTimeout(timer);
-  }, [onDismiss, leveledUp]);
+  }, [onDismiss, leveledUp, newSeasonCards.length]);
 
   const handleDismiss = () => {
     setExiting(true);
@@ -115,6 +121,26 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, onDism
                 </span>
               </div>
             )}
+
+            {/* Season card unlocks */}
+            {newSeasonCards.map((sc, i) => (
+              <div key={i} className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-2">
+                {sc.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={sc.image_url}
+                    alt={sc.name}
+                    className="w-8 h-[42px] rounded-lg object-cover flex-shrink-0 ring-1 ring-amber-400/40"
+                  />
+                ) : (
+                  <span className="text-sm flex-shrink-0">🃏</span>
+                )}
+                <div>
+                  <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Season Card Unlocked!</div>
+                  <div className="text-xs font-bold text-white">{sc.name}</div>
+                </div>
+              </div>
+            ))}
 
             {/* XP progress bar animation */}
             <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
