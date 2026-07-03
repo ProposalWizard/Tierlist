@@ -18,6 +18,10 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.count) setUnclaimedCount(d.count); })
       .catch(() => {});
+
+    const onClaimed = () => setUnclaimedCount(c => Math.max(0, c - 1));
+    window.addEventListener("objective-claimed", onClaimed);
+    return () => window.removeEventListener("objective-claimed", onClaimed);
   }, [isLoggedIn]);
 
   const ProfileLink = ({ onClick }: { onClick?: () => void }) => (

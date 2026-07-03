@@ -510,24 +510,28 @@ function ObjectiveClaimModal({ result, onClose }: { result: ClaimResult; onClose
           <h2 className="text-lg font-black text-white mb-6 leading-tight">{result.title}</h2>
 
           <div className="text-xs font-bold text-white uppercase tracking-wider mb-4">You earned</div>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            {result.xp_reward > 0 && (
-              <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2.5">
-                <span className="text-xl">⚡</span>
-                <span className="text-xl font-black text-amber-400">{result.xp_reward} XP</span>
-              </div>
-            )}
-            {result.card_image_url && (
-              <div className="flex flex-col items-center gap-2">
-                <img
-                  src={result.card_image_url}
-                  alt={result.card_name || "Card"}
-                  className="w-24 h-32 object-cover rounded-xl border-2 border-amber-400/50 shadow-xl shadow-amber-900/30"
-                />
-                {result.card_name && <span className="text-sm font-bold text-white">{result.card_name}</span>}
-              </div>
-            )}
-          </div>
+
+          {/* Card — hero of the reward, centered and large, no border (card art has its own frame) */}
+          {result.card_image_url && (
+            <div className="flex flex-col items-center mb-3">
+              <img
+                src={result.card_image_url}
+                alt={result.card_name || "Card"}
+                className="w-40 h-[210px] object-contain rounded-xl shadow-2xl shadow-amber-900/40 mb-2"
+              />
+              {result.card_name && (
+                <span className="text-sm font-bold text-white">{result.card_name}</span>
+              )}
+            </div>
+          )}
+
+          {/* XP — secondary, smaller */}
+          {result.xp_reward > 0 && (
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <span className="text-base">⚡</span>
+              <span className="text-base font-bold text-amber-400">{result.xp_reward} XP</span>
+            </div>
+          )}
         </div>
         <div className="px-6 pb-6">
           <button
@@ -582,6 +586,8 @@ export function CustomObjectivesSection() {
         setUnclaimedIds(prev => prev.filter(id => id !== objId));
         if (res.ok) {
           setClaimModal({ title: obj.title, xp_reward: obj.xp_reward, card_image_url: obj.card_image_url, card_name: obj.card_name });
+          // Tell the nav badge to decrement immediately — no page refresh needed
+          window.dispatchEvent(new CustomEvent("objective-claimed"));
         }
       }
     } catch { /* non-critical */ }
