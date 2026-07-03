@@ -31,6 +31,7 @@ interface ScoreRow {
   hints_used: number;
   time_seconds: number | null;
   completed_at: string;
+  is_second_chance: boolean;
 }
 
 interface RatingRow {
@@ -162,7 +163,7 @@ export default async function ArchivePage() {
     user && puzzleIds.length > 0
       ? service
           .from("tictactoe_scores")
-          .select("puzzle_id, score, max_score, hints_used, time_seconds, completed_at")
+          .select("puzzle_id, score, max_score, hints_used, time_seconds, completed_at, is_second_chance")
           .eq("user_id", user.id)
           .in("puzzle_id", puzzleIds)
       : Promise.resolve({ data: [] }),
@@ -428,7 +429,7 @@ export default async function ArchivePage() {
                     </p>
                   </div>
                 </Link>
-                {played && (
+                {played && !userScore?.is_second_chance && (
                   <a
                     href={`/tic-tac-toe/${puzzle.id}?second-chance=true`}
                     className="mt-1.5 block rounded-lg border border-amber-700/40 bg-amber-900/20 py-1 text-center text-[9px] font-bold text-amber-400 transition-colors hover:bg-amber-900/40 sm:text-[10px]"
