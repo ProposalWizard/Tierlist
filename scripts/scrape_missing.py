@@ -282,10 +282,16 @@ def _extract_pi_cell(td, player: dict):
 
     flag = td.select_one("img.flag")
     if not flag:
+        # SoFIFA renamed/restructured the flag element in FC 25/26 — try broader selectors
+        flag = td.select_one("img[src*='flag']") or td.select_one("img[data-src*='flag']")
+    if not flag:
         flag = td.select_one("img[title]")
     if flag:
-        player["nationality"] = flag.get("title", "")
-        src = flag.get("src", "")
+        nat = flag.get("title", "") or flag.get("alt", "")
+        if nat:
+            player["nationality"] = nat
+        # FC 25/26 use lazy-load (data-src); older editions use src
+        src = flag.get("data-src", "") or flag.get("src", "")
         if src and not src.startswith("http"):
             src = "https://cdn.sofifa.net" + src
         if src:
