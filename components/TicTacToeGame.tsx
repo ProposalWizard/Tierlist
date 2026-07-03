@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import DifficultyRatingPopup from "./DifficultyRatingPopup";
 import { useRouter } from "next/navigation";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/lib/types";
 import { CUSTOM_SQUARE_LABELS } from "@/lib/types";
@@ -353,6 +354,7 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
   const [revealedHints, setRevealedHints] = useState<Set<string>>(new Set());
   const [hintsUsed, setHintsUsed] = useState(0);
   const [scoreSaved, setScoreSaved] = useState(false);
+  const [ratingDismissed, setRatingDismissed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null!);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -555,27 +557,36 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
   if (gameState.finished) {
     const finalTime = mode === "solo" ? soloTimer : playerTimers[0] + playerTimers[1];
     return (
-      <ResultsScreen
-        puzzle={puzzle}
-        gameState={gameState}
-        mode={mode}
-        soloCurrentScore={soloCurrentScore}
-        totalMaxScore={totalMaxScore}
-        hintsUsed={hintsUsed}
-        elapsed={finalTime}
-        playerTimers={mode === "2player" ? playerTimers : undefined}
-        onPlayAgain={() => {
-          setMode(null);
-          setGameState(makeInitialState());
-          setSelectedSquare(null);
-          setHintsUsed(0);
-          setRevealedHints(new Set());
-          setPopup(null);
-          setScoreSaved(false);
-          setSoloTimer(0);
-          setPlayerTimers([0, 0]);
-        }}
-      />
+      <div className="relative">
+        <ResultsScreen
+          puzzle={puzzle}
+          gameState={gameState}
+          mode={mode}
+          soloCurrentScore={soloCurrentScore}
+          totalMaxScore={totalMaxScore}
+          hintsUsed={hintsUsed}
+          elapsed={finalTime}
+          playerTimers={mode === "2player" ? playerTimers : undefined}
+          onPlayAgain={() => {
+            setMode(null);
+            setGameState(makeInitialState());
+            setSelectedSquare(null);
+            setHintsUsed(0);
+            setRevealedHints(new Set());
+            setPopup(null);
+            setScoreSaved(false);
+            setSoloTimer(0);
+            setPlayerTimers([0, 0]);
+            setRatingDismissed(false);
+          }}
+        />
+        {mode === "solo" && !ratingDismissed && (
+          <DifficultyRatingPopup
+            puzzleId={puzzle.id}
+            onDismiss={() => setRatingDismissed(true)}
+          />
+        )}
+      </div>
     );
   }
 
@@ -1216,21 +1227,7 @@ function ResultsScreen({
     for (let c = 0; c < 3; c++)
       if ((gameState.guesses.get(squareKey(r, c))?.length ?? 0) > 0) squaresCompleted++;
 
-  const missed: { name: string; points: number; conditions: string }[] = [];
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 3; c++) {
-      const sq = puzzle.grid[r][c];
-      const found = gameState.guesses.get(squareKey(r, c)) ?? [];
-      const foundNames = new Set(found.map((a) => a.name));
-      for (const ans of sq.answers) {
-        if (!foundNames.has(ans.name) && ans.points >= 4) {
-          missed.push({ name: ans.name, points: ans.points, conditions: sq.conditions.join(" + ") });
-        }
-      }
-    }
-  }
-  missed.sort((a, b) => b.points - a.points);
-
+  // Build emoji grid for the share text (keep for copy-result)
   const emojiGrid = (() => {
     const rows: string[] = [];
     for (let r = 0; r < 3; r++) {
@@ -1254,7 +1251,7 @@ function ResultsScreen({
     : `Football Tic Tac Toe — ${puzzle.title}\n${soloCurrentScore}/${totalMaxScore} (${pct}%) in ${formatTime(elapsed)}\n${emojiGrid}`;
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-8 text-center">
+    <div className="mx-auto max-w-2xl px-4 py-8 text-center">
       <h2 className="text-3xl font-black text-white">
         {is2P
           ? winner === -1
@@ -1263,157 +1260,116 @@ function ResultsScreen({
           : "Game Over!"}
       </h2>
 
-      <div className="mt-6 rounded-xl border border-gray-700 bg-gray-900 p-6">
+      {/* ── Score stats ── */}
+      <div className="mt-6 rounded-xl border border-gray-700 bg-gray-900 p-5">
         {is2P ? (
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div
-              className={`rounded-xl p-4 ${
-                winner === 0 ? "bg-indigo-900 border-2 border-indigo-400" : "bg-gray-800"
-              }`}
-            >
-              <p className="text-xs font-bold uppercase tracking-wider text-white mb-1">{n1}</p>
-              <p
-                className={`text-4xl font-black ${
-                  winner === 0 ? "text-indigo-300" : "text-white"
-                }`}
-              >
-                {s1}
-              </p>
-              {playerTimers && (
-                <p className="text-xs font-mono font-bold text-white mt-1">{formatTime(playerTimers[0])}</p>
-              )}
-              {gameState.playerBonusAwarded[0] && (
-                <p className="text-xs font-bold text-yellow-400 mt-1">
-                  +{puzzle.three_in_a_row_bonus} TTT Bonus!
-                </p>
-              )}
+            <div className={`rounded-xl p-4 ${winner === 0 ? "bg-indigo-900 border-2 border-indigo-400" : "bg-gray-800"}`}>
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">{n1}</p>
+              <p className={`text-4xl font-black ${winner === 0 ? "text-indigo-300" : "text-white"}`}>{s1}</p>
+              {playerTimers && <p className="text-xs font-mono font-bold text-gray-400 mt-1">{formatTime(playerTimers[0])}</p>}
+              {gameState.playerBonusAwarded[0] && <p className="text-xs font-bold text-yellow-400 mt-1">+{puzzle.three_in_a_row_bonus} TTT Bonus!</p>}
             </div>
-            <div
-              className={`rounded-xl p-4 ${
-                winner === 1 ? "bg-purple-900 border-2 border-purple-400" : "bg-gray-800"
-              }`}
-            >
-              <p className="text-xs font-bold uppercase tracking-wider text-white mb-1">{n2}</p>
-              <p
-                className={`text-4xl font-black ${
-                  winner === 1 ? "text-purple-300" : "text-white"
-                }`}
-              >
-                {s2}
-              </p>
-              {playerTimers && (
-                <p className="text-xs font-mono font-bold text-white mt-1">{formatTime(playerTimers[1])}</p>
-              )}
-              {gameState.playerBonusAwarded[1] && (
-                <p className="text-xs font-bold text-yellow-400 mt-1">
-                  +{puzzle.three_in_a_row_bonus} TTT Bonus!
-                </p>
-              )}
+            <div className={`rounded-xl p-4 ${winner === 1 ? "bg-purple-900 border-2 border-purple-400" : "bg-gray-800"}`}>
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">{n2}</p>
+              <p className={`text-4xl font-black ${winner === 1 ? "text-purple-300" : "text-white"}`}>{s2}</p>
+              {playerTimers && <p className="text-xs font-mono font-bold text-gray-400 mt-1">{formatTime(playerTimers[1])}</p>}
+              {gameState.playerBonusAwarded[1] && <p className="text-xs font-bold text-yellow-400 mt-1">+{puzzle.three_in_a_row_bonus} TTT Bonus!</p>}
             </div>
           </div>
         ) : (
           <>
             <p className="text-5xl font-black text-indigo-400">{soloCurrentScore}</p>
-            <p className="text-sm text-white">
-              out of {totalMaxScore} ({pct}%)
-            </p>
+            <p className="text-sm text-gray-400">out of {totalMaxScore} ({pct}%)</p>
           </>
         )}
 
-        <div className="mt-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+        <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">{squaresCompleted}/9</p>
-            <p className="text-white">Squares</p>
+            <p className="text-xs text-gray-400 mt-0.5">Squares</p>
+          </div>
+          <div className="rounded-lg bg-gray-800 p-3">
+            <p className="text-2xl font-black font-mono text-indigo-400">{formatTime(elapsed)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Time</p>
           </div>
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">
-              {is2P
-                ? gameState.playerBonusAwarded[0] || gameState.playerBonusAwarded[1]
-                  ? "Yes"
-                  : "No"
-                : gameState.bonusAwarded
-                ? "Yes"
-                : "No"}
+              {is2P ? (gameState.playerBonusAwarded[0] || gameState.playerBonusAwarded[1] ? "Yes" : "No") : (gameState.bonusAwarded ? "Yes" : "No")}
             </p>
-            <p className="text-white">3-in-a-row</p>
+            <p className="text-xs text-gray-400 mt-0.5">3-in-a-row</p>
+            {hintsUsed > 0 && <p className="text-[10px] text-amber-400 mt-0.5">{hintsUsed} hints</p>}
           </div>
-          <div className="rounded-lg bg-gray-800 p-3">
-            <p className="text-2xl font-black text-indigo-400 font-mono">{formatTime(elapsed)}</p>
-            <p className="text-white">Time</p>
-          </div>
-          {hintsUsed > 0 && (
-            <div className="rounded-lg bg-gray-800 p-3">
-              <p className="text-2xl font-black text-amber-400">{hintsUsed}</p>
-              <p className="text-white">Hints</p>
+        </div>
+      </div>
+
+      {/* ── Answer grid — 4-column layout: empty corner | col1 | col2 | col3 ── */}
+      <div className="mt-6 overflow-x-auto rounded-xl border border-gray-700 bg-gray-900 p-3">
+        <div className="grid min-w-[340px] grid-cols-4 gap-1.5 text-[10px]">
+          {/* Header row */}
+          <div />
+          {puzzle.col_labels.map((col, ci) => (
+            <div key={`h${ci}`} className="py-1 text-center font-bold leading-tight text-indigo-300">
+              {col}
             </div>
-          )}
-        </div>
+          ))}
 
-        <div className="mt-4 rounded-lg bg-gray-800 p-3">
-          <pre className="text-2xl leading-relaxed">
-            {emojiGrid.split("\n").map((row, i) => (
-              <span key={i}>
-                {row}
-                {i < 2 ? "\n" : ""}
-              </span>
-            ))}
-          </pre>
+          {/* Data rows */}
+          {[0, 1, 2].flatMap((ri) => [
+            // Row label
+            <div
+              key={`rl${ri}`}
+              className="flex items-start justify-end pr-1 pt-1 text-right font-bold leading-tight text-indigo-300"
+            >
+              {puzzle.row_labels[ri]}
+            </div>,
+            // Cells
+            ...[0, 1, 2].map((ci) => {
+              const sq = puzzle.grid[ri][ci];
+              const found = gameState.guesses.get(squareKey(ri, ci)) ?? [];
+              const foundNames = new Set(found.map((a) => a.name));
+              const sqScore = getScore(found);
+              const sqMax = getMaxScore(sq);
+              const cellPct = sqMax > 0 ? sqScore / sqMax : 0;
+
+              return (
+                <div
+                  key={`${ri}-${ci}`}
+                  className={`rounded-lg border p-1.5 text-left ${
+                    cellPct >= 1
+                      ? "border-green-700/50 bg-green-950/50"
+                      : cellPct >= 0.5
+                      ? "border-amber-700/40 bg-amber-950/40"
+                      : found.length > 0
+                      ? "border-orange-700/30 bg-orange-950/30"
+                      : "border-gray-700/30 bg-gray-800/50"
+                  }`}
+                >
+                  <div className="space-y-px">
+                    {[...sq.answers]
+                      .sort((a, b) => b.points - a.points)
+                      .map((ans) => (
+                        <div
+                          key={ans.name}
+                          className={`flex items-baseline justify-between gap-0.5 ${
+                            foundNames.has(ans.name) ? "text-green-400" : "text-gray-600"
+                          }`}
+                        >
+                          <span className="truncate">
+                            {foundNames.has(ans.name) ? "✓" : "✗"} {ans.name}
+                          </span>
+                          <span className="shrink-0 font-bold">{ans.points}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              );
+            }),
+          ])}
         </div>
       </div>
 
-      {missed.length > 0 && (
-        <div className="mt-6 rounded-xl border border-gray-700 bg-gray-900 p-4 text-left">
-          <h3 className="mb-2 text-sm font-bold text-red-400 uppercase">
-            Missed High-Value Players
-          </h3>
-          <div className="space-y-1.5">
-            {missed.slice(0, 10).map((m) => (
-              <div key={`${m.name}-${m.conditions}`} className="flex items-center justify-between text-sm">
-                <div>
-                  <span className="text-white">{m.name}</span>
-                  <span className="ml-2 text-[10px] text-white">{m.conditions}</span>
-                </div>
-                <span className="font-bold text-red-400">{m.points} pts</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-6 rounded-xl border border-gray-700 bg-gray-900 p-4 text-left">
-        <h3 className="mb-3 text-sm font-bold text-white uppercase">All Answers</h3>
-        {puzzle.grid.map((row, r) =>
-          row.map((sq, c) => {
-            const found = gameState.guesses.get(squareKey(r, c)) ?? [];
-            const foundNames = new Set(found.map((a) => a.name));
-            return (
-              <div key={`${r}-${c}`} className="mb-3 rounded-lg bg-gray-800 p-3">
-                <p className="text-xs font-bold text-indigo-400 mb-1">
-                  {sq.conditions.join(" + ")}
-                </p>
-                <div className="space-y-0.5">
-                  {[...sq.answers]
-                    .sort((a, b) => b.points - a.points)
-                    .map((a) => (
-                      <div
-                        key={a.name}
-                        className={`flex justify-between text-xs ${
-                          foundNames.has(a.name) ? "text-green-400" : "text-white"
-                        }`}
-                      >
-                        <span>
-                          {foundNames.has(a.name) ? "✓" : "✗"} {a.name}
-                        </span>
-                        <span>{a.points} pts</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
+      {/* ── Action buttons ── */}
       <div className="mt-6 flex justify-center gap-3">
         <button
           onClick={() => navigator.clipboard.writeText(shareText)}
