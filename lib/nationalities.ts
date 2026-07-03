@@ -135,3 +135,24 @@ export function nationalityFlag(nationality: string | null | undefined): string 
   if (nationality.length === 2) return isoToFlagEmoji(nationality.toUpperCase());
   return "";
 }
+
+// flagcdn.com subdomain codes for UK subdivisions (can't use plain ISO for these)
+const FLAGCDN_SUBDIVISIONS: Record<string, string> = {
+  "England": "gb-eng",
+  "Scotland": "gb-sct",
+  "Wales": "gb-wls",
+  "Northern Ireland": "gb-nir",
+};
+
+// Returns a flagcdn.com image URL for a nationality string.
+// Handles full country names, UK subdivisions, and raw 2-letter ISO codes.
+export function getFlagUrl(nationality: string | null | undefined): string | null {
+  if (!nationality) return null;
+  const sub = FLAGCDN_SUBDIVISIONS[nationality];
+  if (sub) return `https://flagcdn.com/20x15/${sub}.png`;
+  const iso = NATIONALITY_ISO[nationality];
+  if (iso) return `https://flagcdn.com/20x15/${iso.toLowerCase()}.png`;
+  // Direct 2-letter ISO code (some DB rows store "SN", "FR" etc.)
+  if (nationality.length === 2) return `https://flagcdn.com/20x15/${nationality.toLowerCase()}.png`;
+  return null;
+}

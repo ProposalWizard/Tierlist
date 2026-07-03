@@ -4,7 +4,7 @@ import { FORMATIONS, getPositionColor, getPositionTextColor, formatSeasonYear } 
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftSettings, DraftPlayer } from "@/app/draft/page";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
-import { nationalityFlag } from "@/lib/nationalities";
+import { getFlagUrl } from "@/lib/nationalities";
 
 interface RosterPlayer {
   sofifa_id: string;
@@ -1179,10 +1179,14 @@ export default function DraftPick({
                         <div className="font-semibold text-sm truncate group-hover:text-white transition-colors">
                           {player.name}
                         </div>
-                        <div className="text-[11px] sm:text-xs text-white">
-                          {player.nationality
-                            ? <>{nationalityFlag(player.nationality) || player.nationality} &middot; </>
-                            : null}Age {player.age}
+                        <div className="text-[11px] sm:text-xs text-white flex items-center gap-1">
+                          {player.nationality && (() => {
+                            const url = getFlagUrl(player.nationality);
+                            return url
+                              ? <img src={url} alt={player.nationality} className="w-4 h-3 object-cover rounded-[1px] shrink-0" />
+                              : <span className="text-gray-400">{player.nationality}</span>;
+                          })()}
+                          <span>Age {player.age}</span>
                         </div>
                         {hasStats && !settings.hiddenRatings && (
                           <div className="flex gap-2 sm:hidden mt-0.5">
