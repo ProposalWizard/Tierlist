@@ -819,6 +819,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 competition,
+                seasonNumber,
                 squad: players.map(p => ({
                   name: p.name,
                   nationality: p.nationality ?? "",

@@ -126,6 +126,7 @@ export function evaluateObjective(
   sameSeason?: boolean,
   samePlayer?: boolean,
   orGroups?: ObjectiveCondition[][],
+  isNewRun?: boolean,
 ): { newProgress: ObjectiveProgress; complete: boolean } {
   const newProgress: ObjectiveProgress = { ...currentProgress };
 
@@ -159,7 +160,9 @@ export function evaluateObjective(
         const seasonTotal = perPlayer.reduce((s, pp) => s + pp.value, 0);
         seasonValues[cond.id] = seasonTotal;
         if (timeframe === "career") {
-          newProgress[cond.id] = (currentProgress[cond.id] ?? 0) + seasonTotal;
+          // On season 1 of a new draft run, reset the running total to 0
+          const base = isNewRun ? 0 : (currentProgress[cond.id] ?? 0);
+          newProgress[cond.id] = base + seasonTotal;
         } else {
           newProgress[cond.id] = Math.max(currentProgress[cond.id] ?? 0, seasonTotal);
         }
@@ -168,12 +171,14 @@ export function evaluateObjective(
           const key = `${cond.id}__${pp.name}`;
           seasonValues[key] = pp.value;
           if (timeframe === "career") {
-            newProgress[key] = (currentProgress[key] ?? 0) + pp.value;
+            const base = isNewRun ? 0 : (currentProgress[key] ?? 0);
+            newProgress[key] = base + pp.value;
           } else {
             newProgress[key] = Math.max(currentProgress[key] ?? 0, pp.value);
           }
         }
-        if (timeframe === "career") {
+        if (timeframe === "career" && !isNewRun) {
+          // Carry forward per-player totals for players not in the current squad
           for (const key of Object.keys(currentProgress)) {
             if (key.startsWith(`${cond.id}__`) && !(key in newProgress)) {
               newProgress[key] = currentProgress[key];
@@ -197,6 +202,8 @@ export function evaluateObjective(
 
     if (cond.type === "win_event") {
       const happened = cond.event ? seasonData.events.includes(cond.event as WinEvent) : false;
+      // On season 1 of a new draft run, event counts reset for this run
+      if (isNewRun) newProgress[cond.id] = 0;
       if (cond.consecutive) {
         if (happened) {
           newProgress[cond.id] = (newProgress[cond.id] ?? 0) + 1;

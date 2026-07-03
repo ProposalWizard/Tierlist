@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     const sameSeason = (obj as Record<string, unknown>).same_season === true;
     const samePlayer = (obj as Record<string, unknown>).same_player === true;
     const orGroups = ((obj as Record<string, unknown>).or_groups ?? null) as ObjectiveCondition[][] | null;
-    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer, orGroups ?? undefined);
+    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer, orGroups ?? undefined, body.seasonNumber === 1);
 
     if (complete) {
       const { error: upsertErr } = await service.from("user_objectives").upsert({
