@@ -183,11 +183,9 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
 
   const level = progression?.level ?? 0;
 
-  const frameCards: CardEntry[] = (progression?.rewards ?? [])
-    .filter((r) => r.category === "frame" && r.unlocked)
-    .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0))
-    .map(r => ({ id: r.id, name: r.name, unlock_value: r.unlock_value }));
-
+  // Only show cards with real art (season milestone cards and objective reward cards).
+  // Generic frame rewards ("Standard", "Gold" etc.) are excluded — they're cosmetic
+  // frame borders, not collectible cards.
   const unlockedSeasonCards: CardEntry[] = (seasonRewards ?? [])
     .filter(r => level >= r.level)
     .map(r => ({
@@ -197,10 +195,8 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
       card_image_url: r.image_url,
     }));
 
-  const unlockedCards: CardEntry[] = [
-    ...frameCards,
-    ...unlockedSeasonCards,
-  ].sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0));
+  const unlockedCards: CardEntry[] = [...unlockedSeasonCards]
+    .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0));
 
   useEffect(() => {
     try {
