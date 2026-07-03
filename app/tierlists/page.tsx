@@ -261,7 +261,7 @@ export default async function RankingsPage() {
               <div className="flex flex-wrap gap-3">
                 {displayed.map((item) => {
                   const isMultiFormat = !item.is_vote && !item.is_blind && (item.linked_vote_id || item.linked_blind_id);
-                  const showRegularBadge = isMultiFormat;
+                  const showRegularBadge = !item.is_vote && !item.is_blind;
                   const borderClass = item.is_vote
                     ? "border-purple-800/50 hover:border-purple-500"
                     : item.is_blind

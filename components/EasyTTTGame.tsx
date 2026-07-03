@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import type { TicTacToePuzzle, TicTacToeAnswer } from "@/lib/types";
 import DifficultyRatingPopup from "./DifficultyRatingPopup";
 
@@ -122,6 +123,8 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
 
   const [ratingDismissed, setRatingDismissed] = useState(false);
   const scoreSavedRef = useRef(false);
+  const searchParams = useSearchParams();
+  const isSecondChance = searchParams.get("second-chance") === "true";
   const startedAtMs = useRef<number>(0);
 
   const totalAnswers = (() => {
@@ -179,6 +182,7 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
   // Save score to archive when solo game ends
   useEffect(() => {
     if (!gameOver || mode !== "solo" || scoreSavedRef.current) return;
+    if (isSecondChance && totalFound === 0) return;
     scoreSavedRef.current = true;
     const elapsedMs = startedAtMs.current > 0 ? Date.now() - startedAtMs.current : 0;
     fetch(`/api/tictactoe/${puzzle.id}/score`, {
@@ -189,9 +193,10 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
         max_score: totalAnswers,
         hints_used: 0,
         time_seconds: Math.round(elapsedMs / 1000),
+        ...(isSecondChance && { second_chance: true }),
       }),
     }).catch(() => {});
-  }, [gameOver, mode, totalFound, totalAnswers, puzzle.id]);
+  }, [gameOver, mode, totalFound, totalAnswers, puzzle.id, isSecondChance]);
 
   const finishSoloGame = useCallback(() => {
     setGameOver(true);
@@ -432,10 +437,16 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
             ))}
           </div>
 
-          <div className="text-center">
+          <div className="flex flex-wrap justify-center gap-3">
+            {puzzle.is_daily && (
+              <a href="/tic-tac-toe/archive"
+                className="rounded-xl border border-indigo-700 px-6 py-3 text-sm font-bold text-indigo-300 hover:bg-indigo-900/40 inline-block transition-colors">
+                Play Past Dailies
+              </a>
+            )}
             <a href="/tic-tac-toe/easy"
               onClick={() => setRatingDismissed(false)}
-              className="rounded-xl bg-green-600 px-8 py-3 text-sm font-bold text-white hover:bg-green-500 inline-block">
+              className="rounded-xl bg-green-600 px-8 py-3 text-sm font-bold text-white hover:bg-green-500 inline-block transition-colors">
               Play Again
             </a>
           </div>

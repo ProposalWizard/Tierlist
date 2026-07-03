@@ -128,7 +128,7 @@ export default function FindSearch({ items, categories, initialCategory }: Props
           {filtered.map((item) => {
             const href = getHref(item);
             const isMultiFormat = !item.is_live && !item.is_blind && (item.linked_vote_id || item.linked_blind_id);
-            const showRegularBadge = isMultiFormat;
+            const showRegularBadge = !item.is_live && !item.is_blind;
             const borderClass = item.is_live
               ? "border-purple-800/50 hover:border-purple-500"
               : item.is_blind
