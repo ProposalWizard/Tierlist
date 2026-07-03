@@ -52,8 +52,8 @@ function Stars({ rating }: { rating: number }) {
               <path d={starPath} />
             </svg>
             {(isFull || isHalf) && (
-              <span className={`absolute inset-0 overflow-hidden ${isHalf ? "w-1/2" : "w-full"}`}>
-                <svg viewBox="0 0 20 20" className="absolute inset-0 h-full w-full text-amber-400" fill="currentColor">
+              <span className={`absolute inset-y-0 left-0 overflow-hidden ${isHalf ? "w-1/2" : "w-full"}`}>
+                <svg viewBox="0 0 20 20" className="absolute inset-0 h-3 w-3 text-amber-400" fill="currentColor">
                   <path d={starPath} />
                 </svg>
               </span>
@@ -331,10 +331,10 @@ export default async function ArchivePage() {
               const starRating = avgRating ?? { easy: 1, medium: 3, extreme: 5 }[puzzle.difficulty] ?? 3;
 
               return (
+                <div key={puzzle.id} className="group flex flex-col">
                 <Link
-                  key={puzzle.id}
                   href={`/tic-tac-toe/${puzzle.id}`}
-                  className="group relative"
+                  className="relative block"
                   title={puzzle.title}
                 >
                   {/* Card */}
@@ -428,6 +428,15 @@ export default async function ArchivePage() {
                     </p>
                   </div>
                 </Link>
+                {played && (
+                  <a
+                    href={`/tic-tac-toe/${puzzle.id}?second-chance=true`}
+                    className="mt-1.5 block rounded-lg border border-amber-700/40 bg-amber-900/20 py-1 text-center text-[9px] font-bold text-amber-400 transition-colors hover:bg-amber-900/40 sm:text-[10px]"
+                  >
+                    ↺ Second Chance
+                  </a>
+                )}
+                </div>
               );
             })}
           </div>

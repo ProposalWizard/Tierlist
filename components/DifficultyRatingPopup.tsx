@@ -97,12 +97,13 @@ export default function DifficultyRatingPopup({ puzzleId, onDismiss }: Props) {
                   >
                     {/* Gray background star */}
                     <StarIcon className="absolute inset-0 h-full w-full text-gray-600" />
-                    {/* Gold fill (half or full) */}
+                    {/* Gold fill (half or full) — inner star must be h-10 w-10 to match the
+                        button size, not h-full/w-full of the narrow clip container */}
                     {(isFull || isHalf) && (
                       <div
-                        className={`absolute inset-0 overflow-hidden ${isHalf ? "w-1/2" : "w-full"}`}
+                        className={`absolute inset-y-0 left-0 overflow-hidden ${isHalf ? "w-1/2" : "w-full"}`}
                       >
-                        <StarIcon className="absolute inset-0 h-full w-full text-amber-400" />
+                        <StarIcon className="absolute inset-0 h-10 w-10 text-amber-400" />
                       </div>
                     )}
                   </button>

@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import DifficultyRatingPopup from "./DifficultyRatingPopup";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/lib/types";
 import { CUSTOM_SQUARE_LABELS } from "@/lib/types";
 
@@ -355,6 +356,8 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [scoreSaved, setScoreSaved] = useState(false);
   const [ratingDismissed, setRatingDismissed] = useState(false);
+  const searchParams = useSearchParams();
+  const isSecondChance = searchParams.get("second-chance") === "true";
   const inputRef = useRef<HTMLInputElement>(null!);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -506,6 +509,7 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
 
   const saveScore = useCallback(async (finalScore: number, maxScore: number, timeSeconds: number) => {
     if (scoreSaved) return;
+    if (isSecondChance && finalScore === 0) return;
     setScoreSaved(true);
     try {
       await fetch(`/api/tictactoe/${puzzle.id}/score`, {
@@ -516,10 +520,11 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
           max_score: maxScore,
           hints_used: hintsUsed,
           time_seconds: timeSeconds,
+          ...(isSecondChance && { second_chance: true }),
         }),
       });
     } catch { /* silent — score saving is best-effort */ }
-  }, [puzzle.id, hintsUsed, scoreSaved]);
+  }, [puzzle.id, hintsUsed, scoreSaved, isSecondChance]);
 
   const handleFinish = () => {
     const is2P = mode === "2player";
@@ -1265,39 +1270,39 @@ function ResultsScreen({
         {is2P ? (
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className={`rounded-xl p-4 ${winner === 0 ? "bg-indigo-900 border-2 border-indigo-400" : "bg-gray-800"}`}>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">{n1}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-white mb-1">{n1}</p>
               <p className={`text-4xl font-black ${winner === 0 ? "text-indigo-300" : "text-white"}`}>{s1}</p>
-              {playerTimers && <p className="text-xs font-mono font-bold text-gray-400 mt-1">{formatTime(playerTimers[0])}</p>}
+              {playerTimers && <p className="text-xs font-mono font-bold text-white mt-1">{formatTime(playerTimers[0])}</p>}
               {gameState.playerBonusAwarded[0] && <p className="text-xs font-bold text-yellow-400 mt-1">+{puzzle.three_in_a_row_bonus} TTT Bonus!</p>}
             </div>
             <div className={`rounded-xl p-4 ${winner === 1 ? "bg-purple-900 border-2 border-purple-400" : "bg-gray-800"}`}>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">{n2}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-white mb-1">{n2}</p>
               <p className={`text-4xl font-black ${winner === 1 ? "text-purple-300" : "text-white"}`}>{s2}</p>
-              {playerTimers && <p className="text-xs font-mono font-bold text-gray-400 mt-1">{formatTime(playerTimers[1])}</p>}
+              {playerTimers && <p className="text-xs font-mono font-bold text-white mt-1">{formatTime(playerTimers[1])}</p>}
               {gameState.playerBonusAwarded[1] && <p className="text-xs font-bold text-yellow-400 mt-1">+{puzzle.three_in_a_row_bonus} TTT Bonus!</p>}
             </div>
           </div>
         ) : (
           <>
             <p className="text-5xl font-black text-indigo-400">{soloCurrentScore}</p>
-            <p className="text-sm text-gray-400">out of {totalMaxScore} ({pct}%)</p>
+            <p className="text-sm text-white">out of {totalMaxScore} ({pct}%)</p>
           </>
         )}
 
         <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">{squaresCompleted}/9</p>
-            <p className="text-xs text-gray-400 mt-0.5">Squares</p>
+            <p className="text-xs text-white mt-0.5">Squares</p>
           </div>
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black font-mono text-indigo-400">{formatTime(elapsed)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Time</p>
+            <p className="text-xs text-white mt-0.5">Time</p>
           </div>
           <div className="rounded-lg bg-gray-800 p-3">
             <p className="text-2xl font-black text-white">
               {is2P ? (gameState.playerBonusAwarded[0] || gameState.playerBonusAwarded[1] ? "Yes" : "No") : (gameState.bonusAwarded ? "Yes" : "No")}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">3-in-a-row</p>
+            <p className="text-xs text-white mt-0.5">3-in-a-row</p>
             {hintsUsed > 0 && <p className="text-[10px] text-amber-400 mt-0.5">{hintsUsed} hints</p>}
           </div>
         </div>
@@ -1319,7 +1324,7 @@ function ResultsScreen({
             // Row label
             <div
               key={`rl${ri}`}
-              className="flex items-start justify-end pr-1 pt-1 text-right font-bold leading-tight text-indigo-300"
+              className="flex items-start justify-start pl-1 pt-1 text-left font-bold leading-tight text-indigo-300"
             >
               {puzzle.row_labels[ri]}
             </div>,
@@ -1352,7 +1357,7 @@ function ResultsScreen({
                         <div
                           key={ans.name}
                           className={`flex items-baseline justify-between gap-0.5 ${
-                            foundNames.has(ans.name) ? "text-green-400" : "text-gray-600"
+                            foundNames.has(ans.name) ? "text-green-400" : "text-red-500"
                           }`}
                         >
                           <span className="truncate">
@@ -1370,13 +1375,21 @@ function ResultsScreen({
       </div>
 
       {/* ── Action buttons ── */}
-      <div className="mt-6 flex justify-center gap-3">
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => navigator.clipboard.writeText(shareText)}
           className="rounded-xl border border-gray-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-gray-800"
         >
           Copy Result
         </button>
+        {puzzle.is_daily && (
+          <Link
+            href="/tic-tac-toe/archive"
+            className="rounded-xl border border-indigo-700 px-5 py-3 text-sm font-bold text-indigo-300 transition-colors hover:bg-indigo-900/40"
+          >
+            Play Past Dailies
+          </Link>
+        )}
         <button
           onClick={onPlayAgain}
           className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
