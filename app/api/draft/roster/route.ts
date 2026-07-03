@@ -118,6 +118,32 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  // Nationality fallback: FC 25/FC 26 entries sometimes have null nationality due to
+  // SoFIFA HTML changes during scraping. Look up from any other edition for those players.
+  const missingNatIds = roster.filter(p => !p.nationality).map(p => p.sofifa_id).filter(Boolean);
+  if (missingNatIds.length > 0) {
+    const { data: natRows } = await supabase
+      .from("sofifa_players")
+      .select("sofifa_id, nationality")
+      .in("sofifa_id", missingNatIds)
+      .not("nationality", "is", null)
+      .neq("nationality", "");
+    if (natRows && natRows.length > 0) {
+      const natMap = new Map<string, string>();
+      for (const row of natRows) {
+        if (row.nationality && !natMap.has(row.sofifa_id)) {
+          natMap.set(row.sofifa_id, row.nationality);
+        }
+      }
+      for (const player of roster) {
+        if (!player.nationality) {
+          const fallback = natMap.get(player.sofifa_id);
+          if (fallback) player.nationality = fallback;
+        }
+      }
+    }
+  }
+
   // Safety net: estimate OVR from face stats if all other sources returned 0
   for (const player of roster) {
     if (player.overall === 0) {

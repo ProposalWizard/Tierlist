@@ -721,7 +721,7 @@ export default function ObjectivesAdmin() {
                       onClick={() => setNc(n => ({ ...n, timeframe: "career" }))}
                       className={`px-3 py-1.5 rounded text-xs font-bold transition ${nc.timeframe === "career" ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-400 hover:text-white"}`}
                     >
-                      Career total (all drafts)
+                      Draft run (5 seasons)
                     </button>
                     <button
                       onClick={() => setNc(n => ({ ...n, timeframe: "season" }))}
@@ -732,7 +732,7 @@ export default function ObjectivesAdmin() {
                   </div>
                   <p className="text-[10px] text-gray-500 mt-1">
                     {nc.timeframe === "career"
-                      ? "Accumulates across every draft you play. E.g. score 500 goals total across all drafts forever."
+                      ? "Accumulates across all 5 seasons of one draft run. Resets when you start a new draft."
                       : "Must happen within a single season. E.g. score 35 goals in one PL season."}
                   </p>
                 </div>

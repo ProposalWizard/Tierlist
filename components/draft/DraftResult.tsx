@@ -610,12 +610,18 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const [showUELTable, setShowUELTable] = useState(false);
   const [showCareerRecap, setShowCareerRecap] = useState(false);
   const [equippedFrame, setEquippedFrame] = useState("frame_default");
-  const [xpPopup, setXpPopup] = useState<{
-    events: { label: string; xp: number }[];
+  const [xpPopups, setXpPopups] = useState<{
+    id: string;
+    title: string;
+    xp: number;
     oldLevel: number;
     newLevel: number;
     newRewards: string[];
-  } | null>(null);
+    newSeasonCards: { name: string; image_url: string | null }[];
+  }[]>([]);
+  const seasonRewardsRef = useRef<{
+    id: string; level: number; card_name: string | null; image_url: string | null;
+  }[]>([]);
   const shareRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [statsView, setStatsView] = useState<"pl" | "all">("all");
@@ -625,6 +631,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     fetch("/api/profile/progression")
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.equippedFrame) setEquippedFrame(data.equippedFrame); })
+      .catch(() => {});
+    fetch("/api/season-rewards")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.rewards) seasonRewardsRef.current = data.rewards; })
       .catch(() => {});
   }, [isSignedIn]);
 
@@ -721,27 +731,31 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       if (isSignedIn) {
         (async () => {
           const runId = `s${seasonNumber}-${Date.now()}`;
-          const xpEvents: { label: string; xp: number }[] = [];
-          const awardXp = async (eventType: string, ref: string, amount: number, label: string) => {
+          // Track the user's level as XP is awarded sequentially
+          let currentLevel: number | null = null;
+          const awardXp = async (eventType: string, ref: string, amount: number) => {
             try {
               const res = await fetch("/api/xp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ event_type: eventType, event_ref: ref, xp_amount: amount }),
               });
-              const data = await res.json();
-              if (!data.duplicate) xpEvents.push({ label, xp: amount });
+              const data = await res.json() as { old_level?: number; new_level?: number; new_rewards?: string[]; duplicate?: boolean };
+              if (!data.duplicate) {
+                if (currentLevel === null && data.old_level) currentLevel = data.old_level;
+                if (data.new_level) currentLevel = data.new_level;
+              }
               return data;
             } catch { return null; }
           };
 
-          let lastResult: { new_level?: number; old_level?: number; new_rewards?: string[] } | null = null;
-          lastResult = await awardXp("draft_complete", runId, XP_AWARDS.draft_complete, "Season Complete");
+          // Award regular milestone XP silently — no popup for these
+          await awardXp("draft_complete", runId, XP_AWARDS.draft_complete);
           if (season.actualFinish === 1) {
-            lastResult = await awardXp("draft_win", runId, XP_AWARDS.draft_win, "League Champions!");
+            await awardXp("draft_win", runId, XP_AWARDS.draft_win);
           }
           if (season.teamRecord.losses === 0) {
-            lastResult = await awardXp("draft_invincible", runId, XP_AWARDS.draft_invincible, "Invincible Season!");
+            await awardXp("draft_invincible", runId, XP_AWARDS.draft_invincible);
           }
 
           // Check objectives
@@ -805,6 +819,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 competition,
+                seasonNumber,
                 squad: players.map(p => ({
                   name: p.name,
                   nationality: p.nationality ?? "",
@@ -835,11 +850,31 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             });
             if (objRes.ok) {
               const objData = await objRes.json();
-              const completed = objData.completed as { id: string; xp_reward: number; title: string; card_image_url: string | null; card_name: string | null }[] ?? [];
-              for (const obj of completed) {
+              const completedObjs = objData.completed as { id: string; xp_reward: number; title: string; card_image_url: string | null; card_name: string | null }[] ?? [];
+              const pendingPopups: typeof xpPopups = [];
+              for (const obj of completedObjs) {
+                const levelBefore = currentLevel ?? 1;
+                let newRewards: string[] = [];
                 if (obj.xp_reward > 0) {
-                  lastResult = await awardXp(`objective_${obj.id}`, `${runId}_obj_${obj.id}`, obj.xp_reward, obj.title || "Objective Complete!");
+                  const r = await awardXp(`objective_${obj.id}`, `${runId}_obj_${obj.id}`, obj.xp_reward);
+                  newRewards = (!r?.duplicate ? r?.new_rewards : null) ?? [];
                 }
+                const levelAfter = currentLevel ?? levelBefore;
+                const newSeasonCards = seasonRewardsRef.current
+                  .filter(sr => sr.level > levelBefore && sr.level <= levelAfter)
+                  .map(sr => ({ name: sr.card_name ?? "Season Card", image_url: sr.image_url }));
+                pendingPopups.push({
+                  id: obj.id,
+                  title: obj.title || "Objective Complete!",
+                  xp: obj.xp_reward,
+                  oldLevel: levelBefore,
+                  newLevel: levelAfter,
+                  newRewards,
+                  newSeasonCards,
+                });
+              }
+              if (pendingPopups.length > 0) {
+                setXpPopups(pendingPopups);
               }
             }
           } catch { /* objectives check is non-critical */ }
@@ -855,15 +890,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               seasons_played: 1,
             }),
           }).catch(() => {});
-
-          if (xpEvents.length > 0) {
-            setXpPopup({
-              events: xpEvents,
-              oldLevel: lastResult?.old_level ?? 1,
-              newLevel: lastResult?.new_level ?? 1,
-              newRewards: lastResult?.new_rewards ?? [],
-            });
-          }
         })();
 
         // Submit season records to global leaderboard
@@ -2902,16 +2928,20 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         />
       )}
 
-      {/* XP Popup */}
-      {xpPopup && (
+      {/* Objective completion popups — one per completed objective, stacked vertically */}
+      {xpPopups.map((popup, i) => (
         <XPPopup
-          events={xpPopup.events}
-          oldLevel={xpPopup.oldLevel}
-          newLevel={xpPopup.newLevel}
-          newRewards={xpPopup.newRewards}
-          onDismiss={() => setXpPopup(null)}
+          key={popup.id}
+          index={i}
+          title={popup.title}
+          xp={popup.xp}
+          oldLevel={popup.oldLevel}
+          newLevel={popup.newLevel}
+          newRewards={popup.newRewards}
+          newSeasonCards={popup.newSeasonCards}
+          onDismiss={() => setXpPopups(prev => prev.filter(p => p.id !== popup.id))}
         />
-      )}
+      ))}
     </div>
   );
 }

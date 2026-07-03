@@ -66,17 +66,19 @@ export async function POST(req: NextRequest) {
     const sameSeason = (obj as Record<string, unknown>).same_season === true;
     const samePlayer = (obj as Record<string, unknown>).same_player === true;
     const orGroups = ((obj as Record<string, unknown>).or_groups ?? null) as ObjectiveCondition[][] | null;
-    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer, orGroups ?? undefined);
+    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer, orGroups ?? undefined, body.seasonNumber === 1);
 
     if (complete) {
-      await service.from("user_objectives").upsert({
+      const { error: upsertErr } = await service.from("user_objectives").upsert({
         user_id: user.id,
         objective_id: obj.id,
         completed_at: new Date().toISOString(),
         progress: newProgress,
       }, { onConflict: "user_id,objective_id" });
 
-      newlyCompleted.push({ id: obj.id, xp_reward: obj.xp_reward, title: obj.title ?? "", card_image_url: obj.card_image_url ?? null, card_name: obj.card_name ?? null });
+      if (!upsertErr) {
+        newlyCompleted.push({ id: obj.id, xp_reward: obj.xp_reward, title: obj.title ?? "", card_image_url: obj.card_image_url ?? null, card_name: obj.card_name ?? null });
+      }
     } else {
       await service.from("user_objectives").upsert({
         user_id: user.id,

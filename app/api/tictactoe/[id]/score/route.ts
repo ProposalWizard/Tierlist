@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const { data: existing } = await service
     .from("tictactoe_scores")
-    .select("id")
+    .select("id, is_second_chance")
     .eq("user_id", user.id)
     .eq("puzzle_id", id)
     .maybeSingle();
@@ -55,6 +55,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   if (existing && secondChance) {
+    if (existing.is_second_chance) {
+      return NextResponse.json({ saved: false, reason: "second_chance_used" });
+    }
     await service.from("tictactoe_scores").delete().eq("user_id", user.id).eq("puzzle_id", id);
   }
 
@@ -64,6 +67,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     score,
     max_score: maxScore,
     hints_used: hintsUsed,
+    is_second_chance: secondChance,
   };
   if (timeSeconds != null) insertData.time_seconds = timeSeconds;
 

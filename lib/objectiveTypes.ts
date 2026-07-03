@@ -92,6 +92,8 @@ export interface SeasonCheckData {
   plMatchResults?: { goalsFor: number; goalsAgainst: number }[];
   // Previous seasons' PL match results (oldest first). Used for multi-season season_stat conditions.
   historicalPlMatchResults?: { goalsFor: number; goalsAgainst: number }[][];
+  // Which season within the current draft run (1–5). Season 1 resets draft-run progress.
+  seasonNumber?: number;
 }
 
 export interface SquadPlayer {
@@ -176,5 +178,5 @@ export const POSITION_MATCH_LABELS: Record<PositionMatch, string> = {
 
 export const TIMEFRAME_LABELS: Record<Timeframe, string> = {
   season: "In a single season",
-  career: "Across all drafts (career total)",
+  career: "Within one draft run (5 seasons)",
 };
