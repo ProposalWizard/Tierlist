@@ -2,18 +2,15 @@
 
 import { useState, useEffect } from "react";
 
-interface XPEvent {
-  label: string;
-  xp: number;
-}
-
 interface SeasonCardUnlock {
   name: string;
   image_url: string | null;
 }
 
 interface Props {
-  events: XPEvent[];
+  index: number;
+  title: string;
+  xp: number;
   oldLevel: number;
   newLevel: number;
   newRewards: string[];
@@ -21,11 +18,10 @@ interface Props {
   onDismiss: () => void;
 }
 
-export default function XPPopup({ events, oldLevel, newLevel, newRewards, newSeasonCards = [], onDismiss }: Props) {
+export default function XPPopup({ index, title, xp, oldLevel, newLevel, newRewards, newSeasonCards = [], onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
-  const totalXp = events.reduce((s, e) => s + e.xp, 0);
   const leveledUp = newLevel > oldLevel;
 
   useEffect(() => {
@@ -36,7 +32,7 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, newSea
     const timer = setTimeout(() => {
       setExiting(true);
       setTimeout(onDismiss, 400);
-    }, (leveledUp || newSeasonCards.length > 0) ? 6000 : 4000);
+    }, (leveledUp || newSeasonCards.length > 0) ? 6000 : 4500);
     return () => clearTimeout(timer);
   }, [onDismiss, leveledUp, newSeasonCards.length]);
 
@@ -44,6 +40,8 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, newSea
     setExiting(true);
     setTimeout(onDismiss, 400);
   };
+
+  const topOffset = 64 + index * 210;
 
   return (
     <>
@@ -72,10 +70,10 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, newSea
       `}</style>
 
       <div
-        className={`fixed top-16 right-4 z-40 ${exiting ? "toast-exit" : visible ? "toast-enter" : "opacity-0 translate-x-full"}`}
-        style={{ pointerEvents: "auto" }}
+        className={`fixed right-4 z-40 ${exiting ? "toast-exit" : visible ? "toast-enter" : "opacity-0 translate-x-full"}`}
+        style={{ top: `${topOffset}px`, pointerEvents: "auto" }}
       >
-        <div className="relative w-72 rounded-xl border border-amber-500/30 bg-gray-900/95 backdrop-blur-sm shadow-2xl shadow-amber-900/20 overflow-hidden">
+        <div className="relative w-72 rounded-xl border border-emerald-500/30 bg-gray-900/95 backdrop-blur-sm shadow-2xl shadow-emerald-900/20 overflow-hidden">
           {/* Close button */}
           <button
             onClick={handleDismiss}
@@ -89,18 +87,28 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, newSea
           <div className="p-3">
             {/* Header */}
             <div className="flex items-center gap-2.5 mb-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/20">
-                <span className="text-base">&#9889;</span>
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/20 flex-shrink-0">
+                <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              <div>
-                <div className="text-lg font-black text-amber-400 leading-none">
-                  +{totalXp} XP
+              <div className="min-w-0 flex-1 pr-4">
+                <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider leading-none mb-0.5">
+                  Objective Complete!
                 </div>
-                <div className="text-[10px] text-white font-medium mt-0.5">
-                  {events.map(e => e.label).join(" + ")}
+                <div className="text-sm font-bold text-white leading-tight line-clamp-2">
+                  {title}
                 </div>
               </div>
             </div>
+
+            {/* XP reward */}
+            {xp > 0 && (
+              <div className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-2">
+                <span className="text-sm">&#9889;</span>
+                <span className="text-xs font-bold text-amber-400">+{xp} XP</span>
+              </div>
+            )}
 
             {/* Level up notification */}
             {leveledUp && (
@@ -112,11 +120,11 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, newSea
               </div>
             )}
 
-            {/* New rewards */}
+            {/* New frame rewards */}
             {newRewards.length > 0 && (
-              <div className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 mb-2">
+              <div className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 mb-2">
                 <span className="text-sm">&#127775;</span>
-                <span className="text-xs font-bold text-emerald-400">
+                <span className="text-xs font-bold text-purple-400">
                   {newRewards.length} New Reward{newRewards.length > 1 ? "s" : ""} Unlocked!
                 </span>
               </div>
@@ -145,14 +153,14 @@ export default function XPPopup({ events, oldLevel, newLevel, newRewards, newSea
             {/* XP progress bar animation */}
             <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-300 rounded-full xp-bar-fill"
+                className="h-full bg-gradient-to-r from-emerald-600 via-emerald-400 to-emerald-300 rounded-full xp-bar-fill"
                 style={{ width: 0 }}
               />
             </div>
           </div>
 
           {/* Top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500/60 via-amber-400 to-amber-500/60" />
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500/60 via-emerald-400 to-emerald-500/60" />
         </div>
       </div>
     </>

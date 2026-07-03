@@ -39,10 +39,10 @@ export async function GET() {
   if (user) {
     const { data: userObjs } = await supabase
       .from("user_objectives")
-      .select("objective_id, claimed_at")
+      .select("objective_id, claimed_at, completed_at")
       .eq("user_id", user.id);
-    completed = (userObjs ?? []).map(o => o.objective_id);
-    unclaimed = (userObjs ?? []).filter(o => !o.claimed_at).map(o => o.objective_id);
+    completed = (userObjs ?? []).filter(o => o.completed_at != null).map(o => o.objective_id);
+    unclaimed = (userObjs ?? []).filter(o => o.completed_at != null && !o.claimed_at).map(o => o.objective_id);
 
     // Fetch full details for completed objectives (even if expired)
     if (completed.length > 0) {
