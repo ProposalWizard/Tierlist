@@ -1334,6 +1334,360 @@ export function generateTransferOffers(
   });
 }
 
+// --- European CL rivals for fixture generation ---
+const EUROPEAN_CL_RIVALS = [
+  { name: 'Real Madrid', prestige: 98 },
+  { name: 'Barcelona', prestige: 91 },
+  { name: 'Bayern Munich', prestige: 93 },
+  { name: 'PSG', prestige: 92 },
+  { name: 'Inter Milan', prestige: 88 },
+  { name: 'Borussia Dortmund', prestige: 86 },
+  { name: 'Atlético Madrid', prestige: 88 },
+  { name: 'AC Milan', prestige: 87 },
+];
+
+// Matchweeks and phases for the 9 season fixtures
+const FIXTURE_MWS = [0, 4, 9, 14, 20, 24, 28, 33, 37] as const;
+const FIXTURE_PHASES: Array<BDEvent['phase']> = [
+  'pre_season', 'first_half', 'first_half', 'first_half',
+  'january', 'second_half', 'second_half', 'second_half', 'run_in',
+];
+
+interface Fixture {
+  opponent: string;
+  opponentId: string;
+  opponentPrestige: number;
+  isHome: boolean;
+  matchweek: number;
+  competition: NonNullable<BDEvent['matchContext']>['competition'];
+  phase: BDEvent['phase'];
+}
+
+function generateFixtures(club: BDClub, inCL: boolean, inEL: boolean, seed: number): Fixture[] {
+  const rng = mulberry32(seed);
+  const others = PL_CLUBS.filter(c => c.id !== club.id);
+  for (let i = others.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [others[i], others[j]] = [others[j], others[i]];
+  }
+
+  return FIXTURE_MWS.map((mw, idx) => {
+    let competition: Fixture['competition'] = 'Premier League';
+    if (mw === 0) competition = 'Pre-Season';
+    else if (mw === 20) competition = 'FA Cup';
+    else if (inCL && (mw === 14 || mw === 28)) competition = 'Champions League';
+    else if (inEL && mw === 14) competition = 'Europa League';
+
+    let opponent = others[idx % others.length].name;
+    let opponentId = others[idx % others.length].id;
+    let opponentPrestige = others[idx % others.length].prestige;
+
+    if (competition === 'Champions League') {
+      const eu = EUROPEAN_CL_RIVALS[idx % EUROPEAN_CL_RIVALS.length];
+      opponent = eu.name;
+      opponentId = `eu_cl_${idx}`;
+      opponentPrestige = eu.prestige;
+    }
+
+    return {
+      opponent,
+      opponentId,
+      opponentPrestige,
+      isHome: rng() > 0.5,
+      matchweek: mw,
+      competition,
+      phase: FIXTURE_PHASES[idx],
+    };
+  });
+}
+
+function initLeagueTable(clubId: string): LeagueTableRow[] {
+  return [...PL_CLUBS]
+    .sort((a, b) => b.prestige - a.prestige)
+    .map(c => ({
+      clubId: c.id,
+      name: c.name,
+      p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0,
+      form: [],
+      isPlayer: c.id === clubId,
+    }));
+}
+
+function selectTeammates(
+  clubId: string,
+  playerPosition: BDPosition,
+  playerName: string,
+  seed: number,
+): BDTeammate[] {
+  const squad = (CLUB_SQUADS[clubId] ?? []).filter(p => p.name !== playerName);
+  const rng = mulberry32(seed);
+
+  const roleMap: Record<BDPosition, Array<{ pos: BDPosition; role: string }>> = {
+    ATT: [
+      { pos: 'MID', role: 'Creative Playmaker' },
+      { pos: 'ATT', role: 'Strike Partner' },
+      { pos: 'DEF', role: 'Defensive Rock' },
+    ],
+    MID: [
+      { pos: 'ATT', role: 'Forward Partner' },
+      { pos: 'MID', role: 'Midfield Partner' },
+      { pos: 'DEF', role: 'Defensive Shield' },
+    ],
+    DEF: [
+      { pos: 'MID', role: 'Midfield Screen' },
+      { pos: 'DEF', role: 'Defensive Partner' },
+      { pos: 'ATT', role: 'Strike Threat' },
+    ],
+    GK: [
+      { pos: 'DEF', role: 'Defensive Leader' },
+      { pos: 'MID', role: 'Midfield Engine' },
+      { pos: 'ATT', role: 'Strike Threat' },
+    ],
+  };
+
+  const result: BDTeammate[] = [];
+  for (const { pos, role } of roleMap[playerPosition]) {
+    const candidates = squad.filter(p => p.pos === pos);
+    if (candidates.length === 0) continue;
+    const pick = candidates[Math.floor(rng() * candidates.length)];
+    result.push({ name: pick.name, position: pick.pos, role, goals: 0, assists: 0, cleanSheets: 0, avgRating: 0, appearances: 0 });
+  }
+  return result;
+}
+
+function buildMatchEvent(fix: Fixture, club: BDClub): BDEvent {
+  const mwLabel = fix.matchweek === 0 ? 'Pre-Season Friendly' : `Matchweek ${fix.matchweek}`;
+  const title = `${fix.competition} · ${mwLabel}`;
+  const homeAwayStr = fix.isHome ? `${fix.opponent} come to the stadium` : `You travel to ${fix.opponent}`;
+  const diffStr = fix.opponentPrestige >= 90
+    ? 'Elite opposition. A genuine test of where you stand.'
+    : fix.opponentPrestige >= 80
+    ? 'A tough fixture. Three points here would be massive.'
+    : fix.opponentPrestige >= 66
+    ? 'The kind of game you need to win if your season is going to mean anything.'
+    : 'Three points expected. Don\'t let them make a game of it.';
+  const context = `${homeAwayStr}. ${diffStr}`;
+
+  return {
+    id: `match_mw${fix.matchweek}`,
+    phase: fix.phase,
+    category: 'match',
+    title,
+    context,
+    matchContext: {
+      opponent: fix.opponent,
+      opponentId: fix.opponentId,
+      competition: fix.competition,
+      isHome: fix.isHome,
+      matchweek: fix.matchweek,
+      opponentPrestige: fix.opponentPrestige,
+    },
+    choices: [
+      {
+        id: 'press',
+        label: 'Dominate — press high from the first whistle',
+        emoji: '🔥',
+        description: 'High intensity. Higher ceiling — a big win is possible — but physically demanding.',
+        hint: 'risky',
+        outcome: '',
+        effects: {},
+      },
+      {
+        id: 'control',
+        label: 'Control the game — patient and disciplined',
+        emoji: '🎯',
+        description: 'Possession-based, composed. Consistent output, lower variance.',
+        hint: 'safe',
+        outcome: '',
+        effects: {},
+      },
+      {
+        id: 'inspire',
+        label: 'Lead by example — energy and leadership',
+        emoji: '🤝',
+        description: 'Work rate and communication. Elevates the whole team. Great for morale.',
+        hint: 'team',
+        outcome: '',
+        effects: {},
+      },
+    ],
+  };
+}
+
+function generateMatchResult(
+  clubPrestige: number,
+  opponentPrestige: number,
+  choiceId: string,
+  attributes: BDAttributes,
+  playerOverall: number,
+  position: BDPosition,
+  rng: () => number,
+): NonNullable<BDEvent['matchResult']> {
+  const mods: Record<string, { str: number; variance: number; rat: number }> = {
+    press:   { str: 8,  variance: 1.5,  rat: 0.20 },
+    control: { str: 2,  variance: 0.75, rat: 0.08 },
+    inspire: { str: 5,  variance: 1.0,  rat: 0.05 },
+  };
+  const mod = mods[choiceId] ?? mods.control;
+
+  const fitBonus    = (attributes.fitness - 70) * 0.06;
+  const moraleBonus = (attributes.morale - 70) * 0.04;
+  const effectiveStr = clubPrestige + playerOverall * 0.22 + fitBonus + moraleBonus + mod.str;
+  const oppStr = opponentPrestige + gauss(rng, 0, 10 * mod.variance);
+  const delta = effectiveStr - oppStr;
+  const rawWinP = 1 / (1 + Math.exp(-delta / 16));
+
+  const roll = rng();
+  const isWin = roll < rawWinP - 0.11;
+  const isDraw = !isWin && roll < rawWinP + 0.11;
+
+  let teamGoals: number, opponentGoals: number;
+  if (isWin) {
+    teamGoals = Math.max(1, ri(rng, 2.2, 0.9 * mod.variance));
+    opponentGoals = Math.max(0, ri(rng, 0.7, 0.5));
+    if (opponentGoals >= teamGoals) opponentGoals = teamGoals - 1;
+  } else if (isDraw) {
+    teamGoals = Math.max(0, ri(rng, 1.2, 0.7 * mod.variance));
+    opponentGoals = teamGoals;
+  } else {
+    opponentGoals = Math.max(1, ri(rng, 1.9, 0.8));
+    teamGoals = Math.max(0, ri(rng, 0.7, 0.5));
+    if (teamGoals >= opponentGoals) teamGoals = opponentGoals - 1;
+  }
+  teamGoals = clamp(teamGoals, 0, 9);
+  opponentGoals = clamp(opponentGoals, 0, 9);
+
+  const rBase = isWin ? gauss(rng, 7.5, 0.5) : isDraw ? gauss(rng, 7.0, 0.4) : gauss(rng, 6.4, 0.5);
+  const playerRating = clamp(Number((rBase + mod.rat + (playerOverall - 80) * 0.015).toFixed(1)), 5.0, 9.9);
+
+  let playerGoals = 0, playerAssists = 0;
+  if (teamGoals > 0) {
+    if (position === 'ATT') {
+      for (let g = 0; g < teamGoals; g++) if (rng() < 0.38) playerGoals++;
+      for (let g = 0; g < Math.max(0, teamGoals - playerGoals); g++) if (rng() < 0.20) playerAssists++;
+    } else if (position === 'MID') {
+      for (let g = 0; g < teamGoals; g++) if (rng() < 0.16) playerGoals++;
+      for (let g = 0; g < Math.max(0, teamGoals - playerGoals); g++) if (rng() < 0.30) playerAssists++;
+    } else if (position === 'DEF') {
+      if (teamGoals >= 2 && rng() < 0.08) playerGoals = 1;
+      if (Math.max(0, teamGoals - playerGoals) > 0 && rng() < 0.12) playerAssists = 1;
+    }
+  }
+
+  return {
+    teamGoals,
+    opponentGoals,
+    isWin,
+    isDraw,
+    playerGoals,
+    playerAssists,
+    playerRating,
+    cleanSheet: opponentGoals === 0,
+  };
+}
+
+function generateMatchOutcome(
+  result: NonNullable<BDEvent['matchResult']>,
+  club: BDClub,
+  ctx: NonNullable<BDEvent['matchContext']>,
+  position: BDPosition,
+): string {
+  const { teamGoals, opponentGoals, isWin, isDraw, playerGoals, playerAssists, playerRating, cleanSheet } = result;
+  const home = ctx.isHome ? club.name : ctx.opponent;
+  const away = ctx.isHome ? ctx.opponent : club.name;
+  const hg = ctx.isHome ? teamGoals : opponentGoals;
+  const ag = ctx.isHome ? opponentGoals : teamGoals;
+  const score = `${home} ${hg}–${ag} ${away}`;
+
+  const headline = isWin
+    ? (teamGoals >= 4 ? 'A demolition.' : teamGoals >= 3 ? 'A commanding win.' : teamGoals - opponentGoals >= 2 ? 'A convincing result.' : 'Three hard-fought points.')
+    : isDraw
+    ? (teamGoals >= 2 ? 'An entertaining draw.' : 'Honours even.')
+    : (opponentGoals - teamGoals >= 3 ? 'A tough evening.' : 'A frustrating defeat.');
+
+  let personal = '';
+  if (position === 'GK' || position === 'DEF') {
+    personal = cleanSheet
+      ? ` Clean sheet — ${playerRating.toFixed(1)} rating.`
+      : ` ${playerRating.toFixed(1)} rating.`;
+  } else {
+    const parts: string[] = [];
+    if (playerGoals === 1) parts.push('a goal');
+    else if (playerGoals >= 2) parts.push(`${playerGoals} goals`);
+    if (playerAssists === 1) parts.push('an assist');
+    else if (playerAssists >= 2) parts.push(`${playerAssists} assists`);
+    personal = parts.length > 0
+      ? ` ${parts.join(' and ')} — ${playerRating.toFixed(1)} rating.`
+      : playerRating >= 8.0 ? ` A brilliant personal display — ${playerRating.toFixed(1)} rating.`
+      : playerRating <= 6.2 ? ` A tough night personally — ${playerRating.toFixed(1)} rating.`
+      : ` ${playerRating.toFixed(1)} rating.`;
+  }
+
+  return `${score}. ${headline}${personal}`;
+}
+
+function simulateMatchweekTable(
+  table: LeagueTableRow[],
+  playerClubId: string,
+  result: NonNullable<BDEvent['matchResult']>,
+  ctx: NonNullable<BDEvent['matchContext']>,
+  rng: () => number,
+): LeagueTableRow[] {
+  if (ctx.competition !== 'Premier League') return table;
+
+  const addForm = (f: ('W' | 'D' | 'L')[], r: 'W' | 'D' | 'L') => [...f, r].slice(-5) as ('W' | 'D' | 'L')[];
+
+  return table.map(row => {
+    if (row.clubId === playerClubId) {
+      const r: 'W' | 'D' | 'L' = result.isWin ? 'W' : result.isDraw ? 'D' : 'L';
+      const pts = result.isWin ? 3 : result.isDraw ? 1 : 0;
+      return { ...row, p: row.p + 1, w: row.w + (result.isWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (!result.isWin && !result.isDraw ? 1 : 0), gf: row.gf + result.teamGoals, ga: row.ga + result.opponentGoals, pts: row.pts + pts, form: addForm(row.form, r) };
+    }
+    if (row.clubId === ctx.opponentId) {
+      const oppWin = !result.isWin && !result.isDraw;
+      const r: 'W' | 'D' | 'L' = oppWin ? 'W' : result.isDraw ? 'D' : 'L';
+      const pts = oppWin ? 3 : result.isDraw ? 1 : 0;
+      return { ...row, p: row.p + 1, w: row.w + (oppWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (result.isWin ? 1 : 0), gf: row.gf + result.opponentGoals, ga: row.ga + result.teamGoals, pts: row.pts + pts, form: addForm(row.form, r) };
+    }
+    // Simulate other clubs
+    const club = PL_CLUBS.find(c => c.id === row.clubId);
+    if (!club) return row;
+    const winP = clamp(0.24 + (club.prestige - 65) / 165, 0.14, 0.52);
+    const roll = rng();
+    const w = roll < winP ? 1 : 0;
+    const d = !w && roll < winP + 0.24 ? 1 : 0;
+    const l = !w && !d ? 1 : 0;
+    const gf = Math.max(0, ri(rng, w ? 2.0 : d ? 1.1 : 0.6, 0.8));
+    const ga = Math.max(0, l ? ri(rng, 2.0, 0.8) : d ? gf : ri(rng, 0.8, 0.6));
+    const r: 'W' | 'D' | 'L' = w ? 'W' : d ? 'D' : 'L';
+    return { ...row, p: row.p + 1, w: row.w + w, d: row.d + d, l: row.l + l, gf: row.gf + gf, ga: row.ga + ga, pts: row.pts + (w ? 3 : d ? 1 : 0), form: addForm(row.form, r) };
+  });
+}
+
+function updateTeammateStats(
+  teammates: BDTeammate[],
+  result: NonNullable<BDEvent['matchResult']>,
+  rng: () => number,
+): BDTeammate[] {
+  const { isWin, isDraw, teamGoals, opponentGoals } = result;
+  return teammates.map(tm => {
+    const baseRat = isWin ? gauss(rng, 7.3, 0.5) : isDraw ? gauss(rng, 6.9, 0.4) : gauss(rng, 6.4, 0.5);
+    const tmRat = clamp(baseRat, 5.0, 9.5);
+    let tmGoals = 0, tmAssists = 0, tmCS = 0;
+    if (teamGoals > 0) {
+      if (tm.position === 'ATT') { for (let g = 0; g < teamGoals; g++) if (rng() < 0.28) tmGoals++; }
+      else if (tm.position === 'MID') {
+        for (let g = 0; g < teamGoals; g++) if (rng() < 0.12) tmGoals++;
+        for (let g = 0; g < Math.max(0, teamGoals - tmGoals); g++) if (rng() < 0.25) tmAssists++;
+      }
+    }
+    if ((tm.position === 'DEF' || tm.position === 'GK') && opponentGoals === 0) tmCS = 1;
+    const newApps = tm.appearances + 1;
+    const newRat = newApps === 1 ? tmRat : clamp(Number(((tm.avgRating * tm.appearances + tmRat) / newApps).toFixed(2)), 5.0, 9.5);
+    return { ...tm, goals: tm.goals + tmGoals, assists: tm.assists + tmAssists, cleanSheets: tm.cleanSheets + tmCS, avgRating: newRat, appearances: newApps };
+  });
+}
+
 // --- Season initialization ---
 export function inferArchetype(age: number, overall: number): BDArchetype {
   if (age <= 20) return 'wonderkid';
@@ -1351,95 +1705,68 @@ export function archetypeDefaults(archetype: BDArchetype): { age: number; overal
   }
 }
 
-// --- League table helpers ---
-
-export function initLeagueTable(playerClubId: string): LeagueTableRow[] {
-  return PL_CLUBS.map(club => ({
-    clubId: club.id,
-    name: club.name,
-    p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0,
-    form: [] as ('W' | 'D' | 'L')[],
-    isPlayer: club.id === playerClubId,
-  })).sort((a, b) => {
-    const pa = PL_CLUBS.find(c => c.id === a.clubId)!.prestige;
-    const pb = PL_CLUBS.find(c => c.id === b.clubId)!.prestige;
-    return pb - pa;
-  });
-}
-
-export function selectTeammates(clubId: string, playerPos: BDPosition, playerName: string, seed: number): BDTeammate[] {
-  const squad = CLUB_SQUADS[clubId] ?? [];
-  const rng = mulberry32(seed + 7777);
-
-  const ROLE_LABELS: Record<BDPosition, string[]> = {
-    GK:  ['Goalkeeper'],
-    DEF: ['Centre-back', 'Full-back', 'Defender'],
-    MID: ['Central mid', 'Attacking mid', 'Defensive mid'],
-    ATT: ['Striker', 'Winger', 'Forward'],
-  };
-
-  // Pick complement positions — always include at least one of each other position
-  const others = squad.filter(p => p.name !== playerName);
-  const byPos: Record<BDPosition, typeof others> = { GK: [], DEF: [], MID: [], ATT: [] };
-  for (const p of others) byPos[p.pos].push(p);
-
-  const picked: typeof others = [];
-  const complement: BDPosition[] = (['GK', 'DEF', 'MID', 'ATT'] as BDPosition[]).filter(p => p !== playerPos);
-  for (const pos of complement) {
-    const pool = byPos[pos];
-    if (pool.length) picked.push(pool[Math.floor(rng() * pool.length)]);
-  }
-  // Fill to 4 total from remaining
-  const remaining = others.filter(p => !picked.includes(p));
-  while (picked.length < 4 && remaining.length) {
-    const idx = Math.floor(rng() * remaining.length);
-    picked.push(remaining.splice(idx, 1)[0]);
-  }
-
-  return picked.slice(0, 4).map(p => ({
-    name: p.name,
-    position: p.pos,
-    role: ROLE_LABELS[p.pos][Math.floor(rng() * ROLE_LABELS[p.pos].length)],
-    goals: 0, assists: 0, cleanSheets: 0, avgRating: 0, appearances: 0,
-  }));
-}
-
 export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number): BDSeason {
   const year = 2024 + seasonNumber - 1;
   const seed = hashSeed(`season_${player.name}_${seasonNumber}`);
   const rng = mulberry32(seed);
 
-  const phaseCounts: Array<[BDEvent['phase'], number]> = [
-    ['pre_season', 2], ['first_half', 3], ['january', 1], ['second_half', 3], ['run_in', 2],
-  ];
+  const inCL = rng() < club.clChance;
+  const inEL = !inCL && rng() < club.elChance;
 
-  const events: BDEvent[] = [];
+  // Generate fixtures and match events
+  const fixtures = generateFixtures(club, inCL, inEL, hashSeed(`fix_${player.name}_${seasonNumber}`));
+  const matchEventsByPhase: Partial<Record<BDEvent['phase'], BDEvent[]>> = {};
+  for (const fix of fixtures) {
+    if (!matchEventsByPhase[fix.phase]) matchEventsByPhase[fix.phase] = [];
+    matchEventsByPhase[fix.phase]!.push(buildMatchEvent(fix, club));
+  }
+
+  // Sample non-match events from pool per phase
   const usedIds = new Set<string>();
-  for (const [phase, count] of phaseCounts) {
+  function samplePhase(phase: BDEvent['phase'], count: number): BDEvent[] {
     const pool = EVENT_POOL.filter(
-      e => e.phase === phase &&
-        !usedIds.has(e.id) &&
+      e => e.phase === phase && !usedIds.has(e.id) && e.category !== 'match' &&
         (!e.positionFilter || e.positionFilter.includes(player.position)),
     );
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    for (const ev of pool.slice(0, count)) {
-      usedIds.add(ev.id);
-      events.push({ ...ev, choices: ev.choices.map(c => ({ ...c })) });
-    }
+    const picked = pool.slice(0, count);
+    picked.forEach(e => usedIds.add(e.id));
+    return picked.map(e => ({ ...e, choices: e.choices.map(c => ({ ...c })) }));
   }
 
-  const inCL = rng() < club.clChance;
-  const inEL = !inCL && rng() < club.elChance;
+  // Interleave match and non-match events per phase
+  function interleave(phase: BDEvent['phase'], nmCount: number, pattern: ('M' | 'NM')[]): BDEvent[] {
+    const nm = samplePhase(phase, nmCount);
+    const m = matchEventsByPhase[phase] ?? [];
+    const result: BDEvent[] = [];
+    let nmi = 0, mi = 0;
+    for (const slot of pattern) {
+      if (slot === 'NM' && nmi < nm.length) result.push(nm[nmi++]);
+      else if (slot === 'M' && mi < m.length) result.push(m[mi++]);
+    }
+    while (nmi < nm.length) result.push(nm[nmi++]);
+    while (mi < m.length) result.push(m[mi++]);
+    return result;
+  }
 
-  // Fame grows across career, boosted by reputation
+  const events: BDEvent[] = [
+    ...interleave('pre_season', 2, ['NM', 'NM', 'M']),
+    ...interleave('first_half', 4, ['NM', 'M', 'NM', 'M', 'NM', 'M', 'NM']),
+    ...interleave('january',    2, ['NM', 'NM', 'M']),
+    ...interleave('second_half',4, ['M', 'NM', 'M', 'NM', 'NM', 'M', 'NM']),
+    ...interleave('run_in',     2, ['NM', 'M', 'NM']),
+  ];
+
+  const leagueTable = initLeagueTable(club.id);
+  const teammates = selectTeammates(club.id, player.position, player.name, hashSeed(`team_${player.name}_${seasonNumber}`));
+
   const baseFame = player.isRealPlayer
     ? clamp(player.overall * 0.72, 35, 98)
     : clamp(15 + (seasonNumber - 1) * 10 + rng() * 8 + player.reputation * 0.3, 8, 95);
 
-  // Attributes affected by age and archetype
   const ageFit = player.archetype === 'veteran' ? -6 : player.archetype === 'wonderkid' ? 5 : 0;
   const attributes: BDAttributes = {
     fitness: Math.round(clamp(70 + rng() * 18 + ageFit, 55, 92)),
@@ -1461,40 +1788,92 @@ export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number)
     phase: 'pre_season',
     inCL,
     inEL,
+    leagueTable,
+    teammates,
     matchweek: 0,
-    leagueTable: initLeagueTable(club.id),
-    teammates: selectTeammates(club.id, player.position, player.name, seed),
   };
 }
 
 // --- Apply event choice ---
-export function applyChoice(season: BDSeason, eventId: string, choiceId: string): BDSeason {
+export function applyChoice(season: BDSeason, eventId: string, choiceId: string, playerPosition: BDPosition): BDSeason {
   const evIdx = season.events.findIndex(e => e.id === eventId);
   if (evIdx === -1) return season;
   const ev = season.events[evIdx];
   const choice = ev.choices.find(c => c.id === choiceId);
   if (!choice) return season;
 
-  const es = { ...season.eventStats };
-  const attrs = { ...season.attributes };
-  const fx = choice.effects;
+  let es = { ...season.eventStats };
+  let attrs = { ...season.attributes };
+  let leagueTable = season.leagueTable;
+  let teammates = season.teammates;
+  let matchResult: BDEvent['matchResult'];
+  let outcomeText = choice.outcome;
+  let updatedOverall = season.playerOverall;
+  let matchweek = season.matchweek;
 
-  if (fx.goals != null) es.goals += fx.goals;
-  if (fx.assists != null) es.assists += fx.assists;
-  if (fx.cleanSheets != null) es.cleanSheets += fx.cleanSheets;
-  if (fx.manOfTheMatch != null) es.manOfTheMatch += fx.manOfTheMatch;
-  if (fx.avgRating != null) es.avgRating = Number((es.avgRating + fx.avgRating).toFixed(2));
-  if (fx.appearances != null) es.appearances += fx.appearances;
+  if (ev.category === 'match' && ev.matchContext) {
+    const matchSeed = hashSeed(`mr_${eventId}_${choiceId}_${season.year}`);
+    const matchRng = mulberry32(matchSeed);
 
-  // Attributes clamped — fitness/morale affect the final stats meaningfully
-  if (fx.fitness != null) attrs.fitness = clamp(attrs.fitness + fx.fitness, 0, 100);
-  if (fx.morale != null) attrs.morale = clamp(attrs.morale + fx.morale, 0, 100);
-  if (fx.fame != null) attrs.fame = clamp(attrs.fame + fx.fame, 0, 100);
+    const result = generateMatchResult(
+      season.club.prestige,
+      ev.matchContext.opponentPrestige,
+      choiceId,
+      attrs,
+      season.playerOverall,
+      playerPosition,
+      matchRng,
+    );
 
-  const updatedOverall = fx.overall ? season.playerOverall + fx.overall : season.playerOverall;
+    matchResult = result;
+    outcomeText = generateMatchOutcome(result, season.club, ev.matchContext, playerPosition);
+
+    // Apply match stats
+    es.goals += result.playerGoals;
+    es.assists += result.playerAssists;
+    es.appearances += 1;
+    if (result.cleanSheet && (playerPosition === 'GK' || playerPosition === 'DEF')) es.cleanSheets += 1;
+    if (result.playerRating >= 8.5) es.manOfTheMatch += 1;
+    const ratingShift = (result.playerRating - 7.2) * 0.055;
+    es.avgRating = Number((es.avgRating + ratingShift).toFixed(2));
+
+    // Fitness cost, morale from result
+    const fitCost = choiceId === 'press' ? 5 : choiceId === 'inspire' ? 3 : 2;
+    attrs.fitness = clamp(attrs.fitness - fitCost, 0, 100);
+    const moraleDelta = result.isWin ? Math.min(8, 3 + result.teamGoals) : result.isDraw ? 1 : -5;
+    attrs.morale = clamp(attrs.morale + moraleDelta, 0, 100);
+
+    matchweek = ev.matchContext.matchweek;
+
+    if (leagueTable) {
+      leagueTable = simulateMatchweekTable(
+        leagueTable, season.club.id, result, ev.matchContext,
+        mulberry32(hashSeed(`tbl_${eventId}_${season.year}`)),
+      );
+    }
+    if (teammates) {
+      teammates = updateTeammateStats(
+        teammates, result,
+        mulberry32(hashSeed(`tm_${eventId}_${season.year}`)),
+      );
+    }
+  } else {
+    // Non-match event effects
+    const fx = choice.effects;
+    if (fx.goals != null) es.goals += fx.goals;
+    if (fx.assists != null) es.assists += fx.assists;
+    if (fx.cleanSheets != null) es.cleanSheets += fx.cleanSheets;
+    if (fx.manOfTheMatch != null) es.manOfTheMatch += fx.manOfTheMatch;
+    if (fx.avgRating != null) es.avgRating = Number((es.avgRating + fx.avgRating).toFixed(2));
+    if (fx.appearances != null) es.appearances += fx.appearances;
+    if (fx.fitness != null) attrs.fitness = clamp(attrs.fitness + fx.fitness, 0, 100);
+    if (fx.morale != null) attrs.morale = clamp(attrs.morale + fx.morale, 0, 100);
+    if (fx.fame != null) attrs.fame = clamp(attrs.fame + fx.fame, 0, 100);
+    if (fx.overall != null) updatedOverall = season.playerOverall + fx.overall;
+  }
 
   const newEvents = season.events.map((e, i) =>
-    i === evIdx ? { ...e, chosenId: choiceId, outcomeText: choice.outcome } : e,
+    i === evIdx ? { ...e, chosenId: choiceId, outcomeText, matchResult } : e,
   );
 
   const phaseOrder: Array<BDSeason['phase']> = ['pre_season', 'first_half', 'january', 'second_half', 'run_in'];
@@ -1506,7 +1885,7 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string)
     newPhase = phaseOrder[curPhaseIdx + 1];
   }
 
-  return { ...season, playerOverall: updatedOverall, events: newEvents, eventStats: es, attributes: attrs, phase: newPhase };
+  return { ...season, playerOverall: updatedOverall, events: newEvents, eventStats: es, attributes: attrs, phase: newPhase, leagueTable, teammates, matchweek };
 }
 
 // --- Finalize season ---
