@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { BDCareer, BDSeason } from "@/lib/ballonDorTypes";
+import type { BDCareer, BDSeason as BDSeasonData } from "@/lib/ballonDorTypes";
 import { initSeason, finalizeSeason, developPlayer, PL_CLUBS } from "@/lib/ballonDorEngine";
 import BDSetup from "./BDSetup";
 import BDSeason from "./BDSeason";
@@ -34,7 +34,7 @@ export default function BallonDorGame() {
     setCareer(newCareer);
   }
 
-  function handleSeasonUpdate(updated: BDSeason) {
+  function handleSeasonUpdate(updated: BDSeasonData) {
     if (!career) return;
     const allDone = updated.events.every(e => e.chosenId);
     let finalSeason = updated;
