@@ -219,7 +219,7 @@ export default function BDSeason({ season, player, onUpdate }: Props) {
                   <p className="text-sm font-bold text-white">
                     {choice.emoji} {choice.label}
                   </p>
-                  <p className="mt-0.5 text-xs text-gray-500">{choice.description}</p>
+                  {choice.description && <p className="mt-0.5 text-xs text-gray-500">{choice.description}</p>}
                 </button>
               ))}
             </div>

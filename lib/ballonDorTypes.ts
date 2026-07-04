@@ -45,6 +45,7 @@ export interface EventChoice {
   id: string;
   label: string;
   emoji: string;
+  description?: string;
   outcome: string;
   effects: Partial<{
     goals: number;
