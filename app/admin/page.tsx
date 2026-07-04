@@ -6,6 +6,7 @@
  */
 
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -50,6 +51,15 @@ export default async function AdminPage() {
           Manage all tierlists — edit titles, categories, cover photos, remove images, or delete tierlists entirely.
         </p>
       </header>
+
+      <div className="mb-6 flex flex-wrap gap-3">
+        <Link
+          href="/ballon-dor"
+          className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-sm font-bold text-amber-400 transition hover:bg-amber-500/20"
+        >
+          🏅 Ballon d'Or <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider">Beta</span>
+        </Link>
+      </div>
 
       <AdminPanelLoader initialTierlists={tierlists ?? []} />
     </main>

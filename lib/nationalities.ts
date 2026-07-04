@@ -34,6 +34,7 @@ const NATIONALITY_ISO: Record<string, string> = {
   "Slovakia": "SK", "Hungary": "HU", "Romania": "RO",
   "Croatia": "HR", "Serbia": "RS", "Slovenia": "SI",
   "Bosnia and Herzegovina": "BA", "Bosnia Herzegovina": "BA",
+  "Bosnia & Herzegovina": "BA", "Bosnia-Herzegovina": "BA",
   "Montenegro": "ME",
   "North Macedonia": "MK", "FYR Macedonia": "MK", "Macedonia": "MK",
   "Albania": "AL", "Greece": "GR", "Bulgaria": "BG",
@@ -42,13 +43,14 @@ const NATIONALITY_ISO: Record<string, string> = {
   "Liechtenstein": "LI", "Kosovo": "XK",
   "Moldova": "MD", "Belarus": "BY",
   "Georgia": "GE", "Armenia": "AM", "Azerbaijan": "AZ",
-  "Turkey": "TR", "Israel": "IL",
+  "Turkey": "TR", "Türkiye": "TR",  // Turkey renamed in FIFA 23+
+  "Israel": "IL",
   "Estonia": "EE", "Latvia": "LV", "Lithuania": "LT",
   "Faroe Islands": "FO", "Gibraltar": "GI",
 
   // Africa
   "Nigeria": "NG", "Ghana": "GH", "Senegal": "SN",
-  "Ivory Coast": "CI", "Cote d'Ivoire": "CI",
+  "Ivory Coast": "CI", "Cote d'Ivoire": "CI", "Côte d'Ivoire": "CI",
   "Cameroon": "CM", "Mali": "ML", "Algeria": "DZ",
   "Morocco": "MA", "Tunisia": "TN", "Egypt": "EG",
   "South Africa": "ZA",
@@ -64,16 +66,21 @@ const NATIONALITY_ISO: Record<string, string> = {
   "Botswana": "BW", "Malawi": "MW", "Rwanda": "RW",
   "Burundi": "BI", "Sudan": "SD", "South Sudan": "SS",
   "Libya": "LY", "Equatorial Guinea": "GQ",
-  "Central African Republic": "CF", "Cape Verde": "CV",
+  "Central African Republic": "CF",
+  "Cape Verde": "CV", "Cabo Verde": "CV",
   "Comoros": "KM", "Madagascar": "MG", "Mauritius": "MU",
   "Eswatini": "SZ", "Swaziland": "SZ", "Lesotho": "LS",
   "Somalia": "SO", "Eritrea": "ER", "Djibouti": "DJ",
+  "Seychelles": "SC", "Reunion": "RE", "Réunion": "RE",
+  "São Tomé and Príncipe": "ST", "São Tomé e Príncipe": "ST",
+  "Sao Tome and Principe": "ST", "São Tomé & Príncipe": "ST",
 
   // South America
   "Argentina": "AR", "Brazil": "BR", "Chile": "CL",
   "Uruguay": "UY", "Paraguay": "PY", "Bolivia": "BO",
   "Peru": "PE", "Ecuador": "EC", "Colombia": "CO",
   "Venezuela": "VE", "Guyana": "GY", "Suriname": "SR",
+  "French Guiana": "GF",
 
   // North & Central America / Caribbean
   "United States": "US", "USA": "US",
@@ -85,12 +92,21 @@ const NATIONALITY_ISO: Record<string, string> = {
   "Haiti": "HT", "Cuba": "CU", "Dominican Republic": "DO",
   "Belize": "BZ", "Bahamas": "BS", "Barbados": "BB",
   "Curacao": "CW", "Curaçao": "CW",
-  "Antigua and Barbuda": "AG", "Grenada": "GD",
-  "Saint Kitts and Nevis": "KN",
-  "Saint Lucia": "LC",
-  "Saint Vincent and the Grenadines": "VC",
+  "Antigua and Barbuda": "AG", "Antigua & Barbuda": "AG", "Grenada": "GD",
+  "Saint Kitts and Nevis": "KN", "St Kitts & Nevis": "KN", "St. Kitts & Nevis": "KN",
+  "Saint Lucia": "LC", "St Lucia": "LC", "St. Lucia": "LC",
+  "Saint Vincent and the Grenadines": "VC", "St Vincent & the Grenadines": "VC", "St. Vincent & the Grenadines": "VC",
   "Bermuda": "BM", "Puerto Rico": "PR",
   "Guadeloupe": "GP", "Martinique": "MQ",
+  "Bonaire": "BQ",           // Bonaire, Sint Eustatius and Saba
+  "Sint Maarten": "SX",      // Sint Maarten (Dutch part)
+  "Aruba": "AW",
+  "Cayman Islands": "KY",
+  "Montserrat": "MS",
+  "Anguilla": "AI",
+  "Turks and Caicos Islands": "TC",
+  "Dominica": "DM",
+  "Saint Barthelemy": "BL",
 
   // Asia
   "Japan": "JP",
@@ -101,7 +117,8 @@ const NATIONALITY_ISO: Record<string, string> = {
   "Qatar": "QA", "United Arab Emirates": "AE", "UAE": "AE",
   "Jordan": "JO", "Lebanon": "LB", "Syria": "SY",
   "Kuwait": "KW", "Bahrain": "BH", "Oman": "OM", "Yemen": "YE",
-  "Uzbekistan": "UZ", "Kazakhstan": "KZ", "Kyrgyzstan": "KG",
+  "Uzbekistan": "UZ", "Kazakhstan": "KZ",
+  "Kyrgyzstan": "KG", "Kyrgyz Republic": "KG",
   "Tajikistan": "TJ", "Turkmenistan": "TM",
   "Afghanistan": "AF", "Pakistan": "PK",
   "India": "IN", "Bangladesh": "BD", "Sri Lanka": "LK",
@@ -110,7 +127,8 @@ const NATIONALITY_ISO: Record<string, string> = {
   "Indonesia": "ID", "Malaysia": "MY",
   "Philippines": "PH", "Singapore": "SG",
   "Myanmar": "MM", "Cambodia": "KH", "Laos": "LA",
-  "Brunei": "BN", "Timor-Leste": "TL",
+  "Brunei": "BN", "Brunei Darussalam": "BN",
+  "Timor-Leste": "TL", "East Timor": "TL",
   "Mongolia": "MN", "Hong Kong": "HK",
   "Chinese Taipei": "TW", "Taiwan": "TW",
   "Palestine": "PS", "Macau": "MO",
@@ -148,11 +166,14 @@ const FLAGCDN_SUBDIVISIONS: Record<string, string> = {
 // Handles full country names, UK subdivisions, and raw 2-letter ISO codes.
 export function getFlagUrl(nationality: string | null | undefined): string | null {
   if (!nationality) return null;
-  const sub = FLAGCDN_SUBDIVISIONS[nationality];
+  // Normalise curly/smart apostrophes (U+2018, U+2019) to straight apostrophe
+  // so e.g. "Côte d’Ivoire" from the DB matches "Côte d'Ivoire" in the map
+  const n = nationality.replace(/[‘’]/g, "'");
+  const sub = FLAGCDN_SUBDIVISIONS[n];
   if (sub) return `https://flagcdn.com/20x15/${sub}.png`;
-  const iso = NATIONALITY_ISO[nationality];
+  const iso = NATIONALITY_ISO[n];
   if (iso) return `https://flagcdn.com/20x15/${iso.toLowerCase()}.png`;
   // Direct 2-letter ISO code (some DB rows store "SN", "FR" etc.)
-  if (nationality.length === 2) return `https://flagcdn.com/20x15/${nationality.toLowerCase()}.png`;
+  if (n.length === 2) return `https://flagcdn.com/20x15/${n.toLowerCase()}.png`;
   return null;
 }

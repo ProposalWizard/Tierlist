@@ -459,8 +459,20 @@ export function positionFitness(player: DraftPlayer): number {
 
   if (natural.includes(assigned)) return 1.0;
 
+  // Winger ↔ wide mid natural equivalence, but only when the player has no fullback
+  // on that side (a pure LM/LW is essentially a winger; LM who also plays LB is a utility player)
+  const conditionalNatural: Array<{ pair: [string, string]; excludes: string[] }> = [
+    { pair: ['LM', 'LW'], excludes: ['LB', 'LWB'] },
+    { pair: ['RM', 'RW'], excludes: ['RB', 'RWB'] },
+  ];
+  for (const { pair, excludes } of conditionalNatural) {
+    const [posA, posB] = pair;
+    if (natural.some(p => excludes.includes(p))) continue;
+    if ((assigned === posA && natural.includes(posB)) || (assigned === posB && natural.includes(posA))) return 1.0;
+  }
+
   const assignedRole = classifyPosition(assigned);
-  if (natural.some(p => classifyPosition(p) === assignedRole)) return 0.96;
+  if (natural.some(p => classifyPosition(p) === assignedRole)) return 0.98;
 
   const mediumPairs: [string[], string[]][] = [
     [['LB', 'LWB'], ['LM']],
@@ -468,8 +480,8 @@ export function positionFitness(player: DraftPlayer): number {
     [['CDM', 'DM'], ['CB']],
   ];
   for (const [groupA, groupB] of mediumPairs) {
-    if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.88;
-    if (groupB.includes(assigned) && natural.some(p => groupA.includes(p))) return 0.88;
+    if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.93;
+    if (groupB.includes(assigned) && natural.some(p => groupA.includes(p))) return 0.93;
   }
 
   const adjacent: Record<PositionRole, PositionRole[]> = {
@@ -478,9 +490,9 @@ export function positionFitness(player: DraftPlayer): number {
     DEF: ['MID'],
     GK: [],
   };
-  if (natural.some(p => adjacent[assignedRole]?.includes(classifyPosition(p)))) return 0.82;
+  if (natural.some(p => adjacent[assignedRole]?.includes(classifyPosition(p)))) return 0.85;
 
-  return 0.6;
+  return 0.68;
 }
 
 // --- Attribute helpers ---
