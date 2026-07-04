@@ -9,22 +9,39 @@ import BDCeremony from "./BDCeremony";
 
 const STORAGE_KEY = "ballon-dor-career";
 
-function migrateCareer(raw: BDCareer): BDCareer {
-  // Patch missing fields added in the remaster
+// ── Migration ────────────────────────────────────────────────────────
+// New seasons have 15+ events (interleaved match + lifestyle events).
+// Old saves have ~11 events in the old non-fixture format.
+// If an in-progress season is old format, clear it but keep completed seasons.
+function isCompatibleSeason(s: unknown): boolean {
+  const season = s as { events?: unknown[] };
+  return Array.isArray(season?.events) && season.events.length >= 15;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function migrateCareer(raw: any): BDCareer {
   const player = {
     ...raw.player,
     archetype: raw.player.archetype ?? ('world_class' as const),
     reputation: raw.player.reputation ?? 0,
   };
-  return { ...raw, player };
+
+  // Drop incompatible in-progress seasons silently (new season starts fresh)
+  const current = raw.current && isCompatibleSeason(raw.current)
+    ? { ...raw.current, matchweek: raw.current.matchweek ?? 0 }
+    : null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const seasons = (raw.seasons ?? []).map((s: any) => ({ ...s, matchweek: s.matchweek ?? 0 }));
+
+  return { ...raw, player, current, seasons, bdoWins: raw.bdoWins ?? 0, lastBdoRank: raw.lastBdoRank ?? 0 };
 }
 
 function loadCareer(): BDCareer | null {
   try {
-    const rawStr = localStorage.getItem(STORAGE_KEY);
-    if (!rawStr) return null;
-    const raw = JSON.parse(rawStr) as BDCareer;
-    return migrateCareer(raw);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return migrateCareer(JSON.parse(raw));
   } catch { return null; }
 }
 
@@ -32,28 +49,26 @@ function saveCareer(career: BDCareer) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(career));
 }
 
-function StatPill({ label, value, gold }: { label: string; value: string | number; gold?: boolean }) {
-  return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-3 text-center">
-      <p className="text-[10px] text-gray-500 mb-1">{label}</p>
-      <p className={`text-lg font-black ${gold ? 'text-amber-400' : 'text-white'}`}>{value}</p>
-    </div>
-  );
-}
+// ── Main component ───────────────────────────────────────────────────
 
 export default function BallonDorGame() {
   const [career, setCareer] = useState<BDCareer | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // When true: actively showing BDSeason or BDCeremony.
+  // When false: showing the hub (lobby between seasons).
+  const [playing, setPlaying] = useState(false);
   const [showingTransfer, setShowingTransfer] = useState(false);
 
   useEffect(() => {
-    setCareer(loadCareer());
+    const c = loadCareer();
+    setCareer(c);
     setLoaded(true);
   }, []);
 
   function handleSetupComplete(newCareer: BDCareer) {
     saveCareer(newCareer);
     setCareer(newCareer);
+    setPlaying(true);
   }
 
   function handleSeasonUpdate(updated: BDSeasonData) {
@@ -85,8 +100,7 @@ export default function BallonDorGame() {
     };
     saveCareer(newCareer);
     setCareer(newCareer);
-
-    // If there are transfer offers, show the transfer screen
+    setPlaying(false);
     if (completedSeason.transferOffers && completedSeason.transferOffers.length > 0) {
       setShowingTransfer(true);
     }
@@ -95,22 +109,24 @@ export default function BallonDorGame() {
   function startNextSeason(clubId?: string) {
     if (!career) return;
     const lastClub = career.seasons.at(-1)?.club ?? PL_CLUBS[0];
-    const club = clubId
-      ? (PL_CLUBS.find((c) => c.id === clubId) ?? lastClub)
-      : lastClub;
+    const club = clubId ? (PL_CLUBS.find(c => c.id === clubId) ?? lastClub) : lastClub;
     const nextNum = career.seasons.length + 1;
     const season = initSeason(career.player, club, nextNum);
     const newCareer: BDCareer = { ...career, current: season };
     saveCareer(newCareer);
     setCareer(newCareer);
     setShowingTransfer(false);
+    setPlaying(true);
   }
 
   function handleReset() {
     localStorage.removeItem(STORAGE_KEY);
     setCareer(null);
+    setPlaying(false);
+    setShowingTransfer(false);
   }
 
+  // ── Loading ───────────────────────────────────────────────────────
   if (!loaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-950">
@@ -119,11 +135,13 @@ export default function BallonDorGame() {
     );
   }
 
+  // ── New player setup ─────────────────────────────────────────────
   if (!career) {
     return <BDSetup onComplete={handleSetupComplete} />;
   }
 
-  if (career.current && career.current.phase !== 'done') {
+  // ── Active game ──────────────────────────────────────────────────
+  if (playing && career.current && career.current.phase !== 'done') {
     if (career.current.phase === 'ceremony') {
       return (
         <BDCeremony
@@ -138,16 +156,14 @@ export default function BallonDorGame() {
         season={career.current}
         player={career.player}
         onUpdate={handleSeasonUpdate}
+        onReturnToHub={() => setPlaying(false)}
       />
     );
   }
 
+  // ── Transfer window ───────────────────────────────────────────────
   const lastSeason = career.seasons.at(-1);
-  const bdoWins = career.bdoWins;
-  const lastRank = career.lastBdoRank;
   const transferOffers = lastSeason?.transferOffers ?? [];
-
-  // Transfer screen — shown after ceremony complete when offers exist
   if (showingTransfer && transferOffers.length > 0) {
     return (
       <TransferScreen
@@ -155,55 +171,89 @@ export default function BallonDorGame() {
         offers={transferOffers}
         onAccept={(clubId) => startNextSeason(clubId)}
         onStay={() => startNextSeason()}
+        onBackToHub={() => setShowingTransfer(false)}
       />
     );
   }
 
-  // Between-seasons lobby
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-950 px-4 py-12">
-      <div className="w-full max-w-md">
+  // ── Hub / Lobby ──────────────────────────────────────────────────
+  const bdoWins   = career.bdoWins;
+  const lastRank  = career.lastBdoRank;
+  const isDefOrGK = career.player.position === 'GK' || career.player.position === 'DEF';
 
-        {/* BdO wins banner */}
+  return (
+    <div className="min-h-screen bg-gray-950">
+      {/* Site nav strip */}
+      <div className="border-b border-gray-900 px-4 py-3">
+        <div className="mx-auto max-w-lg flex items-center justify-between">
+          <a href="/" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition">
+            <span>←</span> Back to KnowItBall
+          </a>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-700">Ballon d'Or</span>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-lg px-4 py-8 space-y-4">
+
+        {/* ── Game header ─────────────────────────────────────────── */}
+        <div className="text-center mb-2">
+          <p className="text-4xl mb-2">🏅</p>
+          <h1 className="text-2xl font-black text-white">Ballon d'Or Career</h1>
+          <p className="text-sm text-gray-500 mt-1">Win the world's greatest individual award</p>
+        </div>
+
+        {/* ── BdO wins banner ──────────────────────────────────────── */}
         {bdoWins > 0 && (
-          <div className="mb-6 flex justify-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2">
-              <span className="text-xl">🏅</span>
-              <span className="text-sm font-bold text-amber-400">
-                {bdoWins}× Ballon d'Or Winner
-              </span>
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-5 py-2">
+              <span className="text-lg">🏅</span>
+              <span className="text-sm font-black text-amber-400">{bdoWins}× Ballon d'Or Winner</span>
             </div>
           </div>
         )}
 
-        {/* Player identity */}
-        <div className="mb-6 text-center">
-          {career.player.imageUrl && (
-            <img
-              src={career.player.imageUrl}
-              alt={career.player.name}
-              className="h-16 w-16 rounded-full object-cover mx-auto mb-3 border-2 border-gray-700"
-            />
-          )}
-          <h1 className="text-3xl font-black text-white">{career.player.name}</h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Age {career.player.age} · {career.player.position} · {career.player.nationality}
-          </p>
-          <p className="text-sm text-gray-500">
-            OVR {career.player.overall} · {career.seasons.length} season{career.seasons.length !== 1 ? 's' : ''} played
-            {lastRank > 0
-              ? ` · Last BdO: ${lastRank === 1 ? '🥇 Winner' : `#${lastRank}`}`
-              : ''}
-          </p>
+        {/* ── Player card ──────────────────────────────────────────── */}
+        <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+          <div className="flex items-center gap-4">
+            {career.player.imageUrl && (
+              <img
+                src={career.player.imageUrl}
+                alt={career.player.name}
+                className="h-14 w-14 rounded-full object-cover border-2 border-gray-700 shrink-0"
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-black text-white truncate">{career.player.name}</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Age {career.player.age} · {career.player.position} · {career.player.nationality}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                OVR {career.player.overall} · {career.seasons.length} season{career.seasons.length !== 1 ? 's' : ''} played
+                {lastRank > 0 ? ` · Last BdO: ${lastRank === 1 ? '🥇 1st' : `#${lastRank}`}` : ''}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Last season recap */}
-        {lastSeason && (
-          <div className="mb-5 rounded-xl border border-gray-800 bg-gray-900 p-4">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
-              Season {lastSeason.number} · {lastSeason.year} · {lastSeason.club.name}
+        {/* ── In-progress season notice ────────────────────────────── */}
+        {career.current && !playing && (
+          <div className="rounded-xl border border-amber-800/30 bg-amber-950/20 px-4 py-3">
+            <p className="text-xs text-amber-400 font-semibold">
+              Season {career.current.number} in progress
+              {career.current.club ? ` · ${career.current.club.name}` : ''}
             </p>
-            {/* Trophies */}
+            <p className="text-[11px] text-gray-500 mt-0.5">
+              {career.current.events.filter(e => e.chosenId).length} / {career.current.events.length} events completed — your progress is saved
+            </p>
+          </div>
+        )}
+
+        {/* ── Last season recap ─────────────────────────────────────── */}
+        {lastSeason && (
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
+              Last Season · {lastSeason.number} · {lastSeason.year} · {lastSeason.club.name}
+            </p>
             {lastSeason.trophies.length > 0 && (
               <div className="mb-3 flex flex-wrap gap-2">
                 {lastSeason.trophies.map(t => (
@@ -213,19 +263,18 @@ export default function BallonDorGame() {
                 ))}
               </div>
             )}
-            {/* Key stats */}
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2">
               <StatPill
-                label={career.player.position === 'GK' || career.player.position === 'DEF' ? 'Clean Sheets' : 'Goals'}
-                value={career.player.position === 'GK' || career.player.position === 'DEF'
-                  ? (lastSeason.baseStats.cleanSheets + lastSeason.eventStats.cleanSheets)
-                  : (lastSeason.baseStats.goals + lastSeason.eventStats.goals)}
+                label={isDefOrGK ? 'Clean Sheets' : 'Goals'}
+                value={isDefOrGK
+                  ? lastSeason.baseStats.cleanSheets + lastSeason.eventStats.cleanSheets
+                  : lastSeason.baseStats.goals + lastSeason.eventStats.goals}
               />
               <StatPill
                 label={career.player.position === 'GK' ? 'MOTM' : 'Assists'}
                 value={career.player.position === 'GK'
-                  ? (lastSeason.baseStats.manOfTheMatch + lastSeason.eventStats.manOfTheMatch)
-                  : (lastSeason.baseStats.assists + lastSeason.eventStats.assists)}
+                  ? lastSeason.baseStats.manOfTheMatch + lastSeason.eventStats.manOfTheMatch
+                  : lastSeason.baseStats.assists + lastSeason.eventStats.assists}
               />
               <StatPill
                 label="Rating"
@@ -233,13 +282,11 @@ export default function BallonDorGame() {
                 gold
               />
             </div>
-            {/* BdO result */}
             {lastRank > 0 && (
-              <div className={`mt-3 rounded-lg px-3 py-2.5 text-center ${
-                lastRank === 1 ? 'bg-amber-400/10 border border-amber-400/20' :
-                lastRank <= 3 ? 'bg-gray-800' : 'bg-gray-800/60'
+              <div className={`mt-3 rounded-xl px-3 py-2.5 text-center ${
+                lastRank === 1 ? 'bg-amber-400/10 border border-amber-400/20' : 'bg-gray-800/60'
               }`}>
-                <p className="text-xs text-gray-500">Ballon d'Or finish</p>
+                <p className="text-[10px] text-gray-500 mb-0.5">Ballon d'Or finish</p>
                 <p className={`text-lg font-black ${lastRank === 1 ? 'text-amber-400' : 'text-white'}`}>
                   {lastRank === 1 ? '🥇 Winner' : lastRank === 2 ? '🥈 Runner-up' : lastRank === 3 ? '🥉 Third' : `#${lastRank}`}
                 </p>
@@ -248,54 +295,85 @@ export default function BallonDorGame() {
           </div>
         )}
 
-        {/* Transfer offers teaser (if any) */}
+        {/* ── Transfer offers ──────────────────────────────────────── */}
         {transferOffers.length > 0 && (
-          <div className="mb-5 rounded-xl border border-blue-800/40 bg-blue-950/20 p-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-400">
+          <div className="rounded-xl border border-blue-800/30 bg-blue-950/15 p-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-1">
               {transferOffers.length} Transfer Offer{transferOffers.length > 1 ? 's' : ''} Waiting
             </p>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Clubs are interested in signing you this summer. Review the offers before starting next season.
+            <p className="text-xs text-gray-400 mb-3">
+              Clubs want to sign you this summer.
             </p>
             <button
               onClick={() => setShowingTransfer(true)}
-              className="mt-3 w-full rounded-lg bg-blue-500/20 border border-blue-500/30 py-2 text-sm font-bold text-blue-300 transition hover:bg-blue-500/30"
+              className="w-full rounded-lg border border-blue-500/30 bg-blue-500/10 py-2 text-sm font-bold text-blue-300 transition hover:bg-blue-500/20"
             >
               Review offers →
             </button>
           </div>
         )}
 
-        <button
-          onClick={() => startNextSeason()}
-          className="mb-3 w-full rounded-xl bg-amber-500 py-3.5 text-sm font-black text-black transition hover:bg-amber-400"
-        >
-          Start Season {career.seasons.length + 1} →
-        </button>
-        <button
-          onClick={handleReset}
-          className="w-full rounded-xl border border-gray-800 py-3 text-sm text-gray-500 transition hover:border-gray-600 hover:text-gray-300"
-        >
-          Start a new career
-        </button>
+        {/* ── Primary CTA ──────────────────────────────────────────── */}
+        {career.current ? (
+          <button
+            onClick={() => setPlaying(true)}
+            className="w-full rounded-2xl bg-amber-500 py-4 text-sm font-black text-black transition hover:bg-amber-400"
+          >
+            Continue Season {career.current.number} →
+          </button>
+        ) : (
+          <button
+            onClick={() => startNextSeason()}
+            className="w-full rounded-2xl bg-amber-500 py-4 text-sm font-black text-black transition hover:bg-amber-400"
+          >
+            Start Season {career.seasons.length + 1} →
+          </button>
+        )}
+
+        {/* ── Danger zone ──────────────────────────────────────────── */}
+        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">Danger Zone</p>
+          <button
+            onClick={() => {
+              if (window.confirm('Delete your career and start over? This cannot be undone.')) {
+                handleReset();
+              }
+            }}
+            className="w-full rounded-xl border border-red-900/40 py-2.5 text-sm text-red-500/70 transition hover:border-red-700/50 hover:text-red-400"
+          >
+            Delete career &amp; start over
+          </button>
+        </div>
+
       </div>
     </div>
   );
 }
 
-// ── Transfer Screen ────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function StatPill({ label, value, gold }: { label: string; value: string | number; gold?: boolean }) {
+  return (
+    <div className="rounded-xl border border-gray-800 bg-gray-800/50 p-3 text-center">
+      <p className="text-[10px] text-gray-500 mb-1">{label}</p>
+      <p className={`text-lg font-black ${gold ? 'text-amber-400' : 'text-white'}`}>{value}</p>
+    </div>
+  );
+}
+
+// ── Transfer Screen ───────────────────────────────────────────────────
 
 interface TransferScreenProps {
   career: BDCareer;
   offers: TransferOffer[];
   onAccept: (clubId: string) => void;
   onStay: () => void;
+  onBackToHub: () => void;
 }
 
-function TransferScreen({ career, offers, onAccept, onStay }: TransferScreenProps) {
+function TransferScreen({ career, offers, onAccept, onStay, onBackToHub }: TransferScreenProps) {
   const [selectedOffer, setSelectedOffer] = useState<TransferOffer | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-
   const lastClub = career.seasons.at(-1)?.club;
 
   function handleAccept() {
@@ -305,20 +383,25 @@ function TransferScreen({ career, offers, onAccept, onStay }: TransferScreenProp
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 px-4 py-10">
-      <div className="mx-auto max-w-lg">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-950">
+      {/* Back link */}
+      <div className="border-b border-gray-900 px-4 py-3">
+        <div className="mx-auto max-w-lg flex items-center">
+          <button onClick={onBackToHub} className="text-xs text-gray-500 hover:text-gray-300 transition">
+            ← Back to hub
+          </button>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-lg px-4 py-8">
         <div className="mb-8 text-center">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.35em] text-gray-500">
-            Summer Transfer Window
-          </p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.35em] text-gray-500">Summer Transfer Window</p>
           <h1 className="text-3xl font-black text-white">Transfer Offers</h1>
           <p className="mt-2 text-sm text-gray-500">
-            {career.player.name} · Age {career.player.age} · {career.player.overall} OVR
+            {career.player.name} · Age {career.player.age} · OVR {career.player.overall}
           </p>
         </div>
 
-        {/* Current club */}
         {lastClub && (
           <div className="mb-5 rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
             <p className="text-xs text-gray-600 mb-0.5">Current club</p>
@@ -327,7 +410,6 @@ function TransferScreen({ career, offers, onAccept, onStay }: TransferScreenProp
           </div>
         )}
 
-        {/* Offers */}
         <div className="space-y-3 mb-6">
           {offers.map(offer => (
             <button
@@ -339,43 +421,34 @@ function TransferScreen({ career, offers, onAccept, onStay }: TransferScreenProp
                   : 'border-gray-700 bg-gray-900 hover:border-gray-600'
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-black text-white">{offer.clubName}</p>
                     {offer.hasCL && (
-                      <span className="rounded-full bg-blue-500/20 px-1.5 py-px text-[9px] font-bold text-blue-400 uppercase">
-                        CL
-                      </span>
+                      <span className="rounded-full bg-blue-500/20 px-1.5 py-px text-[9px] font-bold text-blue-400 uppercase">CL</span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-xs text-gray-400">{offer.tierLabel}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{offer.tierLabel}</p>
                 </div>
-                <div className="shrink-0 text-right">
-                  {selectedOffer?.clubId === offer.clubId && (
-                    <span className="text-amber-400 text-sm">✓</span>
-                  )}
-                </div>
+                {selectedOffer?.clubId === offer.clubId && (
+                  <span className="text-amber-400 text-sm shrink-0">✓</span>
+                )}
               </div>
             </button>
           ))}
         </div>
 
-        {/* Actions */}
         <div className="space-y-3">
           {selectedOffer && (
             <button
               onClick={handleAccept}
               disabled={confirmed}
               className={`w-full rounded-xl py-4 text-sm font-black transition ${
-                confirmed
-                  ? 'bg-green-600 text-white opacity-80'
-                  : 'bg-amber-500 text-black hover:bg-amber-400'
+                confirmed ? 'bg-green-600 text-white opacity-80' : 'bg-amber-500 text-black hover:bg-amber-400'
               }`}
             >
-              {confirmed
-                ? `Joining ${selectedOffer.clubName}...`
-                : `Accept — Join ${selectedOffer.clubName} →`}
+              {confirmed ? `Joining ${selectedOffer.clubName}…` : `Accept — Join ${selectedOffer.clubName} →`}
             </button>
           )}
           <button
@@ -386,9 +459,8 @@ function TransferScreen({ career, offers, onAccept, onStay }: TransferScreenProp
             Stay at {lastClub?.name ?? 'current club'}
           </button>
         </div>
-
         <p className="mt-5 text-center text-xs text-gray-700">
-          Your choice will take effect from Season {career.seasons.length + 1}.
+          Your choice takes effect from Season {career.seasons.length + 1}.
         </p>
       </div>
     </div>
