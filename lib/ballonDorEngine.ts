@@ -1,7 +1,7 @@
 import type {
   BDPosition, BDStats, BDTrophy, BDClub, BDEvent, EventChoice,
   CeremonyEntry, BDOCeremony, BDSeason, BDAttributes, BDPlayer,
-  BDArchetype, TransferOffer,
+  BDArchetype, TransferOffer, LeagueTableRow, BDTeammate,
 } from './ballonDorTypes';
 
 // --- RNG ---
@@ -54,6 +54,195 @@ export const PL_CLUBS: BDClub[] = [
   { id: 'southampton',name: 'Southampton',        prestige: 56, tier: 'lower',         tierLabel: 'Survival is success',          clChance: 0.00, elChance: 0.02, primaryColor: '#D71920' },
   { id: 'ipswich',    name: 'Ipswich Town',       prestige: 54, tier: 'lower',         tierLabel: 'Newly promoted, bottom half',  clChance: 0.00, elChance: 0.01, primaryColor: '#3A64A3' },
 ];
+
+// --- Club squads for teammate generation ---
+type SquadPlayer = { name: string; pos: BDPosition; ovr: number };
+
+export const CLUB_SQUADS: Record<string, SquadPlayer[]> = {
+  mancity: [
+    { name: 'Ederson', pos: 'GK', ovr: 87 },
+    { name: 'Rúben Dias', pos: 'DEF', ovr: 89 },
+    { name: 'Kyle Walker', pos: 'DEF', ovr: 83 },
+    { name: 'Rodri', pos: 'MID', ovr: 91 },
+    { name: 'Kevin De Bruyne', pos: 'MID', ovr: 89 },
+    { name: 'Phil Foden', pos: 'MID', ovr: 88 },
+    { name: 'Erling Haaland', pos: 'ATT', ovr: 91 },
+    { name: 'Bernardo Silva', pos: 'MID', ovr: 88 },
+  ],
+  liverpool: [
+    { name: 'Alisson', pos: 'GK', ovr: 87 },
+    { name: 'Virgil van Dijk', pos: 'DEF', ovr: 88 },
+    { name: 'Andrew Robertson', pos: 'DEF', ovr: 84 },
+    { name: 'Alexis Mac Allister', pos: 'MID', ovr: 84 },
+    { name: 'Dominik Szoboszlai', pos: 'MID', ovr: 85 },
+    { name: 'Mohamed Salah', pos: 'ATT', ovr: 88 },
+    { name: 'Darwin Núñez', pos: 'ATT', ovr: 83 },
+    { name: 'Luis Díaz', pos: 'ATT', ovr: 84 },
+  ],
+  arsenal: [
+    { name: 'David Raya', pos: 'GK', ovr: 84 },
+    { name: 'William Saliba', pos: 'DEF', ovr: 87 },
+    { name: 'Gabriel Magalhães', pos: 'DEF', ovr: 85 },
+    { name: 'Declan Rice', pos: 'MID', ovr: 87 },
+    { name: 'Martin Ødegaard', pos: 'MID', ovr: 88 },
+    { name: 'Bukayo Saka', pos: 'ATT', ovr: 87 },
+    { name: 'Gabriel Martinelli', pos: 'ATT', ovr: 84 },
+    { name: 'Kai Havertz', pos: 'ATT', ovr: 83 },
+  ],
+  manutd: [
+    { name: 'André Onana', pos: 'GK', ovr: 84 },
+    { name: 'Lisandro Martínez', pos: 'DEF', ovr: 84 },
+    { name: 'Matthijs de Ligt', pos: 'DEF', ovr: 82 },
+    { name: 'Bruno Fernandes', pos: 'MID', ovr: 87 },
+    { name: 'Rasmus Højlund', pos: 'ATT', ovr: 82 },
+    { name: 'Alejandro Garnacho', pos: 'ATT', ovr: 81 },
+    { name: 'Amad Diallo', pos: 'ATT', ovr: 80 },
+  ],
+  chelsea: [
+    { name: 'Robert Sánchez', pos: 'GK', ovr: 82 },
+    { name: 'Reece James', pos: 'DEF', ovr: 83 },
+    { name: 'Levi Colwill', pos: 'DEF', ovr: 80 },
+    { name: 'Enzo Fernández', pos: 'MID', ovr: 84 },
+    { name: 'Cole Palmer', pos: 'MID', ovr: 87 },
+    { name: 'Christopher Nkunku', pos: 'ATT', ovr: 84 },
+    { name: 'Nicolas Jackson', pos: 'ATT', ovr: 82 },
+  ],
+  newcastle: [
+    { name: 'Nick Pope', pos: 'GK', ovr: 84 },
+    { name: 'Kieran Trippier', pos: 'DEF', ovr: 83 },
+    { name: 'Sven Botman', pos: 'DEF', ovr: 83 },
+    { name: 'Bruno Guimarães', pos: 'MID', ovr: 87 },
+    { name: 'Anthony Gordon', pos: 'ATT', ovr: 83 },
+    { name: 'Alexander Isak', pos: 'ATT', ovr: 85 },
+    { name: 'Harvey Barnes', pos: 'ATT', ovr: 80 },
+  ],
+  tottenham: [
+    { name: 'Guglielmo Vicario', pos: 'GK', ovr: 83 },
+    { name: 'Cristian Romero', pos: 'DEF', ovr: 85 },
+    { name: 'Micky van de Ven', pos: 'DEF', ovr: 83 },
+    { name: 'James Maddison', pos: 'MID', ovr: 83 },
+    { name: 'Heung-min Son', pos: 'ATT', ovr: 84 },
+    { name: 'Brennan Johnson', pos: 'ATT', ovr: 80 },
+    { name: 'Dominic Solanke', pos: 'ATT', ovr: 79 },
+  ],
+  astonvilla: [
+    { name: 'Emiliano Martínez', pos: 'GK', ovr: 87 },
+    { name: 'Ezri Konsa', pos: 'DEF', ovr: 82 },
+    { name: 'Pau Torres', pos: 'DEF', ovr: 83 },
+    { name: 'John McGinn', pos: 'MID', ovr: 82 },
+    { name: 'Morgan Rogers', pos: 'MID', ovr: 80 },
+    { name: 'Ollie Watkins', pos: 'ATT', ovr: 85 },
+    { name: 'Leon Bailey', pos: 'ATT', ovr: 81 },
+  ],
+  brighton: [
+    { name: 'Bart Verbruggen', pos: 'GK', ovr: 80 },
+    { name: 'Lewis Dunk', pos: 'DEF', ovr: 80 },
+    { name: 'Tariq Lamptey', pos: 'DEF', ovr: 78 },
+    { name: 'Billy Gilmour', pos: 'MID', ovr: 79 },
+    { name: 'Evan Ferguson', pos: 'ATT', ovr: 81 },
+    { name: 'João Pedro', pos: 'ATT', ovr: 82 },
+    { name: 'Danny Welbeck', pos: 'ATT', ovr: 76 },
+  ],
+  westham: [
+    { name: 'Łukasz Fabiański', pos: 'GK', ovr: 78 },
+    { name: 'Kurt Zouma', pos: 'DEF', ovr: 79 },
+    { name: 'Aaron Wan-Bissaka', pos: 'DEF', ovr: 79 },
+    { name: 'Tomáš Souček', pos: 'MID', ovr: 82 },
+    { name: 'Lucas Paquetá', pos: 'MID', ovr: 83 },
+    { name: 'Jarrod Bowen', pos: 'ATT', ovr: 82 },
+    { name: 'Mohammed Kudus', pos: 'ATT', ovr: 82 },
+  ],
+  fulham: [
+    { name: 'Bernd Leno', pos: 'GK', ovr: 82 },
+    { name: 'Tim Ream', pos: 'DEF', ovr: 78 },
+    { name: 'Antonee Robinson', pos: 'DEF', ovr: 81 },
+    { name: 'Tom Cairney', pos: 'MID', ovr: 79 },
+    { name: 'Alex Iwobi', pos: 'MID', ovr: 80 },
+    { name: 'Raúl Jiménez', pos: 'ATT', ovr: 80 },
+    { name: 'Rodrigo Muniz', pos: 'ATT', ovr: 78 },
+  ],
+  wolves: [
+    { name: 'José Sá', pos: 'GK', ovr: 82 },
+    { name: 'Max Kilman', pos: 'DEF', ovr: 81 },
+    { name: 'Rayan Aït-Nouri', pos: 'DEF', ovr: 81 },
+    { name: 'João Gomes', pos: 'MID', ovr: 80 },
+    { name: 'Matheus Cunha', pos: 'ATT', ovr: 82 },
+    { name: 'Hwang Hee-chan', pos: 'ATT', ovr: 79 },
+    { name: 'Pablo Sarabia', pos: 'ATT', ovr: 77 },
+  ],
+  palace: [
+    { name: 'Dean Henderson', pos: 'GK', ovr: 80 },
+    { name: 'Marc Guéhi', pos: 'DEF', ovr: 82 },
+    { name: 'Daniel Muñoz', pos: 'DEF', ovr: 78 },
+    { name: 'Eberechi Eze', pos: 'MID', ovr: 82 },
+    { name: 'Adam Wharton', pos: 'MID', ovr: 78 },
+    { name: 'Jean-Philippe Mateta', pos: 'ATT', ovr: 80 },
+    { name: 'Ismaïla Sarr', pos: 'ATT', ovr: 78 },
+  ],
+  nottmforest: [
+    { name: 'Matz Sels', pos: 'GK', ovr: 81 },
+    { name: 'Murillo', pos: 'DEF', ovr: 81 },
+    { name: 'Nikola Milenković', pos: 'DEF', ovr: 80 },
+    { name: 'Ryan Yates', pos: 'MID', ovr: 78 },
+    { name: 'Callum Hudson-Odoi', pos: 'ATT', ovr: 79 },
+    { name: 'Chris Wood', pos: 'ATT', ovr: 80 },
+    { name: 'Anthony Elanga', pos: 'ATT', ovr: 78 },
+  ],
+  everton: [
+    { name: 'Jordan Pickford', pos: 'GK', ovr: 84 },
+    { name: 'James Tarkowski', pos: 'DEF', ovr: 80 },
+    { name: 'Michael Keane', pos: 'DEF', ovr: 77 },
+    { name: 'Idrissa Gueye', pos: 'MID', ovr: 79 },
+    { name: 'Dwight McNeil', pos: 'ATT', ovr: 78 },
+    { name: 'Dominic Calvert-Lewin', pos: 'ATT', ovr: 79 },
+    { name: 'Beto', pos: 'ATT', ovr: 76 },
+  ],
+  brentford: [
+    { name: 'Mark Flekken', pos: 'GK', ovr: 80 },
+    { name: 'Nathan Collins', pos: 'DEF', ovr: 80 },
+    { name: 'Kristoffer Ajer', pos: 'DEF', ovr: 78 },
+    { name: 'Christian Nørgaard', pos: 'MID', ovr: 80 },
+    { name: 'Mathias Jensen', pos: 'MID', ovr: 77 },
+    { name: 'Bryan Mbeumo', pos: 'ATT', ovr: 82 },
+    { name: 'Yoane Wissa', pos: 'ATT', ovr: 80 },
+  ],
+  bournemouth: [
+    { name: 'Neto', pos: 'GK', ovr: 81 },
+    { name: 'Illia Zabarnyi', pos: 'DEF', ovr: 78 },
+    { name: 'Adam Smith', pos: 'DEF', ovr: 75 },
+    { name: 'Ryan Christie', pos: 'MID', ovr: 78 },
+    { name: 'Tyler Adams', pos: 'MID', ovr: 78 },
+    { name: 'Antoine Semenyo', pos: 'ATT', ovr: 77 },
+    { name: 'Evanilson', pos: 'ATT', ovr: 79 },
+  ],
+  leicester: [
+    { name: 'Mads Hermansen', pos: 'GK', ovr: 81 },
+    { name: 'Wout Faes', pos: 'DEF', ovr: 80 },
+    { name: 'Victor Kristiansen', pos: 'DEF', ovr: 78 },
+    { name: 'Wilfred Ndidi', pos: 'MID', ovr: 80 },
+    { name: 'Boubakary Soumaré', pos: 'MID', ovr: 77 },
+    { name: 'Stephy Mavididi', pos: 'ATT', ovr: 79 },
+    { name: 'Jamie Vardy', pos: 'ATT', ovr: 77 },
+  ],
+  southampton: [
+    { name: 'Gavin Bazunu', pos: 'GK', ovr: 78 },
+    { name: 'Jan Bednarek', pos: 'DEF', ovr: 77 },
+    { name: 'Kyle Walker-Peters', pos: 'DEF', ovr: 78 },
+    { name: 'Will Smallbone', pos: 'MID', ovr: 76 },
+    { name: 'Joe Aribo', pos: 'MID', ovr: 76 },
+    { name: 'Cameron Archer', pos: 'ATT', ovr: 75 },
+    { name: 'Adam Armstrong', pos: 'ATT', ovr: 76 },
+  ],
+  ipswich: [
+    { name: 'Christian Walton', pos: 'GK', ovr: 75 },
+    { name: 'Luke Woolfenden', pos: 'DEF', ovr: 76 },
+    { name: 'Leif Davis', pos: 'DEF', ovr: 77 },
+    { name: 'Sam Morsy', pos: 'MID', ovr: 76 },
+    { name: 'Kalvin Phillips', pos: 'MID', ovr: 75 },
+    { name: 'Omari Hutchinson', pos: 'ATT', ovr: 77 },
+    { name: 'Liam Delap', pos: 'ATT', ovr: 77 },
+  ],
+};
 
 // --- Age-based performance multiplier for rivals ---
 function rivalAgeMult(age: number): number {
@@ -742,6 +931,46 @@ export const EVENT_POOL: BDEvent[] = [
         { assists: 1, morale: 10, avgRating: 0.08, fitness: -4 }),
     ]),
 
+  E('h2_partner', 'second_half', 'lifestyle', 'Personal Life',
+    'Your partner has been patient all season. They want a night completely away from football. You have a light week ahead.',
+    [
+      ch('date_night', 'Take them somewhere special — football can wait', '❤️',
+        'The right call for the relationship. You come back to training with a clearer head than you\'ve had all season.',
+        'team',
+        'A perfect evening. They appreciate it enormously. You return to training refreshed and mentally sharp.',
+        { morale: 16, fitness: 5 }),
+      ch('compromise', 'Half the evening together, then an early night', '⏱️',
+        'A compromise. Not perfect, but the relationship holds and you\'re rested enough.',
+        'safe',
+        'A balanced evening. Not perfect for either of you, but the relationship holds.',
+        { morale: 6 }),
+      ch('postpone', '"Can we plan something in the summer? I\'m in the middle of my season."', '😬',
+        'They understand. Barely. The tension lingers and something feels slightly off at home.',
+        'selfish',
+        'They accept it. The awkward silence lasts a few days. You feel the weight of it.',
+        { morale: -8, fitness: 4 }),
+    ]),
+
+  E('h2_tabloid', 'second_half', 'lifestyle', 'Tabloid Story',
+    'A tabloid is running a piece about a private night out three weeks ago. Minor stuff — but the timing, with the Ballon d\'Or race building, is damaging.',
+    [
+      ch('silence', 'Say nothing — let it die quietly', '🤐',
+        'The dignified approach. Most fans move on in 48 hours. Some damage, nothing lasting.',
+        'safe',
+        'You stay silent. The story runs for two days and disappears. Controlled.',
+        { fame: -5, morale: -4 }),
+      ch('statement', 'Release a brief, measured statement', '📝',
+        'Takes control of the narrative. Works well — the response earns almost as much coverage as the story.',
+        'media',
+        'Your statement is praised for its tone. The whole thing blows over within two days.',
+        { fame: 5, morale: 6 }),
+      ch('attack', 'Call it out publicly — go on social media and fight back', '🐦',
+        'High risk. Either the public sides with you overwhelmingly or the story gets bigger.',
+        'risky',
+        'It becomes the dominant story for a week. Exhausting, but your name is everywhere.',
+        { fame: 14, morale: -8, fitness: -3 }),
+    ]),
+
   E('h2_overplay', 'second_half', 'lifestyle', 'Overload Warning',
     'The physio flags you as a fatigue risk. The manager wants you to play through it.',
     [
@@ -1122,6 +1351,59 @@ export function archetypeDefaults(archetype: BDArchetype): { age: number; overal
   }
 }
 
+// --- League table helpers ---
+
+export function initLeagueTable(playerClubId: string): LeagueTableRow[] {
+  return PL_CLUBS.map(club => ({
+    clubId: club.id,
+    name: club.name,
+    p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0,
+    form: [] as ('W' | 'D' | 'L')[],
+    isPlayer: club.id === playerClubId,
+  })).sort((a, b) => {
+    const pa = PL_CLUBS.find(c => c.id === a.clubId)!.prestige;
+    const pb = PL_CLUBS.find(c => c.id === b.clubId)!.prestige;
+    return pb - pa;
+  });
+}
+
+export function selectTeammates(clubId: string, playerPos: BDPosition, playerName: string, seed: number): BDTeammate[] {
+  const squad = CLUB_SQUADS[clubId] ?? [];
+  const rng = mulberry32(seed + 7777);
+
+  const ROLE_LABELS: Record<BDPosition, string[]> = {
+    GK:  ['Goalkeeper'],
+    DEF: ['Centre-back', 'Full-back', 'Defender'],
+    MID: ['Central mid', 'Attacking mid', 'Defensive mid'],
+    ATT: ['Striker', 'Winger', 'Forward'],
+  };
+
+  // Pick complement positions — always include at least one of each other position
+  const others = squad.filter(p => p.name !== playerName);
+  const byPos: Record<BDPosition, typeof others> = { GK: [], DEF: [], MID: [], ATT: [] };
+  for (const p of others) byPos[p.pos].push(p);
+
+  const picked: typeof others = [];
+  const complement: BDPosition[] = (['GK', 'DEF', 'MID', 'ATT'] as BDPosition[]).filter(p => p !== playerPos);
+  for (const pos of complement) {
+    const pool = byPos[pos];
+    if (pool.length) picked.push(pool[Math.floor(rng() * pool.length)]);
+  }
+  // Fill to 4 total from remaining
+  const remaining = others.filter(p => !picked.includes(p));
+  while (picked.length < 4 && remaining.length) {
+    const idx = Math.floor(rng() * remaining.length);
+    picked.push(remaining.splice(idx, 1)[0]);
+  }
+
+  return picked.slice(0, 4).map(p => ({
+    name: p.name,
+    position: p.pos,
+    role: ROLE_LABELS[p.pos][Math.floor(rng() * ROLE_LABELS[p.pos].length)],
+    goals: 0, assists: 0, cleanSheets: 0, avgRating: 0, appearances: 0,
+  }));
+}
+
 export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number): BDSeason {
   const year = 2024 + seasonNumber - 1;
   const seed = hashSeed(`season_${player.name}_${seasonNumber}`);
@@ -1179,6 +1461,9 @@ export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number)
     phase: 'pre_season',
     inCL,
     inEL,
+    matchweek: 0,
+    leagueTable: initLeagueTable(club.id),
+    teammates: selectTeammates(club.id, player.position, player.name, seed),
   };
 }
 

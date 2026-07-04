@@ -47,6 +47,31 @@ export interface BDAttributes {
   fame: number;
 }
 
+export interface LeagueTableRow {
+  clubId: string;
+  name: string;
+  p: number;
+  w: number;
+  d: number;
+  l: number;
+  gf: number;
+  ga: number;
+  pts: number;
+  form: ('W' | 'D' | 'L')[];
+  isPlayer: boolean;
+}
+
+export interface BDTeammate {
+  name: string;
+  position: BDPosition;
+  role: string;
+  goals: number;
+  assists: number;
+  cleanSheets: number;
+  avgRating: number;
+  appearances: number;
+}
+
 export interface EventChoice {
   id: string;
   label: string;
@@ -78,6 +103,24 @@ export interface BDEvent {
   choices: EventChoice[];
   chosenId?: string;
   outcomeText?: string;
+  matchContext?: {
+    opponent: string;
+    opponentId: string;
+    competition: 'Premier League' | 'Champions League' | 'Europa League' | 'FA Cup' | 'Pre-Season';
+    isHome: boolean;
+    matchweek: number;
+    opponentPrestige: number;
+  };
+  matchResult?: {
+    teamGoals: number;
+    opponentGoals: number;
+    isWin: boolean;
+    isDraw: boolean;
+    playerGoals: number;
+    playerAssists: number;
+    playerRating: number;
+    cleanSheet: boolean;
+  };
 }
 
 export interface CeremonyEntry {
@@ -124,6 +167,9 @@ export interface BDSeason {
   inCL: boolean;
   inEL: boolean;
   transferOffers?: TransferOffer[];
+  leagueTable?: LeagueTableRow[];
+  teammates?: BDTeammate[];
+  matchweek: number;
 }
 
 export interface BDCareer {
