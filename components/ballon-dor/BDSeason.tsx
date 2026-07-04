@@ -39,9 +39,10 @@ interface Props {
   season: SeasonData;
   player: BDPlayer;
   onUpdate: (s: SeasonData) => void;
+  onReturnToHub?: () => void;
 }
 
-export default function BDSeason({ season, player, onUpdate }: Props) {
+export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Props) {
   // One event at a time
   const currentIdx = season.events.findIndex(e => !e.chosenId);
   const currentEvent = currentIdx >= 0 ? season.events[currentIdx] : null;
@@ -117,7 +118,15 @@ export default function BDSeason({ season, player, onUpdate }: Props) {
       {/* ── Sticky top header ── */}
       <div className="sticky top-0 z-20 bg-gray-950/95 backdrop-blur border-b border-gray-800/80">
         <div className="mx-auto max-w-lg px-4 py-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
+          {onReturnToHub && (
+            <button
+              onClick={onReturnToHub}
+              className="shrink-0 text-gray-500 hover:text-amber-400 transition text-xs font-medium"
+            >
+              ← Hub
+            </button>
+          )}
+          <div className="min-w-0 flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">
               Season {season.number} · {season.year}/{String(season.year + 1).slice(2)} · {season.club.name}
             </p>
