@@ -1,5 +1,6 @@
 export type BDPosition = 'GK' | 'DEF' | 'MID' | 'ATT';
 export type SeasonPhase = 'pre_season' | 'first_half' | 'january' | 'second_half' | 'run_in' | 'ceremony' | 'done';
+export type BDArchetype = 'wonderkid' | 'rising_star' | 'world_class' | 'veteran';
 
 export interface BDStats {
   goals: number;
@@ -25,13 +26,18 @@ export interface BDPlayer {
   nationality: string;
   imageUrl?: string;
   isRealPlayer: boolean;
+  archetype: BDArchetype;
+  reputation: number; // 0-100, grows across career
 }
 
 export interface BDClub {
   id: string;
   name: string;
   prestige: number;
+  tier: string;
+  tierLabel: string;
   clChance: number;
+  elChance: number;
   primaryColor: string;
 }
 
@@ -46,6 +52,7 @@ export interface EventChoice {
   label: string;
   emoji: string;
   description?: string;
+  hint?: 'safe' | 'risky' | 'selfish' | 'team' | 'media';
   outcome: string;
   effects: Partial<{
     goals: number;
@@ -83,6 +90,7 @@ export interface CeremonyEntry {
   stats: BDStats;
   trophies: BDTrophy[];
   bdoScore: number;
+  age?: number;
 }
 
 export interface BDOCeremony {
@@ -90,6 +98,14 @@ export interface BDOCeremony {
   entries: CeremonyEntry[];
   playerRank: number;
   playerNominated: boolean;
+}
+
+export interface TransferOffer {
+  clubId: string;
+  clubName: string;
+  tierLabel: string;
+  prestige: number;
+  hasCL: boolean;
 }
 
 export interface BDSeason {
@@ -107,6 +123,7 @@ export interface BDSeason {
   ceremony?: BDOCeremony;
   inCL: boolean;
   inEL: boolean;
+  transferOffers?: TransferOffer[];
 }
 
 export interface BDCareer {
