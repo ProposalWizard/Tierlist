@@ -229,7 +229,7 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
               </p>
               <div className="grid grid-cols-3 gap-3 text-center mb-3">
                 <div>
-                  <p className="text-xs text-gray-500">{season.player?.position === 'DEF' || season.player?.position === 'GK' ? 'Clean Sheets' : 'Goals'}</p>
+                  <p className="text-xs text-gray-500">{player.position === 'DEF' || player.position === 'GK' ? 'Clean Sheets' : 'Goals'}</p>
                   <p className="text-xl font-black text-white">
                     {entries.find(e => e.isPlayer)?.stats.goals ?? 0}
                   </p>
