@@ -1557,9 +1557,7 @@ function generateMatchResult(
   teamGoals = clamp(teamGoals, 0, 9);
   opponentGoals = clamp(opponentGoals, 0, 9);
 
-  const rBase = isWin ? gauss(rng, 7.5, 0.5) : isDraw ? gauss(rng, 7.0, 0.4) : gauss(rng, 6.4, 0.5);
-  const playerRating = clamp(Number((rBase + mod.rat + (playerOverall - 80) * 0.015).toFixed(1)), 5.0, 9.9);
-
+  // Goals/assists computed FIRST so they feed into the rating
   let playerGoals = 0, playerAssists = 0;
   if (teamGoals > 0) {
     if (position === 'ATT') {
@@ -1573,6 +1571,10 @@ function generateMatchResult(
       if (Math.max(0, teamGoals - playerGoals) > 0 && rng() < 0.12) playerAssists = 1;
     }
   }
+
+  const rBase = isWin ? gauss(rng, 7.5, 0.5) : isDraw ? gauss(rng, 7.0, 0.4) : gauss(rng, 6.4, 0.5);
+  const gaBonus = playerGoals * 0.30 + playerAssists * 0.18;
+  const playerRating = clamp(Number((rBase + mod.rat + (playerOverall - 80) * 0.015 + gaBonus).toFixed(1)), 5.0, 9.9);
 
   return {
     teamGoals,
@@ -1791,6 +1793,8 @@ export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number)
     leagueTable,
     teammates,
     matchweek: 0,
+    money: 3000,
+    energy: 85,
   };
 }
 
@@ -1810,6 +1814,8 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
   let outcomeText = choice.outcome;
   let updatedOverall = season.playerOverall;
   let matchweek = season.matchweek;
+  let money = season.money ?? 3000;
+  let energy = season.energy ?? 85;
 
   if (ev.category === 'match' && ev.matchContext) {
     const matchSeed = hashSeed(`mr_${eventId}_${choiceId}_${season.year}`);
@@ -1837,11 +1843,14 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
     const ratingShift = (result.playerRating - 7.2) * 0.055;
     es.avgRating = Number((es.avgRating + ratingShift).toFixed(2));
 
-    // Fitness cost, morale from result
+    // Fitness/energy cost, morale from result
     const fitCost = choiceId === 'press' ? 5 : choiceId === 'inspire' ? 3 : 2;
     attrs.fitness = clamp(attrs.fitness - fitCost, 0, 100);
+    energy = clamp(energy - 10, 0, 100);
     const moraleDelta = result.isWin ? Math.min(8, 3 + result.teamGoals) : result.isDraw ? 1 : -5;
     attrs.morale = clamp(attrs.morale + moraleDelta, 0, 100);
+    // Match salary: appearance fee + win bonus
+    money += 150 + (result.isWin ? 300 : result.isDraw ? 75 : 0);
 
     matchweek = ev.matchContext.matchweek;
 
@@ -1870,6 +1879,10 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
     if (fx.morale != null) attrs.morale = clamp(attrs.morale + fx.morale, 0, 100);
     if (fx.fame != null) attrs.fame = clamp(attrs.fame + fx.fame, 0, 100);
     if (fx.overall != null) updatedOverall = season.playerOverall + fx.overall;
+    if (fx.money != null) money += fx.money;
+    if (fx.energy != null) energy = clamp(energy + fx.energy, 0, 100);
+    energy = clamp(energy - 5, 0, 100);
+    money += 150; // event salary
   }
 
   const newEvents = season.events.map((e, i) =>
@@ -1885,7 +1898,7 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
     newPhase = phaseOrder[curPhaseIdx + 1];
   }
 
-  return { ...season, playerOverall: updatedOverall, events: newEvents, eventStats: es, attributes: attrs, phase: newPhase, leagueTable, teammates, matchweek };
+  return { ...season, playerOverall: updatedOverall, events: newEvents, eventStats: es, attributes: attrs, phase: newPhase, leagueTable, teammates, matchweek, money, energy };
 }
 
 // --- Finalize season ---

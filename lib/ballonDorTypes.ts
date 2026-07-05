@@ -90,6 +90,8 @@ export interface EventChoice {
     morale: number;
     fame: number;
     overall: number;
+    money: number;
+    energy: number;
   }>;
 }
 
@@ -170,6 +172,8 @@ export interface BDSeason {
   leagueTable?: LeagueTableRow[];
   teammates?: BDTeammate[];
   matchweek: number;
+  money: number;
+  energy: number;
 }
 
 export interface BDCareer {

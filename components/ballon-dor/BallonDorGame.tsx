@@ -28,11 +28,11 @@ function migrateCareer(raw: any): BDCareer {
 
   // Drop incompatible in-progress seasons silently (new season starts fresh)
   const current = raw.current && isCompatibleSeason(raw.current)
-    ? { ...raw.current, matchweek: raw.current.matchweek ?? 0 }
+    ? { ...raw.current, matchweek: raw.current.matchweek ?? 0, money: raw.current.money ?? 3000, energy: raw.current.energy ?? 85 }
     : null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const seasons = (raw.seasons ?? []).map((s: any) => ({ ...s, matchweek: s.matchweek ?? 0 }));
+  const seasons = (raw.seasons ?? []).map((s: any) => ({ ...s, matchweek: s.matchweek ?? 0, money: s.money ?? 0, energy: s.energy ?? 0 }));
 
   return { ...raw, player, current, seasons, bdoWins: raw.bdoWins ?? 0, lastBdoRank: raw.lastBdoRank ?? 0 };
 }
