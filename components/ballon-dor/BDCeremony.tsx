@@ -12,15 +12,14 @@ interface Props {
 type CeremonyPhase =
   | 'intro'
   | 'nominated_check'
-  | 'bulk'        // reveals entries[0..14] = ranks 25 → 11
-  | 'break_mid'   // interlude: "The Top 10"
-  | 'mid'         // reveals entries[15..19] = ranks 10 → 6
-  | 'break_top5'  // interlude: "The Top 5"
-  | 'spotlight'   // entries[20..22] = ranks 5, 4, 3 (one at a time)
-  | 'runner_up'   // entries[23] = rank 2
-  | 'winner_build'// "And the winner is..."
-  | 'winner'      // entries[24] = rank 1 — full screen
-  | 'result';     // season complete, player result + next button
+  | 'bulk'
+  | 'break_mid'
+  | 'mid'
+  | 'break_top5'
+  | 'spotlight'
+  | 'finalists'       // both finalist cards shown, ranks hidden
+  | 'finalist_reveal' // dramatic step-by-step rank reveal
+  | 'result';
 
 const POS_LABEL: Record<string, string> = { GK: 'GK', DEF: 'DEF', MID: 'MID', ATT: 'FWD' };
 
@@ -48,9 +47,12 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
   const [phase, setPhase] = useState<CeremonyPhase>('intro');
   const [bulkRevealed, setBulkRevealed] = useState(0);
   const [midRevealed, setMidRevealed] = useState(0);
-  const [spotlightIdx, setSpotlightIdx] = useState(0); // 0 = rank 5 reveal, 1 = rank 4, 2 = rank 3
-  const [showWinnerContinue, setShowWinnerContinue] = useState(false);
+  const [spotlightIdx, setSpotlightIdx] = useState(0);
+  // finalist_reveal steps: 0 = envelope building, 1 = runner-up revealed, 2 = winner revealed
+  const [revealStep, setRevealStep] = useState(0);
+  const [showFinalistContinue, setShowFinalistContinue] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showResultContinue, setShowResultContinue] = useState(false);
 
   const ceremony = season.ceremony!;
   const { entries, playerNominated, playerRank } = ceremony;
@@ -109,7 +111,7 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
   useEffect(() => {
     if (phase !== 'spotlight') return;
     if (spotlightIdx >= 3) {
-      const t = setTimeout(() => setPhase('runner_up'), 700);
+      const t = setTimeout(() => setPhase('finalists'), 700);
       return () => clearTimeout(t);
     }
     const isPlayerEntry = entries[20 + spotlightIdx]?.isPlayer;
@@ -118,24 +120,24 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
     return () => clearTimeout(t);
   }, [phase, spotlightIdx, entries]);
 
+  // finalists: show both mystery cards, button appears after 4s
   useEffect(() => {
-    if (phase !== 'runner_up') return;
-    const isPlayerRunnerUp = entries[23]?.isPlayer;
-    const t = setTimeout(() => setPhase('winner_build'), isPlayerRunnerUp ? 6000 : 4500);
-    return () => clearTimeout(t);
-  }, [phase, entries]);
-
-  useEffect(() => {
-    if (phase !== 'winner_build') return;
-    const t = setTimeout(() => setPhase('winner'), 4000);
+    if (phase !== 'finalists') return;
+    const t = setTimeout(() => setShowFinalistContinue(true), 4000);
     return () => clearTimeout(t);
   }, [phase]);
 
+  // finalist_reveal: step through 0 → 1 → 2 → show continue
   useEffect(() => {
-    if (phase !== 'winner') return;
-    if (playerWon) setShowConfetti(true);
-    const t = setTimeout(() => setShowWinnerContinue(true), 4000);
-    return () => clearTimeout(t);
+    if (phase !== 'finalist_reveal') return;
+    setRevealStep(0);
+    const t1 = setTimeout(() => setRevealStep(1), 2200); // runner-up revealed
+    const t2 = setTimeout(() => {
+      setRevealStep(2);
+      if (playerWon) setShowConfetti(true);
+    }, 5000); // winner revealed
+    const t3 = setTimeout(() => setShowResultContinue(true), 9000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [phase, playerWon]);
 
   // ── RENDER ────────────────────────────────────────────────────────
@@ -144,10 +146,7 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4">
         <div className="text-center" style={{ animation: 'fadeIn 1.2s ease-out' }}>
-          <div
-            className="mb-8 text-8xl"
-            style={{ filter: 'drop-shadow(0 0 50px rgba(251,191,36,0.5))' }}
-          >
+          <div className="mb-8 text-8xl" style={{ filter: 'drop-shadow(0 0 50px rgba(251,191,36,0.5))' }}>
             🏅
           </div>
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.45em] text-amber-400/50">
@@ -213,18 +212,12 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
         </div>
         <div className="mx-auto max-w-lg px-4 pt-5">
           <div className="grid grid-cols-3 gap-2">
-            {visible.map((entry) => (
-              <BulkCard key={entry.rank} entry={entry} />
-            ))}
+            {visible.map((entry) => <BulkCard key={entry.rank} entry={entry} />)}
           </div>
           {bulkRevealed < 15 && (
             <div className="mt-5 flex justify-center gap-1.5">
               {[0, 150, 300].map(d => (
-                <div
-                  key={d}
-                  className="h-1 w-1 rounded-full bg-amber-400/60 animate-bounce"
-                  style={{ animationDelay: `${d}ms` }}
-                />
+                <div key={d} className="h-1 w-1 rounded-full bg-amber-400/60 animate-bounce" style={{ animationDelay: `${d}ms` }} />
               ))}
             </div>
           )}
@@ -235,10 +228,10 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
 
   if (phase === 'break_mid') {
     return (
-      <InterlùdeScreen year={ceremony.year}>
+      <InterludeScreen year={ceremony.year}>
         <h2 className="text-4xl font-black text-white">The Top Ten.</h2>
         <p className="mt-3 text-sm text-gray-400">The best footballers on the planet.</p>
-      </InterlùdeScreen>
+      </InterludeScreen>
     );
   }
 
@@ -253,19 +246,11 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
           <h2 className="text-base font-black text-white">The Top Ten</h2>
         </div>
         <div className="mx-auto max-w-lg px-4 pt-5 space-y-5">
-          {/* Collapsed bulk */}
           <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-700">
-              Positions 25 – 11
-            </p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-700">Positions 25 – 11</p>
             <div className="grid grid-cols-5 gap-1.5">
               {entries.slice(0, 15).map(entry => (
-                <div
-                  key={entry.rank}
-                  className={`rounded-lg border px-1 py-1.5 text-center ${
-                    entry.isPlayer ? 'border-amber-500/30 bg-amber-500/8' : 'border-gray-800 bg-gray-900/60'
-                  }`}
-                >
+                <div key={entry.rank} className={`rounded-lg border px-1 py-1.5 text-center ${entry.isPlayer ? 'border-amber-500/30 bg-amber-500/8' : 'border-gray-800 bg-gray-900/60'}`}>
                   <p className="text-[9px] font-bold text-gray-600">#{entry.rank}</p>
                   <p className={`text-[9px] font-semibold leading-tight truncate ${entry.isPlayer ? 'text-amber-400' : 'text-gray-400'}`}>
                     {entry.name.split(' ').slice(-1)[0]}
@@ -274,25 +259,15 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
               ))}
             </div>
           </div>
-
-          {/* Mid reveals */}
           <div>
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
-              Positions 10 – 6
-            </p>
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Positions 10 – 6</p>
             <div className="space-y-2.5">
-              {midVisible.map((entry) => (
-                <MidCard key={entry.rank} entry={entry} />
-              ))}
+              {midVisible.map((entry) => <MidCard key={entry.rank} entry={entry} />)}
             </div>
             {midRevealed < 5 && midRevealed > 0 && (
               <div className="mt-4 flex justify-center gap-1.5">
                 {[0, 160, 320].map(d => (
-                  <div
-                    key={d}
-                    className="h-1 w-1 rounded-full bg-amber-400/60 animate-bounce"
-                    style={{ animationDelay: `${d}ms` }}
-                  />
+                  <div key={d} className="h-1 w-1 rounded-full bg-amber-400/60 animate-bounce" style={{ animationDelay: `${d}ms` }} />
                 ))}
               </div>
             )}
@@ -304,13 +279,13 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
 
   if (phase === 'break_top5') {
     return (
-      <InterlùdeScreen year={ceremony.year}>
+      <InterludeScreen year={ceremony.year}>
         <h2 className="text-5xl font-black text-white">The Top Five.</h2>
         <p className="mt-4 text-sm text-gray-400 leading-relaxed">
           Five players. One award.<br />
           The greatest individual prize in football.
         </p>
-      </InterlùdeScreen>
+      </InterludeScreen>
     );
   }
 
@@ -320,36 +295,23 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
     return (
       <div className="flex min-h-screen flex-col bg-black">
         <div className="border-b border-white/5 px-4 py-4 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-amber-400/50">
-            Ballon d'Or {ceremony.year}
-          </p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-amber-400/50">Ballon d'Or {ceremony.year}</p>
           <h2 className="text-base font-black text-white">The Top Five</h2>
         </div>
         <div className="flex-1 px-4 py-6">
           <div className="mx-auto max-w-sm space-y-3">
-            {/* Already announced (compact) */}
             {alreadyRevealed.map(entry => (
-              <div
-                key={entry.rank}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
-                  entry.isPlayer ? 'border-amber-500/40 bg-amber-500/8' : 'border-gray-800 bg-gray-900/60'
-                }`}
-              >
-                <span className={`text-sm font-black tabular-nums w-8 text-center ${
-                  entry.rank === 3 ? 'text-amber-600' : 'text-gray-500'
-                }`}>
+              <div key={entry.rank} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${entry.isPlayer ? 'border-amber-500/40 bg-amber-500/8' : 'border-gray-800 bg-gray-900/60'}`}>
+                <span className={`text-sm font-black tabular-nums w-8 text-center ${entry.rank === 3 ? 'text-amber-600' : 'text-gray-500'}`}>
                   {entry.rank === 3 ? '🥉' : `#${entry.rank}`}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-bold truncate ${entry.isPlayer ? 'text-amber-300' : 'text-white'}`}>
-                    {entry.name}
-                  </p>
+                  <p className={`text-sm font-bold truncate ${entry.isPlayer ? 'text-amber-300' : 'text-white'}`}>{entry.name}</p>
                   <p className="text-xs text-gray-600">{entry.leagueFlag} {entry.club}</p>
                 </div>
                 <p className="text-xs text-gray-500 shrink-0">{keyStatShort(entry)}</p>
               </div>
             ))}
-            {/* Current spotlight */}
             {current && <SpotlightCard key={current.rank} entry={current} />}
           </div>
         </div>
@@ -357,167 +319,157 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
     );
   }
 
-  if (phase === 'runner_up') {
+  // ── FINALISTS: both shown as mystery cards ─────────────────────────
+  if (phase === 'finalists') {
     const runnerUp = entries[23];
+    const winner   = entries[24];
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4">
-        <div className="w-full max-w-sm text-center" style={{ animation: 'dropIn 0.7s ease-out' }}>
-          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.35em] text-gray-600">
-            And finishing in second place...
-          </p>
-          <div className={`rounded-2xl border p-7 ${
-            runnerUp.isPlayer
-              ? 'border-amber-400/40 bg-amber-400/5'
-              : 'border-gray-700 bg-gray-900'
-          }`}>
-            <div className="mb-3 text-5xl">🥈</div>
-            <p className={`text-2xl font-black leading-tight ${runnerUp.isPlayer ? 'text-amber-300' : 'text-white'}`}>
-              {runnerUp.name}
-            </p>
-            <p className="mt-1.5 text-sm text-gray-400">{runnerUp.leagueFlag} {runnerUp.club}</p>
-            <p className="mt-0.5 text-xs text-gray-600">{POS_LABEL[runnerUp.position] ?? runnerUp.position}</p>
-            <div className="mt-5 h-px bg-gray-800" />
-            <p className="mt-4 text-sm font-semibold text-gray-300">{keyStat(runnerUp)}</p>
-            <div className="mt-2 flex justify-center">
-              <RatingBadge rating={runnerUp.stats.avgRating} />
-            </div>
-            {runnerUp.trophies.length > 0 && (
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {runnerUp.trophies.map(t => (
-                  <span key={t.name} className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-300">
-                    {t.emoji} {t.name}
-                  </span>
-                ))}
-              </div>
-            )}
-            {runnerUp.isPlayer && (
-              <div className="mt-5 rounded-xl border border-amber-400/20 bg-amber-400/8 px-4 py-3">
-                <p className="text-sm font-black text-amber-400">That's you.</p>
-                <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                  Second in the world. One of the greatest seasons in football. You'll be back.
-                </p>
-              </div>
-            )}
-          </div>
+      <div className="flex min-h-screen flex-col bg-black px-4">
+        <div className="border-b border-white/5 px-4 py-4 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-amber-400/50">Ballon d'Or {ceremony.year}</p>
+          <h2 className="text-base font-black text-white">The Final Two</h2>
         </div>
-      </div>
-    );
-  }
-
-  if (phase === 'winner_build') {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4">
-        <div className="text-center max-w-xs" style={{ animation: 'fadeIn 0.8s ease-out' }}>
-          <div
-            className="mb-8 text-6xl"
-            style={{ filter: 'drop-shadow(0 0 30px rgba(251,191,36,0.6))' }}
-          >
-            🏅
-          </div>
-          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.4em] text-amber-400/50">
-            Ballon d'Or {ceremony.year}
+        <div className="flex-1 flex flex-col items-center justify-center py-10 space-y-6">
+          <p className="text-sm text-gray-500 text-center leading-relaxed max-w-xs" style={{ animation: 'fadeIn 0.8s ease-out' }}>
+            Two players remain. One will be crowned champion of the world.
           </p>
-          <h2 className="text-2xl font-black text-white">And the winner is...</h2>
-          <div className="mt-8 flex justify-center gap-2">
-            {[0, 250, 500].map(d => (
-              <div
-                key={d}
-                className="h-2.5 w-2.5 rounded-full bg-amber-400 animate-bounce"
-                style={{ animationDelay: `${d}ms`, animationDuration: '1s' }}
-              />
+          <div className="grid grid-cols-2 gap-4 w-full max-w-sm" style={{ animation: 'fadeIn 0.6s ease-out 0.4s both' }}>
+            <FinalistMysteryCard entry={runnerUp} />
+            <FinalistMysteryCard entry={winner} />
+          </div>
+          <div className="flex justify-center gap-2 mt-2">
+            {[0, 300, 600].map(d => (
+              <div key={d} className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: `${d}ms`, animationDuration: '1.2s' }} />
             ))}
           </div>
+          {showFinalistContinue && (
+            <button
+              onClick={() => { setShowFinalistContinue(false); setPhase('finalist_reveal'); }}
+              className="mt-2 w-full max-w-sm rounded-xl bg-amber-500 py-4 text-sm font-black text-black hover:bg-amber-400 transition"
+              style={{ animation: 'fadeIn 0.4s ease-out' }}
+            >
+              Reveal the Winner →
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
-  if (phase === 'winner') {
-    const winner = entries[24];
+  // ── FINALIST REVEAL: step-by-step dramatic reveal ─────────────────
+  if (phase === 'finalist_reveal') {
+    const runnerUp = entries[23];
+    const winner   = entries[24];
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4 relative overflow-hidden">
-        {showConfetti && <ConfettiLayer />}
-        <div
-          className="relative z-10 w-full max-w-sm text-center"
-          style={{ animation: 'dropIn 0.8s ease-out' }}
-        >
-          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.4em] text-amber-400/50">
-            Ballon d'Or {ceremony.year}
-          </p>
-          <div
-            className="mb-6 text-8xl"
-            style={{ filter: 'drop-shadow(0 0 60px rgba(251,191,36,0.8))' }}
-          >
-            🏅
+        {revealStep >= 2 && winner.isPlayer && <ConfettiLayer />}
+        <div className="relative z-10 w-full max-w-sm space-y-5">
+          <div className="text-center mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-amber-400/40">Ballon d'Or {ceremony.year}</p>
+            <h2 className="text-xl font-black text-white mt-1">
+              {revealStep === 0 ? 'The envelope is opened...' : revealStep === 1 ? 'Runner-up...' : '🏅 Winner!'}
+            </h2>
           </div>
-          <h1
-            className="text-4xl font-black text-amber-400 leading-tight"
+
+          {/* Runner-up card */}
+          <div
+            className={`rounded-2xl border p-5 transition-all duration-700 ${
+              revealStep >= 1
+                ? runnerUp.isPlayer
+                  ? 'border-gray-400/40 bg-gray-700/20'
+                  : 'border-gray-700 bg-gray-900'
+                : 'border-gray-800/40 bg-gray-900/30'
+            }`}
+            style={{ animation: revealStep >= 1 ? 'dropIn 0.6s ease-out' : undefined }}
+          >
+            {revealStep >= 1 ? (
+              <>
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-3xl">🥈</span>
+                  {runnerUp.isPlayer && (
+                    <span className="rounded-full bg-gray-500 px-2 py-1 text-xs font-black text-white">YOU</span>
+                  )}
+                </div>
+                <p className={`text-xl font-black leading-tight ${runnerUp.isPlayer ? 'text-gray-200' : 'text-white'}`}>
+                  {runnerUp.name}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">{runnerUp.leagueFlag} {runnerUp.club}</p>
+                <div className="mt-3 h-px bg-gray-800" />
+                <p className="mt-2 text-xs text-gray-400">{keyStat(runnerUp)}</p>
+                {runnerUp.isPlayer && (
+                  <div className="mt-3 rounded-xl border border-gray-600/30 bg-gray-600/10 px-3 py-2.5">
+                    <p className="text-xs font-bold text-gray-300">Runner-up. So close.</p>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">Second in the world. One of the greatest seasons in football.</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-4xl mb-2 animate-pulse">❓</p>
+                <p className="text-sm text-gray-600">{revealStep === 0 ? '...' : ''}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Winner card */}
+          <div
+            className={`rounded-2xl border p-5 transition-all duration-700 ${
+              revealStep >= 2
+                ? winner.isPlayer
+                  ? 'border-amber-400 bg-amber-400/8'
+                  : 'border-amber-600/50 bg-amber-900/20'
+                : 'border-gray-800/40 bg-gray-900/30'
+            }`}
             style={{
-              letterSpacing: '-0.02em',
-              textShadow: '0 0 60px rgba(251,191,36,0.5)',
+              animation: revealStep >= 2 ? 'dropIn 0.7s ease-out' : undefined,
+              boxShadow: revealStep >= 2 ? '0 0 40px rgba(251,191,36,0.25)' : undefined,
             }}
           >
-            {winner.name}
-          </h1>
-          <p className="mt-2 text-base text-gray-300">{winner.leagueFlag} {winner.club}</p>
-          <p className="mt-0.5 text-xs text-gray-600">{POS_LABEL[winner.position] ?? winner.position}</p>
-
-          <div className="mt-7 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
-
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-amber-400/15 bg-amber-400/5 py-3">
-              <p className="text-[10px] text-gray-600 mb-1">
-                {winner.position === 'GK' || winner.position === 'DEF' ? 'Clean Sheets' : 'Goals'}
-              </p>
-              <p className="text-2xl font-black text-white">
-                {winner.position === 'GK' || winner.position === 'DEF'
-                  ? winner.stats.cleanSheets
-                  : winner.stats.goals}
-              </p>
-            </div>
-            <div className="rounded-xl border border-amber-400/15 bg-amber-400/5 py-3">
-              <p className="text-[10px] text-gray-600 mb-1">
-                {winner.position === 'GK' ? 'MOTM' : 'Assists'}
-              </p>
-              <p className="text-2xl font-black text-white">
-                {winner.position === 'GK' ? winner.stats.manOfTheMatch : winner.stats.assists}
-              </p>
-            </div>
-            <div className="rounded-xl border border-amber-400/15 bg-amber-400/5 py-3">
-              <p className="text-[10px] text-gray-600 mb-1">Rating</p>
-              <p className="text-2xl font-black text-amber-400">
-                {winner.stats.avgRating.toFixed(1)}
-              </p>
-            </div>
+            {revealStep >= 2 ? (
+              <>
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-3xl" style={{ filter: 'drop-shadow(0 0 12px rgba(251,191,36,0.8))' }}>🏅</span>
+                  {winner.isPlayer && (
+                    <span className="rounded-full bg-amber-500 px-2 py-1 text-xs font-black text-black">YOU</span>
+                  )}
+                </div>
+                <p className={`text-2xl font-black leading-tight ${winner.isPlayer ? 'text-amber-400' : 'text-amber-300'}`}
+                  style={{ textShadow: winner.isPlayer ? '0 0 30px rgba(251,191,36,0.5)' : undefined }}>
+                  {winner.name}
+                </p>
+                <p className="mt-1 text-xs text-gray-400">{winner.leagueFlag} {winner.club}</p>
+                <div className="mt-3 h-px bg-amber-400/20" />
+                <p className="mt-2 text-sm font-semibold text-gray-200">{keyStat(winner)}</p>
+                {winner.trophies.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {winner.trophies.map(t => (
+                      <span key={t.name} className="rounded-full bg-amber-500/15 border border-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-400">
+                        {t.emoji} {t.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {winner.isPlayer && (
+                  <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/8 px-4 py-3">
+                    <p className="text-base font-black text-amber-300">You did it.</p>
+                    <p className="mt-1 text-xs text-gray-300 leading-relaxed">
+                      Ballon d'Or champion. Your name joins the legends of the game forever.
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-4xl mb-2 animate-pulse">❓</p>
+                <p className="text-sm text-gray-600">{revealStep === 0 ? '...' : ''}</p>
+              </div>
+            )}
           </div>
 
-          {winner.trophies.length > 0 && (
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {winner.trophies.map(t => (
-                <span
-                  key={t.name}
-                  className="rounded-full border border-amber-400/20 bg-amber-400/8 px-3 py-1 text-xs font-bold text-amber-400"
-                >
-                  {t.emoji} {t.name}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {winner.isPlayer && (
-            <div className="mt-6 rounded-2xl border border-amber-400 bg-amber-400/8 px-5 py-5">
-              <p className="text-xl font-black text-amber-300">You did it.</p>
-              <p className="mt-2 text-sm text-gray-300 leading-relaxed">
-                Ballon d'Or champion. The greatest individual honour in football.
-                Your name joins the legends of the game.
-              </p>
-            </div>
-          )}
-
-          {showWinnerContinue && (
+          {showResultContinue && (
             <button
               onClick={() => setPhase('result')}
-              className="mt-8 w-full rounded-xl border border-gray-700 bg-gray-900/80 py-3.5 text-sm font-black text-white transition hover:border-gray-500 hover:bg-gray-800"
+              className="w-full rounded-xl border border-gray-700 bg-gray-900/80 py-3.5 text-sm font-black text-white transition hover:border-gray-500 hover:bg-gray-800"
               style={{ animation: 'fadeIn 0.5s ease-out' }}
             >
               Continue →
@@ -535,8 +487,6 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
   return (
     <div className="min-h-screen bg-black pb-16">
       <div className="mx-auto max-w-sm px-4 pt-10 space-y-4">
-
-        {/* Player result */}
         <div className={`rounded-2xl border p-6 text-center ${
           playerWon
             ? 'border-amber-400 bg-amber-400/8'
@@ -550,9 +500,7 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
             <>
               <div className="mb-3 text-5xl">🏅</div>
               <h2 className="text-2xl font-black text-amber-400">Ballon d'Or Winner</h2>
-              <p className="mt-2 text-xs text-gray-400 leading-relaxed">
-                History will remember this season.
-              </p>
+              <p className="mt-2 text-xs text-gray-400 leading-relaxed">History will remember this season.</p>
             </>
           ) : playerNominated ? (
             <>
@@ -560,9 +508,7 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
               <p className="text-5xl font-black text-white">
                 {playerRank === 2 ? '🥈' : playerRank === 3 ? '🥉' : `#${playerRank}`}
               </p>
-              {playerRank > 3 && (
-                <p className="mt-1 text-sm text-gray-500">in the World</p>
-              )}
+              {playerRank > 3 && <p className="mt-1 text-sm text-gray-500">in the World</p>}
               <p className="mt-3 text-xs text-gray-500 leading-relaxed">
                 {playerRank === 2 ? 'Runner-up. One of the greatest seasons in the world.' :
                  playerRank === 3 ? 'On the podium. A legendary season.' :
@@ -582,45 +528,31 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
           )}
         </div>
 
-        {/* Season stats */}
         {playerEntry && (
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
-              Your {ceremony.year} Season
-            </p>
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Your {ceremony.year} Season</p>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-[10px] text-gray-500 mb-1">
-                  {player.position === 'GK' || player.position === 'DEF' ? 'Clean Sheets' : 'Goals'}
-                </p>
+                <p className="text-[10px] text-gray-500 mb-1">{player.position === 'GK' || player.position === 'DEF' ? 'Clean Sheets' : 'Goals'}</p>
                 <p className="text-xl font-black text-white">
-                  {player.position === 'GK' || player.position === 'DEF'
-                    ? playerEntry.stats.cleanSheets
-                    : playerEntry.stats.goals}
+                  {player.position === 'GK' || player.position === 'DEF' ? playerEntry.stats.cleanSheets : playerEntry.stats.goals}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500 mb-1">
-                  {player.position === 'GK' ? 'MOTM' : 'Assists'}
-                </p>
+                <p className="text-[10px] text-gray-500 mb-1">{player.position === 'GK' ? 'MOTM' : 'Assists'}</p>
                 <p className="text-xl font-black text-white">
                   {player.position === 'GK' ? playerEntry.stats.manOfTheMatch : playerEntry.stats.assists}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 mb-1">Rating</p>
-                <p className="text-xl font-black text-amber-400">
-                  {playerEntry.stats.avgRating.toFixed(1)}
-                </p>
+                <p className="text-xl font-black text-amber-400">{playerEntry.stats.avgRating.toFixed(1)}</p>
               </div>
             </div>
             {season.trophies.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-800 flex flex-wrap gap-2">
                 {season.trophies.map(t => (
-                  <span
-                    key={t.name}
-                    className="rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-400"
-                  >
+                  <span key={t.name} className="rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-400">
                     {t.emoji} {t.name}
                   </span>
                 ))}
@@ -629,7 +561,6 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
           </div>
         )}
 
-        {/* Winner (if not the player) */}
         {!playerWon && (
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Winner</p>
@@ -642,9 +573,7 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
               <div className="text-right shrink-0">
                 <p className="text-xs text-gray-400">{keyStatShort(winnerEntry)}</p>
                 {winnerEntry.trophies.length > 0 && (
-                  <p className="text-[10px] text-gray-600 mt-0.5">
-                    {winnerEntry.trophies.map(t => t.emoji).join(' ')}
-                  </p>
+                  <p className="text-[10px] text-gray-600 mt-0.5">{winnerEntry.trophies.map(t => t.emoji).join(' ')}</p>
                 )}
               </div>
             </div>
@@ -664,14 +593,12 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
 
 // ── Sub-components ─────────────────────────────────────────────────
 
-function InterlùdeScreen({ year, children }: { year: number; children: React.ReactNode }) {
+function InterludeScreen({ year, children }: { year: number; children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4">
       <div className="text-center max-w-xs" style={{ animation: 'fadeIn 0.7s ease-out' }}>
         <div className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
-        <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.4em] text-amber-400/40">
-          Ballon d'Or {year}
-        </p>
+        <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.4em] text-amber-400/40">Ballon d'Or {year}</p>
         {children}
         <div className="mt-7 h-px w-full bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
       </div>
@@ -679,14 +606,32 @@ function InterlùdeScreen({ year, children }: { year: number; children: React.Re
   );
 }
 
+function FinalistMysteryCard({ entry }: { entry: CeremonyEntry }) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 text-center ${entry.isPlayer ? 'border-amber-500/40 bg-amber-500/8' : 'border-gray-700 bg-gray-900'}`}
+      style={{ animation: 'dropIn 0.5s ease-out' }}
+    >
+      <div className="w-10 h-10 rounded-full bg-gray-800/60 border border-dashed border-amber-400/30 flex items-center justify-center mx-auto mb-3">
+        <span className="text-lg text-amber-400/40">?</span>
+      </div>
+      <p className={`text-sm font-black leading-tight mb-1 ${entry.isPlayer ? 'text-amber-300' : 'text-white'}`}>
+        {entry.name}
+      </p>
+      <p className="text-[10px] text-gray-600">{entry.leagueFlag} {entry.club}</p>
+      <div className="mt-2 h-px bg-gray-800" />
+      <p className="mt-2 text-[10px] text-gray-500">{keyStatShort(entry)}</p>
+      {entry.isPlayer && (
+        <span className="mt-2 inline-block rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-black text-black">YOU</span>
+      )}
+    </div>
+  );
+}
+
 function BulkCard({ entry }: { entry: CeremonyEntry }) {
   return (
     <div
-      className={`rounded-lg border px-2 py-2.5 text-center ${
-        entry.isPlayer
-          ? 'border-amber-500/50 bg-amber-500/10'
-          : 'border-gray-800 bg-gray-900/80'
-      }`}
+      className={`rounded-lg border px-2 py-2.5 text-center ${entry.isPlayer ? 'border-amber-500/50 bg-amber-500/10' : 'border-gray-800 bg-gray-900/80'}`}
       style={{ animation: 'fadeSlideIn 0.35s ease-out' }}
     >
       <p className={`text-[10px] font-bold tabular-nums ${entry.isPlayer ? 'text-amber-400/70' : 'text-gray-600'}`}>
@@ -697,9 +642,7 @@ function BulkCard({ entry }: { entry: CeremonyEntry }) {
       </p>
       <p className="mt-0.5 text-[9px] text-gray-600">{entry.leagueFlag}</p>
       {entry.isPlayer && (
-        <span className="mt-1 inline-block rounded-full bg-amber-500 px-1 py-px text-[8px] font-black text-black">
-          YOU
-        </span>
+        <span className="mt-1 inline-block rounded-full bg-amber-500 px-1 py-px text-[8px] font-black text-black">YOU</span>
       )}
     </div>
   );
@@ -708,25 +651,17 @@ function BulkCard({ entry }: { entry: CeremonyEntry }) {
 function MidCard({ entry }: { entry: CeremonyEntry }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${
-        entry.isPlayer ? 'border-amber-500/50 bg-amber-500/8' : 'border-gray-700 bg-gray-900'
-      }`}
+      className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${entry.isPlayer ? 'border-amber-500/50 bg-amber-500/8' : 'border-gray-700 bg-gray-900'}`}
       style={{ animation: 'slideUp 0.5s ease-out' }}
     >
       <div className="w-8 text-center shrink-0">
-        <span className={`text-base font-black ${entry.rank <= 3 ? 'text-amber-400' : 'text-gray-400'}`}>
-          #{entry.rank}
-        </span>
+        <span className={`text-base font-black ${entry.rank <= 3 ? 'text-amber-400' : 'text-gray-400'}`}>#{entry.rank}</span>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className={`text-sm font-black truncate ${entry.isPlayer ? 'text-amber-300' : 'text-white'}`}>
-            {entry.name}
-          </p>
+          <p className={`text-sm font-black truncate ${entry.isPlayer ? 'text-amber-300' : 'text-white'}`}>{entry.name}</p>
           {entry.isPlayer && (
-            <span className="shrink-0 rounded-full bg-amber-500 px-1.5 py-px text-[9px] font-black text-black">
-              YOU
-            </span>
+            <span className="shrink-0 rounded-full bg-amber-500 px-1.5 py-px text-[9px] font-black text-black">YOU</span>
           )}
         </div>
         <p className="text-xs text-gray-500">{entry.leagueFlag} {entry.club}</p>
@@ -742,24 +677,16 @@ function MidCard({ entry }: { entry: CeremonyEntry }) {
 }
 
 function SpotlightCard({ entry }: { entry: CeremonyEntry }) {
-  const rankEmoji = entry.rank === 3 ? '🥉' : entry.rank === 4 ? '' : '';
+  const rankEmoji = entry.rank === 3 ? '🥉' : '';
   return (
     <div
-      className={`rounded-2xl border p-5 ${
-        entry.isPlayer ? 'border-amber-400/60 bg-amber-400/8' : 'border-gray-600 bg-gray-900'
-      }`}
+      className={`rounded-2xl border p-5 ${entry.isPlayer ? 'border-amber-400/60 bg-amber-400/8' : 'border-gray-600 bg-gray-900'}`}
       style={{ animation: 'dropIn 0.6s ease-out' }}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className={`text-xl font-black ${
-            entry.rank === 3 ? 'text-amber-600' :
-            entry.rank === 4 ? 'text-gray-300' :
-            'text-gray-400'
-          }`}>
-            {rankEmoji || `#${entry.rank}`}
-          </span>
-        </div>
+        <span className={`text-xl font-black ${entry.rank === 3 ? 'text-amber-600' : 'text-gray-400'}`}>
+          {rankEmoji || `#${entry.rank}`}
+        </span>
         {entry.isPlayer && (
           <span className="rounded-full bg-amber-500 px-2 py-1 text-xs font-black text-black">YOU</span>
         )}
@@ -798,7 +725,6 @@ function ConfettiLayer() {
     duration: `${(2.2 + (i % 6) * 0.35).toFixed(2)}s`,
     rotate: `${(i * 47) % 360}deg`,
   }));
-
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
       {pieces.map((p, i) => (
@@ -806,15 +732,10 @@ function ConfettiLayer() {
           key={i}
           className="absolute rounded-sm animate-bounce"
           style={{
-            left: p.left,
-            top: `${-5 - (i * 6) % 15}%`,
-            width: p.width,
-            height: p.height,
-            background: p.color,
-            animationDelay: p.delay,
-            animationDuration: p.duration,
-            transform: `rotate(${p.rotate})`,
-            opacity: 0.88,
+            left: p.left, top: `${-5 - (i * 6) % 15}%`,
+            width: p.width, height: p.height, background: p.color,
+            animationDelay: p.delay, animationDuration: p.duration,
+            transform: `rotate(${p.rotate})`, opacity: 0.88,
           }}
         />
       ))}
