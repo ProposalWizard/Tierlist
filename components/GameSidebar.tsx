@@ -13,22 +13,18 @@ interface GameLink {
 }
 
 const GAMES: GameLink[] = [
-  { name: "Home", description: "Browse all games", href: "/" },
-  { name: "Tierlists", description: "Create & play drag-and-drop tierlists", href: "/tierlists" },
-  { name: "Combined XI", description: "Build your dream starting 11", href: "/combined-xi", comingSoon: true },
-  { name: "Squad Builder", description: "Build and share your squad", href: "/squad-builder", comingSoon: true },
-  { name: "Team of the Week", description: "Pick your weekly best 11", href: "/team-of-the-week", comingSoon: true },
-  { name: "Blind Rankings", description: "Rank players without knowing who's next", href: "/blind-rankings" },
-  { name: "Player Ratings", description: "Rate and compare players", href: "/ratings", comingSoon: true },
-  { name: "Match Predictions", description: "Predict match results", href: "/predictions", comingSoon: true },
-  { name: "Draft", description: "Build a dream XI from random FIFA rosters", href: "/draft" },
-  { name: "Ten-A-Ball", description: "Football trivia challenge", href: "/tenable" },
-  { name: "Winner Stays On", description: "Pick the winner each round", href: "/winner-stays-on", comingSoon: true },
-  { name: "Guess the 11", description: "Guess the starting lineup", href: "/guess-the-11", comingSoon: true },
-  { name: "Higher or Lower", description: "Compare player stats", href: "/higher-or-lower", comingSoon: true },
-  { name: "501 Game", description: "Football darts-style challenge", href: "/501", comingSoon: true },
-  { name: "Spot the Fake Stats", description: "Find the made-up statistic", href: "/spot-the-fake", comingSoon: true },
-  { name: "Football Tic Tac Toe", description: "Football-themed tic tac toe", href: "/tic-tac-toe" },
+  { name: "Home",                description: "Browse all games & news",                 href: "/"           },
+  { name: "Tierlists",           description: "Create & play drag-and-drop tierlists",    href: "/tierlists"  },
+  { name: "PL Draft",            description: "Build a dream XI from random FIFA rosters", href: "/draft"     },
+  { name: "Ten-A-Ball",          description: "Football trivia — ten questions, ten lives", href: "/tenable"  },
+  { name: "Football Tic Tac Toe",description: "Pick players to fill the grid",            href: "/tic-tac-toe"},
+  { name: "Blind Rankings",      description: "Rank players without knowing who's next",   href: "/blind-rankings" },
+];
+
+const COMING_SOON: GameLink[] = [
+  { name: "Ballon d'Or",   description: "Live a career and win the world's greatest award", href: "#", comingSoon: true },
+  { name: "Player Ratings",description: "Rate and compare players",                         href: "#", comingSoon: true },
+  { name: "Squad Builder", description: "Build and share your ultimate squad",              href: "#", comingSoon: true },
 ];
 
 export default function GameSidebar() {
@@ -95,26 +91,10 @@ export default function GameSidebar() {
 
             {/* Game list */}
             <nav className="flex-1 overflow-y-auto overscroll-contain py-2">
+              {/* Live games */}
+              <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-600">Games</p>
               {GAMES.map((game) => {
                 const isActive = pathname === game.href || (game.href !== "/" && pathname.startsWith(game.href));
-
-                if (game.comingSoon) {
-                  return (
-                    <div
-                      key={game.href}
-                      className="group mx-3 my-0.5 rounded-lg px-3 py-3 opacity-50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white">{game.name}</span>
-                        <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
-                          Soon
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-white">{game.description}</p>
-                    </div>
-                  );
-                }
-
                 return (
                   <Link
                     key={game.href}
@@ -126,12 +106,30 @@ export default function GameSidebar() {
                     }`}
                   >
                     <span className="text-sm font-bold">{game.name}</span>
-                    <p className={`mt-0.5 text-xs ${isActive ? "text-purple-300" : "text-white group-hover:text-gray-300"}`}>
+                    <p className={`mt-0.5 text-xs ${isActive ? "text-purple-300" : "text-gray-400 group-hover:text-gray-300"}`}>
                       {game.description}
                     </p>
                   </Link>
                 );
               })}
+
+              {/* Coming soon */}
+              <div className="mx-4 my-3 border-t border-gray-800/60" />
+              <p className="mx-4 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-600">Coming Soon</p>
+              {COMING_SOON.map((game) => (
+                <div
+                  key={game.name}
+                  className="mx-3 my-0.5 rounded-lg px-3 py-3 opacity-40 cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">{game.name}</span>
+                    <span className="rounded bg-gray-700 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gray-400">
+                      Soon
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-gray-500">{game.description}</p>
+                </div>
+              ))}
             </nav>
 
             {/* Footer */}
