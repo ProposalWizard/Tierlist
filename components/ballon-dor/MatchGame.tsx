@@ -115,26 +115,41 @@ function getMoments(position: BDPosition): Omit<Moment, 'id' | 'minute'>[] {
   ];
 }
 
-const MINUTES = [11, 23, 37, 52, 68, 84];
+// Spread 6 moments across the 90 minutes in natural match bands
+function generateMatchMinutes(): number[] {
+  const pick = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  return [
+    pick(4,  15),
+    pick(18, 30),
+    pick(33, 44),
+    pick(47, 59),
+    pick(62, 76),
+    pick(79, 89),
+  ];
+}
 
 // ── Outcome helpers ───────────────────────────────────────────────────
-function barOutcome(pos: number): Outcome {
-  if (pos >= 40 && pos <= 60) return 'perfect';
-  if (pos >= 27 && pos <= 73) return 'good';
-  if (pos >= 14 && pos <= 86) return 'ok';
+// center and hw (half-width) define the perfect zone position
+function barOutcome(pos: number, center: number, hw: number): Outcome {
+  const dist = Math.abs(pos - center);
+  if (dist <= hw)      return 'perfect';
+  if (dist <= hw + 13) return 'good';
+  if (dist <= hw + 26) return 'ok';
   return 'miss';
 }
 
-function goalFromOutcome(outcome: Outcome, isAttacking: boolean, chance = 1.0): boolean {
+// Difficulty < 1.0 = harder (facing a stronger team)
+function goalFromOutcome(outcome: Outcome, isAttacking: boolean, chance = 1.0, difficulty = 1.0): boolean {
   if (!isAttacking) return false;
-  if (outcome === 'perfect') return Math.random() < 0.92 * chance;
-  if (outcome === 'good')    return Math.random() < 0.55 * chance;
+  const d = chance * difficulty;
+  if (outcome === 'perfect') return Math.random() < 0.60 * d;
+  if (outcome === 'good')    return Math.random() < 0.28 * d;
   return false;
 }
 
 function assistFromOutcome(outcome: Outcome): boolean {
-  if (outcome === 'perfect') return Math.random() < 0.88;
-  if (outcome === 'good')    return Math.random() < 0.48;
+  if (outcome === 'perfect') return Math.random() < 0.70;
+  if (outcome === 'good')    return Math.random() < 0.35;
   return false;
 }
 
@@ -205,14 +220,21 @@ export default function MatchGame({
   onComplete,
 }: Props) {
   const [phase, setPhase] = useState<'intro' | 'moment' | 'flash' | 'result'>('intro');
-  const [moments] = useState<Moment[]>(() =>
-    getMoments(playerPosition).slice(0, 6).map((m, i) => ({ ...m, id: i, minute: MINUTES[i] }))
-  );
+
+  // Generate random minutes once per match
+  const [moments] = useState<Moment[]>(() => {
+    const mins = generateMatchMinutes();
+    return getMoments(playerPosition).slice(0, 6).map((m, i) => ({ ...m, id: i, minute: mins[i] }));
+  });
+
   const [momentIdx, setMomentIdx] = useState(0);
   const [momentResults, setMomentResults] = useState<MomentResult[]>([]);
   const [lastMomentResult, setLastMomentResult] = useState<MomentResult | null>(null);
   const [teamScore, setTeamScore] = useState(0);
   const [oppScore, setOppScore] = useState(0);
+
+  // difficulty: 1.0 = evenly matched, lower = harder (facing stronger team)
+  const difficulty = Math.max(0.45, Math.min(1.35, 1.0 - (opponentPrestige - clubPrestige) / 75));
 
   // Intro auto-advance
   useEffect(() => {
@@ -231,13 +253,10 @@ export default function MatchGame({
     setPhase('flash');
     setTimeout(() => {
       if (momentIdx + 1 >= moments.length) {
-        // All moments done — compute final result and show result
         const finalResult = computeResult(newResults, playerPosition, clubPrestige, opponentPrestige, isHome);
-        // Team/opp goals override with computed (teammate + opp goals added)
         setTeamScore(finalResult.teamGoals);
         setOppScore(finalResult.opponentGoals);
         setTimeout(() => setPhase('result'), 600);
-        // Store final for onComplete callback — done in result render
         setLastMomentResult({ ...result, _finalResult: finalResult } as MomentResult & { _finalResult: MatchGameResult });
       } else {
         setMomentIdx(i => i + 1);
@@ -333,7 +352,6 @@ export default function MatchGame({
 
   // ── Result ─────────────────────────────────────────────────────────
   if (phase === 'result') {
-    // Pull stored final result from last moment result
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const finalResult: MatchGameResult = (lastMomentResult as any)?._finalResult ?? computeResult(
       momentResults, playerPosition, clubPrestige, opponentPrestige, isHome,
@@ -470,6 +488,7 @@ export default function MatchGame({
             <PowerBarGame
               key={`pb_${currentMoment.id}`}
               moment={currentMoment}
+              difficulty={difficulty}
               onComplete={handleMomentComplete}
             />
           )}
@@ -477,6 +496,7 @@ export default function MatchGame({
             <GoalGridGame
               key={`gg_${currentMoment.id}`}
               moment={currentMoment}
+              difficulty={difficulty}
               onComplete={handleMomentComplete}
             />
           )}
@@ -484,6 +504,7 @@ export default function MatchGame({
             <TimingBarGame
               key={`tb_${currentMoment.id}`}
               moment={currentMoment}
+              difficulty={difficulty}
               onComplete={handleMomentComplete}
             />
           )}
@@ -492,6 +513,7 @@ export default function MatchGame({
               key={`dc_${currentMoment.id}`}
               moment={currentMoment}
               choices={currentMoment.choices}
+              difficulty={difficulty}
               onComplete={handleMomentComplete}
             />
           )}
@@ -521,12 +543,43 @@ function ScoreBar({ teamScore, oppScore, clubName, opponent, minute }: {
 }
 
 // ── Power bar game ─────────────────────────────────────────────────────
-function PowerBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r: MomentResult) => void }) {
+function PowerBarGame({ moment, difficulty, onComplete }: {
+  moment: Moment; difficulty: number; onComplete: (r: MomentResult) => void;
+}) {
   const [pos, setPos] = useState(5);
   const [stopped, setStopped] = useState(false);
   const [stoppedPos, setStoppedPos] = useState<number | null>(null);
   const dirRef = useRef(1);
-  const speedRef = useRef(2.2 + Math.random() * 0.8);
+  // Faster oscillation: 3.5–5.0 (was 2.2–3.0)
+  const speedRef = useRef(3.5 + Math.random() * 1.5);
+  // Randomise perfect zone: centre between 30–70, half-width 8 (16% wide, was 20%)
+  const zoneCenterRef = useRef(30 + Math.floor(Math.random() * 41));
+  const PERFECT_HW = 8;
+  const GOOD_HW    = PERFECT_HW + 13;
+  const OK_HW      = PERFECT_HW + 26;
+
+  const zoneCenter = zoneCenterRef.current;
+
+  // Compute segment widths for the dynamic zone display
+  const seg = {
+    missL:    Math.max(0, zoneCenter - OK_HW),
+    okL:      Math.max(0, zoneCenter - GOOD_HW),
+    goodL:    Math.max(0, zoneCenter - PERFECT_HW),
+    perfectL: Math.max(0, zoneCenter - PERFECT_HW),
+    perfectR: Math.min(100, zoneCenter + PERFECT_HW),
+    goodR:    Math.min(100, zoneCenter + GOOD_HW),
+    okR:      Math.min(100, zoneCenter + OK_HW),
+  };
+
+  const w = {
+    missL:   seg.missL,
+    okL:     seg.okL - seg.missL,
+    goodL:   seg.goodL - seg.okL,
+    perfect: seg.perfectR - seg.perfectL,
+    goodR:   seg.goodR - seg.perfectR,
+    okR:     seg.okR - seg.goodR,
+    missR:   100 - seg.okR,
+  };
 
   useEffect(() => {
     if (stopped) return;
@@ -545,8 +598,8 @@ function PowerBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
     if (stopped) return;
     setStopped(true);
     setStoppedPos(pos);
-    const outcome = barOutcome(pos);
-    const isGoal   = goalFromOutcome(outcome, moment.isGoalChance);
+    const outcome = barOutcome(pos, zoneCenter, PERFECT_HW);
+    const isGoal   = goalFromOutcome(outcome, moment.isGoalChance, 1.0, difficulty);
     const isAssist = moment.isAssistChance && assistFromOutcome(outcome);
     const didConcede = moment.isDefensive && outcome === 'miss' && Math.random() < 0.5;
 
@@ -558,14 +611,11 @@ function PowerBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
     };
 
     const hl = highlights[outcome]?.[isGoal ? 'goal' : isAssist ? 'assist' : 'default'] ?? '';
-
     setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave: false, didConcede, highlight: hl }), 600);
-  }, [stopped, pos, moment, onComplete]);
+  }, [stopped, pos, moment, difficulty, zoneCenter, onComplete]);
 
-  // Zone widths: 0-14 miss | 14-27 ok | 27-40 good | 40-60 perfect | 60-73 good | 73-86 ok | 86-100 miss
-  const zoneColor = stoppedPos !== null
-    ? barOutcome(stoppedPos) === 'perfect' ? 'bg-green-400' : barOutcome(stoppedPos) === 'good' ? 'bg-yellow-400' : barOutcome(stoppedPos) === 'ok' ? 'bg-orange-400' : 'bg-red-500'
-    : '';
+  const stoppedOutcome = stoppedPos !== null ? barOutcome(stoppedPos, zoneCenter, PERFECT_HW) : null;
+  const cursorColor = stoppedOutcome === 'perfect' ? 'bg-green-400' : stoppedOutcome === 'good' ? 'bg-yellow-400' : stoppedOutcome === 'ok' ? 'bg-orange-400' : stoppedOutcome === 'miss' ? 'bg-red-500' : 'bg-white';
 
   return (
     <div className="space-y-6">
@@ -575,36 +625,33 @@ function PowerBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
         onClick={stop}
         onTouchStart={stop}
       >
-        {/* Zone gradient */}
+        {/* Dynamic zone gradient */}
         <div className="absolute inset-0 flex">
-          <div className="h-full bg-red-900/70"   style={{ width: '14%' }} />
-          <div className="h-full bg-orange-800/60" style={{ width: '13%' }} />
-          <div className="h-full bg-yellow-700/60" style={{ width: '13%' }} />
-          <div className="h-full bg-green-600/80"  style={{ width: '20%' }} />
-          <div className="h-full bg-yellow-700/60" style={{ width: '13%' }} />
-          <div className="h-full bg-orange-800/60" style={{ width: '13%' }} />
-          <div className="h-full bg-red-900/70"   style={{ width: '14%' }} />
+          {w.missL  > 0 && <div className="h-full bg-red-900/70"    style={{ width: `${w.missL}%` }} />}
+          {w.okL    > 0 && <div className="h-full bg-orange-800/60"  style={{ width: `${w.okL}%` }} />}
+          {w.goodL  > 0 && <div className="h-full bg-yellow-700/60"  style={{ width: `${w.goodL}%` }} />}
+          {w.perfect > 0 && <div className="h-full bg-green-600/80"  style={{ width: `${w.perfect}%` }} />}
+          {w.goodR  > 0 && <div className="h-full bg-yellow-700/60"  style={{ width: `${w.goodR}%` }} />}
+          {w.okR    > 0 && <div className="h-full bg-orange-800/60"  style={{ width: `${w.okR}%` }} />}
+          {w.missR  > 0 && <div className="h-full bg-red-900/70"    style={{ width: `${w.missR}%` }} />}
         </div>
-        {/* Labels */}
-        <div className="absolute inset-0 flex items-center">
-          <div className="flex-1 text-center"><p className="text-[9px] font-bold text-red-400/70 uppercase">Miss</p></div>
-          <div className="flex-1 text-center"><p className="text-[9px] font-bold text-orange-400/70 uppercase">Ok</p></div>
-          <div className="flex-1 text-center"><p className="text-[9px] font-bold text-yellow-400/70 uppercase">Good</p></div>
-          <div className="flex-1 text-center"><p className="text-[9px] font-black text-green-300 uppercase">Perfect</p></div>
-          <div className="flex-1 text-center"><p className="text-[9px] font-bold text-yellow-400/70 uppercase">Good</p></div>
-          <div className="flex-1 text-center"><p className="text-[9px] font-bold text-orange-400/70 uppercase">Ok</p></div>
-          <div className="flex-1 text-center"><p className="text-[9px] font-bold text-red-400/70 uppercase">Miss</p></div>
+        {/* Perfect label floated over its zone */}
+        <div
+          className="absolute top-0 bottom-0 flex items-center justify-center pointer-events-none"
+          style={{ left: `${seg.perfectL}%`, width: `${w.perfect}%` }}
+        >
+          <p className="text-[9px] font-black text-green-300 uppercase tracking-wide">Perfect</p>
         </div>
         {/* Cursor */}
         <div
-          className={`absolute top-0 bottom-0 w-1.5 rounded-full transition-none shadow-lg ${stoppedPos !== null ? zoneColor : 'bg-white'}`}
+          className={`absolute top-0 bottom-0 w-1.5 rounded-full transition-none shadow-lg ${stoppedPos !== null ? cursorColor : 'bg-white'}`}
           style={{ left: `calc(${stoppedPos ?? pos}% - 3px)` }}
         />
       </div>
 
       {stoppedPos !== null && (
         <p className="text-center text-base font-black text-amber-400" style={{ animation: 'fadeIn 0.2s ease' }}>
-          {outcomeLabel(barOutcome(stoppedPos))}
+          {outcomeLabel(barOutcome(stoppedPos, zoneCenter, PERFECT_HW))}
         </p>
       )}
 
@@ -621,13 +668,14 @@ function PowerBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
 }
 
 // ── Goal grid game ─────────────────────────────────────────────────────
-function GoalGridGame({ moment, onComplete }: { moment: Moment; onComplete: (r: MomentResult) => void }) {
+function GoalGridGame({ moment, difficulty, onComplete }: {
+  moment: Moment; difficulty: number; onComplete: (r: MomentResult) => void;
+}) {
   const [picked, setPicked] = useState<number | null>(null);
   const [keeperCells, setKeeperCells] = useState<number[]>([]);
 
   function pick(cell: number) {
     if (picked !== null) return;
-    // GK covers 2 cells randomly
     const all = [0, 1, 2, 3, 4, 5];
     const kc = all.sort(() => Math.random() - 0.5).slice(0, 2);
     setPicked(cell);
@@ -636,13 +684,10 @@ function GoalGridGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
     const covered = kc.includes(cell);
     const outcome: Outcome = !covered ? 'perfect' : Math.random() < 0.3 ? 'good' : 'miss';
 
-    const isGoal   = moment.isGoalChance && !covered;
-    const isSave   = moment.isSave && !covered; // for GK: picked the right cell = save
-    const isGkSave = moment.isSave && covered;  // opponent scored
-    const didConcede = moment.isSave && !covered; // GK didn't cover = concede
-    // Flip for GK: if GK picks same cell as shot → save
-    const gkSave   = moment.isSave && covered;
-    const gkConcede = moment.isSave && !covered;
+    // Apply difficulty: covered shots are fully blocked; uncovered apply difficulty to goal chance
+    const isGoal   = moment.isGoalChance && !covered && Math.random() < 0.82 * difficulty;
+    const isSave   = moment.isSave && covered;
+    const didConcede = moment.isSave && !covered;
 
     const highlight = moment.isSave
       ? (covered ? 'Brilliant dive — the striker is denied!' : 'Goes the wrong way — the ball hits the net.')
@@ -650,7 +695,7 @@ function GoalGridGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
 
     setTimeout(() => onComplete({
       outcome: moment.isSave ? (covered ? 'perfect' : 'miss') : outcome,
-      isGoal:    moment.isGoalChance ? isGoal  : false,
+      isGoal:    moment.isGoalChance ? isGoal : false,
       isAssist:  false,
       isSave:    moment.isSave ? covered : false,
       didConcede: moment.isSave ? !covered : false,
@@ -658,18 +703,16 @@ function GoalGridGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
     }), 1000);
   }
 
-  // 2 rows × 3 cols representing goal
-  const LABELS = ['Top L', 'Top C', 'Top R', 'Bot L', 'Bot C', 'Bot R'];
+  const LABELS     = ['Top L', 'Top C', 'Top R', 'Bot L', 'Bot C', 'Bot R'];
   const LABEL_ICONS = ['↖', '↑', '↗', '↙', '↓', '↘'];
 
   return (
     <div className="space-y-4">
-      {/* Goal frame */}
       <div className="border-2 border-gray-600 rounded-lg overflow-hidden">
         <div className="grid grid-cols-3 gap-0.5 bg-gray-800 p-0.5">
           {[0, 1, 2, 3, 4, 5].map(cell => {
-            const isKeeper = keeperCells.includes(cell);
-            const isPicked = picked === cell;
+            const isKeeper  = keeperCells.includes(cell);
+            const isPicked  = picked === cell;
             const isGoalCell = isPicked && !isKeeper;
             return (
               <button
@@ -692,7 +735,7 @@ function GoalGridGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
                   <span className="text-lg text-gray-600">{LABEL_ICONS[cell]}</span>
                 )}
                 {picked !== null && isKeeper && <span className="text-2xl">🧤</span>}
-                {picked !== null && isPicked && !isKeeper && <span className="text-2xl">{moment.isSave ? '⚽' : '⚽'}</span>}
+                {picked !== null && isPicked && !isKeeper && <span className="text-2xl">⚽</span>}
                 {picked !== null && !isKeeper && !isPicked && (
                   <span className="text-[9px] text-gray-700">{LABELS[cell]}</span>
                 )}
@@ -709,15 +752,44 @@ function GoalGridGame({ moment, onComplete }: { moment: Moment; onComplete: (r: 
 }
 
 // ── Timing bar game ────────────────────────────────────────────────────
-function TimingBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r: MomentResult) => void }) {
+function TimingBarGame({ moment, difficulty, onComplete }: {
+  moment: Moment; difficulty: number; onComplete: (r: MomentResult) => void;
+}) {
   const [pos, setPos] = useState(0);
   const [pressed, setPressed] = useState(false);
   const [pressedPos, setPressedPos] = useState<number | null>(null);
   const dirRef = useRef(1);
+  // Randomise sweet spot: centre 25–75, half-width 6 (narrower than power bar)
+  const zoneCenterRef = useRef(25 + Math.floor(Math.random() * 51));
+  const PERFECT_HW = 6;
+  const GOOD_HW    = PERFECT_HW + 12;
+  const OK_HW      = PERFECT_HW + 24;
+
+  const zoneCenter = zoneCenterRef.current;
+
+  const seg = {
+    perfectL: Math.max(0, zoneCenter - PERFECT_HW),
+    perfectR: Math.min(100, zoneCenter + PERFECT_HW),
+    goodL:    Math.max(0, zoneCenter - GOOD_HW),
+    goodR:    Math.min(100, zoneCenter + GOOD_HW),
+    okL:      Math.max(0, zoneCenter - OK_HW),
+    okR:      Math.min(100, zoneCenter + OK_HW),
+  };
+
+  const w = {
+    missL:   seg.okL,
+    okL:     seg.goodL - seg.okL,
+    goodL:   seg.perfectL - seg.goodL,
+    perfect: seg.perfectR - seg.perfectL,
+    goodR:   seg.goodR - seg.perfectR,
+    okR:     seg.okR - seg.goodR,
+    missR:   100 - seg.okR,
+  };
 
   useEffect(() => {
     if (pressed) return;
-    const speed = 2.8 + Math.random() * 1.2; // faster than power bar
+    // Speed 3.2–4.5 (was 2.8–4.0)
+    const speed = 3.2 + Math.random() * 1.3;
     const id = setInterval(() => {
       setPos(p => {
         let n = p + dirRef.current * speed;
@@ -733,12 +805,11 @@ function TimingBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r:
     if (pressed) return;
     setPressed(true);
     setPressedPos(pos);
-    // Narrower sweet spot: 42-58 perfect, 30-70 good
-    const outcome: Outcome = (pos >= 42 && pos <= 58) ? 'perfect' : (pos >= 30 && pos <= 70) ? 'good' : (pos >= 18 && pos <= 82) ? 'ok' : 'miss';
-    const isGoal   = goalFromOutcome(outcome, moment.isGoalChance, 0.7); // headers slightly harder
+    const outcome: Outcome = barOutcome(pos, zoneCenter, PERFECT_HW);
+    const isGoal   = goalFromOutcome(outcome, moment.isGoalChance, 0.7, difficulty);
     const isAssist = moment.isAssistChance && assistFromOutcome(outcome);
     const isSave   = moment.isSave && saveFromOutcome(outcome);
-    const didConcede = (moment.isDefensive || moment.isSave) && (outcome === 'miss' || outcome === 'ok' && Math.random() < 0.4);
+    const didConcede = (moment.isDefensive || moment.isSave) && (outcome === 'miss' || (outcome === 'ok' && Math.random() < 0.4));
 
     const hl = isGoal ? 'Powerful header — back of the net!' :
                isAssist ? 'Perfect delivery — your striker converts!' :
@@ -747,14 +818,10 @@ function TimingBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r:
                outcome === 'perfect' ? 'Excellent execution!' : outcome === 'miss' ? 'Completely mistimed.' : 'Not quite right.';
 
     setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave, didConcede, highlight: hl }), 600);
-  }, [pressed, pos, moment, onComplete]);
+  }, [pressed, pos, moment, difficulty, zoneCenter, onComplete]);
 
-  const getZoneColor = (p: number) => {
-    if (p >= 42 && p <= 58) return 'text-green-400';
-    if (p >= 30 && p <= 70) return 'text-yellow-400';
-    if (p >= 18 && p <= 82) return 'text-orange-400';
-    return 'text-red-400';
-  };
+  const pressedOutcome = pressedPos !== null ? barOutcome(pressedPos, zoneCenter, PERFECT_HW) : null;
+  const cursorColor = pressedOutcome === 'perfect' ? 'bg-green-400' : pressedOutcome === 'good' ? 'bg-yellow-400' : pressedOutcome === 'ok' ? 'bg-orange-400' : pressedOutcome === 'miss' ? 'bg-red-400' : 'bg-white';
 
   return (
     <div className="space-y-6">
@@ -765,27 +832,33 @@ function TimingBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r:
         onTouchStart={press}
       >
         <div className="absolute inset-0 flex">
-          <div className="h-full bg-red-900/70"   style={{ width: '18%' }} />
-          <div className="h-full bg-orange-800/60" style={{ width: '12%' }} />
-          <div className="h-full bg-yellow-700/60" style={{ width: '12%' }} />
-          <div className="h-full bg-green-600/80"  style={{ width: '16%' }} />
-          <div className="h-full bg-yellow-700/60" style={{ width: '12%' }} />
-          <div className="h-full bg-orange-800/60" style={{ width: '12%' }} />
-          <div className="h-full bg-red-900/70"   style={{ width: '18%' }} />
+          {w.missL   > 0 && <div className="h-full bg-red-900/70"    style={{ width: `${w.missL}%` }} />}
+          {w.okL     > 0 && <div className="h-full bg-orange-800/60"  style={{ width: `${w.okL}%` }} />}
+          {w.goodL   > 0 && <div className="h-full bg-yellow-700/60"  style={{ width: `${w.goodL}%` }} />}
+          {w.perfect  > 0 && <div className="h-full bg-green-600/80"  style={{ width: `${w.perfect}%` }} />}
+          {w.goodR   > 0 && <div className="h-full bg-yellow-700/60"  style={{ width: `${w.goodR}%` }} />}
+          {w.okR     > 0 && <div className="h-full bg-orange-800/60"  style={{ width: `${w.okR}%` }} />}
+          {w.missR   > 0 && <div className="h-full bg-red-900/70"    style={{ width: `${w.missR}%` }} />}
         </div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-[10px] font-black text-green-300 uppercase tracking-widest">Sweet Spot</p>
-        </div>
-        {/* Faster cursor */}
+        {/* Sweet spot label over perfect zone */}
         <div
-          className={`absolute top-1 bottom-1 w-2 rounded-full shadow-xl transition-none ${pressed ? (pressedPos !== null && pressedPos >= 30 && pressedPos <= 70 ? 'bg-green-400' : 'bg-red-400') : 'bg-white'}`}
+          className="absolute top-0 bottom-0 flex items-center justify-center pointer-events-none"
+          style={{ left: `${seg.perfectL}%`, width: `${w.perfect}%` }}
+        >
+          <p className="text-[8px] font-black text-green-300 uppercase tracking-widest whitespace-nowrap">NOW</p>
+        </div>
+        {/* Cursor */}
+        <div
+          className={`absolute top-1 bottom-1 w-2 rounded-full shadow-xl transition-none ${pressedPos !== null ? cursorColor : 'bg-white'}`}
           style={{ left: `calc(${pressedPos ?? pos}% - 4px)` }}
         />
       </div>
 
-      {pressedPos !== null && (
-        <p className={`text-center text-base font-black ${getZoneColor(pressedPos)}`} style={{ animation: 'fadeIn 0.2s ease' }}>
-          {outcomeLabel((pressedPos >= 42 && pressedPos <= 58) ? 'perfect' : (pressedPos >= 30 && pressedPos <= 70) ? 'good' : (pressedPos >= 18 && pressedPos <= 82) ? 'ok' : 'miss')}
+      {pressedPos !== null && pressedOutcome && (
+        <p className={`text-center text-base font-black ${
+          pressedOutcome === 'perfect' ? 'text-green-400' : pressedOutcome === 'good' ? 'text-yellow-400' : pressedOutcome === 'ok' ? 'text-orange-400' : 'text-red-400'
+        }`} style={{ animation: 'fadeIn 0.2s ease' }}>
+          {outcomeLabel(pressedOutcome)}
         </p>
       )}
 
@@ -802,8 +875,8 @@ function TimingBarGame({ moment, onComplete }: { moment: Moment; onComplete: (r:
 }
 
 // ── Decision game ──────────────────────────────────────────────────────
-function DecisionGame({ moment, choices, onComplete }: {
-  moment: Moment; choices: DecisionChoice[]; onComplete: (r: MomentResult) => void;
+function DecisionGame({ moment, choices, difficulty, onComplete }: {
+  moment: Moment; choices: DecisionChoice[]; difficulty: number; onComplete: (r: MomentResult) => void;
 }) {
   const [timeLeft, setTimeLeft] = useState(3000);
   const [picked, setPicked] = useState<number | null>(null);
@@ -818,7 +891,7 @@ function DecisionGame({ moment, choices, onComplete }: {
     setSuccess(s);
 
     const outcome: Outcome = choiceIdx === null ? 'miss' : s ? (c!.successChance > 0.65 ? 'good' : 'perfect') : 'ok';
-    const isGoal   = goalFromOutcome(s ? 'good' : 'ok', moment.isGoalChance, 0.55);
+    const isGoal   = goalFromOutcome(s ? 'good' : 'ok', moment.isGoalChance, 0.55, difficulty);
     const isAssist = moment.isAssistChance && s && Math.random() < 0.5;
     const didConcede = moment.isDefensive && !s && Math.random() < 0.45;
 
@@ -829,7 +902,7 @@ function DecisionGame({ moment, choices, onComplete }: {
                s ? `${c!.label} — good decision!` : `${c!.label} — doesn't quite come off.`;
 
     setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave: false, didConcede, highlight: hl }), 700);
-  }, [choices, moment, onComplete]);
+  }, [choices, moment, difficulty, onComplete]);
 
   useEffect(() => {
     if (picked !== null) return;
