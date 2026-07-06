@@ -10,7 +10,7 @@ import type {
   BDTeammate,
   EventChoice,
 } from "@/lib/ballonDorTypes";
-import { applyChoice, applyManualMatchResult } from "@/lib/ballonDorEngine";
+import { applyChoice, applyManualMatchResult, CLUB_SQUADS } from "@/lib/ballonDorEngine";
 import MatchGame from "./MatchGame";
 import type { MatchGameResult } from "./MatchGame";
 
@@ -60,13 +60,17 @@ function formatMoney(k: number): string {
 
 // ── Shop config ────────────────────────────────────────────────────
 const SHOP_ITEMS = [
-  { id: 'energy',   emoji: '⚡', name: 'Energy Drink',           desc: '+30 Energy instantly',               price: 8,   stat: '+30 Energy'   },
-  { id: 'boots',    emoji: '👟', name: 'Premium Boots',           desc: '+0.10 season avg rating',            price: 20,  stat: '+0.10 Rating'  },
-  { id: 'trainer',  emoji: '🏋️', name: 'Personal Trainer',        desc: '+12 Fitness for the rest of season', price: 40,  stat: '+12 Fitness'  },
-  { id: 'pr',       emoji: '📱', name: 'PR Agency',                desc: '+15 Fame — global exposure',         price: 25,  stat: '+15 Fame'     },
-  { id: 'psych',    emoji: '🧘', name: 'Sports Psychologist',      desc: '+10 Morale — mental edge',           price: 15,  stat: '+10 Morale'   },
-  { id: 'house',    emoji: '🏠', name: 'Luxury Mansion',           desc: '+15 Morale · +10 Fame — living well', price: 150, stat: '+15M +10F'   },
-  { id: 'car',      emoji: '🚗', name: 'Supercar',                 desc: '+20 Fame · +5 Morale — status symbol', price: 250, stat: '+20F +5M'   },
+  { id: 'energy',    emoji: '⚡', name: 'Energy Drink',           desc: '+30 Energy instantly',                      price: 8,   stat: '+30 Energy'    },
+  { id: 'boots',     emoji: '👟', name: 'Premium Boots',           desc: '+0.10 season avg rating',                   price: 20,  stat: '+0.10 Rating'  },
+  { id: 'psych',     emoji: '🧘', name: 'Sports Psychologist',     desc: '+10 Morale — mental edge',                  price: 15,  stat: '+10 Morale'    },
+  { id: 'nutrition', emoji: '🥗', name: 'Nutrition Plan',          desc: '+10 Fitness · +5 Energy — eat right',       price: 30,  stat: '+10 Fit +5⚡'  },
+  { id: 'charity',   emoji: '💝', name: 'Charity Campaign',        desc: '+20 Morale — the fans love you',            price: 35,  stat: '+20 Morale'    },
+  { id: 'trainer',   emoji: '🏋️', name: 'Personal Trainer',       desc: '+12 Fitness for the rest of season',        price: 40,  stat: '+12 Fitness'   },
+  { id: 'pr',        emoji: '📱', name: 'PR Agency',               desc: '+15 Fame — global exposure',                price: 25,  stat: '+15 Fame'      },
+  { id: 'agent',     emoji: '🤝', name: 'Agent Upgrade',           desc: '+10 Fame · unlocks bigger contract offers', price: 55,  stat: '+10 Fame'      },
+  { id: 'camp',      emoji: '🏕️', name: 'Fitness Camp',           desc: '+20 Fitness — costs 15 Energy',             price: 70,  stat: '+20 Fit −15⚡'  },
+  { id: 'house',     emoji: '🏠', name: 'Luxury Mansion',          desc: '+15 Morale · +10 Fame — living well',       price: 150, stat: '+15M +10F'     },
+  { id: 'car',       emoji: '🚗', name: 'Supercar',                desc: '+20 Fame · +5 Morale — status symbol',      price: 250, stat: '+20F +5M'      },
 ];
 
 // ── Slot symbols ───────────────────────────────────────────────────
@@ -260,7 +264,11 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
       case 'pr':      updated = { ...withMoney, attributes: { ...withMoney.attributes, fame: Math.min(100, withMoney.attributes.fame + 15) } }; break;
       case 'psych':   updated = { ...withMoney, attributes: { ...withMoney.attributes, morale: Math.min(100, withMoney.attributes.morale + 10) } }; break;
       case 'house':   updated = { ...withMoney, attributes: { ...withMoney.attributes, morale: Math.min(100, withMoney.attributes.morale + 15), fame: Math.min(100, withMoney.attributes.fame + 10) } }; break;
-      case 'car':     updated = { ...withMoney, attributes: { ...withMoney.attributes, fame: Math.min(100, withMoney.attributes.fame + 20), morale: Math.min(100, withMoney.attributes.morale + 5) } }; break;
+      case 'car':      updated = { ...withMoney, attributes: { ...withMoney.attributes, fame: Math.min(100, withMoney.attributes.fame + 20), morale: Math.min(100, withMoney.attributes.morale + 5) } }; break;
+      case 'nutrition': updated = { ...withMoney, energy: Math.min(100, (withMoney.energy ?? 85) + 5), attributes: { ...withMoney.attributes, fitness: Math.min(100, withMoney.attributes.fitness + 10) } }; break;
+      case 'charity':   updated = { ...withMoney, attributes: { ...withMoney.attributes, morale: Math.min(100, withMoney.attributes.morale + 20) } }; break;
+      case 'agent':     updated = { ...withMoney, attributes: { ...withMoney.attributes, fame: Math.min(100, withMoney.attributes.fame + 10) } }; break;
+      case 'camp':      updated = { ...withMoney, energy: Math.max(0, (withMoney.energy ?? 85) - 15), attributes: { ...withMoney.attributes, fitness: Math.min(100, withMoney.attributes.fitness + 20) } }; break;
     }
     if (pendingUpdated) setPendingUpdated(updated);
     else onUpdate(updated);
@@ -298,7 +306,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
             </button>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">
               Season {season.number} · {season.year}/{String(season.year + 1).slice(2)} · {season.club.name}
             </p>
             <p className="text-sm font-black text-white truncate">{player.name}</p>
@@ -351,6 +359,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
             teammates={displayTeammates ?? []}
             playerName={player.name}
             playerPosition={player.position}
+            clubId={season.club.id}
             view={statsView}
             onViewChange={setStatsView}
           />
@@ -383,7 +392,7 @@ function MiniStat({ label, value, gold }: { label: string; value: string | numbe
   return (
     <div className="text-center leading-none">
       <p className={`text-base font-black ${gold ? 'text-amber-400' : 'text-white'}`}>{value}</p>
-      <p className="text-[9px] text-gray-600 uppercase tracking-wider mt-0.5">{label}</p>
+      <p className="text-[9px] text-gray-400 uppercase tracking-wider mt-0.5">{label}</p>
     </div>
   );
 }
@@ -430,7 +439,7 @@ function StatusBar({ energy, money }: { energy: number; money: number }) {
     <div className="flex items-center gap-2">
       <div className="flex-1 rounded-xl bg-gray-900 border border-gray-800 px-3 py-2">
         <div className="flex justify-between mb-1">
-          <span className="text-[10px] text-gray-500">⚡ ENERGY</span>
+          <span className="text-[10px] text-gray-300">⚡ ENERGY</span>
           <span className="text-[10px] font-bold text-white">{energy}</span>
         </div>
         <div className="h-1.5 rounded-full bg-gray-800">
@@ -438,7 +447,7 @@ function StatusBar({ energy, money }: { energy: number; money: number }) {
         </div>
       </div>
       <div className="rounded-xl bg-gray-900 border border-gray-800 px-3 py-2.5 shrink-0">
-        <p className="text-[10px] text-gray-500">💰 BAL</p>
+        <p className="text-[10px] text-gray-300">💰 BAL</p>
         <p className="text-sm font-black text-amber-400">{formatMoney(money)}</p>
       </div>
     </div>
@@ -452,7 +461,7 @@ function QuickActions({ energy, note, usedToday, onAction }: {
 }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-700 mb-2">Quick Actions <span className="text-gray-800">(once per event)</span></p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Quick Actions <span className="text-gray-500">(once per event)</span></p>
       <div className="grid grid-cols-3 gap-2">
         {([
           { id: 'rest'   as const, emoji: '😴', label: 'Rest',  sub: '+20 Energy', cost: 0,  color: 'hover:border-green-700/40'  },
@@ -470,7 +479,7 @@ function QuickActions({ energy, note, usedToday, onAction }: {
             >
               <p className="text-xl mb-1">{alreadyUsed ? '✓' : emoji}</p>
               <p className="text-[10px] font-bold text-white">{label}</p>
-              <p className="text-[9px] text-gray-500 mt-0.5">{alreadyUsed ? 'done' : sub}</p>
+              <p className="text-[9px] text-gray-300 mt-0.5">{alreadyUsed ? 'done' : sub}</p>
             </button>
           );
         })}
@@ -523,7 +532,7 @@ function HomeTab({
         <div className="rounded-2xl border border-amber-800/30 bg-amber-950/15 p-7 text-center">
           <p className="text-4xl mb-3">⏳</p>
           <p className="text-base font-black text-amber-400 mb-1">Season Complete</p>
-          <p className="text-sm text-gray-500">Calculating trophies & Ballon d'Or nominations…</p>
+          <p className="text-sm text-gray-300">Calculating trophies & Ballon d'Or nominations…</p>
         </div>
       )}
 
@@ -540,10 +549,10 @@ function HomeTab({
 
 // Category-specific card styles for non-match events
 const CAT_CARD: Record<string, { bg: string; border: string; titleColor: string; ctxColor: string }> = {
-  career:    { bg: 'bg-blue-950/30',   border: 'border-blue-800/40',   titleColor: 'text-blue-100',   ctxColor: 'text-blue-300/70'   },
-  lifestyle: { bg: 'bg-purple-950/30', border: 'border-purple-800/40', titleColor: 'text-purple-100', ctxColor: 'text-purple-300/70' },
-  decision:  { bg: 'bg-amber-950/25',  border: 'border-amber-800/40',  titleColor: 'text-amber-100',  ctxColor: 'text-amber-300/70'  },
-  match:     { bg: 'bg-gray-900',      border: 'border-gray-700',      titleColor: 'text-white',      ctxColor: 'text-gray-400'      },
+  career:    { bg: 'bg-blue-950/30',   border: 'border-blue-800/40',   titleColor: 'text-blue-100',   ctxColor: 'text-blue-200/90'   },
+  lifestyle: { bg: 'bg-purple-950/30', border: 'border-purple-800/40', titleColor: 'text-purple-100', ctxColor: 'text-purple-200/90' },
+  decision:  { bg: 'bg-amber-950/25',  border: 'border-amber-800/40',  titleColor: 'text-amber-100',  ctxColor: 'text-amber-200/90'  },
+  match:     { bg: 'bg-gray-900',      border: 'border-gray-700',      titleColor: 'text-white',      ctxColor: 'text-gray-200'      },
 };
 
 // ── Current event card ─────────────────────────────────────────────
@@ -564,20 +573,20 @@ function CurrentEventCard({ event, season, onChoice, onPlayMatch }: {
             <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${comp.bg} ${comp.border} ${comp.text}`}>
               {comp.icon} {ctx.competition}
             </span>
-            <span className="text-[10px] text-gray-500 font-semibold">
+            <span className="text-[10px] text-gray-300 font-semibold">
               {ctx.matchweek === 0 ? 'Pre-Season' : `Matchweek ${ctx.matchweek}`}
             </span>
           </div>
           <div className="grid grid-cols-3 items-center gap-2 mb-4">
             <div className="text-center">
-              <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">{ctx.isHome ? 'HOME' : 'AWAY'}</p>
+              <p className="text-[10px] text-gray-300 mb-1 uppercase tracking-wider">{ctx.isHome ? 'HOME' : 'AWAY'}</p>
               <p className="text-sm font-black text-white leading-tight">{season.club.name}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-black text-gray-600">vs</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">{ctx.isHome ? 'AWAY' : 'HOME'}</p>
+              <p className="text-[10px] text-gray-300 mb-1 uppercase tracking-wider">{ctx.isHome ? 'AWAY' : 'HOME'}</p>
               <p className="text-sm font-black text-white leading-tight">{ctx.opponent}</p>
             </div>
           </div>
@@ -587,7 +596,7 @@ function CurrentEventCard({ event, season, onChoice, onPlayMatch }: {
                 <span key={i} className={`block w-2.5 h-2.5 rounded-full ${i <= Math.ceil(ctx.opponentPrestige / 20) ? 'bg-amber-500' : 'bg-gray-800'}`} />
               ))}
             </div>
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-gray-300">
               {ctx.opponentPrestige >= 92 ? 'Elite' : ctx.opponentPrestige >= 82 ? 'Strong' : ctx.opponentPrestige >= 72 ? 'Solid' : 'Beatable'}
             </span>
           </div>
@@ -603,7 +612,7 @@ function CurrentEventCard({ event, season, onChoice, onPlayMatch }: {
           ] as const).map(({ label, v, color }) => (
             <div key={label} className="flex-1 rounded-xl border border-gray-800 bg-gray-900 p-2.5">
               <div className="flex justify-between mb-1.5">
-                <span className="text-[10px] text-gray-500">{label}</span>
+                <span className="text-[10px] text-gray-300">{label}</span>
                 <span className="text-[10px] font-bold text-white">{v}</span>
               </div>
               <div className="h-1 rounded-full bg-gray-800">
@@ -620,7 +629,7 @@ function CurrentEventCard({ event, season, onChoice, onPlayMatch }: {
             {event.category}
           </span>
         </div>
-        <h3 className={`text-base font-black mb-2 leading-snug ${catCard.titleColor}`}>{event.title}</h3>
+        <h3 className={`text-xl font-black mb-2 leading-snug ${catCard.titleColor}`}>{event.title}</h3>
         <p className={`text-sm leading-relaxed mb-5 ${catCard.ctxColor}`}>{event.context}</p>
         {event.category === 'match' ? (
           <button
@@ -642,7 +651,7 @@ function CurrentEventCard({ event, season, onChoice, onPlayMatch }: {
                     <p className="text-sm font-bold text-white leading-snug">{choice.emoji} {choice.label}</p>
                     {h && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${h.bg} ${h.text}`}>{h.label}</span>}
                   </div>
-                  {choice.description && <p className="text-xs text-gray-400 leading-relaxed">{choice.description}</p>}
+                  {choice.description && <p className="text-xs text-gray-200 leading-relaxed">{choice.description}</p>}
                 </button>
               );
             })}
@@ -661,7 +670,7 @@ function MatchRevealCard() {
         <span className="text-3xl animate-spin" style={{ animationDuration: '0.8s' }}>⚽</span>
       </div>
       <p className="text-lg font-black text-white mb-1">Match Day</p>
-      <p className="text-sm text-gray-500 mb-5">Simulating result…</p>
+      <p className="text-sm text-gray-300 mb-5">Simulating result…</p>
       <div className="flex justify-center gap-1.5">
         {[0, 1, 2].map(i => (
           <span key={i} className="w-2 h-2 rounded-full bg-amber-400 opacity-0"
@@ -739,32 +748,32 @@ function MatchResultCard({ result, position, onContinue, onSeeTable }: {
             <>
               <div className="text-center">
                 <p className="text-2xl font-black text-white">{mr.playerGoals}</p>
-                <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Goals</p>
+                <p className="text-[9px] text-gray-300 uppercase tracking-wider mt-0.5">Goals</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-black text-white">{mr.playerAssists}</p>
-                <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Assists</p>
+                <p className="text-[9px] text-gray-300 uppercase tracking-wider mt-0.5">Assists</p>
               </div>
             </>
           )}
           {isDefOrGK && mr.cleanSheet && (
             <div className="text-center">
               <p className="text-2xl">🧤</p>
-              <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Clean Sheet</p>
+              <p className="text-[9px] text-gray-300 uppercase tracking-wider mt-0.5">Clean Sheet</p>
             </div>
           )}
           <div className="text-center">
             <p className={`text-2xl font-black ${mr.playerRating >= 8 ? 'text-amber-400' : nightmare ? 'text-red-400' : 'text-white'}`}>
               {mr.playerRating.toFixed(1)}
             </p>
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Rating</p>
+            <p className="text-[9px] text-gray-300 uppercase tracking-wider mt-0.5">Rating</p>
           </div>
         </div>
       </div>
 
       {result.outcomeText && (
         <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
-          <p className="text-xs text-gray-400 leading-relaxed">{result.outcomeText}</p>
+          <p className="text-xs text-gray-200 leading-relaxed">{result.outcomeText}</p>
         </div>
       )}
 
@@ -791,20 +800,20 @@ function LifestyleResultCard({ result, onContinue }: { result: LastResult; onCon
     <div className="rounded-2xl border border-gray-700 bg-gray-900 overflow-hidden" style={{ animation: 'fadeSlideIn 0.3s ease' }}>
       {/* Header */}
       <div className="p-5 border-b border-gray-800">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">{result.eventTitle}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">{result.eventTitle}</p>
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xl">{result.choiceEmoji}</span>
           <p className="text-sm font-bold text-white">{result.choiceLabel}</p>
         </div>
         {result.outcomeText && (
-          <p className="text-sm text-gray-400 leading-relaxed italic">"{result.outcomeText}"</p>
+          <p className="text-sm text-gray-200 leading-relaxed italic">"{result.outcomeText}"</p>
         )}
       </div>
 
       {/* Stat changes */}
       {deltas.length > 0 && (
         <div className="p-5 border-b border-gray-800 space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-3">What Changed</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-3">What Changed</p>
           {deltas.map(([key, val]) => {
             const meta = EFFECT_META[key];
             if (!meta || !val) return null;
@@ -814,7 +823,7 @@ function LifestyleResultCard({ result, onContinue }: { result: LastResult; onCon
               : (pos ? `+${val}` : `${val}`);
             return (
               <div key={key} className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">{meta.emoji} {meta.label}</span>
+                <span className="text-xs text-gray-200">{meta.emoji} {meta.label}</span>
                 <span className={`text-sm font-black ${pos ? 'text-green-400' : 'text-red-400'}`}>{formatted}</span>
               </div>
             );
@@ -837,7 +846,7 @@ function SeasonDiary({ events }: { events: BDEvent[] }) {
   if (!done.length) return null;
   return (
     <div>
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-700">Season so far</p>
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Season so far</p>
       <div className="space-y-1.5">
         {done.map(ev => {
           const ch  = ev.choices.find(c => c.id === ev.chosenId);
@@ -848,10 +857,10 @@ function SeasonDiary({ events }: { events: BDEvent[] }) {
             <div key={ev.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${bg}`}>
               <span className="text-base shrink-0">{ch?.emoji ?? '•'}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-300 truncate">{ev.title}</p>
+                <p className="text-xs font-semibold text-white truncate">{ev.title}</p>
                 {isMatch && mr
-                  ? <p className="text-[10px] text-gray-600">{mr.teamGoals}–{mr.opponentGoals} · {mr.isWin ? 'W' : mr.isDraw ? 'D' : 'L'} · {mr.playerRating.toFixed(1)} rating{mr.playerGoals > 0 ? ` · ${mr.playerGoals}G` : ''}{mr.playerAssists > 0 ? ` ${mr.playerAssists}A` : ''}</p>
-                  : <p className="text-[10px] text-gray-600 truncate">{ch?.label ?? ''}</p>
+                  ? <p className="text-[10px] text-gray-300">{mr.teamGoals}–{mr.opponentGoals} · {mr.isWin ? 'W' : mr.isDraw ? 'D' : 'L'} · {mr.playerRating.toFixed(1)} rating{mr.playerGoals > 0 ? ` · ${mr.playerGoals}G` : ''}{mr.playerAssists > 0 ? ` ${mr.playerAssists}A` : ''}</p>
+                  : <p className="text-[10px] text-gray-300 truncate">{ch?.label ?? ''}</p>
                 }
               </div>
               {isMatch && mr && (
@@ -868,25 +877,25 @@ function SeasonDiary({ events }: { events: BDEvent[] }) {
 }
 
 // ── Stats tab ──────────────────────────────────────────────────────
-function StatsTab({ table, playerClubId, teammates, playerName, playerPosition, view, onViewChange }: {
+function StatsTab({ table, playerClubId, teammates, playerName, playerPosition, clubId, view, onViewChange }: {
   table: LeagueTableRow[]; playerClubId: string; teammates: BDTeammate[];
-  playerName: string; playerPosition: BDPosition; view: 'table' | 'squad';
-  onViewChange: (v: 'table' | 'squad') => void;
+  playerName: string; playerPosition: BDPosition; clubId: string;
+  view: 'table' | 'squad'; onViewChange: (v: 'table' | 'squad') => void;
 }) {
   return (
     <div>
       <div className="sticky top-0 bg-gray-950 border-b border-gray-800 px-4 py-3 flex gap-2 z-10">
         <button onClick={() => onViewChange('table')}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${view === 'table' ? 'bg-purple-900/40 text-purple-300 border border-purple-700/40' : 'bg-gray-900 text-gray-500 border border-gray-800'}`}>
+          className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${view === 'table' ? 'bg-purple-900/40 text-purple-300 border border-purple-700/40' : 'bg-gray-900 text-gray-300 border border-gray-800'}`}>
           📊 Table
         </button>
         <button onClick={() => onViewChange('squad')}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${view === 'squad' ? 'bg-blue-900/40 text-blue-300 border border-blue-700/40' : 'bg-gray-900 text-gray-500 border border-gray-800'}`}>
-          👥 Squad
+          className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${view === 'squad' ? 'bg-blue-900/40 text-blue-300 border border-blue-700/40' : 'bg-gray-900 text-gray-300 border border-gray-800'}`}>
+          👥 Starting XI
         </button>
       </div>
       {view === 'table' && <FullTableView table={table} playerClubId={playerClubId} />}
-      {view === 'squad' && <SquadView teammates={teammates} playerName={playerName} playerPosition={playerPosition} />}
+      {view === 'squad' && <SquadView teammates={teammates} playerName={playerName} playerPosition={playerPosition} clubId={clubId} />}
     </div>
   );
 }
@@ -913,7 +922,7 @@ function FullTableView({ table, playerClubId }: { table: LeagueTableRow[]; playe
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-sm font-black text-white">Premier League</h2>
-          {!allZero && playerPos >= 0 && <p className="text-[10px] text-gray-600 mt-0.5">Your position: #{playerPos + 1}</p>}
+          {!allZero && playerPos >= 0 && <p className="text-[10px] text-gray-300 mt-0.5">Your position: #{playerPos + 1}</p>}
         </div>
         <div className="flex items-center gap-2">
           {!allZero && playerPos >= 0 && (
@@ -929,15 +938,15 @@ function FullTableView({ table, playerClubId }: { table: LeagueTableRow[]; playe
 
       {/* Column headers */}
       <div className="flex items-center gap-1 px-2 py-1 mb-1">
-        <span className="w-6 text-[9px] text-gray-600">#</span>
-        <span className="flex-1 text-[9px] text-gray-600 uppercase">Club</span>
-        <span className="w-5 text-center text-[9px] text-gray-600">P</span>
-        <span className="w-5 text-center text-[9px] text-gray-600">W</span>
-        <span className="w-5 text-center text-[9px] text-gray-600">D</span>
-        <span className="w-5 text-center text-[9px] text-gray-600">L</span>
-        <span className="w-7 text-center text-[9px] text-gray-600">GD</span>
-        <span className="w-7 text-center text-[9px] text-gray-600 font-bold">Pts</span>
-        <span className="w-12 text-[9px] text-gray-600 text-right">Form</span>
+        <span className="w-6 text-[9px] text-gray-400">#</span>
+        <span className="flex-1 text-[9px] text-gray-400 uppercase">Club</span>
+        <span className="w-5 text-center text-[9px] text-gray-400">P</span>
+        <span className="w-5 text-center text-[9px] text-gray-400">W</span>
+        <span className="w-5 text-center text-[9px] text-gray-400">D</span>
+        <span className="w-5 text-center text-[9px] text-gray-400">L</span>
+        <span className="w-7 text-center text-[9px] text-gray-400">GD</span>
+        <span className="w-7 text-center text-[9px] text-gray-400 font-bold">Pts</span>
+        <span className="w-12 text-[9px] text-gray-400 text-right">Form</span>
       </div>
 
       {!showFull && !allZero && start > 0 && <p className="text-center text-[9px] text-gray-700 py-1">· · ·</p>}
@@ -951,10 +960,10 @@ function FullTableView({ table, playerClubId }: { table: LeagueTableRow[]; playe
           <div key={row.clubId} className={`flex items-center gap-1 rounded-lg px-2 py-1.5 ${isPlayer ? 'bg-amber-500/10 border border-amber-500/20' : vi % 2 === 0 ? 'bg-gray-900/30' : ''}`}>
             <span className={`w-6 text-xs font-bold ${posColor}`}>{pos}</span>
             <span className={`flex-1 text-xs font-bold truncate ${isPlayer ? 'text-amber-300' : 'text-white'}`}>{isPlayer ? '★ ' : ''}{row.name}</span>
-            <span className="w-5 text-center text-xs text-gray-500">{row.p}</span>
-            <span className="w-5 text-center text-xs text-gray-500">{row.w}</span>
-            <span className="w-5 text-center text-xs text-gray-500">{row.d}</span>
-            <span className="w-5 text-center text-xs text-gray-500">{row.l}</span>
+            <span className="w-5 text-center text-xs text-gray-300">{row.p}</span>
+            <span className="w-5 text-center text-xs text-gray-300">{row.w}</span>
+            <span className="w-5 text-center text-xs text-gray-300">{row.d}</span>
+            <span className="w-5 text-center text-xs text-gray-300">{row.l}</span>
             <span className={`w-7 text-center text-xs ${gd > 0 ? 'text-green-400' : gd < 0 ? 'text-red-400' : 'text-gray-600'}`}>
               {gd > 0 ? '+' : ''}{gd}
             </span>
@@ -974,82 +983,115 @@ function FullTableView({ table, playerClubId }: { table: LeagueTableRow[]; playe
 }
 
 // ── Squad view ─────────────────────────────────────────────────────
-function SquadView({ teammates, playerName, playerPosition }: { teammates: BDTeammate[]; playerName: string; playerPosition: BDPosition }) {
+function SquadView({ teammates, playerName, playerPosition, clubId }: {
+  teammates: BDTeammate[]; playerName: string; playerPosition: BDPosition; clubId: string;
+}) {
   const posLabel: Record<BDPosition, string> = { GK: 'GK', DEF: 'DEF', MID: 'MID', ATT: 'FWD' };
+  const posOrder: BDPosition[] = ['GK', 'DEF', 'MID', 'ATT'];
+  const posColor: Record<BDPosition, string> = { GK: 'bg-yellow-600', DEF: 'bg-blue-700', MID: 'bg-green-700', ATT: 'bg-red-700' };
+
+  const clubSquad = CLUB_SQUADS[clubId] ?? [];
+  // Build a map of tracked teammates by name for quick lookup
+  const trackedMap = new Map(teammates.map(tm => [tm.name, tm]));
+
+  // Inject the player into the squad (replacing if already present by name)
+  const squadWithPlayer = clubSquad.filter(p => p.name !== playerName);
+  const playerSquadEntry = { name: playerName, pos: playerPosition, ovr: 85 };
+  const fullSquad = [...squadWithPlayer, playerSquadEntry];
+
+  const byPos: Record<BDPosition, typeof fullSquad> = { GK: [], DEF: [], MID: [], ATT: [] };
+  fullSquad.forEach(p => { if (byPos[p.pos]) byPos[p.pos].push(p); });
+
   return (
-    <div className="px-4 py-4 space-y-3">
+    <div className="px-4 py-4 space-y-4">
       <div>
-        <h2 className="text-sm font-black text-white">Your Squad</h2>
-        <p className="text-[10px] text-gray-600 mt-0.5">Key teammates this season</p>
+        <h2 className="text-sm font-black text-white">Starting XI</h2>
+        <p className="text-[10px] text-gray-300 mt-0.5">Full squad · tracked teammates show season stats</p>
       </div>
 
-      <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/8 p-3">
-        <div className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center shrink-0">
-          <span className="text-[10px] font-black text-black">{posLabel[playerPosition]}</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-black text-amber-300 truncate">★ {playerName}</p>
-          <p className="text-[10px] text-gray-500">You</p>
-        </div>
-      </div>
-
-      {teammates.length === 0 && <p className="text-sm text-gray-600 text-center py-4">Teammates appear after matches are played.</p>}
-
-      {teammates.map(tm => {
-        const isDefGK = tm.position === 'DEF' || tm.position === 'GK';
-        const hasData = tm.appearances > 0;
+      {posOrder.map(pos => {
+        const players = byPos[pos];
+        if (!players.length) return null;
         return (
-          <div key={tm.name} className="rounded-xl border border-gray-800 bg-gray-900 p-3">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
-                <span className="text-[10px] font-black text-gray-400">{posLabel[tm.position]}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white truncate">{tm.name}</p>
-                <p className="text-[10px] text-gray-500">{tm.role}</p>
-              </div>
-              {hasData && (
-                <div className="text-right shrink-0">
-                  <p className={`text-sm font-black ${tm.avgRating >= 7.5 ? 'text-amber-400' : 'text-white'}`}>{tm.avgRating.toFixed(1)}</p>
-                  <p className="text-[9px] text-gray-600">Avg</p>
-                </div>
-              )}
+          <div key={pos}>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">{posLabel[pos]}</p>
+            <div className="space-y-2">
+              {players.map(p => {
+                const isPlayer = p.name === playerName;
+                const tracked = trackedMap.get(p.name);
+                const isDefGK = pos === 'DEF' || pos === 'GK';
+                const hasStats = tracked && tracked.appearances > 0;
+
+                return (
+                  <div key={p.name} className={`rounded-xl border p-3 ${isPlayer ? 'border-amber-500/40 bg-amber-500/8' : 'border-gray-800 bg-gray-900'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isPlayer ? 'bg-amber-500' : posColor[pos]}`}>
+                        <span className="text-[9px] font-black text-white">{posLabel[pos]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-bold truncate ${isPlayer ? 'text-amber-300' : 'text-white'}`}>
+                          {isPlayer ? '★ ' : ''}{p.name}
+                        </p>
+                        {tracked && <p className="text-[10px] text-gray-300">{tracked.role}</p>}
+                      </div>
+                      <div className="text-right shrink-0">
+                        {hasStats ? (
+                          <>
+                            <p className={`text-sm font-black ${tracked!.avgRating >= 7.5 ? 'text-amber-400' : 'text-white'}`}>{tracked!.avgRating.toFixed(1)}</p>
+                            <p className="text-[9px] text-gray-300">Rating</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm font-black text-gray-300">{p.ovr}</p>
+                            <p className="text-[9px] text-gray-400">OVR</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {hasStats && (
+                      <div className="flex gap-4 pt-2 mt-1 border-t border-gray-800">
+                        {!isDefGK ? (
+                          <>
+                            <div className="text-center"><p className="text-sm font-black text-white">{tracked!.goals}</p><p className="text-[9px] text-gray-300">G</p></div>
+                            <div className="text-center"><p className="text-sm font-black text-white">{tracked!.assists}</p><p className="text-[9px] text-gray-300">A</p></div>
+                          </>
+                        ) : (
+                          <div className="text-center"><p className="text-sm font-black text-white">{tracked!.cleanSheets}</p><p className="text-[9px] text-gray-300">CS</p></div>
+                        )}
+                        <div className="text-center"><p className="text-sm font-black text-white">{tracked!.appearances}</p><p className="text-[9px] text-gray-300">Apps</p></div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            {hasData ? (
-              <div className="flex gap-4 pt-2 border-t border-gray-800">
-                {!isDefGK && (
-                  <>
-                    <div className="text-center"><p className="text-sm font-black text-white">{tm.goals}</p><p className="text-[9px] text-gray-600">Goals</p></div>
-                    <div className="text-center"><p className="text-sm font-black text-white">{tm.assists}</p><p className="text-[9px] text-gray-600">Assists</p></div>
-                  </>
-                )}
-                {isDefGK && <div className="text-center"><p className="text-sm font-black text-white">{tm.cleanSheets}</p><p className="text-[9px] text-gray-600">Clean Sheets</p></div>}
-                <div className="text-center"><p className="text-sm font-black text-white">{tm.appearances}</p><p className="text-[9px] text-gray-600">Apps</p></div>
-              </div>
-            ) : (
-              <p className="text-[10px] text-gray-700 pt-2 border-t border-gray-800">No matches played yet</p>
-            )}
           </div>
         );
       })}
+
+      {clubSquad.length === 0 && (
+        <p className="text-sm text-gray-300 text-center py-4">Squad data not available for this club.</p>
+      )}
     </div>
   );
 }
 
 // ── Casino tab ─────────────────────────────────────────────────────
 function CasinoTab({ money, onResult }: { money: number; onResult: (net: number) => void }) {
-  const [game, setGame] = useState<'menu' | 'coin' | 'slots' | 'horses'>('menu');
+  const [game, setGame] = useState<'menu' | 'coin' | 'slots' | 'horses' | 'blackjack' | 'roulette'>('menu');
 
-  if (game === 'coin')   return <CoinFlipGame    money={money} onResult={onResult} onBack={() => setGame('menu')} />;
-  if (game === 'slots')  return <SlotsGame        money={money} onResult={onResult} onBack={() => setGame('menu')} />;
-  if (game === 'horses') return <HorseRacingGame  money={money} onResult={onResult} onBack={() => setGame('menu')} />;
+  if (game === 'coin')      return <CoinFlipGame    money={money} onResult={onResult} onBack={() => setGame('menu')} />;
+  if (game === 'slots')     return <SlotsGame        money={money} onResult={onResult} onBack={() => setGame('menu')} />;
+  if (game === 'horses')    return <HorseRacingGame  money={money} onResult={onResult} onBack={() => setGame('menu')} />;
+  if (game === 'blackjack') return <BlackjackGame    money={money} onResult={onResult} onBack={() => setGame('menu')} />;
+  if (game === 'roulette')  return <RouletteGame     money={money} onResult={onResult} onBack={() => setGame('menu')} />;
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
       <div className="text-center mb-2">
         <p className="text-4xl mb-2">🎰</p>
         <h2 className="text-lg font-black text-white">Casino</h2>
-        <p className="text-sm text-gray-500">Balance: {formatMoney(money)}</p>
+        <p className="text-sm text-gray-300">Balance: {formatMoney(money)}</p>
       </div>
       {money < 50 && (
         <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-center">
@@ -1057,9 +1099,11 @@ function CasinoTab({ money, onResult }: { money: number; onResult: (net: number)
         </div>
       )}
       {[
-        { id: 'coin'   as const, emoji: '🪙', name: 'Coin Flip',     desc: 'Pick heads or tails — 50/50 odds. Double or nothing.' },
-        { id: 'slots'  as const, emoji: '🎰', name: 'Slot Machine',   desc: 'Spin 3 reels. Match symbols to win up to ×20.' },
-        { id: 'horses' as const, emoji: '🏇', name: 'Horse Racing',   desc: 'Pick a horse. Bigger odds = bigger payout. High risk, high reward.' },
+        { id: 'coin'      as const, emoji: '🪙', name: 'Coin Flip',    desc: 'Pick heads or tails — 50/50 odds. Double or nothing.'         },
+        { id: 'slots'     as const, emoji: '🎰', name: 'Slot Machine',  desc: 'Spin 3 reels. Match symbols to win up to ×20.'                },
+        { id: 'horses'    as const, emoji: '🏇', name: 'Horse Racing',  desc: 'Pick a horse. Bigger odds = bigger payout.'                   },
+        { id: 'blackjack' as const, emoji: '🃏', name: 'Blackjack',     desc: 'Beat the dealer to 21. Blackjack pays 3:2.'                   },
+        { id: 'roulette'  as const, emoji: '🎡', name: 'Roulette',      desc: 'Pick a colour, range, dozen, or single number. Up to ×35.'   },
       ].map(g => (
         <button key={g.id} onClick={() => setGame(g.id)} disabled={money < 50}
           className="w-full rounded-2xl border border-gray-800 bg-gray-900 p-5 text-left hover:border-amber-600/40 transition disabled:opacity-40">
@@ -1067,7 +1111,7 @@ function CasinoTab({ money, onResult }: { money: number; onResult: (net: number)
             <span className="text-4xl">{g.emoji}</span>
             <div>
               <p className="text-base font-black text-white">{g.name}</p>
-              <p className="text-sm text-gray-500">{g.desc}</p>
+              <p className="text-sm text-gray-300">{g.desc}</p>
             </div>
           </div>
         </button>
@@ -1099,19 +1143,19 @@ function CoinFlipGame({ money, onResult, onBack }: { money: number; onResult: (n
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
-      <button onClick={onBack} className="text-xs text-gray-500 hover:text-amber-400 transition">← Back to Casino</button>
+      <button onClick={onBack} className="text-xs text-gray-300 hover:text-amber-400 transition">← Back to Casino</button>
       <div className="text-center py-4">
         <p className={`text-6xl mb-3 block transition-transform ${flipping ? 'animate-spin' : ''}`} style={{ animationDuration: '0.5s' }}>🪙</p>
         <p className="text-base font-black text-white">Coin Flip</p>
-        <p className="text-sm text-gray-500">Balance: {formatMoney(money)}</p>
+        <p className="text-sm text-gray-300">Balance: {formatMoney(money)}</p>
       </div>
 
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">Bet Amount</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Bet Amount</p>
         <div className="flex gap-2 flex-wrap">
           {bets.map(b => (
             <button key={b} onClick={() => setBet(b)}
-              className={`flex-1 min-w-[60px] rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
+              className={`flex-1 min-w-[60px] rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-200 hover:border-gray-600'}`}>
               {formatMoney(b)}
             </button>
           ))}
@@ -1124,7 +1168,7 @@ function CoinFlipGame({ money, onResult, onBack }: { money: number; onResult: (n
           <p className={`text-lg font-black mb-1 ${outcome.won ? 'text-green-400' : 'text-red-400'}`}>
             {outcome.won ? `+${formatMoney(bet)} WIN!` : `-${formatMoney(bet)} LOSS`}
           </p>
-          <p className="text-xs text-gray-500">Landed: {outcome.landed} · You picked: {outcome.picked}</p>
+          <p className="text-xs text-gray-300">Landed: {outcome.landed} · You picked: {outcome.picked}</p>
         </div>
       )}
 
@@ -1198,10 +1242,10 @@ function SlotsGame({ money, onResult, onBack }: { money: number; onResult: (net:
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
-      <button onClick={onBack} className="text-xs text-gray-500 hover:text-amber-400 transition">← Back to Casino</button>
+      <button onClick={onBack} className="text-xs text-gray-300 hover:text-amber-400 transition">← Back to Casino</button>
       <div className="text-center">
         <p className="text-base font-black text-white mb-0.5">Slot Machine</p>
-        <p className="text-sm text-gray-500">Balance: {formatMoney(money)}</p>
+        <p className="text-sm text-gray-300">Balance: {formatMoney(money)}</p>
       </div>
 
       <div className="rounded-2xl border border-amber-700/30 bg-amber-950/10 p-6">
@@ -1220,11 +1264,11 @@ function SlotsGame({ money, onResult, onBack }: { money: number; onResult: (net:
       </div>
 
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">Bet Amount</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Bet Amount</p>
         <div className="flex gap-2">
           {bets.map(b => (
             <button key={b} onClick={() => setBet(b)}
-              className={`flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-400'}`}>
+              className={`flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-200'}`}>
               {formatMoney(b)}
             </button>
           ))}
@@ -1237,8 +1281,8 @@ function SlotsGame({ money, onResult, onBack }: { money: number; onResult: (net:
       </button>
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">Payouts</p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Payouts</p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-200">
           <p>💎💎💎 → ×20</p>
           <p>7️⃣7️⃣7️⃣ → ×10</p>
           <p>🏆🏆🏆 → ×7</p>
@@ -1307,19 +1351,19 @@ function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult:
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
-      <button onClick={onBack} className="text-xs text-gray-500 hover:text-amber-400 transition">← Back to Casino</button>
+      <button onClick={onBack} className="text-xs text-gray-300 hover:text-amber-400 transition">← Back to Casino</button>
       <div className="text-center">
         <p className="text-base font-black text-white mb-0.5">🏇 Horse Racing</p>
-        <p className="text-sm text-gray-500">Balance: {formatMoney(money)}</p>
+        <p className="text-sm text-gray-300">Balance: {formatMoney(money)}</p>
       </div>
 
       {/* Bet selector */}
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">Bet Amount</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Bet Amount</p>
         <div className="flex gap-2 flex-wrap">
           {bets.map(b => (
             <button key={b} onClick={() => setBet(b)}
-              className={`flex-1 min-w-[60px] rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-400'}`}>
+              className={`flex-1 min-w-[60px] rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-200'}`}>
               {formatMoney(b)}
             </button>
           ))}
@@ -1328,7 +1372,7 @@ function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult:
 
       {/* Horse picker */}
       <div className="space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">Pick a Horse</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300">Pick a Horse</p>
         {HORSES.map((h, i) => (
           <button key={i} onClick={() => !racing && setPicked(i)} disabled={racing}
             className={`w-full rounded-xl border p-3 text-left transition ${picked === i ? 'border-amber-500/60 bg-amber-500/10' : 'border-gray-800 bg-gray-900 hover:border-gray-600'} ${racing ? 'cursor-not-allowed' : ''}`}>
@@ -1339,7 +1383,7 @@ function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult:
               </div>
               <span className="text-xs font-black text-amber-400">{h.odds}× odds</span>
             </div>
-            <p className="text-[10px] text-gray-500 mb-2">{h.desc}</p>
+            <p className="text-[10px] text-gray-300 mb-2">{h.desc}</p>
             {(racing || winner !== null) && (
               <div className="h-1.5 rounded-full bg-gray-800">
                 <div
@@ -1378,6 +1422,319 @@ function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult:
   );
 }
 
+// ── Blackjack game ─────────────────────────────────────────────────
+const SUITS = ['♠', '♥', '♦', '♣'];
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+function makeCard() {
+  const rank = RANKS[Math.floor(Math.random() * RANKS.length)];
+  const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
+  return { rank, suit };
+}
+
+function cardValue(rank: string): number {
+  if (['J', 'Q', 'K'].includes(rank)) return 10;
+  if (rank === 'A') return 11;
+  return parseInt(rank);
+}
+
+function handTotal(cards: { rank: string; suit: string }[]): number {
+  let total = cards.reduce((s, c) => s + cardValue(c.rank), 0);
+  let aces = cards.filter(c => c.rank === 'A').length;
+  while (total > 21 && aces > 0) { total -= 10; aces--; }
+  return total;
+}
+
+function CardEl({ rank, suit, hidden }: { rank: string; suit: string; hidden?: boolean }) {
+  const red = suit === '♥' || suit === '♦';
+  return (
+    <div className={`w-12 h-16 rounded-lg border flex items-center justify-center text-sm font-black select-none ${hidden ? 'bg-blue-900 border-blue-700 text-blue-700' : 'bg-gray-100 border-gray-300'}`}>
+      {hidden ? '?' : <span className={red ? 'text-red-600' : 'text-gray-900'}>{rank}{suit}</span>}
+    </div>
+  );
+}
+
+function BlackjackGame({ money, onResult, onBack }: { money: number; onResult: (net: number) => void; onBack: () => void }) {
+  const [bet, setBet] = useState(100);
+  const [phase, setPhase] = useState<'bet' | 'playing' | 'done'>('bet');
+  const [playerHand, setPlayerHand] = useState<{ rank: string; suit: string }[]>([]);
+  const [dealerHand, setDealerHand] = useState<{ rank: string; suit: string }[]>([]);
+  const [resultText, setResultText] = useState('');
+  const [netChange, setNetChange] = useState(0);
+
+  const bets = [50, 100, 250, 500].filter(b => b <= money);
+
+  function deal() {
+    const p = [makeCard(), makeCard()];
+    const d = [makeCard(), makeCard()];
+    setPlayerHand(p);
+    setDealerHand(d);
+    const pTotal = handTotal(p);
+    if (pTotal === 21) {
+      // blackjack — dealer might also have 21
+      const dTotal = handTotal(d);
+      if (dTotal === 21) { finish(d, p, 0, 'Push — both Blackjack!'); }
+      else { finish(d, p, Math.round(bet * 1.5), '🎰 Blackjack! +' + formatMoney(Math.round(bet * 1.5))); }
+      return;
+    }
+    setPhase('playing');
+  }
+
+  function hit() {
+    const newHand = [...playerHand, makeCard()];
+    setPlayerHand(newHand);
+    if (handTotal(newHand) > 21) {
+      finish(dealerHand, newHand, -bet, 'Bust! −' + formatMoney(bet));
+    }
+  }
+
+  function stand() {
+    let dHand = [...dealerHand];
+    while (handTotal(dHand) < 17) dHand = [...dHand, makeCard()];
+    const pTotal = handTotal(playerHand);
+    const dTotal = handTotal(dHand);
+    let net = 0, msg = '';
+    if (dTotal > 21) { net = bet; msg = 'Dealer busts! +' + formatMoney(bet); }
+    else if (pTotal > dTotal) { net = bet; msg = 'You win! +' + formatMoney(bet); }
+    else if (pTotal === dTotal) { net = 0; msg = 'Push — it\'s a tie'; }
+    else { net = -bet; msg = 'Dealer wins. −' + formatMoney(bet); }
+    finish(dHand, playerHand, net, msg);
+  }
+
+  function finish(dHand: { rank: string; suit: string }[], pHand: { rank: string; suit: string }[], net: number, msg: string) {
+    setDealerHand(dHand);
+    setPlayerHand(pHand);
+    setResultText(msg);
+    setNetChange(net);
+    onResult(net);
+    setPhase('done');
+  }
+
+  const pTotal = handTotal(playerHand);
+  const dTotal = handTotal(dealerHand);
+
+  return (
+    <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
+      <button onClick={onBack} className="text-xs text-gray-300 hover:text-amber-400 transition">← Back to Casino</button>
+      <div className="text-center">
+        <p className="text-base font-black text-white mb-0.5">🃏 Blackjack</p>
+        <p className="text-sm text-gray-300">Balance: {formatMoney(money)}</p>
+      </div>
+
+      {phase === 'bet' && (
+        <>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Bet Amount</p>
+            <div className="flex gap-2 flex-wrap">
+              {bets.map(b => (
+                <button key={b} onClick={() => setBet(b)}
+                  className={`flex-1 min-w-[60px] rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-300 hover:border-gray-600'}`}>
+                  {formatMoney(b)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button onClick={deal} disabled={money < bet}
+            className="w-full rounded-xl bg-amber-500 py-4 text-base font-black text-black hover:bg-amber-400 transition disabled:opacity-40">
+            Deal Cards
+          </button>
+          <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-xs text-gray-300 space-y-1">
+            <p className="font-bold text-white text-sm mb-1">How to play</p>
+            <p>Get closer to 21 than the dealer without going over.</p>
+            <p>Aces = 1 or 11 · Face cards = 10</p>
+            <p>Dealer hits until 17+ · Blackjack pays 1.5×</p>
+          </div>
+        </>
+      )}
+
+      {(phase === 'playing' || phase === 'done') && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+            <p className="text-xs font-bold text-gray-300 mb-2">Dealer {phase === 'done' ? `(${dTotal})` : ''}</p>
+            <div className="flex gap-2 flex-wrap">
+              {dealerHand.map((c, i) => (
+                <CardEl key={i} rank={c.rank} suit={c.suit} hidden={phase === 'playing' && i === 1} />
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+            <p className="text-xs font-bold text-gray-300 mb-2">You ({pTotal})</p>
+            <div className="flex gap-2 flex-wrap">
+              {playerHand.map((c, i) => <CardEl key={i} rank={c.rank} suit={c.suit} />)}
+            </div>
+          </div>
+
+          {phase === 'done' && (
+            <div className={`rounded-2xl border p-4 text-center ${netChange > 0 ? 'border-green-700/40 bg-green-950/20' : netChange === 0 ? 'border-amber-700/40 bg-amber-950/10' : 'border-red-700/40 bg-red-950/20'}`}
+              style={{ animation: 'fadeSlideIn 0.3s ease' }}>
+              <p className={`text-base font-black ${netChange > 0 ? 'text-green-400' : netChange === 0 ? 'text-amber-400' : 'text-red-400'}`}>{resultText}</p>
+            </div>
+          )}
+
+          {phase === 'playing' && (
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={hit}
+                className="rounded-xl bg-blue-600 hover:bg-blue-500 py-4 text-base font-black text-white transition">
+                Hit
+              </button>
+              <button onClick={stand}
+                className="rounded-xl bg-gray-700 hover:bg-gray-600 py-4 text-base font-black text-white transition">
+                Stand
+              </button>
+            </div>
+          )}
+          {phase === 'done' && (
+            <button onClick={() => { setPhase('bet'); setPlayerHand([]); setDealerHand([]); setResultText(''); setNetChange(0); }}
+              className="w-full rounded-xl bg-amber-500 py-4 text-base font-black text-black hover:bg-amber-400 transition">
+              Play Again
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Roulette game ──────────────────────────────────────────────────
+const ROULETTE_REDS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+
+type RouletteBetType = 'red' | 'black' | 'low' | 'high' | 'dozen1' | 'dozen2' | 'dozen3' | 'single';
+
+const ROULETTE_BETS: { id: RouletteBetType; label: string; payout: number; desc: string }[] = [
+  { id: 'red',    label: '🔴 Red',        payout: 1,  desc: 'Numbers 1–36 in red · Pays 1×'   },
+  { id: 'black',  label: '⚫ Black',      payout: 1,  desc: 'Numbers 1–36 in black · Pays 1×' },
+  { id: 'low',    label: '1–18 Low',      payout: 1,  desc: 'Numbers 1–18 · Pays 1×'          },
+  { id: 'high',   label: '19–36 High',    payout: 1,  desc: 'Numbers 19–36 · Pays 1×'         },
+  { id: 'dozen1', label: '1st Dozen',     payout: 2,  desc: 'Numbers 1–12 · Pays 2×'          },
+  { id: 'dozen2', label: '2nd Dozen',     payout: 2,  desc: 'Numbers 13–24 · Pays 2×'         },
+  { id: 'dozen3', label: '3rd Dozen',     payout: 2,  desc: 'Numbers 25–36 · Pays 2×'         },
+  { id: 'single', label: 'Single Number', payout: 35, desc: 'Pick 0–36 exactly · Pays 35×'    },
+];
+
+function roulettePick(landed: number, betType: RouletteBetType, singleNum: number): boolean {
+  if (landed === 0) return false; // 0 loses all except single on 0
+  switch (betType) {
+    case 'red':    return ROULETTE_REDS.has(landed);
+    case 'black':  return !ROULETTE_REDS.has(landed);
+    case 'low':    return landed >= 1 && landed <= 18;
+    case 'high':   return landed >= 19 && landed <= 36;
+    case 'dozen1': return landed >= 1 && landed <= 12;
+    case 'dozen2': return landed >= 13 && landed <= 24;
+    case 'dozen3': return landed >= 25 && landed <= 36;
+    case 'single': return landed === singleNum;
+  }
+}
+
+function RouletteGame({ money, onResult, onBack }: { money: number; onResult: (net: number) => void; onBack: () => void }) {
+  const [bet, setBet] = useState(100);
+  const [betType, setBetType] = useState<RouletteBetType>('red');
+  const [singleNum, setSingleNum] = useState(7);
+  const [spinning, setSpinning] = useState(false);
+  const [landed, setLanded] = useState<number | null>(null);
+  const [net, setNet] = useState(0);
+
+  const bets = [50, 100, 250].filter(b => b <= money);
+  const payout = ROULETTE_BETS.find(b => b.id === betType)?.payout ?? 1;
+
+  function spin() {
+    if (spinning) return;
+    setSpinning(true);
+    setLanded(null);
+    setTimeout(() => {
+      const n = Math.floor(Math.random() * 37); // 0–36
+      const won = roulettePick(n, betType, singleNum) || (betType === 'single' && n === singleNum && n === 0);
+      const realWon = betType === 'single' ? n === singleNum : roulettePick(n, betType, singleNum);
+      const change = realWon ? bet * payout : -bet;
+      setLanded(n);
+      setNet(change);
+      onResult(change);
+      setSpinning(false);
+    }, 1600);
+  }
+
+  const isRed = landed !== null && landed > 0 && ROULETTE_REDS.has(landed);
+  const isGreen = landed === 0;
+
+  return (
+    <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
+      <button onClick={onBack} className="text-xs text-gray-300 hover:text-amber-400 transition">← Back to Casino</button>
+      <div className="text-center">
+        <p className="text-base font-black text-white mb-0.5">🎡 Roulette</p>
+        <p className="text-sm text-gray-300">Balance: {formatMoney(money)}</p>
+      </div>
+
+      {/* Wheel display */}
+      <div className="rounded-2xl border border-gray-700 bg-gray-900 py-8 text-center">
+        {spinning ? (
+          <p className="text-5xl font-black text-white animate-pulse">?</p>
+        ) : landed !== null ? (
+          <div>
+            <p className={`text-5xl font-black ${isGreen ? 'text-green-400' : isRed ? 'text-red-400' : 'text-white'}`}>{landed}</p>
+            <p className={`text-xs font-bold mt-1 ${isGreen ? 'text-green-400' : isRed ? 'text-red-400' : 'text-gray-300'}`}>
+              {isGreen ? 'Green' : isRed ? 'Red' : 'Black'}
+            </p>
+          </div>
+        ) : (
+          <p className="text-gray-300 text-sm">Spin to play</p>
+        )}
+      </div>
+
+      {/* Result */}
+      {landed !== null && !spinning && (
+        <div className={`rounded-2xl border p-4 text-center ${net > 0 ? 'border-green-700/40 bg-green-950/20' : 'border-red-700/40 bg-red-950/20'}`}
+          style={{ animation: 'fadeSlideIn 0.3s ease' }}>
+          <p className={`text-base font-black ${net > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {net > 0 ? `+${formatMoney(net)} — Winner!` : `${formatMoney(net)} — Better luck next time`}
+          </p>
+        </div>
+      )}
+
+      {/* Bet type */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Bet Type</p>
+        <div className="grid grid-cols-2 gap-2">
+          {ROULETTE_BETS.map(b => (
+            <button key={b.id} onClick={() => setBetType(b.id)}
+              className={`rounded-xl border p-2.5 text-left transition ${betType === b.id ? 'border-amber-500 bg-amber-500/10' : 'border-gray-800 bg-gray-900 hover:border-gray-600'}`}>
+              <p className={`text-xs font-bold ${betType === b.id ? 'text-amber-300' : 'text-white'}`}>{b.label}</p>
+              <p className="text-[9px] text-gray-300 mt-0.5">{b.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {betType === 'single' && (
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Pick a Number (0–36)</p>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSingleNum(Math.max(0, singleNum - 1))} className="w-10 h-10 rounded-full bg-gray-800 text-white font-black text-lg flex items-center justify-center hover:bg-gray-700">−</button>
+            <p className="flex-1 text-center text-3xl font-black text-white">{singleNum}</p>
+            <button onClick={() => setSingleNum(Math.min(36, singleNum + 1))} className="w-10 h-10 rounded-full bg-gray-800 text-white font-black text-lg flex items-center justify-center hover:bg-gray-700">+</button>
+          </div>
+        </div>
+      )}
+
+      {/* Bet amount */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 mb-2">Bet Amount</p>
+        <div className="flex gap-2">
+          {bets.map(b => (
+            <button key={b} onClick={() => setBet(b)}
+              className={`flex-1 rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-300 hover:border-gray-600'}`}>
+              {formatMoney(b)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={spin} disabled={spinning || money < bet}
+        className="w-full rounded-xl bg-amber-500 py-4 text-base font-black text-black hover:bg-amber-400 transition disabled:opacity-40">
+        {spinning ? 'Spinning…' : `🎡 Spin! (${payout}× payout)`}
+      </button>
+    </div>
+  );
+}
+
 // ── Shop tab ───────────────────────────────────────────────────────
 function ShopTab({ money, energy, season, onPurchase }: {
   money: number; energy: number; season: SeasonData;
@@ -1399,10 +1756,10 @@ function ShopTab({ money, energy, season, onPurchase }: {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-black text-white">Player Store</h2>
-          <p className="text-[10px] text-gray-500">Invest your earnings wisely</p>
+          <p className="text-[10px] text-gray-300">Invest your earnings wisely</p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-gray-500">Balance</p>
+          <p className="text-[10px] text-gray-300">Balance</p>
           <p className="text-sm font-black text-amber-400">{formatMoney(money)}</p>
         </div>
       </div>
@@ -1427,7 +1784,7 @@ function ShopTab({ money, energy, season, onPurchase }: {
                 <span className="text-3xl shrink-0">{item.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-black text-white">{item.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-snug">{item.desc}</p>
+                  <p className="text-xs text-gray-200 mt-0.5 leading-snug">{item.desc}</p>
                   <span className="inline-block mt-1.5 rounded-full bg-blue-500/15 border border-blue-500/20 px-2 py-0.5 text-[9px] font-bold text-blue-400">
                     {item.stat}
                   </span>
@@ -1450,7 +1807,7 @@ function ShopTab({ money, energy, season, onPurchase }: {
 
       {/* Current attributes */}
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">Current Status</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-300">Current Status</p>
         {[
           { label: 'Fitness', v: season.attributes.fitness, color: 'bg-green-500' },
           { label: 'Morale',  v: season.attributes.morale,  color: 'bg-blue-500'  },
@@ -1459,7 +1816,7 @@ function ShopTab({ money, energy, season, onPurchase }: {
         ].map(({ label, v, color }) => (
           <div key={label}>
             <div className="flex justify-between mb-1">
-              <span className="text-[10px] text-gray-500">{label}</span>
+              <span className="text-[10px] text-gray-300">{label}</span>
               <span className="text-[10px] font-bold text-white">{v}</span>
             </div>
             <div className="h-1 rounded-full bg-gray-800">

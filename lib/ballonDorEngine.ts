@@ -1644,34 +1644,48 @@ function simulateMatchweekTable(
   ctx: NonNullable<BDEvent['matchContext']>,
   rng: () => number,
 ): LeagueTableRow[] {
-  if (ctx.competition !== 'Premier League') return table;
-
   const addForm = (f: ('W' | 'D' | 'L')[], r: 'W' | 'D' | 'L') => [...f, r].slice(-5) as ('W' | 'D' | 'L')[];
+  const isPL = ctx.competition === 'Premier League';
+  // Approximate how many PL games all clubs should have played by this point in the season.
+  // Matchweek 0 = pre-season, so target = matchweek (non-zero for PL/CL/Cup milestones).
+  const targetPLGames = Math.max(1, ctx.matchweek);
+
+  function simGames(row: LeagueTableRow, count: number): LeagueTableRow {
+    const club = PL_CLUBS.find(c => c.id === row.clubId);
+    if (!club || count <= 0) return row;
+    let r = { ...row };
+    for (let i = 0; i < count; i++) {
+      const winP = clamp(0.24 + (club.prestige - 65) / 165, 0.14, 0.52);
+      const roll = rng();
+      const w = roll < winP ? 1 : 0;
+      const d = !w && roll < winP + 0.24 ? 1 : 0;
+      const l = !w && !d ? 1 : 0;
+      const gf = Math.max(0, ri(rng, w ? 2.0 : d ? 1.1 : 0.6, 0.8));
+      const ga = Math.max(0, l ? ri(rng, 2.0, 0.8) : d ? gf : ri(rng, 0.8, 0.6));
+      const res: 'W' | 'D' | 'L' = w ? 'W' : d ? 'D' : 'L';
+      r = { ...r, p: r.p + 1, w: r.w + w, d: r.d + d, l: r.l + l, gf: r.gf + gf, ga: r.ga + ga, pts: r.pts + (w ? 3 : d ? 1 : 0), form: addForm(r.form, res) };
+    }
+    return r;
+  }
 
   return table.map(row => {
-    if (row.clubId === playerClubId) {
+    if (isPL && row.clubId === playerClubId) {
+      // Apply the player's actual PL result
       const r: 'W' | 'D' | 'L' = result.isWin ? 'W' : result.isDraw ? 'D' : 'L';
       const pts = result.isWin ? 3 : result.isDraw ? 1 : 0;
       return { ...row, p: row.p + 1, w: row.w + (result.isWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (!result.isWin && !result.isDraw ? 1 : 0), gf: row.gf + result.teamGoals, ga: row.ga + result.opponentGoals, pts: row.pts + pts, form: addForm(row.form, r) };
     }
-    if (row.clubId === ctx.opponentId) {
+    if (isPL && row.clubId === ctx.opponentId) {
+      // Apply the opponent's inverse PL result, then catch up
       const oppWin = !result.isWin && !result.isDraw;
       const r: 'W' | 'D' | 'L' = oppWin ? 'W' : result.isDraw ? 'D' : 'L';
       const pts = oppWin ? 3 : result.isDraw ? 1 : 0;
-      return { ...row, p: row.p + 1, w: row.w + (oppWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (result.isWin ? 1 : 0), gf: row.gf + result.opponentGoals, ga: row.ga + result.teamGoals, pts: row.pts + pts, form: addForm(row.form, r) };
+      const updated = { ...row, p: row.p + 1, w: row.w + (oppWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (result.isWin ? 1 : 0), gf: row.gf + result.opponentGoals, ga: row.ga + result.teamGoals, pts: row.pts + pts, form: addForm(row.form, r) };
+      return simGames(updated, Math.max(0, targetPLGames - updated.p));
     }
-    // Simulate other clubs
-    const club = PL_CLUBS.find(c => c.id === row.clubId);
-    if (!club) return row;
-    const winP = clamp(0.24 + (club.prestige - 65) / 165, 0.14, 0.52);
-    const roll = rng();
-    const w = roll < winP ? 1 : 0;
-    const d = !w && roll < winP + 0.24 ? 1 : 0;
-    const l = !w && !d ? 1 : 0;
-    const gf = Math.max(0, ri(rng, w ? 2.0 : d ? 1.1 : 0.6, 0.8));
-    const ga = Math.max(0, l ? ri(rng, 2.0, 0.8) : d ? gf : ri(rng, 0.8, 0.6));
-    const r: 'W' | 'D' | 'L' = w ? 'W' : d ? 'D' : 'L';
-    return { ...row, p: row.p + 1, w: row.w + w, d: row.d + d, l: row.l + l, gf: row.gf + gf, ga: row.ga + ga, pts: row.pts + (w ? 3 : d ? 1 : 0), form: addForm(row.form, r) };
+    // All other clubs (and player's club for non-PL matches):
+    // simulate PL games until they've played as many as targetPLGames
+    return simGames(row, Math.max(0, targetPLGames - row.p));
   });
 }
 

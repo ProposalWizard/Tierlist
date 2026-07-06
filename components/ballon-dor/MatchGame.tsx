@@ -262,7 +262,7 @@ export default function MatchGame({
         setMomentIdx(i => i + 1);
         setPhase('moment');
       }
-    }, 1800);
+    }, 2600);
   }
 
   const currentMoment = moments[momentIdx];
