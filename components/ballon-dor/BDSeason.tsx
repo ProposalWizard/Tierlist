@@ -10,7 +10,9 @@ import type {
   BDTeammate,
   EventChoice,
 } from "@/lib/ballonDorTypes";
-import { applyChoice } from "@/lib/ballonDorEngine";
+import { applyChoice, applyManualMatchResult } from "@/lib/ballonDorEngine";
+import MatchGame from "./MatchGame";
+import type { MatchGameResult } from "./MatchGame";
 
 // ── Competition badge styles ───────────────────────────────────────
 const COMP: Record<string, { bg: string; border: string; text: string; icon: string }> = {
@@ -58,13 +60,13 @@ function formatMoney(k: number): string {
 
 // ── Shop config ────────────────────────────────────────────────────
 const SHOP_ITEMS = [
-  { id: 'energy',   emoji: '⚡', name: 'Energy Drink',           desc: '+30 Energy instantly',               price: 80,   stat: '+30 Energy'   },
-  { id: 'boots',    emoji: '👟', name: 'Premium Boots',           desc: '+0.10 season avg rating',            price: 200,  stat: '+0.10 Rating'  },
-  { id: 'trainer',  emoji: '🏋️', name: 'Personal Trainer',        desc: '+12 Fitness for the rest of season', price: 400,  stat: '+12 Fitness'  },
-  { id: 'pr',       emoji: '📱', name: 'PR Agency',                desc: '+15 Fame — global exposure',         price: 250,  stat: '+15 Fame'     },
-  { id: 'psych',    emoji: '🧘', name: 'Sports Psychologist',      desc: '+10 Morale — mental edge',           price: 150,  stat: '+10 Morale'   },
-  { id: 'house',    emoji: '🏠', name: 'Luxury Mansion',           desc: '+15 Morale · +10 Fame — living well', price: 1500, stat: '+15M +10F'   },
-  { id: 'car',      emoji: '🚗', name: 'Supercar',                 desc: '+20 Fame · +5 Morale — status symbol', price: 2500, stat: '+20F +5M'   },
+  { id: 'energy',   emoji: '⚡', name: 'Energy Drink',           desc: '+30 Energy instantly',               price: 8,   stat: '+30 Energy'   },
+  { id: 'boots',    emoji: '👟', name: 'Premium Boots',           desc: '+0.10 season avg rating',            price: 20,  stat: '+0.10 Rating'  },
+  { id: 'trainer',  emoji: '🏋️', name: 'Personal Trainer',        desc: '+12 Fitness for the rest of season', price: 40,  stat: '+12 Fitness'  },
+  { id: 'pr',       emoji: '📱', name: 'PR Agency',                desc: '+15 Fame — global exposure',         price: 25,  stat: '+15 Fame'     },
+  { id: 'psych',    emoji: '🧘', name: 'Sports Psychologist',      desc: '+10 Morale — mental edge',           price: 15,  stat: '+10 Morale'   },
+  { id: 'house',    emoji: '🏠', name: 'Luxury Mansion',           desc: '+15 Morale · +10 Fame — living well', price: 150, stat: '+15M +10F'   },
+  { id: 'car',      emoji: '🚗', name: 'Supercar',                 desc: '+20 Fame · +5 Morale — status symbol', price: 250, stat: '+20F +5M'   },
 ];
 
 // ── Slot symbols ───────────────────────────────────────────────────
@@ -98,6 +100,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
   const [statsView, setStatsView] = useState<'table' | 'squad'>('table');
   const [gamePhase, setGamePhase] = useState<'choices' | 'revealing' | 'result'>('choices');
   const [pendingUpdated, setPendingUpdated] = useState<SeasonData | null>(null);
+  const [matchGameEvent, setMatchGameEvent] = useState<BDEvent | null>(null);
   const [lastResult, setLastResult] = useState<LastResult | null>(null);
   const [quickNote, setQuickNote] = useState<string | null>(null);
   // Tracks which quick actions have been used since the last event was resolved
@@ -108,7 +111,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
   const isAllDone   = currentIdx === -1;
   const completedCount = season.events.filter(e => e.chosenId).length;
   const energy = season.energy ?? 85;
-  const money  = season.money ?? 3000;
+  const money  = season.money ?? 50;
   const isDefOrGK = player.position === 'GK' || player.position === 'DEF';
   const totalGoals   = season.baseStats.goals   + season.eventStats.goals;
   const totalAssists = season.baseStats.assists  + season.eventStats.assists;
@@ -212,6 +215,31 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
     setTimeout(() => setQuickNote(null), 2500);
   }
 
+  function handlePlayMatch() {
+    if (!currentEvent || currentEvent.category !== 'match') return;
+    setMatchGameEvent(currentEvent);
+    setActiveTab('home');
+  }
+
+  function handleMatchGameComplete(result: MatchGameResult) {
+    if (!matchGameEvent || !matchGameEvent.matchContext) return;
+    const updated = applyManualMatchResult(season, matchGameEvent.id, result, player.position);
+    const resolved = updated.events.find(e => e.id === matchGameEvent.id);
+    setPendingUpdated(updated);
+    setLastResult({
+      type: 'match',
+      eventTitle: matchGameEvent.title,
+      choiceLabel: 'Full-time',
+      choiceEmoji: '⚽',
+      outcomeText: resolved?.outcomeText ?? '',
+      matchResult: resolved?.matchResult,
+      matchContext: matchGameEvent.matchContext,
+      clubName: season.club.name,
+    });
+    setMatchGameEvent(null);
+    setGamePhase('result');
+  }
+
   function handleCasinoResult(netChange: number) {
     // If we're mid-result, apply to pending so it doesn't get overwritten
     const base = pendingUpdated ?? season;
@@ -241,6 +269,22 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
   const lockNav = gamePhase === 'revealing';
   const displayMoney = (pendingUpdated?.money ?? money);
   const displayEnergy = (pendingUpdated?.energy ?? energy);
+
+  if (matchGameEvent && matchGameEvent.matchContext) {
+    return (
+      <MatchGame
+        opponent={matchGameEvent.matchContext.opponent}
+        competition={matchGameEvent.matchContext.competition}
+        isHome={matchGameEvent.matchContext.isHome}
+        opponentPrestige={matchGameEvent.matchContext.opponentPrestige}
+        clubName={season.club.name}
+        clubPrestige={season.club.prestige}
+        playerPosition={player.position}
+        playerOverall={season.playerOverall}
+        onComplete={handleMatchGameComplete}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
@@ -296,6 +340,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
             onContinue={handleContinue}
             onSeeTable={handleSeeTable}
             onQuickAction={handleQuickAction}
+            onPlayMatch={handlePlayMatch}
           />
         )}
 
@@ -443,7 +488,7 @@ function QuickActions({ energy, note, usedToday, onAction }: {
 function HomeTab({
   season, player, gamePhase, currentEvent, isAllDone, completedCount,
   lastResult, energy, money, quickNote, usedToday,
-  onChoice, onContinue, onSeeTable, onQuickAction,
+  onChoice, onContinue, onSeeTable, onQuickAction, onPlayMatch,
 }: {
   season: SeasonData; player: BDPlayer; gamePhase: 'choices' | 'revealing' | 'result';
   currentEvent: BDEvent | null; isAllDone: boolean; completedCount: number;
@@ -451,6 +496,7 @@ function HomeTab({
   usedToday: Set<string>;
   onChoice: (eid: string, cid: string) => void; onContinue: () => void;
   onSeeTable: () => void; onQuickAction: (a: 'rest' | 'train' | 'social') => void;
+  onPlayMatch: () => void;
 }) {
   return (
     <div className="mx-auto max-w-lg px-4 py-4 space-y-3">
@@ -465,7 +511,12 @@ function HomeTab({
       )}
 
       {gamePhase === 'choices' && currentEvent && !isAllDone && (
-        <CurrentEventCard event={currentEvent} season={season} onChoice={(id) => onChoice(currentEvent.id, id)} />
+        <CurrentEventCard
+          event={currentEvent}
+          season={season}
+          onChoice={(id) => onChoice(currentEvent.id, id)}
+          onPlayMatch={onPlayMatch}
+        />
       )}
 
       {gamePhase === 'choices' && isAllDone && (
@@ -496,7 +547,11 @@ const CAT_CARD: Record<string, { bg: string; border: string; titleColor: string;
 };
 
 // ── Current event card ─────────────────────────────────────────────
-function CurrentEventCard({ event, season, onChoice }: { event: BDEvent; season: SeasonData; onChoice: (id: string) => void }) {
+function CurrentEventCard({ event, season, onChoice, onPlayMatch }: {
+  event: BDEvent; season: SeasonData;
+  onChoice: (id: string) => void;
+  onPlayMatch: () => void;
+}) {
   const ctx  = event.matchContext;
   const comp = ctx ? (COMP[ctx.competition] ?? COMP['Premier League']) : null;
   const catCard = CAT_CARD[event.category] ?? CAT_CARD.match;
@@ -567,21 +622,32 @@ function CurrentEventCard({ event, season, onChoice }: { event: BDEvent; season:
         </div>
         <h3 className={`text-base font-black mb-2 leading-snug ${catCard.titleColor}`}>{event.title}</h3>
         <p className={`text-sm leading-relaxed mb-5 ${catCard.ctxColor}`}>{event.context}</p>
-        <div className="space-y-2.5">
-          {event.choices.map(choice => {
-            const h = choice.hint ? HINT[choice.hint] : null;
-            return (
-              <button key={choice.id} onClick={() => onChoice(choice.id)}
-                className="w-full rounded-xl border border-white/8 bg-black/20 p-4 text-left transition hover:border-amber-500/40 hover:bg-black/30">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <p className="text-sm font-bold text-white leading-snug">{choice.emoji} {choice.label}</p>
-                  {h && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${h.bg} ${h.text}`}>{h.label}</span>}
-                </div>
-                {choice.description && <p className="text-xs text-gray-400 leading-relaxed">{choice.description}</p>}
-              </button>
-            );
-          })}
-        </div>
+        {event.category === 'match' ? (
+          <button
+            onClick={onPlayMatch}
+            className="w-full rounded-2xl bg-green-600 hover:bg-green-500 active:scale-95 py-5 flex flex-col items-center gap-1.5 transition-all"
+          >
+            <span className="text-3xl">⚽</span>
+            <span className="text-base font-black text-white">Kick Off — Play the Match</span>
+            <span className="text-xs text-green-200/70">6 interactive moments</span>
+          </button>
+        ) : (
+          <div className="space-y-2.5">
+            {event.choices.map(choice => {
+              const h = choice.hint ? HINT[choice.hint] : null;
+              return (
+                <button key={choice.id} onClick={() => onChoice(choice.id)}
+                  className="w-full rounded-xl border border-white/8 bg-black/20 p-4 text-left transition hover:border-amber-500/40 hover:bg-black/30">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-sm font-bold text-white leading-snug">{choice.emoji} {choice.label}</p>
+                    {h && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${h.bg} ${h.text}`}>{h.label}</span>}
+                  </div>
+                  {choice.description && <p className="text-xs text-gray-400 leading-relaxed">{choice.description}</p>}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
