@@ -1151,16 +1151,25 @@ function addStats(a: BDStats, b: BDStats): BDStats {
 }
 
 // --- BdO scoring ---
+// clubPrestige: when provided (player only), applies a prestige multiplier to raw stat points.
+// A player at a lower-prestige club is harder to reward — voters factor in team quality.
 export function calcBdoScore(
   stats: BDStats, trophies: BDTrophy[], fame: number,
   position: BDPosition, overall: number,
+  clubPrestige?: number,
 ): number {
-  let s = 0;
-  if (position === 'ATT') s += stats.goals * 3.5 + stats.assists * 2;
-  else if (position === 'MID') s += stats.goals * 3 + stats.assists * 2.8;
-  else if (position === 'DEF') s += stats.cleanSheets * 5.5 + stats.goals * 2.5 + stats.assists * 1.8;
-  else s += stats.cleanSheets * 7.5 + stats.manOfTheMatch * 4.5;
+  // Prestige mult: Man City (95) → 1.0, Leicester (62) → ~0.68, Southampton (56) → ~0.59
+  const prestigeMult = clubPrestige != null
+    ? clamp(0.55 + (clubPrestige - 54) / (95 - 54) * 0.45, 0.55, 1.0)
+    : 1.0;
 
+  let statScore = 0;
+  if (position === 'ATT') statScore += stats.goals * 3.5 + stats.assists * 2;
+  else if (position === 'MID') statScore += stats.goals * 3 + stats.assists * 2.8;
+  else if (position === 'DEF') statScore += stats.cleanSheets * 5.5 + stats.goals * 2.5 + stats.assists * 1.8;
+  else statScore += stats.cleanSheets * 7.5 + stats.manOfTheMatch * 4.5;
+
+  let s = statScore * prestigeMult;
   s += Math.max(0, (stats.avgRating - 7.0)) * 14;
   s += stats.manOfTheMatch * 2.5;
   s += trophies.reduce((sum, t) => sum + t.bdoBonus, 0);
@@ -1265,7 +1274,7 @@ export function generateCeremony(
     return { ...t, stats: ss, trophies: tr, bdoScore: calcBdoScore(ss, tr, fame, t.position, Math.round(t.overall * rivalAgeMult(t.age))) };
   });
 
-  const playerScore = calcBdoScore(combinedStats, trophies, effectiveFame, player.position, playerOverall);
+  const playerScore = calcBdoScore(combinedStats, trophies, effectiveFame, player.position, playerOverall, season.club.prestige);
 
   const all = [
     ...rivals.map(r => ({
@@ -1793,7 +1802,7 @@ export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number)
     leagueTable,
     teammates,
     matchweek: 0,
-    money: 3000,
+    money: 500,
     energy: 85,
   };
 }
@@ -1814,7 +1823,7 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
   let outcomeText = choice.outcome;
   let updatedOverall = season.playerOverall;
   let matchweek = season.matchweek;
-  let money = season.money ?? 3000;
+  let money = season.money ?? 500;
   let energy = season.energy ?? 85;
 
   if (ev.category === 'match' && ev.matchContext) {

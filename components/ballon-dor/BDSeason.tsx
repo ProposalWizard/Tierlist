@@ -58,11 +58,13 @@ function formatMoney(k: number): string {
 
 // ── Shop config ────────────────────────────────────────────────────
 const SHOP_ITEMS = [
-  { id: 'energy',   emoji: '⚡', name: 'Energy Boost',         desc: '+30 Energy instantly',              price: 500,  stat: '+30 Energy'  },
-  { id: 'boots',    emoji: '👟', name: 'Premium Boots',         desc: '+0.10 season avg rating',           price: 1500, stat: '+0.10 Rating' },
-  { id: 'trainer',  emoji: '🏋️', name: 'Personal Trainer',      desc: '+12 Fitness for the rest of season', price: 2000, stat: '+12 Fitness' },
-  { id: 'pr',       emoji: '📱', name: 'PR Agency',              desc: '+15 Fame — global exposure',         price: 1000, stat: '+15 Fame'    },
-  { id: 'psych',    emoji: '🧘', name: 'Sports Psychologist',    desc: '+10 Morale — mental edge',           price: 800,  stat: '+10 Morale'  },
+  { id: 'energy',   emoji: '⚡', name: 'Energy Drink',           desc: '+30 Energy instantly',               price: 80,   stat: '+30 Energy'   },
+  { id: 'boots',    emoji: '👟', name: 'Premium Boots',           desc: '+0.10 season avg rating',            price: 200,  stat: '+0.10 Rating'  },
+  { id: 'trainer',  emoji: '🏋️', name: 'Personal Trainer',        desc: '+12 Fitness for the rest of season', price: 400,  stat: '+12 Fitness'  },
+  { id: 'pr',       emoji: '📱', name: 'PR Agency',                desc: '+15 Fame — global exposure',         price: 250,  stat: '+15 Fame'     },
+  { id: 'psych',    emoji: '🧘', name: 'Sports Psychologist',      desc: '+10 Morale — mental edge',           price: 150,  stat: '+10 Morale'   },
+  { id: 'house',    emoji: '🏠', name: 'Luxury Mansion',           desc: '+15 Morale · +10 Fame — living well', price: 1500, stat: '+15M +10F'   },
+  { id: 'car',      emoji: '🚗', name: 'Supercar',                 desc: '+20 Fame · +5 Morale — status symbol', price: 2500, stat: '+20F +5M'   },
 ];
 
 // ── Slot symbols ───────────────────────────────────────────────────
@@ -98,6 +100,8 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
   const [pendingUpdated, setPendingUpdated] = useState<SeasonData | null>(null);
   const [lastResult, setLastResult] = useState<LastResult | null>(null);
   const [quickNote, setQuickNote] = useState<string | null>(null);
+  // Tracks which quick actions have been used since the last event was resolved
+  const [usedToday, setUsedToday] = useState<Set<string>>(new Set());
 
   const currentIdx  = season.events.findIndex(e => !e.chosenId);
   const currentEvent = currentIdx >= 0 ? season.events[currentIdx] : null;
@@ -165,19 +169,21 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
     setPendingUpdated(null);
     setLastResult(null);
     setGamePhase('choices');
+    setUsedToday(new Set()); // reset quick actions for the next event
   }
 
   function handleSeeTable() {
-    // Commit the match result first, then show the table
     if (pendingUpdated) onUpdate(pendingUpdated);
     setPendingUpdated(null);
     setLastResult(null);
     setGamePhase('choices');
+    setUsedToday(new Set());
     setActiveTab('stats');
     setStatsView('table');
   }
 
   function handleQuickAction(action: 'rest' | 'train' | 'social') {
+    if (usedToday.has(action)) { setQuickNote('Already done that today — play the next event first!'); return; }
     const e = season.energy ?? 85;
     let note = '';
     let updated: SeasonData;
@@ -201,6 +207,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
         return;
     }
     onUpdate(updated);
+    setUsedToday(prev => { const s = new Set(Array.from(prev)); s.add(action); return s; });
     setQuickNote(note);
     setTimeout(() => setQuickNote(null), 2500);
   }
@@ -224,6 +231,8 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
       case 'trainer': updated = { ...withMoney, attributes: { ...withMoney.attributes, fitness: Math.min(100, withMoney.attributes.fitness + 12) } }; break;
       case 'pr':      updated = { ...withMoney, attributes: { ...withMoney.attributes, fame: Math.min(100, withMoney.attributes.fame + 15) } }; break;
       case 'psych':   updated = { ...withMoney, attributes: { ...withMoney.attributes, morale: Math.min(100, withMoney.attributes.morale + 10) } }; break;
+      case 'house':   updated = { ...withMoney, attributes: { ...withMoney.attributes, morale: Math.min(100, withMoney.attributes.morale + 15), fame: Math.min(100, withMoney.attributes.fame + 10) } }; break;
+      case 'car':     updated = { ...withMoney, attributes: { ...withMoney.attributes, fame: Math.min(100, withMoney.attributes.fame + 20), morale: Math.min(100, withMoney.attributes.morale + 5) } }; break;
     }
     if (pendingUpdated) setPendingUpdated(updated);
     else onUpdate(updated);
@@ -282,6 +291,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
             energy={displayEnergy}
             money={displayMoney}
             quickNote={quickNote}
+            usedToday={usedToday}
             onChoice={handleChoice}
             onContinue={handleContinue}
             onSeeTable={handleSeeTable}
@@ -391,27 +401,31 @@ function StatusBar({ energy, money }: { energy: number; money: number }) {
 }
 
 // ── Quick actions ──────────────────────────────────────────────────
-function QuickActions({ energy, note, onAction }: { energy: number; note: string | null; onAction: (a: 'rest' | 'train' | 'social') => void }) {
+function QuickActions({ energy, note, usedToday, onAction }: {
+  energy: number; note: string | null; usedToday: Set<string>;
+  onAction: (a: 'rest' | 'train' | 'social') => void;
+}) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-700 mb-2">Quick Actions</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-700 mb-2">Quick Actions <span className="text-gray-800">(once per event)</span></p>
       <div className="grid grid-cols-3 gap-2">
         {([
           { id: 'rest'   as const, emoji: '😴', label: 'Rest',  sub: '+20 Energy', cost: 0,  color: 'hover:border-green-700/40'  },
           { id: 'train'  as const, emoji: '🏋️', label: 'Train', sub: '−15⚡ +Rating', cost: 15, color: 'hover:border-blue-700/40'   },
           { id: 'social' as const, emoji: '📱', label: 'Post',  sub: '−8⚡ +Fame', cost: 8,  color: 'hover:border-purple-700/40' },
         ] as const).map(({ id, emoji, label, sub, cost, color }) => {
-          const disabled = energy < cost;
+          const alreadyUsed = usedToday.has(id);
+          const disabled = energy < cost || alreadyUsed;
           return (
             <button
               key={id}
               onClick={() => onAction(id)}
               disabled={disabled}
-              className={`rounded-xl border border-gray-800 bg-gray-900 p-3 text-center transition ${disabled ? 'opacity-40 cursor-not-allowed' : color}`}
+              className={`rounded-xl border border-gray-800 bg-gray-900 p-3 text-center transition ${disabled ? 'opacity-30 cursor-not-allowed' : color}`}
             >
-              <p className="text-xl mb-1">{emoji}</p>
+              <p className="text-xl mb-1">{alreadyUsed ? '✓' : emoji}</p>
               <p className="text-[10px] font-bold text-white">{label}</p>
-              <p className="text-[9px] text-gray-500 mt-0.5">{sub}</p>
+              <p className="text-[9px] text-gray-500 mt-0.5">{alreadyUsed ? 'done' : sub}</p>
             </button>
           );
         })}
@@ -428,12 +442,13 @@ function QuickActions({ energy, note, onAction }: { energy: number; note: string
 // ── Home tab ───────────────────────────────────────────────────────
 function HomeTab({
   season, player, gamePhase, currentEvent, isAllDone, completedCount,
-  lastResult, energy, money, quickNote,
+  lastResult, energy, money, quickNote, usedToday,
   onChoice, onContinue, onSeeTable, onQuickAction,
 }: {
   season: SeasonData; player: BDPlayer; gamePhase: 'choices' | 'revealing' | 'result';
   currentEvent: BDEvent | null; isAllDone: boolean; completedCount: number;
   lastResult: LastResult | null; energy: number; money: number; quickNote: string | null;
+  usedToday: Set<string>;
   onChoice: (eid: string, cid: string) => void; onContinue: () => void;
   onSeeTable: () => void; onQuickAction: (a: 'rest' | 'train' | 'social') => void;
 }) {
@@ -462,7 +477,7 @@ function HomeTab({
       )}
 
       {gamePhase === 'choices' && !isAllDone && (
-        <QuickActions energy={energy} note={quickNote} onAction={onQuickAction} />
+        <QuickActions energy={energy} note={quickNote} usedToday={usedToday} onAction={onQuickAction} />
       )}
 
       {gamePhase === 'choices' && completedCount > 0 && (
@@ -472,10 +487,19 @@ function HomeTab({
   );
 }
 
+// Category-specific card styles for non-match events
+const CAT_CARD: Record<string, { bg: string; border: string; titleColor: string; ctxColor: string }> = {
+  career:    { bg: 'bg-blue-950/30',   border: 'border-blue-800/40',   titleColor: 'text-blue-100',   ctxColor: 'text-blue-300/70'   },
+  lifestyle: { bg: 'bg-purple-950/30', border: 'border-purple-800/40', titleColor: 'text-purple-100', ctxColor: 'text-purple-300/70' },
+  decision:  { bg: 'bg-amber-950/25',  border: 'border-amber-800/40',  titleColor: 'text-amber-100',  ctxColor: 'text-amber-300/70'  },
+  match:     { bg: 'bg-gray-900',      border: 'border-gray-700',      titleColor: 'text-white',      ctxColor: 'text-gray-400'      },
+};
+
 // ── Current event card ─────────────────────────────────────────────
 function CurrentEventCard({ event, season, onChoice }: { event: BDEvent; season: SeasonData; onChoice: (id: string) => void }) {
   const ctx  = event.matchContext;
   const comp = ctx ? (COMP[ctx.competition] ?? COMP['Premier League']) : null;
+  const catCard = CAT_CARD[event.category] ?? CAT_CARD.match;
 
   return (
     <div className="space-y-3">
@@ -535,25 +559,25 @@ function CurrentEventCard({ event, season, onChoice }: { event: BDEvent; season:
         </div>
       )}
 
-      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+      <div className={`rounded-2xl border p-5 ${catCard.bg} ${catCard.border}`}>
         <div className="flex items-center gap-2 mb-2.5">
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${CAT_BADGE[event.category] ?? 'bg-gray-700 text-gray-400'}`}>
             {event.category}
           </span>
         </div>
-        <h3 className="text-base font-black text-white mb-2 leading-snug">{event.title}</h3>
-        <p className="text-sm text-gray-400 leading-relaxed mb-5">{event.context}</p>
+        <h3 className={`text-base font-black mb-2 leading-snug ${catCard.titleColor}`}>{event.title}</h3>
+        <p className={`text-sm leading-relaxed mb-5 ${catCard.ctxColor}`}>{event.context}</p>
         <div className="space-y-2.5">
           {event.choices.map(choice => {
             const h = choice.hint ? HINT[choice.hint] : null;
             return (
               <button key={choice.id} onClick={() => onChoice(choice.id)}
-                className="w-full rounded-xl border border-gray-700 bg-gray-800/40 p-4 text-left transition hover:border-amber-500/40 hover:bg-gray-800">
+                className="w-full rounded-xl border border-white/8 bg-black/20 p-4 text-left transition hover:border-amber-500/40 hover:bg-black/30">
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <p className="text-sm font-bold text-white leading-snug">{choice.emoji} {choice.label}</p>
                   {h && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${h.bg} ${h.text}`}>{h.label}</span>}
                 </div>
-                {choice.description && <p className="text-xs text-gray-500 leading-relaxed">{choice.description}</p>}
+                {choice.description && <p className="text-xs text-gray-400 leading-relaxed">{choice.description}</p>}
               </button>
             );
           })}
@@ -948,10 +972,11 @@ function SquadView({ teammates, playerName, playerPosition }: { teammates: BDTea
 
 // ── Casino tab ─────────────────────────────────────────────────────
 function CasinoTab({ money, onResult }: { money: number; onResult: (net: number) => void }) {
-  const [game, setGame] = useState<'menu' | 'coin' | 'slots'>('menu');
+  const [game, setGame] = useState<'menu' | 'coin' | 'slots' | 'horses'>('menu');
 
-  if (game === 'coin') return <CoinFlipGame money={money} onResult={onResult} onBack={() => setGame('menu')} />;
-  if (game === 'slots') return <SlotsGame money={money} onResult={onResult} onBack={() => setGame('menu')} />;
+  if (game === 'coin')   return <CoinFlipGame    money={money} onResult={onResult} onBack={() => setGame('menu')} />;
+  if (game === 'slots')  return <SlotsGame        money={money} onResult={onResult} onBack={() => setGame('menu')} />;
+  if (game === 'horses') return <HorseRacingGame  money={money} onResult={onResult} onBack={() => setGame('menu')} />;
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
@@ -966,8 +991,9 @@ function CasinoTab({ money, onResult }: { money: number; onResult: (net: number)
         </div>
       )}
       {[
-        { id: 'coin' as const, emoji: '🪙', name: 'Coin Flip', desc: 'Pick heads or tails — 50/50 odds. Double or nothing.' },
-        { id: 'slots' as const, emoji: '🎰', name: 'Slot Machine', desc: 'Spin 3 reels. Match symbols to win up to ×20.' },
+        { id: 'coin'   as const, emoji: '🪙', name: 'Coin Flip',     desc: 'Pick heads or tails — 50/50 odds. Double or nothing.' },
+        { id: 'slots'  as const, emoji: '🎰', name: 'Slot Machine',   desc: 'Spin 3 reels. Match symbols to win up to ×20.' },
+        { id: 'horses' as const, emoji: '🏇', name: 'Horse Racing',   desc: 'Pick a horse. Bigger odds = bigger payout. High risk, high reward.' },
       ].map(g => (
         <button key={g.id} onClick={() => setGame(g.id)} disabled={money < 50}
           className="w-full rounded-2xl border border-gray-800 bg-gray-900 p-5 text-left hover:border-amber-600/40 transition disabled:opacity-40">
@@ -1155,6 +1181,133 @@ function SlotsGame({ money, onResult, onBack }: { money: number; onResult: (net:
           <p>No match → lose bet</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Horse racing game ──────────────────────────────────────────────
+const HORSES = [
+  { name: 'Ballon Bleu',    emoji: '🔵', odds: 2,  chance: 0.42, desc: 'Favourite — steady and reliable' },
+  { name: 'Golden Boot',    emoji: '🟡', odds: 4,  chance: 0.24, desc: 'Strong contender, good recent form' },
+  { name: 'Dark Horse',     emoji: '⚫', odds: 8,  chance: 0.13, desc: 'Outsider with a point to prove' },
+  { name: 'Longshot Larry', emoji: '🔴', odds: 16, chance: 0.06, desc: 'Rank outsider — but dreams are free' },
+];
+
+function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult: (net: number) => void; onBack: () => void }) {
+  const [bet, setBet] = useState(100);
+  const [picked, setPicked] = useState<number | null>(null);
+  const [racing, setRacing] = useState(false);
+  const [progress, setProgress] = useState([0, 0, 0, 0]);
+  const [winner, setWinner] = useState<number | null>(null);
+  const bets = [50, 100, 250, 500].filter(b => b <= money);
+
+  function race() {
+    if (picked === null || racing) return;
+    setRacing(true);
+    setWinner(null);
+    setProgress([0, 0, 0, 0]);
+
+    // determine winner using odds-based probability
+    const roll = Math.random();
+    let cum = 0;
+    let winnerIdx = 0;
+    for (let i = 0; i < HORSES.length; i++) {
+      cum += HORSES[i].chance;
+      if (roll < cum) { winnerIdx = i; break; }
+    }
+
+    // animate progress bars over 2.5s
+    const start = Date.now();
+    const duration = 2500;
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const t = Math.min(elapsed / duration, 1);
+      setProgress(HORSES.map((_, i) => {
+        // winner reaches 100%, others get randomised but cap below 100%
+        if (i === winnerIdx) return t * 100;
+        const base = t * (65 + Math.random() * 20);
+        return Math.min(base, t >= 1 ? 92 : base);
+      }));
+      if (t >= 1) {
+        clearInterval(interval);
+        setProgress(HORSES.map((_, i) => i === winnerIdx ? 100 : 60 + Math.random() * 30));
+        setWinner(winnerIdx);
+        const won = winnerIdx === picked;
+        onResult(won ? bet * (HORSES[picked].odds - 1) : -bet);
+        setRacing(false);
+      }
+    }, 60);
+  }
+
+  return (
+    <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
+      <button onClick={onBack} className="text-xs text-gray-500 hover:text-amber-400 transition">← Back to Casino</button>
+      <div className="text-center">
+        <p className="text-base font-black text-white mb-0.5">🏇 Horse Racing</p>
+        <p className="text-sm text-gray-500">Balance: {formatMoney(money)}</p>
+      </div>
+
+      {/* Bet selector */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">Bet Amount</p>
+        <div className="flex gap-2 flex-wrap">
+          {bets.map(b => (
+            <button key={b} onClick={() => setBet(b)}
+              className={`flex-1 min-w-[60px] rounded-xl border py-2.5 text-sm font-bold transition ${bet === b ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-gray-800 bg-gray-900 text-gray-400'}`}>
+              {formatMoney(b)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Horse picker */}
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">Pick a Horse</p>
+        {HORSES.map((h, i) => (
+          <button key={i} onClick={() => !racing && setPicked(i)} disabled={racing}
+            className={`w-full rounded-xl border p-3 text-left transition ${picked === i ? 'border-amber-500/60 bg-amber-500/10' : 'border-gray-800 bg-gray-900 hover:border-gray-600'} ${racing ? 'cursor-not-allowed' : ''}`}>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{h.emoji}</span>
+                <p className={`text-sm font-bold ${picked === i ? 'text-amber-300' : 'text-white'}`}>{h.name}</p>
+              </div>
+              <span className="text-xs font-black text-amber-400">{h.odds}× odds</span>
+            </div>
+            <p className="text-[10px] text-gray-500 mb-2">{h.desc}</p>
+            {(racing || winner !== null) && (
+              <div className="h-1.5 rounded-full bg-gray-800">
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-200 ${i === winner ? 'bg-amber-400' : 'bg-gray-600'}`}
+                  style={{ width: `${progress[i].toFixed(0)}%` }}
+                />
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {winner !== null && (
+        <div className={`rounded-2xl border p-4 text-center ${winner === picked ? 'border-green-700/40 bg-green-950/20' : 'border-red-700/40 bg-red-950/20'}`}
+          style={{ animation: 'fadeSlideIn 0.3s ease' }}>
+          <p className="text-2xl mb-1">{HORSES[winner].emoji}</p>
+          <p className="text-base font-black text-white mb-1">{HORSES[winner].name} wins!</p>
+          <p className={`text-lg font-black ${winner === picked ? 'text-green-400' : 'text-red-400'}`}>
+            {winner === picked
+              ? `+${formatMoney(bet * (HORSES[picked].odds - 1))} — Winner!`
+              : `-${formatMoney(bet)} — Better luck next time`}
+          </p>
+        </div>
+      )}
+
+      {!racing && (
+        <button onClick={race} disabled={picked === null || money < bet}
+          className="w-full rounded-xl bg-amber-500 py-4 text-base font-black text-black hover:bg-amber-400 transition disabled:opacity-40">
+          {picked === null ? 'Pick a horse first' : `🏁 Race! (${HORSES[picked].odds}× odds)`}
+        </button>
+      )}
+      {racing && (
+        <p className="text-center text-sm text-amber-400 animate-pulse py-2">🏇 They're off!</p>
+      )}
     </div>
   );
 }
