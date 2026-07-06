@@ -1802,7 +1802,7 @@ export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number)
     leagueTable,
     teammates,
     matchweek: 0,
-    money: 500,
+    money: 50,
     energy: 85,
   };
 }
@@ -1859,7 +1859,7 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
     const moraleDelta = result.isWin ? Math.min(8, 3 + result.teamGoals) : result.isDraw ? 1 : -5;
     attrs.morale = clamp(attrs.morale + moraleDelta, 0, 100);
     // Match salary: appearance fee + win bonus
-    money += 150 + (result.isWin ? 300 : result.isDraw ? 75 : 0);
+    money += 15 + (result.isWin ? 30 : result.isDraw ? 8 : 0);
 
     matchweek = ev.matchContext.matchweek;
 
@@ -1891,7 +1891,7 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
     if (fx.money != null) money += fx.money;
     if (fx.energy != null) energy = clamp(energy + fx.energy, 0, 100);
     energy = clamp(energy - 5, 0, 100);
-    money += 150; // event salary
+    money += 15; // event salary
   }
 
   const newEvents = season.events.map((e, i) =>
@@ -1908,6 +1908,73 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
   }
 
   return { ...season, playerOverall: updatedOverall, events: newEvents, eventStats: es, attributes: attrs, phase: newPhase, leagueTable, teammates, matchweek, money, energy };
+}
+
+// --- Apply interactive match result (from MatchGame mini-game) ---
+export function applyManualMatchResult(
+  season: BDSeason,
+  eventId: string,
+  result: NonNullable<BDEvent['matchResult']>,
+  playerPosition: BDPosition,
+): BDSeason {
+  const evIdx = season.events.findIndex(e => e.id === eventId);
+  if (evIdx === -1) return season;
+  const ev = season.events[evIdx];
+  if (!ev.matchContext) return season;
+
+  let es = { ...season.eventStats };
+  let attrs = { ...season.attributes };
+  let leagueTable = season.leagueTable;
+  let teammates = season.teammates;
+  let money = season.money ?? 50;
+  let energy = season.energy ?? 85;
+  let matchweek = season.matchweek;
+
+  const outcomeText = generateMatchOutcome(result, season.club, ev.matchContext, playerPosition);
+
+  es.goals += result.playerGoals;
+  es.assists += result.playerAssists;
+  es.appearances += 1;
+  if (result.cleanSheet && (playerPosition === 'GK' || playerPosition === 'DEF')) es.cleanSheets += 1;
+  if (result.playerRating >= 8.5) es.manOfTheMatch += 1;
+  const ratingShift = (result.playerRating - 7.2) * 0.055;
+  es.avgRating = Number((es.avgRating + ratingShift).toFixed(2));
+
+  attrs.fitness = clamp(attrs.fitness - 4, 0, 100);
+  energy = clamp(energy - 15, 0, 100);
+  const moraleDelta = result.isWin ? Math.min(8, 3 + result.teamGoals) : result.isDraw ? 1 : -5;
+  attrs.morale = clamp(attrs.morale + moraleDelta, 0, 100);
+  money += 15 + (result.isWin ? 30 : result.isDraw ? 8 : 0);
+
+  matchweek = ev.matchContext.matchweek;
+
+  if (leagueTable) {
+    leagueTable = simulateMatchweekTable(
+      leagueTable, season.club.id, result, ev.matchContext,
+      mulberry32(hashSeed(`tbl_${eventId}_${season.year}`)),
+    );
+  }
+  if (teammates) {
+    teammates = updateTeammateStats(
+      teammates, result,
+      mulberry32(hashSeed(`tm_${eventId}_${season.year}`)),
+    );
+  }
+
+  const newEvents = season.events.map((e, i) =>
+    i === evIdx ? { ...e, chosenId: 'play', outcomeText, matchResult: result } : e,
+  );
+
+  const phaseOrder: Array<BDSeason['phase']> = ['pre_season', 'first_half', 'january', 'second_half', 'run_in'];
+  const curPhaseIdx = phaseOrder.indexOf(season.phase as typeof phaseOrder[number]);
+  const phaseEvents = newEvents.filter(e => e.phase === season.phase);
+  const phaseDone = phaseEvents.every(e => e.chosenId);
+  let newPhase: BDSeason['phase'] = season.phase;
+  if (phaseDone && curPhaseIdx >= 0 && curPhaseIdx < phaseOrder.length - 1) {
+    newPhase = phaseOrder[curPhaseIdx + 1];
+  }
+
+  return { ...season, events: newEvents, eventStats: es, attributes: attrs, phase: newPhase, leagueTable, teammates, matchweek, money, energy };
 }
 
 // --- Finalize season ---
