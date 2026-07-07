@@ -255,7 +255,14 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
   function handlePurchase(itemId: string, cost: number) {
     const base = pendingUpdated ?? season;
     if ((base.money ?? 0) < cost) return;
-    const withMoney = { ...base, money: (base.money ?? 0) - cost };
+    // Enforce the one-per-season limit against persisted state (energy is repurchasable)
+    const alreadyOwned = base.purchasedItems ?? [];
+    if (itemId !== 'energy' && alreadyOwned.includes(itemId)) return;
+    const withMoney = {
+      ...base,
+      money: (base.money ?? 0) - cost,
+      purchasedItems: alreadyOwned.includes(itemId) ? alreadyOwned : [...alreadyOwned, itemId],
+    };
     let updated = withMoney;
     switch (itemId) {
       case 'energy':  updated = { ...withMoney, energy: Math.min(100, (withMoney.energy ?? 85) + 30) }; break;
@@ -359,6 +366,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
             teammates={displayTeammates ?? []}
             playerName={player.name}
             playerPosition={player.position}
+            playerOverall={season.playerOverall}
             clubId={season.club.id}
             view={statsView}
             onViewChange={setStatsView}
@@ -877,9 +885,9 @@ function SeasonDiary({ events }: { events: BDEvent[] }) {
 }
 
 // ── Stats tab ──────────────────────────────────────────────────────
-function StatsTab({ table, playerClubId, teammates, playerName, playerPosition, clubId, view, onViewChange }: {
+function StatsTab({ table, playerClubId, teammates, playerName, playerPosition, playerOverall, clubId, view, onViewChange }: {
   table: LeagueTableRow[]; playerClubId: string; teammates: BDTeammate[];
-  playerName: string; playerPosition: BDPosition; clubId: string;
+  playerName: string; playerPosition: BDPosition; playerOverall: number; clubId: string;
   view: 'table' | 'squad'; onViewChange: (v: 'table' | 'squad') => void;
 }) {
   return (
@@ -895,7 +903,7 @@ function StatsTab({ table, playerClubId, teammates, playerName, playerPosition, 
         </button>
       </div>
       {view === 'table' && <FullTableView table={table} playerClubId={playerClubId} />}
-      {view === 'squad' && <SquadView teammates={teammates} playerName={playerName} playerPosition={playerPosition} clubId={clubId} />}
+      {view === 'squad' && <SquadView teammates={teammates} playerName={playerName} playerPosition={playerPosition} playerOverall={playerOverall} clubId={clubId} />}
     </div>
   );
 }
@@ -983,8 +991,8 @@ function FullTableView({ table, playerClubId }: { table: LeagueTableRow[]; playe
 }
 
 // ── Squad view ─────────────────────────────────────────────────────
-function SquadView({ teammates, playerName, playerPosition, clubId }: {
-  teammates: BDTeammate[]; playerName: string; playerPosition: BDPosition; clubId: string;
+function SquadView({ teammates, playerName, playerPosition, playerOverall, clubId }: {
+  teammates: BDTeammate[]; playerName: string; playerPosition: BDPosition; playerOverall: number; clubId: string;
 }) {
   const posLabel: Record<BDPosition, string> = { GK: 'GK', DEF: 'DEF', MID: 'MID', ATT: 'FWD' };
   const posOrder: BDPosition[] = ['GK', 'DEF', 'MID', 'ATT'];
@@ -996,7 +1004,7 @@ function SquadView({ teammates, playerName, playerPosition, clubId }: {
 
   // Inject the player into the squad (replacing if already present by name)
   const squadWithPlayer = clubSquad.filter(p => p.name !== playerName);
-  const playerSquadEntry = { name: playerName, pos: playerPosition, ovr: 85 };
+  const playerSquadEntry = { name: playerName, pos: playerPosition, ovr: playerOverall };
   const fullSquad = [...squadWithPlayer, playerSquadEntry];
 
   const byPos: Record<BDPosition, typeof fullSquad> = { GK: [], DEF: [], MID: [], ATT: [] };
@@ -1296,11 +1304,13 @@ function SlotsGame({ money, onResult, onBack }: { money: number; onResult: (net:
 }
 
 // ── Horse racing game ──────────────────────────────────────────────
+// Chances sum to exactly 1.0 and every horse carries a house edge
+// (chance × odds < 1), so no bet is a positive-EV money farm.
 const HORSES = [
-  { name: 'Ballon Bleu',    emoji: '🔵', odds: 2,  chance: 0.42, desc: 'Favourite — steady and reliable' },
-  { name: 'Golden Boot',    emoji: '🟡', odds: 4,  chance: 0.24, desc: 'Strong contender, good recent form' },
-  { name: 'Dark Horse',     emoji: '⚫', odds: 8,  chance: 0.13, desc: 'Outsider with a point to prove' },
-  { name: 'Longshot Larry', emoji: '🔴', odds: 16, chance: 0.06, desc: 'Rank outsider — but dreams are free' },
+  { name: 'Ballon Bleu',    emoji: '🔵', odds: 2,  chance: 0.46, desc: 'Favourite — steady and reliable' },
+  { name: 'Golden Boot',    emoji: '🟡', odds: 3,  chance: 0.30, desc: 'Strong contender, good recent form' },
+  { name: 'Dark Horse',     emoji: '⚫', odds: 6,  chance: 0.15, desc: 'Outsider with a point to prove' },
+  { name: 'Longshot Larry', emoji: '🔴', odds: 10, chance: 0.09, desc: 'Rank outsider — but dreams are free' },
 ];
 
 function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult: (net: number) => void; onBack: () => void }) {
@@ -1740,13 +1750,13 @@ function ShopTab({ money, energy, season, onPurchase }: {
   money: number; energy: number; season: SeasonData;
   onPurchase: (itemId: string, cost: number) => void;
 }) {
-  const [bought, setBought] = useState<Set<string>>(new Set());
+  // Derived from persisted season state so the one-per-season limit survives tab switches
+  const bought = new Set(season.purchasedItems ?? []);
   const [notif, setNotif] = useState<string | null>(null);
 
   function purchase(item: typeof SHOP_ITEMS[0]) {
-    if (money < item.price || bought.has(item.id)) return;
+    if (money < item.price || (item.id !== 'energy' && bought.has(item.id))) return;
     onPurchase(item.id, item.price);
-    setBought(prev => { const s = new Set(Array.from(prev)); s.add(item.id); return s; });
     setNotif(`${item.emoji} ${item.name} purchased!`);
     setTimeout(() => setNotif(null), 2500);
   }

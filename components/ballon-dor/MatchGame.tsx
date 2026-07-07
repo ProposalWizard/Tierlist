@@ -185,20 +185,22 @@ function computeResult(
   const goodCount     = momentResults.filter(m => m.outcome === 'good').length;
   const defConcedes   = momentResults.filter(m => m.didConcede).length;
 
-  // Teammate goals: based on club prestige ratio
+  // Teammate goals: based on club prestige ratio.
+  // Every assist the player made must correspond to a teammate goal.
   const presRatio    = clubPrestige / (clubPrestige + opponentPrestige);
   const homeAdv      = isHome ? 0.08 : -0.05;
   const tmMean       = (presRatio + homeAdv) * 2.2;
-  const tmGoals      = Math.max(0, Math.round(tmMean + (Math.random() - 0.5)));
+  const tmGoals      = Math.max(playerAssists, Math.round(tmMean + (Math.random() - 0.5)));
   const teamGoals    = playerGoals + tmGoals;
 
-  // Opponent goals
+  // Opponent goals — can never be fewer than the concedes the player watched happen live
   const oppRatio     = opponentPrestige / (clubPrestige + opponentPrestige);
   const defFail      = (position === 'DEF' || position === 'GK') ? defConcedes * 0.6 : 0;
   const oppMean      = (oppRatio - homeAdv) * 2.0 + defFail;
   const rawOppGoals  = Math.max(0, Math.round(oppMean + (Math.random() - 0.3)));
-  // GK saves reduce conceded
-  const opponentGoals = position === 'GK' ? Math.max(0, rawOppGoals - Math.floor(playerSaves * 0.6)) : rawOppGoals;
+  // GK saves reduce conceded, but never below the goals that visibly went in
+  const adjustedOpp   = position === 'GK' ? Math.max(0, rawOppGoals - Math.floor(playerSaves * 0.6)) : rawOppGoals;
+  const opponentGoals = Math.max(adjustedOpp, defConcedes);
 
   const isWin  = teamGoals > opponentGoals;
   const isDraw = teamGoals === opponentGoals;
@@ -696,16 +698,21 @@ function GoalGridGame({ moment, difficulty, opponent, onComplete }: {
     setKeeperCells(kc);
 
     const covered = kc.includes(cell);
-    const outcome: Outcome = !covered ? 'perfect' : Math.random() < 0.3 ? 'good' : 'miss';
 
     // Apply difficulty: covered shots are fully blocked; uncovered apply difficulty to goal chance
     const isGoal   = moment.isGoalChance && !covered && Math.random() < 0.82 * difficulty;
     const isSave   = moment.isSave && covered;
     const didConcede = moment.isSave && !covered;
 
+    // Outcome grade must agree with what actually happened: an uncovered shot
+    // that still doesn't go in is only "good", never "perfect"
+    const outcome: Outcome = moment.isGoalChance
+      ? (isGoal ? 'perfect' : !covered ? 'good' : Math.random() < 0.3 ? 'good' : 'miss')
+      : (!covered ? 'perfect' : Math.random() < 0.3 ? 'good' : 'miss');
+
     const highlight = moment.isSave
       ? (covered ? 'Brilliant dive — the striker is denied!' : 'Goes the wrong way — the ball hits the net.')
-      : (isGoal ? 'Keeper goes the wrong way — net bulges!' : 'Keeper dives the right way — excellent stop!');
+      : (isGoal ? 'Keeper goes the wrong way — net bulges!' : covered ? 'Keeper dives the right way — excellent stop!' : 'Great placement, but the keeper scrambles it away!');
 
     const conc = moment.isSave ? !covered : false;
     const scorerName = conc ? (pickOpponentScorer(opponent) ?? undefined) : undefined;

@@ -34,16 +34,38 @@ export async function DELETE(_req: Request, { params }: Props) {
     .select("image_url")
     .eq("tierlist_id", id);
 
-  // Delete storage files
+  const toPath = (imageUrl: string): string | null => {
+    try {
+      const url = new URL(imageUrl);
+      const parts = url.pathname.split("/tierlist-images/");
+      return parts[1] ? decodeURIComponent(parts[1]) : null;
+    } catch { return null; }
+  };
+
+  // Delete storage files — but only ones no OTHER tierlist references.
+  // "Save as New Tierlist" reuses image URLs, so multiple rows can point at the same file.
   if (images?.length) {
-    const paths = images
-      .map((img) => {
-        try {
-          const url = new URL(img.image_url);
-          const parts = url.pathname.split("/tierlist-images/");
-          return parts[1] ? decodeURIComponent(parts[1]) : null;
-        } catch { return null; }
-      })
+    const urls = images.map((img) => img.image_url).filter(Boolean) as string[];
+
+    // Which of these URLs are still used by a different tierlist?
+    const { data: shared } = await service
+      .from("tierlist_images")
+      .select("image_url")
+      .neq("tierlist_id", id)
+      .in("image_url", urls);
+    const stillUsed = new Set((shared ?? []).map((r) => r.image_url));
+
+    // Also keep any file used as another tierlist's cover image
+    const { data: coverRefs } = await service
+      .from("tierlists")
+      .select("cover_image_url")
+      .neq("id", id)
+      .in("cover_image_url", urls);
+    (coverRefs ?? []).forEach((r) => { if (r.cover_image_url) stillUsed.add(r.cover_image_url); });
+
+    const paths = urls
+      .filter((u) => !stillUsed.has(u))
+      .map(toPath)
       .filter(Boolean) as string[];
 
     if (paths.length) {

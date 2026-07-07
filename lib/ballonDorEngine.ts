@@ -260,7 +260,6 @@ export const CLUB_SQUADS: Record<string, SquadPlayer[]> = {
     { name: 'Tommy Doyle', pos: 'MID', ovr: 77 },
     { name: 'Matheus Cunha', pos: 'ATT', ovr: 82 },
     { name: 'Hwang Hee-chan', pos: 'ATT', ovr: 79 },
-    { name: 'Pedro Neto', pos: 'ATT', ovr: 82 },
     { name: 'Jørgen Strand Larsen', pos: 'ATT', ovr: 78 },
   ],
   palace: [
@@ -538,28 +537,10 @@ export const CLUB_SQUADS: Record<string, SquadPlayer[]> = {
   ],
 };
 
-// Maps opponent display names (as used in fixtures) to CLUB_SQUADS keys
+// Maps opponent display names (as used in fixtures) to CLUB_SQUADS keys.
+// PL entries are derived from PL_CLUBS so fixture names can never drift from the map.
 export const SQUAD_KEY_BY_OPPONENT: Record<string, string> = {
-  'Manchester City':    'mancity',
-  'Liverpool':          'liverpool',
-  'Arsenal':            'arsenal',
-  'Manchester United':  'manutd',
-  'Chelsea':            'chelsea',
-  'Newcastle United':   'newcastle',
-  'Tottenham':          'tottenham',
-  'Aston Villa':        'astonvilla',
-  'Brighton':           'brighton',
-  'West Ham':           'westham',
-  'Fulham':             'fulham',
-  'Wolverhampton':      'wolves',
-  'Crystal Palace':     'palace',
-  'Nottm Forest':       'nottmforest',
-  'Everton':            'everton',
-  'Brentford':          'brentford',
-  'Bournemouth':        'bournemouth',
-  'Leicester City':     'leicester',
-  'Southampton':        'southampton',
-  'Ipswich Town':       'ipswich',
+  ...Object.fromEntries(PL_CLUBS.map(c => [c.name, c.id])),
   'Real Madrid':        'realmadrid',
   'Barcelona':          'barcelona',
   'Bayern Munich':      'bayernmunich',
@@ -1580,11 +1561,14 @@ function generateRivalTrophies(t: RivalTemplate, rng: () => number): BDTrophy[] 
 function simulateTrophies(
   club: BDClub, inCL: boolean, inEL: boolean,
   fitness: number, morale: number, rng: () => number,
+  leaguePosition?: number | null,
 ): BDTrophy[] {
   const perf = clamp((fitness + morale) / 200, 0.7, 1.3);
   const p = club.prestige;
   const trophies: BDTrophy[] = [];
-  if (rng() < (p / 200) * perf) trophies.push({ name: 'Premier League', bdoBonus: 30, emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' });
+  // If we have a final league table, the title must match it; otherwise fall back to a prestige roll
+  const wonLeague = leaguePosition != null ? leaguePosition === 1 : rng() < (p / 200) * perf;
+  if (wonLeague) trophies.push({ name: 'Premier League', bdoBonus: 30, emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' });
   if (rng() < (p / 320 + 0.05) * perf) trophies.push({ name: 'FA Cup', bdoBonus: 12, emoji: '🏆' });
   if (rng() < (p / 410 + 0.08) * perf) trophies.push({ name: 'Carabao Cup', bdoBonus: 5, emoji: '🏆' });
   if (inCL && rng() < club.clChance * (p / 360) * perf) trophies.push({ name: 'Champions League', bdoBonus: 55, emoji: '⭐' });
@@ -1603,7 +1587,12 @@ export function generateCeremony(
   // Effective fame boosted by reputation
   const effectiveFame = clamp(attributes.fame + player.reputation * 0.2, 0, 100);
 
-  const rivals = RIVAL_POOL.map((t, i) => {
+  // Rivals age one year per career season; those past 40 have retired
+  const yearsElapsed = Math.max(0, (season.number ?? 1) - 1);
+  const rivals = RIVAL_POOL
+    .map(t => ({ ...t, age: t.age + yearsElapsed }))
+    .filter(t => t.age <= 40)
+    .map((t, i) => {
     const ss = generateRivalStats(t, hashSeed(`rival_${t.name}_${year}_${i}`));
     const tr = generateRivalTrophies(t, mulberry32(hashSeed(`rtrophy_${t.name}_${year}`)));
     // Fame diminishes with age for older rivals, grows for younger ones
@@ -1663,8 +1652,9 @@ export function generateTransferOffers(
     [betterClubs[i], betterClubs[j]] = [betterClubs[j], betterClubs[i]];
   }
 
-  // How many offers depend on BdO rank and overall
-  const offerCount = bdoRank <= 5 ? 3 : bdoRank <= 10 ? 2 : bdoRank <= 20 ? 1 : (player.overall >= 80 ? 1 : 0);
+  // How many offers depend on BdO rank and overall (rank 0 = not nominated, not a top finish)
+  const rank = bdoRank >= 1 ? bdoRank : Infinity;
+  const offerCount = rank <= 5 ? 3 : rank <= 10 ? 2 : rank <= 20 ? 1 : (player.overall >= 80 ? 1 : 0);
   if (offerCount === 0) return [];
 
   const reasons: Record<string, string[]> = {
@@ -1692,6 +1682,18 @@ const EUROPEAN_CL_RIVALS = [
   { name: 'Borussia Dortmund', prestige: 86 },
   { name: 'Atlético Madrid', prestige: 88 },
   { name: 'AC Milan', prestige: 87 },
+];
+
+// --- European EL rivals for Europa League fixture nights ---
+const EUROPEAN_EL_RIVALS = [
+  { name: 'Roma', prestige: 80 },
+  { name: 'Sevilla', prestige: 78 },
+  { name: 'Lazio', prestige: 77 },
+  { name: 'Eintracht Frankfurt', prestige: 76 },
+  { name: 'Porto', prestige: 79 },
+  { name: 'Benfica', prestige: 80 },
+  { name: 'Ajax', prestige: 78 },
+  { name: 'Villarreal', prestige: 77 },
 ];
 
 // Matchweeks and phases for the 9 season fixtures
@@ -1734,6 +1736,11 @@ function generateFixtures(club: BDClub, inCL: boolean, inEL: boolean, seed: numb
       const eu = EUROPEAN_CL_RIVALS[idx % EUROPEAN_CL_RIVALS.length];
       opponent = eu.name;
       opponentId = `eu_cl_${idx}`;
+      opponentPrestige = eu.prestige;
+    } else if (competition === 'Europa League') {
+      const eu = EUROPEAN_EL_RIVALS[idx % EUROPEAN_EL_RIVALS.length];
+      opponent = eu.name;
+      opponentId = `eu_el_${idx}`;
       opponentPrestige = eu.prestige;
     }
 
@@ -1976,6 +1983,34 @@ function generateMatchOutcome(
   return `${score}. ${headline}${personal}`;
 }
 
+const addForm = (f: ('W' | 'D' | 'L')[], r: 'W' | 'D' | 'L') => [...f, r].slice(-5) as ('W' | 'D' | 'L')[];
+
+// Simulate `count` PL games for a club using a prestige-based win probability
+function simCatchUpGames(row: LeagueTableRow, count: number, rng: () => number): LeagueTableRow {
+  const club = PL_CLUBS.find(c => c.id === row.clubId);
+  if (!club || count <= 0) return row;
+  let r = { ...row };
+  for (let i = 0; i < count; i++) {
+    const winP = clamp(0.24 + (club.prestige - 65) / 165, 0.14, 0.52);
+    const roll = rng();
+    const w = roll < winP ? 1 : 0;
+    const d = !w && roll < winP + 0.24 ? 1 : 0;
+    const l = !w && !d ? 1 : 0;
+    const gf = Math.max(0, ri(rng, w ? 2.0 : d ? 1.1 : 0.6, 0.8));
+    const ga = Math.max(0, l ? ri(rng, 2.0, 0.8) : d ? gf : ri(rng, 0.8, 0.6));
+    const res: 'W' | 'D' | 'L' = w ? 'W' : d ? 'D' : 'L';
+    r = { ...r, p: r.p + 1, w: r.w + w, d: r.d + d, l: r.l + l, gf: r.gf + gf, ga: r.ga + ga, pts: r.pts + (w ? 3 : d ? 1 : 0), form: addForm(r.form, res) };
+  }
+  return r;
+}
+
+// Play out every club's remaining games so the final table reflects a full 38-game season
+function completeLeagueTable(table: LeagueTableRow[], rng: () => number): LeagueTableRow[] {
+  return table
+    .map(row => simCatchUpGames(row, Math.max(0, 38 - row.p), rng))
+    .sort((a, b) => (b.pts - a.pts) || ((b.gf - b.ga) - (a.gf - a.ga)) || (b.gf - a.gf));
+}
+
 function simulateMatchweekTable(
   table: LeagueTableRow[],
   playerClubId: string,
@@ -1983,29 +2018,12 @@ function simulateMatchweekTable(
   ctx: NonNullable<BDEvent['matchContext']>,
   rng: () => number,
 ): LeagueTableRow[] {
-  const addForm = (f: ('W' | 'D' | 'L')[], r: 'W' | 'D' | 'L') => [...f, r].slice(-5) as ('W' | 'D' | 'L')[];
   const isPL = ctx.competition === 'Premier League';
   // Approximate how many PL games all clubs should have played by this point in the season.
   // Matchweek 0 = pre-season, so target = matchweek (non-zero for PL/CL/Cup milestones).
   const targetPLGames = Math.max(1, ctx.matchweek);
 
-  function simGames(row: LeagueTableRow, count: number): LeagueTableRow {
-    const club = PL_CLUBS.find(c => c.id === row.clubId);
-    if (!club || count <= 0) return row;
-    let r = { ...row };
-    for (let i = 0; i < count; i++) {
-      const winP = clamp(0.24 + (club.prestige - 65) / 165, 0.14, 0.52);
-      const roll = rng();
-      const w = roll < winP ? 1 : 0;
-      const d = !w && roll < winP + 0.24 ? 1 : 0;
-      const l = !w && !d ? 1 : 0;
-      const gf = Math.max(0, ri(rng, w ? 2.0 : d ? 1.1 : 0.6, 0.8));
-      const ga = Math.max(0, l ? ri(rng, 2.0, 0.8) : d ? gf : ri(rng, 0.8, 0.6));
-      const res: 'W' | 'D' | 'L' = w ? 'W' : d ? 'D' : 'L';
-      r = { ...r, p: r.p + 1, w: r.w + w, d: r.d + d, l: r.l + l, gf: r.gf + gf, ga: r.ga + ga, pts: r.pts + (w ? 3 : d ? 1 : 0), form: addForm(r.form, res) };
-    }
-    return r;
-  }
+  const simGames = (row: LeagueTableRow, count: number) => simCatchUpGames(row, count, rng);
 
   return table.map(row => {
     if (isPL && row.clubId === playerClubId) {
@@ -2176,7 +2194,7 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
   let outcomeText = choice.outcome;
   let updatedOverall = season.playerOverall;
   let matchweek = season.matchweek;
-  let money = season.money ?? 500;
+  let money = season.money ?? 50;
   let energy = season.energy ?? 85;
 
   if (ev.category === 'match' && ev.matchContext) {
@@ -2338,9 +2356,17 @@ export function finalizeSeason(player: BDPlayer, season: BDSeason): BDSeason {
   const fitMult = clamp(season.attributes.fitness / 80, 0.7, 1.2);
   const moraleMult = clamp(season.attributes.morale / 80, 0.8, 1.1);
 
+  // Complete the league table to 38 games so the final standings (and title) are consistent
+  // with what the player watched all season
+  const finalTable = season.leagueTable ? completeLeagueTable(season.leagueTable, rng) : undefined;
+  const leaguePosition = finalTable
+    ? finalTable.findIndex(r => r.clubId === season.club.id) + 1
+    : null;
+
   const rawTrophies = simulateTrophies(
     season.club, season.inCL, season.inEL,
     season.attributes.fitness, season.attributes.morale, rng,
+    leaguePosition || null,
   );
 
   // Apply attribute effects to base stats
@@ -2359,7 +2385,7 @@ export function finalizeSeason(player: BDPlayer, season: BDSeason): BDSeason {
   // Generate transfer offers for between-season screen
   const transferOffers = generateTransferOffers(player, season.club, ceremony.playerRank, season.number);
 
-  return { ...season, trophies: rawTrophies, phase: 'ceremony', ceremony, transferOffers };
+  return { ...season, trophies: rawTrophies, phase: 'ceremony', ceremony, transferOffers, leagueTable: finalTable ?? season.leagueTable };
 }
 
 // --- Player development ---
@@ -2402,7 +2428,9 @@ export function developPlayer(player: BDPlayer, season: BDSeason): BDPlayer {
 
   const newOvr = clamp(player.overall + delta, 40, 99);
   // Reputation grows with good performances and BdO finishes
-  const bdoRank = season.ceremony?.playerRank ?? 0;
+  // playerRank 0 means the player missed the shortlist entirely — no rep gain
+  const rawRank = season.ceremony?.playerRank ?? 0;
+  const bdoRank = rawRank >= 1 ? rawRank : Infinity;
   const repGain = bdoRank === 1 ? 15 : bdoRank <= 3 ? 10 : bdoRank <= 10 ? 6 : bdoRank <= 25 ? 3 : 0;
   const newRep = clamp(player.reputation + repGain, 0, 100);
 
