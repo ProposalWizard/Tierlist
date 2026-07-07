@@ -93,7 +93,7 @@ function ModeBadge({ mode }: { mode: "normal" | "prime" }) {
     </span>
   ) : (
     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
-      NRM
+      NORMAL
     </span>
   );
 }
@@ -116,7 +116,78 @@ function formatValue(value: number, rt: RecordType, score?: string | null): stri
   return String(value);
 }
 
-function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }) {
+function LeaderboardRow({ entry, index: i, rt }: { entry: RecordEntry; index: number; rt: RecordType }) {
+  const isOfficial = entry.username === "Official";
+  return (
+    <div
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+        i === 0
+          ? "bg-amber-900/15 border-amber-700/30"
+          : i === 1
+            ? "bg-gray-700/15 border-gray-600/30"
+            : i === 2
+              ? "bg-amber-900/10 border-amber-800/20"
+              : "bg-gray-900/50 border-gray-800/30"
+      }`}
+    >
+      <span className={`text-lg leading-none w-6 text-center shrink-0 ${i >= 3 ? "text-xs font-bold text-white" : ""}`}>
+        {MEDALS[i]}
+      </span>
+      <div className="flex-1 min-w-0">
+        {!rt.isTeam && entry.playerName && (
+          <div className="text-sm font-bold text-white truncate">
+            {entry.playerName}
+            {!isOfficial && entry.playerOvr !== null && (
+              <span className="ml-2"><OvrBadge ovr={entry.playerOvr} /></span>
+            )}
+          </div>
+        )}
+        <div className="text-xs text-white truncate">
+          {rt.isTeam ? (
+            <span className="flex items-center gap-2 flex-wrap">
+              <span className="text-white font-bold text-sm">{formatValue(entry.value, rt, entry.playerName)}</span>
+              {isOfficial ? (
+                <>
+                  {entry.clubName && <span className="text-white font-bold">{entry.clubName}</span>}
+                  <span className="text-amber-400 font-bold">⭐ Official</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-emerald-400 font-bold">{entry.username}</span>
+                  {entry.mode && <ModeBadge mode={entry.mode} />}
+                  {entry.playerOvr !== null && <OvrBadge ovr={entry.playerOvr} />}
+                </>
+              )}
+            </span>
+          ) : (
+            <span className="flex items-center gap-2 flex-wrap">
+              {isOfficial ? (
+                <span className="text-amber-400 font-bold">⭐ Official</span>
+              ) : (
+                <>
+                  <span className="text-emerald-400 font-bold">{entry.username}</span>
+                  {entry.mode && <ModeBadge mode={entry.mode} />}
+                </>
+              )}
+              {!isOfficial && entry.seasonNumber && (
+                <span className="text-white">· S{entry.seasonNumber}</span>
+              )}
+            </span>
+          )}
+        </div>
+      </div>
+      {!rt.isTeam && (
+        <div className={`text-xl font-black tabular-nums shrink-0 ${
+          i === 0 ? "text-amber-400" : i === 1 ? "text-white" : i === 2 ? "text-amber-600" : "text-white"
+        }`}>
+          {formatValue(entry.value, rt)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Leaderboard({ entries, rt, expanded }: { entries: RecordEntry[]; rt: RecordType; expanded: boolean }) {
   if (entries.length === 0) {
     return (
       <div className="text-center py-6 text-white text-sm">
@@ -124,79 +195,22 @@ function Leaderboard({ entries, rt }: { entries: RecordEntry[]; rt: RecordType }
       </div>
     );
   }
+  const rest = entries.slice(1);
   return (
     <div className="space-y-2">
-      {entries.map((entry, i) => {
-        const isOfficial = entry.username === "Official";
-        return (
-          <div
-            key={i}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
-              i === 0
-                ? "bg-amber-900/15 border-amber-700/30"
-                : i === 1
-                  ? "bg-gray-700/15 border-gray-600/30"
-                  : i === 2
-                    ? "bg-amber-900/10 border-amber-800/20"
-                    : "bg-gray-900/50 border-gray-800/30"
-            }`}
-          >
-            <span className={`text-lg leading-none w-6 text-center shrink-0 ${i >= 3 ? "text-xs font-bold text-white" : ""}`}>
-              {MEDALS[i]}
-            </span>
-            <div className="flex-1 min-w-0">
-              {!rt.isTeam && entry.playerName && (
-                <div className="text-sm font-bold text-white truncate">
-                  {entry.playerName}
-                  {!isOfficial && entry.playerOvr !== null && (
-                    <span className="ml-2"><OvrBadge ovr={entry.playerOvr} /></span>
-                  )}
-                </div>
-              )}
-              <div className="text-xs text-white truncate">
-                {rt.isTeam ? (
-                  <span className="flex items-center gap-2 flex-wrap">
-                    <span className="text-white font-bold text-sm">{formatValue(entry.value, rt, entry.playerName)}</span>
-                    {isOfficial ? (
-                      <>
-                        {entry.clubName && <span className="text-white font-bold">{entry.clubName}</span>}
-                        <span className="text-amber-400 font-bold">⭐ Official</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-emerald-400 font-bold">{entry.username}</span>
-                        {entry.mode && <ModeBadge mode={entry.mode} />}
-                        {entry.playerOvr !== null && <OvrBadge ovr={entry.playerOvr} />}
-                      </>
-                    )}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2 flex-wrap">
-                    {isOfficial ? (
-                      <span className="text-amber-400 font-bold">⭐ Official</span>
-                    ) : (
-                      <>
-                        <span className="text-emerald-400 font-bold">{entry.username}</span>
-                        {entry.mode && <ModeBadge mode={entry.mode} />}
-                      </>
-                    )}
-                    {!isOfficial && entry.seasonNumber && (
-                      <span className="text-white">· S{entry.seasonNumber}</span>
-                    )}
-                  </span>
-                )}
-              </div>
-            </div>
-            {!rt.isTeam && (
-              <div className={`text-xl font-black tabular-nums shrink-0 ${
-                i === 0 ? "text-amber-400" : i === 1 ? "text-white" : i === 2 ? "text-amber-600" : "text-white"
-              }`}>
-                {formatValue(entry.value, rt)}
-              </div>
-            )}
+      <LeaderboardRow entry={entries[0]} index={0} rt={rt} />
+      {rest.length > 0 && (
+        <div
+          className="overflow-hidden transition-all duration-300 ease-in-out"
+          style={{ maxHeight: expanded ? `${rest.length * 72}px` : "0px", opacity: expanded ? 1 : 0 }}
+        >
+          <div className="space-y-2 pt-2">
+            {rest.map((entry, i) => (
+              <LeaderboardRow key={i + 1} entry={entry} index={i + 1} rt={rt} />
+            ))}
           </div>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 }
@@ -208,6 +222,15 @@ export default function DraftRecordsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+
+  function toggleExpanded(key: string) {
+    setExpandedKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   function handleModeChange(newMode: "normal" | "prime" | "best") {
     setMode(newMode);
@@ -402,6 +425,8 @@ export default function DraftRecordsPage() {
             {SEASON_RECORD_TYPES.filter(rt => !(rt.key === "most_points" && competition === "all")).map(rt => {
               const key = `${competition}_${rt.key}`;
               const entries = mergeWithOfficial(records[key] ?? [], key, rt);
+              const isExpanded = expandedKeys.has(key);
+              const hasMore = entries.length > 1;
               return (
                 <div key={rt.key} className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
                   <div className="flex items-center gap-2 mb-4">
@@ -414,11 +439,25 @@ export default function DraftRecordsPage() {
                         {competition === "pl" ? "Premier League" : "All Competitions"} · Season record
                       </p>
                     </div>
-                    {rt.ascending && (
+                    {rt.ascending && !hasMore && (
                       <span className="text-[10px] text-white font-bold tracking-widest uppercase">lower is better</span>
                     )}
+                    {hasMore && (
+                      <button
+                        onClick={() => toggleExpanded(key)}
+                        className="flex items-center gap-1 text-[10px] font-bold text-white hover:text-emerald-400 transition-colors uppercase tracking-wide shrink-0"
+                      >
+                        {isExpanded ? "Show less" : "See more"}
+                        <svg
+                          className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
-                  <Leaderboard entries={entries} rt={rt} />
+                  <Leaderboard entries={entries} rt={rt} expanded={isExpanded} />
                 </div>
               );
             })}
@@ -435,11 +474,13 @@ export default function DraftRecordsPage() {
                   {CAREER_RECORD_TYPES.map(rt => {
                     const key = `career_${rt.key}`;
                     const entries = records[key] ?? [];
+                    const isExpanded = expandedKeys.has(key);
+                    const hasMore = entries.length > 1;
                     return (
                       <div key={rt.key} className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
                         <div className="flex items-center gap-2 mb-4">
                           <span className="text-xl">{rt.emoji}</span>
-                          <div>
+                          <div className="flex-1">
                             <h2 className="text-sm font-extrabold tracking-wide text-white uppercase">
                               {rt.label}
                             </h2>
@@ -447,8 +488,22 @@ export default function DraftRecordsPage() {
                               Career · All competitions
                             </p>
                           </div>
+                          {hasMore && (
+                            <button
+                              onClick={() => toggleExpanded(key)}
+                              className="flex items-center gap-1 text-[10px] font-bold text-white hover:text-emerald-400 transition-colors uppercase tracking-wide shrink-0"
+                            >
+                              {isExpanded ? "Show less" : "See more"}
+                              <svg
+                                className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
-                        <Leaderboard entries={entries} rt={rt} />
+                        <Leaderboard entries={entries} rt={rt} expanded={isExpanded} />
                       </div>
                     );
                   })}
