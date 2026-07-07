@@ -23,9 +23,24 @@ export async function PUT(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
-  const body = await req.json();
-  const username: string | null = body.username?.trim() || null;
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const username: string | null = typeof body.username === "string" ? body.username.trim() || null : null;
   const is_anonymous: boolean = !!body.is_anonymous;
+
+  // Validate username format and length
+  if (username !== null) {
+    if (username.length > 30) {
+      return NextResponse.json({ error: "Username must be 30 characters or fewer." }, { status: 400 });
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return NextResponse.json({ error: "Username can only contain letters, numbers, and underscores." }, { status: 400 });
+    }
+  }
 
   const service = createServiceClient();
 

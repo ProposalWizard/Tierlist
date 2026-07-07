@@ -39,19 +39,22 @@ export default async function FindPage({
     service
       .from("tierlists")
       .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, created_by, linked_vote_tierlist_id, linked_blind_ranking_id")
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(10000),
     service
       .from("vote_tierlists")
       .select("id, title, category, cover_image_url, created_at, created_by")
       .eq("is_active", true)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(10000),
     service
       .from("blind_rankings")
       .select("id, title, category, cover_image_url, created_at")
       .eq("is_active", true)
-      .order("created_at", { ascending: false }),
-    service.from("tierlist_likes").select("tierlist_id"),
-    service.from("user_profiles").select("user_id, username"),
+      .order("created_at", { ascending: false })
+      .limit(10000),
+    service.from("tierlist_likes").select("tierlist_id").limit(100000),
+    service.from("user_profiles").select("user_id, username").limit(100000),
   ]);
 
   // Build like counts map
@@ -81,16 +84,21 @@ export default async function FindPage({
   };
   const tierlists = (tierlistsRes.data ?? []) as TierlistRow[];
 
+  // IDs that actually exist in their respective tables (used to validate foreign keys)
+  const existingVoteIds = new Set<string>((votelistsRes.data ?? []).map(vl => vl.id));
+  const existingBlindIds = new Set<string>((blindsRes.data ?? []).map(br => br.id));
+
+  // IDs referenced by a regular tierlist (used to suppress standalone cards for linked items)
   const linkedVoteIds = new Set<string>(
-    tierlists.map(t => t.linked_vote_tierlist_id).filter((x): x is string => !!x)
+    tierlists.map(t => t.linked_vote_tierlist_id).filter((x): x is string => !!x && existingVoteIds.has(x))
   );
   const linkedBlindIds = new Set<string>(
-    tierlists.map(t => t.linked_blind_ranking_id).filter((x): x is string => !!x)
+    tierlists.map(t => t.linked_blind_ranking_id).filter((x): x is string => !!x && existingBlindIds.has(x))
   );
 
   const regularItems: FindItem[] = tierlists.map((tl) => {
-    const hasLinkedVote = !!(tl.linked_vote_tierlist_id && linkedVoteIds.has(tl.linked_vote_tierlist_id));
-    const hasLinkedBlind = !!(tl.linked_blind_ranking_id && linkedBlindIds.has(tl.linked_blind_ranking_id));
+    const hasLinkedVote = !!(tl.linked_vote_tierlist_id && existingVoteIds.has(tl.linked_vote_tierlist_id));
+    const hasLinkedBlind = !!(tl.linked_blind_ranking_id && existingBlindIds.has(tl.linked_blind_ranking_id));
     return {
       id: tl.id,
       title: tl.title,

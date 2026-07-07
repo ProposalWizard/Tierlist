@@ -37,26 +37,25 @@ export default async function ProfilePage() {
   await svc.from("user_xp").upsert({ user_id: user.id }, { onConflict: "user_id", ignoreDuplicates: true });
   await svc.from("user_stats").upsert({ user_id: user.id }, { onConflict: "user_id", ignoreDuplicates: true });
 
-  // Check for streak milestone XP awards
+  // Check for streak milestone XP awards — awaited sequentially so each XP read sees the
+  // previous write instead of both chains racing on the same stale total_xp value.
   const { data: streakProfile } = await svc.from("user_profiles").select("current_streak").eq("user_id", user.id).maybeSingle();
   const streak = streakProfile?.current_streak ?? 0;
   if (streak >= 7) {
-    svc.from("xp_events").insert({ user_id: user.id, event_type: "streak_7", event_ref: "streak_7", xp_awarded: XP_AWARDS.streak_7 })
-      .then(async ({ error }) => {
-        if (error) return;
-        const { data: xpRow } = await svc.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
-        const newXp = (xpRow?.total_xp ?? 0) + XP_AWARDS.streak_7;
-        await svc.from("user_xp").upsert({ user_id: user.id, total_xp: newXp, current_level: levelFromXp(newXp).level, updated_at: new Date().toISOString() });
-      });
+    const { error } = await svc.from("xp_events").insert({ user_id: user.id, event_type: "streak_7", event_ref: "streak_7", xp_awarded: XP_AWARDS.streak_7 });
+    if (!error) {
+      const { data: xpRow } = await svc.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
+      const newXp = (xpRow?.total_xp ?? 0) + XP_AWARDS.streak_7;
+      await svc.from("user_xp").upsert({ user_id: user.id, total_xp: newXp, current_level: levelFromXp(newXp).level, updated_at: new Date().toISOString() });
+    }
   }
   if (streak >= 30) {
-    svc.from("xp_events").insert({ user_id: user.id, event_type: "streak_30", event_ref: "streak_30", xp_awarded: XP_AWARDS.streak_30 })
-      .then(async ({ error }) => {
-        if (error) return;
-        const { data: xpRow } = await svc.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
-        const newXp = (xpRow?.total_xp ?? 0) + XP_AWARDS.streak_30;
-        await svc.from("user_xp").upsert({ user_id: user.id, total_xp: newXp, current_level: levelFromXp(newXp).level, updated_at: new Date().toISOString() });
-      });
+    const { error } = await svc.from("xp_events").insert({ user_id: user.id, event_type: "streak_30", event_ref: "streak_30", xp_awarded: XP_AWARDS.streak_30 });
+    if (!error) {
+      const { data: xpRow } = await svc.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
+      const newXp = (xpRow?.total_xp ?? 0) + XP_AWARDS.streak_30;
+      await svc.from("user_xp").upsert({ user_id: user.id, total_xp: newXp, current_level: levelFromXp(newXp).level, updated_at: new Date().toISOString() });
+    }
   }
 
   // Fetch all data in parallel
@@ -67,26 +66,33 @@ export default async function ProfilePage() {
       .from("tierlists")
       .select("id, title, category, cover_image_url, view_count, created_at")
       .eq("created_by", user.id)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(1000),
 
     supabase
       .from("tierlist_likes")
       .select("tierlist_id, tierlists(id, title, cover_image_url, created_at, category)")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(1000),
 
     supabase
       .from("saved_tierlists")
       .select("tierlist_id, tierlists(id, title, cover_image_url, created_at, category)")
       .eq("user_id", user.id)
-      .order("saved_at", { ascending: false }),
+      .order("saved_at", { ascending: false })
+      .limit(1000),
 
     supabase
       .from("saved_profile_images")
       .select("id, image_url, tierlist_title, created_at")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
-  ]);
+      .order("created_at", { ascending: false })
+      .limit(200),
+  ]).catch((err) => {
+    console.error("[profile] data fetch error:", err);
+    throw err;
+  });
 
   const profile      = profileRes.data;
   const created      = createdRes.data ?? [];

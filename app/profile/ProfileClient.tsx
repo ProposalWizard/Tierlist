@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -556,6 +556,7 @@ export function CustomObjectivesSection() {
   const [selectedActiveId, setSelectedActiveId] = useState<string | null>(null);
   const [selectedCompletedId, setSelectedCompletedId] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const claimingRef = useRef(false);
   const [claimModal, setClaimModal] = useState<ClaimResult | null>(null);
 
   useEffect(() => {
@@ -577,7 +578,9 @@ export function CustomObjectivesSection() {
   }, []);
 
   async function handleClaim(objId: string, obj: AdminObjective) {
-    if (claimingId) return;
+    // Use a synchronous ref so rapid double-clicks can't slip past before React re-renders
+    if (claimingRef.current) return;
+    claimingRef.current = true;
     setClaimingId(objId);
     try {
       const res = await fetch(`/api/objectives/${objId}/claim`, { method: "POST" });
@@ -592,6 +595,7 @@ export function CustomObjectivesSection() {
       }
     } catch { /* non-critical */ }
     setClaimingId(null);
+    claimingRef.current = false;
   }
 
   if (loading) return null;
