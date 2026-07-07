@@ -1204,6 +1204,12 @@ function SlotsGame({ money, onResult, onBack }: { money: number; onResult: (net:
   const [reels, setReels] = useState(['⚽', '🏆', '⭐']);
   const [winInfo, setWinInfo] = useState<{ net: number; label: string } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Clear reel timers on unmount so we don't setState after leaving mid-spin
+  useEffect(() => () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  }, []);
 
   const bets = [50, 100, 250].filter(b => b <= money);
 
@@ -1220,7 +1226,7 @@ function SlotsGame({ money, onResult, onBack }: { money: number; onResult: (net:
       ]);
     }, 80);
 
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       const r = [
         SLOT_SYMS[Math.floor(Math.random() * SLOT_SYMS.length)],
@@ -1320,6 +1326,9 @@ function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult:
   const [progress, setProgress] = useState([0, 0, 0, 0]);
   const [winner, setWinner] = useState<number | null>(null);
   const bets = [50, 100, 250, 500].filter(b => b <= money);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Stop the race animation if the user leaves mid-race
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
   function race() {
     if (picked === null || racing) return;
@@ -1327,10 +1336,11 @@ function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult:
     setWinner(null);
     setProgress([0, 0, 0, 0]);
 
-    // determine winner using odds-based probability
+    // determine winner using odds-based probability. Chances sum to 1.0, but
+    // default to the last horse as a float-safety fallthrough.
     const roll = Math.random();
     let cum = 0;
-    let winnerIdx = 0;
+    let winnerIdx = HORSES.length - 1;
     for (let i = 0; i < HORSES.length; i++) {
       cum += HORSES[i].chance;
       if (roll < cum) { winnerIdx = i; break; }
@@ -1350,6 +1360,7 @@ function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult:
       }));
       if (t >= 1) {
         clearInterval(interval);
+        intervalRef.current = null;
         setProgress(HORSES.map((_, i) => i === winnerIdx ? 100 : 60 + Math.random() * 30));
         setWinner(winnerIdx);
         const won = winnerIdx === picked;
@@ -1357,6 +1368,7 @@ function HorseRacingGame({ money, onResult, onBack }: { money: number; onResult:
         setRacing(false);
       }
     }, 60);
+    intervalRef.current = interval;
   }
 
   return (

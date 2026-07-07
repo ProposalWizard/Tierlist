@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { BDCareer, BDSeason as BDSeasonData, TransferOffer } from "@/lib/ballonDorTypes";
 import { initSeason, finalizeSeason, developPlayer, PL_CLUBS } from "@/lib/ballonDorEngine";
 import BDSetup from "./BDSetup";
@@ -46,7 +46,13 @@ function loadCareer(): BDCareer | null {
 }
 
 function saveCareer(career: BDCareer) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(career));
+  // Guard against quota errors / Safari private mode, which throw synchronously
+  // and would otherwise crash the click handler that completed an event.
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(career));
+  } catch (e) {
+    console.error("[BallonDor] failed to save career:", e);
+  }
 }
 
 // ── Main component ───────────────────────────────────────────────────
@@ -376,10 +382,13 @@ function TransferScreen({ career, offers, onAccept, onStay, onBackToHub }: Trans
   const [confirmed, setConfirmed] = useState(false);
   const lastClub = career.seasons.at(-1)?.club;
 
+  const acceptTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (acceptTimer.current) clearTimeout(acceptTimer.current); }, []);
+
   function handleAccept() {
-    if (!selectedOffer) return;
+    if (!selectedOffer || confirmed) return;
     setConfirmed(true);
-    setTimeout(() => onAccept(selectedOffer.clubId), 1200);
+    acceptTimer.current = setTimeout(() => onAccept(selectedOffer.clubId), 1200);
   }
 
   return (
@@ -387,7 +396,7 @@ function TransferScreen({ career, offers, onAccept, onStay, onBackToHub }: Trans
       {/* Back link */}
       <div className="border-b border-gray-900 px-4 py-3">
         <div className="mx-auto max-w-lg flex items-center">
-          <button onClick={onBackToHub} className="text-xs text-gray-500 hover:text-gray-300 transition">
+          <button onClick={onBackToHub} disabled={confirmed} className="text-xs text-gray-500 hover:text-gray-300 transition disabled:opacity-40 disabled:cursor-not-allowed">
             ← Back to hub
           </button>
         </div>

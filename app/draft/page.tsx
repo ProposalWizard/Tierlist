@@ -438,14 +438,18 @@ export default function DraftPage() {
     if (myRoomPlayer?.squad && (myRoomPlayer.squad as DraftPlayer[]).length > 0) {
       setPlayers(myRoomPlayer.squad as DraftPlayer[]);
     }
-    // Accumulate all room players' season results for group stats in CareerRecap
+    // Accumulate all room players' season results for group stats in CareerRecap.
+    // Dedupe by fingerprint — a rejoin/refresh while the room is "complete" can
+    // fire this again and would otherwise double-count the same season.
     setAllRoomPlayerSeasons(prev => {
       const next = { ...(prev ?? {}) };
       for (const rp of allPlayers) {
         if (rp.season_result) {
           const key = rp.display_name;
           if (!next[key]) next[key] = [];
-          next[key] = [...next[key], rp.season_result];
+          const fp = JSON.stringify(rp.season_result);
+          const alreadyPresent = next[key].some(s => JSON.stringify(s) === fp);
+          if (!alreadyPresent) next[key] = [...next[key], rp.season_result];
         }
       }
       return next;
