@@ -489,7 +489,7 @@ export default function DraftPick({
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4">
       {/* Header with progress */}
-      <div className="mb-6">
+      <div className="mb-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             {onBack && (pickedPlayers.length === 0 || isMultiplayer) && (
@@ -881,8 +881,8 @@ export default function DraftPick({
 
           {/* Position picker — position-first starters only */}
           {phase === "spin" && !isClubFirst && !isSubPick && !isSeason2Draft && chosenSlotIdx === null && (
-            <div className="flex flex-col items-center justify-center py-8 sm:py-16">
-              <div className="mb-6 text-center">
+            <div className="flex flex-col items-center justify-center py-4 sm:py-10">
+              <div className="mb-3 text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/5 text-emerald-400 mb-4">
                   <span className="text-xs font-bold tracking-widest uppercase">
                     Pick {pickedPlayers.filter(p => !p.isSub).length + 1} of 11
@@ -922,8 +922,8 @@ export default function DraftPick({
 
           {/* Spin button — shown when position is chosen (or club-first / subs / season2) */}
           {phase === "spin" && (isClubFirst || isSubPick || isSeason2Draft || chosenSlotIdx !== null) && (
-            <div className="flex flex-col items-center justify-center py-8 sm:py-16">
-              <div className="mb-6 text-center">
+            <div className="flex flex-col items-center justify-center py-4 sm:py-10">
+              <div className="mb-3 text-center">
                 <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${
                   isSeason2Draft ? "text-amber-400" :
                   isSubPick ? "text-purple-400" :
@@ -982,9 +982,9 @@ export default function DraftPick({
           )}
 
           {phase === "spinning" && (
-            <div className="flex flex-col items-center justify-center py-8 sm:py-16">
+            <div className="flex flex-col items-center justify-center py-4 sm:py-10">
               {/* Slot machine container */}
-              <div className="relative w-full max-w-md h-24 overflow-hidden rounded-xl border border-emerald-700/40 bg-gray-900/80 mb-6">
+              <div className="relative w-full max-w-md h-24 overflow-hidden rounded-xl border border-emerald-700/40 bg-gray-900/80 mb-3">
                 {/* Top fade */}
                 <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-gray-900 to-transparent z-10 pointer-events-none" />
                 {/* Bottom fade */}
@@ -1082,7 +1082,7 @@ export default function DraftPick({
               )}
 
               {!spinResult && (
-                <div className="flex flex-col items-center justify-center py-8 sm:py-16">
+                <div className="flex flex-col items-center justify-center py-4 sm:py-10">
                   <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
                   <p className="text-white text-sm">Loading roster...</p>
                 </div>
@@ -1253,7 +1253,7 @@ export default function DraftPick({
 
           {phase === "assign" && pendingPlayer && spinDisplay && (
             <div>
-              <div className="text-center mb-6">
+              <div className="text-center mb-3">
                 <div className="flex items-center justify-center gap-3 mb-3">
                   {pendingPlayer.image_url ? (
                     <ImageWithFallback
