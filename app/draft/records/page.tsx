@@ -204,7 +204,7 @@ function Leaderboard({ entries, rt, expanded }: { entries: RecordEntry[]; rt: Re
           className="overflow-hidden transition-all duration-300 ease-in-out"
           style={{ maxHeight: expanded ? `${rest.length * 72}px` : "0px", opacity: expanded ? 1 : 0 }}
         >
-          <div className="space-y-2 pt-2">
+          <div className="space-y-2">
             {rest.map((entry, i) => (
               <LeaderboardRow key={i + 1} entry={entry} index={i + 1} rt={rt} />
             ))}
@@ -420,8 +420,31 @@ export default function DraftRecordsPage() {
           </div>
         )}
 
-        {!loading && !error && (
+        {!loading && !error && (() => {
+          const visibleSeasonKeys = SEASON_RECORD_TYPES
+            .filter(rt => !(rt.key === "most_points" && competition === "all"))
+            .map(rt => `${competition}_${rt.key}`);
+          const visibleCareerKeys = competition === "all"
+            ? CAREER_RECORD_TYPES.map(rt => `career_${rt.key}`)
+            : [];
+          const allVisibleKeys = [...visibleSeasonKeys, ...visibleCareerKeys];
+          const allExpanded = allVisibleKeys.every(k => expandedKeys.has(k));
+          return (
           <div className="space-y-6">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setExpandedKeys(allExpanded ? new Set() : new Set(allVisibleKeys))}
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-white hover:text-emerald-400 transition-colors"
+              >
+                {allExpanded ? "Collapse All" : "Expand All"}
+                <svg
+                  className={`w-3 h-3 transition-transform duration-300 ${allExpanded ? "rotate-180" : ""}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
             {SEASON_RECORD_TYPES.filter(rt => !(rt.key === "most_points" && competition === "all")).map(rt => {
               const key = `${competition}_${rt.key}`;
               const entries = mergeWithOfficial(records[key] ?? [], key, rt);
@@ -515,7 +538,8 @@ export default function DraftRecordsPage() {
               Only signed-in players appear on these boards. ⭐ Official = real-world PL benchmark.
             </p>
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

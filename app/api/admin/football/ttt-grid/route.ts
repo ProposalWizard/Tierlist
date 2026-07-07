@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
     const { data: allCareers } = await service
       .from("football_careers")
       .select("player_id, club_id")
-      .in("club_id", allClubIds);
+      .in("club_id", allClubIds)
+      .limit(100000);
 
     const clubPlayerSets = new Map<string, Set<string>>();
     for (const c of allCareers ?? []) {
