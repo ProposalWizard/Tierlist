@@ -1344,77 +1344,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
     return (
       <div className="max-w-2xl mx-auto p-4 pb-20">
-        {/* Live squad stats */}
-        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[10px] font-bold tracking-widest text-white uppercase">
-              {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Squad Stats"}
-            </h3>
-            {plWeek > 0 && (
-              <div className="flex text-[10px] text-white">
-                <span className="w-6 text-right">G</span>
-                <span className="w-6 text-right ml-1">A</span>
-                <span className="w-9 text-right ml-1">RAT</span>
-              </div>
-            )}
-          </div>
-          <div className="space-y-0.5">
-            {starterPlayers.map((p, i) => {
-              const g = liveGoals[p.name] || 0;
-              const a = liveAssists[p.name] || 0;
-              const scored = g > 0 || a > 0;
-              return (
-                <div key={i} className={`flex items-center gap-2 text-sm py-1 px-1 rounded transition-colors ${scored ? "bg-emerald-950/20" : ""}`}>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
-                    {p.assignedPosition}
-                  </span>
-                  <span className="flex-1 ml-1 font-medium">{p.name}{plWeek > 0 && <span className="text-emerald-400 font-bold text-xs"> {displayRating(p)}</span>}</span>
-                  {plWeek > 0 ? (
-                    <div className="flex shrink-0">
-                      <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-white"}`}>{g || "-"}</span>
-                      <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-white"}`}>{a || "-"}</span>
-                      <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(liveRating(p.name) ?? 0) >= 7.5 ? "text-emerald-400" : (liveRating(p.name) ?? 0) >= 6.5 ? "text-white" : "text-white"}`}>
-                        {liveRating(p.name) !== null ? liveRating(p.name)!.toFixed(1) : "-"}
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
-                      <span className="font-black text-emerald-400 w-10 text-right tabular-nums">{displayRating(p)}</span>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-            {subPlayers.length > 0 && plWeek > 0 && (
-              <>
-                <div className="border-t border-gray-800/50 my-1" />
-                {subPlayers.map((p, i) => {
-                  const g = liveGoals[p.name] || 0;
-                  const a = liveAssists[p.name] || 0;
-                  return (
-                    <div key={`sub-${i}`} className="flex items-center gap-2 text-sm py-1 px-1 opacity-70">
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-700 text-white w-8 text-center">SUB</span>
-                      <span className="flex-1 ml-1 font-medium text-white">{p.name}<span className="text-emerald-400 font-bold text-xs"> {p.overall}</span></span>
-                      <div className="flex shrink-0">
-                        <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-white"}`}>{g || "-"}</span>
-                        <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-white"}`}>{a || "-"}</span>
-                        <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(liveRating(p.name) ?? 0) >= 7.5 ? "text-emerald-400" : "text-white"}`}>
-                          {liveRating(p.name) !== null ? liveRating(p.name)!.toFixed(1) : "-"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
-          </div>
-          <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-white">
-            <span>{plWeek > 0 ? `${plWeek} match${plWeek > 1 ? "es" : ""} played` : "Average OVR"}</span>
-            <span className="font-bold text-white">{plWeek > 0 ? `${runW}W ${runD}D ${runL}L · ${runPts}pts` : avgOvr}</span>
-          </div>
-        </div>
-
         {/* Matchweek header */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-[10px] font-bold tracking-widest text-white uppercase">
@@ -1617,8 +1546,79 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           </div>
         </div>
 
-        <div className="text-center text-xs text-white mb-6">
+        <div className="text-center text-xs text-white mb-4">
           GF {runGF} &middot; GA {runGA} &middot; GD {runGF - runGA >= 0 ? "+" : ""}{runGF - runGA}
+        </div>
+
+        {/* Live squad stats — below matches so games are visible without scrolling */}
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[10px] font-bold tracking-widest text-white uppercase">
+              {seasonNumber > 1 ? `Season ${seasonNumber} Squad` : "Squad Stats"}
+            </h3>
+            {plWeek > 0 && (
+              <div className="flex text-[10px] text-white">
+                <span className="w-6 text-right">G</span>
+                <span className="w-6 text-right ml-1">A</span>
+                <span className="w-9 text-right ml-1">RAT</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-0.5">
+            {starterPlayers.map((p, i) => {
+              const g = liveGoals[p.name] || 0;
+              const a = liveAssists[p.name] || 0;
+              const scored = g > 0 || a > 0;
+              return (
+                <div key={i} className={`flex items-center gap-2 text-sm py-1 px-1 rounded transition-colors ${scored ? "bg-emerald-950/20" : ""}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white w-8 text-center`}>
+                    {p.assignedPosition}
+                  </span>
+                  <span className="flex-1 ml-1 font-medium truncate min-w-0">{p.name}{plWeek > 0 && <span className="text-emerald-400 font-bold text-xs"> {displayRating(p)}</span>}</span>
+                  {plWeek > 0 ? (
+                    <div className="flex shrink-0">
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-white"}`}>{g || "-"}</span>
+                      <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-white"}`}>{a || "-"}</span>
+                      <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(liveRating(p.name) ?? 0) >= 7.5 ? "text-emerald-400" : (liveRating(p.name) ?? 0) >= 6.5 ? "text-white" : "text-white"}`}>
+                        {liveRating(p.name) !== null ? liveRating(p.name)!.toFixed(1) : "-"}
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
+                      <span className="font-black text-emerald-400 w-10 text-right tabular-nums">{displayRating(p)}</span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            {subPlayers.length > 0 && plWeek > 0 && (
+              <>
+                <div className="border-t border-gray-800/50 my-1" />
+                {subPlayers.map((p, i) => {
+                  const g = liveGoals[p.name] || 0;
+                  const a = liveAssists[p.name] || 0;
+                  return (
+                    <div key={`sub-${i}`} className="flex items-center gap-2 text-sm py-1 px-1 opacity-70">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-700 text-white w-8 text-center">SUB</span>
+                      <span className="flex-1 ml-1 font-medium text-white truncate min-w-0">{p.name}<span className="text-emerald-400 font-bold text-xs"> {p.overall}</span></span>
+                      <div className="flex shrink-0">
+                        <span className={`w-6 text-right font-black text-xs tabular-nums ${g > 0 ? "text-emerald-400" : "text-white"}`}>{g || "-"}</span>
+                        <span className={`w-6 text-right font-black text-xs tabular-nums ml-1 ${a > 0 ? "text-blue-400" : "text-white"}`}>{a || "-"}</span>
+                        <span className={`w-9 text-right font-black text-xs tabular-nums ml-1 ${(liveRating(p.name) ?? 0) >= 7.5 ? "text-emerald-400" : "text-white"}`}>
+                          {liveRating(p.name) !== null ? liveRating(p.name)!.toFixed(1) : "-"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-800/50 flex justify-between text-xs text-white">
+            <span>{plWeek > 0 ? `${plWeek} match${plWeek > 1 ? "es" : ""} played` : "Average OVR"}</span>
+            <span className="font-bold text-white">{plWeek > 0 ? `${runW}W ${runD}D ${runL}L · ${runPts}pts` : avgOvr}</span>
+          </div>
         </div>
       </div>
     );
@@ -1915,74 +1915,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           </div>
         </div>
       )}
-
-      {/* W/D/L Record */}
-      <div className="grid grid-cols-3 gap-2 mb-3 mt-4">
-        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-          <div className="text-3xl font-black text-emerald-400">{season.teamRecord.wins}</div>
-            <div className="text-[10px] font-bold tracking-widest text-white uppercase">Wins</div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-3xl font-black text-yellow-400">{season.teamRecord.draws}</div>
-            <div className="text-[10px] font-bold tracking-widest text-white uppercase">Draws</div>
-          </div>
-          <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-            <div className="text-3xl font-black text-red-400">{season.teamRecord.losses}</div>
-            <div className="text-[10px] font-bold tracking-widest text-white uppercase">Losses</div>
-          </div>
-        </div>
-
-      {/* Points / GF / GA */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-          <div className="text-3xl font-black text-white">{season.teamRecord.points}</div>
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Points</div>
-        </div>
-        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-          <div className="text-3xl font-black text-emerald-400">{season.teamRecord.goalsFor}</div>
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Goals For</div>
-        </div>
-        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-          <div className="text-3xl font-black text-red-400">{season.teamRecord.goalsAgainst}</div>
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Goals Against</div>
-        </div>
-      </div>
-
-      {/* CS / Win Streak / Unbeaten Run */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-          <div className="text-2xl font-black">{season.awards.goldenGlove.cleanSheets}</div>
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Clean Sheets</div>
-        </div>
-        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-          <div className="text-2xl font-black">{season.longestWinStreak}</div>
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Win Streak</div>
-        </div>
-        <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800/50">
-          <div className="text-2xl font-black">{season.longestUnbeatenRun}</div>
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Unbeaten Run</div>
-        </div>
-      </div>
-
-      {/* Biggest Win / Worst Defeat / Highest Scoring */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Biggest Win</div>
-          <div className="font-bold text-emerald-400 text-sm mt-0.5">
-            {season.teamRecord.wins > 0 ? <>{season.biggestWin.score} vs {season.biggestWin.opponent}</> : <span className="text-white">No wins</span>}
-          </div>
-        </div>
-        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Worst Defeat</div>
-          <div className="font-bold text-red-400 text-sm mt-0.5">
-            {season.teamRecord.losses > 0 ? <>{season.worstDefeat.score} vs {season.worstDefeat.opponent}</> : <span className="text-emerald-400">Undefeated!</span>}
-          </div>
-        </div>
-        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800/50">
-          <div className="text-[10px] font-bold tracking-widest text-white uppercase">Highest Scoring</div>
-          <div className="font-bold text-emerald-400 text-sm mt-0.5">{season.highestScoring.score} vs {season.highestScoring.opponent}</div>
-        </div>
-      </div>
 
       {/* Form Guide */}
       <div className="bg-gray-900 rounded-xl p-3 mb-6 border border-gray-800/50">

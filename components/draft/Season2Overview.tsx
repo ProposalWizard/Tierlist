@@ -118,48 +118,48 @@ export default function Season2Overview({
             return (
               <div
                 key={i}
-                className={`flex items-center gap-3 border rounded-lg px-4 py-3 transition-all duration-500 ${
+                className={`flex items-start gap-2 border rounded-lg px-3 py-3 transition-all duration-500 ${
                   revealStep > i ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
                 } ${retained
                   ? "bg-emerald-900/20 border-emerald-700/40"
                   : "bg-red-900/10 border-red-800/30"
                 }`}
               >
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${dp.player.isSub ? "bg-purple-600" : getPositionColor(dp.player.assignedPosition)} text-white`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${dp.player.isSub ? "bg-purple-600" : getPositionColor(dp.player.assignedPosition)} text-white`}>
                   {dp.player.isSub ? "SUB" : dp.player.assignedPosition}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm">{dp.player.name}</div>
-                  <div className="text-xs text-white">{dp.player.clubYear} &middot; OVR {dp.player.overall}</div>
-                </div>
-                <div className="text-right flex flex-col items-end gap-1">
-                  {!isConvinceable && (
-                    <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded">
-                      {dp.reason}
-                    </span>
-                  )}
-                  {isConvinceable && !convinceAttempted && revealStep > i && (
-                    <button
-                      onClick={handleConvince}
-                      className="text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 px-2.5 py-1 rounded transition-all active:scale-95"
-                    >
-                      💬 Convince to stay
-                    </button>
-                  )}
-                  {isConvinceable && convinceAttempted && (
-                    <span className={`text-xs font-bold px-2 py-1 rounded ${
-                      convinceSuccess
-                        ? "text-emerald-300 bg-emerald-500/15"
-                        : "text-red-400 bg-red-500/10"
-                    }`}>
-                      {convinceSuccess ? "✓ Changed their mind!" : "✗ Still leaving"}
-                    </span>
-                  )}
-                  {isConvinceable && !convinceAttempted && revealStep <= i && (
-                    <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded">
-                      {dp.reason}
-                    </span>
-                  )}
+                  <div className="font-bold text-sm leading-tight">{dp.player.name}</div>
+                  <div className="text-xs text-white mt-0.5">{dp.player.clubYear} &middot; OVR {dp.player.overall}</div>
+                  <div className="mt-1.5">
+                    {!isConvinceable && (
+                      <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded">
+                        {dp.reason}
+                      </span>
+                    )}
+                    {isConvinceable && !convinceAttempted && revealStep > i && (
+                      <button
+                        onClick={handleConvince}
+                        className="text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 px-2.5 py-1 rounded transition-all active:scale-95"
+                      >
+                        💬 Convince to stay
+                      </button>
+                    )}
+                    {isConvinceable && convinceAttempted && (
+                      <span className={`text-xs font-bold px-2 py-1 rounded ${
+                        convinceSuccess
+                          ? "text-emerald-300 bg-emerald-500/15"
+                          : "text-red-400 bg-red-500/10"
+                      }`}>
+                        {convinceSuccess ? "✓ Changed their mind!" : "✗ Still leaving"}
+                      </span>
+                    )}
+                    {isConvinceable && !convinceAttempted && revealStep <= i && (
+                      <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded">
+                        {dp.reason}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
