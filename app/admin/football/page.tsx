@@ -376,6 +376,11 @@ export default function FootballDataPage() {
   const [gridClubNames, setGridClubNames] = useState<{ rows: string[]; cols: string[] } | null>(null);
   const [gridLoading, setGridLoading] = useState(false);
   const [gridSearching, setGridSearching] = useState<Record<string, boolean>>({});
+  const [saveTitle, setSaveTitle] = useState("");
+  const [saveDifficulty, setSaveDifficulty] = useState<"easy" | "medium" | "extreme">("easy");
+  const [savingPuzzle, setSavingPuzzle] = useState(false);
+  const [savePuzzleError, setSavePuzzleError] = useState<string | null>(null);
+  const [savedPuzzleId, setSavedPuzzleId] = useState<string | null>(null);
 
   /* ── API calls ── */
 
@@ -508,6 +513,46 @@ export default function FootballDataPage() {
       setError(e instanceof Error ? e.message : "Grid generation failed");
     }
     setGridLoading(false);
+  };
+
+  const savePuzzle = async () => {
+    if (!saveTitle.trim() || !gridCells || !gridClubNames) return;
+    setSavingPuzzle(true);
+    setSavePuzzleError(null);
+    setSavedPuzzleId(null);
+    const { rows: rowLabels, cols: colLabels } = gridClubNames;
+    const apiGrid = rowLabels.map((_, ri) =>
+      colLabels.map((_, ci) => {
+        const players = gridCells[ri * 3 + ci] ?? [];
+        return {
+          type: "normal" as const,
+          conditions: [rowLabels[ri], colLabels[ci]] as [string, string],
+          answers: players.map((p) => ({ name: p.name, points: 1 })),
+          maxScore: players.length,
+        };
+      })
+    );
+    try {
+      const res = await fetch("/api/tictactoe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: saveTitle.trim(),
+          difficulty: saveDifficulty,
+          row_labels: rowLabels,
+          col_labels: colLabels,
+          grid: apiGrid,
+          three_in_a_row_bonus: 10,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to save");
+      setSavedPuzzleId(json.id);
+      setSaveTitle("");
+    } catch (e: unknown) {
+      setSavePuzzleError(e instanceof Error ? e.message : "Save failed");
+    }
+    setSavingPuzzle(false);
   };
 
   /* ── Breadcrumb ── */
@@ -692,57 +737,103 @@ export default function FootballDataPage() {
 
             {/* Results grid */}
             {!gridLoading && gridCells && gridClubNames && (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr>
-                      <th className="p-2" />
-                      {gridClubNames.cols.map((name, ci) => (
-                        <th key={ci} className="p-2 text-center text-xs font-bold uppercase text-indigo-400 min-w-[180px]">
-                          {name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {gridClubNames.rows.map((rowName, ri) => (
-                      <tr key={ri}>
-                        <td className="p-2 text-right text-xs font-bold uppercase text-indigo-400 whitespace-nowrap align-top pt-4">
-                          {rowName}
-                        </td>
-                        {[0, 1, 2].map((ci) => {
-                          const cellPlayers = gridCells[ri * 3 + ci] ?? [];
-                          return (
-                            <td key={ci} className="p-1 align-top">
-                              <div className="rounded-lg border border-gray-800 bg-gray-900 p-2 min-h-[80px]">
-                                {cellPlayers.length === 0 ? (
-                                  <div className="flex items-center justify-center h-[80px] text-xs text-white">
-                                    No players
-                                  </div>
-                                ) : (
-                                  <div className="space-y-1">
-                                    <div className="text-[10px] font-bold text-white mb-1">
-                                      {cellPlayers.length} player{cellPlayers.length !== 1 ? "s" : ""}
-                                    </div>
-                                    {cellPlayers.map((p) => (
-                                      <button key={p.id}
-                                        onClick={() => { setTab("browse"); loadPlayer(p.id); }}
-                                        className="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left hover:bg-gray-800 transition-colors">
-                                        <Img src={p.image} alt={p.name} size={20} />
-                                        <span className="text-xs text-white truncate">{p.name}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          );
-                        })}
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="p-2" />
+                        {gridClubNames.cols.map((name, ci) => (
+                          <th key={ci} className="p-2 text-center text-xs font-bold uppercase text-indigo-400 min-w-[180px]">
+                            {name}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {gridClubNames.rows.map((rowName, ri) => (
+                        <tr key={ri}>
+                          <td className="p-2 text-right text-xs font-bold uppercase text-indigo-400 whitespace-nowrap align-top pt-4">
+                            {rowName}
+                          </td>
+                          {[0, 1, 2].map((ci) => {
+                            const cellPlayers = gridCells[ri * 3 + ci] ?? [];
+                            return (
+                              <td key={ci} className="p-1 align-top">
+                                <div className="rounded-lg border border-gray-800 bg-gray-900 p-2 min-h-[80px]">
+                                  {cellPlayers.length === 0 ? (
+                                    <div className="flex items-center justify-center h-[80px] text-xs text-white">
+                                      No players
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-1">
+                                      <div className="text-[10px] font-bold text-white mb-1">
+                                        {cellPlayers.length} player{cellPlayers.length !== 1 ? "s" : ""}
+                                      </div>
+                                      {cellPlayers.map((p) => (
+                                        <button key={p.id}
+                                          onClick={() => { setTab("browse"); loadPlayer(p.id); }}
+                                          className="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left hover:bg-gray-800 transition-colors">
+                                          <Img src={p.image} alt={p.name} size={20} />
+                                          <span className="text-xs text-white truncate">{p.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Save as TTT Puzzle */}
+                <div className="mt-8 rounded-xl border border-gray-700 bg-gray-900 p-5">
+                  <h3 className="mb-1 text-sm font-bold text-white">Save as TTT Puzzle</h3>
+                  <p className="mb-4 text-xs text-white">All players found in each cell become valid answers (1 point each).</p>
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    <input
+                      type="text"
+                      placeholder="Puzzle title..."
+                      value={saveTitle}
+                      onChange={(e) => setSaveTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") savePuzzle(); }}
+                      className="flex-1 min-w-[200px] rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+                    />
+                    <div className="flex gap-1">
+                      {(["easy", "medium", "extreme"] as const).map((d) => (
+                        <button key={d} onClick={() => setSaveDifficulty(d)}
+                          className={`rounded-lg px-3 py-2 text-xs font-bold uppercase transition-colors ${
+                            saveDifficulty === d
+                              ? d === "easy" ? "bg-green-600 text-white"
+                              : d === "medium" ? "bg-yellow-600 text-white"
+                              : "bg-red-600 text-white"
+                              : "border border-gray-700 bg-gray-800 text-white hover:border-gray-600"
+                          }`}>{d}</button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={savePuzzle}
+                      disabled={savingPuzzle || !saveTitle.trim()}
+                      className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {savingPuzzle ? "Saving..." : "Save Puzzle"}
+                    </button>
+                  </div>
+                  {savePuzzleError && <p className="text-sm text-red-400">{savePuzzleError}</p>}
+                  {savedPuzzleId && (
+                    <p className="text-sm text-green-400">
+                      Puzzle saved!{" "}
+                      <Link href={`/tic-tac-toe/${savedPuzzleId}`} className="underline font-bold">
+                        Play it →
+                      </Link>
+                    </p>
+                  )}
+                </div>
+              </>
             )}
           </>
         )}
