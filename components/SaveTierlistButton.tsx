@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Props {
   tierlistId: string;
@@ -12,11 +12,14 @@ export default function SaveTierlistButton({ tierlistId, initialSaved = false, i
   const [saved, setSaved] = useState(initialSaved);
   const [authed, setAuthed] = useState(isLoggedIn);
   const [loading, setLoading] = useState(false);
+  const toggleInFlight = useRef(false);
 
   useEffect(() => {
     fetch(`/api/tierlists/${tierlistId}/save`)
       .then((r) => r.json())
       .then((data) => {
+        // Don't overwrite optimistic state if a toggle is in flight
+        if (toggleInFlight.current) return;
         setSaved(data.saved);
         setAuthed(data.isLoggedIn);
       })
@@ -24,7 +27,8 @@ export default function SaveTierlistButton({ tierlistId, initialSaved = false, i
   }, [tierlistId]);
 
   async function toggle() {
-    if (!authed || loading) return;
+    if (!authed || toggleInFlight.current) return;
+    toggleInFlight.current = true;
     setLoading(true);
     setSaved((v) => !v);
 
@@ -41,6 +45,7 @@ export default function SaveTierlistButton({ tierlistId, initialSaved = false, i
       setSaved((v) => !v);
     } finally {
       setLoading(false);
+      toggleInFlight.current = false;
     }
   }
 

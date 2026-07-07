@@ -10,7 +10,7 @@ function TeamNameInput({ value, onChange }: { value: string; onChange: (name: st
   const [localValue, setLocalValue] = useState(value);
   useEffect(() => { setLocalValue(value); }, [value]);
   return (
-    <div className="mb-6 sm:mb-8">
+    <div className="mb-3 sm:mb-4">
       <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
         Your Team Name
       </label>
@@ -95,7 +95,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
       <ObjectivesToast />
       <div className="max-w-lg w-full">
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-10">
+        <div className="text-center mb-4 sm:mb-5">
           <div className="inline-flex items-center gap-2 mb-3 sm:mb-4">
             <div className="h-px w-8 sm:w-10 bg-gradient-to-r from-transparent to-emerald-500" />
             <span className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-emerald-400 uppercase">
@@ -177,7 +177,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         )}
 
         {/* Formation */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-3 sm:mb-4">
           <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
             Choose Formation
           </label>
@@ -199,7 +199,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         </div>
 
         {/* Era Range */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-3 sm:mb-4">
           <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
             Era Range
           </label>
@@ -245,7 +245,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         </div>
 
         {/* Game Mode */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-3 sm:mb-4">
           <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
             Game Mode
           </label>
@@ -284,7 +284,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         </div>
 
         {/* Draft Order */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-3 sm:mb-4">
           <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
             Draft Order
           </label>
@@ -323,7 +323,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         </div>
 
         {/* Rating Visibility */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-3 sm:mb-4">
           <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
             Rating Visibility
           </label>
@@ -362,7 +362,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         </div>
 
         {/* Re-spins */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-3 sm:mb-4">
           <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
             Re-spins Per Draft
           </label>

@@ -31,20 +31,25 @@ export async function GET() {
 
   const service = createServiceClient();
 
-  // Fetch everything in parallel
+  // Fetch everything in parallel — explicit high limits to avoid the default 1000-row PostgREST cap
   const [
-    { data: tierlists },
-    { data: tierlistImages },
-    { data: voteTierlists },
-    { data: voteImages },
-    { data: categories },
+    { data: tierlists, error: e1 },
+    { data: tierlistImages, error: e2 },
+    { data: voteTierlists, error: e3 },
+    { data: voteImages, error: e4 },
+    { data: categories, error: e5 },
   ] = await Promise.all([
-    service.from("tierlists").select("*").order("created_at", { ascending: false }),
-    service.from("tierlist_images").select("*").order("tierlist_id").order("sort_order"),
-    service.from("vote_tierlists").select("*").order("created_at", { ascending: false }),
-    service.from("vote_tierlist_images").select("*").order("vote_tierlist_id").order("sort_order"),
-    service.from("categories").select("*").order("sort_order"),
+    service.from("tierlists").select("*").order("created_at", { ascending: false }).limit(100000),
+    service.from("tierlist_images").select("*").order("tierlist_id").order("sort_order").limit(1000000),
+    service.from("vote_tierlists").select("*").order("created_at", { ascending: false }).limit(100000),
+    service.from("vote_tierlist_images").select("*").order("vote_tierlist_id").order("sort_order").limit(1000000),
+    service.from("categories").select("*").order("sort_order").limit(10000),
   ]);
+
+  const exportError = e1 ?? e2 ?? e3 ?? e4 ?? e5;
+  if (exportError) {
+    return NextResponse.json({ error: "Export query failed", detail: exportError.message }, { status: 500 });
+  }
 
   // Group images by their tierlist
   const tlImgs = tierlistImages ?? [];

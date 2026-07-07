@@ -31,7 +31,7 @@ export default function LikeButton({ tierlistId, initialCount = 0, initialLiked 
   }, [tierlistId, endpoint]);
 
   async function toggle() {
-    if (!authed || loading) return;
+    if (!authed || toggleInFlight.current) return;
     toggleInFlight.current = true;
     setLoading(true);
     setLiked((v) => !v);
