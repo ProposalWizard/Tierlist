@@ -204,7 +204,7 @@ function Leaderboard({ entries, rt, expanded }: { entries: RecordEntry[]; rt: Re
           className="overflow-hidden transition-all duration-300 ease-in-out"
           style={{ maxHeight: expanded ? `${rest.length * 72}px` : "0px", opacity: expanded ? 1 : 0 }}
         >
-          <div className="space-y-2 pt-2">
+          <div className="space-y-2">
             {rest.map((entry, i) => (
               <LeaderboardRow key={i + 1} entry={entry} index={i + 1} rt={rt} />
             ))}
