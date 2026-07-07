@@ -64,6 +64,9 @@ export async function GET() {
         .from("sofifa_players")
         .select("club, fifa_year")
         .or(PL_FILTER)
+        // Stable ordering is required — without it Postgres gives no ordering
+        // guarantee across .range() pages, so rows can be skipped or duplicated.
+        .order("id", { ascending: true })
         .range(from, to);
 
       if (error) {

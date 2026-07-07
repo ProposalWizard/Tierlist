@@ -438,14 +438,18 @@ export default function DraftPage() {
     if (myRoomPlayer?.squad && (myRoomPlayer.squad as DraftPlayer[]).length > 0) {
       setPlayers(myRoomPlayer.squad as DraftPlayer[]);
     }
-    // Accumulate all room players' season results for group stats in CareerRecap
+    // Accumulate all room players' season results for group stats in CareerRecap.
+    // Dedupe by fingerprint — a rejoin/refresh while the room is "complete" can
+    // fire this again and would otherwise double-count the same season.
     setAllRoomPlayerSeasons(prev => {
       const next = { ...(prev ?? {}) };
       for (const rp of allPlayers) {
         if (rp.season_result) {
           const key = rp.display_name;
           if (!next[key]) next[key] = [];
-          next[key] = [...next[key], rp.season_result];
+          const fp = JSON.stringify(rp.season_result);
+          const alreadyPresent = next[key].some(s => JSON.stringify(s) === fp);
+          if (!alreadyPresent) next[key] = [...next[key], rp.season_result];
         }
       }
       return next;
@@ -753,11 +757,30 @@ export default function DraftPage() {
     }
     if (roomCode) {
       if (currentSeason > 1) {
-        await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nextSeasonNumber: currentSeason }),
-        });
+        if (isHost) {
+          // The host advances the room to the new season (resets everyone to
+          // "drafting"). Only after that should anyone submit their ready.
+          await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nextSeasonNumber: currentSeason }),
+          });
+        } else {
+          // Non-hosts must wait until the host's reset lands — otherwise the
+          // host's next-season would wipe a ready submitted too early, leaving
+          // the player stuck "drafting" forever and the lobby unable to start.
+          const deadline = Date.now() + 30000;
+          while (Date.now() < deadline) {
+            try {
+              const r = await fetch(`/api/draft/rooms/${roomCode}`);
+              if (r.ok) {
+                const d = await r.json();
+                if ((d.room?.season_number ?? 1) >= currentSeason) break;
+              }
+            } catch { /* retry */ }
+            await new Promise(res => setTimeout(res, 1000));
+          }
+        }
       }
       const { teamStrength, avgOvr } = computeTeamStrength(arranged);
       await fetch(`/api/draft/rooms/${roomCode}/ready`, {
@@ -771,7 +794,7 @@ export default function DraftPage() {
       setPhase("result");
     }
     scrollTop();
-  }, [roomCode, currentSeason, scrollTop]);
+  }, [roomCode, currentSeason, isHost, scrollTop]);
 
   const handleSkipToTest = useCallback(async () => {
     const defaultSettings: DraftSettings = {

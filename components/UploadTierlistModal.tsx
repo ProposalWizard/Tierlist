@@ -175,13 +175,8 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
         throw new Error(body.error ?? "Failed to upload tierlist");
       }
 
-      // Mark uploaded images as used (non-blocking)
-      if (uploadedPaths.length > 0) {
-        supabase.from("uploaded_images")
-          .update({ is_used: true })
-          .in("storage_path", uploadedPaths)
-          .then(() => {});
-      }
+      // Images are marked as used server-side in POST /api/tierlists (the client
+      // has no UPDATE RLS policy on uploaded_images, so it can't do it here).
 
       router.push("/tierlists");
       router.refresh();

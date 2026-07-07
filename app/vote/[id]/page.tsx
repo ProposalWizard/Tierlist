@@ -75,16 +75,22 @@ export default async function VotePage({ params }: Props) {
     .order("sort_order");
 
   // ── Fetch aggregate vote counts ───────────────────────────────────────────
-  const { data: allVotes } = await service
-    .from("vote_tierlist_votes")
-    .select("image_id, tier_label")
-    .eq("vote_tierlist_id", id);
-
-  // Group counts by image_id → tier_label
+  // Page through all rows — a plain select is capped at 1000 by PostgREST, which
+  // would silently under-count once a tierlist passes 1000 total votes.
   const voteCounts: Record<string, Record<string, number>> = {};
-  for (const v of allVotes ?? []) {
-    if (!voteCounts[v.image_id]) voteCounts[v.image_id] = {};
-    voteCounts[v.image_id][v.tier_label] = (voteCounts[v.image_id][v.tier_label] ?? 0) + 1;
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data: page } = await service
+      .from("vote_tierlist_votes")
+      .select("image_id, tier_label")
+      .eq("vote_tierlist_id", id)
+      .range(from, from + PAGE - 1);
+    if (!page || page.length === 0) break;
+    for (const v of page) {
+      if (!voteCounts[v.image_id]) voteCounts[v.image_id] = {};
+      voteCounts[v.image_id][v.tier_label] = (voteCounts[v.image_id][v.tier_label] ?? 0) + 1;
+    }
+    if (page.length < PAGE) break;
   }
 
   // ── Fetch linked regular tierlists ──────────────────────────────────────────

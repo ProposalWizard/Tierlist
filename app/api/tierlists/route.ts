@@ -50,23 +50,38 @@ export async function POST(request: Request) {
   }
 
   const { title, category, images } = body;
-  const cover_image_url = body.cover_image_url ?? images[0]?.image_url ?? null;
 
-  if (!title?.trim()) {
-    return NextResponse.json({ error: "title is required" }, { status: 400 });
-  }
+  // Validate images BEFORE dereferencing (a missing array must not crash the route)
   if (!Array.isArray(images) || images.length === 0) {
     return NextResponse.json(
       { error: "images must be a non-empty array" },
       { status: 400 }
     );
   }
+  if (images.length > 200) {
+    return NextResponse.json({ error: "too many images (max 200)" }, { status: 400 });
+  }
+  if (!title?.trim()) {
+    return NextResponse.json({ error: "title is required" }, { status: 400 });
+  }
+  if (title.trim().length > 120) {
+    return NextResponse.json({ error: "title too long (max 120 chars)" }, { status: 400 });
+  }
+  // Reject any image whose URL isn't a real http(s) string (blocks giant data: URLs / junk)
+  const badImage = images.find(
+    (img) => typeof img?.image_url !== "string" || !/^https?:\/\//.test(img.image_url) || img.image_url.length > 2048
+  );
+  if (badImage) {
+    return NextResponse.json({ error: "each image needs a valid image_url" }, { status: 400 });
+  }
 
+  const cover_image_url = body.cover_image_url ?? images[0]?.image_url ?? null;
+  const cleanCategory = category?.trim() || "Other";
   const slug = `${slugify(title.trim())}-${Date.now().toString(36)}`;
 
   const { data: tierlist, error: tlError } = await supabase
     .from("tierlists")
-    .insert({ created_by: user.id, title: title.trim(), category: category ?? "Other", slug, cover_image_url })
+    .insert({ created_by: user.id, title: title.trim(), category: cleanCategory, slug, cover_image_url })
     .select("id, slug")
     .single();
 
@@ -92,6 +107,22 @@ export async function POST(request: Request) {
 
   // Award XP for tierlist creation (fire-and-forget)
   const svc = createServiceClient();
+
+  // Mark the uploaded images (and cover) as used so the storage-cleanup job never
+  // deletes them. Done server-side because uploaded_images has no client UPDATE RLS
+  // policy — the previous client-side update silently no-op'd, leaving is_used=false.
+  const usedPaths = [...images.map((img) => img.image_url), cover_image_url]
+    .filter((u): u is string => typeof u === "string")
+    .map((u) => {
+      try {
+        const parts = new URL(u).pathname.split("/tierlist-images/");
+        return parts[1] ? decodeURIComponent(parts[1]) : null;
+      } catch { return null; }
+    })
+    .filter((p): p is string => !!p);
+  if (usedPaths.length) {
+    void svc.from("uploaded_images").update({ is_used: true }).in("storage_path", usedPaths);
+  }
   svc.from("xp_events").insert({
     user_id: user.id,
     event_type: "tierlist_create",

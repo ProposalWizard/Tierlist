@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { BDPosition } from "@/lib/ballonDorTypes";
+import { pickOpponentScorer } from "@/lib/ballonDorEngine";
 
 // ── Types ────────────────────────────────────────────────────────────
 type MomentType = 'power_bar' | 'goal_grid' | 'timing_bar' | 'decision';
@@ -29,6 +30,7 @@ interface MomentResult {
   isSave: boolean;
   didConcede: boolean;
   highlight: string;
+  scorerName?: string; // opponent player who scored, if applicable
 }
 
 export interface MatchGameResult {
@@ -183,20 +185,22 @@ function computeResult(
   const goodCount     = momentResults.filter(m => m.outcome === 'good').length;
   const defConcedes   = momentResults.filter(m => m.didConcede).length;
 
-  // Teammate goals: based on club prestige ratio
+  // Teammate goals: based on club prestige ratio.
+  // Every assist the player made must correspond to a teammate goal.
   const presRatio    = clubPrestige / (clubPrestige + opponentPrestige);
   const homeAdv      = isHome ? 0.08 : -0.05;
   const tmMean       = (presRatio + homeAdv) * 2.2;
-  const tmGoals      = Math.max(0, Math.round(tmMean + (Math.random() - 0.5)));
+  const tmGoals      = Math.max(playerAssists, Math.round(tmMean + (Math.random() - 0.5)));
   const teamGoals    = playerGoals + tmGoals;
 
-  // Opponent goals
+  // Opponent goals — can never be fewer than the concedes the player watched happen live
   const oppRatio     = opponentPrestige / (clubPrestige + opponentPrestige);
   const defFail      = (position === 'DEF' || position === 'GK') ? defConcedes * 0.6 : 0;
   const oppMean      = (oppRatio - homeAdv) * 2.0 + defFail;
   const rawOppGoals  = Math.max(0, Math.round(oppMean + (Math.random() - 0.3)));
-  // GK saves reduce conceded
-  const opponentGoals = position === 'GK' ? Math.max(0, rawOppGoals - Math.floor(playerSaves * 0.6)) : rawOppGoals;
+  // GK saves reduce conceded, but never below the goals that visibly went in
+  const adjustedOpp   = position === 'GK' ? Math.max(0, rawOppGoals - Math.floor(playerSaves * 0.6)) : rawOppGoals;
+  const opponentGoals = Math.max(adjustedOpp, defConcedes);
 
   const isWin  = teamGoals > opponentGoals;
   const isDraw = teamGoals === opponentGoals;
@@ -262,7 +266,7 @@ export default function MatchGame({
         setMomentIdx(i => i + 1);
         setPhase('moment');
       }
-    }, 1800);
+    }, 2600);
   }
 
   const currentMoment = moments[momentIdx];
@@ -332,8 +336,15 @@ export default function MatchGame({
           {lastMomentResult.didConcede && (
             <>
               <p className="text-5xl mb-3">😤</p>
-              <p className="text-2xl font-black text-red-400">They score!</p>
-              <p className="mt-2 text-sm text-gray-500">{lastMomentResult.highlight}</p>
+              {lastMomentResult.scorerName ? (
+                <>
+                  <p className="text-2xl font-black text-red-400">{lastMomentResult.scorerName} scores!</p>
+                  <p className="mt-1 text-sm text-gray-300">{opponent} pull one back</p>
+                </>
+              ) : (
+                <p className="text-2xl font-black text-red-400">They score!</p>
+              )}
+              <p className="mt-2 text-sm text-gray-300">{lastMomentResult.highlight}</p>
             </>
           )}
           {!isGoal && !isAssist && !isSave && !lastMomentResult.didConcede && (
@@ -342,7 +353,7 @@ export default function MatchGame({
               <p className={`text-2xl font-black ${isMiss ? 'text-red-400' : 'text-gray-300'}`}>
                 {outcomeLabel(lastMomentResult.outcome)}
               </p>
-              <p className="mt-2 text-sm text-gray-500">{lastMomentResult.highlight}</p>
+              <p className="mt-2 text-sm text-gray-300">{lastMomentResult.highlight}</p>
             </>
           )}
         </div>
@@ -489,6 +500,7 @@ export default function MatchGame({
               key={`pb_${currentMoment.id}`}
               moment={currentMoment}
               difficulty={difficulty}
+              opponent={opponent}
               onComplete={handleMomentComplete}
             />
           )}
@@ -497,6 +509,7 @@ export default function MatchGame({
               key={`gg_${currentMoment.id}`}
               moment={currentMoment}
               difficulty={difficulty}
+              opponent={opponent}
               onComplete={handleMomentComplete}
             />
           )}
@@ -505,6 +518,7 @@ export default function MatchGame({
               key={`tb_${currentMoment.id}`}
               moment={currentMoment}
               difficulty={difficulty}
+              opponent={opponent}
               onComplete={handleMomentComplete}
             />
           )}
@@ -514,6 +528,7 @@ export default function MatchGame({
               moment={currentMoment}
               choices={currentMoment.choices}
               difficulty={difficulty}
+              opponent={opponent}
               onComplete={handleMomentComplete}
             />
           )}
@@ -543,8 +558,8 @@ function ScoreBar({ teamScore, oppScore, clubName, opponent, minute }: {
 }
 
 // ── Power bar game ─────────────────────────────────────────────────────
-function PowerBarGame({ moment, difficulty, onComplete }: {
-  moment: Moment; difficulty: number; onComplete: (r: MomentResult) => void;
+function PowerBarGame({ moment, difficulty, opponent, onComplete }: {
+  moment: Moment; difficulty: number; opponent: string; onComplete: (r: MomentResult) => void;
 }) {
   const [pos, setPos] = useState(5);
   const [stopped, setStopped] = useState(false);
@@ -611,8 +626,9 @@ function PowerBarGame({ moment, difficulty, onComplete }: {
     };
 
     const hl = highlights[outcome]?.[isGoal ? 'goal' : isAssist ? 'assist' : 'default'] ?? '';
-    setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave: false, didConcede, highlight: hl }), 600);
-  }, [stopped, pos, moment, difficulty, zoneCenter, onComplete]);
+    const scorerName = didConcede ? (pickOpponentScorer(opponent) ?? undefined) : undefined;
+    setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave: false, didConcede, highlight: hl, scorerName }), 600);
+  }, [stopped, pos, moment, difficulty, zoneCenter, opponent, onComplete]);
 
   const stoppedOutcome = stoppedPos !== null ? barOutcome(stoppedPos, zoneCenter, PERFECT_HW) : null;
   const cursorColor = stoppedOutcome === 'perfect' ? 'bg-green-400' : stoppedOutcome === 'good' ? 'bg-yellow-400' : stoppedOutcome === 'ok' ? 'bg-orange-400' : stoppedOutcome === 'miss' ? 'bg-red-500' : 'bg-white';
@@ -668,8 +684,8 @@ function PowerBarGame({ moment, difficulty, onComplete }: {
 }
 
 // ── Goal grid game ─────────────────────────────────────────────────────
-function GoalGridGame({ moment, difficulty, onComplete }: {
-  moment: Moment; difficulty: number; onComplete: (r: MomentResult) => void;
+function GoalGridGame({ moment, difficulty, opponent, onComplete }: {
+  moment: Moment; difficulty: number; opponent: string; onComplete: (r: MomentResult) => void;
 }) {
   const [picked, setPicked] = useState<number | null>(null);
   const [keeperCells, setKeeperCells] = useState<number[]>([]);
@@ -682,24 +698,32 @@ function GoalGridGame({ moment, difficulty, onComplete }: {
     setKeeperCells(kc);
 
     const covered = kc.includes(cell);
-    const outcome: Outcome = !covered ? 'perfect' : Math.random() < 0.3 ? 'good' : 'miss';
 
     // Apply difficulty: covered shots are fully blocked; uncovered apply difficulty to goal chance
     const isGoal   = moment.isGoalChance && !covered && Math.random() < 0.82 * difficulty;
     const isSave   = moment.isSave && covered;
     const didConcede = moment.isSave && !covered;
 
+    // Outcome grade must agree with what actually happened: an uncovered shot
+    // that still doesn't go in is only "good", never "perfect"
+    const outcome: Outcome = moment.isGoalChance
+      ? (isGoal ? 'perfect' : !covered ? 'good' : Math.random() < 0.3 ? 'good' : 'miss')
+      : (!covered ? 'perfect' : Math.random() < 0.3 ? 'good' : 'miss');
+
     const highlight = moment.isSave
       ? (covered ? 'Brilliant dive — the striker is denied!' : 'Goes the wrong way — the ball hits the net.')
-      : (isGoal ? 'Keeper goes the wrong way — net bulges!' : 'Keeper dives the right way — excellent stop!');
+      : (isGoal ? 'Keeper goes the wrong way — net bulges!' : covered ? 'Keeper dives the right way — excellent stop!' : 'Great placement, but the keeper scrambles it away!');
 
+    const conc = moment.isSave ? !covered : false;
+    const scorerName = conc ? (pickOpponentScorer(opponent) ?? undefined) : undefined;
     setTimeout(() => onComplete({
       outcome: moment.isSave ? (covered ? 'perfect' : 'miss') : outcome,
       isGoal:    moment.isGoalChance ? isGoal : false,
       isAssist:  false,
       isSave:    moment.isSave ? covered : false,
-      didConcede: moment.isSave ? !covered : false,
+      didConcede: conc,
       highlight,
+      scorerName,
     }), 1000);
   }
 
@@ -752,8 +776,8 @@ function GoalGridGame({ moment, difficulty, onComplete }: {
 }
 
 // ── Timing bar game ────────────────────────────────────────────────────
-function TimingBarGame({ moment, difficulty, onComplete }: {
-  moment: Moment; difficulty: number; onComplete: (r: MomentResult) => void;
+function TimingBarGame({ moment, difficulty, opponent, onComplete }: {
+  moment: Moment; difficulty: number; opponent: string; onComplete: (r: MomentResult) => void;
 }) {
   const [pos, setPos] = useState(0);
   const [pressed, setPressed] = useState(false);
@@ -816,9 +840,9 @@ function TimingBarGame({ moment, difficulty, onComplete }: {
                isSave ? 'Brilliant reflexes — what a stop!' :
                didConcede ? 'He gets there first — it goes in.' :
                outcome === 'perfect' ? 'Excellent execution!' : outcome === 'miss' ? 'Completely mistimed.' : 'Not quite right.';
-
-    setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave, didConcede, highlight: hl }), 600);
-  }, [pressed, pos, moment, difficulty, zoneCenter, onComplete]);
+    const scorerName = didConcede ? (pickOpponentScorer(opponent) ?? undefined) : undefined;
+    setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave, didConcede, highlight: hl, scorerName }), 600);
+  }, [pressed, pos, moment, difficulty, zoneCenter, opponent, onComplete]);
 
   const pressedOutcome = pressedPos !== null ? barOutcome(pressedPos, zoneCenter, PERFECT_HW) : null;
   const cursorColor = pressedOutcome === 'perfect' ? 'bg-green-400' : pressedOutcome === 'good' ? 'bg-yellow-400' : pressedOutcome === 'ok' ? 'bg-orange-400' : pressedOutcome === 'miss' ? 'bg-red-400' : 'bg-white';
@@ -875,8 +899,8 @@ function TimingBarGame({ moment, difficulty, onComplete }: {
 }
 
 // ── Decision game ──────────────────────────────────────────────────────
-function DecisionGame({ moment, choices, difficulty, onComplete }: {
-  moment: Moment; choices: DecisionChoice[]; difficulty: number; onComplete: (r: MomentResult) => void;
+function DecisionGame({ moment, choices, difficulty, opponent, onComplete }: {
+  moment: Moment; choices: DecisionChoice[]; difficulty: number; opponent: string; onComplete: (r: MomentResult) => void;
 }) {
   const [timeLeft, setTimeLeft] = useState(3000);
   const [picked, setPicked] = useState<number | null>(null);
@@ -900,9 +924,9 @@ function DecisionGame({ moment, choices, difficulty, onComplete }: {
                isAssist ? `${c!.label} — perfectly played!` :
                didConcede ? `${c!.label} — he slots it home.` :
                s ? `${c!.label} — good decision!` : `${c!.label} — doesn't quite come off.`;
-
-    setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave: false, didConcede, highlight: hl }), 700);
-  }, [choices, moment, difficulty, onComplete]);
+    const scorerName = didConcede ? (pickOpponentScorer(opponent) ?? undefined) : undefined;
+    setTimeout(() => onComplete({ outcome, isGoal, isAssist, isSave: false, didConcede, highlight: hl, scorerName }), 700);
+  }, [choices, moment, difficulty, opponent, onComplete]);
 
   useEffect(() => {
     if (picked !== null) return;

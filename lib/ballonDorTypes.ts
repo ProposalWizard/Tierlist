@@ -151,6 +151,7 @@ export interface TransferOffer {
   tierLabel: string;
   prestige: number;
   hasCL: boolean;
+  reason: string;
 }
 
 export interface BDSeason {
@@ -174,6 +175,8 @@ export interface BDSeason {
   matchweek: number;
   money: number;
   energy: number;
+  // One-shot shop items already bought this season (persisted so the limit survives tab switches)
+  purchasedItems?: string[];
 }
 
 export interface BDCareer {

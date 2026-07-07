@@ -9,10 +9,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 import LikeButton from "@/components/LikeButton";
 import SaveTierlistButton from "@/components/SaveTierlistButton";
 import TierlistBoardLoader from "./TierlistBoardLoader";
 import PlayCommunityVoteLoader from "./PlayCommunityVoteLoader";
+import ViewPinger from "./ViewPinger";
 import type { Tierlist, TierlistImage, VoteTier } from "@/lib/types";
 
 interface Props { params: Promise<{ id: string }> }
@@ -67,6 +69,15 @@ export default async function PlayPage({ params }: Props) {
 
   const tierlist = tierlistResult.data;
   const images   = imagesResult.data ?? [];
+
+  // Determine auth from the request session so "Save to Profile" can render.
+  // (The page is ISR-cached, but auth-cookie-bearing requests render dynamically.)
+  let isLoggedIn = false;
+  try {
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    isLoggedIn = !!user;
+  } catch { /* treat as logged out */ }
 
   // Fetch creator profile, linked blind ranking, and linked vote tierlist in parallel
   const [creatorProfileResult, linkedBrResult, linkedVtResult] = await Promise.all([
@@ -174,10 +185,11 @@ export default async function PlayPage({ params }: Props) {
         isAdmin={false}
         tierlistId={id}
         tierlistTitle={tierlist.title}
-        isLoggedIn={false}
+        isLoggedIn={isLoggedIn}
         initialTiers={tierlist.tiers as VoteTier[] | undefined}
         faceDetectionEnabled={tierlist.face_detection_enabled !== false}
       />
+      <ViewPinger tierlistId={id} />
     </main>
   );
 }

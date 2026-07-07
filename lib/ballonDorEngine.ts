@@ -59,190 +59,510 @@ export const PL_CLUBS: BDClub[] = [
 type SquadPlayer = { name: string; pos: BDPosition; ovr: number };
 
 export const CLUB_SQUADS: Record<string, SquadPlayer[]> = {
+  // ── Premier League ──────────────────────────────────────────────
   mancity: [
     { name: 'Ederson', pos: 'GK', ovr: 87 },
+    { name: 'Stefan Ortega', pos: 'GK', ovr: 79 },
     { name: 'Rúben Dias', pos: 'DEF', ovr: 89 },
+    { name: 'Manuel Akanji', pos: 'DEF', ovr: 84 },
+    { name: 'John Stones', pos: 'DEF', ovr: 84 },
+    { name: 'Josko Gvardiol', pos: 'DEF', ovr: 85 },
     { name: 'Kyle Walker', pos: 'DEF', ovr: 83 },
+    { name: 'Rico Lewis', pos: 'DEF', ovr: 79 },
     { name: 'Rodri', pos: 'MID', ovr: 91 },
     { name: 'Kevin De Bruyne', pos: 'MID', ovr: 89 },
     { name: 'Phil Foden', pos: 'MID', ovr: 88 },
-    { name: 'Erling Haaland', pos: 'ATT', ovr: 91 },
     { name: 'Bernardo Silva', pos: 'MID', ovr: 88 },
+    { name: 'Mateo Kovacic', pos: 'MID', ovr: 82 },
+    { name: 'Ilkay Gündogan', pos: 'MID', ovr: 84 },
+    { name: 'Erling Haaland', pos: 'ATT', ovr: 91 },
+    { name: 'Jeremy Doku', pos: 'ATT', ovr: 83 },
+    { name: 'Jack Grealish', pos: 'ATT', ovr: 82 },
+    { name: 'Oscar Bobb', pos: 'ATT', ovr: 78 },
   ],
   liverpool: [
     { name: 'Alisson', pos: 'GK', ovr: 87 },
+    { name: 'Caoimhín Kelleher', pos: 'GK', ovr: 79 },
     { name: 'Virgil van Dijk', pos: 'DEF', ovr: 88 },
+    { name: 'Ibrahima Konaté', pos: 'DEF', ovr: 85 },
+    { name: 'Joe Gomez', pos: 'DEF', ovr: 81 },
     { name: 'Andrew Robertson', pos: 'DEF', ovr: 84 },
+    { name: 'Conor Bradley', pos: 'DEF', ovr: 80 },
     { name: 'Alexis Mac Allister', pos: 'MID', ovr: 84 },
     { name: 'Dominik Szoboszlai', pos: 'MID', ovr: 85 },
+    { name: 'Ryan Gravenberch', pos: 'MID', ovr: 83 },
+    { name: 'Harvey Elliott', pos: 'MID', ovr: 79 },
+    { name: 'Curtis Jones', pos: 'MID', ovr: 78 },
     { name: 'Mohamed Salah', pos: 'ATT', ovr: 88 },
     { name: 'Darwin Núñez', pos: 'ATT', ovr: 83 },
     { name: 'Luis Díaz', pos: 'ATT', ovr: 84 },
+    { name: 'Cody Gakpo', pos: 'ATT', ovr: 82 },
+    { name: 'Diogo Jota', pos: 'ATT', ovr: 83 },
   ],
   arsenal: [
     { name: 'David Raya', pos: 'GK', ovr: 84 },
+    { name: 'Karl Hein', pos: 'GK', ovr: 75 },
     { name: 'William Saliba', pos: 'DEF', ovr: 87 },
     { name: 'Gabriel Magalhães', pos: 'DEF', ovr: 85 },
+    { name: 'Ben White', pos: 'DEF', ovr: 83 },
+    { name: 'Oleksandr Zinchenko', pos: 'DEF', ovr: 81 },
+    { name: 'Jakub Kiwior', pos: 'DEF', ovr: 79 },
     { name: 'Declan Rice', pos: 'MID', ovr: 87 },
     { name: 'Martin Ødegaard', pos: 'MID', ovr: 88 },
+    { name: 'Thomas Partey', pos: 'MID', ovr: 82 },
+    { name: 'Jorginho', pos: 'MID', ovr: 79 },
+    { name: 'Fabio Vieira', pos: 'MID', ovr: 79 },
     { name: 'Bukayo Saka', pos: 'ATT', ovr: 87 },
     { name: 'Gabriel Martinelli', pos: 'ATT', ovr: 84 },
     { name: 'Kai Havertz', pos: 'ATT', ovr: 83 },
+    { name: 'Leandro Trossard', pos: 'ATT', ovr: 82 },
   ],
   manutd: [
     { name: 'André Onana', pos: 'GK', ovr: 84 },
+    { name: 'Altay Bayındır', pos: 'GK', ovr: 78 },
     { name: 'Lisandro Martínez', pos: 'DEF', ovr: 84 },
     { name: 'Matthijs de Ligt', pos: 'DEF', ovr: 82 },
+    { name: 'Victor Lindelöf', pos: 'DEF', ovr: 80 },
+    { name: 'Luke Shaw', pos: 'DEF', ovr: 81 },
+    { name: 'Diogo Dalot', pos: 'DEF', ovr: 81 },
     { name: 'Bruno Fernandes', pos: 'MID', ovr: 87 },
+    { name: 'Casemiro', pos: 'MID', ovr: 82 },
+    { name: 'Kobbie Mainoo', pos: 'MID', ovr: 80 },
+    { name: 'Mason Mount', pos: 'MID', ovr: 80 },
     { name: 'Rasmus Højlund', pos: 'ATT', ovr: 82 },
     { name: 'Alejandro Garnacho', pos: 'ATT', ovr: 81 },
     { name: 'Amad Diallo', pos: 'ATT', ovr: 80 },
+    { name: 'Marcus Rashford', pos: 'ATT', ovr: 82 },
   ],
   chelsea: [
     { name: 'Robert Sánchez', pos: 'GK', ovr: 82 },
+    { name: 'Filip Jörgensen', pos: 'GK', ovr: 79 },
     { name: 'Reece James', pos: 'DEF', ovr: 83 },
     { name: 'Levi Colwill', pos: 'DEF', ovr: 80 },
+    { name: 'Benoît Badiashile', pos: 'DEF', ovr: 79 },
+    { name: 'Malo Gusto', pos: 'DEF', ovr: 79 },
+    { name: 'Marc Cucurella', pos: 'DEF', ovr: 80 },
     { name: 'Enzo Fernández', pos: 'MID', ovr: 84 },
     { name: 'Cole Palmer', pos: 'MID', ovr: 87 },
+    { name: 'Moisés Caicedo', pos: 'MID', ovr: 84 },
+    { name: 'Romeo Lavia', pos: 'MID', ovr: 80 },
     { name: 'Christopher Nkunku', pos: 'ATT', ovr: 84 },
     { name: 'Nicolas Jackson', pos: 'ATT', ovr: 82 },
+    { name: 'Pedro Neto', pos: 'ATT', ovr: 82 },
+    { name: 'Mykhaylo Mudryk', pos: 'ATT', ovr: 80 },
   ],
   newcastle: [
     { name: 'Nick Pope', pos: 'GK', ovr: 84 },
+    { name: 'Martin Dúbravka', pos: 'GK', ovr: 78 },
     { name: 'Kieran Trippier', pos: 'DEF', ovr: 83 },
     { name: 'Sven Botman', pos: 'DEF', ovr: 83 },
+    { name: 'Jamaal Lascelles', pos: 'DEF', ovr: 79 },
+    { name: 'Dan Burn', pos: 'DEF', ovr: 79 },
+    { name: 'Tino Livramento', pos: 'DEF', ovr: 78 },
     { name: 'Bruno Guimarães', pos: 'MID', ovr: 87 },
+    { name: 'Joe Willock', pos: 'MID', ovr: 79 },
+    { name: 'Sandro Tonali', pos: 'MID', ovr: 83 },
+    { name: 'Joelinton', pos: 'MID', ovr: 81 },
     { name: 'Anthony Gordon', pos: 'ATT', ovr: 83 },
     { name: 'Alexander Isak', pos: 'ATT', ovr: 85 },
     { name: 'Harvey Barnes', pos: 'ATT', ovr: 80 },
+    { name: 'Jacob Murphy', pos: 'ATT', ovr: 78 },
   ],
   tottenham: [
     { name: 'Guglielmo Vicario', pos: 'GK', ovr: 83 },
+    { name: 'Fraser Forster', pos: 'GK', ovr: 76 },
     { name: 'Cristian Romero', pos: 'DEF', ovr: 85 },
     { name: 'Micky van de Ven', pos: 'DEF', ovr: 83 },
+    { name: 'Ben Davies', pos: 'DEF', ovr: 79 },
+    { name: 'Pedro Porro', pos: 'DEF', ovr: 81 },
+    { name: 'Destiny Udogie', pos: 'DEF', ovr: 80 },
     { name: 'James Maddison', pos: 'MID', ovr: 83 },
+    { name: 'Yves Bissouma', pos: 'MID', ovr: 80 },
+    { name: 'Dejan Kulusevski', pos: 'MID', ovr: 82 },
+    { name: 'Rodrigo Bentancur', pos: 'MID', ovr: 80 },
     { name: 'Heung-min Son', pos: 'ATT', ovr: 84 },
     { name: 'Brennan Johnson', pos: 'ATT', ovr: 80 },
     { name: 'Dominic Solanke', pos: 'ATT', ovr: 79 },
+    { name: 'Richarlison', pos: 'ATT', ovr: 80 },
   ],
   astonvilla: [
     { name: 'Emiliano Martínez', pos: 'GK', ovr: 87 },
+    { name: 'Robin Olsen', pos: 'GK', ovr: 76 },
     { name: 'Ezri Konsa', pos: 'DEF', ovr: 82 },
     { name: 'Pau Torres', pos: 'DEF', ovr: 83 },
+    { name: 'Diego Carlos', pos: 'DEF', ovr: 81 },
+    { name: 'Lucas Digne', pos: 'DEF', ovr: 80 },
+    { name: 'Matty Cash', pos: 'DEF', ovr: 80 },
     { name: 'John McGinn', pos: 'MID', ovr: 82 },
     { name: 'Morgan Rogers', pos: 'MID', ovr: 80 },
+    { name: 'Douglas Luiz', pos: 'MID', ovr: 83 },
+    { name: 'Emiliano Buendía', pos: 'MID', ovr: 80 },
     { name: 'Ollie Watkins', pos: 'ATT', ovr: 85 },
     { name: 'Leon Bailey', pos: 'ATT', ovr: 81 },
+    { name: 'Moussa Diaby', pos: 'ATT', ovr: 82 },
   ],
   brighton: [
     { name: 'Bart Verbruggen', pos: 'GK', ovr: 80 },
+    { name: 'Jason Steele', pos: 'GK', ovr: 75 },
     { name: 'Lewis Dunk', pos: 'DEF', ovr: 80 },
+    { name: 'Joel Veltman', pos: 'DEF', ovr: 77 },
+    { name: 'Jan Paul van Hecke', pos: 'DEF', ovr: 78 },
+    { name: 'Pervis Estupiñán', pos: 'DEF', ovr: 78 },
     { name: 'Tariq Lamptey', pos: 'DEF', ovr: 78 },
     { name: 'Billy Gilmour', pos: 'MID', ovr: 79 },
+    { name: 'James Milner', pos: 'MID', ovr: 76 },
+    { name: 'Jack Hinshelwood', pos: 'MID', ovr: 77 },
     { name: 'Evan Ferguson', pos: 'ATT', ovr: 81 },
     { name: 'João Pedro', pos: 'ATT', ovr: 82 },
     { name: 'Danny Welbeck', pos: 'ATT', ovr: 76 },
+    { name: 'Simon Adingra', pos: 'ATT', ovr: 78 },
   ],
   westham: [
     { name: 'Łukasz Fabiański', pos: 'GK', ovr: 78 },
+    { name: 'Alphonse Areola', pos: 'GK', ovr: 77 },
     { name: 'Kurt Zouma', pos: 'DEF', ovr: 79 },
+    { name: 'Nayef Aguerd', pos: 'DEF', ovr: 79 },
     { name: 'Aaron Wan-Bissaka', pos: 'DEF', ovr: 79 },
+    { name: 'Vladimír Coufal', pos: 'DEF', ovr: 78 },
+    { name: 'Emerson', pos: 'DEF', ovr: 78 },
     { name: 'Tomáš Souček', pos: 'MID', ovr: 82 },
     { name: 'Lucas Paquetá', pos: 'MID', ovr: 83 },
+    { name: 'Edson Álvarez', pos: 'MID', ovr: 81 },
+    { name: 'James Ward-Prowse', pos: 'MID', ovr: 81 },
     { name: 'Jarrod Bowen', pos: 'ATT', ovr: 82 },
     { name: 'Mohammed Kudus', pos: 'ATT', ovr: 82 },
+    { name: 'Michail Antonio', pos: 'ATT', ovr: 79 },
   ],
   fulham: [
     { name: 'Bernd Leno', pos: 'GK', ovr: 82 },
+    { name: 'Marek Rodák', pos: 'GK', ovr: 76 },
     { name: 'Tim Ream', pos: 'DEF', ovr: 78 },
+    { name: 'Calvin Bassey', pos: 'DEF', ovr: 79 },
     { name: 'Antonee Robinson', pos: 'DEF', ovr: 81 },
+    { name: 'Kenny Tete', pos: 'DEF', ovr: 78 },
     { name: 'Tom Cairney', pos: 'MID', ovr: 79 },
     { name: 'Alex Iwobi', pos: 'MID', ovr: 80 },
+    { name: 'Harrison Reed', pos: 'MID', ovr: 78 },
+    { name: 'Andreas Pereira', pos: 'MID', ovr: 80 },
     { name: 'Raúl Jiménez', pos: 'ATT', ovr: 80 },
     { name: 'Rodrigo Muniz', pos: 'ATT', ovr: 78 },
+    { name: 'Bobby De Cordova-Reid', pos: 'ATT', ovr: 78 },
   ],
   wolves: [
     { name: 'José Sá', pos: 'GK', ovr: 82 },
+    { name: 'Dan Bentley', pos: 'GK', ovr: 74 },
     { name: 'Max Kilman', pos: 'DEF', ovr: 81 },
     { name: 'Rayan Aït-Nouri', pos: 'DEF', ovr: 81 },
+    { name: 'Toti Gomes', pos: 'DEF', ovr: 77 },
+    { name: 'Nelson Semedo', pos: 'DEF', ovr: 80 },
     { name: 'João Gomes', pos: 'MID', ovr: 80 },
+    { name: 'Mario Lemina', pos: 'MID', ovr: 79 },
+    { name: 'Tommy Doyle', pos: 'MID', ovr: 77 },
     { name: 'Matheus Cunha', pos: 'ATT', ovr: 82 },
     { name: 'Hwang Hee-chan', pos: 'ATT', ovr: 79 },
-    { name: 'Pablo Sarabia', pos: 'ATT', ovr: 77 },
+    { name: 'Jørgen Strand Larsen', pos: 'ATT', ovr: 78 },
   ],
   palace: [
     { name: 'Dean Henderson', pos: 'GK', ovr: 80 },
+    { name: 'Sam Johnstone', pos: 'GK', ovr: 78 },
     { name: 'Marc Guéhi', pos: 'DEF', ovr: 82 },
     { name: 'Daniel Muñoz', pos: 'DEF', ovr: 78 },
+    { name: 'Joachim Andersen', pos: 'DEF', ovr: 80 },
+    { name: 'Tyrick Mitchell', pos: 'DEF', ovr: 78 },
+    { name: 'Nathaniel Clyne', pos: 'DEF', ovr: 76 },
     { name: 'Eberechi Eze', pos: 'MID', ovr: 82 },
     { name: 'Adam Wharton', pos: 'MID', ovr: 78 },
+    { name: 'Will Hughes', pos: 'MID', ovr: 77 },
+    { name: 'Cheick Doucouré', pos: 'MID', ovr: 79 },
     { name: 'Jean-Philippe Mateta', pos: 'ATT', ovr: 80 },
     { name: 'Ismaïla Sarr', pos: 'ATT', ovr: 78 },
+    { name: 'Michael Olise', pos: 'ATT', ovr: 82 },
   ],
   nottmforest: [
     { name: 'Matz Sels', pos: 'GK', ovr: 81 },
+    { name: 'Matt Turner', pos: 'GK', ovr: 76 },
     { name: 'Murillo', pos: 'DEF', ovr: 81 },
     { name: 'Nikola Milenković', pos: 'DEF', ovr: 80 },
+    { name: 'Joe Worrall', pos: 'DEF', ovr: 77 },
+    { name: 'Andrew Omobamidele', pos: 'DEF', ovr: 77 },
+    { name: 'Nuno Tavares', pos: 'DEF', ovr: 78 },
     { name: 'Ryan Yates', pos: 'MID', ovr: 78 },
+    { name: 'Morgan Gibbs-White', pos: 'MID', ovr: 81 },
+    { name: 'Elliot Anderson', pos: 'MID', ovr: 78 },
+    { name: 'Nicolas Domínguez', pos: 'MID', ovr: 78 },
     { name: 'Callum Hudson-Odoi', pos: 'ATT', ovr: 79 },
     { name: 'Chris Wood', pos: 'ATT', ovr: 80 },
     { name: 'Anthony Elanga', pos: 'ATT', ovr: 78 },
+    { name: 'Taiwo Awoniyi', pos: 'ATT', ovr: 78 },
   ],
   everton: [
     { name: 'Jordan Pickford', pos: 'GK', ovr: 84 },
+    { name: 'Joao Virginia', pos: 'GK', ovr: 74 },
     { name: 'James Tarkowski', pos: 'DEF', ovr: 80 },
     { name: 'Michael Keane', pos: 'DEF', ovr: 77 },
+    { name: 'Ben Godfrey', pos: 'DEF', ovr: 77 },
+    { name: 'Ashley Young', pos: 'DEF', ovr: 75 },
+    { name: 'Séamus Coleman', pos: 'DEF', ovr: 76 },
     { name: 'Idrissa Gueye', pos: 'MID', ovr: 79 },
+    { name: 'Abdoulaye Doucouré', pos: 'MID', ovr: 79 },
+    { name: 'James Garner', pos: 'MID', ovr: 78 },
     { name: 'Dwight McNeil', pos: 'ATT', ovr: 78 },
     { name: 'Dominic Calvert-Lewin', pos: 'ATT', ovr: 79 },
     { name: 'Beto', pos: 'ATT', ovr: 76 },
   ],
   brentford: [
     { name: 'Mark Flekken', pos: 'GK', ovr: 80 },
+    { name: 'Thomas Strakosha', pos: 'GK', ovr: 74 },
     { name: 'Nathan Collins', pos: 'DEF', ovr: 80 },
     { name: 'Kristoffer Ajer', pos: 'DEF', ovr: 78 },
+    { name: 'Ethan Pinnock', pos: 'DEF', ovr: 78 },
+    { name: 'Ben Mee', pos: 'DEF', ovr: 77 },
+    { name: 'Rico Henry', pos: 'DEF', ovr: 77 },
     { name: 'Christian Nørgaard', pos: 'MID', ovr: 80 },
     { name: 'Mathias Jensen', pos: 'MID', ovr: 77 },
+    { name: 'Vitaly Janelt', pos: 'MID', ovr: 77 },
+    { name: 'Keane Lewis-Potter', pos: 'MID', ovr: 76 },
     { name: 'Bryan Mbeumo', pos: 'ATT', ovr: 82 },
     { name: 'Yoane Wissa', pos: 'ATT', ovr: 80 },
+    { name: 'Ivan Toney', pos: 'ATT', ovr: 81 },
   ],
   bournemouth: [
     { name: 'Neto', pos: 'GK', ovr: 81 },
+    { name: 'Mark Travers', pos: 'GK', ovr: 75 },
     { name: 'Illia Zabarnyi', pos: 'DEF', ovr: 78 },
+    { name: 'Lloyd Kelly', pos: 'DEF', ovr: 77 },
+    { name: 'Chris Mepham', pos: 'DEF', ovr: 76 },
+    { name: 'Milos Kerkez', pos: 'DEF', ovr: 78 },
     { name: 'Adam Smith', pos: 'DEF', ovr: 75 },
     { name: 'Ryan Christie', pos: 'MID', ovr: 78 },
     { name: 'Tyler Adams', pos: 'MID', ovr: 78 },
+    { name: 'Philip Billing', pos: 'MID', ovr: 78 },
+    { name: 'Marcus Tavernier', pos: 'MID', ovr: 77 },
     { name: 'Antoine Semenyo', pos: 'ATT', ovr: 77 },
     { name: 'Evanilson', pos: 'ATT', ovr: 79 },
+    { name: 'Justin Kluivert', pos: 'ATT', ovr: 78 },
   ],
   leicester: [
     { name: 'Mads Hermansen', pos: 'GK', ovr: 81 },
+    { name: 'Danny Ward', pos: 'GK', ovr: 76 },
     { name: 'Wout Faes', pos: 'DEF', ovr: 80 },
+    { name: 'Conor Coady', pos: 'DEF', ovr: 78 },
     { name: 'Victor Kristiansen', pos: 'DEF', ovr: 78 },
+    { name: 'Ricardo Pereira', pos: 'DEF', ovr: 78 },
     { name: 'Wilfred Ndidi', pos: 'MID', ovr: 80 },
     { name: 'Boubakary Soumaré', pos: 'MID', ovr: 77 },
+    { name: 'Harry Winks', pos: 'MID', ovr: 77 },
+    { name: 'Kiernan Dewsbury-Hall', pos: 'MID', ovr: 79 },
     { name: 'Stephy Mavididi', pos: 'ATT', ovr: 79 },
     { name: 'Jamie Vardy', pos: 'ATT', ovr: 77 },
+    { name: 'Patson Daka', pos: 'ATT', ovr: 78 },
   ],
   southampton: [
     { name: 'Gavin Bazunu', pos: 'GK', ovr: 78 },
+    { name: 'Alex McCarthy', pos: 'GK', ovr: 74 },
     { name: 'Jan Bednarek', pos: 'DEF', ovr: 77 },
+    { name: 'Jack Stephens', pos: 'DEF', ovr: 75 },
     { name: 'Kyle Walker-Peters', pos: 'DEF', ovr: 78 },
+    { name: 'Romain Perraud', pos: 'DEF', ovr: 76 },
     { name: 'Will Smallbone', pos: 'MID', ovr: 76 },
     { name: 'Joe Aribo', pos: 'MID', ovr: 76 },
+    { name: 'Flynn Downes', pos: 'MID', ovr: 75 },
+    { name: 'Stuart Armstrong', pos: 'MID', ovr: 75 },
     { name: 'Cameron Archer', pos: 'ATT', ovr: 75 },
     { name: 'Adam Armstrong', pos: 'ATT', ovr: 76 },
+    { name: 'Sékou Mara', pos: 'ATT', ovr: 74 },
   ],
   ipswich: [
     { name: 'Christian Walton', pos: 'GK', ovr: 75 },
+    { name: 'Vaclav Hladky', pos: 'GK', ovr: 73 },
     { name: 'Luke Woolfenden', pos: 'DEF', ovr: 76 },
+    { name: 'Harry Clarke', pos: 'DEF', ovr: 75 },
     { name: 'Leif Davis', pos: 'DEF', ovr: 77 },
+    { name: 'Axel Tuanzebe', pos: 'DEF', ovr: 74 },
     { name: 'Sam Morsy', pos: 'MID', ovr: 76 },
     { name: 'Kalvin Phillips', pos: 'MID', ovr: 75 },
+    { name: 'Massimo Luongo', pos: 'MID', ovr: 74 },
+    { name: 'Wes Burns', pos: 'MID', ovr: 75 },
     { name: 'Omari Hutchinson', pos: 'ATT', ovr: 77 },
     { name: 'Liam Delap', pos: 'ATT', ovr: 77 },
+    { name: 'Conor Chaplin', pos: 'ATT', ovr: 74 },
+  ],
+
+  // ── European Clubs (CL opponents) ──────────────────────────────
+  realmadrid: [
+    { name: 'Thibaut Courtois', pos: 'GK', ovr: 90 },
+    { name: 'Andriy Lunin', pos: 'GK', ovr: 82 },
+    { name: 'Dani Carvajal', pos: 'DEF', ovr: 84 },
+    { name: 'Éder Militão', pos: 'DEF', ovr: 87 },
+    { name: 'Antonio Rüdiger', pos: 'DEF', ovr: 86 },
+    { name: 'David Alaba', pos: 'DEF', ovr: 83 },
+    { name: 'Ferland Mendy', pos: 'DEF', ovr: 83 },
+    { name: 'Trent Alexander-Arnold', pos: 'DEF', ovr: 87 },
+    { name: 'Federico Valverde', pos: 'MID', ovr: 87 },
+    { name: 'Eduardo Camavinga', pos: 'MID', ovr: 84 },
+    { name: 'Aurélien Tchouaméni', pos: 'MID', ovr: 85 },
+    { name: 'Jude Bellingham', pos: 'MID', ovr: 89 },
+    { name: 'Kylian Mbappé', pos: 'ATT', ovr: 92 },
+    { name: 'Vinicius Jr.', pos: 'ATT', ovr: 90 },
+    { name: 'Rodrygo', pos: 'ATT', ovr: 85 },
+    { name: 'Arda Güler', pos: 'ATT', ovr: 82 },
+    { name: 'Endrick', pos: 'ATT', ovr: 80 },
+  ],
+  barcelona: [
+    { name: 'Iñaki Peña', pos: 'GK', ovr: 79 },
+    { name: 'Wojciech Szczęsny', pos: 'GK', ovr: 83 },
+    { name: 'Ronald Araújo', pos: 'DEF', ovr: 87 },
+    { name: 'Andreas Christensen', pos: 'DEF', ovr: 83 },
+    { name: 'Pau Cubarsí', pos: 'DEF', ovr: 81 },
+    { name: 'Jules Koundé', pos: 'DEF', ovr: 85 },
+    { name: 'Alejandro Balde', pos: 'DEF', ovr: 84 },
+    { name: 'Pedri', pos: 'MID', ovr: 88 },
+    { name: 'Gavi', pos: 'MID', ovr: 87 },
+    { name: 'Frenkie de Jong', pos: 'MID', ovr: 85 },
+    { name: 'Dani Olmo', pos: 'MID', ovr: 85 },
+    { name: 'Marc Casadó', pos: 'MID', ovr: 79 },
+    { name: 'Lamine Yamal', pos: 'ATT', ovr: 87 },
+    { name: 'Robert Lewandowski', pos: 'ATT', ovr: 85 },
+    { name: 'Raphinha', pos: 'ATT', ovr: 86 },
+    { name: 'Ferran Torres', pos: 'ATT', ovr: 81 },
+    { name: 'Fermín López', pos: 'ATT', ovr: 81 },
+  ],
+  bayernmunich: [
+    { name: 'Manuel Neuer', pos: 'GK', ovr: 83 },
+    { name: 'Daniel Peretz', pos: 'GK', ovr: 76 },
+    { name: 'Dayot Upamecano', pos: 'DEF', ovr: 84 },
+    { name: 'Kim Min-jae', pos: 'DEF', ovr: 85 },
+    { name: 'Alphonso Davies', pos: 'DEF', ovr: 84 },
+    { name: 'Raphaël Guerreiro', pos: 'DEF', ovr: 82 },
+    { name: 'Josip Stanišić', pos: 'DEF', ovr: 78 },
+    { name: 'Joshua Kimmich', pos: 'MID', ovr: 88 },
+    { name: 'Thomas Müller', pos: 'MID', ovr: 83 },
+    { name: 'Leroy Sané', pos: 'MID', ovr: 87 },
+    { name: 'Konrad Laimer', pos: 'MID', ovr: 82 },
+    { name: 'Jamal Musiala', pos: 'MID', ovr: 87 },
+    { name: 'Harry Kane', pos: 'ATT', ovr: 90 },
+    { name: 'Florian Wirtz', pos: 'ATT', ovr: 87 },
+    { name: 'Serge Gnabry', pos: 'ATT', ovr: 82 },
+    { name: 'Kingsley Coman', pos: 'ATT', ovr: 82 },
+  ],
+  psg: [
+    { name: 'Gianluigi Donnarumma', pos: 'GK', ovr: 88 },
+    { name: 'Matvey Safonov', pos: 'GK', ovr: 78 },
+    { name: 'Achraf Hakimi', pos: 'DEF', ovr: 87 },
+    { name: 'Marquinhos', pos: 'DEF', ovr: 86 },
+    { name: 'Milan Škriniar', pos: 'DEF', ovr: 83 },
+    { name: 'Lucas Hernández', pos: 'DEF', ovr: 82 },
+    { name: 'Nuno Mendes', pos: 'DEF', ovr: 83 },
+    { name: 'Vitinha', pos: 'MID', ovr: 85 },
+    { name: 'Warren Zaïre-Emery', pos: 'MID', ovr: 83 },
+    { name: 'Fabian Ruiz', pos: 'MID', ovr: 82 },
+    { name: 'Lee Kang-in', pos: 'MID', ovr: 82 },
+    { name: 'João Neves', pos: 'MID', ovr: 83 },
+    { name: 'Ousmane Dembélé', pos: 'ATT', ovr: 86 },
+    { name: 'Khvicha Kvaratskhelia', pos: 'ATT', ovr: 87 },
+    { name: 'Bradley Barcola', pos: 'ATT', ovr: 83 },
+    { name: 'Désiré Doué', pos: 'ATT', ovr: 82 },
+    { name: 'Gonçalo Ramos', pos: 'ATT', ovr: 81 },
+  ],
+  intermilan: [
+    { name: 'Yann Sommer', pos: 'GK', ovr: 84 },
+    { name: 'Josep Martínez', pos: 'GK', ovr: 78 },
+    { name: 'Alessandro Bastoni', pos: 'DEF', ovr: 86 },
+    { name: 'Francesco Acerbi', pos: 'DEF', ovr: 82 },
+    { name: 'Stefan de Vrij', pos: 'DEF', ovr: 81 },
+    { name: 'Matteo Darmian', pos: 'DEF', ovr: 79 },
+    { name: 'Denzel Dumfries', pos: 'DEF', ovr: 82 },
+    { name: 'Carlos Augusto', pos: 'DEF', ovr: 81 },
+    { name: 'Federico Dimarco', pos: 'DEF', ovr: 83 },
+    { name: 'Nicolò Barella', pos: 'MID', ovr: 87 },
+    { name: 'Hakan Çalhanoğlu', pos: 'MID', ovr: 86 },
+    { name: 'Henrikh Mkhitaryan', pos: 'MID', ovr: 83 },
+    { name: 'Davide Frattesi', pos: 'MID', ovr: 82 },
+    { name: 'Piotr Zieliński', pos: 'MID', ovr: 81 },
+    { name: 'Lautaro Martínez', pos: 'ATT', ovr: 89 },
+    { name: 'Marcus Thuram', pos: 'ATT', ovr: 85 },
+    { name: 'Mehdi Taremi', pos: 'ATT', ovr: 80 },
+  ],
+  dortmund: [
+    { name: 'Gregor Kobel', pos: 'GK', ovr: 83 },
+    { name: 'Alexander Meyer', pos: 'GK', ovr: 75 },
+    { name: 'Nico Schlotterbeck', pos: 'DEF', ovr: 82 },
+    { name: 'Niklas Süle', pos: 'DEF', ovr: 83 },
+    { name: 'Waldemar Anton', pos: 'DEF', ovr: 80 },
+    { name: 'Ian Maatsen', pos: 'DEF', ovr: 82 },
+    { name: 'Julian Ryerson', pos: 'DEF', ovr: 79 },
+    { name: 'Emre Can', pos: 'MID', ovr: 82 },
+    { name: 'Julian Brandt', pos: 'MID', ovr: 82 },
+    { name: 'Pascal Groß', pos: 'MID', ovr: 81 },
+    { name: 'Marcel Sabitzer', pos: 'MID', ovr: 81 },
+    { name: 'Serhou Guirassy', pos: 'ATT', ovr: 83 },
+    { name: 'Karim Adeyemi', pos: 'ATT', ovr: 83 },
+    { name: 'Maximilian Beier', pos: 'ATT', ovr: 82 },
+    { name: 'Jamie Bynoe-Gittens', pos: 'ATT', ovr: 80 },
+  ],
+  atleticomadrid: [
+    { name: 'Jan Oblak', pos: 'GK', ovr: 88 },
+    { name: 'Antonio Sivera', pos: 'GK', ovr: 76 },
+    { name: 'José María Giménez', pos: 'DEF', ovr: 85 },
+    { name: 'Robin Le Normand', pos: 'DEF', ovr: 82 },
+    { name: 'Marcos Llorente', pos: 'DEF', ovr: 82 },
+    { name: 'Nahuel Molina', pos: 'DEF', ovr: 82 },
+    { name: 'Reinildo', pos: 'DEF', ovr: 79 },
+    { name: 'Rodrigo De Paul', pos: 'MID', ovr: 84 },
+    { name: 'Pablo Barrios', pos: 'MID', ovr: 81 },
+    { name: 'Conor Gallagher', pos: 'MID', ovr: 82 },
+    { name: 'Koke', pos: 'MID', ovr: 79 },
+    { name: 'Antoine Griezmann', pos: 'ATT', ovr: 85 },
+    { name: 'Alexander Sørloth', pos: 'ATT', ovr: 82 },
+    { name: 'Samuel Lino', pos: 'ATT', ovr: 79 },
+    { name: 'Giuliano Simeone', pos: 'ATT', ovr: 78 },
+  ],
+  acmilan: [
+    { name: 'Mike Maignan', pos: 'GK', ovr: 87 },
+    { name: 'Marco Sportiello', pos: 'GK', ovr: 77 },
+    { name: 'Fikayo Tomori', pos: 'DEF', ovr: 84 },
+    { name: 'Malick Thiaw', pos: 'DEF', ovr: 82 },
+    { name: 'Theo Hernández', pos: 'DEF', ovr: 86 },
+    { name: 'Davide Calabria', pos: 'DEF', ovr: 79 },
+    { name: 'Emerson Royal', pos: 'DEF', ovr: 78 },
+    { name: 'Ismaël Bennacer', pos: 'MID', ovr: 82 },
+    { name: 'Tijjani Reijnders', pos: 'MID', ovr: 84 },
+    { name: 'Youssouf Fofana', pos: 'MID', ovr: 83 },
+    { name: 'Ruben Loftus-Cheek', pos: 'MID', ovr: 82 },
+    { name: 'Yunus Musah', pos: 'MID', ovr: 80 },
+    { name: 'Rafael Leão', pos: 'ATT', ovr: 87 },
+    { name: 'Álvaro Morata', pos: 'ATT', ovr: 82 },
+    { name: 'Christian Pulisic', pos: 'ATT', ovr: 84 },
+    { name: 'Noah Okafor', pos: 'ATT', ovr: 79 },
   ],
 };
+
+// Maps opponent display names (as used in fixtures) to CLUB_SQUADS keys.
+// PL entries are derived from PL_CLUBS so fixture names can never drift from the map.
+export const SQUAD_KEY_BY_OPPONENT: Record<string, string> = {
+  ...Object.fromEntries(PL_CLUBS.map(c => [c.name, c.id])),
+  'Real Madrid':        'realmadrid',
+  'Barcelona':          'barcelona',
+  'Bayern Munich':      'bayernmunich',
+  'PSG':                'psg',
+  'Inter Milan':        'intermilan',
+  'Borussia Dortmund':  'dortmund',
+  'Atlético Madrid':    'atleticomadrid',
+  'AC Milan':           'acmilan',
+};
+
+// Returns a weighted-random goal scorer from the opponent's squad (ATT 3× > MID 2× > DEF 1×)
+export function pickOpponentScorer(opponentName: string): string | null {
+  const key = SQUAD_KEY_BY_OPPONENT[opponentName];
+  if (!key) return null;
+  const squad = CLUB_SQUADS[key];
+  if (!squad?.length) return null;
+  const weighted = squad.flatMap(p =>
+    p.pos === 'ATT' ? [p, p, p] : p.pos === 'MID' ? [p, p] : p.pos === 'DEF' ? [p] : []
+  );
+  if (!weighted.length) return null;
+  return weighted[Math.floor(Math.random() * weighted.length)].name;
+}
 
 // --- Age-based performance multiplier for rivals ---
 function rivalAgeMult(age: number): number {
@@ -1241,11 +1561,14 @@ function generateRivalTrophies(t: RivalTemplate, rng: () => number): BDTrophy[] 
 function simulateTrophies(
   club: BDClub, inCL: boolean, inEL: boolean,
   fitness: number, morale: number, rng: () => number,
+  leaguePosition?: number | null,
 ): BDTrophy[] {
   const perf = clamp((fitness + morale) / 200, 0.7, 1.3);
   const p = club.prestige;
   const trophies: BDTrophy[] = [];
-  if (rng() < (p / 200) * perf) trophies.push({ name: 'Premier League', bdoBonus: 30, emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' });
+  // If we have a final league table, the title must match it; otherwise fall back to a prestige roll
+  const wonLeague = leaguePosition != null ? leaguePosition === 1 : rng() < (p / 200) * perf;
+  if (wonLeague) trophies.push({ name: 'Premier League', bdoBonus: 30, emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' });
   if (rng() < (p / 320 + 0.05) * perf) trophies.push({ name: 'FA Cup', bdoBonus: 12, emoji: '🏆' });
   if (rng() < (p / 410 + 0.08) * perf) trophies.push({ name: 'Carabao Cup', bdoBonus: 5, emoji: '🏆' });
   if (inCL && rng() < club.clChance * (p / 360) * perf) trophies.push({ name: 'Champions League', bdoBonus: 55, emoji: '⭐' });
@@ -1264,7 +1587,12 @@ export function generateCeremony(
   // Effective fame boosted by reputation
   const effectiveFame = clamp(attributes.fame + player.reputation * 0.2, 0, 100);
 
-  const rivals = RIVAL_POOL.map((t, i) => {
+  // Rivals age one year per career season; those past 40 have retired
+  const yearsElapsed = Math.max(0, (season.number ?? 1) - 1);
+  const rivals = RIVAL_POOL
+    .map(t => ({ ...t, age: t.age + yearsElapsed }))
+    .filter(t => t.age <= 40)
+    .map((t, i) => {
     const ss = generateRivalStats(t, hashSeed(`rival_${t.name}_${year}_${i}`));
     const tr = generateRivalTrophies(t, mulberry32(hashSeed(`rtrophy_${t.name}_${year}`)));
     // Fame diminishes with age for older rivals, grows for younger ones
@@ -1324,8 +1652,9 @@ export function generateTransferOffers(
     [betterClubs[i], betterClubs[j]] = [betterClubs[j], betterClubs[i]];
   }
 
-  // How many offers depend on BdO rank and overall
-  const offerCount = bdoRank <= 5 ? 3 : bdoRank <= 10 ? 2 : bdoRank <= 20 ? 1 : (player.overall >= 80 ? 1 : 0);
+  // How many offers depend on BdO rank and overall (rank 0 = not nominated, not a top finish)
+  const rank = bdoRank >= 1 ? bdoRank : Infinity;
+  const offerCount = rank <= 5 ? 3 : rank <= 10 ? 2 : rank <= 20 ? 1 : (player.overall >= 80 ? 1 : 0);
   if (offerCount === 0) return [];
 
   const reasons: Record<string, string[]> = {
@@ -1353,6 +1682,18 @@ const EUROPEAN_CL_RIVALS = [
   { name: 'Borussia Dortmund', prestige: 86 },
   { name: 'Atlético Madrid', prestige: 88 },
   { name: 'AC Milan', prestige: 87 },
+];
+
+// --- European EL rivals for Europa League fixture nights ---
+const EUROPEAN_EL_RIVALS = [
+  { name: 'Roma', prestige: 80 },
+  { name: 'Sevilla', prestige: 78 },
+  { name: 'Lazio', prestige: 77 },
+  { name: 'Eintracht Frankfurt', prestige: 76 },
+  { name: 'Porto', prestige: 79 },
+  { name: 'Benfica', prestige: 80 },
+  { name: 'Ajax', prestige: 78 },
+  { name: 'Villarreal', prestige: 77 },
 ];
 
 // Matchweeks and phases for the 9 season fixtures
@@ -1395,6 +1736,11 @@ function generateFixtures(club: BDClub, inCL: boolean, inEL: boolean, seed: numb
       const eu = EUROPEAN_CL_RIVALS[idx % EUROPEAN_CL_RIVALS.length];
       opponent = eu.name;
       opponentId = `eu_cl_${idx}`;
+      opponentPrestige = eu.prestige;
+    } else if (competition === 'Europa League') {
+      const eu = EUROPEAN_EL_RIVALS[idx % EUROPEAN_EL_RIVALS.length];
+      opponent = eu.name;
+      opponentId = `eu_el_${idx}`;
       opponentPrestige = eu.prestige;
     }
 
@@ -1637,32 +1983,14 @@ function generateMatchOutcome(
   return `${score}. ${headline}${personal}`;
 }
 
-function simulateMatchweekTable(
-  table: LeagueTableRow[],
-  playerClubId: string,
-  result: NonNullable<BDEvent['matchResult']>,
-  ctx: NonNullable<BDEvent['matchContext']>,
-  rng: () => number,
-): LeagueTableRow[] {
-  if (ctx.competition !== 'Premier League') return table;
+const addForm = (f: ('W' | 'D' | 'L')[], r: 'W' | 'D' | 'L') => [...f, r].slice(-5) as ('W' | 'D' | 'L')[];
 
-  const addForm = (f: ('W' | 'D' | 'L')[], r: 'W' | 'D' | 'L') => [...f, r].slice(-5) as ('W' | 'D' | 'L')[];
-
-  return table.map(row => {
-    if (row.clubId === playerClubId) {
-      const r: 'W' | 'D' | 'L' = result.isWin ? 'W' : result.isDraw ? 'D' : 'L';
-      const pts = result.isWin ? 3 : result.isDraw ? 1 : 0;
-      return { ...row, p: row.p + 1, w: row.w + (result.isWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (!result.isWin && !result.isDraw ? 1 : 0), gf: row.gf + result.teamGoals, ga: row.ga + result.opponentGoals, pts: row.pts + pts, form: addForm(row.form, r) };
-    }
-    if (row.clubId === ctx.opponentId) {
-      const oppWin = !result.isWin && !result.isDraw;
-      const r: 'W' | 'D' | 'L' = oppWin ? 'W' : result.isDraw ? 'D' : 'L';
-      const pts = oppWin ? 3 : result.isDraw ? 1 : 0;
-      return { ...row, p: row.p + 1, w: row.w + (oppWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (result.isWin ? 1 : 0), gf: row.gf + result.opponentGoals, ga: row.ga + result.teamGoals, pts: row.pts + pts, form: addForm(row.form, r) };
-    }
-    // Simulate other clubs
-    const club = PL_CLUBS.find(c => c.id === row.clubId);
-    if (!club) return row;
+// Simulate `count` PL games for a club using a prestige-based win probability
+function simCatchUpGames(row: LeagueTableRow, count: number, rng: () => number): LeagueTableRow {
+  const club = PL_CLUBS.find(c => c.id === row.clubId);
+  if (!club || count <= 0) return row;
+  let r = { ...row };
+  for (let i = 0; i < count; i++) {
     const winP = clamp(0.24 + (club.prestige - 65) / 165, 0.14, 0.52);
     const roll = rng();
     const w = roll < winP ? 1 : 0;
@@ -1670,8 +1998,51 @@ function simulateMatchweekTable(
     const l = !w && !d ? 1 : 0;
     const gf = Math.max(0, ri(rng, w ? 2.0 : d ? 1.1 : 0.6, 0.8));
     const ga = Math.max(0, l ? ri(rng, 2.0, 0.8) : d ? gf : ri(rng, 0.8, 0.6));
-    const r: 'W' | 'D' | 'L' = w ? 'W' : d ? 'D' : 'L';
-    return { ...row, p: row.p + 1, w: row.w + w, d: row.d + d, l: row.l + l, gf: row.gf + gf, ga: row.ga + ga, pts: row.pts + (w ? 3 : d ? 1 : 0), form: addForm(row.form, r) };
+    const res: 'W' | 'D' | 'L' = w ? 'W' : d ? 'D' : 'L';
+    r = { ...r, p: r.p + 1, w: r.w + w, d: r.d + d, l: r.l + l, gf: r.gf + gf, ga: r.ga + ga, pts: r.pts + (w ? 3 : d ? 1 : 0), form: addForm(r.form, res) };
+  }
+  return r;
+}
+
+// Play out every club's remaining games so the final table reflects a full 38-game season
+function completeLeagueTable(table: LeagueTableRow[], rng: () => number): LeagueTableRow[] {
+  return table
+    .map(row => simCatchUpGames(row, Math.max(0, 38 - row.p), rng))
+    .sort((a, b) => (b.pts - a.pts) || ((b.gf - b.ga) - (a.gf - a.ga)) || (b.gf - a.gf));
+}
+
+function simulateMatchweekTable(
+  table: LeagueTableRow[],
+  playerClubId: string,
+  result: NonNullable<BDEvent['matchResult']>,
+  ctx: NonNullable<BDEvent['matchContext']>,
+  rng: () => number,
+): LeagueTableRow[] {
+  const isPL = ctx.competition === 'Premier League';
+  // Approximate how many PL games all clubs should have played by this point in the season.
+  // Matchweek 0 = pre-season, so target = matchweek (non-zero for PL/CL/Cup milestones).
+  const targetPLGames = Math.max(1, ctx.matchweek);
+
+  const simGames = (row: LeagueTableRow, count: number) => simCatchUpGames(row, count, rng);
+
+  return table.map(row => {
+    if (isPL && row.clubId === playerClubId) {
+      // Apply the player's actual PL result
+      const r: 'W' | 'D' | 'L' = result.isWin ? 'W' : result.isDraw ? 'D' : 'L';
+      const pts = result.isWin ? 3 : result.isDraw ? 1 : 0;
+      return { ...row, p: row.p + 1, w: row.w + (result.isWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (!result.isWin && !result.isDraw ? 1 : 0), gf: row.gf + result.teamGoals, ga: row.ga + result.opponentGoals, pts: row.pts + pts, form: addForm(row.form, r) };
+    }
+    if (isPL && row.clubId === ctx.opponentId) {
+      // Apply the opponent's inverse PL result, then catch up
+      const oppWin = !result.isWin && !result.isDraw;
+      const r: 'W' | 'D' | 'L' = oppWin ? 'W' : result.isDraw ? 'D' : 'L';
+      const pts = oppWin ? 3 : result.isDraw ? 1 : 0;
+      const updated = { ...row, p: row.p + 1, w: row.w + (oppWin ? 1 : 0), d: row.d + (result.isDraw ? 1 : 0), l: row.l + (result.isWin ? 1 : 0), gf: row.gf + result.opponentGoals, ga: row.ga + result.teamGoals, pts: row.pts + pts, form: addForm(row.form, r) };
+      return simGames(updated, Math.max(0, targetPLGames - updated.p));
+    }
+    // All other clubs (and player's club for non-PL matches):
+    // simulate PL games until they've played as many as targetPLGames
+    return simGames(row, Math.max(0, targetPLGames - row.p));
   });
 }
 
@@ -1823,7 +2194,7 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
   let outcomeText = choice.outcome;
   let updatedOverall = season.playerOverall;
   let matchweek = season.matchweek;
-  let money = season.money ?? 500;
+  let money = season.money ?? 50;
   let energy = season.energy ?? 85;
 
   if (ev.category === 'match' && ev.matchContext) {
@@ -1985,9 +2356,17 @@ export function finalizeSeason(player: BDPlayer, season: BDSeason): BDSeason {
   const fitMult = clamp(season.attributes.fitness / 80, 0.7, 1.2);
   const moraleMult = clamp(season.attributes.morale / 80, 0.8, 1.1);
 
+  // Complete the league table to 38 games so the final standings (and title) are consistent
+  // with what the player watched all season
+  const finalTable = season.leagueTable ? completeLeagueTable(season.leagueTable, rng) : undefined;
+  const leaguePosition = finalTable
+    ? finalTable.findIndex(r => r.clubId === season.club.id) + 1
+    : null;
+
   const rawTrophies = simulateTrophies(
     season.club, season.inCL, season.inEL,
     season.attributes.fitness, season.attributes.morale, rng,
+    leaguePosition || null,
   );
 
   // Apply attribute effects to base stats
@@ -2006,7 +2385,7 @@ export function finalizeSeason(player: BDPlayer, season: BDSeason): BDSeason {
   // Generate transfer offers for between-season screen
   const transferOffers = generateTransferOffers(player, season.club, ceremony.playerRank, season.number);
 
-  return { ...season, trophies: rawTrophies, phase: 'ceremony', ceremony, transferOffers };
+  return { ...season, trophies: rawTrophies, phase: 'ceremony', ceremony, transferOffers, leagueTable: finalTable ?? season.leagueTable };
 }
 
 // --- Player development ---
@@ -2049,7 +2428,9 @@ export function developPlayer(player: BDPlayer, season: BDSeason): BDPlayer {
 
   const newOvr = clamp(player.overall + delta, 40, 99);
   // Reputation grows with good performances and BdO finishes
-  const bdoRank = season.ceremony?.playerRank ?? 0;
+  // playerRank 0 means the player missed the shortlist entirely — no rep gain
+  const rawRank = season.ceremony?.playerRank ?? 0;
+  const bdoRank = rawRank >= 1 ? rawRank : Infinity;
   const repGain = bdoRank === 1 ? 15 : bdoRank <= 3 ? 10 : bdoRank <= 10 ? 6 : bdoRank <= 25 ? 3 : 0;
   const newRep = clamp(player.reputation + repGain, 0, 100);
 

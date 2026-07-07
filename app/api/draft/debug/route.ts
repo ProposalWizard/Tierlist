@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isAdmin } from "@/lib/admin";
 
 export const maxDuration = 30;
 // Diagnostic endpoint — must always reflect the live DB, never a build-time snapshot.
@@ -9,7 +11,14 @@ export const dynamic = "force-dynamic";
 //  - how many players are in the DB and per fifa_year
 //  - what distinct league names exist (so we can fix the PL filter)
 //  - a sample of clubs that match the current PL filter
+// Admin-only — it exposes raw DB stats via the service role.
 export async function GET() {
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user || !(await isAdmin(user.id))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const supabase = createServiceClient();
 
   // Total row count

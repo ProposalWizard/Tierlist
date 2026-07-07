@@ -737,13 +737,23 @@ export default function TierlistBoard({
     if (!over) return;
     const aId = active.id as string;
     const oId = over.id as string;
-    const activeContainer = findContainer(aId);
-    const overContainer = (
-      containerIdsRef.current.has(oId) ? oId : findContainer(oId)
-    ) as string | undefined;
-    if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
     setTierMap((prev) => {
+      // Resolve containers from `prev`, not from a render-time closure. pointermove
+      // can fire twice before a re-render; using stale `tierMap` here would let the
+      // same id be inserted into two tiers at once (duplicate card).
+      const findIn = (id: string): string | undefined => {
+        for (const key of [...tiers.map((t) => t.id), "unranked"]) {
+          if (prev[key]?.includes(id)) return key;
+        }
+        return undefined;
+      };
+      const activeContainer = findIn(aId);
+      const overContainer = containerIdsRef.current.has(oId) ? oId : findIn(oId);
+      if (!activeContainer || !overContainer || activeContainer === overContainer) return prev;
+      // If a prior event already moved the id out of activeContainer, bail
+      if (!prev[activeContainer]?.includes(aId)) return prev;
+
       const activeItems = [...prev[activeContainer]];
       const overItems = [...prev[overContainer]];
       const overIndex = overItems.indexOf(oId);
