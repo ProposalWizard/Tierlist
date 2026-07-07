@@ -67,7 +67,9 @@ export default function VoteBoard({
       .then((r) => r.json())
       .then((votes: Record<string, string>) => {
         if (votes && typeof votes === "object" && !("error" in votes)) {
-          setUserVotes(votes);
+          // Merge server votes UNDER any optimistic votes already cast — replacing
+          // outright would wipe a vote made before this mount fetch resolved.
+          setUserVotes((prev) => ({ ...votes, ...prev }));
         }
       })
       .catch(() => {});
@@ -116,12 +118,21 @@ export default function VoteBoard({
     );
     setPending((p) => ({ ...p, [imageId]: true }));
 
-    const newPool = images.filter((img) => {
-      const v = newUserVotes[img.id];
-      return !v || !tierSet.has(v);
-    });
-    const next = newPool.find((img) => img.id !== imageId);
-    setSelectedId(next?.id ?? null);
+    // Only auto-advance on a NEW vote, not when the user is changing an existing
+    // one (changing a vote shouldn't steal their place in the list).
+    if (!previousVote) {
+      const curIdx = images.findIndex((img) => img.id === imageId);
+      const isUnvoted = (img: VoteImageWithCounts) => {
+        const v = newUserVotes[img.id];
+        return img.id !== imageId && (!v || !tierSet.has(v));
+      };
+      // Prefer the next unvoted image after the current position; wrap to the first.
+      const next =
+        images.slice(curIdx + 1).find(isUnvoted) ??
+        images.slice(0, curIdx).find(isUnvoted) ??
+        null;
+      setSelectedId(next?.id ?? null);
+    }
 
     try {
       const body: Record<string, string> = { image_id: imageId, tier_label: tierLabel };

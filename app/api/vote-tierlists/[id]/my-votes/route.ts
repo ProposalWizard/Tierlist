@@ -19,9 +19,16 @@ export async function GET(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const voterId = user
-    ? user.id
-    : new URL(request.url).searchParams.get("voter_id");
+  // Anonymous voter ids are namespaced with "anon:" (matching the vote route)
+  // so they can't be used to read a logged-in user's ballot.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let voterId: string | null;
+  if (user) {
+    voterId = user.id;
+  } else {
+    const raw = new URL(request.url).searchParams.get("voter_id");
+    voterId = raw && UUID_RE.test(raw) ? `anon:${raw}` : null;
+  }
 
   if (!voterId) return NextResponse.json({});
 
