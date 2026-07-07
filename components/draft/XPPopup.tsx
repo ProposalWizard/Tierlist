@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface SeasonCardUnlock {
   name: string;
@@ -28,13 +28,18 @@ export default function XPPopup({ index, title, xp, oldLevel, newLevel, newRewar
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
+  // Keep the latest onDismiss in a ref so the auto-dismiss timer isn't restarted
+  // every time the parent re-renders (DraftResult re-renders every 100ms during
+  // the reveal, which would otherwise keep the popup on screen forever).
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
   useEffect(() => {
     const timer = setTimeout(() => {
       setExiting(true);
-      setTimeout(onDismiss, 400);
+      setTimeout(() => dismissRef.current(), 400);
     }, (leveledUp || newSeasonCards.length > 0) ? 6000 : 4500);
     return () => clearTimeout(timer);
-  }, [onDismiss, leveledUp, newSeasonCards.length]);
+  }, [leveledUp, newSeasonCards.length]);
 
   const handleDismiss = () => {
     setExiting(true);

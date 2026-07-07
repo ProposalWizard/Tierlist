@@ -5217,10 +5217,11 @@ export function simulateSharedSeason(
 
     let longestWinStreak = 0, curWin = 0, longestUnbeatenRun = 0, curUnbeaten = 0;
     let trailingWinStreak = 0, trailingUnbeatenRun = 0;
+    let trailingWinEnded = false;
     for (let i = matches.length - 1; i >= 0; i--) {
-      if (matches[i].result === 'W') { trailingWinStreak++; trailingUnbeatenRun++; }
-      else if (matches[i].result === 'D') { trailingWinStreak = 0; trailingUnbeatenRun++; }
-      else break;
+      if (matches[i].result === 'W') { if (!trailingWinEnded) trailingWinStreak++; trailingUnbeatenRun++; }
+      else if (matches[i].result === 'D') { trailingWinEnded = true; trailingUnbeatenRun++; }
+      else break; // a loss ends both the win streak and the unbeaten run
     }
     for (const m of matches) {
       if (m.result === 'W') { curWin++; longestWinStreak = Math.max(longestWinStreak, curWin); curUnbeaten++; longestUnbeatenRun = Math.max(longestUnbeatenRun, curUnbeaten); }
@@ -5228,10 +5229,11 @@ export function simulateSharedSeason(
       else { curWin = 0; curUnbeaten = 0; }
     }
     let leadingWinStreak = 0, leadingUnbeatenRun = 0;
+    let leadingWinEnded = false;
     for (const m of matches) {
-      if (m.result === 'W') { leadingWinStreak++; leadingUnbeatenRun++; }
-      else if (m.result === 'D') { leadingWinStreak = 0; leadingUnbeatenRun++; }
-      else break;
+      if (m.result === 'W') { if (!leadingWinEnded) leadingWinStreak++; leadingUnbeatenRun++; }
+      else if (m.result === 'D') { leadingWinEnded = true; leadingUnbeatenRun++; }
+      else break; // a loss ends both the win streak and the unbeaten run
     }
 
     const formatScore = (m: MatchResult) => m.isHome ? `${m.goalsFor}-${m.goalsAgainst}` : `${m.goalsAgainst}-${m.goalsFor}`;

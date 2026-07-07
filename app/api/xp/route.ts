@@ -16,30 +16,44 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { event_type, event_ref, xp_amount } = (body ?? {}) as {
+  const { event_type, event_ref } = (body ?? {}) as {
     event_type?: string;
     event_ref?: string;
-    xp_amount?: number;
   };
 
   if (!event_type || typeof event_type !== "string") {
     return NextResponse.json({ error: "Invalid event" }, { status: 400 });
   }
 
-  // Trust the server-side award table over the client where the event_type is
-  // known. Fall back to the client value only for unknown types, and always
-  // clamp to a sane ceiling — this endpoint is otherwise fully client-trusted,
-  // so an unclamped xp_amount lets a caller mint unlimited XP/levels/rewards.
+  // XP amounts are resolved SERVER-SIDE only — the client value is never trusted.
+  // Known event types use the award table; objective_<id> events look up the
+  // objective's real reward and require the user to have actually completed it.
+  // Any other event type is rejected, so a caller can't mint arbitrary XP.
   const MAX_SINGLE_AWARD = 1000;
-  const knownAward = (XP_AWARDS as Record<string, number>)[event_type];
-  const requested = Number(xp_amount);
-  const resolved = knownAward ?? requested;
-  if (!Number.isFinite(resolved) || resolved <= 0) {
-    return NextResponse.json({ error: "Invalid event" }, { status: 400 });
-  }
-  const awardXp = Math.min(Math.floor(resolved), MAX_SINGLE_AWARD);
-
   const svc = createServiceClient();
+
+  let awardXp: number;
+  const knownAward = (XP_AWARDS as Record<string, number>)[event_type];
+  if (knownAward != null) {
+    awardXp = knownAward;
+  } else if (event_type.startsWith("objective_")) {
+    const objectiveId = event_type.slice("objective_".length);
+    const [{ data: obj }, { data: userObj }] = await Promise.all([
+      svc.from("objectives").select("xp_reward").eq("id", objectiveId).maybeSingle(),
+      svc.from("user_objectives").select("completed_at").eq("user_id", user.id).eq("objective_id", objectiveId).maybeSingle(),
+    ]);
+    if (!obj || !userObj?.completed_at) {
+      return NextResponse.json({ error: "Objective not completed" }, { status: 400 });
+    }
+    awardXp = Number(obj.xp_reward) || 0;
+  } else {
+    return NextResponse.json({ error: "Unknown event type" }, { status: 400 });
+  }
+
+  if (!Number.isFinite(awardXp) || awardXp <= 0) {
+    return NextResponse.json({ error: "Invalid award" }, { status: 400 });
+  }
+  awardXp = Math.min(Math.floor(awardXp), MAX_SINGLE_AWARD);
 
   const { error: eventError } = await svc.from("xp_events").insert({
     user_id: user.id,

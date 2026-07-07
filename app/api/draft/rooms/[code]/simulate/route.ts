@@ -47,8 +47,17 @@ export async function POST(
     return new Response("Not all players have submitted squads", { status: 400 });
   }
 
-  // Mark room as simulating
-  await service.from("draft_rooms").update({ status: "simulating" }).eq("id", room.id);
+  // Atomically claim the room for simulation: only one request can transition it
+  // out of a non-simulating/complete state, so a double-click can't run twice.
+  const { data: claimed } = await service
+    .from("draft_rooms")
+    .update({ status: "simulating" })
+    .eq("id", room.id)
+    .in("status", ["lobby", "started", "drafting"])
+    .select("id");
+  if (!claimed || claimed.length === 0) {
+    return Response.json({ ok: true, alreadyRunning: true });
+  }
 
   try {
     const emptySquads = roomPlayers.filter(rp => !rp.squad || !Array.isArray(rp.squad) || rp.squad.length === 0);

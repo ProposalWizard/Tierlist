@@ -194,6 +194,10 @@ export default function DraftPick({
   const [spinAnimating, setSpinAnimating] = useState(false);
   const [chosenSlotIdx, setChosenSlotIdx] = useState<number | null>(null);
   const spinContainerRef = useRef<HTMLDivElement>(null);
+  // Spin timers, cleared on unmount so they don't setState / fetch after the
+  // component is gone (e.g. leaving a multiplayer room mid-spin).
+  const spinTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => { spinTimersRef.current.forEach(clearTimeout); }, []);
   const maxRespins = settings.respins ?? 3;
   // If parent tracks respins across phases, use that; otherwise local state.
   const [localRespins, setLocalRespins] = useState(maxRespins);
@@ -289,11 +293,11 @@ export default function DraftPick({
       });
     });
 
-    setTimeout(() => {
+    spinTimersRef.current.push(setTimeout(() => {
       setSpinDisplay(target);
       setPhase("pick");
       fetchRoster(target.club, target.year);
-    }, 2200);
+    }, 2200));
   }, [getRandomClubYear, generateSpinItems]);
 
   const handleRespin = useCallback(() => {
@@ -308,9 +312,9 @@ export default function DraftPick({
     setSpinAnimating(false);
     setPhase("spin");
     setSpinning(false);
-    setTimeout(() => {
+    spinTimersRef.current.push(setTimeout(() => {
       handleSpin();
-    }, 50);
+    }, 50));
   }, [handleSpin, respinsRemaining]);
 
   const fetchRoster = async (club: string, year: number) => {
