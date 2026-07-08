@@ -189,8 +189,8 @@ export async function POST(req: Request) {
   // real records untouched. A season is 38 PL games; "all" includes cups.
   const VALUE_CAPS: Record<string, number> = {
     wins: 70, unbeaten: 70, goals: 150, assists: 150, clean_sheets: 70,
-    goals_conceded: 300, biggest_win: 30, avg_rating: 10, most_points: 114,
-    career_goals: 10000, career_assists: 10000, career_avg_rating: 10,
+    goals_conceded: 300, biggest_win: 30, avg_rating: 100, most_points: 114,
+    career_goals: 10000, career_assists: 10000, career_avg_rating: 100,
     career_trophies: 2000,
   };
   const validValue = (record_type: string, value: unknown): number | null => {
