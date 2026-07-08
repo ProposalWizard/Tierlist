@@ -30,22 +30,30 @@ export async function GET() {
     svc.from("user_objectives").select("objective_id").eq("user_id", user.id).not("claimed_at", "is", null),
   ]);
 
-  // Fetch objective card art for all claimed objectives that have a card reward
+  // Fetch objective card art for claimed objectives + counts for all active objectives
   let objectiveCards: { id: string; name: string; card_image_url: string }[] = [];
+  const objectiveCardCounts: Record<string, number> = {};
   const claimedObjIds = (claimedObjRows ?? []).map((r: { objective_id: string }) => r.objective_id);
-  if (claimedObjIds.length > 0) {
-    const { data: objCardData } = await svc
-      .from("objectives")
-      .select("id, card_name, card_image_url")
-      .in("id", claimedObjIds)
-      .not("card_image_url", "is", null);
-    objectiveCards = (objCardData ?? [])
-      .filter((o: { card_image_url: string | null }) => o.card_image_url)
-      .map((o: { id: string; card_name: string | null; card_image_url: string }) => ({
-        id: `obj_card_${o.id}`,
-        name: o.card_name ?? "Card",
-        card_image_url: o.card_image_url,
-      }));
+
+  const [claimedObjCardData, allObjCardData] = await Promise.all([
+    claimedObjIds.length > 0
+      ? svc.from("objectives").select("id, card_name, card_image_url").in("id", claimedObjIds).not("card_image_url", "is", null)
+      : Promise.resolve({ data: [] }),
+    svc.from("objectives").select("card_image_url").eq("is_active", true).not("card_image_url", "is", null),
+  ]);
+
+  objectiveCards = ((claimedObjCardData.data ?? []) as { id: string; card_name: string | null; card_image_url: string }[])
+    .filter(o => o.card_image_url)
+    .map(o => ({
+      id: `obj_card_${o.id}`,
+      name: o.card_name ?? "Card",
+      card_image_url: o.card_image_url,
+    }));
+
+  for (const o of (allObjCardData.data ?? []) as { card_image_url: string | null }[]) {
+    if (o.card_image_url) {
+      objectiveCardCounts[o.card_image_url] = (objectiveCardCounts[o.card_image_url] ?? 0) + 1;
+    }
   }
 
   const totalXp = xpRow?.total_xp ?? 0;
@@ -85,6 +93,7 @@ export async function GET() {
     equippedTitle: profile?.equipped_title ?? "title_rookie",
     recentXpEvents: recentEvents || [],
     objectiveCards,
+    objectiveCardCounts,
   };
 
   return NextResponse.json(result);

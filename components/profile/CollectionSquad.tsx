@@ -163,6 +163,8 @@ interface CardEntry {
   name: string;
   unlock_value: number | null;
   card_image_url?: string | null;
+  objectiveCount?: number;
+  milestoneCount?: number;
 }
 
 interface Props {
@@ -183,6 +185,13 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
 
   const level = progression?.level ?? 0;
 
+  // Build milestone-count map: card_image_url → how many Road to Legend milestones award it
+  const milestoneCounts: Record<string, number> = {};
+  for (const r of seasonRewards ?? []) {
+    if (r.image_url) milestoneCounts[r.image_url] = (milestoneCounts[r.image_url] ?? 0) + 1;
+  }
+  const objCounts = progression?.objectiveCardCounts ?? {};
+
   // Only show cards with real art (season milestone cards and objective reward cards).
   // Generic frame rewards ("Standard", "Gold" etc.) are excluded — they're cosmetic
   // frame borders, not collectible cards.
@@ -193,6 +202,8 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
       name: r.card_name ?? "Season Card",
       unlock_value: r.level,
       card_image_url: r.image_url,
+      objectiveCount: r.image_url ? (objCounts[r.image_url] ?? 0) : 0,
+      milestoneCount: r.image_url ? (milestoneCounts[r.image_url] ?? 0) : 0,
     }));
 
   const unlockedObjectiveCards: CardEntry[] = (progression?.objectiveCards ?? []).map(c => ({
@@ -200,6 +211,8 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
     name: c.name,
     unlock_value: null,
     card_image_url: c.card_image_url,
+    objectiveCount: objCounts[c.card_image_url] ?? 0,
+    milestoneCount: milestoneCounts[c.card_image_url] ?? 0,
   }));
 
   const unlockedCards: CardEntry[] = [...unlockedSeasonCards, ...unlockedObjectiveCards]
@@ -440,7 +453,7 @@ function DraggablePitchCard({
   onRemove,
   onTap,
 }: {
-  card: { id: string; name: string };
+  card: { id: string; name: string; objectiveCount?: number; milestoneCount?: number };
   frameStyle: { border: string; shadow: string; gradient?: string; image?: string };
   hasBenchSelection: boolean;
   onRemove: () => void;
@@ -492,6 +505,17 @@ function DraggablePitchCard({
           </svg>
         </button>
       )}
+      {/* Reward-count badge — bottom-left corner, only visible on hover */}
+      {((card.objectiveCount ?? 0) + (card.milestoneCount ?? 0)) > 0 && !isDragging && (
+        <div className="absolute bottom-0.5 left-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex flex-col gap-0.5">
+          {(card.objectiveCount ?? 0) > 0 && (
+            <span className="text-[7px] font-black text-white bg-blue-600/90 rounded px-1 py-px leading-none">🎯×{card.objectiveCount}</span>
+          )}
+          {(card.milestoneCount ?? 0) > 0 && (
+            <span className="text-[7px] font-black text-white bg-amber-600/90 rounded px-1 py-px leading-none">⭐×{card.milestoneCount}</span>
+          )}
+        </div>
+      )}
       {hasBenchSelection && (
         <div className="absolute inset-0 rounded-xl bg-amber-500/25 flex items-center justify-center">
           <svg className="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -512,7 +536,7 @@ function PitchSlot({
   onTap,
 }: {
   slot: SlotDef;
-  card: { id: string; name: string } | null;
+  card: CardEntry | null;
   frameStyle: { border: string; shadow: string; gradient?: string; image?: string } | null;
   hasBenchSelection: boolean;
   onRemove: () => void;
@@ -534,7 +558,7 @@ function PitchSlot({
     >
       {card && frameStyle ? (
         <DraggablePitchCard
-          card={card}
+          card={{ id: card.id, name: card.name, objectiveCount: card.objectiveCount, milestoneCount: card.milestoneCount }}
           frameStyle={frameStyle}
           hasBenchSelection={hasBenchSelection}
           onRemove={onRemove}
@@ -576,13 +600,15 @@ function BenchCard({
     ? { border: "border-2 border-amber-400", shadow: "shadow-lg shadow-amber-500/30", image: card.card_image_url }
     : (FRAME_STYLES[card.id] ?? FRAME_STYLES.frame_default);
 
+  const totalCount = (card.objectiveCount ?? 0) + (card.milestoneCount ?? 0);
+
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
       onClick={onTap}
-      className={`flex-shrink-0 flex flex-col items-center gap-1.5 cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
+      className={`flex-shrink-0 flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
         isDragging ? "opacity-30 scale-95" : selected ? "scale-110" : "hover:scale-105"
       }`}
       style={
@@ -613,6 +639,20 @@ function BenchCard({
       }`}>
         {card.name}
       </span>
+      {totalCount > 0 && (
+        <div className="flex items-center gap-0.5 flex-wrap justify-center max-w-[64px]">
+          {(card.objectiveCount ?? 0) > 0 && (
+            <span className="text-[8px] font-bold text-blue-400 bg-blue-500/15 rounded px-1 py-px leading-none whitespace-nowrap">
+              🎯 ×{card.objectiveCount}
+            </span>
+          )}
+          {(card.milestoneCount ?? 0) > 0 && (
+            <span className="text-[8px] font-bold text-amber-400 bg-amber-500/15 rounded px-1 py-px leading-none whitespace-nowrap">
+              ⭐ ×{card.milestoneCount}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
