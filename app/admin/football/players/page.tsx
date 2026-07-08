@@ -120,6 +120,7 @@ export default function PlayerSearchPage() {
   const [cloneOvr, setCloneOvr] = useState("");
   const [cloneClub, setCloneClub] = useState("");
   const [clonePositions, setClonePositions] = useState("");
+  const [cloneMoveMode, setCloneMoveMode] = useState(false);
   const [cloningInProgress, setCloningInProgress] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
 
@@ -290,6 +291,7 @@ export default function PlayerSearchPage() {
     setCloneOvr(String(p.manual_overall ?? p.overall ?? ""));
     setCloneClub(p.club ?? "");
     setClonePositions((p.manual_positions ?? p.positions) ?? "");
+    setCloneMoveMode(false);
     setCloneError(null);
     for (let y = 26; y >= 7; y--) {
       if (!existingYears.has(y)) {
@@ -324,6 +326,26 @@ export default function PlayerSearchPage() {
       if (res.ok && json.player) {
         setPlayers((prev) => [...prev, json.player]);
         setCount((c) => (c !== null ? c + 1 : null));
+
+        if (cloneMoveMode) {
+          // Delete the source year entry
+          const delRes = await fetch("/api/admin/football/player-search", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sofifa_id: sourcePlayer.sofifa_id, fifa_year: sourcePlayer.fifa_year }),
+          });
+          if (delRes.ok) {
+            setPlayers((prev) => prev.filter(
+              (p) => !(p.sofifa_id === sourcePlayer.sofifa_id && p.fifa_year === sourcePlayer.fifa_year)
+            ));
+            setCount((c) => (c !== null ? c - 1 : null));
+          } else {
+            setCloneError("Moved to new year but failed to delete old entry — delete it manually.");
+            setCloningInProgress(false);
+            return;
+          }
+        }
+
         setCloningEdition(null);
       } else {
         setCloneError(json.error ?? "Clone failed");
@@ -866,7 +888,7 @@ export default function PlayerSearchPage() {
                                       {cloningEdition === edKey && (
                                         <div className="border-t border-blue-900/50 bg-blue-950/20 px-6 py-4">
                                           <h4 className="mb-3 text-xs font-bold uppercase text-blue-400">
-                                            Clone {yearLabel(p.fifa_year)} → new edition
+                                            {cloneMoveMode ? "Move" : "Clone"} {yearLabel(p.fifa_year)} → new edition
                                           </h4>
                                           <div className="flex flex-wrap items-end gap-3">
                                             <div>
@@ -923,20 +945,37 @@ export default function PlayerSearchPage() {
                                                 className="w-36 rounded bg-gray-800 border border-gray-600 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
                                               />
                                             </div>
-                                            <div className="flex gap-2">
-                                              <button
-                                                onClick={() => handleClone(p)}
-                                                disabled={cloningInProgress}
-                                                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded font-bold disabled:opacity-50"
-                                              >
-                                                {cloningInProgress ? "Cloning..." : "Clone"}
-                                              </button>
-                                              <button
-                                                onClick={() => setCloningEdition(null)}
-                                                className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded font-bold"
-                                              >
-                                                Cancel
-                                              </button>
+                                            <div className="flex flex-col gap-2">
+                                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={cloneMoveMode}
+                                                  onChange={(e) => setCloneMoveMode(e.target.checked)}
+                                                  className="w-3.5 h-3.5 accent-orange-500"
+                                                />
+                                                <span className={`text-xs font-bold ${cloneMoveMode ? "text-orange-400" : "text-gray-400"}`}>
+                                                  Move (delete {yearLabel(p.fifa_year)} after copying)
+                                                </span>
+                                              </label>
+                                              <div className="flex gap-2">
+                                                <button
+                                                  onClick={() => handleClone(p)}
+                                                  disabled={cloningInProgress}
+                                                  className={`px-3 py-1.5 text-sm text-white rounded font-bold disabled:opacity-50 ${
+                                                    cloneMoveMode
+                                                      ? "bg-orange-600 hover:bg-orange-500"
+                                                      : "bg-blue-600 hover:bg-blue-500"
+                                                  }`}
+                                                >
+                                                  {cloningInProgress ? (cloneMoveMode ? "Moving..." : "Cloning...") : (cloneMoveMode ? "Move" : "Clone")}
+                                                </button>
+                                                <button
+                                                  onClick={() => setCloningEdition(null)}
+                                                  className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded font-bold"
+                                                >
+                                                  Cancel
+                                                </button>
+                                              </div>
                                             </div>
                                           </div>
                                           {cloneError && (
