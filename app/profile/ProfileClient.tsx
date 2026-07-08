@@ -501,7 +501,7 @@ function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
   claiming?: boolean;
 }) {
   return (
-    <div className="flex-1 p-6 flex gap-6 overflow-y-auto">
+    <div className="flex-1 p-6 overflow-y-auto">
       <div className="flex-1 min-w-0">
         <h4 className="text-xl font-black text-white mb-2">{obj.title}</h4>
         {obj.description && (
@@ -542,19 +542,6 @@ function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
           </button>
         )}
       </div>
-      {obj.card_image_url && (
-        <div className="shrink-0 text-center">
-          <div className="text-xs font-bold text-white uppercase tracking-wider mb-2">Reward</div>
-          <img
-            src={obj.card_image_url}
-            alt={obj.card_name || "Card Reward"}
-            className="w-40 h-52 object-cover rounded-xl border border-gray-700 shadow-lg"
-          />
-          {obj.card_name && (
-            <div className="text-sm font-bold text-white mt-2 truncate max-w-[10rem]">{obj.card_name}</div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
