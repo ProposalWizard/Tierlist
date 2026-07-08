@@ -217,7 +217,7 @@ function Leaderboard({ entries, rt, expanded }: { entries: RecordEntry[]; rt: Re
 
 export default function DraftRecordsPage() {
   const [competition, setCompetition] = useState<"pl" | "all">("pl");
-  const [mode, setMode] = useState<"normal" | "prime" | "best">("normal");
+  const [mode, setMode] = useState<"normal" | "prime" | "best">("best");
   const [records, setRecords] = useState<Record<string, RecordEntry[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -8,6 +8,7 @@ import {
   fetchPlayerDetails,
   fetchCareersForPlayers,
   fetchClubDetails,
+  fetchSinglePlayer,
 } from "@/lib/footballImport";
 
 export const maxDuration = 60;
@@ -155,9 +156,86 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      case "single-player": {
+        const wikidataId = body.wikidataId as string;
+        if (!wikidataId) return NextResponse.json({ error: "Missing wikidataId" }, { status: 400 });
+
+        const { player, country, clubs, careers } = await fetchSinglePlayer(wikidataId);
+
+        if (country) {
+          await upsertChunked(service, "football_countries", [country], "wikidata_id");
+        }
+
+        await upsertChunked(service, "football_players", [slimPlayer(player as Record<string, unknown>)], "wikidata_id");
+
+        if (clubs.length > 0) {
+          await upsertChunked(service, "football_clubs", clubs.map(slimClub), "wikidata_id");
+        }
+        if (careers.length > 0) {
+          await upsertChunked(service, "football_careers", careers, "player_id,club_id,start_date");
+        }
+
+        return NextResponse.json({
+          step: "single-player",
+          wikidataId,
+          name: player.name,
+          careersImported: careers.length,
+          clubsImported: clubs.length,
+        });
+      }
+
+      case "fill-missing-careers": {
+        const offset = (body.offset as number) ?? 0;
+        const batchSize = 25;
+
+        // Find players who have no career entries at all
+        const { data: allPlayers } = await service
+          .from("football_players")
+          .select("wikidata_id")
+          .order("wikidata_id")
+          .range(offset, offset + batchSize - 1);
+
+        if (!allPlayers || allPlayers.length === 0) {
+          return NextResponse.json({ step: "fill-missing-careers", imported: 0, hasMore: false });
+        }
+
+        const ids = allPlayers.map((r: { wikidata_id: string }) => r.wikidata_id);
+
+        // Check which of these already have careers
+        const { data: existingCareers } = await service
+          .from("football_careers")
+          .select("player_id")
+          .in("player_id", ids);
+
+        const withCareers = new Set((existingCareers ?? []).map((r: { player_id: string }) => r.player_id));
+        const missing = ids.filter((id) => !withCareers.has(id));
+
+        let imported = 0;
+        if (missing.length > 0) {
+          const { careers, clubs } = await fetchCareersForPlayers(missing);
+          if (clubs.length > 0) {
+            await upsertChunked(service, "football_clubs", clubs.map(slimClub), "wikidata_id");
+          }
+          if (careers.length > 0) {
+            await upsertChunked(service, "football_careers", careers, "player_id,club_id,start_date");
+          }
+          imported = careers.length;
+        }
+
+        const hasMore = allPlayers.length === batchSize;
+        return NextResponse.json({
+          step: "fill-missing-careers",
+          checked: ids.length,
+          missingCount: missing.length,
+          imported,
+          hasMore,
+          nextOffset: hasMore ? offset + batchSize : null,
+        });
+      }
+
       case "careers": {
         const offset = (body.offset as number) ?? 0;
-        const batchSize = 100;
+        const batchSize = 25;
 
         const { data: playerRows } = await service
           .from("football_players")
@@ -179,14 +257,14 @@ export async function POST(req: NextRequest) {
           await upsertChunked(service, "football_careers", careers, "player_id,club_id,start_date");
         }
 
-        const hasMore = playerRows.length === batchSize;
+        const careersHasMore = playerRows.length === batchSize;
 
         return NextResponse.json({
           step: "careers",
           imported: careers.length,
           clubsFound: clubs.length,
-          hasMore,
-          nextOffset: hasMore ? offset + batchSize : null,
+          hasMore: careersHasMore,
+          nextOffset: careersHasMore ? offset + batchSize : null,
         });
       }
 

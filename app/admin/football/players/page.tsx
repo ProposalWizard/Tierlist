@@ -80,6 +80,8 @@ interface SofifaPlayer {
   name: string;
   positions: string | null;
   manual_positions: string | null;
+  nationality: string | null;
+  manual_nationality: string | null;
   club: string | null;
   league: string | null;
   overall: number | null;
@@ -108,6 +110,9 @@ export default function PlayerSearchPage() {
   const [editingPos, setEditingPos] = useState<string | null>(null);
   const [editPosValue, setEditPosValue] = useState("");
   const [savingPos, setSavingPos] = useState(false);
+  const [editingNat, setEditingNat] = useState<string | null>(null);
+  const [editNatValue, setEditNatValue] = useState("");
+  const [savingNat, setSavingNat] = useState(false);
   const [deletingEdition, setDeletingEdition] = useState<string | null>(null);
   const [deletingInProgress, setDeletingInProgress] = useState<string | null>(null);
   const [cloningEdition, setCloningEdition] = useState<string | null>(null);
@@ -115,6 +120,7 @@ export default function PlayerSearchPage() {
   const [cloneOvr, setCloneOvr] = useState("");
   const [cloneClub, setCloneClub] = useState("");
   const [clonePositions, setClonePositions] = useState("");
+  const [cloneMoveMode, setCloneMoveMode] = useState(false);
   const [cloningInProgress, setCloningInProgress] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
 
@@ -236,6 +242,31 @@ export default function PlayerSearchPage() {
     setEditingPos(null);
   };
 
+  const handleSaveNat = async (sofifaId: string, fifaYear: number) => {
+    const val = editNatValue.trim();
+    const newNat = val === "" ? null : val;
+
+    setSavingNat(true);
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: fifaYear, manual_nationality: newNat }),
+      });
+      if (res.ok) {
+        setPlayers((prev) =>
+          prev.map((p) =>
+            p.sofifa_id === sofifaId && p.fifa_year === fifaYear
+              ? { ...p, manual_nationality: newNat }
+              : p
+          )
+        );
+      }
+    } catch {}
+    setSavingNat(false);
+    setEditingNat(null);
+  };
+
   const handleDelete = async (sofifaId: string, fifaYear: number) => {
     const edKey = `${sofifaId}-${fifaYear}`;
     setDeletingInProgress(edKey);
@@ -260,6 +291,7 @@ export default function PlayerSearchPage() {
     setCloneOvr(String(p.manual_overall ?? p.overall ?? ""));
     setCloneClub(p.club ?? "");
     setClonePositions((p.manual_positions ?? p.positions) ?? "");
+    setCloneMoveMode(false);
     setCloneError(null);
     for (let y = 26; y >= 7; y--) {
       if (!existingYears.has(y)) {
@@ -294,6 +326,26 @@ export default function PlayerSearchPage() {
       if (res.ok && json.player) {
         setPlayers((prev) => [...prev, json.player]);
         setCount((c) => (c !== null ? c + 1 : null));
+
+        if (cloneMoveMode) {
+          // Delete the source year entry
+          const delRes = await fetch("/api/admin/football/player-search", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sofifa_id: sourcePlayer.sofifa_id, fifa_year: sourcePlayer.fifa_year }),
+          });
+          if (delRes.ok) {
+            setPlayers((prev) => prev.filter(
+              (p) => !(p.sofifa_id === sourcePlayer.sofifa_id && p.fifa_year === sourcePlayer.fifa_year)
+            ));
+            setCount((c) => (c !== null ? c - 1 : null));
+          } else {
+            setCloneError("Moved to new year but failed to delete old entry — delete it manually.");
+            setCloningInProgress(false);
+            return;
+          }
+        }
+
         setCloningEdition(null);
       } else {
         setCloneError(json.error ?? "Clone failed");
@@ -601,6 +653,7 @@ export default function PlayerSearchPage() {
                                 <th className="px-5 py-2 text-left text-xs font-bold uppercase text-white">Edition</th>
                                 <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Club</th>
                                 <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Positions</th>
+                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Nationality</th>
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-white">OVR</th>
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-white">POT</th>
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-white">Age</th>
@@ -616,7 +669,7 @@ export default function PlayerSearchPage() {
                                 const hasOverride = p.manual_overall !== null && p.manual_overall !== undefined;
                                 return (
                                   <tr key={edKey} className="border-b border-gray-800/30">
-                                    <td colSpan={7} className="p-0">
+                                    <td colSpan={8} className="p-0">
                                       <div
                                         onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
                                         className={`flex items-center cursor-pointer transition-colors ${
@@ -669,6 +722,49 @@ export default function PlayerSearchPage() {
                                             >
                                               {(p.manual_positions ?? p.positions) || "--"}
                                               {p.manual_positions && <span className="text-[9px] text-amber-500 ml-0.5">*</span>}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div
+                                          className="px-3 py-2.5 min-w-[110px] relative z-10"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {editingNat === edKey ? (
+                                            <input
+                                              type="text"
+                                              autoFocus
+                                              value={editNatValue}
+                                              onChange={(e) => setEditNatValue(e.target.value)}
+                                              onBlur={() => handleSaveNat(p.sofifa_id, p.fifa_year)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleSaveNat(p.sofifa_id, p.fifa_year);
+                                                if (e.key === "Escape") setEditingNat(null);
+                                              }}
+                                              disabled={savingNat}
+                                              placeholder="e.g. Belgium"
+                                              className="w-28 bg-gray-700 border border-blue-500 rounded px-1 py-0.5 text-sm font-bold text-white focus:outline-none"
+                                            />
+                                          ) : (
+                                            <span
+                                              role="button"
+                                              tabIndex={0}
+                                              onClick={() => {
+                                                setEditingNat(edKey);
+                                                setEditNatValue((p.manual_nationality ?? p.nationality) || "");
+                                              }}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                  setEditingNat(edKey);
+                                                  setEditNatValue((p.manual_nationality ?? p.nationality) || "");
+                                                }
+                                              }}
+                                              className={`inline-block cursor-pointer rounded px-2 py-0.5 hover:bg-gray-700 hover:ring-1 hover:ring-blue-500 transition-all ${
+                                                p.manual_nationality ? "text-amber-400" : (p.nationality ? "text-blue-300" : "text-gray-500 italic")
+                                              }`}
+                                              title={p.manual_nationality ? `Manual: ${p.manual_nationality} (scraped: ${p.nationality ?? "?"})` : "Click to set nationality"}
+                                            >
+                                              {(p.manual_nationality ?? p.nationality) || "none"}
+                                              {p.manual_nationality && <span className="text-[9px] text-amber-500 ml-0.5">*</span>}
                                             </span>
                                           )}
                                         </div>
@@ -792,7 +888,7 @@ export default function PlayerSearchPage() {
                                       {cloningEdition === edKey && (
                                         <div className="border-t border-blue-900/50 bg-blue-950/20 px-6 py-4">
                                           <h4 className="mb-3 text-xs font-bold uppercase text-blue-400">
-                                            Clone {yearLabel(p.fifa_year)} → new edition
+                                            {cloneMoveMode ? "Move" : "Clone"} {yearLabel(p.fifa_year)} → new edition
                                           </h4>
                                           <div className="flex flex-wrap items-end gap-3">
                                             <div>
@@ -849,20 +945,37 @@ export default function PlayerSearchPage() {
                                                 className="w-36 rounded bg-gray-800 border border-gray-600 px-2 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
                                               />
                                             </div>
-                                            <div className="flex gap-2">
-                                              <button
-                                                onClick={() => handleClone(p)}
-                                                disabled={cloningInProgress}
-                                                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded font-bold disabled:opacity-50"
-                                              >
-                                                {cloningInProgress ? "Cloning..." : "Clone"}
-                                              </button>
-                                              <button
-                                                onClick={() => setCloningEdition(null)}
-                                                className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded font-bold"
-                                              >
-                                                Cancel
-                                              </button>
+                                            <div className="flex flex-col gap-2">
+                                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={cloneMoveMode}
+                                                  onChange={(e) => setCloneMoveMode(e.target.checked)}
+                                                  className="w-3.5 h-3.5 accent-orange-500"
+                                                />
+                                                <span className={`text-xs font-bold ${cloneMoveMode ? "text-orange-400" : "text-gray-400"}`}>
+                                                  Move (delete {yearLabel(p.fifa_year)} after copying)
+                                                </span>
+                                              </label>
+                                              <div className="flex gap-2">
+                                                <button
+                                                  onClick={() => handleClone(p)}
+                                                  disabled={cloningInProgress}
+                                                  className={`px-3 py-1.5 text-sm text-white rounded font-bold disabled:opacity-50 ${
+                                                    cloneMoveMode
+                                                      ? "bg-orange-600 hover:bg-orange-500"
+                                                      : "bg-blue-600 hover:bg-blue-500"
+                                                  }`}
+                                                >
+                                                  {cloningInProgress ? (cloneMoveMode ? "Moving..." : "Cloning...") : (cloneMoveMode ? "Move" : "Clone")}
+                                                </button>
+                                                <button
+                                                  onClick={() => setCloningEdition(null)}
+                                                  className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded font-bold"
+                                                >
+                                                  Cancel
+                                                </button>
+                                              </div>
                                             </div>
                                           </div>
                                           {cloneError && (

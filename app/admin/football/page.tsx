@@ -107,6 +107,18 @@ export default function FootballDataPage() {
   const [importLogs, setImportLogs] = useState<ImportLog[]>([]);
   const [startYear, setStartYear] = useState(1920);
 
+  // Single-player add state
+  const [addPlayerId, setAddPlayerId] = useState("");
+  const [addingPlayer, setAddingPlayer] = useState(false);
+  const [addPlayerResult, setAddPlayerResult] = useState<string | null>(null);
+
+  // Fill missing careers state
+  const [fixingCareers, setFixingCareers] = useState(false);
+  const [fixCareersLog, setFixCareersLog] = useState<string[]>([]);
+
+  // Re-fetch career for current player
+  const [refetchingCareer, setRefetchingCareer] = useState(false);
+
   const addLog = (message: string) => {
     setImportLogs((prev) => [...prev, { message, time: new Date().toLocaleTimeString() }]);
   };
@@ -222,7 +234,7 @@ export default function FootballDataPage() {
 
       // Phase 3: Careers
       setImportPhase("Importing career records...");
-      addLog("Phase 3: Career records (100 players per batch)");
+      addLog("Phase 3: Career records (25 players per batch)");
       offset = 0;
       let totalCareers = 0;
       batch = 1;
@@ -295,6 +307,80 @@ export default function FootballDataPage() {
     } catch {
       addLog("Failed to clear database");
     }
+  };
+
+  const handleAddPlayer = async () => {
+    const id = addPlayerId.trim();
+    if (!id) return;
+    setAddingPlayer(true);
+    setAddPlayerResult(null);
+    try {
+      const res = await fetch("/api/admin/football/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ step: "single-player", wikidataId: id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed");
+      setAddPlayerResult(`✓ Added "${json.name}" — ${json.careersImported} career(s), ${json.clubsImported} club(s)`);
+      setAddPlayerId("");
+      loadDbStats();
+    } catch (e: unknown) {
+      setAddPlayerResult(`✗ ${e instanceof Error ? e.message : "Error"}`);
+    }
+    setAddingPlayer(false);
+  };
+
+  const refetchCareer = async (playerId: string) => {
+    setRefetchingCareer(true);
+    try {
+      const res = await fetch("/api/admin/football/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ step: "single-player", wikidataId: playerId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed");
+      // Reload the player view to reflect new career data
+      await loadPlayer(playerId);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Re-fetch failed");
+    }
+    setRefetchingCareer(false);
+  };
+
+  const fillMissingCareers = async () => {
+    setFixingCareers(true);
+    setFixCareersLog([]);
+    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    let offset = 0;
+    let batch = 1;
+    let totalImported = 0;
+    try {
+      while (true) {
+        const res = await fetch("/api/admin/football/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step: "fill-missing-careers", offset }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Failed");
+        totalImported += json.imported as number;
+        if ((json.missingCount as number) > 0 || (json.imported as number) > 0) {
+          setFixCareersLog((prev) => [...prev,
+            `Batch ${batch}: checked ${json.checked}, missing ${json.missingCount}, imported ${json.imported} careers`]);
+        }
+        if (!json.hasMore) break;
+        offset = json.nextOffset as number;
+        batch++;
+        await delay(3000);
+      }
+      setFixCareersLog((prev) => [...prev, `Done — ${totalImported} total career records added`]);
+      loadDbStats();
+    } catch (e: unknown) {
+      setFixCareersLog((prev) => [...prev, `ERROR: ${e instanceof Error ? e.message : "Failed"}`]);
+    }
+    setFixingCareers(false);
   };
 
   // Search
@@ -1083,9 +1169,18 @@ export default function FootballDataPage() {
 
                 {/* Career */}
                 <div>
-                  <h2 className="mb-3 text-sm font-bold uppercase text-white">
-                    Career ({playerCareer.length} clubs)
-                  </h2>
+                  <div className="mb-3 flex items-center gap-3">
+                    <h2 className="text-sm font-bold uppercase text-white flex-1">
+                      Career ({playerCareer.length} clubs)
+                    </h2>
+                    <button
+                      onClick={() => refetchCareer(playerProfile.id)}
+                      disabled={refetchingCareer}
+                      className="rounded-lg border border-indigo-600 bg-indigo-900/30 px-3 py-1 text-xs font-bold text-indigo-300 hover:bg-indigo-900/60 disabled:opacity-50"
+                    >
+                      {refetchingCareer ? "Re-fetching..." : "Re-fetch from Wikidata"}
+                    </button>
+                  </div>
                   {playerCareer.length === 0 ? (
                     <p className="py-8 text-center text-white">No career data found.</p>
                   ) : (
@@ -1175,6 +1270,57 @@ export default function FootballDataPage() {
               >
                 Clear All Data
               </button>
+            </div>
+
+            {/* Add single player */}
+            <div className="mb-6 rounded-xl border border-gray-800 bg-gray-900 p-4">
+              <h3 className="mb-3 text-xs font-bold uppercase text-white">Add / Re-import Player by Wikidata ID</h3>
+              <p className="mb-3 text-xs text-white">Use this for players born before 1967 (e.g. Lineker = Q211147) or players with missing careers.</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={addPlayerId}
+                  onChange={(e) => setAddPlayerId(e.target.value)}
+                  placeholder="e.g. Q211147"
+                  disabled={addingPlayer}
+                  className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-mono text-white disabled:opacity-50"
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAddPlayer(); }}
+                />
+                <button
+                  onClick={handleAddPlayer}
+                  disabled={addingPlayer || !addPlayerId.trim()}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
+                >
+                  {addingPlayer ? "Importing..." : "Import"}
+                </button>
+              </div>
+              {addPlayerResult && (
+                <p className={`mt-2 text-xs font-mono ${addPlayerResult.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+                  {addPlayerResult}
+                </p>
+              )}
+            </div>
+
+            {/* Fill missing careers */}
+            <div className="mb-6 rounded-xl border border-gray-800 bg-gray-900 p-4">
+              <h3 className="mb-3 text-xs font-bold uppercase text-white">Fill Missing Careers</h3>
+              <p className="mb-3 text-xs text-white">Finds all players with 0 career entries and re-fetches their clubs from Wikidata in batches of 25 (reduces timeout risk).</p>
+              <button
+                onClick={fillMissingCareers}
+                disabled={fixingCareers || importing}
+                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-500 disabled:opacity-50"
+              >
+                {fixingCareers ? "Running..." : "Fix Missing Careers"}
+              </button>
+              {fixCareersLog.length > 0 && (
+                <div className="mt-3 max-h-48 overflow-y-auto space-y-1 font-mono text-xs">
+                  {fixCareersLog.map((line, i) => (
+                    <div key={i} className={line.startsWith("ERROR") ? "text-red-400" : line.startsWith("Done") ? "text-green-400" : "text-white"}>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Progress */}

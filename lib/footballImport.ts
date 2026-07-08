@@ -222,6 +222,69 @@ export async function fetchCountryFlags(countryIds: string[]) {
     .filter((c): c is { wikidata_id: string; flag_url: string | null } => !!c.wikidata_id);
 }
 
+// Import / re-import a single player by Wikidata ID (for players missing from DB or with 0 careers)
+export async function fetchSinglePlayer(wikidataId: string) {
+  const basicQ = `
+    SELECT ?playerLabel ?dob ?nationality ?nationalityLabel ?positionLabel WHERE {
+      BIND(wd:${wikidataId} AS ?player)
+      OPTIONAL { ?player wdt:P569 ?dob }
+      OPTIONAL { ?player wdt:P27 ?nationality }
+      OPTIONAL { ?player wdt:P413 ?position }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+    }
+    LIMIT 5
+  `;
+  const careerQ = `
+    SELECT ?club ?clubLabel ?startDate ?endDate WHERE {
+      BIND(wd:${wikidataId} AS ?player)
+      ?player p:P54 ?membership .
+      ?membership ps:P54 ?club .
+      OPTIONAL { ?membership pq:P580 ?startDate }
+      OPTIONAL { ?membership pq:P582 ?endDate }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+    }
+  `;
+
+  const [basicRows, careerRows] = await Promise.all([runSparql(basicQ), runSparql(careerQ)]);
+
+  const first = basicRows[0];
+  const countryId = extractId(val(first, "nationality") ?? undefined);
+  const countryName = val(first, "nationalityLabel");
+
+  const player = {
+    wikidata_id: wikidataId,
+    name: val(first, "playerLabel") ?? wikidataId,
+    date_of_birth: val(first, "dob")?.slice(0, 10) ?? null,
+    country_id: countryId ?? null,
+    position: val(first, "positionLabel") ?? null,
+    image_url: null,
+  };
+
+  const country = countryId && countryName
+    ? { wikidata_id: countryId, name: countryName }
+    : null;
+
+  const seen = new Set<string>();
+  const careers: { player_id: string; club_id: string; start_date: string; end_date: string | null }[] = [];
+  const clubs = new Map<string, { wikidata_id: string; name: string; country: string | null; league: string | null }>();
+
+  for (const row of careerRows) {
+    const cid = extractId(val(row, "club") ?? undefined);
+    if (!cid) continue;
+    if (!clubs.has(cid)) {
+      clubs.set(cid, { wikidata_id: cid, name: val(row, "clubLabel") ?? cid, country: null, league: null });
+    }
+    const startDate = val(row, "startDate")?.slice(0, 10) ?? "";
+    const endDate = val(row, "endDate")?.slice(0, 10) ?? null;
+    const key = `${wikidataId}-${cid}-${startDate}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    careers.push({ player_id: wikidataId, club_id: cid, start_date: startDate, end_date: endDate });
+  }
+
+  return { player, country, clubs: Array.from(clubs.values()), careers };
+}
+
 export async function fetchClubDetails(clubIds: string[]) {
   if (clubIds.length === 0) return [];
 
