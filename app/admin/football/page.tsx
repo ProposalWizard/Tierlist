@@ -468,6 +468,45 @@ export default function FootballDataPage() {
   const [savePuzzleError, setSavePuzzleError] = useState<string | null>(null);
   const [savedPuzzleId, setSavedPuzzleId] = useState<string | null>(null);
 
+  // TTT debug — check a specific player's club IDs vs the grid
+  const [debugQuery, setDebugQuery] = useState("");
+  const [debugSearching, setDebugSearching] = useState(false);
+  const [debugPlayer, setDebugPlayer] = useState<{ name: string; clubs: { id: string; name: string; start: string | null; end: string | null }[] } | null>(null);
+  const [debugError, setDebugError] = useState<string | null>(null);
+
+  const checkPlayerInGrid = async () => {
+    const q = debugQuery.trim();
+    if (!q) return;
+    setDebugSearching(true);
+    setDebugPlayer(null);
+    setDebugError(null);
+    try {
+      // Search for the player
+      const searchRes = await fetch(`/api/admin/football/players?q=${encodeURIComponent(q)}`);
+      const searchJson = await searchRes.json();
+      if (!searchRes.ok) throw new Error(searchJson.error ?? "Search failed");
+      const players: Player[] = searchJson.players ?? [];
+      if (players.length === 0) throw new Error(`No player found for "${q}"`);
+      const player = players[0];
+
+      // Get their career
+      const careerRes = await fetch(`/api/admin/football/players?player=${player.id}`);
+      const careerJson = await careerRes.json();
+      if (!careerRes.ok) throw new Error(careerJson.error ?? "Career fetch failed");
+
+      const clubs = (careerJson.career ?? []).map((c: CareerEntry) => ({
+        id: c.teamId,
+        name: c.team,
+        start: c.startDate,
+        end: c.endDate,
+      }));
+      setDebugPlayer({ name: player.name, clubs });
+    } catch (e: unknown) {
+      setDebugError(e instanceof Error ? e.message : "Failed");
+    }
+    setDebugSearching(false);
+  };
+
   /* ── API calls ── */
 
   const handleSearch = async () => {
@@ -727,6 +766,7 @@ export default function FootballDataPage() {
                         <div className="flex items-center gap-2 rounded-lg border border-indigo-600 bg-indigo-900/20 px-3 py-2">
                           <Img src={gridRows[idx]!.image} alt={gridRows[idx]!.name} size={24} />
                           <span className="font-bold text-white flex-1 truncate text-sm">{gridRows[idx]!.name}</span>
+                          <span className="text-[10px] font-mono text-gray-500 shrink-0">{gridRows[idx]!.id}</span>
                           <button onClick={() => clearGridClub("row", idx)} className="text-white hover:text-white">&times;</button>
                         </div>
                       ) : (
@@ -771,6 +811,7 @@ export default function FootballDataPage() {
                         <div className="flex items-center gap-2 rounded-lg border border-indigo-600 bg-indigo-900/20 px-3 py-2">
                           <Img src={gridCols[idx]!.image} alt={gridCols[idx]!.name} size={24} />
                           <span className="font-bold text-white flex-1 truncate text-sm">{gridCols[idx]!.name}</span>
+                          <span className="text-[10px] font-mono text-gray-500 shrink-0">{gridCols[idx]!.id}</span>
                           <button onClick={() => clearGridClub("col", idx)} className="text-white hover:text-white">&times;</button>
                         </div>
                       ) : (
@@ -921,6 +962,62 @@ export default function FootballDataPage() {
                 </div>
               </>
             )}
+
+            {/* ── Debug: check a specific player's club IDs ── */}
+            <div className="mt-8 rounded-xl border border-gray-800 bg-gray-900 p-4">
+              <h3 className="mb-1 text-xs font-bold uppercase text-white">Debug: Check Player in Grid</h3>
+              <p className="mb-3 text-xs text-white">
+                Search a player to see exactly which club IDs their career uses. Compare against the IDs shown next to each selected club above.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={debugQuery}
+                  onChange={(e) => setDebugQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") checkPlayerInGrid(); }}
+                  placeholder="e.g. Mahrez"
+                  className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+                />
+                <button
+                  onClick={checkPlayerInGrid}
+                  disabled={debugSearching || !debugQuery.trim()}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
+                >
+                  {debugSearching ? "Checking..." : "Check"}
+                </button>
+              </div>
+              {debugError && <p className="mt-2 text-xs text-red-400">{debugError}</p>}
+              {debugPlayer && (() => {
+                const gridClubIds = new Set([
+                  ...gridRows.filter(Boolean).map(c => c!.id),
+                  ...gridCols.filter(Boolean).map(c => c!.id),
+                ]);
+                return (
+                  <div className="mt-3">
+                    <p className="text-sm font-bold text-white mb-2">{debugPlayer.name} — {debugPlayer.clubs.length} club(s)</p>
+                    <div className="space-y-1 font-mono text-xs">
+                      {debugPlayer.clubs.length === 0 ? (
+                        <p className="text-red-400">No career entries in DB — run "Re-fetch from Wikidata" in Browse tab</p>
+                      ) : debugPlayer.clubs.map((c) => {
+                        const inGrid = gridClubIds.has(c.id);
+                        return (
+                          <div key={`${c.id}-${c.start}`} className={`flex items-start gap-2 rounded px-2 py-1 ${inGrid ? "bg-emerald-900/40 border border-emerald-700/50" : "bg-gray-800/50"}`}>
+                            <span className={`shrink-0 font-bold ${inGrid ? "text-emerald-400" : "text-gray-500"}`}>{inGrid ? "✓" : "–"}</span>
+                            <span className={`flex-1 ${inGrid ? "text-emerald-300" : "text-white"}`}>{c.name || <span className="text-gray-500 italic">unnamed</span>}</span>
+                            <span className="text-gray-500 shrink-0">{c.id}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {gridClubIds.size > 0 && (
+                      <p className="mt-2 text-xs text-white">
+                        Grid club IDs: {Array.from(gridClubIds).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
           </>
         )}
 
