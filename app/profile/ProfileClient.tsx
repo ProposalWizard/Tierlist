@@ -14,6 +14,8 @@ import SettingsModal from "@/components/profile/SettingsModal";
 import type { UserProfile } from "@/lib/types";
 import type { UserProgression } from "@/lib/xp";
 import type { SeasonLevelReward } from "@/components/profile/XPProgressBar";
+import type { ObjectiveCondition } from "@/lib/objectiveTypes";
+import { conditionSummary } from "@/lib/objectiveEvaluator";
 
 interface TierlistSummary {
   id: string;
@@ -409,6 +411,8 @@ interface AdminObjective {
   card_name: string | null;
   category: string;
   expires_at: string | null;
+  conditions?: ObjectiveCondition[] | null;
+  or_groups?: ObjectiveCondition[][] | null;
 }
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string; border: string; bg: string }> = {
@@ -432,6 +436,61 @@ function getTimeRemaining(expiresAt: string): string {
   if (days > 0) return `${days}d ${hours}h left`;
   if (hours > 0) return `${hours}h left`;
   return "< 1h left";
+}
+
+function ObjectiveRequirements({ conditions, orGroups }: {
+  conditions: ObjectiveCondition[] | null | undefined;
+  orGroups?: ObjectiveCondition[][] | null;
+}) {
+  if (!conditions || conditions.length === 0) return null;
+  return (
+    <div className="mt-4">
+      <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Requirements</div>
+      <ul className="space-y-1.5">
+        {conditions.map(cond => (
+          <li key={cond.id} className="flex items-start gap-2 text-sm text-white/80">
+            <span className="mt-px text-gray-600 shrink-0">▸</span>
+            <span>{conditionSummary(cond)}</span>
+          </li>
+        ))}
+      </ul>
+      {orGroups && orGroups.length > 0 && orGroups.map((group, i) => (
+        <div key={i} className="mt-2.5">
+          <div className="text-[11px] font-bold text-gray-500 mb-1.5">Plus one of:</div>
+          <ul className="space-y-1 ml-2 pl-3 border-l border-gray-700">
+            {group.map(cond => (
+              <li key={cond.id} className="flex items-start gap-2 text-sm text-white/70">
+                <span className="mt-px text-gray-600 shrink-0">◦</span>
+                <span>{conditionSummary(cond)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RequirementsToggle({ conditions, orGroups }: {
+  conditions: ObjectiveCondition[] | null | undefined;
+  orGroups?: ObjectiveCondition[][] | null;
+}) {
+  const [open, setOpen] = useState(false);
+  if (!conditions || conditions.length === 0) return null;
+  return (
+    <div className="mt-2">
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        className="flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-white transition-colors"
+      >
+        Requirements
+        <svg className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && <ObjectiveRequirements conditions={conditions} orGroups={orGroups} />}
+    </div>
+  );
 }
 
 function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
@@ -472,6 +531,7 @@ function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
             </div>
           )}
         </div>
+        <ObjectiveRequirements conditions={obj.conditions} orGroups={obj.or_groups} />
         {isUnclaimed && onClaim && (
           <button
             onClick={onClaim}
@@ -750,7 +810,8 @@ export function CustomObjectivesSection() {
                   {isSelected && (
                     <div className="px-4 py-4 bg-gray-800/50 border-b border-gray-800/30">
                       {obj.description && <p className="text-sm text-white mb-3 leading-relaxed">{obj.description}</p>}
-                      <div className="flex items-center gap-2 flex-wrap mb-3">
+                      <RequirementsToggle conditions={obj.conditions} orGroups={obj.or_groups} />
+                      <div className="flex items-center gap-2 flex-wrap mb-3 mt-3">
                         {obj.xp_reward > 0 && (
                           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
                             <span className="text-amber-400 text-sm font-black">{obj.xp_reward} XP</span>
