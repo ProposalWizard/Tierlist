@@ -983,15 +983,17 @@ export default function DraftPage() {
             teamName={isSignedIn ? teamName : undefined}
             onTeamNameChange={isSignedIn ? handleTeamNameChange : undefined}
           />
-          <div className="text-center pb-6">
-            <button
-              onClick={handleSkipToTest}
-              disabled={autoFilling}
-              className="text-xs text-white hover:text-gray-500 underline transition disabled:cursor-wait"
-            >
-              {autoFilling ? "auto-drafting squad…" : "[test] skip draft → auto-fill squad"}
-            </button>
-          </div>
+          {isAdminUser && (
+            <div className="text-center pb-6">
+              <button
+                onClick={handleSkipToTest}
+                disabled={autoFilling}
+                className="text-xs text-white hover:text-gray-500 underline transition disabled:cursor-wait"
+              >
+                {autoFilling ? "auto-drafting squad…" : "[test] skip draft → auto-fill squad"}
+              </button>
+            </div>
+          )}
         </>
       )}
       {phase === "lobby" && roomCode && userId && (
