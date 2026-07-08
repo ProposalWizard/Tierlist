@@ -154,6 +154,7 @@ export default function ObjectivesAdmin() {
   const [cardLibraryUrl, setCardLibraryUrl] = useState<string | null>(null);
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const loadObjectives = useCallback(async () => {
     setLoading(true);
@@ -166,6 +167,7 @@ export default function ObjectivesAdmin() {
 
   const resetForm = () => {
     setEditingId(null);
+    setShowForm(false);
     setForm({ title: "", description: "", xp_reward: 100, card_name: "", category: "standard", is_published: false, expires_at: null, same_season: false, same_player: false });
     setConditions([]);
     setOrGroups([]);
@@ -180,6 +182,7 @@ export default function ObjectivesAdmin() {
 
   const handleEdit = (obj: Objective) => {
     setEditingId(obj.id);
+    setShowForm(true);
     setForm({
       title: obj.title,
       description: obj.description || "",
@@ -422,13 +425,28 @@ export default function ObjectivesAdmin() {
         <h2 className="text-lg font-bold text-white">
           Objectives {!loading && `(${objectives.length})`}
         </h2>
+        <button
+          onClick={() => { resetForm(); setShowForm(true); }}
+          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition"
+        >
+          + Add New Objective
+        </button>
       </div>
 
-      {/* Form */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
-        <h3 className="text-sm font-bold text-white">
-          {editingId ? "Edit Objective" : "Add New Objective"}
-        </h3>
+      {/* Form modal */}
+      {showForm && (
+      <div
+        className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 overflow-y-auto py-8 px-4"
+        onClick={(e) => { if (e.target === e.currentTarget) resetForm(); }}
+      >
+        <div className="relative w-full max-w-3xl bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl mb-8">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+            <h3 className="text-sm font-bold text-white">
+              {editingId ? "Edit Objective" : "Add New Objective"}
+            </h3>
+            <button onClick={resetForm} className="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+          </div>
+          <div className="p-5 space-y-4">
 
         {/* Category */}
         <div>
@@ -1358,16 +1376,17 @@ export default function ObjectivesAdmin() {
           >
             {saving ? "Saving..." : editingId ? "Update Objective" : "Add Objective"}
           </button>
-          {editingId && (
-            <button
-              onClick={resetForm}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-sm rounded-lg transition"
-            >
-              Cancel
-            </button>
-          )}
+          <button
+            onClick={resetForm}
+            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-sm rounded-lg transition"
+          >
+            Cancel
+          </button>
         </div>
+        </div>{/* end modal inner padding */}
+        </div>{/* end modal card */}
       </div>
+      )}{/* end showForm modal */}
 
       {/* ───── OBJECTIVES LIST ───── */}
       {loading ? (
