@@ -308,7 +308,8 @@ function isConditionMet(
   seasonValues: Record<string, number>,
 ): boolean {
   if (cond.type === "squad_count") {
-    const val = seasonValues[cond.id] ?? 0;
+    if (!(cond.id in seasonValues)) return false; // competition mismatch — no data for this season
+    const val = seasonValues[cond.id];
     if (cond.atMost) return val <= cond.count;
     return val >= cond.count;
   }

@@ -80,6 +80,16 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
       setLoadingProgression(false);
     };
     loadProgression();
+
+    // Refresh progression when an objective is claimed so Collection Squad cards update immediately
+    const refreshProgression = () => {
+      fetch("/api/profile/progression")
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data && !data.error) setProgression(data); })
+        .catch(() => {});
+    };
+    window.addEventListener("objective-claimed", refreshProgression);
+    return () => window.removeEventListener("objective-claimed", refreshProgression);
   }, []);
 
   async function handleEquip(type: "frame" | "title", id: string) {
@@ -560,8 +570,21 @@ export function CustomObjectivesSection() {
   const [claimModal, setClaimModal] = useState<ClaimResult | null>(null);
 
   useEffect(() => {
-    // Fire login streak check (silent, fire-and-forget)
-    fetch("/api/objectives/check-login", { method: "POST" }).catch(() => {});
+    // Fire login streak check — read response so XP can be awarded for newly completed objectives
+    fetch("/api/objectives/check-login", { method: "POST" })
+      .then(r => r.ok ? r.json() : null)
+      .then(async (data: { completed?: { id: string; xp_reward: number }[] } | null) => {
+        for (const obj of data?.completed ?? []) {
+          if (obj.xp_reward > 0) {
+            await fetch("/api/xp", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ event_type: `objective_${obj.id}`, event_ref: `objective_${obj.id}` }),
+            }).catch(() => {});
+          }
+        }
+      })
+      .catch(() => {});
 
     fetch("/api/objectives")
       .then(res => res.ok ? res.json() : null)

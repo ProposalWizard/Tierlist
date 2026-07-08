@@ -69,8 +69,8 @@ export async function PATCH(req: Request) {
   if (body.category !== undefined) updates.category = body.category;
   if (body.same_season !== undefined) updates.same_season = body.same_season;
   if (body.same_player !== undefined) updates.same_player = body.same_player;
-  // Only write or_groups when non-empty so objectives work before the migration is run
-  if (body.or_groups?.length) updates.or_groups = body.or_groups;
+  // Write or_groups when explicitly provided (including [] to clear it)
+  if ("or_groups" in body) updates.or_groups = body.or_groups?.length ? body.or_groups : null;
   const { error } = await supabase
     .from("objectives")
     .update(updates)

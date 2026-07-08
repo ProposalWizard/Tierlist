@@ -174,6 +174,7 @@ export interface UserProgression {
   equippedFrame: string;
   equippedTitle: string;
   recentXpEvents: { event_type: string; xp_awarded: number; created_at: string }[];
+  objectiveCards?: { id: string; name: string; card_image_url: string }[];
 }
 
 export interface UserStats {
