@@ -80,6 +80,8 @@ interface SofifaPlayer {
   name: string;
   positions: string | null;
   manual_positions: string | null;
+  nationality: string | null;
+  manual_nationality: string | null;
   club: string | null;
   league: string | null;
   overall: number | null;
@@ -108,6 +110,9 @@ export default function PlayerSearchPage() {
   const [editingPos, setEditingPos] = useState<string | null>(null);
   const [editPosValue, setEditPosValue] = useState("");
   const [savingPos, setSavingPos] = useState(false);
+  const [editingNat, setEditingNat] = useState<string | null>(null);
+  const [editNatValue, setEditNatValue] = useState("");
+  const [savingNat, setSavingNat] = useState(false);
   const [deletingEdition, setDeletingEdition] = useState<string | null>(null);
   const [deletingInProgress, setDeletingInProgress] = useState<string | null>(null);
   const [cloningEdition, setCloningEdition] = useState<string | null>(null);
@@ -234,6 +239,31 @@ export default function PlayerSearchPage() {
     } catch {}
     setSavingPos(false);
     setEditingPos(null);
+  };
+
+  const handleSaveNat = async (sofifaId: string, fifaYear: number) => {
+    const val = editNatValue.trim();
+    const newNat = val === "" ? null : val;
+
+    setSavingNat(true);
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: fifaYear, manual_nationality: newNat }),
+      });
+      if (res.ok) {
+        setPlayers((prev) =>
+          prev.map((p) =>
+            p.sofifa_id === sofifaId && p.fifa_year === fifaYear
+              ? { ...p, manual_nationality: newNat }
+              : p
+          )
+        );
+      }
+    } catch {}
+    setSavingNat(false);
+    setEditingNat(null);
   };
 
   const handleDelete = async (sofifaId: string, fifaYear: number) => {
@@ -601,6 +631,7 @@ export default function PlayerSearchPage() {
                                 <th className="px-5 py-2 text-left text-xs font-bold uppercase text-white">Edition</th>
                                 <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Club</th>
                                 <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Positions</th>
+                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Nationality</th>
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-white">OVR</th>
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-white">POT</th>
                                 <th className="px-3 py-2 text-center text-xs font-bold uppercase text-white">Age</th>
@@ -616,7 +647,7 @@ export default function PlayerSearchPage() {
                                 const hasOverride = p.manual_overall !== null && p.manual_overall !== undefined;
                                 return (
                                   <tr key={edKey} className="border-b border-gray-800/30">
-                                    <td colSpan={7} className="p-0">
+                                    <td colSpan={8} className="p-0">
                                       <div
                                         onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
                                         className={`flex items-center cursor-pointer transition-colors ${
@@ -669,6 +700,49 @@ export default function PlayerSearchPage() {
                                             >
                                               {(p.manual_positions ?? p.positions) || "--"}
                                               {p.manual_positions && <span className="text-[9px] text-amber-500 ml-0.5">*</span>}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div
+                                          className="px-3 py-2.5 min-w-[110px] relative z-10"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {editingNat === edKey ? (
+                                            <input
+                                              type="text"
+                                              autoFocus
+                                              value={editNatValue}
+                                              onChange={(e) => setEditNatValue(e.target.value)}
+                                              onBlur={() => handleSaveNat(p.sofifa_id, p.fifa_year)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleSaveNat(p.sofifa_id, p.fifa_year);
+                                                if (e.key === "Escape") setEditingNat(null);
+                                              }}
+                                              disabled={savingNat}
+                                              placeholder="e.g. Belgium"
+                                              className="w-28 bg-gray-700 border border-blue-500 rounded px-1 py-0.5 text-sm font-bold text-white focus:outline-none"
+                                            />
+                                          ) : (
+                                            <span
+                                              role="button"
+                                              tabIndex={0}
+                                              onClick={() => {
+                                                setEditingNat(edKey);
+                                                setEditNatValue((p.manual_nationality ?? p.nationality) || "");
+                                              }}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                  setEditingNat(edKey);
+                                                  setEditNatValue((p.manual_nationality ?? p.nationality) || "");
+                                                }
+                                              }}
+                                              className={`inline-block cursor-pointer rounded px-2 py-0.5 hover:bg-gray-700 hover:ring-1 hover:ring-blue-500 transition-all ${
+                                                p.manual_nationality ? "text-amber-400" : (p.nationality ? "text-blue-300" : "text-gray-500 italic")
+                                              }`}
+                                              title={p.manual_nationality ? `Manual: ${p.manual_nationality} (scraped: ${p.nationality ?? "?"})` : "Click to set nationality"}
+                                            >
+                                              {(p.manual_nationality ?? p.nationality) || "none"}
+                                              {p.manual_nationality && <span className="text-[9px] text-amber-500 ml-0.5">*</span>}
                                             </span>
                                           )}
                                         </div>

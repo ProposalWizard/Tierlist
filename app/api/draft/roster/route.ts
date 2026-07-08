@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("sofifa_players")
     .select(
-      "sofifa_id, name, overall, manual_overall, potential, positions, manual_positions, age, image_url, nationality, attributes"
+      "sofifa_id, name, overall, manual_overall, potential, positions, manual_positions, age, image_url, nationality, manual_nationality, attributes"
     )
     .eq("club", club)
     .eq("fifa_year", year)
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       positions: p.manual_positions || p.positions || (a.positions as string) || (a.player_positions as string) || "",
       age: p.age || parseAttr(a.age) || parseAttr(a.attr_ae) || 0,
       image_url: p.image_url || (a.image_url as string) || null,
-      nationality: p.nationality || (a.nationality as string) || "",
+      nationality: p.manual_nationality || p.nationality || (a.nationality as string) || "",
       pace: parseAttr(a.attr_pac) || parseAttr(a.pac),
       shooting: parseAttr(a.attr_sho) || parseAttr(a.shooting),
       passing: parseAttr(a.attr_pas) || parseAttr(a.passing),
@@ -124,15 +124,15 @@ export async function GET(request: NextRequest) {
   if (missingNatIds.length > 0) {
     const { data: natRows } = await supabase
       .from("sofifa_players")
-      .select("sofifa_id, nationality")
+      .select("sofifa_id, nationality, manual_nationality")
       .in("sofifa_id", missingNatIds)
-      .not("nationality", "is", null)
-      .neq("nationality", "");
+      .or("nationality.not.is.null,manual_nationality.not.is.null");
     if (natRows && natRows.length > 0) {
       const natMap = new Map<string, string>();
       for (const row of natRows) {
-        if (row.nationality && !natMap.has(row.sofifa_id)) {
-          natMap.set(row.sofifa_id, row.nationality);
+        const nat = (row as { sofifa_id: string; nationality: string | null; manual_nationality: string | null }).manual_nationality || (row as { sofifa_id: string; nationality: string | null; manual_nationality: string | null }).nationality;
+        if (nat && !natMap.has(row.sofifa_id)) {
+          natMap.set(row.sofifa_id, nat);
         }
       }
       for (const player of roster) {
