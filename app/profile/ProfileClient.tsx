@@ -732,39 +732,52 @@ export function CustomObjectivesSection() {
 
       {/* Category Tabs — scrollable on mobile; no native scrollbar */}
       <div className="relative border-b border-gray-800/50">
-      <div className="flex gap-0 px-5 pt-3 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
-        {availableCategories.map(catKey => {
-          const cat = CATEGORY_CONFIG[catKey];
-          if (!cat) return null;
-          const catObjs = allObjectives.filter(o => (o.category ?? "standard") === catKey);
-          const catCompleted = catObjs.filter(o => completedIds.includes(o.id)).length;
-          const catUnclaimed = catObjs.filter(o => unclaimedIds.includes(o.id)).length;
-          const isActive = currentCategory === catKey;
-          return (
-            <button
-              key={catKey}
-              onClick={() => { setSelectedCategory(catKey); setSelectedId(null); }}
-              className={`relative flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition border-b-2 -mb-px whitespace-nowrap ${
-                isActive
-                  ? `${cat.color} border-current`
-                  : "text-white border-transparent hover:text-gray-300"
-              }`}
-            >
-              <span className="text-sm">{cat.icon}</span>
-              {cat.label}
-              <span className="ml-1 text-xs opacity-70">({catCompleted}/{catObjs.length})</span>
-              {catUnclaimed > 0 && (
-                <span className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white">
-                  {catUnclaimed}
-                </span>
-              )}
-            </button>
-          );
-        })}
+        <div className="flex gap-0 px-5 pt-3 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
+          {availableCategories.map(catKey => {
+            const cat = CATEGORY_CONFIG[catKey];
+            if (!cat) return null;
+            const catObjs = allObjectives.filter(o => (o.category ?? "standard") === catKey);
+            const catCompleted = catObjs.filter(o => completedIds.includes(o.id)).length;
+            const catUnclaimed = catObjs.filter(o => unclaimedIds.includes(o.id)).length;
+            const isActive = currentCategory === catKey;
+            return (
+              <button
+                key={catKey}
+                onClick={() => { setSelectedCategory(catKey); setSelectedId(null); }}
+                className={`relative flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition border-b-2 -mb-px whitespace-nowrap ${
+                  isActive
+                    ? `${cat.color} border-current`
+                    : "text-white border-transparent hover:text-gray-300"
+                }`}
+              >
+                <span className="text-sm">{cat.icon}</span>
+                {cat.label}
+                <span className="ml-1 text-xs opacity-70">({catCompleted}/{catObjs.length})</span>
+                {catUnclaimed > 0 && (
+                  <span className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white">
+                    {catUnclaimed}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {/* Right-edge fade — hint that more tabs exist off-screen on mobile */}
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-gray-900 to-transparent md:hidden" />
       </div>
-      {/* Right-edge fade — hint that more tabs exist off-screen on mobile */}
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-gray-900 to-transparent md:hidden" />
-      </div>
+      {/* Mobile only: show unclaimed counts for all categories so hidden tabs with rewards are visible */}
+      {(() => {
+        const otherUnclaimed = availableCategories
+          .filter(k => k !== currentCategory)
+          .flatMap(k => allObjectives.filter(o => (o.category ?? "standard") === k && unclaimedIds.includes(o.id)));
+        if (otherUnclaimed.length === 0) return null;
+        return (
+          <div className="md:hidden px-4 py-2 flex items-center gap-1.5 border-b border-gray-800/30 bg-gray-900/60">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white shrink-0">{otherUnclaimed.length}</span>
+            <span className="text-xs text-red-400 font-bold">reward{otherUnclaimed.length !== 1 ? "s" : ""} ready to claim in other tabs</span>
+          </div>
+        );
+      })()}
 
       {categoryObjectives.length === 0 ? (
         <div className="px-5 py-10 text-center text-sm text-white">
@@ -788,30 +801,38 @@ export function CustomObjectivesSection() {
                   >
                     <div className="flex items-center gap-2.5">
                       {done ? (
-                        <svg className="w-4.5 h-4.5 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       ) : (
-                        <div className="w-4.5 h-4.5 rounded-full border border-gray-600 shrink-0" />
+                        <div className="w-4 h-4 rounded-full border border-gray-600 shrink-0" />
                       )}
-                      <span className={`text-base font-bold leading-tight flex-1 ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
-                      {unclaimed && <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />}
-                      <svg className={`w-5 h-5 shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <span className={`text-sm font-bold leading-tight flex-1 ${done ? "text-emerald-400" : "text-white"}`}>{obj.title}</span>
+                      {unclaimed && (
+                        <span
+                          role="button"
+                          onClick={e => { e.stopPropagation(); handleClaim(obj.id, obj); }}
+                          className="shrink-0 px-2.5 py-1 rounded-lg bg-amber-500 text-[11px] font-black text-black leading-none"
+                        >
+                          {claimingId === obj.id ? "…" : "Claim"}
+                        </span>
+                      )}
+                      <svg className={`w-4 h-4 shrink-0 text-gray-500 transition-transform ${isSelected ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
-                    <div className="mt-1.5 pl-7 flex items-center gap-2 flex-wrap">
+                    <div className="mt-1.5 pl-6 flex items-center gap-2 flex-wrap">
                       {obj.xp_reward > 0 && <span className={`text-xs font-bold ${done ? "text-emerald-500/60" : "text-amber-400"}`}>{obj.xp_reward} XP</span>}
                       {!done && obj.expires_at && <span className="text-xs font-bold text-orange-400">⏱ {getTimeRemaining(obj.expires_at)}</span>}
                       {done && !unclaimed && <span className="text-xs font-bold text-emerald-500/60">Completed</span>}
-                      {unclaimed && <span className="text-xs font-bold text-red-400">Claim reward!</span>}
+                      {unclaimed && <span className="text-xs font-bold text-amber-400/70">Tap Claim to collect</span>}
                     </div>
                   </button>
                   {isSelected && (
                     <div className="px-4 py-4 bg-gray-800/50 border-b border-gray-800/30">
                       {obj.description && <p className="text-sm text-white mb-3 leading-relaxed">{obj.description}</p>}
                       <RequirementsToggle conditions={obj.conditions} orGroups={obj.or_groups} />
-                      <div className="flex items-center gap-2 flex-wrap mb-3 mt-3">
+                      <div className="flex items-center gap-2 flex-wrap mt-3">
                         {obj.xp_reward > 0 && (
                           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
                             <span className="text-amber-400 text-sm font-black">{obj.xp_reward} XP</span>
@@ -833,24 +854,6 @@ export function CustomObjectivesSection() {
                           </div>
                         )}
                       </div>
-                      {obj.card_image_url && (
-                        <div className="mb-3 flex items-center gap-4">
-                          <img src={obj.card_image_url} alt={obj.card_name || "Card Reward"} className="w-24 h-32 object-cover rounded-lg border border-gray-700 shadow-lg" />
-                          <div>
-                            <div className="text-xs font-bold text-white uppercase tracking-wider">Reward</div>
-                            {obj.card_name && <div className="text-sm font-bold text-white mt-1">{obj.card_name}</div>}
-                          </div>
-                        </div>
-                      )}
-                      {unclaimed && (
-                        <button
-                          onClick={() => handleClaim(obj.id, obj)}
-                          disabled={claimingId === obj.id}
-                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:opacity-60 text-sm font-black text-white transition-all"
-                        >
-                          {claimingId === obj.id ? "Claiming…" : "Claim Reward"}
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>

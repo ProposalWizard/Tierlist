@@ -159,11 +159,11 @@ export default function XPProgressBar({ progression, seasonRewards }: Props) {
         {/* Header */}
         <div className="relative flex items-start justify-between mb-5">
           <div>
-            <h3 className="text-sm sm:text-base font-black tracking-[0.2em] text-amber-500/80 uppercase">
-              Road to Legend <span className="font-semibold text-orange-400/70 underline underline-offset-4 decoration-orange-400/40">Season 1</span>
+            <h3 className="text-sm sm:text-base font-black tracking-[0.2em] text-amber-500/80 uppercase leading-none">
+              Road to Legend
             </h3>
-            <div className={`text-sm sm:text-base font-semibold mt-0.5 leading-tight ${titleColor}`}>
-              {currentTitle.name}
+            <div className="text-xs font-semibold text-orange-400/70 underline underline-offset-4 decoration-orange-400/40 mt-1">
+              Season 1
             </div>
           </div>
           <span className={`text-[10px] font-bold tabular-nums flex-shrink-0 ${daysLeft <= 14 ? "text-red-400" : "text-white"}`}>
