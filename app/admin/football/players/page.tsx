@@ -60,6 +60,12 @@ const ATTR_LABELS: Record<string, string> = {
   attr_spd: "GK Speed",
 };
 
+/* ── Effective positions: same fallback chain as the roster API ── */
+function effectivePositions(p: { manual_positions: string | null; positions: string | null; attributes: Record<string, unknown> | null }): string {
+  const a = p.attributes ?? {};
+  return p.manual_positions || p.positions || (a.positions as string) || (a.player_positions as string) || "";
+}
+
 /* ── FIFA year label ── */
 function yearLabel(year: number): string {
   const y = year > 100 ? year % 100 : year;
@@ -707,21 +713,22 @@ export default function PlayerSearchPage() {
                                               tabIndex={0}
                                               onClick={() => {
                                                 setEditingPos(edKey);
-                                                setEditPosValue((p.manual_positions ?? p.positions) || "");
+                                                setEditPosValue(effectivePositions(p));
                                               }}
                                               onKeyDown={(e) => {
                                                 if (e.key === "Enter" || e.key === " ") {
                                                   setEditingPos(edKey);
-                                                  setEditPosValue((p.manual_positions ?? p.positions) || "");
+                                                  setEditPosValue(effectivePositions(p));
                                                 }
                                               }}
                                               className={`inline-block cursor-pointer rounded px-2 py-0.5 hover:bg-gray-700 hover:ring-1 hover:ring-yellow-500 transition-all ${
-                                                p.manual_positions ? "text-amber-400" : "text-yellow-400"
+                                                p.manual_positions ? "text-amber-400" : !p.positions && effectivePositions(p) ? "text-gray-400" : "text-yellow-400"
                                               }`}
-                                              title={p.manual_positions ? `Manual: ${p.manual_positions} (scraped: ${p.positions ?? "?"})` : "Click to edit positions"}
+                                              title={p.manual_positions ? `Manual: ${p.manual_positions} (scraped: ${p.positions ?? "?"})` : !p.positions && effectivePositions(p) ? `From attributes (click to set positions column)` : "Click to edit positions"}
                                             >
-                                              {(p.manual_positions ?? p.positions) || "--"}
+                                              {effectivePositions(p) || "--"}
                                               {p.manual_positions && <span className="text-[9px] text-amber-500 ml-0.5">*</span>}
+                                              {!p.manual_positions && !p.positions && effectivePositions(p) && <span className="text-[9px] text-gray-500 ml-0.5">attr</span>}
                                             </span>
                                           )}
                                         </div>
