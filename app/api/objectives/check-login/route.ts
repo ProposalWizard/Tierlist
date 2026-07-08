@@ -24,7 +24,7 @@ export async function POST() {
   // Fetch published, active, non-expired objectives with login_streak conditions
   let { data: objectives, error: objErr } = await service
     .from("objectives")
-    .select("id, xp_reward, conditions")
+    .select("id, xp_reward, conditions, or_groups")
     .eq("is_active", true)
     .eq("is_published", true)
     .or("expires_at.is.null,expires_at.gt.now()");
@@ -33,11 +33,11 @@ export async function POST() {
     // is_published column may not exist yet — fall back without the filter
     const fallback = await service
       .from("objectives")
-      .select("id, xp_reward, conditions")
+      .select("id, xp_reward, conditions, or_groups")
       .eq("is_active", true)
       .or("expires_at.is.null,expires_at.gt.now()");
     if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
-    objectives = fallback.data;
+    objectives = (fallback.data ?? []).map(o => ({ ...o, or_groups: null }));
   }
 
   const eligible = (objectives ?? []).filter(o => {
@@ -80,13 +80,19 @@ export async function POST() {
     }
 
     // Check if all conditions are now met
-    const complete = conditions.every(cond => {
-      if (cond.type === "login_streak") {
-        return (newProgress[cond.id] ?? 0) >= cond.count;
+    const conditionMet = (cond: ObjectiveCondition): boolean => {
+      const val = newProgress[cond.id] ?? 0;
+      if (cond.type === "squad_count" && cond.atMost) return false; // squad_count needs season data; can't evaluate here
+      if (cond.type === "season_stat" && cond.atMost) {
+        const best = newProgress[cond.id] as number | undefined;
+        return best !== undefined && best <= cond.count;
       }
-      // Non-login conditions use stored progress
-      return (newProgress[cond.id] ?? 0) >= cond.count;
-    });
+      return val >= cond.count;
+    };
+    const orGroups = (obj as Record<string, unknown>).or_groups as ObjectiveCondition[][] | null | undefined;
+    const baseMet = conditions.every(conditionMet);
+    const orMet = !orGroups || orGroups.length === 0 || orGroups.every(group => group.some(conditionMet));
+    const complete = baseMet && orMet;
 
     if (complete) {
       await service.from("user_objectives").upsert({

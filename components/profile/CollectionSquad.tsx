@@ -195,7 +195,14 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
       card_image_url: r.image_url,
     }));
 
-  const unlockedCards: CardEntry[] = [...unlockedSeasonCards]
+  const unlockedObjectiveCards: CardEntry[] = (progression?.objectiveCards ?? []).map(c => ({
+    id: c.id,
+    name: c.name,
+    unlock_value: null,
+    card_image_url: c.card_image_url,
+  }));
+
+  const unlockedCards: CardEntry[] = [...unlockedSeasonCards, ...unlockedObjectiveCards]
     .sort((a, b) => (a.unlock_value ?? 0) - (b.unlock_value ?? 0));
 
   useEffect(() => {

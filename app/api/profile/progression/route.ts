@@ -19,6 +19,7 @@ export async function GET() {
     { data: userRewards },
     { data: profile },
     { data: recentEvents },
+    { data: claimedObjRows },
   ] = await Promise.all([
     svc.from("user_xp").select("*").eq("user_id", user.id).maybeSingle(),
     svc.from("user_stats").select("*").eq("user_id", user.id).maybeSingle(),
@@ -26,7 +27,26 @@ export async function GET() {
     svc.from("user_rewards").select("*").eq("user_id", user.id),
     svc.from("user_profiles").select("equipped_frame, equipped_title, longest_streak").eq("user_id", user.id).maybeSingle(),
     svc.from("xp_events").select("event_type, xp_awarded, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+    svc.from("user_objectives").select("objective_id").eq("user_id", user.id).not("claimed_at", "is", null),
   ]);
+
+  // Fetch objective card art for all claimed objectives that have a card reward
+  let objectiveCards: { id: string; name: string; card_image_url: string }[] = [];
+  const claimedObjIds = (claimedObjRows ?? []).map((r: { objective_id: string }) => r.objective_id);
+  if (claimedObjIds.length > 0) {
+    const { data: objCardData } = await svc
+      .from("objectives")
+      .select("id, card_name, card_image_url")
+      .in("id", claimedObjIds)
+      .not("card_image_url", "is", null);
+    objectiveCards = (objCardData ?? [])
+      .filter((o: { card_image_url: string | null }) => o.card_image_url)
+      .map((o: { id: string; card_name: string | null; card_image_url: string }) => ({
+        id: `obj_card_${o.id}`,
+        name: o.card_name ?? "Card",
+        card_image_url: o.card_image_url,
+      }));
+  }
 
   const totalXp = xpRow?.total_xp ?? 0;
   const { level, currentLevelXp, xpToNext, progress } = levelFromXp(totalXp);
@@ -64,6 +84,7 @@ export async function GET() {
     equippedFrame: profile?.equipped_frame ?? "frame_default",
     equippedTitle: profile?.equipped_title ?? "title_rookie",
     recentXpEvents: recentEvents || [],
+    objectiveCards,
   };
 
   return NextResponse.json(result);
