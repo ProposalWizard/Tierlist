@@ -627,6 +627,34 @@ async def wait_for(page, selector: str, what: str, timeout: int = 180) -> bool:
     return False
 
 
+async def _click_next_only(page) -> bool:
+    """Click the pagination Next button if present. Returns True if it clicked.
+
+    Unlike click_next(), this does NOT wait for content — the caller should
+    follow with wait_for() using a long timeout, so an occasional Cloudflare
+    challenge mid-pagination can be solved by hand and the run continues.
+    Crucially it navigates via the Next button (no full page reload), which
+    triggers far fewer Cloudflare challenges than re-goto-ing each page.
+    """
+    next_btn = await page.query_selector('a.bp3-button[rel="next"]')
+    if not next_btn:
+        next_btn = await page.query_selector('a[rel="next"]')
+    if not next_btn:
+        for link in await page.query_selector_all(".pagination a"):
+            text = (await link.inner_text()).strip()
+            if text in ("Next", "›", "»"):
+                next_btn = link
+                break
+    if not next_btn:
+        return False
+    try:
+        await next_btn.click()
+        return True
+    except Exception as e:
+        print(f"  Could not click Next: {e}")
+        return False
+
+
 async def click_next(page, ready_selector: str, expected_r: str | None = None) -> bool:
     next_btn = await page.query_selector('a.bp3-button[rel="next"]')
     if not next_btn:
@@ -1093,12 +1121,13 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
     so no other league can ever be modified even if the site's own filter
     leaks extra rows.
 
-    League filtering that actually holds:
-      • page 1 is loaded with set=true&lg[] to OVERWRITE SoFIFA's saved
+    League filtering that actually holds, WITHOUT a captcha storm:
+      • page 1 is loaded ONCE with set=true&lg[] to OVERWRITE SoFIFA's saved
         session preference with this league (the stale "all leagues" pref was
         why the filter kept leaking back to every player);
-      • every following page is a direct-offset URL carrying lg[] itself, so
-        the filter never rides on the Next button (which drops it).
+      • every following page is reached with the Next button (no full reload),
+        so the session-level league filter is preserved and Cloudflare isn't
+        re-challenged on every page.
     """
     await ensure_discovery(page)
 
@@ -1160,17 +1189,19 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
             continue
 
         all_names: dict[str, str] = {}
-        offset = 0
         page_num = 1
         MAX_PAGES = 500  # backstop only; real runs stop far sooner
 
-        while page_num <= MAX_PAGES:
-            url = _names_url(year, league_id, offset=offset, lock=(page_num == 1))
-            await page.goto(url, wait_until="commit")
-            if not await wait_for(page, 'a[href*="/player/"]', "players page"):
-                print(f"  Page {page_num}: could not load, stopping.")
-                break
+        # Load ONLY page 1 with a full navigation. set=true&lg[] saves this
+        # league as SoFIFA's session preference, so the Next button keeps the
+        # filter without another reload. Re-goto-ing every page is what caused
+        # a fresh Cloudflare challenge on each page — the Next button doesn't.
+        await page.goto(_names_url(year, league_id, offset=0, lock=True), wait_until="commit")
+        if not await wait_for(page, 'a[href*="/player/"]', "players page"):
+            print(f"  Could not load {label}, skipping")
+            continue
 
+        while page_num <= MAX_PAGES:
             # Bail if SoFIFA dropped the edition (version) filter.
             if vc and f"r={vc}" not in page.url:
                 print(f"  ⚠ Version drift on page {page_num} (URL lost r={vc}) — stopping.")
@@ -1205,8 +1236,15 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
                     print(f"    (Only the {len(target_ids)} matching-league names will still be patched.)")
                 break
 
-            offset += 60
+            # Advance with the Next button (no reload → far fewer challenges).
+            if not await _click_next_only(page):
+                print(f"  No more pages. Total: {len(all_names)} players.")
+                break
             page_num += 1
+            # Long wait so an occasional challenge can be solved by hand.
+            if not await wait_for(page, 'a[href*="/player/"]', f"page {page_num}"):
+                print(f"  Page {page_num}: could not load, stopping.")
+                break
             await asyncio.sleep(random.uniform(0.4, 0.9))
 
         # ── Patch: ONLY the `name` field, ONLY allowed ids ────────────────
@@ -1327,7 +1365,7 @@ async def main():
     # If you do NOT see this exact line when you run the script, your local
     # copy is OLD — run `git pull` in the folder before scraping.
     print("=" * 64)
-    print("  scrape_missing.py  BUILD 2026-07-09-C  (Premier-League-safe)")
+    print("  scrape_missing.py  BUILD 2026-07-09-D  (Prem-safe, low-captcha)")
     print("=" * 64)
 
     force = "--force" in sys.argv
