@@ -119,6 +119,9 @@ export default function PlayerSearchPage() {
   const [editingNat, setEditingNat] = useState<string | null>(null);
   const [editNatValue, setEditNatValue] = useState("");
   const [savingNat, setSavingNat] = useState(false);
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [editNameValue, setEditNameValue] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const [deletingEdition, setDeletingEdition] = useState<string | null>(null);
   const [deletingInProgress, setDeletingInProgress] = useState<string | null>(null);
   const [cloningEdition, setCloningEdition] = useState<string | null>(null);
@@ -271,6 +274,31 @@ export default function PlayerSearchPage() {
     } catch {}
     setSavingNat(false);
     setEditingNat(null);
+  };
+
+  const handleSaveName = async (sofifaId: string, fifaYear: number) => {
+    const newName = editNameValue.trim();
+    if (!newName) { setEditingName(null); return; }
+
+    setSavingName(true);
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: fifaYear, name: newName }),
+      });
+      if (res.ok) {
+        setPlayers((prev) =>
+          prev.map((p) =>
+            p.sofifa_id === sofifaId && p.fifa_year === fifaYear
+              ? { ...p, name: newName }
+              : p
+          )
+        );
+      }
+    } catch {}
+    setSavingName(false);
+    setEditingName(null);
   };
 
   const handleDelete = async (sofifaId: string, fifaYear: number) => {
@@ -657,6 +685,7 @@ export default function PlayerSearchPage() {
                             <thead>
                               <tr className="bg-gray-900/80 border-b border-gray-800/50">
                                 <th className="px-5 py-2 text-left text-xs font-bold uppercase text-white">Edition</th>
+                                <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Name</th>
                                 <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Club</th>
                                 <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Positions</th>
                                 <th className="px-3 py-2 text-left text-xs font-bold uppercase text-white">Nationality</th>
@@ -675,7 +704,7 @@ export default function PlayerSearchPage() {
                                 const hasOverride = p.manual_overall !== null && p.manual_overall !== undefined;
                                 return (
                                   <tr key={edKey} className="border-b border-gray-800/30">
-                                    <td colSpan={8} className="p-0">
+                                    <td colSpan={9} className="p-0">
                                       <div
                                         onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
                                         className={`flex items-center cursor-pointer transition-colors ${
@@ -684,6 +713,45 @@ export default function PlayerSearchPage() {
                                       >
                                         <div className="px-5 py-2.5 text-white min-w-[100px] font-medium">
                                           {yearLabel(p.fifa_year)}
+                                        </div>
+                                        <div
+                                          className="px-3 py-2.5 min-w-[140px] max-w-[200px] relative z-10"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {editingName === edKey ? (
+                                            <input
+                                              type="text"
+                                              autoFocus
+                                              value={editNameValue}
+                                              onChange={(e) => setEditNameValue(e.target.value)}
+                                              onBlur={() => handleSaveName(p.sofifa_id, p.fifa_year)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleSaveName(p.sofifa_id, p.fifa_year);
+                                                if (e.key === "Escape") setEditingName(null);
+                                              }}
+                                              disabled={savingName}
+                                              className="w-36 bg-gray-700 border border-blue-500 rounded px-1 py-0.5 text-sm text-white focus:outline-none"
+                                            />
+                                          ) : (
+                                            <span
+                                              role="button"
+                                              tabIndex={0}
+                                              onClick={() => {
+                                                setEditingName(edKey);
+                                                setEditNameValue(p.name);
+                                              }}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                  setEditingName(edKey);
+                                                  setEditNameValue(p.name);
+                                                }
+                                              }}
+                                              className="inline-block cursor-pointer rounded px-2 py-0.5 hover:bg-gray-700 hover:ring-1 hover:ring-blue-500 transition-all text-white truncate max-w-[180px]"
+                                              title="Click to edit name"
+                                            >
+                                              {p.name || "--"}
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="px-3 py-2.5 text-white truncate min-w-[140px] max-w-[220px]">
                                           {p.club ?? "--"}
