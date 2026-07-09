@@ -410,6 +410,15 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
             if name_td:
                 _extract_pi_cell(name_td, player)
 
+        # Brute-force fallback: scan every TD in the row until we find
+        # positions/flags. Mirrors _extract_positions_only's approach, which
+        # reliably finds them even when the cell layout shifts between editions.
+        if not player.get("positions") or not player.get("nationality_flag_url"):
+            for td in tds:
+                _extract_pi_cell(td, player)
+                if player.get("positions") and player.get("nationality_flag_url"):
+                    break
+
         # Club: scan every cell for a /team/ link (it lives in a column with no
         # data-col, so we can't address it directly).
         if not player.get("club"):
