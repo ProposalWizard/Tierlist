@@ -354,6 +354,12 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
                 dc = td.get("data-col", "")
                 txt = td.get_text(strip=True)[:80]
                 print(f"  TD[{i}] class={cls} data-col='{dc}' text='{txt}'")
+            print("  --- Name link inner HTML:")
+            print(f"  data-tippy-content: {name_link.get('data-tippy-content', '')!r}")
+            print(f"  get_text:           {name_link.get_text(strip=True)!r}")
+            name_div_d = name_link.find("div")
+            print(f"  div child text:     {name_div_d.get_text(strip=True)!r if name_div_d else '(no div)'}")
+            print(f"  full inner HTML:    {str(name_link)[:400]}")
             print("  ─── END DIAGNOSTIC ───\n")
 
         href = name_link.get("href", "")
