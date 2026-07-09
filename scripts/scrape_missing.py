@@ -975,6 +975,109 @@ def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, di
     return results
 
 
+def _extract_names_only(html: str) -> dict[str, str]:
+    """Parse a player list page and return {sofifa_id: display_name}.
+    Uses link text (in-game short name) rather than data-tippy-content
+    which became the full legal name in FC 26+."""
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.select_one("table.table")
+    if not table:
+        for t in soup.select("table"):
+            if t.select_one('a[href*="/player/"]'):
+                table = t
+                break
+    if not table:
+        return {}
+
+    results: dict[str, str] = {}
+    for row in table.select("tbody tr") or table.select("tr"):
+        name_link = row.select_one('a[href*="/player/"]')
+        if not name_link:
+            continue
+        href = name_link.get("href", "")
+        sofifa_id = ""
+        for i, part in enumerate(href.split("/")):
+            if part == "player" and i + 1 < len(href.split("/")):
+                sofifa_id = href.split("/")[i + 1]
+                break
+        if not sofifa_id:
+            continue
+        name_div = name_link.find("div")
+        if name_div:
+            raw = name_div.get_text(strip=True)
+        else:
+            raw = name_link.get_text(strip=True)
+        if not raw or raw.isdigit():
+            raw = name_link.get("data-tippy-content", "").strip()
+        raw = re.sub(r"^\d+\s+", "", raw)
+        if raw:
+            results[sofifa_id] = raw
+    return results
+
+
+async def patch_names(page, years: list[int], league_id: str | None = None):
+    """Scrape display names from the player list and patch into existing JSON files.
+    Uses the same URL style as patch_positions so the league filter works reliably."""
+    await ensure_discovery(page)
+
+    for idx, year in enumerate(years):
+        label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
+        fp = OUTPUT_DIR / f"fifa_{year}.json"
+        existing = _load(fp)
+        if not existing:
+            print(f"\n  {fp.name}: no existing data — run a full scrape first, skipping")
+            continue
+
+        print(f"\n{'=' * 50}")
+        print(f"Patching names for {label}: {len(existing)} players in JSON")
+        print(f"{'=' * 50}")
+
+        if idx > 0:
+            await asyncio.sleep(random.uniform(2, 4))
+
+        vc = code_for_year(year)
+        if not vc:
+            print(f"  ⚠ No version code for {label}, skipping")
+            continue
+
+        url = _positions_url(year, league_id)
+        await page.goto(url, wait_until="commit")
+        if not await wait_for(page, 'a[href*="/player/"]', "players page"):
+            print(f"  Could not load {label}, skipping")
+            continue
+
+        all_names: dict[str, str] = {}
+        page_num = 1
+        while True:
+            html = await page.content()
+            batch = _extract_names_only(html)
+            if not batch:
+                print(f"  Page {page_num}: nothing found, stopping.")
+                break
+            new_in_batch = sum(1 for sid in batch if sid not in all_names)
+            if new_in_batch == 0:
+                print(f"  Page {page_num}: all duplicates, stopping.")
+                break
+            all_names.update(batch)
+            if page_num == 1 or page_num % 5 == 0:
+                print(f"  Page {page_num}: {len(batch)} players (total: {len(all_names)})")
+            if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
+                break
+            page_num += 1
+
+        lookup = {str(p.get("sofifa_id", "")): p for p in existing}
+        patched = 0
+        for sid, name in all_names.items():
+            if sid in lookup:
+                lookup[sid]["name"] = name
+                patched += 1
+
+        with open(fp, "w", encoding="utf-8") as f:
+            json.dump(existing, f, ensure_ascii=False, indent=2)
+        print(f"  Patched {patched} names across {page_num} pages.")
+
+
 async def patch_positions(page, years: list[int], league_id: str | None = None):
     """Scrape positions + nationality flags and patch into existing JSON files."""
     await ensure_discovery(page)
@@ -1078,6 +1181,7 @@ async def main():
     force_years = force or bool(requested_years)
 
     patch_pos = "--patch-positions" in sys.argv
+    patch_nam = "--patch-names" in sys.argv
     _league_raw = next((arg.split("=")[1] for arg in sys.argv[1:] if arg.startswith("--league=")), None)
     # Support comma-separated list: --league=19,31,16
     league_ids: list[str] = [x.strip() for x in _league_raw.split(",") if x.strip()] if _league_raw else []
@@ -1125,6 +1229,37 @@ async def main():
             else:
                 print("Could not load leagues list.")
 
+            await context.close()
+        return
+
+    if patch_nam:
+        league_display = ", ".join(league_ids) if league_ids else "all"
+        print(f"Mode: PATCH NAMES ONLY" + (f" (leagues: {league_display})" if league_ids else ""))
+        print(f"Output directory: {OUTPUT_DIR}\n")
+
+        async with async_playwright() as pw:
+            context = await pw.chromium.launch_persistent_context(
+                str(PROFILE_DIR),
+                headless=False,
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                viewport={"width": 1440, "height": 900},
+                locale="en-GB",
+                timezone_id="Europe/London",
+                args=["--disable-blink-features=AutomationControlled"],
+            )
+            page = context.pages[0] if context.pages else await context.new_page()
+            if stealth_async:
+                await stealth_async(page)
+
+            if len(league_ids) > 1:
+                for lid in league_ids:
+                    print(f"\n{'#' * 60}")
+                    print(f"# Starting league ID: {lid}")
+                    print(f"{'#' * 60}\n")
+                    await patch_names(page, years, league_id=lid)
+                print("\nAll leagues complete!")
+            else:
+                await patch_names(page, years, league_id=league_ids[0] if league_ids else None)
             await context.close()
         return
 
