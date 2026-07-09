@@ -163,11 +163,14 @@ TEAMS_URL = "https://sofifa.com/teams"
 LEAGUES_URL = "https://sofifa.com/leagues"
 
 
-def build_url(year: int) -> str:
+def build_url(year: int, league_id: str | None = None) -> str:
     vc = code_for_year(year)
     col_str = ",".join(ACTIVE_COLUMNS)
     show_col = "".join(f"&showCol%5B%5D={c}" for c in ACTIVE_COLUMNS)
-    return f"{BASE_URL}?type=all&r={vc}&set=true&col={col_str}{show_col}"
+    url = f"{BASE_URL}?type=all&r={vc}&set=true&col={col_str}{show_col}"
+    if league_id:
+        url += f"&lg%5B%5D={league_id}"
+    return url
 
 
 def teams_url(year: int) -> str:
@@ -791,7 +794,7 @@ async def ensure_discovery(page) -> None:
         COLUMNS_DISCOVERED = True
 
 
-async def scrape_players(page, context, year: int, download_faces: bool) -> list[dict]:
+async def scrape_players(page, context, year: int, download_faces: bool, league_id: str | None = None) -> list[dict]:
     label = f"FC {str(year % 100).zfill(2)}" if year >= 2024 else f"FIFA {str(year % 100).zfill(2)}"
 
     await ensure_discovery(page)
@@ -802,7 +805,7 @@ async def scrape_players(page, context, year: int, download_faces: bool) -> list
         return []
     print(f"  Using roster code r={vc} for {label}.")
 
-    await page.goto(build_url(year), wait_until="commit")
+    await page.goto(build_url(year, league_id=league_id), wait_until="commit")
     if not await wait_for(page, 'a[href*="/player/"]', "players page"):
         print(f"  Could not load {label}, skipping...")
         return []
@@ -1219,13 +1222,14 @@ async def main():
 
             fp = OUTPUT_DIR / f"fifa_{year}.json"
 
+            scrape_league = league_ids[0] if len(league_ids) == 1 else None
             if backfill:
                 players = _load(fp) or []
                 if not players:
                     print("  Could not load existing file; will full-scrape instead.")
-                    players = await scrape_players(page, context, year, download_faces)
+                    players = await scrape_players(page, context, year, download_faces, league_id=scrape_league)
             else:
-                players = await scrape_players(page, context, year, download_faces)
+                players = await scrape_players(page, context, year, download_faces, league_id=scrape_league)
 
             if not players:
                 print(f"  No players for {label}. Restart later — finished years are skipped.")
