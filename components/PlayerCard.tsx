@@ -87,16 +87,14 @@ export default memo(function PlayerCard({
       {...listeners}
       onClick={handleClick}
       className={`
-        relative select-none overflow-hidden shadow ${isMobile ? "border" : "border-2"}
-        ${dims.circle ? "rounded-full" : "rounded-md md:rounded-lg"}
+        relative select-none overflow-hidden
+        ${dims.circle ? "rounded-full" : "rounded-none"}
         ${isActive ? "opacity-40 ring-2 ring-indigo-400" : ""}
         ${isTapSelected
-          ? "border-indigo-400 ring-2 ring-indigo-400 ring-offset-1 ring-offset-gray-950"
+          ? "ring-2 ring-indigo-400"
           : removeMode && isSelectedForRemoval
-          ? "border-red-500 ring-2 ring-red-500 ring-offset-1 ring-offset-gray-950"
-          : removeMode
-          ? "border-black hover:border-red-400"
-          : "border-black"}
+          ? "ring-2 ring-red-500"
+          : ""}
         ${anyMode
           ? "cursor-pointer active:cursor-pointer"
           : isMobile

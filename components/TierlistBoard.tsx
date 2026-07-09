@@ -145,7 +145,7 @@ function UnrankedPool({
         </label>
       </div>
 
-      <div className="flex min-h-[60px] md:min-h-[88px] flex-wrap gap-[3px] md:gap-2">
+      <div className="flex min-h-[60px] md:min-h-[88px] flex-wrap gap-0">
         <SortableContext
           items={players.map((p) => p.id)}
           strategy={rectSortingStrategy}
@@ -826,7 +826,7 @@ export default function TierlistBoard({
           onDragEnd={onDragEnd}
         >
           {/* Tier rows — wrapped for screenshot */}
-          <div ref={tiersRef} className="space-y-0 md:space-y-2 rounded-none md:rounded-xl bg-gray-950 p-0 md:p-2">
+          <div ref={tiersRef} className="space-y-0 bg-gray-950 p-0">
             {tiers.map((tier) => (
               <TierRow
                 key={tier.id}

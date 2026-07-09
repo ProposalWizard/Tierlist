@@ -89,13 +89,13 @@ export default function TierRow({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-[48px] md:min-h-[112px] rounded-none md:rounded-xl border transition-colors ${
-        isOver ? "border-indigo-400 bg-gray-800" : "border-gray-700 bg-gray-900"
+      className={`flex min-h-[48px] md:min-h-[112px] transition-colors ${
+        isOver ? "bg-gray-800" : "bg-gray-900"
       }`}
     >
       {/* ── Tier label ─────────────────────────────────────────────── */}
       <div
-        className="flex w-[72px] flex-shrink-0 items-center justify-center rounded-none md:rounded-l-xl md:w-44 p-0.5 md:p-0"
+        className="flex w-[72px] flex-shrink-0 items-center justify-center rounded-none md:w-44 p-0.5 md:p-0"
         style={{ backgroundColor: color }}
       >
         {isMobile ? (
@@ -122,7 +122,7 @@ export default function TierRow({
       </div>
 
       {/* ── Player area ────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-wrap content-start gap-[3px] p-[3px] md:gap-2 md:p-2">
+      <div className="flex flex-1 flex-wrap content-start gap-0 p-0">
         <SortableContext
           items={players.map((p) => p.id)}
           strategy={rectSortingStrategy}
