@@ -42,9 +42,9 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Default: return player count per year
+  // Default: return player count per year (full 4-digit years matching DB)
   const stats: Record<number, number> = {};
-  for (let y = 7; y <= 26; y++) {
+  for (let y = 2007; y <= 2026; y++) {
     const { count, error } = await service
       .from("sofifa_players")
       .select("sofifa_id", { count: "exact", head: true })
