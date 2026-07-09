@@ -903,6 +903,15 @@ def _positions_url(year: int, league_id: str | None = None) -> str:
     return url
 
 
+def _league_url(year: int, league_id: str | None = None) -> str:
+    """URL without set=true so saved session preferences can't override the league filter."""
+    vc = code_for_year(year)
+    url = f"{BASE_URL}?type=all&r={vc}"
+    if league_id:
+        url += f"&lg%5B%5D={league_id}"
+    return url
+
+
 def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, dict]:
     """Parse a list page and return {sofifa_id: {positions, nationality, nationality_flag_url}}."""
     from bs4 import BeautifulSoup
@@ -1041,7 +1050,10 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
             print(f"  ⚠ No version code for {label}, skipping")
             continue
 
-        url = _positions_url(year, league_id)
+        # Use _league_url (no set=true) so the league filter comes from the URL
+        # itself rather than saved session preferences which may have been
+        # corrupted by a previous full scrape that ran without a league filter.
+        url = _league_url(year, league_id)
         await page.goto(url, wait_until="commit")
         if not await wait_for(page, 'a[href*="/player/"]', "players page"):
             print(f"  Could not load {label}, skipping")
