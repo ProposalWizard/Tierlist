@@ -903,12 +903,15 @@ def _positions_url(year: int, league_id: str | None = None) -> str:
     return url
 
 
-def _league_url(year: int, league_id: str | None = None) -> str:
-    """URL without set=true so saved session preferences can't override the league filter."""
+def _league_url(year: int, league_id: str | None = None, offset: int = 0) -> str:
+    """Direct page URL with league filter baked in for every page.
+    Bypasses the Next-button pagination which strips the lg[] filter."""
     vc = code_for_year(year)
     url = f"{BASE_URL}?type=all&r={vc}"
     if league_id:
         url += f"&lg%5B%5D={league_id}"
+    if offset:
+        url += f"&offset={offset}"
     return url
 
 
@@ -1050,18 +1053,29 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
             print(f"  ⚠ No version code for {label}, skipping")
             continue
 
-        # Use _league_url (no set=true) so the league filter comes from the URL
-        # itself rather than saved session preferences which may have been
-        # corrupted by a previous full scrape that ran without a league filter.
-        url = _league_url(year, league_id)
-        await page.goto(url, wait_until="commit")
-        if not await wait_for(page, 'a[href*="/player/"]', "players page"):
-            print(f"  Could not load {label}, skipping")
-            continue
-
         all_names: dict[str, str] = {}
         page_num = 1
+        offset = 0
+        PAGE_SIZE = 60  # SoFIFA shows 60 players per page
+
         while True:
+            # Navigate to each page by URL directly — the Next button strips
+            # the lg[] filter from its href so we can't rely on click_next.
+            url = _league_url(year, league_id, offset=offset)
+            await page.goto(url, wait_until="commit")
+            if not await wait_for(page, 'a[href*="/player/"]', "players page", timeout=20000):
+                print(f"  Page {page_num}: could not load, stopping.")
+                break
+
+            # On page 1 print Next button href so we can confirm offset param name
+            if page_num == 1:
+                try:
+                    nb = await page.query_selector('a[rel="next"]')
+                    if nb:
+                        print(f"  [diag] Next href: {await nb.get_attribute('href')}")
+                except Exception:
+                    pass
+
             html = await page.content()
             batch = _extract_names_only(html)
             if not batch:
@@ -1073,10 +1087,13 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
                 break
             all_names.update(batch)
             if page_num == 1 or page_num % 5 == 0:
-                print(f"  Page {page_num}: {len(batch)} players (total: {len(all_names)})")
-            if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
+                print(f"  Page {page_num} (offset {offset}): {len(batch)} players (total: {len(all_names)})")
+            if len(batch) < PAGE_SIZE:
+                print(f"  Page {page_num}: last page ({len(batch)} players).")
                 break
+            offset += PAGE_SIZE
             page_num += 1
+            await asyncio.sleep(random.uniform(0.5, 1.0))
 
         lookup = {str(p.get("sofifa_id", "")): p for p in existing}
         patched = 0
