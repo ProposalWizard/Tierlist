@@ -593,21 +593,30 @@ async def _count(page, selector: str) -> int:
         return 0
 
 
-async def wait_for(page, selector: str, what: str, timeout: int = 180) -> bool:
+async def wait_for(page, selector: str, what: str, timeout: int = 180, min_count: int = 10) -> bool:
     print(f"  Waiting for {what}...")
     deadline = time.time() + timeout
     last = -1
     alerted = False
     while time.time() < deadline:
         c = await _count(page, selector)
-        if c >= 10:
+        if c >= min_count:
             await asyncio.sleep(3)
-            if await _count(page, selector) >= 10:
+            if await _count(page, selector) >= min_count:
                 print(f"  {what} ready.")
                 alerted = False
                 return True
             last = -1
             continue
+        # A settled page with a few links but no challenge is a legit short
+        # final page (e.g. the last page of a league). Accept it rather than
+        # waiting out the whole timeout for links that will never arrive.
+        if 0 < c < min_count and not await _is_cf_challenge(page):
+            await asyncio.sleep(3)
+            settled = await _count(page, selector)
+            if 0 < settled < min_count and not await _is_cf_challenge(page):
+                print(f"  {what} ready ({settled} links — short final page).")
+                return True
         # Check for Cloudflare challenge and alert if found
         if await _is_cf_challenge(page):
             if not alerted:
@@ -1365,7 +1374,7 @@ async def main():
     # If you do NOT see this exact line when you run the script, your local
     # copy is OLD — run `git pull` in the folder before scraping.
     print("=" * 64)
-    print("  scrape_missing.py  BUILD 2026-07-09-D  (Prem-safe, low-captcha)")
+    print("  scrape_missing.py  BUILD 2026-07-09-E  (Prem-safe, last-page fix)")
     print("=" * 64)
 
     force = "--force" in sys.argv
