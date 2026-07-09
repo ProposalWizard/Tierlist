@@ -122,6 +122,16 @@ export default function PlayerSearchPage() {
   const [editingName, setEditingName] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState("");
   const [savingName, setSavingName] = useState(false);
+  const [editionForm, setEditionForm] = useState<{
+    key: string;
+    club: string;
+    league: string;
+    potential: string;
+    age: string;
+    attrs: Record<string, string>;
+  } | null>(null);
+  const [savingEditionForm, setSavingEditionForm] = useState(false);
+  const [editionFormMsg, setEditionFormMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [deletingEdition, setDeletingEdition] = useState<string | null>(null);
   const [deletingInProgress, setDeletingInProgress] = useState<string | null>(null);
   const [cloningEdition, setCloningEdition] = useState<string | null>(null);
@@ -299,6 +309,63 @@ export default function PlayerSearchPage() {
     } catch {}
     setSavingName(false);
     setEditingName(null);
+  };
+
+  const openEditionForm = (p: SofifaPlayer) => {
+    const edKey = `${p.sofifa_id}-${p.fifa_year}`;
+    const attrs: Record<string, string> = {};
+    for (const [k, v] of Object.entries(p.attributes ?? {})) {
+      attrs[k] = String(v ?? "");
+    }
+    setEditionForm({ key: edKey, club: p.club ?? "", league: p.league ?? "", potential: String(p.potential ?? ""), age: String(p.age ?? ""), attrs });
+    setEditionFormMsg(null);
+  };
+
+  const handleSaveEditionForm = async (p: SofifaPlayer) => {
+    if (!editionForm) return;
+    setSavingEditionForm(true);
+    setEditionFormMsg(null);
+
+    const newAttrs: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(editionForm.attrs)) {
+      if (v === "") continue;
+      const n = Number(v);
+      newAttrs[k] = isNaN(n) ? v : n;
+    }
+
+    const body: Record<string, unknown> = {
+      sofifa_id: p.sofifa_id,
+      fifa_year: p.fifa_year,
+      club: editionForm.club || null,
+      league: editionForm.league || null,
+      potential: editionForm.potential ? parseInt(editionForm.potential, 10) : null,
+      age: editionForm.age ? parseInt(editionForm.age, 10) : null,
+      attributes: newAttrs,
+    };
+
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setPlayers((prev) =>
+          prev.map((pl) =>
+            pl.sofifa_id === p.sofifa_id && pl.fifa_year === p.fifa_year
+              ? { ...pl, club: body.club as string | null, league: body.league as string | null, potential: body.potential as number | null, age: body.age as number | null, attributes: newAttrs }
+              : pl
+          )
+        );
+        setEditionFormMsg({ ok: true, text: "Saved!" });
+      } else {
+        setEditionFormMsg({ ok: false, text: json.error ?? "Save failed" });
+      }
+    } catch {
+      setEditionFormMsg({ ok: false, text: "Save failed" });
+    }
+    setSavingEditionForm(false);
   };
 
   const handleDelete = async (sofifaId: string, fifaYear: number) => {
@@ -706,7 +773,12 @@ export default function PlayerSearchPage() {
                                   <tr key={edKey} className="border-b border-gray-800/30">
                                     <td colSpan={9} className="p-0">
                                       <div
-                                        onClick={() => setExpandedEdition(edExpanded ? null : edKey)}
+                                        onClick={() => {
+                                          const next = edExpanded ? null : edKey;
+                                          setExpandedEdition(next);
+                                          if (next) openEditionForm(p);
+                                          else { setEditionForm(null); setEditionFormMsg(null); }
+                                        }}
                                         className={`flex items-center cursor-pointer transition-colors ${
                                           edExpanded ? "bg-gray-800/60" : "hover:bg-gray-900/60"
                                         }`}
@@ -945,18 +1017,93 @@ export default function PlayerSearchPage() {
                                         </div>
                                       </div>
 
-                                      {edExpanded && (
-                                        <div className="border-t border-gray-700 bg-gray-900/40 px-6 py-4">
-                                          <h4 className="mb-3 text-xs font-bold uppercase text-white">
-                                            All Attributes ({p.attributes ? Object.keys(p.attributes).length : 0} keys)
-                                          </h4>
-                                          {p.attributes && Object.keys(p.attributes).length > 0 ? (
-                                            renderAttributes(p.attributes)
-                                          ) : (
-                                            <p className="text-sm text-white">
-                                              No attributes stored for this player.
-                                            </p>
+                                      {edExpanded && editionForm?.key === edKey && (
+                                        <div className="border-t border-gray-700 bg-gray-900/40 px-6 py-4 space-y-4">
+                                          {/* Core columns */}
+                                          <div>
+                                            <h4 className="text-xs font-bold uppercase text-white mb-2">Player Data</h4>
+                                            <div className="flex flex-wrap gap-3">
+                                              <div className="flex flex-col gap-0.5">
+                                                <label className="text-xs text-gray-400">Club</label>
+                                                <input type="text" value={editionForm.club}
+                                                  onChange={(e) => setEditionForm((prev) => prev ? { ...prev, club: e.target.value } : null)}
+                                                  className="w-48 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                                />
+                                              </div>
+                                              <div className="flex flex-col gap-0.5">
+                                                <label className="text-xs text-gray-400">League</label>
+                                                <input type="text" value={editionForm.league}
+                                                  onChange={(e) => setEditionForm((prev) => prev ? { ...prev, league: e.target.value } : null)}
+                                                  className="w-48 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                                />
+                                              </div>
+                                              <div className="flex flex-col gap-0.5">
+                                                <label className="text-xs text-gray-400">Potential</label>
+                                                <input type="number" min={1} max={99} value={editionForm.potential}
+                                                  onChange={(e) => setEditionForm((prev) => prev ? { ...prev, potential: e.target.value } : null)}
+                                                  className="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white text-center focus:border-emerald-500 focus:outline-none"
+                                                />
+                                              </div>
+                                              <div className="flex flex-col gap-0.5">
+                                                <label className="text-xs text-gray-400">Age</label>
+                                                <input type="number" min={15} max={50} value={editionForm.age}
+                                                  onChange={(e) => setEditionForm((prev) => prev ? { ...prev, age: e.target.value } : null)}
+                                                  className="w-14 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-white text-center focus:border-emerald-500 focus:outline-none"
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* Attributes JSONB */}
+                                          {Object.keys(editionForm.attrs).length > 0 && (
+                                            <div>
+                                              <h4 className="text-xs font-bold uppercase text-white mb-2">
+                                                Attributes ({Object.keys(editionForm.attrs).length})
+                                              </h4>
+                                              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+                                                {Object.entries(editionForm.attrs)
+                                                  .sort(([a], [b]) => (ATTR_LABELS[a] ?? a).localeCompare(ATTR_LABELS[b] ?? b))
+                                                  .map(([k, v]) => (
+                                                    <div key={k}>
+                                                      <label className="block text-[10px] text-gray-400 mb-0.5 truncate" title={`${k}${ATTR_LABELS[k] ? ` — ${ATTR_LABELS[k]}` : ""}`}>
+                                                        {ATTR_LABELS[k] ?? k}
+                                                      </label>
+                                                      <input
+                                                        type="text"
+                                                        value={v}
+                                                        onChange={(e) => setEditionForm((prev) => prev ? { ...prev, attrs: { ...prev.attrs, [k]: e.target.value } } : null)}
+                                                        className="w-full bg-gray-700/60 border border-gray-600 rounded px-1.5 py-0.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                                                      />
+                                                    </div>
+                                                  ))}
+                                              </div>
+                                            </div>
                                           )}
+                                          {Object.keys(editionForm.attrs).length === 0 && (
+                                            <p className="text-sm text-gray-500">No attributes stored for this edition.</p>
+                                          )}
+
+                                          {/* Save */}
+                                          <div className="flex items-center gap-3 pt-1">
+                                            <button
+                                              onClick={() => handleSaveEditionForm(p)}
+                                              disabled={savingEditionForm}
+                                              className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-bold rounded disabled:opacity-50 transition-colors"
+                                            >
+                                              {savingEditionForm ? "Saving..." : "Save Changes"}
+                                            </button>
+                                            <button
+                                              onClick={() => { setExpandedEdition(null); setEditionForm(null); setEditionFormMsg(null); }}
+                                              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm font-bold rounded transition-colors"
+                                            >
+                                              Close
+                                            </button>
+                                            {editionFormMsg && (
+                                              <span className={`text-sm ${editionFormMsg.ok ? "text-emerald-400" : "text-red-400"}`}>
+                                                {editionFormMsg.text}
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                       )}
 
