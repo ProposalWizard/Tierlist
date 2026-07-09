@@ -27,6 +27,13 @@ Flags:
   --patch-positions  Fast mode: only scrape positions + nationality flags, patch
                      into existing JSON. Skips league map + face downloads.
                      ~300 pages per edition (10 pages with --league=ID).
+  --patch-names      Fast mode: only scrape display names, patch ONLY the `name`
+                     field of existing JSON. Positions/nationalities/attributes
+                     are never touched. With --league=ID, only that league's
+                     names change (guaranteed via the stored `league` field),
+                     and page 1 uses set=true to lock the league filter so it
+                     holds across all pages (no more leaking to all players).
+                     e.g. --patch-names --year=2026 --league=13  (Prem only)
   --league=ID        Filter to one league (use with --patch-positions for speed).
                      Accepts a comma-separated list to run multiple leagues in
                      one session (e.g. --league=19,31,16 does Bundesliga, Serie A,
@@ -117,6 +124,10 @@ BIG_5_LEAGUES = {
     "Serie A":        "31",
     "Ligue 1":        "16",
 }
+
+# Reverse lookup: league ID -> canonical name (used to restrict name patching
+# to a single league via the `league` field already stored in the JSON).
+LEAGUE_ID_TO_NAME = {v: k for k, v in BIG_5_LEAGUES.items()}
 
 VERSION_CODES = {
     2026: "240034", 2025: "240007", 2024: "230054", 2023: "230017",
@@ -361,7 +372,8 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
             print(f"  data-tippy-content: {name_link.get('data-tippy-content', '')!r}")
             print(f"  get_text:           {name_link.get_text(strip=True)!r}")
             name_div_d = name_link.find("div")
-            print(f"  div child text:     {name_div_d.get_text(strip=True)!r if name_div_d else '(no div)'}")
+            _div_text = repr(name_div_d.get_text(strip=True)) if name_div_d else "(no div)"
+            print(f"  div child text:     {_div_text}")
             print(f"  full inner HTML:    {str(name_link)[:400]}")
             print("  ─── END DIAGNOSTIC ───\n")
 
@@ -915,6 +927,50 @@ def _league_url(year: int, league_id: str | None = None, offset: int = 0) -> str
     return url
 
 
+def _names_url(year: int, league_id: str | None = None, offset: int = 0, lock: bool = False) -> str:
+    """Player-list URL for name-only scraping.
+
+    Every page carries lg[] directly in the URL so the league filter never
+    depends on the Next button (which drops it). `lock` adds set=true on the
+    FIRST page, which *overwrites* SoFIFA's saved session preference with this
+    league — the fix for the stale "all leagues" preference that previously
+    leaked the filter back to every player. No extra columns are requested
+    (names live in the default name column), so this page is light and never
+    touches the position/nationality columns.
+    """
+    vc = code_for_year(year)
+    url = f"{BASE_URL}?type=all&r={vc}"
+    if lock:
+        url += "&set=true"
+    if league_id:
+        url += f"&lg%5B%5D={league_id}"
+    if offset:
+        url += f"&offset={offset}"
+    return url
+
+
+def _league_matches(json_league: str | None, league_id: str | None) -> bool:
+    """True if a JSON row's stored `league` belongs to the requested league ID.
+    Used as a hard client-side guarantee that only the target league's names
+    get patched, regardless of what the site's own filter returns. Premier
+    League also accepts its historical aliases across editions."""
+    if not json_league or not league_id:
+        return False
+    s = json_league.strip().lower()
+    name = LEAGUE_ID_TO_NAME.get(str(league_id), "").lower()
+    if not name:
+        return False
+    if s == name or s.startswith(name):
+        return True
+    if name == "premier league":
+        return (
+            s.startswith("premier league")
+            or s.startswith("english premier league")
+            or s.startswith("barclays premier league")
+        )
+    return False
+
+
 def _extract_positions_only(html: str, dump_first: bool = False) -> dict[str, dict]:
     """Parse a list page and return {sofifa_id: {positions, nationality, nationality_flag_url}}."""
     from bs4 import BeautifulSoup
@@ -1029,8 +1085,21 @@ def _extract_names_only(html: str) -> dict[str, str]:
 
 
 async def patch_names(page, years: list[int], league_id: str | None = None):
-    """Scrape display names from the player list and patch into existing JSON files.
-    Uses the same URL style as patch_positions so the league filter works reliably."""
+    """Scrape display names and patch ONLY the `name` field of existing JSON.
+
+    Positions, nationalities, clubs, attributes — every other field is left
+    completely untouched. When a league filter is given, patching is further
+    restricted to players whose stored `league` matches the requested league,
+    so no other league can ever be modified even if the site's own filter
+    leaks extra rows.
+
+    League filtering that actually holds:
+      • page 1 is loaded with set=true&lg[] to OVERWRITE SoFIFA's saved
+        session preference with this league (the stale "all leagues" pref was
+        why the filter kept leaking back to every player);
+      • every following page is a direct-offset URL carrying lg[] itself, so
+        the filter never rides on the Next button (which drops it).
+    """
     await ensure_discovery(page)
 
     for idx, year in enumerate(years):
@@ -1040,6 +1109,27 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
         if not existing:
             print(f"\n  {fp.name}: no existing data — run a full scrape first, skipping")
             continue
+
+        # Client-side guarantee: only ids whose stored league matches may be
+        # patched. Built from the JSON so it never depends on the live filter.
+        target_ids: set[str] | None = None
+        overshoot_limit: int | None = None
+        if league_id:
+            lg_name = LEAGUE_ID_TO_NAME.get(str(league_id), f"league {league_id}")
+            target_ids = {
+                str(p.get("sofifa_id", ""))
+                for p in existing
+                if _league_matches(p.get("league"), league_id)
+            }
+            target_ids.discard("")
+            if target_ids:
+                print(f"\n  {len(target_ids)} {lg_name} players in JSON — ONLY their names will change.")
+                overshoot_limit = max(1500, len(target_ids) * 5)
+            else:
+                print(f"\n  ⚠ No {lg_name} players found in the JSON (is the `league` field populated?).")
+                print(f"    Falling back to the site league filter alone; every name it returns will be patched.")
+                target_ids = None
+                overshoot_limit = 1500
 
         print(f"\n{'=' * 50}")
         print(f"Patching names for {label}: {len(existing)} players in JSON")
@@ -1053,43 +1143,79 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
             print(f"  ⚠ No version code for {label}, skipping")
             continue
 
-        # Use _positions_url (same as patch_positions) — set=true saves the
-        # league preference to the session so click_next pagination stays filtered.
-        url = _positions_url(year, league_id)
-        await page.goto(url, wait_until="commit")
-        if not await wait_for(page, 'a[href*="/player/"]', "players page"):
-            print(f"  Could not load {label}, skipping")
-            continue
-
         all_names: dict[str, str] = {}
+        offset = 0
         page_num = 1
-        while True:
+        MAX_PAGES = 500  # backstop only; real runs stop far sooner
+
+        while page_num <= MAX_PAGES:
+            url = _names_url(year, league_id, offset=offset, lock=(page_num == 1))
+            await page.goto(url, wait_until="commit")
+            if not await wait_for(page, 'a[href*="/player/"]', "players page"):
+                print(f"  Page {page_num}: could not load, stopping.")
+                break
+
+            # Bail if SoFIFA dropped the edition (version) filter.
+            if vc and f"r={vc}" not in page.url:
+                print(f"  ⚠ Version drift on page {page_num} (URL lost r={vc}) — stopping.")
+                break
+
             html = await page.content()
             batch = _extract_names_only(html)
             if not batch:
-                print(f"  Page {page_num}: nothing found, stopping.")
+                print(f"  Page {page_num}: no players, stopping.")
                 break
+
             new_in_batch = sum(1 for sid in batch if sid not in all_names)
             if new_in_batch == 0:
                 print(f"  Page {page_num}: all duplicates, stopping.")
                 break
+
             all_names.update(batch)
             if page_num == 1 or page_num % 5 == 0:
                 print(f"  Page {page_num}: {len(batch)} players (total: {len(all_names)})")
-            if not await click_next(page, 'a[href*="/player/"]', expected_r=vc):
-                break
-            page_num += 1
 
+            # Early exit: found a name for every target player already.
+            if target_ids and target_ids.issubset(all_names.keys()):
+                print(f"  Found all {len(target_ids)} target players — stopping early.")
+                break
+
+            # Safety: if the league filter silently dropped we would pull the
+            # whole database. Once we vastly exceed a single league's size, stop.
+            if overshoot_limit and len(all_names) > overshoot_limit:
+                print(f"  ⚠ Pulled {len(all_names)} players — far more than {LEAGUE_ID_TO_NAME.get(str(league_id), 'this league')} holds.")
+                print(f"    The site's league filter appears to have dropped; stopping the scrape.")
+                if target_ids is not None:
+                    print(f"    (Only the {len(target_ids)} matching-league names will still be patched.)")
+                break
+
+            offset += 60
+            page_num += 1
+            await asyncio.sleep(random.uniform(0.4, 0.9))
+
+        # ── Patch: ONLY the `name` field, ONLY allowed ids ────────────────
         lookup = {str(p.get("sofifa_id", "")): p for p in existing}
         patched = 0
+        skipped_other_league = 0
         for sid, name in all_names.items():
-            if sid in lookup:
-                lookup[sid]["name"] = name
+            if sid not in lookup:
+                continue
+            if target_ids is not None and sid not in target_ids:
+                skipped_other_league += 1
+                continue
+            new_name = re.sub(r"^\d+\s+", "", name).strip()
+            if new_name:
+                lookup[sid]["name"] = new_name   # nothing else is written
                 patched += 1
 
         with open(fp, "w", encoding="utf-8") as f:
             json.dump(existing, f, ensure_ascii=False, indent=2)
-        print(f"  Patched {patched} names across {page_num} pages.")
+        print(f"  ✓ Patched {patched} names across {page_num} page(s). Positions & nationalities untouched.")
+        if skipped_other_league:
+            print(f"    Skipped {skipped_other_league} non-target-league rows the filter leaked.")
+        print(f"  SAVED -> {fp.name}")
+
+    print("\nDone! Re-import patched files at: https://knowitball.co.uk/admin/football/scrape")
 
 
 async def patch_positions(page, years: list[int], league_id: str | None = None):
