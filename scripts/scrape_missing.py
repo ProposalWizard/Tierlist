@@ -288,6 +288,11 @@ def _extract_pi_cell(td, player: dict):
         flag = td.select_one("img[title]")
     if flag:
         nat = flag.get("title", "") or flag.get("alt", "")
+        if not nat:
+            # FC 26: nationality text is on the parent <a> link, not the img
+            flag_a = flag.find_parent("a")
+            if flag_a:
+                nat = flag_a.get("title", "") or flag_a.get("aria-label", "")
         if nat:
             player["nationality"] = nat
         # FC 25/26 use lazy-load (data-src); older editions use src
@@ -394,6 +399,16 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
                 col_id = header_ids[idx]
             if col_id:
                 _extract_td_value(col_id, td, player)
+
+        # FC 26+: positions and nationality flag moved from the dedicated "pi"
+        # column into the player name cell. If the column scan above found
+        # nothing, scan the name cell directly (same logic as _extract_pi_cell).
+        if not player.get("positions") or not player.get("nationality_flag_url"):
+            name_td = name_link.parent
+            while name_td and name_td.name != "td":
+                name_td = name_td.parent
+            if name_td:
+                _extract_pi_cell(name_td, player)
 
         # Club: scan every cell for a /team/ link (it lives in a column with no
         # data-col, so we can't address it directly).
