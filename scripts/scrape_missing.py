@@ -1116,14 +1116,30 @@ async def patch_names(page, years: list[int], league_id: str | None = None):
         overshoot_limit: int | None = None
         if league_id:
             lg_name = LEAGUE_ID_TO_NAME.get(str(league_id), f"league {league_id}")
+            # Primary match: the stored `league` field.
             target_ids = {
                 str(p.get("sofifa_id", ""))
                 for p in existing
                 if _league_matches(p.get("league"), league_id)
             }
             target_ids.discard("")
+            # Fallback: learn the league's clubs from those matched players, then
+            # add any club-mate whose `league` field happens to be blank. This
+            # keeps the guarantee working even if leagues aren't fully populated.
+            prem_clubs = {
+                (p.get("club") or "").strip()
+                for p in existing
+                if str(p.get("sofifa_id", "")) in target_ids and (p.get("club") or "").strip()
+            }
+            if prem_clubs:
+                for p in existing:
+                    club = (p.get("club") or "").strip()
+                    sid = str(p.get("sofifa_id", ""))
+                    if sid and club in prem_clubs:
+                        target_ids.add(sid)
             if target_ids:
-                print(f"\n  {len(target_ids)} {lg_name} players in JSON — ONLY their names will change.")
+                print(f"\n  {len(target_ids)} {lg_name} players in JSON "
+                      f"({len(prem_clubs)} clubs) — ONLY their names will change.")
                 overshoot_limit = max(1500, len(target_ids) * 5)
             else:
                 print(f"\n  ⚠ No {lg_name} players found in the JSON (is the `league` field populated?).")
@@ -1307,6 +1323,13 @@ async def patch_positions(page, years: list[int], league_id: str | None = None):
 
 
 async def main():
+    # ── Build banner ──────────────────────────────────────────────────────
+    # If you do NOT see this exact line when you run the script, your local
+    # copy is OLD — run `git pull` in the folder before scraping.
+    print("=" * 64)
+    print("  scrape_missing.py  BUILD 2026-07-09-C  (Premier-League-safe)")
+    print("=" * 64)
+
     force = "--force" in sys.argv
     download_faces = "--download-faces" in sys.argv
 
