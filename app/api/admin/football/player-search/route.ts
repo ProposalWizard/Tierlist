@@ -111,7 +111,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ players: data ?? [], count: (data ?? []).length });
+    let players = data ?? [];
+
+    // When searching by name without a year filter, expand results to include
+    // ALL editions for each matched sofifa_id. This handles players whose name
+    // changed across editions (e.g. "Beto" in FIFA 20-25 vs "Norberto Gomez
+    // Betunsal" in FC 26) — they share the same sofifa_id so should group together.
+    if (q && !year && players.length > 0) {
+      const ids = Array.from(new Set(players.map((p: { sofifa_id: string }) => p.sofifa_id)));
+      const { data: allEditions } = await service
+        .from("sofifa_players")
+        .select("*")
+        .in("sofifa_id", ids)
+        .order("overall", { ascending: false })
+        .limit(Math.min(ids.length * 20, 2000));
+      if (allEditions && allEditions.length > players.length) {
+        players = allEditions;
+      }
+    }
+
+    return NextResponse.json({ players, count: players.length });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
