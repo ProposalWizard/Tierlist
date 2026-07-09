@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       fifa_edition: edition,
       name: String(p.name).replace(/^\d+\s+/, "").trim(),
       positions: cleanPositions(p.positions),
-      nationality: p.nationality || null,
+      nationality: p.nationality ? p.nationality.replace(/\b\w/g, c => c.toUpperCase()) : null,
       club: p.club || null,
       league: p.league || null,
       overall: p.overall ?? null,
@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
   // Silently skips if the table doesn't exist yet (migration not run).
   const flagMap = new Map<string, string>();
   for (const p of validPlayers) {
-    const nat = p.nationality?.trim();
+    const nat = p.nationality?.trim().replace(/\b\w/g, c => c.toUpperCase());
     const url = p.nationality_flag_url?.trim();
     if (nat && url && !flagMap.has(nat)) flagMap.set(nat, url);
   }
