@@ -73,9 +73,9 @@ function yearLabel(year: number): string {
   return `FIFA ${String(y).padStart(2, "0")}`;
 }
 
-/* ── Year options (7-26) ── */
+/* ── Year options (2007-2026) — must match fifa_year as stored in DB ── */
 const YEAR_OPTIONS: { value: number; label: string }[] = [];
-for (let y = 26; y >= 7; y--) {
+for (let y = 2026; y >= 2007; y--) {
   YEAR_OPTIONS.push({ value: y, label: yearLabel(y) });
 }
 

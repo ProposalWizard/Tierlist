@@ -142,15 +142,21 @@ const NATIONALITY_ISO: Record<string, string> = {
   "New Caledonia": "NC", "Tahiti": "PF",
 };
 
+function normNat(nationality: string): string {
+  // Title-case so "brazil" matches "Brazil", "FRANCE" matches "France", etc.
+  return nationality.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 export function nationalityFlag(nationality: string | null | undefined): string {
   if (!nationality) return "";
+  const n = normNat(nationality);
   // Check subdivision flags first (England, Scotland, Wales, Northern Ireland)
-  if (SUBDIVISION_FLAGS[nationality]) return SUBDIVISION_FLAGS[nationality];
+  if (SUBDIVISION_FLAGS[n]) return SUBDIVISION_FLAGS[n];
   // Full country name → ISO → emoji
-  const iso = NATIONALITY_ISO[nationality];
+  const iso = NATIONALITY_ISO[n];
   if (iso) return isoToFlagEmoji(iso);
   // Direct ISO code fallback: some DB rows store "SN", "GW" etc. instead of the full name
-  if (nationality.length === 2) return isoToFlagEmoji(nationality.toUpperCase());
+  if (n.length === 2) return isoToFlagEmoji(n.toUpperCase());
   return "";
 }
 
@@ -166,9 +172,8 @@ const FLAGCDN_SUBDIVISIONS: Record<string, string> = {
 // Handles full country names, UK subdivisions, and raw 2-letter ISO codes.
 export function getFlagUrl(nationality: string | null | undefined): string | null {
   if (!nationality) return null;
-  // Normalise curly/smart apostrophes (U+2018, U+2019) to straight apostrophe
-  // so e.g. "Côte d’Ivoire" from the DB matches "Côte d'Ivoire" in the map
-  const n = nationality.replace(/[‘’]/g, "'");
+  // Normalise curly/smart apostrophes and title-case so "brazil" matches "Brazil"
+  const n = normNat(nationality.replace(/[‘’]/g, "’"));
   const sub = FLAGCDN_SUBDIVISIONS[n];
   if (sub) return `https://flagcdn.com/20x15/${sub}.png`;
   const iso = NATIONALITY_ISO[n];

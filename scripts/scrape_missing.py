@@ -354,6 +354,12 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
                 dc = td.get("data-col", "")
                 txt = td.get_text(strip=True)[:80]
                 print(f"  TD[{i}] class={cls} data-col='{dc}' text='{txt}'")
+            print("  --- Name link inner HTML:")
+            print(f"  data-tippy-content: {name_link.get('data-tippy-content', '')!r}")
+            print(f"  get_text:           {name_link.get_text(strip=True)!r}")
+            name_div_d = name_link.find("div")
+            print(f"  div child text:     {name_div_d.get_text(strip=True)!r if name_div_d else '(no div)'}")
+            print(f"  full inner HTML:    {str(name_link)[:400]}")
             print("  ─── END DIAGNOSTIC ───\n")
 
         href = name_link.get("href", "")
@@ -409,6 +415,15 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
                 name_td = name_td.parent
             if name_td:
                 _extract_pi_cell(name_td, player)
+
+        # Brute-force fallback: scan every TD in the row until we find
+        # positions/flags. Mirrors _extract_positions_only's approach, which
+        # reliably finds them even when the cell layout shifts between editions.
+        if not player.get("positions") or not player.get("nationality_flag_url"):
+            for td in tds:
+                _extract_pi_cell(td, player)
+                if player.get("positions") and player.get("nationality_flag_url"):
+                    break
 
         # Club: scan every cell for a /team/ link (it lives in a column with no
         # data-col, so we can't address it directly).
