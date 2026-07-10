@@ -155,6 +155,8 @@ export default function ObjectivesAdmin() {
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [listFilter, setListFilter] = useState<ObjCategory | "all">("all");
+  const [reordering, setReordering] = useState(false);
 
   const loadObjectives = useCallback(async () => {
     setLoading(true);
@@ -164,6 +166,45 @@ export default function ObjectivesAdmin() {
   }, []);
 
   useEffect(() => { loadObjectives(); }, [loadObjectives]);
+
+  // Move an objective up/down within its category. This rewrites the whole
+  // category to a clean sequential sort_order (banded per category so numbers
+  // never collide across categories), which the players' objectives view
+  // already respects (active items in sort_order, completed pushed to bottom).
+  const handleMove = useCallback(async (obj: Objective, dir: -1 | 1) => {
+    const catValue = obj.category ?? "standard";
+    const catIndex = Math.max(0, CATEGORY_ORDER.indexOf(catValue));
+    const catObjs = objectives.filter(o => (o.category ?? "standard") === catValue);
+    const idx = catObjs.findIndex(o => o.id === obj.id);
+    const swapIdx = idx + dir;
+    if (swapIdx < 0 || swapIdx >= catObjs.length) return;
+
+    const reordered = [...catObjs];
+    [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+
+    setReordering(true);
+    // Optimistically reflect the new order locally for a snappy feel.
+    const newOrderById = new Map(reordered.map((o, i) => [o.id, catIndex * 1000 + i]));
+    setObjectives(prev =>
+      [...prev]
+        .map(o => newOrderById.has(o.id) ? { ...o, sort_order: newOrderById.get(o.id)! } : o)
+        .sort((a, b) => a.sort_order - b.sort_order)
+    );
+
+    await Promise.all(
+      reordered.map((o, i) => {
+        const newOrder = catIndex * 1000 + i;
+        if (o.sort_order === newOrder) return Promise.resolve();
+        return fetch("/api/admin/objectives", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: o.id, sort_order: newOrder }),
+        });
+      })
+    );
+    await loadObjectives();
+    setReordering(false);
+  }, [objectives, loadObjectives]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -1403,13 +1444,37 @@ export default function ObjectivesAdmin() {
       )}{/* end showForm modal */}
 
       {/* ───── OBJECTIVES LIST ───── */}
+      {/* Category filter tabs — jump straight to a type instead of scrolling */}
+      {!loading && objectives.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          <button
+            onClick={() => setListFilter("all")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${listFilter === "all" ? "bg-emerald-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}
+          >
+            All ({objectives.length})
+          </button>
+          {CATEGORIES.map(cat => {
+            const count = objectives.filter(o => (o.category ?? "standard") === cat.value).length;
+            if (count === 0) return null;
+            return (
+              <button
+                key={cat.value}
+                onClick={() => setListFilter(cat.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${listFilter === cat.value ? "bg-emerald-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}
+              >
+                {cat.icon} {cat.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
       {loading ? (
         <div className="text-gray-500 text-sm text-center py-8">Loading...</div>
       ) : objectives.length === 0 ? (
         <div className="text-gray-500 text-sm text-center py-8">No objectives yet. Add one above.</div>
       ) : (
         <div className="space-y-6">
-          {CATEGORY_ORDER.map(catValue => {
+          {(listFilter === "all" ? CATEGORY_ORDER : [listFilter]).map(catValue => {
             const catObjs = objectives.filter(o => (o.category ?? "standard") === catValue);
             if (catObjs.length === 0) return null;
             const cat = CATEGORIES.find(c => c.value === catValue)!;
@@ -1454,6 +1519,25 @@ export default function ObjectivesAdmin() {
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
+                    {/* Reorder within this category — controls the order players see */}
+                    <div className="flex flex-col mr-1">
+                      <button
+                        onClick={() => handleMove(obj, -1)}
+                        disabled={reordering || catObjs[0]?.id === obj.id}
+                        title="Move up"
+                        className="px-1.5 leading-none text-gray-400 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        onClick={() => handleMove(obj, 1)}
+                        disabled={reordering || catObjs[catObjs.length - 1]?.id === obj.id}
+                        title="Move down"
+                        className="px-1.5 leading-none text-gray-400 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed"
+                      >
+                        ▼
+                      </button>
+                    </div>
                     <button
                       onClick={async () => {
                         await fetch("/api/admin/objectives", {

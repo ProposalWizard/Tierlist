@@ -417,6 +417,15 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
         : (FRAME_STYLES[managerCard.id] ?? FRAME_STYLES.frame_default))
     : null;
 
+  // Size the drag preview to match whatever the user actually grabbed — a board
+  // card (large) or a bench card (small) — so it doesn't jump size on pickup.
+  const activeOnBoard =
+    !!activeFrameId &&
+    (Object.values(slots).includes(activeFrameId) || managerCardId === activeFrameId);
+  const overlaySizeClass = activeOnBoard
+    ? "w-[60px] h-[80px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px]"
+    : "w-14 h-[72px] sm:w-16 sm:h-[84px]";
+
   return (
     <div className="rounded-xl border border-gray-800/60 bg-gray-900 p-5">
       {/* Header */}
@@ -537,7 +546,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
         <DragOverlay dropAnimation={null}>
           {activeCard && activeStyle ? (
             <div
-              className="w-16 h-[84px] sm:w-20 sm:h-[104px] rounded-xl overflow-hidden shadow-2xl pointer-events-none ring-2 ring-amber-400/60"
+              className={`${overlaySizeClass} rounded-xl overflow-hidden shadow-2xl pointer-events-none ring-2 ring-amber-400/60 bg-gray-900`}
               style={{ transform: "rotate(3deg) scale(1.05)" }}
             >
               {activeStyle.image ? (
@@ -545,7 +554,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
                 <img
                   src={activeStyle.image}
                   alt={activeCard.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               ) : (
                 <div
@@ -593,13 +602,13 @@ function DraggablePitchCard({
           : undefined
       }
     >
-      <div className="w-full h-full rounded-xl overflow-hidden">
+      <div className="w-full h-full rounded-xl overflow-hidden bg-gray-900">
         {frameStyle.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={frameStyle.image}
             alt={card.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             draggable={false}
           />
         ) : (
@@ -723,7 +732,7 @@ function BenchCard({
           : undefined
       }
     >
-      <div className={`relative w-14 h-[72px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
+      <div className={`relative w-14 h-[72px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all bg-gray-900 ${
         selected
           ? (manager ? "ring-sky-400 shadow-lg shadow-sky-500/30" : "ring-amber-400 shadow-lg shadow-amber-500/30")
           : "ring-white/10"
@@ -733,7 +742,7 @@ function BenchCard({
           <img
             src={frameStyle.image}
             alt={card.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             draggable={false}
           />
         ) : (
