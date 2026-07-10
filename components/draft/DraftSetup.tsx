@@ -146,28 +146,6 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           </div>
         </div>
 
-        {/* Sign-in prompt */}
-        {isSignedIn === false && (
-          <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">
-            <div className="flex items-start gap-3">
-              <span className="text-lg mt-0.5">&#128274;</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-white mb-1">Sign in to save your history</div>
-                <p className="text-xs text-white mb-3">
-                  Your draft runs and stats are saved when you&apos;re signed in. Play as a guest or sign in to track your progress.
-                </p>
-                <Link
-                  href="/auth?next=/draft"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-lg font-bold text-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  Sign In / Sign Up
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Team Name */}
         {onTeamNameChange && (
           <TeamNameInput
@@ -410,6 +388,61 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         <p className="text-center text-white text-xs mt-4">
           14 spins. 11 starters + 3 subs. 38 matches.
         </p>
+
+        {/* Sign-in prompt — placed BELOW Start Draft so new/guest users see the
+            game as the primary action, not a sign-up wall. */}
+        {isSignedIn === false && (
+          <div className="bg-gray-900 rounded-xl p-4 mt-6 border border-gray-800/50">
+            <div className="flex items-start gap-3">
+              <span className="text-lg mt-0.5">&#128274;</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-white mb-1">Sign in to save your history</div>
+                <p className="text-xs text-white mb-3">
+                  You can play as a guest right now. Sign in to save your draft runs, stats and progress.
+                </p>
+                <Link
+                  href="/auth?next=/draft"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-lg font-bold text-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  Sign In / Sign Up
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Multiplayer — locked preview for signed-out users so they can see it exists */}
+        {isSignedIn === false && (
+          <div className="mt-6 sm:mt-8">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-px flex-1 bg-gray-800" />
+              <label className="text-xs font-bold tracking-widest text-white uppercase">
+                Multiplayer
+              </label>
+              <div className="h-px flex-1 bg-gray-800" />
+            </div>
+            <Link
+              href="/auth?next=/draft"
+              className="block rounded-xl border border-gray-800/60 bg-gray-900/40 p-3 transition-all hover:border-emerald-700/50 hover:bg-gray-900/70"
+            >
+              <div className="space-y-2 opacity-50 pointer-events-none select-none">
+                <div className="w-full py-3 px-4 rounded-xl text-sm font-bold bg-gray-800/80 border border-gray-700/50 text-white flex items-center justify-center gap-2">
+                  <span>&#128274;</span> Create Room
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1 bg-gray-800/80 border border-gray-700/50 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white/50 tracking-widest uppercase">
+                    Enter Room Code
+                  </div>
+                  <div className="px-5 py-3 rounded-xl text-sm font-bold bg-sky-600/80 text-white">Join</div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-400">
+                <span>&#128274;</span> Sign in to create or join multiplayer rooms
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Multiplayer */}
         {isSignedIn === true && onCreateRoom && onJoinRoom && (
