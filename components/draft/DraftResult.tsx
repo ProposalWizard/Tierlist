@@ -2863,6 +2863,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           allSeasons={[...allSeasonResults, season]}
           roomPlayers={roomPlayers}
           allRoomPlayerSeasons={allRoomPlayerSeasons}
+          formationName={formationName}
           onClose={() => setShowCareerRecap(false)}
           onNewRun={onNewRun}
         />

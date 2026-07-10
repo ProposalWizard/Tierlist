@@ -2,27 +2,28 @@
 import { useMemo, useState } from "react";
 import type { SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
-import { getPositionColor } from "@/components/draft/formations";
+import { getPositionColor, FORMATIONS } from "@/components/draft/formations";
 import ImageWithFallback from "@/components/ImageWithFallback";
 
-const BEST_XI_SLOT_COORDS = [
-  { x: 50, y: 92 }, // GK
-  { x: 15, y: 72 }, // LB
-  { x: 38, y: 75 }, // CB
-  { x: 62, y: 75 }, // CB
-  { x: 85, y: 72 }, // RB
-  { x: 25, y: 48 }, // CM
-  { x: 50, y: 52 }, // CM
-  { x: 75, y: 48 }, // CM
-  { x: 18, y: 22 }, // LW
-  { x: 50, y: 18 }, // ST
-  { x: 82, y: 22 }, // RW
-];
+// Broad role groups for the final position-matching fallback (when neither an
+// exact position nor a formation's compatiblePositions list has a taker).
+function roleGroup(pos: string | undefined): string {
+  const p = (pos ?? "").toUpperCase();
+  if (p === "GK") return "gk";
+  if (["RB", "LB", "CB", "RWB", "LWB"].includes(p)) return "def";
+  if (["CDM", "CM", "CAM"].includes(p)) return "mid";
+  if (["RM", "LM", "RW", "LW"].includes(p)) return "wide";
+  if (["ST", "CF"].includes(p)) return "att";
+  return "other";
+}
 
 interface Props {
   allSeasons: SeasonResult[];
   roomPlayers?: RoomPlayer[];
   allRoomPlayerSeasons?: Record<string, SeasonResult[]>;
+  /** The formation the player chose — Best XI mirrors it instead of a fixed
+   * 4-3-3. Multiplayer rooms are always 4-3-3, so this is 4-3-3 there. */
+  formationName?: string;
   onClose: () => void;
   onNewRun?: () => void;
 }
@@ -52,7 +53,7 @@ interface AllTimePlayer {
   image_url?: string | null;
 }
 
-export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeasons, onClose, onNewRun }: Props) {
+export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeasons, formationName, onClose, onNewRun }: Props) {
   const [tab, setTab] = useState<"overview" | "records" | "h2h" | "players">("overview");
   const [playerStatsView, setPlayerStatsView] = useState<"all" | "pl">("all");
 
@@ -215,29 +216,40 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
   const activeAllTime = playerStatsView === "pl" ? allTimePlayersPL : allTimePlayers;
 
   const bestXI = useMemo(() => {
-    const positionSlots: { pos: string; label: string }[] = [
-      { pos: "GK", label: "GK" },
-      { pos: "LB", label: "LB" }, { pos: "CB", label: "CB" }, { pos: "CB", label: "CB" }, { pos: "RB", label: "RB" },
-      { pos: "CM", label: "CM" }, { pos: "CM", label: "CM" }, { pos: "CM", label: "CM" },
-      { pos: "LW", label: "LW" }, { pos: "ST", label: "ST" }, { pos: "RW", label: "RW" },
-    ];
-    const used = new Set<string>();
-    const xi: { slot: string; player: AllTimePlayer | null }[] = [];
+    // Mirror the formation the player actually chose (falls back to 4-3-3 — which
+    // is also what every multiplayer room uses).
+    const formation =
+      FORMATIONS.find(f => f.name === formationName) ??
+      FORMATIONS.find(f => f.name === "4-3-3") ??
+      FORMATIONS[0];
+    const slots = formation.slots;
 
-    for (const slot of positionSlots) {
-      const candidates = activeAllTime
-        .filter(p => p.position === slot.pos && !used.has(p.owner ? `${p.name}::${p.owner}` : p.name))
-        .sort((a, b) => b.bestRating - a.bestRating);
-      if (candidates.length > 0) {
-        const pick = candidates[0];
-        used.add(pick.owner ? `${pick.name}::${pick.owner}` : pick.name);
-        xi.push({ slot: slot.label, player: pick });
-      } else {
-        xi.push({ slot: slot.label, player: null });
+    const keyOf = (p: AllTimePlayer) => (p.owner ? `${p.name}::${p.owner}` : p.name);
+    const posOf = (p: AllTimePlayer) => (p.position ?? "").toUpperCase();
+    const pool = [...activeAllTime].sort((a, b) => b.bestRating - a.bestRating);
+    const used = new Set<string>();
+    const result = slots.map(s => ({ slot: s.label, x: s.x, y: s.y, player: null as AllTimePlayer | null }));
+
+    // Fill any still-empty slot with the best unused player matching `pred`.
+    const fill = (pred: (slot: typeof slots[number], p: AllTimePlayer) => boolean) => {
+      for (let i = 0; i < slots.length; i++) {
+        if (result[i].player) continue;
+        const pick = pool.find(p => !used.has(keyOf(p)) && pred(slots[i], p));
+        if (pick) { result[i].player = pick; used.add(keyOf(pick)); }
       }
-    }
-    return xi;
-  }, [activeAllTime]);
+    };
+
+    // Best match first: exact position → the formation's compatible positions →
+    // same broad role → finally any remaining player (never leave a gap if the
+    // squad has 11+ players). This is what lets e.g. CAM/CDM fill a CM slot, or
+    // RWB/CB fill an RB slot, when the chosen formation doesn't map 1:1.
+    fill((s, p) => posOf(p) === s.position.toUpperCase());
+    fill((s, p) => s.compatiblePositions.some(c => c.toUpperCase() === posOf(p)));
+    fill((s, p) => roleGroup(s.position) === roleGroup(posOf(p)));
+    fill(() => true);
+
+    return result;
+  }, [activeAllTime, formationName]);
 
   interface SeasonRecord { name: string; owner?: string; value: number; season: number }
 
@@ -830,7 +842,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-600/40" />
 
                     {bestXI.map((s, i) => {
-                      const coords = BEST_XI_SLOT_COORDS[i] ?? { x: 50, y: 50 };
+                      const coords = { x: s.x, y: s.y };
                       const p = s.player;
                       const initials = p ? p.name.split(" ").map(w => w[0]).join("").slice(0, 2) : "";
                       return (
