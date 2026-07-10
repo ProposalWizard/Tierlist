@@ -11,9 +11,11 @@ export interface LibraryCard {
 interface Props {
   onSelect: (card: LibraryCard) => void;
   onClose: () => void;
+  /** Image URLs already used as an objective reward — badged so the admin doesn't reuse one. */
+  usedUrls?: Set<string>;
 }
 
-export default function CardLibraryPicker({ onSelect, onClose }: Props) {
+export default function CardLibraryPicker({ onSelect, onClose, usedUrls }: Props) {
   const [cards, setCards] = useState<LibraryCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -66,18 +68,27 @@ export default function CardLibraryPicker({ onSelect, onClose }: Props) {
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-              {filtered.map(card => (
+              {filtered.map(card => {
+                const used = usedUrls?.has(card.image_url) ?? false;
+                return (
                 <button
                   key={card.id}
                   onClick={() => onSelect(card)}
-                  className="group flex flex-col items-center gap-1.5 p-2 rounded-xl border border-gray-700 hover:border-emerald-500 bg-gray-800 hover:bg-gray-750 transition focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl border bg-gray-800 hover:bg-gray-750 transition focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    used ? "border-amber-500/60" : "border-gray-700 hover:border-emerald-500"
+                  }`}
                 >
-                  <div className="w-full aspect-[3/4] rounded-lg overflow-hidden bg-gray-700">
+                  <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-gray-700">
                     <img
                       src={card.image_url}
                       alt={card.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     />
+                    {used && (
+                      <span className="absolute top-1 left-1 text-[8px] font-black text-white bg-amber-600/90 rounded px-1 py-px leading-none">
+                        USED
+                      </span>
+                    )}
                   </div>
                   <span className="text-[10px] text-gray-300 group-hover:text-white font-bold text-center leading-tight truncate w-full px-0.5 transition-colors">
                     {card.name}
@@ -88,7 +99,8 @@ export default function CardLibraryPicker({ onSelect, onClose }: Props) {
                     </span>
                   )}
                 </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
