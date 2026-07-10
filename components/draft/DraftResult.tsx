@@ -1063,6 +1063,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 biggestWin: { value: plBiggestWin, teamOvr, score: plBiggestWinScore || undefined },
                 avgRating: bestAvgRating(season.plPlayerStats),
                 mostPoints: { value: season.teamRecord.points, teamOvr },
+                squadOvr: { value: teamOvr ?? 0, teamOvr },
               },
               all: {
                 wins: { value: allWins, teamOvr },

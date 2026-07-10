@@ -19,6 +19,7 @@ const SEASON_RECORD_TYPES: { key: string; label: string; emoji: string; isTeam: 
   { key: "unbeaten",       label: "Longest Unbeaten",      emoji: "🛡️", isTeam: true },
   { key: "biggest_win",    label: "Biggest Win",           emoji: "💥", isTeam: true },
   { key: "avg_rating",     label: "Best Player Rating",    emoji: "⭐", isTeam: false, isDecimal: true },
+  { key: "squad_ovr",      label: "Highest Squad OVR",     emoji: "📈", isTeam: true },
 ];
 
 const CAREER_RECORD_TYPES: { key: string; label: string; emoji: string; isTeam: boolean; isDecimal?: boolean }[] = [
