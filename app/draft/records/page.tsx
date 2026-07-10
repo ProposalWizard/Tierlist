@@ -423,7 +423,7 @@ export default function DraftRecordsPage() {
 
         {!loading && !error && (() => {
           const visibleSeasonKeys = SEASON_RECORD_TYPES
-            .filter(rt => !((rt.key === "most_points" || rt.key === "squad_ovr") && competition === "all"))
+            .filter(rt => !((rt.key === "most_points" && competition === "all") || (rt.key === "squad_ovr" && competition === "pl")))
             .map(rt => `${competition}_${rt.key}`);
           const visibleCareerKeys = competition === "all"
             ? CAREER_RECORD_TYPES.map(rt => `career_${rt.key}`)
@@ -446,7 +446,7 @@ export default function DraftRecordsPage() {
                 </svg>
               </button>
             </div>
-            {SEASON_RECORD_TYPES.filter(rt => !((rt.key === "most_points" || rt.key === "squad_ovr") && competition === "all")).map(rt => {
+            {SEASON_RECORD_TYPES.filter(rt => !((rt.key === "most_points" && competition === "all") || (rt.key === "squad_ovr" && competition === "pl"))).map(rt => {
               const key = `${competition}_${rt.key}`;
               const entries = mergeWithOfficial(records[key] ?? [], key, rt);
               const isExpanded = expandedKeys.has(key);

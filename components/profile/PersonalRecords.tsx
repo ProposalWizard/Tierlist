@@ -90,7 +90,7 @@ export default function PersonalRecords() {
             </p>
           ) : (
             <div className="space-y-1.5">
-              {SEASON_RECORD_TYPES.map(rt => {
+              {SEASON_RECORD_TYPES.filter(rt => !(rt.key === "squad_ovr" && competition === "pl")).map(rt => {
                 const key = `${competition}_${rt.key}`;
                 const rec = records[key];
                 if (!rec) return (

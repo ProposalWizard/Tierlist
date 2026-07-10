@@ -113,7 +113,6 @@ interface RecordPayload {
     biggestWin?: TeamStat;
     avgRating?: RecordEntry;
     mostPoints?: TeamStat;
-    squadOvr?: TeamStat;
   };
   all: {
     wins: TeamStat;
@@ -124,6 +123,7 @@ interface RecordPayload {
     goalsConceded?: TeamStat;
     biggestWin?: TeamStat;
     avgRating?: RecordEntry;
+    squadOvr?: TeamStat;
   };
   career?: {
     goals: RecordEntry;
@@ -241,7 +241,6 @@ export async function POST(req: Request) {
   if (pl.biggestWin) pushTeam("pl", "biggest_win", pl.biggestWin);
   if (pl.avgRating) pushEntry("pl", "avg_rating", pl.avgRating);
   if (pl.mostPoints) pushTeam("pl", "most_points", pl.mostPoints);
-  if (pl.squadOvr) pushTeam("pl", "squad_ovr", pl.squadOvr);
 
   pushTeam("all", "wins", all.wins);
   pushTeam("all", "unbeaten", all.unbeaten);
@@ -251,6 +250,7 @@ export async function POST(req: Request) {
   if (all.goalsConceded) pushTeam("all", "goals_conceded", all.goalsConceded);
   if (all.biggestWin) pushTeam("all", "biggest_win", all.biggestWin);
   if (all.avgRating) pushEntry("all", "avg_rating", all.avgRating);
+  if (all.squadOvr) pushTeam("all", "squad_ovr", all.squadOvr);
 
   if (career) {
     if (career.goals) pushEntry("career", "career_goals", career.goals);
