@@ -113,6 +113,7 @@ interface RecordPayload {
     biggestWin?: TeamStat;
     avgRating?: RecordEntry;
     mostPoints?: TeamStat;
+    squadOvr?: TeamStat;
   };
   all: {
     wins: TeamStat;
@@ -191,7 +192,7 @@ export async function POST(req: Request) {
     wins: 70, unbeaten: 70, goals: 150, assists: 150, clean_sheets: 70,
     goals_conceded: 300, biggest_win: 30, avg_rating: 100, most_points: 114,
     career_goals: 10000, career_assists: 10000, career_avg_rating: 100,
-    career_trophies: 2000,
+    career_trophies: 2000, squad_ovr: 99,
   };
   const validValue = (record_type: string, value: unknown): number | null => {
     const n = Number(value);
@@ -240,6 +241,7 @@ export async function POST(req: Request) {
   if (pl.biggestWin) pushTeam("pl", "biggest_win", pl.biggestWin);
   if (pl.avgRating) pushEntry("pl", "avg_rating", pl.avgRating);
   if (pl.mostPoints) pushTeam("pl", "most_points", pl.mostPoints);
+  if (pl.squadOvr) pushTeam("pl", "squad_ovr", pl.squadOvr);
 
   pushTeam("all", "wins", all.wins);
   pushTeam("all", "unbeaten", all.unbeaten);

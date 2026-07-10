@@ -32,6 +32,7 @@ const SEASON_RECORD_TYPES: RecordType[] = [
   { key: "goals_conceded", label: "Least Goals Conceded", emoji: "🔒", isTeam: true, ascending: true },
   { key: "biggest_win",    label: "Biggest Win",          emoji: "💥", isTeam: true },
   { key: "avg_rating",     label: "Player of the Season Rating", emoji: "⭐", isTeam: false, isDecimal: true },
+  { key: "squad_ovr",      label: "Highest Squad OVR",     emoji: "📈", isTeam: true },
 ];
 
 const CAREER_RECORD_TYPES: RecordType[] = [
@@ -422,7 +423,7 @@ export default function DraftRecordsPage() {
 
         {!loading && !error && (() => {
           const visibleSeasonKeys = SEASON_RECORD_TYPES
-            .filter(rt => !(rt.key === "most_points" && competition === "all"))
+            .filter(rt => !((rt.key === "most_points" || rt.key === "squad_ovr") && competition === "all"))
             .map(rt => `${competition}_${rt.key}`);
           const visibleCareerKeys = competition === "all"
             ? CAREER_RECORD_TYPES.map(rt => `career_${rt.key}`)
@@ -445,7 +446,7 @@ export default function DraftRecordsPage() {
                 </svg>
               </button>
             </div>
-            {SEASON_RECORD_TYPES.filter(rt => !(rt.key === "most_points" && competition === "all")).map(rt => {
+            {SEASON_RECORD_TYPES.filter(rt => !((rt.key === "most_points" || rt.key === "squad_ovr") && competition === "all")).map(rt => {
               const key = `${competition}_${rt.key}`;
               const entries = mergeWithOfficial(records[key] ?? [], key, rt);
               const isExpanded = expandedKeys.has(key);

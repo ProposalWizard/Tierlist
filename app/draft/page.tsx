@@ -1082,6 +1082,7 @@ export default function DraftPage() {
           players={players}
           onNewRun={handleNewRun}
           onPlayNextSeason={currentSeason < MAX_SEASONS ? handlePlayNextSeason : undefined}
+          isFinalSeason={currentSeason >= MAX_SEASONS}
           seasonNumber={currentSeason}
           previousResult={previousResults[previousResults.length - 1]}
           allSeasonResults={previousResults}

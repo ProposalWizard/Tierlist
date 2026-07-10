@@ -136,19 +136,45 @@ function remapSlots(
   }));
 
   const result: Record<string, string | null> = {};
+  const placed = new Set<string>();
 
+  const place = (frameId: string, role: string): boolean => {
+    const slot = available.find(s => !s.taken && s.role === role);
+    if (!slot) return false;
+    result[slot.slotId] = frameId;
+    slot.taken = true;
+    placed.add(frameId);
+    return true;
+  };
+
+  // Phase 1 — exact role match. A real striker claims a striker slot BEFORE a
+  // winger can fall back into it, which is what previously benched players.
   for (const role of ROLE_ORDER) {
-    const cards = toPlace.filter(c => c.role === role);
-    for (const card of cards) {
+    for (const card of toPlace) {
+      if (card.role === role && !placed.has(card.frameId)) place(card.frameId, role);
+    }
+  }
+
+  // Phase 2 — fallback roles for anything still unplaced.
+  for (const role of ROLE_ORDER) {
+    for (const card of toPlace) {
+      if (card.role !== role || placed.has(card.frameId)) continue;
       const fallbacks = ROLE_FALLBACKS[role] ?? [role, "mid"];
       for (const fbRole of fallbacks) {
-        const slot = available.find(s => !s.taken && s.role === fbRole);
-        if (slot) {
-          result[slot.slotId] = card.frameId;
-          slot.taken = true;
-          break;
-        }
+        if (place(card.frameId, fbRole)) break;
       }
+    }
+  }
+
+  // Phase 3 — catch-all. Never bench a card when a slot is still open; drop any
+  // leftover into the nearest empty position instead.
+  for (const card of toPlace) {
+    if (placed.has(card.frameId)) continue;
+    const slot = available.find(s => !s.taken);
+    if (slot) {
+      result[slot.slotId] = card.frameId;
+      slot.taken = true;
+      placed.add(card.frameId);
     }
   }
 
@@ -391,6 +417,15 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
         : (FRAME_STYLES[managerCard.id] ?? FRAME_STYLES.frame_default))
     : null;
 
+  // Size the drag preview to match whatever the user actually grabbed — a board
+  // card (large) or a bench card (small) — so it doesn't jump size on pickup.
+  const activeOnBoard =
+    !!activeFrameId &&
+    (Object.values(slots).includes(activeFrameId) || managerCardId === activeFrameId);
+  const overlaySizeClass = activeOnBoard
+    ? "w-[60px] h-[80px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px]"
+    : "w-14 h-[72px] sm:w-16 sm:h-[84px]";
+
   return (
     <div className="rounded-xl border border-gray-800/60 bg-gray-900 p-5">
       {/* Header */}
@@ -511,7 +546,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
         <DragOverlay dropAnimation={null}>
           {activeCard && activeStyle ? (
             <div
-              className="w-16 h-[84px] sm:w-20 sm:h-[104px] rounded-xl overflow-hidden shadow-2xl pointer-events-none ring-2 ring-amber-400/60"
+              className={`${overlaySizeClass} rounded-xl overflow-hidden shadow-2xl pointer-events-none ring-2 ring-amber-400/60 bg-gray-900`}
               style={{ transform: "rotate(3deg) scale(1.05)" }}
             >
               {activeStyle.image ? (
@@ -519,7 +554,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
                 <img
                   src={activeStyle.image}
                   alt={activeCard.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               ) : (
                 <div
@@ -567,13 +602,13 @@ function DraggablePitchCard({
           : undefined
       }
     >
-      <div className="w-full h-full rounded-xl overflow-hidden">
+      <div className="w-full h-full rounded-xl overflow-hidden bg-gray-900">
         {frameStyle.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={frameStyle.image}
             alt={card.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             draggable={false}
           />
         ) : (
@@ -697,7 +732,7 @@ function BenchCard({
           : undefined
       }
     >
-      <div className={`relative w-14 h-[72px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
+      <div className={`relative w-14 h-[72px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all bg-gray-900 ${
         selected
           ? (manager ? "ring-sky-400 shadow-lg shadow-sky-500/30" : "ring-amber-400 shadow-lg shadow-amber-500/30")
           : "ring-white/10"
@@ -707,7 +742,7 @@ function BenchCard({
           <img
             src={frameStyle.image}
             alt={card.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             draggable={false}
           />
         ) : (
