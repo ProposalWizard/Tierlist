@@ -157,14 +157,19 @@ function remapSlots(
 
 const STORAGE_KEY = "collection-squad-v1";
 const FORMATION_KEY = "collection-squad-formation-v1";
+const MANAGER_KEY = "collection-squad-manager-v1";
+
+/** A card counts as a manager if the word "manager" appears anywhere in its name
+ * (e.g. "Jose Mourinho (Manager)"). Manager cards only fit the Manager slot. */
+function isManagerCard(name: string | null | undefined): boolean {
+  return (name ?? "").toLowerCase().includes("manager");
+}
 
 interface CardEntry {
   id: string;
   name: string;
   unlock_value: number | null;
   card_image_url?: string | null;
-  objectiveCount?: number;
-  milestoneCount?: number;
 }
 
 interface Props {
@@ -175,6 +180,7 @@ interface Props {
 export default function CollectionSquad({ progression, seasonRewards }: Props) {
   const [formation, setFormation] = useState("4-3-3");
   const [slots, setSlots] = useState<Record<string, string | null>>({});
+  const [managerCardId, setManagerCardId] = useState<string | null>(null);
   const [activeFrameId, setActiveFrameId] = useState<string | null>(null);
   const [dragSourceSlot, setDragSourceSlot] = useState<string | null>(null);
   const [selectedBenchCard, setSelectedBenchCard] = useState<string | null>(null);
@@ -184,13 +190,6 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
   );
 
   const level = progression?.level ?? 0;
-
-  // Build milestone-count map: card_image_url → how many Road to Legend milestones award it
-  const milestoneCounts: Record<string, number> = {};
-  for (const r of seasonRewards ?? []) {
-    if (r.image_url) milestoneCounts[r.image_url] = (milestoneCounts[r.image_url] ?? 0) + 1;
-  }
-  const objCounts = progression?.objectiveCardCounts ?? {};
 
   // Only show cards with real art (season milestone cards and objective reward cards).
   // Generic frame rewards ("Standard", "Gold" etc.) are excluded — they're cosmetic
@@ -202,8 +201,6 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
       name: r.card_name ?? "Season Card",
       unlock_value: r.level,
       card_image_url: r.image_url,
-      objectiveCount: r.image_url ? (objCounts[r.image_url] ?? 0) : 0,
-      milestoneCount: r.image_url ? (milestoneCounts[r.image_url] ?? 0) : 0,
     }));
 
   const unlockedObjectiveCards: CardEntry[] = (progression?.objectiveCards ?? []).map(c => ({
@@ -211,8 +208,6 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
     name: c.name,
     unlock_value: null,
     card_image_url: c.card_image_url,
-    objectiveCount: objCounts[c.card_image_url] ?? 0,
-    milestoneCount: milestoneCounts[c.card_image_url] ?? 0,
   }));
 
   const unlockedCards: CardEntry[] = [...unlockedSeasonCards, ...unlockedObjectiveCards]
@@ -224,6 +219,15 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
       if (f && FORMATIONS[f]) setFormation(f);
       const s = localStorage.getItem(STORAGE_KEY);
       if (s) setSlots(JSON.parse(s));
+      const m = localStorage.getItem(MANAGER_KEY);
+      if (m) setManagerCardId(m);
+    } catch { /* ignore */ }
+  }, []);
+
+  const persistManager = useCallback((id: string | null) => {
+    try {
+      if (id) localStorage.setItem(MANAGER_KEY, id);
+      else localStorage.removeItem(MANAGER_KEY);
     } catch { /* ignore */ }
   }, []);
 
@@ -239,8 +243,21 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
 
   const currentSlots = FORMATIONS[formation] ?? FORMATIONS["4-3-3"];
 
-  const assignedFrameIds = new Set(Object.values(slots).filter(Boolean) as string[]);
+  const assignedFrameIds = new Set([
+    ...(Object.values(slots).filter(Boolean) as string[]),
+    ...(managerCardId ? [managerCardId] : []),
+  ]);
   const benchCards = unlockedCards.filter((c) => !assignedFrameIds.has(c.id));
+
+  const managerCard = managerCardId
+    ? unlockedCards.find((c) => c.id === managerCardId) ?? null
+    : null;
+
+  // Type of the currently tap-selected bench card — decides which slots light up.
+  const selectedCard = selectedBenchCard
+    ? unlockedCards.find((c) => c.id === selectedBenchCard) ?? null
+    : null;
+  const selectedIsManager = selectedCard ? isManagerCard(selectedCard.name) : false;
 
   function changeFormation(f: string) {
     const newSlots = FORMATIONS[f] ?? FORMATIONS["4-3-3"];
@@ -262,22 +279,47 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
   function handleDragEnd(e: DragEndEvent) {
     const frameId = e.active.id as string;
     setActiveFrameId(null);
+    const srcSlot = dragSourceSlot;
     setDragSourceSlot(null);
 
     const targetId = e.over?.id as string | undefined;
     if (!targetId) return;
+
+    const dragged = unlockedCards.find((c) => c.id === frameId);
+    const draggedIsManager = dragged ? isManagerCard(dragged.name) : false;
+
+    // Manager slot — only accepts manager cards.
+    if (targetId === "MANAGER") {
+      if (!draggedIsManager) return;
+      // Clear it from any pitch slot it might have been in (safety).
+      setSlots((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const k of Object.keys(next)) {
+          if (next[k] === frameId) { next[k] = null; changed = true; }
+        }
+        if (changed) persist(formation, next);
+        return next;
+      });
+      setManagerCardId(frameId);
+      persistManager(frameId);
+      return;
+    }
+
+    // Pitch (player) slot — reject manager cards.
     if (!currentSlots.find((s) => s.id === targetId)) return;
+    if (draggedIsManager) return;
 
     setSlots((prev) => {
       const next = { ...prev };
       const displacedFrameId = next[targetId] ?? null;
 
       // If dragging from a pitch slot to another pitch slot that has a card, swap them
-      if (dragSourceSlot && displacedFrameId && dragSourceSlot !== targetId) {
+      if (srcSlot && displacedFrameId && srcSlot !== targetId) {
         next[targetId] = frameId;
-        next[dragSourceSlot] = displacedFrameId;
+        next[srcSlot] = displacedFrameId;
       } else {
-        if (dragSourceSlot) next[dragSourceSlot] = null;
+        if (srcSlot) next[srcSlot] = null;
         next[targetId] = frameId;
       }
 
@@ -296,12 +338,38 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
 
   function handleSlotTap(slotId: string) {
     if (!selectedBenchCard) return;
+    // Manager cards can't go in a player position.
+    if (selectedIsManager) return;
     setSlots((prev) => {
       const next = { ...prev, [slotId]: selectedBenchCard };
       persist(formation, next);
       return next;
     });
     setSelectedBenchCard(null);
+  }
+
+  function handleManagerTap() {
+    if (!selectedBenchCard) return;
+    // Only manager cards fit the manager slot.
+    if (!selectedIsManager) return;
+    // Remove the card from any pitch slot it occupied (safety).
+    setSlots((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const k of Object.keys(next)) {
+        if (next[k] === selectedBenchCard) { next[k] = null; changed = true; }
+      }
+      if (changed) persist(formation, next);
+      return next;
+    });
+    setManagerCardId(selectedBenchCard);
+    persistManager(selectedBenchCard);
+    setSelectedBenchCard(null);
+  }
+
+  function removeManager() {
+    setManagerCardId(null);
+    persistManager(null);
   }
 
   function handleBenchCardTap(cardId: string) {
@@ -315,6 +383,12 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
     ? (activeCard.card_image_url
         ? { border: "border-2 border-amber-400", shadow: "shadow-lg shadow-amber-500/30", image: activeCard.card_image_url }
         : (FRAME_STYLES[activeCard.id] ?? FRAME_STYLES.frame_default))
+    : null;
+
+  const managerStyle = managerCard
+    ? (managerCard.card_image_url
+        ? { border: "border-2 border-sky-400", shadow: "shadow-lg shadow-sky-500/30", image: managerCard.card_image_url }
+        : (FRAME_STYLES[managerCard.id] ?? FRAME_STYLES.frame_default))
     : null;
 
   return (
@@ -349,11 +423,25 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         {/* Pitch — capped on desktop so it doesn't dominate the page */}
-        <div className="lg:max-w-md lg:mx-auto">
+        <div className="lg:max-w-lg lg:mx-auto">
+        {/* Manager slot — sits above the pitch, only accepts manager cards */}
+        <div className="flex items-center gap-3 mb-4">
+          <ManagerSlot
+            card={managerCard}
+            frameStyle={managerStyle}
+            hasBenchSelection={!!selectedBenchCard && selectedIsManager}
+            onRemove={removeManager}
+            onTap={handleManagerTap}
+          />
+          <div className="leading-tight">
+            <p className="text-[10px] font-bold tracking-widest text-sky-400/80 uppercase">Manager</p>
+            <p className="text-[10px] text-white/45">Only manager cards fit here</p>
+          </div>
+        </div>
         <div
           className="relative w-full mx-auto rounded-xl overflow-hidden mb-5"
           style={{
-            paddingBottom: "140%",
+            paddingBottom: "150%",
             background: "linear-gradient(180deg, #0d380d 0%, #0a2a0a 45%, #06190a 100%)",
           }}
         >
@@ -390,7 +478,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
                 slot={slot}
                 card={card ?? null}
                 frameStyle={style}
-                hasBenchSelection={!!selectedBenchCard}
+                hasBenchSelection={!!selectedBenchCard && !selectedIsManager}
                 onRemove={() => removeFromSlot(slot.id)}
                 onTap={() => handleSlotTap(slot.id)}
               />
@@ -408,7 +496,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
               ? "All cards placed on pitch"
               : "Bench — drag onto a position or tap to select"}
           </p>
-          <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
+          <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
             {benchCards.map((card) => (
               <BenchCard
                 key={card.id}
@@ -453,7 +541,7 @@ function DraggablePitchCard({
   onRemove,
   onTap,
 }: {
-  card: { id: string; name: string; objectiveCount?: number; milestoneCount?: number };
+  card: { id: string; name: string };
   frameStyle: { border: string; shadow: string; gradient?: string; image?: string };
   hasBenchSelection: boolean;
   onRemove: () => void;
@@ -505,17 +593,6 @@ function DraggablePitchCard({
           </svg>
         </button>
       )}
-      {/* Reward-count badge — bottom-left corner, only visible on hover */}
-      {((card.objectiveCount ?? 0) + (card.milestoneCount ?? 0)) > 0 && !isDragging && (
-        <div className="absolute bottom-0.5 left-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex flex-col gap-0.5">
-          {(card.objectiveCount ?? 0) > 0 && (
-            <span className="text-[7px] font-black text-white bg-blue-600/90 rounded px-1 py-px leading-none">🎯×{card.objectiveCount}</span>
-          )}
-          {(card.milestoneCount ?? 0) > 0 && (
-            <span className="text-[7px] font-black text-white bg-amber-600/90 rounded px-1 py-px leading-none">⭐×{card.milestoneCount}</span>
-          )}
-        </div>
-      )}
       {hasBenchSelection && (
         <div className="absolute inset-0 rounded-xl bg-amber-500/25 flex items-center justify-center">
           <svg className="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -558,7 +635,7 @@ function PitchSlot({
     >
       {card && frameStyle ? (
         <DraggablePitchCard
-          card={{ id: card.id, name: card.name, objectiveCount: card.objectiveCount, milestoneCount: card.milestoneCount }}
+          card={{ id: card.id, name: card.name }}
           frameStyle={frameStyle}
           hasBenchSelection={hasBenchSelection}
           onRemove={onRemove}
@@ -596,11 +673,14 @@ function BenchCard({
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.id,
   });
+  const manager = isManagerCard(card.name);
   const frameStyle = card.card_image_url
-    ? { border: "border-2 border-amber-400", shadow: "shadow-lg shadow-amber-500/30", image: card.card_image_url }
+    ? {
+        border: manager ? "border-2 border-sky-400" : "border-2 border-amber-400",
+        shadow: manager ? "shadow-lg shadow-sky-500/30" : "shadow-lg shadow-amber-500/30",
+        image: card.card_image_url,
+      }
     : (FRAME_STYLES[card.id] ?? FRAME_STYLES.frame_default);
-
-  const totalCount = (card.objectiveCount ?? 0) + (card.milestoneCount ?? 0);
 
   return (
     <div
@@ -617,8 +697,10 @@ function BenchCard({
           : undefined
       }
     >
-      <div className={`w-14 h-[72px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
-        selected ? "ring-amber-400 shadow-lg shadow-amber-500/30" : "ring-white/10"
+      <div className={`relative w-14 h-[72px] sm:w-16 sm:h-[84px] rounded-xl overflow-hidden shadow-md ring-2 transition-all ${
+        selected
+          ? (manager ? "ring-sky-400 shadow-lg shadow-sky-500/30" : "ring-amber-400 shadow-lg shadow-amber-500/30")
+          : "ring-white/10"
       }`}>
         {frameStyle.image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -633,25 +715,65 @@ function BenchCard({
             className={`w-full h-full bg-gradient-to-br ${frameStyle.gradient ?? "from-gray-700 to-gray-900"}`}
           />
         )}
+        {manager && (
+          <span className="absolute top-0.5 left-0.5 text-[7px] font-black text-white bg-sky-600/90 rounded px-1 py-px leading-none">
+            MGR
+          </span>
+        )}
       </div>
       <span className={`text-[9px] font-medium text-center max-w-[64px] truncate leading-tight ${
-        selected ? "text-amber-400" : "text-white"
+        selected ? (manager ? "text-sky-400" : "text-amber-400") : "text-white"
       }`}>
         {card.name}
       </span>
-      {totalCount > 0 && (
-        <div className="flex items-center gap-0.5 flex-wrap justify-center max-w-[64px]">
-          {(card.objectiveCount ?? 0) > 0 && (
-            <span className="text-[8px] font-bold text-blue-400 bg-blue-500/15 rounded px-1 py-px leading-none whitespace-nowrap">
-              🎯 ×{card.objectiveCount}
-            </span>
-          )}
-          {(card.milestoneCount ?? 0) > 0 && (
-            <span className="text-[8px] font-bold text-amber-400 bg-amber-500/15 rounded px-1 py-px leading-none whitespace-nowrap">
-              ⭐ ×{card.milestoneCount}
-            </span>
-          )}
-        </div>
+    </div>
+  );
+}
+
+/** Standalone manager slot rendered above the pitch. Only manager cards fit. */
+function ManagerSlot({
+  card,
+  frameStyle,
+  hasBenchSelection,
+  onRemove,
+  onTap,
+}: {
+  card: CardEntry | null;
+  frameStyle: { border: string; shadow: string; gradient?: string; image?: string } | null;
+  hasBenchSelection: boolean;
+  onRemove: () => void;
+  onTap: () => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: "MANAGER" });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`transition-transform duration-150 ${isOver ? "scale-105" : ""}`}
+    >
+      {card && frameStyle ? (
+        <DraggablePitchCard
+          card={{ id: card.id, name: card.name }}
+          frameStyle={frameStyle}
+          hasBenchSelection={hasBenchSelection}
+          onRemove={onRemove}
+          onTap={onTap}
+        />
+      ) : (
+        <button
+          onClick={hasBenchSelection ? onTap : undefined}
+          className={`w-12 h-16 sm:w-[64px] sm:h-[84px] rounded-xl flex items-center justify-center border-2 transition-all duration-200 ${
+            hasBenchSelection
+              ? "border-sky-400 bg-sky-400/25 shadow-lg shadow-sky-400/40 hover:scale-110 cursor-pointer"
+              : isOver
+              ? "border-sky-400 bg-sky-400/25 shadow-lg shadow-sky-400/40"
+              : "border-white/25 bg-black/35 hover:border-white/40"
+          }`}
+        >
+          <span className="text-[9px] sm:text-[10px] font-black text-white/75 leading-none text-center">
+            MGR
+          </span>
+        </button>
       )}
     </div>
   );

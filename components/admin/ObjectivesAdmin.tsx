@@ -610,11 +610,25 @@ export default function ObjectivesAdmin() {
               </div>
             )}
           </div>
+          {/* Warn the admin if this card art is already the reward on another objective */}
+          {cardPreview && (() => {
+            const usedBy = objectives.filter(o => o.id !== editingId && o.card_image_url === cardPreview);
+            return usedBy.length > 0 ? (
+              <div className="mt-2 text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                ⚠ This card is already used in {usedBy.length} other objective{usedBy.length > 1 ? "s" : ""}: {usedBy.map(o => o.title).join(", ")}
+              </div>
+            ) : (
+              <div className="mt-2 text-[11px] text-emerald-400/80">
+                ✓ This card isn&apos;t used in any other objective.
+              </div>
+            );
+          })()}
         </div>
 
         {/* Card Library Picker modal */}
         {showLibraryPicker && (
           <CardLibraryPicker
+            usedUrls={new Set(objectives.filter(o => o.id !== editingId && o.card_image_url).map(o => o.card_image_url as string))}
             onSelect={(card: LibraryCard) => {
               setCardLibraryUrl(card.image_url);
               setCardPreview(card.image_url);
