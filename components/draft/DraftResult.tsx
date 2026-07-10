@@ -1063,7 +1063,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 biggestWin: { value: plBiggestWin, teamOvr, score: plBiggestWinScore || undefined },
                 avgRating: bestAvgRating(season.plPlayerStats),
                 mostPoints: { value: season.teamRecord.points, teamOvr },
-                squadOvr: { value: teamOvr ?? 0, teamOvr },
               },
               all: {
                 wins: { value: allWins, teamOvr },
@@ -1074,6 +1073,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 goalsConceded: { value: allGoalsAgainst, teamOvr },
                 biggestWin: { value: allBiggestWin, teamOvr, score: allBiggestWinScore || undefined },
                 avgRating: bestAvgRating(season.playerStats),
+                squadOvr: { value: teamOvr ?? 0, teamOvr },
               },
               career: {
                 goals: { value: topCareerGoals, playerName: topCareerScorer || null, playerOvr: topCareerGoalsOvr },
@@ -2863,6 +2863,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           allSeasons={[...allSeasonResults, season]}
           roomPlayers={roomPlayers}
           allRoomPlayerSeasons={allRoomPlayerSeasons}
+          formationName={formationName}
           onClose={() => setShowCareerRecap(false)}
           onNewRun={onNewRun}
         />
