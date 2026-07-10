@@ -136,19 +136,45 @@ function remapSlots(
   }));
 
   const result: Record<string, string | null> = {};
+  const placed = new Set<string>();
 
+  const place = (frameId: string, role: string): boolean => {
+    const slot = available.find(s => !s.taken && s.role === role);
+    if (!slot) return false;
+    result[slot.slotId] = frameId;
+    slot.taken = true;
+    placed.add(frameId);
+    return true;
+  };
+
+  // Phase 1 — exact role match. A real striker claims a striker slot BEFORE a
+  // winger can fall back into it, which is what previously benched players.
   for (const role of ROLE_ORDER) {
-    const cards = toPlace.filter(c => c.role === role);
-    for (const card of cards) {
+    for (const card of toPlace) {
+      if (card.role === role && !placed.has(card.frameId)) place(card.frameId, role);
+    }
+  }
+
+  // Phase 2 — fallback roles for anything still unplaced.
+  for (const role of ROLE_ORDER) {
+    for (const card of toPlace) {
+      if (card.role !== role || placed.has(card.frameId)) continue;
       const fallbacks = ROLE_FALLBACKS[role] ?? [role, "mid"];
       for (const fbRole of fallbacks) {
-        const slot = available.find(s => !s.taken && s.role === fbRole);
-        if (slot) {
-          result[slot.slotId] = card.frameId;
-          slot.taken = true;
-          break;
-        }
+        if (place(card.frameId, fbRole)) break;
       }
+    }
+  }
+
+  // Phase 3 — catch-all. Never bench a card when a slot is still open; drop any
+  // leftover into the nearest empty position instead.
+  for (const card of toPlace) {
+    if (placed.has(card.frameId)) continue;
+    const slot = available.find(s => !s.taken);
+    if (slot) {
+      result[slot.slotId] = card.frameId;
+      slot.taken = true;
+      placed.add(card.frameId);
     }
   }
 
