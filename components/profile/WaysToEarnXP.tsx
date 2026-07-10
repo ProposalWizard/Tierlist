@@ -14,16 +14,16 @@ interface Activity {
 
 // Sorted by XP (highest first)
 const ACTIVITIES: Activity[] = [
-  { key: "hall_of_fame_record",   label: "Get a Record in Draft Hall of Fame",        icon: "🏅", xp: XP_AWARDS.hall_of_fame_record,   accent: "bg-amber-400" },
-  { key: "daily_login",           label: "Daily Login",                                icon: "📅", xp: XP_AWARDS.daily_login,           accent: "bg-blue-500" },
-  { key: "tierlist_likes_10",     label: "Create a Tierlist & Get 10 Likes",           icon: "❤️", xp: XP_AWARDS.tierlist_likes_10,     accent: "bg-pink-500" },
+  { key: "hall_of_fame_record",   label: "Get a Record in Draft Hall of Fame",        icon: "🏅", xp: XP_AWARDS.hall_of_fame_record,   accent: "bg-amber-400", note: "Max 10/day" },
+  { key: "daily_login",           label: "Daily Login",                                icon: "📅", xp: XP_AWARDS.daily_login,           accent: "bg-blue-500", note: "Once per day" },
+  { key: "tierlist_likes_10",     label: "Create a Tierlist & Get 10 Likes",           icon: "❤️", xp: XP_AWARDS.tierlist_likes_10,     accent: "bg-pink-500", note: "Max 10/day" },
   { key: "online_draft_complete", label: "Play an Online Draft (complete 1 season)",   icon: "🌐", xp: XP_AWARDS.online_draft_complete, accent: "bg-purple-500", note: "Max 10/day" },
-  { key: "draft_win",             label: "Win the Prem on Draft",                      icon: "🏆", xp: XP_AWARDS.draft_win,             accent: "bg-amber-500" },
-  { key: "live_tierlist_complete",label: "Complete a Live Tier List (75% of items)",   icon: "🗳️", xp: XP_AWARDS.live_tierlist_complete, accent: "bg-emerald-500" },
-  { key: "daily_tictactoe",       label: "Attempt Daily Tic-Tac-Toe",                  icon: "⚽", xp: XP_AWARDS.daily_tictactoe,       accent: "bg-green-500" },
-  { key: "draft_complete",        label: "Play a Draft (complete 1 season)",            icon: "🎮", xp: XP_AWARDS.draft_complete,        accent: "bg-blue-400" },
-  { key: "tenable_perfect",       label: "Get 10/10 on TenAble",                       icon: "🧠", xp: XP_AWARDS.tenable_perfect,       accent: "bg-cyan-500" },
-  { key: "blind_ranking_complete",label: "Play a Blind Ranking",                        icon: "🙈", xp: XP_AWARDS.blind_ranking_complete, accent: "bg-gray-400" },
+  { key: "draft_win",             label: "Win the Prem on Draft",                      icon: "🏆", xp: XP_AWARDS.draft_win,             accent: "bg-amber-500", note: "Max 10/day" },
+  { key: "live_tierlist_complete",label: "Complete a Live Tier List (75% of items)",   icon: "🗳️", xp: XP_AWARDS.live_tierlist_complete, accent: "bg-emerald-500", note: "Max 10/day" },
+  { key: "daily_tictactoe",       label: "Attempt Daily Tic-Tac-Toe",                  icon: "⚽", xp: XP_AWARDS.daily_tictactoe,       accent: "bg-green-500", note: "Max 10/day" },
+  { key: "draft_complete",        label: "Play a Full Draft (all 5 seasons)",           icon: "🎮", xp: XP_AWARDS.draft_complete,        accent: "bg-blue-400", note: "Max 10/day" },
+  { key: "tenable_perfect",       label: "Get 10/10 on TenAble",                       icon: "🧠", xp: XP_AWARDS.tenable_perfect,       accent: "bg-cyan-500", note: "Max 10/day" },
+  { key: "blind_ranking_complete",label: "Play a Blind Ranking",                        icon: "🙈", xp: XP_AWARDS.blind_ranking_complete, accent: "bg-gray-400", note: "Max 10/day" },
 ];
 
 export default function WaysToEarnXP({ compact = false }: { compact?: boolean }) {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { levelFromXp, checkRewardUnlock, XP_AWARDS, type Reward, type UserStats } from "@/lib/xp";
+import { levelFromXp, checkRewardUnlock, XP_AWARDS, DAILY_XP_CAP, DAILY_CAPPED_EVENTS, type Reward, type UserStats } from "@/lib/xp";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -54,6 +54,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid award" }, { status: 400 });
   }
   awardXp = Math.min(Math.floor(awardXp), MAX_SINGLE_AWARD);
+
+  // Daily earning cap — each capped "way to earn XP" is worth XP at most
+  // DAILY_XP_CAP times per calendar day (UTC). Past the cap the action still
+  // succeeds elsewhere, it just stops awarding XP. Already-earned XP is never
+  // touched — this only limits new awards.
+  if (DAILY_CAPPED_EVENTS.has(event_type)) {
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const { count: todayCount } = await svc
+      .from("xp_events")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("event_type", event_type)
+      .gte("created_at", startOfDay.toISOString());
+    if ((todayCount ?? 0) >= DAILY_XP_CAP) {
+      return NextResponse.json({
+        capped: true,
+        message: `Daily limit reached (${DAILY_XP_CAP}/day) for this action`,
+      });
+    }
+  }
 
   const { error: eventError } = await svc.from("xp_events").insert({
     user_id: user.id,

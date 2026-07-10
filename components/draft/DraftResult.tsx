@@ -25,6 +25,9 @@ interface Props {
   revealStartTime?: number;
   speedMultiplier?: 0.5 | 1 | 1.5;
   playerTeamName?: string;
+  /** True only on the final season of a draft (all 5 seasons played). Gates the
+   * "draft complete" XP so it's awarded once per full draft, not per season. */
+  isFinalSeason?: boolean;
 }
 
 function formatGoalScorers(scorers: { player: string; minute: number }[]): string {
@@ -597,7 +600,7 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1, playerTeamName }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1, playerTeamName, isFinalSeason = false }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined, playerTeamName),
     [players, seasonNumber, previousResult, preComputedSeason, playerTeamName],
@@ -749,8 +752,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             } catch { return null; }
           };
 
-          // Award regular milestone XP silently — no popup for these
-          await awardXp("draft_complete", runId, XP_AWARDS.draft_complete);
+          // Award regular milestone XP silently — no popup for these.
+          // "draft_complete" is a whole-draft reward: only granted on the final
+          // season (all 5 played), not once per season.
+          if (isFinalSeason) {
+            await awardXp("draft_complete", `draft-${runId}`, XP_AWARDS.draft_complete);
+          }
           if (season.actualFinish === 1) {
             await awardXp("draft_win", runId, XP_AWARDS.draft_win);
           }

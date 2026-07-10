@@ -65,6 +65,25 @@ export const XP_AWARDS = {
 
 export type XPEventType = keyof typeof XP_AWARDS;
 
+// --- Daily earning cap ---
+// Each "way to earn XP" can only be awarded this many times per calendar day
+// (UTC). Enforced server-side in /api/xp. daily_login is inherently once-per-day
+// so the cap never bites for it, but it's listed for completeness.
+export const DAILY_XP_CAP = 10;
+
+export const DAILY_CAPPED_EVENTS: ReadonlySet<string> = new Set<string>([
+  "hall_of_fame_record",
+  "daily_login",
+  "tierlist_likes_10",
+  "online_draft_complete",
+  "draft_win",
+  "live_tierlist_complete",
+  "daily_tictactoe",
+  "draft_complete",
+  "tenable_perfect",
+  "blind_ranking_complete",
+]);
+
 // --- Manager titles ---
 
 export const MANAGER_TITLES: { id: string; name: string; level: number; rarity: string }[] = [
