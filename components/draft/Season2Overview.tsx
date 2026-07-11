@@ -66,7 +66,7 @@ export default function Season2Overview({
 
   useEffect(() => {
     if (revealStep < totalRevealSteps) {
-      const timer = setTimeout(() => setRevealStep((s) => s + 1), 400);
+      const timer = setTimeout(() => setRevealStep((s) => s + 1), 240);
       return () => clearTimeout(timer);
     }
   }, [revealStep, totalRevealSteps]);

@@ -14,14 +14,29 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    fetch("/api/objectives/unclaimed-count")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.count) setUnclaimedCount(d.count); })
-      .catch(() => {});
+    // The nav stays mounted across the session, so a one-time fetch goes stale
+    // the moment an objective completes mid-game. Re-check on the update event,
+    // on window focus, and when the tab becomes visible again.
+    const refresh = () => {
+      fetch("/api/objectives/unclaimed-count")
+        .then(r => r.ok ? r.json() : null)
+        .then(d => setUnclaimedCount(d?.count ?? 0))
+        .catch(() => {});
+    };
+    refresh();
 
     const onClaimed = () => setUnclaimedCount(c => Math.max(0, c - 1));
+    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
     window.addEventListener("objective-claimed", onClaimed);
-    return () => window.removeEventListener("objective-claimed", onClaimed);
+    window.addEventListener("objectives-updated", refresh);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("objective-claimed", onClaimed);
+      window.removeEventListener("objectives-updated", refresh);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [isLoggedIn]);
 
   const ProfileLink = ({ onClick }: { onClick?: () => void }) => (
