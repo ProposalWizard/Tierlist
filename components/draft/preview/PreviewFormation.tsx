@@ -68,7 +68,7 @@ function Avatar({ name, highlight, size }: { name: string; highlight?: boolean; 
 
 export default function PreviewFormation() {
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-lg">
       {/* Header */}
       <p className="mb-3 text-center text-sm text-white/70">Tap two players to swap · drag on desktop</p>
       <div className="mb-4 flex items-center justify-center gap-3">
@@ -93,23 +93,34 @@ export default function PreviewFormation() {
           </g>
         </svg>
 
-        {XI.map((p) => (
-          <div
-            key={p.name}
-            className="absolute flex flex-col items-center"
-            style={{ left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%, -50%)" }}
-          >
-            <Avatar name={p.name} highlight={p.highlight} size="pitch" />
-            <span className="mt-1 text-[11px] sm:text-xs font-bold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.9)] whitespace-nowrap">
-              {p.name}
-            </span>
-            <span className="mt-0.5 flex items-center gap-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={flag(p.iso)} alt="" className="h-2.5 w-auto rounded-[1px]" />
-              <span className="text-[11px] font-black text-emerald-400 tabular-nums">{p.rating}</span>
-            </span>
-          </div>
-        ))}
+        {XI.map((p) => {
+          // Bottom-most player (GK) shows its label ABOVE the avatar so the
+          // name/flag/rating never clips off the bottom edge of the pitch.
+          const labelAbove = p.y >= 88;
+          const label = (
+            <>
+              <span className={`${labelAbove ? "mb-0.5" : "mt-1"} text-[11px] sm:text-xs font-bold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.9)] whitespace-nowrap`}>
+                {p.name}
+              </span>
+              <span className={`${labelAbove ? "mb-1" : "mt-0.5"} flex items-center gap-1`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={flag(p.iso)} alt="" className="h-2.5 w-auto rounded-[1px]" />
+                <span className="text-[11px] font-black text-emerald-400 tabular-nums">{p.rating}</span>
+              </span>
+            </>
+          );
+          return (
+            <div
+              key={p.name}
+              className="absolute flex flex-col items-center"
+              style={{ left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%, -50%)" }}
+            >
+              {labelAbove && label}
+              <Avatar name={p.name} highlight={p.highlight} size="pitch" />
+              {!labelAbove && label}
+            </div>
+          );
+        })}
       </div>
 
       {/* Substitutes */}

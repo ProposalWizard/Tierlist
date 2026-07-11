@@ -266,11 +266,14 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
               const p = entry.player;
               const fit = isFit(p);
               const isDragOverPlayer = dragOverTarget === `player-${entry.idx}`;
+              // Bottom-most slot (GK) puts its label above the avatar so the
+              // name/flag/rating don't clip off the bottom edge of the pitch.
+              const labelAbove = slot.y >= 88;
 
               return (
                 <div
                   key={i}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-grab active:cursor-grabbing"
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex ${labelAbove ? "flex-col-reverse" : "flex-col"} items-center cursor-grab active:cursor-grabbing`}
                   style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
                   draggable
                   onDragStart={(e) => onDragStart(e, entry.idx)}
