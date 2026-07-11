@@ -235,7 +235,8 @@ export default function Season2Overview({
             Off-Season Training
           </h3>
           <p className="text-xs text-white mb-3">
-            Choose one of your youngest players for intensive training (random +1 to +3; max +2 if 90+ OVR)
+            Choose one of your youngest players for intensive training. Lower-rated players gain the most:
+            ≤65 OVR &rarr; +10–15, 66–75 &rarr; +6–9, 76–80 &rarr; +3–7, 81+ &rarr; +1–3 (max +2 if 90+). Ranges grow each season.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {youngestTwo.map((p) => {
