@@ -149,12 +149,9 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
     [players],
   );
 
+  // Always confirm before selling — protects against a misclick on any player.
   const handleClick = (p: DraftPlayer) => {
-    if (!p.isSub) {
-      setPendingSell(p);
-    } else {
-      onSell(p);
-    }
+    setPendingSell(p);
   };
 
   return (
@@ -163,9 +160,10 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
       {pendingSell && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-gray-900 border border-red-500/40 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <h2 className="text-lg font-black text-white mb-1">Sell Starter?</h2>
+            <h2 className="text-lg font-black text-white mb-1">Sell {pendingSell.isSub ? "Substitute" : "Player"}?</h2>
             <p className="text-gray-300 text-sm mb-1">
-              <span className="font-bold text-white">{pendingSell.name}</span> is in your starting XI.
+              Sell <span className="font-bold text-white">{pendingSell.name}</span>
+              {pendingSell.isSub ? " from your bench?" : " from your starting XI?"}
             </p>
             <p className="text-gray-400 text-sm mb-5">
               You&apos;ll spin for a replacement, but if your draft luck is poor you could end up with a weaker squad.
