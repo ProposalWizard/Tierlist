@@ -1417,6 +1417,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             const isUELEvent = isEuroEvent && event.label.startsWith('UEL');
             const match = event.match;
             const label = event.kind === 'pl' ? `GW${event.week}` : event.label;
+            const isCupFinal = (isEuroEvent || isFACup || isLeagueCup) && /final/i.test(event.label);
 
             return (
               <div
@@ -1437,7 +1438,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           : match.result === "D"
                             ? "border-l-2 border-l-yellow-500"
                             : "border-l-2 border-l-red-500"
-                }`}
+                } ${isCupFinal ? "ring-2 ring-amber-400/70 shadow-[0_0_18px_-2px_rgba(251,191,36,0.7)]" : ""}`}
               >
                 <span className={`text-[10px] font-bold w-12 sm:w-14 shrink-0 truncate ${isEuroEvent ? (isUELEvent ? "text-orange-400" : "text-blue-400") : isFACup ? "text-purple-400" : isLeagueCup ? "text-teal-400" : "text-white"}`}>
                   {label}
@@ -1925,8 +1926,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (entry.type === 'fa-cup') {
               const match = entry.match;
               const fcm = entry.faCupMatch;
+              const isFinal = /final/i.test(entry.label);
               return (
-                <div key={`fa-${idx}`} className="flex items-center gap-2 rounded-lg px-2.5 py-2 bg-purple-950/30 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition">
+                <div key={`fa-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 bg-purple-950/30 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition ${isFinal ? "ring-2 ring-amber-400/70 shadow-[0_0_18px_-2px_rgba(251,191,36,0.7)]" : ""}`}>
                   <span className="text-[10px] font-bold text-purple-400/70 w-8 shrink-0 truncate">{entry.label.replace("FA Cup ", "FA ")}</span>
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
@@ -1944,8 +1946,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (entry.type === 'league-cup') {
               const match = entry.match;
               const lcm = entry.faCupMatch;
+              const isFinal = /final/i.test(entry.label);
               return (
-                <div key={`lc-${idx}`} className="flex items-center gap-2 rounded-lg px-2.5 py-2 bg-teal-950/30 border-l-2 border-l-teal-500 hover:bg-gray-800/60 transition">
+                <div key={`lc-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 bg-teal-950/30 border-l-2 border-l-teal-500 hover:bg-gray-800/60 transition ${isFinal ? "ring-2 ring-amber-400/70 shadow-[0_0_18px_-2px_rgba(251,191,36,0.7)]" : ""}`}>
                   <span className="text-[10px] font-bold text-teal-400/70 w-8 shrink-0 truncate">{entry.label.replace("League Cup ", "LC ")}</span>
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
@@ -1963,8 +1966,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (entry.type === 'ucl') {
               const match = entry.match;
               const isUEL = entry.label.startsWith('UEL');
+              const isFinal = /final/i.test(entry.label);
               return (
-                <div key={`ucl-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 border-l-2 ${isUEL ? 'border-l-orange-500 bg-orange-950/20' : 'border-l-blue-500 bg-blue-950/20'} hover:bg-gray-800/60 transition`}>
+                <div key={`ucl-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 border-l-2 ${isUEL ? 'border-l-orange-500 bg-orange-950/20' : 'border-l-blue-500 bg-blue-950/20'} hover:bg-gray-800/60 transition ${isFinal ? "ring-2 ring-amber-400/70 shadow-[0_0_18px_-2px_rgba(251,191,36,0.7)]" : ""}`}>
                   <span className={`text-[10px] font-bold w-8 shrink-0 truncate ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>{entry.label.split(" ")[1] ?? entry.label}</span>
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">

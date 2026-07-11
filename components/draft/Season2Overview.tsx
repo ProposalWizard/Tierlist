@@ -38,6 +38,8 @@ export default function Season2Overview({
   const [selectedTraining, setSelectedTraining] = useState<string | null>(null);
   const [convinceAttempted, setConvinceAttempted] = useState(false);
   const [convinceSuccess, setConvinceSuccess] = useState(false);
+  const [convinceThinking, setConvinceThinking] = useState(false);
+  const [thinkStep, setThinkStep] = useState(0);
 
   const convinceableIdx = useMemo(
     () => departedPlayers.findIndex(dp => dp.convinceable),
@@ -46,11 +48,24 @@ export default function Season2Overview({
   const convinceablePlayer = convinceableIdx >= 0 ? departedPlayers[convinceableIdx] : null;
 
   const handleConvince = () => {
-    if (convinceAttempted) return;
-    const success = Math.random() < 0.5;
-    setConvinceAttempted(true);
-    setConvinceSuccess(success);
+    if (convinceAttempted || convinceThinking) return;
+    setConvinceThinking(true);
+    setThinkStep(0);
   };
+
+  const THINK_PHRASES = ["Hearing you out…", "Talking to their agent…", "Weighing it up…", "Sleeping on it…"];
+
+  // While "thinking", cycle the phrases, then reveal the outcome after a beat.
+  useEffect(() => {
+    if (!convinceThinking) return;
+    const cycle = setInterval(() => setThinkStep((s) => s + 1), 650);
+    const reveal = setTimeout(() => {
+      setConvinceSuccess(Math.random() < 0.5);
+      setConvinceAttempted(true);
+      setConvinceThinking(false);
+    }, 2300);
+    return () => { clearInterval(cycle); clearTimeout(reveal); };
+  }, [convinceThinking]);
 
   const youngestTwo = useMemo(() => {
     const sorted = [...season2Players]
@@ -142,13 +157,19 @@ export default function Season2Overview({
                         {dp.reason}
                       </span>
                     )}
-                    {isConvinceable && !convinceAttempted && revealStep > i && (
+                    {isConvinceable && !convinceAttempted && !convinceThinking && revealStep > i && (
                       <button
                         onClick={handleConvince}
                         className="text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 px-2.5 py-1 rounded transition-all active:scale-95"
                       >
                         💬 Convince to stay
                       </button>
+                    )}
+                    {isConvinceable && convinceThinking && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-300 bg-amber-500/15 px-2.5 py-1 rounded">
+                        <span className="inline-block w-3 h-3 rounded-full border-2 border-amber-300/30 border-t-amber-300 animate-spin" />
+                        {THINK_PHRASES[thinkStep % THINK_PHRASES.length]}
+                      </span>
                     )}
                     {isConvinceable && convinceAttempted && (
                       <span className={`text-xs font-bold px-2 py-1 rounded ${
