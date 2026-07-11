@@ -220,7 +220,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
       {/* ────── PITCH VIEW ────── */}
       {formation && (
         <div className="mb-4">
-          <div className="relative w-full aspect-[3/4] max-h-[60vh] mx-auto rounded-xl overflow-hidden border border-emerald-800/40">
+          <div className="relative w-full aspect-[3/4] max-h-[60vh] mx-auto rounded-xl overflow-hidden border border-emerald-700/40 ring-1 ring-emerald-500/25 shadow-[0_0_34px_-12px_rgba(16,185,129,0.55)]">
             {/* Pitch gradient background */}
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/80 via-emerald-900/40 to-emerald-950/80" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/20 via-transparent to-transparent" />
@@ -290,8 +290,8 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                       : isSelected
                         ? "border-emerald-400 ring-2 ring-emerald-400/50 scale-110 shadow-lg shadow-emerald-500/30"
                         : !fit
-                          ? "border-amber-400/70"
-                          : "border-white/60"
+                          ? "border-amber-400/80 ring-1 ring-amber-400/40 shadow-[0_0_10px_-3px_rgba(251,191,36,0.5)]"
+                          : "border-white/70 ring-1 ring-emerald-400/40 shadow-[0_0_10px_-3px_rgba(52,211,153,0.55)]"
                   }`}>
                     {p.image_url ? (
                       <ImageWithFallback
