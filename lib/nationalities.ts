@@ -142,18 +142,34 @@ const NATIONALITY_ISO: Record<string, string> = {
   "New Caledonia": "NC", "Tahiti": "PF",
 };
 
-function normNat(nationality: string): string {
-  // Title-case so "brazil" matches "Brazil", "FRANCE" matches "France", etc.
-  return nationality.replace(/\b\w/g, c => c.toUpperCase());
+// Canonicalise a nationality for lookup so casing, accents and apostrophe style
+// never cause a miss. Lowercases, strips diacritics (Türkiye → turkiye), and
+// normalises every apostrophe variant to a straight '. This fixes names with
+// small words ("Republic of Ireland" — a title-case pass would make it "Of")
+// and accented/apostrophe names ("Côte d'Ivoire", "Türkiye").
+function canonNat(nationality: string): string {
+  return nationality
+    .trim()
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[‘’`´]/g, "'");
 }
+
+// Canonical-keyed copies of the lookup maps for robust matching.
+const SUBDIVISION_FLAGS_LC: Record<string, string> = Object.fromEntries(
+  Object.entries(SUBDIVISION_FLAGS).map(([k, v]) => [canonNat(k), v])
+);
+const NATIONALITY_ISO_LC: Record<string, string> = Object.fromEntries(
+  Object.entries(NATIONALITY_ISO).map(([k, v]) => [canonNat(k), v])
+);
 
 export function nationalityFlag(nationality: string | null | undefined): string {
   if (!nationality) return "";
-  const n = normNat(nationality);
+  const n = canonNat(nationality);
   // Check subdivision flags first (England, Scotland, Wales, Northern Ireland)
-  if (SUBDIVISION_FLAGS[n]) return SUBDIVISION_FLAGS[n];
+  if (SUBDIVISION_FLAGS_LC[n]) return SUBDIVISION_FLAGS_LC[n];
   // Full country name → ISO → emoji
-  const iso = NATIONALITY_ISO[n];
+  const iso = NATIONALITY_ISO_LC[n];
   if (iso) return isoToFlagEmoji(iso);
   // Direct ISO code fallback: some DB rows store "SN", "GW" etc. instead of the full name
   if (n.length === 2) return isoToFlagEmoji(n.toUpperCase());
@@ -167,16 +183,18 @@ const FLAGCDN_SUBDIVISIONS: Record<string, string> = {
   "Wales": "gb-wls",
   "Northern Ireland": "gb-nir",
 };
+const FLAGCDN_SUBDIVISIONS_LC: Record<string, string> = Object.fromEntries(
+  Object.entries(FLAGCDN_SUBDIVISIONS).map(([k, v]) => [canonNat(k), v])
+);
 
 // Returns a flagcdn.com image URL for a nationality string.
 // Handles full country names, UK subdivisions, and raw 2-letter ISO codes.
 export function getFlagUrl(nationality: string | null | undefined): string | null {
   if (!nationality) return null;
-  // Normalise curly/smart apostrophes and title-case so "brazil" matches "Brazil"
-  const n = normNat(nationality.replace(/[‘’]/g, "’"));
-  const sub = FLAGCDN_SUBDIVISIONS[n];
+  const n = canonNat(nationality);
+  const sub = FLAGCDN_SUBDIVISIONS_LC[n];
   if (sub) return `https://flagcdn.com/20x15/${sub}.png`;
-  const iso = NATIONALITY_ISO[n];
+  const iso = NATIONALITY_ISO_LC[n];
   if (iso) return `https://flagcdn.com/20x15/${iso.toLowerCase()}.png`;
   // Direct 2-letter ISO code (some DB rows store "SN", "FR" etc.)
   if (n.length === 2) return `https://flagcdn.com/20x15/${n.toLowerCase()}.png`;
