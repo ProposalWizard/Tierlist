@@ -513,6 +513,13 @@ function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
               <span className="text-amber-400 text-sm font-black">{obj.xp_reward} XP</span>
             </div>
           )}
+          {obj.card_image_url && (
+            <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-lg pl-2 pr-4 py-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={obj.card_image_url} alt={obj.card_name || "Card"} className="w-8 h-11 object-cover rounded" />
+              <span className="text-purple-300 text-sm font-bold">{obj.card_name || "Collection Card"}</span>
+            </div>
+          )}
           {isDone && !isUnclaimed ? (
             <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-2">
               <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
@@ -823,6 +830,13 @@ export function CustomObjectivesSection() {
                         {obj.xp_reward > 0 && (
                           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5">
                             <span className="text-amber-400 text-sm font-black">{obj.xp_reward} XP</span>
+                          </div>
+                        )}
+                        {obj.card_image_url && (
+                          <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-lg pl-1.5 pr-3 py-1">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={obj.card_image_url} alt={obj.card_name || "Card"} className="w-6 h-8 object-cover rounded" />
+                            <span className="text-purple-300 text-xs font-bold">{obj.card_name || "Collection Card"}</span>
                           </div>
                         )}
                         {done && !unclaimed ? (
