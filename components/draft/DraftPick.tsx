@@ -730,7 +730,7 @@ export default function DraftPick({
                   className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300 ${
                     (isAssignable || isPickable || (canSwap && (displayPlayer || swapSel !== null))) ? "cursor-pointer" : ""
                   }`}
-                  style={{ left: `${slot.x}%`, top: `${slot.y >= 88 ? slot.y - 7 : slot.y}%` }}
+                  style={{ left: `${slot.x}%`, top: `${slot.y >= 88 ? slot.y - 4 : slot.y}%` }}
                   onClick={() => {
                     if (canSwap) {
                       const pi = slotToPickIdx.get(i);

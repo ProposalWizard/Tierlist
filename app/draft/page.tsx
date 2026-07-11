@@ -230,7 +230,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full border border-emerald-600/25" />
         {formation.slots.map((slot, i) => {
           const p = slotMap.get(i);
-          const renderY = slot.y >= 88 ? slot.y - 7 : slot.y; // nudge GK up so its label fits below
+          const renderY = slot.y >= 88 ? slot.y - 4 : slot.y; // nudge GK up so its label fits below
           if (!p) {
             return (
               <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${slot.x}%`, top: `${renderY}%` }}>
@@ -275,18 +275,23 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
           <div className="grid grid-cols-3 gap-2">
             {subs.map((p, i) => {
               const flag = getFlagUrl(p.nationality);
+              // Show the player's NATURAL position(s), not the slot they happened
+              // to be assigned/swapped into before being benched.
+              const natural = (p.positions || "").split(",").map(s => s.trim()).filter(Boolean);
+              const posLabel = natural.join("/") || p.assignedPosition;
+              const posColor = getPositionColor(natural[0] || p.assignedPosition);
               return (
                 <button key={i} onClick={() => handleClick(p)} className="flex flex-col items-center rounded-xl px-2 py-2 border bg-purple-900/30 border-purple-600/40 hover:border-red-400 hover:ring-2 hover:ring-red-400/50 transition-all">
                   <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/60">
                     {p.image_url ? (
                       <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
                     ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
+                      <div className={`w-full h-full flex items-center justify-center ${posColor}`}>
                         <span className="text-xs font-black text-white">{initials(p.name)}</span>
                       </div>
                     )}
                   </div>
-                  <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)}`}>{p.assignedPosition}</span>
+                  <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${posColor}`}>{posLabel}</span>
                   <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[72px] text-center">{p.name.split(" ").pop()}</span>
                   <div className="flex items-center gap-1">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

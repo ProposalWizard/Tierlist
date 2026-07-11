@@ -4,6 +4,22 @@ import { getPositionColor } from "./formations";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/app/draft/page";
 
+// Mirrors getTrainingBoost() in app/draft/page.tsx so the label shows the
+// player's ACTUAL upgrade range (lower-rated players gain far more).
+function trainingBoostRange(overall: number, season: number): string {
+  let lo: number, hi: number;
+  if (overall <= 65) { lo = 10; hi = 15; }
+  else if (overall <= 75) { lo = 6; hi = 9; }
+  else if (overall <= 80) { lo = 3; hi = 7; }
+  else return overall >= 90 ? "1–2" : "1–3";
+  const inc = Math.max(0, season - 2); // +1 per season after the first training
+  lo += inc; hi += inc;
+  const maxGain = Math.max(0, 100 - overall);
+  hi = Math.min(hi, maxGain);
+  lo = Math.min(lo, hi);
+  return lo === hi ? `${lo}` : `${lo}–${hi}`;
+}
+
 interface DepartedPlayer {
   player: DraftPlayer;
   reason: string;
@@ -302,7 +318,7 @@ export default function Season2Overview({
                     </div>
                   ) : isSelected ? (
                     <div className="mt-2 text-xs font-bold text-cyan-400">
-                      +{p.overall >= 90 ? "1–2" : "1–3"} OVR (random)
+                      +{trainingBoostRange(p.overall, seasonNumber)} OVR (random)
                     </div>
                   ) : null}
                 </button>

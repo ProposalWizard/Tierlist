@@ -244,7 +244,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                   <div
                     key={i}
                     className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer"
-                    style={{ left: `${slot.x}%`, top: `${slot.y >= 88 ? slot.y - 7 : slot.y}%` }}
+                    style={{ left: `${slot.x}%`, top: `${slot.y >= 88 ? slot.y - 4 : slot.y}%` }}
                     onClick={() => handleTapVacantSlot(i)}
                     onDragOver={(e) => { e.preventDefault(); setDragOverTarget(`slot-${i}`); }}
                     onDragLeave={() => setDragOverTarget(null)}
@@ -269,7 +269,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
               // Bottom-most slot (GK) is nudged up the pitch so its label sits
               // below the avatar like every other player (consistent layout)
               // without the name/flag/rating clipping off the bottom edge.
-              const nudgedY = slot.y >= 88 ? slot.y - 7 : slot.y;
+              const nudgedY = slot.y >= 88 ? slot.y - 4 : slot.y;
 
               return (
                 <div
