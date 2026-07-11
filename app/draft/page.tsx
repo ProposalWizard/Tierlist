@@ -8,6 +8,8 @@ import SquadManager from "@/components/draft/SquadManagerDev";
 import MultiplayerLobby from "@/components/draft/MultiplayerLobby";
 import { createClient } from "@/lib/supabase/client";
 import { getPositionColor, FORMATIONS, formatSeasonYear } from "@/components/draft/formations";
+import { getFlagUrl } from "@/lib/nationalities";
+import ImageWithFallback from "@/components/ImageWithFallback";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
@@ -132,22 +134,40 @@ function clearProgress() {
   } catch {}
 }
 
-const SELL_POSITION_ORDER: Record<string, number> = { GK: 0, CB: 1, RB: 2, LB: 3, RWB: 2, LWB: 3, CDM: 4, DM: 4, CM: 5, CAM: 6, RM: 7, LM: 7, RW: 8, LW: 8, ST: 9, CF: 9 };
-
-function SellPhase({ players, onSell, onSkip, seasonNumber }: {
+function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
   players: DraftPlayer[];
   onSell: (player: DraftPlayer) => void;
   onSkip: () => void;
   seasonNumber: number;
+  formationName?: string;
 }) {
   const [pendingSell, setPendingSell] = useState<DraftPlayer | null>(null);
 
-  const sorted = useMemo(
-    () => [...players].sort((a, b) =>
-      (a.isSub === b.isSub ? (SELL_POSITION_ORDER[a.assignedPosition] ?? 5) - (SELL_POSITION_ORDER[b.assignedPosition] ?? 5) : a.isSub ? 1 : -1)
-    ),
-    [players],
+  const formation = useMemo(
+    () => FORMATIONS.find(f => f.name === formationName) ?? FORMATIONS.find(f => f.name === "4-3-3") ?? FORMATIONS[0],
+    [formationName],
   );
+
+  const starters = useMemo(() => players.filter(p => !p.isSub), [players]);
+  const subs = useMemo(() => players.filter(p => p.isSub), [players]);
+
+  // Place each starter into a formation slot: exact position first, then any gap.
+  const slotMap = useMemo(() => {
+    const map = new Map<number, DraftPlayer>();
+    const used = new Set<number>();
+    for (const p of starters) {
+      const idx = formation.slots.findIndex((slot, i) => !used.has(i) && slot.label === p.assignedPosition);
+      if (idx >= 0) { used.add(idx); map.set(idx, p); }
+    }
+    for (const p of starters) {
+      if (Array.from(map.values()).includes(p)) continue;
+      const idx = formation.slots.findIndex((_, i) => !used.has(i));
+      if (idx >= 0) { used.add(idx); map.set(idx, p); }
+    }
+    return map;
+  }, [starters, formation]);
+
+  const initials = (n: string) => n.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
   // Always confirm before selling — protects against a misclick on any player.
   const handleClick = (p: DraftPlayer) => {
@@ -200,30 +220,85 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
         </p>
       </div>
 
-      <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-        <h3 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">
-          Season {seasonNumber} Squad
-        </h3>
-        <div className="space-y-1">
-          {sorted.map((p, i) => {
-            const isSub = !!p.isSub;
+      {/* Starting XI — tap a player to sell */}
+      <div
+        className="relative w-full aspect-[3/4] max-w-sm mx-auto rounded-xl overflow-hidden border border-emerald-800/40 ring-1 ring-emerald-500/20 shadow-[0_0_30px_-12px_rgba(16,185,129,0.5)] mb-4"
+        style={{ background: "radial-gradient(120% 80% at 50% 0%, #12401a 0%, #0c2e14 45%, #071c0d 100%)" }}
+      >
+        <div className="absolute inset-x-[8%] top-[4%] bottom-[4%] border border-emerald-600/25 rounded" />
+        <div className="absolute left-1/2 top-[4%] bottom-[4%] w-px bg-emerald-600/25" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full border border-emerald-600/25" />
+        {formation.slots.map((slot, i) => {
+          const p = slotMap.get(i);
+          const labelAbove = slot.y >= 88;
+          if (!p) {
             return (
-              <button
-                key={i}
-                onClick={() => handleClick(p)}
-                className="w-full flex items-center gap-2 text-sm py-2.5 px-3 rounded-lg transition-all text-left hover:bg-red-900/30 border-2 border-transparent hover:border-red-400/50 active:scale-[0.98]"
-              >
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-9 text-center ${isSub ? "bg-purple-500/20 text-purple-400" : `${getPositionColor(p.assignedPosition)} text-white`}`}>
-                  {isSub ? "SUB" : p.assignedPosition}
-                </span>
-                <span className="flex-1 ml-1 font-medium">{p.name}</span>
-                <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
-                <span className="font-black text-emerald-400 w-7 text-right">{p.overall}</span>
-              </button>
+              <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${slot.x}%`, top: `${slot.y}%` }}>
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-dashed border-white/25 bg-black/30 flex items-center justify-center text-[9px] font-bold text-white/50">{slot.label}</div>
+              </div>
             );
-          })}
-        </div>
+          }
+          const flag = getFlagUrl(p.nationality);
+          return (
+            <button
+              key={i}
+              onClick={() => handleClick(p)}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 flex ${labelAbove ? "flex-col-reverse" : "flex-col"} items-center group`}
+              style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+            >
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/60 shadow-lg group-hover:border-red-400 group-hover:ring-2 group-hover:ring-red-400/60 transition-all">
+                {p.image_url ? (
+                  <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
+                ) : (
+                  <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
+                    <span className="text-xs font-black text-white">{initials(p.name)}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col items-center mt-0.5 max-w-[64px]">
+                <span className="text-[10px] font-bold text-white truncate w-full text-center leading-tight [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">{p.name.split(" ").pop()}</span>
+                <div className="flex items-center gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {flag && <img src={flag} alt="" className="w-3 h-2 object-cover rounded-[1px]" />}
+                  <span className="text-[10px] font-black text-emerald-400">{p.overall}</span>
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
+
+      {/* Bench — tap a sub to sell */}
+      {subs.length > 0 && (
+        <div className="bg-purple-900/10 border border-purple-700/30 rounded-xl p-3 mb-4">
+          <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-2">Substitutes</div>
+          <div className="grid grid-cols-3 gap-2">
+            {subs.map((p, i) => {
+              const flag = getFlagUrl(p.nationality);
+              return (
+                <button key={i} onClick={() => handleClick(p)} className="flex flex-col items-center rounded-xl px-2 py-2 border bg-purple-900/30 border-purple-600/40 hover:border-red-400 hover:ring-2 hover:ring-red-400/50 transition-all">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/60">
+                    {p.image_url ? (
+                      <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
+                        <span className="text-xs font-black text-white">{initials(p.name)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)}`}>{p.assignedPosition}</span>
+                  <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[72px] text-center">{p.name.split(" ").pop()}</span>
+                  <div className="flex items-center gap-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {flag && <img src={flag} alt="" className="w-3 h-2 object-cover rounded-[1px]" />}
+                    <span className="text-[10px] font-black text-emerald-400">{p.overall}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <button
         onClick={onSkip}
@@ -1140,6 +1215,7 @@ export default function DraftPage() {
           onSell={handleSellPlayer}
           onSkip={handleSkipSell}
           seasonNumber={currentSeason}
+          formationName={settings?.formation}
         />
       )}
       {phase === "sell-signing" && settings && (
