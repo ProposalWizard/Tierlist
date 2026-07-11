@@ -679,14 +679,18 @@ export default function DraftPick({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Pitch with picked players — on mobile, show below the action area */}
         <div className="lg:col-span-1 order-2 lg:order-1">
-          {canSwap && pickedPlayers.length > 0 && (
-            <div className="mb-2 text-center text-[10px] font-bold text-amber-400/90">
-              {swapSel !== null
-                ? "Tap another player or an empty spot to move · tap the same player to cancel"
-                : "Tap two players to swap · tap a player then an empty spot to move"}
+          {/* Height is always reserved (when any players exist) so the hint
+              appearing/disappearing between spins doesn't shift the pitch. */}
+          {pickedPlayers.length > 0 && (
+            <div className="mb-2 min-h-[16px] text-center text-[10px] font-bold text-amber-400/90">
+              {canSwap
+                ? (swapSel !== null
+                    ? "Tap another player or an empty spot to move · tap the same player to cancel"
+                    : "Tap two players to swap · tap a player then an empty spot to move")
+                : ""}
             </div>
           )}
-          <div className="relative w-full aspect-[4/3] lg:aspect-[3/4] max-h-[35vh] sm:max-h-[50vh] lg:max-h-none mx-auto rounded-xl overflow-hidden border border-emerald-800/40">
+          <div className="relative w-full aspect-[3/4] max-h-[66vh] sm:max-h-[72vh] lg:max-h-none mx-auto rounded-xl overflow-hidden border border-emerald-800/40">
             {/* Pitch gradient background */}
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/80 via-emerald-900/40 to-emerald-950/80" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/20 via-transparent to-transparent" />
@@ -713,10 +717,10 @@ export default function DraftPick({
               return (
                 <div
                   key={i}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex ${slot.y >= 88 ? "flex-col-reverse" : "flex-col"} items-center transition-all duration-300 ${
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300 ${
                     (isAssignable || isPickable || (canSwap && (displayPlayer || swapSel !== null))) ? "cursor-pointer" : ""
                   }`}
-                  style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                  style={{ left: `${slot.x}%`, top: `${slot.y >= 88 ? slot.y - 7 : slot.y}%` }}
                   onClick={() => {
                     if (canSwap) {
                       const pi = slotToPickIdx.get(i);

@@ -230,10 +230,10 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full border border-emerald-600/25" />
         {formation.slots.map((slot, i) => {
           const p = slotMap.get(i);
-          const labelAbove = slot.y >= 88;
+          const renderY = slot.y >= 88 ? slot.y - 7 : slot.y; // nudge GK up so its label fits below
           if (!p) {
             return (
-              <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${slot.x}%`, top: `${slot.y}%` }}>
+              <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${slot.x}%`, top: `${renderY}%` }}>
                 <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border-2 border-dashed border-white/25 bg-black/30 flex items-center justify-center text-[9px] font-bold text-white/50">{slot.label}</div>
               </div>
             );
@@ -243,8 +243,8 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
             <button
               key={i}
               onClick={() => handleClick(p)}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 flex ${labelAbove ? "flex-col-reverse" : "flex-col"} items-center group`}
-              style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group"
+              style={{ left: `${slot.x}%`, top: `${renderY}%` }}
             >
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/60 shadow-lg group-hover:border-red-400 group-hover:ring-2 group-hover:ring-red-400/60 transition-all">
                 {p.image_url ? (
@@ -748,7 +748,7 @@ export default function DraftPage() {
         const avgRating = stats?.avgRating ?? 6.5;
         let change = 0;
         if (avgRating >= 8.5) change = 3;
-        else if (avgRating >= 7.7) change = 2;
+        else if (avgRating >= 8.0) change = 2;
         else if (avgRating >= 7.0) change = 1;
         else if (avgRating <= 6.5) change = -1;
 

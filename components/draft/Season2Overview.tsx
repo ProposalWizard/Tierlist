@@ -56,7 +56,12 @@ export default function Season2Overview({
     const sorted = [...season2Players]
       .filter((p) => p.age > 0)
       .sort((a, b) => a.age - b.age);
-    return sorted.slice(0, 2);
+    if (sorted.length <= 2) return sorted.slice(0, 2);
+    // Always offer the youngest; the second option is a random pick between the
+    // 2nd- and 3rd-youngest for a bit more variety each season.
+    const pool = sorted.slice(1, 3);
+    const second = pool[Math.floor(Math.random() * pool.length)];
+    return [sorted[0], second];
   }, [season2Players]);
 
   const upgradeablePlayers = youngestTwo.filter((p) => p.overall < 100);
@@ -224,7 +229,7 @@ export default function Season2Overview({
           })}
         </div>
         <div className="mt-3 pt-2 border-t border-gray-800/50 text-[10px] text-white">
-          Based on last season&apos;s avg ratings: 8.5+ = +3, 7.7+ = +2, 7.0+ = +1, &le;6.5 = -1
+          Based on last season&apos;s avg ratings: 8.5+ = +3, 8.0+ = +2, 7.0+ = +1, &le;6.5 = -1
         </div>
       </div>
 
@@ -235,8 +240,7 @@ export default function Season2Overview({
             Off-Season Training
           </h3>
           <p className="text-xs text-white mb-3">
-            Choose one of your youngest players for intensive training. Lower-rated players gain the most:
-            ≤65 OVR &rarr; +10–15, 66–75 &rarr; +6–9, 76–80 &rarr; +3–7, 81+ &rarr; +1–3 (max +2 if 90+). Ranges grow each season.
+            Choose one of your youngest players for intensive training.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {youngestTwo.map((p) => {
