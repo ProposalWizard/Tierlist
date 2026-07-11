@@ -26,10 +26,10 @@ interface SlotDef {
 const FORMATIONS: Record<string, SlotDef[]> = {
   "4-3-3": [
     { id: "GK",  label: "GK",  x: 50, y: 92 },
-    { id: "LB",  label: "LB",  x: 8,  y: 74 },
+    { id: "LB",  label: "LB",  x: 11, y: 74 },
     { id: "LCB", label: "CB",  x: 32, y: 74 },
     { id: "RCB", label: "CB",  x: 68, y: 74 },
-    { id: "RB",  label: "RB",  x: 92, y: 74 },
+    { id: "RB",  label: "RB",  x: 89, y: 74 },
     { id: "LCM", label: "CM",  x: 20, y: 48 },
     { id: "CM",  label: "CM",  x: 50, y: 48 },
     { id: "RCM", label: "CM",  x: 80, y: 48 },
@@ -39,23 +39,23 @@ const FORMATIONS: Record<string, SlotDef[]> = {
   ],
   "4-4-2": [
     { id: "GK",  label: "GK",  x: 50, y: 92 },
-    { id: "LB",  label: "LB",  x: 8,  y: 74 },
+    { id: "LB",  label: "LB",  x: 11, y: 74 },
     { id: "LCB", label: "CB",  x: 32, y: 74 },
     { id: "RCB", label: "CB",  x: 68, y: 74 },
-    { id: "RB",  label: "RB",  x: 92, y: 74 },
-    { id: "LM",  label: "LM",  x: 8,  y: 48 },
+    { id: "RB",  label: "RB",  x: 89, y: 74 },
+    { id: "LM",  label: "LM",  x: 11, y: 48 },
     { id: "LCM", label: "CM",  x: 36, y: 48 },
     { id: "RCM", label: "CM",  x: 64, y: 48 },
-    { id: "RM",  label: "RM",  x: 92, y: 48 },
+    { id: "RM",  label: "RM",  x: 89, y: 48 },
     { id: "ST1", label: "ST",  x: 34, y: 14 },
     { id: "ST2", label: "ST",  x: 66, y: 14 },
   ],
   "4-2-3-1": [
     { id: "GK",  label: "GK",  x: 50, y: 92 },
-    { id: "LB",  label: "LB",  x: 8,  y: 74 },
+    { id: "LB",  label: "LB",  x: 11, y: 74 },
     { id: "LCB", label: "CB",  x: 32, y: 74 },
     { id: "RCB", label: "CB",  x: 68, y: 74 },
-    { id: "RB",  label: "RB",  x: 92, y: 74 },
+    { id: "RB",  label: "RB",  x: 89, y: 74 },
     { id: "LDM", label: "CDM", x: 34, y: 56 },
     { id: "RDM", label: "CDM", x: 66, y: 56 },
     { id: "LW",  label: "LW",  x: 14, y: 32 },
@@ -68,10 +68,10 @@ const FORMATIONS: Record<string, SlotDef[]> = {
     { id: "LCB", label: "CB",  x: 20, y: 74 },
     { id: "CB",  label: "CB",  x: 50, y: 74 },
     { id: "RCB", label: "CB",  x: 80, y: 74 },
-    { id: "LM",  label: "LM",  x: 8,  y: 48 },
+    { id: "LM",  label: "LM",  x: 11, y: 48 },
     { id: "LCM", label: "CM",  x: 36, y: 48 },
     { id: "RCM", label: "CM",  x: 64, y: 48 },
-    { id: "RM",  label: "RM",  x: 92, y: 48 },
+    { id: "RM",  label: "RM",  x: 89, y: 48 },
     { id: "LW",  label: "LW",  x: 14, y: 20 },
     { id: "ST",  label: "ST",  x: 50, y: 10 },
     { id: "RW",  label: "RW",  x: 86, y: 20 },
@@ -81,11 +81,11 @@ const FORMATIONS: Record<string, SlotDef[]> = {
     { id: "LCB", label: "CB",  x: 20, y: 74 },
     { id: "CB",  label: "CB",  x: 50, y: 74 },
     { id: "RCB", label: "CB",  x: 80, y: 74 },
-    { id: "LWB", label: "LWB", x: 6,  y: 48 },
+    { id: "LWB", label: "LWB", x: 10, y: 48 },
     { id: "LCM", label: "CM",  x: 30, y: 48 },
     { id: "CM",  label: "CM",  x: 50, y: 48 },
     { id: "RCM", label: "CM",  x: 70, y: 48 },
-    { id: "RWB", label: "RWB", x: 94, y: 48 },
+    { id: "RWB", label: "RWB", x: 90, y: 48 },
     { id: "ST1", label: "ST",  x: 34, y: 14 },
     { id: "ST2", label: "ST",  x: 66, y: 14 },
   ],
@@ -423,7 +423,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
     !!activeFrameId &&
     (Object.values(slots).includes(activeFrameId) || managerCardId === activeFrameId);
   const overlaySizeClass = activeOnBoard
-    ? "w-[60px] h-[80px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px]"
+    ? "w-[52px] h-[70px] sm:w-[66px] sm:h-[88px] md:w-[74px] md:h-[98px]"
     : "w-14 h-[72px] sm:w-16 sm:h-[84px]";
 
   return (
@@ -457,8 +457,9 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
       )}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        {/* Pitch — capped on desktop so it doesn't dominate the page */}
-        <div className="lg:max-w-lg lg:mx-auto">
+        {/* Pitch — capped to a consistent width at ALL sizes so it never
+            balloons on medium windows (previously only capped at lg+). */}
+        <div className="mx-auto max-w-md">
         {/* Manager slot — sits above the pitch, only accepts manager cards */}
         <div className="flex items-center gap-3 mb-4">
           <ManagerSlot
@@ -476,7 +477,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
         <div
           className="relative w-full mx-auto rounded-xl overflow-hidden mb-5"
           style={{
-            paddingBottom: "150%",
+            paddingBottom: "128%",
             background: "linear-gradient(180deg, #0d380d 0%, #0a2a0a 45%, #06190a 100%)",
           }}
         >
@@ -591,7 +592,7 @@ function DraggablePitchCard({
       ref={setNodeRef}
       {...(hasBenchSelection ? {} : { ...listeners, ...attributes })}
       onClick={hasBenchSelection ? onTap : undefined}
-      className={`group relative w-[60px] h-[80px] sm:w-[100px] sm:h-[133px] md:w-[120px] md:h-[160px] rounded-xl overflow-visible shadow-lg ring-1 transition-all ${
+      className={`group relative w-[52px] h-[70px] sm:w-[66px] sm:h-[88px] md:w-[74px] md:h-[98px] rounded-xl overflow-visible shadow-lg ring-1 transition-all ${
         hasBenchSelection
           ? "ring-amber-400/80 hover:ring-amber-400 hover:scale-105 cursor-pointer"
           : "ring-white/10 cursor-grab active:cursor-grabbing"
@@ -679,7 +680,7 @@ function PitchSlot({
       ) : (
         <button
           onClick={hasBenchSelection ? onTap : undefined}
-          className={`w-10 h-10 sm:w-[56px] sm:h-[56px] md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+          className={`w-9 h-9 sm:w-[44px] sm:h-[44px] md:w-[52px] md:h-[52px] rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
             hasBenchSelection
               ? "border-amber-400 bg-amber-400/25 shadow-lg shadow-amber-400/40 hover:scale-110 cursor-pointer"
               : isOver
