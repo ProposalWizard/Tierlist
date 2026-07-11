@@ -768,10 +768,12 @@ export default function DraftPick({
                           {displayPlayer.name.split(" ").pop()}
                         </span>
                         <div className="flex items-center gap-1">
-                          {getFlagUrl(displayPlayer.nationality) && (
+                          {getFlagUrl(displayPlayer.nationality) ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={getFlagUrl(displayPlayer.nationality)!} alt="" className="w-3 h-2 object-cover rounded-[1px]" />
-                          )}
+                          ) : displayPlayer.nationality ? (
+                            <span className="text-[7px] sm:text-[8px] text-white/60 leading-tight max-w-[36px] truncate">{displayPlayer.nationality}</span>
+                          ) : null}
                           <span className="text-[10px] sm:text-xs font-black text-emerald-400 leading-tight">{displayPlayer.overall}</span>
                         </div>
                       </div>
@@ -824,10 +826,12 @@ export default function DraftPick({
                       <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)}`}>{p.assignedPosition}</span>
                       <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[68px] text-center leading-tight">{p.name.split(" ").pop()}</span>
                       <div className="flex items-center gap-1">
-                        {getFlagUrl(p.nationality) && (
+                        {getFlagUrl(p.nationality) ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={getFlagUrl(p.nationality)!} alt="" className="w-3 h-2 object-cover rounded-[1px]" />
-                        )}
+                        ) : p.nationality ? (
+                          <span className="text-[7px] text-white/60 leading-tight max-w-[36px] truncate">{p.nationality}</span>
+                        ) : null}
                         <span className="text-[10px] font-black text-emerald-400">{p.overall}</span>
                       </div>
                       {isNew && <span className="mt-0.5 text-[7px] font-black tracking-wider text-amber-400">NEW</span>}
@@ -876,10 +880,12 @@ export default function DraftPick({
                           <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(sub.assignedPosition)}`}>{sub.assignedPosition}</span>
                           <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[72px] text-center leading-tight">{sub.name.split(" ").pop()}</span>
                           <div className="flex items-center gap-1">
-                            {getFlagUrl(sub.nationality) && (
+                            {getFlagUrl(sub.nationality) ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={getFlagUrl(sub.nationality)!} alt="" className="w-3 h-2 object-cover rounded-[1px]" />
-                            )}
+                            ) : sub.nationality ? (
+                              <span className="text-[7px] text-white/60 leading-tight max-w-[36px] truncate">{sub.nationality}</span>
+                            ) : null}
                             <span className="text-[10px] font-black text-emerald-400">{sub.overall}</span>
                           </div>
                         </>
