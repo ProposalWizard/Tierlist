@@ -193,6 +193,7 @@ export default function DraftPick({
   const [spinItems, setSpinItems] = useState<{ club: string; year: number }[]>([]);
   const [spinAnimating, setSpinAnimating] = useState(false);
   const [chosenSlotIdx, setChosenSlotIdx] = useState<number | null>(null);
+  const [swapSel, setSwapSel] = useState<number | null>(null); // pickIdx selected for rearranging
   const spinContainerRef = useRef<HTMLDivElement>(null);
   // Spin timers, cleared on unmount so they don't setState / fetch after the
   // component is gone (e.g. leaving a multiplayer room mid-spin).
@@ -450,12 +451,66 @@ export default function DraftPick({
   // Map slot indices to picked players for pitch rendering
   const filledSlots = new Set(slotAssignments.filter((s): s is number => s !== undefined));
   const slotToPlayer = new Map<number, DraftPlayer>();
+  const slotToPickIdx = new Map<number, number>();
   pickedPlayers.forEach((p, pickIdx) => {
     const s = slotAssignments[pickIdx];
     if (s !== undefined) {
       slotToPlayer.set(s, p);
+      slotToPickIdx.set(s, pickIdx);
     }
   });
+
+  // ── Rearrange placed players by tapping (idle draft only) ──────────────────
+  // Swapping is a plain UI re-arrangement of already-picked players; it never
+  // touches the spin/pick flow, so it's only enabled when the draft is idle.
+  const canSwap = !isSeason2Draft && phase === "spin" && chosenSlotIdx === null && !pendingPlayer && !spinning;
+
+  // Swap two picked players (starters and/or subs). isSub follows the slot, so a
+  // starter↔sub swap keeps 11 starters + 3 subs; assignedPosition follows too.
+  const performSwap = useCallback((pickIdxA: number, pickIdxB: number) => {
+    const slotA = slotAssignments[pickIdxA];
+    const slotB = slotAssignments[pickIdxB];
+    const nextAssign = [...slotAssignments];
+    nextAssign[pickIdxA] = slotB;
+    nextAssign[pickIdxB] = slotA;
+    const nextPicked = [...pickedPlayers];
+    nextPicked[pickIdxA] = {
+      ...nextPicked[pickIdxA],
+      isSub: slotB === undefined,
+      assignedPosition: slotB !== undefined ? formation.slots[slotB].label : nextPicked[pickIdxA].assignedPosition,
+    };
+    nextPicked[pickIdxB] = {
+      ...nextPicked[pickIdxB],
+      isSub: slotA === undefined,
+      assignedPosition: slotA !== undefined ? formation.slots[slotA].label : nextPicked[pickIdxB].assignedPosition,
+    };
+    setSlotAssignments(nextAssign);
+    setPickedPlayers(nextPicked);
+    onProgress?.(nextPicked, Array.from(usedClubYears) as string[], nextAssign);
+    setSwapSel(null);
+  }, [slotAssignments, pickedPlayers, formation.slots, onProgress, usedClubYears]);
+
+  // Move a selected player into an empty slot.
+  const performMoveToEmpty = useCallback((pickIdx: number, slotIdx: number) => {
+    const nextAssign = [...slotAssignments];
+    nextAssign[pickIdx] = slotIdx;
+    const nextPicked = [...pickedPlayers];
+    nextPicked[pickIdx] = { ...nextPicked[pickIdx], isSub: false, assignedPosition: formation.slots[slotIdx].label };
+    setSlotAssignments(nextAssign);
+    setPickedPlayers(nextPicked);
+    onProgress?.(nextPicked, Array.from(usedClubYears) as string[], nextAssign);
+    setSwapSel(null);
+  }, [slotAssignments, pickedPlayers, formation.slots, onProgress, usedClubYears]);
+
+  // Handle a tap on a placed player (starter or sub) while rearranging.
+  const handleSwapTapPlayer = useCallback((pickIdx: number) => {
+    setSwapSel((sel) => {
+      if (sel === null) return pickIdx;
+      if (sel === pickIdx) return null;
+      performSwap(sel, pickIdx);
+      return null;
+    });
+  }, [performSwap]);
 
   const existingSlotMap = useMemo(() => {
     if (!existingSquad) return new Map<number, DraftPlayer>();
@@ -624,6 +679,13 @@ export default function DraftPick({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Pitch with picked players — on mobile, show below the action area */}
         <div className="lg:col-span-1 order-2 lg:order-1">
+          {canSwap && pickedPlayers.length > 0 && (
+            <div className="mb-2 text-center text-[10px] font-bold text-amber-400/90">
+              {swapSel !== null
+                ? "Tap another player or an empty spot to move · tap the same player to cancel"
+                : "Tap two players to swap · tap a player then an empty spot to move"}
+            </div>
+          )}
           <div className="relative w-full aspect-[4/3] lg:aspect-[3/4] max-h-[35vh] sm:max-h-[50vh] lg:max-h-none mx-auto rounded-xl overflow-hidden border border-emerald-800/40">
             {/* Pitch gradient background */}
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/80 via-emerald-900/40 to-emerald-950/80" />
@@ -652,14 +714,26 @@ export default function DraftPick({
                 <div
                   key={i}
                   className={`absolute -translate-x-1/2 -translate-y-1/2 flex ${slot.y >= 88 ? "flex-col-reverse" : "flex-col"} items-center transition-all duration-300 ${
-                    (isAssignable || isPickable) ? "cursor-pointer" : ""
+                    (isAssignable || isPickable || (canSwap && (displayPlayer || swapSel !== null))) ? "cursor-pointer" : ""
                   }`}
                   style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                  onClick={() => { if (isAssignable) handleAssignSlot(i); else if (isPickable) { setChosenSlotIdx(i); setCurrentSlotIndex(i); } }}
+                  onClick={() => {
+                    if (canSwap) {
+                      const pi = slotToPickIdx.get(i);
+                      if (pi !== undefined) { handleSwapTapPlayer(pi); return; }
+                      if (swapSel !== null) { performMoveToEmpty(swapSel, i); return; }
+                    }
+                    if (isAssignable) handleAssignSlot(i);
+                    else if (isPickable) { setChosenSlotIdx(i); setCurrentSlotIndex(i); }
+                  }}
                 >
                   {displayPlayer ? (
                     <>
-                      <div className={`relative w-11 h-11 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 shadow-lg ${existing && !picked ? "border-white/40" : "border-white/70"}`}>
+                      <div className={`relative w-11 h-11 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 shadow-lg transition-all ${
+                        slotToPickIdx.get(i) === swapSel
+                          ? "border-amber-400 ring-2 ring-amber-400 scale-110"
+                          : existing && !picked ? "border-white/40" : "border-white/70"
+                      }`}>
                         {displayPlayer.image_url ? (
                           <ImageWithFallback
                             src={displayPlayer.image_url}
@@ -720,17 +794,21 @@ export default function DraftPick({
                 {[0, 1, 2].map(i => {
                   const subs = pickedPlayers.filter(p => p.isSub);
                   const sub = subs[i];
+                  const subPickIdx = sub ? pickedPlayers.indexOf(sub) : -1;
                   const isNext = i === subs.length;
                   const initials = (n: string) => n.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
                   return (
                     <div
                       key={i}
-                      className={`flex flex-col items-center rounded-xl px-2 py-2 border ${
-                        sub
-                          ? "bg-purple-900/30 border-purple-600/40"
-                          : isNext
-                            ? "bg-purple-900/20 border-2 border-dashed border-purple-500/50 animate-pulse"
-                            : "bg-gray-800/40 border-gray-700/30"
+                      onClick={() => { if (canSwap && sub) handleSwapTapPlayer(subPickIdx); }}
+                      className={`flex flex-col items-center rounded-xl px-2 py-2 border transition-all ${canSwap && sub ? "cursor-pointer" : ""} ${
+                        sub && subPickIdx === swapSel
+                          ? "bg-purple-900/40 border-amber-400 ring-2 ring-amber-400"
+                          : sub
+                            ? "bg-purple-900/30 border-purple-600/40"
+                            : isNext
+                              ? "bg-purple-900/20 border-2 border-dashed border-purple-500/50 animate-pulse"
+                              : "bg-gray-800/40 border-gray-700/30"
                       }`}
                     >
                       {sub ? (
