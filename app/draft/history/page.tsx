@@ -44,7 +44,17 @@ export default function DraftHistoryPage() {
     const uelWins = history.filter(h => h.uelWinner).length;
     const bestGD = Math.max(...history.map(h => h.goalDifference ?? (h.goalsFor - h.goalsAgainst)));
 
-    return { seasons, bestPoints, bestRecord, winRate, mostGoals, topOvr, titles, topFour, faCups, uclWins, uelWins, bestGD };
+    // Career totals (across every season) for the key-stats section.
+    const totalPoints = history.reduce((s, h) => s + h.points, 0);
+    const totalGoalsFor = history.reduce((s, h) => s + h.goalsFor, 0);
+    const totalGoalsAgainst = history.reduce((s, h) => s + h.goalsAgainst, 0);
+    const totalGD = totalGoalsFor - totalGoalsAgainst;
+    const trophies = history.reduce((s, h) =>
+      s + (h.finish === 1 ? 1 : 0) + (h.faCupWinner ? 1 : 0) + (h.eflCupWinner ? 1 : 0)
+        + (h.uclWinner ? 1 : 0) + (h.uelWinner ? 1 : 0) + (h.superCupWinner ? 1 : 0) + (h.charityShieldWinner ? 1 : 0), 0);
+
+    return { seasons, bestPoints, bestRecord, winRate, mostGoals, topOvr, titles, topFour, faCups, uclWins, uelWins, bestGD,
+      totalPoints, totalGoalsFor, totalGoalsAgainst, totalGD, trophies };
   }, [history]);
 
   const ACHIEVEMENTS: { id: string; name: string; description: string; icon: string; check: (runs: DraftRunRecord[]) => boolean }[] = useMemo(() => [
@@ -147,6 +157,35 @@ export default function DraftHistoryPage() {
 
       {stats && (
         <>
+          {/* Key career stats */}
+          <h2 className="text-[10px] font-bold tracking-widest text-emerald-400/80 uppercase mb-3">Key Stats</h2>
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            <div className="bg-emerald-950/30 rounded-xl p-3 border border-emerald-700/40">
+              <div className="text-2xl font-black text-emerald-300">{stats.totalPoints}</div>
+              <div className="text-[10px] text-white font-bold uppercase">Total Points</div>
+            </div>
+            <div className="bg-emerald-950/30 rounded-xl p-3 border border-emerald-700/40">
+              <div className="text-2xl font-black text-emerald-300">{stats.winRate}%</div>
+              <div className="text-[10px] text-white font-bold uppercase">Win Rate</div>
+            </div>
+            <div className="bg-amber-950/30 rounded-xl p-3 border border-amber-700/40">
+              <div className="text-2xl font-black text-amber-300">{'\u{1F3C6}'} {stats.trophies}</div>
+              <div className="text-[10px] text-white font-bold uppercase">Trophies</div>
+            </div>
+            <div className="bg-emerald-950/30 rounded-xl p-3 border border-emerald-700/40">
+              <div className="text-2xl font-black text-emerald-300">{stats.totalGoalsFor}</div>
+              <div className="text-[10px] text-white font-bold uppercase">Goals Scored</div>
+            </div>
+            <div className="bg-red-950/30 rounded-xl p-3 border border-red-800/40">
+              <div className="text-2xl font-black text-red-300">{stats.totalGoalsAgainst}</div>
+              <div className="text-[10px] text-white font-bold uppercase">Goals Conceded</div>
+            </div>
+            <div className="bg-gray-900 rounded-xl p-3 border border-gray-700/50">
+              <div className={`text-2xl font-black ${stats.totalGD >= 0 ? "text-emerald-300" : "text-red-300"}`}>{stats.totalGD >= 0 ? "+" : ""}{stats.totalGD}</div>
+              <div className="text-[10px] text-white font-bold uppercase">Goal Difference</div>
+            </div>
+          </div>
+
           {/* Career Stats */}
           <h2 className="text-[10px] font-bold tracking-widest text-white uppercase mb-3">Career Stats</h2>
           <div className="grid grid-cols-3 gap-2 mb-2">

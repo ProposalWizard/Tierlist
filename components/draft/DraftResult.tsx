@@ -1417,6 +1417,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             const isUELEvent = isEuroEvent && event.label.startsWith('UEL');
             const match = event.match;
             const label = event.kind === 'pl' ? `GW${event.week}` : event.label;
+            const isCupFinal = (isEuroEvent || isFACup || isLeagueCup) && /final/i.test(event.label);
 
             return (
               <div
@@ -1437,7 +1438,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           : match.result === "D"
                             ? "border-l-2 border-l-yellow-500"
                             : "border-l-2 border-l-red-500"
-                }`}
+                } ${isCupFinal ? "ring-2 ring-amber-400/70 shadow-[0_0_18px_-2px_rgba(251,191,36,0.7)]" : ""}`}
               >
                 <span className={`text-[10px] font-bold w-12 sm:w-14 shrink-0 truncate ${isEuroEvent ? (isUELEvent ? "text-orange-400" : "text-blue-400") : isFACup ? "text-purple-400" : isLeagueCup ? "text-teal-400" : "text-white"}`}>
                   {label}
@@ -1509,28 +1510,30 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               <svg className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${showLiveTable ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {showLiveTable && (
-              <div className="space-y-0.5">
+              <div className="mt-1 overflow-hidden rounded-lg border border-white/5 bg-black/20">
+                <div className="grid grid-cols-[1.6rem_1fr_1.4rem_1.4rem_1.4rem_1.4rem_2rem_2.1rem] items-center gap-1 border-b border-white/10 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider text-white/50">
+                  <div className="text-center">#</div><div>Club</div>
+                  <div className="text-center">MP</div>
+                  <div className="text-center">W</div><div className="text-center">D</div><div className="text-center">L</div>
+                  <div className="text-center">GD</div><div className="text-center">PTS</div>
+                </div>
                 {liveTable.map((team, i) => {
                   const pos = i + 1;
-                  const zoneClass = pos === 1
-                    ? "border-l-2 border-l-yellow-500"
-                    : pos <= 5
-                      ? "border-l-2 border-l-blue-500"
-                      : pos <= 7
-                        ? "border-l-2 border-l-orange-500"
-                        : pos >= 18
-                          ? "border-l-2 border-l-red-500"
-                          : "";
+                  const edge = pos === 1 ? "bg-amber-400" : pos <= 5 ? "bg-blue-500" : pos <= 7 ? "bg-orange-500" : pos >= 18 ? "bg-red-500" : "bg-transparent";
+                  const badge = pos === 1 ? "bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/40" : pos <= 5 ? "bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/40" : pos <= 7 ? "bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/40" : pos >= 18 ? "bg-red-500/15 text-red-300 ring-1 ring-red-500/40" : "bg-white/5 text-white/70";
                   return (
-                    <div key={team.name} className={`flex items-center text-xs py-1 px-1 rounded transition ${zoneClass} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : ""}`}>
-                      <span className="w-5 text-center text-[10px] font-bold text-white shrink-0">{pos}</span>
-                      <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
-                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.played}</span>
-                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.won}</span>
-                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.drawn}</span>
-                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.lost}</span>
-                      <span className={`w-7 text-right text-[10px] font-bold shrink-0 ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
-                      <span className={`w-7 text-right font-black text-xs shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                    <div key={team.name} className="relative">
+                      <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${edge}`} />
+                      <div className={`grid grid-cols-[1.6rem_1fr_1.4rem_1.4rem_1.4rem_1.4rem_2rem_2.1rem] items-center gap-1 px-2 py-1.5 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
+                        <div className="flex justify-center"><span className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-black tabular-nums ${badge}`}>{pos}</span></div>
+                        <div className="truncate"><span className={`truncate text-xs font-bold ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.name}</span></div>
+                        <div className="text-center text-[10px] font-semibold tabular-nums text-white/55">{team.played}</div>
+                        <div className="text-center text-[10px] font-semibold tabular-nums text-white/80">{team.won}</div>
+                        <div className="text-center text-[10px] font-semibold tabular-nums text-white/80">{team.drawn}</div>
+                        <div className="text-center text-[10px] font-semibold tabular-nums text-white/80">{team.lost}</div>
+                        <div className={`text-center text-[10px] font-bold tabular-nums ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</div>
+                        <div className={`text-center text-xs font-black tabular-nums ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</div>
+                      </div>
                     </div>
                   );
                 })}
@@ -1803,10 +1806,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /><span className="text-white/70">Relegation</span></div>
                 </div>
                 <div className="overflow-hidden rounded-2xl border border-white/5 bg-black/20">
-                  <div className="grid grid-cols-[2rem_1fr_1.6rem_1.6rem_1.6rem_2.4rem_2.6rem] items-center gap-1 border-b border-white/10 px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-white/50">
-                    <div className="text-center">#</div><div>Club</div>
-                    <div className="text-center">W</div><div className="text-center">D</div><div className="text-center">L</div>
-                    <div className="text-center">GD</div><div className="text-center">PTS</div>
+                  <div className="flex items-center gap-2 border-b border-white/10 px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-white/50">
+                    <span className="w-6 text-center shrink-0">#</span>
+                    <span className="flex-1 min-w-0">Club</span>
+                    <span className="flex items-center gap-1 tabular-nums shrink-0">
+                      <span className="w-5 text-center">MP</span>
+                      <span className="w-5 text-center">W</span>
+                      <span className="w-5 text-center">D</span>
+                      <span className="w-5 text-center">L</span>
+                      <span className="w-7 text-right">GD</span>
+                      <span className="w-7 text-right">PTS</span>
+                    </span>
                   </div>
                   {season.leagueTable.map((team, i) => {
                     const pos = i + 1;
@@ -1830,17 +1840,20 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                         )}
                         <div className="relative">
                           <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${edge}`} />
-                          <div className={`grid grid-cols-[2rem_1fr_1.6rem_1.6rem_1.6rem_2.4rem_2.6rem] items-center gap-1 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
-                            <div className="flex justify-center"><span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums ${badge}`}>{pos}</span></div>
-                            <div className="flex items-center gap-1.5 truncate">
+                          <div className={`flex items-center gap-2 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
+                            <span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums shrink-0 ${badge}`}>{pos}</span>
+                            <span className="flex-1 min-w-0 flex items-center gap-1.5">
                               <span className={`truncate text-sm font-bold ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.name}</span>
-                              {pos === 1 && <span className="text-xs">🏆</span>}
-                            </div>
-                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.won}</div>
-                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.drawn}</div>
-                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.lost}</div>
-                            <div className={`text-center text-xs font-bold tabular-nums ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</div>
-                            <div className={`text-center text-sm font-black tabular-nums ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</div>
+                              {pos === 1 && <span className="text-xs shrink-0">🏆</span>}
+                            </span>
+                            <span className="flex items-center gap-1 tabular-nums shrink-0">
+                              <span className="w-5 text-center text-xs font-semibold text-white/55">{team.played}</span>
+                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.won}</span>
+                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.drawn}</span>
+                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.lost}</span>
+                              <span className={`w-7 text-right text-xs font-bold ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
+                              <span className={`w-7 text-right text-sm font-black ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1921,8 +1934,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (entry.type === 'fa-cup') {
               const match = entry.match;
               const fcm = entry.faCupMatch;
+              const isFinal = /final/i.test(entry.label);
               return (
-                <div key={`fa-${idx}`} className="flex items-center gap-2 rounded-lg px-2.5 py-2 bg-purple-950/30 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition">
+                <div key={`fa-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 bg-purple-950/30 border-l-2 border-l-purple-500 hover:bg-gray-800/60 transition ${isFinal ? "ring-2 ring-amber-400/70 shadow-[0_0_18px_-2px_rgba(251,191,36,0.7)]" : ""}`}>
                   <span className="text-[10px] font-bold text-purple-400/70 w-8 shrink-0 truncate">{entry.label.replace("FA Cup ", "FA ")}</span>
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
@@ -1940,8 +1954,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (entry.type === 'league-cup') {
               const match = entry.match;
               const lcm = entry.faCupMatch;
+              const isFinal = /final/i.test(entry.label);
               return (
-                <div key={`lc-${idx}`} className="flex items-center gap-2 rounded-lg px-2.5 py-2 bg-teal-950/30 border-l-2 border-l-teal-500 hover:bg-gray-800/60 transition">
+                <div key={`lc-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 bg-teal-950/30 border-l-2 border-l-teal-500 hover:bg-gray-800/60 transition ${isFinal ? "ring-2 ring-amber-400/70 shadow-[0_0_18px_-2px_rgba(251,191,36,0.7)]" : ""}`}>
                   <span className="text-[10px] font-bold text-teal-400/70 w-8 shrink-0 truncate">{entry.label.replace("League Cup ", "LC ")}</span>
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
@@ -1959,8 +1974,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (entry.type === 'ucl') {
               const match = entry.match;
               const isUEL = entry.label.startsWith('UEL');
+              const isFinal = /final/i.test(entry.label);
               return (
-                <div key={`ucl-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 border-l-2 ${isUEL ? 'border-l-orange-500 bg-orange-950/20' : 'border-l-blue-500 bg-blue-950/20'} hover:bg-gray-800/60 transition`}>
+                <div key={`ucl-${idx}`} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 border-l-2 ${isUEL ? 'border-l-orange-500 bg-orange-950/20' : 'border-l-blue-500 bg-blue-950/20'} hover:bg-gray-800/60 transition ${isFinal ? "ring-2 ring-amber-400/70 shadow-[0_0_18px_-2px_rgba(251,191,36,0.7)]" : ""}`}>
                   <span className={`text-[10px] font-bold w-8 shrink-0 truncate ${isUEL ? 'text-orange-400/70' : 'text-blue-400/70'}`}>{entry.label.split(" ")[1] ?? entry.label}</span>
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black shrink-0 ${match.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : match.result === "D" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>{match.result}</div>
                   <div className="flex-1 min-w-0">
@@ -2934,20 +2950,21 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         />
       )}
 
-      {/* Objective completion popups — one per completed objective, stacked vertically */}
-      {xpPopups.map((popup, i) => (
+      {/* Objective completion popups — shown ONE at a time. When the current one
+          auto-dismisses (or is closed), the next in the queue appears. */}
+      {xpPopups.length > 0 && (
         <XPPopup
-          key={popup.id}
-          index={i}
-          title={popup.title}
-          xp={popup.xp}
-          oldLevel={popup.oldLevel}
-          newLevel={popup.newLevel}
-          newRewards={popup.newRewards}
-          newSeasonCards={popup.newSeasonCards}
-          onDismiss={() => setXpPopups(prev => prev.filter(p => p.id !== popup.id))}
+          key={xpPopups[0].id}
+          index={0}
+          title={xpPopups[0].title}
+          xp={xpPopups[0].xp}
+          oldLevel={xpPopups[0].oldLevel}
+          newLevel={xpPopups[0].newLevel}
+          newRewards={xpPopups[0].newRewards}
+          newSeasonCards={xpPopups[0].newSeasonCards}
+          onDismiss={() => setXpPopups(prev => prev.slice(1))}
         />
-      ))}
+      )}
     </div>
   );
 }
