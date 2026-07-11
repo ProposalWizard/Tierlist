@@ -1806,11 +1806,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /><span className="text-white/70">Relegation</span></div>
                 </div>
                 <div className="overflow-hidden rounded-2xl border border-white/5 bg-black/20">
-                  <div className="grid grid-cols-[1.8rem_1fr_1.5rem_1.5rem_1.5rem_1.5rem_2.1rem_2.3rem] items-center gap-1 border-b border-white/10 px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-white/50">
-                    <div className="text-center">#</div><div>Club</div>
-                    <div className="text-center">MP</div>
-                    <div className="text-center">W</div><div className="text-center">D</div><div className="text-center">L</div>
-                    <div className="text-center">GD</div><div className="text-center">PTS</div>
+                  <div className="flex items-center gap-2 border-b border-white/10 px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-white/50">
+                    <span className="w-6 text-center shrink-0">#</span>
+                    <span className="flex-1 min-w-0">Club</span>
+                    <span className="flex items-center gap-1 tabular-nums shrink-0">
+                      <span className="w-5 text-center">MP</span>
+                      <span className="w-5 text-center">W</span>
+                      <span className="w-5 text-center">D</span>
+                      <span className="w-5 text-center">L</span>
+                      <span className="w-7 text-right">GD</span>
+                      <span className="w-7 text-right">PTS</span>
+                    </span>
                   </div>
                   {season.leagueTable.map((team, i) => {
                     const pos = i + 1;
@@ -1834,18 +1840,20 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                         )}
                         <div className="relative">
                           <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${edge}`} />
-                          <div className={`grid grid-cols-[1.8rem_1fr_1.5rem_1.5rem_1.5rem_1.5rem_2.1rem_2.3rem] items-center gap-1 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
-                            <div className="flex justify-center"><span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums ${badge}`}>{pos}</span></div>
-                            <div className="flex items-center gap-1.5 truncate">
+                          <div className={`flex items-center gap-2 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
+                            <span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums shrink-0 ${badge}`}>{pos}</span>
+                            <span className="flex-1 min-w-0 flex items-center gap-1.5">
                               <span className={`truncate text-sm font-bold ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.name}</span>
-                              {pos === 1 && <span className="text-xs">🏆</span>}
-                            </div>
-                            <div className="text-center text-xs font-semibold tabular-nums text-white/55">{team.played}</div>
-                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.won}</div>
-                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.drawn}</div>
-                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.lost}</div>
-                            <div className={`text-center text-xs font-bold tabular-nums ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</div>
-                            <div className={`text-center text-sm font-black tabular-nums ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</div>
+                              {pos === 1 && <span className="text-xs shrink-0">🏆</span>}
+                            </span>
+                            <span className="flex items-center gap-1 tabular-nums shrink-0">
+                              <span className="w-5 text-center text-xs font-semibold text-white/55">{team.played}</span>
+                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.won}</span>
+                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.drawn}</span>
+                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.lost}</span>
+                              <span className={`w-7 text-right text-xs font-bold ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
+                              <span className={`w-7 text-right text-sm font-black ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -2942,20 +2950,21 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         />
       )}
 
-      {/* Objective completion popups — one per completed objective, stacked vertically */}
-      {xpPopups.map((popup, i) => (
+      {/* Objective completion popups — shown ONE at a time. When the current one
+          auto-dismisses (or is closed), the next in the queue appears. */}
+      {xpPopups.length > 0 && (
         <XPPopup
-          key={popup.id}
-          index={i}
-          title={popup.title}
-          xp={popup.xp}
-          oldLevel={popup.oldLevel}
-          newLevel={popup.newLevel}
-          newRewards={popup.newRewards}
-          newSeasonCards={popup.newSeasonCards}
-          onDismiss={() => setXpPopups(prev => prev.filter(p => p.id !== popup.id))}
+          key={xpPopups[0].id}
+          index={0}
+          title={xpPopups[0].title}
+          xp={xpPopups[0].xp}
+          oldLevel={xpPopups[0].oldLevel}
+          newLevel={xpPopups[0].newLevel}
+          newRewards={xpPopups[0].newRewards}
+          newSeasonCards={xpPopups[0].newSeasonCards}
+          onDismiss={() => setXpPopups(prev => prev.slice(1))}
         />
-      ))}
+      )}
     </div>
   );
 }

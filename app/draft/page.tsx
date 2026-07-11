@@ -754,7 +754,9 @@ export default function DraftPage() {
 
         const oldOverall = player.overall;
         const upgraded = applyStatChange(player, change);
-        return { player: upgraded, oldOverall, newOverall: upgraded.overall, change };
+        // Overall is capped at 100, so report the ACTUAL delta — a 100-rated
+        // player who "earned" +3 didn't actually change, so it shows 0.
+        return { player: upgraded, oldOverall, newOverall: upgraded.overall, change: upgraded.overall - oldOverall };
       });
 
       const usedCYs = currentPlayers.map((p) => {
