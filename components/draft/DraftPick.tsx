@@ -460,6 +460,16 @@ export default function DraftPick({
     }
   });
 
+  // Season-2 signing bench = your remaining substitutes PLUS the new signings,
+  // shown together and uncapped (a bad season can leave more than 3 to sort out).
+  // You set the final XI on the arrange screen afterwards.
+  const s2Bench: { p: DraftPlayer; isNew: boolean }[] = isSeason2Draft
+    ? [
+        ...(existingSquad ?? []).filter(p => p.isSub).map(p => ({ p, isNew: false })),
+        ...pickedPlayers.filter(p => p.isSub).map(p => ({ p, isNew: true })),
+      ]
+    : [];
+
   // ── Rearrange placed players by tapping (idle draft only) ──────────────────
   // Swapping is a plain UI re-arrangement of already-picked players; it never
   // touches the spin/pick flow, so it's only enabled when the draft is idle.
@@ -788,8 +798,45 @@ export default function DraftPick({
             })}
           </div>
 
-          {/* Sub bench — visible during sub picks or when subs exist */}
-          {(isSubPick || pickedPlayers.filter(p => p.isSub).length > 0 || (isClubFirst && filledSlots.size >= 11)) && (
+          {/* Bench — Season 2 shows current subs + new signings together (uncapped);
+              the main draft keeps the fixed 3-slot bench. */}
+          {isSeason2Draft ? (
+            <div className="mt-3 bg-purple-900/10 border border-purple-700/30 rounded-xl p-3">
+              <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-1">
+                Substitutes ({s2Bench.length})
+              </div>
+              <p className="text-[10px] text-white/50 mb-2">Signings join your bench — set your final XI on the next screen.</p>
+              <div className="flex flex-wrap gap-2">
+                {s2Bench.length === 0 && <span className="text-[11px] text-white/50">No substitutes.</span>}
+                {s2Bench.map(({ p, isNew }, i) => {
+                  const initials = p.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+                  return (
+                    <div key={i} className={`flex flex-col items-center rounded-xl px-2 py-2 border w-[76px] ${isNew ? "bg-amber-900/20 border-amber-500/40" : "bg-purple-900/30 border-purple-600/40"}`}>
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/60">
+                        {p.image_url ? (
+                          <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials} />
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
+                            <span className="text-xs font-black text-white">{initials}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)}`}>{p.assignedPosition}</span>
+                      <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[68px] text-center leading-tight">{p.name.split(" ").pop()}</span>
+                      <div className="flex items-center gap-1">
+                        {getFlagUrl(p.nationality) && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={getFlagUrl(p.nationality)!} alt="" className="w-3 h-2 object-cover rounded-[1px]" />
+                        )}
+                        <span className="text-[10px] font-black text-emerald-400">{p.overall}</span>
+                      </div>
+                      {isNew && <span className="mt-0.5 text-[7px] font-black tracking-wider text-amber-400">NEW</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (isSubPick || pickedPlayers.filter(p => p.isSub).length > 0 || (isClubFirst && filledSlots.size >= 11)) && (
             <div className="mt-3 bg-purple-900/10 border border-purple-700/30 rounded-xl p-3">
               <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-2">
                 Substitutes ({pickedPlayers.filter(p => p.isSub).length}/3)
@@ -846,45 +893,6 @@ export default function DraftPick({
                   );
                 })}
               </div>
-            </div>
-          )}
-
-          {/* Existing bench — shown immediately during Season 2 signing, even before first pick */}
-          {isSeason2Draft && existingSquad && existingSquad.filter(p => p.isSub).length > 0 && pickedPlayers.length === 0 && (
-            <div className="mt-3 hidden lg:block space-y-1">
-              <div className="text-[10px] font-bold tracking-widest uppercase text-purple-400">
-                Current Bench
-              </div>
-              {existingSquad.filter(p => p.isSub).map((p, i) => (
-                <div
-                  key={`existing-sub-${i}`}
-                  className="flex items-center gap-2 text-sm bg-purple-900/10 border border-purple-800/30 rounded-lg px-3 py-1.5"
-                >
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
-                    {p.assignedPosition}
-                  </span>
-                  <span className="flex-1 truncate font-medium text-white">{p.name}</span>
-                  <span className="text-white text-[10px] font-medium">{p.clubYear}</span>
-                  <span className="font-extrabold text-purple-400 text-sm">{p.overall}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {isSeason2Draft && existingSquad && existingSquad.filter(p => p.isSub).length > 0 && pickedPlayers.length === 0 && (
-            <div className="mt-3 lg:hidden flex gap-1.5 overflow-x-auto pb-1">
-              <div className="text-[9px] font-bold tracking-widest uppercase text-purple-400 shrink-0 self-center pr-1">Bench</div>
-              {existingSquad.filter(p => p.isSub).map((p, i) => (
-                <div
-                  key={`existing-sub-mobile-${i}`}
-                  className="flex items-center gap-1.5 text-xs bg-purple-900/10 border border-purple-800/20 rounded-lg px-2 py-1 shrink-0"
-                >
-                  <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
-                    {p.assignedPosition}
-                  </span>
-                  <span className="font-medium text-white">{p.name.split(" ").pop()}</span>
-                  <span className="font-extrabold text-purple-400">{p.overall}</span>
-                </div>
-              ))}
             </div>
           )}
 
