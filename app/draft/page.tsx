@@ -74,6 +74,25 @@ function getSigningBoost(season: number): number {
   return Math.floor(Math.random() * 3) + 1;                  // +1 to +3
 }
 
+// Off-season intensive training boost. Lower-rated players gain far more so they
+// can catch up; ratings above 80 keep the modest original boost. Each season the
+// range shifts up by +1 on both ends (first training is season 2 = the base).
+function getTrainingBoost(overall: number, season: number): number {
+  let lo: number, hi: number;
+  if (overall <= 65) { lo = 10; hi = 15; }
+  else if (overall <= 75) { lo = 6; hi = 9; }
+  else if (overall <= 80) { lo = 3; hi = 7; }
+  else {
+    // 81+ unchanged: small boost, capped at +2 for 90+ ratings.
+    const roll = Math.floor(Math.random() * 3) + 1; // +1 to +3
+    return overall >= 90 ? Math.min(2, roll) : roll;
+  }
+  const inc = Math.max(0, season - 2); // +1 per season after the first training
+  lo += inc;
+  hi += inc;
+  return lo + Math.floor(Math.random() * (hi - lo + 1));
+}
+
 function applyStatChange(player: DraftPlayer, change: number): DraftPlayer {
   const newPlayer = {
     ...player,
@@ -130,12 +149,9 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
     [players],
   );
 
+  // Always confirm before selling — protects against a misclick on any player.
   const handleClick = (p: DraftPlayer) => {
-    if (!p.isSub) {
-      setPendingSell(p);
-    } else {
-      onSell(p);
-    }
+    setPendingSell(p);
   };
 
   return (
@@ -144,9 +160,10 @@ function SellPhase({ players, onSell, onSkip, seasonNumber }: {
       {pendingSell && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-gray-900 border border-red-500/40 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <h2 className="text-lg font-black text-white mb-1">Sell Starter?</h2>
+            <h2 className="text-lg font-black text-white mb-1">Sell {pendingSell.isSub ? "Substitute" : "Player"}?</h2>
             <p className="text-gray-300 text-sm mb-1">
-              <span className="font-bold text-white">{pendingSell.name}</span> is in your starting XI.
+              Sell <span className="font-bold text-white">{pendingSell.name}</span>
+              {pendingSell.isSub ? " from your bench?" : " from your starting XI?"}
             </p>
             <p className="text-gray-400 text-sm mb-5">
               You&apos;ll spin for a replacement, but if your draft luck is poor you could end up with a weaker squad.
@@ -692,11 +709,10 @@ export default function DraftPage() {
 
   const handlePreSeasonContinue = useCallback(
     (trainingPlayerName: string, retainedPlayer?: DraftPlayer) => {
-      const trainingRoll = Math.floor(Math.random() * 3) + 1; // random +1, +2, or +3
       const updatedSquad = [
         ...nextSeasonPlayers.map((p) => {
           if (p.name !== trainingPlayerName) return p;
-          const boost = p.overall >= 90 ? Math.min(2, trainingRoll) : trainingRoll;
+          const boost = getTrainingBoost(p.overall, currentSeason);
           return applyStatChange(p, boost);
         }),
         ...(retainedPlayer ? [retainedPlayer] : []),
@@ -712,7 +728,7 @@ export default function DraftPage() {
       }
       scrollTop();
     },
-    [nextSeasonPlayers, signingSlots, scrollTop]
+    [nextSeasonPlayers, signingSlots, scrollTop, currentSeason]
   );
 
   const handleSigningComplete = useCallback(

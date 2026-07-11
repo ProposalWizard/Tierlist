@@ -608,16 +608,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   const season = computedSeason;
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(true);
-  // Final-table visual style — persisted so the choice sticks. "new" is the
-  // redesigned neon table; "classic" is the original. Toggle lives on the table.
-  const [newTableStyle, setNewTableStyle] = useState(false);
-  useEffect(() => {
-    try { setNewTableStyle(localStorage.getItem("draft-table-style-v1") === "new"); } catch { /* ignore */ }
-  }, []);
-  const chooseTableStyle = useCallback((isNew: boolean) => {
-    setNewTableStyle(isNew);
-    try { localStorage.setItem("draft-table-style-v1", isNew ? "new" : "classic"); } catch { /* ignore */ }
-  }, []);
+  // The redesigned neon table is now the default. The classic renderer is kept
+  // below (gated by this flag) so it can be restored by flipping this to false.
+  const USE_NEW_LEAGUE_TABLE = true;
   const [showLiveTable, setShowLiveTable] = useState(true);
   const [showUCLTable, setShowUCLTable] = useState(false);
   const [showUELTable, setShowUELTable] = useState(false);
@@ -892,6 +885,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               }
               if (pendingPopups.length > 0) {
                 setXpPopups(pendingPopups);
+                // Nudge the nav's objective notification to refresh immediately.
+                try { window.dispatchEvent(new Event("objectives-updated")); } catch { /* ignore */ }
               }
             }
           } catch { /* objectives check is non-critical */ }
@@ -1798,20 +1793,13 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       </button>
       {showTable && (
         <div className="bg-gray-900 rounded-xl p-3 sm:p-4 mb-4 border border-gray-800/50">
-          {/* Classic / New table style toggle — choice persists */}
-          <div className="flex justify-end mb-3">
-            <div className="inline-flex rounded-lg bg-gray-800 p-0.5">
-              <button onClick={() => chooseTableStyle(false)} className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition ${!newTableStyle ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white"}`}>Classic</button>
-              <button onClick={() => chooseTableStyle(true)} className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition ${newTableStyle ? "bg-emerald-600 text-white" : "text-gray-400 hover:text-white"}`}>New</button>
-            </div>
-          </div>
-          {newTableStyle ? (
+          {USE_NEW_LEAGUE_TABLE ? (
             <div className="rounded-[20px] bg-gradient-to-br from-teal-400/40 via-white/5 to-amber-400/30 p-[1.5px] shadow-[0_0_36px_-14px_rgba(45,212,191,0.5)]">
               <div className="rounded-[19px] bg-[#0a0f1c] p-3">
                 <div className="mb-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[10px]">
                   <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" /><span className="text-white/70">Champion</span></div>
                   <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500" /><span className="text-white/70">Champions League</span></div>
-                  <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" /><span className="text-white/70">Europa League</span></div>
+                  <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-500" /><span className="text-white/70">Europa League</span></div>
                   <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /><span className="text-white/70">Relegation</span></div>
                 </div>
                 <div className="overflow-hidden rounded-2xl border border-white/5 bg-black/20">
@@ -1822,22 +1810,38 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                   </div>
                   {season.leagueTable.map((team, i) => {
                     const pos = i + 1;
-                    const edge = pos === 1 ? "bg-amber-400" : pos <= 5 ? "bg-blue-500" : pos <= 7 ? "bg-emerald-500" : pos >= 18 ? "bg-red-500" : "bg-transparent";
-                    const badge = pos === 1 ? "bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/40" : pos <= 5 ? "bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/40" : pos <= 7 ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40" : pos >= 18 ? "bg-red-500/15 text-red-300 ring-1 ring-red-500/40" : "bg-white/5 text-white/70";
+                    // Same qualification logic as the classic table (accounts for
+                    // cup winners displacing Europa spots), so zones are correct.
+                    const isCL = tableQualification.clNames.has(team.name);
+                    const isUEL = tableQualification.uelNames.has(team.name);
+                    const isReleg = tableQualification.relegNames.has(team.name);
+                    const edge = pos === 1 ? "bg-amber-400" : isCL ? "bg-blue-500" : isUEL ? "bg-orange-500" : isReleg ? "bg-red-500" : "bg-transparent";
+                    const badge = pos === 1 ? "bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/40" : isCL ? "bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/40" : isUEL ? "bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/40" : isReleg ? "bg-red-500/15 text-red-300 ring-1 ring-red-500/40" : "bg-white/5 text-white/70";
+                    // Red relegation line drawn just above the first relegated team.
+                    const isFirstReleg = pos === season.leagueTable.length - 2;
                     return (
-                      <div key={team.name} className="relative">
-                        <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${edge}`} />
-                        <div className={`grid grid-cols-[2rem_1fr_1.6rem_1.6rem_1.6rem_2.4rem_2.6rem] items-center gap-1 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-amber-400/20 via-amber-400/[0.06] to-transparent ring-1 ring-inset ring-amber-400/50" : "border-b border-white/5"}`}>
-                          <div className="flex justify-center"><span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums ${badge}`}>{pos}</span></div>
-                          <div className="flex items-center gap-1.5 truncate">
-                            <span className={`truncate text-sm font-bold ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.name}</span>
-                            {pos === 1 && <span className="text-xs">🏆</span>}
+                      <div key={team.name}>
+                        {isFirstReleg && (
+                          <div className="my-0.5 flex items-center gap-2 px-2">
+                            <div className="h-[2px] flex-1 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.7)]" />
+                            <span className="text-[8px] font-black uppercase tracking-widest text-red-400">Relegation</span>
+                            <div className="h-[2px] flex-1 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.7)]" />
                           </div>
-                          <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.won}</div>
-                          <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.drawn}</div>
-                          <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.lost}</div>
-                          <div className={`text-center text-xs font-bold tabular-nums ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</div>
-                          <div className={`text-center text-sm font-black tabular-nums ${team.isPlayer ? "text-amber-300" : "text-white"}`}>{team.points}</div>
+                        )}
+                        <div className="relative">
+                          <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${edge}`} />
+                          <div className={`grid grid-cols-[2rem_1fr_1.6rem_1.6rem_1.6rem_2.4rem_2.6rem] items-center gap-1 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
+                            <div className="flex justify-center"><span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums ${badge}`}>{pos}</span></div>
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className={`truncate text-sm font-bold ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.name}</span>
+                              {pos === 1 && <span className="text-xs">🏆</span>}
+                            </div>
+                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.won}</div>
+                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.drawn}</div>
+                            <div className="text-center text-xs font-semibold tabular-nums text-white/80">{team.lost}</div>
+                            <div className={`text-center text-xs font-bold tabular-nums ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</div>
+                            <div className={`text-center text-sm font-black tabular-nums ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</div>
+                          </div>
                         </div>
                       </div>
                     );

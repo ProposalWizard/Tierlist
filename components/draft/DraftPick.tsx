@@ -193,6 +193,7 @@ export default function DraftPick({
   const [spinItems, setSpinItems] = useState<{ club: string; year: number }[]>([]);
   const [spinAnimating, setSpinAnimating] = useState(false);
   const [chosenSlotIdx, setChosenSlotIdx] = useState<number | null>(null);
+  const [swapSel, setSwapSel] = useState<number | null>(null); // pickIdx selected for rearranging
   const spinContainerRef = useRef<HTMLDivElement>(null);
   // Spin timers, cleared on unmount so they don't setState / fetch after the
   // component is gone (e.g. leaving a multiplayer room mid-spin).
@@ -443,15 +444,73 @@ export default function DraftPick({
     [pendingPlayer, formation.slots, finalizePick]
   );
 
+  // The old picked-player chip list is hidden (pitch + bench cover it). Kept in
+  // code behind this flag rather than deleted. Typed boolean so TS still narrows.
+  const showPickedList: boolean = false;
+
   // Map slot indices to picked players for pitch rendering
   const filledSlots = new Set(slotAssignments.filter((s): s is number => s !== undefined));
   const slotToPlayer = new Map<number, DraftPlayer>();
+  const slotToPickIdx = new Map<number, number>();
   pickedPlayers.forEach((p, pickIdx) => {
     const s = slotAssignments[pickIdx];
     if (s !== undefined) {
       slotToPlayer.set(s, p);
+      slotToPickIdx.set(s, pickIdx);
     }
   });
+
+  // ── Rearrange placed players by tapping (idle draft only) ──────────────────
+  // Swapping is a plain UI re-arrangement of already-picked players; it never
+  // touches the spin/pick flow, so it's only enabled when the draft is idle.
+  const canSwap = !isSeason2Draft && phase === "spin" && chosenSlotIdx === null && !pendingPlayer && !spinning;
+
+  // Swap two picked players (starters and/or subs). isSub follows the slot, so a
+  // starter↔sub swap keeps 11 starters + 3 subs; assignedPosition follows too.
+  const performSwap = useCallback((pickIdxA: number, pickIdxB: number) => {
+    const slotA = slotAssignments[pickIdxA];
+    const slotB = slotAssignments[pickIdxB];
+    const nextAssign = [...slotAssignments];
+    nextAssign[pickIdxA] = slotB;
+    nextAssign[pickIdxB] = slotA;
+    const nextPicked = [...pickedPlayers];
+    nextPicked[pickIdxA] = {
+      ...nextPicked[pickIdxA],
+      isSub: slotB === undefined,
+      assignedPosition: slotB !== undefined ? formation.slots[slotB].label : nextPicked[pickIdxA].assignedPosition,
+    };
+    nextPicked[pickIdxB] = {
+      ...nextPicked[pickIdxB],
+      isSub: slotA === undefined,
+      assignedPosition: slotA !== undefined ? formation.slots[slotA].label : nextPicked[pickIdxB].assignedPosition,
+    };
+    setSlotAssignments(nextAssign);
+    setPickedPlayers(nextPicked);
+    onProgress?.(nextPicked, Array.from(usedClubYears) as string[], nextAssign);
+    setSwapSel(null);
+  }, [slotAssignments, pickedPlayers, formation.slots, onProgress, usedClubYears]);
+
+  // Move a selected player into an empty slot.
+  const performMoveToEmpty = useCallback((pickIdx: number, slotIdx: number) => {
+    const nextAssign = [...slotAssignments];
+    nextAssign[pickIdx] = slotIdx;
+    const nextPicked = [...pickedPlayers];
+    nextPicked[pickIdx] = { ...nextPicked[pickIdx], isSub: false, assignedPosition: formation.slots[slotIdx].label };
+    setSlotAssignments(nextAssign);
+    setPickedPlayers(nextPicked);
+    onProgress?.(nextPicked, Array.from(usedClubYears) as string[], nextAssign);
+    setSwapSel(null);
+  }, [slotAssignments, pickedPlayers, formation.slots, onProgress, usedClubYears]);
+
+  // Handle a tap on a placed player (starter or sub) while rearranging.
+  const handleSwapTapPlayer = useCallback((pickIdx: number) => {
+    setSwapSel((sel) => {
+      if (sel === null) return pickIdx;
+      if (sel === pickIdx) return null;
+      performSwap(sel, pickIdx);
+      return null;
+    });
+  }, [performSwap]);
 
   const existingSlotMap = useMemo(() => {
     if (!existingSquad) return new Map<number, DraftPlayer>();
@@ -620,6 +679,13 @@ export default function DraftPick({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Pitch with picked players — on mobile, show below the action area */}
         <div className="lg:col-span-1 order-2 lg:order-1">
+          {canSwap && pickedPlayers.length > 0 && (
+            <div className="mb-2 text-center text-[10px] font-bold text-amber-400/90">
+              {swapSel !== null
+                ? "Tap another player or an empty spot to move · tap the same player to cancel"
+                : "Tap two players to swap · tap a player then an empty spot to move"}
+            </div>
+          )}
           <div className="relative w-full aspect-[4/3] lg:aspect-[3/4] max-h-[35vh] sm:max-h-[50vh] lg:max-h-none mx-auto rounded-xl overflow-hidden border border-emerald-800/40">
             {/* Pitch gradient background */}
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/80 via-emerald-900/40 to-emerald-950/80" />
@@ -647,17 +713,59 @@ export default function DraftPick({
               return (
                 <div
                   key={i}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300 ${
-                    (isAssignable || isPickable) ? "cursor-pointer" : ""
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex ${slot.y >= 88 ? "flex-col-reverse" : "flex-col"} items-center transition-all duration-300 ${
+                    (isAssignable || isPickable || (canSwap && (displayPlayer || swapSel !== null))) ? "cursor-pointer" : ""
                   }`}
                   style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                  onClick={() => { if (isAssignable) handleAssignSlot(i); else if (isPickable) { setChosenSlotIdx(i); setCurrentSlotIndex(i); } }}
+                  onClick={() => {
+                    if (canSwap) {
+                      const pi = slotToPickIdx.get(i);
+                      if (pi !== undefined) { handleSwapTapPlayer(pi); return; }
+                      if (swapSel !== null) { performMoveToEmpty(swapSel, i); return; }
+                    }
+                    if (isAssignable) handleAssignSlot(i);
+                    else if (isPickable) { setChosenSlotIdx(i); setCurrentSlotIndex(i); }
+                  }}
                 >
-                  <div
-                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-extrabold border-2 transition-all duration-300 ${
-                      displayPlayer
-                        ? `${getPositionColor(slot.label)} ${existing && !picked ? 'border-white/50 text-white/80' : 'border-white/80 text-white'} shadow-lg`
-                        : isCurrent
+                  {displayPlayer ? (
+                    <>
+                      <div className={`relative w-11 h-11 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 shadow-lg transition-all ${
+                        slotToPickIdx.get(i) === swapSel
+                          ? "border-amber-400 ring-2 ring-amber-400 scale-110"
+                          : existing && !picked ? "border-white/40" : "border-white/70"
+                      }`}>
+                        {displayPlayer.image_url ? (
+                          <ImageWithFallback
+                            src={displayPlayer.image_url}
+                            alt={displayPlayer.name}
+                            className="w-full h-full object-cover"
+                            fallbackText={displayPlayer.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                          />
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center ${getPositionColor(displayPlayer.assignedPosition)}`}>
+                            <span className="text-xs sm:text-sm font-black text-white">
+                              {displayPlayer.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-center mt-0.5 max-w-[64px] sm:max-w-[80px]">
+                        <span className="text-[10px] sm:text-xs font-bold text-white truncate w-full text-center leading-tight [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
+                          {displayPlayer.name.split(" ").pop()}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {getFlagUrl(displayPlayer.nationality) && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={getFlagUrl(displayPlayer.nationality)!} alt="" className="w-3 h-2 object-cover rounded-[1px]" />
+                          )}
+                          <span className="text-[10px] sm:text-xs font-black text-emerald-400 leading-tight">{displayPlayer.overall}</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div
+                      className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-extrabold border-2 transition-all duration-300 ${
+                        isCurrent
                           ? "bg-emerald-500/80 border-emerald-300 text-white animate-pulse shadow-lg shadow-emerald-500/30"
                           : isNaturalFit
                             ? "bg-emerald-600/80 border-emerald-400 text-white animate-pulse shadow-lg shadow-emerald-500/30"
@@ -665,22 +773,12 @@ export default function DraftPick({
                               ? "bg-gray-700/80 border-sky-500/60 text-sky-300 hover:bg-sky-900/40 hover:border-sky-400"
                               : isPickable
                                 ? "bg-gray-700/80 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/30 hover:border-emerald-400"
-                                : "bg-gray-800/80 border-gray-600/50 text-white"
-                    }`}
-                  >
-                    {displayPlayer ? (
-                      <span className="text-sm font-black">{displayPlayer.overall}</span>
-                    ) : (
-                      slot.label
-                    )}
-                  </div>
-                  <span
-                    className={`text-[8px] mt-0.5 max-w-[56px] sm:max-w-[64px] truncate text-center font-medium ${
-                      displayPlayer ? "text-white/90" : "text-white"
-                    }`}
-                  >
-                    {displayPlayer ? displayPlayer.name.split(" ").pop() : ""}
-                  </span>
+                                : "bg-gray-800/80 border-gray-600/50 text-white/80"
+                      }`}
+                    >
+                      {slot.label}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -690,32 +788,55 @@ export default function DraftPick({
           {(isSubPick || pickedPlayers.filter(p => p.isSub).length > 0 || (isClubFirst && filledSlots.size >= 11)) && (
             <div className="mt-3 bg-purple-900/10 border border-purple-700/30 rounded-xl p-3">
               <div className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-2">
-                Bench ({pickedPlayers.filter(p => p.isSub).length}/3)
+                Substitutes ({pickedPlayers.filter(p => p.isSub).length}/3)
               </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="grid grid-cols-3 gap-2">
                 {[0, 1, 2].map(i => {
-                  const sub = pickedPlayers.filter(p => p.isSub)[i];
+                  const subs = pickedPlayers.filter(p => p.isSub);
+                  const sub = subs[i];
+                  const subPickIdx = sub ? pickedPlayers.indexOf(sub) : -1;
+                  const isNext = i === subs.length;
+                  const initials = (n: string) => n.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
                   return (
                     <div
                       key={i}
-                      className={`flex items-center gap-1.5 text-xs rounded-lg px-2.5 py-1.5 ${
-                        sub
-                          ? "bg-purple-900/30 border border-purple-600/40"
-                          : i === pickedPlayers.filter(p => p.isSub).length
-                            ? "bg-purple-900/20 border-2 border-purple-500/50 border-dashed animate-pulse"
-                            : "bg-gray-800/50 border border-gray-700/30"
+                      onClick={() => { if (canSwap && sub) handleSwapTapPlayer(subPickIdx); }}
+                      className={`flex flex-col items-center rounded-xl px-2 py-2 border transition-all ${canSwap && sub ? "cursor-pointer" : ""} ${
+                        sub && subPickIdx === swapSel
+                          ? "bg-purple-900/40 border-amber-400 ring-2 ring-amber-400"
+                          : sub
+                            ? "bg-purple-900/30 border-purple-600/40"
+                            : isNext
+                              ? "bg-purple-900/20 border-2 border-dashed border-purple-500/50 animate-pulse"
+                              : "bg-gray-800/40 border-gray-700/30"
                       }`}
                     >
                       {sub ? (
                         <>
-                          <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(sub.assignedPosition)} text-white`}>
-                            {sub.assignedPosition}
-                          </span>
-                          <span className="font-medium">{sub.name.split(" ").pop()}</span>
-                          <span className="font-extrabold text-emerald-400">{sub.overall}</span>
+                          <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/60">
+                            {sub.image_url ? (
+                              <ImageWithFallback src={sub.image_url} alt={sub.name} className="w-full h-full object-cover" fallbackText={initials(sub.name)} />
+                            ) : (
+                              <div className={`w-full h-full flex items-center justify-center ${getPositionColor(sub.assignedPosition)}`}>
+                                <span className="text-xs font-black text-white">{initials(sub.name)}</span>
+                              </div>
+                            )}
+                          </div>
+                          <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(sub.assignedPosition)}`}>{sub.assignedPosition}</span>
+                          <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[72px] text-center leading-tight">{sub.name.split(" ").pop()}</span>
+                          <div className="flex items-center gap-1">
+                            {getFlagUrl(sub.nationality) && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={getFlagUrl(sub.nationality)!} alt="" className="w-3 h-2 object-cover rounded-[1px]" />
+                            )}
+                            <span className="text-[10px] font-black text-emerald-400">{sub.overall}</span>
+                          </div>
                         </>
                       ) : (
-                        <span className="text-white font-medium">Sub {i + 1}</span>
+                        <div className="flex flex-col items-center justify-center py-1 text-white/40">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center text-[9px] font-bold">SUB</div>
+                          <span className="mt-1 text-[9px] font-medium">Sub {i + 1}</span>
+                        </div>
                       )}
                     </div>
                   );
@@ -763,8 +884,9 @@ export default function DraftPick({
             </div>
           )}
 
-          {/* Picked list — compact on mobile, full on desktop */}
-          {pickedPlayers.length > 0 && (
+          {/* Picked list removed — the pitch (with faces/flags/ratings) and the
+              bench below cover this, so the old chip list is hidden. */}
+          {showPickedList && pickedPlayers.length > 0 && (
             <div className="mt-3 hidden lg:block space-y-1">
               {pickedPlayers.filter(p => !p.isSub).map((p, i) => (
                 <div
@@ -829,7 +951,7 @@ export default function DraftPick({
               )}
             </div>
           )}
-          {pickedPlayers.length > 0 && (
+          {showPickedList && pickedPlayers.length > 0 && (
             <div className="mt-3 lg:hidden flex gap-1.5 overflow-x-auto pb-1">
               {pickedPlayers.filter(p => !p.isSub).map((p, i) => (
                 <div
