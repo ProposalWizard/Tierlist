@@ -1509,28 +1509,30 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               <svg className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${showLiveTable ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {showLiveTable && (
-              <div className="space-y-0.5">
+              <div className="mt-1 overflow-hidden rounded-lg border border-white/5 bg-black/20">
+                <div className="grid grid-cols-[1.6rem_1fr_1.4rem_1.4rem_1.4rem_1.4rem_2rem_2.1rem] items-center gap-1 border-b border-white/10 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider text-white/50">
+                  <div className="text-center">#</div><div>Club</div>
+                  <div className="text-center">MP</div>
+                  <div className="text-center">W</div><div className="text-center">D</div><div className="text-center">L</div>
+                  <div className="text-center">GD</div><div className="text-center">PTS</div>
+                </div>
                 {liveTable.map((team, i) => {
                   const pos = i + 1;
-                  const zoneClass = pos === 1
-                    ? "border-l-2 border-l-yellow-500"
-                    : pos <= 5
-                      ? "border-l-2 border-l-blue-500"
-                      : pos <= 7
-                        ? "border-l-2 border-l-orange-500"
-                        : pos >= 18
-                          ? "border-l-2 border-l-red-500"
-                          : "";
+                  const edge = pos === 1 ? "bg-amber-400" : pos <= 5 ? "bg-blue-500" : pos <= 7 ? "bg-orange-500" : pos >= 18 ? "bg-red-500" : "bg-transparent";
+                  const badge = pos === 1 ? "bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/40" : pos <= 5 ? "bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/40" : pos <= 7 ? "bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/40" : pos >= 18 ? "bg-red-500/15 text-red-300 ring-1 ring-red-500/40" : "bg-white/5 text-white/70";
                   return (
-                    <div key={team.name} className={`flex items-center text-xs py-1 px-1 rounded transition ${zoneClass} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : ""}`}>
-                      <span className="w-5 text-center text-[10px] font-bold text-white shrink-0">{pos}</span>
-                      <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
-                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.played}</span>
-                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.won}</span>
-                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.drawn}</span>
-                      <span className="w-6 text-center text-white text-[10px] shrink-0">{team.lost}</span>
-                      <span className={`w-7 text-right text-[10px] font-bold shrink-0 ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
-                      <span className={`w-7 text-right font-black text-xs shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                    <div key={team.name} className="relative">
+                      <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${edge}`} />
+                      <div className={`grid grid-cols-[1.6rem_1fr_1.4rem_1.4rem_1.4rem_1.4rem_2rem_2.1rem] items-center gap-1 px-2 py-1.5 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
+                        <div className="flex justify-center"><span className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-black tabular-nums ${badge}`}>{pos}</span></div>
+                        <div className="truncate"><span className={`truncate text-xs font-bold ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.name}</span></div>
+                        <div className="text-center text-[10px] font-semibold tabular-nums text-white/55">{team.played}</div>
+                        <div className="text-center text-[10px] font-semibold tabular-nums text-white/80">{team.won}</div>
+                        <div className="text-center text-[10px] font-semibold tabular-nums text-white/80">{team.drawn}</div>
+                        <div className="text-center text-[10px] font-semibold tabular-nums text-white/80">{team.lost}</div>
+                        <div className={`text-center text-[10px] font-bold tabular-nums ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</div>
+                        <div className={`text-center text-xs font-black tabular-nums ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</div>
+                      </div>
                     </div>
                   );
                 })}
