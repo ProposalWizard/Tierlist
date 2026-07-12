@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     title: string;
     category: string;
     cover_image_url?: string;
+    tiers?: { label?: unknown; color?: unknown }[];
     images: {
       name: string;
       image_url: string;
