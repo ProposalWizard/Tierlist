@@ -493,12 +493,13 @@ function RequirementsToggle({ conditions, orGroups }: {
   );
 }
 
-function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
+function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming, onZoomCard }: {
   obj: AdminObjective;
   isDone: boolean;
   isUnclaimed?: boolean;
   onClaim?: () => void;
   claiming?: boolean;
+  onZoomCard?: (url: string, name: string | null) => void;
 }) {
   return (
     <div className="flex-1 p-6 overflow-y-auto">
@@ -514,11 +515,14 @@ function ObjectiveDetail({ obj, isDone, isUnclaimed, onClaim, claiming }: {
             </div>
           )}
           {obj.card_image_url && (
-            <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-lg pl-2 pr-4 py-1.5">
+            <button
+              onClick={() => onZoomCard?.(obj.card_image_url!, obj.card_name)}
+              className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 hover:border-purple-400/50 rounded-lg pl-2 pr-4 py-1.5 transition-colors"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={obj.card_image_url} alt={obj.card_name || "Card"} className="w-8 h-11 object-cover rounded" />
               <span className="text-purple-300 text-sm font-bold">{obj.card_name || "Collection Card"}</span>
-            </div>
+            </button>
           )}
           {isDone && !isUnclaimed ? (
             <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-2">
@@ -622,6 +626,7 @@ export function CustomObjectivesSection() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const claimingRef = useRef(false);
   const [claimModal, setClaimModal] = useState<ClaimResult | null>(null);
+  const [zoomCard, setZoomCard] = useState<{ url: string; name: string | null } | null>(null);
 
   useEffect(() => {
     // Fire login streak check — read response so XP can be awarded for newly completed objectives
@@ -833,11 +838,14 @@ export function CustomObjectivesSection() {
                           </div>
                         )}
                         {obj.card_image_url && (
-                          <div className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-lg pl-1.5 pr-3 py-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setZoomCard({ url: obj.card_image_url!, name: obj.card_name }); }}
+                            className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 hover:border-purple-400/50 rounded-lg pl-1.5 pr-3 py-1 transition-colors"
+                          >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={obj.card_image_url} alt={obj.card_name || "Card"} className="w-6 h-8 object-cover rounded" />
                             <span className="text-purple-300 text-xs font-bold">{obj.card_name || "Collection Card"}</span>
-                          </div>
+                          </button>
                         )}
                         {done && !unclaimed ? (
                           <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
@@ -905,6 +913,7 @@ export function CustomObjectivesSection() {
                 isUnclaimed={unclaimedIds.includes(selected.id)}
                 onClaim={() => handleClaim(selected.id, selected)}
                 claiming={claimingId === selected.id}
+                onZoomCard={(url, name) => setZoomCard({ url, name })}
               />
             )}
           </div>
@@ -912,6 +921,22 @@ export function CustomObjectivesSection() {
       )}
       {claimModal && (
         <ObjectiveClaimModal result={claimModal} onClose={() => setClaimModal(null)} />
+      )}
+      {zoomCard && (
+        <div
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/85 backdrop-blur-sm p-6"
+          onClick={() => setZoomCard(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={zoomCard.url}
+            alt={zoomCard.name || "Card"}
+            className="max-h-[80vh] max-w-[90vw] w-auto rounded-xl shadow-2xl ring-2 ring-purple-400/40"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {zoomCard.name && <div className="mt-4 text-lg font-black text-white">{zoomCard.name}</div>}
+          <div className="mt-1 text-xs text-white/60">Tap anywhere to close</div>
+        </div>
       )}
     </div>
   );

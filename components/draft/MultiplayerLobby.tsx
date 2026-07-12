@@ -23,6 +23,7 @@ export interface RoomData {
   code: string;
   host_id: string;
   status: "lobby" | "started" | "simulating" | "complete";
+  season_number?: number;
   settings?: Record<string, unknown>;
 }
 
@@ -45,7 +46,7 @@ interface Props {
 
 export default function MultiplayerLobby({
   roomCode,
-  isHost,
+  isHost: isHostProp,
   isAdmin = false,
   userId,
   squadSubmitted,
@@ -69,24 +70,63 @@ export default function MultiplayerLobby({
   const [teamNameInput, setTeamNameInput] = useState("");
   const [teamNameSaving, setTeamNameSaving] = useState(false);
   const [teamNameEditedManually, setTeamNameEditedManually] = useState(false);
+  const [teamNameError, setTeamNameError] = useState<string | null>(null);
   const completedRef = useRef(false);
+  const roomClosedRef = useRef(false);
   const revealStartAtRef = useRef<number | undefined>(undefined);
   const roomCodeRef = useRef(roomCode);
   const userIdRef = useRef(userId);
+  const currentSeasonRef = useRef(currentSeason);
   const onSimCompleteRef = useRef(onSimulationComplete);
   const onSettingsSyncRef = useRef(onSettingsSync);
+  const onLeaveRef = useRef(onLeave);
+  const lastSyncedSettingsRef = useRef<string | null>(null);
   roomCodeRef.current = roomCode;
   userIdRef.current = userId;
+  currentSeasonRef.current = currentSeason;
   onSimCompleteRef.current = onSimulationComplete;
   onSettingsSyncRef.current = onSettingsSync;
+  onLeaveRef.current = onLeave;
+
+  // Push room settings to the parent (deduped) — called from both the
+  // realtime handler and the polling fallback, so non-hosts still receive
+  // the host's settings changes when the realtime channel silently dies.
+  const syncSettings = useCallback((settings: Record<string, unknown> | undefined) => {
+    if (!settings || !onSettingsSyncRef.current) return;
+    const { revealStartAt: _rsa, ...gameSettings } = settings;
+    void _rsa;
+    const fp = JSON.stringify(gameSettings);
+    if (fp === lastSyncedSettingsRef.current) return;
+    lastSyncedSettingsRef.current = fp;
+    onSettingsSyncRef.current(gameSettings as Partial<DraftSettings>);
+  }, []);
 
   const fetchRoom = useCallback(async () => {
     const res = await fetch(`/api/draft/rooms/${roomCodeRef.current}`);
-    if (!res.ok) return;
+    if (!res.ok) {
+      // The room no longer exists (host closed it before starting) — kick
+      // back to setup instead of polling a dead room forever.
+      if (res.status === 404 && !completedRef.current && !roomClosedRef.current) {
+        roomClosedRef.current = true;
+        alert("This room was closed by the host.");
+        onLeaveRef.current();
+      }
+      return;
+    }
     const data = await res.json();
     setRoom(data.room);
     setPlayers(data.players ?? []);
+    syncSettings(data.room?.settings as Record<string, unknown> | undefined);
     return data;
+  }, [syncSettings]);
+
+  // Only surface a "complete" result for the season this client is actually
+  // on. A room can still be "complete" from the PREVIOUS season while this
+  // player has already moved into the next season's lobby — replaying that
+  // stale result would throw them back into the old results screen (and
+  // re-run crediting).
+  const resultIsForCurrentSeason = useCallback((roomData: RoomData | null | undefined) => {
+    return (roomData?.season_number ?? 1) === currentSeasonRef.current;
   }, []);
 
   const tryComplete = useCallback((roomPlayers: RoomPlayer[], revealStartAt?: number) => {
@@ -102,73 +142,80 @@ export default function MultiplayerLobby({
     const supabase = createClient();
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
 
     const checkComplete = async () => {
       if (cancelled || completedRef.current) return;
       const d = await fetchRoom();
-      if (d?.room?.status === "complete" && d.players) {
+      if (d?.room?.status === "complete" && d.players && resultIsForCurrentSeason(d.room)) {
         const rsa = (d.room?.settings as Record<string, unknown> | undefined)?.revealStartAt;
         if (typeof rsa === "number") revealStartAtRef.current = rsa;
         tryComplete(d.players);
       }
     };
 
-    fetchRoom().then((data) => {
-      if (cancelled) return;
-      setLoading(false);
-      if (!data?.room) return;
-
-      const roomId = data.room.id;
-      if (data.room.status === "complete") {
-        tryComplete(data.players ?? []);
-        return;
-      }
-
-      channel = supabase
-        .channel(`draft-room-${roomCodeRef.current}-${Date.now()}`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "draft_rooms", filter: `id=eq.${roomId}` },
-          (payload) => {
-            const updated = payload.new as RoomData;
-            setRoom(updated);
-            if (updated.status === "complete") {
-              // Capture the server-side anchor time so all players animate in sync
-              const rsa = (updated.settings as Record<string, unknown> | undefined)?.revealStartAt;
-              if (typeof rsa === "number") revealStartAtRef.current = rsa;
-              checkComplete();
-            }
-            if (updated.settings && onSettingsSyncRef.current) {
-              // Strip internal fields before syncing game settings to parent
-              const { revealStartAt: _rsa, ...gameSettings } = updated.settings as Record<string, unknown>;
-              void _rsa;
-              onSettingsSyncRef.current(gameSettings as Partial<DraftSettings>);
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "draft_room_players", filter: `room_id=eq.${roomId}` },
-          () => { fetchRoom(); }
-        )
-        .subscribe();
-
-      pollTimer = setInterval(() => {
-        if (completedRef.current) {
-          if (pollTimer) clearInterval(pollTimer);
+    const init = () => {
+      fetchRoom().then((data) => {
+        if (cancelled) return;
+        if (!data?.room) {
+          // Initial fetch failed (network blip) — retry rather than leaving a
+          // dead lobby with no subscription and no polling.
+          retryTimer = setTimeout(init, 3000);
           return;
         }
-        checkComplete();
-      }, 5000);
-    });
+        setLoading(false);
+
+        const roomId = data.room.id;
+        if (data.room.status === "complete" && resultIsForCurrentSeason(data.room)) {
+          tryComplete(data.players ?? []);
+          // Only skip the subscription if the result actually fired — if our
+          // season_result is missing we still need updates to arrive.
+          if (completedRef.current) return;
+        }
+
+        channel = supabase
+          .channel(`draft-room-${roomCodeRef.current}-${Date.now()}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "draft_rooms", filter: `id=eq.${roomId}` },
+            (payload) => {
+              const updated = payload.new as RoomData;
+              setRoom(updated);
+              if (updated.status === "complete") {
+                // Capture the server-side anchor time so all players animate in sync
+                const rsa = (updated.settings as Record<string, unknown> | undefined)?.revealStartAt;
+                if (typeof rsa === "number") revealStartAtRef.current = rsa;
+                checkComplete();
+              }
+              syncSettings(updated.settings as Record<string, unknown> | undefined);
+            }
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "draft_room_players", filter: `room_id=eq.${roomId}` },
+            () => { fetchRoom(); }
+          )
+          .subscribe();
+
+        pollTimer = setInterval(() => {
+          if (completedRef.current) {
+            if (pollTimer) clearInterval(pollTimer);
+            return;
+          }
+          checkComplete();
+        }, 5000);
+      });
+    };
+    init();
 
     return () => {
       cancelled = true;
       if (channel) supabase.removeChannel(channel);
       if (pollTimer) clearInterval(pollTimer);
+      if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [roomCode, fetchRoom, tryComplete]);
+  }, [roomCode, fetchRoom, tryComplete, resultIsForCurrentSeason, syncSettings]);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(roomCode).then(() => {
@@ -250,6 +297,10 @@ export default function MultiplayerLobby({
 
   const allReady = players.length > 1 && players.every(p => p.status === "ready" || p.status === "simulated");
   const myPlayer = players.find(p => p.user_id === userId);
+  // Host-ness can change mid-game: when a host leaves, the room is handed to
+  // the longest-joined remaining player. Trust the live room row over the
+  // initial prop once it's loaded.
+  const isHost = room?.host_id ? room.host_id === userId : isHostProp;
   const isSimulating = room?.status === "simulating";
   const gameStarted = room?.status === "started";
 
@@ -263,6 +314,7 @@ export default function MultiplayerLobby({
     const trimmed = teamNameInput.trim();
     if (!trimmed) return;
     setTeamNameSaving(true);
+    setTeamNameError(null);
     try {
       const res = await fetch(`/api/draft/rooms/${roomCode}/team-name`, {
         method: "POST",
@@ -272,8 +324,14 @@ export default function MultiplayerLobby({
       if (res.ok) {
         setTeamNameEditedManually(false);
         fetchRoom();
+      } else {
+        // Surface rejections (name collides with a league club / another
+        // player, or names are locked) — a silent failure looks like a save.
+        const msg = await res.text().catch(() => "");
+        setTeamNameError(msg || "Couldn't save that name — try another.");
       }
-      // On failure (e.g. migration not run) keep the user's typed value — don't revert
+    } catch {
+      setTeamNameError("Couldn't save — check your connection.");
     } finally {
       setTeamNameSaving(false);
     }
@@ -290,16 +348,23 @@ export default function MultiplayerLobby({
 
   const handleStartGame = async () => {
     if (!isHost || players.length < 2) return;
+    // The room MUST be marked "started" server-side before anyone proceeds —
+    // starting locally after a failed PATCH would advance only the host while
+    // every other player sits at "Waiting for host" forever.
     try {
-      await fetch(`/api/draft/rooms/${roomCode}`, {
+      const res = await fetch(`/api/draft/rooms/${roomCode}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "started" }),
       });
+      if (!res.ok) {
+        setSimError("Couldn't start the game — check your connection and try again.");
+        return;
+      }
+      setSimError(null);
       onStartDraft();
     } catch {
-      // Fallback: just start locally
-      onStartDraft();
+      setSimError("Couldn't start the game — check your connection and try again.");
     }
   };
 
@@ -335,24 +400,29 @@ export default function MultiplayerLobby({
       {/* Team Name */}
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
         <div className="text-[10px] font-bold tracking-widest text-white uppercase mb-2">Your Team Name</div>
-        {room?.status === "lobby" ? (
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={teamNameInput}
-              onChange={(e) => { setTeamNameInput(e.target.value); setTeamNameEditedManually(true); }}
-              maxLength={30}
-              placeholder={myPlayer ? `${myPlayer.display_name} FC` : "Team name"}
-              className="flex-1 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            />
-            <button
-              onClick={handleSaveTeamName}
-              disabled={teamNameSaving || !teamNameInput.trim()}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg text-sm font-bold transition-all active:scale-95"
-            >
-              {teamNameSaving ? "Saving…" : "Save"}
-            </button>
-          </div>
+        {room?.status === "lobby" && currentSeason === 1 ? (
+          <>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={teamNameInput}
+                onChange={(e) => { setTeamNameInput(e.target.value); setTeamNameEditedManually(true); setTeamNameError(null); }}
+                maxLength={30}
+                placeholder={myPlayer ? `${myPlayer.display_name} FC` : "Team name"}
+                className="flex-1 bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+              <button
+                onClick={handleSaveTeamName}
+                disabled={teamNameSaving || !teamNameInput.trim()}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg text-sm font-bold transition-all active:scale-95"
+              >
+                {teamNameSaving ? "Saving…" : "Save"}
+              </button>
+            </div>
+            {teamNameError && (
+              <div className="mt-1.5 text-[11px] font-medium text-red-400">{teamNameError}</div>
+            )}
+          </>
         ) : (
           <div className="text-sm font-bold text-white">{myPlayer?.team_name || (myPlayer ? `${myPlayer.display_name} FC` : "")}</div>
         )}
@@ -644,6 +714,9 @@ export default function MultiplayerLobby({
       </div>
 
       {/* Actions */}
+      {simError && !(isHost && allReady) && (
+        <div className="text-red-400 text-xs text-center mb-2 mt-4">{simError}</div>
+      )}
       {!squadSubmitted && !isSimulating && !gameStarted && (
         currentSeason === 1 ? (
           isHost ? (

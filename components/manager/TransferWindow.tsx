@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback , useRef } from "react";
 import { playerPrice } from "@/lib/matchEvents";
 import { getPositionColor } from "@/components/draft/formations";
 import type { DraftPlayer } from "@/app/draft/page";
@@ -46,8 +46,12 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
 
   const log = (msg: string) => setActivity(prev => [msg, ...prev].slice(0, 8));
 
-  const loadMarketFor = useCallback(async (target: DraftPlayer | null) => {
+  const budgetRef = useRef(budget);
+  budgetRef.current = budget;
+
+  const loadMarketFor = useCallback(async (target: DraftPlayer | null, availableBudget?: number) => {
     if (clubs.length === 0) return;
+    const avail = availableBudget ?? budgetRef.current;
     setLoading(true);
     setMarketOptions(null);
     const options: MarketPlayer[] = [];
@@ -82,29 +86,47 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
         if (compatible.length > 0) pool = compatible;
       }
 
-      const best = pool.reduce((a, b) =>
+      const makeOption = (best: Record<string, unknown>): MarketPlayer => {
+        const abbr = pair.club.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 3);
+        const ovr = Number(best.overall ?? 0);
+        const player: DraftPlayer = {
+          name: String(best.name ?? ""),
+          overall: ovr,
+          positions: String(best.positions ?? ""),
+          club: pair.club,
+          clubYear: `${abbr} ${pair.year}`,
+          assignedPosition: target ? target.assignedPosition : (String(best.positions ?? "CM").split(",")[0].trim() || "CM"),
+          sofifa_id: String(best.sofifa_id ?? ""),
+          image_url: best.image_url as string | null,
+          nationality: String(best.nationality ?? ""),
+          age: Number(best.age ?? 0),
+          isSub: target ? target.isSub : false,
+          attrs: buildAttrs(best as Record<string, number>),
+        };
+        return { player, price: playerPrice(ovr), club: pair.club, year: pair.year };
+      };
+
+      // The scouted option for each club is its best player — but if this is
+      // the final slot and nothing so far is affordable, take the best player
+      // the budget CAN buy. A market of only over-budget players used to make
+      // the window impossible to close (squad must be full before Done).
+      let best = pool.reduce((a, b) =>
         Number((b as Record<string, unknown>).overall ?? 0) > Number((a as Record<string, unknown>).overall ?? 0) ? b : a
       , pool[0]) as Record<string, unknown>;
 
       if (!best) continue;
 
-      const abbr = pair.club.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 3);
-      const ovr = Number(best.overall ?? 0);
-      const player: DraftPlayer = {
-        name: String(best.name ?? ""),
-        overall: ovr,
-        positions: String(best.positions ?? ""),
-        club: pair.club,
-        clubYear: `${abbr} ${pair.year}`,
-        assignedPosition: target ? target.assignedPosition : (String(best.positions ?? "CM").split(",")[0].trim() || "CM"),
-        sofifa_id: String(best.sofifa_id ?? ""),
-        image_url: best.image_url as string | null,
-        nationality: String(best.nationality ?? ""),
-        age: Number(best.age ?? 0),
-        isSub: target ? target.isSub : false,
-        attrs: buildAttrs(best as Record<string, number>),
-      };
-      options.push({ player, price: playerPrice(ovr), club: pair.club, year: pair.year });
+      const nothingAffordableYet = options.every(o => o.price > avail);
+      if (options.length === 3 && nothingAffordableYet && playerPrice(Number(best.overall ?? 0)) > avail) {
+        const affordable = pool.filter(pl => playerPrice(Number((pl as Record<string, unknown>).overall ?? 0)) <= avail);
+        if (affordable.length > 0) {
+          best = affordable.reduce((a, b) =>
+            Number((b as Record<string, unknown>).overall ?? 0) > Number((a as Record<string, unknown>).overall ?? 0) ? b : a
+          , affordable[0]) as Record<string, unknown>;
+        }
+      }
+
+      options.push(makeOption(best));
     }
 
     setMarketOptions(options);
@@ -118,7 +140,7 @@ export default function TransferWindow({ squad: initialSquad, budget: initialBud
     setReplaceTarget(p);
     log(`💸 Sold ${p.name} for £${price}M`);
     setView("buy");
-    loadMarketFor(p);
+    loadMarketFor(p, budget + price);
   };
 
   const handleBuy = (mp: MarketPlayer) => {

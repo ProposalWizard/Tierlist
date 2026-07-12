@@ -139,6 +139,7 @@ function MiniGrid({
 export default async function ArchivePage() {
   const service = createServiceClient();
 
+  const today = new Date().toISOString().slice(0, 10);
   const { data: puzzles } = await service
     .from("tictactoe_puzzles")
     .select(
@@ -146,6 +147,10 @@ export default async function ArchivePage() {
     )
     .eq("is_active", true)
     .eq("is_daily", true)
+    // Hide pre-scheduled FUTURE dailies — playing tomorrow's puzzle today
+    // burns the one-score-per-puzzle slot before it becomes the real daily.
+    // (Dateless dailies stay visible.)
+    .or(`daily_date.lte.${today},daily_date.is.null`)
     .order("display_order", { ascending: false })
     .order("daily_date", { ascending: false });
 

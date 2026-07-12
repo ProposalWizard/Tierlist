@@ -35,27 +35,59 @@ export default async function FindPage({
   const { category: initialCategory } = await searchParams;
   const service = createServiceClient();
 
-  const [tierlistsRes, votelistsRes, blindsRes, likesCountRes, profilesRes] = await Promise.all([
-    service
-      .from("tierlists")
-      .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, created_by, linked_vote_tierlist_id, linked_blind_ranking_id")
-      .order("created_at", { ascending: false })
-      .limit(10000),
-    service
-      .from("vote_tierlists")
-      .select("id, title, category, cover_image_url, created_at, created_by")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(10000),
-    service
-      .from("blind_rankings")
-      .select("id, title, category, cover_image_url, created_at")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(10000),
-    service.from("tierlist_likes").select("tierlist_id").limit(100000),
-    service.from("user_profiles").select("user_id, username").limit(100000),
+  // PostgREST silently caps any single select at 1000 rows regardless of
+  // .limit(), so these queries must page — otherwise, as the site grows,
+  // older tierlists vanish from Find, like counts drift low, and creator
+  // names disappear with no error anywhere.
+  async function fetchAll<T>(
+    build: (from: number, to: number) => PromiseLike<{ data: T[] | null }>,
+    hardCap = 20000,
+  ): Promise<T[]> {
+    const PAGE = 1000;
+    const all: T[] = [];
+    for (let from = 0; from < hardCap; from += PAGE) {
+      const { data } = await build(from, from + PAGE - 1);
+      if (!data || data.length === 0) break;
+      all.push(...data);
+      if (data.length < PAGE) break;
+    }
+    return all;
+  }
+
+  type VoteRow = { id: string; title: string; category: string | null; cover_image_url: string | null; created_at: string; created_by: string | null };
+  type BlindRow = { id: string; title: string; category: string | null; cover_image_url: string | null; created_at: string };
+
+  const [tierlistsAll, votelistsAll, blindsAll, likesAll, profilesAll] = await Promise.all([
+    fetchAll<Record<string, unknown>>((from, to) =>
+      service
+        .from("tierlists")
+        .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, created_by, linked_vote_tierlist_id, linked_blind_ranking_id")
+        .order("created_at", { ascending: false })
+        .range(from, to)),
+    fetchAll<VoteRow>((from, to) =>
+      service
+        .from("vote_tierlists")
+        .select("id, title, category, cover_image_url, created_at, created_by")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .range(from, to)),
+    fetchAll<BlindRow>((from, to) =>
+      service
+        .from("blind_rankings")
+        .select("id, title, category, cover_image_url, created_at")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .range(from, to)),
+    fetchAll<{ tierlist_id: string }>((from, to) =>
+      service.from("tierlist_likes").select("tierlist_id").order("tierlist_id").range(from, to), 100000),
+    fetchAll<{ user_id: string; username: string | null }>((from, to) =>
+      service.from("user_profiles").select("user_id, username").order("user_id").range(from, to), 100000),
   ]);
+  const tierlistsRes = { data: tierlistsAll };
+  const votelistsRes = { data: votelistsAll };
+  const blindsRes = { data: blindsAll };
+  const likesCountRes = { data: likesAll };
+  const profilesRes = { data: profilesAll };
 
   // Build like counts map
   const likeCountMap = new Map<string, number>();

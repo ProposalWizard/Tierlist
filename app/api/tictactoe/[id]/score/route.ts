@@ -35,13 +35,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const score = Number(body.score) || 0;
-  const maxScore = Number(body.max_score) || 0;
-  const hintsUsed = Number(body.hints_used) || 0;
-  const timeSeconds = body.time_seconds != null ? Number(body.time_seconds) : null;
+  // Sanitize: integers only, clamped to sane ranges — otherwise a crafted
+  // POST (score: 999999 / 1e308) permanently corrupts personal stats and
+  // anything later built on this table.
+  const clampInt = (v: unknown, lo: number, hi: number) => {
+    const n = Math.floor(Number(v));
+    return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : lo;
+  };
+  const maxScore = clampInt(body.max_score, 0, 100);
+  const score = clampInt(body.score, 0, maxScore);
+  const hintsUsed = clampInt(body.hints_used, 0, 20);
+  const timeSeconds = body.time_seconds != null ? clampInt(body.time_seconds, 0, 86400) : null;
   const secondChance = body.second_chance === true;
 
   const service = createServiceClient();
+
+  // The puzzle must exist — don't let arbitrary ids create score rows.
+  const { data: puzzle } = await service
+    .from("tictactoe_puzzles")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!puzzle) {
+    return NextResponse.json({ error: "Puzzle not found" }, { status: 404 });
+  }
 
   const { data: existing } = await service
     .from("tictactoe_scores")

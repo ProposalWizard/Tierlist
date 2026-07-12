@@ -408,7 +408,9 @@ export default function TierlistBoard({
     const rejectedType: string[] = [];
     const rejectedSize: string[] = [];
     for (const file of Array.from(files)) {
-      if (!isAllowedImageType(file)) {
+      if (!isAllowedImageType(file) || file.size === 0) {
+        // Zero-byte files pass the MIME check but can never render — if they
+        // were uploaded they'd become permanently broken cards.
         rejectedType.push(file.name);
       } else if (file.size > MAX_FILE_SIZE) {
         rejectedSize.push(file.name);
@@ -1094,7 +1096,15 @@ export default function TierlistBoard({
           )}
           {mode === "play" && hasModified && (
             <button
-              onClick={() => setShowUploadModal(true)}
+              onClick={() => {
+                // Saving requires an account — send logged-out users to sign in
+                // instead of letting them upload files only to hit a 401.
+                if (!isLoggedIn) {
+                  window.location.href = `/auth?next=${encodeURIComponent(window.location.pathname)}`;
+                  return;
+                }
+                setShowUploadModal(true);
+              }}
               disabled={totalImages === 0}
               className="rounded-xl bg-indigo-600 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -1108,6 +1118,7 @@ export default function TierlistBoard({
       {showUploadModal && (
         <UploadTierlistModal
           images={allImagesForUpload}
+          tiers={tiers.map((t) => ({ label: t.label, color: t.color }))}
           onClose={() => setShowUploadModal(false)}
         />
       )}

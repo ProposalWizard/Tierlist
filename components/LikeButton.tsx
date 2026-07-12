@@ -60,8 +60,16 @@ export default function LikeButton({ tierlistId, initialCount = 0, initialLiked 
 
   return (
     <button
-      onClick={toggle}
-      disabled={!authed || loading}
+      onClick={() => {
+        // Logged-out tap: a disabled button with a hover-only tooltip is a
+        // silent no-op on touch devices — send them to sign in instead.
+        if (!authed) {
+          window.location.href = `/auth?next=${encodeURIComponent(window.location.pathname)}`;
+          return;
+        }
+        toggle();
+      }}
+      disabled={loading}
       title={authed ? (liked ? "Unlike" : "Like") : "Sign in to like"}
       className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${
         liked

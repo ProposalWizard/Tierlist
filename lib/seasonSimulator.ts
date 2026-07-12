@@ -287,6 +287,15 @@ export const RESERVE_TEAMS: { name: string; strength: number }[] = [
 
 const ALL_TEAMS_POOL: { name: string; strength: number }[] = [...DEFAULT_PL_TEAMS, ...RESERVE_TEAMS];
 
+// True when a (user-chosen) team name collides with any AI club that can
+// appear in the league or cups. The shared league table is keyed by team
+// name, so a human team named "Arsenal" would merge with the AI Arsenal into
+// one corrupted row (19-team table, doubled stats) for every player.
+export function isReservedTeamName(name: string): boolean {
+  const n = name.trim().toLowerCase();
+  return [...ALL_TEAMS_POOL, ...LOWER_LEAGUE_CLUBS].some(t => t.name.toLowerCase() === n);
+}
+
 const LOWER_LEAGUE_CLUBS: { name: string; strength: number }[] = [
   { name: 'Sunderland', strength: 70 },
   { name: 'Bristol City', strength: 69 },
@@ -2267,42 +2276,37 @@ function simulateChampionsLeague(
   const potForFinish = (f: number) => f <= 2 ? 1 : f === 3 ? 2 : f === 4 ? 3 : 4;
   const playerPot = qualifiesThroughLeague ? potForFinish(playerFinish) : 4;
 
-  // Build 4 pots of 9 teams each
+  // Build 4 pots of 9 teams each: the player, the other PL qualifiers
+  // (previous season's top 5), then the UCL pool. A used-name set makes
+  // duplicates impossible — the old two-pass fill could re-add an
+  // already-placed pot-4 team when the player entered as UEL winner (giving
+  // it doubled fixtures and a 35-name league table) and silently dropped the
+  // 5th-place PL qualifier.
   const pots: { name: string; strength: number; isPlayer: boolean }[][] = [[], [], [], []];
+  const used = new Set<string>([playerTeamName]);
+  pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
 
-  if (uelWinnerQualifies && !qualifiesThroughLeague) {
-    // EL winner replaces lowest-rated team in pot 4
-    const pot4Teams = UCL_TEAMS.filter(t => t.pot === 4);
-    pot4Teams.sort((a, b) => a.strength - b.strength);
-    const replaced = pot4Teams[0];
-    const filteredUCL = UCL_TEAMS.filter(t => t !== replaced);
-    for (const uclTeam of filteredUCL) {
-      if (pots[uclTeam.pot - 1].length < (uclTeam.pot === playerPot ? 8 : 9)) {
-        pots[uclTeam.pot - 1].push({ name: uclTeam.name, strength: uclTeam.strength, isPlayer: false });
-      }
-    }
-    pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
-  } else {
-    pots[playerPot - 1].push({ name: playerTeamName, strength: ratings.teamStrength, isPlayer: true });
-  }
-
-  // Add other PL qualifiers (top 5 excluding player)
+  // Other PL qualifiers (top 5 excluding player)
   const opponentMap = new Map(opponents.map(o => [o.name, o.strength]));
-  let plAdded = 0;
-  for (let i = 0; i < previousLeagueTable.length && plAdded < 4; i++) {
+  for (let i = 0; i < Math.min(5, previousLeagueTable.length); i++) {
     const team = previousLeagueTable[i];
-    if (team.isPlayer) continue;
-    if (i + 1 > 5) break;
-    const strength = opponentMap.get(team.name) || 75;
-    const pot = potForFinish(i + 1);
-    pots[pot - 1].push({ name: team.name, strength, isPlayer: false });
-    plAdded++;
+    if (team.isPlayer || used.has(team.name)) continue;
+    used.add(team.name);
+    pots[potForFinish(i + 1) - 1].push({ name: team.name, strength: opponentMap.get(team.name) || 75, isPlayer: false });
   }
 
-  // Fill pots with UCL non-PL teams
-  for (const uclTeam of UCL_TEAMS) {
-    if (pots[uclTeam.pot - 1].length < 9) {
-      pots[uclTeam.pot - 1].push({ name: uclTeam.name, strength: uclTeam.strength, isPlayer: false });
+  // Fill the remaining slots from the UCL pool. Pot 4 fills strongest-first
+  // so when the player enters as UEL winner (taking a pot-4 slot) it's the
+  // weakest team that misses the cut.
+  const poolByPot: Record<number, { name: string; strength: number }[]> = { 1: [], 2: [], 3: [], 4: [] };
+  for (const t of UCL_TEAMS) poolByPot[t.pot].push({ name: t.name, strength: t.strength });
+  poolByPot[4].sort((a, b) => b.strength - a.strength);
+  for (let potNo = 1; potNo <= 4; potNo++) {
+    for (const t of poolByPot[potNo]) {
+      if (pots[potNo - 1].length >= 9) break;
+      if (used.has(t.name)) continue;
+      used.add(t.name);
+      pots[potNo - 1].push({ name: t.name, strength: t.strength, isPlayer: false });
     }
   }
 
@@ -2927,18 +2931,23 @@ function simulateSuperCup(
   };
 
   if (m.result === 'D') {
-    // Penalties for a draw
-    const playerPens = 4 + Math.floor(rng() * 3);
-    const oppPens = playerPens + (rng() > 0.5 ? -1 : 0);
-    if (playerPens > oppPens) {
-      result.result = 'W';
-    } else if (oppPens > playerPens) {
-      result.result = 'L';
+    // Penalties for a draw — a fair shootout (the old formula could never let
+    // the opponent outscore the player, and a tie was coin-flipped while
+    // displaying the still-tied score next to a decided result).
+    const playerPens = 3 + Math.floor(rng() * 3);
+    const oppPens = 3 + Math.floor(rng() * 3);
+    if (playerPens === oppPens) {
+      // Sudden death: winner takes one extra so the score matches the outcome
+      if (rng() > 0.5) result.result = 'W';
+      else result.result = 'L';
+      result.penaltyScore = result.result === 'W'
+        ? { player: playerPens + 1, opponent: oppPens }
+        : { player: playerPens, opponent: oppPens + 1 };
     } else {
-      result.result = rng() > 0.5 ? 'W' : 'L';
+      result.result = playerPens > oppPens ? 'W' : 'L';
+      result.penaltyScore = { player: playerPens, opponent: oppPens };
     }
     result.penalties = true;
-    result.penaltyScore = { player: playerPens, opponent: oppPens };
   }
 
   return result;
@@ -3479,6 +3488,16 @@ export function simulateSeason(
         statsMap[p.name].appearances++;
         rateMatchForPlayer(p, mr);
       }
+      // Subs can feature in these matches (the sim fields random active
+      // subs) — credit involved subs with an appearance/rating so a scorer
+      // can't end the season with goals but 0 apps.
+      const involved = new Set([...m.goalScorers.map(g => g.player), ...m.assistProviders.map(a => a.player)]);
+      for (const p of subs) {
+        if (involved.has(p.name) && statsMap[p.name]) {
+          statsMap[p.name].appearances++;
+          rateMatchForPlayer(p, mr);
+        }
+      }
       for (const gs of m.goalScorers) {
         if (statsMap[gs.player]) statsMap[gs.player].goals++;
       }
@@ -3504,6 +3523,16 @@ export function simulateSeason(
       for (const p of starters) {
         statsMap[p.name].appearances++;
         rateMatchForPlayer(p, mr);
+      }
+      // Subs can feature in these matches (the sim fields random active
+      // subs) — credit involved subs with an appearance/rating so a scorer
+      // can't end the season with goals but 0 apps.
+      const involved = new Set([...m.goalScorers.map(g => g.player), ...m.assistProviders.map(a => a.player)]);
+      for (const p of subs) {
+        if (involved.has(p.name) && statsMap[p.name]) {
+          statsMap[p.name].appearances++;
+          rateMatchForPlayer(p, mr);
+        }
       }
       for (const gs of m.goalScorers) {
         if (statsMap[gs.player]) statsMap[gs.player].goals++;
@@ -3534,6 +3563,15 @@ export function simulateSeason(
       statsMap[p.name].appearances++;
       rateMatchForPlayer(p, scMatch);
     }
+    {
+      const involved = new Set([...superCup.goalScorers.map(g => g.player), ...superCup.assistProviders.map(a => a.player)]);
+      for (const p of subs) {
+        if (involved.has(p.name) && statsMap[p.name]) {
+          statsMap[p.name].appearances++;
+          rateMatchForPlayer(p, scMatch);
+        }
+      }
+    }
     for (const gs of superCup.goalScorers) {
       if (statsMap[gs.player]) statsMap[gs.player].goals++;
     }
@@ -3541,6 +3579,40 @@ export function simulateSeason(
       if (statsMap[ap.player]) statsMap[ap.player].assists++;
     }
     if (superCup.goalsAgainst === 0) {
+      if (gk) statsMap[gk.name].cleanSheets++;
+      for (const def of defenders) statsMap[def.name].cleanSheets++;
+    }
+  }
+
+  // Count Charity Shield stats (added to all-comps totals) — previously this
+  // match's goals/assists/appearances never reached statsMap, so records and
+  // golden-boot totals disagreed with the displayed scorers.
+  if (charityShield?.played) {
+    const csMatch = {
+      goalScorers: charityShield.goalScorers, assistProviders: charityShield.assistProviders,
+      goalsAgainst: charityShield.goalsAgainst, result: charityShield.result as 'W' | 'D' | 'L',
+      goalsFor: charityShield.goalsFor, opponent: charityShield.opponent, isHome: true,
+    };
+    for (const p of starters) {
+      statsMap[p.name].appearances++;
+      rateMatchForPlayer(p, csMatch);
+    }
+    {
+      const involved = new Set([...charityShield.goalScorers.map(g => g.player), ...charityShield.assistProviders.map(a => a.player)]);
+      for (const p of subs) {
+        if (involved.has(p.name) && statsMap[p.name]) {
+          statsMap[p.name].appearances++;
+          rateMatchForPlayer(p, csMatch);
+        }
+      }
+    }
+    for (const gs of charityShield.goalScorers) {
+      if (statsMap[gs.player]) statsMap[gs.player].goals++;
+    }
+    for (const ap of charityShield.assistProviders) {
+      if (statsMap[ap.player]) statsMap[ap.player].assists++;
+    }
+    if (charityShield.goalsAgainst === 0) {
       if (gk) statsMap[gk.name].cleanSheets++;
       for (const def of defenders) statsMap[def.name].cleanSheets++;
     }

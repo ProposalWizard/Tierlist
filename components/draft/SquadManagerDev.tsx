@@ -244,7 +244,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                   <div
                     key={i}
                     className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer"
-                    style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                    style={{ left: `${slot.x}%`, top: `${slot.y >= 88 ? slot.y - 4 : slot.y}%` }}
                     onClick={() => handleTapVacantSlot(i)}
                     onDragOver={(e) => { e.preventDefault(); setDragOverTarget(`slot-${i}`); }}
                     onDragLeave={() => setDragOverTarget(null)}
@@ -266,15 +266,16 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
               const p = entry.player;
               const fit = isFit(p);
               const isDragOverPlayer = dragOverTarget === `player-${entry.idx}`;
-              // Bottom-most slot (GK) puts its label above the avatar so the
-              // name/flag/rating don't clip off the bottom edge of the pitch.
-              const labelAbove = slot.y >= 88;
+              // Bottom-most slot (GK) is nudged up the pitch so its label sits
+              // below the avatar like every other player (consistent layout)
+              // without the name/flag/rating clipping off the bottom edge.
+              const nudgedY = slot.y >= 88 ? slot.y - 4 : slot.y;
 
               return (
                 <div
                   key={i}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex ${labelAbove ? "flex-col-reverse" : "flex-col"} items-center cursor-grab active:cursor-grabbing`}
-                  style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-grab active:cursor-grabbing"
+                  style={{ left: `${slot.x}%`, top: `${nudgedY}%` }}
                   draggable
                   onDragStart={(e) => onDragStart(e, entry.idx)}
                   onDragEnd={onDragEnd}
@@ -320,9 +321,11 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                       {p.name.split(" ").pop()}
                     </span>
                     <div className="flex items-center gap-0.5">
-                      {getFlagUrl(p.nationality) && (
+                      {getFlagUrl(p.nationality) ? (
                         <img src={getFlagUrl(p.nationality)!} alt={p.nationality} className="w-3 h-2 object-cover rounded-[1px]" />
-                      )}
+                      ) : p.nationality ? (
+                        <span className="text-[7px] sm:text-[8px] text-white/60 leading-tight max-w-[36px] truncate">{p.nationality}</span>
+                      ) : null}
                       <span className="text-[8px] sm:text-[10px] font-bold text-emerald-400 leading-tight">
                         {displayRating(p)}
                       </span>

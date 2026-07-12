@@ -32,6 +32,9 @@ export default async function DailyTicTacToePage() {
     .select("id, daily_date")
     .eq("is_active", true)
     .eq("is_daily", true)
+    // Only past dailies — without this, a missing today-row would serve the
+    // furthest-FUTURE scheduled daily days early (admins pre-schedule them).
+    .lte("daily_date", today)
     .order("daily_date", { ascending: false })
     .limit(1)
     .single();

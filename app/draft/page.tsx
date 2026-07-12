@@ -230,7 +230,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full border border-emerald-600/25" />
         {formation.slots.map((slot, i) => {
           const p = slotMap.get(i);
-          const renderY = slot.y >= 88 ? slot.y - 7 : slot.y; // nudge GK up so its label fits below
+          const renderY = slot.y >= 88 ? slot.y - 4 : slot.y; // nudge GK up so its label fits below
           if (!p) {
             return (
               <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${slot.x}%`, top: `${renderY}%` }}>
@@ -275,18 +275,23 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
           <div className="grid grid-cols-3 gap-2">
             {subs.map((p, i) => {
               const flag = getFlagUrl(p.nationality);
+              // Show the player's NATURAL position(s), not the slot they happened
+              // to be assigned/swapped into before being benched.
+              const natural = (p.positions || "").split(",").map(s => s.trim()).filter(Boolean);
+              const posLabel = natural.join("/") || p.assignedPosition;
+              const posColor = getPositionColor(natural[0] || p.assignedPosition);
               return (
                 <button key={i} onClick={() => handleClick(p)} className="flex flex-col items-center rounded-xl px-2 py-2 border bg-purple-900/30 border-purple-600/40 hover:border-red-400 hover:ring-2 hover:ring-red-400/50 transition-all">
                   <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/60">
                     {p.image_url ? (
                       <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
                     ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
+                      <div className={`w-full h-full flex items-center justify-center ${posColor}`}>
                         <span className="text-xs font-black text-white">{initials(p.name)}</span>
                       </div>
                     )}
                   </div>
-                  <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)}`}>{p.assignedPosition}</span>
+                  <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${posColor}`}>{posLabel}</span>
                   <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[72px] text-center">{p.name.split(" ").pop()}</span>
                   <div className="flex items-center gap-1">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -567,6 +572,11 @@ export default function DraftPage() {
   }, [scrollTop, userId]);
 
   const handleLeaveRoom = useCallback(() => {
+    // Tell the server we're leaving so our row doesn't linger and block the
+    // room's "all ready" forever (fire-and-forget; hosts hand over the room).
+    if (roomCode) {
+      void fetch(`/api/draft/rooms/${roomCode}/leave`, { method: "POST" }).catch(() => {});
+    }
     setPhase("setup");
     setRoomCode(null);
     setIsHost(false);
@@ -576,7 +586,7 @@ export default function DraftPage() {
     setPlayers([]);
     setSettings(null);
     scrollTop();
-  }, [scrollTop]);
+  }, [scrollTop, roomCode]);
 
   const handleUpdateRoomSettings = useCallback(async (update: Partial<DraftSettings>) => {
     if (!roomCode) return;
@@ -636,7 +646,10 @@ export default function DraftPage() {
 
   const handleProgress = useCallback(
     (picked: DraftPlayer[], usedClubYears: string[], slotAssignments?: (number | undefined)[]) => {
-      if (!settings) return;
+      // Multiplayer drafts must not write the SOLO resume key — otherwise a
+      // refreshed multiplayer player is offered "Resume" into a solo game
+      // built from their half-finished room draft.
+      if (!settings || roomCode) return;
       try {
         localStorage.setItem(
           STORAGE_KEY,
@@ -644,7 +657,7 @@ export default function DraftPage() {
         );
       } catch {}
     },
-    [settings, respinsRemaining]
+    [settings, respinsRemaining, roomCode]
   );
 
   const handleDraftComplete = useCallback((picked: DraftPlayer[]) => {
@@ -654,6 +667,36 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop]);
 
+  // Submit the squad's ready with retries. The server rejects with 409 while
+  // the previous season is still "complete" (host hasn't advanced the room
+  // yet) — a ready that landed then would be wiped by the host's reset and
+  // deadlock the room, so keep retrying until it's accepted.
+  const submitReadyWithRetry = useCallback((code: string, arranged: DraftPlayer[]) => {
+    const { teamStrength, avgOvr } = computeTeamStrength(arranged);
+    const readyBody = JSON.stringify({ squad: arranged, avg_ovr: avgOvr, team_strength: teamStrength });
+    void (async () => {
+      let hardFailures = 0;
+      // ~30 min of retries — the host may sit on the results screen a while
+      // before advancing the season, and giving up would deadlock the room.
+      for (let attempt = 0; attempt < 900; attempt++) {
+        try {
+          const res = await fetch(`/api/draft/rooms/${code}/ready`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: readyBody,
+          });
+          if (res.ok) {
+            setSquadSubmitted(true);
+            return;
+          }
+          // 409 = host hasn't advanced the season yet — keep waiting.
+          if (res.status !== 409 && ++hardFailures >= 5) return;
+        } catch { /* network blip — retry */ }
+        await new Promise(res => setTimeout(res, 2000));
+      }
+    })();
+  }, []);
+
   const handleManageConfirm = useCallback(async (arranged: DraftPlayer[], speed?: 0.5 | 1 | 1.5) => {
     setPlayers(arranged);
     if (!roomCode && speed !== undefined) {
@@ -661,27 +704,21 @@ export default function DraftPage() {
     }
     if (roomCode) {
       // Multiplayer: if this is a subsequent season, advance the room first (idempotent)
-      if (currentSeason > 1) {
+      if (currentSeason > 1 && isHost) {
         await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ nextSeasonNumber: currentSeason }),
         });
       }
-      // Submit squad and go back to lobby
-      const { teamStrength, avgOvr } = computeTeamStrength(arranged);
-      await fetch(`/api/draft/rooms/${roomCode}/ready`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ squad: arranged, avg_ovr: avgOvr, team_strength: teamStrength }),
-      });
-      setSquadSubmitted(true);
+      // Go back to the lobby immediately; ready is submitted in the background
       setPhase("lobby");
+      submitReadyWithRetry(roomCode, arranged);
     } else {
       setPhase("result");
     }
     scrollTop();
-  }, [roomCode, currentSeason, scrollTop]);
+  }, [roomCode, currentSeason, isHost, scrollTop, submitReadyWithRetry]);
 
   const handleNewRun = useCallback(() => {
     clearProgress();
@@ -849,45 +886,24 @@ export default function DraftPage() {
       setSettings(prev => prev ? { ...prev, simulationSpeed: speed } : prev);
     }
     if (roomCode) {
-      if (currentSeason > 1) {
-        if (isHost) {
-          // The host advances the room to the new season (resets everyone to
-          // "drafting"). Only after that should anyone submit their ready.
-          await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nextSeasonNumber: currentSeason }),
-          });
-        } else {
-          // Non-hosts must wait until the host's reset lands — otherwise the
-          // host's next-season would wipe a ready submitted too early, leaving
-          // the player stuck "drafting" forever and the lobby unable to start.
-          const deadline = Date.now() + 30000;
-          while (Date.now() < deadline) {
-            try {
-              const r = await fetch(`/api/draft/rooms/${roomCode}`);
-              if (r.ok) {
-                const d = await r.json();
-                if ((d.room?.season_number ?? 1) >= currentSeason) break;
-              }
-            } catch { /* retry */ }
-            await new Promise(res => setTimeout(res, 1000));
-          }
-        }
+      if (currentSeason > 1 && isHost) {
+        // The host advances the room to the new season (resets everyone to
+        // "drafting"). Only after that can anyone's ready be accepted.
+        await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nextSeasonNumber: currentSeason }),
+        });
       }
-      const { teamStrength, avgOvr } = computeTeamStrength(arranged);
-      await fetch(`/api/draft/rooms/${roomCode}/ready`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ squad: arranged, avg_ovr: avgOvr, team_strength: teamStrength }),
-      });
-      setSquadSubmitted(true);
+      // Enter the lobby immediately; ready is submitted in the background
+      // with retries until the host has advanced the season.
       setPhase("lobby");
+      submitReadyWithRetry(roomCode, arranged);
     } else {
       setPhase("result");
     }
     scrollTop();
-  }, [roomCode, currentSeason, isHost, scrollTop]);
+  }, [roomCode, currentSeason, isHost, scrollTop, submitReadyWithRetry]);
 
   const handleSkipToTest = useCallback(async () => {
     const defaultSettings: DraftSettings = {

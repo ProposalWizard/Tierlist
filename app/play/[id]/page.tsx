@@ -186,7 +186,15 @@ export default async function PlayPage({ params }: Props) {
         tierlistId={id}
         tierlistTitle={tierlist.title}
         isLoggedIn={isLoggedIn}
-        initialTiers={tierlist.tiers as VoteTier[] | undefined}
+        initialTiers={
+          // Validate the JSONB shape — a malformed row (missing label/color)
+          // would otherwise render blank, uncolored tier rows.
+          Array.isArray(tierlist.tiers)
+            ? (tierlist.tiers as VoteTier[]).filter(
+                (t) => t && typeof t.label === "string" && t.label.length > 0 && typeof t.color === "string"
+              )
+            : undefined
+        }
         faceDetectionEnabled={tierlist.face_detection_enabled !== false}
       />
       <ViewPinger tierlistId={id} />

@@ -69,7 +69,7 @@ const ISO: Record<string, string> = {
   Pakistan:"PK",Palestine:"PS",Panama:"PA",Paraguay:"PY",Peru:"PE",
   Philippines:"PH",Poland:"PL",Portugal:"PT",Qatar:"QA",Romania:"RO",
   Russia:"RU",Rwanda:"RW","Saudi Arabia":"SA",Scotland:"GB-SCT",
-  Senegal:"SN",Serbia:"SR",
+  Senegal:"SN",Serbia:"RS",
   "Sierra Leone":"SL",Singapore:"SG",Slovakia:"SK",Slovenia:"SI",
   Somalia:"SO","South Africa":"ZA","South Sudan":"SS",Spain:"ES",
   "Sri Lanka":"LK",Sudan:"SD",Suriname:"SR",Sweden:"SE",

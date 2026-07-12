@@ -362,9 +362,9 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
     const bestSG = seasonGoals.reduce((a, b) => b.goals > a.goals ? b : a);
     items.push({ label: "Most Goals in a Season", value: `${bestSG.goals} (S${bestSG.season})` });
 
-    const unbeatenHome = allSeasons.reduce((total, r) => total + r.matches.filter(m => m.isHome && m.result !== 'L').length, 0);
+    const homeWins = allSeasons.reduce((total, r) => total + r.matches.filter(m => m.isHome && m.result === 'W').length, 0);
     const homeGames = allSeasons.reduce((total, r) => total + r.matches.filter(m => m.isHome).length, 0);
-    items.push({ label: "Home Win %", value: `${Math.round((unbeatenHome / homeGames) * 100)}%` });
+    if (homeGames > 0) items.push({ label: "Home Win %", value: `${Math.round((homeWins / homeGames) * 100)}%` });
 
     const comebacks = allSeasons.reduce((total, season) => {
       let count = 0;
