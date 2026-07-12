@@ -692,8 +692,21 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     // Award XP/objectives/history as soon as the season result is computed — don't gate behind
     // the visual reveal animation finishing, or a player who navigates away mid-animation loses credit
     // for a season that already finished simulating.
-    if (!historySaved.current) {
+    //
+    // The run key must be DETERMINISTIC for a given season: re-entering the
+    // results screen (refresh, resim of the seeded season, multiplayer room
+    // still "complete") must produce the same key so the server's event_ref
+    // dedup and the localStorage guard block double-crediting. A Date.now()
+    // key regenerated per mount used to re-award XP and duplicate history.
+    const squadFp = players.map(p => `${p.name}:${p.overall}`).join("|");
+    let sqHash = 0;
+    for (let i = 0; i < squadFp.length; i++) sqHash = ((sqHash << 5) - sqHash + squadFp.charCodeAt(i)) | 0;
+    const runKey = `s${seasonNumber}-f${season.actualFinish}-p${season.teamRecord.points}-g${season.teamRecord.goalsFor}.${season.teamRecord.goalsAgainst}-q${Math.abs(sqHash).toString(36)}`;
+    let alreadyCredited = false;
+    try { alreadyCredited = localStorage.getItem(`draft-credited-${runKey}`) === "1"; } catch { /* ignore */ }
+    if (!historySaved.current && !alreadyCredited) {
       historySaved.current = true;
+      try { localStorage.setItem(`draft-credited-${runKey}`, "1"); } catch { /* ignore */ }
       const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
       const plPlayerGoals: Record<string, number> = {};
       const plPlayerAssists: Record<string, number> = {};
@@ -708,7 +721,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       const topScorerGoals = Object.values(plPlayerGoals).length > 0 ? Math.max(...Object.values(plPlayerGoals)) : 0;
       const topAssists = Object.values(plPlayerAssists).length > 0 ? Math.max(...Object.values(plPlayerAssists)) : 0;
       saveRunToHistory({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: runKey,
         date: new Date().toISOString(),
         formation: formationName || "",
         seasonNumber,
@@ -736,7 +749,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
       if (isSignedIn) {
         (async () => {
-          const runId = `s${seasonNumber}-${Date.now()}`;
+          const runId = runKey;
           // Track the user's level as XP is awarded sequentially
           let currentLevel: number | null = null;
           const awardXp = async (eventType: string, ref: string, amount: number) => {
@@ -770,7 +783,11 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
           // Check objectives
           try {
-            const competition: "pl_draft" | "cl_draft" = (season.ucl || season.uel) ? "cl_draft" : "pl_draft";
+            // A UCL/UEL object exists for every season 2+ even when the player
+            // did NOT qualify (with qualified: false) — gate on qualification,
+            // not existence, or CL objectives credit for non-qualified seasons.
+            const inEurope = !!(season.ucl?.qualified || season.uel?.qualified);
+            const competition: "pl_draft" | "cl_draft" = inEurope ? "cl_draft" : "pl_draft";
 
             const winEvents: import("@/lib/objectiveTypes").WinEvent[] = [];
             winEvents.push("pl_complete");
@@ -783,7 +800,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (season.charityShield?.result === "W") winEvents.push("community_shield_win");
             if (season.superCup?.result === "W") winEvents.push("super_cup_win");
             if (season.actualFinish === 1 && season.faCup.winner) winEvents.push("double");
-            if (season.ucl) {
+            if (season.ucl?.qualified) {
               winEvents.push("cl_complete");
               if (season.ucl.knockoutTies.length > 0) { winEvents.push("cl_qualify"); winEvents.push("cl_r16"); }
               const uclExitStages = ["Quarter-Final", "Semi-Final", "Final"];
@@ -793,7 +810,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               if (season.ucl.winner) winEvents.push("cl_win");
               if (season.actualFinish === 1 && season.ucl.winner) winEvents.push("treble");
             }
-            if (season.uel) {
+            if (season.uel?.qualified) {
               if (season.uel.winner) winEvents.push("europa_win");
               if (season.uel.winner || season.uel.exitStage === "Final") winEvents.push("europa_final");
               if (season.uel.winner || season.uel.exitStage === "Final" || season.uel.exitStage === "Semi-Final") winEvents.push("europa_sf");
