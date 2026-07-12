@@ -287,6 +287,15 @@ export const RESERVE_TEAMS: { name: string; strength: number }[] = [
 
 const ALL_TEAMS_POOL: { name: string; strength: number }[] = [...DEFAULT_PL_TEAMS, ...RESERVE_TEAMS];
 
+// True when a (user-chosen) team name collides with any AI club that can
+// appear in the league or cups. The shared league table is keyed by team
+// name, so a human team named "Arsenal" would merge with the AI Arsenal into
+// one corrupted row (19-team table, doubled stats) for every player.
+export function isReservedTeamName(name: string): boolean {
+  const n = name.trim().toLowerCase();
+  return [...ALL_TEAMS_POOL, ...LOWER_LEAGUE_CLUBS].some(t => t.name.toLowerCase() === n);
+}
+
 const LOWER_LEAGUE_CLUBS: { name: string; strength: number }[] = [
   { name: 'Sunderland', strength: 70 },
   { name: 'Bristol City', strength: 69 },

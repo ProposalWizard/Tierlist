@@ -16,11 +16,19 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id")
+    .select("id, status")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
   if (!room) return new Response("Room not found", { status: 404 });
+
+  // A ready submitted while the previous season is still "complete" would be
+  // wiped moments later by the host's next-season reset, deadlocking the room
+  // (the player looks unready forever but their client thinks it submitted).
+  // Reject it; the client retries until the host has advanced the season.
+  if (room.status === "complete") {
+    return new Response("Waiting for host to start the next season", { status: 409 });
+  }
 
   const { error } = await service
     .from("draft_room_players")
