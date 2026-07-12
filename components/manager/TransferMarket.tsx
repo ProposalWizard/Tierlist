@@ -117,9 +117,23 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
         if (compatible.length > 0) pool = compatible;
       }
 
-      const best = pool.reduce((a, b) =>
+      let best = pool.reduce((a, b) =>
         Number((b as Record<string, unknown>).overall ?? 0) > Number((a as Record<string, unknown>).overall ?? 0) ? b : a
       , pool[0]) as Record<string, unknown>;
+
+      // Guarantee an escape hatch: if this is the last option and nothing so
+      // far is affordable, take the best player the budget CAN buy instead of
+      // the club's best — three unaffordable options used to soft-lock the
+      // squad build (no reroll, no skip, disabled buttons).
+      const nothingAffordableYet = options.every(o => o.price > budget);
+      if (i === 2 && nothingAffordableYet && playerPrice(Number(best.overall ?? 0)) > budget) {
+        const affordable = pool.filter(p => playerPrice(Number((p as Record<string, unknown>).overall ?? 0)) <= budget);
+        if (affordable.length > 0) {
+          best = affordable.reduce((a, b) =>
+            Number((b as Record<string, unknown>).overall ?? 0) > Number((a as Record<string, unknown>).overall ?? 0) ? b : a
+          , affordable[0]) as Record<string, unknown>;
+        }
+      }
 
       const abbr = clubYear.club.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 3);
       const ovr = Number(best.overall ?? 0);
@@ -148,13 +162,23 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
       next[slotIdx] = { options, loading: false, picked: null };
       return next;
     });
-  }, [availableClubs, formation.slots, pickClubYear, slotStates, usedClubYears]);
+  }, [availableClubs, formation.slots, pickClubYear, slotStates, usedClubYears, budget]);
 
   useEffect(() => {
     if (availableClubs && slotStates[currentSlot]?.options === null && !slotStates[currentSlot]?.loading) {
       loadOptions(currentSlot);
     }
   }, [availableClubs, currentSlot, slotStates, loadOptions]);
+
+  // Clears a slot's options so the loader effect re-fires with fresh clubs —
+  // the escape hatch when scouting returned nothing or only unaffordable players.
+  const rescout = (slotIdx: number) => {
+    setSlotStates(prev => {
+      const next = [...prev];
+      next[slotIdx] = { options: null, loading: false, picked: null };
+      return next;
+    });
+  };
 
   const handlePick = (slotIdx: number, option: Option) => {
     if (option.price > budget) return;
@@ -334,6 +358,24 @@ export default function TransferMarket({ formationName, onComplete }: Props) {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* Escape hatch — scouting found nothing, or nothing affordable */}
+        {currentState?.options && !currentState.picked && !currentState.loading &&
+          (currentState.options.length === 0 || currentState.options.every(o => o.price > budget)) && (
+          <div className="mt-3 text-center">
+            <p className="text-xs text-white/70 mb-2">
+              {currentState.options.length === 0
+                ? "Scouting came back empty — try different clubs."
+                : "None of these players fit your remaining budget."}
+            </p>
+            <button
+              onClick={() => rescout(currentSlot)}
+              className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-sm font-bold text-white transition-all active:scale-95"
+            >
+              Scout Different Clubs
+            </button>
           </div>
         )}
 

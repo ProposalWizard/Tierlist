@@ -528,19 +528,12 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
 
   const handleFinish = () => {
     const is2P = mode === "2player";
-    let finalScore: number;
-    let timeSeconds: number;
-    if (is2P) {
-      const [s1, s2] = gameState.playerScores;
-      finalScore = s1 + s2;
-      const bonusCount = (gameState.playerBonusAwarded[0] ? 1 : 0) + (gameState.playerBonusAwarded[1] ? 1 : 0);
-      if (bonusCount > 1) finalScore -= puzzle.three_in_a_row_bonus;
-      timeSeconds = Math.round((playerTimers[0] + playerTimers[1]) / 1000);
-    } else {
-      finalScore = soloCurrentScore;
-      timeSeconds = Math.round(soloTimer / 1000);
+    if (!is2P) {
+      // Only SOLO results are personal records. A 2-player couch game used to
+      // save the combined s1+s2 total as the signed-in user's score, burning
+      // their one-score-per-puzzle slot (a later solo attempt was rejected).
+      saveScore(soloCurrentScore, totalMaxScore, Math.round(soloTimer / 1000));
     }
-    saveScore(finalScore, totalMaxScore, timeSeconds);
     setGameState((s) => ({ ...s, finished: true }));
     setSelectedSquare(null);
   };
@@ -727,7 +720,7 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
 
               <section>
                 <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Scoring</h3>
-                <p>Each valid answer earns points based on how rare that player is as an answer for that specific square. Rarer answers score more. Filling all 9 squares earns a <strong className="text-white">bonus</strong> on top.</p>
+                <p>Each valid answer earns points based on how rare that player is as an answer for that specific square. Rarer answers score more. Getting <strong className="text-white">three in a row</strong> earns a bonus on top.</p>
                 <p className="mt-1.5">In solo mode your total score is shown as you go. Try to beat your personal best by picking the highest-scoring answers.</p>
               </section>
 
@@ -1050,7 +1043,12 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
       {/* Finish button */}
       <div className="mt-6 flex justify-center gap-3">
         <button
-          onClick={handleFinish}
+          onClick={() => {
+            // Giving up saves the current score permanently (one score per
+            // puzzle) — confirm so a curious first tap can't burn the daily.
+            if (!allSquaresFilled && mode === "solo" && !window.confirm("Finish now? Your current score will be saved as your result for this puzzle.")) return;
+            handleFinish();
+          }}
           className="rounded-xl bg-indigo-600 px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-indigo-500 md:text-base"
         >
           {allSquaresFilled ? "View Results" : "Give Up and See Results"}

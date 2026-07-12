@@ -99,6 +99,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
   const [won, setWon] = useState(false);
   const [anim, setAnim] = useState<AnimState | null>(null);
   const [showIncorrectFlash, setShowIncorrectFlash] = useState(false);
+  const [duplicateMsg, setDuplicateMsg] = useState<string | null>(null);
   const [flashPosition, setFlashPosition] = useState<number | null>(null);
   const [guessedNames, setGuessedNames] = useState<Set<string>>(new Set());
   const [slotNames, setSlotNames] = useState<Map<number, string>>(new Map());
@@ -199,6 +200,18 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
   const handleGuess = useCallback(() => {
     if (gameOver || anim || !guess.trim()) return;
 
+    // Re-guessing an answer that's already on the board shouldn't burn a
+    // life — tell the player it's already found instead.
+    const alreadyFound = hasBank
+      ? answers.find((a) => guessedNames.has(a.name) && fuzzyMatch(guess, a))
+      : answers.find((a) => revealed.has(a.position) && fuzzyMatch(guess, a));
+    if (alreadyFound) {
+      setGuess("");
+      setDuplicateMsg(`"${alreadyFound.name}" is already on the board`);
+      setTimeout(() => setDuplicateMsg(null), 2000);
+      return;
+    }
+
     if (hasBank) {
       const matchedAnswer = answers.find(
         (a) => !guessedNames.has(a.name) && fuzzyMatch(guess, a)
@@ -241,6 +254,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
     setGuessedNames(new Set());
     setSlotNames(new Map());
     setPendingSlotName(null);
+    setDuplicateMsg(null);
     pendingSlotNameRef.current = null;
     inputRef.current?.focus();
   };
@@ -385,6 +399,10 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             </button>
           </div>
         ) : (
+          <div>
+          {duplicateMsg && (
+            <div className="mb-2 text-center text-xs font-bold text-amber-400">{duplicateMsg}</div>
+          )}
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -404,6 +422,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             >
               Guess
             </button>
+          </div>
           </div>
         )}
 

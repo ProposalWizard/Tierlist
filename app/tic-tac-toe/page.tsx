@@ -86,7 +86,7 @@ export default function TicTacToeMainPage() {
 
               <section>
                 <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2">Scoring</h3>
-                <p>Earn points for each correct answer. Rarer players score more points. Fill all 9 squares for a bonus.</p>
+                <p>Earn points for each correct answer. Rarer players score more points. Get three in a row for a bonus.</p>
               </section>
 
               <section>
