@@ -84,6 +84,10 @@ export default async function VotePage({ params }: Props) {
       .from("vote_tierlist_votes")
       .select("image_id, tier_label")
       .eq("vote_tierlist_id", id)
+      // Stable order is required for correct pagination — without ORDER BY,
+      // Postgres gives no row-order guarantee, so page boundaries could
+      // double-count some votes and skip others.
+      .order("id")
       .range(from, from + PAGE - 1);
     if (!page || page.length === 0) break;
     for (const v of page) {

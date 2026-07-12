@@ -20,14 +20,39 @@ import ImageWithFallback from "./ImageWithFallback";
 
 const VOTER_ID_KEY = "vote_voter_id";
 
+// Session-scoped fallback when localStorage is blocked (private mode /
+// "block all cookies") — an uncaught SecurityError here used to crash the
+// whole vote page into the error boundary for that cohort.
+let memoryVoterId = "";
+
 function getOrCreateVoterId(): string {
   if (typeof window === "undefined") return "";
-  let id = localStorage.getItem(VOTER_ID_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(VOTER_ID_KEY, id);
+  try {
+    // Always re-read storage (don't trust a per-tab cache): if two fresh tabs
+    // raced to mint an ID, converging on the stored value keeps one identity
+    // per person instead of one per tab.
+    let id = localStorage.getItem(VOTER_ID_KEY);
+    if (!id) {
+      id = memoryVoterId || crypto.randomUUID();
+      localStorage.setItem(VOTER_ID_KEY, id);
+    }
+    memoryVoterId = id;
+    return id;
+  } catch {
+    if (!memoryVoterId) memoryVoterId = crypto.randomUUID();
+    return memoryVoterId;
   }
-  return id;
+}
+
+// Serialize vote POSTs: the server updates XP/votes_cast with a read-modify-
+// write, so two in-flight votes (rapid taps on different images) could both
+// read the same total and one award would be lost. One request at a time
+// keeps the optimistic UI instant while the network calls queue.
+let votePostQueue: Promise<unknown> = Promise.resolve();
+function queuedFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+  const next = votePostQueue.catch(() => {}).then(() => fetch(input, init));
+  votePostQueue = next;
+  return next;
 }
 
 interface Props {
@@ -136,9 +161,14 @@ export default function VoteBoard({
 
     try {
       const body: Record<string, string> = { image_id: imageId, tier_label: tierLabel };
-      if (!isLoggedIn) body.voter_id = voterIdRef.current;
+      if (!isLoggedIn) {
+        // Re-resolve at cast time so two tabs that raced on first visit
+        // converge on the stored identity instead of voting as two people.
+        voterIdRef.current = getOrCreateVoterId() || voterIdRef.current;
+        body.voter_id = voterIdRef.current;
+      }
 
-      const res = await fetch(`/api/vote-tierlists/${votelistId}/vote`, {
+      const res = await queuedFetch(`/api/vote-tierlists/${votelistId}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
