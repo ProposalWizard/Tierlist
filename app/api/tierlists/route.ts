@@ -79,9 +79,24 @@ export async function POST(request: Request) {
   const cleanCategory = category?.trim() || "Other";
   const slug = `${slugify(title.trim())}-${Date.now().toString(36)}`;
 
+  // Custom tier rows (labels/colors) from the create board. Without this the
+  // creator's tiers were silently discarded and every published list fell
+  // back to the default S/A/B/C/D.
+  let tiers: { label: string; color: string }[] | null = null;
+  if (Array.isArray(body.tiers) && body.tiers.length > 0 && body.tiers.length <= 12) {
+    const clean = body.tiers
+      .filter((t: unknown): t is { label: unknown; color: unknown } => !!t && typeof t === "object")
+      .map((t: { label: unknown; color: unknown }) => ({
+        label: String(t.label ?? "").slice(0, 40),
+        color: String(t.color ?? "").slice(0, 32),
+      }))
+      .filter((t: { label: string; color: string }) => t.label.length > 0);
+    if (clean.length > 0) tiers = clean;
+  }
+
   const { data: tierlist, error: tlError } = await supabase
     .from("tierlists")
-    .insert({ created_by: user.id, title: title.trim(), category: cleanCategory, slug, cover_image_url })
+    .insert({ created_by: user.id, title: title.trim(), category: cleanCategory, slug, cover_image_url, tiers })
     .select("id, slug")
     .single();
 
@@ -102,6 +117,9 @@ export async function POST(request: Request) {
 
   if (imgError) {
     console.error("[POST /api/tierlists] images insert error:", imgError);
+    // Roll back the tierlist row — leaving it published with zero images
+    // puts a permanently empty list on the site (and a retry duplicates it).
+    await supabase.from("tierlists").delete().eq("id", tierlist.id);
     return NextResponse.json({ error: "Failed to save images" }, { status: 500 });
   }
 

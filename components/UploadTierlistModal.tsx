@@ -16,10 +16,12 @@ interface ImageEntry {
 
 interface Props {
   images: ImageEntry[];
+  /** Custom tier rows from the board — persisted so the published list keeps them */
+  tiers?: { label: string; color: string }[];
   onClose: () => void;
 }
 
-export default function UploadTierlistModal({ images, onClose }: Props) {
+export default function UploadTierlistModal({ images, tiers, onClose }: Props) {
   const [title, setTitle] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [category, setCategory] = useState("");
@@ -105,7 +107,6 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
         image_url: string;
         face_center: { x: number; y: number } | null;
       }[] = [];
-      const uploadedPaths: string[] = [];
       for (const img of images) {
         if (img.file) {
           // Locally added image — upload to Supabase Storage
@@ -123,7 +124,10 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
             image_url: urlData.publicUrl,
             face_center: img.face_center ?? null,
           });
-          uploadedPaths.push(uploadData.path);
+          // Track for delayed cleanup right away — if a later upload in this
+          // batch fails, files already in storage would otherwise have no
+          // uploaded_images row and the cleanup job could never find them.
+          supabase.from("uploaded_images").insert({ storage_path: uploadData.path, is_used: false }).then(() => {});
         } else {
           // Image already has a Supabase URL — use it directly
           uploadedImages.push({
@@ -132,13 +136,6 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
             face_center: img.face_center ?? null,
           });
         }
-      }
-
-      // Track uploads for delayed cleanup (non-blocking)
-      if (uploadedPaths.length > 0) {
-        supabase.from("uploaded_images").insert(
-          uploadedPaths.map((p) => ({ storage_path: p, is_used: false }))
-        ).then(() => {});
       }
 
       // Determine cover image URL
@@ -150,6 +147,7 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
           .from("tierlist-images")
           .upload(path, customCover.file, { upsert: false });
         if (uploadError) throw new Error(`Cover upload failed: ${uploadError.message}`);
+        supabase.from("uploaded_images").insert({ storage_path: uploadData.path, is_used: false }).then(() => {});
         const { data: urlData } = supabase.storage
           .from("tierlist-images")
           .getPublicUrl(uploadData.path);
@@ -167,10 +165,14 @@ export default function UploadTierlistModal({ images, onClose }: Props) {
           category,
           cover_image_url,
           images: uploadedImages,
+          tiers: tiers && tiers.length > 0 ? tiers : undefined,
         }),
       });
 
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("You need to sign in to save a tierlist \u2014 use the Sign In link in the menu, then try again.");
+        }
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Failed to upload tierlist");
       }
