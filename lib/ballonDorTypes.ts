@@ -112,6 +112,7 @@ export interface BDEvent {
     isHome: boolean;
     matchweek: number;
     opponentPrestige: number;
+    isBigMatch?: boolean;
   };
   matchResult?: {
     teamGoals: number;
@@ -179,10 +180,63 @@ export interface BDSeason {
   purchasedItems?: string[];
 }
 
+// A career-long rival — same position, comparable age, a genuine BdO contender.
+export interface BDRival {
+  name: string;
+  position: BDPosition;
+  age: number;
+  overall: number;
+  club: string;
+  leagueFlag: string;
+  clubPrestige: number;
+  hasCL: boolean;
+  clWinOdds: number;
+  // The rival's finish in the most recent Ballon d'Or ceremony (0 = unranked)
+  lastBdoRank?: number;
+}
+
+export type LegacyTier = 'GOAT' | 'Legend' | 'Icon' | 'World Class' | 'Cult Hero' | 'Journeyman';
+
+export interface BDLegacy {
+  score: number;
+  tier: LegacyTier;
+  seasonsPlayed: number;
+  bdoWins: number;
+  bdoWinYears: number[];
+  podiums: number;      // rank 2–3 finishes
+  topTens: number;      // rank 4–10 finishes
+  trophies: BDTrophy[]; // aggregated across the whole career (with counts folded into name)
+  totalGoals: number;
+  totalAssists: number;
+  totalCleanSheets: number;
+  peakOverall: number;
+  clubs: string[];
+  bestSeason?: {
+    number: number;
+    year: number;
+    club: string;
+    goals: number;
+    assists: number;
+    cleanSheets: number;
+    rating: number;
+    bdoRank: number;
+  };
+}
+
+// Persisted separately from the career (key: "ballon-dor-legacy-best") so it
+// survives starting a new career.
+export interface BDLegacyBest {
+  bestScore: number;
+  bestTier: LegacyTier;
+  careers: number;
+}
+
 export interface BDCareer {
   player: BDPlayer;
   seasons: BDSeason[];
   current: BDSeason | null;
   bdoWins: number;
   lastBdoRank: number;
+  rival?: BDRival;
+  retired?: boolean;
 }

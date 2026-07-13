@@ -2,6 +2,7 @@ import type {
   BDPosition, BDStats, BDTrophy, BDClub, BDEvent, EventChoice,
   CeremonyEntry, BDOCeremony, BDSeason, BDAttributes, BDPlayer,
   BDArchetype, TransferOffer, LeagueTableRow, BDTeammate,
+  BDRival, BDLegacy, BDCareer, LegacyTier,
 } from './ballonDorTypes';
 
 // --- RNG ---
@@ -1409,11 +1410,24 @@ export const EVENT_POOL: BDEvent[] = [
 ];
 
 // --- Base stat generation ---
+// Club prestige tradeoff: at a stacked, star-heavy club you SHARE the goals and
+// assists; at a smaller club you're THE man and every chance runs through you.
+// This deliberately does NOT touch calcBdoScore's prestige multiplier — it only
+// reshapes raw output, so a big move is a genuine risk/reward decision.
+function statShareMult(prestige: number): number {
+  if (prestige >= 90) return 0.85; // elite squad — spread the load
+  if (prestige >= 80) return 0.95;
+  if (prestige >= 70) return 1.05;
+  return 1.15;                      // talisman effect
+}
+
 export function generateBaseStats(
   position: BDPosition, overall: number, inCL: boolean, seed: number,
+  clubPrestige?: number,
 ): BDStats {
   const rng = mulberry32(seed);
   const clMult = inCL ? 1.04 : 1;
+  const share = clubPrestige != null ? statShareMult(clubPrestige) : 1.0;
   const ovr = overall;
 
   // Scaled to OVR: a 63-rated player gets minimal stats, 90+ gets elite stats
@@ -1421,8 +1435,8 @@ export function generateBaseStats(
 
   if (position === 'ATT') {
     return {
-      goals: clamp(ri(rng, ovrScaled * 0.68, 4), 0, 38),
-      assists: clamp(ri(rng, ovrScaled * 0.20, 2), 0, 14),
+      goals: clamp(Math.round(ri(rng, ovrScaled * 0.68, 4) * share), 0, 42),
+      assists: clamp(Math.round(ri(rng, ovrScaled * 0.20, 2) * share), 0, 16),
       appearances: clamp(ri(rng, 18 + ovrScaled * 0.42, 3), 12, 38),
       avgRating: clamp(gauss(rng, 6.25 + ovrScaled * 0.033, 0.20) * clMult, 6.0, 9.2),
       cleanSheets: 0,
@@ -1431,8 +1445,8 @@ export function generateBaseStats(
   }
   if (position === 'MID') {
     return {
-      goals: clamp(ri(rng, ovrScaled * 0.28, 3), 0, 18),
-      assists: clamp(ri(rng, ovrScaled * 0.38, 3), 0, 20),
+      goals: clamp(Math.round(ri(rng, ovrScaled * 0.28, 3) * share), 0, 20),
+      assists: clamp(Math.round(ri(rng, ovrScaled * 0.38, 3) * share), 0, 22),
       appearances: clamp(ri(rng, 18 + ovrScaled * 0.42, 3), 12, 38),
       avgRating: clamp(gauss(rng, 6.28 + ovrScaled * 0.033, 0.20) * clMult, 6.0, 9.2),
       cleanSheets: 0,
@@ -1441,8 +1455,8 @@ export function generateBaseStats(
   }
   if (position === 'DEF') {
     return {
-      goals: clamp(ri(rng, 0.5 + ovrScaled * 0.04, 1.2), 0, 6),
-      assists: clamp(ri(rng, 0.5 + ovrScaled * 0.08, 1.5), 0, 8),
+      goals: clamp(Math.round(ri(rng, 0.5 + ovrScaled * 0.04, 1.2) * share), 0, 7),
+      assists: clamp(Math.round(ri(rng, 0.5 + ovrScaled * 0.08, 1.5) * share), 0, 9),
       appearances: clamp(ri(rng, 16 + ovrScaled * 0.44, 3), 10, 38),
       avgRating: clamp(gauss(rng, 6.20 + ovrScaled * 0.032, 0.20) * clMult, 6.0, 9.0),
       cleanSheets: clamp(ri(rng, ovrScaled * 0.50, 3), 0, 22),
@@ -1576,31 +1590,78 @@ function simulateTrophies(
   return trophies;
 }
 
+// A rival contender in the Ballon d'Or field (pool rival or the career rival).
+interface RivalContender {
+  name: string; club: string; leagueFlag: string; position: BDPosition;
+  stats: BDStats; trophies: BDTrophy[]; bdoScore: number; age: number; isRival: boolean;
+}
+
+// Builds the full deterministic rival field for a season. Seeds are keyed on the
+// season year, so the field is stable across re-renders and matches the eventual
+// ceremony — this lets the mid-season race widget project accurately.
+function buildRivalContenders(season: BDSeason, careerRival?: BDRival): RivalContender[] {
+  const year = season.year;
+  const yearsElapsed = Math.max(0, (season.number ?? 1) - 1);
+  const rivals: RivalContender[] = RIVAL_POOL
+    .filter(t => !careerRival || t.name !== careerRival.name)
+    .map(t => ({ ...t, age: t.age + yearsElapsed }))
+    .filter(t => t.age <= 40)
+    .map((t, i) => {
+      const ss = generateRivalStats(t, hashSeed(`rival_${t.name}_${year}_${i}`));
+      const tr = generateRivalTrophies(t, mulberry32(hashSeed(`rtrophy_${t.name}_${year}`)));
+      const baseFame = clamp(t.overall * 0.65 + 10 + (mulberry32(hashSeed(`fame_${t.name}_${year}`))() * 20 - 10), 30, 100);
+      const ageFameMult = t.age >= 35 ? 0.8 : t.age >= 32 ? 0.9 : t.age <= 21 ? 0.85 : 1.0;
+      const fame = baseFame * ageFameMult;
+      return {
+        name: t.name, club: t.club, leagueFlag: t.leagueFlag, position: t.position,
+        stats: ss, trophies: tr, age: t.age, isRival: false,
+        bdoScore: calcBdoScore(ss, tr, fame, t.position, Math.round(t.overall * rivalAgeMult(t.age))),
+      };
+    });
+
+  // Inject the career rival as a genuine contender: +8% on his simulated output
+  // and his own trophies, so he targets a top-5 finish and can win in strong years.
+  if (careerRival) {
+    const t: RivalTemplate = {
+      name: careerRival.name, club: careerRival.club, leagueFlag: careerRival.leagueFlag,
+      position: careerRival.position, overall: careerRival.overall, clubPrestige: careerRival.clubPrestige,
+      hasCL: careerRival.hasCL, clWinOdds: careerRival.clWinOdds, age: careerRival.age,
+    };
+    const raw = generateRivalStats(t, hashSeed(`crival_${t.name}_${year}`));
+    const boost = 1.08;
+    const ss: BDStats = {
+      goals: Math.round(raw.goals * boost),
+      assists: Math.round(raw.assists * boost),
+      appearances: raw.appearances,
+      avgRating: clamp(Number((raw.avgRating + 0.15).toFixed(2)), 5.5, 9.9),
+      cleanSheets: Math.round(raw.cleanSheets * boost),
+      manOfTheMatch: Math.round(raw.manOfTheMatch * boost),
+    };
+    const tr = generateRivalTrophies(t, mulberry32(hashSeed(`crtrophy_${t.name}_${year}`)));
+    const fame = clamp(t.overall * 0.72 + 12, 35, 100);
+    rivals.push({
+      name: t.name, club: t.club, leagueFlag: t.leagueFlag, position: t.position,
+      stats: ss, trophies: tr, age: t.age, isRival: true,
+      bdoScore: calcBdoScore(ss, tr, fame, t.position, Math.round(t.overall * rivalAgeMult(t.age))) * 1.05,
+    });
+  }
+
+  return rivals;
+}
+
 // --- Ceremony generation ---
 export function generateCeremony(
   player: BDPlayer,
   season: BDSeason,
   combinedStats: BDStats,
+  careerRival?: BDRival,
 ): BDOCeremony {
-  const { year, attributes, trophies, playerOverall } = season;
+  const { attributes, trophies, playerOverall } = season;
 
   // Effective fame boosted by reputation
   const effectiveFame = clamp(attributes.fame + player.reputation * 0.2, 0, 100);
 
-  // Rivals age one year per career season; those past 40 have retired
-  const yearsElapsed = Math.max(0, (season.number ?? 1) - 1);
-  const rivals = RIVAL_POOL
-    .map(t => ({ ...t, age: t.age + yearsElapsed }))
-    .filter(t => t.age <= 40)
-    .map((t, i) => {
-    const ss = generateRivalStats(t, hashSeed(`rival_${t.name}_${year}_${i}`));
-    const tr = generateRivalTrophies(t, mulberry32(hashSeed(`rtrophy_${t.name}_${year}`)));
-    // Fame diminishes with age for older rivals, grows for younger ones
-    const baseFame = clamp(t.overall * 0.65 + 10 + (mulberry32(hashSeed(`fame_${t.name}_${year}`))() * 20 - 10), 30, 100);
-    const ageFameMult = t.age >= 35 ? 0.8 : t.age >= 32 ? 0.9 : t.age <= 21 ? 0.85 : 1.0;
-    const fame = baseFame * ageFameMult;
-    return { ...t, stats: ss, trophies: tr, bdoScore: calcBdoScore(ss, tr, fame, t.position, Math.round(t.overall * rivalAgeMult(t.age))) };
-  });
+  const rivals = buildRivalContenders(season, careerRival);
 
   const playerScore = calcBdoScore(combinedStats, trophies, effectiveFame, player.position, playerOverall, season.club.prestige);
 
@@ -1634,7 +1695,7 @@ export function generateCeremony(
     age: e.age,
   }));
 
-  return { year, entries, playerRank, playerNominated };
+  return { year: season.year, entries, playerRank, playerNominated };
 }
 
 // --- Transfer offer generation ---
@@ -1810,9 +1871,16 @@ function selectTeammates(
   return result;
 }
 
-function buildMatchEvent(fix: Fixture, club: BDClub): BDEvent {
+function buildMatchEvent(fix: Fixture, club: BDClub, rivalClub?: string): BDEvent {
   const mwLabel = fix.matchweek === 0 ? 'Pre-Season Friendly' : `Matchweek ${fix.matchweek}`;
   const title = `${fix.competition} · ${mwLabel}`;
+  // Big match: elite opposition, a Champions League run-in night, or facing the
+  // career rival's club. Pre-season friendlies never count.
+  const isBigMatch = fix.competition !== 'Pre-Season' && (
+    fix.opponentPrestige >= 88 ||
+    (fix.competition === 'Champions League' && fix.phase === 'run_in') ||
+    (!!rivalClub && fix.opponent === rivalClub)
+  );
   const homeAwayStr = fix.isHome ? `${fix.opponent} come to the stadium` : `You travel to ${fix.opponent}`;
   const diffStr = fix.opponentPrestige >= 90
     ? 'Elite opposition. A genuine test of where you stand.'
@@ -1836,6 +1904,7 @@ function buildMatchEvent(fix: Fixture, club: BDClub): BDEvent {
       isHome: fix.isHome,
       matchweek: fix.matchweek,
       opponentPrestige: fix.opponentPrestige,
+      isBigMatch,
     },
     choices: [
       {
@@ -2087,7 +2156,7 @@ export function archetypeDefaults(archetype: BDArchetype): { age: number; overal
   }
 }
 
-export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number): BDSeason {
+export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number, rival?: BDRival): BDSeason {
   const year = 2024 + seasonNumber - 1;
   const seed = hashSeed(`season_${player.name}_${seasonNumber}`);
   const rng = mulberry32(seed);
@@ -2100,7 +2169,7 @@ export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number)
   const matchEventsByPhase: Partial<Record<BDEvent['phase'], BDEvent[]>> = {};
   for (const fix of fixtures) {
     if (!matchEventsByPhase[fix.phase]) matchEventsByPhase[fix.phase] = [];
-    matchEventsByPhase[fix.phase]!.push(buildMatchEvent(fix, club));
+    matchEventsByPhase[fix.phase]!.push(buildMatchEvent(fix, club, rival?.club));
   }
 
   // Sample non-match events from pool per phase
@@ -2162,7 +2231,7 @@ export function initSeason(player: BDPlayer, club: BDClub, seasonNumber: number)
     club,
     playerAge: player.age + (seasonNumber - 1),
     playerOverall: player.overall,
-    baseStats: generateBaseStats(player.position, player.overall, inCL, seed + 999),
+    baseStats: generateBaseStats(player.position, player.overall, inCL, seed + 999, club.prestige),
     eventStats: { goals: 0, assists: 0, appearances: 0, avgRating: 0, cleanSheets: 0, manOfTheMatch: 0 },
     trophies: [],
     attributes,
@@ -2349,7 +2418,7 @@ export function applyManualMatchResult(
 }
 
 // --- Finalize season ---
-export function finalizeSeason(player: BDPlayer, season: BDSeason): BDSeason {
+export function finalizeSeason(player: BDPlayer, season: BDSeason, rival?: BDRival): BDSeason {
   const rng = mulberry32(hashSeed(`trophies_${player.name}_${season.year}`));
 
   // Attribute multiplier: fitness affects appearances, morale affects rating
@@ -2380,7 +2449,7 @@ export function finalizeSeason(player: BDPlayer, season: BDSeason): BDSeason {
   };
 
   const combined = addStats(adjustedBase, season.eventStats);
-  const ceremony = generateCeremony(player, { ...season, trophies: rawTrophies }, combined);
+  const ceremony = generateCeremony(player, { ...season, trophies: rawTrophies }, combined, rival);
 
   // Generate transfer offers for between-season screen
   const transferOffers = generateTransferOffers(player, season.club, ceremony.playerRank, season.number);
@@ -2435,4 +2504,220 @@ export function developPlayer(player: BDPlayer, season: BDSeason): BDPlayer {
   const newRep = clamp(player.reputation + repGain, 0, 100);
 
   return { ...player, age, overall: newOvr, reputation: newRep };
+}
+
+// ── Career rival ─────────────────────────────────────────────────────
+// Generate a career-long rival at career creation: same position, a comparable
+// age, and a real name pulled from the rival pool (never the player's own name).
+export function generateCareerRival(player: BDPlayer): BDRival {
+  const rng = mulberry32(hashSeed(`careerrival_${player.name}_${player.position}`));
+  // Prefer same-position, high-overall templates; fall back to any if none.
+  const samePos = RIVAL_POOL.filter(t => t.position === player.position && t.name !== player.name);
+  const pool = (samePos.length > 0 ? samePos : RIVAL_POOL.filter(t => t.name !== player.name))
+    .slice()
+    .sort((a, b) => b.overall - a.overall);
+  // Pick from the strongest handful so he's a genuine contender.
+  const topN = pool.slice(0, Math.min(6, pool.length));
+  const t = topN[Math.floor(rng() * topN.length)] ?? pool[0] ?? RIVAL_POOL[0];
+
+  const age = clamp(player.age + (rng() < 0.5 ? -1 : 1), 18, 30);
+  return {
+    name: t.name,
+    position: t.position,
+    age,
+    overall: t.overall,
+    club: t.club,
+    leagueFlag: t.leagueFlag,
+    clubPrestige: t.clubPrestige,
+    hasCL: t.hasCL,
+    clWinOdds: t.clWinOdds,
+    lastBdoRank: 0,
+  };
+}
+
+// Age the rival one year per season, with a mild overall decline from 31.
+export function ageRival(rival: BDRival): BDRival {
+  const age = rival.age + 1;
+  let overall = rival.overall;
+  if (age >= 34) overall -= 2;
+  else if (age >= 31) overall -= 1;
+  return { ...rival, age, overall: clamp(overall, 60, 99) };
+}
+
+// ── Mid-season BdO race projection ───────────────────────────────────
+export interface BdoRaceEntry {
+  name: string;
+  club: string;
+  leagueFlag: string;
+  isPlayer: boolean;
+  isRival: boolean;
+  score: number;
+}
+
+export interface BdoRaceProjection {
+  top5: BdoRaceEntry[];
+  playerRank: number;
+  playerScore: number;
+  playerEntry: BdoRaceEntry;
+  gapToLeader: number;
+  leaderName: string;
+}
+
+// Projects the current Ballon d'Or standings mid-season. The player's part-season
+// event output is pro-rated to a full season; the rival field is the same
+// deterministic field the ceremony will use, so the projection is stable.
+export function projectBdoRace(
+  season: BDSeason, player: BDPlayer, careerRival?: BDRival,
+): BdoRaceProjection {
+  const totalEvents = season.events.length || 1;
+  const done = season.events.filter(e => e.chosenId).length;
+  const frac = clamp(done / totalEvents, 0.2, 1);
+
+  // Scale accumulated event stats up to a full-season projection.
+  const es = season.eventStats;
+  const scaledEvent: BDStats = {
+    goals: Math.round(es.goals / frac),
+    assists: Math.round(es.assists / frac),
+    appearances: Math.round(es.appearances / frac),
+    avgRating: es.avgRating,
+    cleanSheets: Math.round(es.cleanSheets / frac),
+    manOfTheMatch: Math.round(es.manOfTheMatch / frac),
+  };
+  const projStats = addStats(season.baseStats, scaledEvent);
+  const effectiveFame = clamp(season.attributes.fame + player.reputation * 0.2, 0, 100);
+  const playerScore = calcBdoScore(
+    projStats, season.trophies, effectiveFame, player.position, season.playerOverall, season.club.prestige,
+  );
+
+  const rivals = buildRivalContenders(season, careerRival);
+  const all: BdoRaceEntry[] = [
+    ...rivals.map(r => ({
+      name: r.name, club: r.club, leagueFlag: r.leagueFlag,
+      isPlayer: false, isRival: r.isRival, score: r.bdoScore,
+    })),
+    {
+      name: player.name, club: season.club.name, leagueFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+      isPlayer: true, isRival: false, score: playerScore,
+    },
+  ].sort((a, b) => b.score - a.score);
+
+  const playerRank = all.findIndex(e => e.isPlayer) + 1;
+  const playerEntry = all[playerRank - 1];
+  const leader = all[0];
+
+  return {
+    top5: all.slice(0, 5),
+    playerRank,
+    playerScore,
+    playerEntry,
+    gapToLeader: Math.max(0, Math.round(leader.score - playerScore)),
+    leaderName: leader.name,
+  };
+}
+
+// ── Legacy / retirement ──────────────────────────────────────────────
+const LEGACY_TIERS: { tier: LegacyTier; min: number; color: string; blurb: string }[] = [
+  { tier: 'GOAT',        min: 4000, color: '#fbbf24', blurb: 'The Greatest Of All Time. An untouchable career.' },
+  { tier: 'Legend',      min: 2500, color: '#f59e0b', blurb: 'A bona fide legend of the game.' },
+  { tier: 'Icon',        min: 1350, color: '#a78bfa', blurb: 'An icon — remembered for generations.' },
+  { tier: 'World Class', min: 750,  color: '#60a5fa', blurb: 'A genuinely world-class career.' },
+  { tier: 'Cult Hero',   min: 350,  color: '#34d399', blurb: 'A cult hero the fans adored.' },
+  { tier: 'Journeyman',  min: 0,    color: '#9ca3af', blurb: 'A solid professional journeyman.' },
+];
+
+export function legacyTierMeta(tier: LegacyTier): { color: string; blurb: string } {
+  const m = LEGACY_TIERS.find(t => t.tier === tier) ?? LEGACY_TIERS[LEGACY_TIERS.length - 1];
+  return { color: m.color, blurb: m.blurb };
+}
+
+function legacyTierFromScore(score: number): LegacyTier {
+  return (LEGACY_TIERS.find(t => score >= t.min) ?? LEGACY_TIERS[LEGACY_TIERS.length - 1]).tier;
+}
+
+// Aggregate a completed career into a Legacy score + tier + recap totals.
+export function computeLegacy(career: BDCareer): BDLegacy {
+  const seasons = career.seasons;
+  const pos = career.player.position;
+
+  let totalGoals = 0, totalAssists = 0, totalCleanSheets = 0;
+  let peakOverall = career.player.overall;
+  let bdoWins = 0, podiums = 0, topTens = 0;
+  const bdoWinYears: number[] = [];
+  const clubs: string[] = [];
+  const trophyCounts = new Map<string, { count: number; emoji: string; bdoBonus: number }>();
+
+  let best: BDLegacy['bestSeason'];
+  let bestScore = -1;
+
+  for (const s of seasons) {
+    const g = s.baseStats.goals + s.eventStats.goals;
+    const a = s.baseStats.assists + s.eventStats.assists;
+    const cs = s.baseStats.cleanSheets + s.eventStats.cleanSheets;
+    const rating = Number((s.baseStats.avgRating + s.eventStats.avgRating).toFixed(1));
+    totalGoals += g;
+    totalAssists += a;
+    totalCleanSheets += cs;
+    peakOverall = Math.max(peakOverall, s.playerOverall);
+    if (!clubs.includes(s.club.name)) clubs.push(s.club.name);
+
+    for (const t of s.trophies) {
+      const prev = trophyCounts.get(t.name);
+      if (prev) prev.count += 1;
+      else trophyCounts.set(t.name, { count: 1, emoji: t.emoji, bdoBonus: t.bdoBonus });
+    }
+
+    const rank = s.ceremony?.playerRank ?? 0;
+    if (rank === 1) { bdoWins += 1; bdoWinYears.push(s.year); }
+    else if (rank === 2 || rank === 3) podiums += 1;
+    else if (rank >= 4 && rank <= 10) topTens += 1;
+
+    // Best season = highest single-season BdO score (fall back to raw output).
+    const seasonScore = (rank >= 1 ? (26 - rank) * 40 : 0) + g * 4 + a * 3 + cs * 3 + s.trophies.length * 20;
+    if (seasonScore > bestScore) {
+      bestScore = seasonScore;
+      best = { number: s.number, year: s.year, club: s.club.name, goals: g, assists: a, cleanSheets: cs, rating, bdoRank: rank };
+    }
+  }
+
+  // Trophy points by type.
+  let trophyScore = 0;
+  const trophies: BDTrophy[] = [];
+  for (const [name, info] of Array.from(trophyCounts.entries())) {
+    const per = name.includes('Champions League') ? 120
+      : (name.includes('Premier League') || name === 'La Liga' || name === 'Bundesliga' || name === 'Serie A' || name === 'Ligue 1' || name.includes('League Title')) ? 80
+      : 25;
+    trophyScore += per * info.count;
+    trophies.push({ name: info.count > 1 ? `${name} ×${info.count}` : name, emoji: info.emoji, bdoBonus: info.bdoBonus });
+  }
+
+  const goalPts = pos === 'GK' || pos === 'DEF'
+    ? totalCleanSheets * 2 + totalGoals * 1.5 + totalAssists * 1.2
+    : totalGoals * 1.5 + totalAssists * 1.2;
+
+  const score = Math.round(
+    bdoWins * 500 +
+    podiums * 150 +
+    topTens * 40 +
+    trophyScore +
+    goalPts +
+    seasons.length * 10 +
+    Math.max(0, peakOverall - 80) * 5,
+  );
+
+  return {
+    score,
+    tier: legacyTierFromScore(score),
+    seasonsPlayed: seasons.length,
+    bdoWins,
+    bdoWinYears,
+    podiums,
+    topTens,
+    trophies,
+    totalGoals,
+    totalAssists,
+    totalCleanSheets,
+    peakOverall,
+    clubs,
+    bestSeason: best,
+  };
 }
