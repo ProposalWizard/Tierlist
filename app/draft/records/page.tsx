@@ -216,10 +216,27 @@ function Leaderboard({ entries, rt, expanded }: { entries: RecordEntry[]; rt: Re
   );
 }
 
+function YourBest({ entry, rt }: { entry: { value: number; playerName: string | null; seasonNumber: number | null } | undefined; rt: RecordType }) {
+  if (!entry || entry.value <= 0) return null;
+  return (
+    <div className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-3 py-2">
+      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 shrink-0">Your best</span>
+      <span className="text-base font-black text-white tabular-nums">{formatValue(entry.value, rt, entry.playerName)}</span>
+      {!rt.isTeam && entry.playerName && <span className="text-xs text-gray-300 truncate">{entry.playerName}</span>}
+      {entry.seasonNumber != null && <span className="text-[10px] text-gray-500 shrink-0">· S{entry.seasonNumber}</span>}
+    </div>
+  );
+}
+
 export default function DraftRecordsPage() {
   const [competition, setCompetition] = useState<"pl" | "all">("pl");
   const [mode, setMode] = useState<"normal" | "prime" | "best">("best");
   const [records, setRecords] = useState<Record<string, RecordEntry[]>>({});
+  // The signed-in player's own personal best per board — shown as a "Your best"
+  // line so a player always sees their record even when it's outside the global
+  // top 5 or sitting below the hard-to-beat Official benchmark (e.g. assists,
+  // where the Official 21 is rarely beaten and hides the user under "See more").
+  const [personal, setPersonal] = useState<Record<string, { value: number; playerName: string | null; seasonNumber: number | null }>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
@@ -251,12 +268,29 @@ export default function DraftRecordsPage() {
     setLoading(true);
     setError(null);
 
+    type PersonalMap = Record<string, { value: number; playerName: string | null; seasonNumber: number | null }>;
+    const isAscendingKey = (key: string) => key.split("_").slice(1).join("_") === "goals_conceded";
+    // Merge the player's normal + prime personal bests, keeping the better value
+    // per board (lower for goals_conceded, higher otherwise).
+    const mergePersonal = (a: PersonalMap, b: PersonalMap): PersonalMap => {
+      const out: PersonalMap = { ...a };
+      for (const [key, entry] of Object.entries(b)) {
+        const existing = out[key];
+        if (!existing) { out[key] = entry; continue; }
+        const better = isAscendingKey(key) ? entry.value < existing.value : entry.value > existing.value;
+        if (better) out[key] = entry;
+      }
+      return out;
+    };
+
     if (mode === "best") {
       Promise.all([
         fetch(`/api/draft/records?mode=normal`).then(r => r.json()),
         fetch(`/api/draft/records?mode=prime`).then(r => r.json()),
+        fetch(`/api/draft/records?personal=true&mode=normal`).then(r => r.json()),
+        fetch(`/api/draft/records?personal=true&mode=prime`).then(r => r.json()),
       ])
-        .then(([normalData, primeData]) => {
+        .then(([normalData, primeData, normalPers, primePers]) => {
           if (normalData.error) throw new Error(normalData.error);
           if (primeData.error) throw new Error(primeData.error);
 
@@ -270,22 +304,25 @@ export default function DraftRecordsPage() {
             const normal = (normalRec[key] ?? []).map(e => ({ ...e, mode: "normal" as const }));
             const prime = (primeRec[key] ?? []).map(e => ({ ...e, mode: "prime" as const }));
             const combined = [...normal, ...prime];
-            const recordType = key.split("_").slice(1).join("_");
-            const isAscending = recordType === "goals_conceded";
+            const isAscending = isAscendingKey(key);
             combined.sort((a, b) => isAscending ? a.value - b.value : b.value - a.value);
             merged[key] = combined.slice(0, 5);
           }
 
           setRecords(merged);
+          setPersonal(mergePersonal(normalPers?.personal ?? {}, primePers?.personal ?? {}));
         })
         .catch(e => setError(e.message))
         .finally(() => setLoading(false));
     } else {
-      fetch(`/api/draft/records?mode=${mode}`)
-        .then(r => r.json())
-        .then(d => {
+      Promise.all([
+        fetch(`/api/draft/records?mode=${mode}`).then(r => r.json()),
+        fetch(`/api/draft/records?personal=true&mode=${mode}`).then(r => r.json()),
+      ])
+        .then(([d, p]) => {
           if (d.error) throw new Error(d.error);
           setRecords(d.records ?? {});
+          setPersonal(p?.personal ?? {});
         })
         .catch(e => setError(e.message))
         .finally(() => setLoading(false));
@@ -482,6 +519,7 @@ export default function DraftRecordsPage() {
                     )}
                   </div>
                   <Leaderboard entries={entries} rt={rt} expanded={isExpanded} />
+                  <YourBest entry={personal[key]} rt={rt} />
                 </div>
               );
             })}
@@ -528,6 +566,7 @@ export default function DraftRecordsPage() {
                           )}
                         </div>
                         <Leaderboard entries={entries} rt={rt} expanded={isExpanded} />
+                        <YourBest entry={personal[key]} rt={rt} />
                       </div>
                     );
                   })}
