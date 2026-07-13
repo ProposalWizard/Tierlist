@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import type { BDSeason, BDPlayer, CeremonyEntry } from "@/lib/ballonDorTypes";
+import { useState, useEffect, useRef, useCallback } from "react";
+import type { BDSeason, BDPlayer, BDRival, CeremonyEntry } from "@/lib/ballonDorTypes";
 
 interface Props {
   season: BDSeason;
   player: BDPlayer;
+  rival?: BDRival;
   onComplete: () => void;
 }
 
@@ -43,8 +44,10 @@ function RatingBadge({ rating }: { rating: number }) {
   );
 }
 
-export default function BDCeremony({ season, player, onComplete }: Props) {
+export default function BDCeremony({ season, player, rival, onComplete }: Props) {
   const [phase, setPhase] = useState<CeremonyPhase>('intro');
+  const shareRef = useRef<HTMLDivElement>(null);
+  const [sharing, setSharing] = useState(false);
   const [bulkRevealed, setBulkRevealed] = useState(0);
   const [midRevealed, setMidRevealed] = useState(0);
   const [spotlightIdx, setSpotlightIdx] = useState(0);
@@ -57,6 +60,37 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
   const ceremony = season.ceremony!;
   const { entries, playerNominated, playerRank } = ceremony;
   const playerWon = playerRank === 1;
+
+  const handleShare = useCallback(async () => {
+    if (!shareRef.current || sharing) return;
+    setSharing(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(shareRef.current, {
+        backgroundColor: "#000000",
+        scale: 2,
+        useCORS: true,
+      });
+      const link = document.createElement("a");
+      link.download = `ballon-dor-${ceremony.year}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+
+      const finishStr = playerWon ? `won the ${ceremony.year} Ballon d'Or 🏅`
+        : playerNominated ? `finished ${playerRank === 2 ? '2nd' : playerRank === 3 ? '3rd' : `#${playerRank}`} in the ${ceremony.year} Ballon d'Or`
+        : `is building towards the Ballon d'Or`;
+      const text = `${player.name} ${finishStr}!`;
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+        "_blank",
+      );
+    } catch (err) {
+      console.error("Ceremony share failed:", err);
+    } finally {
+      setSharing(false);
+    }
+  }, [sharing, ceremony.year, playerWon, playerNominated, playerRank, player.name]);
 
   // ── Phase transitions ──────────────────────────────────────────────
 
@@ -483,10 +517,13 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
   // ── RESULT SCREEN ────────────────────────────────────────────────
   const playerEntry = entries.find(e => e.isPlayer);
   const winnerEntry = entries[24];
+  // The career rival's finish this ceremony (0/undefined = outside the shortlist)
+  const rivalEntry = rival ? entries.find(e => !e.isPlayer && e.name === rival.name) : undefined;
+  const rivalRank = rivalEntry?.rank ?? 0;
 
   return (
     <div className="min-h-screen bg-black pb-16">
-      <div className="mx-auto max-w-sm px-4 pt-10 space-y-4">
+      <div ref={shareRef} className="mx-auto max-w-sm px-4 pt-10 space-y-4">
         <div className={`rounded-2xl border p-6 text-center ${
           playerWon
             ? 'border-amber-400 bg-amber-400/8'
@@ -580,6 +617,36 @@ export default function BDCeremony({ season, player, onComplete }: Props) {
           </div>
         )}
 
+        {/* Career rival's finish vs yours */}
+        {rival && (
+          <div className="rounded-xl border border-red-900/30 bg-red-950/10 p-3.5 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400/80 mb-1">Your Rival</p>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              {(() => {
+                const yourStr = playerRank > 0 ? (playerRank === 1 ? '1st' : `#${playerRank}`) : 'outside the shortlist';
+                const rivalStr = rivalRank > 0 ? (rivalRank === 1 ? '1st' : `#${rivalRank}`) : 'outside the shortlist';
+                if (rivalRank > 0 && playerRank > 0) {
+                  return rivalRank < playerRank
+                    ? `${rival.name} finished ${rivalStr} — ahead of your ${yourStr}. The rivalry burns on.`
+                    : `You finished ${yourStr}, ahead of ${rival.name} in ${rivalStr}. Bragging rights are yours.`;
+                }
+                if (rivalRank > 0) return `${rival.name} finished ${rivalStr}. You've work to do to catch him.`;
+                if (playerRank > 0) return `You finished ${yourStr} while ${rival.name} missed the shortlist. Advantage you.`;
+                return `Neither you nor ${rival.name} made the shortlist this year.`;
+              })()}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="mx-auto max-w-sm px-4 space-y-3 mt-4">
+        <button
+          onClick={handleShare}
+          disabled={sharing}
+          className="w-full rounded-xl border border-gray-700 bg-gray-900 py-3.5 text-sm font-bold text-white transition hover:border-gray-500 hover:bg-gray-800 disabled:opacity-50"
+        >
+          {sharing ? 'Preparing image…' : '📸 Share result'}
+        </button>
         <button
           onClick={onComplete}
           className="w-full rounded-xl bg-amber-500 py-4 text-sm font-black text-black transition hover:bg-amber-400"
