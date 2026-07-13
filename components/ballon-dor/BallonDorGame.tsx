@@ -588,6 +588,15 @@ function TransferScreen({ career, offers, onAccept, onStay, onBackToHub }: Trans
                     )}
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">{offer.tierLabel}</p>
+                  <p className={`mt-1.5 text-[11px] leading-snug ${offer.prestige >= 80 ? 'text-blue-300/80' : 'text-green-300/80'}`}>
+                    {offer.prestige >= 90
+                      ? '🏆 Trophy machine — but you\'ll share the goals'
+                      : offer.prestige >= 80
+                      ? '⚖️ Strong squad — output is split with stars'
+                      : offer.prestige >= 70
+                      ? '⚡ You\'d be a leader — plenty of the ball'
+                      : '🎯 You\'d be THE man — every goal is yours'}
+                  </p>
                 </div>
                 {selectedOffer?.clubId === offer.clubId && (
                   <span className="text-amber-400 text-sm shrink-0">✓</span>
