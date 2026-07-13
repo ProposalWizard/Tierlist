@@ -1,11 +1,13 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { ObjectiveCondition, Competition, ConditionType, WinEvent, StatScope, PositionMatch, Timeframe, MatchStat, WithinCompetition, SeasonStatType } from "@/lib/objectiveTypes";
 import { WIN_EVENT_OPTIONS, CONDITION_TYPE_LABELS, MATCH_STAT_LABELS, SEASON_STAT_LABELS } from "@/lib/objectiveTypes";
 import { conditionSummary } from "@/lib/objectiveEvaluator";
 import { CONTINENTS } from "@/lib/continents";
+import { POSITION_TOKENS, auditObjective, type ObjectiveIssue } from "@/lib/objectiveVocab";
 import CardLibraryPicker from "./CardLibraryPicker";
 import type { LibraryCard } from "./CardLibraryPicker";
+import TokenAutocomplete from "./TokenAutocomplete";
 import SeasonAdmin from "./SeasonAdmin";
 
 type ObjCategory = "standard" | "daily" | "weekly" | "monthly" | "foundation" | "elite" | "goat" | "record_breaker";
@@ -157,6 +159,8 @@ export default function ObjectivesAdmin() {
   const [showForm, setShowForm] = useState(false);
   const [listFilter, setListFilter] = useState<ObjCategory | "all">("all");
   const [reordering, setReordering] = useState(false);
+  const [vocab, setVocab] = useState<{ nationalities: string[]; clubs: string[] }>({ nationalities: [], clubs: [] });
+  const [showAudit, setShowAudit] = useState(false);
 
   const loadObjectives = useCallback(async () => {
     setLoading(true);
@@ -166,6 +170,19 @@ export default function ObjectivesAdmin() {
   }, []);
 
   useEffect(() => { loadObjectives(); }, [loadObjectives]);
+
+  // Load the distinct nationality/club vocabulary once — these are the exact
+  // strings the evaluator matches against, so they power the autocomplete
+  // pickers and the "matches nothing" typo detection. Non-fatal if it fails
+  // (fields fall back to plain typing; validation just won't fire).
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/objectives/vocab")
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && !cancelled) setVocab({ nationalities: d.nationalities ?? [], clubs: d.clubs ?? [] }); })
+      .catch(() => { /* autocomplete is a nicety, not required */ });
+    return () => { cancelled = true; };
+  }, []);
 
   // Move an objective up/down within its category. This rewrites the whole
   // category to a clean sequential sort_order (banded per category so numbers
@@ -441,6 +458,19 @@ export default function ObjectivesAdmin() {
   const availableEvents = WIN_EVENT_OPTIONS.filter(o => o.available);
   const futureEvents = WIN_EVENT_OPTIONS.filter(o => !o.available);
 
+  // Scan every saved objective for dead/blank conditions — filters that match
+  // no players (typos, accent mismatches), events with nothing selected,
+  // impossible age/OVR ranges, etc. Runs only when the panel is opened.
+  const auditResults = useMemo(() => {
+    if (!showAudit) return [] as { obj: Objective; issues: ObjectiveIssue[] }[];
+    return objectives
+      .map(o => ({ obj: o, issues: auditObjective(o, vocab.nationalities, vocab.clubs) }))
+      .filter(r => r.issues.length > 0);
+  }, [showAudit, objectives, vocab]);
+  const auditErrorCount = auditResults.reduce(
+    (n, r) => n + r.issues.filter(i => i.severity === "error").length, 0,
+  );
+
   return (
     <div className="space-y-6">
       {/* Sub-tabs */}
@@ -466,13 +496,83 @@ export default function ObjectivesAdmin() {
         <h2 className="text-lg font-bold text-white">
           Objectives {!loading && `(${objectives.length})`}
         </h2>
-        <button
-          onClick={() => { resetForm(); setShowForm(true); }}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition"
-        >
-          + Add New Objective
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAudit(s => !s)}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition border ${showAudit ? "bg-amber-600 border-amber-500 text-white" : "bg-gray-800 border-gray-700 text-amber-300 hover:text-amber-200 hover:border-amber-600/50"}`}
+          >
+            {showAudit ? "Hide Audit" : "🔎 Audit Objectives"}
+          </button>
+          <button
+            onClick={() => { resetForm(); setShowForm(true); }}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition"
+          >
+            + Add New Objective
+          </button>
+        </div>
       </div>
+
+      {/* ───── AUDIT PANEL ───── */}
+      {showAudit && (
+        <div className="bg-gray-900 border border-amber-800/40 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm font-black uppercase tracking-widest text-amber-400">Condition Audit</span>
+            {vocab.nationalities.length === 0 && (
+              <span className="text-[10px] text-gray-500">(player list still loading — nation/club checks are paused)</span>
+            )}
+          </div>
+          <p className="text-[11px] text-gray-400 mb-3">
+            Flags conditions that can never match — misspelled or wrong-accent nations/clubs (0 players),
+            events with nothing selected, impossible age/OVR ranges, and objectives with no conditions at all.
+          </p>
+          {auditResults.length === 0 ? (
+            <div className="text-sm text-emerald-400 font-bold py-2">
+              ✓ No problems found across {objectives.length} objective{objectives.length === 1 ? "" : "s"}.
+            </div>
+          ) : (
+            <>
+              <div className="text-xs font-bold text-amber-300 mb-3">
+                {auditErrorCount > 0 && <span className="text-red-400">{auditErrorCount} error{auditErrorCount === 1 ? "" : "s"} · </span>}
+                {auditResults.length} objective{auditResults.length === 1 ? "" : "s"} need attention
+              </div>
+              <div className="space-y-3 max-h-[28rem] overflow-y-auto">
+                {auditResults.map(({ obj, issues }) => (
+                  <div key={obj.id} className="bg-gray-800/60 border border-gray-700 rounded-lg p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-sm font-bold text-white truncate">{obj.title}</span>
+                      <button
+                        onClick={() => { setShowAudit(false); handleEdit(obj); }}
+                        className="shrink-0 text-[10px] font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded transition"
+                      >
+                        Fix →
+                      </button>
+                    </div>
+                    <ul className="space-y-1">
+                      {issues.map((iss, k) => (
+                        <li key={k} className="text-[11px] flex items-start gap-1.5">
+                          <span className="shrink-0">
+                            {iss.severity === "error" ? "🔴" : iss.severity === "warning" ? "🟡" : "ℹ️"}
+                          </span>
+                          <span className="text-gray-300">
+                            {(iss.group != null || iss.conditionIndex != null) && (
+                              <span className="text-gray-500 font-bold mr-1">
+                                {iss.group != null ? `OR-group ${iss.group}` : ""}
+                                {iss.group != null && iss.conditionIndex != null ? " · " : ""}
+                                {iss.conditionIndex != null ? `Condition ${iss.conditionIndex}` : ""}:
+                              </span>
+                            )}
+                            {iss.message}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Form modal */}
       {showForm && (
@@ -1048,42 +1148,39 @@ export default function ObjectivesAdmin() {
                 <div className="border-t border-gray-700 pt-3">
                   <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Player filters (all optional — leave blank for any player)</label>
                   <p className="text-[10px] text-amber-400/80 mb-2">
-                    Matching is case-insensitive and partial. <span className="font-bold">Comma-separated</span> values work as OR —
-                    e.g. &quot;France, Germany, Brazil&quot; matches any of those.
-                    Use the <span className="font-bold">country name</span>, not the adjective —
-                    type <span className="font-bold">France</span> not French,{" "}
-                    <span className="font-bold">Germany</span> not German.
-                    Club is the one that came up on the spin wheel (SoFIFA spelling).
+                    Start typing and <span className="font-bold">pick from the list</span> — picked values are guaranteed to match real players (no typos).
+                    Multiple values work as OR (any of them). A chip shown with a{" "}
+                    <span className="font-bold text-amber-300">⚠</span> matches no players — check the spelling.
+                    {vocab.nationalities.length === 0 && (
+                      <span className="block text-gray-500 mt-0.5">(Loading the player list for suggestions…)</span>
+                    )}
                   </p>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="block text-[10px] text-gray-500 mb-0.5">Nationality</label>
-                      <input
-                        type="text"
+                      <TokenAutocomplete
                         value={nc.nationality}
-                        onChange={e => setNc(n => ({ ...n, nationality: e.target.value }))}
-                        placeholder="e.g. France, Germany, Brazil"
-                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                        onChange={v => setNc(n => ({ ...n, nationality: v }))}
+                        options={vocab.nationalities}
+                        placeholder="Type e.g. Fra…"
                       />
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 mb-0.5">Club spun on the wheel</label>
-                      <input
-                        type="text"
+                      <TokenAutocomplete
                         value={nc.club}
-                        onChange={e => setNc(n => ({ ...n, club: e.target.value }))}
-                        placeholder="e.g. Arsenal, Chelsea"
-                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                        onChange={v => setNc(n => ({ ...n, club: v }))}
+                        options={vocab.clubs}
+                        placeholder="Type e.g. Arse…"
                       />
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 mb-0.5">Position</label>
-                      <input
-                        type="text"
+                      <TokenAutocomplete
                         value={nc.position}
-                        onChange={e => setNc(n => ({ ...n, position: e.target.value }))}
-                        placeholder="e.g. ST, GK, CM"
-                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                        onChange={v => setNc(n => ({ ...n, position: v }))}
+                        options={POSITION_TOKENS}
+                        placeholder="Type e.g. ST, GK"
                       />
                     </div>
                   </div>
@@ -1212,32 +1309,32 @@ export default function ObjectivesAdmin() {
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="block text-[10px] text-gray-500 mb-0.5">Not nationality</label>
-                        <input
-                          type="text"
+                        <TokenAutocomplete
                           value={nc.excludeNationality}
-                          onChange={e => setNc(n => ({ ...n, excludeNationality: e.target.value }))}
-                          placeholder="e.g. Spain, Germany"
-                          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                          onChange={v => setNc(n => ({ ...n, excludeNationality: v }))}
+                          options={vocab.nationalities}
+                          placeholder="Type e.g. Spa…"
+                          tone="red"
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 mb-0.5">Not club</label>
-                        <input
-                          type="text"
+                        <TokenAutocomplete
                           value={nc.excludeClub}
-                          onChange={e => setNc(n => ({ ...n, excludeClub: e.target.value }))}
-                          placeholder="e.g. Arsenal"
-                          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                          onChange={v => setNc(n => ({ ...n, excludeClub: v }))}
+                          options={vocab.clubs}
+                          placeholder="Type e.g. Arse…"
+                          tone="red"
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 mb-0.5">Not position</label>
-                        <input
-                          type="text"
+                        <TokenAutocomplete
                           value={nc.excludePosition}
-                          onChange={e => setNc(n => ({ ...n, excludePosition: e.target.value }))}
-                          placeholder="e.g. GK"
-                          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none"
+                          onChange={v => setNc(n => ({ ...n, excludePosition: v }))}
+                          options={POSITION_TOKENS}
+                          placeholder="Type e.g. GK"
+                          tone="red"
                         />
                       </div>
                     </div>
