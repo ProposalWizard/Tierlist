@@ -1599,11 +1599,14 @@ interface RivalContender {
 // Builds the full deterministic rival field for a season. Seeds are keyed on the
 // season year, so the field is stable across re-renders and matches the eventual
 // ceremony — this lets the mid-season race widget project accurately.
-function buildRivalContenders(season: BDSeason, careerRival?: BDRival): RivalContender[] {
+function buildRivalContenders(season: BDSeason, careerRival?: BDRival, playerName?: string): RivalContender[] {
   const year = season.year;
   const yearsElapsed = Math.max(0, (season.number ?? 1) - 1);
   const rivals: RivalContender[] = RIVAL_POOL
     .filter(t => !careerRival || t.name !== careerRival.name)
+    // A real-player career (e.g. playing AS Mbappé) must not also face the
+    // pool's Mbappé — the player would appear twice in the field.
+    .filter(t => !playerName || t.name !== playerName)
     .map(t => ({ ...t, age: t.age + yearsElapsed }))
     .filter(t => t.age <= 40)
     .map((t, i) => {
@@ -1661,7 +1664,7 @@ export function generateCeremony(
   // Effective fame boosted by reputation
   const effectiveFame = clamp(attributes.fame + player.reputation * 0.2, 0, 100);
 
-  const rivals = buildRivalContenders(season, careerRival);
+  const rivals = buildRivalContenders(season, careerRival, player.name);
 
   const playerScore = calcBdoScore(combinedStats, trophies, effectiveFame, player.position, playerOverall, season.club.prestige);
 
@@ -2591,7 +2594,7 @@ export function projectBdoRace(
     projStats, season.trophies, effectiveFame, player.position, season.playerOverall, season.club.prestige,
   );
 
-  const rivals = buildRivalContenders(season, careerRival);
+  const rivals = buildRivalContenders(season, careerRival, player.name);
   const all: BdoRaceEntry[] = [
     ...rivals.map(r => ({
       name: r.name, club: r.club, leagueFlag: r.leagueFlag,
