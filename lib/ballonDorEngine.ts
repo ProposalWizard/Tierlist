@@ -2354,7 +2354,7 @@ export function applyChoice(season: BDSeason, eventId: string, choiceId: string,
 export function applyManualMatchResult(
   season: BDSeason,
   eventId: string,
-  result: NonNullable<BDEvent['matchResult']>,
+  result: NonNullable<BDEvent['matchResult']> & { fameBonus?: number },
   playerPosition: BDPosition,
 ): BDSeason {
   const evIdx = season.events.findIndex(e => e.id === eventId);
@@ -2384,6 +2384,8 @@ export function applyManualMatchResult(
   energy = clamp(energy - 15, 0, 100);
   const moraleDelta = result.isWin ? Math.min(8, 3 + result.teamGoals) : result.isDraw ? 1 : -5;
   attrs.morale = clamp(attrs.morale + moraleDelta, 0, 100);
+  // Big-match fame bonus, awarded by the interactive match on a win/goal
+  if (result.fameBonus) attrs.fame = clamp(attrs.fame + result.fameBonus, 0, 100);
   money += 15 + (result.isWin ? 30 : result.isDraw ? 8 : 0);
 
   matchweek = ev.matchContext.matchweek;

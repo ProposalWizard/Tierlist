@@ -21,6 +21,8 @@ interface Moment {
   isDefensive: boolean;
   isSave: boolean;
   choices?: DecisionChoice[];
+  // Rare high-risk / high-reward moment — extra drama and fame framing.
+  isWonder?: boolean;
 }
 
 interface MomentResult {
@@ -42,6 +44,9 @@ export interface MatchGameResult {
   isWin: boolean;
   isDraw: boolean;
   cleanSheet: boolean;
+  // Extra fame earned from a big-match win/goal (applied by the engine)
+  fameBonus?: number;
+  bigMatchBonus?: boolean;
 }
 
 interface Props {
@@ -53,6 +58,7 @@ interface Props {
   clubPrestige: number;
   playerPosition: BDPosition;
   playerOverall: number;
+  isBigMatch?: boolean;
   onComplete: (result: MatchGameResult) => void;
 }
 
@@ -69,6 +75,14 @@ function getMoments(position: BDPosition): Omit<Moment, 'id' | 'minute'>[] {
     ]},
     { type: 'power_bar',   label: '⚽ Long range!',  situation: 'A yard of space opens 25 yards out — go for goal!',                 isGoalChance: true,  isAssistChance: false, isDefensive: false, isSave: false },
     { type: 'goal_grid',   label: '⚽ Penalty!',     situation: 'Foul in the box — YOU step up from the spot.',                     isGoalChance: true,  isAssistChance: false, isDefensive: false, isSave: false },
+    { type: 'timing_bar',  label: '⚽ Poacher!',     situation: 'The keeper spills it — react quickest and pounce!',                isGoalChance: true,  isAssistChance: false, isDefensive: false, isSave: false },
+    { type: 'decision',    label: '🎯 Counter!',     situation: 'You break clear on the counter, defender closing — decide!',       isGoalChance: true,  isAssistChance: false, isDefensive: false, isSave: false, choices: [
+      { emoji: '🚀', label: 'Go alone',        desc: 'Take on the keeper',        successChance: 0.55 },
+      { emoji: '📤', label: 'Slip in support', desc: 'Play the killer pass',      successChance: 0.66 },
+      { emoji: '🪄', label: 'Nutmeg him',      desc: 'Humiliate the defender',    successChance: 0.42 },
+    ]},
+    { type: 'power_bar',   label: '📤 Cutback!',     situation: 'You reach the byline — pick out a teammate in the middle!',        isGoalChance: false, isAssistChance: true,  isDefensive: false, isSave: false },
+    { type: 'goal_grid',   label: '✨ OVERHEAD KICK!', situation: 'The cross hangs behind you — dare you try the bicycle kick?!',    isGoalChance: true,  isAssistChance: false, isDefensive: false, isSave: false, isWonder: true },
   ];
   if (position === 'MID') return [
     { type: 'power_bar',   label: '📤 Key pass!',    situation: 'Your striker makes a run — thread the through ball perfectly!',    isGoalChance: false, isAssistChance: true,  isDefensive: false, isSave: false },
@@ -85,6 +99,14 @@ function getMoments(position: BDPosition): Omit<Moment, 'id' | 'minute'>[] {
     ]},
     { type: 'power_bar',   label: '📤 Cross!',       situation: 'You burst into space on the right — float it in for the striker!', isGoalChance: false, isAssistChance: true,  isDefensive: false, isSave: false },
     { type: 'timing_bar',  label: '📤 Set piece!',   situation: 'Free kick 35 yards out — deliver it to the back post!',           isGoalChance: false, isAssistChance: true,  isDefensive: false, isSave: false },
+    { type: 'goal_grid',   label: '⚽ Arriving late!', situation: 'You ghost into the box unmarked — meet the cutback first time!',  isGoalChance: true,  isAssistChance: false, isDefensive: false, isSave: false },
+    { type: 'decision',    label: '🎯 Tempo!',       situation: 'The game is stretched — how do you run the midfield?',             isGoalChance: false, isAssistChance: true,  isDefensive: false, isSave: false, choices: [
+      { emoji: '🪄', label: 'Split them open', desc: 'Defence-splitting pass',   successChance: 0.50 },
+      { emoji: '📤', label: 'Quick one-two',   desc: 'Combine and release',      successChance: 0.68 },
+      { emoji: '🔄', label: 'Dictate tempo',   desc: 'Control the rhythm',       successChance: 0.82 },
+    ]},
+    { type: 'timing_bar',  label: '🛡️ Ball-winner!', situation: 'Time your challenge to snuff out their attack!',                  isGoalChance: false, isAssistChance: false, isDefensive: true,  isSave: false },
+    { type: 'power_bar',   label: '✨ SCREAMER!',    situation: 'It drops to you 30 yards out — the crowd rises. Let it fly?!',     isGoalChance: true,  isAssistChance: false, isDefensive: false, isSave: false, isWonder: true },
   ];
   if (position === 'DEF') return [
     { type: 'decision',    label: '🛡️ 1-on-1!',      situation: 'Their striker runs in behind — do you step in or hold?',          isGoalChance: false, isAssistChance: false, isDefensive: true,  isSave: false, choices: [
@@ -105,6 +127,14 @@ function getMoments(position: BDPosition): Omit<Moment, 'id' | 'minute'>[] {
       { emoji: '🧱', label: 'Block the shot', desc: 'Get your body in the way',       successChance: 0.60 },
       { emoji: '🏃', label: 'Sprint to cover', desc: 'Try to recover the position',   successChance: 0.45 },
     ]},
+    { type: 'timing_bar',  label: '🛡️ Sliding block!', situation: 'A shot is goalbound — throw yourself in the way!',              isGoalChance: false, isAssistChance: false, isDefensive: true,  isSave: false },
+    { type: 'power_bar',   label: '📤 Line-break!',  situation: 'You step out with the ball — thread it through the lines!',        isGoalChance: false, isAssistChance: true,  isDefensive: false, isSave: false },
+    { type: 'decision',    label: '🛡️ Hold the line!', situation: 'They load the box for a corner — organise the defence!',        isGoalChance: false, isAssistChance: false, isDefensive: true,  isSave: false, choices: [
+      { emoji: '📢', label: 'Push up',        desc: 'Spring the offside trap',   successChance: 0.55 },
+      { emoji: '🧱', label: 'Zonal marking',  desc: 'Hold your zone',            successChance: 0.70 },
+      { emoji: '🤼', label: 'Man-mark',       desc: 'Stick to their danger man', successChance: 0.63 },
+    ]},
+    { type: 'timing_bar',  label: '✨ THUNDERBASTARD!', situation: 'A defender wandering forward — the ball sits up 30 yards out!',  isGoalChance: true,  isAssistChance: false, isDefensive: false, isSave: false, isWonder: true },
   ];
   // GK
   return [
@@ -114,6 +144,10 @@ function getMoments(position: BDPosition): Omit<Moment, 'id' | 'minute'>[] {
     { type: 'power_bar',   label: '📤 Distribution', situation: 'Quick throw to start a counter-attack — weight it perfectly!',   isGoalChance: false, isAssistChance: false, isDefensive: false, isSave: false },
     { type: 'goal_grid',   label: '🧤 Penalty save!', situation: 'Penalty. One chance. Where do you dive?',                       isGoalChance: false, isAssistChance: false, isDefensive: false, isSave: true },
     { type: 'timing_bar',  label: '🧤 Crucial stop!', situation: 'A shot deflects in the box — react in time!',                   isGoalChance: false, isAssistChance: false, isDefensive: false, isSave: true },
+    { type: 'timing_bar',  label: '🧤 Rush out!',    situation: 'A through ball splits your defence — sweep it up in time!',        isGoalChance: false, isAssistChance: false, isDefensive: false, isSave: true },
+    { type: 'goal_grid',   label: '🧤 Tip over!',    situation: 'A dipping shot arrows for the top corner — pick your side!',       isGoalChance: false, isAssistChance: false, isDefensive: false, isSave: true },
+    { type: 'power_bar',   label: '📤 Launch it!',   situation: 'You claim it and spot a runner — launch the counter perfectly!',   isGoalChance: false, isAssistChance: true,  isDefensive: false, isSave: false },
+    { type: 'goal_grid',   label: '✨ TRIPLE SAVE!', situation: 'Wave after wave crashes in — can you keep it out?!',              isGoalChance: false, isAssistChance: false, isDefensive: false, isSave: true, isWonder: true },
   ];
 }
 
@@ -176,6 +210,7 @@ function computeResult(
   clubPrestige: number,
   opponentPrestige: number,
   isHome: boolean,
+  isBigMatch = false,
 ): MatchGameResult {
   const playerGoals   = momentResults.filter(m => m.isGoal).length;
   const playerAssists = momentResults.filter(m => m.isAssist).length;
@@ -206,13 +241,22 @@ function computeResult(
   const isDraw = teamGoals === opponentGoals;
   const cleanSheet = opponentGoals === 0;
 
+  // Big-match bonus: rising to the occasion against elite opposition earns
+  // extra fame and a rating bump on a win or a goal.
+  const earnedBigBonus = isBigMatch && (isWin || playerGoals > 0);
+  const bigRating = earnedBigBonus ? 0.1 : 0;
+
   // Rating
   const baseRating = isWin ? 7.2 : isDraw ? 6.9 : 6.4;
   const perfBonus  = perfCount * 0.45 + goodCount * 0.18 - missCount * 0.28;
   const statBonus  = playerGoals * 0.40 + playerAssists * 0.24 + playerSaves * 0.32;
-  const playerRating = Math.round(Math.min(9.9, Math.max(5.0, baseRating + perfBonus + statBonus)) * 10) / 10;
+  const playerRating = Math.round(Math.min(9.9, Math.max(5.0, baseRating + perfBonus + statBonus + bigRating)) * 10) / 10;
 
-  return { playerGoals, playerAssists, playerRating, teamGoals, opponentGoals, isWin, isDraw, cleanSheet };
+  return {
+    playerGoals, playerAssists, playerRating, teamGoals, opponentGoals, isWin, isDraw, cleanSheet,
+    fameBonus: earnedBigBonus ? 3 : 0,
+    bigMatchBonus: earnedBigBonus,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -221,14 +265,17 @@ function computeResult(
 export default function MatchGame({
   opponent, competition, isHome, opponentPrestige,
   clubName, clubPrestige, playerPosition, playerOverall,
+  isBigMatch = false,
   onComplete,
 }: Props) {
   const [phase, setPhase] = useState<'intro' | 'moment' | 'flash' | 'result'>('intro');
 
-  // Generate random minutes once per match
+  // Generate random minutes once per match. Shuffle the (now larger) moment pool
+  // so matches vary and the wonder/rare moments occasionally appear.
   const [moments] = useState<Moment[]>(() => {
     const mins = generateMatchMinutes();
-    return getMoments(playerPosition).slice(0, 6).map((m, i) => ({ ...m, id: i, minute: mins[i] }));
+    const pool = [...getMoments(playerPosition)].sort(() => Math.random() - 0.5);
+    return pool.slice(0, 6).map((m, i) => ({ ...m, id: i, minute: mins[i] }));
   });
 
   const [momentIdx, setMomentIdx] = useState(0);
@@ -237,8 +284,10 @@ export default function MatchGame({
   const [teamScore, setTeamScore] = useState(0);
   const [oppScore, setOppScore] = useState(0);
 
-  // difficulty: 1.0 = evenly matched, lower = harder (facing stronger team)
-  const difficulty = Math.max(0.45, Math.min(1.35, 1.0 - (opponentPrestige - clubPrestige) / 75));
+  // difficulty: 1.0 = evenly matched, lower = harder (facing stronger team).
+  // Big matches are ~15% harder.
+  const baseDifficulty = Math.max(0.45, Math.min(1.35, 1.0 - (opponentPrestige - clubPrestige) / 75));
+  const difficulty = isBigMatch ? baseDifficulty * 0.87 : baseDifficulty;
 
   // Intro auto-advance
   useEffect(() => {
@@ -257,7 +306,7 @@ export default function MatchGame({
     setPhase('flash');
     setTimeout(() => {
       if (momentIdx + 1 >= moments.length) {
-        const finalResult = computeResult(newResults, playerPosition, clubPrestige, opponentPrestige, isHome);
+        const finalResult = computeResult(newResults, playerPosition, clubPrestige, opponentPrestige, isHome, isBigMatch);
         setTeamScore(finalResult.teamGoals);
         setOppScore(finalResult.opponentGoals);
         setTimeout(() => setPhase('result'), 600);
@@ -280,6 +329,13 @@ export default function MatchGame({
           <span className={`inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest mb-6 ${comp.badge}`}>
             {comp.icon} {competition}
           </span>
+          {isBigMatch && (
+            <div className="mb-5">
+              <span className="inline-block rounded-full border border-orange-500/50 bg-orange-500/15 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-orange-300 animate-pulse">
+                🔥 Big Match
+              </span>
+            </div>
+          )}
           <div className="flex items-center justify-center gap-6 mb-8">
             <div className="text-center">
               <p className="text-xs text-gray-500 mb-1">{isHome ? 'HOME' : 'AWAY'}</p>
@@ -365,7 +421,7 @@ export default function MatchGame({
   if (phase === 'result') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const finalResult: MatchGameResult = (lastMomentResult as any)?._finalResult ?? computeResult(
-      momentResults, playerPosition, clubPrestige, opponentPrestige, isHome,
+      momentResults, playerPosition, clubPrestige, opponentPrestige, isHome, isBigMatch,
     );
     const perfCount = momentResults.filter(m => m.outcome === 'perfect').length;
     const isMotm    = finalResult.playerRating >= 9.0;
@@ -405,6 +461,7 @@ export default function MatchGame({
 
             {hatTrick && <div className="mb-4 rounded-xl bg-amber-500/20 border border-amber-500/30 py-2.5 text-center"><p className="text-sm font-black text-amber-400">🎩 Hat-Trick Hero!</p></div>}
             {isMotm && !hatTrick && <div className="mb-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 py-2.5 text-center"><p className="text-sm font-black text-yellow-300">⭐ Player of the Match</p></div>}
+            {finalResult.bigMatchBonus && <div className="mb-4 rounded-xl bg-orange-500/15 border border-orange-500/30 py-2.5 text-center"><p className="text-sm font-black text-orange-300">🔥 Big match bonus — +3 Fame · +0.1 Rating</p></div>}
 
             <div className="flex items-center justify-center gap-6">
               {(playerPosition === 'ATT' || playerPosition === 'MID') && (

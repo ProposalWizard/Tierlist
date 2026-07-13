@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type {
   BDSeason as SeasonData,
   BDPlayer,
   BDEvent,
   BDPosition,
+  BDRival,
   LeagueTableRow,
   BDTeammate,
   EventChoice,
 } from "@/lib/ballonDorTypes";
-import { applyChoice, applyManualMatchResult, CLUB_SQUADS } from "@/lib/ballonDorEngine";
+import { applyChoice, applyManualMatchResult, projectBdoRace, CLUB_SQUADS } from "@/lib/ballonDorEngine";
 import MatchGame from "./MatchGame";
 import type { MatchGameResult } from "./MatchGame";
 
@@ -92,6 +93,7 @@ interface LastResult {
 interface Props {
   season: SeasonData;
   player: BDPlayer;
+  rival?: BDRival;
   onUpdate: (s: SeasonData) => void;
   onReturnToHub?: () => void;
 }
@@ -99,7 +101,7 @@ interface Props {
 // ═══════════════════════════════════════════════════════════════════
 // Main component
 // ═══════════════════════════════════════════════════════════════════
-export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Props) {
+export default function BDSeason({ season, player, rival, onUpdate, onReturnToHub }: Props) {
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'casino' | 'shop'>('home');
   const [statsView, setStatsView] = useState<'table' | 'squad'>('table');
   const [gamePhase, setGamePhase] = useState<'choices' | 'revealing' | 'result'>('choices');
@@ -296,6 +298,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
         clubPrestige={season.club.prestige}
         playerPosition={player.position}
         playerOverall={season.playerOverall}
+        isBigMatch={matchGameEvent.matchContext.isBigMatch}
         onComplete={handleMatchGameComplete}
       />
     );
@@ -342,6 +345,7 @@ export default function BDSeason({ season, player, onUpdate, onReturnToHub }: Pr
           <HomeTab
             season={season}
             player={player}
+            rival={rival}
             gamePhase={gamePhase}
             currentEvent={currentEvent}
             isAllDone={isAllDone}
@@ -503,11 +507,11 @@ function QuickActions({ energy, note, usedToday, onAction }: {
 
 // ── Home tab ───────────────────────────────────────────────────────
 function HomeTab({
-  season, player, gamePhase, currentEvent, isAllDone, completedCount,
+  season, player, rival, gamePhase, currentEvent, isAllDone, completedCount,
   lastResult, energy, money, quickNote, usedToday,
   onChoice, onContinue, onSeeTable, onQuickAction, onPlayMatch,
 }: {
-  season: SeasonData; player: BDPlayer; gamePhase: 'choices' | 'revealing' | 'result';
+  season: SeasonData; player: BDPlayer; rival?: BDRival; gamePhase: 'choices' | 'revealing' | 'result';
   currentEvent: BDEvent | null; isAllDone: boolean; completedCount: number;
   lastResult: LastResult | null; energy: number; money: number; quickNote: string | null;
   usedToday: Set<string>;
@@ -515,9 +519,14 @@ function HomeTab({
   onSeeTable: () => void; onQuickAction: (a: 'rest' | 'train' | 'social') => void;
   onPlayMatch: () => void;
 }) {
+  // The BdO race is only meaningful once the season has developed — show it from
+  // the January window onward, and again in the run-in.
+  const showRace = gamePhase === 'choices' && ['january', 'second_half', 'run_in'].includes(season.phase);
   return (
     <div className="mx-auto max-w-lg px-4 py-4 space-y-3">
       <StatusBar energy={energy} money={money} />
+
+      {showRace && <BdoRaceCard season={season} player={player} rival={rival} />}
 
       {gamePhase === 'revealing' && <MatchRevealCard />}
 
@@ -555,6 +564,63 @@ function HomeTab({
   );
 }
 
+// ── BdO Race widget ────────────────────────────────────────────────
+function BdoRaceCard({ season, player, rival }: { season: SeasonData; player: BDPlayer; rival?: BDRival }) {
+  const race = useMemo(() => projectBdoRace(season, player, rival), [season, player, rival]);
+  const rows = useMemo(() => {
+    // Always include the player row, even if outside the top 5.
+    const inTop = race.top5.some(e => e.isPlayer);
+    return inTop ? race.top5 : [...race.top5.slice(0, 4), race.playerEntry];
+  }, [race]);
+  const maxScore = Math.max(1, ...rows.map(r => r.score));
+
+  return (
+    <div className="rounded-2xl border border-amber-800/30 bg-amber-950/10 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">🏅 BdO Race</p>
+        <p className="text-[10px] font-semibold text-gray-400">
+          {race.playerRank === 1
+            ? 'Leading the race!'
+            : `#${race.playerRank} — ${race.gapToLeader} pts behind ${lastName(race.leaderName)}`}
+        </p>
+      </div>
+      <div className="space-y-1.5">
+        {rows.map((e, i) => {
+          const rank = race.top5.some(t => t.isPlayer) ? i + 1 : (e.isPlayer ? race.playerRank : i + 1);
+          const pct = Math.max(6, Math.round((e.score / maxScore) * 100));
+          return (
+            <div key={`${e.name}_${i}`} className="flex items-center gap-2">
+              <span className={`w-4 text-right text-[10px] font-black ${e.isPlayer ? 'text-amber-400' : 'text-gray-500'}`}>{rank}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span className={`truncate text-[11px] font-bold ${e.isPlayer ? 'text-amber-300' : e.isRival ? 'text-red-300' : 'text-gray-300'}`}>
+                    {e.leagueFlag} {e.name}
+                    {e.isPlayer && <span className="ml-1 rounded bg-amber-500/20 px-1 py-px text-[8px] font-black text-amber-400 align-middle">YOU</span>}
+                    {e.isRival && <span className="ml-1 rounded bg-red-500/20 px-1 py-px text-[8px] font-black text-red-300 align-middle">RIVAL</span>}
+                  </span>
+                  <span className="shrink-0 text-[10px] font-black text-gray-400">{Math.round(e.score)}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-gray-800/70 overflow-hidden">
+                  <div
+                    className={`h-1.5 rounded-full ${e.isPlayer ? 'bg-amber-400' : e.isRival ? 'bg-red-400' : 'bg-gray-600'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[9px] text-gray-500">Projected full-season standings — plays out at the ceremony.</p>
+    </div>
+  );
+}
+
+function lastName(name: string): string {
+  const parts = name.trim().split(' ');
+  return parts.length > 1 ? parts[parts.length - 1] : name;
+}
+
 // Category-specific card styles for non-match events
 const CAT_CARD: Record<string, { bg: string; border: string; titleColor: string; ctxColor: string }> = {
   career:    { bg: 'bg-blue-950/30',   border: 'border-blue-800/40',   titleColor: 'text-blue-100',   ctxColor: 'text-blue-200/90'   },
@@ -581,9 +647,16 @@ function CurrentEventCard({ event, season, onChoice, onPlayMatch }: {
             <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${comp.bg} ${comp.border} ${comp.text}`}>
               {comp.icon} {ctx.competition}
             </span>
-            <span className="text-[10px] text-gray-300 font-semibold">
-              {ctx.matchweek === 0 ? 'Pre-Season' : `Matchweek ${ctx.matchweek}`}
-            </span>
+            <div className="flex items-center gap-2">
+              {ctx.isBigMatch && (
+                <span className="rounded-full border border-orange-500/50 bg-orange-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-orange-300">
+                  🔥 Big Match
+                </span>
+              )}
+              <span className="text-[10px] text-gray-300 font-semibold">
+                {ctx.matchweek === 0 ? 'Pre-Season' : `Matchweek ${ctx.matchweek}`}
+              </span>
+            </div>
           </div>
           <div className="grid grid-cols-3 items-center gap-2 mb-4">
             <div className="text-center">
