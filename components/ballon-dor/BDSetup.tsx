@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import type { BDCareer, BDPlayer, BDPosition, BDArchetype } from "@/lib/ballonDorTypes";
-import { PL_CLUBS, initSeason, archetypeDefaults, inferArchetype } from "@/lib/ballonDorEngine";
+import { useState, useEffect } from "react";
+import type { BDCareer, BDPlayer, BDPosition, BDArchetype, BDLegacyBest } from "@/lib/ballonDorTypes";
+import { PL_CLUBS, initSeason, archetypeDefaults, inferArchetype, generateCareerRival, legacyTierMeta } from "@/lib/ballonDorEngine";
+
+const LEGACY_BEST_KEY = "ballon-dor-legacy-best";
 
 interface Props { onComplete: (career: BDCareer) => void; }
 
@@ -84,6 +86,14 @@ function inferPosition(positions: string): BDPosition {
 
 export default function BDSetup({ onComplete }: Props) {
   const [tab, setTab] = useState<Tab>('custom');
+  const [legacyBest, setLegacyBest] = useState<BDLegacyBest | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LEGACY_BEST_KEY);
+      if (raw) setLegacyBest(JSON.parse(raw) as BDLegacyBest);
+    } catch { /* ignore */ }
+  }, []);
 
   const [name, setName] = useState('');
   const [archetype, setArchetype] = useState<BDArchetype>('world_class');
@@ -125,8 +135,9 @@ export default function BDSetup({ onComplete }: Props) {
       archetype,
       reputation: 0,
     };
-    const season = initSeason(player, club, 1);
-    onComplete({ player, seasons: [], current: season, bdoWins: 0, lastBdoRank: 0 });
+    const rival = generateCareerRival(player);
+    const season = initSeason(player, club, 1, rival);
+    onComplete({ player, seasons: [], current: season, bdoWins: 0, lastBdoRank: 0, rival, retired: false });
   }
 
   function startReal() {
@@ -146,8 +157,9 @@ export default function BDSetup({ onComplete }: Props) {
       archetype: arch,
       reputation: Math.round(selectedReal.overall * 0.4),
     };
-    const season = initSeason(player, club, 1);
-    onComplete({ player, seasons: [], current: season, bdoWins: 0, lastBdoRank: 0 });
+    const rival = generateCareerRival(player);
+    const season = initSeason(player, club, 1, rival);
+    onComplete({ player, seasons: [], current: season, bdoWins: 0, lastBdoRank: 0, rival, retired: false });
   }
 
   return (
@@ -161,6 +173,16 @@ export default function BDSetup({ onComplete }: Props) {
           <p className="mt-3 text-sm text-gray-400 leading-relaxed">
             Build a career. Win trophies. Claim the greatest individual prize in football.
           </p>
+          {legacyBest && legacyBest.bestScore > 0 && (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5"
+              style={{ borderColor: legacyTierMeta(legacyBest.bestTier).color + '55', background: legacyTierMeta(legacyBest.bestTier).color + '14' }}>
+              <span className="text-[11px] font-semibold text-gray-400">Best Legacy</span>
+              <span className="text-sm font-black" style={{ color: legacyTierMeta(legacyBest.bestTier).color }}>
+                {legacyBest.bestScore.toLocaleString()} · {legacyBest.bestTier}
+              </span>
+              <span className="text-[10px] text-gray-500">· {legacyBest.careers} career{legacyBest.careers !== 1 ? 's' : ''}</span>
+            </div>
+          )}
         </div>
 
         <div className="mb-6 flex rounded-xl border border-gray-800 bg-gray-900/60 p-1">

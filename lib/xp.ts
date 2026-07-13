@@ -61,6 +61,11 @@ export const XP_AWARDS = {
   draft_complete: 50,
   tenable_perfect: 50,
   blind_ranking_complete: 50,
+  // Ballon d'Or career mode
+  bdo_win: 60,
+  bdo_career: 50,
+  bdo_podium: 30,
+  bdo_season: 15,
 } as const;
 
 export type XPEventType = keyof typeof XP_AWARDS;

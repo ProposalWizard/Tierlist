@@ -1,13 +1,30 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { BDCareer, BDSeason as BDSeasonData, TransferOffer } from "@/lib/ballonDorTypes";
-import { initSeason, finalizeSeason, developPlayer, PL_CLUBS } from "@/lib/ballonDorEngine";
+import type { BDCareer, BDSeason as BDSeasonData, TransferOffer, BDLegacyBest } from "@/lib/ballonDorTypes";
+import { initSeason, finalizeSeason, developPlayer, generateCareerRival, ageRival, computeLegacy, PL_CLUBS } from "@/lib/ballonDorEngine";
 import BDSetup from "./BDSetup";
 import BDSeason from "./BDSeason";
 import BDCeremony from "./BDCeremony";
+import BDLegacy from "./BDLegacy";
 
 const STORAGE_KEY = "ballon-dor-career";
+const LEGACY_BEST_KEY = "ballon-dor-legacy-best";
+
+// Fire-and-forget XP award. Anonymous callers get a 401 which we ignore; the
+// server dedups on the deterministic event_ref so replays never double-credit.
+function slugifyName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'player';
+}
+function postXp(event_type: string, event_ref: string) {
+  try {
+    fetch('/api/xp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type, event_ref, xp_amount: 0 }),
+    }).catch(() => {});
+  } catch { /* ignore */ }
+}
 
 // ── Migration ────────────────────────────────────────────────────────
 // New seasons have 15+ events (interleaved match + lifestyle events).
@@ -34,7 +51,27 @@ function migrateCareer(raw: any): BDCareer {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const seasons = (raw.seasons ?? []).map((s: any) => ({ ...s, matchweek: s.matchweek ?? 0, money: s.money ?? 0, energy: s.energy ?? 0 }));
 
-  return { ...raw, player, current, seasons, bdoWins: raw.bdoWins ?? 0, lastBdoRank: raw.lastBdoRank ?? 0 };
+  // Older saves predate the career rival — generate one lazily so the feature works.
+  const rival = raw.rival ?? generateCareerRival(player);
+
+  return { ...raw, player, current, seasons, bdoWins: raw.bdoWins ?? 0, lastBdoRank: raw.lastBdoRank ?? 0, rival, retired: raw.retired ?? false };
+}
+
+function updateLegacyBest(career: BDCareer) {
+  try {
+    const legacy = computeLegacy(career);
+    let prev: BDLegacyBest = { bestScore: 0, bestTier: 'Journeyman', careers: 0 };
+    const raw = localStorage.getItem(LEGACY_BEST_KEY);
+    if (raw) prev = JSON.parse(raw) as BDLegacyBest;
+    const next: BDLegacyBest = {
+      bestScore: Math.max(prev.bestScore, legacy.score),
+      bestTier: legacy.score >= prev.bestScore ? legacy.tier : prev.bestTier,
+      careers: (prev.careers ?? 0) + 1,
+    };
+    localStorage.setItem(LEGACY_BEST_KEY, JSON.stringify(next));
+  } catch (e) {
+    console.error("[BallonDor] failed to update legacy best:", e);
+  }
 }
 
 function loadCareer(): BDCareer | null {
@@ -82,7 +119,7 @@ export default function BallonDorGame() {
     const allDone = updated.events.every(e => e.chosenId);
     let finalSeason = updated;
     if (allDone && updated.phase !== 'ceremony' && updated.phase !== 'done') {
-      finalSeason = finalizeSeason(career.player, updated);
+      finalSeason = finalizeSeason(career.player, updated, career.rival);
     }
     const newCareer: BDCareer = { ...career, current: finalSeason };
     saveCareer(newCareer);
@@ -92,18 +129,45 @@ export default function BallonDorGame() {
   function handleCeremonyComplete() {
     if (!career?.current?.ceremony) return;
     const season = career.current;
-    const rank = season.ceremony!.playerRank;
+    const ceremony = season.ceremony!;
+    const rank = ceremony.playerRank;
     const won = rank === 1;
     const completedSeason = { ...season, phase: 'done' as const };
     const newPlayer = developPlayer(career.player, season);
-    const newCareer: BDCareer = {
+
+    // Fire-and-forget XP (server dedups on deterministic event_ref)
+    const slug = slugifyName(career.player.name);
+    const seasonRef = `bdo-${slug}-s${season.number}-${season.year}`;
+    postXp('bdo_season', seasonRef);
+    if (rank >= 1 && rank <= 3) postXp('bdo_podium', seasonRef);
+    if (won) postXp('bdo_win', seasonRef);
+
+    // Age the rival alongside the player and record his ceremony finish
+    let nextRival = career.rival;
+    if (nextRival) {
+      const rivalEntry = ceremony.entries.find(e => !e.isPlayer && e.name === nextRival!.name);
+      nextRival = ageRival({ ...nextRival, lastBdoRank: rivalEntry?.rank ?? 0 });
+    }
+
+    let newCareer: BDCareer = {
       ...career,
       player: newPlayer,
+      rival: nextRival,
       seasons: [...career.seasons, completedSeason],
       current: null,
       bdoWins: career.bdoWins + (won ? 1 : 0),
       lastBdoRank: rank,
     };
+
+    // Forced retirement at 36
+    if (newPlayer.age >= 36) {
+      newCareer = retire(newCareer);
+      saveCareer(newCareer);
+      setCareer(newCareer);
+      setPlaying(false);
+      return;
+    }
+
     saveCareer(newCareer);
     setCareer(newCareer);
     setPlaying(false);
@@ -112,12 +176,30 @@ export default function BallonDorGame() {
     }
   }
 
+  // Retire the player: award career XP, persist best legacy, flag retired.
+  function retire(c: BDCareer): BDCareer {
+    postXp('bdo_career', `bdo-career-${slugifyName(c.player.name)}-${c.seasons.length}`);
+    const retired: BDCareer = { ...c, current: null, retired: true };
+    updateLegacyBest(retired);
+    return retired;
+  }
+
+  function handleRetireNow() {
+    if (!career) return;
+    if (!window.confirm(`Retire ${career.player.name} now? Your career legacy will be sealed.`)) return;
+    const retired = retire(career);
+    saveCareer(retired);
+    setCareer(retired);
+    setPlaying(false);
+    setShowingTransfer(false);
+  }
+
   function startNextSeason(clubId?: string) {
     if (!career) return;
     const lastClub = career.seasons.at(-1)?.club ?? PL_CLUBS[0];
     const club = clubId ? (PL_CLUBS.find(c => c.id === clubId) ?? lastClub) : lastClub;
     const nextNum = career.seasons.length + 1;
-    const season = initSeason(career.player, club, nextNum);
+    const season = initSeason(career.player, club, nextNum, career.rival);
     const newCareer: BDCareer = { ...career, current: season };
     saveCareer(newCareer);
     setCareer(newCareer);
@@ -141,6 +223,11 @@ export default function BallonDorGame() {
     );
   }
 
+  // ── Retired: career legacy screen ────────────────────────────────
+  if (career && career.retired) {
+    return <BDLegacy career={career} onNewCareer={handleReset} />;
+  }
+
   // ── New player setup ─────────────────────────────────────────────
   if (!career) {
     return <BDSetup onComplete={handleSetupComplete} />;
@@ -153,6 +240,7 @@ export default function BallonDorGame() {
         <BDCeremony
           season={career.current}
           player={career.player}
+          rival={career.rival}
           onComplete={handleCeremonyComplete}
         />
       );
@@ -161,6 +249,7 @@ export default function BallonDorGame() {
       <BDSeason
         season={career.current}
         player={career.player}
+        rival={career.rival}
         onUpdate={handleSeasonUpdate}
         onReturnToHub={() => setPlaying(false)}
       />
@@ -240,6 +329,9 @@ export default function BallonDorGame() {
             </div>
           </div>
         </div>
+
+        {/* ── Career rival card ────────────────────────────────────── */}
+        {career.rival && <RivalCard career={career} />}
 
         {/* ── In-progress season notice ────────────────────────────── */}
         {career.current && !playing && (
@@ -336,6 +428,16 @@ export default function BallonDorGame() {
           </button>
         )}
 
+        {/* ── Retire ───────────────────────────────────────────────── */}
+        {career.player.age >= 30 && (
+          <button
+            onClick={handleRetireNow}
+            className="w-full rounded-xl border border-amber-800/40 bg-amber-950/10 py-2.5 text-sm font-bold text-amber-500/80 transition hover:border-amber-600/50 hover:text-amber-400"
+          >
+            🎖️ Retire now &amp; seal your legacy
+          </button>
+        )}
+
         {/* ── Danger zone ──────────────────────────────────────────── */}
         <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">Danger Zone</p>
@@ -365,6 +467,53 @@ function StatPill({ label, value, gold }: { label: string; value: string | numbe
       <p className={`text-lg font-black ${gold ? 'text-amber-400' : 'text-white'}`}>{value}</p>
     </div>
   );
+}
+
+// ── Career rival card ─────────────────────────────────────────────────
+function RivalCard({ career }: { career: BDCareer }) {
+  const rival = career.rival!;
+  const yours = career.lastBdoRank;
+  const theirs = rival.lastBdoRank ?? 0;
+  const rankStr = (r: number) => (r === 1 ? '🥇 1st' : r > 0 ? `#${r}` : '—');
+
+  // A taunt if he beat you last time; a respect line if you beat him.
+  let line = 'Your career-long rival. Beat him to the Ballon d\'Or.';
+  if (yours > 0 || theirs > 0) {
+    const bothRanked = yours > 0 && theirs > 0;
+    if (bothRanked && theirs < yours) line = `${lastName(rival.name)} finished above you last season. Respond.`;
+    else if (bothRanked && yours < theirs) line = `You edged ${lastName(rival.name)} last season. Keep him behind you.`;
+    else if (yours > 0 && theirs === 0) line = `You made the shortlist and ${lastName(rival.name)} didn't. Advantage you.`;
+    else if (theirs > 0 && yours === 0) line = `${lastName(rival.name)} made the shortlist and you didn't. Prove them wrong.`;
+  }
+
+  return (
+    <div className="rounded-2xl border border-red-900/30 bg-red-950/10 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] font-black uppercase tracking-widest text-red-400">⚔️ Career Rival</p>
+        <span className="text-[10px] text-gray-500">{rival.leagueFlag} {rival.club}</span>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-base font-black text-white truncate">{rival.name}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Age {rival.age} · {rival.position} · OVR {rival.overall}</p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-[9px] text-gray-500 uppercase">Last BdO</p>
+          <p className="text-sm font-black text-white">
+            <span className="text-red-300">{rankStr(theirs)}</span>
+            <span className="text-gray-600"> vs </span>
+            <span className="text-amber-400">{rankStr(yours)}</span>
+          </p>
+        </div>
+      </div>
+      <p className="mt-2 text-[11px] text-gray-400 leading-relaxed">{line}</p>
+    </div>
+  );
+}
+
+function lastName(name: string): string {
+  const parts = name.trim().split(' ');
+  return parts.length > 1 ? parts[parts.length - 1] : name;
 }
 
 // ── Transfer Screen ───────────────────────────────────────────────────
@@ -439,6 +588,15 @@ function TransferScreen({ career, offers, onAccept, onStay, onBackToHub }: Trans
                     )}
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">{offer.tierLabel}</p>
+                  <p className={`mt-1.5 text-[11px] leading-snug ${offer.prestige >= 80 ? 'text-blue-300/80' : 'text-green-300/80'}`}>
+                    {offer.prestige >= 90
+                      ? '🏆 Trophy machine — but you\'ll share the goals'
+                      : offer.prestige >= 80
+                      ? '⚖️ Strong squad — output is split with stars'
+                      : offer.prestige >= 70
+                      ? '⚡ You\'d be a leader — plenty of the ball'
+                      : '🎯 You\'d be THE man — every goal is yours'}
+                  </p>
                 </div>
                 {selectedOffer?.clubId === offer.clubId && (
                   <span className="text-amber-400 text-sm shrink-0">✓</span>
