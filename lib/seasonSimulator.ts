@@ -1070,6 +1070,36 @@ function buildAllFixtures(
     }
     allFixtures.push({ week: mw + 1, matches: weekMatches });
   }
+
+  // Align the matchweek order to the reveal order. The live reveal streams the
+  // player's PL results in `playerMatches` order and derives the live 20-team
+  // table by slicing these weeks up to the current matchweek. The circle-method
+  // schedule above is shuffled, so without this the player's game in week r is a
+  // random opponent — meaning after N revealed results the table's player row
+  // reflects a DIFFERENT subset of the player's games than the N results shown
+  // (the reported "table is ahead / shows wins as draws" bug). Each week is a
+  // full round (every team plays exactly once), so reordering whole weeks keeps
+  // every team's games-played balanced while making week r contain exactly
+  // playerMatches[r-1].
+  const playerMatchIndex = new Map<string, number>();
+  playerMatches.forEach((m, i) => {
+    playerMatchIndex.set(`${m.opponent}|${m.isHome ? 'H' : 'A'}`, i);
+  });
+  const playerWeekIndex = (wk: SeasonWeek): number => {
+    for (const fx of wk.matches) {
+      if (fx.home === playerTeamName) {
+        const k = playerMatchIndex.get(`${fx.away}|H`);
+        if (k != null) return k;
+      } else if (fx.away === playerTeamName) {
+        const k = playerMatchIndex.get(`${fx.home}|A`);
+        if (k != null) return k;
+      }
+    }
+    return Number.MAX_SAFE_INTEGER; // no player fixture (shouldn't happen) — sink to the end
+  };
+  allFixtures.sort((a, b) => playerWeekIndex(a) - playerWeekIndex(b));
+  allFixtures.forEach((wk, i) => { wk.week = i + 1; });
+
   return allFixtures;
 }
 
