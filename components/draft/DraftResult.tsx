@@ -880,22 +880,38 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               const completedObjs = objData.completed as { id: string; xp_reward: number; title: string; card_image_url: string | null; card_name: string | null }[] ?? [];
               const pendingPopups: typeof xpPopups = [];
               for (const obj of completedObjs) {
-                const levelBefore = currentLevel ?? 1;
                 let newRewards: string[] = [];
+                // Derive this objective's level jump from ITS OWN award response
+                // (old_level → new_level). The old `currentLevel ?? 1` default was
+                // the "unlocked every season card at once" bug: on a normal season
+                // none of the pre-objective awards (draft_complete/win/invincible)
+                // run, so currentLevel is still null here, levelBefore defaulted to
+                // 1, and the popup then reported season cards for levels 1 → (the
+                // user's real level) — dumping the whole set on the first objective.
+                let levelBefore: number | null = currentLevel;
+                let levelAfter: number | null = currentLevel;
                 if (obj.xp_reward > 0) {
                   const r = await awardXp(`objective_${obj.id}`, `${runId}_obj_${obj.id}`, obj.xp_reward);
-                  newRewards = (!r?.duplicate ? r?.new_rewards : null) ?? [];
+                  if (r && !r.duplicate) {
+                    newRewards = r.new_rewards ?? [];
+                    if (typeof r.old_level === "number") levelBefore = r.old_level;
+                    if (typeof r.new_level === "number") levelAfter = r.new_level;
+                  }
                 }
-                const levelAfter = currentLevel ?? levelBefore;
-                const newSeasonCards = seasonRewardsRef.current
-                  .filter(sr => sr.level > levelBefore && sr.level <= levelAfter)
-                  .map(sr => ({ name: sr.card_name ?? "Season Card", image_url: sr.image_url }));
+                const from = levelBefore ?? levelAfter ?? 1;
+                const to = levelAfter ?? from;
+                // Only the cards for levels genuinely crossed by THIS objective.
+                const newSeasonCards = to > from
+                  ? seasonRewardsRef.current
+                      .filter(sr => sr.level > from && sr.level <= to)
+                      .map(sr => ({ name: sr.card_name ?? "Season Card", image_url: sr.image_url }))
+                  : [];
                 pendingPopups.push({
                   id: obj.id,
                   title: obj.title || "Objective Complete!",
                   xp: obj.xp_reward,
-                  oldLevel: levelBefore,
-                  newLevel: levelAfter,
+                  oldLevel: from,
+                  newLevel: to,
                   newRewards,
                   newSeasonCards,
                 });
