@@ -693,14 +693,25 @@ function goalScoringWeight(p: DraftPlayer): number {
     const dri = statOr(a.dribbling, o);
     const pac = statOr(a.pace, o);
     const phy = statOr(a.physical, o);
+    const head = a.heading;
 
     switch (role) {
       case 'ATT':
         return (sho * 3 + dri * 1 + pac * 0.5) * fit * qualityMult / 80;
       case 'MID':
         return (sho * 2 + dri * 0.5) * fit * qualityMult / 150;
-      case 'DEF':
-        return (phy * 1.2 + sho * 0.3) * fit * qualityMult / 600;
+      case 'DEF': {
+        const base = (phy * 1.2 + sho * 0.3) * fit * qualityMult / 600;
+        // Aerial / set-piece threat: defenders with high heading score from
+        // corners and free kicks. An elite header (Van Dijk ~90, Ramos ~85)
+        // expects ~3 PL goals per season; a fullback with heading ~55 barely
+        // benefits. Threshold at 50 so only genuine aerial threats get the
+        // bonus. Falls back to base-only when heading data is missing (=0).
+        const aerialBonus = head > 0
+          ? Math.max(0, head - 50) * (phy / 80) * 0.014 * fit * qualityMult
+          : 0;
+        return base + aerialBonus;
+      }
       case 'GK':
         return 0.02;
     }
