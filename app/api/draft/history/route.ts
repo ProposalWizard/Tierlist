@@ -60,7 +60,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const body = await request.json();
+  interface HistoryBody {
+    formation?: string;
+    seasonNumber?: number;
+    finish?: number;
+    points?: number;
+    record?: { wins?: number; draws?: number; losses?: number };
+    goalsFor?: number;
+    goalsAgainst?: number;
+    avgOvr?: number;
+    players?: unknown;
+    topScorerGoals?: number;
+    topAssists?: number;
+    cleanSheets?: number;
+    goalDifference?: number;
+    longestWinStreak?: number;
+    longestUnbeatenRun?: number;
+    faCupWinner?: unknown;
+    eflCupWinner?: unknown;
+    uclWinner?: unknown;
+    uelWinner?: unknown;
+    superCupWinner?: unknown;
+    charityShieldWinner?: unknown;
+    id?: unknown;
+  }
+  let body: HistoryBody;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
 
   const legacyColumns = {
     user_id: user.id,
