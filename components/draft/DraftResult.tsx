@@ -891,7 +891,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 let levelBefore: number | null = currentLevel;
                 let levelAfter: number | null = currentLevel;
                 if (obj.xp_reward > 0) {
-                  const r = await awardXp(`objective_${obj.id}`, `${runId}_obj_${obj.id}`, obj.xp_reward);
+                  const r = await awardXp(`objective_${obj.id}`, `objective_${obj.id}`, obj.xp_reward);
                   if (r && !r.duplicate) {
                     newRewards = r.new_rewards ?? [];
                     if (typeof r.old_level === "number") levelBefore = r.old_level;

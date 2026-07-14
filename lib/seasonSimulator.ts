@@ -3508,6 +3508,31 @@ export function simulateSeason(
         statsMap[def.name].cleanSheets++;
       }
     }
+    if (cm.leg2) {
+      const mr2 = { goalScorers: cm.leg2.goalScorers, assistProviders: [] as { player: string; minute: number }[], goalsAgainst: cm.leg2.goalsAgainst, result: cm.result as 'W' | 'D' | 'L', goalsFor: cm.leg2.goalsFor, opponent: cm.opponent, isHome: cm.leg2.isHome };
+      for (const p of starters) {
+        if (p === gk && benchGkPlaysFaCup) continue;
+        statsMap[p.name].appearances++;
+        rateMatchForPlayer(p, mr2);
+      }
+      if (benchGkPlaysFaCup && benchGk && statsMap[benchGk.name]) {
+        statsMap[benchGk.name].appearances++;
+        rateMatchForPlayer(benchGk, mr2);
+      }
+      for (const gs of cm.leg2.goalScorers) {
+        if (statsMap[gs.player]) statsMap[gs.player].goals++;
+      }
+      if (cm.leg2.goalsAgainst === 0) {
+        if (benchGkPlaysFaCup && benchGk && statsMap[benchGk.name]) {
+          statsMap[benchGk.name].cleanSheets++;
+        } else if (gk) {
+          statsMap[gk.name].cleanSheets++;
+        }
+        for (const def of defenders) {
+          statsMap[def.name].cleanSheets++;
+        }
+      }
+    }
   }
 
   // Count UCL stats (added to all-comps totals)
