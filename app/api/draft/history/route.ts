@@ -32,7 +32,6 @@ export async function GET() {
     goalsAgainst: row.goals_against,
     goalsScored: row.goals_for,
     avgOvr: row.avg_ovr,
-    players: row.players,
     // Extended stats (null until the draft_runs_stats.sql migration is run
     // and for rows saved before it)
     topScorerGoals: row.top_scorer_goals ?? undefined,
@@ -60,7 +59,38 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const body = await request.json();
+  interface HistoryBody {
+    formation?: string;
+    seasonNumber?: number;
+    finish?: number;
+    points?: number;
+    record?: { wins?: number; draws?: number; losses?: number };
+    goalsFor?: number;
+    goalsAgainst?: number;
+    avgOvr?: number;
+    topScorerGoals?: number;
+    topAssists?: number;
+    cleanSheets?: number;
+    goalDifference?: number;
+    longestWinStreak?: number;
+    longestUnbeatenRun?: number;
+    faCupWinner?: unknown;
+    eflCupWinner?: unknown;
+    uclWinner?: unknown;
+    uelWinner?: unknown;
+    superCupWinner?: unknown;
+    charityShieldWinner?: unknown;
+    id?: unknown;
+  }
+  let body: HistoryBody;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
 
   const legacyColumns = {
     user_id: user.id,
@@ -74,7 +104,6 @@ export async function POST(request: Request) {
     goals_for: body.goalsFor || 0,
     goals_against: body.goalsAgainst || 0,
     avg_ovr: body.avgOvr || 0,
-    players: body.players || [],
   };
 
   const extendedColumns = {

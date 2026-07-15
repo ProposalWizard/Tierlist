@@ -41,6 +41,7 @@ interface Props {
   onLeave: () => void;
   onUpdateSettings?: (settings: Partial<DraftSettings>) => void;
   onSettingsSync?: (settings: Partial<DraftSettings>) => void;
+  onHostChange?: (isNowHost: boolean) => void;
   defaultTeamName?: string;
 }
 
@@ -59,6 +60,7 @@ export default function MultiplayerLobby({
   onLeave,
   onUpdateSettings,
   onSettingsSync,
+  onHostChange,
 }: Props) {
   const [room, setRoom] = useState<RoomData | null>(null);
   const [players, setPlayers] = useState<RoomPlayer[]>([]);
@@ -303,6 +305,14 @@ export default function MultiplayerLobby({
   const isHost = room?.host_id ? room.host_id === userId : isHostProp;
   const isSimulating = room?.status === "simulating";
   const gameStarted = room?.status === "started";
+
+  const prevIsHostRef = useRef(isHostProp);
+  useEffect(() => {
+    if (isHost !== prevIsHostRef.current) {
+      prevIsHostRef.current = isHost;
+      onHostChange?.(isHost);
+    }
+  }, [isHost, onHostChange]);
 
   // Sync the team name input from the server once loaded, unless the user is actively editing it
   useEffect(() => {

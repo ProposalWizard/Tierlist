@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { FORMATIONS, getPositionColor } from "./formations";
 import { calculateSeasonOdds, positionFitness } from "@/lib/seasonSimulator";
+import { getFlagUrl } from "@/lib/nationalities";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftPlayer } from "@/app/draft/page";
 
@@ -22,33 +23,6 @@ const ordinal = (n: number) => {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
-const NATIONALITY_FLAGS: Record<string, string> = {
-  "England": "gb-eng", "Scotland": "gb-sct", "Wales": "gb-wls",
-  "Northern Ireland": "gb-nir", "Republic of Ireland": "ie", "Ireland": "ie",
-  "Spain": "es", "Germany": "de", "France": "fr", "Italy": "it",
-  "Netherlands": "nl", "Belgium": "be", "Portugal": "pt",
-  "Brazil": "br", "Argentina": "ar", "Uruguay": "uy", "Colombia": "co",
-  "Chile": "cl", "Mexico": "mx", "United States": "us", "Canada": "ca",
-  "Senegal": "sn", "Nigeria": "ng", "Ghana": "gh", "Ivory Coast": "ci",
-  "Cameroon": "cm", "Morocco": "ma", "Egypt": "eg", "Algeria": "dz",
-  "Tunisia": "tn", "Mali": "ml", "Guinea": "gn", "Benin": "bj",
-  "Croatia": "hr", "Serbia": "rs", "Poland": "pl", "Czech Republic": "cz",
-  "Slovakia": "sk", "Hungary": "hu", "Austria": "at", "Switzerland": "ch",
-  "Denmark": "dk", "Sweden": "se", "Norway": "no", "Finland": "fi",
-  "Iceland": "is", "Russia": "ru", "Ukraine": "ua", "Turkey": "tr",
-  "Greece": "gr", "Romania": "ro", "Bulgaria": "bg", "Montenegro": "me",
-  "Bosnia and Herzegovina": "ba", "North Macedonia": "mk", "Albania": "al",
-  "Kosovo": "xk", "Slovenia": "si", "Japan": "jp", "South Korea": "kr",
-  "Australia": "au", "New Zealand": "nz", "China": "cn",
-  "United Arab Emirates": "ae", "Saudi Arabia": "sa", "Jamaica": "jm",
-  "Costa Rica": "cr", "Ecuador": "ec", "Venezuela": "ve", "Peru": "pe",
-  "Paraguay": "py", "Bolivia": "bo", "Georgia": "ge", "Israel": "il",
-  "Cyprus": "cy", "Luxembourg": "lu",
-};
-const getFlagUrl = (nationality: string) => {
-  const code = NATIONALITY_FLAGS[nationality];
-  return code ? `https://flagcdn.com/16x12/${code}.png` : null;
-};
 
 export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1, isMultiplayer = false, initialSpeed }: Props) {
   const [squad, setSquad] = useState<DraftPlayer[]>(() => [...players]);
