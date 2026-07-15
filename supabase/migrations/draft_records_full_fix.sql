@@ -47,3 +47,23 @@ ALTER TABLE draft_personal_records ADD CONSTRAINT draft_personal_records_record_
     'biggest_win', 'avg_rating', 'most_points',
     'career_goals', 'career_assists', 'career_trophies', 'career_avg_rating'
   ));
+
+-- Add squad_ovr to global records (was added later in draft_records_squad_ovr.sql
+-- but not included here — adding it so this migration is fully self-contained)
+ALTER TABLE draft_records DROP CONSTRAINT IF EXISTS draft_records_record_type_check;
+ALTER TABLE draft_records ADD CONSTRAINT draft_records_record_type_check
+  CHECK (record_type IN (
+    'wins', 'goals', 'assists', 'clean_sheets', 'unbeaten', 'goals_conceded',
+    'biggest_win', 'avg_rating', 'most_points', 'squad_ovr',
+    'career_goals', 'career_assists', 'career_trophies', 'career_avg_rating'
+  ));
+
+-- Fix the personal records unique constraint to include mode so that normal
+-- and prime records can coexist per user. The old constraint (user_id,
+-- competition, record_type) caused prime-mode inserts to conflict with an
+-- existing normal-mode row (or vice versa), silently dropping the record.
+ALTER TABLE draft_personal_records DROP CONSTRAINT IF EXISTS draft_personal_records_user_id_competition_record_type_key;
+ALTER TABLE draft_personal_records DROP CONSTRAINT IF EXISTS draft_personal_records_user_competition_type_unique;
+ALTER TABLE draft_personal_records
+  ADD CONSTRAINT draft_personal_records_user_competition_type_mode_unique
+  UNIQUE (user_id, competition, record_type, mode);

@@ -271,20 +271,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, inserted: 0 });
   }
 
+  // Whether the mode column exists — discovered lazily on first error, then
+  // remembered for the rest of this request so we don't hit the DB 20× times.
+  let modeColExists: boolean | null = null;
+  const NO_COL = (code: string | undefined) => code === "42703" || code === "PGRST204";
+
   let inserted = 0;
 
   for (const candidate of candidates) {
     const ascending = ASCENDING_RECORD_TYPES.has(candidate.record_type);
 
-    let fetchQuery = serviceClient
+    let baseQuery = serviceClient
       .from("draft_records")
       .select("id, value")
       .eq("competition", candidate.competition)
       .eq("record_type", candidate.record_type);
-    try { fetchQuery = fetchQuery.eq("mode", candidate.mode); } catch { /* mode column may not exist yet */ }
-    const { data: existing, error: fetchErr } = await fetchQuery
-      .order("value", { ascending })
-      .limit(MAX_PER_CATEGORY);
+    if (modeColExists !== false) baseQuery = baseQuery.eq("mode", candidate.mode);
+    let { data: existing, error: fetchErr } = await baseQuery.order("value", { ascending }).limit(MAX_PER_CATEGORY);
+
+    // mode column doesn't exist — retry without the filter
+    if (fetchErr && NO_COL(fetchErr.code)) {
+      modeColExists = false;
+      const fallback = serviceClient
+        .from("draft_records")
+        .select("id, value")
+        .eq("competition", candidate.competition)
+        .eq("record_type", candidate.record_type);
+      ({ data: existing, error: fetchErr } = await fallback.order("value", { ascending }).limit(MAX_PER_CATEGORY));
+    } else if (fetchErr == null && modeColExists == null) {
+      modeColExists = true;
+    }
 
     if (fetchErr) {
       console.error(`Failed to fetch records for ${candidate.competition}/${candidate.record_type}:`, fetchErr.message);
@@ -293,9 +309,20 @@ export async function POST(req: Request) {
 
     const count = existing?.length ?? 0;
 
+    // Build insert payload — omit mode when the column is absent
+    const insertPayload = modeColExists === false
+      ? (({ mode: _m, ...rest }) => rest)(candidate)
+      : candidate;
+
     if (count < MAX_PER_CATEGORY) {
-      const { error: insErr } = await serviceClient.from("draft_records").insert(candidate);
-      if (insErr) {
+      const { error: insErr } = await serviceClient.from("draft_records").insert(insertPayload);
+      if (insErr && NO_COL(insErr.code) && modeColExists !== false) {
+        // Column appeared absent on insert but not on fetch — flip flag and retry
+        modeColExists = false;
+        const { mode: _m, ...withoutMode } = candidate;
+        const { error: retryErr } = await serviceClient.from("draft_records").insert(withoutMode);
+        if (retryErr) { console.error(`Failed to insert record (retry):`, retryErr.message); } else { inserted++; }
+      } else if (insErr) {
         console.error(`Failed to insert record:`, insErr.message);
       } else {
         inserted++;
@@ -304,7 +331,7 @@ export async function POST(req: Request) {
       const worst = existing![count - 1];
       const beatsWorst = ascending ? candidate.value < worst.value : candidate.value > worst.value;
       if (beatsWorst) {
-        const { error: insErr } = await serviceClient.from("draft_records").insert(candidate);
+        const { error: insErr } = await serviceClient.from("draft_records").insert(insertPayload);
         if (insErr) {
           console.error(`Failed to insert record:`, insErr.message);
           continue;
@@ -323,6 +350,8 @@ export async function POST(req: Request) {
   }
 
   // Upsert personal bests
+  let modeColExistsPersonal: boolean | null = null;
+
   for (const candidate of candidates) {
     const ascending = ASCENDING_RECORD_TYPES.has(candidate.record_type);
 
@@ -332,20 +361,64 @@ export async function POST(req: Request) {
       .eq("user_id", user.id)
       .eq("competition", candidate.competition)
       .eq("record_type", candidate.record_type);
-    try { personalQuery = personalQuery.eq("mode", candidate.mode); } catch { /* mode column may not exist yet */ }
-    const { data: existing } = await personalQuery.maybeSingle();
+    if (modeColExistsPersonal !== false) personalQuery = personalQuery.eq("mode", candidate.mode);
+    let { data: existing, error: personalFetchErr } = await personalQuery.maybeSingle();
+
+    if (personalFetchErr && NO_COL(personalFetchErr.code)) {
+      modeColExistsPersonal = false;
+      const fallback = serviceClient
+        .from("draft_personal_records")
+        .select("id, value")
+        .eq("user_id", user.id)
+        .eq("competition", candidate.competition)
+        .eq("record_type", candidate.record_type);
+      ({ data: existing, error: personalFetchErr } = await fallback.maybeSingle());
+    } else if (personalFetchErr == null && modeColExistsPersonal == null) {
+      modeColExistsPersonal = true;
+    }
+
+    if (personalFetchErr) continue;
+
+    const personalInsertPayload: Record<string, unknown> = {
+      user_id: user.id,
+      competition: candidate.competition,
+      record_type: candidate.record_type,
+      value: candidate.value,
+      player_name: candidate.player_name,
+      player_ovr: candidate.player_ovr,
+      season_number: candidate.season_number,
+    };
+    if (modeColExistsPersonal !== false) personalInsertPayload.mode = candidate.mode;
 
     if (!existing) {
-      await serviceClient.from("draft_personal_records").insert({
-        user_id: user.id,
-        competition: candidate.competition,
-        record_type: candidate.record_type,
-        value: candidate.value,
-        player_name: candidate.player_name,
-        player_ovr: candidate.player_ovr,
-        season_number: candidate.season_number,
-        mode: candidate.mode,
-      });
+      const { error: insErr } = await serviceClient.from("draft_personal_records").insert(personalInsertPayload);
+      if (insErr && NO_COL(insErr.code)) {
+        modeColExistsPersonal = false;
+        delete personalInsertPayload.mode;
+        await serviceClient.from("draft_personal_records").insert(personalInsertPayload);
+      } else if (insErr && insErr.code === "23505") {
+        // Unique conflict — a record exists for this (user, competition, type) from
+        // a different mode (unique constraint doesn't include mode yet). Fetch
+        // without mode filter and update if this value is better.
+        const { data: any } = await serviceClient
+          .from("draft_personal_records")
+          .select("id, value")
+          .eq("user_id", user.id)
+          .eq("competition", candidate.competition)
+          .eq("record_type", candidate.record_type)
+          .maybeSingle();
+        if (any) {
+          const isBetter = ascending ? candidate.value < any.value : candidate.value > any.value;
+          if (isBetter) {
+            await serviceClient
+              .from("draft_personal_records")
+              .update({ value: candidate.value, player_name: candidate.player_name, player_ovr: candidate.player_ovr, season_number: candidate.season_number, updated_at: new Date().toISOString() })
+              .eq("id", any.id);
+          }
+        }
+      } else if (insErr) {
+        console.error(`Failed to insert personal record:`, insErr.message);
+      }
     } else {
       const isNewBest = ascending ? candidate.value < existing.value : candidate.value > existing.value;
       if (isNewBest) {
