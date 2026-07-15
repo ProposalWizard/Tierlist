@@ -563,7 +563,6 @@ export interface DraftRunRecord {
   goalsAgainst: number;
   goalsScored: number;
   avgOvr: number;
-  players: { name: string; assignedPosition: string; overall: number; clubYear: string }[];
   topScorerGoals?: number;
   topAssists?: number;
   cleanSheets?: number;
@@ -732,7 +731,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         goalsAgainst: season.teamRecord.goalsAgainst,
         goalsScored: season.teamRecord.goalsFor,
         avgOvr,
-        players: players.map(p => ({ name: p.name, assignedPosition: p.assignedPosition, overall: p.overall, clubYear: p.clubYear })),
         topScorerGoals,
         topAssists,
         cleanSheets: season.awards.goldenGlove.cleanSheets,

@@ -32,7 +32,6 @@ export async function GET() {
     goalsAgainst: row.goals_against,
     goalsScored: row.goals_for,
     avgOvr: row.avg_ovr,
-    players: row.players,
     // Extended stats (null until the draft_runs_stats.sql migration is run
     // and for rows saved before it)
     topScorerGoals: row.top_scorer_goals ?? undefined,
@@ -69,7 +68,6 @@ export async function POST(request: Request) {
     goalsFor?: number;
     goalsAgainst?: number;
     avgOvr?: number;
-    players?: unknown;
     topScorerGoals?: number;
     topAssists?: number;
     cleanSheets?: number;
@@ -106,7 +104,6 @@ export async function POST(request: Request) {
     goals_for: body.goalsFor || 0,
     goals_against: body.goalsAgainst || 0,
     avg_ovr: body.avgOvr || 0,
-    players: body.players || [],
   };
 
   const extendedColumns = {
