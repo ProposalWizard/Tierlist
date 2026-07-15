@@ -147,6 +147,7 @@ export default function TokenAutocomplete({
           onChange={e => { setText(e.target.value); setOpen(true); setHighlight(0); }}
           onKeyDown={onKeyDown}
           onFocus={() => setOpen(true)}
+          onBlur={() => { if (text.trim() && allowFreeText) commit(text); }}
           placeholder={tokens.length === 0 ? placeholder : ""}
           className="flex-1 min-w-[80px] bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none py-0.5"
         />
