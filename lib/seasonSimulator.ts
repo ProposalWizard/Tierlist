@@ -618,22 +618,7 @@ function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
       a.dribbling = Number(a.dribbling) || 0;
       a.defending = Number(a.defending) || 0;
       a.physical = Number(a.physical) || 0;
-      a.finishing = Number(a.finishing) || 0;
-      a.positioning = Number(a.positioning) || 0;
       a.crossing = Number(a.crossing) || 0;
-      a.vision = Number(a.vision) || 0;
-      a.longShots = Number(a.longShots) || 0;
-      a.shortPassing = Number(a.shortPassing) || 0;
-      a.longPassing = Number(a.longPassing) || 0;
-      a.heading = Number(a.heading) || 0;
-      a.interceptions = Number(a.interceptions) || 0;
-      a.standingTackle = Number(a.standingTackle) || 0;
-      a.marking = Number(a.marking) || 0;
-      a.reactions = Number(a.reactions) || 0;
-      a.sprintSpeed = Number(a.sprintSpeed) || 0;
-      a.gkDiving = Number(a.gkDiving) || 0;
-      a.gkPositioning = Number(a.gkPositioning) || 0;
-      a.gkReflexes = Number(a.gkReflexes) || 0;
     }
   }
 
@@ -683,6 +668,7 @@ function computePhaseRatings(players: DraftPlayer[]): PhaseRatings {
 
 function goalScoringWeight(p: DraftPlayer): number {
   const role = classifyPosition(p.assignedPosition);
+  const pos = p.assignedPosition.toUpperCase().trim();
   const fit = positionFitness(p);
   const qualityMult = (p.overall / 80) * (p.overall / 80);
 
@@ -693,24 +679,21 @@ function goalScoringWeight(p: DraftPlayer): number {
     const dri = statOr(a.dribbling, o);
     const pac = statOr(a.pace, o);
     const phy = statOr(a.physical, o);
-    const head = a.heading;
 
     switch (role) {
       case 'ATT':
         return (sho * 3 + dri * 1 + pac * 0.5) * fit * qualityMult / 80;
-      case 'MID':
-        return (sho * 2 + dri * 0.5) * fit * qualityMult / 150;
+      case 'MID': {
+        const divisor = ['CDM', 'DM'].includes(pos) ? 200 : 150;
+        return (sho * 2 + dri * 0.5) * fit * qualityMult / divisor;
+      }
       case 'DEF': {
-        const base = (phy * 1.2 + sho * 0.3) * fit * qualityMult / 600;
-        // Aerial / set-piece threat: defenders with high heading score from
-        // corners and free kicks. An elite header (Van Dijk ~90, Ramos ~85)
-        // expects ~3 PL goals per season; a fullback with heading ~55 barely
-        // benefits. Threshold at 50 so only genuine aerial threats get the
-        // bonus. Falls back to base-only when heading data is missing (=0).
-        const aerialBonus = head > 0
-          ? Math.max(0, head - 50) * (phy / 80) * 0.014 * fit * qualityMult
-          : 0;
-        return base + aerialBonus;
+        const isFullback = ['RB', 'LB', 'RWB', 'LWB'].includes(pos);
+        if (isFullback) {
+          return (pac * 1.5 + phy * 0.5 + sho * 0.3) * fit * qualityMult / 600;
+        }
+        // CB: physical dominance on set pieces
+        return phy * fit * qualityMult / 95;
       }
       case 'GK':
         return 0.02;
@@ -1147,13 +1130,13 @@ function matchRating(
         keyAvg = (statOr(a.dribbling, o) + statOr(a.pace, o) + statOr(a.shooting, o)) / 3;
         break;
       case 'MID':
-        keyAvg = (statOr(a.passing, o) + statOr(a.dribbling, o) + (a.vision > 0 ? a.vision : statOr(a.passing, o))) / 3;
+        keyAvg = (statOr(a.passing, o) + statOr(a.dribbling, o) + statOr(a.physical, o)) / 3;
         break;
       case 'DEF':
-        keyAvg = (statOr(a.defending, o) + statOr(a.physical, o) + (a.interceptions > 0 ? a.interceptions : statOr(a.defending, o))) / 3;
+        keyAvg = (statOr(a.defending, o) + statOr(a.physical, o) + statOr(a.pace, o)) / 3;
         break;
       case 'GK':
-        keyAvg = (statOr(a.gkReflexes, o) + statOr(a.gkPositioning, o) + statOr(a.gkDiving, o)) / 3;
+        keyAvg = o;
         break;
     }
     base += Math.max(0, (keyAvg - 65) * 0.01);
