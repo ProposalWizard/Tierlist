@@ -160,7 +160,27 @@ export default function AdminPanel({
 }: {
   initialTierlists: Tierlist[];
 }) {
-  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings" | "tictactoe" | "tenable" | "objectives" | "cards">("tierlists");
+  const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings" | "tictactoe" | "tenable" | "objectives" | "cards" | "feedback">("tierlists");
+  const [feedbackItems, setFeedbackItems] = useState<{ id: string; message: string; page_url: string | null; created_at: string }[]>([]);
+  const [feedbackLoaded, setFeedbackLoaded] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+
+  const loadFeedback = async () => {
+    if (feedbackLoaded) return;
+    setFeedbackLoading(true);
+    const res = await fetch("/api/admin/feedback");
+    if (res.ok) {
+      const { feedback } = await res.json();
+      setFeedbackItems(feedback);
+    }
+    setFeedbackLoaded(true);
+    setFeedbackLoading(false);
+  };
+
+  const deleteFeedback = async (id: string) => {
+    await fetch("/api/admin/feedback", { method: "DELETE", body: JSON.stringify({ id }), headers: { "Content-Type": "application/json" } });
+    setFeedbackItems(prev => prev.filter(f => f.id !== id));
+  };
   const adminDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
 
@@ -1426,6 +1446,14 @@ export default function AdminPanel({
           }`}
         >
           Cards
+        </button>
+        <button
+          onClick={() => { setTab("feedback"); loadFeedback(); }}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            tab === "feedback" ? "bg-cyan-600 text-white" : "text-white hover:text-white"
+          }`}
+        >
+          Feedback {feedbackLoaded ? `(${feedbackItems.length})` : ""}
         </button>
         <div className="ml-auto flex items-center gap-2">
           <a
@@ -3122,6 +3150,40 @@ export default function AdminPanel({
       {tab === "objectives" && <ObjectivesAdmin />}
 
       {tab === "cards" && <CardLibraryAdmin />}
+
+      {/* ── Feedback tab ────────────────────────────────────────────────── */}
+      {tab === "feedback" && (
+        <div className="space-y-3">
+          {feedbackLoading && <p className="text-sm text-gray-400">Loading...</p>}
+          {feedbackLoaded && feedbackItems.length === 0 && (
+            <p className="text-sm text-gray-400">No feedback submitted yet.</p>
+          )}
+          {feedbackItems.map(item => (
+            <div key={item.id} className="flex gap-4 rounded-xl border border-gray-700 bg-gray-900 px-4 py-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white whitespace-pre-wrap break-words">{item.message}</p>
+                <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
+                  {item.page_url && (
+                    <span className="text-[11px] text-gray-500 truncate max-w-xs" title={item.page_url}>
+                      {item.page_url.replace(/^https?:\/\/[^/]+/, "")}
+                    </span>
+                  )}
+                  <span className="text-[11px] text-gray-500">
+                    {new Date(item.created_at).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => deleteFeedback(item.id)}
+                className="shrink-0 text-red-400 hover:text-red-300 text-sm font-bold leading-none self-start mt-0.5"
+                title="Delete"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Admin cover crop overlay (landscape 3:2) */}
       {adminCoverCrop && (
