@@ -161,7 +161,7 @@ export default function AdminPanel({
   initialTierlists: Tierlist[];
 }) {
   const [tab, setTab] = useState<"tierlists" | "categories" | "vote-tierlists" | "blind-rankings" | "tictactoe" | "tenable" | "objectives" | "cards" | "feedback">("tierlists");
-  const [feedbackItems, setFeedbackItems] = useState<{ id: string; message: string; page_url: string | null; created_at: string }[]>([]);
+  const [feedbackItems, setFeedbackItems] = useState<{ id: string; message: string; page_url: string | null; created_at: string; username: string | null }[]>([]);
   const [feedbackLoaded, setFeedbackLoaded] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
 
@@ -3163,6 +3163,12 @@ export default function AdminPanel({
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-white whitespace-pre-wrap break-words">{item.message}</p>
                 <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
+                  {item.username && (
+                    <span className="text-[11px] font-semibold text-cyan-400">{item.username}</span>
+                  )}
+                  {!item.username && (
+                    <span className="text-[11px] text-gray-600 italic">anonymous</span>
+                  )}
                   {item.page_url && (
                     <span className="text-[11px] text-gray-500 truncate max-w-xs" title={item.page_url}>
                       {item.page_url.replace(/^https?:\/\/[^/]+/, "")}

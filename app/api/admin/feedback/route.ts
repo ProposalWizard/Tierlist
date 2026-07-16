@@ -13,11 +13,20 @@ export async function GET() {
   const service = createServiceClient();
   const { data, error } = await service
     .from("feedback")
-    .select("id, message, page_url, created_at")
+    .select("id, message, page_url, created_at, user_id, user_profiles(username)")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ feedback: data ?? [] });
+
+  const feedback = (data ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id,
+    message: row.message,
+    page_url: row.page_url,
+    created_at: row.created_at,
+    username: (row.user_profiles as { username?: string } | null)?.username ?? null,
+  }));
+
+  return NextResponse.json({ feedback });
 }
 
 export async function DELETE(req: Request) {
