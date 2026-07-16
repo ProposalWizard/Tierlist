@@ -19,10 +19,12 @@ export default function FeedbackForm() {
     setStatus("idle");
 
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("feedback").insert([
       {
         message: trimmed,
         page_url: window.location.href,
+        ...(user ? { user_id: user.id } : {}),
       },
     ]);
 
