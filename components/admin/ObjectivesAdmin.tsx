@@ -348,6 +348,10 @@ export default function ObjectivesAdmin() {
       cond.timeframe = nc.timeframe;
     }
 
+    if (nc.type === "squad_count") {
+      if (nc.atMost) cond.atMost = true;
+    }
+
     if (nc.type === "season_stat") {
       cond.seasonStat = nc.seasonStat;
       if (nc.atMost) cond.atMost = true;

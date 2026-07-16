@@ -123,7 +123,10 @@ export function auditCondition(
   if (cond.type === "win_event" && !cond.event) {
     issues.push(`Event condition has no event selected — it checks nothing.`);
   }
-  const isAtMost = (cond.type === "squad_count" || cond.type === "season_stat") && cond.atMost;
+  // squad_count with count=0 implicitly means "at most 0" even if atMost wasn't persisted
+  // (older saves may be missing the flag due to a now-fixed bug in handleAddCondition)
+  const isAtMost = ((cond.type === "squad_count" || cond.type === "season_stat") && cond.atMost)
+    || (cond.type === "squad_count" && cond.count === 0);
   if (!isAtMost && (cond.count == null || cond.count <= 0)) {
     issues.push(`Target count is ${cond.count ?? "missing"} — a condition needs a positive target.`);
   }
