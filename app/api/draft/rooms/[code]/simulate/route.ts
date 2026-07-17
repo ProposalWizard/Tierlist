@@ -42,7 +42,9 @@ export async function POST(
     return new Response("No players in room", { status: 400 });
   }
 
-  const notReady = roomPlayers.filter(p => p.status !== "ready");
+  // Exclude relegated players ("out" status) — they don't submit squads.
+  const activePlayers = roomPlayers.filter(p => (p as Record<string, unknown>).status !== "out");
+  const notReady = activePlayers.filter(p => p.status !== "ready");
   if (notReady.length > 0) {
     return new Response("Not all players have submitted squads", { status: 400 });
   }
@@ -60,13 +62,13 @@ export async function POST(
   }
 
   try {
-    const emptySquads = roomPlayers.filter(rp => !rp.squad || !Array.isArray(rp.squad) || rp.squad.length === 0);
+    const emptySquads = activePlayers.filter(rp => !rp.squad || !Array.isArray(rp.squad) || rp.squad.length === 0);
     if (emptySquads.length > 0) {
       await service.from("draft_rooms").update({ status: "lobby" }).eq("id", room.id);
       return new Response(`Missing squad data for ${emptySquads.length} player(s)`, { status: 400 });
     }
 
-    const N = roomPlayers.length;
+    const N = activePlayers.length;
     const seasonNumber = room.season_number ?? 1;
     const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
       { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
@@ -74,7 +76,7 @@ export async function POST(
     const sortedAI = [...seasonTeams].sort((a, b) => b.strength - a.strength);
     const aiOpponents = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
 
-    const humanTeams: SharedSeasonInput[] = roomPlayers.map(rp => ({
+    const humanTeams: SharedSeasonInput[] = activePlayers.map(rp => ({
       userId: rp.user_id,
       displayName: rp.display_name,
       teamName: (rp as Record<string, unknown>).team_name as string | undefined,
@@ -83,7 +85,7 @@ export async function POST(
 
     // Build previous season results map for Super Cup / Charity Shield / EL/UCL qualification
     const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean; leagueCupWinner?: boolean }> = {};
-    for (const rp of roomPlayers) {
+    for (const rp of activePlayers) {
       const prev = rp.season_result as Record<string, unknown> | null | undefined;
       if (prev) {
         previousResults[rp.user_id] = {
@@ -98,8 +100,8 @@ export async function POST(
     const sharedSeed = hashRoomId(room.id) ^ (room.season_number ?? 1) * 0x9e3779b9;
     const results = simulateSharedSeason(humanTeams, aiOpponents, sharedSeed >>> 0, seasonNumber, previousLeagueTable ?? undefined, Object.keys(previousResults).length > 0 ? previousResults : undefined);
 
-    // Write all player results in parallel
-    await Promise.all(roomPlayers.map(async (rp) => {
+    // Write results for active players
+    await Promise.all(activePlayers.map(async (rp) => {
       const result = results.get(rp.user_id);
       if (!result) return;
       await service
@@ -120,13 +122,16 @@ export async function POST(
       settings: { ...(existingSettings ?? {}), revealStartAt },
     }).eq("id", room.id);
 
-    // Include updated players in response so the host skips an extra fetchRoom round-trip
-    const updatedPlayers = roomPlayers.map(rp => ({
-      ...rp,
-      season_result: results.get(rp.user_id) ?? null,
-      actual_finish: results.get(rp.user_id)?.actualFinish ?? null,
-      status: "simulated",
-    }));
+    // Include updated players in response; "out" players keep their status unchanged.
+    const updatedPlayers = roomPlayers.map(rp => {
+      if ((rp as Record<string, unknown>).status === "out") return rp;
+      return {
+        ...rp,
+        season_result: results.get(rp.user_id) ?? null,
+        actual_finish: results.get(rp.user_id)?.actualFinish ?? null,
+        status: "simulated",
+      };
+    });
 
     return Response.json({ ok: true, revealStartAt, players: updatedPlayers });
   } catch (e) {

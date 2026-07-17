@@ -9,7 +9,7 @@ export interface RoomPlayer {
   user_id: string;
   display_name: string;
   team_name: string | null;
-  status: "drafting" | "ready" | "simulated";
+  status: "drafting" | "ready" | "simulated" | "out";
   avg_ovr: number | null;
   team_strength: number | null;
   actual_finish: number | null;
@@ -297,7 +297,8 @@ export default function MultiplayerLobby({
     }
   };
 
-  const allReady = players.length > 1 && players.every(p => p.status === "ready" || p.status === "simulated");
+  const activePlayers = players.filter(p => p.status !== "out");
+  const allReady = players.length > 1 && activePlayers.length > 0 && activePlayers.every(p => p.status === "ready" || p.status === "simulated");
   const myPlayer = players.find(p => p.user_id === userId);
   // Host-ness can change mid-game: when a host leaves, the room is handed to
   // the longest-joined remaining player. Trust the live room row over the
@@ -332,6 +333,12 @@ export default function MultiplayerLobby({
         body: JSON.stringify({ teamName: trimmed }),
       });
       if (res.ok) {
+        // Optimistically update local players state so the useEffect that
+        // resets teamNameInput from myPlayer.team_name sees the fresh value
+        // rather than the stale null (which resets the input to defaultTeamName).
+        setPlayers(prev => prev.map(p =>
+          p.user_id === userId ? { ...p, team_name: trimmed } : p
+        ));
         setTeamNameEditedManually(false);
         fetchRoom();
       } else {

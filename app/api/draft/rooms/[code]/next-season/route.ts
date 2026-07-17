@@ -33,19 +33,18 @@ export async function POST(
     return Response.json({ ok: true, skipped: true });
   }
 
-  // Read players' season_result BEFORE clearing, to preserve the league table for European comp qualification
-  const { data: roomPlayers } = await service
+  // Read all players' data BEFORE clearing — need season_result for the league
+  // table and actual_finish to identify relegated players.
+  const { data: allPlayers } = await service
     .from("draft_room_players")
-    .select("season_result")
-    .eq("room_id", room.id)
-    .not("season_result", "is", null)
-    .limit(1);
+    .select("id, season_result, actual_finish")
+    .eq("room_id", room.id);
 
   let previousLeagueTable: { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }[] | null = null;
-  if (roomPlayers && roomPlayers.length > 0) {
-    const result = roomPlayers[0].season_result as { leagueTable?: { name: string; played: number; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; points: number; isPlayer?: boolean }[] } | null;
+  const playerWithResult = (allPlayers ?? []).find(p => p.season_result != null);
+  if (playerWithResult) {
+    const result = playerWithResult.season_result as { leagueTable?: { name: string; played: number; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; points: number; isPlayer?: boolean }[] } | null;
     if (result?.leagueTable) {
-      // Store a compact form: strip isPlayer (it varies per human) and rename fields to save space
       previousLeagueTable = result.leagueTable.map(t => ({
         name: t.name,
         played: t.played,
@@ -59,6 +58,11 @@ export async function POST(
     }
   }
 
+  // Identify relegated players (finished 18th or worse) before clearing the column.
+  const relegatedIds = (allPlayers ?? [])
+    .filter(p => typeof p.actual_finish === "number" && p.actual_finish >= 18)
+    .map(p => p.id as string);
+
   // Reset players FIRST, then the room. Order matters: the ready endpoint
   // rejects submissions while room.status is "complete", so by resetting
   // players before flipping the room to "lobby" no ready can land in the
@@ -67,6 +71,15 @@ export async function POST(
     .from("draft_room_players")
     .update({ status: "drafting", avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })
     .eq("room_id", room.id);
+
+  // Relegated players are out of the competition — mark them so the lobby's
+  // allReady check and the simulate route both skip them.
+  if (relegatedIds.length > 0) {
+    await service
+      .from("draft_room_players")
+      .update({ status: "out" })
+      .in("id", relegatedIds);
+  }
   await service
     .from("draft_rooms")
     .update({ status: "lobby", season_number: nextSeasonNumber, previous_league_table: previousLeagueTable })
