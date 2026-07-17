@@ -719,7 +719,10 @@ export default function DraftPage() {
           body: JSON.stringify({ nextSeasonNumber: currentSeason }),
         });
       }
-      // Go back to the lobby immediately; ready is submitted in the background
+      // Mark submitted before changing phase so the remounted lobby's
+      // gameStarted effect sees squadSubmitted=true and doesn't re-trigger
+      // onStartDraft (which would reset the draft back to formation-pick).
+      setSquadSubmitted(true);
       setPhase("lobby");
       submitReadyWithRetry(roomCode, arranged);
     } else {
@@ -905,8 +908,10 @@ export default function DraftPage() {
           body: JSON.stringify({ nextSeasonNumber: currentSeason }),
         });
       }
-      // Enter the lobby immediately; ready is submitted in the background
-      // with retries until the host has advanced the season.
+      // Mark submitted before changing phase so the remounted lobby's
+      // gameStarted effect sees squadSubmitted=true and doesn't re-trigger
+      // onStartDraft (which would reset the draft back to formation-pick).
+      setSquadSubmitted(true);
       setPhase("lobby");
       submitReadyWithRetry(roomCode, arranged);
     } else {
