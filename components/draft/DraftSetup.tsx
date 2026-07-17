@@ -398,7 +398,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-bold text-white mb-1">Sign in to save your history</div>
                 <p className="text-xs text-white mb-3">
-                  You can play as a guest right now. Sign in to save your draft runs, stats and progress.
+                  You can play as a guest right now. Sign in to play Online, Enter the Hall of Fame, and Save Progress.
                 </p>
                 <Link
                   href="/auth?next=/draft"
