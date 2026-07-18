@@ -15,7 +15,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, host_id, status, season_number")
+    .select("id, host_id, status, season_number, settings")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -56,7 +56,7 @@ export async function POST(
   // table and actual_finish to identify relegated players.
   const { data: allPlayers } = await service
     .from("draft_room_players")
-    .select("id, season_result, actual_finish")
+    .select("id, display_name, season_result, actual_finish")
     .eq("room_id", room.id);
 
   let previousLeagueTable: { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }[] | null = null;
@@ -96,6 +96,20 @@ export async function POST(
     .filter(p => typeof p.actual_finish === "number" && p.actual_finish >= 18)
     .map(p => p.id as string);
 
+  // Snapshot current season results into room.settings.allPlayerSeasons BEFORE clearing.
+  // This lets late-polling clients (who miss the season_result window due to the race
+  // between tryComplete and next-season) recover the full history from the server.
+  const existingSettings = (room.settings as Record<string, unknown>) ?? {};
+  const prevHistory = (existingSettings.allPlayerSeasons as Record<string, unknown[]>) ?? {};
+  const newHistory: Record<string, unknown[]> = { ...prevHistory };
+  for (const p of allPlayers ?? []) {
+    const playerName = (p as Record<string, unknown>).display_name as string | undefined;
+    if (p.season_result && playerName) {
+      if (!newHistory[playerName]) newHistory[playerName] = [];
+      newHistory[playerName] = [...newHistory[playerName], p.season_result];
+    }
+  }
+
   // Reset players FIRST, then the room. Order matters: the ready endpoint
   // rejects submissions while room.status is "complete", so by resetting
   // players before flipping the room to "lobby" no ready can land in the
@@ -115,7 +129,12 @@ export async function POST(
   }
   await service
     .from("draft_rooms")
-    .update({ status: "lobby", season_number: nextSeasonNumber, previous_league_table: previousLeagueTable })
+    .update({
+      status: "lobby",
+      season_number: nextSeasonNumber,
+      previous_league_table: previousLeagueTable,
+      settings: { ...existingSettings, allPlayerSeasons: newHistory, revealStartAt: null },
+    })
     .eq("id", room.id);
 
   return Response.json({ ok: true });

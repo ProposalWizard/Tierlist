@@ -542,9 +542,8 @@ export default function DraftPage() {
     if (myRoomPlayer?.squad && (myRoomPlayer.squad as DraftPlayer[]).length > 0) {
       setPlayers(myRoomPlayer.squad as DraftPlayer[]);
     }
-    // Accumulate all room players' season results for group stats in CareerRecap.
-    // Dedupe by fingerprint — a rejoin/refresh while the room is "complete" can
-    // fire this again and would otherwise double-count the same season.
+    // Accumulate current season from allPlayers. Deduped by fingerprint to
+    // handle rejoin/refresh double-fires.
     setAllRoomPlayerSeasons(prev => {
       const next = { ...(prev ?? {}) };
       for (const rp of allPlayers) {
@@ -558,9 +557,38 @@ export default function DraftPage() {
       }
       return next;
     });
+
+    // Also fetch the server-stored season history from room.settings.allPlayerSeasons.
+    // The next-season route snapshots each season's results there before clearing
+    // season_result. This fills in any seasons a client missed due to the race
+    // between tryComplete and next-season (i.e. the client polled after season_result
+    // was already cleared, so allPlayers had nulls for other players).
+    if (roomCode) {
+      fetch(`/api/draft/rooms/${roomCode}`)
+        .then(r => r.ok ? r.json() : null)
+        .then((data: { room?: { settings?: Record<string, unknown> } } | null) => {
+          const serverHistory = data?.room?.settings?.allPlayerSeasons;
+          if (!serverHistory || typeof serverHistory !== "object") return;
+          setAllRoomPlayerSeasons(prev => {
+            const next = { ...(prev ?? {}) };
+            for (const [key, seasons] of Object.entries(serverHistory as Record<string, SeasonResult[]>)) {
+              if (!next[key]) next[key] = [];
+              for (const season of seasons) {
+                const fp = JSON.stringify(season);
+                if (!next[key].some(s => JSON.stringify(s) === fp)) {
+                  next[key] = [...(next[key] as SeasonResult[]), season];
+                }
+              }
+            }
+            return next;
+          });
+        })
+        .catch(() => {});
+    }
+
     setPhase("result");
     scrollTop();
-  }, [scrollTop, userId]);
+  }, [scrollTop, userId, roomCode]);
 
   const handleCareerComplete = useCallback((seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[], roomPlayerSeasons?: Record<string, SeasonResult[]>) => {
     if (seasons.length === 0) return;
