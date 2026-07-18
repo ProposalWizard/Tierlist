@@ -1112,6 +1112,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             (s.charityShield?.result === 'W' ? 1 : 0);
           const totalTrophies = [...(allSeasonResults ?? []), season].reduce((sum, s) => sum + countTrophies(s), 0);
 
+          console.log("[records] PL assists:", topBy(season.plPlayerStats, "assists"), "All assists:", topBy(season.playerStats, "assists"), "mode:", mode);
           await fetch("/api/draft/records", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1150,9 +1151,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             }),
           })
             .then(async (res) => {
+              const body = await res.json().catch(() => null);
               if (!res.ok) {
-                const body = await res.json().catch(() => null);
                 console.error("Failed to save draft records:", res.status, body?.error);
+              } else {
+                console.log("[records] Save response:", body);
+                if (body?.recordErrors?.length) console.warn("[records] Server errors:", body.recordErrors);
               }
             })
             .catch((err) => console.error("Failed to save draft records:", err));
