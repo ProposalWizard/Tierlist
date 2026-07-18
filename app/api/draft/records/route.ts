@@ -285,6 +285,9 @@ export async function POST(req: Request) {
   const NO_COL = (code: string | undefined) => code === "42703" || code === "PGRST204";
 
   let inserted = 0;
+  // Errors collected during global-record processing — returned in the response
+  // so the client can log them in DevTools (server logs are inaccessible to users).
+  const recordErrors: string[] = [];
 
   for (const candidate of candidates) {
     const ascending = ASCENDING_RECORD_TYPES.has(candidate.record_type);
@@ -311,7 +314,9 @@ export async function POST(req: Request) {
     }
 
     if (fetchErr) {
+      const msg = `fetch ${candidate.competition}/${candidate.record_type}: ${fetchErr.message}`;
       console.error(`Failed to fetch records for ${candidate.competition}/${candidate.record_type}:`, fetchErr.message);
+      recordErrors.push(msg);
       continue;
     }
 
@@ -327,7 +332,49 @@ export async function POST(req: Request) {
       .eq("record_type", candidate.record_type)
       .eq("user_id", candidate.user_id);
     if (modeColExists !== false) userQuery = userQuery.eq("mode", candidate.mode);
-    const { data: userExisting } = await userQuery.maybeSingle();
+    const { data: userExisting, error: userFetchErr } = await userQuery.maybeSingle();
+
+    // PGRST116 means multiple rows exist for this user — a legacy artifact from
+    // before per-user dedup was enforced. Clean up the duplicates (keep only the
+    // best row) so future saves work correctly.
+    if (userFetchErr && userFetchErr.code === "PGRST116") {
+      let allUserQuery = serviceClient
+        .from("draft_records")
+        .select("id, value")
+        .eq("competition", candidate.competition)
+        .eq("record_type", candidate.record_type)
+        .eq("user_id", candidate.user_id);
+      if (modeColExists !== false) allUserQuery = allUserQuery.eq("mode", candidate.mode);
+      const { data: allUserRows } = await allUserQuery.order("value", { ascending });
+      if (allUserRows && allUserRows.length > 0) {
+        // Index 0 is always the "best" whether we sorted ASC or DESC
+        const bestRow = allUserRows[0];
+        const idsToDelete = allUserRows.slice(1).map(r => r.id as string);
+        if (idsToDelete.length > 0) {
+          await serviceClient.from("draft_records").delete().in("id", idsToDelete);
+        }
+        const isBetter = ascending ? candidate.value < bestRow.value : candidate.value > bestRow.value;
+        if (isBetter) {
+          const { error: updErr } = await serviceClient
+            .from("draft_records")
+            .update({
+              value: candidate.value,
+              player_name: candidate.player_name,
+              player_ovr: candidate.player_ovr,
+              season_number: candidate.season_number,
+              username: candidate.username,
+            })
+            .eq("id", bestRow.id);
+          if (updErr) {
+            const msg = `dedup-update ${candidate.competition}/${candidate.record_type}: ${updErr.message}`;
+            console.error(msg);
+            recordErrors.push(msg);
+          }
+        }
+        continue;
+      }
+      // No rows returned (unexpected) — fall through to normal insert path
+    }
 
     if (userExisting) {
       const isBetter = ascending ? candidate.value < userExisting.value : candidate.value > userExisting.value;
@@ -342,7 +389,11 @@ export async function POST(req: Request) {
             username: candidate.username,
           })
           .eq("id", userExisting.id);
-        if (updErr) console.error(`Failed to update user record:`, updErr.message);
+        if (updErr) {
+          const msg = `update ${candidate.competition}/${candidate.record_type}: ${updErr.message}`;
+          console.error(`Failed to update user record:`, updErr.message);
+          recordErrors.push(msg);
+        }
       }
       continue;
     }
@@ -361,9 +412,15 @@ export async function POST(req: Request) {
         modeColExists = false;
         const { mode: _m, ...withoutMode } = candidate;
         const { error: retryErr } = await serviceClient.from("draft_records").insert(withoutMode);
-        if (retryErr) { console.error(`Failed to insert record (retry):`, retryErr.message); } else { inserted++; }
+        if (retryErr) {
+          const msg = `insert-retry ${candidate.competition}/${candidate.record_type}: ${retryErr.message}`;
+          console.error(`Failed to insert record (retry):`, retryErr.message);
+          recordErrors.push(msg);
+        } else { inserted++; }
       } else if (insErr) {
+        const msg = `insert ${candidate.competition}/${candidate.record_type}: ${insErr.message}`;
         console.error(`Failed to insert record:`, insErr.message);
+        recordErrors.push(msg);
       } else {
         inserted++;
       }
@@ -373,7 +430,9 @@ export async function POST(req: Request) {
       if (beatsWorst) {
         const { error: insErr } = await serviceClient.from("draft_records").insert(insertPayload);
         if (insErr) {
+          const msg = `insert-beats-worst ${candidate.competition}/${candidate.record_type}: ${insErr.message}`;
           console.error(`Failed to insert record:`, insErr.message);
+          recordErrors.push(msg);
           continue;
         }
         inserted++;
@@ -383,7 +442,9 @@ export async function POST(req: Request) {
           .delete()
           .eq("id", worst.id);
         if (delErr) {
+          const msg = `prune ${candidate.competition}/${candidate.record_type}: ${delErr.message}`;
           console.error(`Failed to prune worst record:`, delErr.message);
+          recordErrors.push(msg);
         }
       }
     }
@@ -457,7 +518,9 @@ export async function POST(req: Request) {
           }
         }
       } else if (insErr) {
+        const msg = `personal-insert ${candidate.competition}/${candidate.record_type}: ${insErr.message}`;
         console.error(`Failed to insert personal record:`, insErr.message);
+        recordErrors.push(msg);
       }
     } else {
       const isNewBest = ascending ? candidate.value < existing.value : candidate.value > existing.value;
@@ -476,5 +539,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, inserted });
+  return NextResponse.json({ ok: true, inserted, recordErrors });
 }

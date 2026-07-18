@@ -25,7 +25,7 @@ interface SlotDef {
 
 const FORMATIONS: Record<string, SlotDef[]> = {
   "4-3-3": [
-    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "GK",  label: "GK",  x: 50, y: 87 },
     { id: "LB",  label: "LB",  x: 11, y: 74 },
     { id: "LCB", label: "CB",  x: 32, y: 74 },
     { id: "RCB", label: "CB",  x: 68, y: 74 },
@@ -38,7 +38,7 @@ const FORMATIONS: Record<string, SlotDef[]> = {
     { id: "RW",  label: "RW",  x: 86, y: 20 },
   ],
   "4-4-2": [
-    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "GK",  label: "GK",  x: 50, y: 87 },
     { id: "LB",  label: "LB",  x: 11, y: 74 },
     { id: "LCB", label: "CB",  x: 32, y: 74 },
     { id: "RCB", label: "CB",  x: 68, y: 74 },
@@ -51,7 +51,7 @@ const FORMATIONS: Record<string, SlotDef[]> = {
     { id: "ST2", label: "ST",  x: 66, y: 14 },
   ],
   "4-2-3-1": [
-    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "GK",  label: "GK",  x: 50, y: 87 },
     { id: "LB",  label: "LB",  x: 11, y: 74 },
     { id: "LCB", label: "CB",  x: 32, y: 74 },
     { id: "RCB", label: "CB",  x: 68, y: 74 },
@@ -64,7 +64,7 @@ const FORMATIONS: Record<string, SlotDef[]> = {
     { id: "ST",  label: "ST",  x: 50, y: 10 },
   ],
   "3-4-3": [
-    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "GK",  label: "GK",  x: 50, y: 87 },
     { id: "LCB", label: "CB",  x: 20, y: 74 },
     { id: "CB",  label: "CB",  x: 50, y: 74 },
     { id: "RCB", label: "CB",  x: 80, y: 74 },
@@ -77,7 +77,7 @@ const FORMATIONS: Record<string, SlotDef[]> = {
     { id: "RW",  label: "RW",  x: 86, y: 20 },
   ],
   "5-3-2": [
-    { id: "GK",  label: "GK",  x: 50, y: 92 },
+    { id: "GK",  label: "GK",  x: 50, y: 87 },
     { id: "LCB", label: "CB",  x: 20, y: 74 },
     { id: "CB",  label: "CB",  x: 50, y: 74 },
     { id: "RCB", label: "CB",  x: 80, y: 74 },
@@ -203,6 +203,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
   const [activeFrameId, setActiveFrameId] = useState<string | null>(null);
   const [dragSourceSlot, setDragSourceSlot] = useState<string | null>(null);
   const [selectedBenchCard, setSelectedBenchCard] = useState<string | null>(null);
+  const [selectedPitchSlot, setSelectedPitchSlot] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -287,6 +288,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
     const id = e.active.id as string;
     setActiveFrameId(id);
     setSelectedBenchCard(null);
+    setSelectedPitchSlot(null);
     const src = Object.entries(slots).find(([, v]) => v === id)?.[0] ?? null;
     setDragSourceSlot(src);
   }
@@ -348,6 +350,17 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
   }
 
   function handleSlotTap(slotId: string) {
+    if (selectedPitchSlot !== null) {
+      setSlots((prev) => {
+        const next = { ...prev };
+        next[slotId] = next[selectedPitchSlot] ?? null;
+        next[selectedPitchSlot] = null;
+        persist(formation, next);
+        return next;
+      });
+      setSelectedPitchSlot(null);
+      return;
+    }
     if (!selectedBenchCard) return;
     if (selectedIsManager) return;
     setSlots((prev) => {
@@ -356,6 +369,41 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
       return next;
     });
     setSelectedBenchCard(null);
+  }
+
+  function handlePitchCardTap(slotId: string) {
+    // Bench card selected → place it on this occupied slot
+    if (selectedBenchCard && !selectedIsManager) {
+      setSlots((prev) => {
+        const next = { ...prev, [slotId]: selectedBenchCard };
+        persist(formation, next);
+        return next;
+      });
+      setSelectedBenchCard(null);
+      return;
+    }
+    // Tap same slot → deselect
+    if (selectedPitchSlot === slotId) {
+      setSelectedPitchSlot(null);
+      return;
+    }
+    // Swap with already-selected pitch card
+    if (selectedPitchSlot !== null) {
+      setSlots((prev) => {
+        const next = { ...prev };
+        const a = next[selectedPitchSlot] ?? null;
+        const b = next[slotId] ?? null;
+        next[selectedPitchSlot] = b;
+        next[slotId] = a;
+        persist(formation, next);
+        return next;
+      });
+      setSelectedPitchSlot(null);
+      return;
+    }
+    // Select this pitch card
+    setSelectedBenchCard(null);
+    setSelectedPitchSlot(slotId);
   }
 
   function handleManagerTap() {
@@ -381,6 +429,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
   }
 
   function handleBenchCardTap(cardId: string) {
+    setSelectedPitchSlot(null);
     setSelectedBenchCard(prev => prev === cardId ? null : cardId);
   }
 
@@ -452,6 +501,12 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
         <div className="mx-5 mb-3 px-3 py-2 rounded-lg text-xs font-bold text-center"
           style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.25)", color: "#d4af37" }}>
           Tap a position to place · tap bench card again to deselect
+        </div>
+      )}
+      {selectedPitchSlot && (
+        <div className="mx-5 mb-3 px-3 py-2 rounded-lg text-xs font-bold text-center"
+          style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.25)", color: "#d4af37" }}>
+          Tap another card to swap positions · tap same card to deselect
         </div>
       )}
 
@@ -568,8 +623,11 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
                   card={card ?? null}
                   frameStyle={style}
                   hasBenchSelection={!!selectedBenchCard && !selectedIsManager}
+                  hasPitchSelection={selectedPitchSlot !== null}
+                  isSelectedPitch={selectedPitchSlot === slot.id}
                   onRemove={() => removeFromSlot(slot.id)}
                   onTap={() => handleSlotTap(slot.id)}
+                  onCardTap={() => handlePitchCardTap(slot.id)}
                 />
               );
             })}
@@ -656,12 +714,16 @@ function DraggablePitchCard({
   card,
   frameStyle,
   hasBenchSelection,
+  hasPitchSelection,
+  isSelected,
   onRemove,
   onTap,
 }: {
   card: { id: string; name: string };
   frameStyle: { border: string; shadow: string; gradient?: string; image?: string };
   hasBenchSelection: boolean;
+  hasPitchSelection: boolean;
+  isSelected: boolean;
   onRemove: () => void;
   onTap: () => void;
 }) {
@@ -669,16 +731,18 @@ function DraggablePitchCard({
     id: card.id,
   });
 
+  const anySelection = hasBenchSelection || hasPitchSelection;
+
   return (
     <div
       ref={setNodeRef}
-      {...(hasBenchSelection ? {} : { ...listeners, ...attributes })}
-      onClick={hasBenchSelection ? onTap : undefined}
+      {...(!anySelection ? { ...listeners, ...attributes } : {})}
+      onClick={onTap}
       className={`group relative w-[52px] h-[70px] sm:w-[62px] sm:h-[83px] md:w-[70px] md:h-[94px] transition-all ${
-        hasBenchSelection
+        anySelection
           ? "hover:scale-105 cursor-pointer"
           : "cursor-grab active:cursor-grabbing"
-      } ${isDragging ? "opacity-20 scale-95" : ""}`}
+      } ${isDragging ? "opacity-20 scale-95" : isSelected ? "scale-105" : ""}`}
       style={
         transform && !isDragging
           ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` }
@@ -702,8 +766,16 @@ function DraggablePitchCard({
         />
       )}
 
+      {/* Selected pitch card ring */}
+      {isSelected && (
+        <div
+          className="absolute inset-[-3px] rounded-[14px] pointer-events-none z-20"
+          style={{ border: "2px solid #d4af37", boxShadow: "0 0 12px rgba(212,175,55,0.65)" }}
+        />
+      )}
+
       {/* Remove button */}
-      {!hasBenchSelection && !isDragging && (
+      {!anySelection && !isDragging && (
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           title="Remove"
@@ -715,7 +787,7 @@ function DraggablePitchCard({
         </button>
       )}
 
-      {/* Tap-to-place highlight */}
+      {/* Tap-to-place highlight (bench card selected) */}
       {hasBenchSelection && (
         <div
           className="absolute inset-0 flex items-center justify-center"
@@ -723,6 +795,18 @@ function DraggablePitchCard({
         >
           <svg className="w-4 h-4" fill="none" stroke="#d4af37" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+      )}
+
+      {/* Swap target highlight (pitch card selected, this isn't it) */}
+      {hasPitchSelection && !isSelected && (
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          style={{ background: "rgba(212,175,55,0.15)", borderRadius: "8px" }}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="#d4af37" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
           </svg>
         </div>
       )}
@@ -735,17 +819,24 @@ function PitchSlot({
   card,
   frameStyle,
   hasBenchSelection,
+  hasPitchSelection,
+  isSelectedPitch,
   onRemove,
   onTap,
+  onCardTap,
 }: {
   slot: SlotDef;
   card: CardEntry | null;
   frameStyle: { border: string; shadow: string; gradient?: string; image?: string } | null;
   hasBenchSelection: boolean;
+  hasPitchSelection: boolean;
+  isSelectedPitch: boolean;
   onRemove: () => void;
   onTap: () => void;
+  onCardTap: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
+  const anySelection = hasBenchSelection || hasPitchSelection;
 
   return (
     <div
@@ -764,13 +855,15 @@ function PitchSlot({
           card={{ id: card.id, name: card.name }}
           frameStyle={frameStyle}
           hasBenchSelection={hasBenchSelection}
+          hasPitchSelection={hasPitchSelection}
+          isSelected={isSelectedPitch}
           onRemove={onRemove}
-          onTap={onTap}
+          onTap={onCardTap}
         />
       ) : (
         /* Hexagonal empty slot */
         <button
-          onClick={hasBenchSelection ? onTap : undefined}
+          onClick={anySelection ? onTap : undefined}
           className="relative flex items-center justify-center transition-all duration-200"
           style={{ width: 44, height: 52 }}
         >
@@ -782,25 +875,25 @@ function PitchSlot({
             <polygon
               points="22,2 42,13 42,39 22,50 2,39 2,13"
               fill={
-                hasBenchSelection
+                anySelection
                   ? "rgba(212,175,55,0.22)"
                   : isOver
                   ? "rgba(212,175,55,0.22)"
                   : "rgba(0,0,0,0.35)"
               }
               stroke={
-                hasBenchSelection || isOver
+                anySelection || isOver
                   ? "#d4af37"
                   : "rgba(212,175,55,0.45)"
               }
-              strokeWidth={hasBenchSelection || isOver ? 2 : 1.2}
+              strokeWidth={anySelection || isOver ? 2 : 1.2}
             />
           </svg>
           <span
             className="relative z-10 font-black leading-none text-center"
             style={{
               fontSize: 9,
-              color: hasBenchSelection || isOver ? "#d4af37" : "rgba(255,255,255,0.65)",
+              color: anySelection || isOver ? "#d4af37" : "rgba(255,255,255,0.65)",
             }}
           >
             {slot.label}
@@ -908,6 +1001,8 @@ function ManagerSlot({
           card={{ id: card.id, name: card.name }}
           frameStyle={frameStyle}
           hasBenchSelection={hasBenchSelection}
+          hasPitchSelection={false}
+          isSelected={false}
           onRemove={onRemove}
           onTap={onTap}
         />
