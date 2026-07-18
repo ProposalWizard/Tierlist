@@ -66,7 +66,21 @@ export async function POST(req: NextRequest) {
     const sameSeason = (obj as Record<string, unknown>).same_season === true;
     const samePlayer = (obj as Record<string, unknown>).same_player === true;
     const orGroups = ((obj as Record<string, unknown>).or_groups ?? null) as ObjectiveCondition[][] | null;
-    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer, orGroups ?? undefined, body.seasonNumber === 1);
+
+    // Derive isNewRun: only reset career progress when this is genuinely a new run.
+    // Season 1 alone isn't enough — a season-1 check from another flow (e.g. a
+    // multiplayer game) would otherwise wipe solo career counters. Gate the reset
+    // on the run key actually changing since the last reset.
+    const lastRunKey = (currentProgress as Record<string, unknown>)._lastRunKey as string | undefined;
+    const isNewRun = body.seasonNumber === 1 && lastRunKey !== body.runKey;
+
+    const { newProgress, complete } = evaluateObjective(conditions, currentProgress, body, sameSeason, samePlayer, orGroups ?? undefined, isNewRun);
+
+    // When resetting, record the run key so subsequent season-1 checks for the
+    // same run don't reset again.
+    if (isNewRun && body.runKey) {
+      (newProgress as Record<string, unknown>)._lastRunKey = body.runKey;
+    }
 
     if (complete) {
       const { error: upsertErr } = await service.from("user_objectives").upsert({

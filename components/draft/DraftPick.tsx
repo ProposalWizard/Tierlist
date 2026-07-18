@@ -199,6 +199,10 @@ export default function DraftPick({
   // component is gone (e.g. leaving a multiplayer room mid-spin).
   const spinTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => { spinTimersRef.current.forEach(clearTimeout); }, []);
+  // Incremented on every spin/re-spin. A roster fetch captures the count at
+  // call time and discards its result if a newer spin has started since — stops
+  // a stale response from a re-spun club overwriting the current spin.
+  const spinCountRef = useRef(0);
   const maxRespins = settings.respins ?? 3;
   // If parent tracks respins across phases, use that; otherwise local state.
   const [localRespins, setLocalRespins] = useState(maxRespins);
@@ -271,6 +275,8 @@ export default function DraftPick({
   }, [getRandomClubYear]);
 
   const handleSpin = useCallback(async () => {
+    // New spin — invalidate any roster fetch still in flight from a prior spin.
+    spinCountRef.current += 1;
     setError(null);
     setSpinning(true);
     setPhase("spinning");
@@ -319,11 +325,15 @@ export default function DraftPick({
   }, [handleSpin, respinsRemaining]);
 
   const fetchRoster = async (club: string, year: number) => {
+    const myCount = spinCountRef.current;
     try {
       let url = `/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`;
       if (settings.mode === "prime") url += "&prime=true";
       const res = await fetch(url);
       const data = await res.json();
+      // A newer spin started while this fetch was in flight — discard the stale
+      // response so it can't overwrite the current spin (or yank the user out of it).
+      if (spinCountRef.current !== myCount) return;
       if (data.roster && data.roster.length > 0) {
         setSpinResult({ club, year, roster: data.roster });
       } else {
@@ -331,9 +341,11 @@ export default function DraftPick({
         setPhase("spin");
       }
     } catch {
+      if (spinCountRef.current !== myCount) return;
       setError("Failed to fetch roster");
       setPhase("spin");
     }
+    if (spinCountRef.current !== myCount) return;
     setSpinning(false);
   };
 

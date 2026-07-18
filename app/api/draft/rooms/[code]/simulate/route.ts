@@ -51,14 +51,33 @@ export async function POST(
 
   // Atomically claim the room for simulation: only one request can transition it
   // out of a non-simulating/complete state, so a double-click can't run twice.
+  // Stamp simulatingSince so a crash/timeout mid-run can be recovered from.
+  const existingSettings = (room as Record<string, unknown>).settings as Record<string, unknown> | null | undefined;
   const { data: claimed } = await service
     .from("draft_rooms")
-    .update({ status: "simulating" })
+    .update({ status: "simulating", settings: { ...(existingSettings ?? {}), simulatingSince: Date.now() } })
     .eq("id", room.id)
     .in("status", ["lobby", "started", "drafting"])
     .select("id");
   if (!claimed || claimed.length === 0) {
-    return Response.json({ ok: true, alreadyRunning: true });
+    // If the room is stuck in "simulating" for > 2 minutes (a prior request
+    // crashed/timed out after claiming but before resetting), allow a reclaim
+    // so clients aren't stranded on "Simulating season..." forever.
+    const stuckSince = (existingSettings as Record<string, unknown> | null)?.simulatingSince as number | undefined;
+    if (room.status === "simulating" && stuckSince && Date.now() - stuckSince > 2 * 60 * 1000) {
+      const { data: reclaimed } = await service
+        .from("draft_rooms")
+        .update({ status: "simulating", settings: { ...(existingSettings ?? {}), simulatingSince: Date.now() } })
+        .eq("id", room.id)
+        .eq("status", "simulating")
+        .select("id");
+      if (!reclaimed || reclaimed.length === 0) {
+        return Response.json({ ok: true, alreadyRunning: true });
+      }
+      // Reclaim succeeded — fall through to run the simulation below.
+    } else {
+      return Response.json({ ok: true, alreadyRunning: true });
+    }
   }
 
   try {
@@ -150,7 +169,6 @@ export async function POST(
 
     // 3-second buffer so all players load DraftResult before the animation starts
     const revealStartAt = Date.now() + 3000;
-    const existingSettings = (room as Record<string, unknown>).settings as Record<string, unknown> | null | undefined;
     await service.from("draft_rooms").update({
       status: "complete",
       settings: { ...(existingSettings ?? {}), revealStartAt },

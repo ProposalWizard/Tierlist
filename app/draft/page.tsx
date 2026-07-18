@@ -96,6 +96,7 @@ function getTrainingBoost(overall: number, season: number): number {
 }
 
 function applyStatChange(player: DraftPlayer, change: number): DraftPlayer {
+  if (change === 0) return player;
   const newPlayer = {
     ...player,
     overall: Math.max(1, Math.min(100, player.overall + change)),
@@ -103,7 +104,12 @@ function applyStatChange(player: DraftPlayer, change: number): DraftPlayer {
   if (newPlayer.attrs) {
     const attrs = { ...newPlayer.attrs };
     for (const key of Object.keys(attrs) as (keyof PlayerAttributes)[]) {
-      attrs[key] = Math.max(1, Math.min(100, (attrs[key] as number) + change));
+      const val = attrs[key] as number;
+      // val === 0 means "attribute not imported" — leave as 0 so hasAttrs()
+      // stays false and the OVR-based simulation fallback is preserved.
+      if (val > 0) {
+        attrs[key] = Math.max(1, Math.min(100, val + change));
+      }
     }
     newPlayer.attrs = attrs;
   }

@@ -79,6 +79,11 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
     [starters]
   );
 
+  // Guard against confirming with a vacant starting slot (e.g. after selling a
+  // starter and leaving the replacement on the bench) — that would simulate a
+  // 10-man XI. A full formation always has exactly 11 starters.
+  const allStartersFilled = starters.length === 11;
+
   // Core swap — shared by tap and drag
   const performSwap = useCallback((aIdx: number, bIdx: number) => {
     setSquad(prev => {
@@ -488,12 +493,14 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
       {/* ────── CONFIRM ────── */}
       <button
         onClick={() => onConfirm(squad, isMultiplayer ? undefined : simSpeed)}
-        className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-lg transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+        disabled={!allStartersFilled}
+        title={!allStartersFilled ? "Fill all 11 starting positions before confirming" : undefined}
+        className={`w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-lg transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 ${!allStartersFilled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
-        Confirm Squad
+        {allStartersFilled ? "Confirm Squad" : "Fill All 11 Starting Positions"}
       </button>
     </div>
   );
