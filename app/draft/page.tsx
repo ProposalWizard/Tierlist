@@ -734,6 +734,11 @@ export default function DraftPage() {
   const handleNewRun = useCallback(() => {
     readyRetryAbortRef.current?.abort();
     readyRetryAbortRef.current = null;
+    // If in a multiplayer room, leave it so survivors can continue without a
+    // lingering/ghost row blocking "all ready" (fire-and-forget).
+    if (roomCode) {
+      void fetch(`/api/draft/rooms/${roomCode}/leave`, { method: "POST" }).catch(() => {});
+    }
     clearProgress();
     setResume(null);
     setPhase("setup");
@@ -752,7 +757,7 @@ export default function DraftPage() {
     setRoomPlayers(null);
     setRespinsRemaining(0);
     scrollTop();
-  }, [scrollTop]);
+  }, [scrollTop, roomCode]);
 
   const handlePlayNextSeason = useCallback(
     (season: SeasonResult, currentPlayers: DraftPlayer[]) => {
