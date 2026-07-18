@@ -709,8 +709,11 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     let alreadyCredited = false;
     try { alreadyCredited = localStorage.getItem(`draft-credited-${runKey}`) === "1"; } catch { /* ignore */ }
     if (!historySaved.current && !alreadyCredited) {
+      // In-memory guard against duplicate crediting within THIS mount. It resets on
+      // remount (refresh/re-nav), so it never permanently blocks re-crediting — the
+      // persistent `draft-credited-${runKey}` marker (written below only after the
+      // history save actually succeeds, and only for signed-in users) does that job.
       historySaved.current = true;
-      try { localStorage.setItem(`draft-credited-${runKey}`, "1"); } catch { /* ignore */ }
       const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
       const plPlayerGoals: Record<string, number> = {};
       const plPlayerAssists: Record<string, number> = {};
@@ -748,7 +751,15 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         uelWinner: season.uel?.winner || false,
         superCupWinner: season.superCup?.result === 'W' || false,
         charityShieldWinner: season.charityShield?.result === 'W' || false,
-      }, isSignedIn);
+      }, isSignedIn).then((ok) => {
+        // Persist the credited-marker ONLY after the history save actually succeeds,
+        // and ONLY for signed-in users. Writing it eagerly (as before) meant a network
+        // failure permanently blocked re-crediting, and writing it for guests meant a
+        // player who later signed in could never credit that run.
+        if (ok && isSignedIn) {
+          try { localStorage.setItem(`draft-credited-${runKey}`, "1"); } catch { /* ignore */ }
+        }
+      });
 
       if (isSignedIn) {
         (async () => {
@@ -2931,8 +2942,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </div>
       )}
 
-      {/* Career Recap button — shown at the end of career (final season or sacked) */}
-      {!onPlayNextSeason && seasonNumber > 1 && allSeasonResults && allSeasonResults.length > 0 && (
+      {/* Career Recap button — shown at the end of career: either no next season
+          exists (final season), OR the player was relegated/sacked (actualFinish >= 18),
+          in which case onPlayNextSeason is still set but the Season N+1 button is hidden. */}
+      {(!onPlayNextSeason || season.actualFinish >= 18) && seasonNumber > 1 && allSeasonResults && allSeasonResults.length > 0 && (
         <button
           onClick={() => setShowCareerRecap(true)}
           className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 rounded-xl font-bold transition-all shadow-lg shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-3"
