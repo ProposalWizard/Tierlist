@@ -785,7 +785,7 @@ export function CustomObjectivesSection() {
       ) : (
         <>
           {/* Mobile: stacked expandable cards */}
-          <div className="md:hidden">
+          <div className="md:hidden max-h-[480px] overflow-y-auto">
             {categoryObjectives.map((obj) => {
               const done = completedIds.includes(obj.id);
               const unclaimed = unclaimedIds.includes(obj.id);
