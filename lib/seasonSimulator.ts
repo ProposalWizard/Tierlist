@@ -497,17 +497,34 @@ export function positionFitness(player: DraftPlayer): number {
   }
 
   const assignedRole = classifyPosition(assigned);
-  if (natural.some(p => classifyPosition(p) === assignedRole)) return 0.98;
+
+  // CDM/DM naturals are not "same role" at LM, RM, or CAM — they get downgraded
+  // to medium (CAM) or adjacent (LM/RM) below. Filter them out of the same-role
+  // check so a CDM-only player doesn't incorrectly get 0.98 at those positions.
+  // If the player also has e.g. CM natural, CM still qualifies as same-role and
+  // the filter has no effect — the best natural position always wins.
+  const cdmFamily = new Set(['CDM', 'DM', 'LDM', 'RDM']);
+  const cdmDowngradedFor = new Set(['LM', 'RM', 'CAM', 'LAM', 'RAM']);
+  const sameRoleNaturals = cdmDowngradedFor.has(assigned)
+    ? natural.filter(p => !cdmFamily.has(p))
+    : natural;
+  if (sameRoleNaturals.some(p => classifyPosition(p) === assignedRole)) return 0.98;
 
   const mediumPairs: [string[], string[]][] = [
     [['LB', 'LWB'], ['LM']],
     [['RB', 'RWB'], ['RM']],
-    [['CDM', 'DM'], ['CB']],  // CB assigned, CDM/DM natural — reverse direction still applies
+    [['CDM', 'DM', 'LDM', 'RDM'], ['CB', 'SW']],           // CDM ↔ CB
+    [['CDM', 'DM', 'LDM', 'RDM'], ['CAM', 'LAM', 'RAM']],  // CDM ↔ CAM
   ];
   for (const [groupA, groupB] of mediumPairs) {
     if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.93;
     if (groupB.includes(assigned) && natural.some(p => groupA.includes(p))) return 0.93;
   }
+
+  // CDM/DM natural at wide mid (LM/RM) is adjacent role — closer than a
+  // genuine MID↔DEF cross but not the same as a central mid.
+  const wideMidFamily = new Set(['LM', 'RM']);
+  if (wideMidFamily.has(assigned) && natural.some(p => cdmFamily.has(p))) return 0.85;
 
   const adjacent: Record<PositionRole, PositionRole[]> = {
     ATT: ['MID'],
