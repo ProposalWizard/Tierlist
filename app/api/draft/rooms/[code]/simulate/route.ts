@@ -51,14 +51,33 @@ export async function POST(
 
   // Atomically claim the room for simulation: only one request can transition it
   // out of a non-simulating/complete state, so a double-click can't run twice.
+  // Stamp simulatingSince so a crash/timeout mid-run can be recovered from.
+  const existingSettings = (room as Record<string, unknown>).settings as Record<string, unknown> | null | undefined;
   const { data: claimed } = await service
     .from("draft_rooms")
-    .update({ status: "simulating" })
+    .update({ status: "simulating", settings: { ...(existingSettings ?? {}), simulatingSince: Date.now() } })
     .eq("id", room.id)
     .in("status", ["lobby", "started", "drafting"])
     .select("id");
   if (!claimed || claimed.length === 0) {
-    return Response.json({ ok: true, alreadyRunning: true });
+    // If the room is stuck in "simulating" for > 2 minutes (a prior request
+    // crashed/timed out after claiming but before resetting), allow a reclaim
+    // so clients aren't stranded on "Simulating season..." forever.
+    const stuckSince = (existingSettings as Record<string, unknown> | null)?.simulatingSince as number | undefined;
+    if (room.status === "simulating" && stuckSince && Date.now() - stuckSince > 2 * 60 * 1000) {
+      const { data: reclaimed } = await service
+        .from("draft_rooms")
+        .update({ status: "simulating", settings: { ...(existingSettings ?? {}), simulatingSince: Date.now() } })
+        .eq("id", room.id)
+        .eq("status", "simulating")
+        .select("id");
+      if (!reclaimed || reclaimed.length === 0) {
+        return Response.json({ ok: true, alreadyRunning: true });
+      }
+      // Reclaim succeeded — fall through to run the simulation below.
+    } else {
+      return Response.json({ ok: true, alreadyRunning: true });
+    }
   }
 
   try {
@@ -74,7 +93,23 @@ export async function POST(
       { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
     const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined);
     const sortedAI = [...seasonTeams].sort((a, b) => b.strength - a.strength);
-    const aiOpponents = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
+    const aiOpponents: { name: string; strength: number }[] = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
+
+    // After relegations, the AI pool from the previous season may be short.
+    // Top up from remaining sorted AI to ensure exactly 20 - N opponents.
+    if (aiOpponents.length < 20 - N) {
+      const used = new Set(aiOpponents.map((a: { name: string }) => a.name));
+      const extras = sortedAI
+        .filter(t => !used.has(t.name))
+        .slice(0, (20 - N) - aiOpponents.length)
+        .map(t => ({ name: t.name, strength: t.strength }));
+      aiOpponents.push(...extras);
+    }
+    // Hard guard: if still short, log a diagnostic. The simulator tolerates a
+    // smaller league; this handles edge cases where the AI pool is exhausted.
+    if (aiOpponents.length + N !== 20) {
+      console.error(`League size mismatch: ${N} humans + ${aiOpponents.length} AI = ${N + aiOpponents.length}, expected 20`);
+    }
 
     const humanTeams: SharedSeasonInput[] = activePlayers.map(rp => ({
       userId: rp.user_id,
@@ -114,9 +149,26 @@ export async function POST(
         .eq("id", rp.id);
     }));
 
+    // If the host was relegated and surviving players remain, hand off host role
+    // so the room isn't deadlocked (the host gates next-season/simulate/start).
+    const hostResult = results.get(room.host_id);
+    const hostRelegated = hostResult && hostResult.actualFinish >= 18;
+    const survivors = activePlayers.filter(rp => {
+      const r = results.get(rp.user_id);
+      return r && r.actualFinish < 18;
+    });
+    if (hostRelegated && survivors.length > 0) {
+      // Hand off to best-finishing survivor
+      const newHost = survivors.reduce((best, rp) => {
+        const br = results.get(best.user_id)!;
+        const rr = results.get(rp.user_id)!;
+        return rr.actualFinish < br.actualFinish ? rp : best;
+      });
+      await service.from("draft_rooms").update({ host_id: newHost.user_id }).eq("id", room.id);
+    }
+
     // 3-second buffer so all players load DraftResult before the animation starts
     const revealStartAt = Date.now() + 3000;
-    const existingSettings = (room as Record<string, unknown>).settings as Record<string, unknown> | null | undefined;
     await service.from("draft_rooms").update({
       status: "complete",
       settings: { ...(existingSettings ?? {}), revealStartAt },

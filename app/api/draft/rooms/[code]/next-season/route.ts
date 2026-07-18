@@ -23,9 +23,28 @@ export async function POST(
 
   // Only the host may advance the room to the next season — otherwise any
   // authenticated user who knows the 6-char code could reset an in-progress
-  // game and wipe every player's season result.
+  // game and wipe every player's season result. Exception: if the host was
+  // relegated ("out"), any active member may advance so the room isn't stuck.
+  const { data: callerRow } = await service
+    .from("draft_room_players")
+    .select("status")
+    .eq("room_id", room.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!callerRow) return new Response("Not a room member", { status: 403 });
+
   if (room.host_id !== user.id) {
-    return new Response("Only the host can start the next season", { status: 403 });
+    // Allow non-host to advance only if the host's row is "out"
+    const { data: hostRow } = await service
+      .from("draft_room_players")
+      .select("status")
+      .eq("room_id", room.id)
+      .eq("user_id", room.host_id)
+      .maybeSingle();
+    if (!hostRow || hostRow.status !== "out") {
+      return new Response("Only the host can start the next season", { status: 403 });
+    }
   }
 
   // Idempotent: only advance if the room is complete and hasn't already moved to the next season

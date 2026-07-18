@@ -30,6 +30,19 @@ export async function POST(
     return new Response("Waiting for host to start the next season", { status: 409 });
   }
 
+  // Relegated players ("out") are eliminated from the competition and must not
+  // be able to re-enter the league by submitting a squad.
+  const { data: myRow } = await service
+    .from("draft_room_players")
+    .select("status")
+    .eq("room_id", room.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (myRow?.status === "out") {
+    return new Response("Relegated players cannot submit a squad", { status: 409 });
+  }
+
   const { error } = await service
     .from("draft_room_players")
     .update({ squad, avg_ovr, team_strength, status: "ready" })

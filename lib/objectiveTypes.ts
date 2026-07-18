@@ -94,6 +94,9 @@ export interface SeasonCheckData {
   historicalPlMatchResults?: { goalsFor: number; goalsAgainst: number }[][];
   // Which season within the current draft run (1–5). Season 1 resets draft-run progress.
   seasonNumber?: number;
+  // Unique key identifying this draft run. Used to ensure career progress is only
+  // reset once per genuinely-new run (not on every season-1 check across flows).
+  runKey?: string;
 }
 
 export interface SquadPlayer {

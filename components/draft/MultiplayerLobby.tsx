@@ -654,7 +654,7 @@ export default function MultiplayerLobby({
                       <span className="text-sm" title="Host">&#128081;</span>
                     )}
                     <span className={`flex-1 font-bold text-sm ${isMe ? "text-emerald-400" : "text-white"}`}>
-                      {p.display_name}
+                      {p.team_name || p.display_name}
                       {isMe && <span className="text-white font-normal text-xs ml-1">(you)</span>}
                     </span>
                     {/* Avg OVR + Team Rating */}
@@ -670,13 +670,15 @@ export default function MultiplayerLobby({
                     )}
                     {/* Status badge */}
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase ${
-                      p.status === "simulated"
-                        ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                        : p.status === "ready"
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          : "bg-yellow-500/10 text-yellow-500/80 border border-yellow-500/20"
+                      p.status === "out"
+                        ? "bg-gray-600/40 text-gray-300 border border-gray-500/30"
+                        : p.status === "simulated"
+                          ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                          : p.status === "ready"
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-yellow-500/10 text-yellow-500/80 border border-yellow-500/20"
                     }`}>
-                      {p.status === "simulated" ? "Done" : p.status === "ready" ? "Ready" : "Drafting"}
+                      {p.status === "out" ? "Relegated" : p.status === "simulated" ? "Done" : p.status === "ready" ? "Ready" : "Drafting"}
                     </span>
                     {/* Expand arrow */}
                     {p.squad && (
@@ -734,7 +736,12 @@ export default function MultiplayerLobby({
       {simError && !(isHost && allReady) && (
         <div className="text-red-400 text-xs text-center mb-2 mt-4">{simError}</div>
       )}
-      {!squadSubmitted && !isSimulating && !gameStarted && (
+      {myPlayer?.status === "out" ? (
+        <div className="text-center py-8 text-gray-400 mt-6">
+          <p className="text-lg font-semibold">You have been relegated</p>
+          <p className="text-sm mt-1">Spectate the remaining players</p>
+        </div>
+      ) : !squadSubmitted && !isSimulating && !gameStarted && (
         currentSeason === 1 ? (
           isHost ? (
             <button

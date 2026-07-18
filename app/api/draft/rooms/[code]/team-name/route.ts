@@ -18,7 +18,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, season_number")
+    .select("id, season_number, status")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -27,9 +27,11 @@ export async function POST(
   // Team names are locked after season 1: European qualification matches the
   // player against the carried-over league table BY NAME, so a season-2
   // rename would silently void a UCL/UEL spot and leave the old name as a
-  // ghost team in the table.
-  if ((room.season_number ?? 1) > 1) {
-    return new Response("Team names are locked after season 1", { status: 409 });
+  // ghost team in the table. Also lock once the season leaves "lobby" — this
+  // closes the window between season-1 simulate (status "complete",
+  // season_number still 1) and next-season advancing to season_number 2.
+  if ((room.season_number ?? 1) > 1 || room.status !== "lobby") {
+    return new Response("Team names are locked after the season starts", { status: 409 });
   }
 
   if (trimmed) {

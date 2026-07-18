@@ -26,7 +26,7 @@ export async function POST(
 
   const { data: players } = await service
     .from("draft_room_players")
-    .select("user_id, joined_at")
+    .select("user_id, joined_at, status")
     .eq("room_id", room.id)
     .order("joined_at", { ascending: true });
 
@@ -39,9 +39,16 @@ export async function POST(
       await service.from("draft_rooms").delete().eq("id", room.id);
       return Response.json({ ok: true, roomClosed: true });
     }
-    // Mid-game: hand the host role to the longest-joined remaining player so
-    // start/simulate/next-season stay operable, then remove the leaver.
-    await service.from("draft_rooms").update({ host_id: others[0].user_id }).eq("id", room.id);
+    // Mid-game: hand the host role to the longest-joined remaining player who
+    // is still in the competition (not "out") so start/simulate/next-season
+    // stay operable, then remove the leaver.
+    const nextHost = others.find(p => p.status !== "out");
+    if (!nextHost) {
+      // Only "out" (relegated) players remain — close the room.
+      await service.from("draft_rooms").delete().eq("id", room.id);
+      return Response.json({ ok: true, roomClosed: true });
+    }
+    await service.from("draft_rooms").update({ host_id: nextHost.user_id }).eq("id", room.id);
   }
 
   await service

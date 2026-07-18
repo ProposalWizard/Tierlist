@@ -121,11 +121,21 @@ export default function Season2Overview({
   // older FIFA imports) — otherwise `selectedTraining` can never be set and the
   // Continue button stays permanently disabled, soft-locking the pre-season.
   useEffect(() => {
-    if (allRevealed && upgradeablePlayers.length === 0) {
-      const timer = setTimeout(() => onContinue(""), 1500);
+    // Don't start (or restart) the auto-continue timer while a convince attempt
+    // is still resolving (2.3s) — otherwise the 1.5s timer fires first and a
+    // successful convince is discarded. When convinceThinking flips back to
+    // false the effect re-runs and starts the timer with the resolved result.
+    if (allRevealed && upgradeablePlayers.length === 0 && !convinceThinking) {
+      const timer = setTimeout(
+        () => onContinue(
+          "",
+          convinceAttempted && convinceSuccess && convinceablePlayer ? convinceablePlayer.player : undefined,
+        ),
+        1500,
+      );
       return () => clearTimeout(timer);
     }
-  }, [allRevealed, upgradeablePlayers.length, onContinue]);
+  }, [allRevealed, upgradeablePlayers.length, convinceThinking, convinceAttempted, convinceSuccess, convinceablePlayer, onContinue]);
 
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">

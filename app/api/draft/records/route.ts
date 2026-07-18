@@ -22,13 +22,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
     const svc = createServiceClient();
-    let query = svc
+    const personalSelect = () => svc
       .from("draft_personal_records")
       .select("competition, record_type, value, player_name, player_ovr, season_number")
       .eq("user_id", user.id);
-    try { query = query.eq("mode", mode); } catch { /* mode column may not exist yet */ }
 
-    const { data, error } = await query;
+    let { data, error } = await personalSelect().eq("mode", mode);
+
+    // mode column doesn't exist yet (migration not run) — retry without the filter
+    if (error && (error.code === "42703" || error.code === "PGRST204")) {
+      ({ data, error } = await personalSelect());
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -51,13 +55,17 @@ export async function GET(req: Request) {
   // Global leaderboard
   const supabase = createServiceClient();
 
-  let query = supabase
+  const globalSelect = () => supabase
     .from("draft_records")
     .select("competition, record_type, value, player_name, player_ovr, username, season_number, created_at")
     .order("value", { ascending: false });
-  try { query = query.eq("mode", mode); } catch { /* mode column may not exist yet */ }
 
-  const { data, error } = await query;
+  let { data, error } = await globalSelect().eq("mode", mode);
+
+  // mode column doesn't exist yet (migration not run) — retry without the filter
+  if (error && (error.code === "42703" || error.code === "PGRST204")) {
+    ({ data, error } = await globalSelect());
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -304,6 +312,38 @@ export async function POST(req: Request) {
 
     if (fetchErr) {
       console.error(`Failed to fetch records for ${candidate.competition}/${candidate.record_type}:`, fetchErr.message);
+      continue;
+    }
+
+    // Enforce at most one row per user per (competition, record_type, mode) on
+    // the global board. Without this, a single user's first 5 seasons each get
+    // their own row (the board inserts unconditionally while < 5 rows exist),
+    // filling the leaderboard with one person's duplicates. If the user already
+    // has a row, update it in place when this value is better, otherwise skip.
+    let userQuery = serviceClient
+      .from("draft_records")
+      .select("id, value")
+      .eq("competition", candidate.competition)
+      .eq("record_type", candidate.record_type)
+      .eq("user_id", candidate.user_id);
+    if (modeColExists !== false) userQuery = userQuery.eq("mode", candidate.mode);
+    const { data: userExisting } = await userQuery.maybeSingle();
+
+    if (userExisting) {
+      const isBetter = ascending ? candidate.value < userExisting.value : candidate.value > userExisting.value;
+      if (isBetter) {
+        const { error: updErr } = await serviceClient
+          .from("draft_records")
+          .update({
+            value: candidate.value,
+            player_name: candidate.player_name,
+            player_ovr: candidate.player_ovr,
+            season_number: candidate.season_number,
+            username: candidate.username,
+          })
+          .eq("id", userExisting.id);
+        if (updErr) console.error(`Failed to update user record:`, updErr.message);
+      }
       continue;
     }
 

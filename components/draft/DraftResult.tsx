@@ -577,15 +577,20 @@ export interface DraftRunRecord {
   charityShieldWinner?: boolean;
 }
 
-async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
-  if (!isSignedIn) return;
+async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean): Promise<boolean> {
+  if (!isSignedIn) return false;
   try {
-    await fetch("/api/draft/history", {
+    const res = await fetch("/api/draft/history", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(run),
     });
-  } catch {}
+    if (!res.ok) {
+      console.error("saveRunToHistory HTTP", res.status, await res.text().catch(() => ""));
+      return false;
+    }
+    return true;
+  } catch (e) { console.error("saveRunToHistory:", e); return false; }
 }
 
 export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
@@ -687,6 +692,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   }, [revealedIdx]);
 
   const historySaved = useRef(false);
+  // Separate guard for auth-required work (XP, objectives, records). This runs
+  // when isSignedIn becomes true even if historySaved already fired with
+  // isSignedIn = false (the common case on page load where auth resolves async).
+  const creditSaved = useRef(false);
   useEffect(() => {
     // Award XP/objectives/history as soon as the season result is computed — don't gate behind
     // the visual reveal animation finishing, or a player who navigates away mid-animation loses credit
@@ -704,8 +713,11 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     let alreadyCredited = false;
     try { alreadyCredited = localStorage.getItem(`draft-credited-${runKey}`) === "1"; } catch { /* ignore */ }
     if (!historySaved.current && !alreadyCredited) {
+      // In-memory guard against duplicate crediting within THIS mount. It resets on
+      // remount (refresh/re-nav), so it never permanently blocks re-crediting — the
+      // persistent `draft-credited-${runKey}` marker (written below only after the
+      // history save actually succeeds, and only for signed-in users) does that job.
       historySaved.current = true;
-      try { localStorage.setItem(`draft-credited-${runKey}`, "1"); } catch { /* ignore */ }
       const avgOvr = Math.round(players.reduce((s, p) => s + p.overall, 0) / players.length);
       const plPlayerGoals: Record<string, number> = {};
       const plPlayerAssists: Record<string, number> = {};
@@ -743,10 +755,20 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         uelWinner: season.uel?.winner || false,
         superCupWinner: season.superCup?.result === 'W' || false,
         charityShieldWinner: season.charityShield?.result === 'W' || false,
-      }, isSignedIn);
+      }, isSignedIn).then((ok) => {
+        // Persist the credited-marker ONLY after the history save actually succeeds,
+        // and ONLY for signed-in users. Writing it eagerly (as before) meant a network
+        // failure permanently blocked re-crediting, and writing it for guests meant a
+        // player who later signed in could never credit that run.
+        if (ok && isSignedIn) {
+          try { localStorage.setItem(`draft-credited-${runKey}`, "1"); } catch { /* ignore */ }
+        }
+      });
+    }
 
-      if (isSignedIn) {
-        (async () => {
+    if (isSignedIn && !creditSaved.current && !alreadyCredited) {
+      creditSaved.current = true;
+      (async () => {
           const runId = runKey;
           // Track the user's level as XP is awarded sequentially
           let currentLevel: number | null = null;
@@ -845,6 +867,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               body: JSON.stringify({
                 competition,
                 seasonNumber,
+                runKey,
                 squad: players.map(p => ({
                   name: p.name,
                   nationality: p.nationality ?? "",
@@ -876,6 +899,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (objRes.ok) {
               const objData = await objRes.json();
               const completedObjs = objData.completed as { id: string; xp_reward: number; title: string; card_image_url: string | null; card_name: string | null }[] ?? [];
+              // XP for these objective IDs was already granted server-side by the check
+              // route (so it survives a client death). Re-awarding here would double-count
+              // it under a second event key, so skip the /api/xp call for them.
+              const serverAwardedIds = new Set(
+                ((objData.serverAwardedXp as { id: string; xp: number }[] | undefined) ?? []).map(s => s.id)
+              );
               const pendingPopups: typeof xpPopups = [];
               for (const obj of completedObjs) {
                 let newRewards: string[] = [];
@@ -888,7 +917,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 // user's real level) — dumping the whole set on the first objective.
                 let levelBefore: number | null = currentLevel;
                 let levelAfter: number | null = currentLevel;
-                if (obj.xp_reward > 0) {
+                if (obj.xp_reward > 0 && !serverAwardedIds.has(obj.id)) {
                   const r = await awardXp(`objective_${obj.id}`, `objective_${obj.id}`, obj.xp_reward);
                   if (r && !r.duplicate) {
                     newRewards = r.new_rewards ?? [];
@@ -1128,7 +1157,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             })
             .catch((err) => console.error("Failed to save draft records:", err));
         })();
-      }
     }
   }, [players, season, seasonNumber, isSignedIn]);
 
@@ -1258,6 +1286,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
     return { clNames, uelNames, relegNames };
   }, [season.leagueTable, season.faCup.faCupWinner, season.leagueCup.faCupWinner]);
+
+  // Build a set of team names for other human players in the room (for amber highlighting in league table)
+  const otherHumanTeamNames = useMemo(() => {
+    if (!roomPlayers || roomPlayers.length === 0) return new Set<string>();
+    return new Set(
+      roomPlayers.map(p => p.team_name || p.display_name).filter((n): n is string => !!n)
+    );
+  }, [roomPlayers]);
 
   const getLeaguePositionStyle = (pos: number, teamName: string) => {
     if (pos === 1) return "border-l-2 border-l-yellow-500";
@@ -1871,21 +1907,26 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                         )}
                         <div className="relative">
                           <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${edge}`} />
-                          <div className={`flex items-center gap-2 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
-                            <span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums shrink-0 ${badge}`}>{pos}</span>
-                            <span className="flex-1 min-w-0 flex items-center gap-1.5">
-                              <span className={`truncate text-sm font-bold ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.name}</span>
-                              {pos === 1 && <span className="text-xs shrink-0">🏆</span>}
-                            </span>
-                            <span className="flex items-center gap-1 tabular-nums shrink-0">
-                              <span className="w-5 text-center text-xs font-semibold text-white/55">{team.played}</span>
-                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.won}</span>
-                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.drawn}</span>
-                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.lost}</span>
-                              <span className={`w-7 text-right text-xs font-bold ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
-                              <span className={`w-7 text-right text-sm font-black ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
-                            </span>
-                          </div>
+                          {(() => {
+                            const isOtherHuman = !team.isPlayer && otherHumanTeamNames.has(team.name);
+                            return (
+                              <div className={`flex items-center gap-2 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : isOtherHuman ? "bg-gradient-to-r from-amber-400/10 via-amber-400/[0.03] to-transparent ring-1 ring-inset ring-amber-400/30" : "border-b border-white/5"}`}>
+                                <span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums shrink-0 ${badge}`}>{pos}</span>
+                                <span className="flex-1 min-w-0 flex items-center gap-1.5">
+                                  <span className={`truncate text-sm font-bold ${team.isPlayer ? "text-emerald-400" : isOtherHuman ? "text-amber-400" : "text-white"}`}>{team.name}</span>
+                                  {pos === 1 && <span className="text-xs shrink-0">🏆</span>}
+                                </span>
+                                <span className="flex items-center gap-1 tabular-nums shrink-0">
+                                  <span className="w-5 text-center text-xs font-semibold text-white/55">{team.played}</span>
+                                  <span className="w-5 text-center text-xs font-semibold text-white/80">{team.won}</span>
+                                  <span className="w-5 text-center text-xs font-semibold text-white/80">{team.drawn}</span>
+                                  <span className="w-5 text-center text-xs font-semibold text-white/80">{team.lost}</span>
+                                  <span className={`w-7 text-right text-xs font-bold ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
+                                  <span className={`w-7 text-right text-sm font-black ${team.isPlayer ? "text-emerald-400" : isOtherHuman ? "text-amber-400" : "text-white"}`}>{team.points}</span>
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     );
@@ -1914,16 +1955,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           <div className="space-y-0.5">
             {season.leagueTable.map((team, i) => {
               const pos = i + 1;
+              const isOtherHuman = !team.isPlayer && otherHumanTeamNames.has(team.name);
               return (
-                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${getLeaguePositionStyle(pos, team.name)} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : "hover:bg-gray-800/50"}`}>
+                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${getLeaguePositionStyle(pos, team.name)} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : isOtherHuman ? "bg-amber-900/20 border border-amber-700/20 font-bold" : "hover:bg-gray-800/50"}`}>
                   <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos, team.name)}`}>{pos}</span>
-                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
+                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : isOtherHuman ? "text-amber-400 font-bold" : "text-white"}`}>{team.name}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.played}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.won}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.drawn}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.lost}</span>
                   <span className={`w-8 text-right text-xs font-bold shrink-0 ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
-                  <span className={`w-8 text-right font-black shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                  <span className={`w-8 text-right font-black shrink-0 ${team.isPlayer ? "text-emerald-400" : isOtherHuman ? "text-amber-400" : "text-white"}`}>{team.points}</span>
                 </div>
               );
             })}
@@ -2889,7 +2931,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           {i + 1}
                         </span>
                         <span className="flex-1 ml-1.5 font-bold truncate">
-                          {rp.display_name}
+                          {rp.team_name || rp.display_name}
                           {isWinner && <span className="ml-1 text-yellow-400">&#9733;</span>}
                         </span>
                         <span className="w-8 text-center font-black text-white">{record?.points ?? "-"}</span>
@@ -2919,8 +2961,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         </div>
       )}
 
-      {/* Career Recap button — shown at the end of career (final season or sacked) */}
-      {!onPlayNextSeason && seasonNumber > 1 && allSeasonResults && allSeasonResults.length > 0 && (
+      {/* Career Recap button — shown at the end of career: either no next season
+          exists (final season), OR the player was relegated/sacked (actualFinish >= 18),
+          in which case onPlayNextSeason is still set but the Season N+1 button is hidden. */}
+      {(!onPlayNextSeason || season.actualFinish >= 18) && seasonNumber > 1 && allSeasonResults && allSeasonResults.length > 0 && (
         <button
           onClick={() => setShowCareerRecap(true)}
           className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 rounded-xl font-bold transition-all shadow-lg shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mb-3"
