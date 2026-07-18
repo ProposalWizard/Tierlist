@@ -167,6 +167,17 @@ export function evaluateObjective(
           newProgress[cond.id] = Math.max(currentProgress[cond.id] ?? 0, seasonTotal);
         }
       } else {
+        if (isNewRun) {
+          // New draft run: drop ALL per-player keys for this condition carried in
+          // from the previous run's progress (spread via { ...currentProgress }).
+          // Otherwise a player from a prior run could still satisfy a
+          // "within one draft run" (career-timeframe) any_player condition.
+          for (const key of Object.keys(newProgress)) {
+            if (key.startsWith(`${cond.id}__`)) {
+              delete newProgress[key];
+            }
+          }
+        }
         for (const pp of perPlayer) {
           const key = `${cond.id}__${pp.name}`;
           seasonValues[key] = pp.value;
