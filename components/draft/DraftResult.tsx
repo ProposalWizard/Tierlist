@@ -1287,6 +1287,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     return { clNames, uelNames, relegNames };
   }, [season.leagueTable, season.faCup.faCupWinner, season.leagueCup.faCupWinner]);
 
+  // Build a set of team names for other human players in the room (for amber highlighting in league table)
+  const otherHumanTeamNames = useMemo(() => {
+    if (!roomPlayers || roomPlayers.length === 0) return new Set<string>();
+    return new Set(
+      roomPlayers.map(p => p.team_name || p.display_name).filter((n): n is string => !!n)
+    );
+  }, [roomPlayers]);
+
   const getLeaguePositionStyle = (pos: number, teamName: string) => {
     if (pos === 1) return "border-l-2 border-l-yellow-500";
     if (tableQualification.clNames.has(teamName)) return "border-l-2 border-l-blue-500";
@@ -1899,21 +1907,26 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                         )}
                         <div className="relative">
                           <span className={`absolute left-0 top-1 bottom-1 w-[3px] rounded-full ${edge}`} />
-                          <div className={`flex items-center gap-2 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : "border-b border-white/5"}`}>
-                            <span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums shrink-0 ${badge}`}>{pos}</span>
-                            <span className="flex-1 min-w-0 flex items-center gap-1.5">
-                              <span className={`truncate text-sm font-bold ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.name}</span>
-                              {pos === 1 && <span className="text-xs shrink-0">🏆</span>}
-                            </span>
-                            <span className="flex items-center gap-1 tabular-nums shrink-0">
-                              <span className="w-5 text-center text-xs font-semibold text-white/55">{team.played}</span>
-                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.won}</span>
-                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.drawn}</span>
-                              <span className="w-5 text-center text-xs font-semibold text-white/80">{team.lost}</span>
-                              <span className={`w-7 text-right text-xs font-bold ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
-                              <span className={`w-7 text-right text-sm font-black ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
-                            </span>
-                          </div>
+                          {(() => {
+                            const isOtherHuman = !team.isPlayer && otherHumanTeamNames.has(team.name);
+                            return (
+                              <div className={`flex items-center gap-2 px-2 py-2 ${team.isPlayer ? "bg-gradient-to-r from-emerald-400/15 via-emerald-400/[0.05] to-transparent ring-1 ring-inset ring-emerald-400/50" : isOtherHuman ? "bg-gradient-to-r from-amber-400/10 via-amber-400/[0.03] to-transparent ring-1 ring-inset ring-amber-400/30" : "border-b border-white/5"}`}>
+                                <span className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-black tabular-nums shrink-0 ${badge}`}>{pos}</span>
+                                <span className="flex-1 min-w-0 flex items-center gap-1.5">
+                                  <span className={`truncate text-sm font-bold ${team.isPlayer ? "text-emerald-400" : isOtherHuman ? "text-amber-400" : "text-white"}`}>{team.name}</span>
+                                  {pos === 1 && <span className="text-xs shrink-0">🏆</span>}
+                                </span>
+                                <span className="flex items-center gap-1 tabular-nums shrink-0">
+                                  <span className="w-5 text-center text-xs font-semibold text-white/55">{team.played}</span>
+                                  <span className="w-5 text-center text-xs font-semibold text-white/80">{team.won}</span>
+                                  <span className="w-5 text-center text-xs font-semibold text-white/80">{team.drawn}</span>
+                                  <span className="w-5 text-center text-xs font-semibold text-white/80">{team.lost}</span>
+                                  <span className={`w-7 text-right text-xs font-bold ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white/70"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
+                                  <span className={`w-7 text-right text-sm font-black ${team.isPlayer ? "text-emerald-400" : isOtherHuman ? "text-amber-400" : "text-white"}`}>{team.points}</span>
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     );
@@ -1942,16 +1955,17 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           <div className="space-y-0.5">
             {season.leagueTable.map((team, i) => {
               const pos = i + 1;
+              const isOtherHuman = !team.isPlayer && otherHumanTeamNames.has(team.name);
               return (
-                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${getLeaguePositionStyle(pos, team.name)} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : "hover:bg-gray-800/50"}`}>
+                <div key={team.name} className={`flex items-center text-sm py-1.5 px-1 rounded transition ${getLeaguePositionStyle(pos, team.name)} ${team.isPlayer ? "bg-emerald-900/30 border border-emerald-700/30 font-bold" : isOtherHuman ? "bg-amber-900/20 border border-amber-700/20 font-bold" : "hover:bg-gray-800/50"}`}>
                   <span className={`w-6 text-center text-xs font-bold rounded shrink-0 ${getLeaguePositionBadge(pos, team.name)}`}>{pos}</span>
-                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : "text-white"}`}>{team.name}</span>
+                  <span className={`flex-1 ml-1 truncate min-w-0 ${team.isPlayer ? "text-emerald-400 font-bold" : isOtherHuman ? "text-amber-400 font-bold" : "text-white"}`}>{team.name}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.played}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.won}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.drawn}</span>
                   <span className="w-7 text-center text-white text-xs shrink-0">{team.lost}</span>
                   <span className={`w-8 text-right text-xs font-bold shrink-0 ${team.goalDifference > 0 ? "text-emerald-400" : team.goalDifference < 0 ? "text-red-400" : "text-white"}`}>{team.goalDifference > 0 ? "+" : ""}{team.goalDifference}</span>
-                  <span className={`w-8 text-right font-black shrink-0 ${team.isPlayer ? "text-emerald-400" : "text-white"}`}>{team.points}</span>
+                  <span className={`w-8 text-right font-black shrink-0 ${team.isPlayer ? "text-emerald-400" : isOtherHuman ? "text-amber-400" : "text-white"}`}>{team.points}</span>
                 </div>
               );
             })}
@@ -2917,7 +2931,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                           {i + 1}
                         </span>
                         <span className="flex-1 ml-1.5 font-bold truncate">
-                          {rp.display_name}
+                          {rp.team_name || rp.display_name}
                           {isWinner && <span className="ml-1 text-yellow-400">&#9733;</span>}
                         </span>
                         <span className="w-8 text-center font-black text-white">{record?.points ?? "-"}</span>

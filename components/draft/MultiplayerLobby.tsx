@@ -654,7 +654,7 @@ export default function MultiplayerLobby({
                       <span className="text-sm" title="Host">&#128081;</span>
                     )}
                     <span className={`flex-1 font-bold text-sm ${isMe ? "text-emerald-400" : "text-white"}`}>
-                      {p.display_name}
+                      {p.team_name || p.display_name}
                       {isMe && <span className="text-white font-normal text-xs ml-1">(you)</span>}
                     </span>
                     {/* Avg OVR + Team Rating */}

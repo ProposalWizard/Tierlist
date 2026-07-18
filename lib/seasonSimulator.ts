@@ -473,6 +473,8 @@ export function positionFitness(player: DraftPlayer): number {
   const conditionalNatural: Array<{ pair: [string, string]; excludes: string[] }> = [
     { pair: ['LM', 'LW'], excludes: ['LB', 'LWB'] },
     { pair: ['RM', 'RW'], excludes: ['RB', 'RWB'] },
+    { pair: ['LB', 'LWB'], excludes: [] },
+    { pair: ['RB', 'RWB'], excludes: [] },
   ];
   for (const { pair, excludes } of conditionalNatural) {
     const [posA, posB] = pair;
@@ -4420,6 +4422,7 @@ function simulateSharedUCL(
   const humanKnockoutTies = new Map<string, UCLKnockoutTie[]>();
   const humanEliminated = new Map<string, Set<string>>(); // AI teams each human has already faced
   const surviving = new Map<string, typeof qualifiedHumans[0]>();
+  let sharedUCLWinner = '';
 
   for (const h of qualifiedHumans) {
     humanKnockoutTies.set(h.userId, []);
@@ -4515,6 +4518,7 @@ function simulateSharedUCL(
 
       if (tie.result === 'L') {
         surviving.delete(userId);
+        if (isFinal) sharedUCLWinner = opp.name;
         results.set(userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(userId)!,
@@ -4583,12 +4587,13 @@ function simulateSharedUCL(
   }
 
   // Finalize surviving humans (winners or still standing after final)
-  surviving.forEach((_, userId) => {
+  surviving.forEach((h, userId) => {
     if (!results.has(userId)) {
       const lp = phaseResults.get(userId)!;
       const ties = humanKnockoutTies.get(userId)!;
       const lastTie = ties[ties.length - 1];
       const isWinner = lastTie?.round === 'Final' && lastTie.result === 'W';
+      if (isWinner) sharedUCLWinner = h.teamName;
       results.set(userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
         leagueTable: lp.leagueTable, knockoutTies: ties,
@@ -4596,6 +4601,12 @@ function simulateSharedUCL(
       });
     }
   });
+
+  // Backfill the tournament winner into every result so viewers who were
+  // eliminated early can still see who won the UCL.
+  if (sharedUCLWinner) {
+    results.forEach(result => { result.tournamentWinner = sharedUCLWinner; });
+  }
 
   return results;
 }
@@ -4674,6 +4685,7 @@ function simulateSharedUEL(
   const humanKnockoutTies = new Map<string, UCLKnockoutTie[]>();
   const humanEliminated = new Map<string, Set<string>>();
   const surviving = new Map<string, typeof qualifiedHumans[0]>();
+  let sharedUELWinner = '';
 
   for (const h of qualifiedHumans) {
     humanKnockoutTies.set(h.userId, []);
@@ -4756,6 +4768,7 @@ function simulateSharedUEL(
 
       if (tie.result === 'L') {
         surviving.delete(userId);
+        if (isFinal) sharedUELWinner = opp.name;
         results.set(userId, {
           qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
           leagueTable: lp.leagueTable, knockoutTies: humanKnockoutTies.get(userId)!,
@@ -4814,12 +4827,13 @@ function simulateSharedUEL(
     }
   }
 
-  surviving.forEach((_, userId) => {
+  surviving.forEach((h, userId) => {
     if (!results.has(userId)) {
       const lp = phaseResults.get(userId)!;
       const ties = humanKnockoutTies.get(userId)!;
       const lastTie = ties[ties.length - 1];
       const isWinner = lastTie?.round === 'Final' && lastTie.result === 'W';
+      if (isWinner) sharedUELWinner = h.teamName;
       results.set(userId, {
         qualified: true, leagueMatches: lp.leagueMatches, leaguePosition: lp.leaguePosition,
         leagueTable: lp.leagueTable, knockoutTies: ties,
@@ -4827,6 +4841,11 @@ function simulateSharedUEL(
       });
     }
   });
+
+  // Backfill the tournament winner into every result
+  if (sharedUELWinner) {
+    results.forEach(result => { result.tournamentWinner = sharedUELWinner; });
+  }
 
   return results;
 }
