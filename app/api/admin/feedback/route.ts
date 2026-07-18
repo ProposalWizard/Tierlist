@@ -11,19 +11,52 @@ export async function GET() {
   if (!(await isAdmin(user.id))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const service = createServiceClient();
+
+  // First, try to fetch feedback. Select user_id only if it exists (migration may not have run).
   const { data, error } = await service
     .from("feedback")
-    .select("id, message, page_url, created_at, user_id, user_profiles(username)")
+    .select("id, message, page_url, created_at, user_id")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    // user_id column might not exist — retry without it
+    const { data: data2, error: error2 } = await service
+      .from("feedback")
+      .select("id, message, page_url, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error2) return NextResponse.json({ error: error2.message }, { status: 500 });
+
+    const feedback = (data2 ?? []).map((row: Record<string, unknown>) => ({
+      id: row.id,
+      message: row.message,
+      page_url: row.page_url,
+      created_at: row.created_at,
+      username: null,
+    }));
+
+    return NextResponse.json({ feedback });
+  }
+
+  // Collect distinct user_ids to look up usernames in bulk
+  const userIds = [...new Set((data ?? []).map((r: Record<string, unknown>) => r.user_id).filter(Boolean))] as string[];
+  const usernameMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await service
+      .from("user_profiles")
+      .select("id, username")
+      .in("id", userIds);
+    (profiles ?? []).forEach((p: { id: string; username: string | null }) => {
+      if (p.username) usernameMap[p.id] = p.username;
+    });
+  }
 
   const feedback = (data ?? []).map((row: Record<string, unknown>) => ({
     id: row.id,
     message: row.message,
     page_url: row.page_url,
     created_at: row.created_at,
-    username: (row.user_profiles as { username?: string } | null)?.username ?? null,
+    username: (row.user_id && usernameMap[row.user_id as string]) ? usernameMap[row.user_id as string] : null,
   }));
 
   return NextResponse.json({ feedback });
