@@ -39,7 +39,7 @@ export async function GET() {
   }
 
   // Collect distinct user_ids to look up usernames in bulk
-  const userIds = [...new Set((data ?? []).map((r: Record<string, unknown>) => r.user_id).filter(Boolean))] as string[];
+  const userIds = Array.from(new Set((data ?? []).map((r: Record<string, unknown>) => r.user_id).filter(Boolean))) as string[];
   const usernameMap: Record<string, string> = {};
   if (userIds.length > 0) {
     const { data: profiles } = await service
