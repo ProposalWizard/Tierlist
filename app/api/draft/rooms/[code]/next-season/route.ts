@@ -77,6 +77,20 @@ export async function POST(
     }
   }
 
+  // Guard: refuse to advance if any active (non-out) player hasn't received their
+  // simulation result yet. Otherwise the host advancing early would wipe another
+  // player's result before they've seen it, leaving them permanently stuck.
+  const { data: statusCheck } = await service
+    .from("draft_room_players")
+    .select("id, status, season_result")
+    .eq("room_id", room.id);
+  const missingResult = (statusCheck ?? []).some(
+    p => (p as Record<string, unknown>).status !== "out" && p.season_result == null
+  );
+  if (missingResult) {
+    return new Response("Some players have not yet received simulation results", { status: 409 });
+  }
+
   // Identify relegated players (finished 18th or worse) before clearing the column.
   const relegatedIds = (allPlayers ?? [])
     .filter(p => typeof p.actual_finish === "number" && p.actual_finish >= 18)
