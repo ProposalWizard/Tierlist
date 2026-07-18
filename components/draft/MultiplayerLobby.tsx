@@ -170,6 +170,10 @@ export default function MultiplayerLobby({
 
         const roomId = data.room.id;
         if (data.room.status === "complete" && resultIsForCurrentSeason(data.room)) {
+          // Sync the server-set anchor time so the animation starts at the same
+          // wall-clock moment as all other clients, not at Date.now().
+          const rsa = (data.room?.settings as Record<string, unknown> | undefined)?.revealStartAt;
+          if (typeof rsa === "number") revealStartAtRef.current = rsa;
           tryComplete(data.players ?? []);
           // Only skip the subscription if the result actually fired — if our
           // season_result is missing we still need updates to arrive.
@@ -206,7 +210,7 @@ export default function MultiplayerLobby({
             return;
           }
           checkComplete();
-        }, 5000);
+        }, 2000);
       });
     };
     init();
@@ -298,7 +302,7 @@ export default function MultiplayerLobby({
   };
 
   const activePlayers = players.filter(p => p.status !== "out");
-  const allReady = players.length > 1 && activePlayers.length > 0 && activePlayers.every(p => p.status === "ready" || p.status === "simulated");
+  const allReady = players.length > 1 && activePlayers.length > 0 && activePlayers.every(p => p.status === "ready");
   const myPlayer = players.find(p => p.user_id === userId);
   // Host-ness can change mid-game: when a host leaves, the room is handed to
   // the longest-joined remaining player. Trust the live room row over the
@@ -678,7 +682,7 @@ export default function MultiplayerLobby({
                             ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                             : "bg-yellow-500/10 text-yellow-500/80 border border-yellow-500/20"
                     }`}>
-                      {p.status === "out" ? "Relegated" : p.status === "simulated" ? "Done" : p.status === "ready" ? "Ready" : "Drafting"}
+                      {p.status === "out" ? "Relegated" : p.status === "simulated" ? "Waiting" : p.status === "ready" ? "Ready" : "Drafting"}
                     </span>
                     {/* Expand arrow */}
                     {p.squad && (

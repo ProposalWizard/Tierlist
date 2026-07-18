@@ -166,7 +166,6 @@ export default function AdminPanel({
   const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const loadFeedback = async () => {
-    if (feedbackLoaded) return;
     setFeedbackLoading(true);
     const res = await fetch("/api/admin/feedback");
     if (res.ok) {
@@ -3154,6 +3153,16 @@ export default function AdminPanel({
       {/* ── Feedback tab ────────────────────────────────────────────────── */}
       {tab === "feedback" && (
         <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={loadFeedback}
+              disabled={feedbackLoading}
+              className="rounded-md bg-gray-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-600 disabled:opacity-50"
+            >
+              {feedbackLoading ? "Refreshing..." : "↻ Refresh"}
+            </button>
+            {feedbackLoaded && <span className="text-xs text-gray-400">{feedbackItems.length} item{feedbackItems.length !== 1 ? "s" : ""}</span>}
+          </div>
           {feedbackLoading && <p className="text-sm text-gray-400">Loading...</p>}
           {feedbackLoaded && feedbackItems.length === 0 && (
             <p className="text-sm text-gray-400">No feedback submitted yet.</p>

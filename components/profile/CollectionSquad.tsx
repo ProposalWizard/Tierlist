@@ -410,7 +410,7 @@ export default function CollectionSquad({ progression, seasonRewards }: Props) {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden max-w-[480px] mx-auto w-full"
       style={{
         background: "#070d1f",
         border: "1px solid rgba(212,175,55,0.25)",

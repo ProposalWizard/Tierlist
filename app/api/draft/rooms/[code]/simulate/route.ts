@@ -167,8 +167,9 @@ export async function POST(
       await service.from("draft_rooms").update({ host_id: newHost.user_id }).eq("id", room.id);
     }
 
-    // 3-second buffer so all players load DraftResult before the animation starts
-    const revealStartAt = Date.now() + 3000;
+    // 6-second buffer so all players (including late joiners) load DraftResult
+    // before the animation starts and have time to receive the settings sync
+    const revealStartAt = Date.now() + 6000;
     await service.from("draft_rooms").update({
       status: "complete",
       settings: { ...(existingSettings ?? {}), revealStartAt },
