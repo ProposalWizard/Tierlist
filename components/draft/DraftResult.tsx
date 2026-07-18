@@ -577,16 +577,20 @@ export interface DraftRunRecord {
   charityShieldWinner?: boolean;
 }
 
-async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
-  if (!isSignedIn) return;
+async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean): Promise<boolean> {
+  if (!isSignedIn) return false;
   try {
     const res = await fetch("/api/draft/history", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(run),
     });
-    if (!res.ok) console.error("saveRunToHistory HTTP", res.status, await res.text().catch(() => ""));
-  } catch (e) { console.error("saveRunToHistory:", e); }
+    if (!res.ok) {
+      console.error("saveRunToHistory HTTP", res.status, await res.text().catch(() => ""));
+      return false;
+    }
+    return true;
+  } catch (e) { console.error("saveRunToHistory:", e); return false; }
 }
 
 export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
@@ -878,6 +882,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             if (objRes.ok) {
               const objData = await objRes.json();
               const completedObjs = objData.completed as { id: string; xp_reward: number; title: string; card_image_url: string | null; card_name: string | null }[] ?? [];
+              // XP for these objective IDs was already granted server-side by the check
+              // route (so it survives a client death). Re-awarding here would double-count
+              // it under a second event key, so skip the /api/xp call for them.
+              const serverAwardedIds = new Set(
+                ((objData.serverAwardedXp as { id: string; xp: number }[] | undefined) ?? []).map(s => s.id)
+              );
               const pendingPopups: typeof xpPopups = [];
               for (const obj of completedObjs) {
                 let newRewards: string[] = [];
@@ -890,7 +900,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                 // user's real level) — dumping the whole set on the first objective.
                 let levelBefore: number | null = currentLevel;
                 let levelAfter: number | null = currentLevel;
-                if (obj.xp_reward > 0) {
+                if (obj.xp_reward > 0 && !serverAwardedIds.has(obj.id)) {
                   const r = await awardXp(`objective_${obj.id}`, `objective_${obj.id}`, obj.xp_reward);
                   if (r && !r.duplicate) {
                     newRewards = r.new_rewards ?? [];
