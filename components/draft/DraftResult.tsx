@@ -692,6 +692,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   }, [revealedIdx]);
 
   const historySaved = useRef(false);
+  // Separate guard for auth-required work (XP, objectives, records). This runs
+  // when isSignedIn becomes true even if historySaved already fired with
+  // isSignedIn = false (the common case on page load where auth resolves async).
+  const creditSaved = useRef(false);
   useEffect(() => {
     // Award XP/objectives/history as soon as the season result is computed — don't gate behind
     // the visual reveal animation finishing, or a player who navigates away mid-animation loses credit
@@ -760,9 +764,11 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           try { localStorage.setItem(`draft-credited-${runKey}`, "1"); } catch { /* ignore */ }
         }
       });
+    }
 
-      if (isSignedIn) {
-        (async () => {
+    if (isSignedIn && !creditSaved.current && !alreadyCredited) {
+      creditSaved.current = true;
+      (async () => {
           const runId = runKey;
           // Track the user's level as XP is awarded sequentially
           let currentLevel: number | null = null;
@@ -1151,7 +1157,6 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             })
             .catch((err) => console.error("Failed to save draft records:", err));
         })();
-      }
     }
   }, [players, season, seasonNumber, isSignedIn]);
 
