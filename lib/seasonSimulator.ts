@@ -482,13 +482,27 @@ export function positionFitness(player: DraftPlayer): number {
     if ((assigned === posA && natural.includes(posB)) || (assigned === posB && natural.includes(posA))) return 1.0;
   }
 
+  // CDM/DM has its own fitness hierarchy. The general MID bucket would wrongly
+  // treat CAM/LM/RM as same-role (0.98) — only CM/DM family positions are truly
+  // same-role for a defensive mid. CAM and CB are medium cross-role; wide mids
+  // and fullbacks drop further to adjacent. Always uses the best natural position.
+  if (assigned === 'CDM' || assigned === 'DM') {
+    const cdmSameRole = new Set(['CM', 'CDM', 'DM', 'LDM', 'RDM']);
+    const cdmMedium   = new Set(['CAM', 'CB', 'SW']);
+    const cdmAdjacent = new Set(['LM', 'RM', 'LW', 'RW', 'LB', 'RB', 'LWB', 'RWB', 'ST', 'CF', 'SS']);
+    if (natural.some(p => cdmSameRole.has(p))) return 0.98;
+    if (natural.some(p => cdmMedium.has(p)))   return 0.93;
+    if (natural.some(p => cdmAdjacent.has(p))) return 0.85;
+    return 0.68;
+  }
+
   const assignedRole = classifyPosition(assigned);
   if (natural.some(p => classifyPosition(p) === assignedRole)) return 0.98;
 
   const mediumPairs: [string[], string[]][] = [
     [['LB', 'LWB'], ['LM']],
     [['RB', 'RWB'], ['RM']],
-    [['CDM', 'DM'], ['CB']],
+    [['CDM', 'DM'], ['CB']],  // CB assigned, CDM/DM natural — reverse direction still applies
   ];
   for (const [groupA, groupB] of mediumPairs) {
     if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.93;
