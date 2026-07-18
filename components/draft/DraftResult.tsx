@@ -580,12 +580,13 @@ export interface DraftRunRecord {
 async function saveRunToHistory(run: DraftRunRecord, isSignedIn: boolean) {
   if (!isSignedIn) return;
   try {
-    await fetch("/api/draft/history", {
+    const res = await fetch("/api/draft/history", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(run),
     });
-  } catch {}
+    if (!res.ok) console.error("saveRunToHistory HTTP", res.status, await res.text().catch(() => ""));
+  } catch (e) { console.error("saveRunToHistory:", e); }
 }
 
 export async function loadDraftHistory(): Promise<DraftRunRecord[]> {

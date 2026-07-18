@@ -22,13 +22,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
     const svc = createServiceClient();
-    let query = svc
+    const personalSelect = () => svc
       .from("draft_personal_records")
       .select("competition, record_type, value, player_name, player_ovr, season_number")
       .eq("user_id", user.id);
-    try { query = query.eq("mode", mode); } catch { /* mode column may not exist yet */ }
 
-    const { data, error } = await query;
+    let { data, error } = await personalSelect().eq("mode", mode);
+
+    // mode column doesn't exist yet (migration not run) — retry without the filter
+    if (error && (error.code === "42703" || error.code === "PGRST204")) {
+      ({ data, error } = await personalSelect());
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -51,13 +55,17 @@ export async function GET(req: Request) {
   // Global leaderboard
   const supabase = createServiceClient();
 
-  let query = supabase
+  const globalSelect = () => supabase
     .from("draft_records")
     .select("competition, record_type, value, player_name, player_ovr, username, season_number, created_at")
     .order("value", { ascending: false });
-  try { query = query.eq("mode", mode); } catch { /* mode column may not exist yet */ }
 
-  const { data, error } = await query;
+  let { data, error } = await globalSelect().eq("mode", mode);
+
+  // mode column doesn't exist yet (migration not run) — retry without the filter
+  if (error && (error.code === "42703" || error.code === "PGRST204")) {
+    ({ data, error } = await globalSelect());
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
