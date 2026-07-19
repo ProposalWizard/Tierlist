@@ -296,24 +296,31 @@ export async function POST(req: Request) {
 
     let baseQuery = serviceClient
       .from("draft_records")
-      .select("id, value")
+      .select("id, value, player_name")
       .eq("competition", candidate.competition)
       .eq("record_type", candidate.record_type);
     if (modeColExists !== false) baseQuery = baseQuery.eq("mode", candidate.mode);
-    let { data: existing, error: fetchErr } = await baseQuery.order("value", { ascending }).limit(MAX_PER_CATEGORY);
+    // Fetch extra rows so that after filtering dev-player records we still have up to MAX_PER_CATEGORY
+    let { data: rawExisting, error: fetchErr } = await baseQuery.order("value", { ascending }).limit(MAX_PER_CATEGORY + 20);
 
     // mode column doesn't exist — retry without the filter
     if (fetchErr && NO_COL(fetchErr.code)) {
       modeColExists = false;
       const fallback = serviceClient
         .from("draft_records")
-        .select("id, value")
+        .select("id, value, player_name")
         .eq("competition", candidate.competition)
         .eq("record_type", candidate.record_type);
-      ({ data: existing, error: fetchErr } = await fallback.order("value", { ascending }).limit(MAX_PER_CATEGORY));
+      ({ data: rawExisting, error: fetchErr } = await fallback.order("value", { ascending }).limit(MAX_PER_CATEGORY + 20));
     } else if (fetchErr == null && modeColExists == null) {
       modeColExists = true;
     }
+
+    // Filter out dev-player records — they are hidden on the leaderboard display
+    // but without this filter they block real records from being inserted or updated.
+    const existing = (rawExisting ?? [])
+      .filter(r => !isDevPlayer((r as Record<string, unknown>).player_name as string | null))
+      .slice(0, MAX_PER_CATEGORY);
 
     if (fetchErr) {
       const msg = `fetch ${candidate.competition}/${candidate.record_type}: ${fetchErr.message}`;
@@ -331,12 +338,22 @@ export async function POST(req: Request) {
     // has a row, update it in place when this value is better, otherwise skip.
     let userQuery = serviceClient
       .from("draft_records")
-      .select("id, value")
+      .select("id, value, player_name")
       .eq("competition", candidate.competition)
       .eq("record_type", candidate.record_type)
       .eq("user_id", candidate.user_id);
     if (modeColExists !== false) userQuery = userQuery.eq("mode", candidate.mode);
-    const { data: userExisting, error: userFetchErr } = await userQuery.maybeSingle();
+    let { data: userExisting, error: userFetchErr } = await userQuery.maybeSingle();
+
+    // If the user's existing row is a dev-player record (invisible on the
+    // leaderboard but blocking real records from saving), delete it so the
+    // real record can be inserted fresh.
+    if (userExisting && isDevPlayer((userExisting as Record<string, unknown>).player_name as string | null)) {
+      await serviceClient.from("draft_records").delete().eq("id", userExisting.id);
+      actions[`${candidate.competition}_${candidate.record_type}`] = (actions[`${candidate.competition}_${candidate.record_type}`] ?? "") + ` | deleted-dev-player-row(${userExisting.value})`;
+      userExisting = null;
+      userFetchErr = null;
+    }
 
     // PGRST116 means multiple rows exist for this user — a legacy artifact from
     // before per-user dedup was enforced. Clean up the duplicates (keep only the
@@ -482,7 +499,7 @@ export async function POST(req: Request) {
 
     let personalQuery = serviceClient
       .from("draft_personal_records")
-      .select("id, value")
+      .select("id, value, player_name")
       .eq("user_id", user.id)
       .eq("competition", candidate.competition)
       .eq("record_type", candidate.record_type);
@@ -493,7 +510,7 @@ export async function POST(req: Request) {
       modeColExistsPersonal = false;
       const fallback = serviceClient
         .from("draft_personal_records")
-        .select("id, value")
+        .select("id, value, player_name")
         .eq("user_id", user.id)
         .eq("competition", candidate.competition)
         .eq("record_type", candidate.record_type);
@@ -503,6 +520,12 @@ export async function POST(req: Request) {
     }
 
     if (personalFetchErr) continue;
+
+    // Auto-delete dev-player personal records so they don't block real saves.
+    if (existing && isDevPlayer((existing as Record<string, unknown>).player_name as string | null)) {
+      await serviceClient.from("draft_personal_records").delete().eq("id", existing.id);
+      existing = null;
+    }
 
     const personalInsertPayload: Record<string, unknown> = {
       user_id: user.id,
