@@ -1155,8 +1155,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
               if (!res.ok) {
                 console.error("Failed to save draft records:", res.status, body?.error);
               } else {
-                console.log("[records] Save response:", body);
-                if (body?.recordErrors?.length) console.warn("[records] Server errors:", body.recordErrors);
+                console.log("[records] inserted=" + body?.inserted + " errors=" + JSON.stringify(body?.recordErrors));
+                console.log("[records] pl_assists=" + body?.actions?.pl_assists);
+                console.log("[records] all_assists=" + body?.actions?.all_assists);
               }
             })
             .catch((err) => console.error("Failed to save draft records:", err));
