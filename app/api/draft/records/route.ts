@@ -288,6 +288,8 @@ export async function POST(req: Request) {
   // Errors collected during global-record processing — returned in the response
   // so the client can log them in DevTools (server logs are inaccessible to users).
   const recordErrors: string[] = [];
+  // Per-candidate action log for debugging — what happened to each record type.
+  const actions: Record<string, string> = {};
 
   for (const candidate of candidates) {
     const ascending = ASCENDING_RECORD_TYPES.has(candidate.record_type);
@@ -317,8 +319,10 @@ export async function POST(req: Request) {
       const msg = `fetch ${candidate.competition}/${candidate.record_type}: ${fetchErr.message}`;
       console.error(`Failed to fetch records for ${candidate.competition}/${candidate.record_type}:`, fetchErr.message);
       recordErrors.push(msg);
+      actions[`${candidate.competition}_${candidate.record_type}`] = `fetch-error: ${fetchErr.code} ${fetchErr.message}`;
       continue;
     }
+    actions[`${candidate.competition}_${candidate.record_type}`] = `top5=[${(existing ?? []).map(r => r.value).join(",")}] modeColExists=${modeColExists}`;
 
     // Enforce at most one row per user per (competition, record_type, mode) on
     // the global board. Without this, a single user's first 5 seasons each get
@@ -338,6 +342,7 @@ export async function POST(req: Request) {
     // before per-user dedup was enforced. Clean up the duplicates (keep only the
     // best row) so future saves work correctly.
     if (userFetchErr && userFetchErr.code === "PGRST116") {
+      actions[`${candidate.competition}_${candidate.record_type}`] += ` | PGRST116-dedup`;
       let allUserQuery = serviceClient
         .from("draft_records")
         .select("id, value")
@@ -347,7 +352,6 @@ export async function POST(req: Request) {
       if (modeColExists !== false) allUserQuery = allUserQuery.eq("mode", candidate.mode);
       const { data: allUserRows } = await allUserQuery.order("value", { ascending });
       if (allUserRows && allUserRows.length > 0) {
-        // Index 0 is always the "best" whether we sorted ASC or DESC
         const bestRow = allUserRows[0];
         const idsToDelete = allUserRows.slice(1).map(r => r.id as string);
         if (idsToDelete.length > 0) {
@@ -369,11 +373,18 @@ export async function POST(req: Request) {
             const msg = `dedup-update ${candidate.competition}/${candidate.record_type}: ${updErr.message}`;
             console.error(msg);
             recordErrors.push(msg);
+            actions[`${candidate.competition}_${candidate.record_type}`] += ` dedup-update-err`;
+          } else {
+            actions[`${candidate.competition}_${candidate.record_type}`] += ` dedup-updated(${bestRow.value}->${candidate.value})`;
           }
+        } else {
+          actions[`${candidate.competition}_${candidate.record_type}`] += ` dedup-not-better(best=${bestRow.value},new=${candidate.value})`;
         }
         continue;
       }
       // No rows returned (unexpected) — fall through to normal insert path
+    } else if (userFetchErr) {
+      actions[`${candidate.competition}_${candidate.record_type}`] += ` | user-fetch-err:${userFetchErr.code}`;
     }
 
     if (userExisting) {
@@ -393,7 +404,12 @@ export async function POST(req: Request) {
           const msg = `update ${candidate.competition}/${candidate.record_type}: ${updErr.message}`;
           console.error(`Failed to update user record:`, updErr.message);
           recordErrors.push(msg);
+          actions[`${candidate.competition}_${candidate.record_type}`] += ` | update-err`;
+        } else {
+          actions[`${candidate.competition}_${candidate.record_type}`] += ` | updated(${userExisting.value}->${candidate.value})`;
         }
+      } else {
+        actions[`${candidate.competition}_${candidate.record_type}`] += ` | not-better(existing=${userExisting.value},new=${candidate.value})`;
       }
       continue;
     }
@@ -408,7 +424,6 @@ export async function POST(req: Request) {
     if (count < MAX_PER_CATEGORY) {
       const { error: insErr } = await serviceClient.from("draft_records").insert(insertPayload);
       if (insErr && NO_COL(insErr.code) && modeColExists !== false) {
-        // Column appeared absent on insert but not on fetch — flip flag and retry
         modeColExists = false;
         const { mode: _m, ...withoutMode } = candidate;
         const { error: retryErr } = await serviceClient.from("draft_records").insert(withoutMode);
@@ -416,13 +431,19 @@ export async function POST(req: Request) {
           const msg = `insert-retry ${candidate.competition}/${candidate.record_type}: ${retryErr.message}`;
           console.error(`Failed to insert record (retry):`, retryErr.message);
           recordErrors.push(msg);
-        } else { inserted++; }
+          actions[`${candidate.competition}_${candidate.record_type}`] += ` | insert-retry-err:${retryErr.code}`;
+        } else {
+          inserted++;
+          actions[`${candidate.competition}_${candidate.record_type}`] += ` | inserted-no-mode`;
+        }
       } else if (insErr) {
         const msg = `insert ${candidate.competition}/${candidate.record_type}: ${insErr.message}`;
         console.error(`Failed to insert record:`, insErr.message);
         recordErrors.push(msg);
+        actions[`${candidate.competition}_${candidate.record_type}`] += ` | insert-err:${insErr.code} ${insErr.message}`;
       } else {
         inserted++;
+        actions[`${candidate.competition}_${candidate.record_type}`] += ` | inserted`;
       }
     } else {
       const worst = existing![count - 1];
@@ -433,10 +454,11 @@ export async function POST(req: Request) {
           const msg = `insert-beats-worst ${candidate.competition}/${candidate.record_type}: ${insErr.message}`;
           console.error(`Failed to insert record:`, insErr.message);
           recordErrors.push(msg);
+          actions[`${candidate.competition}_${candidate.record_type}`] += ` | beats-worst-insert-err:${insErr.code}`;
           continue;
         }
         inserted++;
-
+        actions[`${candidate.competition}_${candidate.record_type}`] += ` | beats-worst-inserted(worst=${worst.value})`;
         const { error: delErr } = await serviceClient
           .from("draft_records")
           .delete()
@@ -446,6 +468,8 @@ export async function POST(req: Request) {
           console.error(`Failed to prune worst record:`, delErr.message);
           recordErrors.push(msg);
         }
+      } else {
+        actions[`${candidate.competition}_${candidate.record_type}`] += ` | board-full-not-better(worst=${worst.value},new=${candidate.value})`;
       }
     }
   }
@@ -539,5 +563,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, inserted, recordErrors });
+  return NextResponse.json({ ok: true, inserted, recordErrors, actions });
 }
