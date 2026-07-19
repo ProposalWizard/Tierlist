@@ -104,6 +104,7 @@ export async function POST(request: Request) {
     goals_for: body.goalsFor || 0,
     goals_against: body.goalsAgainst || 0,
     avg_ovr: body.avgOvr || 0,
+    players: [] as unknown[],
   };
 
   const extendedColumns = {
