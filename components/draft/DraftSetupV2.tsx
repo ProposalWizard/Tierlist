@@ -206,19 +206,26 @@ export default function DraftSetupV2({ onStart, onCreateRoom, onJoinRoom, teamNa
 
       {/* ══════════════════════════════ HERO ══════════════════════════════ */}
       <div className="relative overflow-hidden" style={{ minHeight: 260, background: "#07090d" }}>
-        {/* Atmospheric background — green energy burst + stadium lights */}
+        {/* Player image — right side */}
+        <div
+          className="absolute right-0 top-0 bottom-0 w-[65%]"
+          style={{
+            backgroundImage: "url('/draft-hero.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center top",
+          }}
+        />
+        {/* CSS fallback atmosphere (visible when image missing, hidden behind image when present) */}
         <div
           className="absolute right-0 top-0 bottom-0 w-[75%]"
           style={{
             background: [
               "radial-gradient(ellipse 55% 35% at 90% 8%, rgba(220,255,240,0.07) 0%, transparent 70%)",
-              "radial-gradient(ellipse 45% 30% at 10% 5%, rgba(220,255,240,0.04) 0%, transparent 70%)",
               "radial-gradient(ellipse 70% 70% at 55% 42%, rgba(16,185,129,0.32) 0%, rgba(5,150,105,0.18) 38%, transparent 70%)",
               "radial-gradient(ellipse 45% 55% at 38% 28%, rgba(52,211,153,0.22) 0%, transparent 55%)",
-              "radial-gradient(ellipse 28% 35% at 68% 18%, rgba(110,231,183,0.14) 0%, transparent 50%)",
-              "radial-gradient(ellipse 60% 40% at 50% 80%, rgba(4,120,87,0.12) 0%, transparent 60%)",
               "linear-gradient(155deg, #0c1f12 0%, #081207 45%, #07090d 100%)",
             ].join(", "),
+            mixBlendMode: "multiply",
           }}
         />
         {/* Gradient overlay: solid dark left → transparent right */}
