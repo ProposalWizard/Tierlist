@@ -206,20 +206,42 @@ export default function DraftSetupV2({ onStart, onCreateRoom, onJoinRoom, teamNa
 
       {/* ══════════════════════════════ HERO ══════════════════════════════ */}
       <div className="relative overflow-hidden" style={{ minHeight: 260, background: "#07090d" }}>
-        {/* Player image — right side, fades to dark on the left */}
+        {/* Atmospheric background — green energy burst + stadium lights */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-[62%]"
+          className="absolute right-0 top-0 bottom-0 w-[75%]"
           style={{
-            backgroundImage: "url('/draft-hero.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center top",
+            background: [
+              "radial-gradient(ellipse 55% 35% at 90% 8%, rgba(220,255,240,0.07) 0%, transparent 70%)",
+              "radial-gradient(ellipse 45% 30% at 10% 5%, rgba(220,255,240,0.04) 0%, transparent 70%)",
+              "radial-gradient(ellipse 70% 70% at 55% 42%, rgba(16,185,129,0.32) 0%, rgba(5,150,105,0.18) 38%, transparent 70%)",
+              "radial-gradient(ellipse 45% 55% at 38% 28%, rgba(52,211,153,0.22) 0%, transparent 55%)",
+              "radial-gradient(ellipse 28% 35% at 68% 18%, rgba(110,231,183,0.14) 0%, transparent 50%)",
+              "radial-gradient(ellipse 60% 40% at 50% 80%, rgba(4,120,87,0.12) 0%, transparent 60%)",
+              "linear-gradient(155deg, #0c1f12 0%, #081207 45%, #07090d 100%)",
+            ].join(", "),
           }}
         />
         {/* Gradient overlay: solid dark left → transparent right */}
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(to right, #07090d 38%, #07090dcc 55%, #07090d66 70%, transparent 90%)" }}
+          style={{ background: "linear-gradient(to right, #07090d 32%, #07090ddd 48%, #07090d88 65%, transparent 88%)" }}
         />
+        {/* Lightning ray streaks */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">
+          <g opacity="0.18" stroke="#34d399" strokeWidth="0.6" fill="none">
+            <line x1="220" y1="110" x2="370" y2="20" />
+            <line x1="220" y1="110" x2="390" y2="80" />
+            <line x1="220" y1="110" x2="380" y2="160" />
+            <line x1="220" y1="110" x2="320" y2="240" />
+            <line x1="220" y1="110" x2="130" y2="0" />
+            <line x1="220" y1="110" x2="250" y2="0" />
+          </g>
+          <g opacity="0.08" stroke="#6ee7b7" strokeWidth="0.4" fill="none">
+            <line x1="220" y1="110" x2="400" y2="50" />
+            <line x1="220" y1="110" x2="355" y2="260" />
+            <line x1="220" y1="110" x2="160" y2="20" />
+          </g>
+        </svg>
 
         {/* Text — left side */}
         <div className="relative px-4 pt-10 pb-7" style={{ maxWidth: "60%" }}>
