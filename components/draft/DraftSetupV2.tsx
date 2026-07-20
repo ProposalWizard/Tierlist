@@ -205,20 +205,20 @@ export default function DraftSetupV2({ onStart, onCreateRoom, onJoinRoom, teamNa
       <ObjectivesToast />
 
       {/* ══════════════════════════════ HERO ══════════════════════════════ */}
-      <div className="relative overflow-hidden" style={{ minHeight: 260, background: "#07090d" }}>
-        {/* Player image — right side, clearly visible */}
+      <div className="relative overflow-hidden" style={{ minHeight: "clamp(260px, 35vw, 420px)", background: "#07090d" }}>
+        {/* Player image — anchored right so players stay on the right at all widths */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-[70%]"
+          className="absolute right-0 top-0 bottom-0 w-[72%] sm:w-[65%] md:w-[60%]"
           style={{
             backgroundImage: "url('/draft-hero.jpg')",
             backgroundSize: "cover",
-            backgroundPosition: "center top",
+            backgroundPosition: "right top",
           }}
         />
-        {/* Gradient: dark on the left (behind text) → fully transparent on the right */}
+        {/* Gradient: solid dark left (text area) → transparent right (players) */}
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(to right, #07090d 28%, #07090d99 42%, #07090d44 55%, transparent 70%)" }}
+          style={{ background: "linear-gradient(to right, #07090d 30%, #07090dbb 45%, #07090d55 60%, transparent 78%)" }}
         />
         {/* Lightning ray streaks */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">
