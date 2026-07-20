@@ -19,12 +19,12 @@ const GAMES: GameLink[] = [
   { name: "Ten-A-Ball",          description: "Football trivia — ten questions, ten lives", href: "/tenable"  },
   { name: "Football Tic Tac Toe",description: "Pick players to fill the grid",            href: "/tic-tac-toe"},
   { name: "Blind Rankings",      description: "Rank players without knowing who's next",   href: "/blind-rankings" },
-  { name: "Ballon d'Or",         description: "Live a career and win the world's greatest award", href: "/ballon-dor" },
 ];
 
 const COMING_SOON: GameLink[] = [
-  { name: "Player Ratings",description: "Rate and compare players",                         href: "#", comingSoon: true },
-  { name: "Squad Builder", description: "Build and share your ultimate squad",              href: "#", comingSoon: true },
+  { name: "Ballon d'Or",    description: "Live a career and win the world's greatest award", href: "#", comingSoon: true },
+  { name: "Player Ratings", description: "Rate and compare players",                         href: "#", comingSoon: true },
+  { name: "Squad Builder",  description: "Build and share your ultimate squad",              href: "#", comingSoon: true },
 ];
 
 export default function GameSidebar() {
