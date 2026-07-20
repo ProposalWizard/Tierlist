@@ -93,28 +93,29 @@ export async function GET(request: NextRequest) {
       age: p.age || parseAttr(a.age) || parseAttr(a.attr_ae) || 0,
       image_url: p.image_url || (a.image_url as string) || null,
       nationality: p.manual_nationality || p.nationality || (a.nationality as string) || "",
-      pace: parseAttr(a.attr_pac) || parseAttr(a.pac),
-      shooting: parseAttr(a.attr_sho) || parseAttr(a.shooting),
-      passing: parseAttr(a.attr_pas) || parseAttr(a.passing),
-      dribbling: parseAttr(a.attr_dri) || parseAttr(a.dribbling),
-      defending: parseAttr(a.attr_def) || parseAttr(a.defending),
-      physical: parseAttr(a.attr_phy) || parseAttr(a.physical),
-      finishing: parseAttr(a.attr_fi) || parseAttr(a.finishing),
-      positioning: parseAttr(a.attr_po) || parseAttr(a.positioning),
-      crossing: parseAttr(a.attr_cr) || parseAttr(a.crossing),
-      vision: parseAttr(a.attr_vi) || parseAttr(a.vision),
-      longShots: parseAttr(a.attr_lo) || parseAttr(a.longShots),
-      shortPassing: parseAttr(a.attr_sh) || parseAttr(a.shortPassing),
-      longPassing: parseAttr(a.attr_lp) || parseAttr(a.longPassing),
-      heading: parseAttr(a.attr_he) || parseAttr(a.heading),
-      interceptions: parseAttr(a.attr_in) || parseAttr(a.interceptions),
-      standingTackle: parseAttr(a.attr_st) || parseAttr(a.standingTackle),
-      marking: parseAttr(a.attr_ma) || parseAttr(a.marking),
-      reactions: parseAttr(a.attr_re) || parseAttr(a.reactions),
-      sprintSpeed: parseAttr(a.attr_sp) || parseAttr(a.sprintSpeed),
-      gkDiving: parseAttr(a.attr_gd) || parseAttr(a.attr_div) || parseAttr(a.gkDiving),
-      gkPositioning: parseAttr(a.attr_gp) || parseAttr(a.attr_pos) || parseAttr(a.gkPositioning),
-      gkReflexes: parseAttr(a.attr_gr) || parseAttr(a.attr_ref) || parseAttr(a.gkReflexes),
+      // Keys are stored as "Pace", "Shooting" etc. (capital, full name) in all editions
+      pace:         parseAttr(a.Pace)         || parseAttr(a.attr_pac) || parseAttr(a.pac),
+      shooting:     parseAttr(a.Shooting)     || parseAttr(a.attr_sho) || parseAttr(a.shooting),
+      passing:      parseAttr(a.Passing)      || parseAttr(a.attr_pas) || parseAttr(a.passing),
+      dribbling:    parseAttr(a.Dribbling)    || parseAttr(a.attr_dri) || parseAttr(a.dribbling),
+      defending:    parseAttr(a.Defending)    || parseAttr(a.attr_def) || parseAttr(a.defending),
+      physical:     parseAttr(a.Physical)     || parseAttr(a.attr_phy) || parseAttr(a.physical),
+      finishing:    parseAttr(a.attr_fi)      || parseAttr(a.finishing),
+      positioning:  parseAttr(a.attr_po)      || parseAttr(a.positioning),
+      crossing:     parseAttr(a.Crossing)     || parseAttr(a.attr_cr) || parseAttr(a.crossing),
+      vision:       parseAttr(a.attr_vi)      || parseAttr(a.vision),
+      longShots:    parseAttr(a.attr_lo)      || parseAttr(a.longShots),
+      shortPassing: parseAttr(a.attr_sh)      || parseAttr(a.shortPassing),
+      longPassing:  parseAttr(a.attr_lp)      || parseAttr(a.longPassing),
+      heading:      parseAttr(a.attr_he)      || parseAttr(a.heading),
+      interceptions:  parseAttr(a.attr_in)    || parseAttr(a.interceptions),
+      standingTackle: parseAttr(a.attr_st)    || parseAttr(a.standingTackle),
+      marking:      parseAttr(a.attr_ma)      || parseAttr(a.marking),
+      reactions:    parseAttr(a.attr_re)      || parseAttr(a.reactions),
+      sprintSpeed:  parseAttr(a.attr_sp)      || parseAttr(a.sprintSpeed),
+      gkDiving:     parseAttr(a.attr_gd)      || parseAttr(a.attr_div) || parseAttr(a.gkDiving),
+      gkPositioning: parseAttr(a.attr_gp)     || parseAttr(a.attr_pos) || parseAttr(a.gkPositioning),
+      gkReflexes:   parseAttr(a.attr_gr)      || parseAttr(a.attr_ref) || parseAttr(a.gkReflexes),
     };
   });
 
@@ -214,28 +215,28 @@ export async function GET(request: NextRequest) {
           player.overall = bestOvr;
           player.potential = best.potential || parseAttr(ba.potential) || parseAttr(ba.attr_pt) || 0;
           if (best.manual_positions || best.positions) player.positions = best.manual_positions || best.positions;
-          player.pace = parseAttr(ba.attr_pac) || parseAttr(ba.pac) || player.pace;
-          player.shooting = parseAttr(ba.attr_sho) || parseAttr(ba.shooting) || player.shooting;
-          player.passing = parseAttr(ba.attr_pas) || parseAttr(ba.passing) || player.passing;
-          player.dribbling = parseAttr(ba.attr_dri) || parseAttr(ba.dribbling) || player.dribbling;
-          player.defending = parseAttr(ba.attr_def) || parseAttr(ba.defending) || player.defending;
-          player.physical = parseAttr(ba.attr_phy) || parseAttr(ba.physical) || player.physical;
-          player.finishing = parseAttr(ba.attr_fi) || parseAttr(ba.finishing) || player.finishing;
-          player.positioning = parseAttr(ba.attr_po) || parseAttr(ba.positioning) || player.positioning;
-          player.crossing = parseAttr(ba.attr_cr) || parseAttr(ba.crossing) || player.crossing;
-          player.vision = parseAttr(ba.attr_vi) || parseAttr(ba.vision) || player.vision;
-          player.longShots = parseAttr(ba.attr_lo) || parseAttr(ba.longShots) || player.longShots;
-          player.shortPassing = parseAttr(ba.attr_sh) || parseAttr(ba.shortPassing) || player.shortPassing;
-          player.longPassing = parseAttr(ba.attr_lp) || parseAttr(ba.longPassing) || player.longPassing;
-          player.heading = parseAttr(ba.attr_he) || parseAttr(ba.heading) || player.heading;
-          player.interceptions = parseAttr(ba.attr_in) || parseAttr(ba.interceptions) || player.interceptions;
+          player.pace         = parseAttr(ba.Pace)      || parseAttr(ba.attr_pac) || parseAttr(ba.pac)         || player.pace;
+          player.shooting     = parseAttr(ba.Shooting)  || parseAttr(ba.attr_sho) || parseAttr(ba.shooting)     || player.shooting;
+          player.passing      = parseAttr(ba.Passing)   || parseAttr(ba.attr_pas) || parseAttr(ba.passing)      || player.passing;
+          player.dribbling    = parseAttr(ba.Dribbling) || parseAttr(ba.attr_dri) || parseAttr(ba.dribbling)    || player.dribbling;
+          player.defending    = parseAttr(ba.Defending) || parseAttr(ba.attr_def) || parseAttr(ba.defending)    || player.defending;
+          player.physical     = parseAttr(ba.Physical)  || parseAttr(ba.attr_phy) || parseAttr(ba.physical)     || player.physical;
+          player.finishing    = parseAttr(ba.attr_fi)   || parseAttr(ba.finishing)    || player.finishing;
+          player.positioning  = parseAttr(ba.attr_po)   || parseAttr(ba.positioning)  || player.positioning;
+          player.crossing     = parseAttr(ba.Crossing)  || parseAttr(ba.attr_cr) || parseAttr(ba.crossing)      || player.crossing;
+          player.vision       = parseAttr(ba.attr_vi)   || parseAttr(ba.vision)       || player.vision;
+          player.longShots    = parseAttr(ba.attr_lo)   || parseAttr(ba.longShots)    || player.longShots;
+          player.shortPassing = parseAttr(ba.attr_sh)   || parseAttr(ba.shortPassing) || player.shortPassing;
+          player.longPassing  = parseAttr(ba.attr_lp)   || parseAttr(ba.longPassing)  || player.longPassing;
+          player.heading      = parseAttr(ba.attr_he)   || parseAttr(ba.heading)      || player.heading;
+          player.interceptions  = parseAttr(ba.attr_in) || parseAttr(ba.interceptions)  || player.interceptions;
           player.standingTackle = parseAttr(ba.attr_st) || parseAttr(ba.standingTackle) || player.standingTackle;
-          player.marking = parseAttr(ba.attr_ma) || parseAttr(ba.marking) || player.marking;
-          player.reactions = parseAttr(ba.attr_re) || parseAttr(ba.reactions) || player.reactions;
-          player.sprintSpeed = parseAttr(ba.attr_sp) || parseAttr(ba.sprintSpeed) || player.sprintSpeed;
-          player.gkDiving = parseAttr(ba.attr_gd) || parseAttr(ba.attr_div) || parseAttr(ba.gkDiving) || player.gkDiving;
-          player.gkPositioning = parseAttr(ba.attr_gp) || parseAttr(ba.attr_pos) || parseAttr(ba.gkPositioning) || player.gkPositioning;
-          player.gkReflexes = parseAttr(ba.attr_gr) || parseAttr(ba.attr_ref) || parseAttr(ba.gkReflexes) || player.gkReflexes;
+          player.marking      = parseAttr(ba.attr_ma)   || parseAttr(ba.marking)      || player.marking;
+          player.reactions    = parseAttr(ba.attr_re)   || parseAttr(ba.reactions)    || player.reactions;
+          player.sprintSpeed  = parseAttr(ba.attr_sp)   || parseAttr(ba.sprintSpeed)  || player.sprintSpeed;
+          player.gkDiving     = parseAttr(ba.attr_gd)   || parseAttr(ba.attr_div)     || parseAttr(ba.gkDiving)     || player.gkDiving;
+          player.gkPositioning = parseAttr(ba.attr_gp)  || parseAttr(ba.attr_pos)     || parseAttr(ba.gkPositioning) || player.gkPositioning;
+          player.gkReflexes   = parseAttr(ba.attr_gr)   || parseAttr(ba.attr_ref)     || parseAttr(ba.gkReflexes)   || player.gkReflexes;
         }
       }
     }
