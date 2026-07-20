@@ -206,32 +206,19 @@ export default function DraftSetupV2({ onStart, onCreateRoom, onJoinRoom, teamNa
 
       {/* ══════════════════════════════ HERO ══════════════════════════════ */}
       <div className="relative overflow-hidden" style={{ minHeight: 260, background: "#07090d" }}>
-        {/* Player image — right side */}
+        {/* Player image — right side, clearly visible */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-[65%]"
+          className="absolute right-0 top-0 bottom-0 w-[70%]"
           style={{
             backgroundImage: "url('/draft-hero.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center top",
           }}
         />
-        {/* CSS fallback atmosphere (visible when image missing, hidden behind image when present) */}
-        <div
-          className="absolute right-0 top-0 bottom-0 w-[75%]"
-          style={{
-            background: [
-              "radial-gradient(ellipse 55% 35% at 90% 8%, rgba(220,255,240,0.07) 0%, transparent 70%)",
-              "radial-gradient(ellipse 70% 70% at 55% 42%, rgba(16,185,129,0.32) 0%, rgba(5,150,105,0.18) 38%, transparent 70%)",
-              "radial-gradient(ellipse 45% 55% at 38% 28%, rgba(52,211,153,0.22) 0%, transparent 55%)",
-              "linear-gradient(155deg, #0c1f12 0%, #081207 45%, #07090d 100%)",
-            ].join(", "),
-            mixBlendMode: "multiply",
-          }}
-        />
-        {/* Gradient overlay: solid dark left → transparent right */}
+        {/* Gradient: dark on the left (behind text) → fully transparent on the right */}
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(to right, #07090d 32%, #07090ddd 48%, #07090d88 65%, transparent 88%)" }}
+          style={{ background: "linear-gradient(to right, #07090d 28%, #07090d99 42%, #07090d44 55%, transparent 70%)" }}
         />
         {/* Lightning ray streaks */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">
