@@ -253,6 +253,23 @@ export default function ScrapeSofifaPage() {
         >
           Load DB Stats
         </button>
+        <button
+          onClick={async () => {
+            if (!confirm("This will rewrite the attributes for every non-FC26 player to match the FC26 format (19 fields). Continue?")) return;
+            setStatus("Normalising attributes — this may take a minute...");
+            try {
+              const res = await fetch("/api/admin/football/normalize-attributes", { method: "POST" });
+              const data = await res.json();
+              if (data.error) { setStatus(`Error: ${data.error}`); return; }
+              setStatus(`Done! Updated ${data.updated} players, ${data.failed} failed.`);
+            } catch (e) {
+              setStatus(`Error: ${e}`);
+            }
+          }}
+          className="px-4 py-2 bg-amber-700 rounded hover:bg-amber-600 text-sm font-medium"
+        >
+          Normalise Attributes (non-FC26)
+        </button>
       </div>
 
       {/* Available versions */}
