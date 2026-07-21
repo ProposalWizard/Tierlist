@@ -160,21 +160,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // --- Normal mode: upsert all rows with normalized attributes ---
-    // Use upsert (INSERT ON CONFLICT UPDATE) instead of plain UPDATE.
-    // This works because we know the row exists (we just selected it).
+    // --- Normal mode: update attributes column for each player ---
     const rows = data.map((p) => ({
       sofifa_id: p.sofifa_id,
       fifa_year: p.fifa_year,
-      name: p.name,
-      positions: p.positions,
-      club: p.club,
-      league: p.league,
-      overall: p.overall,
-      potential: p.potential,
-      age: p.age,
-      image_url: p.image_url,
-      nationality: p.nationality,
       attributes: buildNormalized(p as Parameters<typeof buildNormalized>[0]),
     }));
 
@@ -189,7 +178,9 @@ export async function POST(req: NextRequest) {
         chunk.map((row) =>
           service
             .from("sofifa_players")
-            .upsert([row], { onConflict: "sofifa_id,fifa_year" })
+            .update({ attributes: row.attributes })
+            .eq("sofifa_id", row.sofifa_id)
+            .eq("fifa_year", row.fifa_year)
         )
       );
       for (const { error: upErr } of results) {
