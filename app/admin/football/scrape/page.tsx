@@ -267,6 +267,7 @@ export default function ScrapeSofifaPage() {
                 let data: { ok?: boolean; updated?: number; failed?: number; error?: string };
                 try { data = JSON.parse(text); } catch { setStatus(`Year ${yr} — server error: ${text.slice(0, 200)}`); continue; }
                 if (data.error) { setStatus(`Year ${yr} error: ${data.error}`); continue; }
+                if (data.firstError) setStatus(`Year ${yr}: ${data.updated} ok, ${data.failed} failed — ${data.firstError}`);
                 totalUpdated += data.updated ?? 0;
                 totalFailed += data.failed ?? 0;
               } catch (e) {
