@@ -33,11 +33,11 @@ function buildNormalized(p: {
   if (a.attr_vl) out.attr_vl = a.attr_vl;
   const club = p.club ?? (a.club as string) ?? null;
   if (club) out.club = club;
-  const crossing = coerce(a.Crossing);
+  const crossing = coerce(a.Crossing) ?? coerce(a.attr_cr) ?? coerce(a.crossing);
   if (crossing != null) out.Crossing = crossing;
-  const defending = coerce(a.Defending);
+  const defending = coerce(a.Defending) ?? coerce(a.attr_def) ?? coerce(a.defending);
   if (defending != null) out.Defending = defending;
-  const dribbling = coerce(a.Dribbling);
+  const dribbling = coerce(a.Dribbling) ?? coerce(a.attr_dri) ?? coerce(a.dribbling);
   if (dribbling != null) out.Dribbling = dribbling;
   const imageUrl = p.image_url ?? (a.image_url as string) ?? null;
   if (imageUrl) out.image_url = imageUrl;
@@ -48,19 +48,19 @@ function buildNormalized(p: {
   const nationality = p.nationality ?? (a.nationality as string) ?? null;
   if (nationality) out.nationality = nationality;
   if (a.nationality_flag_url) out.nationality_flag_url = a.nationality_flag_url;
-  const overall = p.overall ?? coerce(a.attr_sort) ?? coerce(a.overall) ?? null;
+  const overall = p.overall ?? coerce(a.overall) ?? coerce(a.attr_sort) ?? coerce(a.attr_oa) ?? null;
   if (overall != null) out.overall = overall;
-  const pace = coerce(a.Pace);
+  const pace = coerce(a.Pace) ?? coerce(a.attr_pac) ?? coerce(a.pac);
   if (pace != null) out.Pace = pace;
-  const passing = coerce(a.Passing);
+  const passing = coerce(a.Passing) ?? coerce(a.attr_pas) ?? coerce(a.passing);
   if (passing != null) out.Passing = passing;
-  const physical = coerce(a.Physical);
+  const physical = coerce(a.Physical) ?? coerce(a.attr_phy) ?? coerce(a.physical);
   if (physical != null) out.Physical = physical;
-  const positions = p.positions ?? (a.positions as string) ?? null;
+  const positions = p.positions ?? (a.positions as string) ?? (a.player_positions as string) ?? null;
   if (positions) out.positions = positions;
-  const potential = p.potential ?? coerce(a.potential) ?? null;
+  const potential = p.potential ?? coerce(a.potential) ?? coerce(a.attr_pt) ?? null;
   if (potential != null) out.potential = potential;
-  const shooting = coerce(a.Shooting);
+  const shooting = coerce(a.Shooting) ?? coerce(a.attr_sho) ?? coerce(a.shooting);
   if (shooting != null) out.Shooting = shooting;
   const sofifaId = p.sofifa_id ?? (a.sofifa_id as string) ?? null;
   if (sofifaId) out.sofifa_id = sofifaId;
@@ -68,8 +68,9 @@ function buildNormalized(p: {
   return out;
 }
 
-// POST /api/admin/football/normalize-attributes?year=2023
-// Normalises one FIFA year at a time to avoid serverless timeouts
+// POST /api/admin/football/normalize-attributes?year=2023[&test=1]
+// Normalises one FIFA year at a time to avoid serverless timeouts.
+// Add &test=1 to process just one player and return the full error for debugging.
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -83,15 +84,89 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Provide a valid year (not 2026)" }, { status: 400 });
     }
 
+    const testMode = req.nextUrl.searchParams.get("test") === "1";
+
     const service = createServiceClient();
-    const { data, error } = await service
+    const query = service
       .from("sofifa_players")
       .select("sofifa_id, fifa_year, name, positions, club, league, overall, potential, age, image_url, nationality, attributes")
       .eq("fifa_year", year);
 
+    const { data, error } = testMode ? await query.limit(3) : await query;
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!data || data.length === 0) return NextResponse.json({ ok: true, year, updated: 0 });
 
+    // --- Test mode: try a single upsert and return the full Supabase response ---
+    if (testMode) {
+      const p = data[0];
+      const normalized = buildNormalized(p as Parameters<typeof buildNormalized>[0]);
+
+      // Try UPDATE first
+      const updateRes = await service
+        .from("sofifa_players")
+        .update({ attributes: normalized })
+        .eq("sofifa_id", p.sofifa_id)
+        .eq("fifa_year", p.fifa_year)
+        .select("sofifa_id, fifa_year");
+
+      // Also try UPSERT with full row
+      const upsertRow = {
+        sofifa_id: p.sofifa_id,
+        fifa_year: p.fifa_year,
+        name: p.name,
+        positions: p.positions,
+        club: p.club,
+        league: p.league,
+        overall: p.overall,
+        potential: p.potential,
+        age: p.age,
+        image_url: p.image_url,
+        nationality: p.nationality,
+        attributes: normalized,
+      };
+      const upsertRes = await service
+        .from("sofifa_players")
+        .upsert([upsertRow], { onConflict: "sofifa_id,fifa_year" });
+
+      return NextResponse.json({
+        testMode: true,
+        year,
+        player: {
+          sofifa_id: p.sofifa_id,
+          name: p.name,
+          fifa_year: p.fifa_year,
+          originalAttrKeys: Object.keys((p.attributes as Record<string, unknown>) ?? {}),
+        },
+        normalizedKeys: Object.keys(normalized),
+        normalizedSample: normalized,
+        updateResult: {
+          data: updateRes.data,
+          error: updateRes.error ? {
+            message: updateRes.error.message,
+            code: (updateRes.error as Record<string, unknown>).code,
+            details: (updateRes.error as Record<string, unknown>).details,
+            hint: (updateRes.error as Record<string, unknown>).hint,
+          } : null,
+          status: updateRes.status,
+          count: updateRes.count,
+        },
+        upsertResult: {
+          error: upsertRes.error ? {
+            message: upsertRes.error.message,
+            code: (upsertRes.error as Record<string, unknown>).code,
+            details: (upsertRes.error as Record<string, unknown>).details,
+            hint: (upsertRes.error as Record<string, unknown>).hint,
+          } : null,
+          status: upsertRes.status,
+          count: upsertRes.count,
+        },
+      });
+    }
+
+    // --- Normal mode: upsert all rows with normalized attributes ---
+    // Use upsert (INSERT ON CONFLICT UPDATE) instead of plain UPDATE.
+    // This works because we know the row exists (we just selected it).
     const rows = data.map((p) => ({
       sofifa_id: p.sofifa_id,
       fifa_year: p.fifa_year,
@@ -107,7 +182,6 @@ export async function POST(req: NextRequest) {
       attributes: buildNormalized(p as Parameters<typeof buildNormalized>[0]),
     }));
 
-    // Run updates in parallel batches of 50
     let updated = 0;
     let failed = 0;
     let firstError: string | null = null;
@@ -119,9 +193,7 @@ export async function POST(req: NextRequest) {
         chunk.map((row) =>
           service
             .from("sofifa_players")
-            .update({ attributes: row.attributes })
-            .eq("sofifa_id", row.sofifa_id)
-            .eq("fifa_year", row.fifa_year)
+            .upsert([row], { onConflict: "sofifa_id,fifa_year" })
         )
       );
       for (const { error: upErr } of results) {
