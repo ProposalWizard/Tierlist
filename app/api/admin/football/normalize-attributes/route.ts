@@ -144,9 +144,7 @@ export async function POST(req: NextRequest) {
           data: updateRes.data,
           error: updateRes.error ? {
             message: updateRes.error.message,
-            code: (updateRes.error as Record<string, unknown>).code,
-            details: (updateRes.error as Record<string, unknown>).details,
-            hint: (updateRes.error as Record<string, unknown>).hint,
+            ...(updateRes.error as unknown as Record<string, unknown>),
           } : null,
           status: updateRes.status,
           count: updateRes.count,
@@ -154,9 +152,7 @@ export async function POST(req: NextRequest) {
         upsertResult: {
           error: upsertRes.error ? {
             message: upsertRes.error.message,
-            code: (upsertRes.error as Record<string, unknown>).code,
-            details: (upsertRes.error as Record<string, unknown>).details,
-            hint: (upsertRes.error as Record<string, unknown>).hint,
+            ...(upsertRes.error as unknown as Record<string, unknown>),
           } : null,
           status: upsertRes.status,
           count: upsertRes.count,
