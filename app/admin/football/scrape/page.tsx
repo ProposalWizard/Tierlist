@@ -37,6 +37,8 @@ export default function ScrapeSofifaPage() {
   const [dbStats, setDbStats] = useState<
     { fifa_year: number; count: number }[] | null
   >(null);
+  const [normErrors, setNormErrors] = useState<string[]>([]);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
   async function testConnection() {
     setStatus("Testing connection to SoFIFA...");
@@ -234,8 +236,26 @@ export default function ScrapeSofifaPage() {
 
       {/* Status bar */}
       {status && (
-        <div className="bg-gray-900 border border-gray-700 rounded p-3 mb-6 text-sm font-mono">
+        <div className="bg-gray-900 border border-gray-700 rounded p-3 mb-3 text-sm font-mono">
           {status}
+        </div>
+      )}
+
+      {/* Normalisation errors */}
+      {normErrors.length > 0 && (
+        <div className="bg-red-950 border border-red-700 rounded p-3 mb-3 text-sm font-mono space-y-1">
+          <div className="text-red-400 font-semibold mb-1">Normalisation errors:</div>
+          {normErrors.map((e, i) => <div key={i} className="text-red-300">{e}</div>)}
+        </div>
+      )}
+
+      {/* Debug test result */}
+      {testResult && (
+        <div className="bg-gray-900 border border-teal-700 rounded p-3 mb-3">
+          <div className="text-teal-400 text-sm font-semibold mb-2">Debug test result:</div>
+          <pre className="text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap">{
+            (() => { try { return JSON.stringify(JSON.parse(testResult), null, 2); } catch { return testResult; } })()
+          }</pre>
         </div>
       )}
 
@@ -259,27 +279,50 @@ export default function ScrapeSofifaPage() {
             const years = Array.from({ length: 19 }, (_, i) => 2007 + i); // 2007–2025
             let totalUpdated = 0;
             let totalFailed = 0;
+            const errs: string[] = [];
+            setNormErrors([]);
+            setTestResult(null);
             for (const yr of years) {
-              setStatus(`Normalising ${yr}...`);
+              setStatus(`Normalising ${yr >= 2024 ? "FC" : "FIFA"} ${String(yr % 100).padStart(2, "0")} (${yr})...`);
               try {
                 const res = await fetch(`/api/admin/football/normalize-attributes?year=${yr}`, { method: "POST" });
                 const text = await res.text();
-                let data: { ok?: boolean; updated?: number; failed?: number; error?: string };
-                try { data = JSON.parse(text); } catch { setStatus(`Year ${yr} — server error: ${text.slice(0, 200)}`); continue; }
-                if (data.error) { setStatus(`Year ${yr} error: ${data.error}`); continue; }
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if ((data as any).firstError) setStatus(`Year ${yr}: ${data.updated} ok, ${data.failed} failed — ${(data as any).firstError}`);
+                let data: any;
+                try { data = JSON.parse(text); } catch { errs.push(`${yr}: server returned non-JSON: ${text.slice(0, 100)}`); setNormErrors([...errs]); continue; }
+                if (data.error) { errs.push(`${yr} error: ${data.error}`); setNormErrors([...errs]); continue; }
+                if (data.firstError) errs.push(`${yr}: ${data.updated} ok, ${data.failed} failed — ${data.firstError}`);
                 totalUpdated += data.updated ?? 0;
                 totalFailed += data.failed ?? 0;
               } catch (e) {
-                setStatus(`Year ${yr} fetch failed: ${e}`);
+                errs.push(`${yr} fetch failed: ${e}`);
               }
+              setNormErrors([...errs]);
             }
-            setStatus(`Done! Updated ${totalUpdated} players total, ${totalFailed} failed.`);
+            setStatus(`Done! Updated ${totalUpdated.toLocaleString()} players, ${totalFailed.toLocaleString()} failed.`);
           }}
           className="px-4 py-2 bg-amber-700 rounded hover:bg-amber-600 text-sm font-medium"
         >
           Normalise Attributes (non-FC26)
+        </button>
+        <button
+          onClick={async () => {
+            const yr = Number(prompt("Test year (e.g. 2023 for FIFA 23):", "2023"));
+            if (!yr) return;
+            setStatus(`Testing single-player update for ${yr}...`);
+            setTestResult(null);
+            try {
+              const res = await fetch(`/api/admin/football/normalize-attributes?year=${yr}&test=1`, { method: "POST" });
+              const text = await res.text();
+              setStatus(`Test response received (${res.status})`);
+              setTestResult(text);
+            } catch (e) {
+              setStatus(`Test fetch failed: ${e}`);
+            }
+          }}
+          className="px-4 py-2 bg-teal-700 rounded hover:bg-teal-600 text-sm font-medium"
+        >
+          Debug: Test 1 Player Update
         </button>
       </div>
 
