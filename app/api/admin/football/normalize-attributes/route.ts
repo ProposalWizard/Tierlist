@@ -85,14 +85,18 @@ export async function POST(req: NextRequest) {
     }
 
     const testMode = req.nextUrl.searchParams.get("test") === "1";
+    const offset = parseInt(req.nextUrl.searchParams.get("offset") ?? "0", 10);
+    const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "500", 10), 1000);
 
     const service = createServiceClient();
-    const query = service
+    const baseQuery = service
       .from("sofifa_players")
       .select("sofifa_id, fifa_year, name, positions, club, league, overall, potential, age, image_url, nationality, attributes")
       .eq("fifa_year", year);
 
-    const { data, error } = testMode ? await query.limit(3) : await query;
+    const { data, error } = testMode
+      ? await baseQuery.limit(3)
+      : await baseQuery.range(offset, offset + limit - 1);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!data || data.length === 0) return NextResponse.json({ ok: true, year, updated: 0 });
@@ -170,7 +174,7 @@ export async function POST(req: NextRequest) {
     let updated = 0;
     let failed = 0;
     let firstError: string | null = null;
-    const PARALLEL = 50;
+    const PARALLEL = 20;
 
     for (let i = 0; i < rows.length; i += PARALLEL) {
       const chunk = rows.slice(i, i + PARALLEL);
@@ -193,7 +197,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, year, updated, failed, firstError });
+    const hasMore = data.length === limit;
+    return NextResponse.json({ ok: true, year, updated, failed, firstError, offset, limit, count: data.length, hasMore });
   } catch (err) {
     console.error("[normalize-attributes]", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
