@@ -107,19 +107,34 @@ export async function POST(req: NextRequest) {
       attributes: buildNormalized(p as Parameters<typeof buildNormalized>[0]),
     }));
 
-    // Upsert in chunks of 200
+    // Run updates in parallel batches of 50
     let updated = 0;
     let failed = 0;
-    for (let i = 0; i < rows.length; i += 200) {
-      const chunk = rows.slice(i, i + 200);
-      const { error: upErr } = await service
-        .from("sofifa_players")
-        .upsert(chunk, { onConflict: "sofifa_id,fifa_year" });
-      if (upErr) { failed += chunk.length; }
-      else { updated += chunk.length; }
+    let firstError: string | null = null;
+    const PARALLEL = 50;
+
+    for (let i = 0; i < rows.length; i += PARALLEL) {
+      const chunk = rows.slice(i, i + PARALLEL);
+      const results = await Promise.all(
+        chunk.map((row) =>
+          service
+            .from("sofifa_players")
+            .update({ attributes: row.attributes })
+            .eq("sofifa_id", row.sofifa_id)
+            .eq("fifa_year", row.fifa_year)
+        )
+      );
+      for (const { error: upErr } of results) {
+        if (upErr) {
+          failed++;
+          if (!firstError) firstError = upErr.message;
+        } else {
+          updated++;
+        }
+      }
     }
 
-    return NextResponse.json({ ok: true, year, updated, failed });
+    return NextResponse.json({ ok: true, year, updated, failed, firstError });
   } catch (err) {
     console.error("[normalize-attributes]", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
