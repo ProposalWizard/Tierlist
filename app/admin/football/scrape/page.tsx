@@ -255,16 +255,25 @@ export default function ScrapeSofifaPage() {
         </button>
         <button
           onClick={async () => {
-            if (!confirm("This will rewrite the attributes for every non-FC26 player to match the FC26 format (19 fields). Continue?")) return;
-            setStatus("Normalising attributes — this may take a minute...");
-            try {
-              const res = await fetch("/api/admin/football/normalize-attributes", { method: "POST" });
-              const data = await res.json();
-              if (data.error) { setStatus(`Error: ${data.error}`); return; }
-              setStatus(`Done! Updated ${data.updated} players, ${data.failed} failed.`);
-            } catch (e) {
-              setStatus(`Error: ${e}`);
+            if (!confirm("This will rewrite the attributes for every non-FC26 player to match the FC26 format. It processes one year at a time. Continue?")) return;
+            const years = Array.from({ length: 19 }, (_, i) => 2007 + i); // 2007–2025
+            let totalUpdated = 0;
+            let totalFailed = 0;
+            for (const yr of years) {
+              setStatus(`Normalising ${yr}...`);
+              try {
+                const res = await fetch(`/api/admin/football/normalize-attributes?year=${yr}`, { method: "POST" });
+                const text = await res.text();
+                let data: { ok?: boolean; updated?: number; failed?: number; error?: string };
+                try { data = JSON.parse(text); } catch { setStatus(`Year ${yr} — server error: ${text.slice(0, 200)}`); continue; }
+                if (data.error) { setStatus(`Year ${yr} error: ${data.error}`); continue; }
+                totalUpdated += data.updated ?? 0;
+                totalFailed += data.failed ?? 0;
+              } catch (e) {
+                setStatus(`Year ${yr} fetch failed: ${e}`);
+              }
             }
+            setStatus(`Done! Updated ${totalUpdated} players total, ${totalFailed} failed.`);
           }}
           className="px-4 py-2 bg-amber-700 rounded hover:bg-amber-600 text-sm font-medium"
         >
