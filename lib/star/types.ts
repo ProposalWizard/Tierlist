@@ -180,4 +180,5 @@ export type StarPhase =
   | "trophies"
   | "contract-renewal"
   | "dilemma"
+  | "relationship-game"
   | "season-transfer";

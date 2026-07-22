@@ -1,5 +1,6 @@
 "use client";
 import type { CareerState } from "@/lib/star/types";
+import type { RelationshipKind } from "./RelationshipMinigame";
 
 interface Props {
   career: CareerState;
@@ -10,19 +11,24 @@ interface Props {
   onOpenTrophies: () => void;
   onOpenContract: () => void;
   onUseDrink: (id: "basic" | "premium" | "elite") => void;
+  onPlayRelationshipGame: (kind: RelationshipKind) => void;
 }
 
+const TRAINING_ENERGY = 15;
+
 export default function LifeScreen({
-  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink,
+  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink, onPlayRelationshipGame,
 }: Props) {
+  const canPlay = career.energy >= TRAINING_ENERGY;
   return (
     <div className="mt-2 space-y-3">
       <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
-        <RelationshipRow label="Boss" value={career.relationships.boss} icon="💼" />
-        <RelationshipRow label="Team" value={career.relationships.team} icon="👕" />
-        <RelationshipRow label="Fans" value={career.relationships.fans} icon="🧣" />
-        <RelationshipRow label="Sponsors" value={career.relationships.sponsors} icon="🤝" />
-        <RelationshipRow label="Happiness" value={career.happiness} icon="😊" />
+        <RelationshipRow label="Boss" value={career.relationships.boss} icon="💼" onIconClick={canPlay ? () => onPlayRelationshipGame("boss") : undefined} />
+        <RelationshipRow label="Team" value={career.relationships.team} icon="👕" onIconClick={canPlay ? () => onPlayRelationshipGame("team") : undefined} />
+        <RelationshipRow label="Fans" value={career.relationships.fans} icon="🧣" onIconClick={canPlay ? () => onPlayRelationshipGame("fans") : undefined} />
+        <RelationshipRow label="Sponsors" value={career.relationships.sponsors} icon="🤝" onIconClick={canPlay ? () => onPlayRelationshipGame("sponsors") : undefined} />
+        <RelationshipRow label="Happiness" value={career.happiness} icon="😊" onIconClick={canPlay ? () => onPlayRelationshipGame("happiness") : undefined} />
+        <div className="text-[9px] text-center text-emerald-300 mt-1">Tap an emoji to play a minigame and raise it (★{TRAINING_ENERGY} energy)</div>
       </div>
 
       <div className="grid grid-cols-4 gap-2">
@@ -82,8 +88,9 @@ export default function LifeScreen({
   );
 }
 
-function RelationshipRow({ label, value, icon }: { label: string; value: number; icon: string }) {
+function RelationshipRow({ label, value, icon, onIconClick }: { label: string; value: number; icon: string; onIconClick?: () => void }) {
   const color = value >= 70 ? "bg-emerald-500" : value >= 40 ? "bg-yellow-500" : "bg-red-500";
+  const IconEl = onIconClick ? "button" : "div";
   return (
     <div className="flex items-center gap-2 mb-2 last:mb-0">
       <div className={`relative flex-1 h-9 rounded-lg overflow-hidden bg-gray-700 border border-gray-600`}>
@@ -93,7 +100,12 @@ function RelationshipRow({ label, value, icon }: { label: string; value: number;
           <span className="ml-2 font-black text-white text-xs bg-black/40 rounded-full px-2">{value}</span>
         </div>
       </div>
-      <div className="w-9 h-9 rounded-lg bg-gray-700 border border-gray-600 flex items-center justify-center text-xl">{icon}</div>
+      <IconEl
+        onClick={onIconClick}
+        className={`w-9 h-9 rounded-lg bg-gray-700 border border-gray-600 flex items-center justify-center text-xl transition ${
+          onIconClick ? "hover:bg-emerald-600 hover:border-emerald-400 cursor-pointer active:scale-90" : "cursor-default opacity-60"
+        }`}
+      >{icon}</IconEl>
     </div>
   );
 }

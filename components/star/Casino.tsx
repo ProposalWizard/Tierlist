@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Props {
   bankStart: number;
@@ -96,13 +96,15 @@ function TopBar({ bank, bet, onExit, onChangeBet }: CasinoGameProps) {
 }
 
 // ---------- BLACKJACK ----------
-type Card = { rank: string; value: number };
+type Card = { rank: string; value: number; suit: "♥" | "♠" | "♦" | "♣" };
 const DECK: string[] = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const SUITS: Array<"♥" | "♠" | "♦" | "♣"> = ["♥", "♠", "♦", "♣"];
 
 function drawCard(): Card {
   const r = DECK[Math.floor(Math.random() * DECK.length)];
   const v = r === "A" ? 11 : ["J", "Q", "K"].includes(r) ? 10 : parseInt(r, 10);
-  return { rank: r, value: v };
+  const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
+  return { rank: r, value: v, suit };
 }
 
 function handValue(cards: Card[]): number {
@@ -115,43 +117,65 @@ function handValue(cards: Card[]): number {
 function Blackjack(props: CasinoGameProps) {
   const [player, setPlayer] = useState<Card[]>([drawCard(), drawCard()]);
   const [dealer, setDealer] = useState<Card[]>([drawCard(), drawCard()]);
-  const [phase, setPhase] = useState<"play" | "reveal">("play");
+  const [revealedDealerCount, setRevealedDealerCount] = useState(1); // second card hidden initially
+  const [phase, setPhase] = useState<"play" | "dealer-turn" | "done">("play");
   const [message, setMessage] = useState("");
-  const [inRound, setInRound] = useState(true);
+  const initialised = useRef(false);
+
+  useEffect(() => {
+    if (!initialised.current) {
+      initialised.current = true;
+      props.onSetBank(props.bank - props.bet);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startRound = () => {
     setPlayer([drawCard(), drawCard()]);
     setDealer([drawCard(), drawCard()]);
+    setRevealedDealerCount(1);
     setPhase("play");
     setMessage("");
-    setInRound(true);
     props.onSetBank(props.bank - props.bet);
   };
 
-  useEffect(() => {
-    // On initial mount, subtract bet
-    props.onSetBank(props.bank - props.bet);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const hit = () => {
+    if (phase !== "play") return;
     const next = [...player, drawCard()];
     setPlayer(next);
     if (handValue(next) > 21) {
-      setPhase("reveal");
+      // Bust — reveal dealer card and end
+      setRevealedDealerCount(dealer.length);
       setMessage("BUST!");
-      setInRound(false);
+      setPhase("done");
     }
   };
 
-  const hold = () => {
+  const hold = async () => {
+    if (phase !== "play") return;
+    setPhase("dealer-turn");
+    // Step 1: reveal dealer's second card after brief pause
+    await new Promise((r) => setTimeout(r, 700));
+    setRevealedDealerCount(2);
+    await new Promise((r) => setTimeout(r, 900));
+
+    // Step 2: dealer draws until 17+, one card at a time with delay
     let d = [...dealer];
-    while (handValue(d) < 17) d.push(drawCard());
-    setDealer(d);
-    setPhase("reveal");
+    while (handValue(d) < 17) {
+      d = [...d, drawCard()];
+      setDealer(d);
+      setRevealedDealerCount(d.length);
+      await new Promise((r) => setTimeout(r, 900));
+    }
+
+    // Step 3: decide result after a short beat
+    await new Promise((r) => setTimeout(r, 400));
     const p = handValue(player);
     const dv = handValue(d);
-    if (dv > 21 || p > dv) {
+    if (dv > 21) {
+      setMessage("DEALER BUSTS — YOU WIN!");
+      props.onSetBank(props.bank + props.bet * 2);
+    } else if (p > dv) {
       setMessage("YOU WIN!");
       props.onSetBank(props.bank + props.bet * 2);
     } else if (p === dv) {
@@ -160,29 +184,36 @@ function Blackjack(props: CasinoGameProps) {
     } else {
       setMessage("DEALER WINS");
     }
-    setInRound(false);
+    setPhase("done");
   };
+
+  const done = phase === "done";
+  const showingSecondCard = revealedDealerCount >= 2;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
       <div className="w-full max-w-sm">
         <TopBar {...props} />
-        <div className="relative aspect-[3/4] bg-green-700 rounded-2xl border-4 border-yellow-700 p-4 flex flex-col justify-between">
+        <div className="relative aspect-[3/4] bg-green-700 rounded-2xl border-4 border-yellow-700 p-4 flex flex-col justify-between overflow-hidden">
           <div>
             <div className="text-[10px] font-black uppercase text-yellow-200 mb-2">Dealer</div>
             <div className="flex gap-2">
               {dealer.map((c, i) => (
-                <CardView key={i} card={c} hidden={phase === "play" && i > 0} />
+                <div key={i} className={`transition-all duration-500 ${i === 1 && !showingSecondCard ? "" : "animate-[dealCard_500ms_ease-out]"}`}>
+                  <CardView card={c} hidden={i >= revealedDealerCount} />
+                </div>
               ))}
             </div>
             <div className="text-white font-black mt-1">
-              {phase === "reveal" ? handValue(dealer) : "?"}
+              {showingSecondCard ? handValue(dealer.slice(0, revealedDealerCount)) : "?"}
             </div>
           </div>
 
           {message && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-3xl font-black text-yellow-300 bg-black/60 px-4 py-2 rounded-lg">{message}</div>
+              <div className={`text-3xl font-black text-yellow-300 bg-black/70 px-4 py-2 rounded-lg text-center ${message.includes("WIN") ? "text-emerald-300" : message.includes("BUST") || message.includes("DEALER WINS") ? "text-red-400" : ""}`}>
+                {message}
+              </div>
             </div>
           )}
 
@@ -197,12 +228,16 @@ function Blackjack(props: CasinoGameProps) {
           </div>
         </div>
 
-        {inRound ? (
+        {phase === "play" && (
           <div className="grid grid-cols-2 gap-2 mt-3">
             <button onClick={hold} className="py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black">✕ Hold</button>
             <button onClick={hit} className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">✓ Hit</button>
           </div>
-        ) : (
+        )}
+        {phase === "dealer-turn" && (
+          <div className="mt-3 py-3 text-center text-yellow-200 font-black animate-pulse">Dealer drawing...</div>
+        )}
+        {done && (
           <button
             disabled={props.bank < props.bet}
             onClick={startRound}
@@ -218,23 +253,39 @@ function Blackjack(props: CasinoGameProps) {
 
 function CardView({ card, hidden }: { card: Card; hidden?: boolean }) {
   if (hidden) {
-    return <div className="w-14 h-20 rounded-lg bg-blue-800 border-2 border-white flex items-center justify-center">
-      <div className="w-8 h-14 border border-white/30 rounded" />
-    </div>;
+    return (
+      <div className="w-14 h-20 rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 border-2 border-white flex items-center justify-center shadow-lg">
+        <div className="w-8 h-14 border-2 border-white/30 rounded" />
+      </div>
+    );
   }
-  const red = card.rank === "A" || parseInt(card.rank) % 2 === 0;
+  const red = card.suit === "♥" || card.suit === "♦";
   return (
-    <div className="w-14 h-20 rounded-lg bg-white border-2 border-gray-300 flex flex-col items-center justify-center shadow-lg">
+    <div className="w-14 h-20 rounded-lg bg-white border-2 border-gray-300 flex flex-col items-center justify-center shadow-lg relative">
       <div className={`text-2xl font-black ${red ? "text-red-600" : "text-black"}`}>{card.rank}</div>
-      <div className={`text-lg ${red ? "text-red-600" : "text-black"}`}>{red ? "♥" : "♠"}</div>
+      <div className={`text-lg ${red ? "text-red-600" : "text-black"}`}>{card.suit}</div>
     </div>
   );
 }
 
 // ---------- ROULETTE ----------
+// European roulette (0-36). Numbers laid around a wheel in canonical order.
+const ROULETTE_ORDER = [
+  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23,
+  10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
+];
+const RED_NUMBERS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+
+function isRed(n: number) { return RED_NUMBERS.has(n); }
+function pocketColor(n: number) {
+  if (n === 0) return "#059669"; // green
+  return isRed(n) ? "#dc2626" : "#111827";
+}
+
 function Roulette(props: CasinoGameProps) {
   const [choice, setChoice] = useState<"red" | "black" | "even" | "odd" | number | null>(null);
   const [spinning, setSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
   const [result, setResult] = useState<number | null>(null);
   const [message, setMessage] = useState("");
 
@@ -244,41 +295,99 @@ function Roulette(props: CasinoGameProps) {
     setSpinning(true);
     setResult(null);
     setMessage("");
+
+    // Pick winner + compute rotation.
+    // Each pocket = 360 / 37 degrees. Rotate the wheel so the winning pocket lands under the pointer (top).
+    const winner = Math.floor(Math.random() * 37);
+    const winnerIdx = ROULETTE_ORDER.indexOf(winner);
+    const anglePer = 360 / 37;
+    // Wheel spins clockwise multiple times, then stops with winner at the top pointer.
+    // Base rotation to align winner: 360 - winnerIdx * anglePer
+    const target = 360 - winnerIdx * anglePer;
+    const revolutions = 6 + Math.floor(Math.random() * 3);
+    const finalRotation = wheelRotation + revolutions * 360 + (target - (wheelRotation % 360));
+    setWheelRotation(finalRotation);
+
     setTimeout(() => {
-      const n = Math.floor(Math.random() * 37); // 0-36
-      setResult(n);
+      setResult(winner);
       setSpinning(false);
       let win = 0;
-      const isRed = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].includes(n);
-      if (typeof choice === "number" && choice === n) win = props.bet * 35;
-      else if (choice === "red" && isRed) win = props.bet * 2;
-      else if (choice === "black" && !isRed && n !== 0) win = props.bet * 2;
-      else if (choice === "even" && n !== 0 && n % 2 === 0) win = props.bet * 2;
-      else if (choice === "odd" && n % 2 === 1) win = props.bet * 2;
+      const redWin = isRed(winner);
+      if (typeof choice === "number" && choice === winner) win = props.bet * 35;
+      else if (choice === "red" && redWin) win = props.bet * 2;
+      else if (choice === "black" && !redWin && winner !== 0) win = props.bet * 2;
+      else if (choice === "even" && winner !== 0 && winner % 2 === 0) win = props.bet * 2;
+      else if (choice === "odd" && winner % 2 === 1) win = props.bet * 2;
       if (win > 0) {
         setMessage(`WIN! +★${win - props.bet}`);
         props.onSetBank(props.bank - props.bet + win);
       } else {
         setMessage("Lost!");
       }
-    }, 1800);
+    }, 4500);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
       <div className="w-full max-w-sm">
         <TopBar {...props} />
-        <div className="bg-green-700 border-4 border-yellow-700 rounded-2xl p-4">
-          <div className="aspect-square rounded-full bg-gradient-to-br from-red-800 via-black to-red-800 border-8 border-yellow-600 flex items-center justify-center relative overflow-hidden">
-            <div className={`text-6xl font-black text-white ${spinning ? "animate-spin" : ""}`} style={{ animationDuration: "0.4s" }}>
-              {spinning ? "?" : result ?? "?"}
+
+        {/* Wheel */}
+        <div className="bg-gradient-to-b from-yellow-900 to-yellow-950 border-4 border-yellow-600 rounded-2xl p-4 shadow-2xl">
+          <div className="relative aspect-square">
+            {/* Pointer at top */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+              <svg width="28" height="28" viewBox="0 0 28 28">
+                <path d="M14 0 L28 14 L14 24 L0 14 Z" fill="#fbbf24" stroke="#000" strokeWidth="1.5" />
+              </svg>
+            </div>
+
+            {/* Wheel */}
+            <div
+              className="absolute inset-2 rounded-full border-4 border-yellow-500 shadow-inner overflow-hidden"
+              style={{
+                transform: `rotate(${wheelRotation}deg)`,
+                transition: spinning ? "transform 4500ms cubic-bezier(0.15, 0.6, 0.2, 1)" : "none",
+                background: "conic-gradient(from 0deg, " +
+                  ROULETTE_ORDER.map((n, i) => {
+                    const startPct = (i / 37) * 100;
+                    const endPct = ((i + 1) / 37) * 100;
+                    return `${pocketColor(n)} ${startPct}% ${endPct}%`;
+                  }).join(", ") + ")",
+              }}
+            >
+              {/* Number labels around the ring */}
+              {ROULETTE_ORDER.map((n, i) => {
+                const angle = (i / 37) * 360 + (360 / 74);
+                return (
+                  <div
+                    key={i}
+                    className="absolute top-1/2 left-1/2 text-white font-black text-[8px]"
+                    style={{
+                      transform: `rotate(${angle}deg) translateY(-46%) rotate(90deg)`,
+                      transformOrigin: "center",
+                    }}
+                  >
+                    {n}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Center hub */}
+            <div className="absolute inset-[35%] rounded-full bg-gradient-to-br from-yellow-500 to-yellow-700 border-4 border-yellow-400 shadow-xl flex items-center justify-center">
+              <div className={`text-3xl font-black text-white transition-opacity ${spinning ? "opacity-40" : "opacity-100"}`}>
+                {spinning ? "?" : result ?? "?"}
+              </div>
             </div>
           </div>
+
           {message && (
             <div className={`mt-3 text-center text-xl font-black ${message.includes("WIN") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>
           )}
         </div>
 
+        {/* Bet choices */}
         <div className="mt-3 grid grid-cols-4 gap-1.5">
           {(["red", "black", "even", "odd"] as const).map((c) => (
             <button
@@ -286,21 +395,24 @@ function Roulette(props: CasinoGameProps) {
               disabled={spinning}
               onClick={() => setChoice(c)}
               className={`py-3 rounded font-black text-xs uppercase transition ${
-                choice === c ? (c === "red" ? "bg-red-600" : c === "black" ? "bg-black text-white" : "bg-emerald-500") : "bg-gray-700"
+                choice === c ? (c === "red" ? "bg-red-600" : c === "black" ? "bg-black text-white ring-2 ring-white" : "bg-emerald-500") : "bg-gray-700"
               }`}
             >{c}</button>
           ))}
         </div>
         <div className="mt-2 text-[10px] text-center text-gray-400">Red/Black/Even/Odd: 2x • Single number: 35x</div>
-        <div className="mt-2 grid grid-cols-6 gap-1">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <button
-              key={i}
-              disabled={spinning}
-              onClick={() => setChoice(i + 1)}
-              className={`py-2 rounded text-xs font-black ${choice === i + 1 ? "bg-yellow-500 text-black" : "bg-gray-700"}`}
-            >{i + 1}</button>
-          ))}
+        <div className="mt-2 grid grid-cols-6 gap-1 max-h-24 overflow-y-auto">
+          {Array.from({ length: 37 }).map((_, i) => {
+            const bg = i === 0 ? "bg-emerald-700" : isRed(i) ? "bg-red-700" : "bg-gray-900";
+            return (
+              <button
+                key={i}
+                disabled={spinning}
+                onClick={() => setChoice(i)}
+                className={`py-2 rounded text-xs font-black text-white ${choice === i ? "ring-2 ring-yellow-400" : ""} ${bg}`}
+              >{i}</button>
+            );
+          })}
         </div>
 
         <button
