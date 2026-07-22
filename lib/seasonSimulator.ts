@@ -528,6 +528,11 @@ export function positionFitness(player: DraftPlayer): number {
   // CB at wide mid is OOP — a centre back playing LM or RM has no business there
   if (wideMidFamily.has(assigned) && natural.some(p => p === 'CB')) return 0.68;
 
+  // Fullbacks (RB/LB/RWB/LWB) at wide forward positions are adjacent
+  const wideForwardFamily = new Set(['RW', 'LW']);
+  const fullbackFamily = new Set(['RB', 'LB', 'RWB', 'LWB']);
+  if (wideForwardFamily.has(assigned) && natural.some(p => fullbackFamily.has(p))) return 0.85;
+
   const adjacent: Record<PositionRole, PositionRole[]> = {
     ATT: ['MID'],
     MID: ['ATT', 'DEF'],
