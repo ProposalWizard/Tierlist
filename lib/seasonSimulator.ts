@@ -525,6 +525,8 @@ export function positionFitness(player: DraftPlayer): number {
   // genuine MID↔DEF cross but not the same as a central mid.
   const wideMidFamily = new Set(['LM', 'RM']);
   if (wideMidFamily.has(assigned) && natural.some(p => cdmFamily.has(p))) return 0.85;
+  // CB at wide mid is OOP — a centre back playing LM or RM has no business there
+  if (wideMidFamily.has(assigned) && natural.some(p => p === 'CB')) return 0.68;
 
   const adjacent: Record<PositionRole, PositionRole[]> = {
     ATT: ['MID'],
