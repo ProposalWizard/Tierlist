@@ -88,12 +88,14 @@ export default function DashboardStats({ career }: Props) {
             </div>
           </div>
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-            <div className="font-black text-xs text-white mb-1">NRG Drinks: {career.nrgDrinks}</div>
-            <div className="text-[10px] text-gray-300">Restores energy before a match. Buy on the Life screen (coming soon).</div>
+            <div className="font-black text-xs text-white mb-1">NRG Drinks: {career.nrgDrinks.basic + career.nrgDrinks.premium + career.nrgDrinks.elite}</div>
+            <div className="text-[10px] text-gray-300">Restores energy before a match. Manage on the Life screen.</div>
           </div>
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-            <div className="font-black text-xs text-white mb-1">Boots</div>
-            <div className="text-[10px] text-gray-300">{career.bootsMatches} matches remaining. Basic boots (no bonus).</div>
+            <div className="font-black text-xs text-white mb-1">Boots — {career.currentBoot.name}</div>
+            <div className="text-[10px] text-gray-300">
+              {career.currentBoot.matches} matches remaining · Pace +{career.currentBoot.pace} · Pow +{career.currentBoot.power} · Tec +{career.currentBoot.technique}
+            </div>
           </div>
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
             <div className="font-black text-xs text-white mb-2">Skills</div>

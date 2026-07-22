@@ -87,8 +87,44 @@ export interface MatchStats {
   awayScore: number;
 }
 
+export interface Boot {
+  id: string;
+  name: string;
+  pace: number;
+  power: number;
+  technique: number;
+  matches: number;
+  price: number;
+}
+
+export interface OwnedItem {
+  id: string;
+  name: string;
+  category: "item" | "vehicle" | "property";
+  price: number;
+  lifestyleValue: number;
+}
+
+export interface Girlfriend {
+  name: string;
+  happiness: number;
+  gifts: number;
+}
+
+export interface SponsorDeal {
+  category: string;
+  perMatch: number;
+  active: boolean;
+}
+
+export interface Trophy {
+  season: number;
+  competition: string;
+  club: string;
+}
+
 export interface CareerState {
-  version: 1;
+  version: 2;
   player: StarPlayer;
   skills: Skills;
   relationships: Relationships;
@@ -107,25 +143,41 @@ export interface CareerState {
   league: LeagueTeam[];
   achievements: string[];
   status: "1st Team" | "Substitute" | "Squad";
-  bootsMatches: number;
-  nrgDrinks: number;
+  currentBoot: Boot;
+  nrgDrinks: { basic: number; premium: number; elite: number };
+  ownedItems: OwnedItem[];
+  girlfriend: Girlfriend | null;
+  sponsors: SponsorDeal[];
+  trophies: Trophy[];
   form: number[];
+  kitPrimary: string;
+  kitSecondary: string;
+  homeCity: string;
+  seenDilemmas: string[];
+  ballonDorWins: number;
 }
 
 export type StarPhase =
   | "profile-setup"
   | "dashboard"
-  | "stats"
-  | "contract"
-  | "status"
   | "league"
-  | "fixtures"
   | "life"
-  | "lifestyle"
   | "skills"
   | "training"
   | "pre-match"
   | "match"
   | "post-match"
   | "ballon-dor"
-  | "season-end";
+  | "shop-nrg"
+  | "shop-boots"
+  | "shop-lifestyle"
+  | "casino-menu"
+  | "casino-blackjack"
+  | "casino-roulette"
+  | "casino-slots"
+  | "sponsors"
+  | "achievements"
+  | "trophies"
+  | "contract-renewal"
+  | "dilemma"
+  | "season-transfer";
