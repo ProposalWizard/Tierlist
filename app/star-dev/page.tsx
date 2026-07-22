@@ -1,8 +1,11 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills } from "@/lib/star/types";
+import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem } from "@/lib/star/types";
 import { loadCareer, saveCareer, clearCareer } from "@/lib/star/storage";
-import { buildLeague, buildFixtures, simulateOtherFixtures, updateLeagueWithUserResult, mulberry32 } from "@/lib/star/season";
+import { buildLeague, buildFixtures, simulateOtherFixtures, updateLeagueWithUserResult, mulberry32, sortLeague } from "@/lib/star/season";
+import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
+import { checkNewAchievements } from "@/lib/star/achievements";
+import { BOOTS_CATALOGUE, NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import DashboardShell from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
@@ -13,12 +16,19 @@ import TrainingMinigame from "@/components/star/TrainingMinigame";
 import Match from "@/components/star/Match";
 import PostMatch from "@/components/star/PostMatch";
 import BallonDor from "@/components/star/BallonDor";
+import Shop from "@/components/star/Shop";
+import Casino from "@/components/star/Casino";
+import DilemmaModal from "@/components/star/DilemmaModal";
+import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
+
+const SPONSOR_CATEGORIES = ["Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food", "Cosmetics", "Watch", "Electronics", "Jewelry", "Car"];
 
 function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerState {
   const league = buildLeague(clubs, player.club);
   const fixtures = buildFixtures(clubs, player.club);
+  const starterBoot: Boot = { ...BOOTS_CATALOGUE[0] };
   return {
-    version: 1,
+    version: 2,
     player,
     skills: { pace: 40, power: 40, technique: 40, vision: 40, freeKick: 30 },
     relationships: { boss: 60, team: 60, fans: 40, girlfriend: null, sponsors: 0 },
@@ -35,11 +45,20 @@ function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerState {
     careerStats: { appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0 },
     fixtures,
     league,
-    achievements: [],
+    achievements: ["first-contract"],
     status: "1st Team",
-    bootsMatches: 5,
-    nrgDrinks: 2,
+    currentBoot: starterBoot,
+    nrgDrinks: { basic: 2, premium: 0, elite: 0 },
+    ownedItems: [],
+    girlfriend: null,
+    sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, perMatch: 0, active: false })),
+    trophies: [],
     form: [],
+    kitPrimary: "#ff0000",
+    kitSecondary: "#ffffff",
+    homeCity: "London",
+    seenDilemmas: [],
+    ballonDorWins: 0,
   };
 }
 
@@ -49,8 +68,9 @@ export default function StarDevPage() {
   const [activeNav, setActiveNav] = useState<"league" | "skills" | "life" | "play" | null>(null);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
+  const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
 
-  // Load saved career on mount
   useEffect(() => {
     const saved = loadCareer();
     if (saved) {
@@ -59,7 +79,6 @@ export default function StarDevPage() {
     }
   }, []);
 
-  // Auto-save
   useEffect(() => {
     if (career) saveCareer(career);
   }, [career]);
@@ -70,8 +89,7 @@ export default function StarDevPage() {
     : "Season complete";
 
   const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[]) => {
-    const c = makeInitialCareer(player, clubs);
-    setCareer(c);
+    setCareer(makeInitialCareer(player, clubs));
     setPhase("dashboard");
   }, []);
 
@@ -94,6 +112,11 @@ export default function StarDevPage() {
     setPhase("dashboard");
   }, []);
 
+  const handleBackToLife = useCallback(() => {
+    setActiveNav("life");
+    setPhase("life");
+  }, []);
+
   const handleTrain = useCallback((skill: keyof Skills) => {
     setTrainingSkill(skill);
     setPhase("training");
@@ -103,12 +126,14 @@ export default function StarDevPage() {
     if (!career || !trainingSkill) return;
     const currentVal = career.skills[trainingSkill];
     const gain = Math.min(100 - currentVal, Math.floor(xp / 5));
-    setCareer({
+    const updated: CareerState = {
       ...career,
       skills: { ...career.skills, [trainingSkill]: currentVal + gain },
       energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
       starRating: Math.min(5, career.starRating + gain * 0.005),
-    });
+    };
+    checkAndSetAchievements(updated);
+    setCareer(updated);
     setTrainingSkill(null);
     setPhase("skills");
   }, [career, trainingSkill]);
@@ -118,11 +143,19 @@ export default function StarDevPage() {
     setPhase("match");
   }, [career, nextFixture]);
 
+  const checkAndSetAchievements = (state: CareerState) => {
+    const newlyUnlocked = checkNewAchievements(state);
+    if (newlyUnlocked.length > 0) {
+      state.achievements = [...state.achievements, ...newlyUnlocked];
+      setUnlockedAchievements(newlyUnlocked);
+      setTimeout(() => setUnlockedAchievements([]), 3000);
+    }
+  };
+
   const handleMatchComplete = useCallback((stats: MatchStats) => {
     if (!career || !nextFixture) return;
     setLastMatchStats(stats);
 
-    // Update career state
     const seasonStats = {
       appearances: career.seasonStats.appearances + 1,
       goals: career.seasonStats.goals + stats.goals,
@@ -144,18 +177,10 @@ export default function StarDevPage() {
       ratingCount: career.careerStats.ratingCount + 1,
     };
 
-    // Update league table
-    let league = updateLeagueWithUserResult(
-      career.league,
-      career.player.club,
-      nextFixture.opponent,
-      stats.homeScore,
-      stats.awayScore,
-    );
+    let league = updateLeagueWithUserResult(career.league, career.player.club, nextFixture.opponent, stats.homeScore, stats.awayScore);
     const rng = mulberry32(career.season * 1000 + career.week);
     league = simulateOtherFixtures(league, career.player.club, career.week, rng);
 
-    // Update fixtures list
     const fixtures = career.fixtures.map((f) => {
       if (f === nextFixture) {
         return {
@@ -171,7 +196,24 @@ export default function StarDevPage() {
       return f;
     });
 
-    setCareer({
+    // Boot durability
+    const newBootMatches = Math.max(0, career.currentBoot.matches - 1);
+    const currentBoot = { ...career.currentBoot, matches: newBootMatches };
+
+    // Sponsor progress: raise relationship based on fame + performance
+    const sponsorGain = Math.max(0, Math.floor(stats.fansChange / 3));
+    const newSponsorRel = Math.min(100, career.relationships.sponsors + sponsorGain);
+
+    // Auto-unlock sponsor deals as relationship increases (one deal per ★10 relationship)
+    const dealsUnlocked = Math.floor(newSponsorRel / 10);
+    const sponsors = career.sponsors.map((s, i) => {
+      if (i < dealsUnlocked && !s.active) {
+        return { ...s, active: true, perMatch: 1 + Math.floor(i / 2) };
+      }
+      return s;
+    });
+
+    let next: CareerState = {
       ...career,
       seasonStats,
       careerStats,
@@ -185,14 +227,18 @@ export default function StarDevPage() {
         boss: Math.max(0, Math.min(100, career.relationships.boss + stats.bossChange)),
         team: Math.max(0, Math.min(100, career.relationships.team + stats.teamChange)),
         fans: Math.max(0, Math.min(100, career.relationships.fans + stats.fansChange)),
+        sponsors: newSponsorRel,
       },
+      sponsors,
       starRating: Math.min(5, career.starRating + (stats.rating >= 8 ? 0.03 : stats.rating >= 7 ? 0.01 : 0)),
       fame: career.fame + Math.max(0, Math.floor(stats.fansChange / 2)),
       week: career.week + 1,
-      bootsMatches: Math.max(0, career.bootsMatches - 1),
+      currentBoot,
       form: [stats.rating, ...career.form].slice(0, 5),
-    });
+    };
+    checkAndSetAchievements(next);
 
+    setCareer(next);
     setPhase("post-match");
   }, [career, nextFixture]);
 
@@ -200,22 +246,70 @@ export default function StarDevPage() {
     if (!career) return;
     const remaining = career.fixtures.filter((f) => !f.played).length;
     if (remaining === 0) {
+      // Award league trophy if won
+      const sorted = sortLeague(career.league);
+      if (sorted[0]?.name === career.player.club) {
+        const trophy = { season: career.season, competition: "Premier League", club: career.player.club };
+        setCareer({ ...career, trophies: [...career.trophies, trophy] });
+      }
       setPhase("ballon-dor");
-    } else {
-      setActiveNav(null);
-      setPhase("dashboard");
+      return;
     }
+
+    // 30% chance of a dilemma between weeks
+    const rng = mulberry32(career.week * 131 + career.season);
+    if (rng() < 0.35) {
+      const d = pickDilemma(career, rng);
+      if (d) {
+        setCurrentDilemma(d);
+        setPhase("dilemma");
+        return;
+      }
+    }
+
+    setActiveNav(null);
+    setPhase("dashboard");
   }, [career]);
 
-  const handleBallonDorContinue = useCallback(() => {
+  const handleDilemmaChoose = useCallback((effects: DilemmaEffect) => {
+    if (!career || !currentDilemma) return;
+    let next = applyEffects(career, effects);
+    next.seenDilemmas = [...next.seenDilemmas, currentDilemma.id];
+    checkAndSetAchievements(next);
+    setCareer(next);
+    setCurrentDilemma(null);
+    setActiveNav(null);
+    setPhase("dashboard");
+  }, [career, currentDilemma]);
+
+  const handleBallonDorContinue = useCallback((userWon: boolean) => {
     if (!career) return;
-    // Advance to next season: reset fixtures, age up, reset season stats
     const clubs = career.league.map((t) => t.name);
     const newFixtures = buildFixtures(clubs, career.player.club);
     const newLeague = buildLeague(clubs, career.player.club);
-    setCareer({
+
+    // Contract seasons remaining
+    const seasonsLeft = career.contract.seasonsRemaining - 1;
+
+    // Aging effects — skills decline slightly after 30
+    const ageEffect = (v: number): number => {
+      const newAge = career.player.age + 1;
+      if (newAge >= 34) return Math.max(20, v - 3);
+      if (newAge >= 30) return Math.max(30, v - 1);
+      return v;
+    };
+    const agedSkills: Skills = {
+      pace: ageEffect(career.skills.pace),
+      power: ageEffect(career.skills.power),
+      technique: career.skills.technique, // technique decays slower
+      vision: career.skills.vision,       // vision improves with age; keep steady
+      freeKick: career.skills.freeKick,
+    };
+
+    let next: CareerState = {
       ...career,
       player: { ...career.player, age: career.player.age + 1 },
+      skills: agedSkills,
       season: career.season + 1,
       week: 1,
       fixtures: newFixtures,
@@ -224,9 +318,20 @@ export default function StarDevPage() {
       energy: 100,
       matchFitness: 85,
       form: [],
-    });
-    setActiveNav(null);
-    setPhase("dashboard");
+      contract: { ...career.contract, seasonsRemaining: seasonsLeft },
+      ballonDorWins: career.ballonDorWins + (userWon ? 1 : 0),
+    };
+
+    checkAndSetAchievements(next);
+    setCareer(next);
+
+    // If contract expiring, force renewal
+    if (seasonsLeft <= 0) {
+      setPhase("contract-renewal");
+    } else {
+      setActiveNav(null);
+      setPhase("dashboard");
+    }
   }, [career]);
 
   const handleFullReset = () => {
@@ -237,7 +342,65 @@ export default function StarDevPage() {
     }
   };
 
-  // Render
+  // Shop buys
+  const handleBuyNrg = useCallback((drink: NrgDrink) => {
+    if (!career || career.money < drink.price) return;
+    setCareer({
+      ...career,
+      money: career.money - drink.price,
+      nrgDrinks: { ...career.nrgDrinks, [drink.id]: career.nrgDrinks[drink.id] + 1 },
+    });
+  }, [career]);
+
+  const handleUseDrink = useCallback((id: "basic" | "premium" | "elite") => {
+    if (!career || career.nrgDrinks[id] === 0) return;
+    const drink = NRG_DRINKS.find((d) => d.id === id)!;
+    setCareer({
+      ...career,
+      nrgDrinks: { ...career.nrgDrinks, [id]: career.nrgDrinks[id] - 1 },
+      energy: Math.min(100, career.energy + drink.restore),
+    });
+  }, [career]);
+
+  const handleBuyBoot = useCallback((boot: Boot) => {
+    if (!career || career.money < boot.price) return;
+    setCareer({
+      ...career,
+      money: career.money - boot.price,
+      currentBoot: { ...boot },
+    });
+  }, [career]);
+
+  const handleBuyItem = useCallback((item: OwnedItem) => {
+    if (!career || career.money < item.price || career.ownedItems.some((o) => o.id === item.id)) return;
+    setCareer({
+      ...career,
+      money: career.money - item.price,
+      ownedItems: [...career.ownedItems, item],
+      happiness: Math.min(100, career.happiness + Math.floor(item.lifestyleValue / 3)),
+      fame: career.fame + Math.floor(item.lifestyleValue / 5),
+    });
+  }, [career]);
+
+  const handleCasinoExit = useCallback((finalBank: number) => {
+    if (!career) return;
+    setCareer({ ...career, money: finalBank });
+    setActiveNav("life");
+    setPhase("life");
+  }, [career]);
+
+  const handleContractComplete = useCallback((newContract: CareerState["contract"] | null) => {
+    if (!career) return;
+    if (newContract) {
+      setCareer({ ...career, contract: newContract });
+    } else {
+      // Keep old contract with 0 seasons — will be forced to renew next season anyway
+    }
+    setActiveNav(null);
+    setPhase("dashboard");
+  }, [career]);
+
+  // ---------- RENDER ----------
   if (phase === "profile-setup" || !career) {
     return <ProfileSetup onComplete={handleProfileComplete} />;
   }
@@ -247,7 +410,6 @@ export default function StarDevPage() {
   }
 
   if (phase === "match" && nextFixture) {
-    // Get opponent strength from league
     const opp = career.league.find((t) => t.name === nextFixture.opponent);
     return (
       <Match
@@ -273,6 +435,36 @@ export default function StarDevPage() {
   if (phase === "ballon-dor") {
     return <BallonDor career={career} onContinue={handleBallonDorContinue} />;
   }
+
+  if (phase === "dilemma" && currentDilemma) {
+    return <DilemmaModal dilemma={currentDilemma} onChoose={handleDilemmaChoose} />;
+  }
+
+  if (phase === "contract-renewal") {
+    return <ContractRenewal career={career} onComplete={handleContractComplete} />;
+  }
+
+  if (phase === "shop-nrg" || phase === "shop-boots" || phase === "shop-lifestyle") {
+    const kind = phase === "shop-nrg" ? "nrg" : phase === "shop-boots" ? "boots" : "lifestyle";
+    return (
+      <Shop
+        career={career}
+        kind={kind}
+        onBack={handleBackToLife}
+        onBuyNrg={handleBuyNrg}
+        onBuyBoot={handleBuyBoot}
+        onBuyItem={handleBuyItem}
+      />
+    );
+  }
+
+  if (phase === "casino-menu") {
+    return <Casino bankStart={career.money} onExit={handleCasinoExit} />;
+  }
+
+  if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToLife} />;
+  if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToLife} />;
+  if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToLife} />;
 
   // Pre-match confirmation
   if (phase === "pre-match" && nextFixture) {
@@ -301,6 +493,12 @@ export default function StarDevPage() {
                 <div className="font-black text-emerald-300 text-lg">{Math.round(career.matchFitness)}%</div>
               </div>
             </div>
+            <div className="mt-3 text-[10px] text-gray-400">
+              Boot: <span className="text-white font-bold">{career.currentBoot.name}</span> ({career.currentBoot.matches} matches left)
+            </div>
+            {career.currentBoot.matches === 0 && (
+              <div className="mt-1 text-red-300 text-[10px] font-bold">⚠ Boots need replacing</div>
+            )}
             {career.energy < 40 && (
               <div className="mt-3 text-red-300 text-xs font-bold">⚠ Low energy — you may underperform</div>
             )}
@@ -314,7 +512,6 @@ export default function StarDevPage() {
     );
   }
 
-  // Dashboard-shell wrapped screens
   return (
     <DashboardShell
       career={career}
@@ -323,6 +520,11 @@ export default function StarDevPage() {
       activeNav={activeNav}
       nextMatchLabel={nextMatchLabel}
     >
+      {unlockedAchievements.length > 0 && (
+        <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
+          ⭐ Achievement Unlocked: {unlockedAchievements[0]} ⭐
+        </div>
+      )}
       {phase === "dashboard" && <DashboardStats career={career} />}
       {phase === "league" && (
         <div>
@@ -333,7 +535,16 @@ export default function StarDevPage() {
       {phase === "life" && (
         <div>
           <BackChip onBack={handleBackToDashboard} />
-          <LifeScreen career={career} />
+          <LifeScreen
+            career={career}
+            onOpenShop={(kind) => setPhase(kind === "nrg" ? "shop-nrg" : kind === "boots" ? "shop-boots" : "shop-lifestyle")}
+            onOpenCasino={() => setPhase("casino-menu")}
+            onOpenSponsors={() => setPhase("sponsors")}
+            onOpenAchievements={() => setPhase("achievements")}
+            onOpenTrophies={() => setPhase("trophies")}
+            onOpenContract={() => setPhase("contract-renewal")}
+            onUseDrink={handleUseDrink}
+          />
         </div>
       )}
       {phase === "skills" && (

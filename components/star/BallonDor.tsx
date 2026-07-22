@@ -4,7 +4,7 @@ import type { CareerState } from "@/lib/star/types";
 
 interface Props {
   career: CareerState;
-  onContinue: () => void;
+  onContinue: (userWon: boolean) => void;
 }
 
 interface Nominee {
@@ -162,7 +162,7 @@ export default function BallonDor({ career, onContinue }: Props) {
 
             {reveal >= nominees.length && (
               <button
-                onClick={onContinue}
+                onClick={() => onContinue(winner?.isUser ?? false)}
                 className="mt-4 w-full py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black rounded-xl font-black transition hover:from-yellow-400"
               >
                 Continue to Next Season →
