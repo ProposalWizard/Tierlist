@@ -465,11 +465,11 @@ export function positionFitness(player: DraftPlayer): number {
   const natural = (player.positions || '').split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
 
   if (natural.length === 0) return 1.0;
-
   if (natural.includes(assigned)) return 1.0;
 
-  // Winger ↔ wide mid natural equivalence, but only when the player has no fullback
-  // on that side (a pure LM/LW is essentially a winger; LM who also plays LB is a utility player)
+  // Conditional natural equivalences — treated as 100%
+  // LM↔LW only when the player has no fullback on that side (pure winger vs utility player)
+  // LB↔LWB and RB↔RWB always equivalent
   const conditionalNatural: Array<{ pair: [string, string]; excludes: string[] }> = [
     { pair: ['LM', 'LW'], excludes: ['LB', 'LWB'] },
     { pair: ['RM', 'RW'], excludes: ['RB', 'RWB'] },
@@ -482,64 +482,123 @@ export function positionFitness(player: DraftPlayer): number {
     if ((assigned === posA && natural.includes(posB)) || (assigned === posB && natural.includes(posA))) return 1.0;
   }
 
-  // CDM/DM has its own fitness hierarchy. The general MID bucket would wrongly
-  // treat CAM/LM/RM as same-role (0.98) — only CM/DM family positions are truly
-  // same-role for a defensive mid. CAM and CB are medium cross-role; wide mids
-  // and fullbacks drop further to adjacent. Always uses the best natural position.
-  if (assigned === 'CDM' || assigned === 'DM') {
-    const cdmSameRole = new Set(['CM', 'CDM', 'DM', 'LDM', 'RDM']);
-    const cdmMedium   = new Set(['CAM', 'CB', 'SW']);
-    const cdmAdjacent = new Set(['LM', 'RM', 'LW', 'RW', 'LB', 'RB', 'LWB', 'RWB', 'ST', 'CF', 'SS']);
-    if (natural.some(p => cdmSameRole.has(p))) return 0.98;
-    if (natural.some(p => cdmMedium.has(p)))   return 0.93;
-    if (natural.some(p => cdmAdjacent.has(p))) return 0.85;
-    return 0.68;
-  }
-
-  const assignedRole = classifyPosition(assigned);
-
-  // CDM/DM naturals are not "same role" at LM, RM, or CAM — they get downgraded
-  // to medium (CAM) or adjacent (LM/RM) below. Filter them out of the same-role
-  // check so a CDM-only player doesn't incorrectly get 0.98 at those positions.
-  // If the player also has e.g. CM natural, CM still qualifies as same-role and
-  // the filter has no effect — the best natural position always wins.
-  const cdmFamily = new Set(['CDM', 'DM', 'LDM', 'RDM']);
-  const cdmDowngradedFor = new Set(['LM', 'RM', 'CAM', 'LAM', 'RAM']);
-  const sameRoleNaturals = cdmDowngradedFor.has(assigned)
-    ? natural.filter(p => !cdmFamily.has(p))
-    : natural;
-  if (sameRoleNaturals.some(p => classifyPosition(p) === assignedRole)) return 0.98;
-
-  const mediumPairs: [string[], string[]][] = [
-    [['LB', 'LWB'], ['LM']],
-    [['RB', 'RWB'], ['RM']],
-    [['CDM', 'DM', 'LDM', 'RDM'], ['CB', 'SW']],           // CDM ↔ CB
-    [['CDM', 'DM', 'LDM', 'RDM'], ['CAM', 'LAM', 'RAM']],  // CDM ↔ CAM
-  ];
-  for (const [groupA, groupB] of mediumPairs) {
-    if (groupA.includes(assigned) && natural.some(p => groupB.includes(p))) return 0.93;
-    if (groupB.includes(assigned) && natural.some(p => groupA.includes(p))) return 0.93;
-  }
-
-  // CDM/DM natural at wide mid (LM/RM) is adjacent role — closer than a
-  // genuine MID↔DEF cross but not the same as a central mid.
-  const wideMidFamily = new Set(['LM', 'RM']);
-  if (wideMidFamily.has(assigned) && natural.some(p => cdmFamily.has(p))) return 0.85;
-  // CB at wide mid is OOP — a centre back playing LM or RM has no business there
-  if (wideMidFamily.has(assigned) && natural.some(p => p === 'CB')) return 0.68;
-
-  // Fullbacks (RB/LB/RWB/LWB) at wide forward positions are adjacent
-  const wideForwardFamily = new Set(['RW', 'LW']);
-  const fullbackFamily = new Set(['RB', 'LB', 'RWB', 'LWB']);
-  if (wideForwardFamily.has(assigned) && natural.some(p => fullbackFamily.has(p))) return 0.85;
-
-  const adjacent: Record<PositionRole, PositionRole[]> = {
-    ATT: ['MID'],
-    MID: ['ATT', 'DEF'],
-    DEF: ['MID'],
-    GK: [],
+  // Return the highest fitness value across all natural positions.
+  // Positions not in the map default to 0.68 (OOP).
+  const best = (map: Record<string, number>): number => {
+    let max = 0.68;
+    for (const p of natural) {
+      const v = map[p];
+      if (v !== undefined && v > max) max = v;
+    }
+    return max;
   };
-  if (natural.some(p => adjacent[assignedRole]?.includes(classifyPosition(p)))) return 0.85;
+
+  switch (assigned) {
+    case 'CB':
+      return best({
+        RB: 0.98, LB: 0.98, RWB: 0.98, LWB: 0.98,
+        CDM: 0.93,
+        CM: 0.85, CAM: 0.85, LM: 0.85, RM: 0.85,
+      });
+
+    case 'RB':
+      return best({
+        // RWB → 100% via conditional natural pair
+        CB: 0.98, LB: 0.98, LWB: 0.98,
+        CDM: 0.93, RM: 0.93,
+        CM: 0.85, CAM: 0.85, RW: 0.85,
+      });
+
+    case 'LB':
+      return best({
+        // LWB → 100% via conditional natural pair
+        CB: 0.98, RB: 0.98, RWB: 0.98,
+        CDM: 0.93, LM: 0.93,
+        CM: 0.85, CAM: 0.85, LW: 0.85,
+      });
+
+    case 'RWB':
+      return best({
+        // RB → 100% via conditional natural pair
+        LB: 0.98, LWB: 0.98,
+        CB: 0.93, RW: 0.93,
+        LW: 0.85, RM: 0.85, CDM: 0.85, CM: 0.85,
+      });
+
+    case 'LWB':
+      return best({
+        // LB → 100% via conditional natural pair
+        RB: 0.98, RWB: 0.98,
+        CB: 0.93, LW: 0.93,
+        RW: 0.85, LM: 0.85, CDM: 0.85, CM: 0.85,
+      });
+
+    case 'CDM':
+    case 'DM':
+      return best({
+        CM: 0.98,
+        CAM: 0.93, CB: 0.93,
+        LM: 0.85, RM: 0.85, LW: 0.85, RW: 0.85,
+        // ST, LB, RB, LWB, RWB → 0.68 (OOP)
+      });
+
+    case 'CM':
+      return best({
+        CDM: 0.98, CAM: 0.98,
+        LM: 0.93, RM: 0.93,
+        LW: 0.85, RW: 0.85, ST: 0.85,
+        CB: 0.85, LB: 0.85, RB: 0.85, RWB: 0.85, LWB: 0.85,
+      });
+
+    case 'CAM':
+      return best({
+        CM: 0.98,
+        CDM: 0.93, LM: 0.93, RM: 0.93, LW: 0.93, RW: 0.93, ST: 0.93,
+        CB: 0.85, LB: 0.85, RB: 0.85,
+      });
+
+    case 'LM':
+      return best({
+        // LW → 100% via conditional (if no LB/LWB); LWB same-role per design
+        CM: 0.98, CAM: 0.98, LWB: 0.98, RW: 0.98,
+        LB: 0.93,
+        CDM: 0.85, RM: 0.85, LW: 0.85,
+      });
+
+    case 'RM':
+      return best({
+        // RW → 100% via conditional (if no RB/RWB); LW and RW same-role per design
+        CM: 0.98, CAM: 0.98, LW: 0.98, RW: 0.98,
+        RB: 0.93, RWB: 0.93,
+        CDM: 0.85, LM: 0.85,
+      });
+
+    case 'LW':
+      return best({
+        // LM → 100% via conditional (if no LB/LWB)
+        ST: 0.98, RW: 0.98,
+        RM: 0.93, CAM: 0.93,
+        LM: 0.85, CM: 0.85, LB: 0.85, LWB: 0.85, RB: 0.85, RWB: 0.85,
+        // CDM → 0.68 (OOP)
+      });
+
+    case 'RW':
+      return best({
+        // RM → 100% via conditional (if no RB/RWB)
+        ST: 0.98, LW: 0.98,
+        LM: 0.93, CAM: 0.93,
+        RM: 0.85, CM: 0.85, RB: 0.85, RWB: 0.85, LB: 0.85, LWB: 0.85,
+        // CDM → 0.68 (OOP)
+      });
+
+    case 'ST':
+      return best({
+        LW: 0.98, RW: 0.98,
+        CAM: 0.93,
+        LM: 0.85, RM: 0.85,
+        // CDM, CM → 0.68 (OOP)
+      });
+  }
 
   return 0.68;
 }
