@@ -20,6 +20,7 @@ import Shop from "@/components/star/Shop";
 import Casino from "@/components/star/Casino";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
+import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
 
 const SPONSOR_CATEGORIES = ["Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food", "Cosmetics", "Watch", "Electronics", "Jewelry", "Car"];
 
@@ -70,6 +71,7 @@ export default function StarDevPage() {
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
 
   useEffect(() => {
     const saved = loadCareer();
@@ -382,6 +384,32 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  const handleOpenRelationshipGame = useCallback((kind: RelationshipKind) => {
+    setRelationshipGameKind(kind);
+    setPhase("relationship-game");
+  }, []);
+
+  const handleRelationshipGameComplete = useCallback((gain: number, energyCost: number) => {
+    if (!career || !relationshipGameKind) return;
+    let updated: CareerState = {
+      ...career,
+      energy: Math.max(0, career.energy - energyCost),
+    };
+    if (relationshipGameKind === "happiness") {
+      updated.happiness = Math.min(100, career.happiness + gain);
+    } else {
+      updated.relationships = {
+        ...career.relationships,
+        [relationshipGameKind]: Math.min(100, career.relationships[relationshipGameKind] as number + gain),
+      };
+    }
+    checkAndSetAchievements(updated);
+    setCareer(updated);
+    setRelationshipGameKind(null);
+    setActiveNav("life");
+    setPhase("life");
+  }, [career, relationshipGameKind]);
+
   const handleCasinoExit = useCallback((finalBank: number) => {
     if (!career) return;
     setCareer({ ...career, money: finalBank });
@@ -466,6 +494,20 @@ export default function StarDevPage() {
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToLife} />;
 
+  if (phase === "relationship-game" && relationshipGameKind) {
+    const currentValue = relationshipGameKind === "happiness"
+      ? career.happiness
+      : (career.relationships[relationshipGameKind] as number);
+    return (
+      <RelationshipMinigame
+        kind={relationshipGameKind}
+        currentValue={currentValue}
+        onComplete={handleRelationshipGameComplete}
+        onCancel={() => { setRelationshipGameKind(null); setActiveNav("life"); setPhase("life"); }}
+      />
+    );
+  }
+
   // Pre-match confirmation
   if (phase === "pre-match" && nextFixture) {
     const home = nextFixture.home ? career.player.club : nextFixture.opponent;
@@ -544,6 +586,7 @@ export default function StarDevPage() {
             onOpenTrophies={() => setPhase("trophies")}
             onOpenContract={() => setPhase("contract-renewal")}
             onUseDrink={handleUseDrink}
+            onPlayRelationshipGame={handleOpenRelationshipGame}
           />
         </div>
       )}

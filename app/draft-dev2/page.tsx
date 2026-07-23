@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import DraftSetup from "@/components/draft/DraftSetupV2";
+import DraftSetup from "@/components/draft/DraftSetupHero";
 import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";

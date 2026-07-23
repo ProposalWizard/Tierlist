@@ -298,20 +298,40 @@ export function resolveEvent(
   const actualY = target.y + Math.sin(angle) * deviation;
 
   // ---------- SHOT RESOLUTION ----------
+  // This is a "3D-feel" shot model. The ball has:
+  //   - Horizontal deviation from intended target (from skill)
+  //   - Vertical trajectory: it rises then falls. Peak height depends on shot power + technique.
+  //   - Height at the goal line determines if it goes IN, HITS BAR/POST, or SAILS OVER.
+  //   - Defenders can only block LOW shots that pass close to them.
+  //
+  // "Height at goal" (h) is on 0-100 scale:
+  //   h < 5     → too low, keeper collects
+  //   5 ≤ h ≤ 45 → shot is inside frame, could be goal or save
+  //   45 < h ≤ 55 → hits the crossbar
+  //   h > 55    → over the bar
   if (actIsShot) {
-    const inGoalX = actualX >= event.goal.x1 - 2 && actualX <= event.goal.x2 + 2;
-    const inGoalY = actualY <= 4;
-    const onTarget = inGoalX && inGoalY;
+    const dist = Math.hypot(target.x - event.ball.x, target.y - event.ball.y);
+    // Long shots have naturally higher trajectory; headers stay low
+    const baseArc = actual === "HEADER" ? 8 : actual === "LONG_SHOT" ? 30 : 20;
+    // Technique controls how well you hit the intended height. Poor tech = wobble ± 30 units.
+    const heightWobble = (1 - tech / 100) * 30 * (rng() - 0.5) * 2;
+    // Slightly aim to keep low = more goals; aim way high = over bar
+    // Player subconsciously chooses arc based on distance — represented by baseArc adjusted for tech
+    const shotHeight = baseArc + heightWobble + (dist > 30 ? 8 : 0);
 
-    // Block: any defender between ball and target
+    // Block: defender in the shot line CAN block only if the ball's height at that point < 15
     let blocked = false;
-    for (const d of event.defenders) {
-      const t = closestPointOnLineParam(event.ball, target, d);
-      if (t > 0.1 && t < 0.9) {
-        const px = event.ball.x + (target.x - event.ball.x) * t;
-        const py = event.ball.y + (target.y - event.ball.y) * t;
-        const dist = Math.hypot(d.x - px, d.y - py);
-        if (dist < 3.5) { blocked = true; break; }
+    if (shotHeight < 25) {
+      for (const d of event.defenders) {
+        const t = closestPointOnLineParam(event.ball, target, d);
+        if (t > 0.15 && t < 0.85) {
+          const px = event.ball.x + (target.x - event.ball.x) * t;
+          const py = event.ball.y + (target.y - event.ball.y) * t;
+          const distToLine = Math.hypot(d.x - px, d.y - py);
+          // At progress t, height rises to peak at t=0.5. Height = shotHeight * sin(t * PI)
+          const heightAtT = shotHeight * Math.sin(t * Math.PI);
+          if (distToLine < 3.5 && heightAtT < 15) { blocked = true; break; }
+        }
       }
     }
     if (blocked) return {
@@ -319,30 +339,60 @@ export function resolveEvent(
       intended: event.kind, actual, narrative: "Blocked by a defender!",
     };
 
-    if (!onTarget) {
-      const overBar = actualY < 0;
+    const inGoalX = actualX >= event.goal.x1 - 1 && actualX <= event.goal.x2 + 1;
+
+    if (!inGoalX) {
       return {
         success: false, goal: false, assist: false, keyPass: false, offside: false,
         intended: event.kind, actual,
-        narrative: overBar ? "Over the bar!" : "Wide of the post.",
+        narrative: rng() < 0.5 ? "Wide of the post!" : "Cannons off the post!",
+      };
+    }
+
+    // Height check at goal
+    if (shotHeight > 55) {
+      return {
+        success: false, goal: false, assist: false, keyPass: false, offside: false,
+        intended: event.kind, actual, narrative: "Skied over the bar!",
+      };
+    }
+    if (shotHeight > 45) {
+      return {
+        success: false, goal: false, assist: false, keyPass: false, offside: false,
+        intended: event.kind, actual, narrative: "Off the crossbar!",
+      };
+    }
+    if (shotHeight < 3) {
+      return {
+        success: false, goal: false, assist: false, keyPass: false, offside: false,
+        intended: event.kind, actual, narrative: "Straight at the keeper — collected easily.",
       };
     }
 
     // On target — keeper save check
-    const keeperReach = 10 + shotPower / 20;   // range keeper can reach
+    // Keeper reach = larger for higher-power keepers, smaller for shots into corners
+    const inCorner = Math.abs(actualX - 50) > 7;
+    const highShot = shotHeight > 25;
+    const cornerBonus = inCorner ? 0.25 : 0;
+    const heightBonus = highShot ? 0.15 : 0;
+
+    const keeperReach = 8 + shotPower / 25;
     const keeperDist = Math.hypot(actualX - event.goalkeeper.x, actualY - event.goalkeeper.y);
-    const powerBonus = 0.15 + power * 0.25;    // stronger shot = harder to save
-    const saveChance = Math.max(0, Math.min(0.7, (keeperReach - keeperDist) / keeperReach * 0.55 - powerBonus));
+    const powerBonus = 0.1 + power * 0.2;
+    const saveChance = Math.max(0, Math.min(0.75,
+      (keeperReach - keeperDist) / keeperReach * 0.55 - powerBonus - cornerBonus - heightBonus,
+    ));
     if (rng() < saveChance) {
+      const narratives = ["Saved by the keeper!", "Great fingertip save!", "Palmed away!", "Keeper spreads himself well!"];
       return {
         success: false, goal: false, assist: false, keyPass: false, offside: false,
-        intended: event.kind, actual, narrative: "Saved by the keeper!",
+        intended: event.kind, actual, narrative: narratives[Math.floor(rng() * narratives.length)],
       };
     }
 
     return {
       success: true, goal: true, assist: false, keyPass: false, offside: false,
-      intended: event.kind, actual, narrative: "GOAL!",
+      intended: event.kind, actual, narrative: inCorner ? "GOAL! What a finish in the corner!" : "GOAL!",
     };
   }
 
@@ -387,20 +437,49 @@ export function resolveEvent(
       };
     }
 
-    // Chance the teammate scores from a great pass
-    const scoreChance = actual === "THROUGH_BALL" ? 0.42 : actual === "CROSS" ? 0.30 : 0.14;
-    // Bonus if it's a proper pass conversion from a shot event (user picked a smart pass over a shot)
-    const conversionBonus = event.kind !== actual ? 0.1 : 0;
-    if (rng() < scoreChance + conversionBonus) {
+    // Chance the receiving teammate takes a shot on goal.
+    // Only triggers if the teammate is in an attacking position (y < 30 = near opposition goal)
+    const canShoot = mate.y < 30;
+    // How likely they SHOOT = depends on how good the pass was + team strength baseline
+    const shootChance = actual === "THROUGH_BALL" ? 0.8 : actual === "CROSS" ? 0.7 : mate.y < 20 ? 0.55 : 0.25;
+
+    if (canShoot && rng() < shootChance) {
+      // They take a shot. Chance of scoring depends on:
+      //  - position (closer to goal = higher)
+      //  - team quality (higher relationships.team = better teammates)
+      //  - some randomness
+      const posQuality = Math.max(0, 1 - mate.y / 30);              // 1.0 at goal, 0 at y=30
+      const teamQuality = 0.35 + (0.65 * (0.4 + 0.6 * (100 / 100))); // baseline 60% team ability
+      const baseScoreChance = 0.15 + posQuality * 0.35;
+      const finalScoreChance = baseScoreChance * teamQuality;
+      // Conversion bonus if user picked a smart pass over a shot
+      const conversionBonus = event.kind !== actual ? 0.08 : 0;
+
+      if (rng() < finalScoreChance + conversionBonus) {
+        return {
+          success: true, goal: false, assist: true, keyPass: true, offside: false,
+          intended: event.kind, actual, narrative: "ASSIST! Your teammate finishes it!",
+        };
+      }
+      // They shot but missed / saved / blocked
+      const missNarratives = [
+        "Teammate shoots — saved by the keeper!",
+        "Teammate takes it on — just wide!",
+        "The shot's blocked by a defender!",
+        "Teammate can't quite convert!",
+        "Effort skims the bar!",
+      ];
       return {
-        success: true, goal: false, assist: true, keyPass: true, offside: false,
-        intended: event.kind, actual, narrative: "ASSIST! Your teammate finishes it!",
+        success: true, goal: false, assist: false, keyPass: true, offside: false,
+        intended: event.kind, actual,
+        narrative: missNarratives[Math.floor(rng() * missNarratives.length)],
       };
     }
 
     return {
       success: true, goal: false, assist: false, keyPass: false, offside: false,
-      intended: event.kind, actual, narrative: "Neat pass to a teammate.",
+      intended: event.kind, actual,
+      narrative: canShoot ? "Neat pass — teammate lays it off." : "Neat pass to a teammate.",
     };
   }
 
