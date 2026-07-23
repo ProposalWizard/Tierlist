@@ -1,8 +1,10 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CareerState, MatchStats, Fixture } from "@/lib/star/types";
-import { buildMatchScript, resolveEvent, finaliseMatch, type PlayableEvent } from "@/lib/star/matchEngine";
+import { buildMatchScript, finaliseMatch, type PlayableEvent } from "@/lib/star/matchEngine";
+import { simulateKick, type KickResult } from "@/lib/star/kickPhysics";
 import { mulberry32 } from "@/lib/star/season";
+import ContactBall from "./ContactBall";
 
 interface Props {
   career: CareerState;
@@ -23,9 +25,21 @@ interface RunningState {
   script: ReturnType<typeof buildMatchScript>;
   scriptIndex: number;
   currentEvent: PlayableEvent | null;
-  ballAnim: { to: { x: number; y: number }; landing: { x: number; y: number } } | null;
   resultText: string;
   paused: boolean;
+}
+
+type Phase = "aim" | "contact" | "flight" | "flight2" | "result";
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+function colorForResult(result: KickResult): "goal" | "miss" | "neutral" {
+  if (result.secondary) return result.secondary.outcome === "goal" ? "goal" : "miss";
+  if (result.goal) return "goal";
+  if (result.outcomeKind === "teammate" || result.outcomeKind === "offside") return "neutral";
+  return "miss";
 }
 
 export default function Match({ career, fixture, oppStrength, onComplete }: Props) {
@@ -43,20 +57,31 @@ export default function Match({ career, fixture, oppStrength, onComplete }: Prop
       script,
       scriptIndex: 0,
       currentEvent: null,
-      ballAnim: null,
       resultText: "",
       paused: false,
     };
   });
   const [fullTime, setFullTime] = useState(false);
+
+  // --- Interaction state ---
+  const [phase, setPhase] = useState<Phase>("aim");
+  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
+  const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
+  const [ballScreen, setBallScreen] = useState<{ x: number; y: number; h: number } | null>(null);
+  const [gkX, setGkX] = useState<number | null>(null);
+  const [resultColor, setResultColor] = useState<"goal" | "miss" | "neutral">("neutral");
+
   const rngRef = useRef<() => number>(mulberry32(state.script.seed));
   const pitchRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
 
   const homeTeam = fixture.home ? career.player.club : fixture.opponent;
   const awayTeam = fixture.home ? fixture.opponent : career.player.club;
   const homeScore = fixture.home ? state.userScore : state.oppScore;
   const awayScore = fixture.home ? state.oppScore : state.userScore;
 
+  // --- Advance the match script ---
   useEffect(() => {
     if (state.paused || state.currentEvent || fullTime) return;
     const timer = setTimeout(() => {
@@ -98,59 +123,164 @@ export default function Match({ career, fixture, oppStrength, onComplete }: Prop
     }
   }, [state.scriptIndex, state.script.events.length, state.currentEvent, fullTime]);
 
-  const handleEventTap = useCallback((tapX: number, tapY: number) => {
-    if (!state.currentEvent || state.ballAnim) return;
-    const evt = state.currentEvent;
-    const result = resolveEvent(evt, { x: tapX, y: tapY }, 0.8, career.skills, rngRef.current);
-
-    // For animation, use the intended target as the ball's flight path
-    setState((prev) => ({ ...prev, ballAnim: { to: { x: tapX, y: tapY }, landing: { x: tapX, y: tapY } } }));
-
-    setTimeout(() => {
-      setState((prev) => {
-        const newPasses = result.success && (result.actual === "PASS" || result.actual === "CROSS" || result.actual === "THROUGH_BALL")
-          ? prev.passes + 1 : prev.passes;
-        const newGoals = result.goal ? prev.goals + 1 : prev.goals;
-        const newAssists = result.assist ? prev.assists + 1 : prev.assists;
-        const conversionNote = result.intended !== result.actual
-          ? ` (${result.intended === "SHOOT" ? "converted to pass" : "shot from a pass"})`
-          : "";
-        return {
-          ...prev,
-          goals: newGoals,
-          assists: newAssists,
-          passes: newPasses,
-          userScore: result.goal ? prev.userScore + 1 : prev.userScore,
-          resultText: result.narrative,
-          commentary: [`${prev.minute}': ${result.narrative}${conversionNote}`, ...prev.commentary].slice(0, 6),
-        };
-      });
-      setTimeout(() => {
-        setState((prev) => ({
-          ...prev,
-          currentEvent: null,
-          ballAnim: null,
-          resultText: "",
-          paused: false,
-        }));
-      }, 1500);
-    }, 550);
-  }, [state.currentEvent, state.ballAnim, career.skills]);
-
-  const handlePitchClick = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!pitchRef.current || !state.currentEvent || state.ballAnim) return;
-    const rect = pitchRef.current.getBoundingClientRect();
-    let cx = 0, cy = 0;
-    if ("touches" in e) {
-      cx = e.changedTouches[0].clientX;
-      cy = e.changedTouches[0].clientY;
-    } else {
-      cx = e.clientX;
-      cy = e.clientY;
+  // --- Reset interaction when a new event begins ---
+  useEffect(() => {
+    if (state.currentEvent) {
+      setPhase("aim");
+      setAim(null);
+      setDrag(null);
+      setBallScreen(null);
+      setGkX(state.currentEvent.goalkeeper.x);
+      draggingRef.current = false;
     }
-    const x = ((cx - rect.left) / rect.width) * 100;
-    const y = ((cy - rect.top) / rect.height) * 100;
-    handleEventTap(x, y);
+  }, [state.currentEvent]);
+
+  // --- Cleanup any running animation on unmount ---
+  useEffect(() => () => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  // --- Convert a pointer event to pitch coordinates (0-100) ---
+  const pitchPoint = (e: React.PointerEvent): { x: number; y: number } | null => {
+    if (!pitchRef.current) return null;
+    const rect = pitchRef.current.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    };
+  };
+
+  const onPitchPointerDown = (e: React.PointerEvent) => {
+    if (!state.currentEvent || phase !== "aim") return;
+    const p = pitchPoint(e);
+    if (!p) return;
+    const ball = state.currentEvent.ball;
+    if (Math.hypot(p.x - ball.x, p.y - ball.y) > 14) return; // must grab near the ball
+    draggingRef.current = true;
+    try {
+      pitchRef.current?.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    setDrag(p);
+  };
+
+  const onPitchPointerMove = (e: React.PointerEvent) => {
+    if (!draggingRef.current) return;
+    const p = pitchPoint(e);
+    if (p) setDrag(p);
+  };
+
+  const onPitchPointerUp = (e: React.PointerEvent) => {
+    if (!draggingRef.current || !state.currentEvent) return;
+    draggingRef.current = false;
+    try {
+      pitchRef.current?.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    const d = drag;
+    setDrag(null);
+    if (!d) return;
+    const ball = state.currentEvent.ball;
+    const dragDist = Math.hypot(d.x - ball.x, d.y - ball.y);
+    const power = clamp(dragDist / 35, 0, 1);
+    if (power < 0.12) return; // too weak — stay in aim
+    const dx = ball.x - d.x;
+    const dy = ball.y - d.y;
+    const len = Math.hypot(dx, dy) || 1;
+    setAim({ dir: { x: dx / len, y: dy / len }, power });
+    setPhase("contact");
+  };
+
+  // --- Flight animation over a path ---
+  const runFlight = (
+    path: { x: number; y: number; h: number }[],
+    savePoint: { x: number; y: number } | null,
+    gkStartX: number,
+    onDone: () => void,
+  ) => {
+    let length = 0;
+    for (let i = 1; i < path.length; i++) {
+      length += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+    }
+    const duration = clamp(500 + length * 14, 700, 1600);
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const fpos = t * (path.length - 1);
+      const idx = Math.floor(fpos);
+      const frac = fpos - idx;
+      const a = path[idx];
+      const b = path[Math.min(path.length - 1, idx + 1)];
+      setBallScreen({
+        x: a.x + (b.x - a.x) * frac,
+        y: a.y + (b.y - a.y) * frac,
+        h: a.h + (b.h - a.h) * frac,
+      });
+      if (savePoint) {
+        const saveStart = 1 - 200 / duration;
+        if (t >= saveStart) {
+          const st = clamp((t - saveStart) / (1 - saveStart), 0, 1);
+          setGkX(gkStartX + (savePoint.x - gkStartX) * st);
+        }
+      }
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        onDone();
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+  };
+
+  const handleContact = (contact: { cx: number; cy: number }) => {
+    const evt = state.currentEvent;
+    if (!evt || !aim) return;
+    const result = simulateKick(
+      evt,
+      { dir: aim.dir, power: aim.power, contact },
+      career.skills,
+      career.relationships.team,
+      oppStrength,
+      rngRef.current,
+    );
+    setPhase("flight");
+    runFlight(result.path, result.savePoint ?? null, evt.goalkeeper.x, () => {
+      if (result.secondary) {
+        setTimeout(() => {
+          setPhase("flight2");
+          runFlight(result.secondary!.path, null, evt.goalkeeper.x, () => showOutcome(result));
+        }, 500);
+      } else {
+        showOutcome(result);
+      }
+    });
+  };
+
+  const showOutcome = (result: KickResult) => {
+    setPhase("result");
+    setResultColor(colorForResult(result));
+    setState((prev) => {
+      const primaryLine = `${prev.minute}': ${result.narrative}`;
+      const newComm = result.secondary
+        ? [`${prev.minute}': ${result.secondary.narrative}`, primaryLine, ...prev.commentary]
+        : [primaryLine, ...prev.commentary];
+      return {
+        ...prev,
+        goals: prev.goals + (result.goal ? 1 : 0),
+        assists: prev.assists + (result.assist ? 1 : 0),
+        passes: prev.passes + (result.passCompleted ? 1 : 0),
+        userScore: prev.userScore + (result.goal || result.assist ? 1 : 0),
+        resultText: result.secondary ? result.secondary.narrative : result.narrative,
+        commentary: newComm.slice(0, 6),
+      };
+    });
+    setTimeout(() => {
+      setBallScreen(null);
+      setAim(null);
+      setState((prev) => ({ ...prev, currentEvent: null, resultText: "", paused: false }));
+    }, 1500);
   };
 
   const finishMatch = () => {
@@ -160,6 +290,42 @@ export default function Match({ career, fixture, oppStrength, onComplete }: Prop
     );
     onComplete(stats);
   };
+
+  const evt = state.currentEvent;
+  const flying = phase === "flight" || phase === "flight2";
+
+  // Aim overlay geometry (viewBox 0 0 100 133, y scaled by 1.33)
+  let aimLine: { bx: number; by: number; ex: number; ey: number; arrow: string } | null = null;
+  let dragPower = 0;
+  if (evt && phase === "aim" && drag) {
+    const ball = evt.ball;
+    const dist = Math.hypot(drag.x - ball.x, drag.y - ball.y);
+    dragPower = clamp(dist / 35, 0, 1);
+    const dx = ball.x - drag.x;
+    const dy = ball.y - drag.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const ndx = dx / len;
+    const ndy = dy / len;
+    const lineLen = dragPower * 30;
+    const endX = ball.x + ndx * lineLen;
+    const endY = ball.y + ndy * lineLen;
+    const bx = ball.x;
+    const by = ball.y * 1.33;
+    const ex = endX;
+    const ey = endY * 1.33;
+    // Arrowhead in viewBox space
+    const vdx = ex - bx;
+    const vdy = ey - by;
+    const vlen = Math.hypot(vdx, vdy) || 1;
+    const uxx = vdx / vlen;
+    const uyy = vdy / vlen;
+    const px = -uyy;
+    const py = uxx;
+    const baseX = ex - uxx * 3;
+    const baseY = ey - uyy * 3;
+    const arrow = `${ex},${ey} ${baseX + px * 1.6},${baseY + py * 1.6} ${baseX - px * 1.6},${baseY - py * 1.6}`;
+    aimLine = { bx, by, ex, ey, arrow };
+  }
 
   return (
     <div className="min-h-screen bg-emerald-900 text-white flex flex-col items-center py-2 px-2">
@@ -180,97 +346,150 @@ export default function Match({ career, fixture, oppStrength, onComplete }: Prop
         {/* Pitch */}
         <div
           ref={pitchRef}
-          onClick={handlePitchClick}
-          onTouchEnd={handlePitchClick}
+          onPointerDown={onPitchPointerDown}
+          onPointerMove={onPitchPointerMove}
+          onPointerUp={onPitchPointerUp}
+          onPointerCancel={onPitchPointerUp}
           className={`relative w-full aspect-[3/4] rounded-xl overflow-hidden border-2 border-emerald-800 shadow-2xl select-none ${
-            state.currentEvent && !state.ballAnim ? "cursor-crosshair" : "cursor-default"
+            evt && phase === "aim" ? "cursor-grab" : "cursor-default"
           }`}
           style={{
+            touchAction: "none",
             background: "repeating-linear-gradient(0deg, #16a34a 0px, #16a34a 32px, #15803d 32px, #15803d 64px)",
           }}
         >
-          <PitchLines offsideLine={state.currentEvent?.offsideLine} />
+          <PitchLines offsideLine={evt?.offsideLine} />
 
-          {state.currentEvent && (
+          {evt && (
             <>
               {/* Goal frame at top */}
-              <div className="absolute pointer-events-none" style={{ left: `${state.currentEvent.goal.x1}%`, top: 0, width: `${state.currentEvent.goal.x2 - state.currentEvent.goal.x1}%`, height: "5%" }}>
+              <div className="absolute pointer-events-none" style={{ left: `${evt.goal.x1}%`, top: 0, width: `${evt.goal.x2 - evt.goal.x1}%`, height: "5%" }}>
                 <div className="w-full h-full border-2 border-white bg-white/10 border-b-0" />
               </div>
               {/* Goalkeeper */}
-              <Dot x={state.currentEvent.goalkeeper.x} y={state.currentEvent.goalkeeper.y} color="bg-yellow-400" size="lg" label="GK" />
+              <Dot x={gkX ?? evt.goalkeeper.x} y={evt.goalkeeper.y} color="bg-yellow-400" size="lg" label="GK" />
               {/* Defenders */}
-              {state.currentEvent.defenders.map((d, i) => (
+              {evt.defenders.map((d, i) => (
                 <Dot key={`d${i}`} x={d.x} y={d.y} color="bg-red-600" />
               ))}
-              {/* Teammates — show subtle highlight if they're a valid pass target */}
-              {state.currentEvent.teammates.map((t, i) => (
-                <Dot
-                  key={t.id}
-                  x={t.x}
-                  y={t.y}
-                  color="bg-blue-400"
-                  label={`${i + 1}`}
-                  ring={!state.ballAnim}
-                />
+              {/* Teammates */}
+              {evt.teammates.map((t, i) => (
+                <Dot key={t.id} x={t.x} y={t.y} color="bg-blue-400" label={`${i + 1}`} />
               ))}
               {/* Player (you) */}
-              <Dot x={state.currentEvent.player.x} y={state.currentEvent.player.y} color="bg-emerald-500 ring-2 ring-white" label="YOU" />
-              {/* Ball at player */}
-              {!state.ballAnim && (
+              <Dot x={evt.player.x} y={evt.player.y} color="bg-emerald-500 ring-2 ring-white" label="YOU" />
+
+              {/* Static ball (aim phase) */}
+              {phase === "aim" && (
                 <div
-                  className="absolute w-3 h-3 rounded-full bg-white border border-black -translate-x-1/2 -translate-y-1/2 shadow z-10"
-                  style={{ left: `${state.currentEvent.ball.x}%`, top: `${state.currentEvent.ball.y + 3}%` }}
+                  className="absolute w-3.5 h-3.5 rounded-full bg-white border border-black -translate-x-1/2 -translate-y-1/2 shadow z-10"
+                  style={{ left: `${evt.ball.x}%`, top: `${evt.ball.y}%` }}
                 />
               )}
-              {/* Prompt */}
-              {!state.ballAnim && !state.resultText && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                  <div className="bg-black/70 border-2 border-yellow-400 rounded-lg px-6 py-3 animate-pulse">
-                    <div className="text-2xl font-black text-yellow-300 tracking-widest">{state.currentEvent.prompt}</div>
-                    <div className="text-[10px] text-yellow-200 text-center mt-0.5">TAP to aim</div>
+
+              {/* Slingshot aim overlay */}
+              {aimLine && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-20" viewBox="0 0 100 133" preserveAspectRatio="none">
+                  <line
+                    x1={aimLine.bx}
+                    y1={aimLine.by}
+                    x2={aimLine.ex}
+                    y2={aimLine.ey}
+                    stroke="rgba(255,255,255,0.9)"
+                    strokeWidth="0.7"
+                    strokeDasharray="2 1.4"
+                  />
+                  <polygon points={aimLine.arrow} fill="rgba(255,255,255,0.95)" />
+                </svg>
+              )}
+
+              {/* Power meter (left edge) */}
+              {phase === "aim" && drag && (
+                <div className="absolute left-1 top-2 bottom-2 w-3 z-30 pointer-events-none flex flex-col justify-end">
+                  <div className="relative flex-1 rounded-full bg-black/40 overflow-hidden">
+                    <div
+                      className="absolute bottom-0 left-0 right-0 rounded-full"
+                      style={{
+                        height: `${Math.round(dragPower * 100)}%`,
+                        background: "linear-gradient(to top, #22c55e, #eab308, #ef4444)",
+                      }}
+                    />
+                  </div>
+                  <div className="text-[8px] font-black text-white text-center mt-0.5 drop-shadow">
+                    {Math.round(dragPower * 100)}%
                   </div>
                 </div>
               )}
-            </>
-          )}
 
-          {/* Ball animation to target */}
-          {state.ballAnim && state.currentEvent && (
-            <>
-              {/* Trajectory line */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 133" preserveAspectRatio="none">
-                <line
-                  x1={state.currentEvent.ball.x}
-                  y1={state.currentEvent.ball.y * 1.33}
-                  x2={state.ballAnim.to.x}
-                  y2={state.ballAnim.to.y * 1.33}
-                  stroke="rgba(255,255,255,0.5)"
-                  strokeWidth="0.5"
-                  strokeDasharray="1 1"
+              {/* Prompt (aim, before dragging) */}
+              {phase === "aim" && !drag && !state.resultText && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                  <div className="bg-black/70 border-2 border-yellow-400 rounded-lg px-6 py-3">
+                    <div className="text-2xl font-black text-yellow-300 tracking-widest text-center">{evt.prompt}</div>
+                    <div className="text-[10px] text-yellow-200 text-center mt-0.5">Drag from the ball to kick</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Animated ball in flight */}
+              {flying && ballScreen && (
+                <>
+                  <div
+                    className="absolute rounded-full bg-black pointer-events-none z-10"
+                    style={{
+                      left: `${ballScreen.x}%`,
+                      top: `${ballScreen.y}%`,
+                      width: "11px",
+                      height: "5px",
+                      opacity: 0.35,
+                      transform: "translate(-50%, -50%)",
+                    }}
+                  />
+                  <div
+                    className="absolute w-3.5 h-3.5 rounded-full bg-white border-2 border-black shadow-lg pointer-events-none z-20"
+                    style={{
+                      left: `${ballScreen.x}%`,
+                      top: `${ballScreen.y - ballScreen.h * 0.55}%`,
+                      transform: `translate(-50%, -50%) scale(${1 + ballScreen.h / 8})`,
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Contact-point overlay (phase 2) */}
+              {phase === "contact" && aim && (
+                <ContactBall
+                  power={aim.power}
+                  onContact={handleContact}
+                  onCancel={() => {
+                    setPhase("aim");
+                    setAim(null);
+                  }}
                 />
-              </svg>
-              <div
-                className="absolute w-4 h-4 rounded-full bg-white border-2 border-black shadow-lg -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-all duration-500 ease-out z-20"
-                style={{ left: `${state.ballAnim.to.x}%`, top: `${state.ballAnim.to.y}%` }}
-              />
+              )}
             </>
           )}
 
           {/* Result text */}
           {state.resultText && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className={`text-3xl font-black tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] px-4 py-2 rounded-lg ${
-                state.resultText.includes("GOAL") ? "text-emerald-300 bg-black/50" :
-                state.resultText.includes("ASSIST") ? "text-yellow-300 bg-black/50" :
-                "text-red-400 bg-black/50"
-              }`}>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
+              <div
+                className={`text-3xl font-black tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] px-4 py-2 rounded-lg text-center ${
+                  resultColor === "goal"
+                    ? state.resultText.includes("ASSIST")
+                      ? "text-yellow-300 bg-black/50"
+                      : "text-emerald-300 bg-black/50"
+                    : resultColor === "neutral"
+                    ? "text-yellow-200 bg-black/50"
+                    : "text-red-400 bg-black/50"
+                }`}
+              >
                 {state.resultText}
               </div>
             </div>
           )}
 
-          {!state.currentEvent && !fullTime && (
+          {!evt && !fullTime && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-black/50 rounded-full px-4 py-1 text-white font-black text-lg">
                 {state.minute}&apos;
@@ -291,9 +510,9 @@ export default function Match({ career, fixture, oppStrength, onComplete }: Prop
         </div>
 
         {/* Hint bar */}
-        {state.currentEvent && !state.ballAnim && (
+        {evt && phase === "aim" && (
           <div className="mt-2 bg-gray-800/80 border border-gray-700 rounded-lg px-3 py-2 text-[10px] text-gray-300 text-center">
-            <span className="text-yellow-300">💡</span> Tap a <span className="text-blue-300 font-bold">teammate</span> (blue) to pass, or aim into the <span className="text-white font-bold">goal frame</span> to shoot.
+            <span className="text-yellow-300">💡</span> Drag back from the ball to aim and power up — release, then pick where on the ball to strike.
           </div>
         )}
 
