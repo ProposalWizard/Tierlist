@@ -224,8 +224,11 @@ export function simulateKick(
     }
   }
 
-  // --- Ended in-field untouched: look for a receiving teammate ---
+  // --- Ended in-field untouched ---
   const end = path[path.length - 1];
+  const isShotKind = event.kind === "SHOOT" || event.kind === "LONG_SHOT" || event.kind === "HEADER";
+
+  // Look for the receiving teammate nearest the landing spot.
   let mate: PlayableEvent["teammates"][0] | null = null;
   let mateDist = Infinity;
   for (const m of event.teammates) {
@@ -235,22 +238,39 @@ export function simulateKick(
       mate = m;
     }
   }
+  // Passes connect more generously than shots — you were TRYING to find a man.
+  const receiveRadius = isShotKind ? 4 : 9;
 
-  if (!mate || mateDist > 5.5) {
+  // A shot that fizzled out near the goal is gathered by the keeper, not "lost".
+  if (isShotKind && end.y < 14 && (!mate || mateDist > receiveRadius)) {
     return {
       path,
-      outcomeKind: "out",
-      narrative: "Possession lost.",
+      outcomeKind: "saved",
+      narrative: "Straight at the keeper — gathered easily.",
       goal: false,
       assist: false,
       passCompleted: false,
     };
   }
 
+  if (!mate || mateDist > receiveRadius) {
+    return {
+      path,
+      outcomeKind: "out",
+      narrative: isShotKind ? "Effort drifts harmlessly wide." : "Overhit — possession lost.",
+      goal: false,
+      assist: false,
+      passCompleted: false,
+    };
+  }
+
+  // Ball actually rolls to the receiver's feet, so the pass reads correctly.
+  const arrived = extendToMate(path, mate);
+
   // Offside for through balls / crosses played beyond the last defender.
   if ((event.kind === "THROUGH_BALL" || event.kind === "CROSS") && mate.y < event.offsideLine - 1) {
     return {
-      path,
+      path: arrived,
       outcomeKind: "offside",
       narrative: "Flag's up — offside!",
       goal: false,
@@ -263,9 +283,9 @@ export function simulateKick(
   if (mate.y < 35) {
     const secondary = buildSecondaryShot(event, mate, teamRelationship, rng);
     return {
-      path,
+      path: arrived,
       outcomeKind: "teammate",
-      narrative: "Slipped through to a teammate…",
+      narrative: "Played through to a teammate…",
       goal: false,
       assist: secondary.outcome === "goal",
       passCompleted: true,
@@ -274,13 +294,27 @@ export function simulateKick(
   }
 
   return {
-    path,
+    path: arrived,
     outcomeKind: "teammate",
     narrative: "Pinged to a teammate.",
     goal: false,
     assist: false,
     passCompleted: true,
   };
+}
+
+// Extend a path so the ball rolls from its landing point to the receiver's feet.
+function extendToMate(path: FlightPoint[], mate: { x: number; y: number }): FlightPoint[] {
+  const last = path[path.length - 1];
+  const gap = Math.hypot(mate.x - last.x, mate.y - last.y);
+  if (gap < 0.5) return path;
+  const N = Math.max(3, Math.min(8, Math.round(gap)));
+  const extra: FlightPoint[] = [];
+  for (let k = 1; k <= N; k++) {
+    const t = k / N;
+    extra.push({ x: last.x + (mate.x - last.x) * t, y: last.y + (mate.y - last.y) * t, h: 0 });
+  }
+  return [...path, ...extra];
 }
 
 function resolveGoalLine(
