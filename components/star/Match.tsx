@@ -193,42 +193,58 @@ export default function Match({ career, fixture, oppStrength, onComplete }: Prop
     setPhase("contact");
   };
 
-  // --- Flight animation over a path ---
-  const runFlight = (
-    path: { x: number; y: number; h: number }[],
-    savePoint: { x: number; y: number } | null,
-    gkStartX: number,
-    onDone: () => void,
-  ) => {
+  // Duration of a flight path, based on its geometric length.
+  const flightDuration = (path: { x: number; y: number; h: number }[]): number => {
     let length = 0;
     for (let i = 1; i < path.length; i++) {
       length += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
     }
-    const duration = clamp(500 + length * 14, 700, 1600);
+    return clamp(500 + length * 14, 700, 1600);
+  };
+
+  // Purely COSMETIC animation. It never drives game progression — the outcome
+  // is scheduled by explicit timers in handleContact — so even if a frame throws
+  // or the tab is backgrounded, the match can never freeze.
+  const runFlight = (
+    path: { x: number; y: number; h: number }[],
+    savePoint: { x: number; y: number } | null,
+    gkStartX: number,
+    duration: number,
+  ) => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    if (!path || path.length === 0) return;
     const start = performance.now();
     const step = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      const fpos = t * (path.length - 1);
-      const idx = Math.floor(fpos);
-      const frac = fpos - idx;
-      const a = path[idx];
-      const b = path[Math.min(path.length - 1, idx + 1)];
-      setBallScreen({
-        x: a.x + (b.x - a.x) * frac,
-        y: a.y + (b.y - a.y) * frac,
-        h: a.h + (b.h - a.h) * frac,
-      });
-      if (savePoint) {
-        const saveStart = 1 - 200 / duration;
-        if (t >= saveStart) {
-          const st = clamp((t - saveStart) / (1 - saveStart), 0, 1);
-          setGkX(gkStartX + (savePoint.x - gkStartX) * st);
+      try {
+        const t = Math.min(1, (now - start) / duration);
+        const maxIdx = path.length - 1;
+        const fpos = t * maxIdx;
+        const idx = Math.max(0, Math.min(maxIdx, Math.floor(fpos)));
+        const frac = fpos - idx;
+        const a = path[idx];
+        const b = path[Math.min(maxIdx, idx + 1)];
+        if (a && b) {
+          setBallScreen({
+            x: a.x + (b.x - a.x) * frac,
+            y: a.y + (b.y - a.y) * frac,
+            h: a.h + (b.h - a.h) * frac,
+          });
         }
-      }
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(step);
-      } else {
-        onDone();
+        if (savePoint) {
+          const saveStart = 1 - 200 / duration;
+          if (t >= saveStart) {
+            const st = clamp((t - saveStart) / (1 - saveStart), 0, 1);
+            setGkX(gkStartX + (savePoint.x - gkStartX) * st);
+          }
+        }
+        if (t < 1) {
+          rafRef.current = requestAnimationFrame(step);
+        } else {
+          rafRef.current = null;
+        }
+      } catch {
+        // Never let a cosmetic frame stall the match — the outcome timer handles progression.
+        rafRef.current = null;
       }
     };
     rafRef.current = requestAnimationFrame(step);
@@ -246,16 +262,23 @@ export default function Match({ career, fixture, oppStrength, onComplete }: Prop
       rngRef.current,
     );
     setPhase("flight");
-    runFlight(result.path, result.savePoint ?? null, evt.goalkeeper.x, () => {
-      if (result.secondary) {
-        setTimeout(() => {
-          setPhase("flight2");
-          runFlight(result.secondary!.path, null, evt.goalkeeper.x, () => showOutcome(result));
-        }, 500);
-      } else {
-        showOutcome(result);
-      }
-    });
+
+    const dur1 = flightDuration(result.path);
+    runFlight(result.path, result.savePoint ?? null, evt.goalkeeper.x, dur1);
+
+    if (result.secondary) {
+      const secondary = result.secondary;
+      const dur2 = flightDuration(secondary.path);
+      // After the primary flight + a 500ms beat, play the teammate's shot.
+      window.setTimeout(() => {
+        setPhase("flight2");
+        runFlight(secondary.path, null, evt.goalkeeper.x, dur2);
+      }, dur1 + 500);
+      // Outcome is revealed once the secondary finishes — driven by a timer, not the rAF.
+      window.setTimeout(() => showOutcome(result), dur1 + 500 + dur2);
+    } else {
+      window.setTimeout(() => showOutcome(result), dur1);
+    }
   };
 
   const showOutcome = (result: KickResult) => {
