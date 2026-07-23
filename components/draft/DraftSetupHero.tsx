@@ -98,70 +98,84 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
       <ObjectivesToast />
       <div className="max-w-lg w-full">
 
-        {/* ─── HERO CARD — replaces /draft's centered text header ─── */}
+        {/* ─── HERO CARD — replaces /draft's centered text header
+             - Full-width image so all 4 players are visible (no left-crop)
+             - Title pinned to top, description pinned to bottom
+             - Left-side dark gradient keeps the text readable */}
         <div
-          className="relative overflow-hidden rounded-2xl mb-4 sm:mb-5 border border-white/5"
-          style={{ background: "#07090d", aspectRatio: "16 / 10" }}
+          className="relative overflow-hidden rounded-2xl mb-3 sm:mb-4 border border-white/5"
+          style={{ background: "#07090d", aspectRatio: "5 / 4" }}
         >
+          {/* Full-bleed background image, centered so all four players show */}
           <div
-            className="absolute right-0 top-0 bottom-0 w-[65%]"
+            className="absolute inset-0"
             style={{
               backgroundImage: "url('/draft-hero.jpg')",
               backgroundSize: "cover",
-              backgroundPosition: "right top",
+              backgroundPosition: "center",
             }}
           />
+          {/* Dark fade on the left for text readability */}
           <div
             className="absolute inset-0"
-            style={{ background: "linear-gradient(to right, #07090d 25%, #07090dbb 42%, #07090d55 58%, transparent 78%)" }}
+            style={{ background: "linear-gradient(to right, #07090d 0%, #07090de0 22%, #07090d80 40%, #07090d20 60%, transparent 80%)" }}
           />
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
-            <g opacity="0.18" stroke="#34d399" strokeWidth="0.6" fill="none">
-              <line x1="220" y1="110" x2="370" y2="20" />
-              <line x1="220" y1="110" x2="390" y2="80" />
-              <line x1="220" y1="110" x2="380" y2="160" />
-              <line x1="220" y1="110" x2="320" y2="240" />
-              <line x1="220" y1="110" x2="130" y2="0" />
-              <line x1="220" y1="110" x2="250" y2="0" />
+          {/* Top+bottom soft vignette so text at top/bottom stays legible */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to bottom, #07090d40 0%, transparent 20%, transparent 75%, #07090dcc 100%)" }}
+          />
+          {/* Lightning rays */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+            <g opacity="0.16" stroke="#34d399" strokeWidth="0.6" fill="none">
+              <line x1="220" y1="140" x2="370" y2="30" />
+              <line x1="220" y1="140" x2="390" y2="90" />
+              <line x1="220" y1="140" x2="380" y2="200" />
+              <line x1="220" y1="140" x2="320" y2="310" />
+              <line x1="220" y1="140" x2="130" y2="10" />
             </g>
             <g opacity="0.08" stroke="#6ee7b7" strokeWidth="0.4" fill="none">
-              <line x1="220" y1="110" x2="400" y2="50" />
-              <line x1="220" y1="110" x2="355" y2="260" />
-              <line x1="220" y1="110" x2="160" y2="20" />
+              <line x1="220" y1="140" x2="400" y2="60" />
+              <line x1="220" y1="140" x2="355" y2="310" />
             </g>
           </svg>
 
-          <div className="relative px-4 pt-5 pb-4 h-full flex flex-col justify-center" style={{ maxWidth: "56%" }}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-px w-4 bg-emerald-500/60" />
-              <span className="text-[8px] sm:text-[9px] font-black tracking-[0.4em] text-emerald-400 uppercase">Knowitball</span>
-              <div className="h-px w-4 bg-emerald-500/60" />
+          {/* Content — title top-left, description bottom-left */}
+          <div className="relative h-full flex flex-col p-4 pt-3">
+            {/* Title block, pinned to top */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-px w-4 bg-emerald-500/60" />
+                <span className="text-[8px] sm:text-[9px] font-black tracking-[0.4em] text-emerald-400 uppercase">Knowitball</span>
+                <div className="h-px w-4 bg-emerald-500/60" />
+              </div>
+              <div className="font-black tracking-tight leading-[0.92] text-white uppercase" style={{ fontSize: "clamp(1.15rem, 5.6vw, 1.85rem)" }}>
+                PREMIER<br />LEAGUE
+              </div>
+              <div
+                className="font-black tracking-tight leading-[0.9] uppercase mt-1"
+                style={{
+                  fontSize: "clamp(2rem, 11vw, 3.4rem)",
+                  background: "linear-gradient(180deg, #86efac 0%, #10b981 40%, #059669 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                DRAFT
+              </div>
             </div>
-            <div className="font-black tracking-tight leading-[0.92] text-white uppercase" style={{ fontSize: "clamp(1.1rem, 5.5vw, 1.75rem)" }}>
-              PREMIER<br />LEAGUE
-            </div>
-            <div
-              className="font-black tracking-tight leading-[0.9] uppercase mt-1"
-              style={{
-                fontSize: "clamp(2rem, 11vw, 3.4rem)",
-                background: "linear-gradient(180deg, #86efac 0%, #10b981 40%, #059669 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              DRAFT
-            </div>
+            {/* Description, pinned to bottom */}
+            <p className="mt-auto text-[10px] sm:text-xs text-gray-200 leading-snug max-w-[68%] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+              Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
+            </p>
           </div>
         </div>
 
-        {/* ─── Description + How to Play + History/HoF (matches /draft header) ─── */}
+        {/* How to Play + History/HoF (description moved inside hero) */}
         <div className="text-center mb-4 sm:mb-5">
-          <p className="text-white text-xs sm:text-sm max-w-sm mx-auto">
-            Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
-          </p>
           <button
             onClick={() => setShowHowToPlay(true)}
-            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold text-white hover:text-white hover:border-gray-500 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold text-white hover:text-white hover:border-gray-500 transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
