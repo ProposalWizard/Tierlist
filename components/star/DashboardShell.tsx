@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 
 interface Props {
@@ -15,13 +15,20 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
-  // The site's GlobalNav sits above this shell. Size the shell to exactly the
-  // remaining viewport so the bottom nav bar is always on screen (no page scroll —
-  // only the middle content area scrolls).
-  const [navH, setNavH] = useState(60);
+  // The site's GlobalNav sits above this shell. Measure the shell's own document
+  // position and fill exactly the rest of the viewport, so the bottom nav bar is
+  // always on screen (no page scroll — only the middle content area scrolls).
+  // Measuring ourselves (not the nav) avoids grabbing the wrong element — the
+  // page contains a second, viewport-tall <nav> inside the sidebar drawer.
+  const shellRef = useRef<HTMLDivElement>(null);
+  const [shellH, setShellH] = useState<number | null>(null);
   useEffect(() => {
-    const nav = document.querySelector("nav");
-    const update = () => setNavH(nav instanceof HTMLElement ? nav.offsetHeight : 0);
+    const update = () => {
+      const rect = shellRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const docTop = rect.top + window.scrollY;
+      setShellH(Math.max(400, window.innerHeight - docTop));
+    };
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -29,8 +36,9 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
 
   return (
     <div
+      ref={shellRef}
       className="bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col overflow-hidden"
-      style={{ height: `calc(100dvh - ${navH}px)` }}
+      style={{ height: shellH !== null ? `${shellH}px` : "calc(100dvh - 64px)" }}
     >
       <div className="flex-1 min-h-0 flex flex-col max-w-md w-full mx-auto">
         {/* Top header */}
