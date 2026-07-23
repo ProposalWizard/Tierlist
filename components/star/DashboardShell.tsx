@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 
 interface Props {
@@ -14,9 +15,24 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
+  // The site's GlobalNav sits above this shell. Size the shell to exactly the
+  // remaining viewport so the bottom nav bar is always on screen (no page scroll —
+  // only the middle content area scrolls).
+  const [navH, setNavH] = useState(60);
+  useEffect(() => {
+    const nav = document.querySelector("nav");
+    const update = () => setNavH(nav instanceof HTMLElement ? nav.offsetHeight : 0);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col">
-      <div className="flex-1 flex flex-col max-w-md w-full mx-auto">
+    <div
+      className="bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col overflow-hidden"
+      style={{ height: `calc(100dvh - ${navH}px)` }}
+    >
+      <div className="flex-1 min-h-0 flex flex-col max-w-md w-full mx-auto">
         {/* Top header */}
         <div className="bg-gradient-to-b from-gray-700 to-gray-800 border-b border-black/50 px-3 py-2 flex items-center justify-between shadow-md">
           <button onClick={onExit} className="w-8 h-8 rounded-lg bg-red-600 hover:bg-red-500 text-white font-black text-lg">✕</button>
@@ -57,8 +73,8 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
           </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 px-3 py-2 overflow-y-auto">
+        {/* Body — the only scrollable region; header + bottom nav stay fixed */}
+        <div className="flex-1 min-h-0 px-3 py-2 overflow-y-auto">
           {children}
         </div>
 
