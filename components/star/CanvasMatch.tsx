@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  buildShootingScenario, launch, stepBall, stepKeeper, stepFollower,
+  buildWeightedScenario, launch, stepBall, stepKeeper, stepFollower,
   OUTCOME_TEXT, clamp,
-  type Scenario, type Ball, type Outcome, type KickSkills,
+  type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import ContactBall from "./ContactBall";
@@ -13,18 +13,34 @@ type Phase = "aim" | "contact" | "flight" | "result";
 interface Props {
   skills?: KickSkills;
   keeperStrength?: number;
+  position?: string;
   seed?: number;
 }
 
+// What the situation is, shown to the player so it reads clearly before they aim.
+const SCENARIO_LABEL: Record<ScenarioKind, { verb: string; hint: string }> = {
+  one_on_one: { verb: "1-ON-1!", hint: "Clean through on goal — pick your finish." },
+  tight_angle: { verb: "TIGHT ANGLE!", hint: "Acute angle — the keeper's covering the near post." },
+  long_range: { verb: "SHOOT!", hint: "Long way out — give it some pace." },
+  volley: { verb: "VOLLEY!", hint: "Meet it first time — drag back to strike." },
+  header: { verb: "HEADER!", hint: "Get up and meet the cross." },
+  cutback: { verb: "CUTBACK!", hint: "Square it back for the run — aim the blue circle." },
+  byline_cross: { verb: "CROSS IT!", hint: "Whip one in for the run — aim the blue circle." },
+  through_ball: { verb: "THROUGH BALL!", hint: "Split the defense — aim the blue circle." },
+  midfield_pass: { verb: "PASS!", hint: "Keep it simple — find your teammate." },
+};
+
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, seed = 12345 }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", seed = 12345 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const strengthRef = useRef(keeperStrength);
   strengthRef.current = keeperStrength;
+  const positionRef = useRef(position);
+  positionRef.current = position;
 
-  const scenarioRef = useRef<Scenario>(buildShootingScenario(mulberry32(seed), keeperStrength));
+  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength));
   const ballRef = useRef<Ball | null>(null);
   const rngRef = useRef<() => number>(mulberry32(seed));
   const seedRef = useRef(seed);
@@ -38,7 +54,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const draggingRef = useRef(false);
 
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [stats, setStats] = useState({ shots: 0, goals: 0 });
+  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0 });
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
@@ -115,6 +131,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     ctx.moveTo(g1, H * 0.035); ctx.lineTo(g1, 0); ctx.lineTo(g2, 0); ctx.lineTo(g2, H * 0.035);
     ctx.stroke();
 
+    // Pass reception zone — where a cutback/cross/through-ball/pass needs to land
+    if (sc.passTarget) {
+      const { px, py } = toPx(sc.passTarget.x, sc.passTarget.y);
+      ctx.setLineDash([unit * 0.8, unit * 0.6]);
+      ctx.lineWidth = Math.max(1.5, unit * 0.35);
+      ctx.strokeStyle = "rgba(167,139,250,0.85)";
+      ctx.beginPath();
+      ctx.arc(px, py, unit * 2.4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     const dot = (x: number, y: number, r: number, fill: string, label?: string) => {
       const { px, py } = toPx(x, y);
       ctx.beginPath();
@@ -147,6 +175,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.strokeStyle = "rgba(0,0,0,0.4)";
       ctx.stroke();
     }
+
+    // Teammates — decorative crossers, or the runner a pass is aimed at
+    for (const t of sc.teammates) dot(t.x, t.y, R * 0.9, "#a78bfa");
 
     // Defenders + striker
     for (const d of sc.defenders) dot(d.x, d.y, R, "#dc2626");
@@ -286,7 +317,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const resolveOutcome = (res: Outcome) => {
     setOutcome(res);
     setPhase("result");
-    setStats((s) => ({ shots: s.shots + 1, goals: s.goals + (OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) }));
+    const isPassScenario = scenarioRef.current.passTarget != null;
+    setStats((s) => isPassScenario
+      ? { ...s, passes: s.passes + 1, passesCompleted: s.passesCompleted + (OUTCOME_TEXT[res].kind === "pass" ? 1 : 0) }
+      : { ...s, shots: s.shots + 1, goals: s.goals + (OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) });
     // Safety: if the ball never resolves for some reason, this still fires next scenario.
     window.setTimeout(() => nextScenario(), 1800);
   };
@@ -294,7 +328,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const nextScenario = () => {
     seedRef.current += 1;
     rngRef.current = mulberry32(seedRef.current);
-    scenarioRef.current = buildShootingScenario(rngRef.current, strengthRef.current);
+    scenarioRef.current = buildWeightedScenario(rngRef.current, positionRef.current, strengthRef.current);
     ballRef.current = null;
     setAim(null);
     setOutcome(null);
@@ -340,13 +374,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   };
 
   const outMeta = outcome ? OUTCOME_TEXT[outcome] : null;
+  const scenarioLabel = SCENARIO_LABEL[scenarioRef.current.kind];
 
   return (
     <div className="w-full max-w-sm mx-auto">
       {/* HUD */}
-      <div className="flex items-center justify-between mb-2 px-1">
+      <div className="flex items-center justify-between mb-2 px-1 gap-2">
         <div className="text-xs font-black text-white/80">Shots: {stats.shots}</div>
         <div className="text-xs font-black text-emerald-400">Goals: {stats.goals}</div>
+        <div className="text-xs font-black text-violet-400">Passes: {stats.passesCompleted}/{stats.passes}</div>
       </div>
 
       <div
@@ -367,7 +403,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         {phase === "aim" && !draggingRef.current && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             <div className="bg-black/70 border-2 border-yellow-400 rounded-lg px-6 py-3 text-center">
-              <div className="text-2xl font-black text-yellow-300 tracking-widest">SHOOT!</div>
+              <div className="text-2xl font-black text-yellow-300 tracking-widest">{scenarioLabel.verb}</div>
               <div className="text-[10px] text-yellow-200 mt-0.5">Drag back from the ball to aim &amp; power</div>
             </div>
           </div>
@@ -386,7 +422,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         {phase === "result" && outMeta && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className={`text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-5 py-3 rounded-lg bg-black/50 ${
-              outMeta.kind === "goal" ? "text-emerald-300" : outMeta.kind === "neutral" ? "text-yellow-200" : "text-red-400"
+              outMeta.kind === "goal" ? "text-emerald-300" : outMeta.kind === "pass" ? "text-violet-300" : outMeta.kind === "neutral" ? "text-yellow-200" : "text-red-400"
             }`}>
               {outMeta.text}
             </div>
@@ -396,8 +432,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       {/* Hint */}
       <div className="mt-2 bg-gray-800/80 border border-gray-700 rounded-lg px-3 py-2 text-[10px] text-gray-300 text-center">
-        <span className="text-yellow-300">💡</span> Drag back from the ball for power &amp; direction, then strike:
-        bottom = lofted &amp; far, top = driven low, sides = curl.
+        <span className="text-yellow-300">💡</span> {scenarioLabel.hint}
       </div>
     </div>
   );
