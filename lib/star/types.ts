@@ -123,6 +123,17 @@ export interface Trophy {
   club: string;
 }
 
+export interface Horse {
+  name: string;
+  breed: string;
+  speed: number;    // 40-95 rating — top-end pace
+  stamina: number;  // 40-95 rating — holds form to the line
+  energy: number;   // 0-100, spent racing, regained between matches
+  racesRun: number;
+  racesWon: number;
+  earnings: number; // lifetime prize money won
+}
+
 export interface CareerState {
   version: 2;
   player: StarPlayer;
@@ -155,6 +166,7 @@ export interface CareerState {
   homeCity: string;
   seenDilemmas: string[];
   ballonDorWins: number;
+  horse: Horse | null;
 }
 
 export type StarPhase =
@@ -181,4 +193,5 @@ export type StarPhase =
   | "contract-renewal"
   | "dilemma"
   | "relationship-game"
-  | "season-transfer";
+  | "season-transfer"
+  | "horse-stable";

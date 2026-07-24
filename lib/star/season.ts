@@ -64,11 +64,17 @@ export function buildFixtures(clubs: string[], userClub: string): Fixture[] {
 export function simulateOtherFixtures(
   league: LeagueTeam[],
   userClub: string,
+  opponent: string,
   week: number,
   rng: () => number,
 ): LeagueTeam[] {
   const strengthMap = new Map(league.map((t) => [t.name, t.strength]));
-  const teams = league.map((t) => t.name).filter((n) => n !== userClub);
+  // Exclude BOTH the user and the club they just played this week — the user's
+  // result already counted the opponent's game. Including it here would count that
+  // club twice and, with an odd number of remaining teams, hand a different club a
+  // bye every week, so the table drifts off level over a season. With both removed,
+  // an even league pairs cleanly and everyone plays exactly once per week.
+  const teams = league.map((t) => t.name).filter((n) => n !== userClub && n !== opponent);
   const shuffled = [...teams].sort(() => rng() - 0.5);
   const updated = league.map((t) => ({ ...t }));
 

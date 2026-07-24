@@ -127,6 +127,19 @@ export function ContractRenewal({ career, onComplete }: { career: CareerState; o
   const [wins, setWins] = useState(0);
   const [message, setMessage] = useState("");
 
+  // Renewal is only available in the final year of the deal — otherwise you could
+  // reopen this screen from the Life menu every week and print unlimited wage rises.
+  // Signing resets the deal to 3 seasons, so this closes the loop after one renewal.
+  const canRenew = career.contract.seasonsRemaining <= 1;
+
+  // Draw a card that is never equal to the current one — a true higher-or-lower has
+  // no ties, so a 6 can't be followed by another 6.
+  const drawDifferent = (from: number) => {
+    let n = 1 + Math.floor(Math.random() * 13);
+    while (n === from) n = 1 + Math.floor(Math.random() * 13);
+    return n;
+  };
+
   const startCard = () => {
     setPhase("playing");
     setCurrent(3 + Math.floor(Math.random() * 8));
@@ -136,14 +149,12 @@ export function ContractRenewal({ career, onComplete }: { career: CareerState; o
   };
 
   const guess = (higher: boolean) => {
-    const n = 1 + Math.floor(Math.random() * 13);
+    const n = drawDifferent(current);
     setNext(n);
     setRounds((r) => r + 1);
     const correct = higher ? n > current : n < current;
     setTimeout(() => {
-      if (n === current) {
-        setMessage("Tie! No progress.");
-      } else if (correct) {
+      if (correct) {
         setWins((w) => w + 1);
         setMessage("✓ Correct!");
       } else {
@@ -178,7 +189,20 @@ export function ContractRenewal({ career, onComplete }: { career: CareerState; o
           <div className="text-lg font-black text-white">{career.contract.club}</div>
         </div>
 
-        {phase === "intro" && (
+        {phase === "intro" && !canRenew && (
+          <div className="bg-gray-700 rounded-2xl p-4 border border-gray-600 text-center">
+            <div className="text-4xl mb-2">📝</div>
+            <div className="text-sm text-gray-200 mb-1 leading-snug font-bold">
+              You&apos;re under contract for {career.contract.seasonsRemaining} more seasons.
+            </div>
+            <div className="text-xs text-gray-400 mb-4 leading-snug">
+              The club will only renegotiate in the final year of your deal. Come back then to improve your terms.
+            </div>
+            <button onClick={() => onComplete(null)} className="w-full py-3 bg-emerald-500 rounded-xl font-black">Back</button>
+          </div>
+        )}
+
+        {phase === "intro" && canRenew && (
           <div className="bg-gray-700 rounded-2xl p-4 border border-gray-600">
             <div className="text-sm text-gray-200 mb-3 leading-snug">
               Your contract is up. Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms by ★1 wage.

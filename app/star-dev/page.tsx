@@ -1,11 +1,12 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem } from "@/lib/star/types";
+import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse } from "@/lib/star/types";
 import { loadCareer, saveCareer, clearCareer } from "@/lib/star/storage";
-import { buildLeague, buildFixtures, simulateOtherFixtures, updateLeagueWithUserResult, mulberry32, sortLeague } from "@/lib/star/season";
+import { mulberry32 } from "@/lib/star/season";
+import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason } from "@/lib/star/careerFlow";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
-import { BOOTS_CATALOGUE, NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
+import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import DashboardShell from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
@@ -15,53 +16,13 @@ import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScre
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
+import HorseRacing from "@/components/star/HorseRacing";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
 import Casino from "@/components/star/Casino";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
-
-const SPONSOR_CATEGORIES = ["Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food", "Cosmetics", "Watch", "Electronics", "Jewelry", "Car"];
-
-function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerState {
-  const league = buildLeague(clubs, player.club);
-  const fixtures = buildFixtures(clubs, player.club);
-  const starterBoot: Boot = { ...BOOTS_CATALOGUE[0] };
-  return {
-    version: 2,
-    player,
-    skills: { pace: 40, power: 40, technique: 40, vision: 40, freeKick: 30 },
-    relationships: { boss: 60, team: 60, fans: 40, girlfriend: null, sponsors: 0 },
-    contract: { club: player.club, wage: 1, goalBonus: 1, assistBonus: 1, seasonsRemaining: 3 },
-    season: 1,
-    week: 1,
-    energy: 100,
-    matchFitness: 80,
-    happiness: 60,
-    money: 3,
-    starRating: 2.5,
-    fame: 5,
-    seasonStats: { appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0 },
-    careerStats: { appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0 },
-    fixtures,
-    league,
-    achievements: ["first-contract"],
-    status: "1st Team",
-    currentBoot: starterBoot,
-    nrgDrinks: { basic: 2, premium: 0, elite: 0 },
-    ownedItems: [],
-    girlfriend: null,
-    sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, perMatch: 0, active: false })),
-    trophies: [],
-    form: [],
-    kitPrimary: "#ff0000",
-    kitSecondary: "#ffffff",
-    homeCity: "London",
-    seenDilemmas: [],
-    ballonDorWins: 0,
-  };
-}
 
 export default function StarDevPage() {
   const [career, setCareer] = useState<CareerState | null>(null);
@@ -145,101 +106,26 @@ export default function StarDevPage() {
     setPhase("match");
   }, [career, nextFixture]);
 
-  const checkAndSetAchievements = (state: CareerState) => {
-    const newlyUnlocked = checkNewAchievements(state);
-    if (newlyUnlocked.length > 0) {
-      state.achievements = [...state.achievements, ...newlyUnlocked];
-      setUnlockedAchievements(newlyUnlocked);
+  // Pop the achievement toast for ids the reducers already appended to state.
+  const toastAchievements = (ids: string[]) => {
+    if (ids.length > 0) {
+      setUnlockedAchievements(ids);
       setTimeout(() => setUnlockedAchievements([]), 3000);
     }
+  };
+
+  // For handlers that build state inline: append newly-earned achievements + toast.
+  const checkAndSetAchievements = (state: CareerState) => {
+    const newlyUnlocked = checkNewAchievements(state);
+    if (newlyUnlocked.length > 0) state.achievements = [...state.achievements, ...newlyUnlocked];
+    toastAchievements(newlyUnlocked);
   };
 
   const handleMatchComplete = useCallback((stats: MatchStats) => {
     if (!career || !nextFixture) return;
     setLastMatchStats(stats);
-
-    const seasonStats = {
-      appearances: career.seasonStats.appearances + 1,
-      goals: career.seasonStats.goals + stats.goals,
-      hatTricks: career.seasonStats.hatTricks + (stats.goals >= 3 ? 1 : 0),
-      passes: career.seasonStats.passes + stats.passes,
-      assists: career.seasonStats.assists + stats.assists,
-      starMan: career.seasonStats.starMan + (stats.starMan ? 1 : 0),
-      totalRating: career.seasonStats.totalRating + stats.rating,
-      ratingCount: career.seasonStats.ratingCount + 1,
-    };
-    const careerStats = {
-      appearances: career.careerStats.appearances + 1,
-      goals: career.careerStats.goals + stats.goals,
-      hatTricks: career.careerStats.hatTricks + (stats.goals >= 3 ? 1 : 0),
-      passes: career.careerStats.passes + stats.passes,
-      assists: career.careerStats.assists + stats.assists,
-      starMan: career.careerStats.starMan + (stats.starMan ? 1 : 0),
-      totalRating: career.careerStats.totalRating + stats.rating,
-      ratingCount: career.careerStats.ratingCount + 1,
-    };
-
-    let league = updateLeagueWithUserResult(career.league, career.player.club, nextFixture.opponent, stats.homeScore, stats.awayScore);
-    const rng = mulberry32(career.season * 1000 + career.week);
-    league = simulateOtherFixtures(league, career.player.club, career.week, rng);
-
-    const fixtures = career.fixtures.map((f) => {
-      if (f === nextFixture) {
-        return {
-          ...f,
-          played: true,
-          homeScore: f.home ? stats.homeScore : stats.awayScore,
-          awayScore: f.home ? stats.awayScore : stats.homeScore,
-          userGoals: stats.goals,
-          userAssists: stats.assists,
-          userRating: stats.rating,
-        };
-      }
-      return f;
-    });
-
-    // Boot durability
-    const newBootMatches = Math.max(0, career.currentBoot.matches - 1);
-    const currentBoot = { ...career.currentBoot, matches: newBootMatches };
-
-    // Sponsor progress: raise relationship based on fame + performance
-    const sponsorGain = Math.max(0, Math.floor(stats.fansChange / 3));
-    const newSponsorRel = Math.min(100, career.relationships.sponsors + sponsorGain);
-
-    // Auto-unlock sponsor deals as relationship increases (one deal per ★10 relationship)
-    const dealsUnlocked = Math.floor(newSponsorRel / 10);
-    const sponsors = career.sponsors.map((s, i) => {
-      if (i < dealsUnlocked && !s.active) {
-        return { ...s, active: true, perMatch: 1 + Math.floor(i / 2) };
-      }
-      return s;
-    });
-
-    let next: CareerState = {
-      ...career,
-      seasonStats,
-      careerStats,
-      league,
-      fixtures,
-      money: career.money + stats.totalCash,
-      energy: Math.max(15, career.energy - 40),
-      matchFitness: Math.min(100, career.matchFitness + 3),
-      relationships: {
-        ...career.relationships,
-        boss: Math.max(0, Math.min(100, career.relationships.boss + stats.bossChange)),
-        team: Math.max(0, Math.min(100, career.relationships.team + stats.teamChange)),
-        fans: Math.max(0, Math.min(100, career.relationships.fans + stats.fansChange)),
-        sponsors: newSponsorRel,
-      },
-      sponsors,
-      starRating: Math.min(5, career.starRating + (stats.rating >= 8 ? 0.03 : stats.rating >= 7 ? 0.01 : 0)),
-      fame: career.fame + Math.max(0, Math.floor(stats.fansChange / 2)),
-      week: career.week + 1,
-      currentBoot,
-      form: [stats.rating, ...career.form].slice(0, 5),
-    };
-    checkAndSetAchievements(next);
-
+    const { career: next, newlyUnlocked } = creditMatchResult(career, nextFixture, stats);
+    toastAchievements(newlyUnlocked);
     setCareer(next);
     setPhase("post-match");
   }, [career, nextFixture]);
@@ -248,12 +134,8 @@ export default function StarDevPage() {
     if (!career) return;
     const remaining = career.fixtures.filter((f) => !f.played).length;
     if (remaining === 0) {
-      // Award league trophy if won
-      const sorted = sortLeague(career.league);
-      if (sorted[0]?.name === career.player.club) {
-        const trophy = { season: career.season, competition: "Premier League", club: career.player.club };
-        setCareer({ ...career, trophies: [...career.trophies, trophy] });
-      }
+      const { career: next } = awardLeagueTrophyIfWon(career);
+      setCareer(next);
       setPhase("ballon-dor");
       return;
     }
@@ -286,49 +168,12 @@ export default function StarDevPage() {
 
   const handleBallonDorContinue = useCallback((userWon: boolean) => {
     if (!career) return;
-    const clubs = career.league.map((t) => t.name);
-    const newFixtures = buildFixtures(clubs, career.player.club);
-    const newLeague = buildLeague(clubs, career.player.club);
-
-    // Contract seasons remaining
-    const seasonsLeft = career.contract.seasonsRemaining - 1;
-
-    // Aging effects — skills decline slightly after 30
-    const ageEffect = (v: number): number => {
-      const newAge = career.player.age + 1;
-      if (newAge >= 34) return Math.max(20, v - 3);
-      if (newAge >= 30) return Math.max(30, v - 1);
-      return v;
-    };
-    const agedSkills: Skills = {
-      pace: ageEffect(career.skills.pace),
-      power: ageEffect(career.skills.power),
-      technique: career.skills.technique, // technique decays slower
-      vision: career.skills.vision,       // vision improves with age; keep steady
-      freeKick: career.skills.freeKick,
-    };
-
-    let next: CareerState = {
-      ...career,
-      player: { ...career.player, age: career.player.age + 1 },
-      skills: agedSkills,
-      season: career.season + 1,
-      week: 1,
-      fixtures: newFixtures,
-      league: newLeague,
-      seasonStats: { appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0 },
-      energy: 100,
-      matchFitness: 85,
-      form: [],
-      contract: { ...career.contract, seasonsRemaining: seasonsLeft },
-      ballonDorWins: career.ballonDorWins + (userWon ? 1 : 0),
-    };
-
-    checkAndSetAchievements(next);
+    const { career: next, newlyUnlocked } = advanceSeason(career, userWon);
+    toastAchievements(newlyUnlocked);
     setCareer(next);
 
-    // If contract expiring, force renewal
-    if (seasonsLeft <= 0) {
+    // If the contract has run out, force a renewal before returning to the dashboard.
+    if (next.contract.seasonsRemaining <= 0) {
       setPhase("contract-renewal");
     } else {
       setActiveNav(null);
@@ -381,6 +226,26 @@ export default function StarDevPage() {
       ownedItems: [...career.ownedItems, item],
       happiness: Math.min(100, career.happiness + Math.floor(item.lifestyleValue / 3)),
       fame: career.fame + Math.floor(item.lifestyleValue / 5),
+    });
+  }, [career]);
+
+  const handleBuyHorse = useCallback((horse: Horse, price: number) => {
+    if (!career || career.money < price || career.horse) return;
+    setCareer({ ...career, money: career.money - price, horse });
+  }, [career]);
+
+  const handleHorseRace = useCallback((finish: number, prize: number, energyCost: number) => {
+    if (!career || !career.horse) return;
+    setCareer({
+      ...career,
+      money: career.money + prize,
+      horse: {
+        ...career.horse,
+        energy: Math.max(0, career.horse.energy - energyCost),
+        racesRun: career.horse.racesRun + 1,
+        racesWon: career.horse.racesWon + (finish === 1 ? 1 : 0),
+        earnings: career.horse.earnings + prize,
+      },
     });
   }, [career]);
 
@@ -440,6 +305,12 @@ export default function StarDevPage() {
   if (phase === "match" && nextFixture) {
     const opp = career.league.find((t) => t.name === nextFixture.opponent);
     const oppStrength = opp?.strength ?? 65;
+    // Your worn boots actually count now: they add to the power/technique the shot
+    // physics uses (capped at 100). This affects the SHOT, not the aim arrow — the
+    // arrow is a fixed-scale drag indicator and never grows with power.
+    const bootMatchesLeft = career.currentBoot.matches > 0;
+    const effectivePower = Math.min(100, career.skills.power + (bootMatchesLeft ? career.currentBoot.power : 0));
+    const effectiveTechnique = Math.min(100, career.skills.technique + (bootMatchesLeft ? career.currentBoot.technique : 0));
     return (
       <div
         className="min-h-screen bg-gray-950 text-white py-4 px-3"
@@ -447,7 +318,7 @@ export default function StarDevPage() {
       >
         <div className="max-w-sm mx-auto">
           <CanvasMatch
-            skills={{ power: career.skills.power, technique: career.skills.technique }}
+            skills={{ power: effectivePower, technique: effectiveTechnique }}
             keeperStrength={oppStrength}
             position={career.player.position}
             teamRelationship={career.relationships.team}
@@ -506,6 +377,9 @@ export default function StarDevPage() {
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToLife} />;
+  if (phase === "horse-stable") {
+    return <HorseRacing career={career} onBuyHorse={handleBuyHorse} onRace={handleHorseRace} onBack={handleBackToLife} />;
+  }
 
   if (phase === "relationship-game" && relationshipGameKind) {
     const currentValue = relationshipGameKind === "happiness"
@@ -598,6 +472,7 @@ export default function StarDevPage() {
             onOpenAchievements={() => setPhase("achievements")}
             onOpenTrophies={() => setPhase("trophies")}
             onOpenContract={() => setPhase("contract-renewal")}
+            onOpenStable={() => setPhase("horse-stable")}
             onUseDrink={handleUseDrink}
             onPlayRelationshipGame={handleOpenRelationshipGame}
           />

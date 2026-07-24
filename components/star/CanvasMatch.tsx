@@ -505,21 +505,43 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
       const b = toPx(ex, ey);
-      ctx.strokeStyle = "rgba(251,191,36,0.95)";
-      ctx.lineWidth = Math.max(2, unit * 0.5);
-      ctx.setLineDash([unit * 1.5, unit]);
-      ctx.beginPath();
-      ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
-      ctx.setLineDash([]);
-      // arrowhead
+      // Solid, tapered orange arrow: a round-capped shaft into a clean triangular
+      // head. Same length as before (tip stays at b) — only the styling changed.
       const ang = Math.atan2(b.py - a.py, b.px - a.px);
-      ctx.fillStyle = C.goldSoft;
+      const ux = Math.cos(ang), uy = Math.sin(ang);
+      const nx = -uy, ny = ux; // perpendicular
+      const arrowLen = Math.hypot(b.px - a.px, b.py - a.py) || 1;
+      const headLen = clamp(unit * 3, unit * 1.2, arrowLen * 0.55);
+      const headHalf = unit * 2;
+      const shaftW = unit * 1.25;
+      const bx = b.px - ux * headLen, by = b.py - uy * headLen; // head base
+
+      // shaft
+      const shaftGrad = ctx.createLinearGradient(a.px, a.py, b.px, b.py);
+      shaftGrad.addColorStop(0, "#fb923c");
+      shaftGrad.addColorStop(1, "#ea580c");
+      ctx.strokeStyle = shaftGrad;
+      ctx.lineWidth = shaftW;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(a.px, a.py);
+      ctx.lineTo(bx, by);
+      ctx.stroke();
+      ctx.lineCap = "butt";
+
+      // head
       ctx.beginPath();
       ctx.moveTo(b.px, b.py);
-      ctx.lineTo(b.px - Math.cos(ang - 0.4) * unit * 1, b.py - Math.sin(ang - 0.4) * unit * 1);
-      ctx.lineTo(b.px - Math.cos(ang + 0.4) * unit * 1, b.py - Math.sin(ang + 0.4) * unit * 1);
+      ctx.lineTo(bx + nx * headHalf, by + ny * headHalf);
+      ctx.lineTo(bx - nx * headHalf, by - ny * headHalf);
       ctx.closePath();
+      ctx.fillStyle = "#f97316";
       ctx.fill();
+      // subtle darker edge for definition
+      ctx.lineJoin = "round";
+      ctx.lineWidth = Math.max(1, unit * 0.22);
+      ctx.strokeStyle = "rgba(124,45,18,0.6)";
+      ctx.stroke();
 
       // power meter (left)
       const meterX = unit * 2, meterTop = H * 0.15, meterH = H * 0.7, meterW = unit * 2.5;
