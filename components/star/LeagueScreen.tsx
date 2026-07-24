@@ -8,13 +8,14 @@ interface Props {
 }
 
 export default function LeagueScreen({ career }: Props) {
-  const [view, setView] = useState<"table" | "fixtures">("table");
+  const [view, setView] = useState<"table" | "fixtures" | "squad">("table");
   const sorted = sortLeague(career.league);
+  const squad = career.squad ?? [];
 
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-2 gap-1 mb-2">
-        {(["table", "fixtures"] as const).map((v) => (
+      <div className="grid grid-cols-3 gap-1 mb-2">
+        {(["table", "fixtures", "squad"] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
@@ -77,6 +78,68 @@ export default function LeagueScreen({ career }: Props) {
               <div className={`text-left ${!f.home ? "font-black" : ""}`}>{f.home ? f.opponent : career.player.club}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {view === "squad" && (
+        <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
+          {/* Header */}
+          <div className="grid grid-cols-[1fr_36px_26px_26px] text-[10px] font-black text-white bg-gray-800 py-1.5 px-2 border-b border-black/50 gap-1">
+            <div>Name</div>
+            <div className="text-center">Pos</div>
+            <div className="text-center text-yellow-300">G</div>
+            <div className="text-center text-blue-300">A</div>
+          </div>
+          <div className="max-h-[420px] overflow-y-auto">
+            {/* User row first — reads from seasonStats */}
+            <div className="grid grid-cols-[1fr_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 bg-emerald-700 text-white">
+              <div className="truncate font-black">{career.player.firstName} {career.player.lastName} ★</div>
+              <div className="text-center text-emerald-200">{career.player.position}</div>
+              <div className="text-center font-black text-yellow-300">{career.seasonStats.goals}</div>
+              <div className="text-center font-black text-blue-300">{career.seasonStats.assists}</div>
+            </div>
+            {/* Squad sorted by goals+assists descending */}
+            {[...squad]
+              .sort((a, b) => (b.seasonGoals + b.seasonAssists) - (a.seasonGoals + a.seasonAssists))
+              .map((p, i) => (
+                <div
+                  key={p.id}
+                  className={`grid grid-cols-[1fr_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${
+                    i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                  }`}
+                >
+                  <div className="truncate">{p.name}</div>
+                  <div className="text-center text-gray-400">{p.position}</div>
+                  <div className="text-center">
+                    {p.seasonGoals > 0
+                      ? <span className="text-yellow-300 font-black">{p.seasonGoals}</span>
+                      : <span className="text-gray-600">0</span>}
+                  </div>
+                  <div className="text-center">
+                    {p.seasonAssists > 0
+                      ? <span className="text-blue-300 font-black">{p.seasonAssists}</span>
+                      : <span className="text-gray-600">0</span>}
+                  </div>
+                </div>
+              ))}
+          </div>
+          {/* Career totals footer for top scorers */}
+          {squad.some(p => p.careerGoals > 0 || p.careerAssists > 0) && (
+            <div className="bg-gray-800 border-t border-black/30 px-2 py-1.5">
+              <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Career Top Scorers</div>
+              {[...squad]
+                .sort((a, b) => (b.careerGoals + b.careerAssists) - (a.careerGoals + a.careerAssists))
+                .slice(0, 3)
+                .filter(p => p.careerGoals > 0 || p.careerAssists > 0)
+                .map(p => (
+                  <div key={p.id} className="flex items-center gap-1 text-[9px] text-gray-300 mb-0.5">
+                    <span className="font-black text-white truncate flex-1">{p.shortName}</span>
+                    <span className="text-yellow-400 font-black">{p.careerGoals}G</span>
+                    <span className="text-blue-400 font-black">{p.careerAssists}A</span>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       )}
     </div>

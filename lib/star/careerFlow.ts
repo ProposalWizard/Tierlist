@@ -10,6 +10,7 @@ import {
 } from "./season";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
+import { generateSquad, clubNameSeed } from "./squadData";
 
 export const SPONSOR_CATEGORIES = [
   "Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food",
@@ -57,7 +58,53 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     seenDilemmas: [],
     ballonDorWins: 0,
     horse: null,
+    squad: generateSquad(clubNameSeed(player.club)),
+    contractStarMilestones: [],
+    contractFormOfferSeason: -1,
   };
+}
+
+// Star rating thresholds that trigger an early contract offer.
+// The player starts at 2.5★ so offers begin when they break into 3★ territory.
+const STAR_OFFER_MILESTONES = [3, 4, 5];
+const FORM_OFFER_THRESHOLD = 7.5;  // average match rating over last 5 games
+const FORM_OFFER_MIN_MATCHES = 5;
+
+// Check if the club should make an unsolicited early renewal offer.
+// Returns the reason if an offer is due, or null if nothing to offer.
+// Only fires when at least 2 seasons remain (end-of-contract flow handles the final year).
+export function checkForContractOffer(career: CareerState): "form" | "star" | null {
+  if (career.contract.seasonsRemaining < 2) return null;
+
+  // Star milestone — lowest unmet threshold the player has now cleared
+  const milestones = career.contractStarMilestones ?? [];
+  for (const m of STAR_OFFER_MILESTONES) {
+    if (career.starRating >= m && !milestones.includes(m)) return "star";
+  }
+
+  // Sustained form — exactly once per season; needs a full window of 5 high-rated games
+  const lastFormSeason = career.contractFormOfferSeason ?? -1;
+  if (lastFormSeason !== career.season && career.form.length >= FORM_OFFER_MIN_MATCHES) {
+    const avg = career.form.reduce((s, r) => s + r, 0) / career.form.length;
+    if (avg >= FORM_OFFER_THRESHOLD) return "form";
+  }
+
+  return null;
+}
+
+// Mark the triggering milestone/season so the same offer doesn't fire again.
+export function markContractOfferUsed(career: CareerState, reason: "form" | "star"): CareerState {
+  if (reason === "star") {
+    const milestones = career.contractStarMilestones ?? [];
+    const triggered = STAR_OFFER_MILESTONES.find(m => career.starRating >= m && !milestones.includes(m));
+    if (triggered !== undefined) {
+      return { ...career, contractStarMilestones: [...milestones, triggered] };
+    }
+  }
+  if (reason === "form") {
+    return { ...career, contractFormOfferSeason: career.season };
+  }
+  return career;
 }
 
 // Apply a finished match to the career: season/career stat accrual, the user's
@@ -112,6 +159,23 @@ export function creditMatchResult(
     i < dealsUnlocked && !s.active ? { ...s, active: true, perMatch: 1 + Math.floor(i / 2) } : s,
   );
 
+  // Update squad player stats from this match's goal events.
+  // Chain teammate goals (isUserGoal: false) → scorer gets a goal.
+  // User direct goals (isUserGoal: true) → assister (if any) gets an assist.
+  const goalEvents = stats.goalEvents ?? [];
+  const updatedSquad = (career.squad ?? []).map(p => {
+    const scored = goalEvents.filter(e => !e.isUserGoal && e.scorer === p.name).length;
+    const assisted = goalEvents.filter(e => e.assist === p.name).length;
+    if (scored === 0 && assisted === 0) return p;
+    return {
+      ...p,
+      seasonGoals: p.seasonGoals + scored,
+      seasonAssists: p.seasonAssists + assisted,
+      careerGoals: p.careerGoals + scored,
+      careerAssists: p.careerAssists + assisted,
+    };
+  });
+
   const next: CareerState = {
     ...career,
     seasonStats: accrue(career.seasonStats),
@@ -134,6 +198,7 @@ export function creditMatchResult(
     week: career.week + 1,
     currentBoot,
     horse,
+    squad: updatedSquad,
     form: [stats.rating, ...career.form].slice(0, 5),
   };
 
@@ -183,6 +248,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     form: [],
     contract: { ...career.contract, seasonsRemaining: career.contract.seasonsRemaining - 1 },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
+    squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0 })),
   };
 
   return applyAchievements(next);

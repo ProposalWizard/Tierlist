@@ -119,7 +119,11 @@ export function TrophiesScreen({ trophies, onBack, ballonDors }: { trophies: Tro
 }
 
 // ---------- CONTRACT RENEWAL (higher-or-lower) ----------
-export function ContractRenewal({ career, onComplete }: { career: CareerState; onComplete: (newContract: CareerState["contract"] | null) => void }) {
+export function ContractRenewal({ career, offerReason, onComplete }: {
+  career: CareerState;
+  offerReason?: "form" | "star";
+  onComplete: (newContract: CareerState["contract"] | null) => void;
+}) {
   const [phase, setPhase] = useState<"intro" | "playing" | "done">("intro");
   const [current, setCurrent] = useState(7);
   const [next, setNext] = useState<number | null>(null);
@@ -127,10 +131,10 @@ export function ContractRenewal({ career, onComplete }: { career: CareerState; o
   const [wins, setWins] = useState(0);
   const [message, setMessage] = useState("");
 
-  // Renewal is only available in the final year of the deal — otherwise you could
-  // reopen this screen from the Life menu every week and print unlimited wage rises.
-  // Signing resets the deal to 3 seasons, so this closes the loop after one renewal.
-  const canRenew = career.contract.seasonsRemaining <= 1;
+  // An early offer (form/star) bypasses the normal "final year only" gate.
+  // Without an offer, the Life menu can still open this screen but shows
+  // a "come back later" message if there are 2+ seasons remaining.
+  const canRenew = career.contract.seasonsRemaining <= 1 || !!offerReason;
 
   // Draw a card that is never equal to the current one — a true higher-or-lower has
   // no ties, so a 6 can't be followed by another 6.
@@ -204,16 +208,37 @@ export function ContractRenewal({ career, onComplete }: { career: CareerState; o
 
         {phase === "intro" && canRenew && (
           <div className="bg-gray-700 rounded-2xl p-4 border border-gray-600">
-            <div className="text-sm text-gray-200 mb-3 leading-snug">
-              Your contract is up. Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms by ★1 wage.
+            {offerReason === "form" && (
+              <div className="mb-3 flex items-start gap-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl px-3 py-2.5">
+                <span className="text-lg leading-none">📈</span>
+                <div className="text-xs text-emerald-200 leading-snug">
+                  <span className="font-black text-emerald-300">Outstanding form!</span> Your performances have been exceptional — {career.contract.club} want to lock you in with an improved deal early.
+                </div>
+              </div>
+            )}
+            {offerReason === "star" && (
+              <div className="mb-3 flex items-start gap-2 bg-amber-900/40 border border-amber-700/50 rounded-xl px-3 py-2.5">
+                <span className="text-lg leading-none">⭐</span>
+                <div className="text-xs text-amber-200 leading-snug">
+                  <span className="font-black text-amber-300">{career.starRating.toFixed(1)}★ status!</span> The club recognise your growing reputation and are offering improved terms to reflect your standing.
+                </div>
+              </div>
+            )}
+            <div className="text-xs text-gray-300 mb-3 leading-snug">
+              {offerReason
+                ? "Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms."
+                : "Your contract is up. Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms by ★1 wage."}
             </div>
             <div className="bg-gray-800 rounded-lg p-3 text-xs mb-3 space-y-1">
               <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{career.contract.wage}/match</span></div>
               <div className="flex justify-between"><span>Goal bonus</span><span className="text-yellow-300 font-black">★{career.contract.goalBonus}</span></div>
               <div className="flex justify-between"><span>Assist bonus</span><span className="text-yellow-300 font-black">★{career.contract.assistBonus}</span></div>
+              <div className="flex justify-between"><span>Seasons remaining</span><span className="text-gray-300 font-black">{career.contract.seasonsRemaining}</span></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => onComplete(null)} className="py-3 bg-gray-600 rounded-xl font-black">Wait a season</button>
+              <button onClick={() => onComplete(null)} className="py-3 bg-gray-600 rounded-xl font-black">
+                {offerReason ? "Decline offer" : "Wait a season"}
+              </button>
               <button onClick={startCard} className="py-3 bg-emerald-500 rounded-xl font-black">Start negotiation</button>
             </div>
           </div>

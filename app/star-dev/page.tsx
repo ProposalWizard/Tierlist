@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse } from "@/lib/star/types";
 import { loadCareer, saveCareer, clearCareer } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
-import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason } from "@/lib/star/careerFlow";
+import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
@@ -30,6 +30,7 @@ export default function StarDevPage() {
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
+  const [contractOfferReason, setContractOfferReason] = useState<"form" | "star" | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
 
@@ -136,6 +137,17 @@ export default function StarDevPage() {
       const { career: next } = awardLeagueTrophyIfWon(career);
       setCareer(next);
       setPhase("ballon-dor");
+      return;
+    }
+
+    // Mid-season contract offer — fires when the club wants to lock in a player
+    // who has hit a star milestone or maintained exceptional form for 5+ matches.
+    const earlyOffer = checkForContractOffer(career);
+    if (earlyOffer) {
+      const updated = markContractOfferUsed(career, earlyOffer);
+      setCareer(updated);
+      setContractOfferReason(earlyOffer);
+      setPhase("contract-renewal");
       return;
     }
 
@@ -285,9 +297,8 @@ export default function StarDevPage() {
     if (!career) return;
     if (newContract) {
       setCareer({ ...career, contract: newContract });
-    } else {
-      // Keep old contract with 0 seasons — will be forced to renew next season anyway
     }
+    setContractOfferReason(null);
     setActiveNav(null);
     setPhase("dashboard");
   }, [career]);
@@ -352,7 +363,7 @@ export default function StarDevPage() {
   }
 
   if (phase === "contract-renewal") {
-    return <ContractRenewal career={career} onComplete={handleContractComplete} />;
+    return <ContractRenewal career={career} offerReason={contractOfferReason ?? undefined} onComplete={handleContractComplete} />;
   }
 
   if (phase === "shop-nrg" || phase === "shop-boots" || phase === "shop-lifestyle") {

@@ -13,7 +13,8 @@ import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
 import { finaliseMatch } from "@/lib/star/matchStats";
-import type { CareerState, MatchStats, Fixture } from "@/lib/star/types";
+import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
+import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 
@@ -144,6 +145,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
   const userScoreRef = useRef(0);
   const oppScoreRef = useRef(0);
+  const goalEventsRef = useRef<GoalEvent[]>([]);
   const [score, setScore] = useState({ user: 0, opp: 0 });
   const [finalStats, setFinalStats] = useState<MatchStats | null>(null);
 
@@ -440,10 +442,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.fill();
     }
 
-    // Rebound poacher — lurks, brightens when it commits to a loose ball
+    // Rebound poacher — always same blue as other teammates
     {
       const f = sc.follower;
-      puck(f.x, f.y, R * 0.9, f.active ? "#60a5fa" : "rgba(96,165,250,0.4)", C.mateRim);
+      puck(f.x, f.y, R * 0.9, C.mate, C.mateRim);
     }
 
     // Teammates — decorative crossers, or the runner a pass is aimed at
@@ -774,9 +776,39 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     } else if (res === "caught" || res === "blocked") {
       nudge(0.18, 0.5);
       playSave();
+    } else if (res === "offside") {
+      playWhistle();
     }
 
-    pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: sc.receiver?.roleLabel, isPass: isSimplePass }));
+    // Assign named squad players to goals and update the goal events log.
+    // Chain goals → a named attacker from the squad scores; user assisted.
+    // Direct user goals → optionally pick a named squad member as assister.
+    let commentaryRoleLabel = sc.receiver?.roleLabel;
+    if (kind === "goal" && careerRef.current) {
+      const squad = careerRef.current.squad ?? [];
+      const pFirst = careerRef.current.player.firstName;
+      const pLast = careerRef.current.player.lastName;
+      const playerName = `${pFirst} ${pLast}`;
+      const rng = rngRef.current;
+
+      if (d.assists === 1 && sc.receiver) {
+        // Teammate scored (chain scenario) — replace role label with a real player name
+        const scorer = pickSquadScorer(squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position)).length > 0
+          ? squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position))
+          : squad, rng);
+        if (scorer) {
+          commentaryRoleLabel = scorer.shortName;
+          goalEventsRef.current.push({ minute: matchMinuteRef.current, scorer: scorer.name, assist: playerName, isUserGoal: false });
+        }
+      } else if (d.goals === 1) {
+        // User scored directly — optionally pick a squad assister
+        const assister = squad.length > 0 ? pickSquadAssist(squad, "", rng) : null;
+        goalEventsRef.current.push({ minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name, isUserGoal: true });
+        if (assister) pushLine(`Assist: ${assister.shortName}`);
+      }
+    }
+
+    pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: commentaryRoleLabel, isPass: isSimplePass }));
 
     // Build-up pass that succeeded → check for ball return
     if (sc.kind === "buildup" && (res === "delivered" || (kind === "goal"))) {
@@ -809,6 +841,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const stats = finaliseMatch(
           attemptsRef.current, t.goals, t.assists, t.passesCompleted,
           90, userScoreRef.current, oppScoreRef.current, careerForStats,
+          goalEventsRef.current,
         );
         window.setTimeout(() => { setFinalStats(stats); setPhase("postmatch"); }, 1800);
       } else {
@@ -880,6 +913,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const stats = finaliseMatch(
           attemptsRef.current, t.goals, t.assists, t.passesCompleted,
           90, userScoreRef.current, oppScoreRef.current, careerForStats,
+          goalEventsRef.current,
         );
         if (matchModeRef.current && onCompleteRef.current) {
           onCompleteRef.current(stats);
@@ -925,6 +959,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
     userScoreRef.current = 0;
     oppScoreRef.current = 0;
+    goalEventsRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
     buildupReturnRef.current = false;
@@ -1069,15 +1104,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : "cursor-default"}`}
         />
 
-        {/* Aim prompt */}
-        {phase === "aim" && !draggingRef.current && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="kib-pop bg-gray-950/80 border-2 border-amber-400/90 rounded-lg px-6 py-3 text-center shadow-xl">
-              <div className="text-2xl font-black text-amber-300 tracking-widest drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{scenarioLabel.verb}</div>
-              <div className="text-[10px] text-amber-100/80 mt-0.5">Drag back from the ball to aim &amp; power</div>
-            </div>
-          </div>
-        )}
 
         {/* Contact overlay */}
         {phase === "contact" && aim && (

@@ -123,6 +123,7 @@ const RESULT_SELF: Partial<Record<Outcome, string[]>> = {
   blocked: ["Blocked! A defender gets across in time.", "Charged down before it can trouble the keeper."],
   out: ["Runs out of play.", "That one's gone out."],
   short: ["Doesn't have the legs on it.", "Comes up just short."],
+  offside: ["The flag is up — offside!", "Offside! The linesman's flag is raised.", "Caught offside — the run was timed too early."],
 };
 
 const RESULT_TEAMMATE_TEMPLATES: Partial<Record<Outcome, string[]>> = {

@@ -69,6 +69,24 @@ export interface LeagueTeam {
   points: number;
 }
 
+export interface SquadPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  position: "GK" | "CB" | "LB" | "RB" | "CDM" | "CM" | "CAM" | "LW" | "RW" | "ST";
+  seasonGoals: number;
+  seasonAssists: number;
+  careerGoals: number;
+  careerAssists: number;
+}
+
+export interface GoalEvent {
+  minute: number;
+  scorer: string;   // full player name
+  assist?: string;  // full player name, or undefined
+  isUserGoal: boolean;
+}
+
 export interface MatchStats {
   chances: number;
   goals: number;
@@ -85,6 +103,7 @@ export interface MatchStats {
   totalCash: number;
   homeScore: number;
   awayScore: number;
+  goalEvents?: GoalEvent[];
 }
 
 export interface Boot {
@@ -167,6 +186,10 @@ export interface CareerState {
   seenDilemmas: string[];
   ballonDorWins: number;
   horse: Horse | null;
+  squad: SquadPlayer[];
+  // Mid-season contract offer tracking (optional for backward-compat with saved careers)
+  contractStarMilestones?: number[]; // star thresholds that have already triggered an early offer
+  contractFormOfferSeason?: number;  // season when the last form-based early offer fired (-1 = never)
 }
 
 export type StarPhase =
