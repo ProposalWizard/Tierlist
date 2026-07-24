@@ -55,13 +55,16 @@ export default function StarMatchDevPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-emerald-950 text-white py-4 px-3">
+    <div
+      className="min-h-screen bg-gray-950 text-white py-4 px-3"
+      style={{ backgroundImage: "radial-gradient(70% 45% at 50% 0%, rgba(16,185,129,0.16), transparent 70%)" }}
+    >
       <div className="max-w-sm mx-auto">
         <div className="text-center mb-3">
-          <div className="inline-block px-3 py-1 rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-300 text-[10px] font-black tracking-widest uppercase">
-            Match Engine Sandbox
+          <div className="inline-block px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 text-[10px] font-black tracking-widest uppercase">
+            Knowitball · Match Lab
           </div>
-          <h1 className="mt-2 text-xl font-black">Shooting Test</h1>
+          <h1 className="mt-2 text-xl font-black tracking-tight">Shooting Test</h1>
         </div>
 
         <CanvasMatch
