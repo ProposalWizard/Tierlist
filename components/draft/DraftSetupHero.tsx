@@ -16,9 +16,10 @@ function TeamNameInput({ value, onChange }: { value: string; onChange: (name: st
   useEffect(() => { setLocalValue(value); }, [value]);
   return (
     <div className="mb-3 sm:mb-4">
-      <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
+      <label className="block text-xs font-bold tracking-widest text-white uppercase mb-2.5">
         Your Team Name
       </label>
+      {/* text-[16px] prevents iOS from zooming in on focus */}
       <input
         type="text"
         value={localValue}
@@ -26,7 +27,8 @@ function TeamNameInput({ value, onChange }: { value: string; onChange: (name: st
         onBlur={() => { const v = localValue.trim(); if (v) onChange(v); }}
         placeholder="KNOWITBALL FC"
         maxLength={50}
-        className="w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-sm font-bold text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+        className="w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-[16px] font-bold text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+        style={{ touchAction: "manipulation" }}
       />
       <p className="text-[10px] text-gray-500 mt-1.5">Shown in league tables across all your drafts</p>
     </div>
@@ -112,7 +114,8 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-3 sm:px-4 py-6 relative">
+    // justify-start: long content scrolls naturally on phones instead of fighting justify-center
+    <div className="flex flex-col items-center justify-start min-h-screen px-3 sm:px-4 pt-4 pb-10 sm:pt-8 sm:pb-12 relative">
       <ObjectivesToast />
       <div className="max-w-lg w-full">
 
@@ -176,21 +179,24 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
             <p className="mt-auto text-[10px] sm:text-xs text-gray-200 leading-snug max-w-[68%] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
               Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
             </p>
-            {/* Image position controls — bottom-right corner, dev tool */}
+            {/* Image position controls — bottom-right corner, dev tool.
+                Panel opens upward; left-aligned so it stays inside the card on narrow screens. */}
             <div className="absolute bottom-2 right-2">
               <button
                 onClick={() => setShowImgControls((v) => !v)}
                 className="text-[9px] font-bold px-2 py-1 rounded bg-black/50 border border-white/10 text-white/60 hover:text-white hover:bg-black/70 transition"
+                style={{ touchAction: "manipulation" }}
               >
                 ⚙ Image
               </button>
               {showImgControls && (
-                <div className="absolute bottom-7 right-0 w-52 bg-gray-950/95 border border-white/10 rounded-xl p-3 shadow-2xl z-10 space-y-2.5">
+                <div className="absolute bottom-8 right-0 w-48 bg-gray-950/98 border border-white/10 rounded-xl p-3 shadow-2xl z-10 space-y-2.5"
+                  style={{ maxWidth: "calc(100vw - 1.5rem)", right: 0 }}>
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Image Position</div>
                   {(["x", "y", "zoom"] as const).map((key) => (
                     <div key={key}>
-                      <div className="flex justify-between text-[9px] text-gray-400 mb-0.5">
-                        <span className="font-bold uppercase">{key === "zoom" ? "Zoom" : key === "x" ? "Left → Right" : "Top → Bottom"}</span>
+                      <div className="flex justify-between text-[9px] text-gray-400 mb-1">
+                        <span className="font-bold uppercase">{key === "zoom" ? "Zoom" : key === "x" ? "Left ↔ Right" : "Top ↕ Bottom"}</span>
                         <span className="tabular-nums text-white">{key === "zoom" ? `${imgPos.zoom.toFixed(2)}×` : `${Math.round(imgPos[key])}%`}</span>
                       </div>
                       <input
@@ -200,13 +206,15 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
                         step={key === "zoom" ? 0.01 : 1}
                         value={imgPos[key]}
                         onChange={(e) => updateImgPos({ [key]: parseFloat(e.target.value) })}
-                        className="w-full accent-emerald-400 h-1"
+                        className="w-full accent-emerald-400"
+                        style={{ height: "20px" }}
                       />
                     </div>
                   ))}
                   <button
                     onClick={() => updateImgPos({ x: 50, y: 30, zoom: 1.0 })}
                     className="text-[9px] text-gray-500 hover:text-white transition w-full text-center pt-0.5"
+                    style={{ touchAction: "manipulation" }}
                   >
                     Reset to default
                   </button>
@@ -255,33 +263,35 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
 
         {onTeamNameChange && <TeamNameInput value={teamName ?? ""} onChange={onTeamNameChange} />}
 
-        {/* Formation */}
+        {/* Formation — 2 cols on mobile (names like 4-2-3-1 are too cramped at 4-col) */}
         <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">Choose Formation</label>
-          <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-2.5">Choose Formation</label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {FORMATIONS.map((f) => (
               <button
                 key={f.name}
                 onClick={() => setFormation(f.name)}
-                className={`relative py-2.5 sm:py-3 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 ${
+                style={{ touchAction: "manipulation", minHeight: "44px" }}
+                className={`relative py-3 px-2 rounded-lg text-sm font-bold transition-all active:scale-95 ${
                   formation === f.name
                     ? "bg-emerald-600 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                    : "bg-gray-800/80 text-white hover:bg-gray-700 hover:text-gray-200 border border-gray-700/50"
+                    : "bg-gray-800/80 text-white border border-gray-700/50"
                 }`}
               >{f.name}</button>
             ))}
           </div>
         </div>
 
-        {/* Era Range */}
+        {/* Era Range — text-[16px] on selects prevents iOS from zooming on focus */}
         <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">Era Range</label>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-2.5">Era Range</label>
+          <div className="flex items-center gap-2">
             <div className="flex-1 relative">
               <select
                 value={eraStart}
                 onChange={(e) => setEraStart(Number(e.target.value))}
-                className="w-full appearance-none bg-gray-800/80 border border-gray-700/50 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                className="w-full appearance-none bg-gray-800/80 border border-gray-700/50 rounded-lg px-3 py-3 text-[16px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                style={{ touchAction: "manipulation" }}
               >
                 {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
                   <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
@@ -291,16 +301,13 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-px bg-gray-600" />
-              <span className="text-white font-bold text-[10px] sm:text-xs tracking-widest uppercase">to</span>
-              <div className="w-2 h-px bg-gray-600" />
-            </div>
+            <span className="text-white font-bold text-xs tracking-widest uppercase shrink-0">to</span>
             <div className="flex-1 relative">
               <select
                 value={eraEnd}
                 onChange={(e) => setEraEnd(Number(e.target.value))}
-                className="w-full appearance-none bg-gray-800/80 border border-gray-700/50 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                className="w-full appearance-none bg-gray-800/80 border border-gray-700/50 rounded-lg px-3 py-3 text-[16px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                style={{ touchAction: "manipulation" }}
               >
                 {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
                   <option key={y} value={y}>{y - 1}/{String(y % 100).padStart(2, "0")}</option>
@@ -315,93 +322,94 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
 
         {/* Game Mode */}
         <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">Game Mode</label>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setMode("normal")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                mode === "normal" ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50" : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-bold text-white">Normal</div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "normal" ? "text-emerald-100" : "text-white"}`}>Players rated as they were that season</div>
-            </button>
-            <button
-              onClick={() => setMode("prime")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                mode === "prime" ? "bg-amber-600 ring-2 ring-amber-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-amber-900/50" : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-bold text-white">Prime</div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "prime" ? "text-amber-100" : "text-white"}`}>Every player uses their best-ever rating</div>
-            </button>
+          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-2.5">Game Mode</label>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { value: "normal", label: "Normal", desc: "Players rated as that season", active: mode === "normal", cls: "emerald" },
+              { value: "prime", label: "Prime", desc: "Every player at their best-ever", active: mode === "prime", cls: "amber" },
+            ] as const).map(({ value, label, desc, active, cls }) => (
+              <button
+                key={value}
+                onClick={() => setMode(value)}
+                style={{ touchAction: "manipulation", minHeight: "56px" }}
+                className={`relative py-3 px-3 rounded-lg text-left transition-all active:scale-95 ${
+                  active
+                    ? `bg-${cls}-600 ring-2 ring-${cls}-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-${cls}-900/50`
+                    : "bg-gray-800/80 border border-gray-700/50"
+                }`}
+              >
+                <div className="text-sm font-bold text-white">{label}</div>
+                <div className={`text-[10px] mt-0.5 ${active ? `text-${cls}-100` : "text-gray-400"}`}>{desc}</div>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Draft Order */}
         <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">Draft Order</label>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setDraftOrder("club-first")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                draftOrder === "club-first" ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50" : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-bold text-white">Club First</div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-emerald-100" : "text-white"}`}>Pick a player, then choose their position</div>
-            </button>
-            <button
-              onClick={() => setDraftOrder("position-first")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                draftOrder === "position-first" ? "bg-sky-600 ring-2 ring-sky-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-sky-900/50" : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-bold text-white">Position First</div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-sky-100" : "text-white"}`}>Fill each position slot in order</div>
-            </button>
+          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-2.5">Draft Order</label>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { value: "club-first", label: "Club First", desc: "Pick player, then position", active: draftOrder === "club-first", cls: "emerald" },
+              { value: "position-first", label: "Position First", desc: "Fill each slot in order", active: draftOrder === "position-first", cls: "sky" },
+            ] as const).map(({ value, label, desc, active, cls }) => (
+              <button
+                key={value}
+                onClick={() => setDraftOrder(value)}
+                style={{ touchAction: "manipulation", minHeight: "56px" }}
+                className={`relative py-3 px-3 rounded-lg text-left transition-all active:scale-95 ${
+                  active
+                    ? `bg-${cls}-600 ring-2 ring-${cls}-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-${cls}-900/50`
+                    : "bg-gray-800/80 border border-gray-700/50"
+                }`}
+              >
+                <div className="text-sm font-bold text-white">{label}</div>
+                <div className={`text-[10px] mt-0.5 ${active ? `text-${cls}-100` : "text-gray-400"}`}>{desc}</div>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Rating Visibility */}
         <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">Rating Visibility</label>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setHiddenRatings(false)}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                !hiddenRatings ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50" : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-bold text-white">Normal</div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${!hiddenRatings ? "text-emerald-100" : "text-white"}`}>Ratings visible while picking</div>
-            </button>
-            <button
-              onClick={() => setHiddenRatings(true)}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                hiddenRatings ? "bg-purple-600 ring-2 ring-purple-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-purple-900/50" : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-bold text-white">Hidden Ratings</div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${hiddenRatings ? "text-purple-200/70" : "text-white"}`}>All ratings hidden until you pick</div>
-            </button>
+          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-2.5">Rating Visibility</label>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { value: false, label: "Normal", desc: "Ratings visible while picking", active: !hiddenRatings, cls: "emerald" },
+              { value: true, label: "Hidden", desc: "Revealed only after you pick", active: hiddenRatings, cls: "purple" },
+            ] as const).map(({ value, label, desc, active, cls }) => (
+              <button
+                key={String(value)}
+                onClick={() => setHiddenRatings(value)}
+                style={{ touchAction: "manipulation", minHeight: "56px" }}
+                className={`relative py-3 px-3 rounded-lg text-left transition-all active:scale-95 ${
+                  active
+                    ? `bg-${cls}-600 ring-2 ring-${cls}-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-${cls}-900/50`
+                    : "bg-gray-800/80 border border-gray-700/50"
+                }`}
+              >
+                <div className="text-sm font-bold text-white">{label}</div>
+                <div className={`text-[10px] mt-0.5 ${active ? `text-${cls}-100` : "text-gray-400"}`}>{desc}</div>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Re-spins */}
         <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">Re-spins Per Draft</label>
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-2.5">Re-spins Per Draft</label>
+          <div className="grid grid-cols-3 gap-2">
             {([3, 1, 0] as const).map((n) => (
               <button
                 key={n}
                 onClick={() => setRespins(n)}
-                className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                  respins === n ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50" : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
+                style={{ touchAction: "manipulation", minHeight: "56px" }}
+                className={`relative py-3 px-2 rounded-lg text-left transition-all active:scale-95 ${
+                  respins === n ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50" : "bg-gray-800/80 border border-gray-700/50"
                 }`}
               >
-                <div className="text-sm font-bold text-white">{n === 0 ? "None" : n === 1 ? "1 Re-spin" : "3 Re-spins"}</div>
-                <div className={`text-[9px] sm:text-[10px] mt-0.5 ${respins === n ? "text-emerald-200/70" : "text-white"}`}>{n === 0 ? "No second chances" : n === 1 ? "One total" : "Three total"}</div>
+                <div className="text-sm font-bold text-white">{n === 0 ? "None" : `${n} Re-spin${n > 1 ? "s" : ""}`}</div>
+                <div className={`text-[10px] mt-0.5 ${respins === n ? "text-emerald-200/70" : "text-gray-400"}`}>{n === 0 ? "No second chances" : n === 1 ? "One total" : "Three total"}</div>
               </button>
             ))}
           </div>

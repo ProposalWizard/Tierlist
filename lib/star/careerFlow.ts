@@ -10,6 +10,7 @@ import {
 } from "./season";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
+import { generateSquad, clubNameSeed } from "./squadData";
 
 export const SPONSOR_CATEGORIES = [
   "Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food",
@@ -57,6 +58,7 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     seenDilemmas: [],
     ballonDorWins: 0,
     horse: null,
+    squad: generateSquad(clubNameSeed(player.club)),
     contractStarMilestones: [],
     contractFormOfferSeason: -1,
   };
@@ -157,6 +159,23 @@ export function creditMatchResult(
     i < dealsUnlocked && !s.active ? { ...s, active: true, perMatch: 1 + Math.floor(i / 2) } : s,
   );
 
+  // Update squad player stats from this match's goal events.
+  // Chain teammate goals (isUserGoal: false) → scorer gets a goal.
+  // User direct goals (isUserGoal: true) → assister (if any) gets an assist.
+  const goalEvents = stats.goalEvents ?? [];
+  const updatedSquad = (career.squad ?? []).map(p => {
+    const scored = goalEvents.filter(e => !e.isUserGoal && e.scorer === p.name).length;
+    const assisted = goalEvents.filter(e => e.assist === p.name).length;
+    if (scored === 0 && assisted === 0) return p;
+    return {
+      ...p,
+      seasonGoals: p.seasonGoals + scored,
+      seasonAssists: p.seasonAssists + assisted,
+      careerGoals: p.careerGoals + scored,
+      careerAssists: p.careerAssists + assisted,
+    };
+  });
+
   const next: CareerState = {
     ...career,
     seasonStats: accrue(career.seasonStats),
@@ -179,6 +198,7 @@ export function creditMatchResult(
     week: career.week + 1,
     currentBoot,
     horse,
+    squad: updatedSquad,
     form: [stats.rating, ...career.form].slice(0, 5),
   };
 
@@ -228,6 +248,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     form: [],
     contract: { ...career.contract, seasonsRemaining: career.contract.seasonsRemaining - 1 },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
+    squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0 })),
   };
 
   return applyAchievements(next);
