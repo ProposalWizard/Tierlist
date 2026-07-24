@@ -13,7 +13,7 @@ import LeagueScreen from "@/components/star/LeagueScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
-import Match from "@/components/star/Match";
+import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -439,13 +439,26 @@ export default function StarDevPage() {
 
   if (phase === "match" && nextFixture) {
     const opp = career.league.find((t) => t.name === nextFixture.opponent);
+    const oppStrength = opp?.strength ?? 65;
     return (
-      <Match
-        career={career}
-        fixture={nextFixture}
-        oppStrength={opp?.strength ?? 65}
-        onComplete={handleMatchComplete}
-      />
+      <div
+        className="min-h-screen bg-gray-950 text-white py-4 px-3"
+        style={{ backgroundImage: "radial-gradient(70% 45% at 50% 0%, rgba(16,185,129,0.16), transparent 70%)" }}
+      >
+        <div className="max-w-sm mx-auto">
+          <CanvasMatch
+            skills={{ power: career.skills.power, technique: career.skills.technique }}
+            keeperStrength={oppStrength}
+            position={career.player.position}
+            teamRelationship={career.relationships.team}
+            career={career}
+            fixture={nextFixture}
+            oppStrength={oppStrength}
+            onComplete={handleMatchComplete}
+            seed={career.season * 1000 + career.week}
+          />
+        </div>
+      </div>
     );
   }
 

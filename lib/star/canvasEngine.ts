@@ -1,5 +1,5 @@
 // Canvas match engine — pure physics, no React, no rendering.
-// Coordinate system (shared with lib/star/matchEngine.ts):
+// Coordinate system:
 //   x: 0-100 (left-right), y: 0-100 (attacking goal at y=0, top), posts x=40..60.
 //   1 unit = 1 metre. Height z in metres, crossbar at 2.44m.
 // The flight is a real simulation: the OUTCOME is whatever the physics produces.
