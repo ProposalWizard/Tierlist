@@ -167,6 +167,9 @@ export interface CareerState {
   seenDilemmas: string[];
   ballonDorWins: number;
   horse: Horse | null;
+  // Mid-season contract offer tracking (optional for backward-compat with saved careers)
+  contractStarMilestones?: number[]; // star thresholds that have already triggered an early offer
+  contractFormOfferSeason?: number;  // season when the last form-based early offer fired (-1 = never)
 }
 
 export type StarPhase =
