@@ -173,7 +173,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, see
       const power = clamp(dist / 35, 0, 1);
       const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
       const len = Math.hypot(dx, dy) || 1;
-      const lineLen = power * 30;
+      const lineLen = power * 10;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
@@ -189,8 +189,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, see
       ctx.fillStyle = "rgba(255,255,255,0.95)";
       ctx.beginPath();
       ctx.moveTo(b.px, b.py);
-      ctx.lineTo(b.px - Math.cos(ang - 0.4) * unit * 2, b.py - Math.sin(ang - 0.4) * unit * 2);
-      ctx.lineTo(b.px - Math.cos(ang + 0.4) * unit * 2, b.py - Math.sin(ang + 0.4) * unit * 2);
+      ctx.lineTo(b.px - Math.cos(ang - 0.4) * unit * 1, b.py - Math.sin(ang - 0.4) * unit * 1);
+      ctx.lineTo(b.px - Math.cos(ang + 0.4) * unit * 1, b.py - Math.sin(ang + 0.4) * unit * 1);
       ctx.closePath();
       ctx.fill();
 
