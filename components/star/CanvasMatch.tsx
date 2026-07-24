@@ -9,16 +9,59 @@ import { mulberry32 } from "@/lib/star/season";
 import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
 } from "@/lib/star/matchCommentary";
+import {
+  primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
+} from "@/lib/star/matchSound";
+import type { CareerState, MatchStats } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
+import PostMatch from "./PostMatch";
 
-type Phase = "aim" | "contact" | "flight" | "result";
+type Phase = "aim" | "contact" | "flight" | "result" | "postmatch";
+
+// A mini-match is this many attempts (shots + chain chances + simple passes)
+// before the session wraps and PostMatch shows a summary.
+const SESSION_LENGTH = 6;
 
 interface Props {
   skills?: KickSkills;
   keeperStrength?: number;
   position?: string;
   teamRelationship?: number;
+  career?: CareerState | null;
   seed?: number;
+}
+
+// Mirrors lib/star/matchEngine.ts's finaliseMatch rating/relationship formula,
+// but never mutates the real career — this is a display-only session summary.
+// Wage/bonus/sponsor figures use the loaded career's contract if one is
+// available, and fall back to zero (no fabricated numbers) if not.
+function computeSessionStats(chances: number, goals: number, assists: number, passes: number, career: CareerState | null | undefined): MatchStats {
+  const rating = clamp(6.0 + goals * 1.2 + assists * 0.8 + passes * 0.05, 1, 10);
+  const starMan = rating >= 8.5 || goals >= 2;
+  const wage = career?.contract.wage ?? 0;
+  const goalBonus = goals * (career?.contract.goalBonus ?? 0);
+  const assistBonusPay = assists * (career?.contract.assistBonus ?? 0);
+  const sponsorPay = career ? Math.floor(career.relationships.sponsors / 20) : 0;
+  const totalCash = wage + goalBonus + assistBonusPay + sponsorPay;
+
+  let boss = 0, team = 0, fans = 0;
+  if (rating >= 8) { boss += 6; fans += 8; team += 3; }
+  else if (rating >= 7) { boss += 3; fans += 4; team += 2; }
+  else if (rating >= 6) { boss += 1; fans += 1; team += 1; }
+  else if (rating >= 5) { boss -= 2; fans -= 2; team -= 1; }
+  else { boss -= 5; fans -= 4; team -= 3; }
+  if (goals > 0) fans += goals * 3;
+  if (assists > 0) { team += assists * 3; fans += assists; }
+  if (starMan) { boss += 4; fans += 5; team += 2; }
+
+  return {
+    chances, goals, assists, passes,
+    rating: Math.round(rating * 10) / 10,
+    starMan,
+    bossChange: boss, teamChange: team, fansChange: fans,
+    wage, goalBonus: goalBonus + assistBonusPay, sponsorPay, totalCash,
+    homeScore: goals, awayScore: 0,
+  };
 }
 
 // --- Knowitball match identity: "night match under floodlights" ---
@@ -63,9 +106,32 @@ interface Particle {
 }
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, seed = 12345 }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const careerRef = useRef(career);
+  careerRef.current = career;
+
+  // --- Session (mini-match -> PostMatch) tracking ---
+  const attemptsRef = useRef(0);
+  const [finalStats, setFinalStats] = useState<MatchStats | null>(null);
+
+  // --- Sound: muted by default until primed by the first user gesture ---
+  const [muted, setMuted] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("star-match-muted");
+      if (saved === "1") { setMuted(true); setMatchSoundMuted(true); }
+    } catch { /* ignore */ }
+  }, []);
+  const toggleMuted = () => {
+    setMuted((m) => {
+      const next = !m;
+      setMatchSoundMuted(next);
+      try { localStorage.setItem("star-match-muted", next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   const strengthRef = useRef(keeperStrength);
   strengthRef.current = keeperStrength;
@@ -135,6 +201,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Announce the very first scenario ---
   useEffect(() => {
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
+    playWhistle(); // no-op until the first user gesture primes audio — harmless
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -533,7 +600,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const receiver = scenarioRef.current.receiver;
         if (ev && receiver) {
           if (ev === "received") pushLine(commentaryReceived(receiver.roleLabel, rngRef.current));
-          else if (ev === "receiverShot") pushLine(commentaryReceiverShot(receiver.roleLabel, rngRef.current));
+          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(receiver.roleLabel, rngRef.current)); playKick(); }
         }
         if (ballRef.current) ballRef.current.event = null;
       }
@@ -574,26 +641,50 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const isChain = sc.receiver != null;
     const isSimplePass = sc.passTarget != null && !isChain;
     const receiverReached = sc.receiverDone;
+    const kind = OUTCOME_TEXT[res].kind;
 
+    let updated = stats;
     setStats((s) => {
-      if (isChain) {
-        return { ...s, chances: s.chances + 1, assists: s.assists + (receiverReached && OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) };
-      }
-      if (isSimplePass) {
-        return { ...s, passes: s.passes + 1, passesCompleted: s.passesCompleted + (OUTCOME_TEXT[res].kind === "pass" ? 1 : 0) };
-      }
-      return { ...s, shots: s.shots + 1, goals: s.goals + (OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) };
+      const next = isChain
+        ? { ...s, chances: s.chances + 1, assists: s.assists + (receiverReached && kind === "goal" ? 1 : 0) }
+        : isSimplePass
+        ? { ...s, passes: s.passes + 1, passesCompleted: s.passesCompleted + (kind === "pass" ? 1 : 0) }
+        : { ...s, shots: s.shots + 1, goals: s.goals + (kind === "goal" ? 1 : 0) };
+      updated = next;
+      return next;
     });
 
-    // Celebration / impact FX, matched to what the physics produced.
-    if (OUTCOME_TEXT[res].kind === "goal") spawnGoalFx();
-    else if (res === "post") nudge(0.28, 0.9);
-    else if (res === "saved" || res === "caught" || res === "tipped" || res === "blocked") nudge(0.18, 0.5);
+    // Celebration / impact FX + sound, matched to what the physics produced.
+    if (kind === "goal") {
+      spawnGoalFx();
+      playNet();
+      playCrowdSwell("cheer");
+    } else if (res === "post") {
+      nudge(0.28, 0.9);
+      playPost();
+      playCrowdSwell("groan");
+    } else if (res === "saved" || res === "tipped") {
+      nudge(0.18, 0.5);
+      playSave();
+      playCrowdSwell("groan");
+    } else if (res === "caught" || res === "blocked") {
+      nudge(0.18, 0.5);
+      playSave();
+    }
 
     pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: sc.receiver?.roleLabel, isPass: isSimplePass }));
 
-    // Safety: if the ball never resolves for some reason, this still fires next scenario.
-    window.setTimeout(() => nextScenario(), 1800);
+    // After a short beat: either the next chance, or full-time once the session's played out.
+    attemptsRef.current += 1;
+    if (attemptsRef.current >= SESSION_LENGTH) {
+      const summary = computeSessionStats(attemptsRef.current, updated.goals, updated.assists, updated.passesCompleted, careerRef.current);
+      window.setTimeout(() => {
+        setFinalStats(summary);
+        setPhase("postmatch");
+      }, 1800);
+    } else {
+      window.setTimeout(() => nextScenario(), 1800);
+    }
   };
 
   const nextScenario = () => {
@@ -611,10 +702,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     flashRef.current.t = 0;
     setPhase("aim");
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
+    playWhistle();
+  };
+
+  const restartSession = () => {
+    attemptsRef.current = 0;
+    setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
+    setFinalStats(null);
+    setFeed([]);
+    nextScenario();
   };
 
   // --- Pointer (slingshot) ---
   const onPointerDown = (e: React.PointerEvent) => {
+    primeMatchSound();
     if (phaseRef.current !== "aim") return;
     const p = pitchFromPointer(e.clientX, e.clientY);
     const b = scenarioRef.current.ball;
@@ -648,6 +749,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, skills, rngRef.current);
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current));
+    playKick();
   };
 
   const outMeta = outcome ? OUTCOME_TEXT[outcome] : null;
@@ -689,6 +791,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             {statCell("Passes", `${stats.passesCompleted}/${stats.passes}`, "text-violet-300")}
             {statCell("Assists", `${stats.assists}/${stats.chances}`, "text-emerald-300")}
           </div>
+          <button
+            onClick={toggleMuted}
+            aria-label={muted ? "Unmute sound" : "Mute sound"}
+            className="px-2.5 flex items-center border-l border-white/5 text-gray-400 hover:text-amber-300 transition"
+          >
+            {muted ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="M11 5 6 9H3v6h3l5 4V5Z" strokeLinejoin="round" />
+                <path d="m17 9 6 6M23 9l-6 6" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="M11 5 6 9H3v6h3l5 4V5Z" strokeLinejoin="round" />
+                <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" strokeLinecap="round" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
@@ -768,6 +887,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-gray-400 text-center">
         <span className="text-amber-300">💡</span> {scenarioLabel.hint}
       </div>
+
+      {/* Session complete — reuse the real post-match screen for the summary */}
+      {phase === "postmatch" && finalStats && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <PostMatch
+            stats={finalStats}
+            homeTeam={careerRef.current?.player.club ?? "You"}
+            awayTeam="Training Session"
+            onContinue={restartSession}
+          />
+        </div>
+      )}
     </div>
   );
 }

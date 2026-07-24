@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import { loadCareer } from "@/lib/star/storage";
+import type { CareerState } from "@/lib/star/types";
 
 const POSITIONS = ["ST", "CAM", "LW", "RW", "CM", "CDM", "LM", "RM", "LB", "RB", "CB", "GK"];
 
@@ -18,6 +19,7 @@ export default function StarMatchDevPage() {
   const [careerPosition, setCareerPosition] = useState<string | null>(null);
   const [teamRelationship, setTeamRelationship] = useState(60);
   const [careerTeam, setCareerTeam] = useState<number | null>(null);
+  const [career, setCareer] = useState<CareerState | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,12 +33,13 @@ export default function StarMatchDevPage() {
         setState("denied");
       }
     });
-    const career = loadCareer();
-    if (career) {
-      setCareerPosition(career.player.position);
-      setPosition(career.player.position);
-      setCareerTeam(career.relationships.team);
-      setTeamRelationship(career.relationships.team);
+    const loaded = loadCareer();
+    if (loaded) {
+      setCareer(loaded);
+      setCareerPosition(loaded.player.position);
+      setPosition(loaded.player.position);
+      setCareerTeam(loaded.relationships.team);
+      setTeamRelationship(loaded.relationships.team);
     }
   }, []);
 
@@ -72,6 +75,7 @@ export default function StarMatchDevPage() {
           keeperStrength={keeperStrength}
           position={position}
           teamRelationship={teamRelationship}
+          career={career}
           seed={2024}
         />
 
@@ -121,6 +125,10 @@ export default function StarMatchDevPage() {
               className="w-full"
             />
           </label>
+        </div>
+
+        <div className="mt-3 text-center text-[10px] text-gray-500">
+          Each session is a 6-chance mini-match — a post-match summary shows after the last one.
         </div>
       </div>
     </div>
