@@ -85,7 +85,7 @@ export interface Scenario {
 
 export type Outcome =
   | "goal" | "rebound" | "delivered" | "saved" | "caught" | "tipped"
-  | "over" | "post" | "wide" | "blocked" | "out" | "short";
+  | "over" | "post" | "wide" | "blocked" | "out" | "short" | "offside";
 
 export interface KickSkills {
   power: number;      // 0-100
@@ -907,6 +907,19 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         const passLen = Math.hypot(tgt.x - scenario.ball.x, tgt.y - scenario.ball.y);
         const forward = scenario.ball.y - tgt.y;
         scenario.passDifficulty = clamp(forward / 30 + passLen / 60, 0, 1);
+
+        // Offside check for through_ball: compare runner's starting y against the
+        // second-to-last outfield defender (smaller y = closer to goal = more advanced).
+        // Offside means the runner was ahead of that line when the ball was played.
+        if (scenario.receiver && scenario.kind === "through_ball" && scenario.teammates.length > 0) {
+          const runnerY = scenario.teammates[0].y;
+          const defYs = scenario.defenders.map(d => d.y).sort((a, b) => a - b); // ascending = closest to goal first
+          const secondToLastY = defYs.length >= 2 ? defYs[1] : (defYs[0] ?? 20);
+          const margin = runnerY - secondToLastY; // positive = runner is behind (onside), negative = offside
+          const offProb = margin < 0 ? 0.82 : margin < 1.5 ? 0.18 : 0;
+          if (offProb > 0 && rng() < offProb) return "offside";
+        }
+
         if (scenario.receiver) {
           ball.pos = { x: tgt.x, y: tgt.y };
           ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
@@ -956,4 +969,5 @@ export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass"
   blocked: { text: "Blocked!", kind: "miss" },
   out: { text: "Out of play.", kind: "neutral" },
   short: { text: "Scrambled clear.", kind: "neutral" },
+  offside: { text: "OFFSIDE!", kind: "neutral" },
 };

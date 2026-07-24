@@ -440,10 +440,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.fill();
     }
 
-    // Rebound poacher — lurks, brightens when it commits to a loose ball
+    // Rebound poacher — always same blue as other teammates
     {
       const f = sc.follower;
-      puck(f.x, f.y, R * 0.9, f.active ? "#60a5fa" : "rgba(96,165,250,0.4)", C.mateRim);
+      puck(f.x, f.y, R * 0.9, C.mate, C.mateRim);
     }
 
     // Teammates — decorative crossers, or the runner a pass is aimed at
@@ -774,6 +774,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     } else if (res === "caught" || res === "blocked") {
       nudge(0.18, 0.5);
       playSave();
+    } else if (res === "offside") {
+      playWhistle();
     }
 
     pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: sc.receiver?.roleLabel, isPass: isSimplePass }));
@@ -1069,15 +1071,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : "cursor-default"}`}
         />
 
-        {/* Aim prompt */}
-        {phase === "aim" && !draggingRef.current && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="kib-pop bg-gray-950/80 border-2 border-amber-400/90 rounded-lg px-6 py-3 text-center shadow-xl">
-              <div className="text-2xl font-black text-amber-300 tracking-widest drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{scenarioLabel.verb}</div>
-              <div className="text-[10px] text-amber-100/80 mt-0.5">Drag back from the ball to aim &amp; power</div>
-            </div>
-          </div>
-        )}
 
         {/* Contact overlay */}
         {phase === "contact" && aim && (
