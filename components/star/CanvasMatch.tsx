@@ -46,6 +46,34 @@ const FALLBACK_CAREER = {
   relationships: { sponsors: 0 },
 } as unknown as CareerState;
 
+interface CreditDelta {
+  shots: number; goals: number; passes: number; passesCompleted: number; chances: number; assists: number;
+}
+const NO_CREDIT: CreditDelta = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
+
+// Credit a resolved chance from WHAT ACTUALLY HAPPENED — who struck the resolving
+// shot and whether it scored — never from the scenario's shape. Keying off "is this
+// a passing scenario" was the root of the miscredit bug: the physics lets you shoot
+// straight at goal in a cutback/cross/through-ball without ever finding your man, so
+// a scenario-shape branch dropped those goals on the floor (ball in the net, zero
+// credit). Every crediting decision must flow through here so that split can't
+// reappear. Exactly one of shots/passes/chances is incremented per call, which the
+// "Chance N/N" progress counter relies on.
+function creditChance(res: Outcome, ctx: { isChain: boolean; isSimplePass: boolean; receiverReached: boolean }): CreditDelta {
+  const isGoal = OUTCOME_TEXT[res].kind === "goal";
+  // A plain pass that reached its man.
+  if (res === "delivered") return { ...NO_CREDIT, passes: 1, passesCompleted: 1 };
+  // The team-mate you picked out took the resolving shot.
+  if (ctx.isChain && ctx.receiverReached) return { ...NO_CREDIT, chances: 1, assists: isGoal ? 1 : 0 };
+  // You went for goal yourself and scored — credit it even in a passing scenario.
+  if (isGoal) return { ...NO_CREDIT, shots: 1, goals: 1 };
+  // A passing move that broke down without a goal stays an attempted ball, not a shot.
+  if (ctx.isChain) return { ...NO_CREDIT, chances: 1 };
+  if (ctx.isSimplePass) return { ...NO_CREDIT, passes: 1 };
+  // A shooting scenario you didn't convert.
+  return { ...NO_CREDIT, shots: 1 };
+}
+
 // --- Knowitball match identity: "night match under floodlights" ---
 // Deep cool pitch greens + floodlight wash, near-black glass chrome, gold accent.
 const C = {
@@ -645,17 +673,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // resolves — the rAF loop calls a stale resolveOutcome closure, so reading it
     // back off React state would risk under-counting the final chance. State is
     // just a mirror for the HUD.
+    const d = creditChance(res, { isChain, isSimplePass, receiverReached });
     const t = tallyRef.current;
-    if (isChain) {
-      t.chances += 1;
-      if (receiverReached && kind === "goal") t.assists += 1;
-    } else if (isSimplePass) {
-      t.passes += 1;
-      if (kind === "pass") t.passesCompleted += 1;
-    } else {
-      t.shots += 1;
-      if (kind === "goal") t.goals += 1;
-    }
+    t.shots += d.shots;
+    t.goals += d.goals;
+    t.passes += d.passes;
+    t.passesCompleted += d.passesCompleted;
+    t.chances += d.chances;
+    t.assists += d.assists;
     setStats({ ...t });
 
     // Your team scores whenever the ball ends up in the net — your own finish or a
