@@ -16,6 +16,8 @@ export default function StarMatchDevPage() {
   const [keeperStrength, setKeeperStrength] = useState(62);
   const [position, setPosition] = useState("ST");
   const [careerPosition, setCareerPosition] = useState<string | null>(null);
+  const [teamRelationship, setTeamRelationship] = useState(60);
+  const [careerTeam, setCareerTeam] = useState<number | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -33,6 +35,8 @@ export default function StarMatchDevPage() {
     if (career) {
       setCareerPosition(career.player.position);
       setPosition(career.player.position);
+      setCareerTeam(career.relationships.team);
+      setTeamRelationship(career.relationships.team);
     }
   }, []);
 
@@ -60,7 +64,13 @@ export default function StarMatchDevPage() {
           <h1 className="mt-2 text-xl font-black">Shooting Test</h1>
         </div>
 
-        <CanvasMatch skills={{ power, technique }} keeperStrength={keeperStrength} position={position} seed={2024} />
+        <CanvasMatch
+          skills={{ power, technique }}
+          keeperStrength={keeperStrength}
+          position={position}
+          teamRelationship={teamRelationship}
+          seed={2024}
+        />
 
         {/* Skill sliders so I can feel how attributes change the shot */}
         <div className="mt-4 bg-gray-900/60 border border-gray-700 rounded-lg p-3 space-y-3">
@@ -96,6 +106,17 @@ export default function StarMatchDevPage() {
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
+          </label>
+          <label className="block">
+            <div className="flex justify-between text-xs font-bold text-white mb-1">
+              <span>Team Relationship{careerTeam !== null ? ` (career: ${careerTeam})` : ""}</span>
+              <span className="text-amber-400">{teamRelationship}</span>
+            </div>
+            <input
+              type="range" min={0} max={100} value={teamRelationship}
+              onChange={(e) => setTeamRelationship(Number(e.target.value))}
+              className="w-full"
+            />
           </label>
         </div>
       </div>

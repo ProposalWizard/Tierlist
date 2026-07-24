@@ -6,6 +6,9 @@ import {
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
+import {
+  commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
+} from "@/lib/star/matchCommentary";
 import ContactBall from "./ContactBall";
 
 type Phase = "aim" | "contact" | "flight" | "result";
@@ -14,6 +17,7 @@ interface Props {
   skills?: KickSkills;
   keeperStrength?: number;
   position?: string;
+  teamRelationship?: number;
   seed?: number;
 }
 
@@ -31,7 +35,7 @@ const SCENARIO_LABEL: Record<ScenarioKind, { verb: string; hint: string }> = {
 };
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", seed = 12345 }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, seed = 12345 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -39,8 +43,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   strengthRef.current = keeperStrength;
   const positionRef = useRef(position);
   positionRef.current = position;
+  const teamRef = useRef(teamRelationship);
+  teamRef.current = teamRelationship;
 
-  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength));
+  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship));
   const ballRef = useRef<Ball | null>(null);
   const rngRef = useRef<() => number>(mulberry32(seed));
   const seedRef = useRef(seed);
@@ -54,7 +60,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const draggingRef = useRef(false);
 
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0 });
+  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
+  const [feed, setFeed] = useState<string[]>([]);
+  const pushLine = useCallback((line: string) => {
+    setFeed((f) => [...f, line].slice(-4));
+  }, []);
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
@@ -75,6 +85,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
+  }, []);
+
+  // --- Announce the very first scenario ---
+  useEffect(() => {
+    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- Coordinate helpers (pitch <-> canvas pixels) ---
@@ -174,6 +190,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.lineWidth = 2;
       ctx.strokeStyle = "rgba(0,0,0,0.4)";
       ctx.stroke();
+    }
+
+    // Highlight the receiver while they control a pass they've just won
+    const rb = ballRef.current;
+    if (rb && rb.receiverControlT > 0 && sc.passTarget) {
+      const { px, py } = toPx(sc.passTarget.x, sc.passTarget.y);
+      ctx.beginPath();
+      ctx.arc(px, py, R * 1.7, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(167,139,250,0.4)";
+      ctx.fill();
     }
 
     // Teammates — decorative crossers, or the runner a pass is aimed at
@@ -305,6 +331,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           const res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           if (res) { resolveOutcome(res); break; }
         }
+        // Surface mid-flight moments (pass reception / the teammate's own shot) once.
+        const ev = ballRef.current?.event;
+        const receiver = scenarioRef.current.receiver;
+        if (ev && receiver) {
+          if (ev === "received") pushLine(commentaryReceived(receiver.roleLabel, rngRef.current));
+          else if (ev === "receiverShot") pushLine(commentaryReceiverShot(receiver.roleLabel, rngRef.current));
+        }
+        if (ballRef.current) ballRef.current.event = null;
       }
       render();
       rafRef.current = requestAnimationFrame(loop);
@@ -317,10 +351,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const resolveOutcome = (res: Outcome) => {
     setOutcome(res);
     setPhase("result");
-    const isPassScenario = scenarioRef.current.passTarget != null;
-    setStats((s) => isPassScenario
-      ? { ...s, passes: s.passes + 1, passesCompleted: s.passesCompleted + (OUTCOME_TEXT[res].kind === "pass" ? 1 : 0) }
-      : { ...s, shots: s.shots + 1, goals: s.goals + (OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) });
+    const sc = scenarioRef.current;
+    const isChain = sc.receiver != null;
+    const isSimplePass = sc.passTarget != null && !isChain;
+    const receiverReached = sc.receiverDone;
+
+    setStats((s) => {
+      if (isChain) {
+        return { ...s, chances: s.chances + 1, assists: s.assists + (receiverReached && OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) };
+      }
+      if (isSimplePass) {
+        return { ...s, passes: s.passes + 1, passesCompleted: s.passesCompleted + (OUTCOME_TEXT[res].kind === "pass" ? 1 : 0) };
+      }
+      return { ...s, shots: s.shots + 1, goals: s.goals + (OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) };
+    });
+
+    pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: sc.receiver?.roleLabel, isPass: isSimplePass }));
+
     // Safety: if the ball never resolves for some reason, this still fires next scenario.
     window.setTimeout(() => nextScenario(), 1800);
   };
@@ -328,13 +375,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const nextScenario = () => {
     seedRef.current += 1;
     rngRef.current = mulberry32(seedRef.current);
-    scenarioRef.current = buildWeightedScenario(rngRef.current, positionRef.current, strengthRef.current);
+    scenarioRef.current = buildWeightedScenario(rngRef.current, positionRef.current, strengthRef.current, teamRef.current);
     ballRef.current = null;
     setAim(null);
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
     setPhase("aim");
+    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
   };
 
   // --- Pointer (slingshot) ---
@@ -371,6 +419,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     if (!aim) return;
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, skills, rngRef.current);
     setPhase("flight");
+    pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current));
   };
 
   const outMeta = outcome ? OUTCOME_TEXT[outcome] : null;
@@ -379,10 +428,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   return (
     <div className="w-full max-w-sm mx-auto">
       {/* HUD */}
-      <div className="flex items-center justify-between mb-2 px-1 gap-2">
-        <div className="text-xs font-black text-white/80">Shots: {stats.shots}</div>
-        <div className="text-xs font-black text-emerald-400">Goals: {stats.goals}</div>
-        <div className="text-xs font-black text-violet-400">Passes: {stats.passesCompleted}/{stats.passes}</div>
+      <div className="flex flex-wrap items-center justify-between mb-2 px-1 gap-x-3 gap-y-0.5">
+        <div className="text-[11px] font-black text-white/80">Shots: {stats.shots}</div>
+        <div className="text-[11px] font-black text-emerald-400">Goals: {stats.goals}</div>
+        <div className="text-[11px] font-black text-violet-400">Passes: {stats.passesCompleted}/{stats.passes}</div>
+        <div className="text-[11px] font-black text-amber-400">Assists: {stats.assists}/{stats.chances}</div>
       </div>
 
       <div
@@ -428,6 +478,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             </div>
           </div>
         )}
+      </div>
+
+      {/* Commentary feed */}
+      <div className="mt-2 bg-black/60 border border-gray-700 rounded-lg px-3 py-2 min-h-[3.4rem] space-y-0.5">
+        {feed.length === 0 && <div className="text-[11px] text-gray-500 italic">Kick-off…</div>}
+        {feed.map((line, i) => (
+          <div
+            key={i}
+            className={`text-[11px] leading-snug ${i === feed.length - 1 ? "text-white font-bold" : "text-gray-500"}`}
+          >
+            {line}
+          </div>
+        ))}
       </div>
 
       {/* Hint */}
