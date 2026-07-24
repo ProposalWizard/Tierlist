@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import CanvasMatch from "@/components/star/CanvasMatch";
+import { loadCareer } from "@/lib/star/storage";
+
+const POSITIONS = ["ST", "CAM", "LW", "RW", "CM", "CDM", "LM", "RM", "LB", "RB", "CB", "GK"];
 
 // Standalone sandbox for the Canvas match engine. Admin-only; not linked in nav.
 // Kept separate from /star-dev so the working career mode is untouched while the
@@ -11,6 +14,8 @@ export default function StarMatchDevPage() {
   const [power, setPower] = useState(55);
   const [technique, setTechnique] = useState(55);
   const [keeperStrength, setKeeperStrength] = useState(62);
+  const [position, setPosition] = useState("ST");
+  const [careerPosition, setCareerPosition] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,6 +29,11 @@ export default function StarMatchDevPage() {
         setState("denied");
       }
     });
+    const career = loadCareer();
+    if (career) {
+      setCareerPosition(career.player.position);
+      setPosition(career.player.position);
+    }
   }, []);
 
   if (state === "loading") {
@@ -50,7 +60,7 @@ export default function StarMatchDevPage() {
           <h1 className="mt-2 text-xl font-black">Shooting Test</h1>
         </div>
 
-        <CanvasMatch skills={{ power, technique }} keeperStrength={keeperStrength} seed={2024} />
+        <CanvasMatch skills={{ power, technique }} keeperStrength={keeperStrength} position={position} seed={2024} />
 
         {/* Skill sliders so I can feel how attributes change the shot */}
         <div className="mt-4 bg-gray-900/60 border border-gray-700 rounded-lg p-3 space-y-3">
@@ -72,6 +82,20 @@ export default function StarMatchDevPage() {
               <span>Keeper Strength</span><span className="text-yellow-400">{keeperStrength}</span>
             </div>
             <input type="range" min={20} max={100} value={keeperStrength} onChange={(e) => setKeeperStrength(Number(e.target.value))} className="w-full" />
+          </label>
+          <label className="block">
+            <div className="flex justify-between text-xs font-bold text-white mb-1">
+              <span>Position{careerPosition ? ` (career: ${careerPosition})` : ""}</span>
+            </div>
+            <select
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              className="w-full bg-gray-800 text-white text-sm font-bold rounded-lg px-2 py-1.5 border border-gray-700"
+            >
+              {POSITIONS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
           </label>
         </div>
       </div>

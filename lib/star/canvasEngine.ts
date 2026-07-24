@@ -39,6 +39,16 @@ export interface Follower {
   shot: boolean;     // already took its follow-up
 }
 
+// The kind of match situation the player has been put in. Shooting kinds
+// (one_on_one..header) resolve at the goal line as before. Passing kinds
+// (cutback..midfield_pass) instead resolve against a passTarget reception
+// zone — same physics, different success condition.
+export const SCENARIO_KINDS = [
+  "one_on_one", "tight_angle", "long_range", "volley", "header",
+  "cutback", "byline_cross", "through_ball", "midfield_pass",
+] as const;
+export type ScenarioKind = typeof SCENARIO_KINDS[number];
+
 export interface Scenario {
   ball: Vec2;
   player: Vec2;
@@ -48,10 +58,13 @@ export interface Scenario {
   follower: Follower;
   goal: { x1: number; x2: number };
   crossbar: number;
+  kind: ScenarioKind;
+  teammates: Vec2[];        // decorative runners/crossers, and/or the pass target
+  passTarget: Vec2 | null;  // set for passing kinds — reach this zone to succeed
 }
 
 export type Outcome =
-  | "goal" | "rebound" | "saved" | "caught" | "tipped"
+  | "goal" | "rebound" | "delivered" | "saved" | "caught" | "tipped"
   | "over" | "post" | "wide" | "blocked" | "out" | "short";
 
 export interface KickSkills {
@@ -101,31 +114,255 @@ function gaussian(rng: () => number): number {
   return (rng() + rng() + rng() + rng() - 2) / 1;
 }
 
-// A central shooting chance with slight variation.
-export function buildShootingScenario(rng: () => number, keeperStrength = 62): Scenario {
-  const bx = 40 + rng() * 20;
-  const by = 19 + rng() * 8;
+// --- Shared scenario scaffolding ---
+const GOAL = { x1: 40, x2: 60 };
+const CROSSBAR = 2.44;
+
+function makeKeeper(x: number, y = 3.5): Keeper {
+  return { x, y, startX: x, targetX: x, dive: 0, saves: 0, done: false, flash: 0 };
+}
+
+function makeFollower(rng: () => number, by: number): Follower {
+  return {
+    x: clamp(50 + (rng() < 0.5 ? -1 : 1) * (4 + rng() * 4), 40, 60),
+    y: clamp(by * 0.5, 8, 14),
+    active: false, shot: false,
+  };
+}
+
+// A clean run in behind — keeper rushes off his line to close the angle.
+function buildOneOnOne(rng: () => number, keeperStrength: number): Scenario {
+  const bx = 44 + rng() * 12;
+  const by = 11 + rng() * 5;
+  const keeperX = clamp(bx + (rng() - 0.5) * 6, 42, 58);
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx, y: by + 1.4 },
+    defenders: [
+      { x: clamp(bx - 10 + rng() * 8, 20, 80), y: by + 10 + rng() * 6 }, // trailing, out of the lane
+    ],
+    keeper: makeKeeper(keeperX, 6.5 + rng() * 2),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "one_on_one", teammates: [], passTarget: null,
+  };
+}
+
+// Wide and close to the byline — an acute angle, keeper shaded to the near post.
+function buildTightAngle(rng: () => number, keeperStrength: number): Scenario {
+  const side = rng() < 0.5 ? -1 : 1;
+  const bx = side < 0 ? 32 + rng() * 5 : 63 + rng() * 5;
+  const by = 7 + rng() * 5;
+  const keeperX = clamp(bx - side * 3, 40, 60);
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx, y: by + 1.3 },
+    defenders: [
+      { x: clamp(50 - side * 6, 35, 65), y: clamp(by + 3, 6, 14) }, // covering the cutback/far post
+    ],
+    keeper: makeKeeper(keeperX),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "tight_angle", teammates: [], passTarget: null,
+  };
+}
+
+// Well outside the box — needs pace, and a defensive screen to bend or chip around.
+function buildLongRange(rng: () => number, keeperStrength: number): Scenario {
+  const bx = 38 + rng() * 24;
+  const by = 32 + rng() * 10;
   const keeperX = 48 + rng() * 4;
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.6 },
     defenders: [
-      { x: clamp(bx - 6 + rng() * 3, 32, 68), y: clamp(by - 6 - rng() * 3, 6, by - 2) },
-      { x: clamp(bx + 6 - rng() * 3, 32, 68), y: clamp(by - 7 - rng() * 3, 6, by - 2) },
+      { x: clamp(bx - 4 + rng() * 8, 38, 62), y: clamp(by - 12 - rng() * 4, 16, by - 6) },
+      { x: clamp(bx + 8 - rng() * 4, 30, 70), y: clamp(by - 8 - rng() * 4, 14, by - 4) },
     ],
-    keeper: {
-      x: keeperX, y: 3.5, startX: keeperX, targetX: keeperX,
-      dive: 0, saves: 0, done: false, flash: 0,
-    },
-    keeperStrength: clamp(keeperStrength, 0, 100),
-    follower: {
-      x: clamp(50 + (rng() < 0.5 ? -1 : 1) * (4 + rng() * 4), 40, 60),
-      y: clamp(by * 0.5, 8, 14),
-      active: false, shot: false,
-    },
-    goal: { x1: 40, x2: 60 },
-    crossbar: 2.44,
+    keeper: makeKeeper(keeperX),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "long_range", teammates: [], passTarget: null,
   };
+}
+
+// Edge of the box, ball arriving from a cross — meet it first time.
+function buildVolley(rng: () => number, keeperStrength: number): Scenario {
+  const bx = 42 + rng() * 16;
+  const by = 15 + rng() * 6;
+  const side = rng() < 0.5 ? -1 : 1;
+  const crosser = { x: side < 0 ? 8 + rng() * 6 : 86 + rng() * 6, y: 10 + rng() * 4 };
+  const keeperX = 48 + rng() * 4;
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx, y: by + 0.6 },
+    defenders: [
+      { x: clamp(bx - 5 + rng() * 3, 34, 66), y: clamp(by - 2, 8, by) },
+      { x: clamp(bx + 5 - rng() * 3, 34, 66), y: clamp(by - 3, 8, by) },
+    ],
+    keeper: makeKeeper(keeperX),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "volley", teammates: [crosser], passTarget: null,
+  };
+}
+
+// Six-yard box, meeting a cross with your head — tight marking.
+function buildHeader(rng: () => number, keeperStrength: number): Scenario {
+  const bx = 44 + rng() * 12;
+  const by = 4 + rng() * 4;
+  const side = rng() < 0.5 ? -1 : 1;
+  const crosser = { x: side < 0 ? 6 + rng() * 6 : 88 + rng() * 6, y: 8 + rng() * 4 };
+  const keeperX = clamp(bx + (rng() - 0.5) * 4, 42, 58);
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx, y: by + 0.4 },
+    defenders: [
+      { x: clamp(bx - 3 + rng() * 6, 38, 62), y: clamp(by + 1, 3, 10) },
+    ],
+    keeper: makeKeeper(keeperX),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "header", teammates: [crosser], passTarget: null,
+  };
+}
+
+// Byline, squaring the ball back for a teammate arriving at the penalty spot.
+function buildCutback(rng: () => number, keeperStrength: number): Scenario {
+  const side = rng() < 0.5 ? -1 : 1;
+  const bx = side < 0 ? 10 + rng() * 6 : 84 + rng() * 6;
+  const by = 5 + rng() * 4;
+  const target = { x: 46 + rng() * 8, y: 15 + rng() * 5 };
+  const keeperX = clamp(50 + (rng() - 0.5) * 4, 44, 56);
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx, y: by + 1 },
+    defenders: [
+      { x: clamp(target.x - side * 5, 34, 66), y: clamp(target.y - 2, 8, 16) }, // covering the cutback lane
+    ],
+    keeper: makeKeeper(keeperX),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "cutback", teammates: [target], passTarget: target,
+  };
+}
+
+// Corner-flag area, whipping a cross in for a run at the near/far post.
+function buildBylineCross(rng: () => number, keeperStrength: number): Scenario {
+  const side = rng() < 0.5 ? -1 : 1;
+  const bx = side < 0 ? 2 + rng() * 5 : 93 + rng() * 5;
+  const by = 3 + rng() * 4;
+  const target = { x: 42 + rng() * 16, y: 8 + rng() * 5 };
+  const keeperX = clamp(50 - side * 3, 42, 58);
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx, y: by + 1 },
+    defenders: [
+      { x: clamp(target.x - side * 3, 36, 64), y: clamp(target.y, 6, 13) }, // marking the run
+      { x: clamp(50 + side * 4, 38, 62), y: clamp(target.y + 3, 8, 16) },
+    ],
+    keeper: makeKeeper(keeperX),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "byline_cross", teammates: [target], passTarget: target,
+  };
+}
+
+// Central midfield, splitting the defense for a teammate breaking in behind.
+function buildThroughBall(rng: () => number, keeperStrength: number): Scenario {
+  const bx = 40 + rng() * 20;
+  const by = 32 + rng() * 10;
+  const target = { x: 44 + rng() * 12, y: 12 + rng() * 5 };
+  const lineY = clamp((by + target.y) / 2, 20, 30);
+  const keeperX = 48 + rng() * 4;
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx, y: by + 1.6 },
+    defenders: [
+      { x: clamp(bx - 6 + rng() * 4, 34, 50), y: lineY }, // the line the ball must be threaded past
+      { x: clamp(bx + 6 - rng() * 4, 50, 66), y: lineY + 2 },
+    ],
+    keeper: makeKeeper(keeperX),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "through_ball", teammates: [target], passTarget: target,
+  };
+}
+
+// Deep and safe — simple recycling pass, "no goal" in this situation.
+function buildMidfieldPass(rng: () => number, keeperStrength: number): Scenario {
+  const bx = 30 + rng() * 40;
+  const by = 44 + rng() * 14;
+  const target = { x: clamp(bx + (rng() - 0.5) * 20, 15, 85), y: clamp(by - 6 - rng() * 6, 30, 52) };
+  const keeperX = 48 + rng() * 4;
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx, y: by + 1.4 },
+    defenders: [
+      { x: clamp((bx + target.x) / 2 + (rng() - 0.5) * 6, 20, 80), y: clamp((by + target.y) / 2, 36, 54) },
+    ],
+    keeper: makeKeeper(keeperX),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "midfield_pass", teammates: [target], passTarget: target,
+  };
+}
+
+// Build one scenario of a given kind.
+export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStrength = 62): Scenario {
+  const ks = clamp(keeperStrength, 0, 100);
+  switch (kind) {
+    case "one_on_one": return buildOneOnOne(rng, ks);
+    case "tight_angle": return buildTightAngle(rng, ks);
+    case "long_range": return buildLongRange(rng, ks);
+    case "volley": return buildVolley(rng, ks);
+    case "header": return buildHeader(rng, ks);
+    case "cutback": return buildCutback(rng, ks);
+    case "byline_cross": return buildBylineCross(rng, ks);
+    case "through_ball": return buildThroughBall(rng, ks);
+    case "midfield_pass": return buildMidfieldPass(rng, ks);
+  }
+}
+
+// How often each scenario kind shows up, by the player's position. Attackers see
+// mostly finishing chances; wide players get more crosses/cutbacks; central and
+// deep players get more through-balls and safe build-up passes.
+const DEFAULT_WEIGHTS: Record<ScenarioKind, number> = {
+  one_on_one: 11, tight_angle: 11, long_range: 11, volley: 11, header: 11,
+  cutback: 11, byline_cross: 11, through_ball: 11, midfield_pass: 11,
+};
+
+const POSITION_WEIGHTS: Record<string, Record<ScenarioKind, number>> = {
+  ST:  { one_on_one: 22, tight_angle: 16, long_range: 8,  volley: 16, header: 18, cutback: 6,  byline_cross: 2,  through_ball: 8,  midfield_pass: 4 },
+  CAM: { one_on_one: 16, tight_angle: 12, long_range: 14, volley: 12, header: 10, cutback: 8,  byline_cross: 4,  through_ball: 16, midfield_pass: 8 },
+  LW:  { one_on_one: 14, tight_angle: 16, long_range: 8,  volley: 10, header: 6,  cutback: 12, byline_cross: 18, through_ball: 8,  midfield_pass: 8 },
+  RW:  { one_on_one: 14, tight_angle: 16, long_range: 8,  volley: 10, header: 6,  cutback: 12, byline_cross: 18, through_ball: 8,  midfield_pass: 8 },
+  CM:  { one_on_one: 6,  tight_angle: 4,  long_range: 14, volley: 6,  header: 4,  cutback: 8,  byline_cross: 6,  through_ball: 20, midfield_pass: 32 },
+  LM:  { one_on_one: 8,  tight_angle: 10, long_range: 8,  volley: 6,  header: 4,  cutback: 12, byline_cross: 20, through_ball: 12, midfield_pass: 20 },
+  RM:  { one_on_one: 8,  tight_angle: 10, long_range: 8,  volley: 6,  header: 4,  cutback: 12, byline_cross: 20, through_ball: 12, midfield_pass: 20 },
+  CDM: { one_on_one: 3,  tight_angle: 2,  long_range: 16, volley: 3,  header: 4,  cutback: 4,  byline_cross: 4,  through_ball: 16, midfield_pass: 48 },
+  CB:  { one_on_one: 2,  tight_angle: 1,  long_range: 6,  volley: 2,  header: 10, cutback: 2,  byline_cross: 2,  through_ball: 8,  midfield_pass: 67 },
+  LB:  { one_on_one: 3,  tight_angle: 3,  long_range: 4,  volley: 2,  header: 4,  cutback: 8,  byline_cross: 24, through_ball: 10, midfield_pass: 42 },
+  RB:  { one_on_one: 3,  tight_angle: 3,  long_range: 4,  volley: 2,  header: 4,  cutback: 8,  byline_cross: 24, through_ball: 10, midfield_pass: 42 },
+  GK:  { one_on_one: 0,  tight_angle: 0,  long_range: 2,  volley: 0,  header: 0,  cutback: 0,  byline_cross: 0,  through_ball: 8,  midfield_pass: 90 },
+};
+
+export function pickScenarioKind(position: string, rng: () => number): ScenarioKind {
+  const weights = POSITION_WEIGHTS[position] ?? DEFAULT_WEIGHTS;
+  const total = SCENARIO_KINDS.reduce((sum, k) => sum + weights[k], 0);
+  let roll = rng() * total;
+  for (const k of SCENARIO_KINDS) {
+    roll -= weights[k];
+    if (roll <= 0) return k;
+  }
+  return SCENARIO_KINDS[SCENARIO_KINDS.length - 1];
+}
+
+// Pick a scenario kind weighted by position, then build it — the single entry
+// point the UI needs for spawning the next situation.
+export function buildWeightedScenario(rng: () => number, position: string, keeperStrength = 62): Scenario {
+  const kind = pickScenarioKind(position, rng);
+  return buildScenario(kind, rng, keeperStrength);
 }
 
 function predictCrossX(from: Vec2, dir: Vec2): number {
@@ -385,6 +622,12 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     }
   }
 
+  // --- Pass delivery (cutback / cross / through-ball / midfield pass) ---
+  if (scenario.passTarget && ball.z < 3.2) {
+    const dist = Math.hypot(scenario.passTarget.x - ball.pos.x, scenario.passTarget.y - ball.pos.y);
+    if (dist < 2.4) return "delivered";
+  }
+
   // --- Goal line crossing (interpolate the exact x and z at y=0) ---
   if (prevY > 0 && ball.pos.y <= 0) {
     const frac = prevY / (prevY - ball.pos.y);
@@ -409,9 +652,10 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   return null;
 }
 
-export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "miss" | "neutral" }> = {
+export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass" | "miss" | "neutral" }> = {
   goal: { text: "GOAL!", kind: "goal" },
   rebound: { text: "GOAL — rebound!", kind: "goal" },
+  delivered: { text: "Picked out the run!", kind: "pass" },
   saved: { text: "Saved by the keeper!", kind: "miss" },
   caught: { text: "Caught by the keeper!", kind: "miss" },
   tipped: { text: "Tipped to safety!", kind: "miss" },
