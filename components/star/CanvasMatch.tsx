@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  buildWeightedScenario, launch, stepBall, stepKeeper, stepFollower,
+  buildWeightedScenario, buildAttackingScenario, launch, stepBall, stepKeeper, stepFollower,
   OUTCOME_TEXT, clamp,
-  type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind,
+  type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import {
@@ -17,10 +17,11 @@ import type { CareerState, MatchStats, Fixture } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 
-type Phase = "aim" | "contact" | "flight" | "result" | "postmatch";
+type Phase = "aim" | "contact" | "flight" | "result" | "sim" | "postmatch";
 
-// A match is this many playable chances before it wraps to full time.
-const SESSION_LENGTH = 6;
+// Match runs from minute 0 to 90. Chances are distributed organically — no
+// fixed session length. The number of chances depends on player/team quality.
+const MATCH_DURATION = 90;
 
 interface Props {
   skills?: KickSkills;
@@ -83,8 +84,8 @@ const C = {
   lineFaint: "rgba(255,253,245,0.22)",
   you: "#10b981",
   youRim: "#065f46",
-  mate: "#8b5cf6",
-  mateRim: "#4c1d95",
+  mate: "#3b82f6",
+  mateRim: "#1e3a5f",
   opp: "#dc2626",
   oppRim: "#7f1d1d",
   gk: "#fbbf24",
@@ -104,6 +105,10 @@ const SCENARIO_LABEL: Record<ScenarioKind, { verb: string; hint: string }> = {
   byline_cross: { verb: "CROSS IT!", hint: "Whip one in for the run — aim the purple circle." },
   through_ball: { verb: "THROUGH BALL!", hint: "Split the defense — aim the purple circle." },
   midfield_pass: { verb: "PASS!", hint: "Keep it simple — find your teammate." },
+  penalty: { verb: "PENALTY!", hint: "12 yards out — pick your spot." },
+  free_kick: { verb: "FREE KICK!", hint: "Bend it over the wall." },
+  corner: { verb: "CORNER!", hint: "Deliver it into the box for the header." },
+  buildup: { verb: "BUILD UP!", hint: "Find a teammate — forward passes may win you the ball back." },
 };
 
 interface Particle {
@@ -141,6 +146,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const oppScoreRef = useRef(0);
   const [score, setScore] = useState({ user: 0, opp: 0 });
   const [finalStats, setFinalStats] = useState<MatchStats | null>(null);
+
+  // --- Simulation between chances ---
+  const matchMinuteRef = useRef(0);
+  const [matchMinute, setMatchMinute] = useState(0);
+  const buildupReturnRef = useRef(false); // next scenario is an attacking follow-up
+
+  interface SimEvent { minute: number; text: string; isGoal?: boolean; }
+  const [simEvents, setSimEvents] = useState<SimEvent[]>([]);
+  const [simVisible, setSimVisible] = useState(false);
+
+  const SIM_COMMENTARY = [
+    "Possession is being shared evenly in midfield.",
+    "The defense holds firm under pressure.",
+    "A counter-attack breaks down in the final third.",
+    "A tidy passing move comes to nothing.",
+    "The ball is being recycled patiently at the back.",
+    "A promising run down the wing is halted by a strong tackle.",
+    "The keeper comes out to claim a hopeful cross.",
+    "A long ball finds nobody — easily dealt with.",
+    "Neat footwork in the middle of the park creates some space.",
+    "The crowd are starting to get restless.",
+    "A crunching challenge in midfield draws a free kick — nothing comes of it.",
+    "The tempo drops as both sides look to regroup.",
+    "A lovely piece of skill on the touchline, but the final ball lets them down.",
+    "Chances have been at a premium here.",
+  ];
 
   // --- Sound: muted by default until primed by the first user gesture ---
   const [muted, setMuted] = useState(false);
@@ -224,25 +255,31 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     return () => window.removeEventListener("resize", resize);
   }, []);
 
-  // --- Announce the very first scenario ---
+  // --- Announce the very first scenario + set its viewport ---
   useEffect(() => {
+    viewportRef.current = scenarioRef.current.viewport;
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
     playWhistle(); // no-op until the first user gesture primes audio — harmless
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Coordinate helpers (pitch <-> canvas pixels) ---
+  // --- Coordinate helpers (pitch <-> canvas pixels, viewport-aware) ---
+  const viewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
   const toPx = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current!;
-    return { px: (x / 100) * canvas.width, py: (y / 100) * canvas.height };
+    const vp = viewportRef.current;
+    const nx = (x - vp.x1) / (vp.x2 - vp.x1);
+    const ny = (y - vp.y1) / (vp.y2 - vp.y1);
+    return { px: nx * canvas.width, py: ny * canvas.height };
   }, []);
 
   const pitchFromPointer = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
+    const vp = viewportRef.current;
     return {
-      x: ((clientX - rect.left) / rect.width) * 100,
-      y: ((clientY - rect.top) / rect.height) * 100,
+      x: ((clientX - rect.left) / rect.width) * (vp.x2 - vp.x1) + vp.x1,
+      y: ((clientY - rect.top) / rect.height) * (vp.y2 - vp.y1) + vp.y1,
     };
   };
 
@@ -254,8 +291,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     if (!ctx) return;
     const W = canvas.width, H = canvas.height;
     const sc = scenarioRef.current;
-    const unit = W / 100;
-    const uy = H / 100;
+    const vp = viewportRef.current;
+    const unit = W / (vp.x2 - vp.x1);
+    const uy = H / (vp.y2 - vp.y1);
     const heightScale = H * 0.018; // px per metre of ball height
 
     // Camera nudge — a decaying oscillation, big events only. Never under reduced motion.
@@ -343,15 +381,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     ctx.moveTo(g1, netH + unit * 0.4); ctx.lineTo(g1, 0); ctx.lineTo(g2, 0); ctx.lineTo(g2, netH + unit * 0.4);
     ctx.stroke();
 
-    // Pass reception zone — where a cutback/cross/through-ball/pass needs to land
-    if (sc.passTarget) {
-      const { px, py } = toPx(sc.passTarget.x, sc.passTarget.y);
+    // Pass reception zones — primary target (purple) + secondary options (lighter)
+    const allTargets = [
+      ...(sc.passTarget ? [{ pos: sc.passTarget, primary: true }] : []),
+      ...(sc.secondaryPassTargets ?? []).map(pos => ({ pos, primary: false })),
+    ];
+    for (const tgt of allTargets) {
+      const { px, py } = toPx(tgt.pos.x, tgt.pos.y);
       ctx.setLineDash([unit * 0.8, unit * 0.6]);
       ctx.lineWidth = Math.max(1.5, unit * 0.35);
-      ctx.strokeStyle = "rgba(167,139,250,0.85)";
+      ctx.strokeStyle = tgt.primary ? "rgba(167,139,250,0.85)" : "rgba(96,165,250,0.65)";
       ctx.beginPath();
-      ctx.arc(px, py, unit * 2.4, 0, Math.PI * 2);
+      ctx.arc(px, py, unit * 2.8, 0, Math.PI * 2);
       ctx.stroke();
+      if (!tgt.primary) {
+        ctx.fillStyle = "rgba(96,165,250,0.12)";
+        ctx.fill();
+      }
       ctx.setLineDash([]);
     }
 
@@ -397,7 +443,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Rebound poacher — lurks, brightens when it commits to a loose ball
     {
       const f = sc.follower;
-      puck(f.x, f.y, R * 0.9, f.active ? "#7c3aed" : "rgba(139,92,246,0.45)", C.mateRim);
+      puck(f.x, f.y, R * 0.9, f.active ? "#60a5fa" : "rgba(96,165,250,0.4)", C.mateRim);
     }
 
     // Teammates — decorative crossers, or the runner a pass is aimed at
@@ -732,46 +778,134 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: sc.receiver?.roleLabel, isPass: isSimplePass }));
 
-    // After a short beat: either the next chance, or full-time once the match's played out.
+    // Build-up pass that succeeded → check for ball return
+    if (sc.kind === "buildup" && (res === "delivered" || (kind === "goal"))) {
+      if (res === "delivered") {
+        const returnChance = 0.2 + sc.passDifficulty * 0.5;
+        if (rngRef.current() < returnChance) {
+          buildupReturnRef.current = true;
+          pushLine("Great pass! The ball comes back in an attacking position...");
+        }
+      }
+    }
+
     attemptsRef.current += 1;
-    if (attemptsRef.current >= SESSION_LENGTH) {
-      // One canonical scorer for both modes — the real finaliseMatch. Career mode
-      // hands the result back to the career flow; the sandbox shows PostMatch itself.
-      const careerForStats = careerRef.current ?? FALLBACK_CAREER;
-      const t = tallyRef.current;
-      const stats = finaliseMatch(
-        attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-        90, userScoreRef.current, oppScoreRef.current, careerForStats,
-      );
-      window.setTimeout(() => {
+
+    // Build-up return: skip simulation, go straight to an attacking scenario
+    if (buildupReturnRef.current) {
+      buildupReturnRef.current = false;
+      window.setTimeout(() => loadScenario(true), 1600);
+      return;
+    }
+
+    // In career/match mode, enter simulation phase. In sandbox, go directly.
+    if (matchModeRef.current) {
+      window.setTimeout(() => startSimulation(), 1800);
+    } else {
+      // Sandbox mode: after 6 chances, show post-match
+      if (attemptsRef.current >= 6) {
+        const careerForStats = careerRef.current ?? FALLBACK_CAREER;
+        const t = tallyRef.current;
+        const stats = finaliseMatch(
+          attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+          90, userScoreRef.current, oppScoreRef.current, careerForStats,
+        );
+        window.setTimeout(() => { setFinalStats(stats); setPhase("postmatch"); }, 1800);
+      } else {
+        window.setTimeout(() => loadScenario(false), 1800);
+      }
+    }
+  };
+
+  // Generate simulation events between chances and run the clock forward.
+  const startSimulation = () => {
+    seedRef.current += 1;
+    const rng = mulberry32(seedRef.current);
+    rngRef.current = rng;
+    const currentMin = matchMinuteRef.current;
+
+    // How long until the player's next chance? Depends on skill + quality.
+    const car = careerRef.current;
+    const skill = car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55;
+    const avgInterval = clamp(16 - (skill / 100) * 6 - (teamRef.current / 100) * 3 + (oppStrengthRef.current / 100) * 3, 6, 22);
+    const interval = Math.round(avgInterval + (rng() - 0.5) * avgInterval * 0.5);
+    const nextMin = Math.min(MATCH_DURATION, currentMin + interval);
+
+    const events: SimEvent[] = [];
+    let min = currentMin;
+
+    // Generate commentary + opponent chances during simulation
+    while (min < nextMin) {
+      min += 2 + Math.floor(rng() * 4);
+      if (min >= nextMin) break;
+
+      // Opponent chance
+      const oppChanceRate = 0.12 + (oppStrengthRef.current - 65) / 400;
+      if (rng() < oppChanceRate) {
+        const oppScores = rng() < 0.28 + (oppStrengthRef.current - 65) / 200;
+        if (oppScores) {
+          oppScoreRef.current += 1;
+          setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
+          events.push({ minute: min, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true });
+          playCrowdSwell("groan");
+        } else {
+          const misses = [
+            `${fixtureOpponentRef.current} have a shot — goes wide.`,
+            `A chance for ${fixtureOpponentRef.current} — the keeper saves well.`,
+            `${fixtureOpponentRef.current} threaten — cleared off the line!`,
+            `${fixtureOpponentRef.current} fire wide from distance.`,
+          ];
+          events.push({ minute: min, text: misses[Math.floor(rng() * misses.length)] });
+        }
+      } else {
+        // Normal commentary
+        events.push({ minute: min, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
+      }
+    }
+
+    matchMinuteRef.current = nextMin;
+    setMatchMinute(nextMin);
+    setSimEvents(events);
+    setSimVisible(true);
+    setPhase("sim");
+
+    // Show simulation for a few seconds, then transition
+    const simDuration = Math.min(events.length * 800 + 1200, 5000);
+    window.setTimeout(() => {
+      setSimVisible(false);
+      if (nextMin >= MATCH_DURATION) {
+        // Full time
+        const careerForStats = careerRef.current ?? FALLBACK_CAREER;
+        const t = tallyRef.current;
+        const stats = finaliseMatch(
+          attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+          90, userScoreRef.current, oppScoreRef.current, careerForStats,
+        );
         if (matchModeRef.current && onCompleteRef.current) {
           onCompleteRef.current(stats);
         } else {
           setFinalStats(stats);
           setPhase("postmatch");
         }
-      }, 1800);
-    } else {
-      window.setTimeout(() => nextScenario(), 1800);
-    }
+      } else {
+        loadScenario(false);
+      }
+    }, simDuration);
   };
 
-  const nextScenario = () => {
+  // Load a new scenario onto the canvas and enter aim phase.
+  const loadScenario = (attacking: boolean) => {
     seedRef.current += 1;
     rngRef.current = mulberry32(seedRef.current);
+    const rng = rngRef.current;
 
-    // Career mode: the opponent can nick a goal in the gap between your chances.
-    if (matchModeRef.current) {
-      const oppGoalChance = 0.07 + (oppStrengthRef.current - 65) / 500;
-      if (rngRef.current() < oppGoalChance) {
-        oppScoreRef.current += 1;
-        setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
-        pushLine(`⚽ ${fixtureOpponentRef.current} score against the run of play!`);
-        playCrowdSwell("groan");
-      }
+    if (attacking) {
+      scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current);
+    } else {
+      scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current);
     }
 
-    scenarioRef.current = buildWeightedScenario(rngRef.current, positionRef.current, strengthRef.current, teamRef.current);
+    viewportRef.current = scenarioRef.current.viewport;
     ballRef.current = null;
     setAim(null);
     setOutcome(null);
@@ -791,11 +925,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
     userScoreRef.current = 0;
     oppScoreRef.current = 0;
+    matchMinuteRef.current = 0;
+    setMatchMinute(0);
+    buildupReturnRef.current = false;
     setScore({ user: 0, opp: 0 });
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
     setFinalStats(null);
     setFeed([]);
-    nextScenario();
+    setSimEvents([]);
+    setSimVisible(false);
+    loadScenario(false);
   };
 
   // --- Pointer (slingshot) ---
@@ -965,6 +1104,39 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             </div>
           </div>
         )}
+
+        {/* Simulation overlay — match clock ticking between player chances */}
+        {phase === "sim" && simVisible && (
+          <div className="absolute inset-0 bg-gray-950/90 flex flex-col items-center justify-center pointer-events-none z-10">
+            {/* Match clock */}
+            <div className="text-5xl font-black text-white tabular-nums mb-1">{matchMinute}&#39;</div>
+            {/* Scoreline */}
+            {matchMode && (
+              <div className="text-sm font-bold text-gray-300 mb-4">
+                {homeTeam.slice(0, 10)} <span className="text-white text-lg tabular-nums mx-1">{homeScore}</span>
+                <span className="text-gray-500 mx-1">-</span>
+                <span className="text-white text-lg tabular-nums mx-1">{awayScore}</span> {awayTeam.slice(0, 10)}
+              </div>
+            )}
+            {/* Scrolling events */}
+            <div className="w-full max-w-[85%] space-y-1.5 overflow-hidden max-h-[55%]">
+              {simEvents.map((ev, i) => (
+                <div
+                  key={i}
+                  className={`text-xs leading-snug px-3 py-1 rounded ${
+                    ev.isGoal
+                      ? "text-amber-300 font-black bg-amber-900/30 border border-amber-500/40"
+                      : "text-gray-400 bg-gray-800/40"
+                  }`}
+                  style={{ animationDelay: `${i * 0.4}s` }}
+                >
+                  <span className="text-gray-500 tabular-nums mr-1.5 font-bold">{ev.minute}&#39;</span>
+                  {ev.text}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Live commentary ticker */}
@@ -992,7 +1164,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-gray-400 text-center">
         {matchMode && (
           <span className="text-emerald-300 font-black mr-1">
-            Chance {Math.min(SESSION_LENGTH, stats.shots + stats.passes + stats.chances + 1)}/{SESSION_LENGTH} ·
+            {matchMinute}&#39; ·
           </span>
         )}
         <span className="text-amber-300">💡</span> {scenarioLabel.hint}

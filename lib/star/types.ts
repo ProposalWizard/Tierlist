@@ -193,5 +193,4 @@ export type StarPhase =
   | "contract-renewal"
   | "dilemma"
   | "relationship-game"
-  | "season-transfer"
-  | "horse-stable";
+  | "season-transfer";
