@@ -41,10 +41,10 @@ const GROUND_FRICTION = 15;    // units/s^2 while rolling
 const AIR_DRAG = 0.2;          // per-second horizontal drag while airborne
 const BOUNCE_VZ = 0.5;         // vertical restitution
 const BOUNCE_H = 0.7;          // horizontal speed kept on bounce
-const CURL_K = 0.022;          // Magnus-ish lateral bend strength
-const KEEPER_REACH = 2.9;      // metres the keeper covers around himself
+const CURL_K = 0.09;           // Magnus-ish lateral bend strength
+const KEEPER_REACH = 1.8;      // metres the keeper covers around himself
 const KEEPER_DIVE_MAX = 12;    // max horizontal dive from start
-const KEEPER_DIVE_SPEED = 28;  // units/sec dive speed
+const KEEPER_DIVE_SPEED = 16;  // units/sec dive speed
 
 export function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
