@@ -21,6 +21,25 @@ interface Props {
   seed?: number;
 }
 
+// --- Knowitball match identity: "night match under floodlights" ---
+// Deep cool pitch greens + floodlight wash, near-black glass chrome, gold accent.
+const C = {
+  pitchA: "#149046",
+  pitchB: "#0e763a",
+  line: "rgba(255,253,245,0.55)",
+  lineFaint: "rgba(255,253,245,0.22)",
+  you: "#10b981",
+  youRim: "#065f46",
+  mate: "#8b5cf6",
+  mateRim: "#4c1d95",
+  opp: "#dc2626",
+  oppRim: "#7f1d1d",
+  gk: "#fbbf24",
+  gkRim: "#92400e",
+  gold: "#fbbf24",
+  goldSoft: "#fde68a",
+};
+
 // What the situation is, shown to the player so it reads clearly before they aim.
 const SCENARIO_LABEL: Record<ScenarioKind, { verb: string; hint: string }> = {
   one_on_one: { verb: "1-ON-1!", hint: "Clean through on goal — pick your finish." },
@@ -28,11 +47,20 @@ const SCENARIO_LABEL: Record<ScenarioKind, { verb: string; hint: string }> = {
   long_range: { verb: "SHOOT!", hint: "Long way out — give it some pace." },
   volley: { verb: "VOLLEY!", hint: "Meet it first time — drag back to strike." },
   header: { verb: "HEADER!", hint: "Get up and meet the cross." },
-  cutback: { verb: "CUTBACK!", hint: "Square it back for the run — aim the blue circle." },
-  byline_cross: { verb: "CROSS IT!", hint: "Whip one in for the run — aim the blue circle." },
-  through_ball: { verb: "THROUGH BALL!", hint: "Split the defense — aim the blue circle." },
+  cutback: { verb: "CUTBACK!", hint: "Square it back for the run — aim the purple circle." },
+  byline_cross: { verb: "CROSS IT!", hint: "Whip one in for the run — aim the purple circle." },
+  through_ball: { verb: "THROUGH BALL!", hint: "Split the defense — aim the purple circle." },
   midfield_pass: { verb: "PASS!", hint: "Keep it simple — find your teammate." },
 };
+
+interface Particle {
+  x: number; y: number;       // pitch units
+  vx: number; vy: number;     // pitch units/sec
+  rot: number; vrot: number;
+  life: number; maxLife: number;
+  size: number;               // pitch units
+  color: string;
+}
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, seed = 12345 }: Props) {
@@ -68,6 +96,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
+
+  // --- Cosmetic FX state (never touches physics) ---
+  const reducedMotionRef = useRef(false);
+  const trailRef = useRef<{ x: number; y: number; z: number }[]>([]);
+  const particlesRef = useRef<Particle[]>([]);
+  const shakeRef = useRef({ t: 0, dur: 1, mag: 0 });   // camera nudge
+  const flashRef = useRef({ t: 0, dur: 1 });            // goal flash
+  const seamRef = useRef(0);                            // ball roll angle
+
+  // Respect prefers-reduced-motion: no shake, no confetti, only a faint brief flash.
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    reducedMotionRef.current = mq.matches;
+    const on = (e: MediaQueryListEvent) => { reducedMotionRef.current = e.matches; };
+    mq.addEventListener?.("change", on);
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
 
   // --- Canvas sizing (device-pixel-ratio aware) ---
   useEffect(() => {
@@ -117,34 +162,92 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const W = canvas.width, H = canvas.height;
     const sc = scenarioRef.current;
     const unit = W / 100;
+    const uy = H / 100;
     const heightScale = H * 0.018; // px per metre of ball height
 
-    // Pitch stripes
+    // Camera nudge — a decaying oscillation, big events only. Never under reduced motion.
+    let ox = 0, oy = 0;
+    const sh = shakeRef.current;
+    if (sh.t > 0 && !reducedMotionRef.current) {
+      const k = sh.t / sh.dur;
+      const m = sh.mag * unit * k;
+      ox = Math.sin(sh.t * 73) * m;
+      oy = Math.cos(sh.t * 57) * m * 0.7;
+    }
+    ctx.save();
+    ctx.translate(ox, oy);
+
+    // --- Pitch: mowing stripes toward the goal ---
     const bands = 11;
     for (let i = 0; i < bands; i++) {
-      ctx.fillStyle = i % 2 === 0 ? "#16a34a" : "#15803d";
-      ctx.fillRect(0, (i / bands) * H, W, (H / bands) + 1);
+      ctx.fillStyle = i % 2 === 0 ? C.pitchA : C.pitchB;
+      ctx.fillRect(-unit * 2, (i / bands) * H, W + unit * 4, (H / bands) + 1);
     }
+    // PLUG-IN (optional asset): a subtle 256px grass-noise tile can be drawn here at ~8% alpha
+    // via ctx.createPattern(img, "repeat") for extra texture. See notes in the PR/commit.
 
-    ctx.lineWidth = Math.max(1, unit * 0.4);
-    ctx.strokeStyle = "rgba(255,255,255,0.55)";
-    // Penalty box (top)
+    // Floodlight wash from the goal end...
+    const flood = ctx.createLinearGradient(0, 0, 0, H * 0.5);
+    flood.addColorStop(0, "rgba(255,255,235,0.10)");
+    flood.addColorStop(1, "rgba(255,255,235,0)");
+    ctx.fillStyle = flood;
+    ctx.fillRect(-unit * 2, 0, W + unit * 4, H * 0.5);
+    // ...and a vignette so the edges fall away.
+    const vig = ctx.createRadialGradient(W / 2, H * 0.42, Math.min(W, H) * 0.3, W / 2, H * 0.42, Math.max(W, H) * 0.78);
+    vig.addColorStop(0, "rgba(1,14,8,0)");
+    vig.addColorStop(1, "rgba(1,14,8,0.34)");
+    ctx.fillStyle = vig;
+    ctx.fillRect(-unit * 2, -unit * 2, W + unit * 4, H + unit * 4);
+
+    // --- Markings ---
+    ctx.lineWidth = Math.max(1, unit * 0.35);
+    ctx.strokeStyle = C.line;
+    // Penalty box + six-yard box
     ctx.strokeRect(toPx(30, 0).px, 0, toPx(70, 0).px - toPx(30, 0).px, toPx(0, 18).py);
-    // Six-yard box
     ctx.strokeRect(toPx(42, 0).px, 0, toPx(58, 0).px - toPx(42, 0).px, toPx(0, 7).py);
-    // Halfway hint
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    // Penalty spot + the D
+    {
+      const spot = toPx(50, 11);
+      ctx.beginPath();
+      ctx.arc(spot.px, spot.py, unit * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = C.line;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(spot.px, spot.py, unit * 9.15, uy * 9.15, 0, 0.87, Math.PI - 0.87);
+      ctx.stroke();
+    }
+    // Corner arcs
+    ctx.beginPath(); ctx.ellipse(0, 0, unit * 2.5, uy * 2.5, 0, 0, Math.PI / 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(W, 0, unit * 2.5, uy * 2.5, 0, Math.PI / 2, Math.PI); ctx.stroke();
+    // Halfway line + centre circle hint
+    ctx.strokeStyle = C.lineFaint;
     ctx.beginPath();
     ctx.moveTo(0, toPx(0, 66).py); ctx.lineTo(W, toPx(0, 66).py); ctx.stroke();
+    {
+      const cc = toPx(50, 66);
+      ctx.beginPath();
+      ctx.ellipse(cc.px, cc.py, unit * 9.15, uy * 9.15, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
 
-    // Goal frame
+    // --- Goal: frame + net ---
     const g1 = toPx(sc.goal.x1, 0).px, g2 = toPx(sc.goal.x2, 0).px;
-    ctx.fillStyle = "rgba(255,255,255,0.16)";
-    ctx.fillRect(g1, 0, g2 - g1, H * 0.035);
+    const netH = H * 0.033;
+    ctx.fillStyle = "rgba(255,255,255,0.10)";
+    ctx.fillRect(g1, 0, g2 - g1, netH);
+    ctx.strokeStyle = "rgba(255,255,255,0.30)";
+    ctx.lineWidth = 1;
+    for (let x = g1 + unit * 1.1; x < g2; x += unit * 1.1) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, netH); ctx.stroke();
+    }
+    for (let i = 1; i <= 2; i++) {
+      const y = (netH * i) / 3;
+      ctx.beginPath(); ctx.moveTo(g1, y); ctx.lineTo(g2, y); ctx.stroke();
+    }
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = Math.max(2, unit * 0.5);
+    ctx.lineWidth = Math.max(2, unit * 0.55);
     ctx.beginPath();
-    ctx.moveTo(g1, H * 0.035); ctx.lineTo(g1, 0); ctx.lineTo(g2, 0); ctx.lineTo(g2, H * 0.035);
+    ctx.moveTo(g1, netH + unit * 0.4); ctx.lineTo(g1, 0); ctx.lineTo(g2, 0); ctx.lineTo(g2, netH + unit * 0.4);
     ctx.stroke();
 
     // Pass reception zone — where a cutback/cross/through-ball/pass needs to land
@@ -159,38 +262,34 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.setLineDash([]);
     }
 
-    const dot = (x: number, y: number, r: number, fill: string, label?: string) => {
+    // --- Stylised "puck" players: drop shadow, rim, top-light ---
+    const puck = (x: number, y: number, r: number, fill: string, rim: string, label?: string, labelColor = "#fff") => {
       const { px, py } = toPx(x, y);
+      ctx.beginPath();
+      ctx.ellipse(px, py + r * 0.55, r * 0.95, r * 0.4, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.32)";
+      ctx.fill();
       ctx.beginPath();
       ctx.arc(px, py, r, 0, Math.PI * 2);
       ctx.fillStyle = fill;
       ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(0,0,0,0.4)";
+      ctx.lineWidth = Math.max(1.5, r * 0.18);
+      ctx.strokeStyle = rim;
       ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(px - r * 0.28, py - r * 0.3, r * 0.42, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fill();
       if (label) {
-        ctx.fillStyle = "#fff";
-        ctx.font = `bold ${Math.round(r * 0.9)}px sans-serif`;
+        ctx.fillStyle = labelColor;
+        ctx.font = `bold ${Math.round(r * 0.85)}px sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(label, px, py);
+        ctx.fillText(label, px, py + r * 0.05);
       }
     };
 
     const R = unit * 2.2;
-
-    // Rebound poacher — lurks, brightens when it commits to a loose ball
-    {
-      const f = sc.follower;
-      const { px, py } = toPx(f.x, f.y);
-      ctx.beginPath();
-      ctx.arc(px, py, R * 0.9, 0, Math.PI * 2);
-      ctx.fillStyle = f.active ? "#3b82f6" : "rgba(59,130,246,0.5)";
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(0,0,0,0.4)";
-      ctx.stroke();
-    }
 
     // Highlight the receiver while they control a pass they've just won
     const rb = ballRef.current;
@@ -202,12 +301,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.fill();
     }
 
-    // Teammates — decorative crossers, or the runner a pass is aimed at
-    for (const t of sc.teammates) dot(t.x, t.y, R * 0.9, "#a78bfa");
+    // Rebound poacher — lurks, brightens when it commits to a loose ball
+    {
+      const f = sc.follower;
+      puck(f.x, f.y, R * 0.9, f.active ? "#7c3aed" : "rgba(139,92,246,0.45)", C.mateRim);
+    }
 
-    // Defenders + striker
-    for (const d of sc.defenders) dot(d.x, d.y, R, "#dc2626");
-    dot(sc.player.x, sc.player.y, R, "#10b981", "YOU");
+    // Teammates — decorative crossers, or the runner a pass is aimed at
+    for (const t of sc.teammates) puck(t.x, t.y, R * 0.9, C.mate, C.mateRim);
+
+    // Defenders + you
+    for (const d of sc.defenders) puck(d.x, d.y, R, C.opp, C.oppRim);
+    puck(sc.player.x, sc.player.y, R, C.you, C.youRim, "YOU");
 
     // Keeper — body stretches into the dive it commits to
     {
@@ -218,6 +323,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const rx = R * (1.15 + diveN * 1.9);
       const ry = R * (1.15 - diveN * 0.3);
       const cx = px + sign * rx * 0.35;
+      ctx.beginPath();
+      ctx.ellipse(cx, py + ry * 0.55, rx * 0.95, ry * 0.4, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.32)";
+      ctx.fill();
       if (kk.flash > 0) {
         ctx.beginPath();
         ctx.ellipse(cx, py, rx * 1.28, ry * 1.28, 0, 0, Math.PI * 2);
@@ -226,50 +335,72 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
       ctx.beginPath();
       ctx.ellipse(cx, py, rx, ry, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "#facc15";
+      ctx.fillStyle = C.gk;
       ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.lineWidth = Math.max(1.5, R * 0.18);
+      ctx.strokeStyle = C.gkRim;
       ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx - rx * 0.25, py - ry * 0.3, ry * 0.42, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.22)";
+      ctx.fill();
       ctx.fillStyle = "#111827";
-      ctx.font = `bold ${Math.round(R * 0.9)}px sans-serif`;
+      ctx.font = `bold ${Math.round(R * 0.85)}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("GK", px, py);
     }
 
-    // Ball (with height shadow)
-    const ball = ballRef.current;
-    if (ball) {
-      const { px, py } = toPx(ball.pos.x, ball.pos.y);
-      // shadow at ground
+    // --- Ball trail (fades along the flight; curl makes it sing) ---
+    const trail = trailRef.current;
+    for (let i = 0; i < trail.length; i++) {
+      const t = trail[i];
+      const k = (i + 1) / trail.length;
+      const { px, py } = toPx(t.x, t.y);
+      ctx.beginPath();
+      ctx.arc(px, py - t.z * heightScale, unit * 0.85 * (0.3 + 0.5 * k), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${0.06 + 0.24 * k})`;
+      ctx.fill();
+    }
+
+    // --- Ball (shadow at ground, seam patches roll with spin) ---
+    const drawBall = (x: number, y: number, z: number) => {
+      const { px, py } = toPx(x, y);
       ctx.beginPath();
       ctx.ellipse(px, py, unit * 0.9, unit * 0.5, 0, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.fill();
-      // ball lifted by height
-      const by = py - ball.z * heightScale;
-      const br = unit * 0.9 * (1 + ball.z / 14);
+      const by = py - z * heightScale;
+      const br = unit * 0.9 * (1 + z / 14);
       ctx.beginPath();
       ctx.arc(px, by, br, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = "#fefefe";
       ctx.fill();
       ctx.lineWidth = 2;
-      ctx.strokeStyle = "#111";
+      ctx.strokeStyle = "#0f172a";
       ctx.stroke();
-    } else if (phaseRef.current === "aim") {
-      // resting ball at the spot
-      const { px, py } = toPx(sc.ball.x, sc.ball.y);
+      // rolling seam patches
+      const a = seamRef.current;
+      ctx.save();
       ctx.beginPath();
-      ctx.arc(px, py, unit * 0.9, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
+      ctx.arc(px, by, br * 0.92, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.arc(px + Math.cos(a) * br * 0.45, by + Math.sin(a) * br * 0.45, br * 0.3, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(15,23,42,0.16)";
       ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#111";
-      ctx.stroke();
-    }
+      ctx.beginPath();
+      ctx.arc(px - Math.cos(a) * br * 0.5, by - Math.sin(a) * br * 0.5, br * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(15,23,42,0.12)";
+      ctx.fill();
+      ctx.restore();
+    };
 
-    // Aim slingshot overlay
+    const ball = ballRef.current;
+    if (ball) drawBall(ball.pos.x, ball.pos.y, ball.z);
+    else if (phaseRef.current === "aim") drawBall(sc.ball.x, sc.ball.y, 0);
+
+    // --- Aim slingshot overlay (brand gold) ---
     if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {
       const d = dragRef.current;
       const dist = Math.hypot(d.x - sc.ball.x, d.y - sc.ball.y);
@@ -281,7 +412,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
       const b = toPx(ex, ey);
-      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.strokeStyle = "rgba(251,191,36,0.95)";
       ctx.lineWidth = Math.max(2, unit * 0.5);
       ctx.setLineDash([unit * 1.5, unit]);
       ctx.beginPath();
@@ -289,7 +420,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.setLineDash([]);
       // arrowhead
       const ang = Math.atan2(b.py - a.py, b.px - a.px);
-      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.fillStyle = C.goldSoft;
       ctx.beginPath();
       ctx.moveTo(b.px, b.py);
       ctx.lineTo(b.px - Math.cos(ang - 0.4) * unit * 1, b.py - Math.sin(ang - 0.4) * unit * 1);
@@ -299,19 +430,85 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       // power meter (left)
       const meterX = unit * 2, meterTop = H * 0.15, meterH = H * 0.7, meterW = unit * 2.5;
-      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.fillStyle = "rgba(2,6,23,0.55)";
       ctx.fillRect(meterX, meterTop, meterW, meterH);
       const fillH = meterH * power;
       const grad = ctx.createLinearGradient(0, meterTop + meterH, 0, meterTop);
       grad.addColorStop(0, "#22c55e"); grad.addColorStop(0.6, "#eab308"); grad.addColorStop(1, "#ef4444");
       ctx.fillStyle = grad;
       ctx.fillRect(meterX, meterTop + meterH - fillH, meterW, fillH);
-      ctx.fillStyle = "#fff";
+      ctx.strokeStyle = "rgba(251,191,36,0.5)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(meterX, meterTop, meterW, meterH);
+      ctx.fillStyle = C.goldSoft;
       ctx.font = `bold ${Math.round(unit * 2.2)}px sans-serif`;
       ctx.textAlign = "center";
       ctx.fillText(`${Math.round(power * 100)}%`, meterX + meterW / 2, meterTop - unit);
     }
+
+    // --- Confetti (brand colours, goal only) ---
+    for (const p of particlesRef.current) {
+      const { px, py } = toPx(p.x, p.y);
+      const s = p.size * unit;
+      const alpha = clamp(p.life / p.maxLife, 0, 1);
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-s / 2, -s / 4, s, s / 2);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.restore(); // end camera nudge
+
+    // --- Goal flash (screen-space, not shaken; faint + brief under reduced motion) ---
+    const fl = flashRef.current;
+    if (fl.t > 0) {
+      const k = fl.t / fl.dur;
+      const maxA = reducedMotionRef.current ? 0.14 : 0.32;
+      const gm = toPx(50, 2);
+      const fg = ctx.createRadialGradient(gm.px, gm.py, 0, gm.px, gm.py, W * 0.75);
+      fg.addColorStop(0, `rgba(253,230,138,${maxA * k})`);
+      fg.addColorStop(1, "rgba(253,230,138,0)");
+      ctx.fillStyle = fg;
+      ctx.fillRect(0, 0, W, H);
+    }
   }, [toPx]);
+
+  // --- Cosmetic FX helpers ---
+  const nudge = (dur: number, mag: number) => {
+    if (reducedMotionRef.current) return;
+    shakeRef.current = { t: dur, dur, mag };
+  };
+
+  const spawnGoalFx = () => {
+    if (reducedMotionRef.current) {
+      flashRef.current = { t: 0.25, dur: 0.25 };
+      return;
+    }
+    flashRef.current = { t: 0.55, dur: 0.55 };
+    nudge(0.4, 1.3);
+    const b = ballRef.current;
+    const origin = b ? { x: b.pos.x, y: Math.max(b.pos.y, 1.5) } : { x: 50, y: 2 };
+    const rng = rngRef.current;
+    const colors = [C.gold, C.goldSoft, "#34d399", "#ffffff", C.you];
+    for (let i = 0; i < 46; i++) {
+      const life = 0.8 + rng() * 0.6;
+      particlesRef.current.push({
+        x: origin.x + (rng() - 0.5) * 6,
+        y: origin.y + (rng() - 0.5) * 2,
+        vx: (rng() - 0.5) * 46,
+        vy: -(8 + rng() * 34),
+        rot: rng() * Math.PI * 2,
+        vrot: (rng() - 0.5) * 10,
+        life, maxLife: life,
+        size: 0.5 + rng() * 0.7,
+        color: colors[Math.floor(rng() * colors.length)],
+      });
+    }
+  };
 
   // --- Main animation loop ---
   useEffect(() => {
@@ -340,6 +537,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         }
         if (ballRef.current) ballRef.current.event = null;
       }
+
+      // Cosmetic FX advance (pausing the rAF pauses everything together)
+      if (shakeRef.current.t > 0) shakeRef.current.t = Math.max(0, shakeRef.current.t - dt);
+      if (flashRef.current.t > 0) flashRef.current.t = Math.max(0, flashRef.current.t - dt);
+      for (const p of particlesRef.current) {
+        p.vy += 70 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vrot * dt;
+        p.life -= dt;
+      }
+      if (particlesRef.current.length) particlesRef.current = particlesRef.current.filter((p) => p.life > 0);
+
+      const b = ballRef.current;
+      if (phaseRef.current === "flight" && b && !b.resting) {
+        seamRef.current += (b.spin * 0.3 + Math.hypot(b.vel.x, b.vel.y) * 0.06) * dt;
+        trailRef.current.push({ x: b.pos.x, y: b.pos.y, z: b.z });
+        if (trailRef.current.length > 16) trailRef.current.shift();
+      } else if (trailRef.current.length) {
+        trailRef.current.shift(); // let it dissolve after the play resolves
+      }
+
       render();
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -366,6 +585,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       return { ...s, shots: s.shots + 1, goals: s.goals + (OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) };
     });
 
+    // Celebration / impact FX, matched to what the physics produced.
+    if (OUTCOME_TEXT[res].kind === "goal") spawnGoalFx();
+    else if (res === "post") nudge(0.28, 0.9);
+    else if (res === "saved" || res === "caught" || res === "tipped" || res === "blocked") nudge(0.18, 0.5);
+
     pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: sc.receiver?.roleLabel, isPass: isSimplePass }));
 
     // Safety: if the ball never resolves for some reason, this still fires next scenario.
@@ -381,6 +605,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
+    trailRef.current = [];
+    particlesRef.current = [];
+    shakeRef.current.t = 0;
+    flashRef.current.t = 0;
     setPhase("aim");
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
   };
@@ -425,19 +653,48 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const outMeta = outcome ? OUTCOME_TEXT[outcome] : null;
   const scenarioLabel = SCENARIO_LABEL[scenarioRef.current.kind];
 
+  const statCell = (label: string, value: string, valueClass: string) => (
+    <div className="px-1.5 py-1 text-center">
+      <div className="text-[8px] uppercase tracking-widest text-gray-500 font-bold leading-none">{label}</div>
+      <div className={`text-xs font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
+    </div>
+  );
+
   return (
     <div className="w-full max-w-sm mx-auto">
-      {/* HUD */}
-      <div className="flex flex-wrap items-center justify-between mb-2 px-1 gap-x-3 gap-y-0.5">
-        <div className="text-[11px] font-black text-white/80">Shots: {stats.shots}</div>
-        <div className="text-[11px] font-black text-emerald-400">Goals: {stats.goals}</div>
-        <div className="text-[11px] font-black text-violet-400">Passes: {stats.passesCompleted}/{stats.passes}</div>
-        <div className="text-[11px] font-black text-amber-400">Assists: {stats.assists}/{stats.chances}</div>
+      {/* Local keyframes; disabled wholesale under prefers-reduced-motion */}
+      <style>{`
+        @keyframes kibPop { 0% { transform: scale(0.55); opacity: 0; } 60% { transform: scale(1.07); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes kibLive { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .kib-pop { animation: kibPop 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.35) both; }
+        .kib-live { animation: kibLive 1.6s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .kib-pop, .kib-live { animation: none; }
+        }
+      `}</style>
+
+      {/* Scoreboard plate */}
+      <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
+        <div className="flex items-stretch">
+          {/* PLUG-IN (optional asset): swap this monogram for /public/star/knowitball-badge.png */}
+          <div className="px-2.5 flex items-center bg-gradient-to-b from-amber-400 to-amber-500 text-gray-950 text-[11px] font-black tracking-tight">
+            KB
+          </div>
+          <div className="px-2.5 flex items-center border-r border-white/5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300/90">
+            Match&nbsp;Lab
+          </div>
+          <div className="flex-1 grid grid-cols-4 divide-x divide-white/5">
+            {statCell("Shots", `${stats.shots}`, "text-white")}
+            {statCell("Goals", `${stats.goals}`, "text-amber-300")}
+            {statCell("Passes", `${stats.passesCompleted}/${stats.passes}`, "text-violet-300")}
+            {statCell("Assists", `${stats.assists}/${stats.chances}`, "text-emerald-300")}
+          </div>
+        </div>
       </div>
 
       <div
         ref={wrapRef}
-        className="relative w-full aspect-[3/4] rounded-xl overflow-hidden border-2 border-emerald-800 shadow-2xl"
+        className="relative w-full aspect-[3/4] rounded-xl overflow-hidden border-2 border-emerald-800/80 shadow-2xl shadow-emerald-950/60"
         style={{ touchAction: "none" }}
       >
         <canvas
@@ -452,9 +709,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         {/* Aim prompt */}
         {phase === "aim" && !draggingRef.current && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="bg-black/70 border-2 border-yellow-400 rounded-lg px-6 py-3 text-center">
-              <div className="text-2xl font-black text-yellow-300 tracking-widest">{scenarioLabel.verb}</div>
-              <div className="text-[10px] text-yellow-200 mt-0.5">Drag back from the ball to aim &amp; power</div>
+            <div className="kib-pop bg-gray-950/80 border-2 border-amber-400/90 rounded-lg px-6 py-3 text-center shadow-xl">
+              <div className="text-2xl font-black text-amber-300 tracking-widest drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{scenarioLabel.verb}</div>
+              <div className="text-[10px] text-amber-100/80 mt-0.5">Drag back from the ball to aim &amp; power</div>
             </div>
           </div>
         )}
@@ -471,8 +728,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         {/* Outcome */}
         {phase === "result" && outMeta && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className={`text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-5 py-3 rounded-lg bg-black/50 ${
-              outMeta.kind === "goal" ? "text-emerald-300" : outMeta.kind === "pass" ? "text-violet-300" : outMeta.kind === "neutral" ? "text-yellow-200" : "text-red-400"
+            <div className={`kib-pop text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-6 py-3 rounded-xl ${
+              outMeta.kind === "goal"
+                ? "text-amber-300 bg-gray-950/70 ring-2 ring-amber-400/70 shadow-[0_0_40px_rgba(251,191,36,0.35)]"
+                : outMeta.kind === "pass"
+                ? "text-violet-300 bg-gray-950/60 ring-1 ring-violet-400/50"
+                : outMeta.kind === "neutral"
+                ? "text-yellow-200 bg-gray-950/60"
+                : "text-red-400 bg-gray-950/60 ring-1 ring-red-500/40"
             }`}>
               {outMeta.text}
             </div>
@@ -480,22 +743,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         )}
       </div>
 
-      {/* Commentary feed */}
-      <div className="mt-2 bg-black/60 border border-gray-700 rounded-lg px-3 py-2 min-h-[3.4rem] space-y-0.5">
-        {feed.length === 0 && <div className="text-[11px] text-gray-500 italic">Kick-off…</div>}
-        {feed.map((line, i) => (
-          <div
-            key={i}
-            className={`text-[11px] leading-snug ${i === feed.length - 1 ? "text-white font-bold" : "text-gray-500"}`}
-          >
-            {line}
-          </div>
-        ))}
+      {/* Live commentary ticker */}
+      <div className="mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem]">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="kib-live inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
+          <span className="text-[8px] font-black tracking-[0.22em] text-gray-500 uppercase">Live Commentary</span>
+        </div>
+        <div className="space-y-0.5">
+          {feed.length === 0 && <div className="text-[11px] text-gray-600 italic">Kick-off…</div>}
+          {feed.map((line, i) => (
+            <div
+              key={i}
+              className={`text-[11px] leading-snug pl-2 border-l-2 ${
+                i === feed.length - 1 ? "text-white font-bold border-emerald-500/80" : "text-gray-600 border-transparent"
+              }`}
+            >
+              {line}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Hint */}
-      <div className="mt-2 bg-gray-800/80 border border-gray-700 rounded-lg px-3 py-2 text-[10px] text-gray-300 text-center">
-        <span className="text-yellow-300">💡</span> {scenarioLabel.hint}
+      <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-gray-400 text-center">
+        <span className="text-amber-300">💡</span> {scenarioLabel.hint}
       </div>
     </div>
   );
