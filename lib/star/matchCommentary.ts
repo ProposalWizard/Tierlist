@@ -55,6 +55,26 @@ const BUILDUP: Record<ScenarioKind, string[]> = {
     "No rush here — just needs to find a team-mate.",
     "Patient build-up play in midfield.",
   ],
+  penalty: [
+    "Penalty! Steps up to the spot — everything on this.",
+    "It's a penalty kick! The stadium holds its breath.",
+    "Points to the spot — a chance to make it count from twelve yards.",
+  ],
+  free_kick: [
+    "Free kick in a dangerous position — the wall is set.",
+    "Lines up the free kick — can he bend it over the wall?",
+    "A set-piece opportunity — this is in his range.",
+  ],
+  corner: [
+    "Corner kick — the delivery is everything here.",
+    "Swinging in a corner — bodies in the box.",
+    "Corner from the flag — who wants it most?",
+  ],
+  buildup: [
+    "Deep in midfield — needs to find the right pass here.",
+    "On the ball with options ahead — can he pick the right one?",
+    "Building from the back — time to play through the lines.",
+  ],
 };
 
 // --- The moment the ball is struck ---
@@ -68,6 +88,10 @@ const STRIKE: Record<ScenarioKind, string[]> = {
   byline_cross: ["Whips the cross in!", "Delivers it into the box!", "Floats one in from the byline!"],
   through_ball: ["Plays it through!", "Threads the pass into the gap!", "Slips it through the lines!"],
   midfield_pass: ["Rolls it across.", "Finds his team-mate.", "Plays it simple and safe."],
+  penalty: ["Steps up and strikes it!", "Hits it hard and low!", "Goes for the corner!"],
+  free_kick: ["Bends it over the wall!", "Strikes it with venom!", "Curls one toward the top corner!"],
+  corner: ["Whips the corner in!", "Delivers it right into the danger zone!", "A teasing delivery from the flag!"],
+  buildup: ["Plays it forward!", "Tries to thread it through!", "Sprays it out wide!"],
 };
 
 // --- A teammate controls the pass you've just delivered ---

@@ -16,7 +16,6 @@ import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScre
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
-import HorseRacing from "@/components/star/HorseRacing";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
 import Casino from "@/components/star/Casino";
@@ -371,16 +370,12 @@ export default function StarDevPage() {
   }
 
   if (phase === "casino-menu") {
-    return <Casino bankStart={career.money} onExit={handleCasinoExit} />;
+    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} />;
   }
 
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToLife} />;
-  if (phase === "horse-stable") {
-    return <HorseRacing career={career} onBuyHorse={handleBuyHorse} onRace={handleHorseRace} onBack={handleBackToLife} />;
-  }
-
   if (phase === "relationship-game" && relationshipGameKind) {
     const currentValue = relationshipGameKind === "happiness"
       ? career.happiness
@@ -472,7 +467,6 @@ export default function StarDevPage() {
             onOpenAchievements={() => setPhase("achievements")}
             onOpenTrophies={() => setPhase("trophies")}
             onOpenContract={() => setPhase("contract-renewal")}
-            onOpenStable={() => setPhase("horse-stable")}
             onUseDrink={handleUseDrink}
             onPlayRelationshipGame={handleOpenRelationshipGame}
           />

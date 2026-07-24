@@ -57,6 +57,7 @@ export const LIFESTYLE_ITEMS: OwnedItem[] = [
   { id: "flat-1", name: "Studio Flat", category: "property", price: 30, lifestyleValue: 10 },
   { id: "flat-2", name: "City Apartment", category: "property", price: 80, lifestyleValue: 25 },
   { id: "penthouse", name: "Penthouse", category: "property", price: 140, lifestyleValue: 40 },
+  { id: "stable", name: "Horse Stable", category: "property", price: 150, lifestyleValue: 45 },
   { id: "house-1", name: "Suburban House", category: "property", price: 200, lifestyleValue: 55 },
   { id: "villa", name: "Beach Villa", category: "property", price: 320, lifestyleValue: 75 },
   { id: "house-2", name: "Mansion", category: "property", price: 500, lifestyleValue: 100 },

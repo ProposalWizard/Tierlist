@@ -1,13 +1,33 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import type { CareerState, Horse } from "@/lib/star/types";
 
 interface Props {
   bankStart: number;
+  career: CareerState;
   onExit: (finalBank: number) => void;
+  onHorseRace: (finish: number, prize: number, energyCost: number) => void;
+  onBuyHorse: (horse: Horse, price: number) => void;
 }
 
-export default function CasinoMenu({ bankStart, onExit }: Props) {
-  const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots">("menu");
+// Horses available for purchase (same as former HorseRacing.tsx STABLE)
+const PURCHASABLE_HORSES: { horse: Omit<Horse, "energy" | "racesRun" | "racesWon" | "earnings">; price: number }[] = [
+  { horse: { name: "Clover Lad", breed: "Cob", speed: 55, stamina: 58 }, price: 30 },
+  { horse: { name: "Midnight Dash", breed: "Thoroughbred", speed: 68, stamina: 62 }, price: 60 },
+  { horse: { name: "Golden Arrow", breed: "Arabian", speed: 78, stamina: 72 }, price: 120 },
+  { horse: { name: "Thunderhoof", breed: "Champion", speed: 88, stamina: 84 }, price: 240 },
+];
+
+const HORSE_NAMES = [
+  "Thunder Bolt", "Golden Arrow", "Midnight Star", "Silver Streak", "Red Comet",
+  "Wild Spirit", "Iron Duke", "Bold Ruler", "Grey Storm", "Nimbus",
+  "Blaze", "Royal Flash", "Diamond Dash", "Lucky Strike", "Storm Chaser",
+];
+
+const MY_HORSE_RACE_COST = 40;
+
+export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse }: Props) {
+  const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses">("menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(1);
 
@@ -21,6 +41,20 @@ export default function CasinoMenu({ bankStart, onExit }: Props) {
   }
   if (game === "slots") {
     return <Slots bank={bank} bet={bet} onSetBank={setBank} onExit={() => setGame("menu")} onChangeBet={changeBet} />;
+  }
+  if (game === "horses") {
+    return (
+      <HorseRacingGame
+        bank={bank}
+        bet={bet}
+        career={career}
+        onSetBank={setBank}
+        onExit={() => setGame("menu")}
+        onChangeBet={changeBet}
+        onHorseRace={onHorseRace}
+        onBuyHorse={onBuyHorse}
+      />
+    );
   }
 
   return (
@@ -59,6 +93,14 @@ export default function CasinoMenu({ bankStart, onExit }: Props) {
             <div className="text-3xl">🎰</div>
             <div className="text-emerald-400">SLOTS</div>
           </button>
+          <button
+            disabled={bank < 1}
+            onClick={() => setGame("horses")}
+            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
+          >
+            <div className="text-3xl">🐎</div>
+            <div className="text-emerald-400">HORSE RACING</div>
+          </button>
         </div>
       </div>
     </div>
@@ -93,6 +135,367 @@ function TopBar({ bank, bet, onExit, onChangeBet }: CasinoGameProps) {
       </div>
     </div>
   );
+}
+
+// ---------- HORSE RACING ----------
+interface RaceHorse {
+  name: string;
+  rating: number;
+  odds: number;
+}
+interface RaceRunner {
+  name: string;
+  rating: number;
+  score: number;
+  duration: number;
+  isUser: boolean;
+}
+
+function generateRaceHorses(): RaceHorse[] {
+  const shuffled = [...HORSE_NAMES].sort(() => Math.random() - 0.5);
+  const horses: RaceHorse[] = [];
+  for (let i = 0; i < 6; i++) {
+    const rating = 40 + Math.floor(Math.random() * 56); // 40-95
+    const odds = Math.max(1.5, 12 - rating / 10);
+    horses.push({ name: shuffled[i], rating, odds: Math.round(odds * 10) / 10 });
+  }
+  return horses;
+}
+
+interface HorseRacingProps extends CasinoGameProps {
+  career: CareerState;
+  onHorseRace: (finish: number, prize: number, energyCost: number) => void;
+  onBuyHorse: (horse: Horse, price: number) => void;
+}
+
+function HorseRacingGame(props: HorseRacingProps) {
+  const [tab, setTab] = useState<"bet" | "my-horses">("bet");
+  const [horses, setHorses] = useState<RaceHorse[]>(() => generateRaceHorses());
+  const [selectedHorse, setSelectedHorse] = useState<number | null>(null);
+  const [runners, setRunners] = useState<RaceRunner[] | null>(null);
+  const [go, setGo] = useState(false);
+  const [result, setResult] = useState<{ finish: number; payout: number; winnerName: string } | null>(null);
+  const [isMyHorseRace, setIsMyHorseRace] = useState(false);
+
+  const ownsStable = props.career.ownedItems.some((i) => i.id === "stable");
+  const myHorse = props.career.horse;
+
+  // Start CSS transition one tick after lanes mount
+  useEffect(() => {
+    if (runners && !go) {
+      const t = setTimeout(() => setGo(true), 60);
+      return () => clearTimeout(t);
+    }
+  }, [runners, go]);
+
+  // Reveal result once the slowest runner crosses the line
+  useEffect(() => {
+    if (runners && go && !result) {
+      const maxDur = Math.max(...runners.map((r) => r.duration));
+      const t = setTimeout(() => {
+        const ordered = [...runners].sort((a, b) => b.score - a.score);
+        const winnerName = ordered[0].name;
+        if (isMyHorseRace) {
+          // My horse race — prize based on finishing position
+          const finish = ordered.findIndex((r) => r.isUser) + 1;
+          const prizeMult = finish === 1 ? 5 : finish === 2 ? 2 : finish === 3 ? 1 : 0;
+          const prize = props.bet * prizeMult;
+          setResult({ finish, payout: prize, winnerName });
+        } else {
+          // Betting race — did our pick win?
+          const betHorse = horses[selectedHorse!];
+          const finish = ordered.findIndex((r) => r.name === betHorse.name) + 1;
+          const payout = finish === 1 ? Math.round(props.bet * betHorse.odds) : 0;
+          setResult({ finish, payout, winnerName });
+        }
+      }, maxDur * 1000 + 250);
+      return () => clearTimeout(t);
+    }
+  }, [runners, go, result, isMyHorseRace, horses, selectedHorse, props.bet]);
+
+  const placeBet = () => {
+    if (selectedHorse === null || props.bank < props.bet) return;
+    props.onSetBank(props.bank - props.bet);
+
+    // Build runners from the race horses
+    const field: RaceRunner[] = horses.map((h) => {
+      const score = h.rating + Math.random() * 30;
+      return { name: h.name, rating: h.rating, score, duration: 0, isUser: false };
+    });
+
+    const scores = field.map((r) => r.score);
+    const lo = Math.min(...scores), hi = Math.max(...scores);
+    field.forEach((r) => {
+      const norm = hi > lo ? (r.score - lo) / (hi - lo) : 0.5;
+      r.duration = 3.6 - norm * 1.4;
+    });
+
+    setIsMyHorseRace(false);
+    setResult(null);
+    setGo(false);
+    setRunners(field);
+  };
+
+  const startMyHorseRace = () => {
+    if (!myHorse || myHorse.energy < MY_HORSE_RACE_COST) return;
+    const energyFactor = 0.6 + (myHorse.energy / 100) * 0.4;
+    const userScore = (myHorse.speed * 0.55 + myHorse.stamina * 0.45) * energyFactor + Math.random() * 22;
+
+    const field: RaceRunner[] = [{ name: myHorse.name, rating: Math.round((myHorse.speed + myHorse.stamina) / 2), score: userScore, duration: 0, isUser: true }];
+    const rivalNames = [...HORSE_NAMES].filter((n) => n !== myHorse.name).sort(() => Math.random() - 0.5);
+    for (let i = 0; i < 5; i++) {
+      const rating = 46 + Math.random() * 42;
+      field.push({ name: rivalNames[i], rating: Math.round(rating), score: rating + Math.random() * 22, duration: 0, isUser: false });
+    }
+
+    const scores = field.map((r) => r.score);
+    const lo = Math.min(...scores), hi = Math.max(...scores);
+    field.forEach((r) => {
+      const norm = hi > lo ? (r.score - lo) / (hi - lo) : 0.5;
+      r.duration = 3.6 - norm * 1.4;
+    });
+
+    setIsMyHorseRace(true);
+    setResult(null);
+    setGo(false);
+    setRunners(field);
+  };
+
+  const collectResult = () => {
+    if (!result) return;
+    if (isMyHorseRace) {
+      props.onHorseRace(result.finish, result.payout, MY_HORSE_RACE_COST);
+      if (result.payout > 0) props.onSetBank(props.bank + result.payout);
+    } else {
+      if (result.payout > 0) props.onSetBank(props.bank + result.payout);
+    }
+    setRunners(null);
+    setGo(false);
+    setResult(null);
+    setHorses(generateRaceHorses());
+    setSelectedHorse(null);
+  };
+
+  // Race animation view (shared by both bet and my-horse races)
+  if (runners) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
+        <div className="w-full max-w-sm">
+          <TopBar {...props} />
+          <div className="bg-gradient-to-b from-emerald-700 to-emerald-900 border-2 border-emerald-600 rounded-xl p-3 overflow-hidden">
+            <div className="space-y-2 relative">
+              {/* Finish line */}
+              <div className="absolute right-1 top-0 bottom-0 w-1 bg-white/70" style={{ backgroundImage: "repeating-linear-gradient(0deg,#fff 0 6px,#111 6px 12px)" }} />
+              {runners.map((r, i) => {
+                const isPickedOrUser = isMyHorseRace ? r.isUser : r.name === horses[selectedHorse!]?.name;
+                return (
+                  <div key={i} className="relative h-8 bg-emerald-800/40 rounded">
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 text-2xl whitespace-nowrap"
+                      style={{
+                        left: go ? "88%" : "2%",
+                        transition: `left ${r.duration}s cubic-bezier(0.4,0.1,0.7,1)`,
+                      }}
+                    >
+                      <span className="drop-shadow">🐎</span>
+                    </div>
+                    <div className={`absolute left-1 top-1/2 -translate-y-1/2 text-[9px] font-black ${isPickedOrUser ? "text-yellow-300" : "text-white/70"}`}>
+                      {isMyHorseRace && r.isUser ? "YOU" : r.name}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {result && (
+              <div className="mt-3 text-center">
+                {isMyHorseRace ? (
+                  <>
+                    <div className={`text-3xl font-black ${result.finish === 1 ? "text-yellow-300" : result.finish <= 3 ? "text-emerald-300" : "text-gray-300"}`}>
+                      {ordinal(result.finish)} Place
+                    </div>
+                    <div className="text-sm font-bold mt-1">
+                      {result.payout > 0 ? <span className="text-emerald-300">Won ★{result.payout}!</span> : <span className="text-gray-400">Out of the money.</span>}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`text-2xl font-black ${result.payout > 0 ? "text-yellow-300" : "text-red-400"}`}>
+                      {result.payout > 0 ? `YOU WIN! +★${result.payout}` : "No luck!"}
+                    </div>
+                    <div className="text-sm text-gray-300 mt-1">Winner: {result.winnerName}</div>
+                  </>
+                )}
+                <button onClick={collectResult} className="mt-3 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">
+                  {result.payout > 0 ? "Collect Winnings" : "Next Race"}
+                </button>
+              </div>
+            )}
+            {!result && (
+              <div className="mt-3 text-center text-xs font-black text-white/80 animate-pulse">And they&apos;re off!</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
+      <div className="w-full max-w-sm">
+        <TopBar {...props} />
+
+        {/* Tabs */}
+        {ownsStable && (
+          <div className="flex gap-1 mb-3">
+            <button
+              onClick={() => setTab("bet")}
+              className={`flex-1 py-2 rounded-lg font-black text-sm transition ${tab === "bet" ? "bg-emerald-600" : "bg-gray-700 text-gray-400"}`}
+            >Bet on Races</button>
+            <button
+              onClick={() => setTab("my-horses")}
+              className={`flex-1 py-2 rounded-lg font-black text-sm transition ${tab === "my-horses" ? "bg-emerald-600" : "bg-gray-700 text-gray-400"}`}
+            >My Horses</button>
+          </div>
+        )}
+
+        {/* Betting tab */}
+        {tab === "bet" && (
+          <>
+            <div className="text-[10px] text-center text-gray-400 mb-2">Pick a horse, place your bet, and watch the race!</div>
+            <div className="space-y-2 mb-3">
+              {horses.map((h, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedHorse(i)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition ${
+                    selectedHorse === i
+                      ? "bg-emerald-900/60 border-emerald-400"
+                      : "bg-gray-800 border-gray-700 hover:border-gray-500"
+                  }`}
+                >
+                  <div className="text-2xl">🐎</div>
+                  <div className="flex-1 text-left">
+                    <div className="font-black text-white text-sm">{h.name}</div>
+                    <div className="text-[10px] text-gray-400">Rating: {h.rating}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-black text-yellow-300 text-sm">{h.odds.toFixed(1)}:1</div>
+                    <div className="text-[9px] text-gray-500">odds</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={selectedHorse === null || props.bank < props.bet}
+              onClick={placeBet}
+              className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
+            >
+              Place Bet — ★{props.bet}
+            </button>
+          </>
+        )}
+
+        {/* My Horses tab */}
+        {tab === "my-horses" && ownsStable && (
+          <>
+            {!myHorse ? (
+              <>
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-[11px] text-gray-300 leading-snug text-center">
+                  Buy a racehorse and enter it in races to win prize money. Racing tires your horse — its energy comes back as the season plays out.
+                </div>
+                <div className="space-y-2">
+                  {PURCHASABLE_HORSES.map((s) => {
+                    const canAfford = props.bank >= s.price;
+                    return (
+                      <div key={s.horse.name} className="bg-gray-800 border border-gray-700 rounded-xl p-3 flex items-center gap-3">
+                        <div className="text-3xl">🐎</div>
+                        <div className="flex-1">
+                          <div className="font-black text-white text-sm">{s.horse.name}</div>
+                          <div className="text-[10px] text-gray-400">{s.horse.breed} - SPD {s.horse.speed} - STA {s.horse.stamina}</div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (canAfford) {
+                              props.onBuyHorse({ ...s.horse, energy: 100, racesRun: 0, racesWon: 0, earnings: 0 }, s.price);
+                              props.onSetBank(props.bank - s.price);
+                            }
+                          }}
+                          disabled={!canAfford}
+                          className={`px-3 py-2 rounded-lg font-black text-xs flex items-center gap-1 ${canAfford ? "bg-emerald-500 hover:bg-emerald-400" : "bg-gray-700 text-gray-500"}`}
+                        >
+                          <StarIcon />{s.price}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-gradient-to-b from-emerald-800/40 to-gray-800 border border-emerald-700/50 rounded-xl p-4 mb-3">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="text-5xl">🐎</div>
+                    <div className="flex-1">
+                      <div className="font-black text-white text-lg">{myHorse.name}</div>
+                      <div className="text-[11px] text-gray-400">{myHorse.breed}</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-center mb-3">
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Speed</div>
+                      <div className="text-lg font-black text-emerald-300 tabular-nums">{myHorse.speed}</div>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Stamina</div>
+                      <div className="text-lg font-black text-emerald-300 tabular-nums">{myHorse.stamina}</div>
+                    </div>
+                  </div>
+                  <div className="mb-1 flex justify-between text-[10px] font-bold text-gray-300">
+                    <span>Energy</span><span>{myHorse.energy}%</span>
+                  </div>
+                  <div className="h-2.5 w-full rounded-full bg-black/40 overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${myHorse.energy}%`, background: myHorse.energy >= MY_HORSE_RACE_COST ? "linear-gradient(to right,#22c55e,#eab308)" : "#ef4444" }} />
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px]">
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-gray-400 font-bold">Runs</div>
+                      <div className="text-white font-black">{myHorse.racesRun}</div>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-gray-400 font-bold">Wins</div>
+                      <div className="text-white font-black">{myHorse.racesWon}</div>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-gray-400 font-bold">Winnings</div>
+                      <div className="text-white font-black">★{myHorse.earnings}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-center text-gray-400 mb-2">Prize: 1st = bet x5, 2nd = bet x2, 3rd = bet x1</div>
+
+                <button
+                  onClick={startMyHorseRace}
+                  disabled={myHorse.energy < MY_HORSE_RACE_COST}
+                  className={`w-full py-3 rounded-xl font-black text-lg ${myHorse.energy >= MY_HORSE_RACE_COST ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400" : "bg-gray-700 text-gray-500"}`}
+                >
+                  {myHorse.energy >= MY_HORSE_RACE_COST ? `Enter Race (-${MY_HORSE_RACE_COST} energy)` : "Too tired — rest needed"}
+                </button>
+                {myHorse.energy < MY_HORSE_RACE_COST && (
+                  <div className="mt-2 text-[10px] text-center text-gray-400">Your horse regains 20 energy after each match you play.</div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ordinal(n: number) {
+  return n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`;
 }
 
 // ---------- BLACKJACK ----------
