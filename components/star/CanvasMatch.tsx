@@ -12,14 +12,14 @@ import {
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
-import type { CareerState, MatchStats } from "@/lib/star/types";
+import { finaliseMatch } from "@/lib/star/matchStats";
+import type { CareerState, MatchStats, Fixture } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 
 type Phase = "aim" | "contact" | "flight" | "result" | "postmatch";
 
-// A mini-match is this many attempts (shots + chain chances + simple passes)
-// before the session wraps and PostMatch shows a summary.
+// A match is this many playable chances before it wraps to full time.
 const SESSION_LENGTH = 6;
 
 interface Props {
@@ -29,40 +29,22 @@ interface Props {
   teamRelationship?: number;
   career?: CareerState | null;
   seed?: number;
+  // Career-match mode: when a fixture + onComplete are supplied, this runs a real
+  // match — it tallies the scoreline, simulates the opponent between chances, and
+  // hands finaliseMatch()'s MatchStats back to the career flow instead of showing
+  // its own post-match summary. Without them it's the standalone sandbox.
+  fixture?: Fixture;
+  oppStrength?: number;
+  onComplete?: (stats: MatchStats) => void;
 }
 
-// Mirrors lib/star/matchEngine.ts's finaliseMatch rating/relationship formula,
-// but never mutates the real career — this is a display-only session summary.
-// Wage/bonus/sponsor figures use the loaded career's contract if one is
-// available, and fall back to zero (no fabricated numbers) if not.
-function computeSessionStats(chances: number, goals: number, assists: number, passes: number, career: CareerState | null | undefined): MatchStats {
-  const rating = clamp(6.0 + goals * 1.2 + assists * 0.8 + passes * 0.05, 1, 10);
-  const starMan = rating >= 8.5 || goals >= 2;
-  const wage = career?.contract.wage ?? 0;
-  const goalBonus = goals * (career?.contract.goalBonus ?? 0);
-  const assistBonusPay = assists * (career?.contract.assistBonus ?? 0);
-  const sponsorPay = career ? Math.floor(career.relationships.sponsors / 20) : 0;
-  const totalCash = wage + goalBonus + assistBonusPay + sponsorPay;
-
-  let boss = 0, team = 0, fans = 0;
-  if (rating >= 8) { boss += 6; fans += 8; team += 3; }
-  else if (rating >= 7) { boss += 3; fans += 4; team += 2; }
-  else if (rating >= 6) { boss += 1; fans += 1; team += 1; }
-  else if (rating >= 5) { boss -= 2; fans -= 2; team -= 1; }
-  else { boss -= 5; fans -= 4; team -= 3; }
-  if (goals > 0) fans += goals * 3;
-  if (assists > 0) { team += assists * 3; fans += assists; }
-  if (starMan) { boss += 4; fans += 5; team += 2; }
-
-  return {
-    chances, goals, assists, passes,
-    rating: Math.round(rating * 10) / 10,
-    starMan,
-    bossChange: boss, teamChange: team, fansChange: fans,
-    wage, goalBonus: goalBonus + assistBonusPay, sponsorPay, totalCash,
-    homeScore: goals, awayScore: 0,
-  };
-}
+// Only the fields finaliseMatch reads — lets the standalone sandbox produce a
+// summary via the same canonical scorer without a real career loaded (all cash
+// figures come out 0 rather than fabricated).
+const FALLBACK_CAREER = {
+  contract: { wage: 0, goalBonus: 0, assistBonus: 0 },
+  relationships: { sponsors: 0 },
+} as unknown as CareerState;
 
 // --- Knowitball match identity: "night match under floodlights" ---
 // Deep cool pitch greens + floodlight wash, near-black glass chrome, gold accent.
@@ -106,14 +88,30 @@ interface Particle {
 }
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345 }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const careerRef = useRef(career);
   careerRef.current = career;
 
-  // --- Session (mini-match -> PostMatch) tracking ---
+  // Career-match mode is active when the career flow passes a fixture + callback.
+  const matchMode = !!(fixture && onComplete);
+  const matchModeRef = useRef(matchMode);
+  matchModeRef.current = matchMode;
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const oppStrengthRef = useRef(oppStrength ?? 65);
+  oppStrengthRef.current = oppStrength ?? 65;
+  const fixtureOpponent = fixture?.opponent ?? "The opposition";
+  const fixtureOpponentRef = useRef(fixtureOpponent);
+  fixtureOpponentRef.current = fixtureOpponent;
+
+  // --- Session / scoreline tracking ---
   const attemptsRef = useRef(0);
+  const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
+  const userScoreRef = useRef(0);
+  const oppScoreRef = useRef(0);
+  const [score, setScore] = useState({ user: 0, opp: 0 });
   const [finalStats, setFinalStats] = useState<MatchStats | null>(null);
 
   // --- Sound: muted by default until primed by the first user gesture ---
@@ -643,16 +641,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const receiverReached = sc.receiverDone;
     const kind = OUTCOME_TEXT[res].kind;
 
-    let updated = stats;
-    setStats((s) => {
-      const next = isChain
-        ? { ...s, chances: s.chances + 1, assists: s.assists + (receiverReached && kind === "goal" ? 1 : 0) }
-        : isSimplePass
-        ? { ...s, passes: s.passes + 1, passesCompleted: s.passesCompleted + (kind === "pass" ? 1 : 0) }
-        : { ...s, shots: s.shots + 1, goals: s.goals + (kind === "goal" ? 1 : 0) };
-      updated = next;
-      return next;
-    });
+    // The tally lives in a ref so it's authoritative the instant this chance
+    // resolves — the rAF loop calls a stale resolveOutcome closure, so reading it
+    // back off React state would risk under-counting the final chance. State is
+    // just a mirror for the HUD.
+    const t = tallyRef.current;
+    if (isChain) {
+      t.chances += 1;
+      if (receiverReached && kind === "goal") t.assists += 1;
+    } else if (isSimplePass) {
+      t.passes += 1;
+      if (kind === "pass") t.passesCompleted += 1;
+    } else {
+      t.shots += 1;
+      if (kind === "goal") t.goals += 1;
+    }
+    setStats({ ...t });
+
+    // Your team scores whenever the ball ends up in the net — your own finish or a
+    // teammate you set up (same rule the old DOM match used: goal || assist).
+    if (kind === "goal") {
+      userScoreRef.current += 1;
+      setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
+    }
 
     // Celebration / impact FX + sound, matched to what the physics produced.
     if (kind === "goal") {
@@ -674,13 +685,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: sc.receiver?.roleLabel, isPass: isSimplePass }));
 
-    // After a short beat: either the next chance, or full-time once the session's played out.
+    // After a short beat: either the next chance, or full-time once the match's played out.
     attemptsRef.current += 1;
     if (attemptsRef.current >= SESSION_LENGTH) {
-      const summary = computeSessionStats(attemptsRef.current, updated.goals, updated.assists, updated.passesCompleted, careerRef.current);
+      // One canonical scorer for both modes — the real finaliseMatch. Career mode
+      // hands the result back to the career flow; the sandbox shows PostMatch itself.
+      const careerForStats = careerRef.current ?? FALLBACK_CAREER;
+      const t = tallyRef.current;
+      const stats = finaliseMatch(
+        attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+        90, userScoreRef.current, oppScoreRef.current, careerForStats,
+      );
       window.setTimeout(() => {
-        setFinalStats(summary);
-        setPhase("postmatch");
+        if (matchModeRef.current && onCompleteRef.current) {
+          onCompleteRef.current(stats);
+        } else {
+          setFinalStats(stats);
+          setPhase("postmatch");
+        }
       }, 1800);
     } else {
       window.setTimeout(() => nextScenario(), 1800);
@@ -690,6 +712,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const nextScenario = () => {
     seedRef.current += 1;
     rngRef.current = mulberry32(seedRef.current);
+
+    // Career mode: the opponent can nick a goal in the gap between your chances.
+    if (matchModeRef.current) {
+      const oppGoalChance = 0.07 + (oppStrengthRef.current - 65) / 500;
+      if (rngRef.current() < oppGoalChance) {
+        oppScoreRef.current += 1;
+        setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
+        pushLine(`⚽ ${fixtureOpponentRef.current} score against the run of play!`);
+        playCrowdSwell("groan");
+      }
+    }
+
     scenarioRef.current = buildWeightedScenario(rngRef.current, positionRef.current, strengthRef.current, teamRef.current);
     ballRef.current = null;
     setAim(null);
@@ -707,6 +741,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   const restartSession = () => {
     attemptsRef.current = 0;
+    tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
+    userScoreRef.current = 0;
+    oppScoreRef.current = 0;
+    setScore({ user: 0, opp: 0 });
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
     setFinalStats(null);
     setFeed([]);
@@ -755,6 +793,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const outMeta = outcome ? OUTCOME_TEXT[outcome] : null;
   const scenarioLabel = SCENARIO_LABEL[scenarioRef.current.kind];
 
+  // Match-mode scoreboard (user's club vs opponent, mapped to home/away)
+  const homeTeam = matchMode ? (fixture!.home ? career?.player.club ?? "You" : fixture!.opponent) : "";
+  const awayTeam = matchMode ? (fixture!.home ? fixture!.opponent : career?.player.club ?? "You") : "";
+  const homeScore = matchMode ? (fixture!.home ? score.user : score.opp) : 0;
+  const awayScore = matchMode ? (fixture!.home ? score.opp : score.user) : 0;
+
   const statCell = (label: string, value: string, valueClass: string) => (
     <div className="px-1.5 py-1 text-center">
       <div className="text-[8px] uppercase tracking-widest text-gray-500 font-bold leading-none">{label}</div>
@@ -775,6 +819,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         }
       `}</style>
 
+      {/* Live match scoreboard (career mode only) */}
+      {matchMode && (
+        <div className="mb-2 flex items-center justify-between gap-1">
+          <div className="flex-1 bg-red-600 border border-red-500 rounded-l-lg px-2 py-1.5 text-white font-black text-xs truncate">
+            {homeTeam.slice(0, 8).toUpperCase()}
+          </div>
+          <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{homeScore}</div>
+          <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{awayScore}</div>
+          <div className="flex-1 bg-amber-500 border border-amber-400 rounded-r-lg px-2 py-1.5 text-white font-black text-xs truncate text-right">
+            {awayTeam.slice(0, 8).toUpperCase()}
+          </div>
+        </div>
+      )}
+
       {/* Scoreboard plate */}
       <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
         <div className="flex items-stretch">
@@ -783,7 +841,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             KB
           </div>
           <div className="px-2.5 flex items-center border-r border-white/5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300/90">
-            Match&nbsp;Lab
+            {matchMode ? `Wk ${fixture!.week}` : "Match Lab"}
           </div>
           <div className="flex-1 grid grid-cols-4 divide-x divide-white/5">
             {statCell("Shots", `${stats.shots}`, "text-white")}
@@ -885,6 +943,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       {/* Hint */}
       <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-gray-400 text-center">
+        {matchMode && (
+          <span className="text-emerald-300 font-black mr-1">
+            Chance {Math.min(SESSION_LENGTH, stats.shots + stats.passes + stats.chances + 1)}/{SESSION_LENGTH} ·
+          </span>
+        )}
         <span className="text-amber-300">💡</span> {scenarioLabel.hint}
       </div>
 
