@@ -10,6 +10,7 @@ export default function StarMatchDevPage() {
   const [state, setState] = useState<"loading" | "ok" | "denied">("loading");
   const [power, setPower] = useState(55);
   const [technique, setTechnique] = useState(55);
+  const [keeperStrength, setKeeperStrength] = useState(62);
 
   useEffect(() => {
     const supabase = createClient();
@@ -49,7 +50,7 @@ export default function StarMatchDevPage() {
           <h1 className="mt-2 text-xl font-black">Shooting Test</h1>
         </div>
 
-        <CanvasMatch skills={{ power, technique }} seed={2024} />
+        <CanvasMatch skills={{ power, technique }} keeperStrength={keeperStrength} seed={2024} />
 
         {/* Skill sliders so I can feel how attributes change the shot */}
         <div className="mt-4 bg-gray-900/60 border border-gray-700 rounded-lg p-3 space-y-3">
@@ -65,6 +66,12 @@ export default function StarMatchDevPage() {
               <span>Technique</span><span className="text-emerald-400">{technique}</span>
             </div>
             <input type="range" min={20} max={100} value={technique} onChange={(e) => setTechnique(Number(e.target.value))} className="w-full" />
+          </label>
+          <label className="block">
+            <div className="flex justify-between text-xs font-bold text-white mb-1">
+              <span>Keeper Strength</span><span className="text-yellow-400">{keeperStrength}</span>
+            </div>
+            <input type="range" min={20} max={100} value={keeperStrength} onChange={(e) => setKeeperStrength(Number(e.target.value))} className="w-full" />
           </label>
         </div>
       </div>

@@ -3,6 +3,8 @@
 //   x: 0-100 (left-right), y: 0-100 (attacking goal at y=0, top), posts x=40..60.
 //   1 unit = 1 metre. Height z in metres, crossbar at 2.44m.
 // The flight is a real simulation: the OUTCOME is whatever the physics produces.
+// Keeper, defenders and rebounds are all driven off the same ball state that the
+// renderer draws, so what you see is what resolves.
 
 export interface Vec2 { x: number; y: number; }
 
@@ -13,20 +15,44 @@ export interface Ball {
   vz: number;  // m/s vertical
   spin: number; // curl coefficient (sign = direction)
   resting: boolean;
+  loose: boolean;      // true once the ball has been parried/deflected and is a live rebound
+  contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
+}
+
+// A goalkeeper that slides + dives along its line and stretches to reach the ball.
+export interface Keeper {
+  x: number;
+  y: number;
+  startX: number;
+  targetX: number;   // committed crossing x the keeper dives for
+  dive: number;      // signed dive extension in metres (for rendering the lunge)
+  saves: number;     // save attempts already spent on this ball (each one weakens the next)
+  done: boolean;     // caught / tipped — keeper is out of the equation
+  flash: number;     // seconds of "just made contact" glow (render only)
+}
+
+// A poacher lurking for the rebound.
+export interface Follower {
+  x: number;
+  y: number;
+  active: boolean;   // currently chasing a loose ball
+  shot: boolean;     // already took its follow-up
 }
 
 export interface Scenario {
   ball: Vec2;
   player: Vec2;
   defenders: Vec2[];
-  keeper: Vec2;
-  keeperStartX: number;
-  keeperTargetX: number; // where the keeper commits to on launch
+  keeper: Keeper;
+  keeperStrength: number;   // 0-100 — better keepers cover more of the goal
+  follower: Follower;
   goal: { x1: number; x2: number };
   crossbar: number;
 }
 
-export type Outcome = "goal" | "saved" | "over" | "post" | "wide" | "blocked" | "out" | "short";
+export type Outcome =
+  | "goal" | "rebound" | "saved" | "caught" | "tipped"
+  | "over" | "post" | "wide" | "blocked" | "out" | "short";
 
 export interface KickSkills {
   power: number;      // 0-100
@@ -42,9 +68,18 @@ const AIR_DRAG = 0.2;          // per-second horizontal drag while airborne
 const BOUNCE_VZ = 0.5;         // vertical restitution
 const BOUNCE_H = 0.7;          // horizontal speed kept on bounce
 const CURL_K = 0.09;           // Magnus-ish lateral bend strength
-const KEEPER_REACH = 1.8;      // metres the keeper covers around himself
-const KEEPER_DIVE_MAX = 12;    // max horizontal dive from start
-const KEEPER_DIVE_SPEED = 16;  // units/sec dive speed
+
+const SHOT_REF_SPEED = 60;     // roughly the fastest launch speed; used to normalise "fast shots"
+const KEEPER_DIVE_MAX = 13;    // metres of goal the keeper can cover with a dive
+const KEEPER_DIVE_SPEED = 16;  // units/sec slide/dive speed
+const KEEPER_VREACH = 2.7;     // highest ball the keeper can paw at (top-bin shots clear this)
+const KEEPER_REACH_MIN = 1.25; // reach floor (metres) even for a weak, wrong-footed keeper
+const KEEPER_REACH_MAX = 2.65; // reach ceiling for a top keeper on a comfortable shot
+
+const DEF_BLOCK_R = 1.45;      // how close the ball must pass a defender to hit them
+const DEF_BLOCK_H = 2.1;       // defenders can only block below head/torso height — chip over to beat them
+
+const FOLLOWER_SPEED = 15;     // rebound poacher run speed, units/sec
 
 export function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -67,7 +102,7 @@ function gaussian(rng: () => number): number {
 }
 
 // A central shooting chance with slight variation.
-export function buildShootingScenario(rng: () => number): Scenario {
+export function buildShootingScenario(rng: () => number, keeperStrength = 62): Scenario {
   const bx = 40 + rng() * 20;
   const by = 19 + rng() * 8;
   const keeperX = 48 + rng() * 4;
@@ -78,9 +113,16 @@ export function buildShootingScenario(rng: () => number): Scenario {
       { x: clamp(bx - 6 + rng() * 3, 32, 68), y: clamp(by - 6 - rng() * 3, 6, by - 2) },
       { x: clamp(bx + 6 - rng() * 3, 32, 68), y: clamp(by - 7 - rng() * 3, 6, by - 2) },
     ],
-    keeper: { x: keeperX, y: 3.5 },
-    keeperStartX: keeperX,
-    keeperTargetX: keeperX,
+    keeper: {
+      x: keeperX, y: 3.5, startX: keeperX, targetX: keeperX,
+      dive: 0, saves: 0, done: false, flash: 0,
+    },
+    keeperStrength: clamp(keeperStrength, 0, 100),
+    follower: {
+      x: clamp(50 + (rng() < 0.5 ? -1 : 1) * (4 + rng() * 4), 40, 60),
+      y: clamp(by * 0.5, 8, 14),
+      active: false, shot: false,
+    },
     goal: { x1: 40, x2: 60 },
     crossbar: 2.44,
   };
@@ -116,7 +158,8 @@ export function launch(
   // Curl from striking the side of the ball, magnified by technique.
   const spin = contact.cx * (0.5 + tech / 100) * power;
 
-  scenario.keeperTargetX = predictCrossX(scenario.ball, d);
+  // Keeper commits to the predicted crossing point.
+  scenario.keeper.targetX = predictCrossX(scenario.ball, d);
 
   return {
     pos: { x: scenario.ball.x, y: scenario.ball.y },
@@ -125,32 +168,152 @@ export function launch(
     vz,
     spin,
     resting: false,
+    loose: false,
+    contactCd: 0,
   };
 }
 
-// Advance the keeper's dive toward its committed target.
+// Advance the keeper's slide/dive toward its committed target.
 export function stepKeeper(scenario: Scenario, dt: number) {
-  const target = clamp(
-    scenario.keeperTargetX,
-    scenario.keeperStartX - KEEPER_DIVE_MAX,
-    scenario.keeperStartX + KEEPER_DIVE_MAX,
-  );
-  const dx = target - scenario.keeper.x;
-  const move = Math.sign(dx) * Math.min(Math.abs(dx), KEEPER_DIVE_SPEED * dt);
-  scenario.keeper.x += move;
+  const k = scenario.keeper;
+  if (k.flash > 0) k.flash = Math.max(0, k.flash - dt);
+  if (k.done) return;
+
+  const target = clamp(k.targetX, k.startX - KEEPER_DIVE_MAX, k.startX + KEEPER_DIVE_MAX);
+  const dx = target - k.x;
+  // A keeper already committed to one save recovers a touch slower for the next.
+  const speed = KEEPER_DIVE_SPEED * (k.saves > 0 ? 0.78 : 1);
+  const move = Math.sign(dx) * Math.min(Math.abs(dx), speed * dt);
+  k.x += move;
+  // Dive extension eases toward how far he is from his standing spot.
+  const wanted = clamp(k.x - k.startX, -KEEPER_DIVE_MAX, KEEPER_DIVE_MAX);
+  k.dive += (wanted - k.dive) * Math.min(1, dt * 12);
+}
+
+// Advance the rebound poacher. Chases a loose ball and pokes a follow-up goalward.
+export function stepFollower(scenario: Scenario, ball: Ball, rng: () => number, dt: number) {
+  const f = scenario.follower;
+  if (f.shot) return;
+
+  const speed = Math.hypot(ball.vel.x, ball.vel.y);
+  const dangerous = ball.loose && !ball.resting && ball.pos.y < 16 && speed < 42;
+  if (!f.active && dangerous) f.active = true;
+  if (!f.active) return;
+
+  // Run onto the loose ball.
+  const dx = ball.pos.x - f.x, dy = ball.pos.y - f.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const step = FOLLOWER_SPEED * dt;
+  if (dist > step) {
+    f.x += (dx / dist) * step;
+    f.y += (dy / dist) * step;
+  } else {
+    f.x = ball.pos.x; f.y = ball.pos.y;
+  }
+
+  // Close enough and the ball is low → take the second chance.
+  if (dist < 1.6 && ball.z < 1.7) {
+    const tx = 44 + rng() * 12;                 // aim somewhere across the goal
+    const dir = normalize({ x: tx - ball.pos.x, y: -ball.pos.y - 0.001 });
+    const sp = 32 + rng() * 12;
+    ball.vel = { x: dir.x * sp, y: dir.y * sp };
+    ball.vz = 0.3 + rng() * 0.7;
+    ball.spin *= 0.3;
+    ball.loose = false;                         // a fresh shot — but it still counts as a rebound if it goes in
+    ball.contactCd = 0.18;
+    f.shot = true;
+    // Keeper reacts late, already out of position from the first save.
+    scenario.keeper.targetX = predictCrossX(ball.pos, dir);
+  }
+}
+
+// The keeper's effective reach shrinks against pace, corners and elevation.
+function keeperReach(scenario: Scenario, ball: Ball, speed: number): number {
+  const base = KEEPER_REACH_MIN + (scenario.keeperStrength / 100) * (KEEPER_REACH_MAX - KEEPER_REACH_MIN);
+  const speedPen = clamp(speed / SHOT_REF_SPEED, 0, 1);            // fierce shots are harder to reach
+  const cornerPen = clamp(Math.abs(ball.pos.x - 50) / 10, 0, 1);  // shots into the corners stretch him
+  const heightPen = clamp(ball.z / KEEPER_VREACH, 0, 1);          // high shots into the top bins
+  const wear = Math.max(0.35, 1 - 0.4 * scenario.keeper.saves);   // each prior save leaves him grounded
+  return base * (1 - speedPen * 0.42) * (1 - cornerPen * 0.28) * (1 - heightPen * 0.30) * wear;
+}
+
+// Resolve a keeper contact into catch / parry / tip. Returns a terminal Outcome
+// for catch/tip, or null when the ball is parried and stays live.
+function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: number, speed: number, rng: () => number): Outcome | null {
+  const k = scenario.keeper;
+  k.saves += 1;
+  k.flash = 0.35;
+  const marginNorm = clamp((reach - dist) / reach, 0, 1); // 1 = right at the body, 0 = full stretch
+  const lowAndSlow = speed < 30 && ball.z < 1.2;
+
+  // Comfortable, gathered save.
+  if (marginNorm > 0.5 && lowAndSlow && rng() < 0.72) {
+    ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
+    k.done = true;
+    return "caught";
+  }
+
+  // Full-stretch, high or fierce → tip it to safety (over the bar / around the post).
+  if (marginNorm < 0.24 || ball.z > 1.85 || speed > 46) {
+    ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
+    k.done = true;
+    return "tipped";
+  }
+
+  // Otherwise: a parry that stays in play.
+  const away = normalize({ x: ball.pos.x - k.x, y: ball.pos.y - k.y });
+  const dangerous = rng() < 0.34; // sometimes spilled straight back into the danger zone
+  // Safe parries go wide + downfield; dangerous ones drop short and central.
+  const fwd: Vec2 = dangerous ? { x: 0, y: 0.5 } : { x: 0, y: 1 };
+  const lat = (rng() - 0.5) * (dangerous ? 0.6 : 1.4);
+  let dir = normalize({ x: away.x * 0.6 + fwd.x + lat, y: away.y * 0.6 + fwd.y });
+  // Keep the parry in front of goal — a keeper rarely paws it back over his own line.
+  const minY = dangerous ? 0.05 : 0.25;
+  if (dir.y < minY) dir = normalize({ x: dir.x, y: minY });
+  const newSpeed = speed * (dangerous ? 0.22 + rng() * 0.12 : 0.4 + rng() * 0.2);
+  ball.vel = { x: dir.x * newSpeed, y: dir.y * newSpeed };
+  ball.vz = 0.6 + rng() * 1.6; // the ball pops up off the parry
+  ball.spin *= 0.4;
+  ball.loose = true;
+  ball.contactCd = 0.28;
+  // Keeper scrambles back toward where the ball spills.
+  k.targetX = ball.pos.x;
+  return null;
+}
+
+// A defender in the way deflects the ball rather than swallowing it.
+function deflectOffDefender(ball: Ball, d: Vec2, speed: number, rng: () => number): boolean {
+  const n = normalize({ x: ball.pos.x - d.x, y: ball.pos.y - d.y }); // outward from defender
+  const vn = ball.vel.x * n.x + ball.vel.y * n.y;
+  if (vn >= 0) return false; // already moving away — no real contact
+  // Reflect the incoming component, then damp: a genuine deflection, not a wall.
+  const damp = 0.42 + rng() * 0.22;
+  const jitter = (rng() - 0.5) * 6;
+  ball.vel = {
+    x: (ball.vel.x - 2 * vn * n.x) * damp + jitter * 0.15,
+    y: (ball.vel.y - 2 * vn * n.y) * damp,
+  };
+  ball.vz += 0.8 + rng() * 1.4;    // deflections loop up off shins/knees
+  ball.spin *= 0.5;
+  ball.loose = true;
+  ball.contactCd = 0.3;
+  ball.pos.x += n.x * 0.25;        // nudge clear so it doesn't re-trigger
+  ball.pos.y += n.y * 0.25;
+  return true;
 }
 
 // Advance the ball one tick and return an Outcome if the play has resolved.
-export function stepBall(ball: Ball, scenario: Scenario, dt: number): Outcome | null {
+export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
   if (ball.resting) return "short";
 
   const prevY = ball.pos.y;
   const prevX = ball.pos.x;
   const prevZ = ball.z;
+  if (ball.contactCd > 0) ball.contactCd = Math.max(0, ball.contactCd - dt);
 
   // --- Curl (lateral bend perpendicular to travel) ---
-  const speed = Math.hypot(ball.vel.x, ball.vel.y);
-  if (speed > 0.01 && Math.abs(ball.spin) > 0.0001) {
+  const speed0 = Math.hypot(ball.vel.x, ball.vel.y);
+  if (speed0 > 0.01 && Math.abs(ball.spin) > 0.0001) {
     // positive spin curves LEFT of travel (struck right side of ball)
     const ax = ball.spin * CURL_K * ball.vel.y;
     const ay = ball.spin * CURL_K * -ball.vel.x;
@@ -198,20 +361,31 @@ export function stepBall(ball: Ball, scenario: Scenario, dt: number): Outcome | 
     }
   }
 
-  // --- Resolution ---
-  // Defender block (only what they can reach, below head height).
-  for (const d of scenario.defenders) {
-    if (ball.z < 2.0 && Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < 1.7) {
-      return "blocked";
+  const speed = Math.hypot(ball.vel.x, ball.vel.y);
+
+  // --- Defender deflection (only below head height, and only what they can reach) ---
+  if (ball.contactCd <= 0 && ball.z < DEF_BLOCK_H && speed > 8) {
+    for (const d of scenario.defenders) {
+      if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < DEF_BLOCK_R) {
+        deflectOffDefender(ball, d, speed, rng);
+        break;
+      }
     }
   }
 
-  // Keeper save (before the goal line; must be low enough to be reachable).
-  if (ball.z < 2.6 && Math.hypot(scenario.keeper.x - ball.pos.x, scenario.keeper.y - ball.pos.y) < KEEPER_REACH) {
-    return "saved";
+  // --- Keeper save (before the goal line; must be low enough to be reachable) ---
+  const k = scenario.keeper;
+  if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.2) {
+    const reach = keeperReach(scenario, ball, speed);
+    const dist = Math.hypot(k.x - ball.pos.x, k.y - ball.pos.y);
+    if (dist < reach) {
+      const res = resolveKeeper(ball, scenario, dist, reach, speed, rng);
+      if (res) return res; // caught or tipped
+      // parried — ball is loose, keep simulating this tick
+    }
   }
 
-  // Goal line crossing (interpolate the exact x and z at y=0).
+  // --- Goal line crossing (interpolate the exact x and z at y=0) ---
   if (prevY > 0 && ball.pos.y <= 0) {
     const frac = prevY / (prevY - ball.pos.y);
     const xCross = prevX + (ball.pos.x - prevX) * frac;
@@ -221,7 +395,8 @@ export function stepBall(ball: Ball, scenario: Scenario, dt: number): Outcome | 
     if (xCross >= x1 && xCross <= x2) {
       if (zCross > crossbar + 0.12) return "over";
       if (zCross > crossbar - 0.12) return "post"; // clipped the bar
-      return "goal";
+      // A ball that beat the keeper and crossed the line — rebound if it had been spilled.
+      return ball.loose ? "rebound" : "goal";
     }
     if ((xCross >= x1 - 1.1 && xCross < x1) || (xCross > x2 && xCross <= x2 + 1.1)) return "post";
     return "wide";
@@ -236,11 +411,14 @@ export function stepBall(ball: Ball, scenario: Scenario, dt: number): Outcome | 
 
 export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "miss" | "neutral" }> = {
   goal: { text: "GOAL!", kind: "goal" },
+  rebound: { text: "GOAL — rebound!", kind: "goal" },
   saved: { text: "Saved by the keeper!", kind: "miss" },
+  caught: { text: "Caught by the keeper!", kind: "miss" },
+  tipped: { text: "Tipped to safety!", kind: "miss" },
   over: { text: "Over the bar!", kind: "miss" },
   post: { text: "Off the woodwork!", kind: "miss" },
   wide: { text: "Wide of the mark!", kind: "miss" },
   blocked: { text: "Blocked!", kind: "miss" },
   out: { text: "Out of play.", kind: "neutral" },
-  short: { text: "Didn't reach.", kind: "neutral" },
+  short: { text: "Scrambled clear.", kind: "neutral" },
 };

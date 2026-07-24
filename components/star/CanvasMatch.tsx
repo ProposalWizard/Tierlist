@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  buildShootingScenario, launch, stepBall, stepKeeper,
+  buildShootingScenario, launch, stepBall, stepKeeper, stepFollower,
   OUTCOME_TEXT, clamp,
   type Scenario, type Ball, type Outcome, type KickSkills,
 } from "@/lib/star/canvasEngine";
@@ -12,15 +12,19 @@ type Phase = "aim" | "contact" | "flight" | "result";
 
 interface Props {
   skills?: KickSkills;
+  keeperStrength?: number;
   seed?: number;
 }
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, seed = 12345 }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, seed = 12345 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const scenarioRef = useRef<Scenario>(buildShootingScenario(mulberry32(seed)));
+  const strengthRef = useRef(keeperStrength);
+  strengthRef.current = keeperStrength;
+
+  const scenarioRef = useRef<Scenario>(buildShootingScenario(mulberry32(seed), keeperStrength));
   const ballRef = useRef<Ball | null>(null);
   const rngRef = useRef<() => number>(mulberry32(seed));
   const seedRef = useRef(seed);
@@ -130,10 +134,52 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, see
     };
 
     const R = unit * 2.2;
-    // Keeper, defenders, player
-    dot(sc.keeper.x, sc.keeper.y, R * 1.15, "#facc15", "GK");
+
+    // Rebound poacher — lurks, brightens when it commits to a loose ball
+    {
+      const f = sc.follower;
+      const { px, py } = toPx(f.x, f.y);
+      ctx.beginPath();
+      ctx.arc(px, py, R * 0.9, 0, Math.PI * 2);
+      ctx.fillStyle = f.active ? "#3b82f6" : "rgba(59,130,246,0.5)";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(0,0,0,0.4)";
+      ctx.stroke();
+    }
+
+    // Defenders + striker
     for (const d of sc.defenders) dot(d.x, d.y, R, "#dc2626");
     dot(sc.player.x, sc.player.y, R, "#10b981", "YOU");
+
+    // Keeper — body stretches into the dive it commits to
+    {
+      const kk = sc.keeper;
+      const { px, py } = toPx(kk.x, kk.y);
+      const diveN = clamp(Math.abs(kk.dive) / 10, 0, 1);
+      const sign = kk.dive === 0 ? 0 : Math.sign(kk.dive);
+      const rx = R * (1.15 + diveN * 1.9);
+      const ry = R * (1.15 - diveN * 0.3);
+      const cx = px + sign * rx * 0.35;
+      if (kk.flash > 0) {
+        ctx.beginPath();
+        ctx.ellipse(cx, py, rx * 1.28, ry * 1.28, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(250,204,21,0.35)";
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.ellipse(cx, py, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#facc15";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.stroke();
+      ctx.fillStyle = "#111827";
+      ctx.font = `bold ${Math.round(R * 0.9)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("GK", px, py);
+    }
 
     // Ball (with height shadow)
     const ball = ballRef.current;
@@ -224,7 +270,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, see
         const h = dt / steps;
         for (let i = 0; i < steps; i++) {
           stepKeeper(scenarioRef.current, h);
-          const res = stepBall(ballRef.current, scenarioRef.current, h);
+          stepFollower(scenarioRef.current, ballRef.current, rngRef.current, h);
+          const res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           if (res) { resolveOutcome(res); break; }
         }
       }
@@ -239,7 +286,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, see
   const resolveOutcome = (res: Outcome) => {
     setOutcome(res);
     setPhase("result");
-    setStats((s) => ({ shots: s.shots + 1, goals: s.goals + (res === "goal" ? 1 : 0) }));
+    setStats((s) => ({ shots: s.shots + 1, goals: s.goals + (OUTCOME_TEXT[res].kind === "goal" ? 1 : 0) }));
     // Safety: if the ball never resolves for some reason, this still fires next scenario.
     window.setTimeout(() => nextScenario(), 1800);
   };
@@ -247,7 +294,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, see
   const nextScenario = () => {
     seedRef.current += 1;
     rngRef.current = mulberry32(seedRef.current);
-    scenarioRef.current = buildShootingScenario(rngRef.current);
+    scenarioRef.current = buildShootingScenario(rngRef.current, strengthRef.current);
     ballRef.current = null;
     setAim(null);
     setOutcome(null);
