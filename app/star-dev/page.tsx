@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem } from "@/lib/star/types";
+import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse } from "@/lib/star/types";
 import { loadCareer, saveCareer, clearCareer } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason } from "@/lib/star/careerFlow";
@@ -16,6 +16,7 @@ import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScre
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
+import HorseRacing from "@/components/star/HorseRacing";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
 import Casino from "@/components/star/Casino";
@@ -228,6 +229,26 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  const handleBuyHorse = useCallback((horse: Horse, price: number) => {
+    if (!career || career.money < price || career.horse) return;
+    setCareer({ ...career, money: career.money - price, horse });
+  }, [career]);
+
+  const handleHorseRace = useCallback((finish: number, prize: number, energyCost: number) => {
+    if (!career || !career.horse) return;
+    setCareer({
+      ...career,
+      money: career.money + prize,
+      horse: {
+        ...career.horse,
+        energy: Math.max(0, career.horse.energy - energyCost),
+        racesRun: career.horse.racesRun + 1,
+        racesWon: career.horse.racesWon + (finish === 1 ? 1 : 0),
+        earnings: career.horse.earnings + prize,
+      },
+    });
+  }, [career]);
+
   const handleOpenRelationshipGame = useCallback((kind: RelationshipKind) => {
     setRelationshipGameKind(kind);
     setPhase("relationship-game");
@@ -284,6 +305,12 @@ export default function StarDevPage() {
   if (phase === "match" && nextFixture) {
     const opp = career.league.find((t) => t.name === nextFixture.opponent);
     const oppStrength = opp?.strength ?? 65;
+    // Your worn boots actually count now: they add to the power/technique the shot
+    // physics uses (capped at 100). This affects the SHOT, not the aim arrow — the
+    // arrow is a fixed-scale drag indicator and never grows with power.
+    const bootMatchesLeft = career.currentBoot.matches > 0;
+    const effectivePower = Math.min(100, career.skills.power + (bootMatchesLeft ? career.currentBoot.power : 0));
+    const effectiveTechnique = Math.min(100, career.skills.technique + (bootMatchesLeft ? career.currentBoot.technique : 0));
     return (
       <div
         className="min-h-screen bg-gray-950 text-white py-4 px-3"
@@ -291,7 +318,7 @@ export default function StarDevPage() {
       >
         <div className="max-w-sm mx-auto">
           <CanvasMatch
-            skills={{ power: career.skills.power, technique: career.skills.technique }}
+            skills={{ power: effectivePower, technique: effectiveTechnique }}
             keeperStrength={oppStrength}
             position={career.player.position}
             teamRelationship={career.relationships.team}
@@ -350,6 +377,9 @@ export default function StarDevPage() {
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToLife} />;
+  if (phase === "horse-stable") {
+    return <HorseRacing career={career} onBuyHorse={handleBuyHorse} onRace={handleHorseRace} onBack={handleBackToLife} />;
+  }
 
   if (phase === "relationship-game" && relationshipGameKind) {
     const currentValue = relationshipGameKind === "happiness"
@@ -442,6 +472,7 @@ export default function StarDevPage() {
             onOpenAchievements={() => setPhase("achievements")}
             onOpenTrophies={() => setPhase("trophies")}
             onOpenContract={() => setPhase("contract-renewal")}
+            onOpenStable={() => setPhase("horse-stable")}
             onUseDrink={handleUseDrink}
             onPlayRelationshipGame={handleOpenRelationshipGame}
           />

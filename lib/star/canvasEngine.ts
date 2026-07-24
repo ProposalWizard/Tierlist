@@ -95,7 +95,7 @@ const GROUND_FRICTION = 15;    // units/s^2 while rolling
 const AIR_DRAG = 0.2;          // per-second horizontal drag while airborne
 const BOUNCE_VZ = 0.5;         // vertical restitution
 const BOUNCE_H = 0.7;          // horizontal speed kept on bounce
-const CURL_K = 0.09;           // Magnus-ish lateral bend strength
+const CURL_K = 0.30;           // Magnus-ish lateral bend strength (bending around defenders is a core skill)
 
 const SHOT_REF_SPEED = 60;     // roughly the fastest launch speed; used to normalise "fast shots"
 const KEEPER_DIVE_MAX = 13;    // metres of goal the keeper can cover with a dive
@@ -482,8 +482,10 @@ export function launch(
   const Sh = power * (30 + skills.power * 0.3) * (1 - loft * 0.25);
   // Vertical launch speed from how low on the ball it was struck.
   const vz = loft * power * (9 + skills.power * 0.04);
-  // Curl from striking the side of the ball, magnified by technique.
-  const spin = contact.cx * (0.5 + tech / 100) * power;
+  // Curl from striking the side of the ball, magnified by technique. Struck near
+  // the edge with good technique this bends dramatically — enough to bend around a
+  // defender, which is the point.
+  const spin = contact.cx * (0.65 + tech / 100 * 1.2) * power;
 
   // Keeper commits to the predicted crossing point.
   scenario.keeper.targetX = predictCrossX(scenario.ball, d);

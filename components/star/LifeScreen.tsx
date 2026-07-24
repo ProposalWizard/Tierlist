@@ -10,6 +10,7 @@ interface Props {
   onOpenAchievements: () => void;
   onOpenTrophies: () => void;
   onOpenContract: () => void;
+  onOpenStable: () => void;
   onUseDrink: (id: "basic" | "premium" | "elite") => void;
   onPlayRelationshipGame: (kind: RelationshipKind) => void;
 }
@@ -17,7 +18,7 @@ interface Props {
 const TRAINING_ENERGY = 15;
 
 export default function LifeScreen({
-  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink, onPlayRelationshipGame,
+  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onOpenStable, onUseDrink, onPlayRelationshipGame,
 }: Props) {
   const canPlay = career.energy >= TRAINING_ENERGY;
   return (
@@ -38,10 +39,11 @@ export default function LifeScreen({
         <QuickBtn label="Casino" icon="🎰" onClick={onOpenCasino} />
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <QuickBtn label="Sponsors" icon="🤝" onClick={onOpenSponsors} />
         <QuickBtn label="Awards" icon="⭐" onClick={onOpenAchievements} />
         <QuickBtn label="Trophies" icon="🏆" onClick={onOpenTrophies} />
+        <QuickBtn label="Stable" icon="🐎" onClick={onOpenStable} />
       </div>
 
       {/* NRG drinks quick-use */}

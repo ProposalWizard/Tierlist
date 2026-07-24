@@ -56,6 +56,7 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     homeCity: "London",
     seenDilemmas: [],
     ballonDorWins: 0,
+    horse: null,
   };
 }
 
@@ -99,6 +100,11 @@ export function creditMatchResult(
 
   const currentBoot = { ...career.currentBoot, matches: Math.max(0, career.currentBoot.matches - 1) };
 
+  // A rested week for the stable: the horse regains some energy between matches.
+  const horse = career.horse
+    ? { ...career.horse, energy: Math.min(100, career.horse.energy + 20) }
+    : career.horse;
+
   const sponsorGain = Math.max(0, Math.floor(stats.fansChange / 3));
   const newSponsorRel = Math.min(100, career.relationships.sponsors + sponsorGain);
   const dealsUnlocked = Math.floor(newSponsorRel / 10);
@@ -127,6 +133,7 @@ export function creditMatchResult(
     fame: career.fame + Math.max(0, Math.floor(stats.fansChange / 2)),
     week: career.week + 1,
     currentBoot,
+    horse,
     form: [stats.rating, ...career.form].slice(0, 5),
   };
 
