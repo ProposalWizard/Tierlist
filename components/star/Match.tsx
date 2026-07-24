@@ -472,8 +472,8 @@ export default function Match({ career, fixture, oppStrength, onComplete }: Prop
                     className="absolute w-3.5 h-3.5 rounded-full bg-white border-2 border-black shadow-lg pointer-events-none z-20"
                     style={{
                       left: `${ballScreen.x}%`,
-                      top: `${ballScreen.y - ballScreen.h * 0.55}%`,
-                      transform: `translate(-50%, -50%) scale(${1 + ballScreen.h / 8})`,
+                      top: `${ballScreen.y - ballScreen.h * 0.32}%`,
+                      transform: `translate(-50%, -50%) scale(${1 + ballScreen.h / 12})`,
                     }}
                   />
                 </>

@@ -117,13 +117,13 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
           <div className="text-[10px] text-gray-500 mt-1">Costs ★{ENERGY_COST} energy</div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 flex-1 max-w-sm mx-auto w-full">
+        <div className="grid grid-cols-4 gap-1 max-w-[280px] mx-auto w-full">
           {cards.map((c, i) => (
             <button
               key={c.id}
               onClick={() => handleClick(i)}
               disabled={locked || phase !== "playing" || c.matched}
-              className={`aspect-square rounded-xl border-2 flex items-center justify-center text-3xl transition-all duration-300 ${
+              className={`aspect-square rounded-lg border-2 flex items-center justify-center text-2xl transition-all duration-300 ${
                 c.matched
                   ? "bg-emerald-800/40 border-emerald-500 opacity-50"
                   : c.flipped

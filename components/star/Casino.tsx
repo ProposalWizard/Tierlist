@@ -356,19 +356,19 @@ function Roulette(props: CasinoGameProps) {
                   }).join(", ") + ")",
               }}
             >
-              {/* Number labels around the ring */}
+              {/* Number labels — one full-size layer per number, rotated so the
+                  label sits in its pocket near the rim. */}
               {ROULETTE_ORDER.map((n, i) => {
-                const angle = (i / 37) * 360 + (360 / 74);
+                const angle = (i / 37) * 360 + 360 / 74;
                 return (
                   <div
                     key={i}
-                    className="absolute top-1/2 left-1/2 text-white font-black text-[8px]"
-                    style={{
-                      transform: `rotate(${angle}deg) translateY(-46%) rotate(90deg)`,
-                      transformOrigin: "center",
-                    }}
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ transform: `rotate(${angle}deg)` }}
                   >
-                    {n}
+                    <span className="absolute left-1/2 top-0 -translate-x-1/2 pt-[3px] text-white font-black text-[10px] leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                      {n}
+                    </span>
                   </div>
                 );
               })}
