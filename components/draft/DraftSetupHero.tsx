@@ -5,7 +5,7 @@ import { FORMATIONS } from "./formations";
 import { createClient } from "@/lib/supabase/client";
 import ObjectivesToast from "@/components/ObjectivesToast";
 import type { DraftSettings } from "@/app/draft/page";
-import { TrophyIcon, StarBadgeIcon, ChevronIcon, LockIcon } from "./TrophyIcons";
+import DraftNavCards from "./DraftNavCards";
 
 // draft-dev2 setup: identical to /draft's DraftSetup, EXCEPT the top centered
 // "PREMIER LEAGUE DRAFT" text header is replaced with a contained hero card
@@ -184,98 +184,7 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
             </svg>
             How to Play
           </button>
-          <div className="flex gap-2 mt-4">
-            <Link
-              href={isSignedIn === false ? "/auth?next=/draft/history" : "/draft/history"}
-              className={`group relative flex-1 flex items-center gap-2.5 rounded-2xl border p-2.5 sm:p-3 overflow-hidden text-left transition-all hover:scale-[1.015] active:scale-[0.98] ${
-                isSignedIn === false
-                  ? "border-gray-700/50 bg-gray-800/40 hover:bg-gray-800/60"
-                  : "border-emerald-600/40 bg-gradient-to-br from-emerald-950/50 via-gray-900 to-gray-900 hover:border-emerald-500/60 shadow-lg shadow-emerald-950/40"
-              }`}
-            >
-              {/* diagonal sheen */}
-              <div
-                className="pointer-events-none absolute inset-0 opacity-60"
-                style={{ background: "linear-gradient(115deg, transparent 25%, rgba(255,255,255,0.06) 45%, transparent 60%)" }}
-              />
-              <div
-                className={`relative shrink-0 grid place-items-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${
-                  isSignedIn === false
-                    ? "bg-gray-700/70 text-gray-400"
-                    : "bg-gradient-to-br from-emerald-400 to-emerald-700 text-white shadow-[0_0_16px_rgba(16,185,129,0.45)]"
-                }`}
-              >
-                <TrophyIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                {isSignedIn === false && (
-                  <div className="absolute -bottom-1 -right-1 grid place-items-center w-4 h-4 rounded-full bg-gray-900 border border-gray-600 text-gray-300">
-                    <LockIcon className="w-2.5 h-2.5" />
-                  </div>
-                )}
-              </div>
-              <div className="relative flex-1 min-w-0">
-                <div className={`text-[12.5px] sm:text-sm font-black leading-tight ${isSignedIn === false ? "text-gray-400" : "text-white"}`}>
-                  History &amp; Achievements
-                </div>
-                <div className={`text-[10px] sm:text-[11px] font-medium mt-0.5 ${isSignedIn === false ? "text-gray-600" : "text-emerald-300/70"}`}>
-                  Explore your journey
-                </div>
-              </div>
-              <div
-                className={`relative shrink-0 grid place-items-center w-6 h-6 sm:w-7 sm:h-7 rounded-full border transition-colors ${
-                  isSignedIn === false
-                    ? "border-gray-600 text-gray-500"
-                    : "border-emerald-500/40 text-emerald-300 group-hover:border-emerald-400 group-hover:text-emerald-200"
-                }`}
-              >
-                <ChevronIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </div>
-            </Link>
-            <Link
-              href={isSignedIn === false ? "/auth?next=/draft/records" : "/draft/records"}
-              className={`group relative flex-1 flex items-center gap-2.5 rounded-2xl border p-2.5 sm:p-3 overflow-hidden text-left transition-all hover:scale-[1.015] active:scale-[0.98] ${
-                isSignedIn === false
-                  ? "border-gray-700/50 bg-gray-800/40 hover:bg-gray-800/60"
-                  : "border-amber-600/40 bg-gradient-to-br from-amber-950/50 via-gray-900 to-gray-900 hover:border-amber-500/60 shadow-lg shadow-amber-950/40"
-              }`}
-            >
-              {/* diagonal sheen */}
-              <div
-                className="pointer-events-none absolute inset-0 opacity-60"
-                style={{ background: "linear-gradient(115deg, transparent 25%, rgba(255,255,255,0.06) 45%, transparent 60%)" }}
-              />
-              <div
-                className={`relative shrink-0 grid place-items-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${
-                  isSignedIn === false
-                    ? "bg-gray-700/70 text-gray-400"
-                    : "bg-gradient-to-br from-amber-300 to-amber-600 text-amber-950 shadow-[0_0_16px_rgba(217,158,32,0.45)]"
-                }`}
-              >
-                <StarBadgeIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                {isSignedIn === false && (
-                  <div className="absolute -bottom-1 -right-1 grid place-items-center w-4 h-4 rounded-full bg-gray-900 border border-gray-600 text-gray-300">
-                    <LockIcon className="w-2.5 h-2.5" />
-                  </div>
-                )}
-              </div>
-              <div className="relative flex-1 min-w-0">
-                <div className={`text-[12.5px] sm:text-sm font-black leading-tight ${isSignedIn === false ? "text-gray-400" : "text-white"}`}>
-                  Hall of Fame
-                </div>
-                <div className={`text-[10px] sm:text-[11px] font-medium mt-0.5 ${isSignedIn === false ? "text-gray-600" : "text-amber-300/70"}`}>
-                  See the legends
-                </div>
-              </div>
-              <div
-                className={`relative shrink-0 grid place-items-center w-6 h-6 sm:w-7 sm:h-7 rounded-full border transition-colors ${
-                  isSignedIn === false
-                    ? "border-gray-600 text-gray-500"
-                    : "border-amber-500/40 text-amber-300 group-hover:border-amber-400 group-hover:text-amber-200"
-                }`}
-              >
-                <ChevronIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </div>
-            </Link>
-          </div>
+          <DraftNavCards isSignedIn={isSignedIn} />
         </div>
 
         {onTeamNameChange && <TeamNameInput value={teamName ?? ""} onChange={onTeamNameChange} />}
