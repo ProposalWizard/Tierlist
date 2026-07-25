@@ -283,3 +283,222 @@ export function ShieldIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/* ────────────────────────── Record-board icons ──────────────────────────
+   One icon per record type. All share the same gold gradient family so they
+   read as a set. Each has a unique gradient ID to avoid SVG namespace clashes
+   when multiple icons appear on the same page.                              */
+
+export function PointsIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recPoints" x1="0" y1="0" x2="0" y2="24" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="15" width="5" height="8" rx="1" fill="url(#recPoints)" />
+      <rect x="9.5" y="9" width="5" height="14" rx="1" fill="url(#recPoints)" opacity="0.9" />
+      <rect x="17" y="3" width="5" height="20" rx="1" fill="url(#recPoints)" />
+      <rect x="2.8" y="15.8" width="1.3" height="6.2" rx="0.5" fill="rgba(255,255,255,0.42)" />
+      <rect x="10.3" y="9.8" width="1.3" height="10.2" rx="0.5" fill="rgba(255,255,255,0.38)" />
+      <rect x="17.8" y="3.8" width="1.3" height="16.2" rx="0.5" fill="rgba(255,255,255,0.4)" />
+    </svg>
+  );
+}
+
+export function WinsIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recWins" x1="2" y1="1" x2="22" y2="23" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <path d="M7 1.5h10v9.5a5 5 0 01-10 0V1.5z" fill="url(#recWins)" />
+      <path d="M7 4.5H4a1.8 1.8 0 000 3.6h3" fill="none" stroke="url(#recWins)" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M17 4.5h3a1.8 1.8 0 010 3.6h-3" fill="none" stroke="url(#recWins)" strokeWidth="1.5" strokeLinecap="round" />
+      <rect x="10.5" y="17" width="3" height="3" rx="0.5" fill="url(#recWins)" />
+      <rect x="7" y="19.8" width="10" height="2.5" rx="1.2" fill="url(#recWins)" />
+      <path d="M10 2.5 v7 a3 3 0 001 2.2" fill="none" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function BootIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recBoot" x1="2" y1="1" x2="22" y2="23" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <path d="M6 1.5 L12 1.5 L12 13 L21 13 L21 17 L4 17 L4 1.5 Z" fill="url(#recBoot)" />
+      <rect x="4" y="17" width="17" height="2.5" rx="1" fill="url(#recBoot)" opacity="0.85" />
+      <circle cx="7" cy="21.2" r="1.1" fill="url(#recBoot)" />
+      <circle cx="12" cy="21.2" r="1.1" fill="url(#recBoot)" />
+      <circle cx="17" cy="21.2" r="1.1" fill="url(#recBoot)" />
+      <path d="M7.5 2.5 v10" stroke="rgba(255,255,255,0.4)" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function AssistIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recAssist" x1="1" y1="20" x2="23" y2="4" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#b45309" /><stop offset="38%" stopColor="#f59e0b" />
+          <stop offset="72%" stopColor="#fcd34d" /><stop offset="100%" stopColor="#fef3c7" />
+        </linearGradient>
+      </defs>
+      <path d="M2 20 Q9 5 22 8" stroke="url(#recAssist)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <path d="M18.5 4.5 L22.5 8 L19 11.5" stroke="url(#recAssist)" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="4" cy="18.5" r="2" fill="url(#recAssist)" />
+    </svg>
+  );
+}
+
+export function GloveIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recGlove" x1="2" y1="1" x2="22" y2="23" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <rect x="6" y="8" width="14" height="11" rx="5" fill="url(#recGlove)" />
+      <ellipse cx="5" cy="10" rx="2.8" ry="4.5" fill="url(#recGlove)" />
+      <line x1="10.5" y1="8" x2="10.5" y2="11.5" stroke="rgba(0,0,0,0.22)" strokeWidth="1" />
+      <line x1="14" y1="8" x2="14" y2="11.5" stroke="rgba(0,0,0,0.22)" strokeWidth="1" />
+      <rect x="6" y="17.5" width="14" height="4.5" rx="2.2" fill="url(#recGlove)" opacity="0.88" />
+      <path d="M7.5 9 Q10 7.5 15 8.5" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function UnbeatenIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recUnbeaten" x1="2" y1="1" x2="22" y2="23" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <path d="M12 2 L20 5.5 v7 c0 4.5-3.5 7.8-8 9.5-4.5-1.7-8-5-8-9.5v-7 Z" fill="url(#recUnbeaten)" />
+      <path d="M13 8 L9.5 15 L12.2 15 L9 21 L16 13.5 L13 13.5 Z" fill="rgba(255,255,255,0.55)" />
+    </svg>
+  );
+}
+
+export function GoalLockIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recLock" x1="4" y1="1" x2="20" y2="23" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <rect x="5" y="11" width="14" height="11" rx="2.5" fill="url(#recLock)" />
+      <path d="M8.5 11 V7.5 a3.5 3.5 0 017 0 V11" fill="none" stroke="url(#recLock)" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="12" cy="16.5" r="2" fill="rgba(0,0,0,0.38)" />
+      <rect x="11.1" y="16.5" width="1.8" height="2.8" rx="0.5" fill="rgba(0,0,0,0.38)" />
+      <rect x="5.8" y="11.8" width="2.2" height="5" rx="0.8" fill="rgba(255,255,255,0.3)" />
+    </svg>
+  );
+}
+
+export function ExplosionIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recExplosion" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <path d="M12 1.5 L13.5 8.3 L19.4 4.6 L15.7 10.5 L22.5 12 L15.7 13.5 L19.4 19.4 L13.5 15.7 L12 22.5 L10.5 15.7 L4.6 19.4 L8.3 13.5 L1.5 12 L8.3 10.5 L4.6 4.6 L10.5 8.3 Z" fill="url(#recExplosion)" />
+      <circle cx="12" cy="12" r="3.5" fill="rgba(255,255,255,0.28)" />
+    </svg>
+  );
+}
+
+export function RatingStarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recRating" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <path d="M12 2 L14.4 8.8 L21.5 8.9 L15.8 13.2 L17.9 20.1 L12 16 L6.1 20.1 L8.2 13.2 L2.5 8.9 L9.6 8.8 Z" fill="url(#recRating)" />
+      <path d="M10.5 5 L12 3 L12.5 8.5" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="18.5" cy="5.5" r="0.8" fill="rgba(255,255,255,0.6)" />
+      <circle cx="5.5" cy="5.5" r="0.8" fill="rgba(255,255,255,0.6)" />
+    </svg>
+  );
+}
+
+export function SquadOvrIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recOvr" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <path d="M12 2 L20 8.5 L12 22 L4 8.5 Z" fill="url(#recOvr)" />
+      <line x1="4" y1="8.5" x2="20" y2="8.5" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8" />
+      <path d="M4 8.5 L12 2 L16.5 8.5 L12 22 Z" fill="rgba(255,255,255,0.1)" />
+      <path d="M8 6 L12 2.5 L15 7" fill="none" stroke="rgba(255,255,255,0.48)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function FootballIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recFootball" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="10.5" fill="url(#recFootball)" />
+      <path d="M12 7 L15 9.3 L13.8 13 L10.2 13 L9 9.3 Z" fill="rgba(0,0,0,0.38)" />
+      <line x1="12" y1="7" x2="12" y2="1.5" stroke="rgba(0,0,0,0.28)" strokeWidth="1" />
+      <line x1="15" y1="9.3" x2="21.5" y2="7.5" stroke="rgba(0,0,0,0.28)" strokeWidth="1" />
+      <line x1="13.8" y1="13" x2="18" y2="18.5" stroke="rgba(0,0,0,0.28)" strokeWidth="1" />
+      <line x1="10.2" y1="13" x2="6" y2="18.5" stroke="rgba(0,0,0,0.28)" strokeWidth="1" />
+      <line x1="9" y1="9.3" x2="2.5" y2="7.5" stroke="rgba(0,0,0,0.28)" strokeWidth="1" />
+      <path d="M7 5 Q12 2.5 17 5" fill="none" stroke="rgba(255,255,255,0.42)" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function MedalIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <defs>
+        <linearGradient id="recMedal" x1="4" y1="1" x2="20" y2="23" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" /><stop offset="38%" stopColor="#fcd34d" />
+          <stop offset="72%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+      </defs>
+      <path d="M9 1.5 L12 9 L7.5 14 Z" fill="url(#recMedal)" opacity="0.85" />
+      <path d="M15 1.5 L12 9 L16.5 14 Z" fill="url(#recMedal)" opacity="0.68" />
+      <circle cx="12" cy="17" r="7" fill="url(#recMedal)" />
+      <circle cx="12" cy="17" r="4.8" fill="rgba(0,0,0,0.14)" stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" />
+      <path d="M12 14 L12.7 16.2 L15 16.2 L13.2 17.6 L13.9 19.8 L12 18.5 L10.1 19.8 L10.8 17.6 L9 16.2 L11.3 16.2 Z" fill="rgba(255,255,255,0.48)" />
+      <path d="M8.5 14 Q10 13 13 14" fill="none" stroke="rgba(255,255,255,0.42)" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}

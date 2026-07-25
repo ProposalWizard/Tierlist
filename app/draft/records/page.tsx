@@ -1,10 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ComponentType } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
   accentFor, CrownIcon, Laurel, AngledTab, HallOfFameBanner, StatTile,
   BoardIcon, PeopleIcon, StarIcon, ShieldIcon,
+  PointsIcon, WinsIcon, BootIcon, AssistIcon, GloveIcon, UnbeatenIcon,
+  GoalLockIcon, ExplosionIcon, RatingStarIcon, SquadOvrIcon, FootballIcon, MedalIcon,
 } from "@/components/draft/HallOfFameChrome";
 
 interface RecordEntry {
@@ -20,30 +22,30 @@ interface RecordEntry {
 interface RecordType {
   key: string;
   label: string;
-  emoji: string;
+  Icon: ComponentType<{ className?: string }>;
   isTeam: boolean;
   ascending?: boolean;
   isDecimal?: boolean;
 }
 
 const SEASON_RECORD_TYPES: RecordType[] = [
-  { key: "most_points",    label: "Most Points",          emoji: "📊", isTeam: true },
-  { key: "wins",           label: "Most Wins",            emoji: "🏆", isTeam: true },
-  { key: "goals",          label: "Golden Boot",          emoji: "👟", isTeam: false },
-  { key: "assists",        label: "Most Assists",         emoji: "🎯", isTeam: false },
-  { key: "clean_sheets",   label: "Golden Glove",         emoji: "🧤", isTeam: false },
-  { key: "unbeaten",       label: "Longest Unbeaten",     emoji: "🛡️", isTeam: true },
-  { key: "goals_conceded", label: "Least Goals Conceded", emoji: "🔒", isTeam: true, ascending: true },
-  { key: "biggest_win",    label: "Biggest Win",          emoji: "💥", isTeam: true },
-  { key: "avg_rating",     label: "Player of the Season Rating", emoji: "⭐", isTeam: false, isDecimal: true },
-  { key: "squad_ovr",      label: "Highest Squad OVR",     emoji: "📈", isTeam: true },
+  { key: "most_points",    label: "Most Points",                Icon: PointsIcon,     isTeam: true },
+  { key: "wins",           label: "Most Wins",                  Icon: WinsIcon,       isTeam: true },
+  { key: "goals",          label: "Golden Boot",                Icon: BootIcon,       isTeam: false },
+  { key: "assists",        label: "Most Assists",               Icon: AssistIcon,     isTeam: false },
+  { key: "clean_sheets",   label: "Golden Glove",               Icon: GloveIcon,      isTeam: false },
+  { key: "unbeaten",       label: "Longest Unbeaten",           Icon: UnbeatenIcon,   isTeam: true },
+  { key: "goals_conceded", label: "Least Goals Conceded",       Icon: GoalLockIcon,   isTeam: true, ascending: true },
+  { key: "biggest_win",    label: "Biggest Win",                Icon: ExplosionIcon,  isTeam: true },
+  { key: "avg_rating",     label: "Player of the Season Rating",Icon: RatingStarIcon, isTeam: false, isDecimal: true },
+  { key: "squad_ovr",      label: "Highest Squad OVR",          Icon: SquadOvrIcon,   isTeam: true },
 ];
 
 const CAREER_RECORD_TYPES: RecordType[] = [
-  { key: "career_goals",      label: "Most Career Goals",         emoji: "⚽", isTeam: false },
-  { key: "career_assists",    label: "Most Career Assists",       emoji: "🎯", isTeam: false },
-  { key: "career_trophies",   label: "Most Trophies Won",         emoji: "🏅", isTeam: true },
-  { key: "career_avg_rating", label: "Highest Career Avg Rating", emoji: "⭐", isTeam: false, isDecimal: true },
+  { key: "career_goals",      label: "Most Career Goals",         Icon: FootballIcon,   isTeam: false },
+  { key: "career_assists",    label: "Most Career Assists",       Icon: AssistIcon,     isTeam: false },
+  { key: "career_trophies",   label: "Most Trophies Won",         Icon: MedalIcon,      isTeam: true },
+  { key: "career_avg_rating", label: "Highest Career Avg Rating", Icon: RatingStarIcon, isTeam: false, isDecimal: true },
 ];
 
 const OFFICIAL: Record<string, { value: number; playerName: string | null; playerOvr: number | null; clubName?: string }> = {
@@ -260,7 +262,7 @@ function RecordCard({
       <div className="relative flex">
         {/* Rank + icon column */}
         <div className="shrink-0 w-[62px] sm:w-[74px] flex flex-col items-center justify-center py-3 gap-0.5">
-          <span className="text-2xl sm:text-[26px] leading-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">{rt.emoji}</span>
+          <rt.Icon className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-[0_2px_8px_rgba(251,191,36,0.35)]" />
           <span className={`text-2xl sm:text-[28px] font-black italic leading-none tabular-nums ${a.num}`}>
             {String(rank).padStart(2, "0")}
           </span>
