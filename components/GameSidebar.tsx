@@ -29,7 +29,13 @@ const COMING_SOON: GameLink[] = [
 
 export default function GameSidebar() {
   const [open, setOpen] = useState(false);
+  // createPortal needs a real document, which does not exist while the page is
+  // being server-rendered. Without this guard the portal below threw
+  // "document is not defined" during SSR and took the whole page down with it.
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     setOpen(false);
@@ -61,7 +67,7 @@ export default function GameSidebar() {
         </svg>
       </button>
 
-      {createPortal(
+      {mounted && createPortal(
         <>
           {/* Overlay */}
           <div

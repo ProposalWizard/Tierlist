@@ -1,10 +1,22 @@
 // Canvas match engine — pure physics, no React, no rendering.
-// Coordinate system:
-//   x: 0-100 (left-right), y: 0-100 (attacking goal at y=0, top), posts x=40..60.
-//   1 unit = 1 metre. Height z in metres, crossbar at 2.44m.
+//
+// Coordinate system and every dimension come from ./pitch (real IFAB metres):
+//   x: 0 = left touchline, 68 = right touchline. Goal mouth spans 30.34..37.66.
+//   y: 0 = the attacking goal line, growing upfield. Negative y is inside the net.
+//   z: metres above the turf. Crossbar at 2.44 m.
+// Both axes are metric and equally scaled, so distances mean the same thing in
+// every direction and the renderer can draw the same geometry the ball is
+// tested against — what you see is exactly what resolves.
+//
 // The flight is a real simulation: the OUTCOME is whatever the physics produces.
-// Keeper, defenders and rebounds are all driven off the same ball state that the
-// renderer draws, so what you see is what resolves.
+// Keeper, defenders, the runner on the end of a pass and rebounds are all driven
+// off the same ball state the renderer draws.
+
+import {
+  PITCH_W, HALF_LEN, CX, GOAL_H, POST_L, POST_R, NET_DEPTH,
+  SIX_DEPTH, BOX_DEPTH, BOX_L, BOX_R, PEN_SPOT_Y, BALL_R,
+  insideGoalMouth, hitsPost,
+} from "./pitch";
 
 export interface Vec2 { x: number; y: number; }
 export interface Viewport { x1: number; x2: number; y1: number; y2: number; }
@@ -14,7 +26,7 @@ export type BallEvent = "received" | "receiverShot";
 
 export interface Ball {
   pos: Vec2;
-  vel: Vec2;   // units/sec, horizontal plane
+  vel: Vec2;   // m/s, horizontal plane
   z: number;   // metres above the turf
   vz: number;  // m/s vertical
   spin: number; // curl coefficient (sign = direction)
@@ -23,6 +35,7 @@ export interface Ball {
   contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
   receiverControlT: number; // seconds a teammate spends controlling a received pass before shooting
   event: BallEvent | null;  // one-shot flag for the UI to narrate, cleared once read
+  inNet: boolean;      // crossed the line — the UI keeps animating it into the netting
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -45,10 +58,20 @@ export interface Follower {
   shot: boolean;     // already took its follow-up
 }
 
+// The team-mate a pass is aimed at. They are a real moving entity: the renderer
+// draws them at `pos` and reception is tested against `pos`, so a pass can never
+// visually pass through the player without them receiving it — which is what
+// happened when the drawn team-mate and the reception zone were separate things.
+export interface Runner {
+  pos: Vec2;      // live position — drawn here, reception tested here
+  to: Vec2;       // where they are running
+  speed: number;  // m/s (a sprinting footballer tops out around 8)
+  moving: boolean;
+}
+
 // The kind of match situation the player has been put in. Shooting kinds
-// (one_on_one..header) resolve at the goal line as before. Passing kinds
-// (cutback..midfield_pass) instead resolve against a passTarget reception
-// zone — same physics, different success condition.
+// (one_on_one..header) resolve at the goal line. Passing kinds
+// (cutback..midfield_pass) instead resolve against the runner.
 export const SCENARIO_KINDS = [
   "one_on_one", "tight_angle", "long_range", "volley", "header",
   "cutback", "byline_cross", "through_ball", "midfield_pass",
@@ -73,14 +96,16 @@ export interface Scenario {
   goal: { x1: number; x2: number };
   crossbar: number;
   kind: ScenarioKind;
-  teammates: Vec2[];        // decorative runners/crossers, and/or the pass target
-  passTarget: Vec2 | null;  // set for passing kinds — reach this zone to succeed
+  teammates: Vec2[];        // decorative players (crossers, support) — never pass targets
+  runner: Runner | null;    // the team-mate a pass is aimed at, if any
+  passTarget: Vec2 | null;  // where the runner is heading (drawn as the aim marker)
   receiver: Receiver | null;   // set for cutback/byline_cross/through_ball — they shoot on reception
-  receiverDone: boolean;       // true once the ball has reached passTarget (guards re-trigger)
+  receiverDone: boolean;       // true once the ball has reached the runner (guards re-trigger)
   teamRelationship: number;    // 0-100 — how well the team combines, feeds the receiver's shot quality
   viewport: Viewport;
-  secondaryPassTargets: Vec2[];
-  passDifficulty: number;       // 0-1, set when a pass resolves — harder pass = higher ball-return chance
+  secondaryRunners: Runner[];  // extra options in build-up play
+  passDifficulty: number;      // 0-1, set when a pass resolves — harder pass = higher ball-return chance
+  offsideRisk: number;         // 0-1 chance the run is flagged, set at build time from the real line
 }
 
 export type Outcome =
@@ -94,25 +119,34 @@ export interface KickSkills {
 
 export interface Contact { cx: number; cy: number; } // -1..1, cx=right, cy=down(bottom)
 
-// --- Tunable constants (this is the "game feel" surface) ---
-const G = 9.8;                 // gravity, m/s^2 (height only)
-const GROUND_FRICTION = 15;    // units/s^2 while rolling
+// --- Tunable constants — all in real units (metres, seconds, m/s) ---
+const G = 9.8;                 // gravity, m/s^2
+const GROUND_FRICTION = 2.6;   // m/s^2 rolling resistance on grass. A firm 18 m/s
+                               // pass covers ~30 m and still arrives at ~12 m/s.
+                               // (This was 15 — 1.5x gravity — which killed every
+                               // pass within a second and produced "the ball only
+                               // went a fifth of the way" shots.)
 const AIR_DRAG = 0.2;          // per-second horizontal drag while airborne
-const BOUNCE_VZ = 0.5;         // vertical restitution
-const BOUNCE_H = 0.7;          // horizontal speed kept on bounce
-const CURL_K = 0.30;           // Magnus-ish lateral bend strength (bending around defenders is a core skill)
+const BOUNCE_VZ = 0.55;        // vertical restitution off turf
+const BOUNCE_H = 0.72;         // horizontal speed kept on bounce
+const CURL_K = 0.16;           // Magnus-ish lateral bend. A well-struck curler bends
+                               // ~2-3 m over 25 m — enough to beat a wall, not a banana.
 
-const SHOT_REF_SPEED = 60;     // roughly the fastest launch speed; used to normalise "fast shots"
-const KEEPER_DIVE_MAX = 13;    // metres of goal the keeper can cover with a dive
-const KEEPER_DIVE_SPEED = 16;  // units/sec slide/dive speed
-const KEEPER_VREACH = 2.7;     // highest ball the keeper can paw at (top-bin shots clear this)
-const KEEPER_REACH_MIN = 1.25; // reach floor (metres) even for a weak, wrong-footed keeper
-const KEEPER_REACH_MAX = 2.65; // reach ceiling for a top keeper on a comfortable shot
+const SHOT_REF_SPEED = 32;     // m/s — about as hard as a professional strikes it
+const KEEPER_LATERAL_MAX = 3.2;// metres along the line a keeper can cover diving
+const KEEPER_DIVE_SPEED = 5.4; // m/s lateral — a real dive, not a teleport
+const KEEPER_VREACH = 2.5;     // metres — fingertips at full stretch; the top corners
+                               // sit right at the edge of this, so they stay beatable
+const KEEPER_REACH_MIN = 1.05; // arm's reach floor for a wrong-footed keeper
+const KEEPER_REACH_MAX = 1.95; // reach ceiling for a top keeper on a comfortable shot
 
-const DEF_BLOCK_R = 1.45;      // how close the ball must pass a defender to hit them
-const DEF_BLOCK_H = 2.1;       // defenders can only block below head/torso height — chip over to beat them
+const DEF_BLOCK_R = 0.95;      // metres — body + outstretched leg
+const DEF_BLOCK_H = 1.9;       // defenders can only block below head height — chip over them
 
-const FOLLOWER_SPEED = 15;     // rebound poacher run speed, units/sec
+const FOLLOWER_SPEED = 7.2;    // m/s — a sprinting poacher
+const RUNNER_SPEED = 7.0;      // m/s — the team-mate making the run
+
+const PASS_CONTROL_R = 2.0;    // metres — how close the ball must get to be controlled
 
 export function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -135,52 +169,96 @@ function gaussian(rng: () => number): number {
 }
 
 // --- Shared scenario scaffolding ---
-const GOAL = { x1: 40, x2: 60 };
-const CROSSBAR = 2.44;
+const GOAL = { x1: POST_L, x2: POST_R };
+const CROSSBAR = GOAL_H;
 
-function makeKeeper(x: number, y = 3.5): Keeper {
-  return { x, y, startX: x, targetX: x, dive: 0, saves: 0, done: false, flash: 0 };
+// Keepers stand on their line. `y` is how far off it they are — a set-piece keeper
+// is a metre out, a keeper rushing a one-on-one might be eight, and nothing puts
+// him outside his own penalty area.
+function makeKeeper(x: number, y = 0.8): Keeper {
+  const kx = clamp(x, POST_L - 2.5, POST_R + 2.5);
+  return { x: kx, y: clamp(y, 0.3, BOX_DEPTH - 2), startX: kx, targetX: kx, dive: 0, saves: 0, done: false, flash: 0 };
 }
 
+function makeRunner(to: Vec2, from: Vec2, speed = RUNNER_SPEED): Runner {
+  return { pos: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, speed, moving: true };
+}
+
+// A poacher lurking around the penalty spot for a spill.
 function makeFollower(rng: () => number, by: number): Follower {
   return {
-    x: clamp(50 + (rng() < 0.5 ? -1 : 1) * (4 + rng() * 4), 40, 60),
-    y: clamp(by * 0.5, 8, 14),
+    x: clamp(CX + (rng() < 0.5 ? -1 : 1) * (2 + rng() * 5), POST_L - 3, POST_R + 3),
+    y: clamp(by * 0.5, SIX_DEPTH, PEN_SPOT_Y + 3),
     active: false, shot: false,
   };
 }
 
-// Compute a camera viewport that tightly frames all entities in a scenario,
-// maintaining a 3:4 aspect ratio to match the canvas.
+// The offside line: the second-to-last defender is the outfield player nearest
+// their own goal line (the keeper being the last). In these coordinates that is
+// the SMALLEST y. An attacker is offside if they are nearer the goal line than
+// that — i.e. their y is smaller still.
+function offsideLineY(defenders: Vec2[]): number {
+  if (defenders.length === 0) return BOX_DEPTH;
+  return Math.min(...defenders.map(d => d.y));
+}
+
+// The camera. Canvas is a 3:4 portrait, so the viewport must be too, and it must
+// use the SAME metres-per-pixel on both axes or every distance on screen lies.
+// Framing is clamped to a sane zoom band so the pitch never appears wildly zoomed
+// in on one chance and wildly zoomed out on the next.
+const VIEW_ASPECT = 3 / 4;      // width / height
+const VIEW_MIN_H = 30;          // metres of pitch visible vertically, closest zoom
+const VIEW_MAX_H = 62;          // furthest zoom
+
 function autoViewport(points: Vec2[], includeGoal: boolean): Viewport {
   const all = [...points];
   if (includeGoal) {
-    all.push({ x: 40, y: 0 }, { x: 60, y: 0 });
+    all.push({ x: POST_L, y: 0 }, { x: POST_R, y: 0 }, { x: CX, y: -NET_DEPTH });
   }
   let x1 = Math.min(...all.map(p => p.x));
   let x2 = Math.max(...all.map(p => p.x));
   let y1 = Math.min(...all.map(p => p.y));
   let y2 = Math.max(...all.map(p => p.y));
-  const padX = Math.max(8, (x2 - x1) * 0.18);
-  const padY = Math.max(6, (y2 - y1) * 0.18);
-  x1 -= padX; x2 += padX; y1 -= padY; y2 += padY;
-  const aspect = 3 / 4;
-  const w = x2 - x1, h = y2 - y1;
-  if (w / h > aspect) { const e = w / aspect - h; y1 -= e / 2; y2 += e / 2; }
-  else { const e = h * aspect - w; x1 -= e / 2; x2 += e / 2; }
-  return { x1: Math.max(-8, x1), x2: Math.min(108, x2), y1: Math.max(-8, y1), y2: Math.min(105, y2) };
+
+  // Breathing room so nothing sits on the frame edge.
+  x1 -= 4; x2 += 4; y1 -= 3.5; y2 += 3.5;
+
+  // Grow to whichever the content demands, then hold the canvas aspect exactly.
+  let h = Math.max(y2 - y1, (x2 - x1) / VIEW_ASPECT);
+  h = clamp(h, VIEW_MIN_H, VIEW_MAX_H);
+  const w = h * VIEW_ASPECT;
+
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  let vx1 = cx - w / 2, vx2 = cx + w / 2;
+  let vy1 = cy - h / 2, vy2 = cy + h / 2;
+
+  // Keep the frame over the pitch: slide (never squash) it back into bounds.
+  const padX = 5, backPad = NET_DEPTH + 2.5, fwdPad = 6;
+  if (vx1 < -padX) { const s = -padX - vx1; vx1 += s; vx2 += s; }
+  if (vx2 > PITCH_W + padX) { const s = vx2 - (PITCH_W + padX); vx1 -= s; vx2 -= s; }
+  if (vy1 < -backPad) { const s = -backPad - vy1; vy1 += s; vy2 += s; }
+  if (vy2 > HALF_LEN + fwdPad) { const s = vy2 - (HALF_LEN + fwdPad); vy1 -= s; vy2 -= s; }
+
+  return { x1: vx1, x2: vx2, y1: vy1, y2: vy2 };
 }
 
-function scenarioViewport(sc: { ball: Vec2; player: Vec2; defenders: Vec2[]; teammates: Vec2[]; keeper: { x: number; y: number }; passTarget: Vec2 | null; kind: ScenarioKind }): Viewport {
-  const pts: Vec2[] = [sc.ball, sc.player, { x: sc.keeper.x, y: sc.keeper.y }];
-  for (const d of sc.defenders) pts.push(d);
-  for (const t of sc.teammates) pts.push(t);
-  if (sc.passTarget) pts.push(sc.passTarget);
+function scenarioViewport(sc: {
+  ball: Vec2; player: Vec2; defenders: Vec2[]; teammates: Vec2[];
+  keeper: { x: number; y: number }; runner: Runner | null; secondaryRunners?: Runner[]; kind: ScenarioKind;
+}): Viewport {
+  const pts: Vec2[] = [sc.ball, sc.player];
   const showGoal = sc.kind !== "buildup" && sc.kind !== "midfield_pass";
+  if (showGoal) pts.push({ x: sc.keeper.x, y: sc.keeper.y });
+  for (const d of sc.defenders) pts.push(d);
+  // Decorative team-mates (the crosser a volley or header came from) are
+  // deliberately NOT framed. They stand out by the touchline, and letting them
+  // drag the bounding box shoved the actual action — and the goal — into the
+  // corner of the screen, which is what made the camera look so erratic.
+  if (sc.runner) { pts.push(sc.runner.pos); pts.push(sc.runner.to); }
+  for (const r of sc.secondaryRunners ?? []) { pts.push(r.pos); pts.push(r.to); }
   return autoViewport(pts, showGoal);
 }
-
-const DEFAULT_VP: Viewport = { x1: -5, x2: 105, y1: -5, y2: 100 };
 
 // Who's on the end of a cutback/cross/through-ball, and their rough finishing quality.
 const RECEIVER_ROLES: Partial<Record<ScenarioKind, { label: string; skillMin: number; skillMax: number }[]>> = {
@@ -209,291 +287,310 @@ function rollReceiver(kind: ScenarioKind, rng: () => number): Receiver | null {
   return { skill: pick.skillMin + rng() * (pick.skillMax - pick.skillMin), roleLabel: pick.label };
 }
 
-// A clean run in behind — keeper rushes off his line to close the angle.
+// A clean run in behind — the keeper races off his line to close the angle down.
 function buildOneOnOne(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = 44 + rng() * 12;
-  const by = 11 + rng() * 5;
-  const keeperX = clamp(bx + (rng() - 0.5) * 6, 42, 58);
+  const bx = CX + (rng() - 0.5) * 12;
+  const by = 13 + rng() * 7;
+  // He comes to meet you, but stays inside his box and roughly on the shooting line.
+  const keeperY = clamp(by * 0.42, 3.5, 9);
+  const keeperX = clamp(CX + (bx - CX) * 0.45, POST_L - 1, POST_R + 1);
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 1.4 },
+    player: { x: bx, y: by + 1.2 },
     defenders: [
-      { x: clamp(bx - 10 + rng() * 8, 20, 80), y: by + 10 + rng() * 6 },
+      { x: clamp(bx + (rng() - 0.5) * 6, 8, PITCH_W - 8), y: by + 3 + rng() * 4 }, // recovering behind you
     ],
-    keeper: makeKeeper(keeperX, 6.5 + rng() * 2),
+    keeper: makeKeeper(keeperX, keeperY),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "one_on_one" as const, teammates: [], passTarget: null,
+    kind: "one_on_one" as const, teammates: [], runner: null, passTarget: null,
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Wide and close to the byline — an acute angle, keeper shaded to the near post.
+// Wide and close to the byline — an acute angle, keeper shading his near post.
 function buildTightAngle(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const side = rng() < 0.5 ? -1 : 1;
-  const bx = side < 0 ? 32 + rng() * 5 : 63 + rng() * 5;
-  const by = 7 + rng() * 5;
-  const keeperX = clamp(bx - side * 3, 40, 60);
+  const bx = CX + side * (11 + rng() * 6);
+  const by = 3 + rng() * 6;
+  // Covers the near post — the far post is the opening.
+  const keeperX = clamp(CX + side * 2.6, POST_L + 0.4, POST_R - 0.4);
+  return {
+    ball: { x: bx, y: by },
+    player: { x: bx + side * 0.9, y: by + 0.9 },
+    defenders: [
+      { x: clamp(bx - side * 2.5, 6, PITCH_W - 6), y: clamp(by + 1.5, 2, 10) },
+    ],
+    keeper: makeKeeper(keeperX, 0.9 + rng() * 0.8),
+    keeperStrength, follower: makeFollower(rng, by),
+    goal: GOAL, crossbar: CROSSBAR,
+    kind: "tight_angle" as const, teammates: [], runner: null, passTarget: null,
+    receiver: null, receiverDone: false, teamRelationship,
+  } as unknown as Scenario;
+}
+
+// Well outside the box — needs pace, and a screen to bend or lift the ball over.
+function buildLongRange(rng: () => number, keeperStrength: number, teamRelationship: number) {
+  const bx = CX + (rng() - 0.5) * 20;
+  const by = 24 + rng() * 10;
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.3 },
     defenders: [
-      { x: clamp(50 - side * 6, 35, 65), y: clamp(by + 3, 6, 14) },
+      { x: clamp(bx + (rng() - 0.5) * 5, 10, PITCH_W - 10), y: by - 3 - rng() * 2 },
+      { x: clamp(bx + (rng() - 0.5) * 12, 10, PITCH_W - 10), y: by - 6 - rng() * 3 },
     ],
-    keeper: makeKeeper(keeperX),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "tight_angle" as const, teammates: [], passTarget: null,
+    kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Well outside the box — needs pace, and a defensive screen to bend or chip around.
-function buildLongRange(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = 38 + rng() * 24;
-  const by = 32 + rng() * 10;
-  const keeperX = 48 + rng() * 4;
-  return {
-    ball: { x: bx, y: by },
-    player: { x: bx, y: by + 1.6 },
-    defenders: [
-      { x: clamp(bx - 4 + rng() * 8, 38, 62), y: clamp(by - 12 - rng() * 4, 16, by - 6) },
-      { x: clamp(bx + 8 - rng() * 4, 30, 70), y: clamp(by - 8 - rng() * 4, 14, by - 4) },
-    ],
-    keeper: makeKeeper(keeperX),
-    keeperStrength, follower: makeFollower(rng, by),
-    goal: GOAL, crossbar: CROSSBAR,
-    kind: "long_range" as const, teammates: [], passTarget: null,
-    receiver: null, receiverDone: false, teamRelationship,
-  } as unknown as Scenario;
-}
-
-// Edge of the box, ball arriving from a cross — meet it first time.
+// Edge of the box, ball dropping from a cross — meet it first time.
 function buildVolley(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = 42 + rng() * 16;
-  const by = 15 + rng() * 6;
+  const bx = CX + (rng() - 0.5) * 13;
+  const by = 11 + rng() * 6;
   const side = rng() < 0.5 ? -1 : 1;
-  const crosser = { x: side < 0 ? 8 + rng() * 6 : 86 + rng() * 6, y: 10 + rng() * 4 };
-  const keeperX = 48 + rng() * 4;
+  const crosser = { x: side < 0 ? 4 + rng() * 5 : PITCH_W - 9 + rng() * 5, y: 5 + rng() * 5 };
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 0.6 },
+    player: { x: bx, y: by + 1.0 },
     defenders: [
-      { x: clamp(bx - 5 + rng() * 3, 34, 66), y: clamp(by - 2, 8, by) },
-      { x: clamp(bx + 5 - rng() * 3, 34, 66), y: clamp(by - 3, 8, by) },
+      { x: clamp(bx - 2.5 + rng() * 1.5, 10, PITCH_W - 10), y: clamp(by - 1.5, 5, by) },
+      { x: clamp(bx + 3.5 - rng() * 1.5, 10, PITCH_W - 10), y: clamp(by - 2.5, 5, by) },
     ],
-    keeper: makeKeeper(keeperX),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.4 + rng() * 1.2),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "volley" as const, teammates: [crosser], passTarget: null,
+    kind: "volley" as const, teammates: [crosser], runner: null, passTarget: null,
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Six-yard box, meeting a cross with your head — tight marking.
+// Inside the six-yard box, meeting a cross with your head — tight marking.
 function buildHeader(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = 44 + rng() * 12;
-  const by = 4 + rng() * 4;
+  const bx = CX + (rng() - 0.5) * 9;
+  const by = 3.5 + rng() * 3.5;
   const side = rng() < 0.5 ? -1 : 1;
-  const crosser = { x: side < 0 ? 6 + rng() * 6 : 88 + rng() * 6, y: 8 + rng() * 4 };
-  const keeperX = clamp(bx + (rng() - 0.5) * 4, 42, 58);
+  const crosser = { x: side < 0 ? 3 + rng() * 4 : PITCH_W - 7 + rng() * 4, y: 4 + rng() * 4 };
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 0.4 },
+    player: { x: bx, y: by + 1.0 },
     defenders: [
-      { x: clamp(bx - 3 + rng() * 6, 38, 62), y: clamp(by + 1, 3, 10) },
+      // Marking you goal-side, close but not standing inside you.
+      { x: clamp(bx - side * (1.5 + rng() * 1.1), 8, PITCH_W - 8), y: clamp(by - 0.8, 1.5, 8) },
     ],
-    keeper: makeKeeper(keeperX),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 0.7 + rng() * 0.8),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "header" as const, teammates: [crosser], passTarget: null,
+    kind: "header" as const, teammates: [crosser], runner: null, passTarget: null,
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Byline, squaring the ball back for a teammate arriving at the penalty spot —
-// they take their own shot the instant it reaches their feet.
+// Byline, squaring it back for a team-mate arriving at the spot. The ball is level
+// with the goal line, so nobody in the middle can be offside — which is exactly
+// why this is the safest ball in football.
 function buildCutback(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const side = rng() < 0.5 ? -1 : 1;
-  const bx = side < 0 ? 10 + rng() * 6 : 84 + rng() * 6;
-  const by = 5 + rng() * 4;
-  const target = { x: 46 + rng() * 8, y: 15 + rng() * 5 };
-  const keeperX = clamp(50 + (rng() - 0.5) * 4, 44, 56);
+  const bx = CX + side * (9 + rng() * 5);
+  const by = 1 + rng() * 3;
+  const to = { x: CX + (rng() - 0.5) * 7, y: PEN_SPOT_Y - 1 + rng() * 3 };
+  const from = { x: to.x + (rng() - 0.5) * 3, y: to.y + 3.5 + rng() * 2 };
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 1 },
+    player: { x: bx + side * 0.8, y: by + 0.9 },
     defenders: [
-      { x: clamp(target.x - side * 5, 34, 66), y: clamp(target.y - 2, 8, 16) },
+      { x: clamp(to.x - side * 3.5, 8, PITCH_W - 8), y: clamp(to.y - 1.5, 4, 12) },
     ],
-    keeper: makeKeeper(keeperX),
+    keeper: makeKeeper(CX + side * 1.5, 0.7 + rng() * 0.7),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "cutback" as const, teammates: [target], passTarget: target,
+    kind: "cutback" as const, teammates: [],
+    runner: makeRunner(to, from), passTarget: to,
     receiver: rollReceiver("cutback", rng), receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Corner-flag area, whipping a cross in for a run at the near/far post — the
-// runner meets it and shoots the instant it arrives.
+// From the byline near the corner, whipped in for a run at the near/far post.
 function buildBylineCross(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const side = rng() < 0.5 ? -1 : 1;
-  const bx = side < 0 ? 2 + rng() * 5 : 93 + rng() * 5;
-  const by = 3 + rng() * 4;
-  const target = { x: 42 + rng() * 16, y: 8 + rng() * 5 };
-  const keeperX = clamp(50 - side * 3, 42, 58);
+  const bx = side < 0 ? 2 + rng() * 4 : PITCH_W - 6 + rng() * 4;
+  const by = 0.8 + rng() * 3;
+  const to = { x: CX + (rng() - 0.5) * 11, y: 4.5 + rng() * 5 };
+  const from = { x: to.x - side * 2.5, y: to.y + 4 + rng() * 2.5 };
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 1 },
+    player: { x: bx + side * 0.8, y: by + 0.9 },
     defenders: [
-      { x: clamp(target.x - side * 3, 36, 64), y: clamp(target.y, 6, 13) },
-      { x: clamp(50 + side * 4, 38, 62), y: clamp(target.y + 3, 8, 16) },
+      { x: clamp(to.x - side * 2.2, 8, PITCH_W - 8), y: clamp(to.y - 0.8, 3, 11) },
+      { x: clamp(CX + side * 3, 8, PITCH_W - 8), y: clamp(to.y + 2.5, 5, 13) },
     ],
-    keeper: makeKeeper(keeperX),
+    keeper: makeKeeper(CX - side * 1.2, 1 + rng() * 0.9),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "byline_cross" as const, teammates: [target], passTarget: target,
+    kind: "byline_cross" as const, teammates: [],
+    runner: makeRunner(to, from), passTarget: to,
     receiver: rollReceiver("byline_cross", rng), receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Central midfield, splitting the defense for a teammate breaking in behind —
-// they run onto it and shoot first time. The teammate starts BEHIND (higher y
-// than) the defensive line to look onside — the purple target zone is the space
-// they'll run into.
+// Splitting the defense for a team-mate breaking in behind. The runner STARTS
+// level with or behind the second-to-last defender — onside, as the laws require,
+// judged at the moment the ball is played — and only then runs beyond the line.
+// (Spawning him already past the defence is what made every through-ball look
+// like a blatant offside.)
 function buildThroughBall(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = 40 + rng() * 20;
-  const by = 32 + rng() * 10;
-  const lineY = clamp(by - 8 - rng() * 4, 20, 28);
-  const target = { x: 44 + rng() * 12, y: clamp(lineY - 6 - rng() * 4, 10, lineY - 4) };
-  const runnerStart = { x: clamp(target.x + (rng() - 0.5) * 6, 38, 62), y: lineY + 1 + rng() * 2 };
-  const keeperX = 48 + rng() * 4;
+  const bx = CX + (rng() - 0.5) * 16;
+  const by = 28 + rng() * 10;
+  const lineY = clamp(by - 9 - rng() * 4, 15, 24);
+  const defenders: Vec2[] = [
+    { x: clamp(CX - 5 - rng() * 4, 10, PITCH_W - 10), y: lineY },
+    { x: clamp(CX + 5 + rng() * 4, 10, PITCH_W - 10), y: lineY + 0.6 + rng() * 1.2 },
+  ];
+  const line = offsideLineY(defenders);
+  // Onside by construction: level with the line, or a stride behind it.
+  const startY = line + rng() * 2.0;
+  const from = { x: clamp(CX + (rng() - 0.5) * 14, 12, PITCH_W - 12), y: startY };
+  // The space he runs into, beyond the defence — legal, because he set off onside.
+  const to = { x: clamp(from.x + (rng() - 0.5) * 6, 12, PITCH_W - 12), y: clamp(line - 5 - rng() * 4, 6, line - 2) };
+  // Only a genuinely tight start is ever flagged, and then only sometimes.
+  const marginToLine = startY - line;
+  const offsideRisk = marginToLine < 0.6 ? 0.1 : 0;
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 1.6 },
-    defenders: [
-      { x: clamp(bx - 6 + rng() * 4, 34, 50), y: lineY },
-      { x: clamp(bx + 6 - rng() * 4, 50, 66), y: lineY + 2 },
-    ],
-    keeper: makeKeeper(keeperX),
+    player: { x: bx, y: by + 1.3 },
+    defenders,
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 2 + rng() * 2),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "through_ball" as const, teammates: [runnerStart], passTarget: target,
+    kind: "through_ball" as const, teammates: [],
+    runner: makeRunner(to, from), passTarget: to,
     receiver: rollReceiver("through_ball", rng), receiverDone: false, teamRelationship,
+    offsideRisk,
   } as unknown as Scenario;
 }
 
-// Deep and safe — simple recycling pass, "no goal" in this situation. No receiver,
-// so it resolves as a plain completed/failed delivery rather than chaining a shot.
+// Deep and safe — simple recycling pass. No receiver, so it resolves as a plain
+// completed/failed delivery rather than chaining a shot.
 function buildMidfieldPass(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = 30 + rng() * 40;
-  const by = 44 + rng() * 14;
-  const target = { x: clamp(bx + (rng() - 0.5) * 20, 15, 85), y: clamp(by - 6 - rng() * 6, 30, 52) };
-  const keeperX = 48 + rng() * 4;
+  const bx = 14 + rng() * (PITCH_W - 28);
+  const by = 34 + rng() * 12;
+  const to = { x: clamp(bx + (rng() - 0.5) * 20, 8, PITCH_W - 8), y: clamp(by - 6 - rng() * 7, 24, 44) };
+  const from = { x: to.x + (rng() - 0.5) * 3, y: to.y + 2 + rng() * 2 };
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 1.4 },
+    player: { x: bx, y: by + 1.3 },
     defenders: [
-      { x: clamp((bx + target.x) / 2 + (rng() - 0.5) * 6, 20, 80), y: clamp((by + target.y) / 2, 36, 54) },
+      { x: clamp((bx + to.x) / 2 + (rng() - 0.5) * 7, 8, PITCH_W - 8), y: clamp((by + to.y) / 2, 28, 44) },
     ],
-    keeper: makeKeeper(keeperX),
+    keeper: makeKeeper(CX, 1.5),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "midfield_pass", teammates: [target], passTarget: target,
+    kind: "midfield_pass" as const, teammates: [],
+    runner: makeRunner(to, from, RUNNER_SPEED * 0.55), passTarget: to,
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Penalty kick — just you and the keeper, no defenders, tight camera.
+// Penalty — the spot is 11 m out, the keeper must stay on his line.
 function buildPenalty(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const keeperX = 50 + (rng() - 0.5) * 2;
   return {
-    ball: { x: 50, y: 11 },
-    player: { x: 50, y: 13.5 },
+    ball: { x: CX, y: PEN_SPOT_Y },
+    player: { x: CX, y: PEN_SPOT_Y + 1.6 },
     defenders: [],
-    keeper: makeKeeper(keeperX, 1.5),
-    keeperStrength, follower: { x: 52, y: 14, active: false, shot: false } as Follower,
+    keeper: makeKeeper(CX + (rng() - 0.5) * 1.2, 0.4),
+    keeperStrength, follower: { x: CX + 3, y: PEN_SPOT_Y + 2, active: false, shot: false } as Follower,
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "penalty" as const, teammates: [], passTarget: null,
+    kind: "penalty" as const, teammates: [], runner: null, passTarget: null,
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Free kick — wall of defenders, need to bend it over or around them.
+// Free kick — the wall stands the regulation 9.15 m from the ball, on the line
+// between the ball and the goal. Bend it round or lift it over.
 function buildFreeKick(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = 42 + rng() * 16;
-  const by = 24 + rng() * 8;
-  const keeperX = clamp(bx + (rng() - 0.5) * 4, 44, 56);
-  const wallY = by - 9.15;
-  const wallCx = (bx + 50) / 2;
-  const wallSize = 3 + (rng() < 0.35 ? 1 : 0);
+  const bx = CX + (rng() - 0.5) * 16;
+  const by = 18 + rng() * 8;
+  const toGoal = normalize({ x: CX - bx, y: -by });
+  const wallCx = bx + toGoal.x * 9.15;
+  const wallCy = by + toGoal.y * 9.15;
+  const wallSize = 3 + (rng() < 0.4 ? 1 : 0);
   const defenders: Vec2[] = [];
+  // Shoulder to shoulder across the shot line, spaced so they read as a wall of
+  // individual players rather than one solid blob.
+  const across = { x: -toGoal.y, y: toGoal.x };
   for (let i = 0; i < wallSize; i++) {
-    defenders.push({ x: clamp(wallCx - (wallSize - 1) + i * 2, 34, 66), y: wallY });
+    const off = (i - (wallSize - 1) / 2) * 1.15;
+    defenders.push({
+      x: clamp(wallCx + across.x * off, 4, PITCH_W - 4),
+      y: clamp(wallCy + across.y * off, 2, HALF_LEN),
+    });
   }
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 2.5 },
+    player: { x: bx, y: by + 2 },
     defenders,
-    keeper: makeKeeper(keeperX),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 1 + rng() * 0.8),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "free_kick" as const, teammates: [], passTarget: null,
+    kind: "free_kick" as const, teammates: [], runner: null, passTarget: null,
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Corner kick — cross from the corner flag into the box for a header.
+// Corner — taken from the corner arc, delivered into the box for a header.
 function buildCorner(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const side = rng() < 0.5 ? -1 : 1;
-  const bx = side < 0 ? 1 : 99;
-  const by = 1;
-  const target = { x: 44 + rng() * 12, y: 6 + rng() * 5 };
-  const keeperX = clamp(50 + side * 3 + (rng() - 0.5) * 6, 42, 58);
+  const bx = side < 0 ? 0.5 : PITCH_W - 0.5;
+  const by = 0.5;
+  const to = { x: CX + (rng() - 0.5) * 10, y: 4 + rng() * 5 };
+  const from = { x: to.x - side * 3, y: to.y + 4 + rng() * 3 };
   return {
     ball: { x: bx, y: by },
-    player: { x: bx + side * 1.5, y: by + 2 },
+    player: { x: bx + side * 1.2, y: by + 1.2 },
     defenders: [
-      { x: clamp(target.x + (rng() - 0.5) * 5, 38, 62), y: clamp(target.y + 1, 4, 12) },
-      { x: clamp(50 - side * 4 + (rng() - 0.5) * 4, 38, 62), y: clamp(target.y + 3, 6, 14) },
+      { x: clamp(to.x + (rng() - 0.5) * 4, 8, PITCH_W - 8), y: clamp(to.y + 0.8, 3, 11) },
+      { x: clamp(CX - side * 3, 8, PITCH_W - 8), y: clamp(to.y + 2.5, 5, 13) },
     ],
-    keeper: makeKeeper(keeperX, 4 + rng() * 2),
-    keeperStrength, follower: makeFollower(rng, 10),
+    keeper: makeKeeper(CX + side * 1.5, 1.2 + rng() * 1),
+    keeperStrength, follower: makeFollower(rng, 9),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "corner" as const, teammates: [target], passTarget: target,
+    kind: "corner" as const, teammates: [],
+    runner: makeRunner(to, from), passTarget: to,
     receiver: rollReceiver("corner", rng), receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
 
-// Build-up play — deep in midfield, 2-3 pass options, no goal visible.
-// Easy (behind/nearby) → low chance of ball return; hard (forward) → high chance.
+// Build-up play — deep in your own half, two options: a safe ball and a harder
+// forward one. The harder one is likelier to win the ball straight back.
 function buildBuildup(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = 30 + rng() * 40;
-  const by = 48 + rng() * 12;
-  const easyTarget = {
-    x: clamp(bx + (rng() - 0.5) * 14, 15, 85),
-    y: clamp(by + 2 + rng() * 5, 40, 62),
-  };
-  const hardTarget = {
-    x: clamp(50 + (rng() - 0.5) * 24, 25, 75),
-    y: clamp(by - 14 - rng() * 6, 22, 40),
-  };
+  const bx = 14 + rng() * (PITCH_W - 28);
+  const by = 40 + rng() * 11;
+  const easyTo = { x: clamp(bx + (rng() - 0.5) * 15, 6, PITCH_W - 6), y: clamp(by + 2 + rng() * 5, 34, HALF_LEN + 4) };
+  const hardTo = { x: clamp(CX + (rng() - 0.5) * 22, 10, PITCH_W - 10), y: clamp(by - 14 - rng() * 6, 18, 34) };
   const defenders: Vec2[] = [
-    { x: clamp((bx + hardTarget.x) / 2 + (rng() - 0.5) * 6, 20, 80), y: clamp((by + hardTarget.y) / 2, 30, 50) },
+    { x: clamp((bx + hardTo.x) / 2 + (rng() - 0.5) * 7, 8, PITCH_W - 8), y: clamp((by + hardTo.y) / 2, 24, 44) },
   ];
   if (rng() < 0.55) {
-    defenders.push({ x: clamp(hardTarget.x + (rng() - 0.5) * 10, 20, 80), y: clamp(hardTarget.y + 3, 25, 45) });
+    defenders.push({ x: clamp(hardTo.x + (rng() - 0.5) * 9, 8, PITCH_W - 8), y: clamp(hardTo.y + 2.5, 20, 40) });
   }
+  const hardRunner = makeRunner(hardTo, { x: hardTo.x + (rng() - 0.5) * 3, y: hardTo.y + 3 }, RUNNER_SPEED * 0.8);
+  const easyRunner = makeRunner(easyTo, { x: easyTo.x, y: easyTo.y + 1.5 }, RUNNER_SPEED * 0.5);
   return {
     ball: { x: bx, y: by },
-    player: { x: bx, y: by + 1.5 },
+    player: { x: bx, y: by + 1.3 },
     defenders,
-    keeper: makeKeeper(50, 2),
-    keeperStrength, follower: { x: 50, y: 50, active: false, shot: false } as Follower,
+    keeper: makeKeeper(CX, 1.5),
+    keeperStrength, follower: { x: CX, y: 40, active: false, shot: false } as Follower,
     goal: GOAL, crossbar: CROSSBAR,
     kind: "buildup" as const,
-    teammates: [easyTarget, hardTarget],
-    passTarget: hardTarget,
-    secondaryPassTargets: [easyTarget],
+    teammates: [],
+    runner: hardRunner,
+    passTarget: hardTo,
+    secondaryRunners: [easyRunner],
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
@@ -518,9 +615,10 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
     case "corner": sc = buildCorner(rng, ks, tr) as Scenario; break;
     case "buildup": sc = buildBuildup(rng, ks, tr) as Scenario; break;
   }
-  if (!sc.viewport) sc.viewport = scenarioViewport(sc);
-  if (!sc.secondaryPassTargets) sc.secondaryPassTargets = [];
+  if (!sc.secondaryRunners) sc.secondaryRunners = [];
   if (sc.passDifficulty === undefined) sc.passDifficulty = 0;
+  if (sc.offsideRisk === undefined) sc.offsideRisk = 0;
+  if (!sc.viewport) sc.viewport = scenarioViewport(sc);
   return sc;
 }
 
@@ -576,13 +674,14 @@ export function buildAttackingScenario(rng: () => number, keeperStrength = 62, t
   return buildScenario(kind, rng, keeperStrength, teamRelationship);
 }
 
+// Where a ball on this heading will cross the goal line — what the keeper commits to.
 function predictCrossX(from: Vec2, dir: Vec2): number {
   if (dir.y >= -0.001) return from.x; // not heading toward goal
   const s = -from.y / dir.y;
-  return clamp(from.x + dir.x * s, 30, 70);
+  return clamp(from.x + dir.x * s, POST_L - 2, POST_R + 2);
 }
 
-const RECEIVER_CONTROL_T = 0.5; // seconds the teammate takes to control the ball before shooting
+const RECEIVER_CONTROL_T = 0.45; // seconds the teammate takes to control the ball before shooting
 
 // A teammate who's just received a cutback/cross/through-ball takes their own shot.
 // Quality is a real simulation input (accuracy spread, power, curl), not a probability
@@ -591,24 +690,23 @@ const RECEIVER_CONTROL_T = 0.5; // seconds the teammate takes to control the bal
 function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   const receiver = scenario.receiver;
   if (!receiver) return;
-  const target = scenario.passTarget ?? ball.pos;
 
-  const posQuality = clamp(1 - target.y / 24, 0, 1);          // closer to goal = better chance
+  const dist = Math.hypot(ball.pos.x - CX, ball.pos.y);
+  const posQuality = clamp(1 - dist / 26, 0, 1);                    // closer to goal = better chance
   const teamQuality = clamp(scenario.teamRelationship / 100, 0, 1); // how well you two combine
   const composite = clamp(receiver.skill * 0.5 + posQuality * 50 + teamQuality * 25, 10, 96);
 
   const goalCx = (scenario.goal.x1 + scenario.goal.x2) / 2;
-  const spread = 20 - composite * 0.14; // tighter aim as composite quality rises
+  const spread = 7 - composite * 0.05;   // metres of aim scatter across the mouth
   const aimX = goalCx + (rng() - 0.5) * spread;
-  const baseDir = normalize({ x: aimX - ball.pos.x, y: 0.001 - ball.pos.y });
-  const sigmaDeg = (1 - composite / 100) * 11;
+  const baseDir = normalize({ x: aimX - ball.pos.x, y: -Math.max(ball.pos.y, 0.5) });
+  const sigmaDeg = (1 - composite / 100) * 9;
   const dir = rotateDeg(baseDir, gaussian(rng) * sigmaDeg);
 
-  const power = 0.55 + (composite / 100) * 0.35 + rng() * 0.08;
-  const loft = clamp(0.22 + rng() * 0.3 - composite / 500, 0.05, 0.75);
-  const Sh = power * (34 + composite * 0.22) * (1 - loft * 0.25);
-  const vz = loft * power * (9 + composite * 0.05);
-  const spin = (rng() - 0.5) * 2 * (0.35 + composite / 220) * power;
+  const loft = clamp(0.16 + rng() * 0.22 - composite / 600, 0.03, 0.55);
+  const Sh = (16 + composite * 0.16) * (1 - loft * 0.25);
+  const vz = loft * (7 + composite * 0.04);
+  const spin = (rng() - 0.5) * 0.9;
 
   ball.vel = { x: dir.x * Sh, y: dir.y * Sh };
   ball.vz = vz;
@@ -637,13 +735,13 @@ export function launch(
   const noise = gaussian(rng) * sigmaDeg;
   const d = rotateDeg(normalize(dir), noise);
 
-  // Horizontal launch speed. Lofting bleeds a little ground speed into the air.
-  const Sh = power * (30 + skills.power * 0.3) * (1 - loft * 0.25);
+  // Horizontal launch speed, in m/s. A full-power strike from a 55-power player
+  // leaves the boot around 28 m/s; a 100-power player nudges 36. Lofting bleeds
+  // a little ground speed into the air.
+  const Sh = power * (18 + skills.power * 0.18) * (1 - loft * 0.25);
   // Vertical launch speed from how low on the ball it was struck.
-  const vz = loft * power * (9 + skills.power * 0.04);
-  // Curl from striking the side of the ball, magnified by technique. Struck near
-  // the edge with good technique this bends dramatically — enough to bend around a
-  // defender, which is the point.
+  const vz = loft * power * (7.5 + skills.power * 0.035);
+  // Curl from striking the side of the ball, magnified by technique.
   const spin = contact.cx * (0.65 + tech / 100 * 1.2) * power;
 
   // Keeper commits to the predicted crossing point.
@@ -660,6 +758,7 @@ export function launch(
     contactCd: 0,
     receiverControlT: 0,
     event: null,
+    inNet: false,
   };
 }
 
@@ -669,15 +768,32 @@ export function stepKeeper(scenario: Scenario, dt: number) {
   if (k.flash > 0) k.flash = Math.max(0, k.flash - dt);
   if (k.done) return;
 
-  const target = clamp(k.targetX, k.startX - KEEPER_DIVE_MAX, k.startX + KEEPER_DIVE_MAX);
+  const target = clamp(k.targetX, k.startX - KEEPER_LATERAL_MAX, k.startX + KEEPER_LATERAL_MAX);
   const dx = target - k.x;
   // A keeper already committed to one save recovers a touch slower for the next.
   const speed = KEEPER_DIVE_SPEED * (k.saves > 0 ? 0.78 : 1);
   const move = Math.sign(dx) * Math.min(Math.abs(dx), speed * dt);
   k.x += move;
   // Dive extension eases toward how far he is from his standing spot.
-  const wanted = clamp(k.x - k.startX, -KEEPER_DIVE_MAX, KEEPER_DIVE_MAX);
+  const wanted = clamp(k.x - k.startX, -KEEPER_LATERAL_MAX, KEEPER_LATERAL_MAX);
   k.dive += (wanted - k.dive) * Math.min(1, dt * 12);
+}
+
+// Advance the team-mate making the run. They move at a real sprinting pace, which
+// is what makes a through-ball a question of weight and timing rather than of
+// hitting a static circle.
+export function stepRunner(scenario: Scenario, dt: number) {
+  const move = (r: Runner | null) => {
+    if (!r || !r.moving) return;
+    const dx = r.to.x - r.pos.x, dy = r.to.y - r.pos.y;
+    const dist = Math.hypot(dx, dy);
+    const step = r.speed * dt;
+    if (dist <= step) { r.pos.x = r.to.x; r.pos.y = r.to.y; r.moving = false; return; }
+    r.pos.x += (dx / dist) * step;
+    r.pos.y += (dy / dist) * step;
+  };
+  move(scenario.runner);
+  for (const r of scenario.secondaryRunners) move(r);
 }
 
 // Advance the rebound poacher. Chases a loose ball and pokes a follow-up goalward.
@@ -686,7 +802,7 @@ export function stepFollower(scenario: Scenario, ball: Ball, rng: () => number, 
   if (f.shot) return;
 
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
-  const dangerous = ball.loose && !ball.resting && ball.pos.y < 16 && speed < 42;
+  const dangerous = ball.loose && !ball.resting && ball.pos.y < BOX_DEPTH && speed < 24;
   if (!f.active && dangerous) f.active = true;
   if (!f.active) return;
 
@@ -702,10 +818,10 @@ export function stepFollower(scenario: Scenario, ball: Ball, rng: () => number, 
   }
 
   // Close enough and the ball is low → take the second chance.
-  if (dist < 1.6 && ball.z < 1.7) {
-    const tx = 44 + rng() * 12;                 // aim somewhere across the goal
-    const dir = normalize({ x: tx - ball.pos.x, y: -ball.pos.y - 0.001 });
-    const sp = 32 + rng() * 12;
+  if (dist < 1.2 && ball.z < 1.6) {
+    const tx = POST_L + rng() * (POST_R - POST_L);
+    const dir = normalize({ x: tx - ball.pos.x, y: -Math.max(ball.pos.y, 0.5) });
+    const sp = 17 + rng() * 8;
     ball.vel = { x: dir.x * sp, y: dir.y * sp };
     ball.vz = 0.3 + rng() * 0.7;
     ball.spin *= 0.3;
@@ -720,10 +836,10 @@ export function stepFollower(scenario: Scenario, ball: Ball, rng: () => number, 
 // The keeper's effective reach shrinks against pace, corners and elevation.
 function keeperReach(scenario: Scenario, ball: Ball, speed: number): number {
   const base = KEEPER_REACH_MIN + (scenario.keeperStrength / 100) * (KEEPER_REACH_MAX - KEEPER_REACH_MIN);
-  const speedPen = clamp(speed / SHOT_REF_SPEED, 0, 1);            // fierce shots are harder to reach
-  const cornerPen = clamp(Math.abs(ball.pos.x - 50) / 10, 0, 1);  // shots into the corners stretch him
-  const heightPen = clamp(ball.z / KEEPER_VREACH, 0, 1);          // high shots into the top bins
-  const wear = Math.max(0.35, 1 - 0.4 * scenario.keeper.saves);   // each prior save leaves him grounded
+  const speedPen = clamp(speed / SHOT_REF_SPEED, 0, 1);              // fierce shots are harder to reach
+  const cornerPen = clamp(Math.abs(ball.pos.x - CX) / 4.5, 0, 1);    // shots into the corners stretch him
+  const heightPen = clamp(ball.z / KEEPER_VREACH, 0, 1);             // high shots into the top bins
+  const wear = Math.max(0.35, 1 - 0.4 * scenario.keeper.saves);      // each prior save leaves him grounded
   return base * (1 - speedPen * 0.42) * (1 - cornerPen * 0.28) * (1 - heightPen * 0.30) * wear;
 }
 
@@ -734,7 +850,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   k.saves += 1;
   k.flash = 0.35;
   const marginNorm = clamp((reach - dist) / reach, 0, 1); // 1 = right at the body, 0 = full stretch
-  const lowAndSlow = speed < 30 && ball.z < 1.2;
+  const lowAndSlow = speed < 17 && ball.z < 1.2;
 
   // Comfortable, gathered save.
   if (marginNorm > 0.5 && lowAndSlow && rng() < 0.72) {
@@ -744,7 +860,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   }
 
   // Full-stretch, high or fierce → tip it to safety (over the bar / around the post).
-  if (marginNorm < 0.24 || ball.z > 1.85 || speed > 46) {
+  if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
     k.done = true;
     return "tipped";
@@ -772,13 +888,13 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
 }
 
 // A defender in the way deflects the ball rather than swallowing it.
-function deflectOffDefender(ball: Ball, d: Vec2, speed: number, rng: () => number): boolean {
+function deflectOffDefender(ball: Ball, d: Vec2, rng: () => number): boolean {
   const n = normalize({ x: ball.pos.x - d.x, y: ball.pos.y - d.y }); // outward from defender
   const vn = ball.vel.x * n.x + ball.vel.y * n.y;
   if (vn >= 0) return false; // already moving away — no real contact
   // Reflect the incoming component, then damp: a genuine deflection, not a wall.
   const damp = 0.42 + rng() * 0.22;
-  const jitter = (rng() - 0.5) * 6;
+  const jitter = (rng() - 0.5) * 3;
   ball.vel = {
     x: (ball.vel.x - 2 * vn * n.x) * damp + jitter * 0.15,
     y: (ball.vel.y - 2 * vn * n.y) * damp,
@@ -861,10 +977,10 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
 
   // --- Defender deflection (only below head height, and only what they can reach) ---
-  if (ball.contactCd <= 0 && ball.z < DEF_BLOCK_H && speed > 8) {
+  if (ball.contactCd <= 0 && ball.z < DEF_BLOCK_H && speed > 4) {
     for (const d of scenario.defenders) {
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < DEF_BLOCK_R) {
-        deflectOffDefender(ball, d, speed, rng);
+        deflectOffDefender(ball, d, rng);
         break;
       }
     }
@@ -872,7 +988,7 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
 
   // --- Keeper save (before the goal line; must be low enough to be reachable) ---
   const k = scenario.keeper;
-  if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.2) {
+  if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.1) {
     const reach = keeperReach(scenario, ball, speed);
     const dist = Math.hypot(k.x - ball.pos.x, k.y - ball.pos.y);
     if (dist < reach) {
@@ -882,18 +998,17 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     }
   }
 
-  // --- Pass reception: check against primary + secondary pass targets ---
-  // Uses a swept-sphere check along the ball's path to prevent fast balls tunneling
-  // through teammates without being detected.
-  if (!scenario.receiverDone && ball.z < 3.2) {
-    const targets = scenario.passTarget
-      ? [scenario.passTarget, ...scenario.secondaryPassTargets]
-      : scenario.secondaryPassTargets;
-    const PASS_RADIUS = 3.0;
-    for (const tgt of targets) {
-      const dist = Math.hypot(tgt.x - ball.pos.x, tgt.y - ball.pos.y);
-      // Also check along the segment from prev to current position (swept sphere)
-      let swept = dist;
+  // --- Pass reception, tested against the RUNNER's live position ---
+  // Swept along the ball's path so a fast pass can't tunnel past the player it
+  // was aimed at. This is what stops a pass visually going straight through a
+  // team-mate: the man and the reception test are now the same object.
+  if (!scenario.receiverDone && ball.z < 2.6) {
+    const candidates: Runner[] = scenario.runner
+      ? [scenario.runner, ...scenario.secondaryRunners]
+      : [...scenario.secondaryRunners];
+    for (const r of candidates) {
+      const tgt = r.pos;
+      let swept = Math.hypot(tgt.x - ball.pos.x, tgt.y - ball.pos.y);
       const segX = ball.pos.x - prevX, segY = ball.pos.y - prevY;
       const segLen2 = segX * segX + segY * segY;
       if (segLen2 > 0.01) {
@@ -901,24 +1016,18 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         const closestX = prevX + segX * t, closestY = prevY + segY * t;
         swept = Math.min(swept, Math.hypot(tgt.x - closestX, tgt.y - closestY));
       }
-      if (swept < PASS_RADIUS) {
+      if (swept < PASS_CONTROL_R) {
         scenario.receiverDone = true;
-        // Track how difficult the pass was (for build-up → return mechanic)
+        r.moving = false;
+        // How difficult was that ball? Forward + long = harder, and a harder ball
+        // won back is likelier to come straight back to you.
         const passLen = Math.hypot(tgt.x - scenario.ball.x, tgt.y - scenario.ball.y);
         const forward = scenario.ball.y - tgt.y;
-        scenario.passDifficulty = clamp(forward / 30 + passLen / 60, 0, 1);
+        scenario.passDifficulty = clamp(forward / 25 + passLen / 45, 0, 1);
 
-        // Offside check for through_ball: compare runner's starting y against the
-        // second-to-last outfield defender (smaller y = closer to goal = more advanced).
-        // Offside means the runner was ahead of that line when the ball was played.
-        if (scenario.receiver && scenario.kind === "through_ball" && scenario.teammates.length > 0) {
-          const runnerY = scenario.teammates[0].y;
-          const defYs = scenario.defenders.map(d => d.y).sort((a, b) => a - b); // ascending = closest to goal first
-          const secondToLastY = defYs.length >= 2 ? defYs[1] : (defYs[0] ?? 20);
-          const margin = runnerY - secondToLastY; // positive = runner is behind (onside), negative = offside
-          const offProb = margin < 0 ? 0.82 : margin < 1.5 ? 0.18 : 0;
-          if (offProb > 0 && rng() < offProb) return "offside";
-        }
+        // Offside is judged at the moment the ball was played, and every runner is
+        // built onside, so this only ever fires on a genuinely marginal start.
+        if (scenario.offsideRisk > 0 && rng() < scenario.offsideRisk) return "offside";
 
         if (scenario.receiver) {
           ball.pos = { x: tgt.x, y: tgt.y };
@@ -937,23 +1046,51 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     const frac = prevY / (prevY - ball.pos.y);
     const xCross = prevX + (ball.pos.x - prevX) * frac;
     const zCross = prevZ + (ball.z - prevZ) * frac;
-    const { x1, x2 } = scenario.goal;
     const crossbar = scenario.crossbar;
-    if (xCross >= x1 && xCross <= x2) {
-      if (zCross > crossbar + 0.12) return "over";
-      if (zCross > crossbar - 0.12) return "post"; // clipped the bar
-      // A ball that beat the keeper and crossed the line — rebound if it had been spilled.
+    if (insideGoalMouth(xCross)) {
+      if (zCross > crossbar + BALL_R) return "over";
+      if (zCross > crossbar - BALL_R) return "post"; // clipped the underside of the bar
+      // Beat the keeper and crossed the line. Let it carry on into the netting so
+      // the goal is SEEN rather than announced — the UI keeps stepping it while
+      // the net slows it down.
+      ball.inNet = true;
+      ball.vel.x *= 0.55; ball.vel.y *= 0.55; ball.vz = Math.min(ball.vz, 0);
       return ball.loose ? "rebound" : "goal";
     }
-    if ((xCross >= x1 - 1.1 && xCross < x1) || (xCross > x2 && xCross <= x2 + 1.1)) return "post";
+    if (hitsPost(xCross)) return "post";
     return "wide";
   }
 
   // Out of bounds.
-  if (ball.pos.x < -2 || ball.pos.x > 102 || ball.pos.y > 102) return "out";
+  if (ball.pos.x < -2 || ball.pos.x > PITCH_W + 2 || ball.pos.y > HALF_LEN + 8) return "out";
 
   if (ball.resting) return "short";
   return null;
+}
+
+// Keep a scored ball moving into the netting after the outcome has resolved.
+// Purely cosmetic — no collisions, no outcome, just the ball settling in the goal.
+export function stepBallInNet(ball: Ball, dt: number) {
+  if (!ball.inNet) return;
+  ball.pos.x += ball.vel.x * dt;
+  ball.pos.y += ball.vel.y * dt;
+  ball.vz -= G * dt;
+  ball.z = Math.max(0, ball.z + ball.vz * dt);
+  // The net catches it.
+  const drag = Math.max(0, 1 - 5.5 * dt);
+  ball.vel.x *= drag;
+  ball.vel.y *= drag;
+  // Back netting.
+  if (ball.pos.y < -NET_DEPTH + 0.35) {
+    ball.pos.y = -NET_DEPTH + 0.35;
+    ball.vel.x *= 0.4; ball.vel.y = 0;
+  }
+  // Side netting — a ball that crossed the line inside the posts stays inside
+  // them. Without this its residual sideways pace carried it out through the
+  // side of the goal, so a legitimate goal could finish drawn outside the net.
+  const inL = POST_L + BALL_R, inR = POST_R - BALL_R;
+  if (ball.pos.x < inL) { ball.pos.x = inL; ball.vel.x = Math.abs(ball.vel.x) * 0.25; }
+  else if (ball.pos.x > inR) { ball.pos.x = inR; ball.vel.x = -Math.abs(ball.vel.x) * 0.25; }
 }
 
 export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass" | "miss" | "neutral" }> = {

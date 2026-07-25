@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FORMATIONS } from "./formations";
 import { createClient } from "@/lib/supabase/client";
@@ -10,6 +10,12 @@ import type { DraftSettings } from "@/app/draft/page";
 // "PREMIER LEAGUE DRAFT" text header is replaced with a contained hero card
 // featuring the player-image design. Everything else — layout, spacing, colors,
 // buttons — matches /draft verbatim so the two pages line up.
+
+// Framing for the hero photo. x/y are backgroundPosition percentages and zoom
+// scales out from that same point, so panning and zooming share one focal point.
+// These were set by eye using a temporary on-page slider panel, which has since
+// been removed — change the numbers here to reframe the image for everyone.
+const HERO_IMG = { x: 34, y: 42, zoom: 1.04 };
 
 function TeamNameInput({ value, onChange }: { value: string; onChange: (name: string) => void }) {
   const [localValue, setLocalValue] = useState(value);
@@ -56,24 +62,6 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
   const [joiningRoom, setJoiningRoom] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
-
-  // Hero image positioning — persisted to localStorage so tweaks survive page reloads.
-  // x/y are backgroundPosition percentages; zoom is a scale factor (1.0 = no extra zoom).
-  const [imgPos, setImgPos] = useState({ x: 50, y: 30, zoom: 1.0 });
-  const [showImgControls, setShowImgControls] = useState(false);
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("draft-hero-img");
-      if (saved) setImgPos(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, []);
-  const updateImgPos = useCallback((patch: Partial<{ x: number; y: number; zoom: number }>) => {
-    setImgPos((prev) => {
-      const next = { ...prev, ...patch };
-      try { localStorage.setItem("draft-hero-img", JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
-  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -127,16 +115,18 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
           className="relative overflow-hidden rounded-2xl mb-3 sm:mb-4 border border-white/5"
           style={{ background: "#07090d", aspectRatio: "5 / 4" }}
         >
-          {/* Background image — zoom via scale() so backgroundPosition panning still works */}
+          {/* Background image. The framing below was dialled in by eye and is now
+              fixed: HERO_IMG.x/y are backgroundPosition percentages and the zoom
+              scales from that same point, so the focal point stays put. */}
           <div className="absolute inset-0 overflow-hidden">
             <div
               className="absolute inset-0"
               style={{
                 backgroundImage: "url('/draft-hero.jpg')",
                 backgroundSize: "cover",
-                backgroundPosition: `${imgPos.x}% ${imgPos.y}%`,
-                transform: `scale(${imgPos.zoom})`,
-                transformOrigin: `${imgPos.x}% ${imgPos.y}%`,
+                backgroundPosition: `${HERO_IMG.x}% ${HERO_IMG.y}%`,
+                transform: `scale(${HERO_IMG.zoom})`,
+                transformOrigin: `${HERO_IMG.x}% ${HERO_IMG.y}%`,
               }}
             />
           </div>
@@ -179,48 +169,6 @@ export default function DraftSetupHero({ onStart, onCreateRoom, onJoinRoom, team
             <p className="mt-auto text-[10px] sm:text-xs text-gray-200 leading-snug max-w-[68%] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
               Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
             </p>
-            {/* Image position controls — bottom-right corner, dev tool.
-                Panel opens upward; left-aligned so it stays inside the card on narrow screens. */}
-            <div className="absolute bottom-2 right-2">
-              <button
-                onClick={() => setShowImgControls((v) => !v)}
-                className="text-[9px] font-bold px-2 py-1 rounded bg-black/50 border border-white/10 text-white/60 hover:text-white hover:bg-black/70 transition"
-                style={{ touchAction: "manipulation" }}
-              >
-                ⚙ Image
-              </button>
-              {showImgControls && (
-                <div className="absolute bottom-8 right-0 w-48 bg-gray-950/98 border border-white/10 rounded-xl p-3 shadow-2xl z-10 space-y-2.5"
-                  style={{ maxWidth: "calc(100vw - 1.5rem)", right: 0 }}>
-                  <div className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Image Position</div>
-                  {(["x", "y", "zoom"] as const).map((key) => (
-                    <div key={key}>
-                      <div className="flex justify-between text-[9px] text-gray-400 mb-1">
-                        <span className="font-bold uppercase">{key === "zoom" ? "Zoom" : key === "x" ? "Left ↔ Right" : "Top ↕ Bottom"}</span>
-                        <span className="tabular-nums text-white">{key === "zoom" ? `${imgPos.zoom.toFixed(2)}×` : `${Math.round(imgPos[key])}%`}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={key === "zoom" ? 1.0 : 0}
-                        max={key === "zoom" ? 2.0 : 100}
-                        step={key === "zoom" ? 0.01 : 1}
-                        value={imgPos[key]}
-                        onChange={(e) => updateImgPos({ [key]: parseFloat(e.target.value) })}
-                        className="w-full accent-emerald-400"
-                        style={{ height: "20px" }}
-                      />
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => updateImgPos({ x: 50, y: 30, zoom: 1.0 })}
-                    className="text-[9px] text-gray-500 hover:text-white transition w-full text-center pt-0.5"
-                    style={{ touchAction: "manipulation" }}
-                  >
-                    Reset to default
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
