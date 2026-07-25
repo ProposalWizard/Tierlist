@@ -2,6 +2,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import {
+  accentFor, CrownIcon, Laurel, AngledTab, HallOfFameBanner, StatTile,
+  BoardIcon, PeopleIcon, StarIcon, ShieldIcon,
+} from "@/components/draft/HallOfFameChrome";
 
 interface RecordEntry {
   value: number;
@@ -89,11 +93,11 @@ const MEDALS = ["🥇", "🥈", "🥉", "4th", "5th"];
 
 function ModeBadge({ mode }: { mode: "normal" | "prime" }) {
   return mode === "prime" ? (
-    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/40 shrink-0 tracking-wide">
       PRIME
     </span>
   ) : (
-    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 shrink-0 tracking-wide">
       NORMAL
     </span>
   );
@@ -101,11 +105,11 @@ function ModeBadge({ mode }: { mode: "normal" | "prime" }) {
 
 function OvrBadge({ ovr }: { ovr: number }) {
   const colour =
-    ovr >= 88 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" :
-    ovr >= 80 ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" :
-    "bg-gray-800/80 text-white border-gray-700/40";
+    ovr >= 88 ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/40" :
+    ovr >= 80 ? "bg-yellow-500/10 text-yellow-300 border-yellow-500/30" :
+    "bg-gray-800/80 text-gray-300 border-gray-700/50";
   return (
-    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${colour}`}>
+    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border tracking-wide ${colour}`}>
       {ovr} OVR
     </span>
   );
@@ -121,67 +125,66 @@ function LeaderboardRow({ entry, index: i, rt }: { entry: RecordEntry; index: nu
   const isOfficial = entry.username === "Official";
   return (
     <div
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg border ${
         i === 0
-          ? "bg-amber-900/15 border-amber-700/30"
-          : i === 1
-            ? "bg-gray-700/15 border-gray-600/30"
-            : i === 2
-              ? "bg-amber-900/10 border-amber-800/20"
-              : "bg-gray-900/50 border-gray-800/30"
+          ? "bg-white/[0.04] border-white/10"
+          : "bg-black/30 border-white/5"
       }`}
     >
-      <span className={`text-lg leading-none w-6 text-center shrink-0 ${i >= 3 ? "text-xs font-bold text-white" : ""}`}>
+      <span className={`leading-none w-5 text-center shrink-0 ${i >= 3 ? "text-[10px] font-black text-gray-500" : "text-base"}`}>
         {MEDALS[i]}
       </span>
+
       <div className="flex-1 min-w-0">
         {!rt.isTeam && entry.playerName && (
-          <div className="text-sm font-bold text-white truncate">
-            {entry.playerName}
-            {!isOfficial && entry.playerOvr !== null && (
-              <span className="ml-2"><OvrBadge ovr={entry.playerOvr} /></span>
-            )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-sm font-black text-white truncate">{entry.playerName}</span>
+            {!isOfficial && entry.playerOvr !== null && <OvrBadge ovr={entry.playerOvr} />}
           </div>
         )}
-        <div className="text-xs text-white truncate">
+        <div className="text-xs">
           {rt.isTeam ? (
-            <span className="flex items-center gap-2 flex-wrap">
-              <span className="text-white font-bold text-sm">{formatValue(entry.value, rt, entry.playerName)}</span>
+            <span className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-white font-black text-base tabular-nums">{formatValue(entry.value, rt, entry.playerName)}</span>
               {isOfficial ? (
-                <>
-                  {entry.clubName && <span className="text-white font-bold">{entry.clubName}</span>}
-                  <span className="text-amber-400 font-bold">⭐ Official</span>
-                </>
+                entry.clubName && <span className="text-gray-300 font-bold">{entry.clubName}</span>
               ) : (
                 <>
-                  <span className="text-emerald-400 font-bold">{entry.username}</span>
+                  <span className="text-emerald-400 font-black">{entry.username}</span>
                   {entry.mode && <ModeBadge mode={entry.mode} />}
                   {entry.playerOvr !== null && <OvrBadge ovr={entry.playerOvr} />}
                 </>
               )}
             </span>
           ) : (
-            <span className="flex items-center gap-2 flex-wrap">
+            <span className="flex items-center gap-1.5 flex-wrap">
               {isOfficial ? (
-                <span className="text-amber-400 font-bold">⭐ Official</span>
+                entry.clubName && <span className="text-gray-300 font-bold">{entry.clubName}</span>
               ) : (
                 <>
-                  <span className="text-emerald-400 font-bold">{entry.username}</span>
+                  <span className="text-emerald-400 font-black">{entry.username}</span>
                   {entry.mode && <ModeBadge mode={entry.mode} />}
                 </>
               )}
               {!isOfficial && entry.seasonNumber && (
-                <span className="text-white">· S{entry.seasonNumber}</span>
+                <span className="text-gray-500">· S{entry.seasonNumber}</span>
               )}
             </span>
           )}
         </div>
       </div>
+
+      {isOfficial && (
+        <span className="shrink-0 text-[9px] sm:text-[10px] font-black italic uppercase tracking-wider text-amber-300/90">
+          Official record
+        </span>
+      )}
+
       {!rt.isTeam && (
-        <div className={`text-xl font-black tabular-nums shrink-0 ${
-          i === 0 ? "text-amber-400" : i === 1 ? "text-white" : i === 2 ? "text-amber-600" : "text-white"
-        }`}>
-          {formatValue(entry.value, rt)}
+        <div className="shrink-0 text-right">
+          <div className={`text-xl font-black tabular-nums leading-none ${i === 0 ? "text-amber-300" : "text-white"}`}>
+            {formatValue(entry.value, rt)}
+          </div>
         </div>
       )}
     </div>
@@ -191,21 +194,21 @@ function LeaderboardRow({ entry, index: i, rt }: { entry: RecordEntry; index: nu
 function Leaderboard({ entries, rt, expanded }: { entries: RecordEntry[]; rt: RecordType; expanded: boolean }) {
   if (entries.length === 0) {
     return (
-      <div className="text-center py-6 text-white text-sm">
-        No records yet — be the first!
+      <div className="text-center py-5 text-gray-500 text-xs font-bold uppercase tracking-widest">
+        No records yet — be the first
       </div>
     );
   }
   const rest = entries.slice(1);
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <LeaderboardRow entry={entries[0]} index={0} rt={rt} />
       {rest.length > 0 && (
         <div
           className="overflow-hidden transition-all duration-300 ease-in-out"
           style={{ maxHeight: expanded ? `${rest.length * 72}px` : "0px", opacity: expanded ? 1 : 0 }}
         >
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {rest.map((entry, i) => (
               <LeaderboardRow key={i + 1} entry={entry} index={i + 1} rt={rt} />
             ))}
@@ -219,12 +222,88 @@ function Leaderboard({ entries, rt, expanded }: { entries: RecordEntry[]; rt: Re
 function YourBest({ entry, rt }: { entry: { value: number; playerName: string | null; seasonNumber: number | null } | undefined; rt: RecordType }) {
   if (!entry || entry.value <= 0) return null;
   return (
-    <div className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-3 py-2">
-      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 shrink-0">Your best</span>
+    <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-emerald-600/40 bg-emerald-950/40 px-2.5 py-2">
+      <span className="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-400 shrink-0">Your best</span>
       <span className="text-base font-black text-white tabular-nums">{formatValue(entry.value, rt, entry.playerName)}</span>
       {!rt.isTeam && entry.playerName && <span className="text-xs text-gray-300 truncate">{entry.playerName}</span>}
       {entry.seasonNumber != null && <span className="text-[10px] text-gray-500 shrink-0">· S{entry.seasonNumber}</span>}
     </div>
+  );
+}
+
+// One record board, presented as a numbered, colour-accented card.
+function RecordCard({
+  rt, rank, subtitle, entries, personalEntry, expanded, onToggle,
+}: {
+  rt: RecordType;
+  rank: number;
+  subtitle: string;
+  entries: RecordEntry[];
+  personalEntry: { value: number; playerName: string | null; seasonNumber: number | null } | undefined;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const a = accentFor(rank - 1);
+  const hasMore = entries.length > 1;
+  return (
+    <article className={`relative overflow-hidden rounded-2xl border bg-[#0a0d13] ${a.ring} ${a.glow}`}>
+      {/* Angled accent panel down the left edge. */}
+      <div
+        className="pointer-events-none absolute inset-y-0 -left-8 w-[106px] sm:w-[118px] overflow-hidden"
+        style={{ transform: "skewX(-11deg)" }}
+        aria-hidden="true"
+      >
+        <div className={`absolute inset-0 ${a.panel}`} />
+        <div className={`absolute inset-y-0 right-0 w-px ${a.edge}`} />
+      </div>
+
+      <div className="relative flex">
+        {/* Rank + icon column */}
+        <div className="shrink-0 w-[62px] sm:w-[74px] flex flex-col items-center justify-center py-3 gap-0.5">
+          <span className="text-2xl sm:text-[26px] leading-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">{rt.emoji}</span>
+          <span className={`text-2xl sm:text-[28px] font-black italic leading-none tabular-nums ${a.num}`}>
+            {String(rank).padStart(2, "0")}
+          </span>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 min-w-0 py-3 pr-3 pl-1">
+          <div className="flex items-start gap-2 mb-2">
+            <div className="flex-1 min-w-0">
+              {/* Left to wrap rather than truncate — several of these labels are
+                  long enough to lose their meaning when clipped on a phone. */}
+              <h2 className="text-sm sm:text-base font-black uppercase tracking-tight text-white leading-tight">
+                {rt.label}
+              </h2>
+              <p className={`text-[8.5px] sm:text-[10px] font-black uppercase tracking-[0.08em] sm:tracking-[0.12em] ${a.sub} leading-tight mt-0.5`}>
+                {subtitle}
+              </p>
+            </div>
+            {rt.ascending && !hasMore && (
+              <span className="shrink-0 text-[9px] text-gray-500 font-black tracking-wider uppercase">Lower is better</span>
+            )}
+            {hasMore && (
+              <button
+                onClick={onToggle}
+                style={{ touchAction: "manipulation" }}
+                className={`shrink-0 flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-black uppercase tracking-wider transition-colors ${a.pill}`}
+              >
+                {expanded ? "Show less" : "See more"}
+                <svg
+                  className={`w-2.5 h-2.5 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <Leaderboard entries={entries} rt={rt} expanded={expanded} />
+          <YourBest entry={personalEntry} rt={rt} />
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -334,7 +413,7 @@ export default function DraftRecordsPage() {
       <div className="min-h-screen bg-gray-950 text-white">
         <div className="max-w-2xl mx-auto px-4 py-8">
           <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-white text-sm">Loading...</p>
           </div>
         </div>
@@ -348,7 +427,7 @@ export default function DraftRecordsPage() {
         <div className="max-w-2xl mx-auto px-4 py-8">
           <Link
             href="/draft"
-            className="inline-flex items-center gap-1.5 text-white hover:text-emerald-400 text-sm font-medium mb-6 transition-colors"
+            className="inline-flex items-center gap-1.5 text-white hover:text-amber-300 text-sm font-medium mb-6 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -376,78 +455,60 @@ export default function DraftRecordsPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href="/draft"
-            className="inline-flex items-center gap-1.5 text-white hover:text-emerald-400 text-sm font-medium mb-6 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Draft
-          </Link>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl">📋</span>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Hall of Fame</h1>
-              <p className="text-white text-sm">All-time season records · <span className="text-amber-400">⭐ Official</span> = real-world PL record to beat</p>
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-6">
+        <Link
+          href="/draft"
+          className="inline-flex items-center gap-1.5 text-gray-300 hover:text-amber-300 text-sm font-bold mb-4 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Draft
+        </Link>
+
+        {/* ── Banner ── */}
+        <HallOfFameBanner>
+          <div className="flex flex-col items-center text-center">
+            <CrownIcon className="w-9 h-6 sm:w-11 sm:h-8 mb-1 drop-shadow-[0_2px_8px_rgba(251,191,36,0.5)]" />
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
+              <Laurel className="w-8 h-14 sm:w-11 sm:h-20 shrink-0" />
+              <h1
+                className="font-black uppercase italic tracking-tight leading-none"
+                style={{
+                  fontSize: "clamp(1.7rem, 8.5vw, 3rem)",
+                  background: "linear-gradient(180deg,#ffffff 0%,#e5e7eb 42%,#9ca3af 72%,#6b7280 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0 2px 10px rgba(255,255,255,0.18))",
+                }}
+              >
+                Hall of Fame
+              </h1>
+              <Laurel flip className="w-8 h-14 sm:w-11 sm:h-20 shrink-0" />
             </div>
+            <p className="mt-1.5 text-[11px] sm:text-sm text-gray-300 font-medium">All-time season records</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs text-gray-400">
+              <span className="text-amber-300 font-black">★ OFFICIAL</span> = real-world PL record to beat
+            </p>
           </div>
+        </HallOfFameBanner>
+
+        {/* ── Mode tabs ── */}
+        <div className="flex gap-1.5 mb-2.5 px-1">
+          <AngledTab active={mode === "normal"} onClick={() => handleModeChange("normal")} tone="emerald">Normal</AngledTab>
+          <AngledTab active={mode === "prime"} onClick={() => handleModeChange("prime")} tone="amber">Prime</AngledTab>
+          <AngledTab active={mode === "best"} onClick={() => handleModeChange("best")} tone="violet">Best</AngledTab>
         </div>
 
-        {/* Normal / Prime / Best toggle (primary) */}
-        <div className="flex gap-1.5 mb-4 bg-gray-900/50 border border-gray-800/50 rounded-xl p-1 max-w-xs">
-          <button
-            onClick={() => handleModeChange("normal")}
-            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-              mode === "normal" ? "bg-emerald-600 text-white shadow-lg" : "text-white hover:text-white"
-            }`}
-          >
-            Normal
-          </button>
-          <button
-            onClick={() => handleModeChange("prime")}
-            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-              mode === "prime" ? "bg-amber-600 text-white shadow-lg" : "text-white hover:text-white"
-            }`}
-          >
-            Prime
-          </button>
-          <button
-            onClick={() => handleModeChange("best")}
-            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-              mode === "best" ? "bg-purple-600 text-white shadow-lg" : "text-white hover:text-white"
-            }`}
-          >
-            Best
-          </button>
-        </div>
-
-        {/* PL / All Comps toggle (secondary) */}
-        <div className="flex gap-1.5 mb-8 bg-gray-900/50 border border-gray-800/50 rounded-xl p-1 max-w-xs">
-          <button
-            onClick={() => setCompetition("pl")}
-            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-              competition === "pl" ? "bg-purple-600 text-white shadow-lg" : "text-white hover:text-white"
-            }`}
-          >
-            Premier League
-          </button>
-          <button
-            onClick={() => setCompetition("all")}
-            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-              competition === "all" ? "bg-purple-600 text-white shadow-lg" : "text-white hover:text-white"
-            }`}
-          >
-            All Comps
-          </button>
+        {/* ── Competition tabs ── */}
+        <div className="flex gap-1.5 mb-5 px-1">
+          <AngledTab active={competition === "pl"} onClick={() => setCompetition("pl")}>Premier League</AngledTab>
+          <AngledTab active={competition === "all"} onClick={() => setCompetition("all")}>All Comps</AngledTab>
         </div>
 
         {loading && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-white text-sm">Loading records...</p>
           </div>
         )}
@@ -459,123 +520,105 @@ export default function DraftRecordsPage() {
         )}
 
         {!loading && !error && (() => {
-          const visibleSeasonKeys = SEASON_RECORD_TYPES
-            .filter(rt => !((rt.key === "most_points" && competition === "all") || (rt.key === "squad_ovr" && competition === "pl")))
-            .map(rt => `${competition}_${rt.key}`);
+          const visibleSeasonTypes = SEASON_RECORD_TYPES
+            .filter(rt => !((rt.key === "most_points" && competition === "all") || (rt.key === "squad_ovr" && competition === "pl")));
+          const visibleSeasonKeys = visibleSeasonTypes.map(rt => `${competition}_${rt.key}`);
           const visibleCareerKeys = competition === "all"
             ? CAREER_RECORD_TYPES.map(rt => `career_${rt.key}`)
             : [];
           const allVisibleKeys = [...visibleSeasonKeys, ...visibleCareerKeys];
           const allExpanded = allVisibleKeys.every(k => expandedKeys.has(k));
+          const compLabel = competition === "pl" ? "Premier League" : "All Competitions";
+
+          // Figures below are counted from what is actually on screen — nothing
+          // here is estimated or padded.
+          const boardsWithEntries = allVisibleKeys.filter(k => {
+            const rt = [...SEASON_RECORD_TYPES, ...CAREER_RECORD_TYPES].find(t => k.endsWith(t.key));
+            const raw = records[k] ?? [];
+            return (rt ? mergeWithOfficial(raw, k, rt) : raw).length > 0;
+          }).length;
+          const holders = new Set<string>();
+          for (const k of allVisibleKeys) {
+            for (const e of records[k] ?? []) {
+              if (e.username && e.username !== "Official") holders.add(e.username);
+            }
+          }
+          const yourEntries = allVisibleKeys.filter(k => (personal[k]?.value ?? 0) > 0).length;
+          const officialMarks = allVisibleKeys.filter(k => OFFICIAL[k]).length;
+
           return (
-          <div className="space-y-6">
-            <div className="flex justify-end">
+          <div className="space-y-3">
+            <div className="flex justify-end px-1">
               <button
                 onClick={() => setExpandedKeys(allExpanded ? new Set() : new Set(allVisibleKeys))}
-                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-white hover:text-emerald-400 transition-colors"
+                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400 hover:text-amber-300 transition-colors"
               >
                 {allExpanded ? "Collapse All" : "Expand All"}
                 <svg
                   className={`w-3 h-3 transition-transform duration-300 ${allExpanded ? "rotate-180" : ""}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
             </div>
-            {SEASON_RECORD_TYPES.filter(rt => !((rt.key === "most_points" && competition === "all") || (rt.key === "squad_ovr" && competition === "pl"))).map(rt => {
+
+            {visibleSeasonTypes.map((rt, i) => {
               const key = `${competition}_${rt.key}`;
               const entries = mergeWithOfficial(records[key] ?? [], key, rt);
-              const isExpanded = expandedKeys.has(key);
-              const hasMore = entries.length > 1;
               return (
-                <div key={rt.key} className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xl">{rt.emoji}</span>
-                    <div className="flex-1">
-                      <h2 className="text-sm font-extrabold tracking-wide text-white uppercase">
-                        {rt.label}
-                      </h2>
-                      <p className="text-[10px] text-white uppercase tracking-widest font-bold">
-                        {competition === "pl" ? "Premier League" : "All Competitions"} · Season record
-                      </p>
-                    </div>
-                    {rt.ascending && !hasMore && (
-                      <span className="text-[10px] text-white font-bold tracking-widest uppercase">lower is better</span>
-                    )}
-                    {hasMore && (
-                      <button
-                        onClick={() => toggleExpanded(key)}
-                        className="flex items-center gap-1 text-[10px] font-bold text-white hover:text-emerald-400 transition-colors uppercase tracking-wide shrink-0"
-                      >
-                        {isExpanded ? "Show less" : "See more"}
-                        <svg
-                          className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
-                          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                  <Leaderboard entries={entries} rt={rt} expanded={isExpanded} />
-                  <YourBest entry={personal[key]} rt={rt} />
-                </div>
+                <RecordCard
+                  key={rt.key}
+                  rt={rt}
+                  rank={i + 1}
+                  subtitle={`${compLabel} · Season Record`}
+                  entries={entries}
+                  personalEntry={personal[key]}
+                  expanded={expandedKeys.has(key)}
+                  onToggle={() => toggleExpanded(key)}
+                />
               );
             })}
 
             {/* Career records — only in All Comps tab */}
             {competition === "all" && (
-              <div className="pt-2">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-lg">🌟</span>
-                  <h2 className="text-xs font-extrabold tracking-[0.2em] text-white uppercase">Career Records</h2>
-                  <div className="flex-1 h-px bg-gray-800" />
+              <div className="pt-3 space-y-3">
+                <div className="flex items-center gap-2.5 px-1">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-600/50" />
+                  <span className="text-[10px] font-black tracking-[0.28em] text-amber-300 uppercase">Career Records</span>
+                  <div className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-600/50" />
                 </div>
-                <div className="space-y-4">
-                  {CAREER_RECORD_TYPES.map(rt => {
-                    const key = `career_${rt.key}`;
-                    const entries = records[key] ?? [];
-                    const isExpanded = expandedKeys.has(key);
-                    const hasMore = entries.length > 1;
-                    return (
-                      <div key={rt.key} className="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-xl">{rt.emoji}</span>
-                          <div className="flex-1">
-                            <h2 className="text-sm font-extrabold tracking-wide text-white uppercase">
-                              {rt.label}
-                            </h2>
-                            <p className="text-[10px] text-white uppercase tracking-widest font-bold">
-                              Career · All competitions
-                            </p>
-                          </div>
-                          {hasMore && (
-                            <button
-                              onClick={() => toggleExpanded(key)}
-                              className="flex items-center gap-1 text-[10px] font-bold text-white hover:text-emerald-400 transition-colors uppercase tracking-wide shrink-0"
-                            >
-                              {isExpanded ? "Show less" : "See more"}
-                              <svg
-                                className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                        <Leaderboard entries={entries} rt={rt} expanded={isExpanded} />
-                        <YourBest entry={personal[key]} rt={rt} />
-                      </div>
-                    );
-                  })}
-                </div>
+                {CAREER_RECORD_TYPES.map((rt, i) => {
+                  const key = `career_${rt.key}`;
+                  const entries = records[key] ?? [];
+                  return (
+                    <RecordCard
+                      key={rt.key}
+                      rt={rt}
+                      rank={visibleSeasonTypes.length + i + 1}
+                      subtitle="Career · All Competitions"
+                      entries={entries}
+                      personalEntry={personal[key]}
+                      expanded={expandedKeys.has(key)}
+                      onToggle={() => toggleExpanded(key)}
+                    />
+                  );
+                })}
               </div>
             )}
 
-            <p className="text-center text-white text-xs pb-4">
-              Only signed-in players appear on these boards. ⭐ Official = real-world PL benchmark.
+            {/* ── Figures strip ── */}
+            <div className="mt-2 rounded-2xl border border-white/10 bg-[linear-gradient(120deg,#11131b_0%,#0b0d13_60%,#0a0c11_100%)] px-3 py-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatTile label="Boards" value={String(boardsWithEntries)} caption="With a record" icon={<BoardIcon className="w-4 h-4" />} />
+                <StatTile label="Holders" value={String(holders.size)} caption="On these boards" icon={<PeopleIcon className="w-4 h-4" />} />
+                <StatTile label="Your marks" value={String(yourEntries)} caption="Boards you're on" icon={<StarIcon className="w-4 h-4" />} />
+                <StatTile label="Official" value={String(officialMarks)} caption="Real-world marks" icon={<ShieldIcon className="w-4 h-4" />} />
+              </div>
+            </div>
+
+            <p className="text-center text-gray-500 text-[11px] pb-4 pt-1">
+              Only signed-in players appear on these boards. ★ Official = real-world PL benchmark.
             </p>
           </div>
           );
