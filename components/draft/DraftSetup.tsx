@@ -6,6 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import ObjectivesToast from "@/components/ObjectivesToast";
 import type { DraftSettings } from "@/app/draft/page";
 
+// Framing for the hero photo. x/y are backgroundPosition percentages and zoom
+// scales out from that same point, so panning and zooming share one focal point.
+// Change these numbers to reframe the image for everyone.
+const HERO_IMG = { x: 34, y: 42, zoom: 1.04 };
+
 function TeamNameInput({ value, onChange }: { value: string; onChange: (name: string) => void }) {
   const [localValue, setLocalValue] = useState(value);
   useEffect(() => { setLocalValue(value); }, [value]);
@@ -94,26 +99,68 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
     <div className="flex flex-col items-center justify-center min-h-screen px-3 sm:px-4 py-6 relative">
       <ObjectivesToast />
       <div className="max-w-lg w-full">
-        {/* Header */}
-        <div className="text-center mb-4 sm:mb-5">
-          <div className="inline-flex items-center gap-2 mb-3 sm:mb-4">
-            <div className="h-px w-8 sm:w-10 bg-gradient-to-r from-transparent to-emerald-500" />
-            <span className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-emerald-400 uppercase">
-              Knowitball
-            </span>
-            <div className="h-px w-8 sm:w-10 bg-gradient-to-l from-transparent to-emerald-500" />
+        {/* Hero card — replaces the old centered text header. The title sits at the
+            top, the description at the bottom, and the gradients keep both legible
+            over the photo. */}
+        <div
+          className="relative overflow-hidden rounded-2xl mb-3 sm:mb-4 border border-white/5"
+          style={{ background: "#07090d", aspectRatio: "5 / 4" }}
+        >
+          <div className="absolute inset-0 overflow-hidden">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: "url('/draft-hero.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: `${HERO_IMG.x}% ${HERO_IMG.y}%`,
+                transform: `scale(${HERO_IMG.zoom})`,
+                transformOrigin: `${HERO_IMG.x}% ${HERO_IMG.y}%`,
+              }}
+            />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2 sm:mb-3 bg-gradient-to-r from-white via-white to-gray-400 bg-clip-text text-transparent">
-            PREMIER LEAGUE
-            <br />
-            <span className="text-emerald-400">DRAFT</span>
-          </h1>
-          <p className="text-white text-xs sm:text-sm max-w-sm mx-auto">
-            Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
-          </p>
+          {/* Dark fade on the left for text readability */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to right, #07090d 0%, #07090de0 22%, #07090d80 40%, #07090d20 60%, transparent 80%)" }}
+          />
+          {/* Top+bottom soft vignette so text at top/bottom stays legible */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to bottom, #07090d40 0%, transparent 20%, transparent 75%, #07090dcc 100%)" }}
+          />
+          <div className="relative h-full flex flex-col p-4 pt-3">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-px w-4 bg-emerald-500/60" />
+                <span className="text-[8px] sm:text-[9px] font-black tracking-[0.4em] text-emerald-400 uppercase">Knowitball</span>
+                <div className="h-px w-4 bg-emerald-500/60" />
+              </div>
+              <div className="font-black tracking-tight leading-[0.92] text-white uppercase" style={{ fontSize: "clamp(1.15rem, 5.6vw, 1.85rem)" }}>
+                PREMIER<br />LEAGUE
+              </div>
+              <div
+                className="font-black tracking-tight leading-[0.9] uppercase mt-1"
+                style={{
+                  fontSize: "clamp(2rem, 11vw, 3.4rem)",
+                  background: "linear-gradient(180deg, #86efac 0%, #10b981 40%, #059669 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                DRAFT
+              </div>
+            </div>
+            <p className="mt-auto text-[10px] sm:text-xs text-gray-200 leading-snug max-w-[68%] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+              Draft your squad. Play seasons in multiple competitions. Try to win the league and break records, grow your squad and make history.
+            </p>
+          </div>
+        </div>
+
+        {/* How to Play + History/HoF (description now lives inside the hero) */}
+        <div className="text-center mb-4 sm:mb-5">
           <button
             onClick={() => setShowHowToPlay(true)}
-            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold text-white hover:text-white hover:border-gray-500 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700 text-xs font-bold text-white hover:text-white hover:border-gray-500 transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
