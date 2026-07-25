@@ -5,6 +5,7 @@ import { FORMATIONS } from "./formations";
 import { createClient } from "@/lib/supabase/client";
 import ObjectivesToast from "@/components/ObjectivesToast";
 import type { DraftSettings } from "@/app/draft/page";
+import DraftNavCards from "./DraftNavCards";
 
 // Framing for the hero photo. x/y are backgroundPosition percentages and zoom
 // scales out from that same point, so panning and zooming share one focal point.
@@ -167,30 +168,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
             </svg>
             How to Play
           </button>
-          <div className="flex gap-2 mt-4">
-            <Link
-              href={isSignedIn === false ? "/auth?next=/draft/history" : "/draft/history"}
-              className={`flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md ${
-                isSignedIn === false
-                  ? "text-gray-400 hover:text-gray-300 bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700/40 hover:border-gray-600/50"
-                  : "text-white hover:text-emerald-300 bg-gray-800 hover:bg-gray-700 border border-gray-600/60 hover:border-emerald-600/50"
-              }`}
-            >
-              {isSignedIn === false && <span className="mr-1">&#128274;</span>}
-              History &amp; Achievements &rarr;
-            </Link>
-            <Link
-              href={isSignedIn === false ? "/auth?next=/draft/records" : "/draft/records"}
-              className={`flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md ${
-                isSignedIn === false
-                  ? "text-amber-400/60 hover:text-amber-300/70 bg-amber-900/15 hover:bg-amber-900/25 border border-amber-700/30 hover:border-amber-600/40 shadow-amber-900/20"
-                  : "text-amber-300 hover:text-amber-200 bg-amber-900/30 hover:bg-amber-900/40 border border-amber-600/50 hover:border-amber-500/60 shadow-amber-900/30"
-              }`}
-            >
-              {isSignedIn === false && <span className="mr-1">&#128274;</span>}
-              &#128203; Hall of Fame &rarr;
-            </Link>
-          </div>
+          <DraftNavCards isSignedIn={isSignedIn} />
         </div>
 
         {/* Team Name */}
