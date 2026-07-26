@@ -23,6 +23,7 @@ interface RecordType {
   key: string;
   label: string;
   Icon: ComponentType<{ className?: string }>;
+  playerImage?: string; // path in /public, e.g. "/hof/bruna-fernandes.png"
   isTeam: boolean;
   ascending?: boolean;
   isDecimal?: boolean;
@@ -260,12 +261,20 @@ function RecordCard({
       </div>
 
       <div className="relative flex">
-        {/* Rank + icon column */}
-        <div className="shrink-0 w-[62px] sm:w-[74px] flex flex-col items-center justify-center py-3 gap-0.5">
-          <rt.Icon className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-[0_2px_8px_rgba(251,191,36,0.35)]" />
-          <span className={`text-2xl sm:text-[28px] font-black italic leading-none tabular-nums ${a.num}`}>
-            {String(rank).padStart(2, "0")}
-          </span>
+        {/* Rank + icon column — or player illustration when playerImage is set */}
+        <div className="shrink-0 w-[62px] sm:w-[74px] self-stretch flex items-stretch py-1.5 px-1">
+          {rt.playerImage ? (
+            <div className="flex-1 rounded-2xl overflow-hidden bg-white/[0.04]">
+              <img src={rt.playerImage} alt="" className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2">
+              <rt.Icon className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-[0_2px_8px_rgba(251,191,36,0.35)]" />
+              <span className={`text-2xl sm:text-[28px] font-black italic leading-none tabular-nums ${a.num}`}>
+                {String(rank).padStart(2, "0")}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Body */}
