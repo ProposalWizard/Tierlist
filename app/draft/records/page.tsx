@@ -32,8 +32,8 @@ interface RecordType {
 const SEASON_RECORD_TYPES: RecordType[] = [
   { key: "most_points",    label: "Most Points",                Icon: PointsIcon,     isTeam: true },
   { key: "wins",           label: "Most Wins",                  Icon: WinsIcon,       isTeam: true },
-  { key: "goals",          label: "Golden Boot",                Icon: BootIcon,       isTeam: false },
-  { key: "assists",        label: "Most Assists",               Icon: AssistIcon,     isTeam: false },
+  { key: "goals",          label: "Golden Boot",                Icon: BootIcon,       playerImage: "/Haaland.png",         isTeam: false },
+  { key: "assists",        label: "Most Assists",               Icon: AssistIcon,     playerImage: "/Bruno Fernandes.png", isTeam: false },
   { key: "clean_sheets",   label: "Golden Glove",               Icon: GloveIcon,      isTeam: false },
   { key: "unbeaten",       label: "Longest Unbeaten",           Icon: UnbeatenIcon,   isTeam: true },
   { key: "goals_conceded", label: "Least Goals Conceded",       Icon: GoalLockIcon,   isTeam: true, ascending: true },
