@@ -31,13 +31,13 @@ interface RecordType {
 
 const SEASON_RECORD_TYPES: RecordType[] = [
   { key: "most_points",    label: "Most Points",                Icon: PointsIcon,     playerImage: "/ChatGPT Image Jul 26, 2026, 09_48_46 PM-Photoroom.png", isTeam: true },
-  { key: "wins",           label: "Most Wins",                  Icon: WinsIcon,       playerImage: "/klopp and pep.png",           isTeam: true },
+  { key: "wins",           label: "Most Wins",                  Icon: WinsIcon,       playerImage: "/Klopp and Pep.png",           isTeam: true },
   { key: "goals",          label: "Golden Boot",                Icon: BootIcon,       playerImage: "/Erling Haaland.png",          isTeam: false },
   { key: "assists",        label: "Most Assists",               Icon: AssistIcon,     playerImage: "/Bruno Fernandes.png",         isTeam: false },
-  { key: "clean_sheets",   label: "Golden Glove",               Icon: GloveIcon,      playerImage: "/Petr cech.png",               isTeam: false },
-  { key: "unbeaten",       label: "Longest Unbeaten",           Icon: UnbeatenIcon,   playerImage: "/Arsenal invincibles.png",     isTeam: true },
-  { key: "goals_conceded", label: "Least Goals Conceded",       Icon: GoalLockIcon,   playerImage: "/jose mourinho.png",           isTeam: true, ascending: true },
-  { key: "biggest_win",    label: "Biggest Win",                Icon: ExplosionIcon,  playerImage: "/united9-0.png",               isTeam: true },
+  { key: "clean_sheets",   label: "Golden Glove",               Icon: GloveIcon,      playerImage: "/Petr Cech.png",               isTeam: false },
+  { key: "unbeaten",       label: "Longest Unbeaten",           Icon: UnbeatenIcon,   playerImage: "/Arsenal Invincibles.png",     isTeam: true },
+  { key: "goals_conceded", label: "Least Goals Conceded",       Icon: GoalLockIcon,   playerImage: "/Jose Mourinho.png",           isTeam: true, ascending: true },
+  { key: "biggest_win",    label: "Biggest Win",                Icon: ExplosionIcon,  playerImage: "/United 9-0.png",              isTeam: true },
   { key: "avg_rating",     label: "Player of the Season Rating",Icon: RatingStarIcon, isTeam: false, isDecimal: true },
   { key: "squad_ovr",      label: "Highest Squad OVR",          Icon: SquadOvrIcon,   isTeam: true },
 ];
