@@ -45,6 +45,16 @@ type GamePhase = "setup" | "lobby" | "formation-pick" | "draft" | "manage" | "re
 const STORAGE_KEY = "pl-draft-progress";
 const MAX_SEASONS = 5;
 
+const FORMATION_COLORS: Record<string, string> = {
+  "4-4-2":   "#3b82f6",
+  "4-3-3":   "#06b6d4",
+  "4-2-3-1": "#818cf8",
+  "3-5-2":   "#a855f7",
+  "3-4-3":   "#ec4899",
+  "4-1-4-1": "#f59e0b",
+  "5-3-2":   "#8b5cf6",
+};
+
 interface SavedProgress {
   settings: DraftSettings;
   players: DraftPlayer[];
@@ -1179,33 +1189,126 @@ export default function DraftPage() {
         />
       )}
       {phase === "formation-pick" && settings && (
-        <div className="flex flex-col items-center justify-center min-h-screen px-3 sm:px-4 py-6">
-          <div className="max-w-lg w-full">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/5 mb-4">
-                <span className="text-xs font-bold tracking-widest uppercase text-emerald-400">Step 1</span>
+        <div className="min-h-screen bg-[#050b14] px-3 sm:px-6 py-8 flex flex-col items-center">
+          <div className="w-full max-w-2xl">
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5">
+              <span className="text-white/40 font-black text-xl select-none">{">>"}</span>
+              <h1 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight leading-none">
+                <span className="text-white">CHOOSE </span>
+                <span className="text-cyan-400">FORMATION</span>
+              </h1>
+              <div className="flex-1 flex items-center gap-1">
+                <div className="h-px flex-1 bg-gradient-to-r from-cyan-500/50 to-transparent" />
+                <span className="text-white/20 font-black text-sm select-none">{"==="}</span>
               </div>
-              <h1 className="text-3xl font-black tracking-tight mb-2">Choose Your Formation</h1>
-              <p className="text-white text-sm">Pick your formation before the draft begins</p>
             </div>
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2 mb-8">
-              {FORMATIONS.map((f) => (
-                <button
-                  key={f.name}
-                  onClick={() => setSettings(prev => prev ? { ...prev, formation: f.name } : prev)}
-                  className={`relative py-2.5 sm:py-3 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 ${
-                    settings.formation === f.name
-                      ? "bg-emerald-600 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                      : "bg-gray-800/80 text-white hover:bg-gray-700 hover:text-gray-200 border border-gray-700/50"
-                  }`}
-                >
-                  {f.name}
-                </button>
-              ))}
+
+            {/* Formation grid */}
+            <div className="bg-[#080f1e] rounded-2xl border border-white/[0.08] p-3 sm:p-4 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                {FORMATIONS.map((f) => {
+                  const color = FORMATION_COLORS[f.name] ?? "#06b6d4";
+                  const sel = settings.formation === f.name;
+                  return (
+                    <button
+                      key={f.name}
+                      onClick={() => setSettings(prev => prev ? { ...prev, formation: f.name } : prev)}
+                      style={sel ? {
+                        borderColor: color,
+                        boxShadow: `0 0 22px -4px ${color}70, inset 0 0 18px -10px ${color}30`,
+                      } : {}}
+                      className={`relative rounded-xl border-2 overflow-hidden transition-all duration-200 active:scale-[0.97] text-left ${
+                        sel ? "" : "border-white/10 hover:border-white/25"
+                      }`}
+                    >
+                      {/* Card background radial glow */}
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: sel
+                            ? `radial-gradient(ellipse at 50% -10%, ${color}28 0%, #050b14 65%)`
+                            : "radial-gradient(ellipse at 50% -10%, rgba(255,255,255,0.04) 0%, #050b14 65%)",
+                        }}
+                      />
+
+                      {/* Star badge */}
+                      {sel && (
+                        <div
+                          className="absolute top-1.5 right-1.5 w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center z-10 shadow-lg"
+                          style={{ background: color }}
+                        >
+                          <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
+                        </div>
+                      )}
+
+                      {/* Formation name */}
+                      <div className="relative px-2 pt-2 pb-0.5 text-center">
+                        <span
+                          className="text-xs sm:text-sm font-black italic leading-none"
+                          style={{ color: sel ? color : "white" }}
+                        >
+                          {f.name}
+                        </span>
+                      </div>
+
+                      {/* Mini pitch */}
+                      <div className="relative px-1.5 pb-1.5">
+                        <svg viewBox="0 0 100 100" className="w-full">
+                          {/* Pitch background */}
+                          <rect x="3" y="3" width="94" height="94" rx="4" fill="rgb(3,18,42)" />
+                          {/* Pitch outline */}
+                          <rect x="3" y="3" width="94" height="94" rx="4" stroke="rgba(255,255,255,0.13)" strokeWidth="0.9" fill="none" />
+                          {/* Centre line */}
+                          <line x1="3" y1="50" x2="97" y2="50" stroke="rgba(255,255,255,0.09)" strokeWidth="0.7" />
+                          {/* Centre circle */}
+                          <circle cx="50" cy="50" r="10" stroke="rgba(255,255,255,0.09)" strokeWidth="0.7" fill="none" />
+                          {/* Top penalty box */}
+                          <rect x="26" y="3" width="48" height="18" stroke="rgba(255,255,255,0.09)" strokeWidth="0.7" fill="none" />
+                          {/* Bottom penalty box */}
+                          <rect x="26" y="79" width="48" height="18" stroke="rgba(255,255,255,0.09)" strokeWidth="0.7" fill="none" />
+                          {/* Player dots */}
+                          {f.slots.map((slot, idx) => {
+                            const cx = 3 + slot.x * 0.94;
+                            const cy = 3 + slot.y * 0.94;
+                            return (
+                              <g key={idx}>
+                                <circle cx={cx} cy={cy} r="7.5" fill={color} opacity="0.22" />
+                                <circle cx={cx} cy={cy} r="4.8" fill={color} />
+                                <circle cx={cx - 1.2} cy={cy - 1.2} r="1.8" fill="rgba(255,255,255,0.55)" />
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Pro tip */}
+            <div className="flex items-center gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] px-4 py-3 mb-5">
+              <svg className="w-5 h-5 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-0.5">Pro Tip</p>
+                <p className="text-xs text-gray-300 leading-snug">Pick a formation that suits your players and playstyle. You can change it anytime!</p>
+              </div>
+            </div>
+
+            {/* Start Draft */}
             <button
               onClick={() => { setPhase("draft"); scrollTop(); }}
-              className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-lg transition-all shadow-lg shadow-emerald-900/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-xl font-black text-lg transition-all hover:scale-[1.02] active:scale-[0.97] flex items-center justify-center gap-2"
+              style={{
+                background: "linear-gradient(135deg,#059669 0%,#0891b2 100%)",
+                boxShadow: "0 8px 28px -8px rgba(6,182,212,0.55)",
+              }}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
