@@ -505,21 +505,21 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           }}
         >
           <div className="absolute inset-0" style={{ background: "linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.07) 50%,transparent 70%)" }} />
-          <div className="relative flex items-center justify-center px-5 py-4 gap-4">
-            <div className="shrink-0">
-              {/* Replace the filename below once you've added the image to /public */}
+          <div className="relative flex items-center justify-center px-5 py-4">
+            {/* Ball pinned to left so it doesn't affect text centering */}
+            <div className="absolute left-3 top-1/2 -translate-y-1/2">
               <img
                 src="/ball.png"
                 alt=""
-                className="w-11 h-11 object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
+                className="w-16 h-16 object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
               />
             </div>
-            <div className="min-w-0">
+            <div className="text-center">
               <div className="text-xl sm:text-2xl font-black italic text-white uppercase leading-none tracking-tight">
                 Start Draft<span className="ml-1.5 inline-block transition-transform group-hover:translate-x-1">→</span>
               </div>
               {teamName && (
-                <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1 max-w-[200px] truncate">
+                <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1 max-w-[200px] mx-auto truncate">
                   {teamName}
                 </div>
               )}
