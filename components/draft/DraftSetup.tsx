@@ -509,7 +509,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
             <div className="shrink-0">
               {/* Replace the filename below once you've added the image to /public */}
               <img
-                src="/ball-streak.png"
+                src="/ball.png"
                 alt=""
                 className="w-11 h-11 object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
               />
