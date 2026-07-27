@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ObjectivesToast from "@/components/ObjectivesToast";
 import type { DraftSettings } from "@/app/draft/page";
 import DraftNavCards from "./DraftNavCards";
+import { formatSeasonYear } from "./formations";
 
 // Framing for the hero photo. x/y are backgroundPosition percentages and zoom
 // scales out from that same point, so panning and zooming share one focal point.
@@ -100,6 +101,64 @@ function TeamNameInput({ value, onChange }: { value: string; onChange: (name: st
         <p className="text-[10px] text-gray-500">Shown in league tables across all your drafts</p>
       </div>
     </div>
+  );
+}
+
+function SectionHeader({ icon, label1, label2 }: { icon: ReactNode; label1: string; label2: string }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-3">
+      <div className="text-cyan-400 shrink-0">{icon}</div>
+      <span className="text-sm font-black uppercase italic tracking-tight leading-none">
+        <span className="text-white">{label1} </span>
+        <span className="text-cyan-400">{label2}</span>
+      </span>
+      <div className="flex-1 h-px bg-gradient-to-r from-cyan-500/30 to-transparent" />
+    </div>
+  );
+}
+
+function SettingsBtn({
+  selected,
+  onClick,
+  children,
+  accent = "teal",
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  accent?: "teal" | "amber" | "purple" | "sky";
+}) {
+  const gradMap: Record<string, string> = {
+    teal: "linear-gradient(135deg,#0d9488 0%,#06b6d4 100%)",
+    amber: "linear-gradient(135deg,#b45309 0%,#f59e0b 100%)",
+    purple: "linear-gradient(135deg,#6d28d9 0%,#a855f7 100%)",
+    sky: "linear-gradient(135deg,#0369a1 0%,#38bdf8 100%)",
+  };
+  const shadowMap: Record<string, string> = {
+    teal: "0 4px 18px rgba(6,182,212,0.35)",
+    amber: "0 4px 18px rgba(245,158,11,0.35)",
+    purple: "0 4px 18px rgba(168,85,247,0.35)",
+    sky: "0 4px 18px rgba(56,189,248,0.35)",
+  };
+  return (
+    <button
+      onClick={onClick}
+      style={selected ? { background: gradMap[accent], boxShadow: shadowMap[accent] } : undefined}
+      className={`relative flex-1 py-3 px-3 rounded-xl text-left transition-all duration-200 ${
+        selected
+          ? "text-white"
+          : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80 hover:bg-white/[0.07]"
+      }`}
+    >
+      {selected && (
+        <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-white/25 flex items-center justify-center">
+          <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </span>
+      )}
+      {children}
+    </button>
   );
 }
 
@@ -249,216 +308,244 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         )}
 
         {/* Era Range */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
-            Era Range
-          </label>
+        <div className="mb-4 sm:mb-5">
+          <SectionHeader
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round" strokeLinejoin="round" />
+                <line x1="8" y1="2" x2="8" y2="6" strokeLinecap="round" strokeLinejoin="round" />
+                <line x1="3" y1="10" x2="21" y2="10" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+            label1="ERA"
+            label2="RANGE"
+          />
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Start Season card */}
             <div className="flex-1 relative">
+              <div className="p-[1.5px] rounded-xl" style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}>
+                <div className="bg-[#09060f] rounded-[10px] px-3 py-2.5">
+                  <div className="text-[9px] font-bold tracking-widest text-purple-400 uppercase mb-1">Start Season</div>
+                  <div className="text-lg sm:text-xl font-black text-white leading-none mb-1.5 tabular-nums">
+                    {formatSeasonYear(eraStart)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <svg className="w-3 h-3 text-purple-400/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
               <select
                 value={eraStart}
-                onChange={(e) => setEraStart(Number(e.target.value))}
-                className="w-full appearance-none bg-gray-800/80 border border-gray-700/50 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                onChange={e => setEraStart(Number(e.target.value))}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               >
-                {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
-                  <option key={y} value={y}>
-                    {y - 1}/{String(y % 100).padStart(2, "0")}
-                  </option>
+                {Array.from({ length: 20 }, (_, i) => 2007 + i).map(y => (
+                  <option key={y} value={y}>{formatSeasonYear(y)}</option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-px bg-gray-600" />
-              <span className="text-white font-bold text-[10px] sm:text-xs tracking-widest uppercase">to</span>
-              <div className="w-2 h-px bg-gray-600" />
+
+            {/* TO separator */}
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <div className="w-px h-3 bg-white/15" />
+              <span className="text-[9px] font-black tracking-widest text-white/30 uppercase">TO</span>
+              <div className="w-px h-3 bg-white/15" />
             </div>
+
+            {/* End Season card */}
             <div className="flex-1 relative">
+              <div className="p-[1.5px] rounded-xl" style={{ background: "linear-gradient(135deg,#0284c7,#06b6d4)" }}>
+                <div className="bg-[#010d18] rounded-[10px] px-3 py-2.5">
+                  <div className="text-[9px] font-bold tracking-widest text-cyan-400 uppercase mb-1">End Season</div>
+                  <div className="text-lg sm:text-xl font-black text-white leading-none mb-1.5 tabular-nums">
+                    {formatSeasonYear(eraEnd)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <svg className="w-3 h-3 text-cyan-400/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <svg className="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
               <select
                 value={eraEnd}
-                onChange={(e) => setEraEnd(Number(e.target.value))}
-                className="w-full appearance-none bg-gray-800/80 border border-gray-700/50 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                onChange={e => setEraEnd(Number(e.target.value))}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               >
-                {Array.from({ length: 20 }, (_, i) => 2007 + i).map((y) => (
-                  <option key={y} value={y}>
-                    {y - 1}/{String(y % 100).padStart(2, "0")}
-                  </option>
+                {Array.from({ length: 20 }, (_, i) => 2007 + i).map(y => (
+                  <option key={y} value={y}>{formatSeasonYear(y)}</option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </div>
             </div>
           </div>
+          {eraStart > eraEnd && (
+            <div className="mt-2 bg-red-900/20 border border-red-800/50 rounded-lg p-2 text-xs text-red-400 text-center">
+              Start year must be before or equal to end year
+            </div>
+          )}
         </div>
 
         {/* Game Mode */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
-            Game Mode
-          </label>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setMode("normal")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                mode === "normal"
-                  ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className={`text-xs sm:text-sm font-bold ${mode === "normal" ? "text-white" : "text-white"}`}>
-                Normal
-              </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "normal" ? "text-emerald-100" : "text-white"}`}>
-                Players rated as they were that season
-              </div>
-            </button>
-            <button
-              onClick={() => setMode("prime")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                mode === "prime"
-                  ? "bg-amber-600 ring-2 ring-amber-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-amber-900/50"
-                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className={`text-xs sm:text-sm font-bold ${mode === "prime" ? "text-white" : "text-white"}`}>
-                Prime
-              </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${mode === "prime" ? "text-amber-100" : "text-white"}`}>
-                Every player uses their best-ever rating
-              </div>
-            </button>
+        <div className="mb-4 sm:mb-5">
+          <SectionHeader
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <rect x="2" y="7" width="20" height="11" rx="3" strokeLinecap="round" strokeLinejoin="round" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12h2m-1-1v2" />
+                <circle cx="15" cy="11.5" r="0.8" fill="currentColor" stroke="none" />
+                <circle cx="17" cy="13.5" r="0.8" fill="currentColor" stroke="none" />
+              </svg>
+            }
+            label1="GAME"
+            label2="MODE"
+          />
+          <div className="flex gap-2">
+            <SettingsBtn selected={mode === "normal"} onClick={() => setMode("normal")} accent="teal">
+              <div className="text-xs font-black italic uppercase leading-none mb-1">Normal</div>
+              <div className="text-[9px] opacity-70 leading-snug">Rated as that season</div>
+            </SettingsBtn>
+            <SettingsBtn selected={mode === "prime"} onClick={() => setMode("prime")} accent="amber">
+              <div className="text-xs font-black italic uppercase leading-none mb-1">Prime</div>
+              <div className="text-[9px] opacity-70 leading-snug">Best-ever rating</div>
+            </SettingsBtn>
           </div>
         </div>
 
         {/* Draft Order */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
-            Draft Order
-          </label>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setDraftOrder("club-first")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                draftOrder === "club-first"
-                  ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className={`text-xs sm:text-sm font-bold ${draftOrder === "club-first" ? "text-white" : "text-white"}`}>
-                Club First
-              </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "club-first" ? "text-emerald-100" : "text-white"}`}>
-                Pick a player, then choose their position
-              </div>
-            </button>
-            <button
-              onClick={() => setDraftOrder("position-first")}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                draftOrder === "position-first"
-                  ? "bg-sky-600 ring-2 ring-sky-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-sky-900/50"
-                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className={`text-xs sm:text-sm font-bold ${draftOrder === "position-first" ? "text-white" : "text-white"}`}>
-                Position First
-              </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${draftOrder === "position-first" ? "text-sky-100" : "text-white"}`}>
-                Fill each position slot in order
-              </div>
-            </button>
+        <div className="mb-4 sm:mb-5">
+          <SectionHeader
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            }
+            label1="DRAFT"
+            label2="ORDER"
+          />
+          <div className="flex gap-2">
+            <SettingsBtn selected={draftOrder === "club-first"} onClick={() => setDraftOrder("club-first")} accent="teal">
+              <div className="text-xs font-black italic uppercase leading-none mb-1">Club First</div>
+              <div className="text-[9px] opacity-70 leading-snug">Pick player, choose slot</div>
+            </SettingsBtn>
+            <SettingsBtn selected={draftOrder === "position-first"} onClick={() => setDraftOrder("position-first")} accent="sky">
+              <div className="text-xs font-black italic uppercase leading-none mb-1">Position First</div>
+              <div className="text-[9px] opacity-70 leading-snug">Fill each slot in order</div>
+            </SettingsBtn>
           </div>
         </div>
 
         {/* Rating Visibility */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
-            Rating Visibility
-          </label>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setHiddenRatings(false)}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                !hiddenRatings
-                  ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className={`text-xs sm:text-sm font-bold ${!hiddenRatings ? "text-white" : "text-white"}`}>
-                Normal
-              </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${!hiddenRatings ? "text-emerald-100" : "text-white"}`}>
-                Ratings visible while picking
-              </div>
-            </button>
-            <button
-              onClick={() => setHiddenRatings(true)}
-              className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                hiddenRatings
-                  ? "bg-purple-600 ring-2 ring-purple-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-purple-900/50"
-                  : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-              }`}
-            >
-              <div className={`text-xs sm:text-sm font-bold ${hiddenRatings ? "text-white" : "text-white"}`}>
-                Hidden Ratings
-              </div>
-              <div className={`text-[9px] sm:text-[10px] mt-0.5 ${hiddenRatings ? "text-purple-200/70" : "text-white"}`}>
-                All ratings hidden until you pick
-              </div>
-            </button>
+        <div className="mb-4 sm:mb-5">
+          <SectionHeader
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            }
+            label1="RATING"
+            label2="VISIBILITY"
+          />
+          <div className="flex gap-2">
+            <SettingsBtn selected={!hiddenRatings} onClick={() => setHiddenRatings(false)} accent="teal">
+              <div className="text-xs font-black italic uppercase leading-none mb-1">Normal</div>
+              <div className="text-[9px] opacity-70 leading-snug">Ratings visible</div>
+            </SettingsBtn>
+            <SettingsBtn selected={hiddenRatings} onClick={() => setHiddenRatings(true)} accent="purple">
+              <div className="text-xs font-black italic uppercase leading-none mb-1">Hidden</div>
+              <div className="text-[9px] opacity-70 leading-snug">Revealed after pick</div>
+            </SettingsBtn>
           </div>
         </div>
 
         {/* Re-spins */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
-            Re-spins Per Draft
-          </label>
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-            {([3, 1, 0] as const).map((n) => (
-              <button
-                key={n}
-                onClick={() => setRespins(n)}
-                className={`relative py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg text-left transition-all duration-200 ${
-                  respins === n
-                    ? "bg-emerald-600 ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                    : "bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50"
-                }`}
-              >
-                <div className={`text-sm font-bold ${respins === n ? "text-white" : "text-white"}`}>
+        <div className="mb-5 sm:mb-6">
+          <SectionHeader
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            }
+            label1="RE-SPINS"
+            label2="PER DRAFT"
+          />
+          <div className="flex gap-2">
+            {([3, 1, 0] as const).map(n => (
+              <SettingsBtn key={n} selected={respins === n} onClick={() => setRespins(n)} accent="teal">
+                <div className="text-xs font-black italic uppercase leading-none mb-1">
                   {n === 0 ? "None" : n === 1 ? "1 Re-spin" : "3 Re-spins"}
                 </div>
-                <div className={`text-[9px] sm:text-[10px] mt-0.5 ${respins === n ? "text-emerald-200/70" : "text-white"}`}>
-                  {n === 0 ? "No second chances" : n === 1 ? "One total" : "Three total"}
+                <div className="text-[9px] opacity-70 leading-snug">
+                  {n === 0 ? "No 2nd chances" : n === 1 ? "One total" : "Three total"}
                 </div>
-              </button>
+              </SettingsBtn>
             ))}
           </div>
         </div>
 
-        {/* Era validation warning */}
-        {eraStart > eraEnd && (
-          <div className="mb-4 bg-red-900/20 border border-red-800/50 rounded-lg p-3 text-sm text-red-400 text-center">
-            Start year must be before or equal to end year
-          </div>
-        )}
-
-        {/* Start Button */}
+        {/* Start Draft button */}
         <button
           onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder, respins, hiddenRatings })}
           disabled={eraStart > eraEnd}
-          className="group relative w-full py-3.5 sm:py-4 rounded-xl text-base sm:text-lg font-bold transition-all duration-300 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/60 hover:scale-[1.02] active:scale-[0.98] disabled:from-gray-700 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed"
+          className="group relative w-full rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+          style={{
+            background: "linear-gradient(115deg,#059669 0%,#0d9488 45%,#0891b2 100%)",
+            boxShadow: "0 8px 32px rgba(6,182,212,0.35), 0 2px 8px rgba(0,0,0,0.5)",
+          }}
         >
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            Start Draft
-            <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-          </span>
+          <div className="absolute inset-0" style={{ background: "linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.07) 50%,transparent 70%)" }} />
+          <div className="relative flex items-center px-5 py-4 gap-4">
+            <div className="shrink-0 relative">
+              <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-[3px]">
+                {[0, 1, 2].map(i => (
+                  <div key={i} className="bg-white/40 rounded-full" style={{ width: `${10 - i * 3}px`, height: "1.5px" }} />
+                ))}
+              </div>
+              <svg className="w-11 h-11" viewBox="0 0 40 40" fill="none">
+                <defs>
+                  <clipPath id="sdBallClip">
+                    <circle cx="20" cy="20" r="17" />
+                  </clipPath>
+                </defs>
+                <circle cx="20" cy="20" r="17" fill="white" />
+                <g clipPath="url(#sdBallClip)" fill="#1a1a2e">
+                  <polygon points="20,5 24,13 20,16 16,13" />
+                  <polygon points="31,12 26,14 24,13 26.5,7" />
+                  <polygon points="33.5,23 27,21 26,14 31,12" />
+                  <polygon points="27,32 22,27 24,21 27,21" />
+                  <polygon points="13,32 13,27 16,21 18,27" />
+                  <polygon points="6.5,23 10,14 14,20 13,21" />
+                  <polygon points="9,12 13.5,7 16,13 14,14" />
+                </g>
+                <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1.5" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xl sm:text-2xl font-black italic text-white uppercase leading-none tracking-tight">
+                Start Draft<span className="ml-1.5 inline-block transition-transform group-hover:translate-x-1">→</span>
+              </div>
+              {teamName && (
+                <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1 truncate">
+                  {teamName}
+                </div>
+              )}
+            </div>
+          </div>
         </button>
 
-        <p className="text-center text-white text-xs mt-4">
-          14 spins. 11 starters + 3 subs. 38 matches.
+        <p className="text-center text-white/25 text-[10px] mt-3 tracking-widest uppercase">
+          14 spins · 11 starters + 3 subs · 38 matches
         </p>
 
         {/* Sign-in prompt — placed BELOW Start Draft so new/guest users see the
