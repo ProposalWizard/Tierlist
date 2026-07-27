@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ObjectivesToast from "@/components/ObjectivesToast";
@@ -13,22 +13,92 @@ const HERO_IMG = { x: 34, y: 42, zoom: 1.04 };
 
 function TeamNameInput({ value, onChange }: { value: string; onChange: (name: string) => void }) {
   const [localValue, setLocalValue] = useState(value);
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => { setLocalValue(value); }, [value]);
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+
+  function save() {
+    const v = localValue.trim();
+    if (v) onChange(v); else setLocalValue(value);
+    setEditing(false);
+  }
+
   return (
     <div className="mb-3 sm:mb-4">
-      <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
-        Your Team Name
-      </label>
-      <input
-        type="text"
-        value={localValue}
-        onChange={e => setLocalValue(e.target.value.slice(0, 50))}
-        onBlur={() => { const v = localValue.trim(); if (v) onChange(v); }}
-        placeholder="KNOWITBALL FC"
-        maxLength={50}
-        className="w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-sm font-bold text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-      />
-      <p className="text-[10px] text-gray-500 mt-1.5">Shown in league tables across all your drafts</p>
+      {/* Section header */}
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-lg sm:text-xl font-black uppercase italic tracking-tight leading-none">
+          <span className="text-white">YOUR </span>
+          <span className="text-cyan-400">TEAM</span>
+          <span className="text-white"> NAME</span>
+        </h2>
+        <span className="text-white/30 font-black text-sm select-none">{">>>"}</span>
+      </div>
+
+      {/* Gradient-border card */}
+      <div
+        className="p-[1.5px] rounded-xl"
+        style={{ background: "linear-gradient(110deg,#06b6d4 0%,#7c3aed 55%,#06b6d4 100%)" }}
+      >
+        <div className="bg-[#060c18] rounded-[10px] flex items-center gap-3 px-3 sm:px-4 py-3">
+          {/* Jersey icon */}
+          <div className="shrink-0 w-11 h-12">
+            <svg viewBox="0 0 56 62" fill="none" className="w-full h-full drop-shadow-[0_2px_10px_rgba(59,130,246,0.55)]">
+              <path d="M18 5 L2 17 L10 21 L10 55 L46 55 L46 21 L54 17 L38 5 Q33 10 28 10 Q23 10 18 5 Z" fill="#1e3a8a" />
+              <path d="M18 5 Q23 10 28 10 Q33 10 38 5" fill="none" stroke="#60a5fa" strokeWidth="1.8" />
+              <path d="M2 17 L10 21" stroke="#1d4ed8" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M54 17 L46 21" stroke="#1d4ed8" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M21 13 C20 24 20 36 21 46" stroke="rgba(255,255,255,0.1)" strokeWidth="5" strokeLinecap="round" />
+              <text x="28" y="41" textAnchor="middle" fill="white" fontSize="15" fontWeight="900" fontFamily="system-ui,sans-serif">10</text>
+            </svg>
+          </div>
+
+          {/* Name display / input */}
+          <div className="flex-1 min-w-0">
+            {editing ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={localValue}
+                onChange={e => setLocalValue(e.target.value.slice(0, 50))}
+                onBlur={save}
+                onKeyDown={e => {
+                  if (e.key === "Enter") save();
+                  if (e.key === "Escape") { setLocalValue(value); setEditing(false); }
+                }}
+                className="w-full bg-transparent text-xl sm:text-2xl font-black italic text-white placeholder-white/30 focus:outline-none border-b border-cyan-400/50 pb-0.5"
+                placeholder="KNOWITBALL FC"
+                maxLength={50}
+              />
+            ) : (
+              <span className="text-xl sm:text-2xl font-black italic text-white truncate block">
+                {localValue || "KNOWITBALL FC"}
+              </span>
+            )}
+          </div>
+
+          {/* Edit button */}
+          <button
+            onClick={() => setEditing(e => !e)}
+            style={{ touchAction: "manipulation" }}
+            className="shrink-0 w-9 h-9 rounded-full border border-cyan-400/50 flex items-center justify-center text-cyan-400 hover:border-cyan-300 hover:text-cyan-300 hover:bg-cyan-400/10 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Subtext */}
+      <div className="flex items-center gap-1.5 mt-2">
+        <svg className="w-3.5 h-3.5 text-gray-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L15 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L9 8.26L12 2Z" opacity="0.6" />
+        </svg>
+        <p className="text-[10px] text-gray-500">Shown in league tables across all your drafts</p>
+      </div>
     </div>
   );
 }
