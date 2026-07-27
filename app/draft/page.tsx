@@ -427,7 +427,7 @@ export default function DraftPage() {
   const handleStartDraft = useCallback((s: DraftSettings) => {
     clearProgress();
     setResume(null);
-    setSettings(s);
+    setSettings({ ...s, formation: "4-3-3" }); // formation chosen on next screen
     setPlayers([]);
     setRoomCode(null);
     setIsHost(false);
@@ -435,7 +435,7 @@ export default function DraftPage() {
     setPreComputedSeason(null);
     setRoomPlayers(null);
     setRespinsRemaining(s.respins ?? 0);
-    setPhase("draft");
+    setPhase("formation-pick");
     scrollTop();
   }, [scrollTop]);
 

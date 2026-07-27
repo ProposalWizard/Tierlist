@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FORMATIONS } from "./formations";
 import { createClient } from "@/lib/supabase/client";
 import ObjectivesToast from "@/components/ObjectivesToast";
 import type { DraftSettings } from "@/app/draft/page";
@@ -43,7 +42,7 @@ interface Props {
 }
 
 export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName, onTeamNameChange }: Props) {
-  const [formation, setFormation] = useState("4-3-3");
+  const formation = "4-3-3"; // picked on the formation screen after Start Draft
   const [eraStart, setEraStart] = useState(2007);
   const [eraEnd, setEraEnd] = useState(2026);
   const [mode, setMode] = useState<"normal" | "prime">("normal");
@@ -178,28 +177,6 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
             onChange={onTeamNameChange}
           />
         )}
-
-        {/* Formation */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-xs font-bold tracking-widest text-white uppercase mb-3">
-            Choose Formation
-          </label>
-          <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-            {FORMATIONS.map((f) => (
-              <button
-                key={f.name}
-                onClick={() => setFormation(f.name)}
-                className={`relative py-2.5 sm:py-3 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200 ${
-                  formation === f.name
-                    ? "bg-emerald-600 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950 shadow-lg shadow-emerald-900/50"
-                    : "bg-gray-800/80 text-white hover:bg-gray-700 hover:text-gray-200 border border-gray-700/50"
-                }`}
-              >
-                {f.name}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Era Range */}
         <div className="mb-3 sm:mb-4">
