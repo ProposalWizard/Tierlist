@@ -29,7 +29,7 @@ function TeamNameInput({ value, onChange }: { value: string; onChange: (name: st
     <div className="mb-3 sm:mb-4">
       {/* Section header */}
       <div className="flex items-center gap-2 mb-3">
-        <h2 className="text-lg sm:text-xl font-black uppercase italic tracking-tight leading-none">
+        <h2 className="text-sm sm:text-base font-black uppercase italic tracking-tight leading-none">
           <span className="text-white">YOUR </span>
           <span className="text-cyan-400">TEAM</span>
           <span className="text-white"> NAME</span>
@@ -68,12 +68,12 @@ function TeamNameInput({ value, onChange }: { value: string; onChange: (name: st
                   if (e.key === "Enter") save();
                   if (e.key === "Escape") { setLocalValue(value); setEditing(false); }
                 }}
-                className="w-full bg-transparent text-xl sm:text-2xl font-black italic text-white placeholder-white/30 focus:outline-none border-b border-cyan-400/50 pb-0.5"
+                className="w-full bg-transparent text-base sm:text-lg font-black italic text-white placeholder-white/30 focus:outline-none border-b border-cyan-400/50 pb-0.5"
                 placeholder="KNOWITBALL FC"
                 maxLength={50}
               />
             ) : (
-              <span className="text-xl sm:text-2xl font-black italic text-white truncate block">
+              <span className="text-base sm:text-lg font-black italic text-white truncate block">
                 {localValue || "KNOWITBALL FC"}
               </span>
             )}
