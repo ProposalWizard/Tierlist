@@ -30,7 +30,7 @@ interface RecordType {
 }
 
 const SEASON_RECORD_TYPES: RecordType[] = [
-  { key: "most_points",    label: "Most Points",                Icon: PointsIcon,     playerImage: "/ChatGPT Image Jul 26, 2026, 09_48_46 PM-Photoroom.png", isTeam: true },
+  { key: "most_points",    label: "Most Points",                Icon: PointsIcon,     playerImage: "/f3d83465-95e8-48a7-b770-8bedcd65e0c1-Photoroom.png", isTeam: true },
   { key: "wins",           label: "Most Wins",                  Icon: WinsIcon,       playerImage: "/Klopp and Pep.png",           isTeam: true },
   { key: "goals",          label: "Golden Boot",                Icon: BootIcon,       playerImage: "/Erling Haaland.png",          isTeam: false },
   { key: "assists",        label: "Most Assists",               Icon: AssistIcon,     playerImage: "/Bruno Fernandes.png",         isTeam: false },
