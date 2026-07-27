@@ -505,38 +505,21 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           }}
         >
           <div className="absolute inset-0" style={{ background: "linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.07) 50%,transparent 70%)" }} />
-          <div className="relative flex items-center px-5 py-4 gap-4">
-            <div className="shrink-0 relative">
-              <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-[3px]">
-                {[0, 1, 2].map(i => (
-                  <div key={i} className="bg-white/40 rounded-full" style={{ width: `${10 - i * 3}px`, height: "1.5px" }} />
-                ))}
-              </div>
-              <svg className="w-11 h-11" viewBox="0 0 40 40" fill="none">
-                <defs>
-                  <clipPath id="sdBallClip">
-                    <circle cx="20" cy="20" r="17" />
-                  </clipPath>
-                </defs>
-                <circle cx="20" cy="20" r="17" fill="white" />
-                <g clipPath="url(#sdBallClip)" fill="#1a1a2e">
-                  <polygon points="20,5 24,13 20,16 16,13" />
-                  <polygon points="31,12 26,14 24,13 26.5,7" />
-                  <polygon points="33.5,23 27,21 26,14 31,12" />
-                  <polygon points="27,32 22,27 24,21 27,21" />
-                  <polygon points="13,32 13,27 16,21 18,27" />
-                  <polygon points="6.5,23 10,14 14,20 13,21" />
-                  <polygon points="9,12 13.5,7 16,13 14,14" />
-                </g>
-                <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1.5" />
-              </svg>
+          <div className="relative flex items-center justify-center px-5 py-4 gap-4">
+            <div className="shrink-0">
+              {/* Replace the filename below once you've added the image to /public */}
+              <img
+                src="/ball.png"
+                alt=""
+                className="w-11 h-11 object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
+              />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0">
               <div className="text-xl sm:text-2xl font-black italic text-white uppercase leading-none tracking-tight">
                 Start Draft<span className="ml-1.5 inline-block transition-transform group-hover:translate-x-1">→</span>
               </div>
               {teamName && (
-                <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1 truncate">
+                <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1 max-w-[200px] truncate">
                   {teamName}
                 </div>
               )}
