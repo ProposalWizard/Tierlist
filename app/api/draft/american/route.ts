@@ -37,7 +37,12 @@ export async function POST() {
     .select("id, code")
     .single();
 
-  if (error || !room) return new Response("Failed to create room", { status: 500 });
+  if (error || !room) {
+    return new Response(
+      `Failed to create room: ${error?.message ?? "no data returned"} (code: ${error?.code ?? "?"})`,
+      { status: 500 }
+    );
+  }
 
   await service.from("american_draft_participants").insert({
     room_id: room.id,
