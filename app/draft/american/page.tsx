@@ -199,8 +199,32 @@ export default function AmericanDraftPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sofifa_id }),
     });
-    if (!res.ok) setError(await res.text());
-  }, [room]);
+
+    const payload = await res.json().catch(() => null) as
+      | { ok?: boolean; complete?: boolean; linked_room_code?: string | null; warning?: string; error?: string }
+      | null;
+
+    if (!res.ok) {
+      setError(payload?.error ?? "Failed to make pick");
+      return;
+    }
+
+    // Act on the response rather than waiting for the Realtime event. The final
+    // pick of the draft has no further room updates to listen for, so relying on
+    // Realtime alone would leave the last picker stuck on the completed board.
+    if (payload?.complete) {
+      if (payload.linked_room_code) {
+        redirectToLinkedRoom(payload.linked_room_code);
+      } else {
+        if (payload.warning) setError(payload.warning);
+        await loadRoom(room.code);
+      }
+      return;
+    }
+
+    // Fallback refresh in case the Realtime event is dropped.
+    await loadRoom(room.code);
+  }, [room, redirectToLinkedRoom, loadRoom]);
 
   const goHome = () => { setRoom(null); setParticipants([]); setPhase("home"); };
 
