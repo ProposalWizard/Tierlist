@@ -35,6 +35,7 @@ export interface AmRoom {
   pick_order: string[];
   current_pick_idx: number;
   round_players: AmPlayer[];
+  linked_room_code: string | null;
   created_at: string;
   expires_at: string;
 }
@@ -78,6 +79,26 @@ const POS_FILTER: Record<string, string[]> = {
   ANY: [],
 };
 
+// Matches English Premier League across all FIFA edition naming conventions.
+// Anchored to avoid catching Scottish/Russian/Ukrainian Premier Leagues.
+const PL_OR_FILTER =
+  "league.ilike.Premier League%,league.ilike.English Premier League%,league.ilike.Barclays Premier League%";
+
+// Clubs that share the same league name string but are NOT English PL clubs.
+const NON_ENGLISH_PL_CLUBS = new Set(
+  [
+    "Dynamo Kyiv", "Shakhtar Donetsk",
+    "Akhmat Grozny", "Alaniya", "Arsenal Tula", "FC Amkar Perm",
+    "FC Anzhi Makhachkala", "FC Dynamo Moscow", "FC Khimki", "FC Krasnodar",
+    "FC Kuban Krasnodar", "FC Lokomotiv", "FC Moscow", "FC Orenburg",
+    "FC Rostov", "FC Tom Tomsk", "FC Tosno", "FC Ufa", "FC Ural Yekaterinburg",
+    "FC Volga Nizhny Novgorod", "Mordovia Saransk", "PFC CSKA",
+    "PFC Krylia Sovetov Samara", "Rubin Kazan", "SKA Khabarovsk",
+    "Saturn Ramenskoye", "Spartak Moscow", "Spartak Nalchik", "Torpedo Moscow",
+    "FC Sibir Novosibirsk", "Zenit",
+  ].map(c => c.toLowerCase())
+);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchRoundPlayers(service: any, position: string): Promise<AmPlayer[]> {
   const allowed = POS_FILTER[position] ?? [];
@@ -87,25 +108,26 @@ export async function fetchRoundPlayers(service: any, position: string): Promise
     .from("sofifa_players")
     .select(
       "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, attributes"
-    );
+    )
+    .or(PL_OR_FILTER);
 
   if (allowed.length > 0) {
     query = query.ilike("positions", `%${allowed[0]}%`);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = (await query.limit(400)) as { data: any[] | null };
+  const { data } = (await query.limit(600)) as { data: any[] | null };
   const rows = data || [];
 
-  // Refine in JS to ensure at least one matching position
-  const filtered =
-    allowed.length > 0
-      ? rows.filter(r => {
-          const pos = resolvePositions(r).toUpperCase();
-          const parts = pos.split(",").map((x: string) => x.trim());
-          return allowed.some(p => parts.includes(p));
-        })
-      : rows;
+  // Filter out non-English PL clubs and refine position match in JS
+  const filtered = rows.filter(r => {
+    const clubName = (r.club || "").toLowerCase();
+    if (NON_ENGLISH_PL_CLUBS.has(clubName)) return false;
+    if (allowed.length === 0) return true;
+    const pos = resolvePositions(r).toUpperCase();
+    const parts = pos.split(",").map((x: string) => x.trim());
+    return allowed.some(p => parts.includes(p));
+  });
 
   const shuffled = [...filtered].sort(() => Math.random() - 0.5);
 

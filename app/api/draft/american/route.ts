@@ -3,7 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 function genCode(): string {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
+  const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let c = "";
+  for (let i = 0; i < 6; i++) c += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+  return c;
 }
 
 export async function POST() {
@@ -14,10 +17,10 @@ export async function POST() {
   const service = createServiceClient();
   const { data: profile } = await service
     .from("user_profiles")
-    .select("username")
-    .eq("id", user.id)
+    .select("username, team_name")
+    .eq("user_id", user.id)
     .maybeSingle();
-  const displayName = profile?.username || user.email?.split("@")[0] || "Player";
+  const displayName = profile?.team_name || profile?.username || user.email?.split("@")[0] || "Player";
 
   // Unique 6-char code
   let code = genCode();

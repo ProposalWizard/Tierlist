@@ -16,6 +16,7 @@ const POS_BG: Record<string, string> = {
   CDM: "bg-green-500", CM: "bg-green-500", CAM: "bg-green-500",
   RM: "bg-green-500", LM: "bg-green-500",
   RW: "bg-red-500", LW: "bg-red-500", ST: "bg-red-500", CF: "bg-red-500",
+  ANY: "bg-purple-500",
 };
 
 const POS_TEXT: Record<string, string> = {
@@ -35,14 +36,14 @@ function ovrColor(ovr: number): string {
 }
 
 function PlayerCard({
-  player, canPick, onPick,
+  player, canPick, onPick, slotPosition,
 }: {
   player: AmPlayer;
   canPick: boolean;
   onPick: (id: string) => void;
+  slotPosition: string;
 }) {
   const [picking, setPicking] = useState(false);
-  const primaryPos = player.positions.split(",")[0]?.trim() || "";
 
   async function handlePick() {
     if (picking) return;
@@ -50,6 +51,9 @@ function PlayerCard({
     await onPick(player.sofifa_id);
     setPicking(false);
   }
+
+  const badgeBg = POS_BG[slotPosition] || "bg-gray-600";
+  const badgeLabel = slotPosition === "ANY" ? "SUB" : slotPosition;
 
   return (
     <div
@@ -60,7 +64,7 @@ function PlayerCard({
       } bg-[#0a1120]`}
     >
       {/* Image area */}
-      <div className="relative bg-gradient-to-b from-white/[0.04] to-transparent" style={{ aspectRatio: "1/1" }}>
+      <div className="relative bg-gradient-to-b from-white/[0.04] to-transparent h-[72px] sm:h-[84px] shrink-0">
         {player.image_url ? (
           <img
             src={player.image_url}
@@ -70,28 +74,25 @@ function PlayerCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-7 h-7 text-white/10" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
             </svg>
           </div>
         )}
-        {/* OVR */}
-        <div className={`absolute top-1.5 left-1.5 ${ovrColor(player.ovr)} text-white text-[11px] font-black px-1.5 py-0.5 rounded leading-none`}>
+        {/* OVR badge */}
+        <div className={`absolute top-1 left-1 ${ovrColor(player.ovr)} text-white text-[10px] font-black px-1.5 py-0.5 rounded leading-none`}>
           {player.ovr}
         </div>
-        {/* Position */}
-        {primaryPos && (
-          <div className={`absolute top-1.5 right-1.5 ${POS_BG[primaryPos] || "bg-gray-600"} text-white text-[9px] font-bold px-1.5 py-0.5 rounded leading-none`}>
-            {primaryPos}
-          </div>
-        )}
+        {/* Slot position badge */}
+        <div className={`absolute top-1 right-1 ${badgeBg} text-white text-[9px] font-bold px-1.5 py-0.5 rounded leading-none`}>
+          {badgeLabel}
+        </div>
       </div>
 
       {/* Info */}
       <div className="px-2 pt-1.5 pb-1 flex-1">
         <div className="text-[11px] font-black text-white leading-tight line-clamp-1 mb-0.5">{player.name}</div>
         <div className="text-[9px] text-gray-400 truncate leading-tight">{player.club}</div>
-        <div className="text-[9px] text-gray-600 truncate leading-tight">{player.edition}</div>
       </div>
 
       {/* Pick button */}
@@ -147,7 +148,6 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
         {/* Pick order list */}
         <div className="p-3 lg:p-4 flex-1">
           <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mb-2.5">Pick Order</div>
-          {/* On mobile: horizontal scroll */}
           <div className="flex lg:flex-col gap-2 overflow-x-auto pb-1 lg:pb-0 lg:overflow-visible">
             {pickOrder.map((uid, idx) => {
               const p = participants.find(x => x.user_id === uid);
@@ -251,6 +251,7 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
                 player={player}
                 canPick={isMyTurn}
                 onPick={onPick}
+                slotPosition={currentPosition}
               />
             ))}
           </div>
