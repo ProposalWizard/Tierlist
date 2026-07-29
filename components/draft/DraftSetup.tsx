@@ -596,25 +596,6 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
               </label>
               <div className="h-px flex-1 bg-gray-800" />
             </div>
-            {/* American Draft mode link */}
-            <Link
-              href="/draft/american"
-              className="group flex items-center gap-3 w-full mb-3 p-[1.5px] rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99]"
-              style={{ background: "linear-gradient(110deg,#0d9488 0%,#06b6d4 50%,#0d9488 100%)" }}
-            >
-              <div className="flex-1 flex items-center gap-3 bg-[#060c18] rounded-[10px] px-4 py-3">
-                <svg className="w-5 h-5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <div className="min-w-0">
-                  <div className="text-xs font-black uppercase italic text-white leading-none">American Draft</div>
-                  <div className="text-[9px] text-cyan-300/70 mt-0.5">All players visible · take turns · build the best squad</div>
-                </div>
-                <svg className="w-4 h-4 text-cyan-400 shrink-0 ml-auto transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
             <div className="space-y-2">
               <button
                 onClick={() => onCreateRoom(currentSettings())}
