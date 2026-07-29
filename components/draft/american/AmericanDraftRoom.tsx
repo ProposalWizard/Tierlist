@@ -13,13 +13,16 @@ interface Props {
   onPick: (sofifaId: string) => Promise<void>;
 }
 
-const POS_BG: Record<string, string> = {
-  GK: "bg-yellow-500", RB: "bg-blue-500", RWB: "bg-blue-500",
-  CB: "bg-blue-500", LB: "bg-blue-500", LWB: "bg-blue-500",
-  CDM: "bg-green-500", CM: "bg-green-500", CAM: "bg-green-500",
-  RM: "bg-green-500", LM: "bg-green-500",
-  RW: "bg-red-500", LW: "bg-red-500", ST: "bg-red-500", CF: "bg-red-500",
-  ANY: "bg-purple-500",
+// Position accent colors — used for the diagonal streak overlay and the
+// small position label at top-right of each card. Deliberately kept as
+// hex so we can compose gradients and alpha values from them.
+const POS_ACCENT: Record<string, string> = {
+  GK: "#facc15",   RB: "#3b82f6",  RWB: "#3b82f6",
+  CB: "#3b82f6",   LB: "#3b82f6",  LWB: "#3b82f6",
+  CDM: "#22c55e",  CM: "#22c55e",  CAM: "#22c55e",
+  RM: "#22c55e",   LM: "#22c55e",
+  RW: "#ef4444",   LW: "#ef4444",  ST: "#ef4444",  CF: "#ef4444",
+  ANY: "#a855f7",
 };
 
 const POS_TEXT: Record<string, string> = {
@@ -31,11 +34,13 @@ const POS_TEXT: Record<string, string> = {
   ANY: "text-purple-400",
 };
 
-function ovrColor(ovr: number): string {
-  if (ovr >= 85) return "bg-amber-500 text-black";
-  if (ovr >= 80) return "bg-emerald-500 text-black";
-  if (ovr >= 75) return "bg-sky-500 text-white";
-  return "bg-gray-600 text-white";
+// OVR is styled as a clean bright number over a subtle dark chip — the
+// tier color leaks through as a soft text glow rather than a solid pill.
+function ovrTextColor(ovr: number): string {
+  if (ovr >= 85) return "text-amber-400";
+  if (ovr >= 80) return "text-emerald-400";
+  if (ovr >= 75) return "text-sky-400";
+  return "text-gray-300";
 }
 
 function PlayerCard({
@@ -58,7 +63,7 @@ function PlayerCard({
     setPicking(false);
   }
 
-  const badgeBg = POS_BG[slotPosition] || "bg-gray-600";
+  const accent = POS_ACCENT[slotPosition] || "#64748b";
   const badgeLabel = slotPosition === "ANY" ? "SUB" : slotPosition;
   const showImage = !!player.image_url && !imgFailed;
   const showClubLogo = !!player.club_logo_url && !clubLogoFailed;
@@ -68,87 +73,105 @@ function PlayerCard({
   return (
     <div
       onClick={canPick ? handlePick : undefined}
-      className={`relative rounded-xl overflow-hidden border flex flex-col transition-all duration-150 select-none ${
+      className={`relative rounded-2xl overflow-hidden border flex flex-col aspect-[3/4] transition-all duration-150 select-none ${
         canPick
-          ? "border-white/10 hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)] cursor-pointer active:scale-[0.98]"
+          ? "border-white/10 hover:border-cyan-400/50 hover:shadow-[0_0_24px_rgba(6,182,212,0.20)] cursor-pointer active:scale-[0.98]"
           : "border-white/[0.05] opacity-60"
-      } bg-[#0b1626]`}
+      }`}
+      style={{ background: "linear-gradient(180deg,#0d1a2b 0%,#08121f 100%)" }}
     >
-      {/* ── Image area (square-ish, whole face visible) ── */}
-      <div className="relative aspect-[5/6] overflow-hidden shrink-0 bg-[#0b1626]">
-        {/* Decorative diagonal accent lines */}
-        <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0px, #fff 1px, transparent 1px, transparent 14px)" }}
+      {/* ── Image area — top two-thirds ── */}
+      <div className="relative flex-[2] overflow-hidden">
+        {/* Two subtle diagonal streaks in the position color — spaced out,
+            not a repeating pattern. */}
+        <div
+          className="absolute -right-4 top-4 h-40 w-24 rotate-[35deg] rounded-full blur-2xl opacity-25 pointer-events-none"
+          style={{ background: accent }}
+        />
+        <div
+          className="absolute right-1 top-8 h-24 w-[2px] rotate-[35deg] opacity-40 pointer-events-none"
+          style={{ background: accent }}
+        />
+        <div
+          className="absolute right-4 top-2 h-16 w-[1px] rotate-[35deg] opacity-25 pointer-events-none"
+          style={{ background: accent }}
         />
 
+        {/* Player face — sits on the bottom of the image area so head + shoulders read naturally */}
         {showImage ? (
           <img
             src={player.image_url!}
             alt={player.name}
             referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-contain object-bottom"
+            className="absolute inset-x-0 bottom-0 w-full h-full object-contain object-bottom"
             onError={() => setImgFailed(true)}
           />
         ) : (
           <img
             src={SILHOUETTE_SRC}
             alt=""
-            className="absolute inset-0 w-full h-full object-contain object-bottom opacity-40"
+            className="absolute inset-x-0 bottom-0 w-full h-full object-contain object-bottom opacity-45"
           />
         )}
 
-        {/* OVR badge — top left */}
-        <div className={`absolute top-1.5 left-1.5 ${ovrColor(player.ovr)} text-[11px] font-black px-1.5 py-0.5 rounded leading-none shadow-sm`}>
+        {/* OVR — clean big number, no chunky pill */}
+        <div className={`absolute top-2 left-2.5 ${ovrTextColor(player.ovr)} text-xl sm:text-2xl font-black leading-none drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] tabular-nums`}>
           {player.ovr}
         </div>
 
-        {/* Position badge — top right */}
-        <div className={`absolute top-1.5 right-1.5 ${badgeBg} text-white text-[9px] font-bold px-1.5 py-0.5 rounded leading-none shadow-sm uppercase`}>
+        {/* Position — clean bold text with a thin outlined chip */}
+        <div
+          className="absolute top-2 right-2 text-[11px] font-black uppercase tracking-wider leading-none px-1.5 py-1 rounded-md border"
+          style={{
+            color: accent,
+            borderColor: `${accent}66`,
+            background: "rgba(0,0,0,0.35)",
+          }}
+        >
           {badgeLabel}
         </div>
       </div>
 
-      {/* ── Info ── */}
-      <div className="px-2 pt-1.5 pb-1.5 flex-1">
-        <div className="flex items-center gap-1 mb-0.5">
-          {showFlag && (
-            <img
-              src={flagUrl!}
-              alt=""
-              className="w-3 h-2 shrink-0 rounded-[1px]"
-              onError={() => setFlagFailed(true)}
-            />
-          )}
-          <div className="text-[11px] font-bold text-white leading-tight line-clamp-1 flex-1">
+      {/* ── Info + pick — bottom third ── */}
+      <div className="relative flex-1 px-2.5 pt-1.5 pb-2 flex flex-col justify-between border-t border-white/[0.04]">
+        <div>
+          <div className="text-[13px] font-black text-white leading-tight line-clamp-1">
             {player.name}
           </div>
+          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-gray-400 leading-tight">
+            {showClubLogo ? (
+              <img
+                src={player.club_logo_url!}
+                alt=""
+                className="w-3.5 h-3.5 shrink-0 object-contain"
+                onError={() => setClubLogoFailed(true)}
+              />
+            ) : (
+              <span className="w-3.5 h-3.5 shrink-0 inline-block rounded-full bg-white/[0.06]" />
+            )}
+            <span className="truncate flex-1">{player.club}</span>
+            {showFlag && (
+              <img
+                src={flagUrl!}
+                alt=""
+                className="w-3.5 h-2.5 shrink-0 rounded-[1px] object-cover"
+                onError={() => setFlagFailed(true)}
+              />
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1 text-[9px] text-gray-400 truncate leading-tight">
-          {showClubLogo ? (
-            <img
-              src={player.club_logo_url!}
-              alt=""
-              className="w-3 h-3 shrink-0 object-contain"
-              onError={() => setClubLogoFailed(true)}
-            />
-          ) : (
-            <span className="w-3 h-3 shrink-0 inline-block rounded-full bg-white/[0.06]" />
-          )}
-          <span className="truncate">{player.club}</span>
-        </div>
-      </div>
 
-      {/* ── Pick button ── */}
-      {canPick && (
-        <button
-          onClick={e => { e.stopPropagation(); handlePick(); }}
-          disabled={picking}
-          className="mx-1.5 mb-1.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider text-white transition-all disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg,#0d9488,#06b6d4)" }}
-        >
-          {picking ? "…" : "PICK"}
-        </button>
-      )}
+        {canPick && (
+          <button
+            onClick={e => { e.stopPropagation(); handlePick(); }}
+            disabled={picking}
+            className="mt-1.5 w-full py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest text-white transition-all disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg,#0d9488,#06b6d4)" }}
+          >
+            {picking ? "…" : "PICK"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
