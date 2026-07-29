@@ -531,6 +531,21 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop, userId]);
 
+  // Auto-join when redirected from American Draft (?room=CODE in URL)
+  const autoJoinedRef = useRef(false);
+  useEffect(() => {
+    if (autoJoinedRef.current || !isSignedIn || phase !== "setup") return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("room");
+    if (!code) return;
+    autoJoinedRef.current = true;
+    window.history.replaceState(null, "", "/draft");
+    handleJoinRoom(code.toUpperCase(), {
+      formation: "4-3-3", eraStart: 2007, eraEnd: 2026,
+      mode: "normal", draftOrder: "position-first", respins: 0,
+    });
+  }, [isSignedIn, phase, handleJoinRoom]);
+
   const handleStartFromLobby = useCallback(() => {
     if (currentSeason === 1) {
       setPhase("formation-pick");

@@ -37,15 +37,15 @@ export async function POST(
     .select("id")
     .eq("room_id", room.id);
 
-  if ((all || []).length >= 4) return new Response("Room is full (max 4)", { status: 400 });
+  if ((all || []).length >= 6) return new Response("Room is full (max 6)", { status: 400 });
 
   const { data: profile } = await service
     .from("user_profiles")
-    .select("username")
-    .eq("id", user.id)
+    .select("username, team_name")
+    .eq("user_id", user.id)
     .maybeSingle();
 
-  const displayName = profile?.username || user.email?.split("@")[0] || "Player";
+  const displayName = profile?.team_name || profile?.username || user.email?.split("@")[0] || "Player";
 
   await service.from("american_draft_participants").insert({
     room_id: room.id,

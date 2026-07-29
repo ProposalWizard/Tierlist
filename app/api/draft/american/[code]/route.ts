@@ -19,7 +19,7 @@ export async function GET(
     .from("american_draft_participants")
     .select("*")
     .eq("room_id", room.id)
-    .order("joined_at");
+    .order("joined_at", { ascending: true });
 
-  return NextResponse.json({ room, participants: participants || [] });
+  return NextResponse.json({ room, participants: participants ?? [] });
 }

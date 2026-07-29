@@ -6,7 +6,7 @@ import AmericanDraftRoom from "@/components/draft/american/AmericanDraftRoom";
 import { POSITION_LABELS } from "@/lib/americanDraft";
 import type { AmRoom, AmParticipant } from "@/lib/americanDraft";
 
-type Phase = "loading" | "home" | "lobby" | "drafting" | "complete";
+type Phase = "loading" | "home" | "lobby" | "drafting" | "complete" | "redirecting";
 
 const POS_TEXT: Record<string, string> = {
   GK: "text-yellow-400", RB: "text-blue-400", CB: "text-blue-400", LB: "text-blue-400",
@@ -14,7 +14,9 @@ const POS_TEXT: Record<string, string> = {
   ANY: "text-purple-400",
 };
 
-// ── Complete screen ──────────────────────────────────────────────────────────
+const POSITION_SEQUENCE = ["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW","ANY","ANY","ANY"];
+
+// ── Complete / fallback screen (shown if linked_room_code is missing) ─────────
 function CompleteScreen({
   participants,
   onBack,
@@ -39,7 +41,7 @@ function CompleteScreen({
                 {(p.squad || []).map((pick, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <span className={`text-[9px] font-bold w-7 shrink-0 ${POS_TEXT[pick.position] || "text-gray-400"}`}>
-                      {pick.position}
+                      {pick.position === "ANY" ? "SUB" : pick.position}
                     </span>
                     <div className="flex items-center gap-1.5 min-w-0 flex-1">
                       {pick.player.image_url && (
@@ -56,7 +58,6 @@ function CompleteScreen({
                   </div>
                 ))}
               </div>
-              {/* Squad OVR average */}
               {p.squad.length > 0 && (
                 <div className="mt-3 pt-2 border-t border-white/[0.06] flex items-center justify-between">
                   <span className="text-[9px] text-gray-500 uppercase tracking-widest">Avg OVR</span>
@@ -101,6 +102,11 @@ export default function AmericanDraftPage() {
     });
   }, []);
 
+  const redirectToLinkedRoom = useCallback((linkedCode: string) => {
+    setPhase("redirecting");
+    window.location.href = `/draft?room=${linkedCode}`;
+  }, []);
+
   const loadRoom = useCallback(async (code: string) => {
     const res = await fetch(`/api/draft/american/${code}`);
     if (!res.ok) { setError("Room not found"); return; }
@@ -108,9 +114,16 @@ export default function AmericanDraftPage() {
     setRoom(r);
     setParticipants(p);
     if (r.status === "drafting") setPhase("drafting");
-    else if (r.status === "complete") setPhase("complete");
-    else setPhase("lobby");
-  }, []);
+    else if (r.status === "complete") {
+      if (r.linked_room_code) {
+        redirectToLinkedRoom(r.linked_room_code);
+      } else {
+        setPhase("complete");
+      }
+    } else {
+      setPhase("lobby");
+    }
+  }, [redirectToLinkedRoom]);
 
   // Realtime subscription
   useEffect(() => {
@@ -126,7 +139,13 @@ export default function AmericanDraftPage() {
           const updated = payload.new as AmRoom;
           setRoom(updated);
           if (updated.status === "drafting") setPhase("drafting");
-          if (updated.status === "complete") setPhase("complete");
+          if (updated.status === "complete") {
+            if (updated.linked_room_code) {
+              redirectToLinkedRoom(updated.linked_room_code);
+            } else {
+              setPhase("complete");
+            }
+          }
         }
       )
       .on(
@@ -141,7 +160,7 @@ export default function AmericanDraftPage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [room?.id, room?.code]);
+  }, [room?.id, room?.code, redirectToLinkedRoom]);
 
   const createRoom = async () => {
     setBusy(true); setError(null);
@@ -185,11 +204,13 @@ export default function AmericanDraftPage() {
 
   const goHome = () => { setRoom(null); setParticipants([]); setPhase("home"); };
 
-  // ── Loading ──
-  if (phase === "loading") {
+  // ── Loading / redirecting ──
+  if (phase === "loading" || phase === "redirecting") {
     return (
       <div className="min-h-screen bg-[#050b14] flex items-center justify-center">
-        <div className="text-white/30 text-sm">Loading…</div>
+        <div className="text-white/30 text-sm">
+          {phase === "redirecting" ? "Joining season room…" : "Loading…"}
+        </div>
       </div>
     );
   }
@@ -225,7 +246,7 @@ export default function AmericanDraftPage() {
     );
   }
 
-  // ── Complete ──
+  // ── Complete fallback (if linked_room_code is null) ──
   if (phase === "complete") {
     return <CompleteScreen participants={participants} onBack={goHome} />;
   }
@@ -252,7 +273,7 @@ export default function AmericanDraftPage() {
           {/* Players */}
           <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-3">
             <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mb-2">
-              Players ({participants.length}/4)
+              Players ({participants.length}/6)
             </div>
             <div className="space-y-2">
               {participants.map(p => (
@@ -269,7 +290,7 @@ export default function AmericanDraftPage() {
                   )}
                 </div>
               ))}
-              {Array.from({ length: Math.max(0, 4 - participants.length) }).map((_, i) => (
+              {Array.from({ length: Math.max(0, 6 - participants.length) }).map((_, i) => (
                 <div key={i} className="flex items-center gap-2 opacity-25">
                   <div className="w-8 h-8 rounded-full border border-dashed border-gray-700" />
                   <span className="text-xs text-gray-600">Waiting for player…</span>
@@ -282,10 +303,10 @@ export default function AmericanDraftPage() {
           <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4">
             <div className="text-[9px] font-bold tracking-widest text-gray-600 uppercase mb-1.5">Format</div>
             <div className="text-[10px] text-gray-500 space-y-0.5">
+              <div>· Premier League players only</div>
               <div>· 14 rounds — 11 positions + 3 subs (any position)</div>
-              <div>· 10 players shown per round from all eras</div>
-              <div>· Pick order randomised each round</div>
-              <div>· 2–4 players</div>
+              <div>· 10 players shown per round, pick order randomised</div>
+              <div>· 2–6 players · Leads into season simulation</div>
             </div>
           </div>
 
@@ -320,26 +341,26 @@ export default function AmericanDraftPage() {
       <div className="w-full max-w-sm">
         {/* Hero */}
         <div className="text-center mb-8">
-          <div className="text-[10px] font-bold tracking-[0.3em] text-cyan-400 uppercase mb-3">Multiplayer Only</div>
+          <div className="text-[10px] font-bold tracking-[0.3em] text-cyan-400 uppercase mb-3">Multiplayer Only · PL Players</div>
           <h1 className="text-4xl sm:text-5xl font-black text-white uppercase italic leading-none mb-2">
             American<br />
             <span className="text-cyan-400">Draft</span>
           </h1>
           <p className="text-sm text-gray-400 mt-3 leading-relaxed max-w-xs mx-auto">
-            14 rounds of picks — all players visible to everyone. Take turns choosing. Build the best squad.
+            14 rounds of picks — all players visible to everyone. Take turns choosing Premier League stars. Build the best squad, then play the season.
           </p>
         </div>
 
         {/* Positions preview */}
         <div className="flex flex-wrap gap-1 justify-center mb-8">
-          {["GK","RB","CB","CB","LB","CM","CM","CM","RW","ST","LW","ANY","ANY","ANY"].map((p, i) => (
+          {POSITION_SEQUENCE.map((p, i) => (
             <span
               key={i}
               className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
                 POS_TEXT[p] || "text-gray-400"
               } border-current/20 bg-current/[0.06]`}
             >
-              {p}
+              {p === "ANY" ? "SUB" : p}
             </span>
           ))}
         </div>
