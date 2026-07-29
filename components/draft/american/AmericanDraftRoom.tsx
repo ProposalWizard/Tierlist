@@ -1,7 +1,10 @@
 "use client";
 import { useState } from "react";
 import { POSITION_LABELS } from "@/lib/americanDraft";
+import { getFlagUrl } from "@/lib/nationalities";
 import type { AmRoom, AmParticipant, AmPlayer } from "@/lib/americanDraft";
+
+const SILHOUETTE_SRC = "/84eaf89921b5683f425ebabcb7983508-Photoroom.png";
 
 interface Props {
   room: AmRoom;
@@ -29,28 +32,10 @@ const POS_TEXT: Record<string, string> = {
 };
 
 function ovrColor(ovr: number): string {
-  if (ovr >= 85) return "bg-amber-500";
-  if (ovr >= 80) return "bg-emerald-500";
-  if (ovr >= 75) return "bg-sky-500";
-  return "bg-gray-600";
-}
-
-function PlayerSilhouette() {
-  return (
-    <svg viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-      {/* subtle glow backdrop */}
-      <ellipse cx="60" cy="130" rx="52" ry="20" fill="rgba(6,182,212,0.06)" />
-      {/* torso / kit */}
-      <path
-        d="M18 160 C18 128 36 112 60 110 C84 112 102 128 102 160 Z"
-        fill="rgba(255,255,255,0.07)"
-      />
-      {/* neck */}
-      <rect x="54" y="80" width="12" height="14" rx="4" fill="rgba(255,255,255,0.07)" />
-      {/* head */}
-      <ellipse cx="60" cy="62" rx="26" ry="30" fill="rgba(255,255,255,0.07)" />
-    </svg>
-  );
+  if (ovr >= 85) return "bg-amber-500 text-black";
+  if (ovr >= 80) return "bg-emerald-500 text-black";
+  if (ovr >= 75) return "bg-sky-500 text-white";
+  return "bg-gray-600 text-white";
 }
 
 function PlayerCard({
@@ -63,6 +48,8 @@ function PlayerCard({
 }) {
   const [picking, setPicking] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
+  const [clubLogoFailed, setClubLogoFailed] = useState(false);
+  const [flagFailed, setFlagFailed] = useState(false);
 
   async function handlePick() {
     if (picking || !canPick) return;
@@ -74,21 +61,24 @@ function PlayerCard({
   const badgeBg = POS_BG[slotPosition] || "bg-gray-600";
   const badgeLabel = slotPosition === "ANY" ? "SUB" : slotPosition;
   const showImage = !!player.image_url && !imgFailed;
+  const showClubLogo = !!player.club_logo_url && !clubLogoFailed;
+  const flagUrl = getFlagUrl(player.nationality);
+  const showFlag = !!flagUrl && !flagFailed;
 
   return (
     <div
       onClick={canPick ? handlePick : undefined}
-      className={`relative rounded-2xl overflow-hidden border flex flex-col transition-all duration-200 select-none ${
+      className={`relative rounded-xl overflow-hidden border flex flex-col transition-all duration-150 select-none ${
         canPick
-          ? "border-white/15 hover:border-cyan-400/60 hover:shadow-[0_0_28px_rgba(6,182,212,0.22)] cursor-pointer active:scale-[0.97]"
-          : "border-white/[0.06] opacity-60"
-      } bg-[#0c1829]`}
+          ? "border-white/10 hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)] cursor-pointer active:scale-[0.98]"
+          : "border-white/[0.05] opacity-60"
+      } bg-[#0b1626]`}
     >
-      {/* ── Image area ── */}
-      <div className="relative h-40 sm:h-44 overflow-hidden shrink-0 bg-[#091423]">
+      {/* ── Image area (square-ish, whole face visible) ── */}
+      <div className="relative aspect-[5/6] overflow-hidden shrink-0 bg-[#0b1626]">
         {/* Decorative diagonal accent lines */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0px, #fff 1px, transparent 1px, transparent 12px)" }}
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+          style={{ backgroundImage: "repeating-linear-gradient(135deg, #fff 0px, #fff 1px, transparent 1px, transparent 14px)" }}
         />
 
         {showImage ? (
@@ -96,37 +86,55 @@ function PlayerCard({
             src={player.image_url!}
             alt={player.name}
             referrerPolicy="no-referrer"
-            className="absolute inset-0 w-full h-full object-cover object-top"
+            className="absolute inset-0 w-full h-full object-contain object-bottom"
             onError={() => setImgFailed(true)}
           />
         ) : (
-          <div className="absolute inset-0 flex items-end justify-center pb-0">
-            <PlayerSilhouette />
-          </div>
+          <img
+            src={SILHOUETTE_SRC}
+            alt=""
+            className="absolute inset-0 w-full h-full object-contain object-bottom opacity-40"
+          />
         )}
 
-        {/* Bottom image fade so info text is readable */}
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0c1829] to-transparent" />
-
         {/* OVR badge — top left */}
-        <div className={`absolute top-2.5 left-2.5 ${ovrColor(player.ovr)} text-white text-sm font-black px-2 py-1 rounded-lg leading-none shadow-md`}>
+        <div className={`absolute top-1.5 left-1.5 ${ovrColor(player.ovr)} text-[11px] font-black px-1.5 py-0.5 rounded leading-none shadow-sm`}>
           {player.ovr}
         </div>
 
         {/* Position badge — top right */}
-        <div className={`absolute top-2.5 right-2.5 ${badgeBg} text-white text-[10px] font-bold px-2 py-1 rounded-lg leading-none shadow-md uppercase tracking-wide`}>
+        <div className={`absolute top-1.5 right-1.5 ${badgeBg} text-white text-[9px] font-bold px-1.5 py-0.5 rounded leading-none shadow-sm uppercase`}>
           {badgeLabel}
         </div>
       </div>
 
       {/* ── Info ── */}
-      <div className="px-3 pt-2 pb-1 flex-1">
-        <div className="text-sm font-black text-white leading-tight line-clamp-1">{player.name}</div>
-        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-gray-400 truncate leading-tight">
-          <svg className="w-3 h-3 shrink-0 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9V8h2v9zm4 0h-2V8h2v9z" />
-          </svg>
-          {player.club}
+      <div className="px-2 pt-1.5 pb-1.5 flex-1">
+        <div className="flex items-center gap-1 mb-0.5">
+          {showFlag && (
+            <img
+              src={flagUrl!}
+              alt=""
+              className="w-3 h-2 shrink-0 rounded-[1px]"
+              onError={() => setFlagFailed(true)}
+            />
+          )}
+          <div className="text-[11px] font-bold text-white leading-tight line-clamp-1 flex-1">
+            {player.name}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-[9px] text-gray-400 truncate leading-tight">
+          {showClubLogo ? (
+            <img
+              src={player.club_logo_url!}
+              alt=""
+              className="w-3 h-3 shrink-0 object-contain"
+              onError={() => setClubLogoFailed(true)}
+            />
+          ) : (
+            <span className="w-3 h-3 shrink-0 inline-block rounded-full bg-white/[0.06]" />
+          )}
+          <span className="truncate">{player.club}</span>
         </div>
       </div>
 
@@ -135,7 +143,7 @@ function PlayerCard({
         <button
           onClick={e => { e.stopPropagation(); handlePick(); }}
           disabled={picking}
-          className="mx-3 mb-3 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest text-white transition-all disabled:opacity-50"
+          className="mx-1.5 mb-1.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider text-white transition-all disabled:opacity-50"
           style={{ background: "linear-gradient(135deg,#0d9488,#06b6d4)" }}
         >
           {picking ? "…" : "PICK"}
@@ -281,7 +289,7 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
               Loading players…
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2.5 max-w-6xl mx-auto">
               {room.round_players.map(player => (
                 <PlayerCard
                   key={player.sofifa_id}

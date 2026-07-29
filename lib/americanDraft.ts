@@ -7,6 +7,7 @@ export interface AmPlayer {
   image_url: string | null;
   nationality: string;
   club: string;
+  club_logo_url: string | null;
   edition: string;
 }
 
@@ -130,8 +131,21 @@ export async function fetchRoundPlayers(service: any, position: string): Promise
   });
 
   const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+  const chosen = shuffled.slice(0, 10);
 
-  return shuffled.slice(0, 10).map(r => ({
+  // Look up club logos in one query so we can attach them to each card.
+  const clubs = Array.from(new Set(chosen.map(r => r.club).filter(Boolean)));
+  const logoMap = new Map<string, string>();
+  if (clubs.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: logos } = (await (service as any)
+      .from("club_logos")
+      .select("club, logo_url")
+      .in("club", clubs)) as { data: { club: string; logo_url: string }[] | null };
+    (logos ?? []).forEach(l => logoMap.set(l.club, l.logo_url));
+  }
+
+  return chosen.map(r => ({
     sofifa_id: r.sofifa_id || "",
     name: r.name || "Unknown",
     ovr: resolveOvr(r),
@@ -140,6 +154,7 @@ export async function fetchRoundPlayers(service: any, position: string): Promise
     image_url: r.image_url || null,
     nationality: (r.manual_nationality || r.nationality || ""),
     club: r.club || "",
+    club_logo_url: logoMap.get(r.club) ?? null,
     edition: r.fifa_edition || "",
   }));
 }
