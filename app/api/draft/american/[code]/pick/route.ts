@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { fetchRoundPlayers, shuffleArray } from "@/lib/americanDraft";
 import type { AmPlayer, SquadPick } from "@/lib/americanDraft";
+import { computeTeamStrength } from "@/lib/seasonSimulator";
+import type { DraftPlayer } from "@/lib/seasonSimulator";
 
 function genRoomCode(): string {
   const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -12,7 +14,7 @@ function genRoomCode(): string {
 }
 
 // Convert American Draft picks into the DraftPlayer shape used by regular multiplayer.
-function buildDraftSquad(picks: SquadPick[]) {
+function buildDraftSquad(picks: SquadPick[]): DraftPlayer[] {
   return picks.map(pick => {
     const p = pick.player;
     const isSubPick = pick.position === "ANY";
@@ -80,10 +82,17 @@ export async function POST(
   ];
 
   // Persist this player's squad update FIRST so reads below see it
-  await service
+  const { error: squadErr } = await service
     .from("american_draft_participants")
     .update({ squad: newSquad, last_pick: picked })
     .eq("id", participant.id);
+
+  if (squadErr) {
+    return NextResponse.json(
+      { error: `Failed to save pick: ${squadErr.message}` },
+      { status: 500 }
+    );
+  }
 
   const remainingPlayers = roundPlayers.filter(p => p.sofifa_id !== sofifa_id);
   const pickOrder = room.pick_order as string[];
@@ -93,77 +102,123 @@ export async function POST(
 
   if (isLastPickerInRound && isLastRound) {
     // ── Draft complete: create the linked regular multiplayer room ───────────
+    // Every failure below must be surfaced. supabase-js returns { data, error }
+    // instead of throwing, so a silent failure here would leave the room stuck
+    // on the final round forever with the client showing "picked" but never
+    // advancing.
     let linkedCode: string | null = null;
+    let linkError: string | null = null;
 
     try {
       // Re-read all participants to get their completed squads
-      const { data: completedParticipants } = await service
+      const { data: completedParticipants, error: partErr } = await service
         .from("american_draft_participants")
         .select("*")
         .eq("room_id", room.id);
 
-      if (completedParticipants && completedParticipants.length >= 2) {
-        // Generate a unique code for the regular draft room
-        let newCode = genRoomCode();
-        for (let attempt = 0; attempt < 10; attempt++) {
-          const { data: existing } = await service
-            .from("draft_rooms")
-            .select("id")
-            .eq("code", newCode)
-            .maybeSingle();
-          if (!existing) break;
-          newCode = genRoomCode();
-        }
+      if (partErr) throw new Error(`read participants: ${partErr.message}`);
+      if (!completedParticipants?.length) throw new Error("no participants found");
 
-        const roomSettings = {
-          formation: "4-3-3",
-          eraStart: 2007,
-          eraEnd: 2026,
-          mode: "normal",
-          draftOrder: "position-first",
-          respins: 0,
-        };
-
-        const { data: newRoom } = await service
+      // Generate a unique code for the regular draft room
+      let newCode = genRoomCode();
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const { data: existing } = await service
           .from("draft_rooms")
-          .insert({
-            code: newCode,
-            host_id: room.host_id,
-            status: "lobby",
-            settings: roomSettings,
-            season_number: 1,
-          })
           .select("id")
-          .single();
-
-        if (newRoom) {
-          // Insert each participant as a ready player with their squad
-          for (const p of completedParticipants) {
-            const squad = buildDraftSquad(p.squad || []);
-            const avg_ovr = squad.length > 0
-              ? Math.round(squad.reduce((s, pl) => s + pl.overall, 0) / squad.length)
-              : null;
-
-            await service.from("draft_room_players").insert({
-              room_id: newRoom.id,
-              user_id: p.user_id,
-              display_name: p.display_name,
-              status: "ready",
-              squad,
-              avg_ovr,
-            });
-          }
-          linkedCode = newCode;
-        }
+          .eq("code", newCode)
+          .maybeSingle();
+        if (!existing) break;
+        newCode = genRoomCode();
       }
-    } catch {
-      // Non-fatal — American Draft still completes; players just won't be redirected
+
+      const roomSettings = {
+        formation: "4-3-3",
+        eraStart: 2007,
+        eraEnd: 2026,
+        mode: "normal",
+        draftOrder: "position-first",
+        respins: 0,
+      };
+
+      const { data: newRoom, error: roomErr } = await service
+        .from("draft_rooms")
+        .insert({
+          code: newCode,
+          host_id: room.host_id,
+          status: "lobby",
+          settings: roomSettings,
+          season_number: 1,
+        })
+        .select("id")
+        .single();
+
+      if (roomErr || !newRoom) {
+        throw new Error(`create season room: ${roomErr?.message ?? "no row returned"}`);
+      }
+
+      // Insert each participant as a ready player with their finished squad.
+      // team_strength must be computed with the same function the normal ready
+      // route uses, otherwise the lobby shows no STR and the simulator has to
+      // fall back to a default.
+      const rows = completedParticipants.map(p => {
+        const squad = buildDraftSquad((p.squad as SquadPick[]) || []);
+        const { teamStrength, avgOvr } = computeTeamStrength(squad);
+        return {
+          room_id: newRoom.id,
+          user_id: p.user_id,
+          display_name: p.display_name,
+          status: "ready",
+          squad,
+          avg_ovr: squad.length > 0 ? avgOvr : null,
+          team_strength: squad.length > 0 ? teamStrength : null,
+        };
+      });
+
+      const { error: playersErr } = await service.from("draft_room_players").insert(rows);
+      if (playersErr) throw new Error(`create season players: ${playersErr.message}`);
+
+      linkedCode = newCode;
+    } catch (e) {
+      linkError = e instanceof Error ? e.message : String(e);
     }
 
-    await service
+    // Mark the American room complete. If linked_room_code doesn't exist yet
+    // (an older american_draft.sql was applied), retry without it so the draft
+    // still finishes instead of soft-locking on the last pick.
+    const { error: completeErr } = await service
       .from("american_draft_rooms")
       .update({ status: "complete", round_players: [], linked_room_code: linkedCode })
       .eq("id", room.id);
+
+    if (completeErr) {
+      const { error: retryErr } = await service
+        .from("american_draft_rooms")
+        .update({ status: "complete", round_players: [] })
+        .eq("id", room.id);
+
+      if (retryErr) {
+        return NextResponse.json(
+          { error: `Failed to complete draft: ${retryErr.message}` },
+          { status: 500 }
+        );
+      }
+      // Completed, but the code column is missing — tell the client why.
+      return NextResponse.json({
+        ok: true,
+        complete: true,
+        linked_room_code: null,
+        warning:
+          "Draft finished but the season room could not be linked — run the latest " +
+          "american_draft.sql migration (missing linked_room_code column).",
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      complete: true,
+      linked_room_code: linkedCode,
+      ...(linkError ? { warning: `Season room not created: ${linkError}` } : {}),
+    });
   } else if (isLastPickerInRound) {
     const nextRound = (room.current_round as number) + 1;
     const nextPosition = posSeq[nextRound];
@@ -178,7 +233,7 @@ export async function POST(
     );
     const newRoundPlayers = await fetchRoundPlayers(service, nextPosition);
 
-    await service
+    const { error: roundErr } = await service
       .from("american_draft_rooms")
       .update({
         current_round: nextRound,
@@ -187,14 +242,28 @@ export async function POST(
         round_players: newRoundPlayers,
       })
       .eq("id", room.id);
+
+    if (roundErr) {
+      return NextResponse.json(
+        { error: `Failed to advance round: ${roundErr.message}` },
+        { status: 500 }
+      );
+    }
   } else {
-    await service
+    const { error: advanceErr } = await service
       .from("american_draft_rooms")
       .update({
         current_pick_idx: (room.current_pick_idx as number) + 1,
         round_players: remainingPlayers,
       })
       .eq("id", room.id);
+
+    if (advanceErr) {
+      return NextResponse.json(
+        { error: `Failed to advance pick: ${advanceErr.message}` },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -31,6 +31,21 @@ CREATE TABLE IF NOT EXISTS american_draft_participants (
   UNIQUE (room_id, user_id)
 );
 
+-- ── Upgrades for databases that already ran an earlier version of this file ──
+-- CREATE TABLE IF NOT EXISTS above is a no-op on an existing table, so any
+-- column added after the first release must be patched in explicitly here.
+-- Without linked_room_code the final pick of the draft fails to save and the
+-- room soft-locks on the last round.
+ALTER TABLE american_draft_rooms ADD COLUMN IF NOT EXISTS linked_room_code TEXT;
+
+-- Older versions of this table had no status CHECK; make sure 'complete' and
+-- 'drafting' are both accepted.
+DO $$ BEGIN
+  ALTER TABLE american_draft_rooms DROP CONSTRAINT IF EXISTS american_draft_rooms_status_check;
+  ALTER TABLE american_draft_rooms ADD CONSTRAINT american_draft_rooms_status_check
+    CHECK (status IN ('lobby', 'drafting', 'complete'));
+END $$;
+
 -- Allow all authenticated and anonymous users to read rooms and participants
 -- (the room code already acts as an access gate).
 ALTER TABLE american_draft_rooms ENABLE ROW LEVEL SECURITY;
