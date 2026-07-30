@@ -6,6 +6,7 @@ import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";
 import SquadManager from "@/components/draft/SquadManagerDev";
 import MultiplayerLobby from "@/components/draft/MultiplayerLobby";
+import AmericanDraftPhase from "@/components/draft/american/AmericanDraftPhase";
 import { createClient } from "@/lib/supabase/client";
 import { getPositionColor, FORMATIONS, formatSeasonYear } from "@/components/draft/formations";
 import { getFlagUrl } from "@/lib/nationalities";
@@ -23,6 +24,12 @@ export interface DraftSettings {
   respins: 0 | 1 | 3;
   hiddenRatings?: boolean;
   simulationSpeed?: 0.5 | 1 | 1.5;
+  /**
+   * Multiplayer squad selection style. "normal" is the per-player spinning
+   * wheel; "american" replaces it with a shared turn-based pool draft.
+   * Ignored in single player.
+   */
+  draftMode?: "normal" | "american";
 }
 
 export interface DraftPlayer {
@@ -40,7 +47,7 @@ export interface DraftPlayer {
   attrs?: PlayerAttributes;
 }
 
-type GamePhase = "setup" | "lobby" | "formation-pick" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
+type GamePhase = "setup" | "lobby" | "american-draft" | "formation-pick" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
 
 const STORAGE_KEY = "pl-draft-progress";
 const MAX_SEASONS = 5;
@@ -480,6 +487,10 @@ export default function DraftPage() {
     let restoredSquad: DraftPlayer[] | null = null;
     let restoredAlreadySubmitted = false;
     let restoredSeason = 1;
+    // Set when the room is mid-American-draft and this player still owes picks —
+    // dropping them in the lobby instead would stall the draft for everyone,
+    // because their turn would come round and nobody could take it.
+    let resumeAmericanDraft = false;
 
     // Fetch host's settings; formation is picked later in formation-pick phase
     const res = await fetch(`/api/draft/rooms/${code}`);
@@ -508,6 +519,10 @@ export default function DraftPage() {
           restoredSquad = myRoomPlayer.squad as DraftPlayer[];
           restoredAlreadySubmitted = myRoomPlayer.status === "ready";
         }
+        const amState = data.room?.american_state as { complete?: boolean } | null | undefined;
+        if (amState && !amState.complete && myRoomPlayer && myRoomPlayer.status !== "ready") {
+          resumeAmericanDraft = true;
+        }
       }
     } else {
       setSettings(_ownSettings);
@@ -527,7 +542,7 @@ export default function DraftPage() {
       setSquadSubmitted(false);
     }
 
-    setPhase("lobby");
+    setPhase(resumeAmericanDraft ? "american-draft" : "lobby");
     scrollTop();
   }, [scrollTop, userId]);
 
@@ -548,6 +563,13 @@ export default function DraftPage() {
 
   const handleStartFromLobby = useCallback(() => {
     if (currentSeason === 1) {
+      // American mode replaces the per-player spin for the first season only;
+      // later seasons re-arrange the squad the draft produced, as normal.
+      if (settings?.draftMode === "american") {
+        setPhase("american-draft");
+        scrollTop();
+        return;
+      }
       setPhase("formation-pick");
     } else if (players.length > 0) {
       // Season 2+ with an existing squad (preserved from last season) — go straight to arrange
@@ -556,7 +578,7 @@ export default function DraftPage() {
       setPhase("draft");
     }
     scrollTop();
-  }, [scrollTop, currentSeason, players]);
+  }, [scrollTop, currentSeason, players, settings]);
 
   const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[], revealStartAt?: number) => {
     setRevealStartTime(revealStartAt ?? Date.now());
@@ -1201,6 +1223,19 @@ export default function DraftPage() {
           onSettingsSync={handleSettingsSync}
           onHostChange={setIsHost}
           defaultTeamName={teamName}
+        />
+      )}
+      {phase === "american-draft" && roomCode && userId && (
+        <AmericanDraftPhase
+          roomCode={roomCode}
+          userId={userId}
+          onComplete={() => {
+            // The server has already written every squad as 'ready', so return
+            // to the lobby in the submitted state and let the host simulate.
+            setSquadSubmitted(true);
+            setPhase("lobby");
+            scrollTop();
+          }}
         />
       )}
       {phase === "formation-pick" && settings && (

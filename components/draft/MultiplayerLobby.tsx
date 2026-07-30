@@ -373,6 +373,20 @@ export default function MultiplayerLobby({
     // starting locally after a failed PATCH would advance only the host while
     // every other player sits at "Waiting for host" forever.
     try {
+      // American mode: the start endpoint seeds the shared draft state AND
+      // marks the room started, so it replaces the plain status PATCH.
+      if (settings?.draftMode === "american" && currentSeason === 1) {
+        const res = await fetch(`/api/draft/rooms/${roomCode}/american/start`, { method: "POST" });
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null) as { error?: string } | null;
+          setSimError(payload?.error ?? "Couldn't start the American draft.");
+          return;
+        }
+        setSimError(null);
+        onStartDraft();
+        return;
+      }
+
       const res = await fetch(`/api/draft/rooms/${roomCode}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
