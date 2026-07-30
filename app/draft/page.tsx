@@ -6,6 +6,7 @@ import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";
 import SquadManager from "@/components/draft/SquadManagerDev";
 import MultiplayerLobby from "@/components/draft/MultiplayerLobby";
+import AmericanDraftPhase from "@/components/draft/american/AmericanDraftPhase";
 import { createClient } from "@/lib/supabase/client";
 import { getPositionColor, FORMATIONS, formatSeasonYear } from "@/components/draft/formations";
 import { getFlagUrl } from "@/lib/nationalities";
@@ -23,6 +24,12 @@ export interface DraftSettings {
   respins: 0 | 1 | 3;
   hiddenRatings?: boolean;
   simulationSpeed?: 0.5 | 1 | 1.5;
+  /**
+   * Multiplayer squad selection style. "normal" is the per-player spinning
+   * wheel; "american" replaces it with a shared turn-based pool draft.
+   * Ignored in single player.
+   */
+  draftMode?: "normal" | "american";
 }
 
 export interface DraftPlayer {
@@ -40,7 +47,7 @@ export interface DraftPlayer {
   attrs?: PlayerAttributes;
 }
 
-type GamePhase = "setup" | "lobby" | "formation-pick" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
+type GamePhase = "setup" | "lobby" | "american-draft" | "formation-pick" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
 
 const STORAGE_KEY = "pl-draft-progress";
 const MAX_SEASONS = 5;
@@ -368,6 +375,17 @@ export default function DraftPage() {
   const [allRoomPlayerSeasons, setAllRoomPlayerSeasons] = useState<Record<string, SeasonResult[]> | null>(null);
   const [revealStartTime, setRevealStartTime] = useState<number | undefined>(undefined);
 
+  // Read ?room= during the first render, before the URL-sync effect below can
+  // rewrite it. A useState initialiser runs while rendering, whereas effects run
+  // after — and the sync effect's first run (roomCode still null) replaces the
+  // URL with a bare /draft, which used to erase the code before the auto-join
+  // effect ever saw it, so shared room links silently never joined.
+  const [initialRoomParam] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const code = new URLSearchParams(window.location.search).get("room");
+    return code ? code.toUpperCase() : null;
+  });
+
   // Update URL to reflect room code when playing online (so it's shareable/bookmarkable)
   useEffect(() => {
     const url = roomCode ? `/draft?room=${roomCode}` : '/draft';
@@ -480,6 +498,10 @@ export default function DraftPage() {
     let restoredSquad: DraftPlayer[] | null = null;
     let restoredAlreadySubmitted = false;
     let restoredSeason = 1;
+    // Set when the room is mid-American-draft and this player still owes picks —
+    // dropping them in the lobby instead would stall the draft for everyone,
+    // because their turn would come round and nobody could take it.
+    let resumeAmericanDraft = false;
 
     // Fetch host's settings; formation is picked later in formation-pick phase
     const res = await fetch(`/api/draft/rooms/${code}`);
@@ -508,6 +530,10 @@ export default function DraftPage() {
           restoredSquad = myRoomPlayer.squad as DraftPlayer[];
           restoredAlreadySubmitted = myRoomPlayer.status === "ready";
         }
+        const amState = data.room?.american_state as { complete?: boolean } | null | undefined;
+        if (amState && !amState.complete && myRoomPlayer && myRoomPlayer.status !== "ready") {
+          resumeAmericanDraft = true;
+        }
       }
     } else {
       setSettings(_ownSettings);
@@ -527,20 +553,21 @@ export default function DraftPage() {
       setSquadSubmitted(false);
     }
 
-    setPhase("lobby");
+    setPhase(resumeAmericanDraft ? "american-draft" : "lobby");
     scrollTop();
   }, [scrollTop, userId]);
 
-  // Auto-join when redirected from American Draft (?room=CODE in URL)
+  // Auto-join a room code that arrived in the URL (a shared or bookmarked
+  // /draft?room=CODE link). Reads the value captured during the first render
+  // rather than window.location, which the URL-sync effect has already cleared
+  // by the time auth resolves and this can run.
   const autoJoinedRef = useRef(false);
   useEffect(() => {
     if (autoJoinedRef.current || !isSignedIn || phase !== "setup") return;
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("room");
+    const code = initialRoomParam;
     if (!code) return;
     autoJoinedRef.current = true;
-    window.history.replaceState(null, "", "/draft");
-    handleJoinRoom(code.toUpperCase(), {
+    handleJoinRoom(code, {
       formation: "4-3-3", eraStart: 2007, eraEnd: 2026,
       mode: "normal", draftOrder: "position-first", respins: 0,
     });
@@ -548,6 +575,13 @@ export default function DraftPage() {
 
   const handleStartFromLobby = useCallback(() => {
     if (currentSeason === 1) {
+      // American mode replaces the per-player spin for the first season only;
+      // later seasons re-arrange the squad the draft produced, as normal.
+      if (settings?.draftMode === "american") {
+        setPhase("american-draft");
+        scrollTop();
+        return;
+      }
       setPhase("formation-pick");
     } else if (players.length > 0) {
       // Season 2+ with an existing squad (preserved from last season) — go straight to arrange
@@ -556,7 +590,7 @@ export default function DraftPage() {
       setPhase("draft");
     }
     scrollTop();
-  }, [scrollTop, currentSeason, players]);
+  }, [scrollTop, currentSeason, players, settings]);
 
   const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[], revealStartAt?: number) => {
     setRevealStartTime(revealStartAt ?? Date.now());
@@ -1201,6 +1235,19 @@ export default function DraftPage() {
           onSettingsSync={handleSettingsSync}
           onHostChange={setIsHost}
           defaultTeamName={teamName}
+        />
+      )}
+      {phase === "american-draft" && roomCode && userId && (
+        <AmericanDraftPhase
+          roomCode={roomCode}
+          userId={userId}
+          onComplete={() => {
+            // The server has already written every squad as 'ready', so return
+            // to the lobby in the submitted state and let the host simulate.
+            setSquadSubmitted(true);
+            setPhase("lobby");
+            scrollTop();
+          }}
         />
       )}
       {phase === "formation-pick" && settings && (

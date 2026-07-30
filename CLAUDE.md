@@ -110,7 +110,8 @@ NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
 | `draft_club_seasons.sql` | **PENDING** | Adds `get_pl_club_seasons()` SQL function — fast DISTINCT club/season lookup for the PL Draft clubs API. The API works without it (paginated fallback) but is slower. Run in Supabase SQL Editor. |
 | `draft_runs_stats.sql` | **PENDING** | Adds extended stats columns to `draft_runs` (top scorer, assists, clean sheets, streaks, all six cup-winner flags) plus a unique `event_key` for dedup. Until it's run, the history API falls back to the legacy insert: history keeps working but cup/trophy achievements can't unlock and replayed seasons aren't deduped in history. Run in Supabase SQL Editor (idempotent). |
 | `draft_records_full_fix.sql` | **PENDING (likely cause of Career Records bug)** | Consolidated fix for `draft_records`/`draft_personal_records` CHECK constraints. The older `draft_records_expanded.sql`/`draft_records_mode.sql`/`draft_records_fix_constraints.sql` migrations were apparently never fully run — their CHECK constraints reject `competition = 'career'` and several `record_type` values (`career_assists`, `career_avg_rating`, `most_points`, `biggest_win`, `avg_rating`), so every Career Records insert silently fails (caught and only `console.error`'d server-side, invisible to users). Run `draft_records_full_fix.sql` in Supabase SQL Editor — it's idempotent and safe to run regardless of which older migrations already applied. |
-| `american_draft.sql` | **PENDING** | Creates `american_draft_rooms` and `american_draft_participants` tables for the American Draft multiplayer mode (accessible at `/draft/american`). Includes RLS policies and Realtime publication. Must be run before any user can create or join an American Draft room. |
+| `american_draft.sql` | **PENDING** | Creates `american_draft_rooms` and `american_draft_participants` for the standalone dev sandbox at `/draft/american`. Includes RLS policies and Realtime publication. Also patches in `linked_room_code` via `ADD COLUMN IF NOT EXISTS` — re-run it if you applied an earlier version, otherwise the sandbox's final pick fails. Not needed for American mode inside real rooms (see below). |
+| `draft_american_mode.sql` | **PENDING** | Adds `american_state` JSONB to `draft_rooms`. Required for the **Draft Mode → American** setting on real multiplayer rooms. Without it the host's "Start Game" returns an error telling you to run this migration. |
 
 ### Critical Gotchas
 
@@ -172,6 +173,7 @@ npm run lint   # Run ESLint
 | `draft_club_seasons.sql` | **PENDING** | PL Draft clubs API works but is slower (paginated fallback) |
 | `draft_runs_stats.sql` | **PENDING** | Cup/trophy achievements can't unlock; replayed seasons not deduped in history |
 | `draft_records_full_fix.sql` | **PENDING** | Career Records silently fail to insert (CHECK constraint mismatch on `competition`/`record_type` values) |
+| `draft_american_mode.sql` | **PENDING** | American draft mode can't start on real multiplayer rooms (`draft_rooms.american_state` missing) |
 
 ---
 

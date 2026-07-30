@@ -2,13 +2,25 @@
 import { useState } from "react";
 import { POSITION_LABELS } from "@/lib/americanDraft";
 import { getFlagUrl } from "@/lib/nationalities";
-import type { AmRoom, AmParticipant, AmPlayer } from "@/lib/americanDraft";
+import type { AmPlayer } from "@/lib/americanDraft";
 
 const SILHOUETTE_SRC = "/84eaf89921b5683f425ebabcb7983508-Photoroom.png";
 
+/**
+ * Normalised board props. The draft runs both as a standalone dev room and as a
+ * phase of a real multiplayer room, which store their state differently, so the
+ * board takes the pieces it actually renders rather than either room shape.
+ */
 interface Props {
-  room: AmRoom;
-  participants: AmParticipant[];
+  positionSequence: string[];
+  currentRound: number;
+  pickOrder: string[];
+  currentPickIdx: number;
+  roundPlayers: AmPlayer[];
+  /** userId → that player's most recent pick, shown under their name. */
+  lastPick: Record<string, AmPlayer>;
+  /** userId → display name. */
+  names: Record<string, string>;
   userId: string;
   onPick: (sofifaId: string) => Promise<void>;
 }
@@ -40,7 +52,7 @@ function ovrTextColor(ovr: number): string {
   if (ovr >= 85) return "text-amber-400";
   if (ovr >= 80) return "text-emerald-400";
   if (ovr >= 75) return "text-sky-400";
-  return "text-gray-300";
+  return "text-white";
 }
 
 function PlayerCard({
@@ -133,30 +145,42 @@ function PlayerCard({
       </div>
 
       {/* ── Info + pick — bottom third ── */}
-      <div className="relative flex-1 px-2.5 pt-1.5 pb-2 flex flex-col justify-between border-t border-white/[0.04]">
+      <div className="relative flex-1 px-2 pt-1.5 pb-2 flex flex-col justify-between border-t border-white/[0.04]">
         <div>
-          <div className="text-[13px] font-black text-white leading-tight line-clamp-1">
+          {/* Name — centred */}
+          <div className="text-[13px] font-black text-white leading-tight line-clamp-1 text-center">
             {player.name}
           </div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-gray-400 leading-tight">
+
+          {/* Club badge left · season centre · nation flag right */}
+          <div className="mt-1 flex items-center justify-between gap-1">
             {showClubLogo ? (
               <img
                 src={player.club_logo_url!}
-                alt=""
-                className="w-3.5 h-3.5 shrink-0 object-contain"
+                alt={player.club}
+                title={player.club}
+                referrerPolicy="no-referrer"
+                className="w-7 h-7 shrink-0 object-contain"
                 onError={() => setClubLogoFailed(true)}
               />
             ) : (
-              <span className="w-3.5 h-3.5 shrink-0 inline-block rounded-full bg-white/[0.06]" />
+              <span className="w-7 h-7 shrink-0" />
             )}
-            <span className="truncate flex-1">{player.club}</span>
-            {showFlag && (
+
+            <span className="text-[11px] font-bold text-white/85 tabular-nums leading-none">
+              {player.season}
+            </span>
+
+            {showFlag ? (
               <img
                 src={flagUrl!}
-                alt=""
-                className="w-3.5 h-2.5 shrink-0 rounded-[1px] object-cover"
+                alt={player.nationality}
+                title={player.nationality}
+                className="w-7 h-[21px] shrink-0 rounded-sm object-cover"
                 onError={() => setFlagFailed(true)}
               />
+            ) : (
+              <span className="w-7 h-[21px] shrink-0" />
             )}
           </div>
         </div>
@@ -176,15 +200,17 @@ function PlayerCard({
   );
 }
 
-export default function AmericanDraftRoom({ room, participants, userId, onPick }: Props) {
-  const pickOrder = room.pick_order;
-  const currentPickerId = pickOrder[room.current_pick_idx];
+export default function AmericanDraftRoom({
+  positionSequence, currentRound, pickOrder, currentPickIdx,
+  roundPlayers, lastPick, names, userId, onPick,
+}: Props) {
+  const currentPickerId = pickOrder[currentPickIdx];
   const isMyTurn = currentPickerId === userId;
-  const currentPosition = room.position_sequence[room.current_round] || "ANY";
+  const currentPosition = positionSequence[currentRound] || "ANY";
   const posLabel = POSITION_LABELS[currentPosition] || currentPosition;
-  const currentPicker = participants.find(p => p.user_id === currentPickerId);
-  const totalRounds = room.position_sequence.length;
-  const picksLeft = room.round_players.length;
+  const currentPickerName = names[currentPickerId];
+  const totalRounds = positionSequence.length;
+  const picksLeft = roundPlayers.length;
 
   const posTextColor = POS_TEXT[currentPosition] || "text-cyan-400";
 
@@ -194,8 +220,8 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
       <aside className="lg:w-60 xl:w-64 shrink-0 bg-[#07101f] border-b lg:border-b-0 lg:border-r border-white/[0.06] flex flex-col">
         {/* Round header */}
         <div className="p-3 lg:p-4 border-b border-white/[0.06]">
-          <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mb-0.5">
-            Round {room.current_round + 1} of {totalRounds}
+          <div className="text-[9px] font-bold tracking-widest text-white/50 uppercase mb-0.5">
+            Round {currentRound + 1} of {totalRounds}
           </div>
           <div className={`text-base font-black uppercase italic leading-none ${posTextColor}`}>
             {posLabel}
@@ -204,7 +230,7 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
-                width: `${(room.current_round / totalRounds) * 100}%`,
+                width: `${(currentRound / totalRounds) * 100}%`,
                 background: "linear-gradient(90deg,#0d9488,#06b6d4)",
               }}
             />
@@ -213,13 +239,13 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
 
         {/* Pick order */}
         <div className="p-3 lg:p-4 flex-1">
-          <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase mb-2.5">Pick Order</div>
+          <div className="text-[9px] font-bold tracking-widest text-white/50 uppercase mb-2.5">Pick Order</div>
           <div className="flex lg:flex-col gap-2 overflow-x-auto pb-1 lg:pb-0 lg:overflow-visible">
             {pickOrder.map((uid, idx) => {
-              const p = participants.find(x => x.user_id === uid);
-              if (!p) return null;
-              const hasPicked = idx < room.current_pick_idx;
-              const isCurrent = idx === room.current_pick_idx;
+              const displayName = names[uid] ?? "Player";
+              const uidLastPick = lastPick[uid];
+              const hasPicked = idx < currentPickIdx;
+              const isCurrent = idx === currentPickIdx;
               const isMe = uid === userId;
 
               return (
@@ -235,13 +261,13 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[9px] font-black ${
-                      isCurrent ? "bg-cyan-500 text-white" : "bg-white/10 text-gray-500"
+                      isCurrent ? "bg-cyan-500 text-white" : "bg-white/10 text-white/60"
                     }`}>
                       {idx + 1}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className={`text-xs font-bold truncate leading-tight ${isMe ? "text-cyan-300" : "text-white"}`}>
-                        {p.display_name}{isMe ? " (You)" : ""}
+                        {displayName}{isMe ? " (You)" : ""}
                       </div>
                       <div className="text-[9px] leading-tight">
                         {isCurrent ? (
@@ -249,23 +275,23 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
                         ) : hasPicked ? (
                           <span className="text-emerald-400">Picked ✓</span>
                         ) : (
-                          <span className="text-gray-600">Waiting</span>
+                          <span className="text-white/45">Waiting</span>
                         )}
                       </div>
                     </div>
                   </div>
-                  {p.last_pick && (
+                  {uidLastPick && (
                     <div className="mt-1.5 flex items-center gap-1.5 pl-7">
-                      {p.last_pick.image_url && (
+                      {uidLastPick.image_url && (
                         <img
-                          src={p.last_pick.image_url}
+                          src={uidLastPick.image_url}
                           alt=""
                           referrerPolicy="no-referrer"
                           className="w-4 h-4 rounded-full object-cover shrink-0"
                           onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       )}
-                      <span className="text-[9px] text-gray-400 truncate">{p.last_pick.name}</span>
+                      <span className="text-[9px] text-white/60 truncate">{uidLastPick.name}</span>
                     </div>
                   )}
                 </div>
@@ -287,33 +313,33 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
                 </svg>
                 <span className="text-sm font-black text-white uppercase tracking-wide">
                   It&apos;s your turn{" "}
-                  <span className="text-gray-400 font-semibold normal-case tracking-normal">— Choose a player</span>
+                  <span className="text-white/60 font-semibold normal-case tracking-normal">— Choose a player</span>
                 </span>
               </>
             ) : (
               <>
                 <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-                <span className="text-sm font-semibold text-gray-300">
-                  Waiting for <span className="text-white font-bold">{currentPicker?.display_name ?? "…"}</span> to pick
+                <span className="text-sm font-semibold text-white/80">
+                  Waiting for <span className="text-white font-bold">{currentPickerName ?? "…"}</span> to pick
                 </span>
               </>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">Picks Left</span>
+            <span className="text-[10px] font-bold tracking-widest text-white/50 uppercase">Picks Left</span>
             <span className="text-lg font-black text-white tabular-nums">{picksLeft}</span>
           </div>
         </div>
 
         {/* Player grid */}
         <div className="flex-1 p-3 sm:p-4 lg:p-5 overflow-y-auto">
-          {room.round_players.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-gray-500 text-sm">
+          {roundPlayers.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-white/50 text-sm">
               Loading players…
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2.5 max-w-6xl mx-auto">
-              {room.round_players.map(player => (
+              {roundPlayers.map(player => (
                 <PlayerCard
                   key={player.sofifa_id}
                   player={player}
@@ -333,7 +359,7 @@ export default function AmericanDraftRoom({ room, participants, userId, onPick }
               <circle cx="12" cy="12" r="10" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01" />
             </svg>
-            <span className="text-[11px] text-gray-400">
+            <span className="text-[11px] text-white/60">
               <span className="text-cyan-400 font-bold">Choose wisely.</span> Great teams are built one pick at a time.
             </span>
           </div>

@@ -1,0 +1,181 @@
+"use client";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
+import AmericanDraftRoom from "./AmericanDraftRoom";
+import type { AmericanState } from "@/lib/americanDraft";
+
+interface Props {
+  roomCode: string;
+  userId: string;
+  /** Called once every squad has been written to the room as 'ready'. */
+  onComplete: () => void;
+}
+
+/**
+ * The American draft as a phase of a real multiplayer room.
+ *
+ * State lives on draft_rooms.american_state, so this reads the room and follows
+ * it over Realtime — the same channel shape the lobby uses. When the state flips
+ * to complete the server has already written every player's squad to their own
+ * draft_room_players row with status 'ready', so we just hand control back to
+ * the lobby and the normal simulate flow continues.
+ */
+export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Props) {
+  const [state, setState] = useState<AmericanState | null>(null);
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const completedRef = useRef(false);
+
+  const finish = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    onComplete();
+  }, [onComplete]);
+
+  // Initial load + Realtime subscription
+  useEffect(() => {
+    const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    (async () => {
+      const { data: room, error: roomErr } = await supabase
+        .from("draft_rooms")
+        .select("id, american_state")
+        .eq("code", roomCode.toUpperCase())
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (roomErr || !room) {
+        setError("Could not load the draft room.");
+        setLoading(false);
+        return;
+      }
+
+      const { data: players } = await supabase
+        .from("draft_room_players")
+        .select("user_id, display_name, team_name")
+        .eq("room_id", room.id);
+
+      if (cancelled) return;
+
+      setNames(
+        Object.fromEntries(
+          (players ?? []).map(p => [p.user_id, p.team_name || p.display_name || "Player"])
+        )
+      );
+
+      const initial = room.american_state as AmericanState | null;
+      setState(initial);
+      setLoading(false);
+      if (initial?.complete) { finish(); return; }
+
+      channel = supabase
+        .channel(`american-draft-${roomCode}-${Date.now()}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "draft_rooms", filter: `id=eq.${room.id}` },
+          payload => {
+            const next = (payload.new as { american_state?: AmericanState | null })?.american_state;
+            if (!next) return;
+            setState(next);
+            if (next.complete) finish();
+          }
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [roomCode, finish]);
+
+  const makePick = useCallback(async (sofifaId: string) => {
+    setError(null);
+    const res = await fetch(`/api/draft/rooms/${roomCode}/american/pick`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sofifa_id: sofifaId }),
+    });
+
+    const payload = await res.json().catch(() => null) as
+      | { ok?: boolean; complete?: boolean; error?: string }
+      | null;
+
+    if (!res.ok) {
+      setError(payload?.error ?? "Could not make that pick.");
+      return;
+    }
+
+    // Act on the response rather than waiting for the Realtime event — the last
+    // pick produces no further room update for the final picker to observe.
+    if (payload?.complete) { finish(); return; }
+
+    // Fallback refresh in case the Realtime event is dropped.
+    const supabase = createClient();
+    const { data: room } = await supabase
+      .from("draft_rooms")
+      .select("american_state")
+      .eq("code", roomCode.toUpperCase())
+      .maybeSingle();
+    const next = room?.american_state as AmericanState | null;
+    if (next) {
+      setState(next);
+      if (next.complete) finish();
+    }
+  }, [roomCode, finish]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#060d1a] flex items-center justify-center">
+        <div className="text-white/50 text-sm">Loading draft…</div>
+      </div>
+    );
+  }
+
+  if (error && !state) {
+    return (
+      <div className="min-h-screen bg-[#060d1a] flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-red-400 font-bold text-sm mb-1">{error}</p>
+          <p className="text-white/50 text-xs">Try refreshing the page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!state) {
+    return (
+      <div className="min-h-screen bg-[#060d1a] flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-white font-bold text-sm mb-1">Waiting for the host to start the draft…</p>
+          <p className="text-white/50 text-xs">Room {roomCode}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {error && (
+        <div className="bg-red-500/10 border-b border-red-500/30 px-4 py-2 text-center">
+          <span className="text-red-400 text-xs font-semibold">{error}</span>
+        </div>
+      )}
+      <AmericanDraftRoom
+        positionSequence={state.position_sequence}
+        currentRound={state.current_round}
+        pickOrder={state.pick_order}
+        currentPickIdx={state.current_pick_idx}
+        roundPlayers={state.round_players}
+        lastPick={state.last_pick ?? {}}
+        names={names}
+        userId={userId}
+        onPick={makePick}
+      />
+    </>
+  );
+}

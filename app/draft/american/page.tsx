@@ -262,8 +262,15 @@ export default function AmericanDraftPage() {
   if (phase === "drafting" && room) {
     return (
       <AmericanDraftRoom
-        room={room}
-        participants={participants}
+        positionSequence={room.position_sequence}
+        currentRound={room.current_round}
+        pickOrder={room.pick_order}
+        currentPickIdx={room.current_pick_idx}
+        roundPlayers={room.round_players}
+        lastPick={Object.fromEntries(
+          participants.filter(p => p.last_pick).map(p => [p.user_id, p.last_pick!])
+        )}
+        names={Object.fromEntries(participants.map(p => [p.user_id, p.display_name]))}
         userId={userId}
         onPick={makePick}
       />
