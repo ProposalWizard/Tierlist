@@ -38,7 +38,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # Reuse the existing scraper's helpers so URL building, pagination, CAPTCHA
 # waiting and CDN path handling all stay in one place.
+import scrape_missing  # noqa: E402
 from scrape_missing import (  # noqa: E402
+    BASE_URL,
     OUTPUT_DIR,
     PROFILE_DIR,
     TEAMS_URL,
@@ -159,8 +161,18 @@ async def main() -> None:
 
         # Read the real roster codes from SoFIFA's edition dropdown — the
         # hardcoded table in scrape_missing has been wrong for some editions.
+        # The dropdown only exists once a real page has loaded, so navigate
+        # first; reading it from a blank tab silently finds nothing and every
+        # year falls back to the (known unreliable) hardcoded table.
         try:
+            await page.goto(BASE_URL, wait_until="commit")
+            await wait_for(page, 'a[href*="/player/"]', "players page")
             await discover_versions(page)
+            n_discovered = len(scrape_missing.DISCOVERED_CODES)
+            if n_discovered:
+                print(f"Discovered {n_discovered} real roster codes from the edition dropdown.\n")
+            else:
+                print("Edition dropdown was empty — falling back to the hardcoded codes.\n")
         except Exception as e:
             print(f"Version discovery failed ({e}); falling back to the hardcoded codes.\n")
 
