@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { evaluateObjective } from "@/lib/objectiveEvaluator";
+import { levelFromXp } from "@/lib/xp";
 import type { ObjectiveCondition, ObjectiveProgress, SeasonCheckData } from "@/lib/objectiveTypes";
 
 export async function POST(req: NextRequest) {
@@ -120,7 +121,15 @@ export async function POST(req: NextRequest) {
             if (inserted && inserted.length > 0) {
               const { data: xpRow } = await service.from("user_xp").select("total_xp").eq("user_id", user.id).maybeSingle();
               const newTotal = (xpRow?.total_xp ?? 0) + awardAmount;
-              await service.from("user_xp").upsert({ user_id: user.id, total_xp: newTotal });
+              // current_level must be recomputed here too. Leaving it stale keeps
+              // level-gated rewards locked until some unrelated XP event happens
+              // to fire, because /api/stats and /api/xp both read this column.
+              await service.from("user_xp").upsert({
+                user_id: user.id,
+                total_xp: newTotal,
+                current_level: levelFromXp(newTotal).level,
+                updated_at: new Date().toISOString(),
+              });
             }
             // Either way the XP is now handled server-side — tell the client to skip it.
             serverAwardedXp.push({ id: obj.id, xp: awardAmount });

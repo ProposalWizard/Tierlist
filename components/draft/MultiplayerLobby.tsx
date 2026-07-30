@@ -104,7 +104,17 @@ export default function MultiplayerLobby({
   }, []);
 
   const fetchRoom = useCallback(async () => {
-    const res = await fetch(`/api/draft/rooms/${roomCodeRef.current}`);
+    // fetch REJECTS on network failure (offline, DNS, dropped connection) rather
+    // than returning !ok. Swallowing that into an undefined return keeps the
+    // caller's retry path in charge and stops the 2s poll emitting unhandled
+    // rejections; without it a single blip left the lobby on "Loading…" forever
+    // with no subscription and no polling.
+    let res: Response;
+    try {
+      res = await fetch(`/api/draft/rooms/${roomCodeRef.current}`);
+    } catch {
+      return;
+    }
     if (!res.ok) {
       // The room no longer exists (host closed it before starting) — kick
       // back to setup instead of polling a dead room forever.
@@ -115,7 +125,8 @@ export default function MultiplayerLobby({
       }
       return;
     }
-    const data = await res.json();
+    const data = await res.json().catch(() => null);
+    if (!data) return;
     setRoom(data.room);
     setPlayers(data.players ?? []);
     syncSettings(data.room?.settings as Record<string, unknown> | undefined);
@@ -158,7 +169,7 @@ export default function MultiplayerLobby({
     };
 
     const init = () => {
-      fetchRoom().then((data) => {
+      fetchRoom().catch(() => undefined).then((data) => {
         if (cancelled) return;
         if (!data?.room) {
           // Initial fetch failed (network blip) — retry rather than leaving a

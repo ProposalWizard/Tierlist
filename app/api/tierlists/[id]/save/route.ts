@@ -34,17 +34,25 @@ export async function POST(_req: Request, { params }: Props) {
     .eq("tierlist_id", id)
     .maybeSingle();
 
+  // Surface write failures — otherwise the response claims the toggle happened
+  // (filled bookmark icon) when nothing was written, e.g. the tierlist was
+  // deleted between page load and the click, giving an FK violation.
   if (existing) {
-    await supabase
+    const { error } = await supabase
       .from("saved_tierlists")
       .delete()
       .eq("user_id", user.id)
       .eq("tierlist_id", id);
+    if (error) return NextResponse.json({ error: "Failed to unsave" }, { status: 500 });
     return NextResponse.json({ saved: false });
   } else {
-    await supabase
+    const { error } = await supabase
       .from("saved_tierlists")
       .insert({ user_id: user.id, tierlist_id: id });
+    // 23505 = already saved (double-tap race) — treat as success, it is saved.
+    if (error && error.code !== "23505") {
+      return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+    }
     return NextResponse.json({ saved: true });
   }
 }

@@ -14,6 +14,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 
 export async function GET() {
   const supabase = await createClient();
@@ -31,24 +32,56 @@ export async function GET() {
 
   const service = createServiceClient();
 
-  // Fetch everything in parallel — explicit high limits to avoid the default 1000-row PostgREST cap
-  const [
-    { data: tierlists, error: e1 },
-    { data: tierlistImages, error: e2 },
-    { data: voteTierlists, error: e3 },
-    { data: voteImages, error: e4 },
-    { data: categories, error: e5 },
-  ] = await Promise.all([
-    service.from("tierlists").select("*").order("created_at", { ascending: false }).limit(100000),
-    service.from("tierlist_images").select("*").order("tierlist_id").order("sort_order").limit(1000000),
-    service.from("vote_tierlists").select("*").order("created_at", { ascending: false }).limit(100000),
-    service.from("vote_tierlist_images").select("*").order("vote_tierlist_id").order("sort_order").limit(1000000),
-    service.from("categories").select("*").order("sort_order").limit(10000),
+  // Every query must PAGE, not just carry a high .limit(). PostgREST's row cap
+  // is server-side (db-max-rows), so .limit(1000000) still returned 1000 rows —
+  // this "full backup" was silently truncated, and tierlist_images crosses 1000
+  // after only a handful of tierlists, so most lists in the download lost their
+  // images. Restoring from such a file loses data with no error anywhere.
+  type Keyed = Record<string, unknown> & { id: string };
+  type TlImage = Record<string, unknown> & { tierlist_id: string };
+  type VtImage = Record<string, unknown> & { vote_tierlist_id: string };
+
+  const [tierlists, tierlistImages, voteTierlists, voteImages, categories] = await Promise.all([
+    fetchAllRows<Keyed>((from, to) =>
+      service.from("tierlists").select("*").order("created_at", { ascending: false }).range(from, to),
+      200000),
+    fetchAllRows<TlImage>((from, to) =>
+      service.from("tierlist_images").select("*").order("tierlist_id").order("sort_order").range(from, to),
+      1000000),
+    fetchAllRows<Keyed>((from, to) =>
+      service.from("vote_tierlists").select("*").order("created_at", { ascending: false }).range(from, to),
+      200000),
+    fetchAllRows<VtImage>((from, to) =>
+      service.from("vote_tierlist_images").select("*").order("vote_tierlist_id").order("sort_order").range(from, to),
+      1000000),
+    fetchAllRows<Record<string, unknown>>((from, to) =>
+      service.from("categories").select("*").order("sort_order").range(from, to),
+      20000),
   ]);
 
-  const exportError = e1 ?? e2 ?? e3 ?? e4 ?? e5;
-  if (exportError) {
-    return NextResponse.json({ error: "Export query failed", detail: exportError.message }, { status: 500 });
+  // Cross-check the exported row counts against the server's own counts, so a
+  // truncated or partially-failed backup fails loudly instead of downloading.
+  const [tlCount, tlImgCount, vtCount, vtImgCount] = await Promise.all([
+    service.from("tierlists").select("id", { count: "exact", head: true }),
+    service.from("tierlist_images").select("id", { count: "exact", head: true }),
+    service.from("vote_tierlists").select("id", { count: "exact", head: true }),
+    service.from("vote_tierlist_images").select("id", { count: "exact", head: true }),
+  ]);
+
+  const mismatches: string[] = [];
+  const check = (name: string, got: number, expected: number | null) => {
+    if (expected != null && got !== expected) mismatches.push(`${name}: exported ${got} of ${expected}`);
+  };
+  check("tierlists", tierlists.length, tlCount.count);
+  check("tierlist_images", tierlistImages.length, tlImgCount.count);
+  check("vote_tierlists", voteTierlists.length, vtCount.count);
+  check("vote_tierlist_images", voteImages.length, vtImgCount.count);
+
+  if (mismatches.length > 0) {
+    return NextResponse.json(
+      { error: "Export incomplete — refusing to produce a partial backup", detail: mismatches.join("; ") },
+      { status: 500 }
+    );
   }
 
   // Group images by their tierlist

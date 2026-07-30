@@ -11,6 +11,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import ImageWithFallback from "@/components/ImageWithFallback";
 
 export const metadata: Metadata = {
@@ -55,22 +56,36 @@ type CategorySetting = { category: string; sort_method: string; pinned_ids: stri
 export default async function RankingsPage() {
   const service = createServiceClient();
 
-  const [tierlistsResult, votelistsResult, blindsResult, allLikesResult, categorySettingsResult, categoriesResult] = await Promise.all([
-    service
-      .from("tierlists")
-      .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, linked_vote_tierlist_id, linked_blind_ranking_id")
-      .order("created_at", { ascending: false }),
-    service
-      .from("vote_tierlists")
-      .select("id, title, category, cover_image_url, created_at")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false }),
-    service
-      .from("blind_rankings")
-      .select("id, title, category, cover_image_url, created_at")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false }),
-    service.from("tierlist_likes").select("tierlist_id"),
+  // These must page: PostgREST caps a single select at 1000 rows, and a
+  // truncated tierlist list also breaks the linked-id sets below, which would
+  // start rendering linked vote/blind rankings as duplicate standalone cards.
+  const [tierlistsAll, votelistsAll, blindsAll, likesAll, categorySettingsResult, categoriesResult] = await Promise.all([
+    fetchAllRows<TierlistRow>((from, to) =>
+      service
+        .from("tierlists")
+        .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, linked_vote_tierlist_id, linked_blind_ranking_id")
+        .order("created_at", { ascending: false })
+        .range(from, to)
+    ),
+    fetchAllRows<VoteRow>((from, to) =>
+      service
+        .from("vote_tierlists")
+        .select("id, title, category, cover_image_url, created_at")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .range(from, to)
+    ),
+    fetchAllRows<BlindRow>((from, to) =>
+      service
+        .from("blind_rankings")
+        .select("id, title, category, cover_image_url, created_at")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .range(from, to)
+    ),
+    fetchAllRows<{ tierlist_id: string }>((from, to) =>
+      service.from("tierlist_likes").select("tierlist_id").order("tierlist_id").range(from, to)
+    ),
     service.from("category_homepage_settings").select("category, sort_method, pinned_ids"),
     service.from("categories").select("name, sort_order").order("sort_order", { ascending: true }),
   ]);
@@ -86,9 +101,18 @@ export default async function RankingsPage() {
     linked_vote_tierlist_id: string | null;
     linked_blind_ranking_id: string | null;
   };
-  const tierlists = (tierlistsResult.data ?? []) as TierlistRow[];
-  const votelists = votelistsResult.data ?? [];
-  const blinds = blindsResult.data ?? [];
+  type VoteRow = {
+    id: string;
+    title: string;
+    category: string | null;
+    cover_image_url: string | null;
+    created_at: string;
+  };
+  type BlindRow = VoteRow;
+
+  const tierlists = tierlistsAll;
+  const votelists = votelistsAll;
+  const blinds = blindsAll;
 
   // Build sets of vote/blind IDs that are already linked to a regular ranking
   const linkedVoteIds = new Set<string>(
@@ -103,7 +127,7 @@ export default async function RankingsPage() {
   );
 
   const likeCountMap = new Map<string, number>();
-  for (const like of (allLikesResult.data ?? [])) {
+  for (const like of likesAll) {
     likeCountMap.set(like.tierlist_id, (likeCountMap.get(like.tierlist_id) ?? 0) + 1);
   }
 

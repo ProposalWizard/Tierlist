@@ -94,7 +94,7 @@ def save(logos: dict[str, str]) -> None:
     )
 
 
-async def sweep_edition(page, year: int) -> dict[str, str]:
+async def sweep_edition(page, year: int, diagnose: bool = False) -> dict[str, str]:
     """Return {club: logo_url} for one edition's Premier League teams list."""
     url = pl_teams_url(year)
     if not code_for_year(year):
@@ -111,6 +111,15 @@ async def sweep_edition(page, year: int) -> dict[str, str]:
     page_num = 1
     while True:
         rows = parse_teams(await page.content())
+        if diagnose:
+            n_links = len(await page.query_selector_all('a[href*="/team/"]'))
+            n_next = len(await page.query_selector_all('a[rel="next"]'))
+            print(f"    [diag] page {page_num}: url={page.url}")
+            print(f"    [diag] parse_teams rows={len(rows)}, /team/ links on page={n_links}, "
+                  f"rel=next links={n_next}")
+            if rows:
+                print(f"    [diag] first row: {rows[0]}")
+                print(f"    [diag] clubs: {', '.join(r['club'] for r in rows)}")
         if not rows:
             break
         for r in rows:
@@ -118,12 +127,14 @@ async def sweep_edition(page, year: int) -> dict[str, str]:
             if club and logo and club not in found:
                 found[club] = logo
         if not await click_next(page, 'a[href*="/team/"]'):
+            if diagnose:
+                print("    [diag] click_next returned False — no further pages.")
             break
         page_num += 1
 
-    missing = [r for r in found.items() if not r[1]]
+    no_badge = [c for c, url in found.items() if not url]
     print(f"  {edition_label(year)} ({season_label(year)}): {len(found)} clubs"
-          + (f", {len(missing)} without a badge" if missing else ""))
+          + (f", {len(no_badge)} without a badge" if no_badge else ""))
     return found
 
 
@@ -131,6 +142,8 @@ async def main() -> None:
     ap = argparse.ArgumentParser(description="Scrape Premier League club badges, 2006/07 to 2025/26.")
     ap.add_argument("--years", nargs="*", type=int, help="Specific edition years (default: 2007..2026)")
     ap.add_argument("--headless", action="store_true", help="Run without a visible browser window")
+    ap.add_argument("--diagnose", action="store_true",
+                    help="Print per-page detail (URL, row count, pagination links) to debug missing clubs")
     args = ap.parse_args()
 
     years = args.years or PL_YEARS
@@ -181,7 +194,7 @@ async def main() -> None:
             if idx > 0:
                 await asyncio.sleep(random.uniform(2, 4))
             try:
-                found = await sweep_edition(page, year)
+                found = await sweep_edition(page, year, diagnose=args.diagnose)
             except Exception as e:
                 print(f"  ! {edition_label(year)} failed: {e}")
                 continue

@@ -76,10 +76,19 @@ export async function POST(request: Request) {
     }
   }
 
+  // Objective awards are stored under one canonical key regardless of which of
+  // the three paths credits them (here, /api/objectives/check, or the claim
+  // route). Storing the objective id in event_type instead would sit outside
+  // the UNIQUE(user_id, event_type, event_ref) index the others dedupe on, and
+  // the objective would pay out more than once.
+  const isObjectiveEvent = knownAward == null && event_type.startsWith("objective_");
+  const insertEventType = isObjectiveEvent ? "objective_complete" : event_type;
+  const insertEventRef = isObjectiveEvent ? event_type : (event_ref || event_type);
+
   const { error: eventError } = await svc.from("xp_events").insert({
     user_id: user.id,
-    event_type,
-    event_ref: event_ref || event_type,
+    event_type: insertEventType,
+    event_ref: insertEventRef,
     xp_awarded: awardXp,
   });
 

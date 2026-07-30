@@ -34,13 +34,16 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     .eq("user_id", user.id)
     .eq("objective_id", params.id);
 
-  // Award XP if not yet awarded (idempotent — unique constraint on xp_events deduplicates)
+  // Award XP if not yet awarded (idempotent — unique constraint on xp_events
+  // deduplicates). The (event_type, event_ref) pair MUST match the one the
+  // season check and /api/xp write, or the UNIQUE(user_id, event_type,
+  // event_ref) index can't see them as the same award and the objective pays
+  // out twice.
   if (obj.xp_reward > 0) {
-    const eventType = `objective_${obj.id}`;
     const { error: xpEventErr } = await service.from("xp_events").insert({
       user_id: user.id,
-      event_type: eventType,
-      event_ref: eventType,
+      event_type: "objective_complete",
+      event_ref: `objective_${obj.id}`,
       xp_awarded: obj.xp_reward,
     });
     if (!xpEventErr) {

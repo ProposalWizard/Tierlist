@@ -375,6 +375,17 @@ export default function DraftPage() {
   const [allRoomPlayerSeasons, setAllRoomPlayerSeasons] = useState<Record<string, SeasonResult[]> | null>(null);
   const [revealStartTime, setRevealStartTime] = useState<number | undefined>(undefined);
 
+  // Read ?room= during the first render, before the URL-sync effect below can
+  // rewrite it. A useState initialiser runs while rendering, whereas effects run
+  // after — and the sync effect's first run (roomCode still null) replaces the
+  // URL with a bare /draft, which used to erase the code before the auto-join
+  // effect ever saw it, so shared room links silently never joined.
+  const [initialRoomParam] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const code = new URLSearchParams(window.location.search).get("room");
+    return code ? code.toUpperCase() : null;
+  });
+
   // Update URL to reflect room code when playing online (so it's shareable/bookmarkable)
   useEffect(() => {
     const url = roomCode ? `/draft?room=${roomCode}` : '/draft';
@@ -546,16 +557,17 @@ export default function DraftPage() {
     scrollTop();
   }, [scrollTop, userId]);
 
-  // Auto-join when redirected from American Draft (?room=CODE in URL)
+  // Auto-join a room code that arrived in the URL (a shared or bookmarked
+  // /draft?room=CODE link). Reads the value captured during the first render
+  // rather than window.location, which the URL-sync effect has already cleared
+  // by the time auth resolves and this can run.
   const autoJoinedRef = useRef(false);
   useEffect(() => {
     if (autoJoinedRef.current || !isSignedIn || phase !== "setup") return;
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("room");
+    const code = initialRoomParam;
     if (!code) return;
     autoJoinedRef.current = true;
-    window.history.replaceState(null, "", "/draft");
-    handleJoinRoom(code.toUpperCase(), {
+    handleJoinRoom(code, {
       formation: "4-3-3", eraStart: 2007, eraEnd: 2026,
       mode: "normal", draftOrder: "position-first", respins: 0,
     });

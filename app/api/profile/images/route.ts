@@ -16,8 +16,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No image provided" }, { status: 400 });
   }
 
-  // Upload to Supabase Storage
-  const filename = `${crypto.randomUUID()}.png`;
+  // Validate before touching Storage. `contentType: file.type` was passed
+  // straight through, so an "image" declared as text/html was stored AND
+  // SERVED as HTML from the public bucket. Size was unbounded too.
+  const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
+  const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return NextResponse.json({ error: "Image must be PNG, JPEG or WebP" }, { status: 400 });
+  }
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: "Image too large (max 10 MB)" }, { status: 400 });
+  }
+
+  // Upload to Supabase Storage. contentType comes from the allowlist above
+  // rather than being passed through raw — an "image" declared as text/html
+  // would otherwise be stored AND served as HTML from the public bucket.
+  const EXT_FOR_TYPE: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+  };
+  const filename = `${crypto.randomUUID()}.${EXT_FOR_TYPE[file.type]}`;
   const storagePath = `profile-saves/${user.id}/${filename}`;
 
   const { error: uploadError } = await supabase.storage

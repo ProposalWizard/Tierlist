@@ -84,10 +84,19 @@ export async function POST(
     .from("draft_room_players")
     .select("id, status, season_result")
     .eq("room_id", room.id);
-  const missingResult = (statusCheck ?? []).some(
-    p => (p as Record<string, unknown>).status !== "out" && p.season_result == null
-  );
-  if (missingResult) {
+  const active = (statusCheck ?? []).filter(p => (p as Record<string, unknown>).status !== "out");
+  const missingResult = active.some(p => p.season_result == null);
+  // A previous call that reset the players but failed before flipping the room
+  // leaves EVERY active player cleared and back to "drafting" while the room is
+  // still "complete". That state is a resumable partial failure, not an
+  // early-advance attempt, so it must not be rejected — otherwise the guard
+  // blocks its own retry and the room can never advance again.
+  const resetAlreadyApplied =
+    active.length > 0 &&
+    active.every(
+      p => p.season_result == null && (p as Record<string, unknown>).status === "drafting"
+    );
+  if (missingResult && !resetAlreadyApplied) {
     return new Response("Some players have not yet received simulation results", { status: 409 });
   }
 
@@ -110,24 +119,48 @@ export async function POST(
     }
   }
 
-  // Reset players FIRST, then the room. Order matters: the ready endpoint
-  // rejects submissions while room.status is "complete", so by resetting
-  // players before flipping the room to "lobby" no ready can land in the
-  // window between the two writes and get wiped.
-  await service
+  // Three writes, ordered so that a failure at any point is recoverable:
+  //
+  //  1. Save the season history while the results still exist. Doing this last
+  //     would lose the whole season's history if the reset had already cleared
+  //     season_result and the room write then failed.
+  //  2. Reset the players.
+  //  3. Flip the room to "lobby" LAST. The ready endpoint rejects submissions
+  //     while the room is "complete", so keeping that status until the final
+  //     write means no ready can land mid-way and be wiped by the reset.
+  //
+  // Every write is checked: supabase-js returns { data, error } rather than
+  // throwing, so an unchecked failure here would return ok:true having left the
+  // room half-advanced.
+  const { error: historyErr } = await service
+    .from("draft_rooms")
+    .update({ settings: { ...existingSettings, allPlayerSeasons: newHistory } })
+    .eq("id", room.id);
+  if (historyErr) {
+    return new Response(`Could not save season history: ${historyErr.message}`, { status: 500 });
+  }
+
+  const { error: resetErr } = await service
     .from("draft_room_players")
     .update({ status: "drafting", avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })
     .eq("room_id", room.id);
+  if (resetErr) {
+    return new Response(`Could not reset players: ${resetErr.message}`, { status: 500 });
+  }
 
   // Relegated players are out of the competition — mark them so the lobby's
   // allReady check and the simulate route both skip them.
   if (relegatedIds.length > 0) {
-    await service
+    const { error: relegateErr } = await service
       .from("draft_room_players")
       .update({ status: "out" })
       .in("id", relegatedIds);
+    if (relegateErr) {
+      return new Response(`Could not mark relegated players: ${relegateErr.message}`, { status: 500 });
+    }
   }
-  await service
+
+  const { error: roomErr } = await service
     .from("draft_rooms")
     .update({
       status: "lobby",
@@ -136,6 +169,9 @@ export async function POST(
       settings: { ...existingSettings, allPlayerSeasons: newHistory, revealStartAt: null },
     })
     .eq("id", room.id);
+  if (roomErr) {
+    return new Response(`Could not advance the room: ${roomErr.message}`, { status: 500 });
+  }
 
   return Response.json({ ok: true });
 }

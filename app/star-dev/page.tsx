@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse } from "@/lib/star/types";
+import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture } from "@/lib/star/types";
 import { loadCareer, saveCareer, clearCareer } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
@@ -45,6 +45,12 @@ export default function StarDevPage() {
   useEffect(() => {
     if (career) saveCareer(career);
   }, [career]);
+
+  // The fixture the post-match screen is reporting on. Held in state because
+  // crediting the result marks it played, so re-deriving "first unplayed" would
+  // name the NEXT opponent — and would be null after the final fixture, which
+  // used to strand the career with no way to reach the Ballon d'Or / next season.
+  const [playedFixture, setPlayedFixture] = useState<Fixture | null>(null);
 
   const nextFixture = career?.fixtures.find((f) => !f.played) ?? null;
   const nextMatchLabel = nextFixture
@@ -124,6 +130,7 @@ export default function StarDevPage() {
   const handleMatchComplete = useCallback((stats: MatchStats) => {
     if (!career || !nextFixture) return;
     setLastMatchStats(stats);
+    setPlayedFixture(nextFixture);
     const { career: next, newlyUnlocked } = creditMatchResult(career, nextFixture, stats);
     toastAchievements(newlyUnlocked);
     setCareer(next);
@@ -343,12 +350,12 @@ export default function StarDevPage() {
     );
   }
 
-  if (phase === "post-match" && lastMatchStats && nextFixture) {
+  if (phase === "post-match" && lastMatchStats && playedFixture) {
     return (
       <PostMatch
         stats={lastMatchStats}
-        homeTeam={nextFixture.home ? career.player.club : nextFixture.opponent}
-        awayTeam={nextFixture.home ? nextFixture.opponent : career.player.club}
+        homeTeam={playedFixture.home ? career.player.club : playedFixture.opponent}
+        awayTeam={playedFixture.home ? playedFixture.opponent : career.player.club}
         onContinue={handlePostMatchContinue}
       />
     );

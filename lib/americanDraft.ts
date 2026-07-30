@@ -136,10 +136,12 @@ export const POSITION_LABELS: Record<string, string> = {
   ANY: "Substitute",
 };
 
+// The attributes JSONB is deliberately NOT selected — it's a large blob and this
+// runs once per round (14 per game), so pulling it for hundreds of rows burned
+// egress for two fallback fields.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function resolveOvr(row: any): number {
-  const a = row.attributes || {};
-  const candidates = [row.manual_overall, row.overall, a.overall, a.attr_sort, a.attr_oa];
+  const candidates = [row.manual_overall, row.overall];
   for (const v of candidates) {
     if (typeof v === "number") return Math.round(v);
   }
@@ -183,6 +185,37 @@ const NON_ENGLISH_PL_CLUBS = new Set(
   ].map(c => c.toLowerCase())
 );
 
+// club_logos is small and changes only when an admin re-imports it, but
+// fetchRoundPlayers runs once per round (14 per game), so cache it in module
+// scope rather than refetching the whole table every time.
+let clubLogoCache: { map: Map<string, string>; at: number } | null = null;
+const CLUB_LOGO_TTL_MS = 10 * 60 * 1000;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getClubLogoMap(service: any): Promise<Map<string, string>> {
+  if (clubLogoCache && Date.now() - clubLogoCache.at < CLUB_LOGO_TTL_MS) {
+    return clubLogoCache.map;
+  }
+
+  // Index by normalised name: an .in("club", …) exact match misses whenever the
+  // badge was scraped from an edition that spelled the club differently.
+  const map = new Map<string, string>();
+  const { data: logos } = (await service
+    .from("club_logos")
+    .select("club, logo_url")
+    .limit(5000)) as { data: { club: string; logo_url: string }[] | null };
+
+  (logos ?? []).forEach(l => {
+    const key = normalizeClubKey(l.club || "");
+    if (key && !map.has(key)) map.set(key, l.logo_url);
+  });
+
+  // Don't cache an empty result — that's usually a transient failure, and
+  // caching it would blank every badge for the whole TTL.
+  if (map.size > 0) clubLogoCache = { map, at: Date.now() };
+  return map;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchRoundPlayers(service: any, position: string): Promise<AmPlayer[]> {
   const allowed = POS_FILTER[position] ?? [];
@@ -191,7 +224,7 @@ export async function fetchRoundPlayers(service: any, position: string): Promise
   let query = (service as any)
     .from("sofifa_players")
     .select(
-      "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year, attributes"
+      "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year"
     )
     .or(PL_OR_FILTER);
 
@@ -199,8 +232,27 @@ export async function fetchRoundPlayers(service: any, position: string): Promise
     query = query.ilike("positions", `%${allowed[0]}%`);
   }
 
+  // Order by rating and take a random window rather than an unordered .limit().
+  // An unordered limit returns whatever sits earliest in the heap — in practice
+  // the same rows every round of every game, so the "random" pool was a fixed
+  // slice. Ordering makes the window deterministic, and the random offset then
+  // moves it, so different games see different players.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = (await query.limit(600)) as { data: any[] | null };
+  const { count } = (await (service as any)
+    .from("sofifa_players")
+    .select("sofifa_id", { count: "exact", head: true })
+    .or(PL_OR_FILTER)
+    .ilike("positions", allowed.length > 0 ? `%${allowed[0]}%` : "%")) as { count: number | null };
+
+  const WINDOW = 600;
+  const total = count ?? WINDOW;
+  const maxOffset = Math.max(0, total - WINDOW);
+  const offset = maxOffset > 0 ? Math.floor(Math.random() * (maxOffset + 1)) : 0;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = (await query
+    .order("overall", { ascending: false })
+    .range(offset, offset + WINDOW - 1)) as { data: any[] | null };
   const rows = data || [];
 
   // Filter out non-English PL clubs and refine position match in JS
@@ -216,19 +268,7 @@ export async function fetchRoundPlayers(service: any, position: string): Promise
   const shuffled = [...filtered].sort(() => Math.random() - 0.5);
   const chosen = shuffled.slice(0, 10);
 
-  // Load the whole club_logos table (a few hundred rows at most) and index it
-  // by normalised name. An .in("club", …) exact match misses whenever the logo
-  // was scraped from an edition that spelled the club differently.
-  const logoMap = new Map<string, string>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: logos } = (await (service as any)
-    .from("club_logos")
-    .select("club, logo_url")
-    .limit(5000)) as { data: { club: string; logo_url: string }[] | null };
-  (logos ?? []).forEach(l => {
-    const key = normalizeClubKey(l.club || "");
-    if (key && !logoMap.has(key)) logoMap.set(key, l.logo_url);
-  });
+  const logoMap = await getClubLogoMap(service);
 
   return chosen.map(r => ({
     sofifa_id: r.sofifa_id || "",
