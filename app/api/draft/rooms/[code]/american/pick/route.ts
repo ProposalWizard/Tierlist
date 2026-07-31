@@ -127,11 +127,23 @@ export async function POST(
     // Exclude everyone already taken, so a player picked at one position can
     // never reappear at another — and no two editions of the same footballer
     // can both end up in a squad.
-    nextState.round_players = await fetchRoundPlayers(
-      service,
-      state.position_sequence[nextRound],
-      pickedPlayerKeys(nextState.picks)
-    );
+    //
+    // fetchRoundPlayers throws rather than returning an empty list. Saving an
+    // empty pool is what stranded a draft on "Loading players…" with nothing to
+    // pick and no way forward, so the pick is rejected instead and the room
+    // stays on the round it can still play.
+    try {
+      nextState.round_players = await fetchRoundPlayers(
+        service,
+        state.position_sequence[nextRound],
+        pickedPlayerKeys(nextState.picks)
+      );
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Could not load the next round" },
+        { status: 500 }
+      );
+    }
   } else {
     // Same round, next picker — the picked player leaves the pool.
     nextState.current_pick_idx = state.current_pick_idx + 1;

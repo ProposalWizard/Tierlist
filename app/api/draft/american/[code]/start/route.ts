@@ -34,7 +34,12 @@ export async function POST(
 
   const userIds = participants.map((p: { user_id: string }) => p.user_id);
   const pickOrder = shuffleArray(userIds);
-  const roundPlayers = await fetchRoundPlayers(service, room.position_sequence[0] as string);
+  let roundPlayers;
+  try {
+    roundPlayers = await fetchRoundPlayers(service, room.position_sequence[0] as string);
+  } catch (e) {
+    return new Response(e instanceof Error ? e.message : "Could not load players", { status: 500 });
+  }
 
   const { error } = await service
     .from("american_draft_rooms")

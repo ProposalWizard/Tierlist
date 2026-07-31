@@ -57,10 +57,14 @@ export async function POST(
     return NextResponse.json({ error: "American draft supports at most 6 players" }, { status: 400 });
   }
 
-  const firstRoundPlayers = await fetchRoundPlayers(service, AM_POSITION_SEQUENCE[0]);
-  if (firstRoundPlayers.length === 0) {
+  // Throws rather than returning an empty pool, so a data problem surfaces here
+  // instead of starting a draft nobody can pick in.
+  let firstRoundPlayers;
+  try {
+    firstRoundPlayers = await fetchRoundPlayers(service, AM_POSITION_SEQUENCE[0]);
+  } catch (e) {
     return NextResponse.json(
-      { error: "No Premier League goalkeepers found — is the player data imported?" },
+      { error: e instanceof Error ? e.message : "Could not load goalkeepers" },
       { status: 500 }
     );
   }

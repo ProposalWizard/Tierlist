@@ -158,6 +158,28 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     );
   }
 
+  // An empty pool on an unfinished round is a dead end, not a loading state —
+  // say so rather than showing "Loading players…" forever.
+  if (!state.complete && state.round_players.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#060d1a] flex items-center justify-center px-6">
+        <div className="text-center max-w-sm">
+          <p className="text-white font-bold text-sm mb-1">No players available for this round</p>
+          <p className="text-white/60 text-xs mb-4">
+            {error ?? "The pool for this position came back empty."}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider text-white"
+            style={{ background: "linear-gradient(135deg,#0d9488,#06b6d4)" }}
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {error && (

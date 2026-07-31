@@ -249,31 +249,43 @@ export async function fetchRoundPlayers(
   const allowed = POS_FILTER[position] ?? [];
   const excluded = new Set(excludeKeys);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (service as any)
-    .from("sofifa_players")
-    .select(
-      "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year"
-    )
-    .or(PL_OR_FILTER);
+  const SELECT_COLS =
+    "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
+  const WINDOW = 900;
 
-  if (allowed.length > 0) {
-    query = query.ilike("positions", `%${allowed[0]}%`);
+  // No ORDER BY. Postgres sorts NULLs FIRST on DESC, so ordering by overall
+  // filled the whole window with unrated rows for the most populous positions
+  // (centre back worst of all) — every one of which the position refine below
+  // then dropped, leaving an empty pool. It also made the query slow. Excluding
+  // unrated rows outright is both cheaper and what we actually want; variety
+  // comes from the JS shuffle.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const runQuery = async (usePositionPrefilter: boolean) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q = (service as any)
+      .from("sofifa_players")
+      .select(SELECT_COLS)
+      .or(PL_OR_FILTER)
+      .not("overall", "is", null);
+    if (usePositionPrefilter && allowed.length > 0) {
+      q = q.ilike("positions", `%${allowed[0]}%`);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (await q.limit(WINDOW)) as { data: any[] | null; error: any };
+  };
+
+  // The error was previously discarded, so a failed or timed-out query became
+  // an empty pool that got saved to the room — the draft then sat on "Loading
+  // players…" forever with nothing to pick.
+  let { data, error } = await runQuery(true);
+  if (error) {
+    throw new Error(`Could not load ${position} players: ${error.message}`);
   }
-
-  // Ordered by rating, which is indexed (idx_sofifa_overall), then shuffled in
-  // JS for variety. There is deliberately NO count query here: `count: "exact"`
-  // over this table with an ilike/or filter is a full scan, and running one per
-  // round is what made each new position take tens of seconds to load.
-  const WINDOW = 600;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = (await query
-    .order("overall", { ascending: false })
-    .limit(WINDOW)) as { data: any[] | null };
-  const rows = data || [];
+  let rows = data || [];
 
   // Filter out non-English PL clubs and refine the position match in JS.
-  const filtered = rows.filter(r => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyFilters = (input: any[]) => input.filter(r => {
     const clubName = (r.club || "").toLowerCase();
     if (NON_ENGLISH_PL_CLUBS.has(clubName)) return false;
     if (excluded.has(`id:${r.sofifa_id}`)) return false;
@@ -283,6 +295,26 @@ export async function fetchRoundPlayers(
     const parts = pos.split(",").map((x: string) => x.trim());
     return allowed.some(p => parts.includes(p));
   });
+  let filtered = applyFilters(rows);
+
+  // If the prefilter yielded nothing usable, retry once without it and match on
+  // position purely in JS — the `positions` column's formatting varies between
+  // editions, so the ilike can miss rows the JS check would accept.
+  if (filtered.length === 0 && allowed.length > 0) {
+    const retry = await runQuery(false);
+    if (retry.error) {
+      throw new Error(`Could not load ${position} players: ${retry.error.message}`);
+    }
+    rows = retry.data || [];
+    filtered = applyFilters(rows);
+  }
+
+  if (filtered.length === 0) {
+    throw new Error(
+      `No Premier League players available for ${position}. ` +
+      `Everyone eligible may already have been drafted.`
+    );
+  }
 
   // One entry per footballer. Shuffle first so which edition of a player
   // survives varies between rounds instead of always being the highest rated.
