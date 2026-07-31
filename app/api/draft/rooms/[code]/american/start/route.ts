@@ -71,10 +71,17 @@ export async function POST(
 
   const state = makeAmericanState(eligible, firstRoundPlayers);
 
-  const { error: updateErr } = await service
+  // Only write if no draft has been seeded yet. The earlier read-then-write left
+  // a race: two starts (a retry after the query timed out, or a double click)
+  // could both see american_state as null and both write, giving each client a
+  // DIFFERENT pool — which is how two players ended up looking at ten different
+  // goalkeepers and every pick was rejected as "no longer available".
+  const { data: written, error: updateErr } = await service
     .from("draft_rooms")
     .update({ american_state: state, status: "started" })
-    .eq("id", room.id);
+    .eq("id", room.id)
+    .is("american_state", null)
+    .select("id");
 
   if (updateErr) {
     return NextResponse.json(
@@ -85,6 +92,14 @@ export async function POST(
       },
       { status: 500 }
     );
+  }
+
+  // No row updated means another request seeded the draft first. That is a
+  // success, not an error — make sure the room is marked started and let this
+  // caller fall in behind the pool that actually won.
+  if (!written || written.length === 0) {
+    await service.from("draft_rooms").update({ status: "started" }).eq("id", room.id);
+    return NextResponse.json({ ok: true, alreadyStarted: true });
   }
 
   return NextResponse.json({ ok: true });
