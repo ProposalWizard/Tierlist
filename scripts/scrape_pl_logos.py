@@ -1,29 +1,37 @@
 #!/usr/bin/env python3
-"""Scrape every Premier League club badge from the 2006/07 season through 2025/26.
+"""Scrape club badges from SoFIFA into a {club: logo_url} map.
 
-FIFA editions are named for their release year but cover the season starting the
-year before, so FIFA 07 (r-code year 2007) is the 2006/07 season and FC 26
-(year 2026) is 2025/26. That means we sweep edition years 2007..2026 inclusive.
+WHY IT LOOKS LIKE THIS
+----------------------
+Cloudflare challenges every browser NAVIGATION, which made a page-per-edition
+sweep unbearable — a CAPTCHA per edition. But the clearance cookie it issues
+belongs to the whole browser context, and Playwright's context.request shares
+that cookie jar. So we navigate exactly ONCE (which also reads the real roster
+codes from the edition dropdown), then pull every teams page over plain HTTP
+through the same context. One challenge per run, not twenty.
 
-Only the Premier League teams list is loaded for each edition (lg[]=13), so this
-is far quicker than a full team sweep and can't pick up badges from other
-leagues. Club names drift between editions ("Man Utd" vs "Manchester United"),
-which is exactly why we sweep every edition rather than just the newest one —
-whatever spelling a player row uses, some edition will have supplied a badge
-under that spelling.
+Pagination uses &offset= rather than clicking "Next". scrape_missing already
+documents that the Next button drops the lg[] filter, and with no navigation
+there is nothing to click anyway.
 
-Output: <sofifa_data>/pl_club_logos.json  — a flat {club: logo_url} map, merged
-with anything already in the file so re-runs accumulate.
+By default this sweeps EVERY club SoFIFA lists, not just the Premier League.
+Badges for clubs you never use are harmless — club_logos is a lookup table, and
+the app only ever reads the rows it needs. Sweeping everything means no league
+IDs have to be guessed (SoFIFA's ID 16 is Ligue 1, not League Two, so guessing
+is genuinely risky) and it captures the alternate spellings older editions used,
+which is what the name matching needs.
 
-Upload it at /admin/football/scrape (the "club logos" JSON input).
+Output: <sofifa_data>/pl_club_logos.json — merged with whatever is already
+there, so re-runs accumulate and nothing is lost.
+
+Upload it at /admin/football/scrape (the club logos input).
 
 Usage:
-    python scripts/scrape_pl_logos.py                # all editions, 2007..2026
-    python scripts/scrape_pl_logos.py --years 2007 2012 2019
-    python scripts/scrape_pl_logos.py --headless     # no visible browser
-
-A CAPTCHA may appear on the first page load. The browser profile is persisted,
-so solve it once in the visible window and later runs reuse the session.
+    python scrape_pl_logos.py                     # all clubs, editions 2007..2026
+    python scrape_pl_logos.py --pl-only           # Premier League only
+    python scrape_pl_logos.py --years 2012 2019   # specific editions
+    python scrape_pl_logos.py --headless          # no visible window (only works
+                                                  # if clearance is already cached)
 """
 from __future__ import annotations
 
@@ -37,18 +45,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-# Reuse the existing scraper's helpers so URL building, pagination, CAPTCHA
-# waiting and CDN path handling all stay in one place.
 import scrape_missing  # noqa: E402
 from scrape_missing import (  # noqa: E402
     BASE_URL,
     OUTPUT_DIR,
     PROFILE_DIR,
     TEAMS_URL,
-    _beep,
-    _count,
-    _is_cf_challenge,
-    click_next,
     code_for_year,
     discover_versions,
     parse_teams,
@@ -57,12 +59,19 @@ from scrape_missing import (  # noqa: E402
 )
 from playwright.async_api import async_playwright  # noqa: E402
 
+# SoFIFA's Premier League id. Only used with --pl-only. Other English tiers are
+# deliberately NOT hardcoded: the id space is not sequential by country (16 is
+# Ligue 1), so a guessed id would silently scrape the wrong league.
 PREMIER_LEAGUE_ID = "13"
 
 # Edition years covering 2006/07 .. 2025/26.
 PL_YEARS = list(range(2007, 2027))
 
 OUT_FILE = OUTPUT_DIR / "pl_club_logos.json"
+
+# Markers that mean we got a Cloudflare interstitial instead of the real page.
+CF_MARKERS = ("just a moment", "challenge-platform", "cf-browser-verification",
+              "checking your browser", "cf_chl")
 
 
 def edition_label(year: int) -> str:
@@ -74,10 +83,13 @@ def season_label(year: int) -> str:
     return f"{year - 1}/{str(year % 100).zfill(2)}"
 
 
-def pl_teams_url(year: int) -> str:
-    """Teams list for one edition, filtered to the Premier League only."""
+def teams_page_url(year: int, offset: int = 0, pl_only: bool = False) -> str:
     vc = code_for_year(year)
-    url = f"{TEAMS_URL}?type=club&r={vc}&set=true&lg%5B%5D={PREMIER_LEAGUE_ID}"
+    url = f"{TEAMS_URL}?type=club&r={vc}&set=true"
+    if pl_only:
+        url += f"&lg%5B%5D={PREMIER_LEAGUE_ID}"
+    if offset:
+        url += f"&offset={offset}"
     return url
 
 
@@ -98,120 +110,115 @@ def save(logos: dict[str, str]) -> None:
     )
 
 
-async def wait_for_full_table(page, selector: str, timeout: int = 180) -> int:
-    """Wait until the number of matching links STOPS GROWING, and return it.
-
-    scrape_missing.wait_for returns the moment the count crosses a threshold,
-    which is right for a 60-row players page but wrong here: the teams table
-    renders progressively, so any threshold low enough to suit a 20-club league
-    is reached while the table is still filling in. That silently parsed a
-    half-rendered DOM and produced the same truncated club list for every
-    edition. Waiting for the count to settle instead is threshold-free.
-    """
-    deadline = time.time() + timeout
-    stable_for = 0
-    last = -1
-    alerted = False
-
-    while time.time() < deadline:
-        if await _is_cf_challenge(page):
-            if not alerted:
-                print("\n" + "=" * 60)
-                print("  *** CLOUDFLARE CHALLENGE — SOLVE IN BROWSER ***")
-                print("=" * 60 + "\n")
-                _beep()
-                alerted = True
-            stable_for = 0
-            last = -1
-            await asyncio.sleep(2)
-            continue
-
-        if alerted:
-            print("  Challenge cleared, continuing...")
-            alerted = False
-
-        count = await _count(page, selector)
-        if count > 0 and count == last:
-            stable_for += 1
-            # Three consecutive identical reads ~3s apart: the table has settled.
-            if stable_for >= 3:
-                return count
-        else:
-            stable_for = 0
-        last = count
-        await asyncio.sleep(1)
-
-    return await _count(page, selector)
+def looks_like_challenge(html: str) -> bool:
+    head = html[:4000].lower()
+    return any(m in head for m in CF_MARKERS)
 
 
-async def sweep_edition(page, year: int, diagnose: bool = False) -> dict[str, str]:
-    """Return {club: logo_url} for one edition's Premier League teams list."""
-    url = pl_teams_url(year)
+async def clear_challenge(page, url: str) -> bool:
+    """Navigate in the real browser so the user can solve a challenge, which
+    refreshes the clearance cookie for all later HTTP fetches."""
+    print("\n" + "=" * 60)
+    print("  *** CLOUDFLARE CHALLENGE — SOLVE IN THE BROWSER WINDOW ***")
+    print("  (only needed once; HTTP fetches reuse the cookie afterwards)")
+    print("=" * 60 + "\n")
+    try:
+        scrape_missing._beep()
+    except Exception:
+        pass
+    await page.goto(url, wait_until="commit")
+    return await wait_for(page, 'a[href*="/team/"]', "teams page", min_count=1)
+
+
+async def fetch_html(context, page, url: str) -> str | None:
+    """GET a page through the browser context's cookie jar. Falls back to a real
+    navigation (so a human can solve a challenge) if Cloudflare intercepts."""
+    try:
+        resp = await context.request.get(url, headers={
+            "Accept": "text/html,application/xhtml+xml",
+            "Referer": "https://sofifa.com/",
+        })
+        if resp.ok:
+            html = await resp.text()
+            if not looks_like_challenge(html):
+                return html
+    except Exception as e:
+        print(f"    fetch failed ({e}); falling back to the browser.")
+
+    if not await clear_challenge(page, url):
+        return None
+    return await page.content()
+
+
+async def sweep_edition(context, page, year: int, pl_only: bool, diagnose: bool) -> dict[str, str]:
+    """Return {club: logo_url} for one edition, paging with &offset=."""
     if not code_for_year(year):
         print(f"  ! No roster code for {edition_label(year)} — skipping.")
         return {}
 
-    await page.goto(url, wait_until="commit")
-    print("  Waiting for the PL teams table to finish rendering...")
-    settled = await wait_for_full_table(page, 'a[href*="/team/"]')
-    if settled == 0:
-        print(f"  ! Could not load the teams list for {edition_label(year)}.")
-        return {}
-
     found: dict[str, str] = {}
+    offset = 0
     page_num = 1
+
     while True:
-        rows = parse_teams(await page.content())
+        url = teams_page_url(year, offset=offset, pl_only=pl_only)
+        html = await fetch_html(context, page, url)
+        if html is None:
+            print(f"  ! Could not load {edition_label(year)} at offset {offset}.")
+            break
+
+        rows = parse_teams(html)
         if diagnose:
-            n_links = len(await page.query_selector_all('a[href*="/team/"]'))
-            n_next = len(await page.query_selector_all('a[rel="next"]'))
-            print(f"    [diag] page {page_num}: url={page.url}")
-            print(f"    [diag] parse_teams rows={len(rows)}, /team/ links on page={n_links}, "
-                  f"rel=next links={n_next}")
+            print(f"    [diag] page {page_num} offset={offset}: {len(rows)} rows")
             if rows:
-                print(f"    [diag] first row: {rows[0]}")
-                print(f"    [diag] clubs: {', '.join(r['club'] for r in rows)}")
+                print(f"    [diag] {', '.join(r['club'] for r in rows[:8])}"
+                      + (" …" if len(rows) > 8 else ""))
         if not rows:
             break
+
+        new_this_page = 0
         for r in rows:
             club, logo = r["club"], r["club_logo_url"]
             if club and logo and club not in found:
                 found[club] = logo
-        if not await click_next(page, 'a[href*="/team/"]'):
-            if diagnose:
-                print("    [diag] click_next returned False — no further pages.")
-            break
-        page_num += 1
+                new_this_page += 1
 
-    no_badge = [c for c, url in found.items() if not url]
-    print(f"  {edition_label(year)} ({season_label(year)}): {len(found)} clubs"
-          + (f", {len(no_badge)} without a badge" if no_badge else ""))
-    # The Premier League has had 20 clubs every season in this range, so a short
-    # list means the page was read before it finished rendering — say so loudly
-    # rather than quietly banking a truncated result.
-    if len(found) < 20:
-        print(f"  ! Expected 20 clubs, got {len(found)} — the table was still "
-              f"loading. Re-run this edition: --years {year}")
+        # A page that adds nothing new means SoFIFA is repeating the last page
+        # rather than returning empty past the end — stop instead of looping.
+        if new_this_page == 0:
+            break
+
+        offset += len(rows)
+        page_num += 1
+        await asyncio.sleep(random.uniform(0.4, 0.9))
+
+    label = f"{edition_label(year)} ({season_label(year)})"
+    print(f"  {label}: {len(found)} clubs")
+    if pl_only and 0 < len(found) < 20:
+        print(f"  ! Expected 20 Premier League clubs, got {len(found)} — "
+              f"re-run this edition with --years {year}")
     return found
 
 
 async def main() -> None:
-    ap = argparse.ArgumentParser(description="Scrape Premier League club badges, 2006/07 to 2025/26.")
-    ap.add_argument("--years", nargs="*", type=int, help="Specific edition years (default: 2007..2026)")
-    ap.add_argument("--headless", action="store_true", help="Run without a visible browser window")
-    ap.add_argument("--diagnose", action="store_true",
-                    help="Print per-page detail (URL, row count, pagination links) to debug missing clubs")
+    ap = argparse.ArgumentParser(description="Scrape SoFIFA club badges.")
+    ap.add_argument("--years", nargs="*", type=int, help="Edition years (default 2007..2026)")
+    ap.add_argument("--pl-only", action="store_true",
+                    help="Only sweep the Premier League instead of every club")
+    ap.add_argument("--headless", action="store_true",
+                    help="No visible window — only works if clearance is already cached")
+    ap.add_argument("--diagnose", action="store_true", help="Print per-page detail")
     args = ap.parse_args()
 
-    years = args.years or PL_YEARS
-    years = [y for y in years if 2007 <= y <= 2026]
+    years = [y for y in (args.years or PL_YEARS) if 2007 <= y <= 2026]
     if not years:
         print("No valid edition years given (expected 2007..2026).")
         return
 
     logos = load_existing()
     print(f"Starting with {len(logos)} club badges already in {OUT_FILE.name}.")
-    print(f"Sweeping {len(years)} editions: {years[0]}..{years[-1]}\n")
+    print(f"Sweeping {len(years)} editions ({years[0]}..{years[-1]}), "
+          f"{'Premier League only' if args.pl_only else 'all clubs'}.\n")
 
     async with async_playwright() as pw:
         context = await pw.chromium.launch_persistent_context(
@@ -229,46 +236,42 @@ async def main() -> None:
             await stealth_async(page)
             print("Stealth mode active.\n")
 
-        # Read the real roster codes from SoFIFA's edition dropdown — the
-        # hardcoded table in scrape_missing has been wrong for some editions.
-        # The dropdown only exists once a real page has loaded, so navigate
-        # first; reading it from a blank tab silently finds nothing and every
-        # year falls back to the (known unreliable) hardcoded table.
+        # The one interactive navigation of the run. It earns the Cloudflare
+        # clearance cookie AND exposes the edition dropdown, whose roster codes
+        # are authoritative — the hardcoded table is wrong for several editions.
+        print("Opening SoFIFA once to sign in past Cloudflare...")
+        await page.goto(BASE_URL, wait_until="commit")
+        await wait_for(page, 'a[href*="/player/"]', "players page")
         try:
-            await page.goto(BASE_URL, wait_until="commit")
-            await wait_for(page, 'a[href*="/player/"]', "players page")
             await discover_versions(page)
-            n_discovered = len(scrape_missing.DISCOVERED_CODES)
-            if n_discovered:
-                print(f"Discovered {n_discovered} real roster codes from the edition dropdown.\n")
-            else:
-                print("Edition dropdown was empty — falling back to the hardcoded codes.\n")
+            n = len(scrape_missing.DISCOVERED_CODES)
+            print(f"Discovered {n} roster codes from the edition dropdown.\n"
+                  if n else "Edition dropdown empty — using the hardcoded codes.\n")
         except Exception as e:
-            print(f"Version discovery failed ({e}); falling back to the hardcoded codes.\n")
+            print(f"Version discovery failed ({e}); using the hardcoded codes.\n")
 
         for idx, year in enumerate(years):
             print(f"[{idx + 1}/{len(years)}] {edition_label(year)}")
             if idx > 0:
-                await asyncio.sleep(random.uniform(2, 4))
+                await asyncio.sleep(random.uniform(1.0, 2.0))
             try:
-                found = await sweep_edition(page, year, diagnose=args.diagnose)
+                found = await sweep_edition(context, page, year, args.pl_only, args.diagnose)
             except Exception as e:
                 print(f"  ! {edition_label(year)} failed: {e}")
                 continue
 
-            # Newer editions win on conflict — their CDN paths are the ones
-            # least likely to have been retired.
             new_names = [c for c in found if c not in logos]
-            logos.update(found)
+            logos.update(found)   # newer editions win — their CDN paths are live
             if new_names:
-                print(f"  + {len(new_names)} new: {', '.join(sorted(new_names)[:6])}"
+                preview = ", ".join(sorted(new_names)[:6])
+                print(f"  + {len(new_names)} new: {preview}"
                       + (" …" if len(new_names) > 6 else ""))
-            save(logos)   # save as we go so a crash doesn't lose progress
+            save(logos)   # save as we go so a crash keeps progress
 
         await context.close()
 
     save(logos)
-    print(f"\nDONE — {len(logos)} Premier League club badges.")
+    print(f"\nDONE — {len(logos)} club badges.")
     print(f"File: {OUT_FILE}")
     print("Upload it at https://knowitball.co.uk/admin/football/scrape (club logos input).")
 
