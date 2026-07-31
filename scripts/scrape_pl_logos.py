@@ -32,6 +32,7 @@ import asyncio
 import json
 import random
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -44,6 +45,9 @@ from scrape_missing import (  # noqa: E402
     OUTPUT_DIR,
     PROFILE_DIR,
     TEAMS_URL,
+    _beep,
+    _count,
+    _is_cf_challenge,
     click_next,
     code_for_year,
     discover_versions,
@@ -94,6 +98,52 @@ def save(logos: dict[str, str]) -> None:
     )
 
 
+async def wait_for_full_table(page, selector: str, timeout: int = 180) -> int:
+    """Wait until the number of matching links STOPS GROWING, and return it.
+
+    scrape_missing.wait_for returns the moment the count crosses a threshold,
+    which is right for a 60-row players page but wrong here: the teams table
+    renders progressively, so any threshold low enough to suit a 20-club league
+    is reached while the table is still filling in. That silently parsed a
+    half-rendered DOM and produced the same truncated club list for every
+    edition. Waiting for the count to settle instead is threshold-free.
+    """
+    deadline = time.time() + timeout
+    stable_for = 0
+    last = -1
+    alerted = False
+
+    while time.time() < deadline:
+        if await _is_cf_challenge(page):
+            if not alerted:
+                print("\n" + "=" * 60)
+                print("  *** CLOUDFLARE CHALLENGE — SOLVE IN BROWSER ***")
+                print("=" * 60 + "\n")
+                _beep()
+                alerted = True
+            stable_for = 0
+            last = -1
+            await asyncio.sleep(2)
+            continue
+
+        if alerted:
+            print("  Challenge cleared, continuing...")
+            alerted = False
+
+        count = await _count(page, selector)
+        if count > 0 and count == last:
+            stable_for += 1
+            # Three consecutive identical reads ~3s apart: the table has settled.
+            if stable_for >= 3:
+                return count
+        else:
+            stable_for = 0
+        last = count
+        await asyncio.sleep(1)
+
+    return await _count(page, selector)
+
+
 async def sweep_edition(page, year: int, diagnose: bool = False) -> dict[str, str]:
     """Return {club: logo_url} for one edition's Premier League teams list."""
     url = pl_teams_url(year)
@@ -102,8 +152,9 @@ async def sweep_edition(page, year: int, diagnose: bool = False) -> dict[str, st
         return {}
 
     await page.goto(url, wait_until="commit")
-    # PL is 20 clubs, so a single page — don't demand 10+ rows before proceeding.
-    if not await wait_for(page, 'a[href*="/team/"]', "PL teams list", min_count=1):
+    print("  Waiting for the PL teams table to finish rendering...")
+    settled = await wait_for_full_table(page, 'a[href*="/team/"]')
+    if settled == 0:
         print(f"  ! Could not load the teams list for {edition_label(year)}.")
         return {}
 
@@ -135,6 +186,12 @@ async def sweep_edition(page, year: int, diagnose: bool = False) -> dict[str, st
     no_badge = [c for c, url in found.items() if not url]
     print(f"  {edition_label(year)} ({season_label(year)}): {len(found)} clubs"
           + (f", {len(no_badge)} without a badge" if no_badge else ""))
+    # The Premier League has had 20 clubs every season in this range, so a short
+    # list means the page was read before it finished rendering — say so loudly
+    # rather than quietly banking a truncated result.
+    if len(found) < 20:
+        print(f"  ! Expected 20 clubs, got {len(found)} — the table was still "
+              f"loading. Re-run this edition: --years {year}")
     return found
 
 
