@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   americanPicksToSquad,
   fetchRoundPlayers,
+  pickedPlayerKeys,
   shuffleArray,
 } from "@/lib/americanDraft";
 import type { AmericanState, SquadPick } from "@/lib/americanDraft";
@@ -123,9 +124,13 @@ export async function POST(
     nextState.current_round = nextRound;
     nextState.current_pick_idx = 0;
     nextState.pick_order = shuffleArray(state.pick_order);
+    // Exclude everyone already taken, so a player picked at one position can
+    // never reappear at another — and no two editions of the same footballer
+    // can both end up in a squad.
     nextState.round_players = await fetchRoundPlayers(
       service,
-      state.position_sequence[nextRound]
+      state.position_sequence[nextRound],
+      pickedPlayerKeys(nextState.picks)
     );
   } else {
     // Same round, next picker — the picked player leaves the pool.

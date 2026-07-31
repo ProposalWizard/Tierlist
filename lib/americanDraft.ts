@@ -25,6 +25,20 @@ export function seasonLabel(fifaYear: number | null | undefined): string {
 // between editions ("Man Utd" vs "Manchester United", stray accents, "&" vs
 // "and"). Normalise both sides so a logo scraped from one edition still
 // matches a player row from another.
+// Two rows can describe the same footballer under different sofifa_ids — the
+// SoFIFA data has genuine duplicates, which is how three Diogo Dalots (two of
+// them the same season) reached one pool. Matching on a normalised name as well
+// as the id catches those. The cost is that two genuinely different players who
+// share a name collapse to one entry, which is the right trade here: the draft
+// only ever needs 10 of several hundred candidates.
+export function playerNameKey(name: string): string {
+  return (name || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
 export function normalizeClubKey(club: string): string {
   return club
     .toLowerCase()
@@ -216,9 +230,24 @@ async function getClubLogoMap(service: any): Promise<Map<string, string>> {
   return map;
 }
 
+/**
+ * Build one round's pool of 10 players.
+ *
+ * `excludeSofifaIds` are players already taken by ANYONE earlier in this draft.
+ * A player is one person, not one row: the same sofifa_id appears once per FIFA
+ * edition, so without both the exclusion and the per-id dedup below you get the
+ * same footballer three times in one pool (and again at another position later).
+ * Picking one of those duplicates then removed every row sharing that id, which
+ * is what made the board disagree between players.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function fetchRoundPlayers(service: any, position: string): Promise<AmPlayer[]> {
+export async function fetchRoundPlayers(
+  service: any,
+  position: string,
+  excludeKeys: Iterable<string> = [],
+): Promise<AmPlayer[]> {
   const allowed = POS_FILTER[position] ?? [];
+  const excluded = new Set(excludeKeys);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (service as any)
@@ -232,41 +261,43 @@ export async function fetchRoundPlayers(service: any, position: string): Promise
     query = query.ilike("positions", `%${allowed[0]}%`);
   }
 
-  // Order by rating and take a random window rather than an unordered .limit().
-  // An unordered limit returns whatever sits earliest in the heap — in practice
-  // the same rows every round of every game, so the "random" pool was a fixed
-  // slice. Ordering makes the window deterministic, and the random offset then
-  // moves it, so different games see different players.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { count } = (await (service as any)
-    .from("sofifa_players")
-    .select("sofifa_id", { count: "exact", head: true })
-    .or(PL_OR_FILTER)
-    .ilike("positions", allowed.length > 0 ? `%${allowed[0]}%` : "%")) as { count: number | null };
-
+  // Ordered by rating, which is indexed (idx_sofifa_overall), then shuffled in
+  // JS for variety. There is deliberately NO count query here: `count: "exact"`
+  // over this table with an ilike/or filter is a full scan, and running one per
+  // round is what made each new position take tens of seconds to load.
   const WINDOW = 600;
-  const total = count ?? WINDOW;
-  const maxOffset = Math.max(0, total - WINDOW);
-  const offset = maxOffset > 0 ? Math.floor(Math.random() * (maxOffset + 1)) : 0;
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = (await query
     .order("overall", { ascending: false })
-    .range(offset, offset + WINDOW - 1)) as { data: any[] | null };
+    .limit(WINDOW)) as { data: any[] | null };
   const rows = data || [];
 
-  // Filter out non-English PL clubs and refine position match in JS
+  // Filter out non-English PL clubs and refine the position match in JS.
   const filtered = rows.filter(r => {
     const clubName = (r.club || "").toLowerCase();
     if (NON_ENGLISH_PL_CLUBS.has(clubName)) return false;
+    if (excluded.has(`id:${r.sofifa_id}`)) return false;
+    if (excluded.has(`name:${playerNameKey(r.name)}`)) return false;
     if (allowed.length === 0) return true;
     const pos = resolvePositions(r).toUpperCase();
     const parts = pos.split(",").map((x: string) => x.trim());
     return allowed.some(p => parts.includes(p));
   });
 
+  // One entry per footballer. Shuffle first so which edition of a player
+  // survives varies between rounds instead of always being the highest rated.
   const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-  const chosen = shuffled.slice(0, 10);
+  const seen = new Set<string>();
+  const chosen: any[] = [];
+  for (const r of shuffled) {
+    const idKey = `id:${r.sofifa_id}`;
+    const nameKey = `name:${playerNameKey(r.name)}`;
+    if (seen.has(idKey) || seen.has(nameKey)) continue;
+    seen.add(idKey);
+    seen.add(nameKey);
+    chosen.push(r);
+    if (chosen.length >= 10) break;
+  }
 
   const logoMap = await getClubLogoMap(service);
 
@@ -283,6 +314,25 @@ export async function fetchRoundPlayers(service: any, position: string): Promise
     edition: r.fifa_edition || "",
     season: seasonLabel(r.fifa_year),
   }));
+}
+
+/**
+ * Identity keys for every player already taken in this draft — by sofifa_id and
+ * by normalised name, so neither a second FIFA edition of the same footballer
+ * nor a duplicate row under a different id can come back around.
+ */
+export function pickedPlayerKeys(picks: Record<string, SquadPick[]>): Set<string> {
+  const keys = new Set<string>();
+  for (const list of Object.values(picks ?? {})) {
+    for (const p of list ?? []) {
+      const player = p?.player;
+      if (!player) continue;
+      if (player.sofifa_id) keys.add(`id:${player.sofifa_id}`);
+      const nk = playerNameKey(player.name);
+      if (nk) keys.add(`name:${nk}`);
+    }
+  }
+  return keys;
 }
 
 export function shuffleArray<T>(arr: T[]): T[] {

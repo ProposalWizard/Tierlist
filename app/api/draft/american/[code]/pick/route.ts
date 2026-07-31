@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { fetchRoundPlayers, shuffleArray } from "@/lib/americanDraft";
+import { fetchRoundPlayers, playerNameKey, shuffleArray } from "@/lib/americanDraft";
 import type { AmPlayer, SquadPick } from "@/lib/americanDraft";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
@@ -225,13 +225,26 @@ export async function POST(
 
     const { data: allParticipants } = await service
       .from("american_draft_participants")
-      .select("user_id")
+      .select("user_id, squad")
       .eq("room_id", room.id);
 
     const newPickOrder = shuffleArray(
       (allParticipants || []).map((p: { user_id: string }) => p.user_id)
     );
-    const newRoundPlayers = await fetchRoundPlayers(service, nextPosition);
+
+    // Everyone already taken this draft, so a player can't come up again at a
+    // different position or as a different FIFA edition of the same footballer.
+    const takenKeys = new Set<string>();
+    for (const p of allParticipants ?? []) {
+      for (const pick of ((p as { squad?: SquadPick[] }).squad ?? [])) {
+        const player = pick?.player;
+        if (!player) continue;
+        if (player.sofifa_id) takenKeys.add(`id:${player.sofifa_id}`);
+        const nk = playerNameKey(player.name);
+        if (nk) takenKeys.add(`name:${nk}`);
+      }
+    }
+    const newRoundPlayers = await fetchRoundPlayers(service, nextPosition, takenKeys);
 
     const { error: roundErr } = await service
       .from("american_draft_rooms")
