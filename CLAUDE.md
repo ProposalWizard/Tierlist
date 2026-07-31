@@ -174,6 +174,9 @@ npm run lint   # Run ESLint
 | `draft_runs_stats.sql` | **PENDING** | Cup/trophy achievements can't unlock; replayed seasons not deduped in history |
 | `draft_records_full_fix.sql` | **PENDING** | Career Records silently fail to insert (CHECK constraint mismatch on `competition`/`record_type` values) |
 | `draft_american_mode.sql` | **PENDING** | American draft mode can't start on real multiplayer rooms (`draft_rooms.american_state` missing) |
+| `sofifa_search_indexes.sql` | **PENDING** | Trigram indexes on `sofifa_players.positions`/`league`. The American draft no longer needs them (it filters by league equality and positions in JS), but without them any ILIKE query on those columns scans the whole table and times out. |
+| `perf_indexes_jul2026.sql` | **PENDING** | `tierlist_likes` has no index leading with `tierlist_id` despite every /play and /vote view counting on it; `draft_records` has none at all. |
+| `security_rls_hardening_jul2026.sql` | **PENDING** | Drops client-facing write policies on tables only server routes write. Also re-asserts `fix_rls_service_role_policies.sql`, which may never have been applied. |
 
 ---
 

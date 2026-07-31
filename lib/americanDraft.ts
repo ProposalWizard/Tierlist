@@ -250,6 +250,43 @@ async function getClubLogoMap(service: any): Promise<Map<string, string>> {
  * Picking one of those duplicates then removed every row sharing that id, which
  * is what made the board disagree between players.
  */
+// The exact league names vary by edition ("Premier League", "Barclays Premier
+// League", …). Discovered once per process with a small LIMITed probe, then
+// reused as an equality list so the (league, fifa_year) btree index can serve
+// the round queries. An ILIKE on league cannot use that index under the default
+// collation, so filtering that way scanned the entire table every round —
+// which is what produced "canceling statement due to statement timeout".
+let plLeagueNames: string[] | null = null;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getPLLeagueNames(service: any): Promise<string[]> {
+  if (plLeagueNames && plLeagueNames.length > 0) return plLeagueNames;
+
+  // Postgres can stop as soon as the limit is met, so this probe is cheap even
+  // though the pattern itself is not indexable.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = (await (service as any)
+    .from("sofifa_players")
+    .select("league")
+    .or(PL_OR_FILTER)
+    .limit(400)) as { data: { league: string | null }[] | null };
+
+  const names = Array.from(
+    new Set((data ?? []).map(r => r.league).filter((l): l is string => !!l))
+  );
+  if (names.length > 0) plLeagueNames = names;
+  return names;
+}
+
+const ALL_FIFA_YEARS = Array.from({ length: 20 }, (_, i) => 2007 + i);
+
+/**
+ * Build one round's pool of 10 players.
+ *
+ * `excludeKeys` identify everyone already taken by anyone in this draft, by id
+ * and by normalised name, so a footballer can be drafted once per draft — not
+ * once per position, and not once per FIFA edition.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchRoundPlayers(
   service: any,
@@ -261,39 +298,12 @@ export async function fetchRoundPlayers(
 
   const SELECT_COLS =
     "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
-  const WINDOW = 900;
 
-  // No ORDER BY. Postgres sorts NULLs FIRST on DESC, so ordering by overall
-  // filled the whole window with unrated rows for the most populous positions
-  // (centre back worst of all) — every one of which the position refine below
-  // then dropped, leaving an empty pool. It also made the query slow. Excluding
-  // unrated rows outright is both cheaper and what we actually want; variety
-  // comes from the JS shuffle.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const runQuery = async (usePositionPrefilter: boolean) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q = (service as any)
-      .from("sofifa_players")
-      .select(SELECT_COLS)
-      .or(PL_OR_FILTER)
-      .not("overall", "is", null);
-    if (usePositionPrefilter && allowed.length > 0) {
-      q = q.ilike("positions", `%${allowed[0]}%`);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (await q.limit(WINDOW)) as { data: any[] | null; error: any };
-  };
-
-  // The error was previously discarded, so a failed or timed-out query became
-  // an empty pool that got saved to the room — the draft then sat on "Loading
-  // players…" forever with nothing to pick.
-  let { data, error } = await runQuery(true);
-  if (error) {
-    throw new Error(`Could not load ${position} players: ${error.message}`);
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) {
+    throw new Error("No Premier League rows found — is the player data imported?");
   }
-  let rows = data || [];
 
-  // Filter out non-English PL clubs and refine the position match in JS.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyFilters = (input: any[]) => input.filter(r => {
     const clubName = (r.club || "").toLowerCase();
@@ -305,18 +315,38 @@ export async function fetchRoundPlayers(
     const parts = pos.split(",").map((x: string) => x.trim());
     return allowed.some(p => parts.includes(p));
   });
-  let filtered = applyFilters(rows);
 
-  // If the prefilter yielded nothing usable, retry once without it and match on
-  // position purely in JS — the `positions` column's formatting varies between
-  // editions, so the ilike can miss rows the JS check would accept.
-  if (filtered.length === 0 && allowed.length > 0) {
-    const retry = await runQuery(false);
-    if (retry.error) {
-      throw new Error(`Could not load ${position} players: ${retry.error.message}`);
+  // Positions are filtered in JS, never in SQL. `positions ILIKE '%GK%'` has a
+  // leading wildcard and there is no index on that column, so it forced a scan
+  // of every row. Narrowing to a handful of editions instead keeps the query on
+  // the (league, fifa_year) index and gives a different pool each round.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const runQuery = async (years: number[] | null) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q = (service as any)
+      .from("sofifa_players")
+      .select(SELECT_COLS)
+      .in("league", leagues)
+      .not("overall", "is", null);
+    if (years) q = q.in("fifa_year", years);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (await q.limit(1500)) as { data: any[] | null; error: any };
+  };
+
+  const randomYears = shuffleArray(ALL_FIFA_YEARS).slice(0, 6);
+  let { data, error } = await runQuery(randomYears);
+  if (error) {
+    throw new Error(`Could not load ${position} players: ${error.message}`);
+  }
+  let filtered = applyFilters(data || []);
+
+  // Too few for this position in that slice of editions — widen to all of them.
+  if (filtered.length < 10) {
+    const wide = await runQuery(null);
+    if (wide.error) {
+      throw new Error(`Could not load ${position} players: ${wide.error.message}`);
     }
-    rows = retry.data || [];
-    filtered = applyFilters(rows);
+    filtered = applyFilters(wide.data || []);
   }
 
   if (filtered.length === 0) {
@@ -326,10 +356,10 @@ export async function fetchRoundPlayers(
     );
   }
 
-  // One entry per footballer. Shuffle first so which edition of a player
-  // survives varies between rounds instead of always being the highest rated.
+  // One entry per footballer, shuffled so which edition survives varies.
   const shuffled = [...filtered].sort(() => Math.random() - 0.5);
   const seen = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chosen: any[] = [];
   for (const r of shuffled) {
     const idKey = `id:${r.sofifa_id}`;
@@ -343,10 +373,10 @@ export async function fetchRoundPlayers(
 
   const logoMap = await getClubLogoMap(service);
 
-  // Attributes are fetched ONLY for the handful actually shown. The blob is
-  // large, so selecting it across the whole candidate window is what made each
-  // round slow — but omitting it entirely broke team strength, because the
-  // simulator's no-attributes fallback halves every midfielder's contribution.
+  // Attributes only for the ten actually offered. The blob is large, so pulling
+  // it across the candidate window was slow — but omitting it entirely broke
+  // team strength, since the simulator's no-attributes fallback halves every
+  // midfielder's contribution.
   const attrsById = new Map<string, PlayerAttributes>();
   const chosenIds = chosen.map(r => r.sofifa_id).filter(Boolean);
   if (chosenIds.length > 0) {
@@ -356,8 +386,6 @@ export async function fetchRoundPlayers(
       .select("sofifa_id, fifa_year, attributes")
       .in("sofifa_id", chosenIds)) as { data: any[] | null };
     for (const row of attrRows ?? []) {
-      // Key on id+year: the same player exists once per edition and their
-      // attributes differ between them.
       attrsById.set(`${row.sofifa_id}:${row.fifa_year}`, attributesFromJson(row.attributes));
     }
   }

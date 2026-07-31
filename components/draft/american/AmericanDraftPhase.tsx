@@ -126,6 +126,25 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
 
     if (!res.ok) {
       setError(payload?.error ?? "Could not make that pick.");
+      // A rejected pick usually means this client's board is stale — someone
+      // else took the player, or it is looking at a superseded pool. Re-read
+      // the room so the board matches the server instead of leaving the player
+      // clicking a card the server will keep refusing.
+      try {
+        const supabase = createClient();
+        const { data: room } = await supabase
+          .from("draft_rooms")
+          .select("american_state")
+          .eq("code", roomCode.toUpperCase())
+          .maybeSingle();
+        const next = room?.american_state as AmericanState | null;
+        if (next) {
+          setState(next);
+          if (next.complete) void finish();
+        }
+      } catch {
+        // Leave the error message up; the Realtime feed may still recover it.
+      }
       return;
     }
 
