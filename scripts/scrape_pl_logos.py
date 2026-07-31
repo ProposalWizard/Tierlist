@@ -29,7 +29,8 @@ Usage:
     python scrape_pl_logos.py --years 2012 2019   # specific editions
     python scrape_pl_logos.py --all-clubs         # every club (slow, many pages)
     python scrape_pl_logos.py --diagnose          # per-page detail
-"""from __future__ import annotations
+"""
+from __future__ import annotations
 
 import argparse
 import asyncio
