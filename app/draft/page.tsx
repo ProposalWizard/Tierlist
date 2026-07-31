@@ -1241,11 +1241,19 @@ export default function DraftPage() {
         <AmericanDraftPhase
           roomCode={roomCode}
           userId={userId}
-          onComplete={() => {
-            // The server has already written every squad as 'ready', so return
-            // to the lobby in the submitted state and let the host simulate.
-            setSquadSubmitted(true);
-            setPhase("lobby");
+          onComplete={(mySquad) => {
+            // The server has already written every squad as 'ready'. Send the
+            // player to the same Arrange Your Squad screen the normal draft
+            // uses so they can set their eleven before the season; confirming
+            // there re-submits and returns to the lobby. Only skip it if the
+            // squad could not be read back.
+            if (mySquad.length > 0) {
+              setPlayers(mySquad);
+              setPhase("arrange");
+            } else {
+              setSquadSubmitted(true);
+              setPhase("lobby");
+            }
             scrollTop();
           }}
         />

@@ -106,9 +106,13 @@ export async function POST(
       }
     }
 
+    // "started", not "lobby": the lobby only lets the host edit settings while
+    // the room is in "lobby", and the draft is finished, so the settings it was
+    // played under must stop being editable. The simulate route accepts
+    // lobby/started/drafting, so this does not block the season.
     const { error: doneErr } = await service
       .from("draft_rooms")
-      .update({ american_state: nextState, status: "lobby" })
+      .update({ american_state: nextState, status: "started" })
       .eq("id", room.id);
 
     if (doneErr) {

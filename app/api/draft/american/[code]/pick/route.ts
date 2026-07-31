@@ -34,6 +34,7 @@ function buildDraftSquad(picks: SquadPick[]): DraftPlayer[] {
       nationality: p.nationality,
       age: p.age,
       isSub: isSubPick,
+      attrs: p.attrs,
     };
   });
 }
