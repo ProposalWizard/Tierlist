@@ -36,6 +36,7 @@ import argparse
 import asyncio
 import json
 import random
+import re
 import sys
 import time
 from pathlib import Path
@@ -50,6 +51,7 @@ from scrape_missing import (  # noqa: E402
     TEAMS_URL,
     code_for_year,
     discover_versions,
+    _abs_cdn,
     parse_teams,
     stealth_async,
     wait_for,
@@ -157,6 +159,65 @@ async def fetch_html(page, url: str, allow_reclear: bool = True) -> str | None:
     return await reclear(page, url)
 
 
+def parse_teams_with_logos(html: str) -> list[dict]:
+    """Parse the teams table, resolving badge URLs from RAW server HTML.
+
+    scrape_missing.parse_teams reads img["src"], which is correct for a rendered
+    page but empty here: fetching the HTML directly skips the lazy-load script
+    that fills src in, so every badge came back blank even though the club names
+    parsed fine. Check the lazy-load attributes too, and if there is still no
+    image, derive the badge from the team id in the row's own link — SoFIFA
+    serves them at a predictable path, so the id is enough.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.select_one("table.table")
+    if not table:
+        for t in soup.select("table"):
+            if t.select_one('a[href*="/team/"]'):
+                table = t
+                break
+    if not table:
+        return []
+
+    rows = table.select("tbody tr") or table.select("tr")
+    out: list[dict] = []
+
+    for row in rows:
+        tlink = row.select_one('a[href*="/team/"]')
+        if not tlink:
+            continue
+        club = tlink.get_text(strip=True)
+        if not club:
+            continue
+
+        logo = ""
+        for img in row.select("img"):
+            for attr in ("data-src", "data-original", "data-lazy", "src"):
+                val = (img.get(attr) or "").strip()
+                if val and "/teams/" in val:
+                    logo = val
+                    break
+            if not logo:
+                srcset = (img.get("srcset") or img.get("data-srcset") or "").strip()
+                if srcset and "/teams/" in srcset:
+                    logo = srcset.split(",")[0].strip().split(" ")[0]
+            if logo:
+                break
+
+        # Fallback: /team/<id>/<slug>/ -> the badge path for that id.
+        if not logo:
+            m = re.search(r"/team/(\d+)", tlink.get("href", "") or "")
+            if m:
+                logo = f"https://cdn.sofifa.net/teams/{m.group(1)}/60.png"
+
+        if logo:
+            out.append({"club": club, "club_logo_url": _abs_cdn(logo), "league": None})
+
+    return out
+
+
 async def sweep_edition(page, year: int, pl_only: bool, diagnose: bool) -> dict[str, str]:
     """Return {club: logo_url} for one edition, paging with &offset=."""
     if not code_for_year(year):
@@ -176,7 +237,7 @@ async def sweep_edition(page, year: int, pl_only: bool, diagnose: bool) -> dict[
             print(f"  ! Could not load {edition_label(year)} at offset {offset}.")
             break
 
-        rows = parse_teams(html)
+        rows = parse_teams_with_logos(html)
         if diagnose:
             print(f"    [diag] page {page_num} offset={offset}: {len(rows)} rows")
             if rows:
