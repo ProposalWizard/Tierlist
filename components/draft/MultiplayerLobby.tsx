@@ -642,6 +642,37 @@ export default function MultiplayerLobby({
               </div>
             </div>
 
+            {/* Draft Mode — last setting. Only meaningful for a room, which is
+                why it lives here rather than on the draft home page. */}
+            <div className="mt-3">
+              <label className="block text-[9px] font-bold tracking-widest text-gray-400 uppercase mb-1.5">Draft Mode</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => onUpdateSettings!({ draftMode: "normal" })}
+                  className={`py-1.5 px-2 rounded-lg text-left transition-all ${
+                    (settings.draftMode ?? "normal") === "normal" ? "bg-emerald-600 ring-1 ring-emerald-400" : "bg-gray-800 hover:bg-gray-700"
+                  }`}
+                >
+                  <div className="text-[11px] font-bold text-white">Normal</div>
+                  <div className="text-[9px] text-white/70 leading-snug">Everyone spins their own squad</div>
+                </button>
+                <button
+                  onClick={() => onUpdateSettings!({ draftMode: "american" })}
+                  className={`py-1.5 px-2 rounded-lg text-left transition-all ${
+                    settings.draftMode === "american" ? "bg-purple-600 ring-1 ring-purple-400" : "bg-gray-800 hover:bg-gray-700"
+                  }`}
+                >
+                  <div className="text-[11px] font-bold text-white">American</div>
+                  <div className="text-[9px] text-white/70 leading-snug">Take turns from a shared pool</div>
+                </button>
+              </div>
+              {settings.draftMode === "american" && (
+                <p className="text-[9px] text-white/60 mt-1.5 leading-snug">
+                  Premier League players only, 2–6 players. Everyone drafts together instead of spinning.
+                </p>
+              )}
+            </div>
+
             <p className="text-[9px] text-gray-500 mt-3 text-center">Settings lock when the game starts</p>
           </div>
         );
