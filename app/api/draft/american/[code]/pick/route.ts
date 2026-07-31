@@ -244,7 +244,15 @@ export async function POST(
         if (nk) takenKeys.add(`name:${nk}`);
       }
     }
-    const newRoundPlayers = await fetchRoundPlayers(service, nextPosition, takenKeys);
+    let newRoundPlayers;
+    try {
+      newRoundPlayers = await fetchRoundPlayers(service, nextPosition, takenKeys);
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Could not load the next round" },
+        { status: 500 }
+      );
+    }
 
     const { error: roundErr } = await service
       .from("american_draft_rooms")
