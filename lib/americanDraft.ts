@@ -1,3 +1,6 @@
+import { attributesFromJson } from "@/lib/playerAttributes";
+import type { PlayerAttributes } from "@/lib/seasonSimulator";
+
 export interface AmPlayer {
   sofifa_id: string;
   name: string;
@@ -11,6 +14,12 @@ export interface AmPlayer {
   edition: string;
   /** Season the rating is from, e.g. "2018/19". Derived from fifa_year. */
   season: string;
+  /**
+   * Detailed attributes for the season simulator. Without these it falls back
+   * to a crude approximation that counts midfielders at HALF their rating, so
+   * a squad of 90-rated players simulated like a mid-table side.
+   */
+  attrs?: PlayerAttributes;
 }
 
 // FIFA editions are named for the year they release in, but cover the season
@@ -134,6 +143,7 @@ export function americanPicksToSquad(picks: SquadPick[]) {
       nationality: p.nationality,
       age: p.age,
       isSub: isSubPick,
+      attrs: p.attrs,
     };
   });
 }
@@ -333,6 +343,25 @@ export async function fetchRoundPlayers(
 
   const logoMap = await getClubLogoMap(service);
 
+  // Attributes are fetched ONLY for the handful actually shown. The blob is
+  // large, so selecting it across the whole candidate window is what made each
+  // round slow — but omitting it entirely broke team strength, because the
+  // simulator's no-attributes fallback halves every midfielder's contribution.
+  const attrsById = new Map<string, PlayerAttributes>();
+  const chosenIds = chosen.map(r => r.sofifa_id).filter(Boolean);
+  if (chosenIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: attrRows } = (await (service as any)
+      .from("sofifa_players")
+      .select("sofifa_id, fifa_year, attributes")
+      .in("sofifa_id", chosenIds)) as { data: any[] | null };
+    for (const row of attrRows ?? []) {
+      // Key on id+year: the same player exists once per edition and their
+      // attributes differ between them.
+      attrsById.set(`${row.sofifa_id}:${row.fifa_year}`, attributesFromJson(row.attributes));
+    }
+  }
+
   return chosen.map(r => ({
     sofifa_id: r.sofifa_id || "",
     name: r.name || "Unknown",
@@ -345,6 +374,7 @@ export async function fetchRoundPlayers(
     club_logo_url: logoMap.get(normalizeClubKey(r.club || "")) ?? null,
     edition: r.fifa_edition || "",
     season: seasonLabel(r.fifa_year),
+    attrs: attrsById.get(`${r.sofifa_id}:${r.fifa_year}`),
   }));
 }
 

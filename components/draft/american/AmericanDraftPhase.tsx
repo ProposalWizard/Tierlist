@@ -3,12 +3,16 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import AmericanDraftRoom from "./AmericanDraftRoom";
 import type { AmericanState } from "@/lib/americanDraft";
+import type { DraftPlayer } from "@/app/draft/page";
 
 interface Props {
   roomCode: string;
   userId: string;
-  /** Called once every squad has been written to the room as 'ready'. */
-  onComplete: () => void;
+  /**
+   * Called once every squad has been written to the room as 'ready', with this
+   * player's own drafted squad so they can arrange it before the season.
+   */
+  onComplete: (mySquad: DraftPlayer[]) => void;
 }
 
 /**
@@ -27,11 +31,26 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
   const [loading, setLoading] = useState(true);
   const completedRef = useRef(false);
 
-  const finish = useCallback(() => {
+  // Read back the squad the server just wrote for this player, so the arrange
+  // screen shows the real drafted eleven rather than rebuilding it client-side.
+  const finish = useCallback(async () => {
     if (completedRef.current) return;
     completedRef.current = true;
-    onComplete();
-  }, [onComplete]);
+    let mySquad: DraftPlayer[] = [];
+    try {
+      const res = await fetch(`/api/draft/rooms/${roomCode}`);
+      if (res.ok) {
+        const data = await res.json();
+        const mine = (data.players as Array<{ user_id: string; squad?: DraftPlayer[] | null }> | undefined)
+          ?.find(p => p.user_id === userId);
+        if (Array.isArray(mine?.squad)) mySquad = mine.squad;
+      }
+    } catch {
+      // Fall through with an empty squad — the caller drops straight to the
+      // lobby, where the squad is already saved as ready either way.
+    }
+    onComplete(mySquad);
+  }, [onComplete, roomCode, userId]);
 
   // Initial load + Realtime subscription
   useEffect(() => {
@@ -70,7 +89,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
       const initial = room.american_state as AmericanState | null;
       setState(initial);
       setLoading(false);
-      if (initial?.complete) { finish(); return; }
+      if (initial?.complete) { void finish(); return; }
 
       channel = supabase
         .channel(`american-draft-${roomCode}-${Date.now()}`)
@@ -81,7 +100,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
             const next = (payload.new as { american_state?: AmericanState | null })?.american_state;
             if (!next) return;
             setState(next);
-            if (next.complete) finish();
+            if (next.complete) void finish();
           }
         )
         .subscribe();
@@ -112,7 +131,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
 
     // Act on the response rather than waiting for the Realtime event — the last
     // pick produces no further room update for the final picker to observe.
-    if (payload?.complete) { finish(); return; }
+    if (payload?.complete) { void finish(); return; }
 
     // Fallback refresh in case the Realtime event is dropped.
     const supabase = createClient();
@@ -124,7 +143,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     const next = room?.american_state as AmericanState | null;
     if (next) {
       setState(next);
-      if (next.complete) finish();
+      if (next.complete) void finish();
     }
   }, [roomCode, finish]);
 
