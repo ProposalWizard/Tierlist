@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   americanPicksToSquad,
+  attachSquadAttributes,
   fetchRoundPlayers,
   pickedPlayerKeys,
   shuffleArray,
@@ -80,8 +81,21 @@ export async function POST(
     nextState.complete = true;
     nextState.round_players = [];
 
-    const rows = Object.entries(nextState.picks).map(([userId, picks]) => {
-      const squad = americanPicksToSquad(picks as SquadPick[]);
+    // Attributes are fetched once, here, for every finished squad — they are
+    // kept out of the live draft state so each pick's write stays small. The
+    // simulator needs them: without attributes it counts midfielders at half
+    // their rating, which made an 83-average squad simulate at 67 strength.
+    const built = Object.entries(nextState.picks).map(([userId, picks]) => {
+      const list = picks as SquadPick[];
+      return {
+        userId,
+        squad: americanPicksToSquad(list),
+        fifaYears: list.map(p => p.player.fifa_year),
+      };
+    });
+    await attachSquadAttributes(service, built);
+
+    const rows = built.map(({ userId, squad }) => {
       const { teamStrength, avgOvr } = computeTeamStrength(squad);
       return { userId, squad, teamStrength, avgOvr };
     });
