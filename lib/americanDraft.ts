@@ -15,11 +15,14 @@ export interface AmPlayer {
   /** Season the rating is from, e.g. "2018/19". Derived from fifa_year. */
   season: string;
   /**
-   * Detailed attributes for the season simulator. Without these it falls back
-   * to a crude approximation that counts midfielders at HALF their rating, so
-   * a squad of 90-rated players simulated like a mid-table side.
+   * Edition year, kept so attributes can be looked up at the end of the draft.
+   * Attributes are deliberately NOT stored on the player: american_state is
+   * rewritten on EVERY pick and pushed to every client over Realtime, so
+   * carrying ~22 numbers per player for the round pool plus every accumulated
+   * pick made that payload grow all draft long — which is what made later
+   * picks take seconds to register.
    */
-  attrs?: PlayerAttributes;
+  fifa_year: number;
 }
 
 // FIFA editions are named for the year they release in, but cover the season
@@ -143,9 +146,57 @@ export function americanPicksToSquad(picks: SquadPick[]) {
       nationality: p.nationality,
       age: p.age,
       isSub: isSubPick,
-      attrs: p.attrs,
     };
   });
+}
+
+/**
+ * Attach attributes to finished squads, in ONE query for the whole draft.
+ *
+ * The season simulator branches on whether a player has attributes: without
+ * them it counts midfielders at HALF their rating and gives full backs no
+ * attacking contribution, so an 83-average squad simulated at 67 strength.
+ * Doing this once at the end keeps the attributes out of the live draft state.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function attachSquadAttributes(
+  service: any,
+  squads: Array<{ squad: DraftPlayerLike[]; fifaYears: number[] }>,
+): Promise<void> {
+  const ids = Array.from(new Set(squads.flatMap(s => s.squad.map(p => p.sofifa_id)).filter((x): x is string => !!x)));
+  const years = Array.from(new Set(squads.flatMap(s => s.fifaYears).filter(Boolean)));
+  if (ids.length === 0) return;
+
+  // Bounded by both id and edition — an id-only lookup returns every edition of
+  // every player, which is a lot of large JSONB for nothing.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q = (service as any)
+    .from("sofifa_players")
+    .select("sofifa_id, fifa_year, attributes")
+    .in("sofifa_id", ids);
+  if (years.length > 0) q = q.in("fifa_year", years);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = (await q) as { data: any[] | null };
+
+  const byKey = new Map<string, PlayerAttributes>();
+  for (const row of data ?? []) {
+    byKey.set(`${row.sofifa_id}:${row.fifa_year}`, attributesFromJson(row.attributes));
+  }
+
+  for (const entry of squads) {
+    entry.squad.forEach((p, i) => {
+      const year = entry.fifaYears[i];
+      const attrs = byKey.get(`${p.sofifa_id}:${year}`);
+      if (attrs) p.attrs = attrs;
+    });
+  }
+}
+
+/** Minimal shape attachSquadAttributes mutates. sofifa_id is optional because
+ *  the simulator's DraftPlayer does not declare it. */
+interface DraftPlayerLike {
+  sofifa_id?: string;
+  attrs?: PlayerAttributes;
 }
 
 export const POSITION_LABELS: Record<string, string> = {
@@ -280,6 +331,14 @@ async function getPLLeagueNames(service: any): Promise<string[]> {
 
 const ALL_FIFA_YEARS = Array.from({ length: 20 }, (_, i) => 2007 + i);
 
+// Candidate rows per position, cached in module scope. The underlying data only
+// changes when an admin re-imports, but this was a fresh 1500-row query on every
+// round advance — 14 per draft, per room. Rounds after the first now do no
+// candidate query at all on a warm instance.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const candidateCache = new Map<string, { rows: any[]; at: number }>();
+const CANDIDATE_TTL_MS = 10 * 60 * 1000;
+
 /**
  * Build one round's pool of 10 players.
  *
@@ -333,21 +392,32 @@ export async function fetchRoundPlayers(
     return (await q.limit(1500)) as { data: any[] | null; error: any };
   };
 
-  const randomYears = shuffleArray(ALL_FIFA_YEARS).slice(0, 6);
-  let { data, error } = await runQuery(randomYears);
-  if (error) {
-    throw new Error(`Could not load ${position} players: ${error.message}`);
-  }
-  let filtered = applyFilters(data || []);
-
-  // Too few for this position in that slice of editions — widen to all of them.
-  if (filtered.length < 10) {
-    const wide = await runQuery(null);
-    if (wide.error) {
-      throw new Error(`Could not load ${position} players: ${wide.error.message}`);
+  // Serve from cache when warm. Exclusions and shuffling are applied per round
+  // below, so a cached row set still produces a different pool each time.
+  const cached = candidateCache.get(position);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let rows: any[];
+  if (cached && Date.now() - cached.at < CANDIDATE_TTL_MS) {
+    rows = cached.rows;
+  } else {
+    const randomYears = shuffleArray(ALL_FIFA_YEARS).slice(0, 6);
+    const first = await runQuery(randomYears);
+    if (first.error) {
+      throw new Error(`Could not load ${position} players: ${first.error.message}`);
     }
-    filtered = applyFilters(wide.data || []);
+    rows = first.data || [];
+    // Too few for this position in that slice of editions — widen to all.
+    if (applyFilters(rows).length < 10) {
+      const wide = await runQuery(null);
+      if (wide.error) {
+        throw new Error(`Could not load ${position} players: ${wide.error.message}`);
+      }
+      rows = wide.data || [];
+    }
+    if (rows.length > 0) candidateCache.set(position, { rows, at: Date.now() });
   }
+
+  const filtered = applyFilters(rows);
 
   if (filtered.length === 0) {
     throw new Error(
@@ -373,23 +443,6 @@ export async function fetchRoundPlayers(
 
   const logoMap = await getClubLogoMap(service);
 
-  // Attributes only for the ten actually offered. The blob is large, so pulling
-  // it across the candidate window was slow — but omitting it entirely broke
-  // team strength, since the simulator's no-attributes fallback halves every
-  // midfielder's contribution.
-  const attrsById = new Map<string, PlayerAttributes>();
-  const chosenIds = chosen.map(r => r.sofifa_id).filter(Boolean);
-  if (chosenIds.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: attrRows } = (await (service as any)
-      .from("sofifa_players")
-      .select("sofifa_id, fifa_year, attributes")
-      .in("sofifa_id", chosenIds)) as { data: any[] | null };
-    for (const row of attrRows ?? []) {
-      attrsById.set(`${row.sofifa_id}:${row.fifa_year}`, attributesFromJson(row.attributes));
-    }
-  }
-
   return chosen.map(r => ({
     sofifa_id: r.sofifa_id || "",
     name: r.name || "Unknown",
@@ -402,7 +455,7 @@ export async function fetchRoundPlayers(
     club_logo_url: logoMap.get(normalizeClubKey(r.club || "")) ?? null,
     edition: r.fifa_edition || "",
     season: seasonLabel(r.fifa_year),
-    attrs: attrsById.get(`${r.sofifa_id}:${r.fifa_year}`),
+    fifa_year: r.fifa_year,
   }));
 }
 

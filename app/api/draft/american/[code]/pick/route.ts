@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { fetchRoundPlayers, playerNameKey, shuffleArray } from "@/lib/americanDraft";
+import { attachSquadAttributes, fetchRoundPlayers, playerNameKey, shuffleArray } from "@/lib/americanDraft";
 import type { AmPlayer, SquadPick } from "@/lib/americanDraft";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
@@ -34,7 +34,6 @@ function buildDraftSquad(picks: SquadPick[]): DraftPlayer[] {
       nationality: p.nationality,
       age: p.age,
       isSub: isSubPick,
-      attrs: p.attrs,
     };
   });
 }
@@ -161,8 +160,14 @@ export async function POST(
       // team_strength must be computed with the same function the normal ready
       // route uses, otherwise the lobby shows no STR and the simulator has to
       // fall back to a default.
-      const rows = completedParticipants.map(p => {
-        const squad = buildDraftSquad((p.squad as SquadPick[]) || []);
+      // One attributes query for every finished squad — see the in-room route.
+      const built = completedParticipants.map(p => {
+        const list = (p.squad as SquadPick[]) || [];
+        return { p, squad: buildDraftSquad(list), fifaYears: list.map(x => x.player.fifa_year) };
+      });
+      await attachSquadAttributes(service, built);
+
+      const rows = built.map(({ p, squad }) => {
         const { teamStrength, avgOvr } = computeTeamStrength(squad);
         return {
           room_id: newRoom.id,
