@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
-"""Scrape club badges from SoFIFA into a {club: logo_url} map.
+"""Scrape Premier League club badges from SoFIFA into a {club: logo_url} map.
 
 WHY IT LOOKS LIKE THIS
 ----------------------
-Cloudflare challenges every browser NAVIGATION, which made a page-per-edition
-sweep unbearable — a CAPTCHA per edition. But the clearance cookie it issues
-belongs to the whole browser context, and Playwright's context.request shares
-that cookie jar. So we navigate exactly ONCE (which also reads the real roster
-codes from the edition dropdown), then pull every teams page over plain HTTP
-through the same context. One challenge per run, not twenty.
+Cloudflare challenges every browser NAVIGATION, so a goto() per edition meant a
+CAPTCHA per edition. Reusing the clearance cookie through context.request does
+NOT help — that issues requests outside the browser's network stack, so the TLS
+and header fingerprint differ and Cloudflare challenges them anyway.
 
-Pagination uses &offset= rather than clicking "Next". scrape_missing already
-documents that the Next button drops the lg[] filter, and with no navigation
-there is nothing to click anyway.
+What works is running fetch() INSIDE the already-cleared page via
+page.evaluate: the real browser stack, the live cookie jar, and a same-origin
+request. So we navigate once to earn clearance (which also reads the roster
+codes from the edition dropdown), then pull every teams page in-page.
 
-By default this sweeps EVERY club SoFIFA lists, not just the Premier League.
-Badges for clubs you never use are harmless — club_logos is a lookup table, and
-the app only ever reads the rows it needs. Sweeping everything means no league
-IDs have to be guessed (SoFIFA's ID 16 is Ligue 1, not League Two, so guessing
-is genuinely risky) and it captures the alternate spellings older editions used,
-which is what the name matching needs.
+Sweeping the Premier League only is the default, and deliberately so: it is one
+page per edition, and the American draft this feeds uses PL players
+exclusively. --all-clubs sweeps everything, but that is roughly twelve pages
+per edition instead of one, which is a lot more exposure to challenges for
+coverage the draft never reads.
 
 Output: <sofifa_data>/pl_club_logos.json — merged with whatever is already
 there, so re-runs accumulate and nothing is lost.
@@ -27,13 +25,11 @@ there, so re-runs accumulate and nothing is lost.
 Upload it at /admin/football/scrape (the club logos input).
 
 Usage:
-    python scrape_pl_logos.py                     # all clubs, editions 2007..2026
-    python scrape_pl_logos.py --pl-only           # Premier League only
+    python scrape_pl_logos.py                     # PL, editions 2007..2026
     python scrape_pl_logos.py --years 2012 2019   # specific editions
-    python scrape_pl_logos.py --headless          # no visible window (only works
-                                                  # if clearance is already cached)
-"""
-from __future__ import annotations
+    python scrape_pl_logos.py --all-clubs         # every club (slow, many pages)
+    python scrape_pl_logos.py --diagnose          # per-page detail
+"""from __future__ import annotations
 
 import argparse
 import asyncio
@@ -115,42 +111,52 @@ def looks_like_challenge(html: str) -> bool:
     return any(m in head for m in CF_MARKERS)
 
 
-async def clear_challenge(page, url: str) -> bool:
-    """Navigate in the real browser so the user can solve a challenge, which
-    refreshes the clearance cookie for all later HTTP fetches."""
+async def reclear(page, url: str) -> str | None:
+    """Navigate for real so a human can solve a challenge; returns the page HTML."""
     print("\n" + "=" * 60)
     print("  *** CLOUDFLARE CHALLENGE — SOLVE IN THE BROWSER WINDOW ***")
-    print("  (only needed once; HTTP fetches reuse the cookie afterwards)")
     print("=" * 60 + "\n")
     try:
         scrape_missing._beep()
     except Exception:
         pass
     await page.goto(url, wait_until="commit")
-    return await wait_for(page, 'a[href*="/team/"]', "teams page", min_count=1)
-
-
-async def fetch_html(context, page, url: str) -> str | None:
-    """GET a page through the browser context's cookie jar. Falls back to a real
-    navigation (so a human can solve a challenge) if Cloudflare intercepts."""
-    try:
-        resp = await context.request.get(url, headers={
-            "Accept": "text/html,application/xhtml+xml",
-            "Referer": "https://sofifa.com/",
-        })
-        if resp.ok:
-            html = await resp.text()
-            if not looks_like_challenge(html):
-                return html
-    except Exception as e:
-        print(f"    fetch failed ({e}); falling back to the browser.")
-
-    if not await clear_challenge(page, url):
+    if not await wait_for(page, 'a[href*="/team/"]', "teams page", min_count=1):
         return None
     return await page.content()
 
 
-async def sweep_edition(context, page, year: int, pl_only: bool, diagnose: bool) -> dict[str, str]:
+async def fetch_html(page, url: str, allow_reclear: bool = True) -> str | None:
+    """Fetch a page WITHOUT navigating, by running fetch() inside the already
+    cleared page.
+
+    context.request looked like the obvious way to reuse the clearance cookie,
+    but it issues requests outside the browser's network stack — different TLS
+    and header fingerprint — so Cloudflare challenged every one regardless of
+    cookies. Running fetch() inside the page uses the real browser stack, the
+    live cookie jar and a same-origin request, which is what actually gets
+    through. Navigation is then only needed if clearance genuinely lapses.
+    """
+    try:
+        html = await page.evaluate(
+            """async (u) => {
+                const r = await fetch(u, { credentials: 'include' });
+                return await r.text();
+            }""",
+            url,
+        )
+    except Exception as e:
+        print(f"    in-page fetch failed ({e})")
+        html = None
+
+    if html and not looks_like_challenge(html):
+        return html
+    if not allow_reclear:
+        return None
+    return await reclear(page, url)
+
+
+async def sweep_edition(page, year: int, pl_only: bool, diagnose: bool) -> dict[str, str]:
     """Return {club: logo_url} for one edition, paging with &offset=."""
     if not code_for_year(year):
         print(f"  ! No roster code for {edition_label(year)} — skipping.")
@@ -162,7 +168,9 @@ async def sweep_edition(context, page, year: int, pl_only: bool, diagnose: bool)
 
     while True:
         url = teams_page_url(year, offset=offset, pl_only=pl_only)
-        html = await fetch_html(context, page, url)
+        # Only allow a re-clear on the first page of an edition. Without this a
+        # persistently blocked page loops forever re-prompting for a CAPTCHA.
+        html = await fetch_html(page, url, allow_reclear=(page_num == 1))
         if html is None:
             print(f"  ! Could not load {edition_label(year)} at offset {offset}.")
             break
@@ -190,6 +198,9 @@ async def sweep_edition(context, page, year: int, pl_only: bool, diagnose: bool)
 
         offset += len(rows)
         page_num += 1
+        if page_num > 40:
+            print("    (stopping — page cap reached)")
+            break
         await asyncio.sleep(random.uniform(0.4, 0.9))
 
     label = f"{edition_label(year)} ({season_label(year)})"
@@ -203,8 +214,9 @@ async def sweep_edition(context, page, year: int, pl_only: bool, diagnose: bool)
 async def main() -> None:
     ap = argparse.ArgumentParser(description="Scrape SoFIFA club badges.")
     ap.add_argument("--years", nargs="*", type=int, help="Edition years (default 2007..2026)")
-    ap.add_argument("--pl-only", action="store_true",
-                    help="Only sweep the Premier League instead of every club")
+    ap.add_argument("--all-clubs", action="store_true",
+                    help="Sweep every club, not just the Premier League. Far more "
+                         "page loads (~12 pages per edition instead of 1).")
     ap.add_argument("--headless", action="store_true",
                     help="No visible window — only works if clearance is already cached")
     ap.add_argument("--diagnose", action="store_true", help="Print per-page detail")
@@ -218,7 +230,7 @@ async def main() -> None:
     logos = load_existing()
     print(f"Starting with {len(logos)} club badges already in {OUT_FILE.name}.")
     print(f"Sweeping {len(years)} editions ({years[0]}..{years[-1]}), "
-          f"{'Premier League only' if args.pl_only else 'all clubs'}.\n")
+          f"{'all clubs' if args.all_clubs else 'Premier League only'}.\n")
 
     async with async_playwright() as pw:
         context = await pw.chromium.launch_persistent_context(
@@ -255,7 +267,7 @@ async def main() -> None:
             if idx > 0:
                 await asyncio.sleep(random.uniform(1.0, 2.0))
             try:
-                found = await sweep_edition(context, page, year, args.pl_only, args.diagnose)
+                found = await sweep_edition(page, year, not args.all_clubs, args.diagnose)
             except Exception as e:
                 print(f"  ! {edition_label(year)} failed: {e}")
                 continue
