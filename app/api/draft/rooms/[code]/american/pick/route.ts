@@ -6,6 +6,7 @@ import {
   attachSquadAttributes,
   fetchRoundPlayers,
   pickedPlayerKeys,
+  roundOptionsFromSettings,
   shuffleArray,
 } from "@/lib/americanDraft";
 import type { AmericanState, SquadPick } from "@/lib/americanDraft";
@@ -36,7 +37,7 @@ export async function POST(
 
   const { data: room, error: roomErr } = await service
     .from("draft_rooms")
-    .select("id, american_state, season_number")
+    .select("id, american_state, season_number, settings")
     .eq("code", code)
     .maybeSingle();
 
@@ -154,7 +155,8 @@ export async function POST(
       nextState.round_players = await fetchRoundPlayers(
         service,
         state.position_sequence[nextRound],
-        pickedPlayerKeys(nextState.picks)
+        pickedPlayerKeys(nextState.picks),
+        roundOptionsFromSettings(room.settings)
       );
     } catch (e) {
       return NextResponse.json(

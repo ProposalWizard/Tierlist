@@ -346,14 +346,38 @@ const CANDIDATE_TTL_MS = 10 * 60 * 1000;
  * and by normalised name, so a footballer can be drafted once per draft — not
  * once per position, and not once per FIFA edition.
  */
+/** Read the pool-shaping settings off a room's settings JSON. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function roundOptionsFromSettings(settings: any): RoundOptions {
+  const s = (settings ?? {}) as Record<string, unknown>;
+  const start = Number(s.eraStart);
+  const end = Number(s.eraEnd);
+  return {
+    eraStart: Number.isFinite(start) ? start : undefined,
+    eraEnd: Number.isFinite(end) ? end : undefined,
+    prime: s.mode === "prime",
+  };
+}
+
+export interface RoundOptions {
+  /** Inclusive fifa_year range from the room's era setting. */
+  eraStart?: number;
+  eraEnd?: number;
+  /** Prime mode: show each player at their best-ever edition. */
+  prime?: boolean;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchRoundPlayers(
   service: any,
   position: string,
   excludeKeys: Iterable<string> = [],
+  opts: RoundOptions = {},
 ): Promise<AmPlayer[]> {
   const allowed = POS_FILTER[position] ?? [];
   const excluded = new Set(excludeKeys);
+  const eraStart = opts.eraStart ?? 2007;
+  const eraEnd = opts.eraEnd ?? 2026;
 
   const SELECT_COLS =
     "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
@@ -386,7 +410,9 @@ export async function fetchRoundPlayers(
       .from("sofifa_players")
       .select(SELECT_COLS)
       .in("league", leagues)
-      .not("overall", "is", null);
+      .not("overall", "is", null)
+      .gte("fifa_year", eraStart)
+      .lte("fifa_year", eraEnd);
     if (years) q = q.in("fifa_year", years);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (await q.limit(1500)) as { data: any[] | null; error: any };
@@ -394,13 +420,15 @@ export async function fetchRoundPlayers(
 
   // Serve from cache when warm. Exclusions and shuffling are applied per round
   // below, so a cached row set still produces a different pool each time.
-  const cached = candidateCache.get(position);
+  const cacheKey = `${position}|${eraStart}-${eraEnd}`;
+  const cached = candidateCache.get(cacheKey);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let rows: any[];
   if (cached && Date.now() - cached.at < CANDIDATE_TTL_MS) {
     rows = cached.rows;
   } else {
-    const randomYears = shuffleArray(ALL_FIFA_YEARS).slice(0, 6);
+    const eraYears = ALL_FIFA_YEARS.filter(y => y >= eraStart && y <= eraEnd);
+    const randomYears = shuffleArray(eraYears).slice(0, 6);
     const first = await runQuery(randomYears);
     if (first.error) {
       throw new Error(`Could not load ${position} players: ${first.error.message}`);
@@ -414,7 +442,7 @@ export async function fetchRoundPlayers(
       }
       rows = wide.data || [];
     }
-    if (rows.length > 0) candidateCache.set(position, { rows, at: Date.now() });
+    if (rows.length > 0) candidateCache.set(cacheKey, { rows, at: Date.now() });
   }
 
   const filtered = applyFilters(rows);
@@ -439,6 +467,28 @@ export async function fetchRoundPlayers(
     seen.add(nameKey);
     chosen.push(r);
     if (chosen.length >= 10) break;
+  }
+
+  // Prime mode shows each player at their best-ever edition, matching the
+  // normal draft's behaviour. Bounded to the ten actually offered.
+  if (opts.prime && chosen.length > 0) {
+    const ids = chosen.map(r => r.sofifa_id).filter(Boolean);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: editions } = (await (service as any)
+      .from("sofifa_players")
+      .select(SELECT_COLS)
+      .in("sofifa_id", ids)) as { data: any[] | null };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bestById = new Map<string, any>();
+    for (const row of editions ?? []) {
+      const cur = bestById.get(row.sofifa_id);
+      if (!cur || resolveOvr(row) > resolveOvr(cur)) bestById.set(row.sofifa_id, row);
+    }
+    for (let i = 0; i < chosen.length; i++) {
+      const best = bestById.get(chosen[i].sofifa_id);
+      if (best && resolveOvr(best) > resolveOvr(chosen[i])) chosen[i] = best;
+    }
   }
 
   const logoMap = await getClubLogoMap(service);

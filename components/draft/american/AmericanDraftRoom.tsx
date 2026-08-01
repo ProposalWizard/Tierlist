@@ -22,6 +22,8 @@ interface Props {
   /** userId → display name. */
   names: Record<string, string>;
   userId: string;
+  /** Room's Rating Visibility setting — hides OVR until a player is drafted. */
+  hideRatings?: boolean;
   onPick: (sofifaId: string) => Promise<void>;
 }
 
@@ -56,12 +58,13 @@ function ovrTextColor(ovr: number): string {
 }
 
 function PlayerCard({
-  player, canPick, onPick, slotPosition,
+  player, canPick, onPick, slotPosition, hideRatings,
 }: {
   player: AmPlayer;
   canPick: boolean;
   onPick: (id: string) => void;
   slotPosition: string;
+  hideRatings?: boolean;
 }) {
   const [picking, setPicking] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
@@ -126,9 +129,10 @@ function PlayerCard({
           />
         )}
 
-        {/* OVR — clean big number, no chunky pill */}
-        <div className={`absolute top-2 left-2.5 ${ovrTextColor(player.ovr)} text-xl sm:text-2xl font-black leading-none drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] tabular-nums`}>
-          {player.ovr}
+        {/* OVR — masked entirely when the room hides ratings, including the
+            tier colour, which would otherwise give the rating away. */}
+        <div className={`absolute top-2 left-2.5 ${hideRatings ? "text-white/70" : ovrTextColor(player.ovr)} text-xl sm:text-2xl font-black leading-none drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] tabular-nums`}>
+          {hideRatings ? "?" : player.ovr}
         </div>
 
         {/* Position — clean bold text with a thin outlined chip */}
@@ -202,7 +206,7 @@ function PlayerCard({
 
 export default function AmericanDraftRoom({
   positionSequence, currentRound, pickOrder, currentPickIdx,
-  roundPlayers, lastPick, names, userId, onPick,
+  roundPlayers, lastPick, names, userId, hideRatings, onPick,
 }: Props) {
   const currentPickerId = pickOrder[currentPickIdx];
   const isMyTurn = currentPickerId === userId;
@@ -346,6 +350,7 @@ export default function AmericanDraftRoom({
                   canPick={isMyTurn}
                   onPick={onPick}
                   slotPosition={currentPosition}
+                  hideRatings={hideRatings}
                 />
               ))}
             </div>

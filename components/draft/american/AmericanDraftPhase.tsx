@@ -27,9 +27,12 @@ interface Props {
 export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Props) {
   const [state, setState] = useState<AmericanState | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [hideRatings, setHideRatings] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const completedRef = useRef(false);
+  // Set while a pick is in flight; cleared when authoritative state arrives.
+  const pendingPickRef = useRef<string | null>(null);
 
   // Read back the squad the server just wrote for this player, so the arrange
   // screen shows the real drafted eleven rather than rebuilding it client-side.
@@ -61,7 +64,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     (async () => {
       const { data: room, error: roomErr } = await supabase
         .from("draft_rooms")
-        .select("id, american_state")
+        .select("id, american_state, settings")
         .eq("code", roomCode.toUpperCase())
         .maybeSingle();
 
@@ -86,6 +89,10 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
         )
       );
 
+      setHideRatings(
+        (room.settings as { hiddenRatings?: boolean } | null)?.hiddenRatings === true
+      );
+
       const initial = room.american_state as AmericanState | null;
       setState(initial);
       setLoading(false);
@@ -99,6 +106,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
           payload => {
             const next = (payload.new as { american_state?: AmericanState | null })?.american_state;
             if (!next) return;
+            pendingPickRef.current = null;
             setState(next);
             if (next.complete) void finish();
           }
@@ -112,47 +120,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     };
   }, [roomCode, finish]);
 
-  const makePick = useCallback(async (sofifaId: string) => {
-    setError(null);
-    const res = await fetch(`/api/draft/rooms/${roomCode}/american/pick`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sofifa_id: sofifaId }),
-    });
-
-    const payload = await res.json().catch(() => null) as
-      | { ok?: boolean; complete?: boolean; error?: string }
-      | null;
-
-    if (!res.ok) {
-      setError(payload?.error ?? "Could not make that pick.");
-      // A rejected pick usually means this client's board is stale — someone
-      // else took the player, or it is looking at a superseded pool. Re-read
-      // the room so the board matches the server instead of leaving the player
-      // clicking a card the server will keep refusing.
-      try {
-        const supabase = createClient();
-        const { data: room } = await supabase
-          .from("draft_rooms")
-          .select("american_state")
-          .eq("code", roomCode.toUpperCase())
-          .maybeSingle();
-        const next = room?.american_state as AmericanState | null;
-        if (next) {
-          setState(next);
-          if (next.complete) void finish();
-        }
-      } catch {
-        // Leave the error message up; the Realtime feed may still recover it.
-      }
-      return;
-    }
-
-    // Act on the response rather than waiting for the Realtime event — the last
-    // pick produces no further room update for the final picker to observe.
-    if (payload?.complete) { void finish(); return; }
-
-    // Fallback refresh in case the Realtime event is dropped.
+  const refetchState = useCallback(async () => {
     const supabase = createClient();
     const { data: room } = await supabase
       .from("draft_rooms")
@@ -161,10 +129,66 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
       .maybeSingle();
     const next = room?.american_state as AmericanState | null;
     if (next) {
+      pendingPickRef.current = null;
       setState(next);
       if (next.complete) void finish();
     }
   }, [roomCode, finish]);
+
+  const makePick = useCallback(async (sofifaId: string) => {
+    setError(null);
+
+    // Apply the pick locally before the request goes out. Previously the board
+    // did nothing until a POST *and* a follow-up read had both completed — two
+    // sequential round-trips of dead time on every pick. The server remains the
+    // authority: its Realtime update overwrites this, and a rejected pick
+    // refetches, so a wrong guess here corrects itself.
+    pendingPickRef.current = sofifaId;
+    setState(prev => {
+      if (!prev) return prev;
+      const isLastPickerInRound = prev.current_pick_idx + 1 >= prev.pick_order.length;
+      return {
+        ...prev,
+        round_players: prev.round_players.filter(p => p.sofifa_id !== sofifaId),
+        // Only advance within a round. A round change re-shuffles the order and
+        // loads a new pool server-side, which cannot be predicted here.
+        current_pick_idx: isLastPickerInRound ? prev.current_pick_idx : prev.current_pick_idx + 1,
+      };
+    });
+
+    let res: Response;
+    try {
+      res = await fetch(`/api/draft/rooms/${roomCode}/american/pick`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sofifa_id: sofifaId }),
+      });
+    } catch {
+      setError("Network problem — retrying from the server state.");
+      await refetchState();
+      return;
+    }
+
+    const payload = await res.json().catch(() => null) as
+      | { ok?: boolean; complete?: boolean; error?: string }
+      | null;
+
+    if (!res.ok) {
+      setError(payload?.error ?? "Could not make that pick.");
+      // Roll the optimistic change back to whatever the server actually has.
+      await refetchState();
+      return;
+    }
+
+    // The last pick produces no further room update for this client to observe.
+    if (payload?.complete) { void finish(); return; }
+
+    // Happy path: let Realtime deliver the authoritative state. Reconcile only
+    // if it hasn't arrived shortly, rather than paying for a read every pick.
+    setTimeout(() => {
+      if (pendingPickRef.current === sofifaId) void refetchState();
+    }, 2500);
+  }, [roomCode, finish, refetchState]);
 
   if (loading) {
     return (
@@ -234,6 +258,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
         lastPick={state.last_pick ?? {}}
         names={names}
         userId={userId}
+        hideRatings={hideRatings}
         onPick={makePick}
       />
     </>
