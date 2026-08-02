@@ -477,6 +477,9 @@ export default function MultiplayerLobby({
       {/* Room Settings */}
       {settings && (() => {
         const canEdit = isHost && !!onUpdateSettings && room?.status === "lobby" && currentSeason === 1;
+        // American mode has no spin, so the spin-only settings are hidden rather
+        // than shown as controls that would do nothing.
+        const isAmerican = settings?.draftMode === "american";
 
         if (!canEdit) {
           // Read-only compact badge row for non-hosts / locked settings
@@ -578,7 +581,9 @@ export default function MultiplayerLobby({
               </div>
             </div>
 
-            {/* Draft Order */}
+            {/* Draft Order — spin-only. American mode fills positions in a fixed
+                sequence from a shared pool, so there is no order to choose. */}
+            {!isAmerican && (
             <div className="mb-3">
               <label className="block text-[9px] font-bold tracking-widest text-gray-400 uppercase mb-1.5">Draft Order</label>
               <div className="grid grid-cols-2 gap-1.5">
@@ -600,6 +605,8 @@ export default function MultiplayerLobby({
                 </button>
               </div>
             </div>
+
+            )}
 
             {/* Rating Visibility */}
             <div className="mb-3">
@@ -624,7 +631,8 @@ export default function MultiplayerLobby({
               </div>
             </div>
 
-            {/* Re-spins */}
+            {/* Re-spins — spin-only. Nothing is spun in American mode. */}
+            {!isAmerican && (
             <div>
               <label className="block text-[9px] font-bold tracking-widest text-gray-400 uppercase mb-1.5">Re-spins Per Draft</label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -641,6 +649,8 @@ export default function MultiplayerLobby({
                 ))}
               </div>
             </div>
+
+            )}
 
             {/* Draft Mode — last setting. Only meaningful for a room, which is
                 why it lives here rather than on the draft home page. */}

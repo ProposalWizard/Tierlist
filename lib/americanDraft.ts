@@ -103,6 +103,23 @@ export interface AmericanState {
   picks: Record<string, SquadPick[]>;
   last_pick: Record<string, AmPlayer>;
   complete: boolean;
+
+  // ── Between-season replacement draft ──────────────────────────────────────
+  /**
+   * "initial" fills a whole squad position by position. "replacement" refills
+   * the gaps left by departures and sales from ONE mixed pool, because a
+   * position-by-position draft makes no sense when each manager has lost a
+   * different set of positions.
+   */
+  mode?: "initial" | "replacement";
+  /** userId → replacements still owed. A manager drops out once theirs hits 0. */
+  vacancies?: Record<string, number>;
+  /** userId → lost their keeper, so the pool must contain one for them. */
+  needs_gk?: Record<string, boolean>;
+  /** Reverse league standings, worst first — the pick order every round. */
+  standings_order?: string[];
+  /** userId → their post-departure squad, collected before the draft starts. */
+  pending_vacancies?: Record<string, { count: number; needsGk: boolean }>;
 }
 
 /** 11 starters in 4-3-3 order, then 3 substitutes. */
@@ -122,6 +139,55 @@ export function makeAmericanState(userIds: string[], firstRoundPlayers: AmPlayer
     last_pick: {},
     complete: false,
   };
+}
+
+/**
+ * Seed a between-season replacement draft.
+ *
+ * Rounds run until nobody is owed a player, so the number of rounds is the
+ * largest number of vacancies any single manager has. A manager only appears in
+ * the rounds they still need, which is why the pick order is rebuilt each round
+ * rather than fixed. Order is straight reverse standings — worst finisher first,
+ * as in a real draft — not snaked.
+ */
+export function makeReplacementState(
+  vacancies: Record<string, number>,
+  needsGk: Record<string, boolean>,
+  standingsOrder: string[],
+  firstRoundPlayers: AmPlayer[],
+): AmericanState {
+  const maxRounds = Math.max(0, ...Object.values(vacancies));
+  return {
+    // Mixed pool, so the sequence is only there to give the board a round count.
+    position_sequence: Array.from({ length: maxRounds }, () => "ANY"),
+    current_round: 0,
+    pick_order: participantsForRound(vacancies, standingsOrder),
+    current_pick_idx: 0,
+    round_players: firstRoundPlayers,
+    picks: {},
+    last_pick: {},
+    complete: false,
+    mode: "replacement",
+    vacancies,
+    needs_gk: needsGk,
+    standings_order: standingsOrder,
+  };
+}
+
+/** Everyone still owed a player, in reverse-standings order. */
+export function participantsForRound(
+  vacancies: Record<string, number>,
+  standingsOrder: string[],
+): string[] {
+  return standingsOrder.filter(uid => (vacancies[uid] ?? 0) > 0);
+}
+
+/** How many keepers the next pool must contain for the managers in it. */
+export function goalkeepersNeeded(
+  participants: string[],
+  needsGk: Record<string, boolean>,
+): number {
+  return participants.filter(uid => needsGk[uid]).length;
 }
 
 /**
@@ -346,14 +412,39 @@ const CANDIDATE_TTL_MS = 10 * 60 * 1000;
  * and by normalised name, so a footballer can be drafted once per draft — not
  * once per position, and not once per FIFA edition.
  */
+/** Read the pool-shaping settings off a room's settings JSON. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function roundOptionsFromSettings(settings: any): RoundOptions {
+  const s = (settings ?? {}) as Record<string, unknown>;
+  const start = Number(s.eraStart);
+  const end = Number(s.eraEnd);
+  return {
+    eraStart: Number.isFinite(start) ? start : undefined,
+    eraEnd: Number.isFinite(end) ? end : undefined,
+    prime: s.mode === "prime",
+  };
+}
+
+export interface RoundOptions {
+  /** Inclusive fifa_year range from the room's era setting. */
+  eraStart?: number;
+  eraEnd?: number;
+  /** Prime mode: show each player at their best-ever edition. */
+  prime?: boolean;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchRoundPlayers(
   service: any,
   position: string,
   excludeKeys: Iterable<string> = [],
+  opts: RoundOptions = {},
+  size = 10,
 ): Promise<AmPlayer[]> {
   const allowed = POS_FILTER[position] ?? [];
   const excluded = new Set(excludeKeys);
+  const eraStart = opts.eraStart ?? 2007;
+  const eraEnd = opts.eraEnd ?? 2026;
 
   const SELECT_COLS =
     "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
@@ -386,7 +477,9 @@ export async function fetchRoundPlayers(
       .from("sofifa_players")
       .select(SELECT_COLS)
       .in("league", leagues)
-      .not("overall", "is", null);
+      .not("overall", "is", null)
+      .gte("fifa_year", eraStart)
+      .lte("fifa_year", eraEnd);
     if (years) q = q.in("fifa_year", years);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (await q.limit(1500)) as { data: any[] | null; error: any };
@@ -394,13 +487,15 @@ export async function fetchRoundPlayers(
 
   // Serve from cache when warm. Exclusions and shuffling are applied per round
   // below, so a cached row set still produces a different pool each time.
-  const cached = candidateCache.get(position);
+  const cacheKey = `${position}|${eraStart}-${eraEnd}`;
+  const cached = candidateCache.get(cacheKey);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let rows: any[];
   if (cached && Date.now() - cached.at < CANDIDATE_TTL_MS) {
     rows = cached.rows;
   } else {
-    const randomYears = shuffleArray(ALL_FIFA_YEARS).slice(0, 6);
+    const eraYears = ALL_FIFA_YEARS.filter(y => y >= eraStart && y <= eraEnd);
+    const randomYears = shuffleArray(eraYears).slice(0, 6);
     const first = await runQuery(randomYears);
     if (first.error) {
       throw new Error(`Could not load ${position} players: ${first.error.message}`);
@@ -414,7 +509,7 @@ export async function fetchRoundPlayers(
       }
       rows = wide.data || [];
     }
-    if (rows.length > 0) candidateCache.set(position, { rows, at: Date.now() });
+    if (rows.length > 0) candidateCache.set(cacheKey, { rows, at: Date.now() });
   }
 
   const filtered = applyFilters(rows);
@@ -438,7 +533,29 @@ export async function fetchRoundPlayers(
     seen.add(idKey);
     seen.add(nameKey);
     chosen.push(r);
-    if (chosen.length >= 10) break;
+    if (chosen.length >= size) break;
+  }
+
+  // Prime mode shows each player at their best-ever edition, matching the
+  // normal draft's behaviour. Bounded to the ten actually offered.
+  if (opts.prime && chosen.length > 0) {
+    const ids = chosen.map(r => r.sofifa_id).filter(Boolean);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: editions } = (await (service as any)
+      .from("sofifa_players")
+      .select(SELECT_COLS)
+      .in("sofifa_id", ids)) as { data: any[] | null };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bestById = new Map<string, any>();
+    for (const row of editions ?? []) {
+      const cur = bestById.get(row.sofifa_id);
+      if (!cur || resolveOvr(row) > resolveOvr(cur)) bestById.set(row.sofifa_id, row);
+    }
+    for (let i = 0; i < chosen.length; i++) {
+      const best = bestById.get(chosen[i].sofifa_id);
+      if (best && resolveOvr(best) > resolveOvr(chosen[i])) chosen[i] = best;
+    }
   }
 
   const logoMap = await getClubLogoMap(service);
@@ -457,6 +574,55 @@ export async function fetchRoundPlayers(
     season: seasonLabel(r.fifa_year),
     fifa_year: r.fifa_year,
   }));
+}
+
+/**
+ * A mixed-position pool for the replacement draft.
+ *
+ * `minGoalkeepers` is the number of managers in this round who lost their
+ * keeper. A purely random mix could contain none, which would force someone to
+ * play an outfielder in goal through no choice of their own, so that many
+ * keepers are seated first and the rest of the board filled around them. The
+ * final list is shuffled so the guaranteed keepers are not all at the front.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function fetchMixedRoundPlayers(
+  service: any,
+  excludeKeys: Iterable<string> = [],
+  opts: RoundOptions = {},
+  minGoalkeepers = 0,
+): Promise<AmPlayer[]> {
+  const SIZE = 10;
+  const gkTarget = Math.min(minGoalkeepers, SIZE);
+
+  // "ANY" applies no position filter, so this is the whole eligible pool.
+  const outfieldPool = await fetchRoundPlayers(service, "ANY", excludeKeys, opts, SIZE * 3);
+  const keeperPool = gkTarget > 0
+    ? await fetchRoundPlayers(service, "GK", excludeKeys, opts, SIZE)
+    : [];
+
+  const chosen: AmPlayer[] = [];
+  const used = new Set<string>();
+  const take = (p: AmPlayer) => {
+    const idKey = `id:${p.sofifa_id}`;
+    const nameKey = `name:${playerNameKey(p.name)}`;
+    if (used.has(idKey) || used.has(nameKey)) return false;
+    used.add(idKey);
+    used.add(nameKey);
+    chosen.push(p);
+    return true;
+  };
+
+  for (const gk of keeperPool) {
+    if (chosen.length >= gkTarget) break;
+    take(gk);
+  }
+  for (const p of outfieldPool) {
+    if (chosen.length >= SIZE) break;
+    take(p);
+  }
+
+  return shuffleArray(chosen);
 }
 
 /**

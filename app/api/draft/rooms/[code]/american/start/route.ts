@@ -5,6 +5,7 @@ import {
   AM_POSITION_SEQUENCE,
   fetchRoundPlayers,
   makeAmericanState,
+  roundOptionsFromSettings,
 } from "@/lib/americanDraft";
 
 /**
@@ -25,7 +26,7 @@ export async function POST(
 
   const { data: room, error: roomErr } = await service
     .from("draft_rooms")
-    .select("id, host_id, status, american_state")
+    .select("id, host_id, status, american_state, settings")
     .eq("code", code)
     .maybeSingle();
 
@@ -61,7 +62,12 @@ export async function POST(
   // instead of starting a draft nobody can pick in.
   let firstRoundPlayers;
   try {
-    firstRoundPlayers = await fetchRoundPlayers(service, AM_POSITION_SEQUENCE[0]);
+    firstRoundPlayers = await fetchRoundPlayers(
+      service,
+      AM_POSITION_SEQUENCE[0],
+      [],
+      roundOptionsFromSettings(room.settings)
+    );
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Could not load goalkeepers" },
