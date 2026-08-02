@@ -24,6 +24,8 @@ interface Props {
   userId: string;
   /** Room's Rating Visibility setting — hides OVR until a player is drafted. */
   hideRatings?: boolean;
+  /** Blocks picking while a submitted pick is still being confirmed. */
+  locked?: boolean;
   onPick: (sofifaId: string) => Promise<void>;
 }
 
@@ -211,10 +213,10 @@ function PlayerCard({
 
 export default function AmericanDraftRoom({
   positionSequence, currentRound, pickOrder, currentPickIdx,
-  roundPlayers, lastPick, names, userId, hideRatings, onPick,
+  roundPlayers, lastPick, names, userId, hideRatings, locked, onPick,
 }: Props) {
   const currentPickerId = pickOrder[currentPickIdx];
-  const isMyTurn = currentPickerId === userId;
+  const isMyTurn = currentPickerId === userId && !locked;
   const currentPosition = positionSequence[currentRound] || "ANY";
   const posLabel = POSITION_LABELS[currentPosition] || currentPosition;
   const currentPickerName = names[currentPickerId];
