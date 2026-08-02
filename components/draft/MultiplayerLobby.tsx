@@ -40,6 +40,8 @@ interface Props {
   onCareerComplete?: (seasons: SeasonResult[], finalRoomPlayers: RoomPlayer[], allRoomPlayerSeasons?: Record<string, SeasonResult[]>) => void;
   onLeave: () => void;
   onUpdateSettings?: (settings: Partial<DraftSettings>) => void;
+  /** Fired when the room has a live American draft this player should be in. */
+  onAmericanDraftActive?: () => void;
   onSettingsSync?: (settings: Partial<DraftSettings>) => void;
   onHostChange?: (isNowHost: boolean) => void;
   defaultTeamName?: string;
@@ -59,6 +61,7 @@ export default function MultiplayerLobby({
   onCareerComplete,
   onLeave,
   onUpdateSettings,
+  onAmericanDraftActive,
   onSettingsSync,
   onHostChange,
 }: Props) {
@@ -368,6 +371,22 @@ export default function MultiplayerLobby({
       setTeamNameSaving(false);
     }
   };
+
+  // A live American draft must pull everyone in, whatever screen they are on.
+  // Previously a client that missed the transition sat in the lobby showing
+  // "waiting" while the others drafted, and the room could never progress.
+  const americanPulledRef = useRef(false);
+  const onAmericanRef = useRef(onAmericanDraftActive);
+  onAmericanRef.current = onAmericanDraftActive;
+  useEffect(() => {
+    if (americanPulledRef.current || !onAmericanRef.current) return;
+    const am = (room as unknown as { american_state?: { complete?: boolean; seeded?: boolean } } | null)?.american_state;
+    if (!am || am.complete || !am.seeded) return;
+    const me = players.find(p => p.user_id === userId);
+    if (me?.status === "out") return;      // relegated players take no part
+    americanPulledRef.current = true;
+    onAmericanRef.current();
+  }, [room, players, userId]);
 
   // When room transitions to "started", all players auto-transition to formation pick
   const gameStartedHandled = useRef(false);

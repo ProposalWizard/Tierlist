@@ -1284,6 +1284,7 @@ export default function DraftPage() {
           onCareerComplete={isAdminUser ? handleCareerComplete : undefined}
           onLeave={handleLeaveRoom}
           onUpdateSettings={handleUpdateRoomSettings}
+          onAmericanDraftActive={() => { setPhase("american-draft"); scrollTop(); }}
           onSettingsSync={handleSettingsSync}
           onHostChange={setIsHost}
           defaultTeamName={teamName}

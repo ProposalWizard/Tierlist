@@ -24,6 +24,17 @@ interface Props {
  * draft_room_players row with status 'ready', so we just hand control back to
  * the lobby and the normal simulate flow continues.
  */
+/** Cheap identity for a draft state — enough to tell whether the board moved. */
+function stateSignature(s: AmericanState): string {
+  return [
+    s.current_round,
+    s.current_pick_idx,
+    s.complete ? 1 : 0,
+    s.pick_order?.join(","),
+    s.round_players?.map(p => p.sofifa_id).join(","),
+  ].join("|");
+}
+
 export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Props) {
   const [state, setState] = useState<AmericanState | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
@@ -137,7 +148,11 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     if (next) {
       pendingPickRef.current = null;
       setAwaitingServer(false);
-      setState(next);
+      // Only swap state in when something actually changed. The safety-net poll
+      // runs every few seconds, and replacing the object each time re-rendered
+      // the whole board — which read on screen as a brief flicker/refresh even
+      // though nothing had moved.
+      setState(prev => (prev && stateSignature(prev) === stateSignature(next) ? prev : next));
       if (next.complete) void finish();
     }
   }, [roomCode, finish]);

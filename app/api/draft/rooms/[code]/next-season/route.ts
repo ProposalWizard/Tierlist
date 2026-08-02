@@ -167,6 +167,11 @@ export async function POST(
       season_number: nextSeasonNumber,
       previous_league_table: previousLeagueTable,
       settings: { ...existingSettings, allPlayerSeasons: newHistory, revealStartAt: null },
+      // Clear the finished American draft. It carries complete:true and
+      // seeded:true, and carrying those into the new season made the next
+      // draft look already-finished — clients skipped straight past it — and
+      // left it permanently unseedable.
+      american_state: null,
     })
     .eq("id", room.id);
   if (roomErr) {

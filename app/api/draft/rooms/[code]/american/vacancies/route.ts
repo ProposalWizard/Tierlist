@@ -80,15 +80,19 @@ export async function POST(
   // Relegated managers are out of the competition and take no part.
   const active = (allPlayers ?? []).filter(p => p.status !== "out");
 
+  // Only pending_vacancies is carried forward. Spreading the whole previous
+  // state dragged complete:true and seeded:true from the last season into this
+  // one, so the draft was skipped and could never be seeded again.
   const prev = (room.american_state as AmericanState | null) ?? null;
-  const pending = { ...(prev?.pending_vacancies ?? {}) };
+  const stale = prev?.complete === true;
+  const pending = { ...(stale ? {} : (prev?.pending_vacancies ?? {})) };
   pending[user.id] = { count, needsGk: !!body.needsGk };
 
   const everyoneIn = active.every(p => pending[p.user_id] !== undefined);
   if (!everyoneIn) {
     const { error } = await service
       .from("draft_rooms")
-      .update({ american_state: { ...(prev ?? {}), mode: "replacement", pending_vacancies: pending } })
+      .update({ american_state: { mode: "replacement", pending_vacancies: pending } })
       .eq("id", room.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({
@@ -113,8 +117,8 @@ export async function POST(
       .from("draft_rooms")
       .update({
         american_state: {
-          ...(prev ?? {}), mode: "replacement", pending_vacancies: pending,
-          complete: true, round_players: [], vacancies, needs_gk: needsGk,
+          mode: "replacement", pending_vacancies: pending,
+          complete: true, seeded: true, round_players: [], vacancies, needs_gk: needsGk,
         },
       })
       .eq("id", room.id);
