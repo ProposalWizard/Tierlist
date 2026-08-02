@@ -293,9 +293,11 @@ async function finishReplacementDraft(
   nextState.complete = true;
   nextState.round_players = [];
 
+  // status is needed so relegated managers are skipped below — writing "ready"
+  // over their "out" would put an eliminated manager back into the league.
   const { data: rosters, error: rosterErr } = await service
     .from("draft_room_players")
-    .select("user_id, squad")
+    .select("user_id, squad, status")
     .eq("room_id", room.id);
   if (rosterErr) {
     return NextResponse.json({ error: rosterErr.message }, { status: 500 });
@@ -304,11 +306,13 @@ async function finishReplacementDraft(
   const season = Number(room.season_number) || 1;
   const built = Object.entries(nextState.picks).map(([userId, picks]) => {
     const list = picks as SquadPick[];
-    return { userId, squad: americanPicksToSquad(list), fifaYears: list.map(p => p.player.fifa_year) };
+    // anyMeansSub=false: a mixed replacement pool has no bench slots.
+    return { userId, squad: americanPicksToSquad(list, false), fifaYears: list.map(p => p.player.fifa_year) };
   });
   await attachSquadAttributes(service, built);
 
   for (const row of rosters ?? []) {
+    if (row.status === "out") continue;
     const mine = built.find(b => b.userId === row.user_id);
     const carried = (row.squad as DraftPlayer[]) ?? [];
     // Signings keep their boost in American mode, so a career's squad inflation

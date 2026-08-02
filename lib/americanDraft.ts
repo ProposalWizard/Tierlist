@@ -121,6 +121,12 @@ export interface AmericanState {
   standings_order?: string[];
   /** userId → their post-departure squad, collected before the draft starts. */
   pending_vacancies?: Record<string, { count: number; needsGk: boolean }>;
+  /**
+   * Set once a pool has been built. The seeding write is conditional on this
+   * being absent, so two managers submitting simultaneously cannot each seed a
+   * different pool.
+   */
+  seeded?: boolean;
 }
 
 /** 11 starters in 4-3-3 order, then 3 substitutes. */
@@ -197,17 +203,24 @@ export function goalkeepersNeeded(
  * own primary position; every other round keeps its slot position so the
  * formation lines up.
  */
-export function americanPicksToSquad(picks: SquadPick[]) {
+export function americanPicksToSquad(picks: SquadPick[], anyMeansSub = true) {
   return picks.map(pick => {
     const p = pick.player;
-    const isSubPick = pick.position === "ANY";
+    // In the initial draft "ANY" is a bench slot. In the replacement draft the
+    // whole pool is mixed, so every round's slot is "ANY" — treating those as
+    // substitutes marked EVERY replacement as a bench player, leaving a manager
+    // who lost three starters with an eight-man starting XI and a team strength
+    // computed from only those eight.
+    const isSubPick = anyMeansSub && pick.position === "ANY";
     return {
       name: p.name,
       overall: p.ovr,
       positions: p.positions,
       club: p.club,
       clubYear: p.season ? `${p.club} ${p.season}` : p.club,
-      assignedPosition: isSubPick ? (p.positions.split(",")[0]?.trim() || "CM") : pick.position,
+      assignedPosition: pick.position === "ANY"
+        ? (p.positions.split(",")[0]?.trim() || "CM")
+        : pick.position,
       sofifa_id: p.sofifa_id,
       image_url: p.image_url,
       nationality: p.nationality,
