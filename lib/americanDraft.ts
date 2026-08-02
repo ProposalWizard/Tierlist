@@ -423,7 +423,7 @@ const eraPoolCache = new Map<string, { rows: any[]; at: number }>();
 const ERA_POOL_TTL_MS = 10 * 60 * 1000;
 
 const POOL_COLS =
-  "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
+  "id, sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getEraPool(service: any, eraStart: number, eraEnd: number): Promise<any[]> {
@@ -436,22 +436,34 @@ async function getEraPool(service: any, eraStart: number, eraEnd: number): Promi
     throw new Error("No Premier League rows found — is the player data imported?");
   }
 
-  // Paged, because PostgREST caps a single select at 1000 rows regardless of
-  // limit — the exact trap that truncated this before.
+  // Keyset pagination on the BIGINT primary key rather than range/offset.
+  // OFFSET makes the database walk and discard every earlier row on each page,
+  // so a multi-page sweep of this table gets progressively slower and was
+  // hitting the statement timeout. Seeking on id > last is a direct index jump,
+  // so every page costs the same.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows = await fetchAllRows<any>((from, to) =>
-    (service as any)
+  const rows: any[] = [];
+  let lastId = 0;
+  for (let page = 0; page < 60; page++) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = (await (service as any)
       .from("sofifa_players")
       .select(POOL_COLS)
       .in("league", leagues)
       .not("overall", "is", null)
       .gte("fifa_year", eraStart)
       .lte("fifa_year", eraEnd)
-      .order("sofifa_id", { ascending: true })
-      .order("fifa_year", { ascending: true })
-      .range(from, to),
-    40000,
-  );
+      .gt("id", lastId)
+      .order("id", { ascending: true })
+      .limit(1000)) as { data: any[] | null; error: { message: string } | null };
+
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) break;
+
+    rows.push(...data);
+    lastId = data[data.length - 1].id;
+    if (data.length < 1000) break;
+  }
 
   if (rows.length > 0) eraPoolCache.set(key, { rows, at: Date.now() });
   return rows;
@@ -498,7 +510,17 @@ export async function fetchRoundPlayers(
   const eraStart = opts.eraStart ?? 2007;
   const eraEnd = opts.eraEnd ?? 2026;
 
-  const all = await getEraPool(service, eraStart, eraEnd);
+  let all: Awaited<ReturnType<typeof getEraPool>>;
+  try {
+    all = await getEraPool(service, eraStart, eraEnd);
+  } catch (e) {
+    throw new Error(
+      `Could not load the player pool: ${e instanceof Error ? e.message : String(e)}`
+    );
+  }
+  if (all.length === 0) {
+    throw new Error("No Premier League players found — is the player data imported?");
+  }
 
   const filtered = all.filter(r => {
     const clubName = (r.club || "").toLowerCase();

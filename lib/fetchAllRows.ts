@@ -17,13 +17,17 @@
  * without one, Postgres may return overlapping or missing rows across pages.
  */
 export async function fetchAllRows<T>(
-  build: (from: number, to: number) => PromiseLike<{ data: T[] | null }>,
+  build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error?: { message: string } | null }>,
   hardCap = 20000,
 ): Promise<T[]> {
   const PAGE = 1000;
   const all: T[] = [];
   for (let from = 0; from < hardCap; from += PAGE) {
-    const { data } = await build(from, from + PAGE - 1);
+    // The error MUST be checked. Reading only `data` turned any failure —
+    // a timeout, a bad column — into a silent empty result, which callers then
+    // reported as "no rows exist". Throw so the caller can say what went wrong.
+    const { data, error } = await build(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
     if (!data || data.length === 0) break;
     all.push(...data);
     if (data.length < PAGE) break;
