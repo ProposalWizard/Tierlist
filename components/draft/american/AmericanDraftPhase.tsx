@@ -135,6 +135,16 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     }
   }, [roomCode, finish]);
 
+  // While a replacement draft is still collecting everyone's vacancies there is
+  // nothing to subscribe to yet, so poll until the pool appears.
+  const awaitingSeed = !!state && state.mode === "replacement" && !state.complete
+    && (state.round_players?.length ?? 0) === 0 && !state.pick_order?.length;
+  useEffect(() => {
+    if (!awaitingSeed) return;
+    const t = setInterval(() => { void refetchState(); }, 2000);
+    return () => clearInterval(t);
+  }, [awaitingSeed, refetchState]);
+
   const makePick = useCallback(async (sofifaId: string) => {
     setError(null);
 
@@ -215,6 +225,22 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
         <div className="text-center">
           <p className="text-white font-bold text-sm mb-1">Waiting for the host to start the draft…</p>
           <p className="text-white/50 text-xs">Room {roomCode}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Still gathering everyone's departures — not an error, just a wait.
+  if (awaitingSeed) {
+    const submitted = Object.keys(state.pending_vacancies ?? {}).length;
+    return (
+      <div className="min-h-screen bg-[#060d1a] flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-white font-bold text-sm mb-1">Waiting for the other managers…</p>
+          <p className="text-white/60 text-xs">
+            {submitted} {submitted === 1 ? "manager has" : "managers have"} finished their pre-season.
+            The draft starts once everyone is in.
+          </p>
         </div>
       </div>
     );

@@ -4,13 +4,22 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   americanPicksToSquad,
   attachSquadAttributes,
+  fetchMixedRoundPlayers,
   fetchRoundPlayers,
+  goalkeepersNeeded,
+  participantsForRound,
   pickedPlayerKeys,
+  playerNameKey,
   roundOptionsFromSettings,
   shuffleArray,
 } from "@/lib/americanDraft";
 import type { AmericanState, SquadPick } from "@/lib/americanDraft";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
+import type { DraftPlayer } from "@/lib/seasonSimulator";
+import { applyStatChange, getSigningBoost } from "@/lib/draftBoosts";
+
+/** Squad rows only need these fields to build the ownership exclusion set. */
+type RosterEntry = { sofifa_id?: string; name?: string };
 
 /**
  * Make one pick in a room's American draft.
@@ -73,6 +82,12 @@ export async function POST(
     },
     last_pick: { ...state.last_pick, [user.id]: picked },
   };
+
+  const isReplacement = state.mode === "replacement";
+
+  if (isReplacement) {
+    return handleReplacementPick(service, room, state, nextState, user.id, sofifa_id);
+  }
 
   const isLastPickerInRound = state.current_pick_idx + 1 >= state.pick_order.length;
   const isLastRound = state.current_round + 1 >= state.position_sequence.length;
@@ -180,4 +195,145 @@ export async function POST(
   }
 
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * One pick in a between-season replacement draft.
+ *
+ * Unlike the initial draft, managers owe different numbers of players, so the
+ * pick order is rebuilt each round from whoever is still owed one and the draft
+ * ends when nobody is. Picks are APPENDED to the squad the manager carried in
+ * after departures and sales, rather than forming a whole new squad.
+ */
+async function handleReplacementPick(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  service: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  room: any,
+  state: AmericanState,
+  nextState: AmericanState,
+  userId: string,
+  sofifaId: string,
+) {
+  const vacancies = { ...(state.vacancies ?? {}) };
+  vacancies[userId] = Math.max(0, (vacancies[userId] ?? 0) - 1);
+  nextState.vacancies = vacancies;
+
+  const standingsOrder = state.standings_order ?? state.pick_order;
+  const needsGk = state.needs_gk ?? {};
+
+  // A manager who just filled their keeper slot no longer forces one into the pool.
+  const pickedIsGk = (state.round_players.find(p => p.sofifa_id === sofifaId)?.positions ?? "")
+    .toUpperCase().split(",").map(x => x.trim()).includes("GK");
+  if (pickedIsGk && needsGk[userId]) {
+    nextState.needs_gk = { ...needsGk, [userId]: false };
+  }
+
+  const stillPicking = state.current_pick_idx + 1 < state.pick_order.length;
+  if (stillPicking) {
+    nextState.current_pick_idx = state.current_pick_idx + 1;
+    nextState.round_players = state.round_players.filter(p => p.sofifa_id !== sofifaId);
+  } else {
+    const nextParticipants = participantsForRound(vacancies, standingsOrder);
+    if (nextParticipants.length === 0) {
+      return finishReplacementDraft(service, room, nextState);
+    }
+
+    nextState.current_round = state.current_round + 1;
+    nextState.current_pick_idx = 0;
+    nextState.pick_order = nextParticipants;
+
+    // Exclude everyone on any roster in the room as well as this draft's picks.
+    const excluded = pickedPlayerKeys(nextState.picks);
+    const { data: rosters } = await service
+      .from("draft_room_players")
+      .select("squad")
+      .eq("room_id", room.id);
+    for (const r of rosters ?? []) {
+      for (const sp of ((r.squad as RosterEntry[]) ?? [])) {
+        if (sp?.sofifa_id) excluded.add(`id:${sp.sofifa_id}`);
+        const nk = playerNameKey(sp?.name ?? "");
+        if (nk) excluded.add(`name:${nk}`);
+      }
+    }
+
+    try {
+      nextState.round_players = await fetchMixedRoundPlayers(
+        service,
+        excluded,
+        roundOptionsFromSettings(room.settings),
+        goalkeepersNeeded(nextParticipants, nextState.needs_gk ?? needsGk)
+      );
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Could not load the next round" },
+        { status: 500 }
+      );
+    }
+  }
+
+  const { error } = await service
+    .from("draft_rooms")
+    .update({ american_state: nextState })
+    .eq("id", room.id);
+  if (error) {
+    return NextResponse.json({ error: `Could not save the pick: ${error.message}` }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
+/** Append each manager's replacements to their carried-over squad. */
+async function finishReplacementDraft(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  service: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  room: any,
+  nextState: AmericanState,
+) {
+  nextState.complete = true;
+  nextState.round_players = [];
+
+  const { data: rosters, error: rosterErr } = await service
+    .from("draft_room_players")
+    .select("user_id, squad")
+    .eq("room_id", room.id);
+  if (rosterErr) {
+    return NextResponse.json({ error: rosterErr.message }, { status: 500 });
+  }
+
+  const season = Number(room.season_number) || 1;
+  const built = Object.entries(nextState.picks).map(([userId, picks]) => {
+    const list = picks as SquadPick[];
+    return { userId, squad: americanPicksToSquad(list), fifaYears: list.map(p => p.player.fifa_year) };
+  });
+  await attachSquadAttributes(service, built);
+
+  for (const row of rosters ?? []) {
+    const mine = built.find(b => b.userId === row.user_id);
+    const carried = (row.squad as DraftPlayer[]) ?? [];
+    // Signings keep their boost in American mode, so a career's squad inflation
+    // curve stays the same as the normal draft's.
+    const signed = (mine?.squad ?? []).map(p => applyStatChange(p, getSigningBoost(season)));
+    const full = [...carried, ...signed];
+    if (full.length === 0) continue;
+
+    const { teamStrength, avgOvr } = computeTeamStrength(full);
+    const { error } = await service
+      .from("draft_room_players")
+      .update({ squad: full, avg_ovr: avgOvr, team_strength: teamStrength, status: "ready" })
+      .eq("room_id", room.id)
+      .eq("user_id", row.user_id);
+    if (error) {
+      return NextResponse.json({ error: `Could not save squads: ${error.message}` }, { status: 500 });
+    }
+  }
+
+  const { error: doneErr } = await service
+    .from("draft_rooms")
+    .update({ american_state: nextState })
+    .eq("id", room.id);
+  if (doneErr) {
+    return NextResponse.json({ error: doneErr.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true, complete: true });
 }

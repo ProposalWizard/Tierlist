@@ -78,8 +78,13 @@ function PlayerCard({
     setPicking(false);
   }
 
-  const accent = POS_ACCENT[slotPosition] || "#64748b";
-  const badgeLabel = slotPosition === "ANY" ? "SUB" : slotPosition;
+  // A mixed pool has no slot to fill, so the badge shows what the player
+  // actually plays. In the initial draft it shows the slot being filled, and
+  // "ANY" there means a substitute.
+  const naturalPos = (player.positions || "").split(",")[0]?.trim().toUpperCase() || "";
+  const badgePos = slotPosition === "ANY" && naturalPos ? naturalPos : slotPosition;
+  const accent = POS_ACCENT[badgePos] || "#64748b";
+  const badgeLabel = badgePos === "ANY" ? "SUB" : badgePos;
   const showImage = !!player.image_url && !imgFailed;
   const showClubLogo = !!player.club_logo_url && !clubLogoFailed;
   const flagUrl = getFlagUrl(player.nationality);

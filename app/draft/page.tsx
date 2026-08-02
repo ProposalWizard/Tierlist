@@ -375,6 +375,10 @@ export default function DraftPage() {
   const [allRoomPlayerSeasons, setAllRoomPlayerSeasons] = useState<Record<string, SeasonResult[]> | null>(null);
   const [revealStartTime, setRevealStartTime] = useState<number | undefined>(undefined);
 
+  // True only for a multiplayer room running the American draft. Gates the
+  // between-season reordering so the normal spin flow is untouched.
+  const isAmericanRoom = !!roomCode && settings?.draftMode === "american";
+
   // Read ?room= during the first render, before the URL-sync effect below can
   // rewrite it. A useState initialiser runs while rendering, whereas effects run
   // after — and the sync effect's first run (roomCode still null) replaces the
@@ -945,7 +949,10 @@ export default function DraftPage() {
       setNextSeasonPlayers(updatedSquad);
       const actualSlots = retainedPlayer ? Math.max(0, signingSlots - 1) : signingSlots;
       setSigningSlots(actualSlots);
-      if (actualSlots === 0) {
+      // American mode replaces the spin-based signing phase with a shared draft,
+      // which cannot start until every manager's vacancies are known — so the
+      // sell decision has to come FIRST here, not after signing.
+      if (isAmericanRoom || actualSlots === 0) {
         setPlayers(updatedSquad);
         setPhase("sell");
       } else {
@@ -953,7 +960,7 @@ export default function DraftPage() {
       }
       scrollTop();
     },
-    [nextSeasonPlayers, signingSlots, scrollTop, currentSeason]
+    [nextSeasonPlayers, signingSlots, scrollTop, currentSeason, isAmericanRoom]
   );
 
   const handleSigningComplete = useCallback(
@@ -967,19 +974,53 @@ export default function DraftPage() {
     [nextSeasonPlayers, scrollTop, currentSeason]
   );
 
+  /**
+   * American mode: hand the squad we are left with, plus how many replacements
+   * we are owed, to the server. The last manager to submit seeds the shared
+   * replacement draft, so no host action is needed.
+   */
+  const submitVacancies = useCallback(async (squad: DraftPlayer[], vacancies: number) => {
+    if (!roomCode) return;
+    // A pool that contains no keeper would force an outfielder into goal, so
+    // the server needs to know who is short of one.
+    const needsGk = !squad.some(p => (p.positions || "").toUpperCase().split(",").map(x => x.trim()).includes("GK"));
+    setPlayers(squad);
+    setPhase("american-draft");
+    scrollTop();
+    try {
+      await fetch(`/api/draft/rooms/${roomCode}/american/vacancies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ squad, vacancies, needsGk }),
+      });
+    } catch {
+      // The draft screen polls the room, so a dropped submit recovers on retry.
+    }
+  }, [roomCode, scrollTop]);
+
   const handleSellPlayer = useCallback(
     (soldPlayer: DraftPlayer) => {
-      setPlayers((prev) => prev.filter((p) => p !== soldPlayer));
+      const remaining = players.filter((p) => p !== soldPlayer);
+      setPlayers(remaining);
+      if (isAmericanRoom) {
+        // Selling frees one more slot on top of any unreplaced departures.
+        void submitVacancies(remaining, signingSlots + 1);
+        return;
+      }
       setPhase("sell-signing");
       scrollTop();
     },
-    [scrollTop]
+    [scrollTop, players, isAmericanRoom, signingSlots, submitVacancies]
   );
 
   const handleSkipSell = useCallback(() => {
+    if (isAmericanRoom) {
+      void submitVacancies(players, signingSlots);
+      return;
+    }
     setPhase("arrange");
     scrollTop();
-  }, [scrollTop]);
+  }, [scrollTop, isAmericanRoom, players, signingSlots, submitVacancies]);
 
   const handleSellSigningComplete = useCallback(
     (newPlayers: DraftPlayer[]) => {
