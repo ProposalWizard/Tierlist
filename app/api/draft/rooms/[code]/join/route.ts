@@ -40,19 +40,31 @@ export async function POST(
 
   const { data: profile } = await service
     .from("user_profiles")
-    .select("username")
+    .select("username, team_name")
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // team_name is carried over from the profile so a saved team name shows from
+  // the moment you enter the room. It was left null until the player manually
+  // pressed save in the lobby, so the board fell back to their username.
   const displayName = profile?.username || user.email?.split("@")[0] || "Player";
+  const teamName = profile?.team_name || null;
 
   // Upsert so host joining doesn't error. Only set status on a brand-new join —
   // rejoining must NOT reset a player's status (e.g. "ready"/"simulated"), or the
   // host's ready-check gate would hang waiting on someone who already finished.
-  const upsertPayload: { room_id: string; user_id: string; display_name: string; status?: string } = {
+  const upsertPayload: {
+    room_id: string; user_id: string; display_name: string;
+    status?: string; team_name?: string | null;
+  } = {
     room_id: room.id, user_id: user.id, display_name: displayName,
   };
-  if (!alreadyInRoom) upsertPayload.status = "drafting";
+  // Seed the team name on a first join only — rejoining must not overwrite a
+  // name the player renamed inside this room.
+  if (!alreadyInRoom) {
+    upsertPayload.status = "drafting";
+    upsertPayload.team_name = teamName;
+  }
 
   const { error } = await service.from("draft_room_players").upsert(
     upsertPayload,
