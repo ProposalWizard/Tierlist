@@ -987,14 +987,25 @@ export default function DraftPage() {
     setPlayers(squad);
     setPhase("american-draft");
     scrollTop();
-    try {
-      await fetch(`/api/draft/rooms/${roomCode}/american/vacancies`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ squad, vacancies, needsGk }),
-      });
-    } catch {
-      // The draft screen polls the room, so a dropped submit recovers on retry.
+
+    // This MUST land. The draft only starts once every manager has submitted,
+    // so a single dropped request leaves the whole room waiting forever — the
+    // waiting screen only reads state, it never resubmits. Keep retrying.
+    const body = JSON.stringify({ squad, vacancies, needsGk });
+    for (let attempt = 0; attempt < 20; attempt++) {
+      try {
+        const res = await fetch(`/api/draft/rooms/${roomCode}/american/vacancies`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        });
+        if (res.ok) return;
+        // A 4xx means the request itself is wrong; retrying cannot fix it.
+        if (res.status >= 400 && res.status < 500) return;
+      } catch {
+        // Network failure — fall through to the backoff below.
+      }
+      await new Promise(r => setTimeout(r, Math.min(1000 * 2 ** attempt, 15000)));
     }
   }, [roomCode, scrollTop]);
 

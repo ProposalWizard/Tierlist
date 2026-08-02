@@ -30,6 +30,11 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
   const [hideRatings, setHideRatings] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // True from pressing PICK until authoritative state arrives. Without it the
+  // LAST picker of a round could keep clicking: the local update deliberately
+  // does not advance the turn there (the server reshuffles and reloads), so the
+  // board still looked like their turn while the next round was loading.
+  const [awaitingServer, setAwaitingServer] = useState(false);
   const completedRef = useRef(false);
   // Set while a pick is in flight; cleared when authoritative state arrives.
   const pendingPickRef = useRef<string | null>(null);
@@ -107,6 +112,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
             const next = (payload.new as { american_state?: AmericanState | null })?.american_state;
             if (!next) return;
             pendingPickRef.current = null;
+            setAwaitingServer(false);
             setState(next);
             if (next.complete) void finish();
           }
@@ -130,10 +136,22 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     const next = room?.american_state as AmericanState | null;
     if (next) {
       pendingPickRef.current = null;
+      setAwaitingServer(false);
       setState(next);
       if (next.complete) void finish();
     }
   }, [roomCode, finish]);
+
+  // Safety-net poll for the whole draft. Realtime drops events often enough
+  // that two clients could each sit on a stale state, both showing "waiting for
+  // the other to pick" with neither able to act. A cheap periodic read
+  // guarantees they converge no matter what the socket does.
+  const draftLive = !!state && !state.complete;
+  useEffect(() => {
+    if (!draftLive) return;
+    const t = setInterval(() => { void refetchState(); }, 3000);
+    return () => clearInterval(t);
+  }, [draftLive, refetchState]);
 
   // While a replacement draft is still collecting everyone's vacancies there is
   // nothing to subscribe to yet, so poll until the pool appears.
@@ -154,6 +172,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     // authority: its Realtime update overwrites this, and a rejected pick
     // refetches, so a wrong guess here corrects itself.
     pendingPickRef.current = sofifaId;
+    setAwaitingServer(true);
     setState(prev => {
       if (!prev) return prev;
       const isLastPickerInRound = prev.current_pick_idx + 1 >= prev.pick_order.length;
@@ -175,6 +194,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
       });
     } catch {
       setError("Network problem — retrying from the server state.");
+      setAwaitingServer(false);
       await refetchState();
       return;
     }
@@ -185,13 +205,14 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
 
     if (!res.ok) {
       setError(payload?.error ?? "Could not make that pick.");
+      setAwaitingServer(false);
       // Roll the optimistic change back to whatever the server actually has.
       await refetchState();
       return;
     }
 
     // The last pick produces no further room update for this client to observe.
-    if (payload?.complete) { void finish(); return; }
+    if (payload?.complete) { setAwaitingServer(false); void finish(); return; }
 
     // Happy path: let Realtime deliver the authoritative state. Reconcile only
     // if it hasn't arrived shortly, rather than paying for a read every pick.
@@ -285,6 +306,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
         names={names}
         userId={userId}
         hideRatings={hideRatings}
+        locked={awaitingServer}
         onPick={makePick}
       />
     </>

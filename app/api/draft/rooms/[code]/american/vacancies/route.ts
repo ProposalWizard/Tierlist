@@ -158,13 +158,36 @@ export async function POST(
 
   const state = makeReplacementState(vacancies, needsGk, standingsOrder, pool);
   state.pending_vacancies = pending;
+  state.seeded = true;
 
-  const { error: seedErr } = await service
+  // Claim the seed. Two managers submitting at almost the same moment can BOTH
+  // observe "everyone is in" and both build a pool — which is exactly how a
+  // previous draft ended up with the two players looking at different
+  // goalkeepers and every pick rejected as unavailable. Writing only while the
+  // state is still unseeded means one wins and the other falls in behind it.
+  const { data: claimed, error: seedErr } = await service
     .from("draft_rooms")
     .update({ american_state: state, status: "started" })
-    .eq("id", room.id);
+    .eq("id", room.id)
+    .is("american_state->>seeded", null)
+    .select("id");
+
   if (seedErr) {
-    return NextResponse.json({ error: `Could not start the draft: ${seedErr.message}` }, { status: 500 });
+    // If the JSON filter is unsupported, fall back to an unconditional write
+    // rather than blocking the draft — that is no worse than before.
+    const { error: fallbackErr } = await service
+      .from("draft_rooms")
+      .update({ american_state: state, status: "started" })
+      .eq("id", room.id);
+    if (fallbackErr) {
+      return NextResponse.json({ error: `Could not start the draft: ${fallbackErr.message}` }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, started: true });
+  }
+
+  // Someone else seeded first — their pool is the real one.
+  if (!claimed || claimed.length === 0) {
+    return NextResponse.json({ ok: true, started: true, alreadySeeded: true });
   }
 
   return NextResponse.json({ ok: true, started: true });

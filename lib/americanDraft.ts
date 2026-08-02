@@ -1,4 +1,5 @@
 import { attributesFromJson } from "@/lib/playerAttributes";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
 
 export interface AmPlayer {
@@ -120,6 +121,12 @@ export interface AmericanState {
   standings_order?: string[];
   /** userId → their post-departure squad, collected before the draft starts. */
   pending_vacancies?: Record<string, { count: number; needsGk: boolean }>;
+  /**
+   * Set once a pool has been built. The seeding write is conditional on this
+   * being absent, so two managers submitting simultaneously cannot each seed a
+   * different pool.
+   */
+  seeded?: boolean;
 }
 
 /** 11 starters in 4-3-3 order, then 3 substitutes. */
@@ -196,17 +203,24 @@ export function goalkeepersNeeded(
  * own primary position; every other round keeps its slot position so the
  * formation lines up.
  */
-export function americanPicksToSquad(picks: SquadPick[]) {
+export function americanPicksToSquad(picks: SquadPick[], anyMeansSub = true) {
   return picks.map(pick => {
     const p = pick.player;
-    const isSubPick = pick.position === "ANY";
+    // In the initial draft "ANY" is a bench slot. In the replacement draft the
+    // whole pool is mixed, so every round's slot is "ANY" — treating those as
+    // substitutes marked EVERY replacement as a bench player, leaving a manager
+    // who lost three starters with an eight-man starting XI and a team strength
+    // computed from only those eight.
+    const isSubPick = anyMeansSub && pick.position === "ANY";
     return {
       name: p.name,
       overall: p.ovr,
       positions: p.positions,
       club: p.club,
       clubYear: p.season ? `${p.club} ${p.season}` : p.club,
-      assignedPosition: isSubPick ? (p.positions.split(",")[0]?.trim() || "CM") : pick.position,
+      assignedPosition: pick.position === "ANY"
+        ? (p.positions.split(",")[0]?.trim() || "CM")
+        : pick.position,
       sofifa_id: p.sofifa_id,
       image_url: p.image_url,
       nationality: p.nationality,
@@ -395,23 +409,62 @@ async function getPLLeagueNames(service: any): Promise<string[]> {
   return names;
 }
 
-const ALL_FIFA_YEARS = Array.from({ length: 20 }, (_, i) => 2007 + i);
-
-// Candidate rows per position, cached in module scope. The underlying data only
-// changes when an admin re-imports, but this was a fresh 1500-row query on every
-// round advance — 14 per draft, per room. Rounds after the first now do no
-// candidate query at all on a warm instance.
+// Every eligible Premier League row for an era, loaded once and cached.
+//
+// The previous approach asked for 1500 rows from six random editions with no
+// ORDER BY. A PL edition is only ~560 rows, so the limit was exhausted after
+// two or three of them — and since scan order follows the (league, fifa_year)
+// index, it was always the EARLIEST ones. That is why a round came back
+// entirely 2009/10 rather than spread across the era. Holding the whole era in
+// memory and sampling in JS removes the truncation completely, and makes every
+// round after the first cost no query at all.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const candidateCache = new Map<string, { rows: any[]; at: number }>();
-const CANDIDATE_TTL_MS = 10 * 60 * 1000;
+const eraPoolCache = new Map<string, { rows: any[]; at: number }>();
+const ERA_POOL_TTL_MS = 10 * 60 * 1000;
 
-/**
- * Build one round's pool of 10 players.
- *
- * `excludeKeys` identify everyone already taken by anyone in this draft, by id
- * and by normalised name, so a footballer can be drafted once per draft — not
- * once per position, and not once per FIFA edition.
- */
+const POOL_COLS =
+  "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getEraPool(service: any, eraStart: number, eraEnd: number): Promise<any[]> {
+  const key = `${eraStart}-${eraEnd}`;
+  const cached = eraPoolCache.get(key);
+  if (cached && Date.now() - cached.at < ERA_POOL_TTL_MS) return cached.rows;
+
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) {
+    throw new Error("No Premier League rows found — is the player data imported?");
+  }
+
+  // Paged, because PostgREST caps a single select at 1000 rows regardless of
+  // limit — the exact trap that truncated this before.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = await fetchAllRows<any>((from, to) =>
+    (service as any)
+      .from("sofifa_players")
+      .select(POOL_COLS)
+      .in("league", leagues)
+      .not("overall", "is", null)
+      .gte("fifa_year", eraStart)
+      .lte("fifa_year", eraEnd)
+      .order("sofifa_id", { ascending: true })
+      .order("fifa_year", { ascending: true })
+      .range(from, to),
+    40000,
+  );
+
+  if (rows.length > 0) eraPoolCache.set(key, { rows, at: Date.now() });
+  return rows;
+}
+
+export interface RoundOptions {
+  /** Inclusive fifa_year range from the room's era setting. */
+  eraStart?: number;
+  eraEnd?: number;
+  /** Prime mode: show each player at their best-ever edition. */
+  prime?: boolean;
+}
+
 /** Read the pool-shaping settings off a room's settings JSON. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function roundOptionsFromSettings(settings: any): RoundOptions {
@@ -425,14 +478,13 @@ export function roundOptionsFromSettings(settings: any): RoundOptions {
   };
 }
 
-export interface RoundOptions {
-  /** Inclusive fifa_year range from the room's era setting. */
-  eraStart?: number;
-  eraEnd?: number;
-  /** Prime mode: show each player at their best-ever edition. */
-  prime?: boolean;
-}
-
+/**
+ * Build one round's pool.
+ *
+ * `excludeKeys` identify everyone already taken by anyone in this draft, by id
+ * and by normalised name, so a footballer can be drafted once per draft — not
+ * once per position, and not once per FIFA edition.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchRoundPlayers(
   service: any,
@@ -446,16 +498,9 @@ export async function fetchRoundPlayers(
   const eraStart = opts.eraStart ?? 2007;
   const eraEnd = opts.eraEnd ?? 2026;
 
-  const SELECT_COLS =
-    "sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
+  const all = await getEraPool(service, eraStart, eraEnd);
 
-  const leagues = await getPLLeagueNames(service);
-  if (leagues.length === 0) {
-    throw new Error("No Premier League rows found — is the player data imported?");
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const applyFilters = (input: any[]) => input.filter(r => {
+  const filtered = all.filter(r => {
     const clubName = (r.club || "").toLowerCase();
     if (NON_ENGLISH_PL_CLUBS.has(clubName)) return false;
     if (excluded.has(`id:${r.sofifa_id}`)) return false;
@@ -466,54 +511,6 @@ export async function fetchRoundPlayers(
     return allowed.some(p => parts.includes(p));
   });
 
-  // Positions are filtered in JS, never in SQL. `positions ILIKE '%GK%'` has a
-  // leading wildcard and there is no index on that column, so it forced a scan
-  // of every row. Narrowing to a handful of editions instead keeps the query on
-  // the (league, fifa_year) index and gives a different pool each round.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const runQuery = async (years: number[] | null) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q = (service as any)
-      .from("sofifa_players")
-      .select(SELECT_COLS)
-      .in("league", leagues)
-      .not("overall", "is", null)
-      .gte("fifa_year", eraStart)
-      .lte("fifa_year", eraEnd);
-    if (years) q = q.in("fifa_year", years);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (await q.limit(1500)) as { data: any[] | null; error: any };
-  };
-
-  // Serve from cache when warm. Exclusions and shuffling are applied per round
-  // below, so a cached row set still produces a different pool each time.
-  const cacheKey = `${position}|${eraStart}-${eraEnd}`;
-  const cached = candidateCache.get(cacheKey);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let rows: any[];
-  if (cached && Date.now() - cached.at < CANDIDATE_TTL_MS) {
-    rows = cached.rows;
-  } else {
-    const eraYears = ALL_FIFA_YEARS.filter(y => y >= eraStart && y <= eraEnd);
-    const randomYears = shuffleArray(eraYears).slice(0, 6);
-    const first = await runQuery(randomYears);
-    if (first.error) {
-      throw new Error(`Could not load ${position} players: ${first.error.message}`);
-    }
-    rows = first.data || [];
-    // Too few for this position in that slice of editions — widen to all.
-    if (applyFilters(rows).length < 10) {
-      const wide = await runQuery(null);
-      if (wide.error) {
-        throw new Error(`Could not load ${position} players: ${wide.error.message}`);
-      }
-      rows = wide.data || [];
-    }
-    if (rows.length > 0) candidateCache.set(cacheKey, { rows, at: Date.now() });
-  }
-
-  const filtered = applyFilters(rows);
-
   if (filtered.length === 0) {
     throw new Error(
       `No Premier League players available for ${position}. ` +
@@ -521,8 +518,8 @@ export async function fetchRoundPlayers(
     );
   }
 
-  // One entry per footballer, shuffled so which edition survives varies.
-  const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+  // Shuffled across the WHOLE era, so every edition is equally likely.
+  const shuffled = shuffleArray(filtered);
   const seen = new Set<string>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chosen: any[] = [];
@@ -536,19 +533,12 @@ export async function fetchRoundPlayers(
     if (chosen.length >= size) break;
   }
 
-  // Prime mode shows each player at their best-ever edition, matching the
-  // normal draft's behaviour. Bounded to the ten actually offered.
+  // Prime mode shows each player at their best-ever edition. The era pool is
+  // already in memory, so this is a lookup rather than another query.
   if (opts.prime && chosen.length > 0) {
-    const ids = chosen.map(r => r.sofifa_id).filter(Boolean);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: editions } = (await (service as any)
-      .from("sofifa_players")
-      .select(SELECT_COLS)
-      .in("sofifa_id", ids)) as { data: any[] | null };
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bestById = new Map<string, any>();
-    for (const row of editions ?? []) {
+    for (const row of all) {
       const cur = bestById.get(row.sofifa_id);
       if (!cur || resolveOvr(row) > resolveOvr(cur)) bestById.set(row.sofifa_id, row);
     }
