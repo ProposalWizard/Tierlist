@@ -21,6 +21,12 @@ their keeper is guaranteed one.
 keep the positions he was drafted with, or he ends up out of position in his
 own slot. Uses the two cases this actually happened to.
 
+**weighting** — weak players must be RARE but never removed, and "weak" is
+judged against the player's own season because ratings drift upward over the
+years. In prime mode the judgement uses the player's PEAK rating, so a
+teenager who later became a star is not treated as a weak card — that case is
+asserted directly with a 52-rated youngster who peaks at 89.
+
 **randomness** — the pool must span the whole era. Ideal randomness is ~8.0
 distinct seasons per ten-card round; a broken shuffle scored 6.0 and put nine
 of ten cards inside a five-year window 38% of the time. Also asserts every

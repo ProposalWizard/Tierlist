@@ -446,10 +446,64 @@ async function getIdBounds(service: any, leagues: string[], eraStart: number, er
   return bounds;
 }
 
-// The complete eligible set for an era, cached in memory.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const eraPoolCache = new Map<string, { rows: any[]; at: number }>();
+// The complete eligible set for an era, cached in memory along with the
+// weighting data derived from it.
+interface EraPool {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rows: any[];
+  at: number;
+  /** fifa_year → the rating that counts as "weak" in THAT season. */
+  weakBelow: Map<number, number>;
+  /** sofifa_id → their best rating and the season it came from. */
+  best: Map<string, { ovr: number; year: number }>;
+}
+const eraPoolCache = new Map<string, EraPool>();
 const ERA_POOL_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Squad players are far more numerous than starters — roughly a third of every
+ * club's roster is academy and reserve — so an even draw fills the board with
+ * players who never actually played. Weak players get a fraction of a ticket
+ * rather than being removed, so a scrappy squad player is a rare curiosity
+ * instead of a third of every round.
+ */
+const WEAK_PLAYER_WEIGHT = 0.1;
+
+/**
+ * "Weak" is judged against the player's OWN season, never a fixed number.
+ *
+ * FIFA ratings have drifted upward: a 67 in 2007 was a solid squad player, a 67
+ * in 2026 is a teenager. A fixed cutoff therefore penalises old seasons far
+ * more than new ones and quietly makes modern players commoner — measured at
+ * 21% — which is the era bias this draft has already been fixed for once.
+ * Taking the same RANK within each season removes that entirely.
+ */
+function computeWeakThresholds(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rows: any[],
+): Map<number, number> {
+  const bySeason = new Map<number, number[]>();
+  const allOvr: number[] = [];
+  for (const r of rows) {
+    const o = resolveOvr(r);
+    allOvr.push(o);
+    const list = bySeason.get(r.fifa_year);
+    if (list) list.push(o); else bySeason.set(r.fifa_year, [o]);
+  }
+  allOvr.sort((a, b) => a - b);
+  // Where "70" sits across the whole era, expressed as a rank.
+  const rank = allOvr.length
+    ? allOvr.filter(v => v < 70).length / allOvr.length
+    : 0.4;
+
+  const out = new Map<number, number>();
+  for (const [year, list] of Array.from(bySeason.entries())) {
+    list.sort((a, b) => a - b);
+    const idx = Math.max(0, Math.min(list.length - 1, Math.floor(rank * list.length)));
+    out.set(year, list[idx]);
+  }
+  return out;
+}
 
 /**
  * Load every eligible player for the era, as PARALLEL slices of the id range.
@@ -465,10 +519,10 @@ const ERA_POOL_TTL_MS = 10 * 60 * 1000;
  * ids follow import order, so any contiguous run is a single season.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getEraPool(service: any, leagues: string[], eraStart: number, eraEnd: number): Promise<any[]> {
+async function getEraPool(service: any, leagues: string[], eraStart: number, eraEnd: number): Promise<EraPool> {
   const key = `${eraStart}-${eraEnd}`;
   const cached = eraPoolCache.get(key);
-  if (cached && Date.now() - cached.at < ERA_POOL_TTL_MS) return cached.rows;
+  if (cached && Date.now() - cached.at < ERA_POOL_TTL_MS) return cached;
 
   const { min, max } = await getIdBounds(service, leagues, eraStart, eraEnd);
   const SLICES = 24;
@@ -523,8 +577,17 @@ async function getEraPool(service: any, leagues: string[], eraStart: number, era
   }
 
   const rows = Array.from(byId.values());
-  if (rows.length > 0) eraPoolCache.set(key, { rows, at: Date.now() });
-  return rows;
+  // Peak rating per player, used to weight prime mode by what the card will
+  // actually SHOW rather than by the season that happened to be drawn.
+  const best = new Map<string, { ovr: number; year: number }>();
+  for (const r of rows) {
+    const o = resolveOvr(r);
+    const cur = best.get(r.sofifa_id);
+    if (!cur || o > cur.ovr) best.set(r.sofifa_id, { ovr: o, year: r.fifa_year });
+  }
+  const pool: EraPool = { rows, at: Date.now(), weakBelow: computeWeakThresholds(rows), best };
+  if (rows.length > 0) eraPoolCache.set(key, pool);
+  return pool;
 }
 
 export interface RoundOptions {
@@ -584,7 +647,8 @@ export async function fetchRoundPlayers(
     return allowed.some(p => parts.includes(p));
   });
 
-  const filtered = applyFilters(await getEraPool(service, leagues, eraStart, eraEnd));
+  const era = await getEraPool(service, leagues, eraStart, eraEnd);
+  const filtered = applyFilters(era.rows);
   if (filtered.length === 0) {
     throw new Error(
       `No Premier League players available for ${position}. ` +
@@ -592,7 +656,29 @@ export async function fetchRoundPlayers(
     );
   }
 
-  const shuffled = shuffle(filtered);
+  // Weighted draw, not a flat shuffle. Each row gets a key of
+  // random^(1/weight) and the largest keys win — a standard weighted sample
+  // without replacement, so a heavier player is likelier to appear but nothing
+  // is ever guaranteed or excluded.
+  //
+  // In PRIME mode the weight uses the player's PEAK rating, because that is
+  // what the card will show. A teenager rated 58 who later became an 88 is not
+  // a weak card in prime mode, and weighting him down by the season that
+  // happened to be drawn would have made exactly those careers rare.
+  const weightOf = (r: { sofifa_id: string; fifa_year: number }) => {
+    const judged = opts.prime ? era.best.get(r.sofifa_id) : null;
+    const ovr = judged ? judged.ovr : resolveOvr(r);
+    const year = judged ? judged.year : r.fifa_year;
+    const weakBelow = era.weakBelow.get(year);
+    if (weakBelow === undefined) return 1;
+    return ovr >= weakBelow ? 1 : WEAK_PLAYER_WEIGHT;
+  };
+
+  const shuffled = [...filtered]
+    .map(r => ({ r, key: Math.pow(Math.random(), 1 / weightOf(r)) }))
+    .sort((a, b) => b.key - a.key)
+    .map(x => x.r);
+
   const seen = new Set<string>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chosen: any[] = [];
