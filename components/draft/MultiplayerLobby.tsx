@@ -372,6 +372,19 @@ export default function MultiplayerLobby({
     }
   };
 
+  // Warm the player pool while people are still in the lobby. The pool lives in
+  // server memory and that cache does not survive a cold instance, so without
+  // this the host's Start Game paid the whole load — 20-30 seconds of nothing
+  // happening. Fire and forget; it is purely an optimisation.
+  const warmedRef = useRef(false);
+  useEffect(() => {
+    if (warmedRef.current) return;
+    if (settings?.draftMode !== "american") return;
+    warmedRef.current = true;
+    void fetch(`/api/draft/rooms/${roomCodeRef.current}/american/warm`, { method: "POST" })
+      .catch(() => undefined);
+  }, [settings?.draftMode]);
+
   // A live American draft must pull everyone in, whatever screen they are on.
   // Previously a client that missed the transition sat in the lobby showing
   // "waiting" while the others drafted, and the room could never progress.
