@@ -1,5 +1,6 @@
 import { attributesFromJson } from "@/lib/playerAttributes";
 import { fetchAllRows } from "@/lib/fetchAllRows";
+import { shuffle } from "@/lib/shuffle";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
 
 export interface AmPlayer {
@@ -656,6 +657,5 @@ export function pickedPlayerKeys(picks: Record<string, SquadPick[]>): Set<string
   return keys;
 }
 
-export function shuffleArray<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
+/** Re-exported so existing call sites keep working. See lib/shuffle.ts. */
+export const shuffleArray = shuffle;

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
+import { shuffle } from "@/lib/shuffle";
 
 interface Props {
   career: CareerState;
@@ -58,7 +59,7 @@ export default function HorseRacing({ career, onBuyHorse, onRace, onBack }: Prop
     const energyFactor = 0.6 + (horse.energy / 100) * 0.4; // tired horses underperform
     const userScore = (horse.speed * 0.55 + horse.stamina * 0.45) * energyFactor + Math.random() * 22;
     const field: Runner[] = [{ name: horse.name, isUser: true, score: userScore, duration: 0 }];
-    const names = [...RIVAL_NAMES].sort(() => Math.random() - 0.5);
+    const names = shuffle(RIVAL_NAMES);
     for (let i = 0; i < FIELD - 1; i++) {
       const rating = 46 + Math.random() * 42;
       field.push({ name: names[i], isUser: false, score: rating + Math.random() * 22, duration: 0 });

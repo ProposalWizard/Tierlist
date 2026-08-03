@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getPositionColor, FORMATIONS, formatSeasonYear } from "@/components/draft/formations";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
+import { shuffle } from "@/lib/shuffle";
 
 export interface DraftSettings {
   formation: string;
@@ -259,7 +260,7 @@ export default function DraftDevClient() {
         const rest = currentPlayers.filter(p => p !== retiree);
         departed.push({ player: rest[Math.floor(Math.random() * rest.length)], reason: "Left the club" });
       } else {
-        const shuffled = [...currentPlayers].sort(() => Math.random() - 0.5);
+        const shuffled = shuffle(currentPlayers);
         departed.push({ player: shuffled[0], reason: "Left the club" });
         departed.push({ player: shuffled[1], reason: "Left the club" });
       }
@@ -270,7 +271,7 @@ export default function DraftDevClient() {
         const retiree = Math.random() < 0.5 ? sorted[0] : sorted[1];
         departed.push({ player: retiree, reason: `Retired (age ${retiree.age || "?"})`, convinceable: true });
       } else {
-        const shuffled = [...currentPlayers].sort(() => Math.random() - 0.5);
+        const shuffled = shuffle(currentPlayers);
         departed.push({ player: shuffled[0], reason: "Left the club", convinceable: true });
       }
     }

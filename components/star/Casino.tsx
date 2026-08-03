@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
+import { shuffle } from "@/lib/shuffle";
 
 interface Props {
   bankStart: number;
@@ -152,7 +153,7 @@ interface RaceRunner {
 }
 
 function generateRaceHorses(): RaceHorse[] {
-  const shuffled = [...HORSE_NAMES].sort(() => Math.random() - 0.5);
+  const shuffled = shuffle(HORSE_NAMES);
   const horses: RaceHorse[] = [];
   for (let i = 0; i < 6; i++) {
     const rating = 40 + Math.floor(Math.random() * 56); // 40-95
@@ -242,7 +243,7 @@ function HorseRacingGame(props: HorseRacingProps) {
     const userScore = (myHorse.speed * 0.55 + myHorse.stamina * 0.45) * energyFactor + Math.random() * 22;
 
     const field: RaceRunner[] = [{ name: myHorse.name, rating: Math.round((myHorse.speed + myHorse.stamina) / 2), score: userScore, duration: 0, isUser: true }];
-    const rivalNames = [...HORSE_NAMES].filter((n) => n !== myHorse.name).sort(() => Math.random() - 0.5);
+    const rivalNames = shuffle(HORSE_NAMES.filter((n) => n !== myHorse.name));
     for (let i = 0; i < 5; i++) {
       const rating = 46 + Math.random() * 42;
       field.push({ name: rivalNames[i], rating: Math.round(rating), score: rating + Math.random() * 22, duration: 0, isUser: false });
