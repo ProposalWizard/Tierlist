@@ -43,6 +43,54 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
     [squad]
   );
 
+  /**
+   * Make every starter's assignedPosition agree with the slot he is actually
+   * shown in, and bench anyone the formation has no room for.
+   *
+   * A starter whose assignedPosition matches no free slot label used to be
+   * DISPLAYED in whatever slot was left over while assignedPosition stayed as
+   * it was. So a third centre-back shown at left back was still badged, rated
+   * and simulated as a centre-back: no OOP marker, no fitness penalty, and the
+   * season played out as though the team had a natural left back.
+   *
+   * A squad can also arrive with more than eleven starters — a replacement
+   * signing that came in as a starter rather than a sub. Those extras were in
+   * neither the pitch (no slot) nor the bench list (not a sub), so they were
+   * invisible, they inflated team strength, and the confirm button stayed
+   * disabled with nothing on screen to fix. They go to the bench.
+   */
+  useEffect(() => {
+    if (!formation) return;
+    setSquad(prev => {
+      const labels = formation.slots.map(s => s.label);
+      const used = new Set<number>();
+      const unplaced: number[] = [];
+
+      // Same two passes as slotMap, so nobody visibly moves — only their
+      // recorded position changes to match where they already appear.
+      prev.forEach((p, i) => {
+        if (p.isSub) return;
+        const slotIdx = labels.findIndex((l, li) => !used.has(li) && l === p.assignedPosition);
+        if (slotIdx >= 0) used.add(slotIdx);
+        else unplaced.push(i);
+      });
+      if (unplaced.length === 0) return prev;
+
+      const next = [...prev];
+      for (const i of unplaced) {
+        const free = labels.findIndex((_, li) => !used.has(li));
+        if (free >= 0) {
+          used.add(free);
+          next[i] = { ...next[i], assignedPosition: labels[free] };
+        } else {
+          const natural = (next[i].positions || "").split(",")[0]?.trim();
+          next[i] = { ...next[i], isSub: true, assignedPosition: natural || next[i].assignedPosition };
+        }
+      }
+      return next;
+    });
+  }, [formation]);
+
   // Map each formation slot to the starter occupying it
   const slotMap = useMemo(() => {
     if (!formation) return new Map<number, { player: DraftPlayer; idx: number }>();
