@@ -115,6 +115,9 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
       const initial = room.american_state as AmericanState | null;
       setState(initial);
       setLoading(false);
+      // A completed draft here can only be one we just finished; a stale one
+      // from last season is cleared when the room advances, and the vacancy
+      // submission that precedes this screen replaces it in any case.
       if (initial?.complete) { void finish(); return; }
 
       channel = supabase
@@ -171,7 +174,11 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
   // could each sit on a stale state, both showing "waiting for the other to
   // pick" with neither able to act; this guarantees they converge regardless.
   // Two separate intervals used to run here and double up the requests.
-  const draftLive = !!state && !state.complete;
+  // Deliberately includes state === null: the room clears its draft state
+  // between seasons, so a client that arrives before the draft is seeded has
+  // nothing yet. Without polling in that window only a realtime event could
+  // ever move them on, and a dropped one strands them.
+  const draftLive = !state || !state.complete;
   useEffect(() => {
     if (!draftLive) return;
     const t = setInterval(() => { void refetchState(); }, awaitingSeed ? 2000 : 3000);

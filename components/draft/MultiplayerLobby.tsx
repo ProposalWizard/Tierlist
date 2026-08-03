@@ -316,7 +316,17 @@ export default function MultiplayerLobby({
   };
 
   const activePlayers = players.filter(p => p.status !== "out");
-  const allReady = players.length > 1 && activePlayers.length > 0 && activePlayers.every(p => p.status === "ready");
+  // Nobody counts as ready while a replacement draft is still running. A player
+  // who confirmed an arrange screen before the draft finished was flipping to
+  // "ready" with picks still owed, so the room showed everyone ready and the
+  // host could have simulated a season on an incomplete squad.
+  const americanDraftRunning = (() => {
+    const am = (room as unknown as { american_state?: { complete?: boolean; seeded?: boolean } } | null)?.american_state;
+    return !!am?.seeded && !am.complete;
+  })();
+  const allReady = players.length > 1 && activePlayers.length > 0
+    && !americanDraftRunning
+    && activePlayers.every(p => p.status === "ready");
   const myPlayer = players.find(p => p.user_id === userId);
   // Host-ness can change mid-game: when a host leaves, the room is handed to
   // the longest-joined remaining player. Trust the live room row over the

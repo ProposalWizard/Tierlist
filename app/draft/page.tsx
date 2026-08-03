@@ -986,13 +986,32 @@ export default function DraftPage() {
     // the server needs to know who is short of one.
     const needsGk = !squad.some(p => (p.positions || "").toUpperCase().split(",").map(x => x.trim()).includes("GK"));
     setPlayers(squad);
+
+    // Submit BEFORE switching screens. The draft screen reads the room's draft
+    // state as it mounts, and until this request lands that state is still the
+    // PREVIOUS season's finished draft — so the screen saw "already complete"
+    // and jumped straight to arrange. It only bit whoever submitted first;
+    // everyone after them found the state already cleaned up by this call.
+    const body = JSON.stringify({ squad, vacancies, needsGk });
+    let submitted = false;
+    try {
+      const res = await fetch(`/api/draft/rooms/${roomCode}/american/vacancies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      submitted = res.ok;
+    } catch {
+      // fall through to the retry loop below
+    }
+
     setPhase("american-draft");
     scrollTop();
+    if (submitted) return;
 
     // This MUST land. The draft only starts once every manager has submitted,
     // so a single dropped request leaves the whole room waiting forever — the
     // waiting screen only reads state, it never resubmits. Keep retrying.
-    const body = JSON.stringify({ squad, vacancies, needsGk });
     for (let attempt = 0; attempt < 20; attempt++) {
       try {
         const res = await fetch(`/api/draft/rooms/${roomCode}/american/vacancies`, {
