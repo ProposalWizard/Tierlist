@@ -1,5 +1,6 @@
 import { attributesFromJson } from "@/lib/playerAttributes";
 import { fetchAllRows } from "@/lib/fetchAllRows";
+import { shuffle } from "@/lib/shuffle";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
 
 export interface AmPlayer {
@@ -409,62 +410,119 @@ async function getPLLeagueNames(service: any): Promise<string[]> {
   return names;
 }
 
-// Every eligible Premier League row for an era, loaded once and cached.
-//
-// The previous approach asked for 1500 rows from six random editions with no
-// ORDER BY. A PL edition is only ~560 rows, so the limit was exhausted after
-// two or three of them — and since scan order follows the (league, fifa_year)
-// index, it was always the EARLIEST ones. That is why a round came back
-// entirely 2009/10 rather than spread across the era. Holding the whole era in
-// memory and sampling in JS removes the truncation completely, and makes every
-// round after the first cost no query at all.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const eraPoolCache = new Map<string, { rows: any[]; at: number }>();
-const ERA_POOL_TTL_MS = 10 * 60 * 1000;
+// Bounds of the eligible id range, cached. Two tiny indexed queries.
+let idBoundsCache: { key: string; min: number; max: number; at: number } | null = null;
+const BOUNDS_TTL_MS = 10 * 60 * 1000;
 
 const POOL_COLS =
   "id, sofifa_id, name, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, club, fifa_edition, fifa_year";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getEraPool(service: any, eraStart: number, eraEnd: number): Promise<any[]> {
+function eligible(service: any, leagues: string[], eraStart: number, eraEnd: number) {
+  return (service as any)
+    .from("sofifa_players")
+    .select(POOL_COLS)
+    .in("league", leagues)
+    .not("overall", "is", null)
+    .gte("fifa_year", eraStart)
+    .lte("fifa_year", eraEnd);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getIdBounds(service: any, leagues: string[], eraStart: number, eraEnd: number) {
+  const key = `${eraStart}-${eraEnd}`;
+  if (idBoundsCache && idBoundsCache.key === key && Date.now() - idBoundsCache.at < BOUNDS_TTL_MS) {
+    return idBoundsCache;
+  }
+  const [lo, hi] = await Promise.all([
+    eligible(service, leagues, eraStart, eraEnd).order("id", { ascending: true }).limit(1),
+    eligible(service, leagues, eraStart, eraEnd).order("id", { ascending: false }).limit(1),
+  ]);
+  const min = lo?.data?.[0]?.id ?? 0;
+  const max = hi?.data?.[0]?.id ?? 0;
+  if (!max) throw new Error("No Premier League players found — is the player data imported?");
+  const bounds = { key, min, max, at: Date.now() };
+  idBoundsCache = bounds;
+  return bounds;
+}
+
+// The complete eligible set for an era, cached in memory.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const eraPoolCache = new Map<string, { rows: any[]; at: number }>();
+const ERA_POOL_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Load every eligible player for the era, as PARALLEL slices of the id range.
+ *
+ * Sequential paging took roughly twelve round trips — 20-30 seconds on a cold
+ * serverless instance, which is exactly what pressing Start Game, or picking
+ * after a few minutes idle, was paying. (Rapid picking felt instant only
+ * because the instance was still warm and the cache still populated.)
+ *
+ * Splitting the id range into slices and fetching them at once costs about one
+ * round trip instead of twelve, and still returns the WHOLE pool — which
+ * matters, because sampling scattered runs instead was measurably less random:
+ * ids follow import order, so any contiguous run is a single season.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getEraPool(service: any, leagues: string[], eraStart: number, eraEnd: number): Promise<any[]> {
   const key = `${eraStart}-${eraEnd}`;
   const cached = eraPoolCache.get(key);
   if (cached && Date.now() - cached.at < ERA_POOL_TTL_MS) return cached.rows;
 
-  const leagues = await getPLLeagueNames(service);
-  if (leagues.length === 0) {
-    throw new Error("No Premier League rows found — is the player data imported?");
-  }
+  const { min, max } = await getIdBounds(service, leagues, eraStart, eraEnd);
+  const SLICES = 24;
+  const PAGE = 1000;
+  const step = Math.max(1, Math.ceil((max - min + 1) / SLICES));
 
-  // Keyset pagination on the BIGINT primary key rather than range/offset.
-  // OFFSET makes the database walk and discard every earlier row on each page,
-  // so a multi-page sweep of this table gets progressively slower and was
-  // hitting the statement timeout. Seeking on id > last is a direct index jump,
-  // so every page costs the same.
+  const slices = await Promise.all(
+    Array.from({ length: SLICES }, (_, i) => {
+      const lo = min + i * step;
+      return eligible(service, leagues, eraStart, eraEnd)
+        .gte("id", lo)
+        .lt("id", lo + step)
+        .order("id", { ascending: true })
+        .limit(PAGE);
+    })
+  );
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows: any[] = [];
-  let lastId = 0;
-  for (let page = 0; page < 60; page++) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = (await (service as any)
-      .from("sofifa_players")
-      .select(POOL_COLS)
-      .in("league", leagues)
-      .not("overall", "is", null)
-      .gte("fifa_year", eraStart)
-      .lte("fifa_year", eraEnd)
-      .gt("id", lastId)
-      .order("id", { ascending: true })
-      .limit(1000)) as { data: any[] | null; error: { message: string } | null };
+  const byId = new Map<number, any>();
+  // A slice that comes back exactly full may have been truncated by the
+  // server's row cap, so walk the rest of that slice by keyset. Silently
+  // keeping a short slice would drop players from the pool entirely.
+  const saturated: number[] = [];
+  slices.forEach((r, i) => {
+    if (r?.error) throw new Error(r.error.message);
+    const rows = r?.data ?? [];
+    for (const row of rows) byId.set(row.id, row);
+    if (rows.length >= PAGE) saturated.push(i);
+  });
 
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) break;
-
-    rows.push(...data);
-    lastId = data[data.length - 1].id;
-    if (data.length < 1000) break;
+  for (const i of saturated) {
+    const lo = min + i * step;
+    const hi = lo + step;
+    // reduce, not Math.max(...spread) — spreading a large array overflows the
+    // call stack.
+    let cursor = lo - 1;
+    for (const row of Array.from(byId.values())) {
+      if (row.id >= lo && row.id < hi && row.id > cursor) cursor = row.id;
+    }
+    for (let guard = 0; guard < 20; guard++) {
+      const { data, error } = await eligible(service, leagues, eraStart, eraEnd)
+        .gt("id", cursor)
+        .lt("id", hi)
+        .order("id", { ascending: true })
+        .limit(PAGE);
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) break;
+      for (const row of data) byId.set(row.id, row);
+      cursor = data[data.length - 1].id;
+      if (data.length < PAGE) break;
+    }
   }
 
+  const rows = Array.from(byId.values());
   if (rows.length > 0) eraPoolCache.set(key, { rows, at: Date.now() });
   return rows;
 }
@@ -509,20 +567,13 @@ export async function fetchRoundPlayers(
   const excluded = new Set(excludeKeys);
   const eraStart = opts.eraStart ?? 2007;
   const eraEnd = opts.eraEnd ?? 2026;
-
-  let all: Awaited<ReturnType<typeof getEraPool>>;
-  try {
-    all = await getEraPool(service, eraStart, eraEnd);
-  } catch (e) {
-    throw new Error(
-      `Could not load the player pool: ${e instanceof Error ? e.message : String(e)}`
-    );
-  }
-  if (all.length === 0) {
-    throw new Error("No Premier League players found — is the player data imported?");
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) {
+    throw new Error("No Premier League rows found — is the player data imported?");
   }
 
-  const filtered = all.filter(r => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyFilters = (input: any[]) => input.filter(r => {
     const clubName = (r.club || "").toLowerCase();
     if (NON_ENGLISH_PL_CLUBS.has(clubName)) return false;
     if (excluded.has(`id:${r.sofifa_id}`)) return false;
@@ -533,6 +584,7 @@ export async function fetchRoundPlayers(
     return allowed.some(p => parts.includes(p));
   });
 
+  const filtered = applyFilters(await getEraPool(service, leagues, eraStart, eraEnd));
   if (filtered.length === 0) {
     throw new Error(
       `No Premier League players available for ${position}. ` +
@@ -540,8 +592,7 @@ export async function fetchRoundPlayers(
     );
   }
 
-  // Shuffled across the WHOLE era, so every edition is equally likely.
-  const shuffled = shuffleArray(filtered);
+  const shuffled = shuffle(filtered);
   const seen = new Set<string>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chosen: any[] = [];
@@ -555,18 +606,35 @@ export async function fetchRoundPlayers(
     if (chosen.length >= size) break;
   }
 
-  // Prime mode shows each player at their best-ever edition. The era pool is
-  // already in memory, so this is a lookup rather than another query.
+  // Prime: swap each player onto their best-rated edition. Searched across ALL
+  // leagues, matching what the normal draft's prime mode does, so "prime" means
+  // the same thing in both. Crucially the ORIGINAL positions are kept: a player
+  // is offered in a round because those positions qualified them for the slot,
+  // and adopting the prime season's positions instead is what left drafted
+  // players sitting out of position in their own slot.
   if (opts.prime && chosen.length > 0) {
+    const ids = chosen.map(r => r.sofifa_id).filter(Boolean);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: editions } = (await (service as any)
+      .from("sofifa_players")
+      .select(POOL_COLS)
+      .in("sofifa_id", ids)) as { data: any[] | null };
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bestById = new Map<string, any>();
-    for (const row of all) {
+    for (const row of editions ?? []) {
       const cur = bestById.get(row.sofifa_id);
       if (!cur || resolveOvr(row) > resolveOvr(cur)) bestById.set(row.sofifa_id, row);
     }
     for (let i = 0; i < chosen.length; i++) {
       const best = bestById.get(chosen[i].sofifa_id);
-      if (best && resolveOvr(best) > resolveOvr(chosen[i])) chosen[i] = best;
+      if (best && resolveOvr(best) > resolveOvr(chosen[i])) {
+        chosen[i] = {
+          ...best,
+          positions: chosen[i].positions,
+          manual_positions: chosen[i].manual_positions,
+        };
+      }
     }
   }
 
@@ -656,6 +724,5 @@ export function pickedPlayerKeys(picks: Record<string, SquadPick[]>): Set<string
   return keys;
 }
 
-export function shuffleArray<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
+/** Re-exported so existing call sites keep working. See lib/shuffle.ts. */
+export const shuffleArray = shuffle;

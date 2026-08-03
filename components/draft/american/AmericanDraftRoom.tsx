@@ -70,6 +70,7 @@ function PlayerCard({
 }) {
   const [picking, setPicking] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [clubLogoFailed, setClubLogoFailed] = useState(false);
   const [flagFailed, setFlagFailed] = useState(false);
 
@@ -119,20 +120,27 @@ function PlayerCard({
           style={{ background: accent }}
         />
 
-        {/* Player face — sits on the bottom of the image area so head + shoulders read naturally */}
-        {showImage ? (
+        {/* The silhouette sits UNDERNEATH the face and is always rendered, so a
+            card is never blank while the photo downloads. Ten faces load at the
+            start of every round, and without this they popped in one by one
+            over empty cards, which reads as the board buffering. */}
+        <img
+          src={SILHOUETTE_SRC}
+          alt=""
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 w-full h-full object-contain object-bottom opacity-45"
+        />
+        {showImage && (
           <img
             src={player.image_url!}
             alt={player.name}
             referrerPolicy="no-referrer"
-            className="absolute inset-x-0 bottom-0 w-full h-full object-contain object-bottom"
+            decoding="async"
+            className={`absolute inset-x-0 bottom-0 w-full h-full object-contain object-bottom transition-opacity duration-200 ${
+              imgLoaded ? "opacity-100" : "opacity-0"
+            }`}
+            onLoad={() => setImgLoaded(true)}
             onError={() => setImgFailed(true)}
-          />
-        ) : (
-          <img
-            src={SILHOUETTE_SRC}
-            alt=""
-            className="absolute inset-x-0 bottom-0 w-full h-full object-contain object-bottom opacity-45"
           />
         )}
 
@@ -216,7 +224,12 @@ export default function AmericanDraftRoom({
   roundPlayers, lastPick, names, userId, hideRatings, locked, onPick,
 }: Props) {
   const currentPickerId = pickOrder[currentPickIdx];
-  const isMyTurn = currentPickerId === userId && !locked;
+  // `locked` means our own pick is in flight. It is still our turn as far as
+  // the server is concerned, so treat that as its own state — otherwise the
+  // header read "Waiting for <your own team> to pick" while confirming.
+  const isMyPick = currentPickerId === userId;
+  const isMyTurn = isMyPick && !locked;
+  const confirming = isMyPick && !!locked;
   const currentPosition = positionSequence[currentRound] || "ANY";
   const posLabel = POSITION_LABELS[currentPosition] || currentPosition;
   const currentPickerName = names[currentPickerId];
@@ -326,6 +339,11 @@ export default function AmericanDraftRoom({
                   It&apos;s your turn{" "}
                   <span className="text-white/60 font-semibold normal-case tracking-normal">— Choose a player</span>
                 </span>
+              </>
+            ) : confirming ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+                <span className="text-sm font-semibold text-white/80">Confirming your pick…</span>
               </>
             ) : (
               <>

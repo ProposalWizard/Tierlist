@@ -13,6 +13,7 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
+import { shuffle } from "@/lib/shuffle";
 
 export interface DraftSettings {
   formation: string;
@@ -810,7 +811,7 @@ export default function DraftDev2Page() {
           const randomIdx = Math.floor(Math.random() * rest.length);
           departed.push({ player: rest[randomIdx], reason: "Left the club" });
         } else {
-          const shuffled = [...currentPlayers].sort(() => Math.random() - 0.5);
+          const shuffled = shuffle(currentPlayers);
           departed.push({ player: shuffled[0], reason: "Left the club" });
           departed.push({ player: shuffled[1], reason: "Left the club" });
         }
@@ -823,7 +824,7 @@ export default function DraftDev2Page() {
           const retiree = Math.random() < 0.5 ? sorted[0] : sorted[1];
           departed.push({ player: retiree, reason: `Retired (age ${retiree.age || "?"})`, convinceable: true });
         } else {
-          const shuffled = [...currentPlayers].sort(() => Math.random() - 0.5);
+          const shuffled = shuffle(currentPlayers);
           departed.push({ player: shuffled[0], reason: "Left the club", convinceable: true });
         }
       }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { BDPosition } from "@/lib/ballonDorTypes";
 import { pickOpponentScorer } from "@/lib/ballonDorEngine";
+import { shuffle } from "@/lib/shuffle";
 
 // ── Types ────────────────────────────────────────────────────────────
 type MomentType = 'power_bar' | 'goal_grid' | 'timing_bar' | 'decision';
@@ -274,7 +275,7 @@ export default function MatchGame({
   // so matches vary and the wonder/rare moments occasionally appear.
   const [moments] = useState<Moment[]>(() => {
     const mins = generateMatchMinutes();
-    const pool = [...getMoments(playerPosition)].sort(() => Math.random() - 0.5);
+    const pool = shuffle(getMoments(playerPosition));
     return pool.slice(0, 6).map((m, i) => ({ ...m, id: i, minute: mins[i] }));
   });
 
@@ -750,7 +751,7 @@ function GoalGridGame({ moment, difficulty, opponent, onComplete }: {
   function pick(cell: number) {
     if (picked !== null) return;
     const all = [0, 1, 2, 3, 4, 5];
-    const kc = all.sort(() => Math.random() - 0.5).slice(0, 2);
+    const kc = shuffle(all).slice(0, 2);
     setPicked(cell);
     setKeeperCells(kc);
 

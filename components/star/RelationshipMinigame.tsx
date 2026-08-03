@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
+import { shuffle } from "@/lib/shuffle";
 
 export type RelationshipKind = "boss" | "team" | "fans" | "sponsors" | "happiness";
 
@@ -167,8 +168,8 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
 }
 
 function generateCards(pool: string[]): CardState[] {
-  const chosen = [...pool].sort(() => Math.random() - 0.5).slice(0, 8);
+  const chosen = shuffle(pool).slice(0, 8);
   const doubled = [...chosen, ...chosen];
-  const shuffled = doubled.sort(() => Math.random() - 0.5);
+  const shuffled = shuffle(doubled);
   return shuffled.map((emoji, id) => ({ id, emoji, flipped: false, matched: false }));
 }

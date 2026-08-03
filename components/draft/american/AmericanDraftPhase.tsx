@@ -24,6 +24,17 @@ interface Props {
  * draft_room_players row with status 'ready', so we just hand control back to
  * the lobby and the normal simulate flow continues.
  */
+/** Cheap identity for a draft state — enough to tell whether the board moved. */
+function stateSignature(s: AmericanState): string {
+  return [
+    s.current_round,
+    s.current_pick_idx,
+    s.complete ? 1 : 0,
+    s.pick_order?.join(","),
+    s.round_players?.map(p => p.sofifa_id).join(","),
+  ].join("|");
+}
+
 export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Props) {
   const [state, setState] = useState<AmericanState | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
@@ -38,6 +49,9 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
   const completedRef = useRef(false);
   // Set while a pick is in flight; cleared when authoritative state arrives.
   const pendingPickRef = useRef<string | null>(null);
+  // The realtime effect must not re-subscribe on every render, so it reaches
+  // the current handler through a ref rather than closing over it.
+  const applyServerStateRef = useRef<((s: AmericanState, force: boolean) => void) | null>(null);
 
   // Read back the squad the server just wrote for this player, so the arrange
   // screen shows the real drafted eleven rather than rebuilding it client-side.
@@ -111,10 +125,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
           payload => {
             const next = (payload.new as { american_state?: AmericanState | null })?.american_state;
             if (!next) return;
-            pendingPickRef.current = null;
-            setAwaitingServer(false);
-            setState(next);
-            if (next.complete) void finish();
+            applyServerStateRef.current?.(next, false);
           }
         )
         .subscribe();
@@ -126,7 +137,20 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     };
   }, [roomCode, finish]);
 
-  const refetchState = useCallback(async () => {
+  // While a pick is in flight the local board is deliberately ahead of the
+  // server. Applying server state during that window puts the card the player
+  // just took back on screen for a moment before removing it again — the
+  // "refresh" flicker. Ignore incoming state until the pick is confirmed.
+  const applyServerState = useCallback((next: AmericanState, force: boolean) => {
+    if (!force && pendingPickRef.current) return;
+    pendingPickRef.current = null;
+    setAwaitingServer(false);
+    setState(prev => (prev && stateSignature(prev) === stateSignature(next) ? prev : next));
+    if (next.complete) void finish();
+  }, [finish]);
+  applyServerStateRef.current = applyServerState;
+
+  const refetchState = useCallback(async (force = false) => {
     const supabase = createClient();
     const { data: room } = await supabase
       .from("draft_rooms")
@@ -134,34 +158,25 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
       .eq("code", roomCode.toUpperCase())
       .maybeSingle();
     const next = room?.american_state as AmericanState | null;
-    if (next) {
-      pendingPickRef.current = null;
-      setAwaitingServer(false);
-      setState(next);
-      if (next.complete) void finish();
-    }
-  }, [roomCode, finish]);
+    if (next) applyServerState(next, force);
+  }, [roomCode, applyServerState]);
 
-  // Safety-net poll for the whole draft. Realtime drops events often enough
-  // that two clients could each sit on a stale state, both showing "waiting for
-  // the other to pick" with neither able to act. A cheap periodic read
-  // guarantees they converge no matter what the socket does.
+  // While a replacement draft is still collecting everyone's vacancies there is
+  // no seeded state to subscribe to yet, so it has to be polled for.
+  const awaitingSeed = !!state && state.mode === "replacement" && !state.complete
+    && (state.round_players?.length ?? 0) === 0 && !state.pick_order?.length;
+
+  // One safety-net poll for the whole draft, slightly faster while waiting for
+  // the pool to appear. Realtime drops events often enough that two clients
+  // could each sit on a stale state, both showing "waiting for the other to
+  // pick" with neither able to act; this guarantees they converge regardless.
+  // Two separate intervals used to run here and double up the requests.
   const draftLive = !!state && !state.complete;
   useEffect(() => {
     if (!draftLive) return;
-    const t = setInterval(() => { void refetchState(); }, 3000);
+    const t = setInterval(() => { void refetchState(); }, awaitingSeed ? 2000 : 3000);
     return () => clearInterval(t);
-  }, [draftLive, refetchState]);
-
-  // While a replacement draft is still collecting everyone's vacancies there is
-  // nothing to subscribe to yet, so poll until the pool appears.
-  const awaitingSeed = !!state && state.mode === "replacement" && !state.complete
-    && (state.round_players?.length ?? 0) === 0 && !state.pick_order?.length;
-  useEffect(() => {
-    if (!awaitingSeed) return;
-    const t = setInterval(() => { void refetchState(); }, 2000);
-    return () => clearInterval(t);
-  }, [awaitingSeed, refetchState]);
+  }, [draftLive, awaitingSeed, refetchState]);
 
   const makePick = useCallback(async (sofifaId: string) => {
     setError(null);
@@ -195,7 +210,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     } catch {
       setError("Network problem — retrying from the server state.");
       setAwaitingServer(false);
-      await refetchState();
+      await refetchState(true);
       return;
     }
 
@@ -207,7 +222,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
       setError(payload?.error ?? "Could not make that pick.");
       setAwaitingServer(false);
       // Roll the optimistic change back to whatever the server actually has.
-      await refetchState();
+      await refetchState(true);
       return;
     }
 
@@ -217,7 +232,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     // Happy path: let Realtime deliver the authoritative state. Reconcile only
     // if it hasn't arrived shortly, rather than paying for a read every pick.
     setTimeout(() => {
-      if (pendingPickRef.current === sofifaId) void refetchState();
+      if (pendingPickRef.current === sofifaId) void refetchState(true);
     }, 2500);
   }, [roomCode, finish, refetchState]);
 
