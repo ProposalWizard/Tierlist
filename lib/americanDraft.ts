@@ -1,6 +1,7 @@
 import { attributesFromJson } from "@/lib/playerAttributes";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { shuffle } from "@/lib/shuffle";
+import { positionFitness } from "@/lib/seasonSimulator";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
 
 export interface AmPlayer {
@@ -309,6 +310,22 @@ function resolvePositions(row: any): string {
   return (row.manual_positions || row.positions || "").toString();
 }
 
+/**
+ * A player is offered for a slot only if the SIMULATOR considers him a real fit
+ * for it. Two separate ideas of "can play here" had drifted apart: the draft
+ * offered CF for striker, which the simulator scores 0.68 — properly out of
+ * position — and offered any right-mid at right wing, including one who is also
+ * a right-back, which scores 0.85. Asking the simulator directly means the two
+ * can never disagree again.
+ *
+ * The bar is 0.98, not a perfect 1.0. A defensive or attacking mid at centre
+ * mid scores 0.98 — near enough to play there, and excluding them would leave
+ * those players undraftable entirely while the only formation is 4-3-3.
+ */
+const MIN_SLOT_FITNESS = 0.98;
+
+// Candidate positions per slot. Kept as a cheap pre-filter; the fitness check
+// above is what actually decides.
 const POS_FILTER: Record<string, string[]> = {
   GK:  ["GK"],
   RB:  ["RB", "RWB"],
@@ -467,7 +484,7 @@ const ERA_POOL_TTL_MS = 10 * 60 * 1000;
  * rather than being removed, so a scrappy squad player is a rare curiosity
  * instead of a third of every round.
  */
-const WEAK_PLAYER_WEIGHT = 0.1;
+const WEAK_PLAYER_WEIGHT = 0.03;
 
 /**
  * "Weak" is judged against the player's OWN season, never a fixed number.
@@ -500,7 +517,10 @@ function computeWeakThresholds(
   for (const [year, list] of Array.from(bySeason.entries())) {
     list.sort((a, b) => a - b);
     const idx = Math.max(0, Math.min(list.length - 1, Math.floor(rank * list.length)));
-    out.set(year, list[idx]);
+    // +3 on top of the season's own mark. The rank alone still let through more
+    // fringe players than felt right in play, and lifting the bar per season
+    // keeps it era-neutral in a way a flat number would not.
+    out.set(year, list[idx] + 3);
   }
   return out;
 }
@@ -642,9 +662,16 @@ export async function fetchRoundPlayers(
     if (excluded.has(`id:${r.sofifa_id}`)) return false;
     if (excluded.has(`name:${playerNameKey(r.name)}`)) return false;
     if (allowed.length === 0) return true;
-    const pos = resolvePositions(r).toUpperCase();
-    const parts = pos.split(",").map((x: string) => x.trim());
-    return allowed.some(p => parts.includes(p));
+    const positions = resolvePositions(r);
+    const parts = positions.toUpperCase().split(",").map((x: string) => x.trim());
+    if (!allowed.some(p => parts.includes(p))) return false;
+    // The simulator has the final say — it knows the conditional cases a list
+    // cannot express, such as right-mid being a perfect right winger UNLESS he
+    // is also a right-back.
+    return positionFitness({
+      assignedPosition: position,
+      positions,
+    } as Parameters<typeof positionFitness>[0]) >= MIN_SLOT_FITNESS;
   });
 
   const era = await getEraPool(service, leagues, eraStart, eraEnd);

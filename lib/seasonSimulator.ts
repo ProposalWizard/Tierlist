@@ -546,13 +546,13 @@ export function positionFitness(player: DraftPlayer): number {
       return best({
         CDM: 0.98, CAM: 0.98,
         LM: 0.93, RM: 0.93,
-        LW: 0.85, RW: 0.85, ST: 0.85,
+        LW: 0.85, RW: 0.85, ST: 0.85, CF: 0.85,
         CB: 0.85, LB: 0.85, RB: 0.85, RWB: 0.85, LWB: 0.85,
       });
 
     case 'CAM':
       return best({
-        CM: 0.98,
+        CM: 0.98, CF: 0.98,
         CDM: 0.93, LM: 0.93, RM: 0.93, LW: 0.93, RW: 0.93, ST: 0.93,
         CB: 0.85, LB: 0.85, RB: 0.85,
       });
@@ -577,7 +577,7 @@ export function positionFitness(player: DraftPlayer): number {
       return best({
         // LM → 100% via conditional (if no LB/LWB)
         ST: 0.98, RW: 0.98,
-        RM: 0.93, CAM: 0.93,
+        RM: 0.93, CAM: 0.93, CF: 0.93,
         LM: 0.85, CM: 0.85, LB: 0.85, LWB: 0.85, RB: 0.85, RWB: 0.85,
         // CDM → 0.68 (OOP)
       });
@@ -586,14 +586,18 @@ export function positionFitness(player: DraftPlayer): number {
       return best({
         // RM → 100% via conditional (if no RB/RWB)
         ST: 0.98, LW: 0.98,
-        LM: 0.93, CAM: 0.93,
+        LM: 0.93, CAM: 0.93, CF: 0.93,
         RM: 0.85, CM: 0.85, RB: 0.85, RWB: 0.85, LB: 0.85, LWB: 0.85,
         // CDM → 0.68 (OOP)
       });
 
     case 'ST':
       return best({
-        LW: 0.98, RW: 0.98,
+        // CF is a withdrawn striker, not an out-of-position player. Without it
+        // here every CF-only forward scored 0.68 at striker — the same as
+        // playing a centre-back up front — even though the draft's own
+        // formation compatibility lists have always allowed CF at ST.
+        CF: 0.98, LW: 0.98, RW: 0.98,
         CAM: 0.93,
         LM: 0.85, RM: 0.85,
         // CDM, CM → 0.68 (OOP)

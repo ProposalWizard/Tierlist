@@ -306,8 +306,10 @@ async function finishReplacementDraft(
   const season = Number(room.season_number) || 1;
   const built = Object.entries(nextState.picks).map(([userId, picks]) => {
     const list = picks as SquadPick[];
-    // anyMeansSub=false: a mixed replacement pool has no bench slots.
-    return { userId, squad: americanPicksToSquad(list, false), fifaYears: list.map(p => p.player.fifa_year) };
+    // Replacements join the BENCH. They are not slotted into the position of
+    // whoever left — the manager promotes whoever they want on the arrange
+    // screen, which already refuses to continue until a full eleven is picked.
+    return { userId, squad: americanPicksToSquad(list, true), fifaYears: list.map(p => p.player.fifa_year) };
   });
   await attachSquadAttributes(service, built);
 

@@ -17,6 +17,8 @@ function genRoomCode(): string {
 function buildDraftSquad(picks: SquadPick[]): DraftPlayer[] {
   return picks.map(pick => {
     const p = pick.player;
+    // "ANY" rounds are bench slots — in the initial draft they are the three
+    // substitutes, and in a replacement draft every pick joins the bench.
     const isSubPick = pick.position === "ANY";
     const assignedPosition = isSubPick
       ? (p.positions.split(",")[0]?.trim() || "CM")
