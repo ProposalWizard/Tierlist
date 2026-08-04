@@ -1,9 +1,32 @@
 // A stand-in for the Supabase client that mimics PostgREST semantics closely
 // enough to exercise the real pool code: filters, keyset paging, the 1000-row
 // server cap, and ordering.
-export function makeFakeDb({ rows, hardCap = 1000, failAfterPages = null }) {
+export function makeFakeDb({ rows, hardCap = 1000, failAfterPages = null, storage = false }) {
   let pageCount = 0;
   const stats = { queries: 0, pages: 0 };
+
+  // Opt-in stand-in for Supabase Storage, used by the staging tests. Off by
+  // default so the query-count and randomness tests keep measuring the pure
+  // database path.
+  const files = new Map();
+  const fakeStorage = {
+    from: (bucket) => ({
+      async download(path) {
+        const body = files.get(`${bucket}/${path}`);
+        return body === undefined
+          ? { data: null, error: { message: "Object not found" } }
+          : { data: { text: async () => body }, error: null };
+      },
+      async upload(path, body, _opts) {
+        files.set(`${bucket}/${path}`, typeof body === "string" ? body : await body.text());
+        return { data: { path }, error: null };
+      },
+      async remove(paths) {
+        for (const p of paths) files.delete(`${bucket}/${p}`);
+        return { data: [], error: null };
+      },
+    }),
+  };
 
   function makeQuery(table) {
     const f = { table, filters: [], order: null, limitN: null, rangeFrom: null, rangeTo: null };
@@ -44,7 +67,9 @@ export function makeFakeDb({ rows, hardCap = 1000, failAfterPages = null }) {
     }
     return q;
   }
-  return { from: makeQuery, __stats: stats };
+  const db = { from: makeQuery, __stats: stats, __files: files };
+  if (storage) db.storage = fakeStorage;
+  return db;
 }
 
 // ~560 PL players per edition across 20 editions, like the real table.

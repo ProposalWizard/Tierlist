@@ -397,6 +397,16 @@ export default function DraftPage() {
     window.history.replaceState(null, '', url);
   }, [roomCode]);
 
+  // American rooms: the between-season replacement draft is seeded by whoever
+  // submits their vacancies last, and that seeding needs the era pool. Warm it
+  // while people are still reading their pre-season screens — dead time — so
+  // the seed itself is instant instead of paying a cold pool build.
+  useEffect(() => {
+    if (!isAmericanRoom || !roomCode) return;
+    if (phase !== "pre-season" && phase !== "sell") return;
+    void fetch(`/api/draft/rooms/${roomCode}/american/warm`, { method: "POST" }).catch(() => {});
+  }, [phase, isAmericanRoom, roomCode]);
+
   useEffect(() => {
     setResume(loadProgress());
     const supabase = createClient();

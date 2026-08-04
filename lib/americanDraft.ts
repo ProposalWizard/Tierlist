@@ -477,6 +477,77 @@ interface EraPool {
 const eraPoolCache = new Map<string, EraPool>();
 const ERA_POOL_TTL_MS = 10 * 60 * 1000;
 
+// ── Persistent cache in Supabase Storage ─────────────────────────────────────
+// The module-scope caches above die with the serverless instance, so any pick
+// or seed that landed on a cold instance rebuilt the whole era pool from the
+// database — the multi-second stall players felt "after a few minutes idle".
+// The same pool serialised into the storage bucket survives instances: a cold
+// start becomes one storage GET instead of ~28 table queries. Storage is only
+// ever an optimisation here — every read and write is guarded, and any failure
+// falls back to the database path that already works.
+const CACHE_BUCKET = "tierlist-images";
+const CACHE_PREFIX = "draft-cache";
+const ERA_POOL_STORAGE_TTL_MS = 30 * 60 * 1000;
+/** How often a warm instance re-persists its pool so the file stays fresh. */
+const ERA_POOL_REPERSIST_MS = 15 * 60 * 1000;
+const lastPersist = new Map<string, number>();
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function readCacheJson(service: any, path: string): Promise<any | null> {
+  try {
+    const { data, error } = await service?.storage
+      ?.from(CACHE_BUCKET)
+      .download(`${CACHE_PREFIX}/${path}`) ?? { data: null, error: true };
+    if (error || !data) return null;
+    return JSON.parse(await data.text());
+  } catch {
+    return null;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function writeCacheJson(service: any, path: string, obj: unknown): Promise<void> {
+  try {
+    await service?.storage
+      ?.from(CACHE_BUCKET)
+      .upload(`${CACHE_PREFIX}/${path}`, JSON.stringify(obj), {
+        upsert: true,
+        contentType: "application/json",
+        cacheControl: "no-cache",
+      });
+  } catch {
+    // best effort only
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function removeCacheJson(service: any, path: string): void {
+  try {
+    void service?.storage?.from(CACHE_BUCKET).remove([`${CACHE_PREFIX}/${path}`]);
+  } catch {
+    // best effort only
+  }
+}
+
+// Derived maps are rebuilt from rows rather than stored: they are pure
+// functions of the rows and Maps don't survive JSON anyway.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function poolFromRows(rows: any[]): EraPool {
+  const best = new Map<string, { ovr: number; year: number }>();
+  for (const r of rows) {
+    const o = resolveOvr(r);
+    const cur = best.get(r.sofifa_id);
+    if (!cur || o > cur.ovr) best.set(r.sofifa_id, { ovr: o, year: r.fifa_year });
+  }
+  return { rows, at: Date.now(), weakBelow: computeWeakThresholds(rows), best };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function persistEraPool(service: any, key: string, rows: any[]): void {
+  lastPersist.set(key, Date.now());
+  void writeCacheJson(service, `era-pool-${key}.json`, { builtAt: Date.now(), rows });
+}
+
 /**
  * Squad players are far more numerous than starters — roughly a third of every
  * club's roster is academy and reserve — so an even draw fills the board with
@@ -542,7 +613,30 @@ function computeWeakThresholds(
 async function getEraPool(service: any, leagues: string[], eraStart: number, eraEnd: number): Promise<EraPool> {
   const key = `${eraStart}-${eraEnd}`;
   const cached = eraPoolCache.get(key);
-  if (cached && Date.now() - cached.at < ERA_POOL_TTL_MS) return cached;
+  if (cached && Date.now() - cached.at < ERA_POOL_TTL_MS) {
+    // Keep the storage copy fresh from warm instances, so whichever cold
+    // instance handles the next request finds a recent file waiting.
+    if (Date.now() - (lastPersist.get(key) ?? 0) > ERA_POOL_REPERSIST_MS) {
+      persistEraPool(service, key, cached.rows);
+    }
+    return cached;
+  }
+
+  // Cold instance: one storage GET replaces the whole multi-query build below.
+  const stored = await readCacheJson(service, `era-pool-${key}.json`) as
+    | { builtAt?: number; rows?: unknown[] }
+    | null;
+  if (
+    stored &&
+    Array.isArray(stored.rows) &&
+    stored.rows.length > 0 &&
+    Date.now() - (stored.builtAt ?? 0) < ERA_POOL_STORAGE_TTL_MS
+  ) {
+    const pool = poolFromRows(stored.rows);
+    eraPoolCache.set(key, pool);
+    lastPersist.set(key, stored.builtAt ?? Date.now());
+    return pool;
+  }
 
   const { min, max } = await getIdBounds(service, leagues, eraStart, eraEnd);
   const SLICES = 24;
@@ -597,16 +691,11 @@ async function getEraPool(service: any, leagues: string[], eraStart: number, era
   }
 
   const rows = Array.from(byId.values());
-  // Peak rating per player, used to weight prime mode by what the card will
-  // actually SHOW rather than by the season that happened to be drawn.
-  const best = new Map<string, { ovr: number; year: number }>();
-  for (const r of rows) {
-    const o = resolveOvr(r);
-    const cur = best.get(r.sofifa_id);
-    if (!cur || o > cur.ovr) best.set(r.sofifa_id, { ovr: o, year: r.fifa_year });
+  const pool = poolFromRows(rows);
+  if (rows.length > 0) {
+    eraPoolCache.set(key, pool);
+    persistEraPool(service, key, rows);
   }
-  const pool: EraPool = { rows, at: Date.now(), weakBelow: computeWeakThresholds(rows), best };
-  if (rows.length > 0) eraPoolCache.set(key, pool);
   return pool;
 }
 
@@ -816,6 +905,165 @@ export async function fetchMixedRoundPlayers(
   }
 
   return shuffleArray(chosen);
+}
+
+// ── Next-round staging ───────────────────────────────────────────────────────
+// The pool for round N+1 used to be built inside the LAST pick of round N, so
+// every round transition made the whole room wait on that one request — the
+// only moment the draft ever felt slow once picking itself was optimistic.
+// Instead, clients call the stage endpoint as soon as a round begins; the pool
+// for the NEXT round is built during the round (dead time — people are
+// picking) and parked in storage. The round-advance request then just reads it.
+//
+// Correctness: the staged pool excludes everyone taken so far AND the entire
+// current 10-card pool, and every pick during the round comes from that pool —
+// so nothing staged can be taken in the meantime. The consumer still verifies
+// this against the final taken set and falls back to a live build on any
+// mismatch, so a stale or foreign file can never put a taken player back on
+// the board. Files are deleted on use.
+
+export interface StagedRound {
+  mode: "initial" | "replacement";
+  round: number;
+  players: AmPlayer[];
+}
+
+function stagedRoundPath(roomId: string, season: number, mode: string, round: number): string {
+  return `room-${roomId}-s${season}-${mode}-r${round}.json`;
+}
+
+type StageRoom = {
+  id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  settings: any;
+  season_number?: number | null;
+};
+
+/** Exclusion keys for the current pool itself — staged rounds must not repeat it. */
+function currentPoolKeys(state: AmericanState, into: Set<string>): Set<string> {
+  for (const p of state.round_players ?? []) {
+    if (p.sofifa_id) into.add(`id:${p.sofifa_id}`);
+    const nk = playerNameKey(p.name);
+    if (nk) into.add(`name:${nk}`);
+  }
+  return into;
+}
+
+/**
+ * Build and park the pool for the round after the one being played.
+ * Returns the staged players (also when a previous call already staged them),
+ * or null when there is no next round. Never throws — staging is an
+ * optimisation, so any failure just means the advance falls back to a live build.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function stageNextRound(service: any, room: StageRoom, state: AmericanState): Promise<AmPlayer[] | null> {
+  try {
+    if (!state || state.complete) return null;
+    const mode = state.mode === "replacement" ? "replacement" : "initial";
+    const nextRound = state.current_round + 1;
+    const season = Number(room.season_number) || 1;
+    const path = stagedRoundPath(room.id, season, mode, nextRound);
+
+    const existing = await readCacheJson(service, path) as StagedRound | null;
+    if (existing && existing.mode === mode && existing.round === nextRound && existing.players?.length) {
+      return existing.players;
+    }
+
+    const opts = roundOptionsFromSettings(room.settings);
+    const excl = currentPoolKeys(state, pickedPlayerKeys(state.picks));
+    let players: AmPlayer[];
+
+    if (mode === "initial") {
+      if (nextRound >= state.position_sequence.length) return null;
+      players = await fetchRoundPlayers(service, state.position_sequence[nextRound], excl, opts);
+    } else {
+      // Predict who is still owed a player once this round's remaining picks
+      // are made: everyone from the current picker onward picks exactly once.
+      const vac = state.vacancies ?? {};
+      const remaining = new Set(state.pick_order.slice(state.current_pick_idx));
+      const predicted: Record<string, number> = {};
+      for (const uid of Object.keys(vac)) {
+        predicted[uid] = (vac[uid] ?? 0) - (remaining.has(uid) ? 1 : 0);
+      }
+      const nextParticipants = participantsForRound(predicted, state.standings_order ?? state.pick_order);
+      if (nextParticipants.length === 0) return null;
+
+      // Squads persist between seasons, so exclude every roster in the room.
+      const { data: rosters } = await service
+        .from("draft_room_players")
+        .select("squad")
+        .eq("room_id", room.id);
+      for (const r of rosters ?? []) {
+        for (const sp of ((r?.squad as Array<{ sofifa_id?: string; name?: string }>) ?? [])) {
+          if (sp?.sofifa_id) excl.add(`id:${sp.sofifa_id}`);
+          const nk = playerNameKey(sp?.name ?? "");
+          if (nk) excl.add(`name:${nk}`);
+        }
+      }
+
+      // A keeper picked later this round can only DECREASE the need, so this
+      // guess never under-provides goalkeepers — at worst the pool has a spare.
+      const gkNeed = goalkeepersNeeded(nextParticipants, state.needs_gk ?? {});
+      players = await fetchMixedRoundPlayers(service, excl, opts, gkNeed);
+    }
+
+    if (!players || players.length === 0) return null;
+    await writeCacheJson(service, path, { mode, round: nextRound, players } satisfies StagedRound);
+    return players;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Consume a staged pool for a round advance. Validates that the file is for
+ * exactly this round, that nothing in it has since been taken, and that it
+ * carries enough goalkeepers — on any doubt it returns null and the caller
+ * builds the pool live. The file is removed either way: it is either used now
+ * or wrong forever.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function takeStagedRound(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  service: any,
+  room: StageRoom,
+  mode: "initial" | "replacement",
+  round: number,
+  takenKeys: Set<string>,
+  minGoalkeepers = 0,
+): Promise<AmPlayer[] | null> {
+  try {
+    const season = Number(room.season_number) || 1;
+    const path = stagedRoundPath(room.id, season, mode, round);
+    const staged = await readCacheJson(service, path) as StagedRound | null;
+    removeCacheJson(service, path);
+
+    if (!staged || staged.mode !== mode || staged.round !== round) return null;
+    const players = staged.players ?? [];
+    if (players.length === 0) return null;
+
+    const clean = players.every(p =>
+      !takenKeys.has(`id:${p.sofifa_id}`) && !takenKeys.has(`name:${playerNameKey(p.name)}`)
+    );
+    if (!clean) return null;
+
+    const gks = players.filter(p =>
+      (p.positions || "").toUpperCase().split(",").map(x => x.trim()).includes("GK")
+    ).length;
+    if (gks < minGoalkeepers) return null;
+
+    return players;
+  } catch {
+    return null;
+  }
+}
+
+/** Best-effort cleanup once a draft finishes — a staged pool for a round that
+ * will never be played must not survive into a later draft. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function discardStagedRound(service: any, room: StageRoom, mode: "initial" | "replacement", round: number): void {
+  const season = Number(room.season_number) || 1;
+  removeCacheJson(service, stagedRoundPath(room.id, season, mode, round));
 }
 
 /**

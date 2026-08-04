@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   americanPicksToSquad,
   attachSquadAttributes,
+  discardStagedRound,
   fetchMixedRoundPlayers,
   fetchRoundPlayers,
   goalkeepersNeeded,
@@ -12,6 +13,7 @@ import {
   playerNameKey,
   roundOptionsFromSettings,
   shuffleArray,
+  takeStagedRound,
 } from "@/lib/americanDraft";
 import type { AmericanState, SquadPick } from "@/lib/americanDraft";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
@@ -149,7 +151,7 @@ export async function POST(
       return NextResponse.json({ error: `Could not finish the draft: ${doneErr.message}` }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, complete: true });
+    return NextResponse.json({ ok: true, complete: true, state: nextState });
   }
 
   if (isLastPickerInRound) {
@@ -161,23 +163,32 @@ export async function POST(
     // Exclude everyone already taken, so a player picked at one position can
     // never reappear at another — and no two editions of the same footballer
     // can both end up in a squad.
+    const taken = pickedPlayerKeys(nextState.picks);
+
+    // The pool was normally staged during the round, so advancing is just a
+    // read. Falls back to a live build when it wasn't, or fails validation.
     //
     // fetchRoundPlayers throws rather than returning an empty list. Saving an
     // empty pool is what stranded a draft on "Loading players…" with nothing to
     // pick and no way forward, so the pick is rejected instead and the room
     // stays on the round it can still play.
-    try {
-      nextState.round_players = await fetchRoundPlayers(
-        service,
-        state.position_sequence[nextRound],
-        pickedPlayerKeys(nextState.picks),
-        roundOptionsFromSettings(room.settings)
-      );
-    } catch (e) {
-      return NextResponse.json(
-        { error: e instanceof Error ? e.message : "Could not load the next round" },
-        { status: 500 }
-      );
+    const staged = await takeStagedRound(service, room, "initial", nextRound, taken);
+    if (staged) {
+      nextState.round_players = staged;
+    } else {
+      try {
+        nextState.round_players = await fetchRoundPlayers(
+          service,
+          state.position_sequence[nextRound],
+          taken,
+          roundOptionsFromSettings(room.settings)
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Could not load the next round" },
+          { status: 500 }
+        );
+      }
     }
   } else {
     // Same round, next picker — the picked player leaves the pool.
@@ -194,7 +205,9 @@ export async function POST(
     return NextResponse.json({ error: `Could not save the pick: ${saveErr.message}` }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  // The authoritative state rides back on the response, so the picker's board
+  // is exact the moment the request lands — no waiting on Realtime or a poll.
+  return NextResponse.json({ ok: true, state: nextState });
 }
 
 /**
@@ -257,18 +270,26 @@ async function handleReplacementPick(
       }
     }
 
-    try {
-      nextState.round_players = await fetchMixedRoundPlayers(
-        service,
-        excluded,
-        roundOptionsFromSettings(room.settings),
-        goalkeepersNeeded(nextParticipants, nextState.needs_gk ?? needsGk)
-      );
-    } catch (e) {
-      return NextResponse.json(
-        { error: e instanceof Error ? e.message : "Could not load the next round" },
-        { status: 500 }
-      );
+    // Prefer the pool staged during the round; build live only when it is
+    // missing or fails validation (taken player, not enough goalkeepers).
+    const gkMin = goalkeepersNeeded(nextParticipants, nextState.needs_gk ?? needsGk);
+    const staged = await takeStagedRound(service, room, "replacement", nextState.current_round, excluded, gkMin);
+    if (staged) {
+      nextState.round_players = staged;
+    } else {
+      try {
+        nextState.round_players = await fetchMixedRoundPlayers(
+          service,
+          excluded,
+          roundOptionsFromSettings(room.settings),
+          gkMin
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Could not load the next round" },
+          { status: 500 }
+        );
+      }
     }
   }
 
@@ -279,7 +300,7 @@ async function handleReplacementPick(
   if (error) {
     return NextResponse.json({ error: `Could not save the pick: ${error.message}` }, { status: 500 });
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, state: nextState });
 }
 
 /** Append each manager's replacements to their carried-over squad. */
@@ -341,5 +362,8 @@ async function finishReplacementDraft(
   if (doneErr) {
     return NextResponse.json({ error: doneErr.message }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, complete: true });
+  // A pool staged for a round that will now never be played must not survive
+  // into a later draft. Best effort — validation would reject it anyway.
+  discardStagedRound(service, room, "replacement", nextState.current_round + 1);
+  return NextResponse.json({ ok: true, complete: true, state: nextState });
 }

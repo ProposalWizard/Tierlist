@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import AmericanDraftRoom from "./AmericanDraftRoom";
-import type { AmericanState } from "@/lib/americanDraft";
+import type { AmericanState, AmPlayer } from "@/lib/americanDraft";
+import { getFlagUrl } from "@/lib/nationalities";
 import type { DraftPlayer } from "@/app/draft/page";
 
 interface Props {
@@ -181,9 +182,38 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
   const draftLive = !state || !state.complete;
   useEffect(() => {
     if (!draftLive) return;
-    const t = setInterval(() => { void refetchState(); }, awaitingSeed ? 2000 : 3000);
+    const t = setInterval(() => { void refetchState(); }, 2000);
     return () => clearInterval(t);
-  }, [draftLive, awaitingSeed, refetchState]);
+  }, [draftLive, refetchState]);
+
+  // As soon as a round begins, ask the server to build the NEXT round's pool in
+  // the background and warm the browser's image cache with it. By the time the
+  // round flips, the pool is a stored file and every face, badge and flag is
+  // already local — the new board appears fully drawn instead of popping in.
+  // Once per round per client; a failure costs nothing but the head start.
+  const stagedKeyRef = useRef<string | null>(null);
+  const roundKey = state && !state.complete && (state.round_players?.length ?? 0) > 0
+    ? `${state.mode ?? "initial"}-${state.current_round}`
+    : null;
+  useEffect(() => {
+    if (!roundKey || stagedKeyRef.current === roundKey) return;
+    stagedKeyRef.current = roundKey;
+    (async () => {
+      try {
+        const res = await fetch(`/api/draft/rooms/${roomCode}/american/stage`, { method: "POST" });
+        if (!res.ok) return;
+        const data = await res.json() as { players?: AmPlayer[] };
+        for (const p of data.players ?? []) {
+          if (p.image_url) new Image().src = p.image_url;
+          if (p.club_logo_url) new Image().src = p.club_logo_url;
+          const flag = getFlagUrl(p.nationality);
+          if (flag) new Image().src = flag;
+        }
+      } catch {
+        // Staging is only a head start — the draft works without it.
+      }
+    })();
+  }, [roundKey, roomCode]);
 
   const makePick = useCallback(async (sofifaId: string) => {
     setError(null);
@@ -222,7 +252,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     }
 
     const payload = await res.json().catch(() => null) as
-      | { ok?: boolean; complete?: boolean; error?: string }
+      | { ok?: boolean; complete?: boolean; error?: string; state?: AmericanState }
       | null;
 
     if (!res.ok) {
@@ -236,12 +266,17 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     // The last pick produces no further room update for this client to observe.
     if (payload?.complete) { setAwaitingServer(false); void finish(); return; }
 
-    // Happy path: let Realtime deliver the authoritative state. Reconcile only
-    // if it hasn't arrived shortly, rather than paying for a read every pick.
+    // The authoritative state rides back on the pick response itself, so the
+    // board — including a whole new round — is exact the moment the request
+    // lands, with no Realtime round-trip to wait for.
+    if (payload?.state) { applyServerState(payload.state, true); return; }
+
+    // Older server without state in the response: let Realtime deliver it, and
+    // reconcile only if it hasn't arrived shortly.
     setTimeout(() => {
       if (pendingPickRef.current === sofifaId) void refetchState(true);
     }, 2500);
-  }, [roomCode, finish, refetchState]);
+  }, [roomCode, finish, refetchState, applyServerState]);
 
   if (loading) {
     return (
