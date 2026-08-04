@@ -517,7 +517,9 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           score: finalScore,
-          max_score: maxScore,
+          // The server derives max_score from the stored puzzle; this only
+          // declares which unit the score is in.
+          scoring: "points",
           hints_used: hintsUsed,
           time_seconds: timeSeconds,
           ...(isSecondChance && { second_chance: true }),
