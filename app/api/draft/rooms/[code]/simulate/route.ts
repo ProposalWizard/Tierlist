@@ -91,22 +91,17 @@ export async function POST(
     const seasonNumber = room.season_number ?? 1;
     const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
       { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
-    const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined);
+    // getSeasonTeams must be told how many clubs this league needs. It returns
+    // last season's survivors plus three promotions, which is one short for
+    // every human who was relegated or left since — and a short league is not a
+    // cosmetic problem: an odd total makes the round-robin schedule emit a
+    // self-fixture and the simulation throws, while an even-but-short total
+    // plays fewer than the 38 matchweeks the simulator assumes. Either way the
+    // room could never play another season.
+    const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined, undefined, 20 - N);
     const sortedAI = [...seasonTeams].sort((a, b) => b.strength - a.strength);
     const aiOpponents: { name: string; strength: number }[] = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
 
-    // After relegations, the AI pool from the previous season may be short.
-    // Top up from remaining sorted AI to ensure exactly 20 - N opponents.
-    if (aiOpponents.length < 20 - N) {
-      const used = new Set(aiOpponents.map((a: { name: string }) => a.name));
-      const extras = sortedAI
-        .filter(t => !used.has(t.name))
-        .slice(0, (20 - N) - aiOpponents.length)
-        .map(t => ({ name: t.name, strength: t.strength }));
-      aiOpponents.push(...extras);
-    }
-    // Hard guard: if still short, log a diagnostic. The simulator tolerates a
-    // smaller league; this handles edge cases where the AI pool is exhausted.
     if (aiOpponents.length + N !== 20) {
       console.error(`League size mismatch: ${N} humans + ${aiOpponents.length} AI = ${N + aiOpponents.length}, expected 20`);
     }

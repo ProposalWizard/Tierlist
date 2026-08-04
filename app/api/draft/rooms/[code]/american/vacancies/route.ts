@@ -58,6 +58,41 @@ export async function POST(
   if (roomErr) return NextResponse.json({ error: roomErr.message }, { status: 500 });
   if (!room) return new Response("Room not found", { status: 404 });
 
+  // ── Guards ────────────────────────────────────────────────────────────────
+  // Without these, ANY logged-in user could POST to ANY room code (they are
+  // short, enumerable, and draft_rooms is world-readable) and the write below
+  // would replace american_state — which holds picks, pick_order and
+  // round_players — with a two-key object, permanently bricking a live draft.
+
+  // 1. The caller must actually be in this room, and not eliminated.
+  const { data: me, error: meErr } = await service
+    .from("draft_room_players")
+    .select("user_id, status")
+    .eq("room_id", room.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (meErr) return NextResponse.json({ error: meErr.message }, { status: 500 });
+  if (!me) return NextResponse.json({ error: "You are not in this room" }, { status: 403 });
+  if (me.status === "out") {
+    return NextResponse.json({ error: "You have been eliminated from this room" }, { status: 403 });
+  }
+
+  // 2. The room must be running an American draft at all.
+  if ((room.settings as { draftMode?: string } | null)?.draftMode !== "american") {
+    return NextResponse.json({ error: "This room is not in American draft mode" }, { status: 400 });
+  }
+
+  // 3. Never while an initial draft is live — that is the state this would
+  //    otherwise overwrite. Only a finished draft may be superseded by the
+  //    between-season replacement round.
+  const existing = room.american_state as AmericanState | null;
+  if (existing && existing.mode !== "replacement" && !existing.complete) {
+    return NextResponse.json(
+      { error: "A draft is already in progress in this room" },
+      { status: 409 }
+    );
+  }
+
   // Persist the reduced squad so the pool can exclude everyone still owned. The
   // status stays "drafting" — the squad is not final until it has been arranged.
   const { error: squadErr } = await service

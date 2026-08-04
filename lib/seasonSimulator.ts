@@ -319,12 +319,27 @@ const LOWER_LEAGUE_CLUBS: { name: string; strength: number }[] = [
   { name: 'Mansfield', strength: 62 },
 ];
 
+/**
+ * The AI clubs for the coming season: last season's survivors plus promotions.
+ *
+ * `neededCount` is how many AI clubs the caller actually needs, which is NOT
+ * always the number that survived. In multiplayer the league is
+ * `humans + AI = 20`, so every human relegated (or leaving) has to be replaced
+ * by an extra promoted club. Without it the league comes up short: an odd total
+ * makes the round-robin schedule emit a self-fixture and the season crashes,
+ * and an even-but-short total plays fewer than the 38 matchweeks the simulator
+ * hardcodes. Either way the room could never play another season.
+ *
+ * Omit it to keep the previous behaviour (survivors + 3), which is what solo
+ * career mode wants — there, no human ever leaves the league.
+ */
 export function getSeasonTeams(
   previousLeagueTable?: LeagueTeam[] | { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
   promotionSeed?: number,
+  neededCount?: number,
 ): { name: string; strength: number }[] {
   if (!previousLeagueTable || previousLeagueTable.length === 0) {
-    return DEFAULT_PL_TEAMS;
+    return topUpFromPool(DEFAULT_PL_TEAMS, neededCount, promotionSeed);
   }
 
   const poolNames = new Set(ALL_TEAMS_POOL.map(t => t.name));
@@ -360,7 +375,51 @@ export function getSeasonTeams(
       return { name: t.name, strength: pool?.strength ?? 75 };
     });
 
-  return [...remainingTeams, ...promoted];
+  return topUpFromPool([...remainingTeams, ...promoted], neededCount, promotionSeed);
+}
+
+/**
+ * Promote extra clubs until the list reaches `needed`.
+ *
+ * Callers used to attempt this themselves by filtering the season's own AI list
+ * against itself, which by construction can never yield anyone new — so a
+ * league short of clubs stayed short. Drawing from the full pool is the part
+ * that was missing.
+ */
+function topUpFromPool(
+  teams: { name: string; strength: number }[],
+  needed: number | undefined,
+  seed?: number,
+): { name: string; strength: number }[] {
+  if (!needed || teams.length >= needed) return teams;
+
+  const have = new Set(teams.map(t => t.name));
+  const candidates = ALL_TEAMS_POOL.filter(t => !have.has(t.name));
+  const rng = createRng((seed ?? 12345) ^ 0x5bf03635);
+  const out = [...teams];
+
+  // Same weighted draw the promotions above use, so a topped-up league is
+  // shaped like a normally promoted one rather than always the strongest left.
+  while (out.length < needed && candidates.length > 0) {
+    const total = candidates.reduce((sum, t) => sum + t.strength, 0);
+    let roll = rng() * total;
+    let picked = candidates.length - 1;
+    for (let j = 0; j < candidates.length; j++) {
+      roll -= candidates[j].strength;
+      if (roll <= 0) { picked = j; break; }
+    }
+    out.push(candidates[picked]);
+    candidates.splice(picked, 1);
+  }
+
+  // The pool itself is finite. Rather than hand back a short league that would
+  // crash the schedule, fall back to filler clubs so the season can still run.
+  let filler = 1;
+  while (out.length < needed) {
+    out.push({ name: `Athletic FC ${filler}`, strength: 66 });
+    filler++;
+  }
+  return out;
 }
 
 // --- UCL team data ---

@@ -131,11 +131,52 @@ export interface AmericanState {
   seeded?: boolean;
 }
 
-/** 11 starters in 4-3-3 order, then 3 substitutes. */
+/**
+ * 11 starters in 4-3-3 order, back to front, then 3 substitutes.
+ *
+ * These slots must be exactly the 4-3-3 entry in components/draft/formations.ts,
+ * which is the formation the arrange screen lays the squad out in. They drifted
+ * once: this drafted three centre-mids while the formation asks for a CDM and
+ * two CMs, so the arrange screen had to put a CM in the CDM slot — showing an
+ * out-of-position marker, and costing that player a fitness penalty in the
+ * simulation, on every single American squad. tests/americanDraft/formations.mts
+ * fails if they ever diverge again.
+ */
 export const AM_POSITION_SEQUENCE = [
-  "GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RW", "ST", "LW",
+  "GK", "RB", "CB", "CB", "LB", "CDM", "CM", "CM", "RW", "ST", "LW",
   "ANY", "ANY", "ANY",
 ];
+
+/** Substitute rounds appended after the starting eleven. */
+export const AM_BENCH_ROUNDS = 3;
+
+/**
+ * The round sequence for a formation: one round per starting slot, back to
+ * front, then the bench rounds.
+ *
+ * Back to front matters. Drafting keeper-first means the scarcest, most
+ * position-locked slots are filled while the pool is deepest — by the time the
+ * forward rounds come round, a manager short of options can still fall back on
+ * a winger, whereas nobody can improvise a goalkeeper.
+ *
+ * Returns null for any formation carrying a slot the draft has no filter for,
+ * because a round with no filter would offer the entire database. Callers
+ * should fall back to AM_POSITION_SEQUENCE.
+ */
+export function positionSequenceForFormation(
+  slots: Array<{ label: string; y: number }>,
+): string[] | null {
+  if (slots.length !== 11) return null;
+  const labels = slots.map(s => s.label.toUpperCase());
+  if (!labels.every(isDraftableSlot)) return null;
+
+  // y is the share of the pitch from the top, so the biggest y is the keeper.
+  const ordered = [...slots]
+    .sort((a, b) => b.y - a.y)
+    .map(s => s.label.toUpperCase());
+
+  return [...ordered, ...Array.from({ length: AM_BENCH_ROUNDS }, () => "ANY")];
+}
 
 export function makeAmericanState(userIds: string[], firstRoundPlayers: AmPlayer[]): AmericanState {
   return {
@@ -326,6 +367,11 @@ const MIN_SLOT_FITNESS = 0.98;
 
 // Candidate positions per slot. Kept as a cheap pre-filter; the fitness check
 // above is what actually decides.
+//
+// Covers every slot label used by ANY formation in components/draft/formations.ts,
+// not just the 4-3-3 the draft currently runs. A slot with no entry here would
+// fall through to "no filter" and offer the whole database for that round, so
+// the set must stay in step with the formations list.
 const POS_FILTER: Record<string, string[]> = {
   GK:  ["GK"],
   RB:  ["RB", "RWB"],
@@ -335,8 +381,22 @@ const POS_FILTER: Record<string, string[]> = {
   RW:  ["RW", "RM"],
   LW:  ["LW", "LM"],
   ST:  ["ST", "CF"],
+  // Slots only other formations use. Deliberately as tight as the ones above —
+  // each is the mirror of its counterpart, and positionFitness still has the
+  // final say on everything these let through.
+  CDM: ["CDM", "CM"],
+  CAM: ["CAM", "CM"],
+  RM:  ["RM", "RW"],
+  LM:  ["LM", "LW"],
+  RWB: ["RWB", "RB"],
+  LWB: ["LWB", "LB"],
   ANY: [],
 };
+
+/** Slot labels the draft can build a round for. */
+export function isDraftableSlot(label: string): boolean {
+  return Object.prototype.hasOwnProperty.call(POS_FILTER, label.toUpperCase());
+}
 
 // Matches English Premier League across all FIFA edition naming conventions.
 // Anchored to avoid catching Scottish/Russian/Ukrainian Premier Leagues.

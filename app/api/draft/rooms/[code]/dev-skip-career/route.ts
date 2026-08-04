@@ -109,7 +109,9 @@ export async function POST(
 
       // Build sim inputs
       const N = readyPlayers.length;
-      const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined);
+      // See simulate/route.ts — the league needs 20 - N AI clubs, which is more
+      // than "survivors + 3" once any human has been relegated or left.
+      const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined, undefined, 20 - N);
       const aiOpponents = [...seasonTeams]
         .sort((a, b) => b.strength - a.strength)
         .slice(0, 20 - N)
