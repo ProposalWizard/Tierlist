@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { simulateSharedSeason, getSeasonTeams } from "@/lib/seasonSimulator";
+import { sanitizeSquad } from "@/lib/squadSanitize";
 import type { DraftPlayer, SharedSeasonInput, LeagueTeam } from "@/lib/seasonSimulator";
 
 function hashRoomId(roomId: string): number {
@@ -106,11 +107,18 @@ export async function POST(
       console.error(`League size mismatch: ${N} humans + ${aiOpponents.length} AI = ${N + aiOpponents.length}, expected 20`);
     }
 
+    // Sanitised at the point of use, not trusted as stored. draft_room_players
+    // is directly writable by its owner under the current RLS policy, so a
+    // squad can reach this table without ever passing through /ready — and
+    // every phase rating in the league is computed from it. This clamps
+    // ratings and caps the starting eleven so an impossible squad cannot
+    // decide the season. See lib/squadSanitize.ts: it is defence in depth, not
+    // a replacement for security_rls_hardening_jul2026.sql.
     const humanTeams: SharedSeasonInput[] = activePlayers.map(rp => ({
       userId: rp.user_id,
       displayName: rp.display_name,
       teamName: (rp as Record<string, unknown>).team_name as string | undefined,
-      squad: (rp.squad ?? []) as DraftPlayer[],
+      squad: sanitizeSquad(rp.squad),
     }));
 
     // Previous season's cup wins, for Super Cup / Community Shield / European

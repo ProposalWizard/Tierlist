@@ -1,13 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
+import { sanitizeSquad, MAX_SQUAD } from "@/lib/squadSanitize";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
 
 // A drafted squad is 11 starters plus subs; season 2+ can add signings. Anything
 // outside this range is not a squad this game can produce.
 const MIN_SQUAD = 11;
-const MAX_SQUAD = 20;
-const MAX_OVERALL = 99;
 
 export async function POST(
   req: Request,
@@ -33,32 +32,13 @@ export async function POST(
   // damage from a hand-crafted request; it does NOT prove the squad was actually
   // drafted, since the client-side spin leaves no server record of what was
   // offered. Verifying that would need the offered pool persisted per player.
-  const squad: DraftPlayer[] = [];
-  for (const entry of rawSquad) {
-    if (!entry || typeof entry !== "object") {
-      return new Response("Invalid player in squad", { status: 400 });
-    }
-    const p = entry as Record<string, unknown>;
-    if (typeof p.name !== "string" || !p.name.trim()) {
-      return new Response("Invalid player in squad", { status: 400 });
-    }
-    const overall = Number(p.overall);
-    if (!Number.isFinite(overall)) {
-      return new Response("Invalid player rating in squad", { status: 400 });
-    }
-    const clampedAttrs = p.attrs && typeof p.attrs === "object"
-      ? Object.fromEntries(
-          Object.entries(p.attrs as Record<string, unknown>).map(([k, v]) => {
-            const n = Number(v);
-            return [k, Number.isFinite(n) ? Math.max(0, Math.min(MAX_OVERALL, Math.round(n))) : 0];
-          })
-        )
-      : undefined;
-    squad.push({
-      ...(p as unknown as DraftPlayer),
-      overall: Math.max(1, Math.min(MAX_OVERALL, Math.round(overall))),
-      ...(clampedAttrs ? { attrs: clampedAttrs as unknown as DraftPlayer["attrs"] } : {}),
-    });
+  //
+  // Shared with the simulate route, which re-applies it to the STORED squad —
+  // draft_room_players is directly writable by its owner, so a squad can reach
+  // the league without ever passing through here.
+  const squad: DraftPlayer[] = sanitizeSquad(rawSquad);
+  if (squad.length !== rawSquad.length) {
+    return new Response("Invalid player in squad", { status: 400 });
   }
 
   // Derived from the squad server-side — never taken from the request. The

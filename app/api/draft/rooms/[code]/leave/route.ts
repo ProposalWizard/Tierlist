@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { seedReplacementDraftIfReady } from "@/lib/americanReplacementSeed";
 
 // Removes the caller from a room. Without this, leaving is purely client-side:
 // the departed player's row lingers forever, "allReady" can never become true
@@ -63,6 +64,17 @@ export async function POST(
     .delete()
     .eq("room_id", room.id)
     .eq("user_id", user.id);
+
+  // Leaving can be the thing that completes the set.
+  //
+  // A between-season American draft only starts once every remaining manager
+  // has submitted their vacancies, and that check used to run ONLY inside a
+  // submission. So a manager who quit before submitting stranded everyone who
+  // had: nobody was left to trigger the check, and the quitter could not rejoin
+  // to unstick it because a started room refuses joins. Re-running it here
+  // means the draft begins the moment the last person who was going to submit,
+  // has. It is a no-op in every other situation.
+  await seedReplacementDraftIfReady(service, room.id);
 
   return Response.json({ ok: true });
 }
