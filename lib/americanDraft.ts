@@ -940,6 +940,161 @@ export async function fetchRoundPlayers(
   }));
 }
 
+/** What a custom pool filter gets to see about a candidate. */
+export interface PoolCandidate {
+  sofifa_id: string;
+  name: string;
+  ovr: number;
+  positions: string;
+  nationality: string;
+  club: string;
+  age: number;
+  fifa_year: number;
+}
+
+/**
+ * Build a pool from an arbitrary rule instead of a formation slot.
+ *
+ * The Challenge draft (app/draft-challenge-dev) picks each round by a random
+ * "brief" — a rating band, a nationality, a minimum stat, a club, an era —
+ * rather than by position, so it needs the same machinery fetchRoundPlayers
+ * uses without POS_FILTER. Everything that matters is shared with it: the
+ * cached era pool, the non-English-PL club exclusions, the weighted draw that
+ * keeps fringe squad players rare, per-footballer dedup by id AND normalised
+ * name, prime-mode edition swapping, and club badge resolution.
+ *
+ * Returns fewer than `size` players when the rule simply does not match enough
+ * people; callers decide whether that is usable. It never throws for an empty
+ * result, because a brief that comes up short is a normal thing to discard.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function fetchCustomRoundPlayers(
+  service: any,
+  match: (c: PoolCandidate) => boolean,
+  excludeKeys: Iterable<string> = [],
+  opts: RoundOptions = {},
+  size = 10,
+): Promise<AmPlayer[]> {
+  const excluded = new Set(excludeKeys);
+  const eraStart = opts.eraStart ?? 2007;
+  const eraEnd = opts.eraEnd ?? 2026;
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) {
+    throw new Error("No Premier League rows found — is the player data imported?");
+  }
+
+  const era = await getEraPool(service, leagues, eraStart, eraEnd);
+
+  const filtered = era.rows.filter(r => {
+    if (NON_ENGLISH_PL_CLUBS.has((r.club || "").toLowerCase())) return false;
+    if (excluded.has(`id:${r.sofifa_id}`)) return false;
+    if (excluded.has(`name:${playerNameKey(r.name)}`)) return false;
+    return match(toCandidate(r));
+  });
+  if (filtered.length === 0) return [];
+
+  const weightOf = (r: { sofifa_id: string; fifa_year: number }) => {
+    const judged = opts.prime ? era.best.get(r.sofifa_id) : null;
+    const ovr = judged ? judged.ovr : resolveOvr(r);
+    const year = judged ? judged.year : r.fifa_year;
+    const weakBelow = era.weakBelow.get(year);
+    if (weakBelow === undefined) return 1;
+    return ovr >= weakBelow ? 1 : WEAK_PLAYER_WEIGHT;
+  };
+
+  const shuffled = [...filtered]
+    .map(r => ({ r, key: Math.pow(Math.random(), 1 / weightOf(r)) }))
+    .sort((a, b) => b.key - a.key)
+    .map(x => x.r);
+
+  const seen = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chosen: any[] = [];
+  for (const r of shuffled) {
+    const idKey = `id:${r.sofifa_id}`;
+    const nameKey = `name:${playerNameKey(r.name)}`;
+    if (seen.has(idKey) || seen.has(nameKey)) continue;
+    seen.add(idKey);
+    seen.add(nameKey);
+    chosen.push(r);
+    if (chosen.length >= size) break;
+  }
+
+  // Prime mode deliberately does NOT swap editions here. A brief selects on the
+  // drawn season's own numbers — "88-92 rated", "92+ pace", "2008/09" — so
+  // replacing that row with a different season's would hand back cards that
+  // openly contradict the brief they were drawn for.
+  const logoMap = await getClubLogoMap(service);
+  return chosen.map(r => ({
+    sofifa_id: r.sofifa_id || "",
+    name: r.name || "Unknown",
+    ovr: resolveOvr(r),
+    positions: resolvePositions(r),
+    age: r.age || 0,
+    image_url: r.image_url || null,
+    nationality: (r.manual_nationality || r.nationality || ""),
+    club: r.club || "",
+    club_logo_url: logoMap.get(normalizeClubKey(r.club || "")) ?? null,
+    edition: r.fifa_edition || "",
+    season: seasonLabel(r.fifa_year),
+    fifa_year: r.fifa_year,
+  }));
+}
+
+/** How many eligible players a rule matches — used to reject unusable briefs. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function countMatching(
+  service: any,
+  match: (c: PoolCandidate) => boolean,
+  opts: RoundOptions = {},
+): Promise<number> {
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) return 0;
+  const era = await getEraPool(service, leagues, opts.eraStart ?? 2007, opts.eraEnd ?? 2026);
+  // Counts distinct footballers, not rows — twenty editions of one player is
+  // one card, so a naive row count badly overstates how deep a brief is.
+  const people = new Set<string>();
+  for (const r of era.rows) {
+    if (NON_ENGLISH_PL_CLUBS.has((r.club || "").toLowerCase())) continue;
+    if (!match(toCandidate(r))) continue;
+    people.add(playerNameKey(r.name) || r.sofifa_id);
+  }
+  return people.size;
+}
+
+/** Every eligible player's id/year, so attributes can be indexed for stat briefs. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function eligibleIdentities(
+  service: any,
+  opts: RoundOptions = {},
+  minOverall = 0,
+): Promise<{ sofifa_id: string; fifa_year: number }[]> {
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) return [];
+  const era = await getEraPool(service, leagues, opts.eraStart ?? 2007, opts.eraEnd ?? 2026);
+  const out: { sofifa_id: string; fifa_year: number }[] = [];
+  for (const r of era.rows) {
+    if (NON_ENGLISH_PL_CLUBS.has((r.club || "").toLowerCase())) continue;
+    if (resolveOvr(r) < minOverall) continue;
+    if (r.sofifa_id) out.push({ sofifa_id: r.sofifa_id, fifa_year: r.fifa_year });
+  }
+  return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toCandidate(r: any): PoolCandidate {
+  return {
+    sofifa_id: r.sofifa_id || "",
+    name: r.name || "",
+    ovr: resolveOvr(r),
+    positions: resolvePositions(r),
+    nationality: (r.manual_nationality || r.nationality || ""),
+    club: r.club || "",
+    age: r.age || 0,
+    fifa_year: r.fifa_year,
+  };
+}
+
 /**
  * A mixed-position pool for the replacement draft.
  *
