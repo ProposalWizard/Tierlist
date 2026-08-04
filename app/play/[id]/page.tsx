@@ -107,15 +107,32 @@ export default async function PlayPage({ params }: Props) {
     const vt = linkedVtResult.data;
     linkedVoteTierlist = { id: vt.id, title: vt.title, tiers: vt.tiers as VoteTier[] };
 
-    const [{ data: vtImages }, { data: vtVotes }] = await Promise.all([
-      service.from("vote_tierlist_images").select("id, name, image_url, sort_order").eq("vote_tierlist_id", vt.id).order("sort_order"),
-      service.from("vote_tierlist_votes").select("image_id, tier_label").eq("vote_tierlist_id", vt.id),
-    ]);
+    const { data: vtImages } = await service
+      .from("vote_tierlist_images")
+      .select("id, name, image_url, sort_order")
+      .eq("vote_tierlist_id", vt.id)
+      .order("sort_order");
 
+    // Page through every vote. A plain select is capped at 1000 rows by
+    // PostgREST, so a popular tierlist had its placements computed from a
+    // fraction of the votes — and /vote (which pages correctly) then disagreed
+    // with /play about the same tierlist. Stable ORDER BY is required, or page
+    // boundaries can double-count some rows and skip others.
     const counts: Record<string, Record<string, number>> = {};
-    for (const v of vtVotes ?? []) {
-      if (!counts[v.image_id]) counts[v.image_id] = {};
-      counts[v.image_id][v.tier_label] = (counts[v.image_id][v.tier_label] ?? 0) + 1;
+    const VOTE_PAGE = 1000;
+    for (let from = 0; ; from += VOTE_PAGE) {
+      const { data: page } = await service
+        .from("vote_tierlist_votes")
+        .select("image_id, tier_label")
+        .eq("vote_tierlist_id", vt.id)
+        .order("id")
+        .range(from, from + VOTE_PAGE - 1);
+      if (!page || page.length === 0) break;
+      for (const v of page) {
+        if (!counts[v.image_id]) counts[v.image_id] = {};
+        counts[v.image_id][v.tier_label] = (counts[v.image_id][v.tier_label] ?? 0) + 1;
+      }
+      if (page.length < VOTE_PAGE) break;
     }
 
     linkedVoteImages = (vtImages ?? []).map((img) => {

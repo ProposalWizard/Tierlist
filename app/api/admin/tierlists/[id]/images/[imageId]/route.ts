@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
+import { deleteUnreferencedImages } from "@/lib/storageCleanup";
 
 type Params = Promise<{ id: string; imageId: string }>;
 
@@ -40,18 +41,11 @@ export async function DELETE(_request: Request, { params }: { params: Params }) 
     .eq("tierlist_id", id)
     .maybeSingle();
 
-  // Best-effort storage cleanup
-  if (imgData?.image_url) {
-    const BUCKET_MARKER = "/object/public/tierlist-images/";
-    const idx = imgData.image_url.indexOf(BUCKET_MARKER);
-    if (idx !== -1) {
-      const storagePath = decodeURIComponent(
-        imgData.image_url.slice(idx + BUCKET_MARKER.length)
-      );
-      await service.storage.from("tierlist-images").remove([storagePath]);
-    }
-  }
-
+  // Remove the row FIRST, then clean up the file only if nothing else points at
+  // it. Image URLs are shared — "Save as New Tierlist" and the admin import
+  // both copy URLs rather than re-uploading — so deleting the object
+  // unconditionally, as this used to, silently broke the picture in every other
+  // tierlist using it, with no way to get it back.
   const { error: delError } = await service
     .from("tierlist_images")
     .delete()
@@ -62,6 +56,8 @@ export async function DELETE(_request: Request, { params }: { params: Params }) 
     console.error("[DELETE /api/admin/tierlists/images]", delError);
     return NextResponse.json({ error: delError.message }, { status: 500 });
   }
+
+  await deleteUnreferencedImages(service, [imgData?.image_url]);
 
   return NextResponse.json({ ok: true });
 }
