@@ -113,9 +113,32 @@ export async function POST(
       squad: (rp.squad ?? []) as DraftPlayer[],
     }));
 
-    // Build previous season results map for Super Cup / Charity Shield / EL/UCL qualification
+    // Previous season's cup wins, for Super Cup / Community Shield / European
+    // qualification.
+    //
+    // This used to read season_result off the player rows, but /next-season —
+    // which every season from the second onwards must pass through — nulls that
+    // column before this ever runs, so the map was always empty and all of the
+    // above were silently unreachable in multiplayer. next-season now copies
+    // the flags onto the room's settings before clearing, and that is the real
+    // source here. season_result is still consulted as a fallback for rooms
+    // that advanced before this change.
     const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean; leagueCupWinner?: boolean }> = {};
+    const carried = ((room.settings ?? {}) as Record<string, unknown>).previousCupResults as
+      | Record<string, { uclWinner?: boolean; uelWinner?: boolean; faCupWinner?: boolean; leagueCupWinner?: boolean }>
+      | undefined;
+
     for (const rp of activePlayers) {
+      const fromSettings = carried?.[rp.user_id];
+      if (fromSettings) {
+        previousResults[rp.user_id] = {
+          uclWinner: fromSettings.uclWinner === true,
+          uelWinner: fromSettings.uelWinner === true,
+          faCupWinner: fromSettings.faCupWinner === true,
+          leagueCupWinner: fromSettings.leagueCupWinner === true,
+        };
+        continue;
+      }
       const prev = rp.season_result as Record<string, unknown> | null | undefined;
       if (prev) {
         previousResults[rp.user_id] = {

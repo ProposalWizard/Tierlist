@@ -23,8 +23,12 @@ const cinzel = Cinzel({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom stays enabled. Blocking it fails WCAG 1.4.4, and this UI is full
+  // of deliberately tiny type — 6-10px in the tic-tac-toe archive grid, the
+  // scoreboards and the star dashboard — so a reader who cannot make it out has
+  // no other way to, since there is no in-app text-size control.
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export const metadata: Metadata = {

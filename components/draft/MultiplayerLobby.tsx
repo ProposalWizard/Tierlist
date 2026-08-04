@@ -324,7 +324,13 @@ export default function MultiplayerLobby({
     const am = (room as unknown as { american_state?: { complete?: boolean; seeded?: boolean } } | null)?.american_state;
     return !!am?.seeded && !am.complete;
   })();
-  const allReady = players.length > 1 && activePlayers.length > 0
+  // Counts ACTIVE managers, not rows. Using players.length meant a two-player
+  // room whose second player left could never simulate again: the remaining
+  // manager readied up fine server-side, but the Simulate button never
+  // appeared, and their only way out was Leave Room. Relegated managers are
+  // already excluded from activePlayers, so a career can also continue down to
+  // its last surviving manager.
+  const allReady = activePlayers.length > 0
     && !americanDraftRunning
     && activePlayers.every(p => p.status === "ready");
   const myPlayer = players.find(p => p.user_id === userId);
