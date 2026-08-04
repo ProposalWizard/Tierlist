@@ -15,7 +15,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, host_id, status, season_number, settings")
+    .select("id, host_id, status, season_number, settings, american_state")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -47,8 +47,21 @@ export async function POST(
     }
   }
 
-  // Idempotent: only advance if the room is complete and hasn't already moved to the next season
-  if (room.status !== "complete" || (room.season_number ?? 1) >= nextSeasonNumber) {
+  // Idempotent: only advance if the season really has finished and the room
+  // hasn't already moved on.
+  //
+  // "complete" is the normal finished-season status. A room can also legitimately
+  // be sitting in "started" here: an older build flipped the room to "started"
+  // when it seeded the between-season American replacement draft, and those rooms
+  // would otherwise be stuck forever — never advancing the season, so the result
+  // clients wait for never arrives. Accept that case when the American draft it
+  // started has actually finished.
+  const amState = room.american_state as { complete?: boolean; mode?: string } | null;
+  const finishedReplacementDraft =
+    room.status === "started" && amState?.mode === "replacement" && amState?.complete === true;
+  const seasonFinished = room.status === "complete" || finishedReplacementDraft;
+
+  if (!seasonFinished || (room.season_number ?? 1) >= nextSeasonNumber) {
     return Response.json({ ok: true, skipped: true });
   }
 
@@ -140,10 +153,18 @@ export async function POST(
     return new Response(`Could not save season history: ${historyErr.message}`, { status: 500 });
   }
 
+  // Everyone still IN the competition goes back to "drafting". Eliminated
+  // managers must be excluded: this reset also nulls actual_finish, so someone
+  // relegated in an earlier season no longer appears in relegatedIds below and
+  // would never be re-marked "out". They came back as an active player two
+  // seasons later — counted by the lobby's allReady check and by simulate,
+  // both of which then waited forever for a squad that manager would never
+  // submit, deadlocking the room permanently.
   const { error: resetErr } = await service
     .from("draft_room_players")
     .update({ status: "drafting", avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })
-    .eq("room_id", room.id);
+    .eq("room_id", room.id)
+    .neq("status", "out");
   if (resetErr) {
     return new Response(`Could not reset players: ${resetErr.message}`, { status: 500 });
   }

@@ -115,21 +115,63 @@ export async function POST(
   // Relegated managers are out of the competition and take no part.
   const active = (allPlayers ?? []).filter(p => p.status !== "out");
 
+  // Merge this manager's entry into pending_vacancies, then CHECK IT SURVIVED.
+  //
+  // This is a read-modify-write on a shared JSONB column. Two managers
+  // submitting within the same moment both read {A}, then write {A,B} and
+  // {A,C} — last write wins and one of them vanishes. Both got HTTP 200, so
+  // neither client ever retried, and "everyone is in" could never become true:
+  // the whole room waited forever. Re-reading after the write and retrying
+  // when our own entry is missing makes every writer converge.
+  //
   // Only pending_vacancies is carried forward. Spreading the whole previous
   // state dragged complete:true and seeded:true from the last season into this
   // one, so the draft was skipped and could never be seeded again.
-  const prev = (room.american_state as AmericanState | null) ?? null;
-  const stale = prev?.complete === true;
-  const pending = { ...(stale ? {} : (prev?.pending_vacancies ?? {})) };
-  pending[user.id] = { count, needsGk: !!body.needsGk };
+  const mine = { count, needsGk: !!body.needsGk };
+  let pending: Record<string, { count: number; needsGk: boolean }> = {};
+  let everyoneIn = false;
+  let merged = false;
 
-  const everyoneIn = active.every(p => pending[p.user_id] !== undefined);
-  if (!everyoneIn) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const current = attempt === 0
+      ? (room.american_state as AmericanState | null)
+      : ((await service.from("draft_rooms").select("american_state").eq("id", room.id).maybeSingle())
+          .data?.american_state as AmericanState | null) ?? null;
+
+    // A completed state belongs to the previous season — start fresh.
+    const stale = current?.complete === true;
+    pending = { ...(stale ? {} : (current?.pending_vacancies ?? {})) };
+    pending[user.id] = mine;
+    everyoneIn = active.every(p => pending[p.user_id] !== undefined);
+
+    // Once everyone is in, fall through to the seeding block below, which has
+    // its own conditional claim and is safe to race on.
+    if (everyoneIn) { merged = true; break; }
+
     const { error } = await service
       .from("draft_rooms")
       .update({ american_state: { mode: "replacement", pending_vacancies: pending } })
       .eq("id", room.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const { data: check } = await service
+      .from("draft_rooms")
+      .select("american_state")
+      .eq("id", room.id)
+      .maybeSingle();
+    const after = (check?.american_state as AmericanState | null)?.pending_vacancies ?? {};
+    if (after[user.id] !== undefined) { merged = true; break; }
+    // Someone overwrote us — go round again with their state as the base.
+  }
+
+  if (!merged) {
+    return NextResponse.json(
+      { error: "Could not record your squad — please try again." },
+      { status: 503 }
+    );
+  }
+
+  if (!everyoneIn) {
     return NextResponse.json({
       ok: true,
       waiting: true,
@@ -204,9 +246,18 @@ export async function POST(
   // previous draft ended up with the two players looking at different
   // goalkeepers and every pick rejected as unavailable. Writing only while the
   // state is still unseeded means one wins and the other falls in behind it.
+  //
+  // Deliberately does NOT touch room.status. This draft runs between seasons,
+  // while the room is "complete", and "complete" is the exact status
+  // /next-season requires in order to advance the season number. Flipping the
+  // room to "started" here made that call return skipped:true, so the room
+  // stayed on the old season number forever: the season-2 result never matched
+  // what clients were waiting for, nobody ever saw it, relegation was never
+  // applied and the room sat in the lobby permanently. Settings stay locked
+  // either way — the lobby only unlocks them in "lobby".
   const { data: claimed, error: seedErr } = await service
     .from("draft_rooms")
-    .update({ american_state: state, status: "started" })
+    .update({ american_state: state })
     .eq("id", room.id)
     .is("american_state->>seeded", null)
     .select("id");
@@ -216,7 +267,7 @@ export async function POST(
     // rather than blocking the draft — that is no worse than before.
     const { error: fallbackErr } = await service
       .from("draft_rooms")
-      .update({ american_state: state, status: "started" })
+      .update({ american_state: state })
       .eq("id", room.id);
     if (fallbackErr) {
       return NextResponse.json({ error: `Could not start the draft: ${fallbackErr.message}` }, { status: 500 });

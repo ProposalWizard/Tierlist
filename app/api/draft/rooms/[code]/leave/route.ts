@@ -18,7 +18,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, host_id, status")
+    .select("id, host_id, status, season_number")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -33,7 +33,14 @@ export async function POST(
   const others = (players ?? []).filter(p => p.user_id !== user.id);
 
   if (room.host_id === user.id) {
-    if (others.length === 0 || room.status === "lobby") {
+    // "lobby" is NOT only the pre-game state — next-season puts the room back
+    // into it between every season, so this branch used to delete a room that
+    // was several seasons into a career, cascading away every player's squad
+    // and history, the moment the host pressed Leave from a between-seasons
+    // lobby. Only season 1 counts as "before the game started"; from season 2
+    // the host role is handed over below instead.
+    const beforeKickOff = room.status === "lobby" && (room.season_number ?? 1) === 1;
+    if (others.length === 0 || beforeKickOff) {
       // Empty room, or host abandons before the game starts → close the room
       // (players cascade). Remaining lobby members are told it closed.
       await service.from("draft_rooms").delete().eq("id", room.id);
