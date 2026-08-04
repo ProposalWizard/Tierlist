@@ -15,13 +15,27 @@ import {
   shuffleArray,
   takeStagedRound,
 } from "@/lib/americanDraft";
-import type { AmericanState, SquadPick } from "@/lib/americanDraft";
+import { nextPickDeadline } from "@/lib/americanDraft";
+import type { AmericanState, AmPlayer, SquadPick } from "@/lib/americanDraft";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
 import { applyStatChange, getSigningBoost } from "@/lib/draftBoosts";
 
 /** Squad rows only need these fields to build the ownership exclusion set. */
 type RosterEntry = { sofifa_id?: string; name?: string };
+
+/**
+ * The card an auto-pick takes when a manager's turn expires: the best rated
+ * player on the board.
+ *
+ * Deliberately the strongest rather than a random one. Missing your turn is
+ * already a punishment — losing the choice — and handing out a deliberately bad
+ * card on top would make a dropped connection ruin someone's season. Taking the
+ * top card is also what most human managers would have done.
+ */
+function autoPickFor(state: AmericanState): AmPlayer | undefined {
+  return [...state.round_players].sort((a, b) => b.ovr - a.ovr)[0];
+}
 
 /**
  * Make one pick in a room's American draft.
@@ -36,8 +50,11 @@ export async function POST(
   req: Request,
   { params }: { params: { code: string } }
 ) {
-  const { sofifa_id } = (await req.json().catch(() => ({}))) as { sofifa_id?: string };
-  if (!sofifa_id) return NextResponse.json({ error: "Missing sofifa_id" }, { status: 400 });
+  const body = (await req.json().catch(() => ({}))) as { sofifa_id?: string; auto?: boolean };
+  const isAuto = body.auto === true;
+  if (!isAuto && !body.sofifa_id) {
+    return NextResponse.json({ error: "Missing sofifa_id" }, { status: 400 });
+  }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -61,34 +78,74 @@ export async function POST(
   if (!state) return NextResponse.json({ error: "This room is not running an American draft" }, { status: 400 });
   if (state.complete) return NextResponse.json({ ok: true, complete: true });
 
-  if (state.pick_order[state.current_pick_idx] !== user.id) {
-    return NextResponse.json({ error: "It is not your turn" }, { status: 409 });
+  const currentPickerId = state.pick_order[state.current_pick_idx];
+
+  // Who the pick is recorded against, and which player. Normally that is the
+  // caller choosing a card. On an expired turn ANY member of the room may fire
+  // an auto-pick FOR the stalled manager, which is what stops one person
+  // closing their laptop from freezing the draft for everyone else.
+  let actingUserId: string;
+  let picked: AmPlayer | undefined;
+
+  if (isAuto) {
+    const { data: membership } = await service
+      .from("draft_room_players")
+      .select("user_id")
+      .eq("room_id", room.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!membership) {
+      return NextResponse.json({ error: "You are not in this room" }, { status: 403 });
+    }
+
+    // The deadline is the ONLY thing that authorises this. Checked against the
+    // server clock, never the caller's — otherwise a fast clock would let
+    // someone pick on a team-mate's behalf while they were still deciding.
+    const deadline = state.pick_deadline ?? 0;
+    if (!deadline || Date.now() < deadline) {
+      return NextResponse.json(
+        { error: "That manager still has time to pick", retryAt: deadline },
+        { status: 409 }
+      );
+    }
+
+    actingUserId = currentPickerId;
+    picked = autoPickFor(state);
+    if (!picked) {
+      return NextResponse.json({ error: "No player available to auto-pick" }, { status: 409 });
+    }
+  } else {
+    if (currentPickerId !== user.id) {
+      return NextResponse.json({ error: "It is not your turn" }, { status: 409 });
+    }
+    actingUserId = user.id;
+    picked = state.round_players.find(p => p.sofifa_id === body.sofifa_id);
+    if (!picked) {
+      return NextResponse.json({ error: "That player is no longer available" }, { status: 409 });
+    }
   }
 
-  const picked = state.round_players.find(p => p.sofifa_id === sofifa_id);
-  if (!picked) {
-    return NextResponse.json({ error: "That player is no longer available" }, { status: 409 });
-  }
-
+  const sofifa_id = picked.sofifa_id;
   const currentPosition = state.position_sequence[state.current_round];
 
-  // Record the pick.
+  // Record the pick. Every turn that follows gets a fresh deadline.
   const nextState: AmericanState = {
     ...state,
     picks: {
       ...state.picks,
-      [user.id]: [
-        ...(state.picks[user.id] ?? []),
+      [actingUserId]: [
+        ...(state.picks[actingUserId] ?? []),
         { round: state.current_round, position: currentPosition, player: picked },
       ],
     },
-    last_pick: { ...state.last_pick, [user.id]: picked },
+    last_pick: { ...state.last_pick, [actingUserId]: picked },
+    pick_deadline: nextPickDeadline(),
   };
 
   const isReplacement = state.mode === "replacement";
 
   if (isReplacement) {
-    return handleReplacementPick(service, room, state, nextState, user.id, sofifa_id);
+    return handleReplacementPick(service, room, state, nextState, actingUserId, sofifa_id);
   }
 
   const isLastPickerInRound = state.current_pick_idx + 1 >= state.pick_order.length;

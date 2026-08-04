@@ -26,6 +26,8 @@ interface Props {
   hideRatings?: boolean;
   /** Blocks picking while a submitted pick is still being confirmed. */
   locked?: boolean;
+  /** Seconds left on the current turn; null when the room has no clock. */
+  secondsLeft?: number | null;
   onPick: (sofifaId: string) => Promise<void>;
 }
 
@@ -221,7 +223,7 @@ function PlayerCard({
 
 export default function AmericanDraftRoom({
   positionSequence, currentRound, pickOrder, currentPickIdx,
-  roundPlayers, lastPick, names, userId, hideRatings, locked, onPick,
+  roundPlayers, lastPick, names, userId, hideRatings, locked, secondsLeft, onPick,
 }: Props) {
   const currentPickerId = pickOrder[currentPickIdx];
   // `locked` means our own pick is in flight. It is still our turn as far as
@@ -250,6 +252,28 @@ export default function AmericanDraftRoom({
           <div className={`text-base font-black uppercase italic leading-none ${posTextColor}`}>
             {posLabel}
           </div>
+
+          {/* Turn clock. Runs out → the server picks the best card on the board
+              for whoever is stalling, so nobody can freeze the room. */}
+          {secondsLeft !== null && secondsLeft !== undefined && (
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span
+                className={`text-2xl font-black tabular-nums leading-none ${
+                  secondsLeft <= 10 ? "text-red-400" : isMyTurn ? "text-white" : "text-white/70"
+                }`}
+                aria-live={secondsLeft <= 10 ? "polite" : "off"}
+              >
+                {secondsLeft}s
+              </span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">
+                {secondsLeft === 0
+                  ? "auto-picking"
+                  : isMyTurn
+                    ? "to pick"
+                    : "on the clock"}
+              </span>
+            </div>
+          )}
           <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"

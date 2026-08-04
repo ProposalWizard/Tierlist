@@ -129,6 +129,26 @@ export interface AmericanState {
    * different pool.
    */
   seeded?: boolean;
+
+  /**
+   * Epoch ms by which the current picker must choose. Past it, ANY member of
+   * the room can ask the server to auto-pick for them.
+   *
+   * Without this a single player closing their laptop mid-draft froze the room
+   * for everyone, permanently: picks require it to be your turn, and there was
+   * no clock, no auto-pick and no host override. If they then left, their id
+   * stayed in pick_order while rejoining a started room was refused, so the
+   * room became unrecoverable by anyone.
+   */
+  pick_deadline?: number;
+}
+
+/** Seconds a manager gets to make a pick before anyone can auto-pick for them. */
+export const AM_PICK_SECONDS = 60;
+
+/** Deadline for a turn starting now. */
+export function nextPickDeadline(): number {
+  return Date.now() + AM_PICK_SECONDS * 1000;
 }
 
 /**
@@ -188,6 +208,7 @@ export function makeAmericanState(userIds: string[], firstRoundPlayers: AmPlayer
     picks: {},
     last_pick: {},
     complete: false,
+    pick_deadline: nextPickDeadline(),
   };
 }
 
@@ -221,6 +242,7 @@ export function makeReplacementState(
     vacancies,
     needs_gk: needsGk,
     standings_order: standingsOrder,
+    pick_deadline: nextPickDeadline(),
   };
 }
 

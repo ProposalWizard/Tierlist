@@ -186,6 +186,66 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     return () => clearInterval(t);
   }, [draftLive, refetchState]);
 
+  // ── Turn clock ─────────────────────────────────────────────────────────────
+  // Every turn carries a server-set deadline. Once it passes, ANY client in the
+  // room asks the server to auto-pick for the stalled manager; the server
+  // re-checks the deadline against its own clock, so several clients firing at
+  // once is harmless and a wrong local clock proves nothing. Without this, one
+  // player closing their laptop mid-draft froze the room permanently.
+  const deadline = state?.pick_deadline ?? null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!deadline || !draftLive) return;
+    const t = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(t);
+  }, [deadline, draftLive]);
+
+  const secondsLeft = deadline ? Math.max(0, Math.ceil((deadline - now) / 1000)) : null;
+
+  // Grace past the deadline before anyone auto-picks, so a pick already in
+  // flight — or a slightly slow clock — wins the race.
+  const AUTO_GRACE_MS = 1500;
+  const autoFiredRef = useRef<string | null>(null);
+  const autoBusyRef = useRef(false);
+
+  useEffect(() => {
+    if (!state || state.complete || !deadline || pendingPickRef.current) return;
+    if ((state.round_players?.length ?? 0) === 0) return;
+    if (now < deadline + AUTO_GRACE_MS) return;
+    if (autoBusyRef.current) return;
+
+    // Once per turn — unless the attempt fails, in which case the ref is
+    // cleared and the next tick of the clock tries again. Without that retry a
+    // single failed call (a 409 from clock skew, a dropped request) would leave
+    // the room stalled exactly as it was before there was a timer at all.
+    const turnKey = `${state.mode ?? "initial"}-${state.current_round}-${state.current_pick_idx}-${deadline}`;
+    if (autoFiredRef.current === turnKey) return;
+    autoFiredRef.current = turnKey;
+    autoBusyRef.current = true;
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/draft/rooms/${roomCode}/american/pick`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ auto: true }),
+        });
+        const payload = await res.json().catch(() => null) as
+          | { state?: AmericanState; complete?: boolean } | null;
+        if (res.ok && payload?.complete) { void finish(); return; }
+        if (res.ok && payload?.state) { applyServerState(payload.state, true); return; }
+        // Someone else got there first, or it was rejected — take the server's
+        // word for the current state and allow another attempt after that.
+        autoFiredRef.current = null;
+        await refetchState(true);
+      } catch {
+        autoFiredRef.current = null;
+      } finally {
+        autoBusyRef.current = false;
+      }
+    })();
+  }, [state, deadline, now, roomCode, applyServerState, refetchState, finish]);
+
   // As soon as a round begins, ask the server to build the NEXT round's pool in
   // the background and warm the browser's image cache with it. By the time the
   // round flips, the pool is a stored file and every face, badge and flag is
@@ -364,6 +424,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
         userId={userId}
         hideRatings={hideRatings}
         locked={awaitingServer}
+        secondsLeft={secondsLeft}
         onPick={makePick}
       />
     </>
