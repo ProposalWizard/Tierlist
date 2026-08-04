@@ -190,7 +190,9 @@ export default function EasyTTTGame({ puzzle }: { puzzle: TicTacToePuzzle }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         score: totalFound,
-        max_score: totalAnswers,
+        // Easy mode counts answers found, not points — the server derives the
+        // maximum from the puzzle in whichever unit this names.
+        scoring: "answers",
         hints_used: 0,
         time_seconds: Math.round(elapsedMs / 1000),
         ...(isSecondChance && { second_chance: true }),

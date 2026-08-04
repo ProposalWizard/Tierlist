@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { simulateSharedSeason, getSeasonTeams } from "@/lib/seasonSimulator";
+import { sanitizeSquad } from "@/lib/squadSanitize";
 import type { DraftPlayer, SharedSeasonInput, LeagueTeam } from "@/lib/seasonSimulator";
 
 function hashRoomId(roomId: string): number {
@@ -91,36 +92,61 @@ export async function POST(
     const seasonNumber = room.season_number ?? 1;
     const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
       { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
-    const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined);
+    // getSeasonTeams must be told how many clubs this league needs. It returns
+    // last season's survivors plus three promotions, which is one short for
+    // every human who was relegated or left since — and a short league is not a
+    // cosmetic problem: an odd total makes the round-robin schedule emit a
+    // self-fixture and the simulation throws, while an even-but-short total
+    // plays fewer than the 38 matchweeks the simulator assumes. Either way the
+    // room could never play another season.
+    const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined, undefined, 20 - N);
     const sortedAI = [...seasonTeams].sort((a, b) => b.strength - a.strength);
     const aiOpponents: { name: string; strength: number }[] = sortedAI.slice(0, 20 - N).map(t => ({ name: t.name, strength: t.strength }));
 
-    // After relegations, the AI pool from the previous season may be short.
-    // Top up from remaining sorted AI to ensure exactly 20 - N opponents.
-    if (aiOpponents.length < 20 - N) {
-      const used = new Set(aiOpponents.map((a: { name: string }) => a.name));
-      const extras = sortedAI
-        .filter(t => !used.has(t.name))
-        .slice(0, (20 - N) - aiOpponents.length)
-        .map(t => ({ name: t.name, strength: t.strength }));
-      aiOpponents.push(...extras);
-    }
-    // Hard guard: if still short, log a diagnostic. The simulator tolerates a
-    // smaller league; this handles edge cases where the AI pool is exhausted.
     if (aiOpponents.length + N !== 20) {
       console.error(`League size mismatch: ${N} humans + ${aiOpponents.length} AI = ${N + aiOpponents.length}, expected 20`);
     }
 
+    // Sanitised at the point of use, not trusted as stored. draft_room_players
+    // is directly writable by its owner under the current RLS policy, so a
+    // squad can reach this table without ever passing through /ready — and
+    // every phase rating in the league is computed from it. This clamps
+    // ratings and caps the starting eleven so an impossible squad cannot
+    // decide the season. See lib/squadSanitize.ts: it is defence in depth, not
+    // a replacement for security_rls_hardening_jul2026.sql.
     const humanTeams: SharedSeasonInput[] = activePlayers.map(rp => ({
       userId: rp.user_id,
       displayName: rp.display_name,
       teamName: (rp as Record<string, unknown>).team_name as string | undefined,
-      squad: (rp.squad ?? []) as DraftPlayer[],
+      squad: sanitizeSquad(rp.squad),
     }));
 
-    // Build previous season results map for Super Cup / Charity Shield / EL/UCL qualification
+    // Previous season's cup wins, for Super Cup / Community Shield / European
+    // qualification.
+    //
+    // This used to read season_result off the player rows, but /next-season —
+    // which every season from the second onwards must pass through — nulls that
+    // column before this ever runs, so the map was always empty and all of the
+    // above were silently unreachable in multiplayer. next-season now copies
+    // the flags onto the room's settings before clearing, and that is the real
+    // source here. season_result is still consulted as a fallback for rooms
+    // that advanced before this change.
     const previousResults: Record<string, { uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean; leagueCupWinner?: boolean }> = {};
+    const carried = ((room.settings ?? {}) as Record<string, unknown>).previousCupResults as
+      | Record<string, { uclWinner?: boolean; uelWinner?: boolean; faCupWinner?: boolean; leagueCupWinner?: boolean }>
+      | undefined;
+
     for (const rp of activePlayers) {
+      const fromSettings = carried?.[rp.user_id];
+      if (fromSettings) {
+        previousResults[rp.user_id] = {
+          uclWinner: fromSettings.uclWinner === true,
+          uelWinner: fromSettings.uelWinner === true,
+          faCupWinner: fromSettings.faCupWinner === true,
+          leagueCupWinner: fromSettings.leagueCupWinner === true,
+        };
+        continue;
+      }
       const prev = rp.season_result as Record<string, unknown> | null | undefined;
       if (prev) {
         previousResults[rp.user_id] = {

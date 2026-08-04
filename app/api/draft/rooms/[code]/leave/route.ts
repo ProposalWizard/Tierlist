@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { seedReplacementDraftIfReady } from "@/lib/americanReplacementSeed";
 
 // Removes the caller from a room. Without this, leaving is purely client-side:
 // the departed player's row lingers forever, "allReady" can never become true
@@ -18,7 +19,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, host_id, status")
+    .select("id, host_id, status, season_number")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -33,7 +34,14 @@ export async function POST(
   const others = (players ?? []).filter(p => p.user_id !== user.id);
 
   if (room.host_id === user.id) {
-    if (others.length === 0 || room.status === "lobby") {
+    // "lobby" is NOT only the pre-game state — next-season puts the room back
+    // into it between every season, so this branch used to delete a room that
+    // was several seasons into a career, cascading away every player's squad
+    // and history, the moment the host pressed Leave from a between-seasons
+    // lobby. Only season 1 counts as "before the game started"; from season 2
+    // the host role is handed over below instead.
+    const beforeKickOff = room.status === "lobby" && (room.season_number ?? 1) === 1;
+    if (others.length === 0 || beforeKickOff) {
       // Empty room, or host abandons before the game starts → close the room
       // (players cascade). Remaining lobby members are told it closed.
       await service.from("draft_rooms").delete().eq("id", room.id);
@@ -56,6 +64,17 @@ export async function POST(
     .delete()
     .eq("room_id", room.id)
     .eq("user_id", user.id);
+
+  // Leaving can be the thing that completes the set.
+  //
+  // A between-season American draft only starts once every remaining manager
+  // has submitted their vacancies, and that check used to run ONLY inside a
+  // submission. So a manager who quit before submitting stranded everyone who
+  // had: nobody was left to trigger the check, and the quitter could not rejoin
+  // to unstick it because a started room refuses joins. Re-running it here
+  // means the draft begins the moment the last person who was going to submit,
+  // has. It is a no-op in every other situation.
+  await seedReplacementDraftIfReady(service, room.id);
 
   return Response.json({ ok: true });
 }

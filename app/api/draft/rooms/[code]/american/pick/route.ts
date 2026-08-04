@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   americanPicksToSquad,
   attachSquadAttributes,
+  discardStagedRound,
   fetchMixedRoundPlayers,
   fetchRoundPlayers,
   goalkeepersNeeded,
@@ -12,14 +13,29 @@ import {
   playerNameKey,
   roundOptionsFromSettings,
   shuffleArray,
+  takeStagedRound,
 } from "@/lib/americanDraft";
-import type { AmericanState, SquadPick } from "@/lib/americanDraft";
+import { nextPickDeadline } from "@/lib/americanDraft";
+import type { AmericanState, AmPlayer, SquadPick } from "@/lib/americanDraft";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
 import { applyStatChange, getSigningBoost } from "@/lib/draftBoosts";
 
 /** Squad rows only need these fields to build the ownership exclusion set. */
 type RosterEntry = { sofifa_id?: string; name?: string };
+
+/**
+ * The card an auto-pick takes when a manager's turn expires: the best rated
+ * player on the board.
+ *
+ * Deliberately the strongest rather than a random one. Missing your turn is
+ * already a punishment — losing the choice — and handing out a deliberately bad
+ * card on top would make a dropped connection ruin someone's season. Taking the
+ * top card is also what most human managers would have done.
+ */
+function autoPickFor(state: AmericanState): AmPlayer | undefined {
+  return [...state.round_players].sort((a, b) => b.ovr - a.ovr)[0];
+}
 
 /**
  * Make one pick in a room's American draft.
@@ -34,8 +50,11 @@ export async function POST(
   req: Request,
   { params }: { params: { code: string } }
 ) {
-  const { sofifa_id } = (await req.json().catch(() => ({}))) as { sofifa_id?: string };
-  if (!sofifa_id) return NextResponse.json({ error: "Missing sofifa_id" }, { status: 400 });
+  const body = (await req.json().catch(() => ({}))) as { sofifa_id?: string; auto?: boolean };
+  const isAuto = body.auto === true;
+  if (!isAuto && !body.sofifa_id) {
+    return NextResponse.json({ error: "Missing sofifa_id" }, { status: 400 });
+  }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -59,34 +78,74 @@ export async function POST(
   if (!state) return NextResponse.json({ error: "This room is not running an American draft" }, { status: 400 });
   if (state.complete) return NextResponse.json({ ok: true, complete: true });
 
-  if (state.pick_order[state.current_pick_idx] !== user.id) {
-    return NextResponse.json({ error: "It is not your turn" }, { status: 409 });
+  const currentPickerId = state.pick_order[state.current_pick_idx];
+
+  // Who the pick is recorded against, and which player. Normally that is the
+  // caller choosing a card. On an expired turn ANY member of the room may fire
+  // an auto-pick FOR the stalled manager, which is what stops one person
+  // closing their laptop from freezing the draft for everyone else.
+  let actingUserId: string;
+  let picked: AmPlayer | undefined;
+
+  if (isAuto) {
+    const { data: membership } = await service
+      .from("draft_room_players")
+      .select("user_id")
+      .eq("room_id", room.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!membership) {
+      return NextResponse.json({ error: "You are not in this room" }, { status: 403 });
+    }
+
+    // The deadline is the ONLY thing that authorises this. Checked against the
+    // server clock, never the caller's — otherwise a fast clock would let
+    // someone pick on a team-mate's behalf while they were still deciding.
+    const deadline = state.pick_deadline ?? 0;
+    if (!deadline || Date.now() < deadline) {
+      return NextResponse.json(
+        { error: "That manager still has time to pick", retryAt: deadline },
+        { status: 409 }
+      );
+    }
+
+    actingUserId = currentPickerId;
+    picked = autoPickFor(state);
+    if (!picked) {
+      return NextResponse.json({ error: "No player available to auto-pick" }, { status: 409 });
+    }
+  } else {
+    if (currentPickerId !== user.id) {
+      return NextResponse.json({ error: "It is not your turn" }, { status: 409 });
+    }
+    actingUserId = user.id;
+    picked = state.round_players.find(p => p.sofifa_id === body.sofifa_id);
+    if (!picked) {
+      return NextResponse.json({ error: "That player is no longer available" }, { status: 409 });
+    }
   }
 
-  const picked = state.round_players.find(p => p.sofifa_id === sofifa_id);
-  if (!picked) {
-    return NextResponse.json({ error: "That player is no longer available" }, { status: 409 });
-  }
-
+  const sofifa_id = picked.sofifa_id;
   const currentPosition = state.position_sequence[state.current_round];
 
-  // Record the pick.
+  // Record the pick. Every turn that follows gets a fresh deadline.
   const nextState: AmericanState = {
     ...state,
     picks: {
       ...state.picks,
-      [user.id]: [
-        ...(state.picks[user.id] ?? []),
+      [actingUserId]: [
+        ...(state.picks[actingUserId] ?? []),
         { round: state.current_round, position: currentPosition, player: picked },
       ],
     },
-    last_pick: { ...state.last_pick, [user.id]: picked },
+    last_pick: { ...state.last_pick, [actingUserId]: picked },
+    pick_deadline: nextPickDeadline(),
   };
 
   const isReplacement = state.mode === "replacement";
 
   if (isReplacement) {
-    return handleReplacementPick(service, room, state, nextState, user.id, sofifa_id);
+    return handleReplacementPick(service, room, state, nextState, actingUserId, sofifa_id);
   }
 
   const isLastPickerInRound = state.current_pick_idx + 1 >= state.pick_order.length;
@@ -149,7 +208,7 @@ export async function POST(
       return NextResponse.json({ error: `Could not finish the draft: ${doneErr.message}` }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, complete: true });
+    return NextResponse.json({ ok: true, complete: true, state: nextState });
   }
 
   if (isLastPickerInRound) {
@@ -161,23 +220,32 @@ export async function POST(
     // Exclude everyone already taken, so a player picked at one position can
     // never reappear at another — and no two editions of the same footballer
     // can both end up in a squad.
+    const taken = pickedPlayerKeys(nextState.picks);
+
+    // The pool was normally staged during the round, so advancing is just a
+    // read. Falls back to a live build when it wasn't, or fails validation.
     //
     // fetchRoundPlayers throws rather than returning an empty list. Saving an
     // empty pool is what stranded a draft on "Loading players…" with nothing to
     // pick and no way forward, so the pick is rejected instead and the room
     // stays on the round it can still play.
-    try {
-      nextState.round_players = await fetchRoundPlayers(
-        service,
-        state.position_sequence[nextRound],
-        pickedPlayerKeys(nextState.picks),
-        roundOptionsFromSettings(room.settings)
-      );
-    } catch (e) {
-      return NextResponse.json(
-        { error: e instanceof Error ? e.message : "Could not load the next round" },
-        { status: 500 }
-      );
+    const staged = await takeStagedRound(service, room, "initial", nextRound, taken);
+    if (staged) {
+      nextState.round_players = staged;
+    } else {
+      try {
+        nextState.round_players = await fetchRoundPlayers(
+          service,
+          state.position_sequence[nextRound],
+          taken,
+          roundOptionsFromSettings(room.settings)
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Could not load the next round" },
+          { status: 500 }
+        );
+      }
     }
   } else {
     // Same round, next picker — the picked player leaves the pool.
@@ -194,7 +262,9 @@ export async function POST(
     return NextResponse.json({ error: `Could not save the pick: ${saveErr.message}` }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  // The authoritative state rides back on the response, so the picker's board
+  // is exact the moment the request lands — no waiting on Realtime or a poll.
+  return NextResponse.json({ ok: true, state: nextState });
 }
 
 /**
@@ -257,18 +327,26 @@ async function handleReplacementPick(
       }
     }
 
-    try {
-      nextState.round_players = await fetchMixedRoundPlayers(
-        service,
-        excluded,
-        roundOptionsFromSettings(room.settings),
-        goalkeepersNeeded(nextParticipants, nextState.needs_gk ?? needsGk)
-      );
-    } catch (e) {
-      return NextResponse.json(
-        { error: e instanceof Error ? e.message : "Could not load the next round" },
-        { status: 500 }
-      );
+    // Prefer the pool staged during the round; build live only when it is
+    // missing or fails validation (taken player, not enough goalkeepers).
+    const gkMin = goalkeepersNeeded(nextParticipants, nextState.needs_gk ?? needsGk);
+    const staged = await takeStagedRound(service, room, "replacement", nextState.current_round, excluded, gkMin);
+    if (staged) {
+      nextState.round_players = staged;
+    } else {
+      try {
+        nextState.round_players = await fetchMixedRoundPlayers(
+          service,
+          excluded,
+          roundOptionsFromSettings(room.settings),
+          gkMin
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Could not load the next round" },
+          { status: 500 }
+        );
+      }
     }
   }
 
@@ -279,7 +357,7 @@ async function handleReplacementPick(
   if (error) {
     return NextResponse.json({ error: `Could not save the pick: ${error.message}` }, { status: 500 });
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, state: nextState });
 }
 
 /** Append each manager's replacements to their carried-over squad. */
@@ -306,8 +384,10 @@ async function finishReplacementDraft(
   const season = Number(room.season_number) || 1;
   const built = Object.entries(nextState.picks).map(([userId, picks]) => {
     const list = picks as SquadPick[];
-    // anyMeansSub=false: a mixed replacement pool has no bench slots.
-    return { userId, squad: americanPicksToSquad(list, false), fifaYears: list.map(p => p.player.fifa_year) };
+    // Replacements join the BENCH. They are not slotted into the position of
+    // whoever left — the manager promotes whoever they want on the arrange
+    // screen, which already refuses to continue until a full eleven is picked.
+    return { userId, squad: americanPicksToSquad(list, true), fifaYears: list.map(p => p.player.fifa_year) };
   });
   await attachSquadAttributes(service, built);
 
@@ -339,5 +419,8 @@ async function finishReplacementDraft(
   if (doneErr) {
     return NextResponse.json({ error: doneErr.message }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, complete: true });
+  // A pool staged for a round that will now never be played must not survive
+  // into a later draft. Best effort — validation would reject it anyway.
+  discardStagedRound(service, room, "replacement", nextState.current_round + 1);
+  return NextResponse.json({ ok: true, complete: true, state: nextState });
 }

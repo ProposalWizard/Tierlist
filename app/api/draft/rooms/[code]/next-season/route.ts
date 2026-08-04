@@ -15,7 +15,7 @@ export async function POST(
 
   const { data: room } = await service
     .from("draft_rooms")
-    .select("id, host_id, status, season_number, settings")
+    .select("id, host_id, status, season_number, settings, american_state")
     .eq("code", code.toUpperCase())
     .maybeSingle();
 
@@ -47,8 +47,21 @@ export async function POST(
     }
   }
 
-  // Idempotent: only advance if the room is complete and hasn't already moved to the next season
-  if (room.status !== "complete" || (room.season_number ?? 1) >= nextSeasonNumber) {
+  // Idempotent: only advance if the season really has finished and the room
+  // hasn't already moved on.
+  //
+  // "complete" is the normal finished-season status. A room can also legitimately
+  // be sitting in "started" here: an older build flipped the room to "started"
+  // when it seeded the between-season American replacement draft, and those rooms
+  // would otherwise be stuck forever — never advancing the season, so the result
+  // clients wait for never arrives. Accept that case when the American draft it
+  // started has actually finished.
+  const amState = room.american_state as { complete?: boolean; mode?: string } | null;
+  const finishedReplacementDraft =
+    room.status === "started" && amState?.mode === "replacement" && amState?.complete === true;
+  const seasonFinished = room.status === "complete" || finishedReplacementDraft;
+
+  if (!seasonFinished || (room.season_number ?? 1) >= nextSeasonNumber) {
     return Response.json({ ok: true, skipped: true });
   }
 
@@ -56,8 +69,31 @@ export async function POST(
   // table and actual_finish to identify relegated players.
   const { data: allPlayers } = await service
     .from("draft_room_players")
-    .select("id, display_name, season_result, actual_finish")
+    .select("id, user_id, display_name, season_result, actual_finish")
     .eq("room_id", room.id);
+
+  // Carry each manager's cup wins into the next season BEFORE season_result is
+  // cleared below. The simulate route builds its previousResults map from
+  // season_result, but this reset always ran first, so that map was empty every
+  // time: Super Cup ties, the Community Shield and cup-based European
+  // qualification were unreachable in multiplayer. Winning the Europa League
+  // earned a Champions League place in solo career mode and nothing at all in a
+  // room. Stored on settings rather than a new column so no migration is needed.
+  const previousCupResults: Record<string, {
+    uclWinner: boolean; uelWinner: boolean; faCupWinner: boolean; leagueCupWinner: boolean;
+  }> = {};
+  for (const p of allPlayers ?? []) {
+    const prev = p.season_result as Record<string, unknown> | null | undefined;
+    if (!prev || !p.user_id) continue;
+    const won = (key: string) =>
+      (prev[key] as Record<string, unknown> | undefined)?.winner === true;
+    previousCupResults[p.user_id as string] = {
+      uclWinner: won("ucl"),
+      uelWinner: won("uel"),
+      faCupWinner: won("faCup"),
+      leagueCupWinner: won("leagueCup"),
+    };
+  }
 
   let previousLeagueTable: { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }[] | null = null;
   const playerWithResult = (allPlayers ?? []).find(p => p.season_result != null);
@@ -134,16 +170,24 @@ export async function POST(
   // room half-advanced.
   const { error: historyErr } = await service
     .from("draft_rooms")
-    .update({ settings: { ...existingSettings, allPlayerSeasons: newHistory } })
+    .update({ settings: { ...existingSettings, allPlayerSeasons: newHistory, previousCupResults } })
     .eq("id", room.id);
   if (historyErr) {
     return new Response(`Could not save season history: ${historyErr.message}`, { status: 500 });
   }
 
+  // Everyone still IN the competition goes back to "drafting". Eliminated
+  // managers must be excluded: this reset also nulls actual_finish, so someone
+  // relegated in an earlier season no longer appears in relegatedIds below and
+  // would never be re-marked "out". They came back as an active player two
+  // seasons later — counted by the lobby's allReady check and by simulate,
+  // both of which then waited forever for a squad that manager would never
+  // submit, deadlocking the room permanently.
   const { error: resetErr } = await service
     .from("draft_room_players")
     .update({ status: "drafting", avg_ovr: null, team_strength: null, season_result: null, actual_finish: null })
-    .eq("room_id", room.id);
+    .eq("room_id", room.id)
+    .neq("status", "out");
   if (resetErr) {
     return new Response(`Could not reset players: ${resetErr.message}`, { status: 500 });
   }
@@ -166,7 +210,7 @@ export async function POST(
       status: "lobby",
       season_number: nextSeasonNumber,
       previous_league_table: previousLeagueTable,
-      settings: { ...existingSettings, allPlayerSeasons: newHistory, revealStartAt: null },
+      settings: { ...existingSettings, allPlayerSeasons: newHistory, previousCupResults, revealStartAt: null },
       // Clear the finished American draft. It carries complete:true and
       // seeded:true, and carrying those into the new season made the next
       // draft look already-finished — clients skipped straight past it — and

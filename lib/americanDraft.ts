@@ -1,6 +1,7 @@
 import { attributesFromJson } from "@/lib/playerAttributes";
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { shuffle } from "@/lib/shuffle";
+import { positionFitness } from "@/lib/seasonSimulator";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
 
 export interface AmPlayer {
@@ -128,13 +129,74 @@ export interface AmericanState {
    * different pool.
    */
   seeded?: boolean;
+
+  /**
+   * Epoch ms by which the current picker must choose. Past it, ANY member of
+   * the room can ask the server to auto-pick for them.
+   *
+   * Without this a single player closing their laptop mid-draft froze the room
+   * for everyone, permanently: picks require it to be your turn, and there was
+   * no clock, no auto-pick and no host override. If they then left, their id
+   * stayed in pick_order while rejoining a started room was refused, so the
+   * room became unrecoverable by anyone.
+   */
+  pick_deadline?: number;
 }
 
-/** 11 starters in 4-3-3 order, then 3 substitutes. */
+/** Seconds a manager gets to make a pick before anyone can auto-pick for them. */
+export const AM_PICK_SECONDS = 60;
+
+/** Deadline for a turn starting now. */
+export function nextPickDeadline(): number {
+  return Date.now() + AM_PICK_SECONDS * 1000;
+}
+
+/**
+ * 11 starters in 4-3-3 order, back to front, then 3 substitutes.
+ *
+ * These slots must be exactly the 4-3-3 entry in components/draft/formations.ts,
+ * which is the formation the arrange screen lays the squad out in. They drifted
+ * once: this drafted three centre-mids while the formation asks for a CDM and
+ * two CMs, so the arrange screen had to put a CM in the CDM slot — showing an
+ * out-of-position marker, and costing that player a fitness penalty in the
+ * simulation, on every single American squad. tests/americanDraft/formations.mts
+ * fails if they ever diverge again.
+ */
 export const AM_POSITION_SEQUENCE = [
-  "GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RW", "ST", "LW",
+  "GK", "RB", "CB", "CB", "LB", "CDM", "CM", "CM", "RW", "ST", "LW",
   "ANY", "ANY", "ANY",
 ];
+
+/** Substitute rounds appended after the starting eleven. */
+export const AM_BENCH_ROUNDS = 3;
+
+/**
+ * The round sequence for a formation: one round per starting slot, back to
+ * front, then the bench rounds.
+ *
+ * Back to front matters. Drafting keeper-first means the scarcest, most
+ * position-locked slots are filled while the pool is deepest — by the time the
+ * forward rounds come round, a manager short of options can still fall back on
+ * a winger, whereas nobody can improvise a goalkeeper.
+ *
+ * Returns null for any formation carrying a slot the draft has no filter for,
+ * because a round with no filter would offer the entire database. Callers
+ * should fall back to AM_POSITION_SEQUENCE.
+ */
+export function positionSequenceForFormation(
+  slots: Array<{ label: string; y: number }>,
+): string[] | null {
+  if (slots.length !== 11) return null;
+  const labels = slots.map(s => s.label.toUpperCase());
+  if (!labels.every(isDraftableSlot)) return null;
+
+  // y is the share of the pitch from the top, so the biggest y is the keeper.
+  const ordered = [...slots]
+    .sort((a, b) => b.y - a.y)
+    .map(s => s.label.toUpperCase());
+
+  return [...ordered, ...Array.from({ length: AM_BENCH_ROUNDS }, () => "ANY")];
+}
 
 export function makeAmericanState(userIds: string[], firstRoundPlayers: AmPlayer[]): AmericanState {
   return {
@@ -146,6 +208,7 @@ export function makeAmericanState(userIds: string[], firstRoundPlayers: AmPlayer
     picks: {},
     last_pick: {},
     complete: false,
+    pick_deadline: nextPickDeadline(),
   };
 }
 
@@ -179,6 +242,7 @@ export function makeReplacementState(
     vacancies,
     needs_gk: needsGk,
     standings_order: standingsOrder,
+    pick_deadline: nextPickDeadline(),
   };
 }
 
@@ -309,6 +373,27 @@ function resolvePositions(row: any): string {
   return (row.manual_positions || row.positions || "").toString();
 }
 
+/**
+ * A player is offered for a slot only if the SIMULATOR considers him a real fit
+ * for it. Two separate ideas of "can play here" had drifted apart: the draft
+ * offered CF for striker, which the simulator scores 0.68 — properly out of
+ * position — and offered any right-mid at right wing, including one who is also
+ * a right-back, which scores 0.85. Asking the simulator directly means the two
+ * can never disagree again.
+ *
+ * The bar is 0.98, not a perfect 1.0. A defensive or attacking mid at centre
+ * mid scores 0.98 — near enough to play there, and excluding them would leave
+ * those players undraftable entirely while the only formation is 4-3-3.
+ */
+const MIN_SLOT_FITNESS = 0.98;
+
+// Candidate positions per slot. Kept as a cheap pre-filter; the fitness check
+// above is what actually decides.
+//
+// Covers every slot label used by ANY formation in components/draft/formations.ts,
+// not just the 4-3-3 the draft currently runs. A slot with no entry here would
+// fall through to "no filter" and offer the whole database for that round, so
+// the set must stay in step with the formations list.
 const POS_FILTER: Record<string, string[]> = {
   GK:  ["GK"],
   RB:  ["RB", "RWB"],
@@ -318,8 +403,22 @@ const POS_FILTER: Record<string, string[]> = {
   RW:  ["RW", "RM"],
   LW:  ["LW", "LM"],
   ST:  ["ST", "CF"],
+  // Slots only other formations use. Deliberately as tight as the ones above —
+  // each is the mirror of its counterpart, and positionFitness still has the
+  // final say on everything these let through.
+  CDM: ["CDM", "CM"],
+  CAM: ["CAM", "CM"],
+  RM:  ["RM", "RW"],
+  LM:  ["LM", "LW"],
+  RWB: ["RWB", "RB"],
+  LWB: ["LWB", "LB"],
   ANY: [],
 };
+
+/** Slot labels the draft can build a round for. */
+export function isDraftableSlot(label: string): boolean {
+  return Object.prototype.hasOwnProperty.call(POS_FILTER, label.toUpperCase());
+}
 
 // Matches English Premier League across all FIFA edition naming conventions.
 // Anchored to avoid catching Scottish/Russian/Ukrainian Premier Leagues.
@@ -460,6 +559,77 @@ interface EraPool {
 const eraPoolCache = new Map<string, EraPool>();
 const ERA_POOL_TTL_MS = 10 * 60 * 1000;
 
+// ── Persistent cache in Supabase Storage ─────────────────────────────────────
+// The module-scope caches above die with the serverless instance, so any pick
+// or seed that landed on a cold instance rebuilt the whole era pool from the
+// database — the multi-second stall players felt "after a few minutes idle".
+// The same pool serialised into the storage bucket survives instances: a cold
+// start becomes one storage GET instead of ~28 table queries. Storage is only
+// ever an optimisation here — every read and write is guarded, and any failure
+// falls back to the database path that already works.
+const CACHE_BUCKET = "tierlist-images";
+const CACHE_PREFIX = "draft-cache";
+const ERA_POOL_STORAGE_TTL_MS = 30 * 60 * 1000;
+/** How often a warm instance re-persists its pool so the file stays fresh. */
+const ERA_POOL_REPERSIST_MS = 15 * 60 * 1000;
+const lastPersist = new Map<string, number>();
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function readCacheJson(service: any, path: string): Promise<any | null> {
+  try {
+    const { data, error } = await service?.storage
+      ?.from(CACHE_BUCKET)
+      .download(`${CACHE_PREFIX}/${path}`) ?? { data: null, error: true };
+    if (error || !data) return null;
+    return JSON.parse(await data.text());
+  } catch {
+    return null;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function writeCacheJson(service: any, path: string, obj: unknown): Promise<void> {
+  try {
+    await service?.storage
+      ?.from(CACHE_BUCKET)
+      .upload(`${CACHE_PREFIX}/${path}`, JSON.stringify(obj), {
+        upsert: true,
+        contentType: "application/json",
+        cacheControl: "no-cache",
+      });
+  } catch {
+    // best effort only
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function removeCacheJson(service: any, path: string): void {
+  try {
+    void service?.storage?.from(CACHE_BUCKET).remove([`${CACHE_PREFIX}/${path}`]);
+  } catch {
+    // best effort only
+  }
+}
+
+// Derived maps are rebuilt from rows rather than stored: they are pure
+// functions of the rows and Maps don't survive JSON anyway.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function poolFromRows(rows: any[]): EraPool {
+  const best = new Map<string, { ovr: number; year: number }>();
+  for (const r of rows) {
+    const o = resolveOvr(r);
+    const cur = best.get(r.sofifa_id);
+    if (!cur || o > cur.ovr) best.set(r.sofifa_id, { ovr: o, year: r.fifa_year });
+  }
+  return { rows, at: Date.now(), weakBelow: computeWeakThresholds(rows), best };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function persistEraPool(service: any, key: string, rows: any[]): void {
+  lastPersist.set(key, Date.now());
+  void writeCacheJson(service, `era-pool-${key}.json`, { builtAt: Date.now(), rows });
+}
+
 /**
  * Squad players are far more numerous than starters — roughly a third of every
  * club's roster is academy and reserve — so an even draw fills the board with
@@ -467,7 +637,7 @@ const ERA_POOL_TTL_MS = 10 * 60 * 1000;
  * rather than being removed, so a scrappy squad player is a rare curiosity
  * instead of a third of every round.
  */
-const WEAK_PLAYER_WEIGHT = 0.1;
+const WEAK_PLAYER_WEIGHT = 0.03;
 
 /**
  * "Weak" is judged against the player's OWN season, never a fixed number.
@@ -500,7 +670,10 @@ function computeWeakThresholds(
   for (const [year, list] of Array.from(bySeason.entries())) {
     list.sort((a, b) => a - b);
     const idx = Math.max(0, Math.min(list.length - 1, Math.floor(rank * list.length)));
-    out.set(year, list[idx]);
+    // +3 on top of the season's own mark. The rank alone still let through more
+    // fringe players than felt right in play, and lifting the bar per season
+    // keeps it era-neutral in a way a flat number would not.
+    out.set(year, list[idx] + 3);
   }
   return out;
 }
@@ -522,7 +695,30 @@ function computeWeakThresholds(
 async function getEraPool(service: any, leagues: string[], eraStart: number, eraEnd: number): Promise<EraPool> {
   const key = `${eraStart}-${eraEnd}`;
   const cached = eraPoolCache.get(key);
-  if (cached && Date.now() - cached.at < ERA_POOL_TTL_MS) return cached;
+  if (cached && Date.now() - cached.at < ERA_POOL_TTL_MS) {
+    // Keep the storage copy fresh from warm instances, so whichever cold
+    // instance handles the next request finds a recent file waiting.
+    if (Date.now() - (lastPersist.get(key) ?? 0) > ERA_POOL_REPERSIST_MS) {
+      persistEraPool(service, key, cached.rows);
+    }
+    return cached;
+  }
+
+  // Cold instance: one storage GET replaces the whole multi-query build below.
+  const stored = await readCacheJson(service, `era-pool-${key}.json`) as
+    | { builtAt?: number; rows?: unknown[] }
+    | null;
+  if (
+    stored &&
+    Array.isArray(stored.rows) &&
+    stored.rows.length > 0 &&
+    Date.now() - (stored.builtAt ?? 0) < ERA_POOL_STORAGE_TTL_MS
+  ) {
+    const pool = poolFromRows(stored.rows);
+    eraPoolCache.set(key, pool);
+    lastPersist.set(key, stored.builtAt ?? Date.now());
+    return pool;
+  }
 
   const { min, max } = await getIdBounds(service, leagues, eraStart, eraEnd);
   const SLICES = 24;
@@ -577,16 +773,11 @@ async function getEraPool(service: any, leagues: string[], eraStart: number, era
   }
 
   const rows = Array.from(byId.values());
-  // Peak rating per player, used to weight prime mode by what the card will
-  // actually SHOW rather than by the season that happened to be drawn.
-  const best = new Map<string, { ovr: number; year: number }>();
-  for (const r of rows) {
-    const o = resolveOvr(r);
-    const cur = best.get(r.sofifa_id);
-    if (!cur || o > cur.ovr) best.set(r.sofifa_id, { ovr: o, year: r.fifa_year });
+  const pool = poolFromRows(rows);
+  if (rows.length > 0) {
+    eraPoolCache.set(key, pool);
+    persistEraPool(service, key, rows);
   }
-  const pool: EraPool = { rows, at: Date.now(), weakBelow: computeWeakThresholds(rows), best };
-  if (rows.length > 0) eraPoolCache.set(key, pool);
   return pool;
 }
 
@@ -642,9 +833,16 @@ export async function fetchRoundPlayers(
     if (excluded.has(`id:${r.sofifa_id}`)) return false;
     if (excluded.has(`name:${playerNameKey(r.name)}`)) return false;
     if (allowed.length === 0) return true;
-    const pos = resolvePositions(r).toUpperCase();
-    const parts = pos.split(",").map((x: string) => x.trim());
-    return allowed.some(p => parts.includes(p));
+    const positions = resolvePositions(r);
+    const parts = positions.toUpperCase().split(",").map((x: string) => x.trim());
+    if (!allowed.some(p => parts.includes(p))) return false;
+    // The simulator has the final say — it knows the conditional cases a list
+    // cannot express, such as right-mid being a perfect right winger UNLESS he
+    // is also a right-back.
+    return positionFitness({
+      assignedPosition: position,
+      positions,
+    } as Parameters<typeof positionFitness>[0]) >= MIN_SLOT_FITNESS;
   });
 
   const era = await getEraPool(service, leagues, eraStart, eraEnd);
@@ -742,6 +940,161 @@ export async function fetchRoundPlayers(
   }));
 }
 
+/** What a custom pool filter gets to see about a candidate. */
+export interface PoolCandidate {
+  sofifa_id: string;
+  name: string;
+  ovr: number;
+  positions: string;
+  nationality: string;
+  club: string;
+  age: number;
+  fifa_year: number;
+}
+
+/**
+ * Build a pool from an arbitrary rule instead of a formation slot.
+ *
+ * The Challenge draft (app/draft-challenge-dev) picks each round by a random
+ * "brief" — a rating band, a nationality, a minimum stat, a club, an era —
+ * rather than by position, so it needs the same machinery fetchRoundPlayers
+ * uses without POS_FILTER. Everything that matters is shared with it: the
+ * cached era pool, the non-English-PL club exclusions, the weighted draw that
+ * keeps fringe squad players rare, per-footballer dedup by id AND normalised
+ * name, prime-mode edition swapping, and club badge resolution.
+ *
+ * Returns fewer than `size` players when the rule simply does not match enough
+ * people; callers decide whether that is usable. It never throws for an empty
+ * result, because a brief that comes up short is a normal thing to discard.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function fetchCustomRoundPlayers(
+  service: any,
+  match: (c: PoolCandidate) => boolean,
+  excludeKeys: Iterable<string> = [],
+  opts: RoundOptions = {},
+  size = 10,
+): Promise<AmPlayer[]> {
+  const excluded = new Set(excludeKeys);
+  const eraStart = opts.eraStart ?? 2007;
+  const eraEnd = opts.eraEnd ?? 2026;
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) {
+    throw new Error("No Premier League rows found — is the player data imported?");
+  }
+
+  const era = await getEraPool(service, leagues, eraStart, eraEnd);
+
+  const filtered = era.rows.filter(r => {
+    if (NON_ENGLISH_PL_CLUBS.has((r.club || "").toLowerCase())) return false;
+    if (excluded.has(`id:${r.sofifa_id}`)) return false;
+    if (excluded.has(`name:${playerNameKey(r.name)}`)) return false;
+    return match(toCandidate(r));
+  });
+  if (filtered.length === 0) return [];
+
+  const weightOf = (r: { sofifa_id: string; fifa_year: number }) => {
+    const judged = opts.prime ? era.best.get(r.sofifa_id) : null;
+    const ovr = judged ? judged.ovr : resolveOvr(r);
+    const year = judged ? judged.year : r.fifa_year;
+    const weakBelow = era.weakBelow.get(year);
+    if (weakBelow === undefined) return 1;
+    return ovr >= weakBelow ? 1 : WEAK_PLAYER_WEIGHT;
+  };
+
+  const shuffled = [...filtered]
+    .map(r => ({ r, key: Math.pow(Math.random(), 1 / weightOf(r)) }))
+    .sort((a, b) => b.key - a.key)
+    .map(x => x.r);
+
+  const seen = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chosen: any[] = [];
+  for (const r of shuffled) {
+    const idKey = `id:${r.sofifa_id}`;
+    const nameKey = `name:${playerNameKey(r.name)}`;
+    if (seen.has(idKey) || seen.has(nameKey)) continue;
+    seen.add(idKey);
+    seen.add(nameKey);
+    chosen.push(r);
+    if (chosen.length >= size) break;
+  }
+
+  // Prime mode deliberately does NOT swap editions here. A brief selects on the
+  // drawn season's own numbers — "88-92 rated", "92+ pace", "2008/09" — so
+  // replacing that row with a different season's would hand back cards that
+  // openly contradict the brief they were drawn for.
+  const logoMap = await getClubLogoMap(service);
+  return chosen.map(r => ({
+    sofifa_id: r.sofifa_id || "",
+    name: r.name || "Unknown",
+    ovr: resolveOvr(r),
+    positions: resolvePositions(r),
+    age: r.age || 0,
+    image_url: r.image_url || null,
+    nationality: (r.manual_nationality || r.nationality || ""),
+    club: r.club || "",
+    club_logo_url: logoMap.get(normalizeClubKey(r.club || "")) ?? null,
+    edition: r.fifa_edition || "",
+    season: seasonLabel(r.fifa_year),
+    fifa_year: r.fifa_year,
+  }));
+}
+
+/** How many eligible players a rule matches — used to reject unusable briefs. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function countMatching(
+  service: any,
+  match: (c: PoolCandidate) => boolean,
+  opts: RoundOptions = {},
+): Promise<number> {
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) return 0;
+  const era = await getEraPool(service, leagues, opts.eraStart ?? 2007, opts.eraEnd ?? 2026);
+  // Counts distinct footballers, not rows — twenty editions of one player is
+  // one card, so a naive row count badly overstates how deep a brief is.
+  const people = new Set<string>();
+  for (const r of era.rows) {
+    if (NON_ENGLISH_PL_CLUBS.has((r.club || "").toLowerCase())) continue;
+    if (!match(toCandidate(r))) continue;
+    people.add(playerNameKey(r.name) || r.sofifa_id);
+  }
+  return people.size;
+}
+
+/** Every eligible player's id/year, so attributes can be indexed for stat briefs. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function eligibleIdentities(
+  service: any,
+  opts: RoundOptions = {},
+  minOverall = 0,
+): Promise<{ sofifa_id: string; fifa_year: number }[]> {
+  const leagues = await getPLLeagueNames(service);
+  if (leagues.length === 0) return [];
+  const era = await getEraPool(service, leagues, opts.eraStart ?? 2007, opts.eraEnd ?? 2026);
+  const out: { sofifa_id: string; fifa_year: number }[] = [];
+  for (const r of era.rows) {
+    if (NON_ENGLISH_PL_CLUBS.has((r.club || "").toLowerCase())) continue;
+    if (resolveOvr(r) < minOverall) continue;
+    if (r.sofifa_id) out.push({ sofifa_id: r.sofifa_id, fifa_year: r.fifa_year });
+  }
+  return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toCandidate(r: any): PoolCandidate {
+  return {
+    sofifa_id: r.sofifa_id || "",
+    name: r.name || "",
+    ovr: resolveOvr(r),
+    positions: resolvePositions(r),
+    nationality: (r.manual_nationality || r.nationality || ""),
+    club: r.club || "",
+    age: r.age || 0,
+    fifa_year: r.fifa_year,
+  };
+}
+
 /**
  * A mixed-position pool for the replacement draft.
  *
@@ -789,6 +1142,165 @@ export async function fetchMixedRoundPlayers(
   }
 
   return shuffleArray(chosen);
+}
+
+// ── Next-round staging ───────────────────────────────────────────────────────
+// The pool for round N+1 used to be built inside the LAST pick of round N, so
+// every round transition made the whole room wait on that one request — the
+// only moment the draft ever felt slow once picking itself was optimistic.
+// Instead, clients call the stage endpoint as soon as a round begins; the pool
+// for the NEXT round is built during the round (dead time — people are
+// picking) and parked in storage. The round-advance request then just reads it.
+//
+// Correctness: the staged pool excludes everyone taken so far AND the entire
+// current 10-card pool, and every pick during the round comes from that pool —
+// so nothing staged can be taken in the meantime. The consumer still verifies
+// this against the final taken set and falls back to a live build on any
+// mismatch, so a stale or foreign file can never put a taken player back on
+// the board. Files are deleted on use.
+
+export interface StagedRound {
+  mode: "initial" | "replacement";
+  round: number;
+  players: AmPlayer[];
+}
+
+function stagedRoundPath(roomId: string, season: number, mode: string, round: number): string {
+  return `room-${roomId}-s${season}-${mode}-r${round}.json`;
+}
+
+type StageRoom = {
+  id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  settings: any;
+  season_number?: number | null;
+};
+
+/** Exclusion keys for the current pool itself — staged rounds must not repeat it. */
+function currentPoolKeys(state: AmericanState, into: Set<string>): Set<string> {
+  for (const p of state.round_players ?? []) {
+    if (p.sofifa_id) into.add(`id:${p.sofifa_id}`);
+    const nk = playerNameKey(p.name);
+    if (nk) into.add(`name:${nk}`);
+  }
+  return into;
+}
+
+/**
+ * Build and park the pool for the round after the one being played.
+ * Returns the staged players (also when a previous call already staged them),
+ * or null when there is no next round. Never throws — staging is an
+ * optimisation, so any failure just means the advance falls back to a live build.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function stageNextRound(service: any, room: StageRoom, state: AmericanState): Promise<AmPlayer[] | null> {
+  try {
+    if (!state || state.complete) return null;
+    const mode = state.mode === "replacement" ? "replacement" : "initial";
+    const nextRound = state.current_round + 1;
+    const season = Number(room.season_number) || 1;
+    const path = stagedRoundPath(room.id, season, mode, nextRound);
+
+    const existing = await readCacheJson(service, path) as StagedRound | null;
+    if (existing && existing.mode === mode && existing.round === nextRound && existing.players?.length) {
+      return existing.players;
+    }
+
+    const opts = roundOptionsFromSettings(room.settings);
+    const excl = currentPoolKeys(state, pickedPlayerKeys(state.picks));
+    let players: AmPlayer[];
+
+    if (mode === "initial") {
+      if (nextRound >= state.position_sequence.length) return null;
+      players = await fetchRoundPlayers(service, state.position_sequence[nextRound], excl, opts);
+    } else {
+      // Predict who is still owed a player once this round's remaining picks
+      // are made: everyone from the current picker onward picks exactly once.
+      const vac = state.vacancies ?? {};
+      const remaining = new Set(state.pick_order.slice(state.current_pick_idx));
+      const predicted: Record<string, number> = {};
+      for (const uid of Object.keys(vac)) {
+        predicted[uid] = (vac[uid] ?? 0) - (remaining.has(uid) ? 1 : 0);
+      }
+      const nextParticipants = participantsForRound(predicted, state.standings_order ?? state.pick_order);
+      if (nextParticipants.length === 0) return null;
+
+      // Squads persist between seasons, so exclude every roster in the room.
+      const { data: rosters } = await service
+        .from("draft_room_players")
+        .select("squad")
+        .eq("room_id", room.id);
+      for (const r of rosters ?? []) {
+        for (const sp of ((r?.squad as Array<{ sofifa_id?: string; name?: string }>) ?? [])) {
+          if (sp?.sofifa_id) excl.add(`id:${sp.sofifa_id}`);
+          const nk = playerNameKey(sp?.name ?? "");
+          if (nk) excl.add(`name:${nk}`);
+        }
+      }
+
+      // A keeper picked later this round can only DECREASE the need, so this
+      // guess never under-provides goalkeepers — at worst the pool has a spare.
+      const gkNeed = goalkeepersNeeded(nextParticipants, state.needs_gk ?? {});
+      players = await fetchMixedRoundPlayers(service, excl, opts, gkNeed);
+    }
+
+    if (!players || players.length === 0) return null;
+    await writeCacheJson(service, path, { mode, round: nextRound, players } satisfies StagedRound);
+    return players;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Consume a staged pool for a round advance. Validates that the file is for
+ * exactly this round, that nothing in it has since been taken, and that it
+ * carries enough goalkeepers — on any doubt it returns null and the caller
+ * builds the pool live. The file is removed either way: it is either used now
+ * or wrong forever.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function takeStagedRound(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  service: any,
+  room: StageRoom,
+  mode: "initial" | "replacement",
+  round: number,
+  takenKeys: Set<string>,
+  minGoalkeepers = 0,
+): Promise<AmPlayer[] | null> {
+  try {
+    const season = Number(room.season_number) || 1;
+    const path = stagedRoundPath(room.id, season, mode, round);
+    const staged = await readCacheJson(service, path) as StagedRound | null;
+    removeCacheJson(service, path);
+
+    if (!staged || staged.mode !== mode || staged.round !== round) return null;
+    const players = staged.players ?? [];
+    if (players.length === 0) return null;
+
+    const clean = players.every(p =>
+      !takenKeys.has(`id:${p.sofifa_id}`) && !takenKeys.has(`name:${playerNameKey(p.name)}`)
+    );
+    if (!clean) return null;
+
+    const gks = players.filter(p =>
+      (p.positions || "").toUpperCase().split(",").map(x => x.trim()).includes("GK")
+    ).length;
+    if (gks < minGoalkeepers) return null;
+
+    return players;
+  } catch {
+    return null;
+  }
+}
+
+/** Best-effort cleanup once a draft finishes — a staged pool for a round that
+ * will never be played must not survive into a later draft. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function discardStagedRound(service: any, room: StageRoom, mode: "initial" | "replacement", round: number): void {
+  const season = Number(room.season_number) || 1;
+  removeCacheJson(service, stagedRoundPath(room.id, season, mode, round));
 }
 
 /**

@@ -39,14 +39,23 @@ export default async function FindPage({
   // .limit(), so these queries must page — otherwise, as the site grows,
   // older tierlists vanish from Find, like counts drift low, and creator
   // names disappear with no error anywhere.
+  // Discarding `error` here is what lib/fetchAllRows.ts documents as the trap:
+  // a statement timeout comes back as { data: null, error } and looks exactly
+  // like "no rows". That rendered every ranking with 0 likes, or the page as
+  // "0 rankings available", with nothing logged anywhere. Surface it instead.
   async function fetchAll<T>(
-    build: (from: number, to: number) => PromiseLike<{ data: T[] | null }>,
+    build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error?: { message: string } | null }>,
+    label: string,
     hardCap = 20000,
   ): Promise<T[]> {
     const PAGE = 1000;
     const all: T[] = [];
     for (let from = 0; from < hardCap; from += PAGE) {
-      const { data } = await build(from, from + PAGE - 1);
+      const { data, error } = await build(from, from + PAGE - 1);
+      if (error) {
+        console.error(`[find] ${label} failed at offset ${from}: ${error.message}`);
+        throw new Error(`Could not load ${label}: ${error.message}`);
+      }
       if (!data || data.length === 0) break;
       all.push(...data);
       if (data.length < PAGE) break;
@@ -63,25 +72,25 @@ export default async function FindPage({
         .from("tierlists")
         .select("id, title, category, additional_categories, cover_image_url, view_count, created_at, created_by, linked_vote_tierlist_id, linked_blind_ranking_id")
         .order("created_at", { ascending: false })
-        .range(from, to)),
+        .range(from, to), "rankings"),
     fetchAll<VoteRow>((from, to) =>
       service
         .from("vote_tierlists")
         .select("id, title, category, cover_image_url, created_at, created_by")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
-        .range(from, to)),
+        .range(from, to), "vote tierlists"),
     fetchAll<BlindRow>((from, to) =>
       service
         .from("blind_rankings")
         .select("id, title, category, cover_image_url, created_at")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
-        .range(from, to)),
+        .range(from, to), "blind rankings"),
     fetchAll<{ tierlist_id: string }>((from, to) =>
-      service.from("tierlist_likes").select("tierlist_id").order("tierlist_id").range(from, to), 100000),
+      service.from("tierlist_likes").select("tierlist_id").order("tierlist_id").range(from, to), "likes", 100000),
     fetchAll<{ user_id: string; username: string | null }>((from, to) =>
-      service.from("user_profiles").select("user_id, username").order("user_id").range(from, to), 100000),
+      service.from("user_profiles").select("user_id, username").order("user_id").range(from, to), "profiles", 100000),
   ]);
   const tierlistsRes = { data: tierlistsAll };
   const votelistsRes = { data: votelistsAll };

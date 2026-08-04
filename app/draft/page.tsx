@@ -352,6 +352,10 @@ export default function DraftPage() {
   const [previousResults, setPreviousResults] = useState<SeasonResult[]>([]);
   const [nextSeasonPlayers, setNextSeasonPlayers] = useState<DraftPlayer[]>([]);
   const [departedPlayers, setDepartedPlayers] = useState<DepartedPlayer[]>([]);
+  // Set when this manager refreshed during an American pre-season: the room is
+  // still collecting vacancies and theirs are missing, so the lobby has to send
+  // them back through pre-season rather than straight to arrange.
+  const [amNeedsVacancies, setAmNeedsVacancies] = useState(false);
   const [ratingChanges, setRatingChanges] = useState<RatingChange[]>([]);
   const [signingSlots, setSigningSlots] = useState(2);
   const [nextUsedClubYears, setNextUsedClubYears] = useState<string[]>([]);
@@ -396,6 +400,16 @@ export default function DraftPage() {
     const url = roomCode ? `/draft?room=${roomCode}` : '/draft';
     window.history.replaceState(null, '', url);
   }, [roomCode]);
+
+  // American rooms: the between-season replacement draft is seeded by whoever
+  // submits their vacancies last, and that seeding needs the era pool. Warm it
+  // while people are still reading their pre-season screens — dead time — so
+  // the seed itself is instant instead of paying a cold pool build.
+  useEffect(() => {
+    if (!isAmericanRoom || !roomCode) return;
+    if (phase !== "pre-season" && phase !== "sell") return;
+    void fetch(`/api/draft/rooms/${roomCode}/american/warm`, { method: "POST" }).catch(() => {});
+  }, [phase, isAmericanRoom, roomCode]);
 
   useEffect(() => {
     setResume(loadProgress());
@@ -507,6 +521,10 @@ export default function DraftPage() {
     // dropping them in the lobby instead would stall the draft for everyone,
     // because their turn would come round and nobody could take it.
     let resumeAmericanDraft = false;
+    // True when an American replacement draft is waiting on THIS manager's
+    // vacancies — they refreshed mid-pre-season and have to redo it, otherwise
+    // the draft can never seed.
+    let amNeedsMyVacancies = false;
 
     // Fetch host's settings; formation is picked later in formation-pick phase
     const res = await fetch(`/api/draft/rooms/${code}`);
@@ -535,9 +553,24 @@ export default function DraftPage() {
           restoredSquad = myRoomPlayer.squad as DraftPlayer[];
           restoredAlreadySubmitted = myRoomPlayer.status === "ready";
         }
-        const amState = data.room?.american_state as { complete?: boolean } | null | undefined;
+        // Resume into the draft screen ONLY when there is a draft to act in.
+        //
+        // A replacement draft's state exists from the moment the FIRST manager
+        // submits their vacancies — long before it is seeded. Treating that as
+        // "a draft is running" dropped everyone else straight into the draft
+        // screen on refresh, skipping their own pre-season and their vacancy
+        // submission. That screen only polls, so the draft could never seed and
+        // the room deadlocked. A manager who has not submitted yet belongs in
+        // the pre-season flow, not the draft.
+        const amState = data.room?.american_state as
+          | { complete?: boolean; seeded?: boolean; mode?: string; pending_vacancies?: Record<string, unknown> }
+          | null
+          | undefined;
         if (amState && !amState.complete && myRoomPlayer && myRoomPlayer.status !== "ready") {
-          resumeAmericanDraft = true;
+          const isReplacement = amState.mode === "replacement";
+          const iSubmitted = !!amState.pending_vacancies?.[userId];
+          resumeAmericanDraft = !isReplacement || amState.seeded === true || iSubmitted;
+          amNeedsMyVacancies = isReplacement && !amState.seeded && !iSubmitted;
         }
       }
     } else {
@@ -558,6 +591,7 @@ export default function DraftPage() {
       setSquadSubmitted(false);
     }
 
+    setAmNeedsVacancies(amNeedsMyVacancies);
     setPhase(resumeAmericanDraft ? "american-draft" : "lobby");
     scrollTop();
   }, [scrollTop, userId]);
@@ -578,6 +612,10 @@ export default function DraftPage() {
     });
   }, [isSignedIn, phase, handleJoinRoom]);
 
+  // handlePlayNextSeason is defined further down, so reach it through a ref
+  // rather than reordering several hundred lines of interdependent callbacks.
+  const playNextSeasonRef = useRef<((s: SeasonResult | null, p: DraftPlayer[]) => void) | null>(null);
+
   const handleStartFromLobby = useCallback(() => {
     if (currentSeason === 1) {
       // American mode replaces the per-player spin for the first season only;
@@ -588,6 +626,16 @@ export default function DraftPage() {
         return;
       }
       setPhase("formation-pick");
+    } else if (amNeedsVacancies && players.length > 0) {
+      // This manager refreshed during an American pre-season, so the room is
+      // still waiting on their vacancies. Going to arrange would submit a squad
+      // without ever telling the server how many replacements they are owed,
+      // and the replacement draft could never seed — the room would wait on
+      // them forever. Send them back through pre-season instead. Their
+      // departures are re-rolled because they only ever existed in this tab.
+      setAmNeedsVacancies(false);
+      playNextSeasonRef.current?.(null, players);
+      return;
     } else if (players.length > 0) {
       // Season 2+ with an existing squad (preserved from last season) — go straight to arrange
       setPhase("arrange");
@@ -595,7 +643,7 @@ export default function DraftPage() {
       setPhase("draft");
     }
     scrollTop();
-  }, [scrollTop, currentSeason, players, settings]);
+  }, [scrollTop, currentSeason, players, settings, amNeedsVacancies]);
 
   const handleSimulationComplete = useCallback((myResult: SeasonResult, allPlayers: RoomPlayer[], revealStartAt?: number) => {
     setRevealStartTime(revealStartAt ?? Date.now());
@@ -858,7 +906,7 @@ export default function DraftPage() {
   }, [scrollTop, roomCode]);
 
   const handlePlayNextSeason = useCallback(
-    (season: SeasonResult, currentPlayers: DraftPlayer[]) => {
+    (season: SeasonResult | null, currentPlayers: DraftPlayer[]) => {
       const sorted = [...currentPlayers].sort((a, b) => (b.age || 0) - (a.age || 0));
       const departed: DepartedPlayer[] = [];
 
@@ -895,7 +943,11 @@ export default function DraftPage() {
       const departedSet = new Set(departed.map((d) => d.player));
       const remaining = currentPlayers.filter((p) => !departedSet.has(p));
 
-      const statsMap = new Map(season.playerStats.map((s) => [s.name, s]));
+      // `season` is null when a manager is redoing a pre-season they lost to a
+      // refresh — the season result only ever existed in this component's
+      // state. Everyone keeps their current rating in that case rather than
+      // being handed changes derived from a season we can no longer see.
+      const statsMap = new Map((season?.playerStats ?? []).map((s) => [s.name, s]));
       const changes: RatingChange[] = remaining.map((player) => {
         const stats = statsMap.get(player.name);
         const avgRating = stats?.avgRating ?? 6.5;
@@ -923,10 +975,12 @@ export default function DraftPage() {
       setDepartedPlayers(departed);
       setRatingChanges(changes);
       setNextSeasonPlayers(changes.map((rc) => rc.player));
-      setPreviousResults((prev) => [...prev, season]);
+      if (season) setPreviousResults((prev) => [...prev, season]);
       setNextUsedClubYears(usedCYs);
       setSigningSlots(departed.length);
-      setCurrentSeason((s) => s + 1);
+      // Redoing a lost pre-season is for the season we are ALREADY on, so the
+      // counter must not move again.
+      if (season) setCurrentSeason((s) => s + 1);
       // Reset multiplayer state so the lobby is fresh for the next season
       setPreComputedSeason(null);
       setRoomPlayers(null);
@@ -936,6 +990,7 @@ export default function DraftPage() {
     },
     [scrollTop]
   );
+  playNextSeasonRef.current = handlePlayNextSeason;
 
   const handlePreSeasonContinue = useCallback(
     (trainingPlayerName: string, retainedPlayer?: DraftPlayer) => {

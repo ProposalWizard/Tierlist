@@ -586,26 +586,54 @@ export default function AdminPanel({
         );
       }
 
-      // Upload staged new images
+      // Upload staged new images. Failures used to `continue` silently, so an
+      // admin who staged twelve images and lost three to failed uploads was
+      // still told "Tierlist saved" — with closeEdit() discarding the staged
+      // files, the only way to notice was to count the images afterwards.
+      const failedUploads: string[] = [];
       if (editState.stagedNewImages.length > 0) {
-        const supabaseForImages = editState.customCoverFile ? createClient() : (cover_image_url ? createClient() : createClient());
+        const supabaseForImages = createClient();
         for (const staged of editState.stagedNewImages) {
-          const { compressImage } = await import("@/lib/imageUtils");
-          const compressed = await compressImage(staged.file);
-          const path = `${crypto.randomUUID()}.webp`;
-          const { error: upErr } = await supabaseForImages.storage
-            .from("tierlist-images")
-            .upload(path, compressed, { contentType: "image/webp" });
-          if (upErr) continue;
-          const { data: urlData } = supabaseForImages.storage
-            .from("tierlist-images")
-            .getPublicUrl(path);
-          await fetch(`/api/admin/tierlists/${tierlistId}/images`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: staged.name, image_url: urlData.publicUrl }),
-          });
+          try {
+            const { compressImage } = await import("@/lib/imageUtils");
+            const compressed = await compressImage(staged.file);
+            const path = `${crypto.randomUUID()}.webp`;
+            const { error: upErr } = await supabaseForImages.storage
+              .from("tierlist-images")
+              .upload(path, compressed, { contentType: "image/webp" });
+            if (upErr) { failedUploads.push(staged.name || staged.file.name); continue; }
+            const { data: urlData } = supabaseForImages.storage
+              .from("tierlist-images")
+              .getPublicUrl(path);
+            const addRes = await fetch(`/api/admin/tierlists/${tierlistId}/images`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: staged.name, image_url: urlData.publicUrl }),
+            });
+            if (!addRes.ok) failedUploads.push(staged.name || staged.file.name);
+          } catch {
+            failedUploads.push(staged.name || staged.file.name);
+          }
         }
+      }
+
+      if (failedUploads.length > 0) {
+        // Keep the editor open with the failed files still staged so they can
+        // be retried, rather than reporting success and throwing them away.
+        setEditState((p) =>
+          p
+            ? {
+                ...p,
+                saving: false,
+                stagedNewImages: p.stagedNewImages.filter((s) =>
+                  failedUploads.includes(s.name || s.file.name)
+                ),
+                pendingDeleteImageIds: [],
+                error: `${failedUploads.length} image${failedUploads.length === 1 ? "" : "s"} failed to upload (${failedUploads.slice(0, 3).join(", ")}${failedUploads.length > 3 ? "…" : ""}). Everything else was saved — press Save Changes to retry these.`,
+              }
+            : p
+        );
+        return;
       }
 
       // Update image sort orders (batch)
@@ -653,6 +681,15 @@ export default function AdminPanel({
   function handleDeleteImage(_tierlistId: string, imageId: string) {
     setEditState((prev) => {
       if (!prev) return prev;
+      const removed = prev.images.find((img) => img.id === imageId);
+      // Clearing selectedCoverImageId alone was not enough: cover_image_url
+      // still held the deleted image's URL, and the save PATCHes that URL back
+      // BEFORE running the deletions that remove the file. Deleting the image
+      // marked "Cover" therefore left the tierlist card, and every link
+      // preview, pointing at a 404.
+      const wasCover =
+        prev.selectedCoverImageId === imageId ||
+        (!!removed?.image_url && prev.cover_image_url === removed.image_url);
       return {
         ...prev,
         images: prev.images.filter((img) => img.id !== imageId),
@@ -661,6 +698,7 @@ export default function AdminPanel({
           prev.selectedCoverImageId === imageId
             ? null
             : prev.selectedCoverImageId,
+        cover_image_url: wasCover ? null : prev.cover_image_url,
       };
     });
   }
@@ -2878,11 +2916,19 @@ export default function AdminPanel({
                                                 if (!p) return p;
                                                 const target = p.images.find((i) => i.id === img.id);
                                                 if (target?.isNew && target.image_url.startsWith("blob:")) URL.revokeObjectURL(target.image_url);
+                                                // Drop cover_image_url too when this image IS
+                                                // the cover — otherwise the save writes the
+                                                // URL back and the deletion that follows takes
+                                                // the file away, leaving a broken cover.
+                                                const wasCover =
+                                                  p.selectedCoverImageId === img.id ||
+                                                  (!!target?.image_url && p.cover_image_url === target.image_url);
                                                 return {
                                                   ...p,
                                                   images: p.images.filter((i) => i.id !== img.id),
                                                   pendingDeleteImageIds: img.isNew ? p.pendingDeleteImageIds : [...p.pendingDeleteImageIds, img.id],
                                                   selectedCoverImageId: p.selectedCoverImageId === img.id ? null : p.selectedCoverImageId,
+                                                  cover_image_url: wasCover ? null : p.cover_image_url,
                                                   isDirty: true,
                                                 };
                                               });

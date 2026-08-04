@@ -7,11 +7,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
+import { deleteUnreferencedImages } from "@/lib/storageCleanup";
 
 type Params = Promise<{ id: string; imageId: string }>;
 
 export async function DELETE(_request: Request, { params }: { params: Params }) {
-  const { imageId } = await params;
+  const { id, imageId } = await params;
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user || !(await isAdmin(user.id))) {
@@ -20,28 +21,29 @@ export async function DELETE(_request: Request, { params }: { params: Params }) 
 
   const service = createServiceClient();
 
-  // Get the image URL for storage cleanup
+  // Scope to the vote tierlist in the URL, not the image id alone — otherwise
+  // this route will happily delete an image belonging to a different list.
   const { data: img } = await service
     .from("vote_tierlist_images")
     .select("image_url")
     .eq("id", imageId)
-    .single();
-
-  if (img?.image_url) {
-    const BUCKET_MARKER = "/object/public/tierlist-images/";
-    const idx = img.image_url.indexOf(BUCKET_MARKER);
-    if (idx !== -1) {
-      const path = decodeURIComponent(img.image_url.slice(idx + BUCKET_MARKER.length));
-      await service.storage.from("tierlist-images").remove([path]);
-    }
-  }
+    .eq("vote_tierlist_id", id)
+    .maybeSingle();
 
   const { error } = await service
     .from("vote_tierlist_images")
     .delete()
-    .eq("id", imageId);
+    .eq("id", imageId)
+    .eq("vote_tierlist_id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Only remove the file if nothing else references it. Vote tierlists are
+  // routinely built by importing from a regular tierlist, which copies the URL
+  // rather than the file — so an unconditional delete broke the source list's
+  // image too.
+  await deleteUnreferencedImages(service, [img?.image_url]);
+
   return NextResponse.json({ ok: true });
 }
 

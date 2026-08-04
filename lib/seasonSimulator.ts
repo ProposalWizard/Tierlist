@@ -319,12 +319,27 @@ const LOWER_LEAGUE_CLUBS: { name: string; strength: number }[] = [
   { name: 'Mansfield', strength: 62 },
 ];
 
+/**
+ * The AI clubs for the coming season: last season's survivors plus promotions.
+ *
+ * `neededCount` is how many AI clubs the caller actually needs, which is NOT
+ * always the number that survived. In multiplayer the league is
+ * `humans + AI = 20`, so every human relegated (or leaving) has to be replaced
+ * by an extra promoted club. Without it the league comes up short: an odd total
+ * makes the round-robin schedule emit a self-fixture and the season crashes,
+ * and an even-but-short total plays fewer than the 38 matchweeks the simulator
+ * hardcodes. Either way the room could never play another season.
+ *
+ * Omit it to keep the previous behaviour (survivors + 3), which is what solo
+ * career mode wants — there, no human ever leaves the league.
+ */
 export function getSeasonTeams(
   previousLeagueTable?: LeagueTeam[] | { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[],
   promotionSeed?: number,
+  neededCount?: number,
 ): { name: string; strength: number }[] {
   if (!previousLeagueTable || previousLeagueTable.length === 0) {
-    return DEFAULT_PL_TEAMS;
+    return topUpFromPool(DEFAULT_PL_TEAMS, neededCount, promotionSeed);
   }
 
   const poolNames = new Set(ALL_TEAMS_POOL.map(t => t.name));
@@ -360,7 +375,51 @@ export function getSeasonTeams(
       return { name: t.name, strength: pool?.strength ?? 75 };
     });
 
-  return [...remainingTeams, ...promoted];
+  return topUpFromPool([...remainingTeams, ...promoted], neededCount, promotionSeed);
+}
+
+/**
+ * Promote extra clubs until the list reaches `needed`.
+ *
+ * Callers used to attempt this themselves by filtering the season's own AI list
+ * against itself, which by construction can never yield anyone new — so a
+ * league short of clubs stayed short. Drawing from the full pool is the part
+ * that was missing.
+ */
+function topUpFromPool(
+  teams: { name: string; strength: number }[],
+  needed: number | undefined,
+  seed?: number,
+): { name: string; strength: number }[] {
+  if (!needed || teams.length >= needed) return teams;
+
+  const have = new Set(teams.map(t => t.name));
+  const candidates = ALL_TEAMS_POOL.filter(t => !have.has(t.name));
+  const rng = createRng((seed ?? 12345) ^ 0x5bf03635);
+  const out = [...teams];
+
+  // Same weighted draw the promotions above use, so a topped-up league is
+  // shaped like a normally promoted one rather than always the strongest left.
+  while (out.length < needed && candidates.length > 0) {
+    const total = candidates.reduce((sum, t) => sum + t.strength, 0);
+    let roll = rng() * total;
+    let picked = candidates.length - 1;
+    for (let j = 0; j < candidates.length; j++) {
+      roll -= candidates[j].strength;
+      if (roll <= 0) { picked = j; break; }
+    }
+    out.push(candidates[picked]);
+    candidates.splice(picked, 1);
+  }
+
+  // The pool itself is finite. Rather than hand back a short league that would
+  // crash the schedule, fall back to filler clubs so the season can still run.
+  let filler = 1;
+  while (out.length < needed) {
+    out.push({ name: `Athletic FC ${filler}`, strength: 66 });
+    filler++;
+  }
+  return out;
 }
 
 // --- UCL team data ---
@@ -605,13 +664,36 @@ export function positionFitness(player: DraftPlayer): number {
 
 // --- Attribute helpers ---
 
-function hasAttrs(p: DraftPlayer): p is DraftPlayer & { attrs: PlayerAttributes } {
-  if (!p.attrs) return false;
-  const a = p.attrs;
-  return (a.shooting > 0 || a.passing > 0 || a.defending > 0 || a.pace > 0);
-}
-
 function statOr(val: number, ovr: number): number { return val > 0 ? val : ovr; }
+
+/**
+ * The seven attributes the simulator uses, with `overall` standing in for any
+ * that are missing — including the case where the player has no attributes at
+ * all.
+ *
+ * Every consumer below used to carry its own `if (hasAttrs)` branch with a
+ * completely separate formula for players without attribute data, and those
+ * fallbacks were on different scales from the real ones. The worst of them made
+ * an attribute-less squad measure ~15 team-strength points weaker than an
+ * identical squad WITH attributes, in the same shared league. Resolving the
+ * attributes once, here, means there is only one formula to keep honest.
+ */
+function resolvedAttrs(p: DraftPlayer): {
+  pace: number; shooting: number; passing: number; dribbling: number;
+  defending: number; physical: number; crossing: number;
+} {
+  const a = (p.attrs ?? {}) as Partial<PlayerAttributes>;
+  const o = p.overall;
+  return {
+    pace: statOr(a.pace ?? 0, o),
+    shooting: statOr(a.shooting ?? 0, o),
+    passing: statOr(a.passing ?? 0, o),
+    dribbling: statOr(a.dribbling ?? 0, o),
+    defending: statOr(a.defending ?? 0, o),
+    physical: statOr(a.physical ?? 0, o),
+    crossing: statOr(a.crossing ?? 0, o),
+  };
+}
 
 // --- Position-based attack/defense contributions ---
 
@@ -619,22 +701,26 @@ function playerContributions(p: DraftPlayer, fitness: number): { attack: number;
   const pos = p.assignedPosition.toUpperCase().trim();
   const o = p.overall;
 
-  if (!hasAttrs(p)) {
-    const role = classifyPosition(pos);
-    if (role === 'GK') return { attack: 0, defense: o * fitness };
-    if (role === 'DEF') return { attack: 0, defense: o * fitness };
-    if (role === 'ATT') return { attack: o * fitness, defense: 0 };
-    return { attack: o * 0.5 * fitness, defense: o * 0.5 * fitness };
-  }
-
-  const a = p.attrs;
-  const def = statOr(a.defending, o);
-  const phy = statOr(a.physical, o);
-  const pac = statOr(a.pace, o);
-  const crs = statOr(a.crossing, o);
-  const pas = statOr(a.passing, o);
-  const sho = statOr(a.shooting, o);
-  const dri = statOr(a.dribbling, o);
+  // A player with NO attributes is treated as one whose every attribute equals
+  // his overall — which is what statOr below already does for any individual
+  // missing stat, so the two cases now agree by construction.
+  //
+  // There used to be a separate branch here for attribute-less players, and it
+  // was on a completely different scale from this one. It gave full backs ZERO
+  // attack (this path gives them roughly their overall) and halved every
+  // midfielder's contribution to both phases. Because computePhaseRatings
+  // averages only the non-zero contributions, that dragged both averages down
+  // hard: identical 4-3-3 squads at a uniform 80 overall measured 80.0 with
+  // attributes and 65.0 without, and at 90 overall the attribute-less side came
+  // out at 73.1 — below the WEAKEST AI club in the league.
+  //
+  // That mattered because both kinds of squad appear in the same shared league:
+  // the roster route only drops rows that have neither an overall nor a
+  // position, so attribute-less players do reach real games. Two managers who
+  // drafted equally well were being scored on different scales, and the one
+  // whose players happened to lack attribute data was relegated for it.
+  const { defending: def, physical: phy, pace: pac, crossing: crs,
+          passing: pas, shooting: sho, dribbling: dri } = resolvedAttrs(p);
 
   const blend = (statAvg: number) => (statAvg * 0.3 + o * 0.7) * fitness;
 
@@ -771,37 +857,30 @@ function goalScoringWeight(p: DraftPlayer): number {
   const fit = positionFitness(p);
   const qualityMult = (p.overall / 80) * (p.overall / 80);
 
-  if (hasAttrs(p)) {
-    const a = p.attrs;
-    const o = p.overall;
-    const sho = statOr(a.shooting, o);
-    const dri = statOr(a.dribbling, o);
-    const pac = statOr(a.pace, o);
-    const phy = statOr(a.physical, o);
+  // One formula for every player. The separate attribute-less fallback that
+  // used to sit below returned roughly DOUBLE these weights, so in a squad
+  // mixing both kinds of player the ones lacking attribute data soaked up the
+  // goals regardless of who was actually the better finisher.
+  const { shooting: sho, dribbling: dri, pace: pac, physical: phy } = resolvedAttrs(p);
 
-    switch (role) {
-      case 'ATT':
-        return (sho * 3 + dri * 1 + pac * 0.5) * fit * qualityMult / 80;
-      case 'MID': {
-        const divisor = ['CDM', 'DM'].includes(pos) ? 200 : 150;
-        return (sho * 2 + dri * 0.5) * fit * qualityMult / divisor;
-      }
-      case 'DEF': {
-        const isFullback = ['RB', 'LB', 'RWB', 'LWB'].includes(pos);
-        if (isFullback) {
-          return (pac * 1.5 + phy * 0.5 + sho * 0.3) * fit * qualityMult / 600;
-        }
-        // CB: physical dominance on set pieces
-        return phy * fit * qualityMult / 95;
-      }
-      case 'GK':
-        return 0.02;
+  switch (role) {
+    case 'ATT':
+      return (sho * 3 + dri * 1 + pac * 0.5) * fit * qualityMult / 80;
+    case 'MID': {
+      const divisor = ['CDM', 'DM'].includes(pos) ? 200 : 150;
+      return (sho * 2 + dri * 0.5) * fit * qualityMult / divisor;
     }
+    case 'DEF': {
+      const isFullback = ['RB', 'LB', 'RWB', 'LWB'].includes(pos);
+      if (isFullback) {
+        return (pac * 1.5 + phy * 0.5 + sho * 0.3) * fit * qualityMult / 600;
+      }
+      // CB: physical dominance on set pieces
+      return phy * fit * qualityMult / 95;
+    }
+    case 'GK':
+      return 0.02;
   }
-
-  const ratingFactor = 0.5 + (p.overall / 99) * 0.5;
-  const roleWeights: Record<PositionRole, number> = { ATT: 10, MID: 3, DEF: 0.5, GK: 0.02 };
-  return roleWeights[role] * ratingFactor * fit * qualityMult;
 }
 
 function assistWeight(p: DraftPlayer): number {
@@ -809,33 +888,26 @@ function assistWeight(p: DraftPlayer): number {
   const pos = p.assignedPosition.toUpperCase().trim();
   const fit = positionFitness(p);
 
-  if (hasAttrs(p)) {
-    const a = p.attrs;
-    const o = p.overall;
-    const pas = statOr(a.passing, o);
-    const crs = statOr(a.crossing, o);
-    const dri = statOr(a.dribbling, o);
+  // As with goalScoringWeight: one formula for everyone, so a squad mixing
+  // players with and without attribute data distributes assists by ability
+  // rather than by which rows happened to be imported with attributes.
+  const { passing: pas, crossing: crs, dribbling: dri } = resolvedAttrs(p);
 
-    const isFullback = ['RB', 'LB', 'RWB', 'LWB'].includes(pos);
-    if (isFullback) {
-      return (crs * 3 + pas * 1) * fit / 40;
-    }
-
-    switch (role) {
-      case 'MID':
-        return (pas * 2 + crs * 1 + dri * 0.5) * fit / 30;
-      case 'ATT':
-        return (pas * 1.5 + dri * 1 + crs * 0.5) * fit / 40;
-      case 'DEF':
-        return (pas * 0.5) * fit / 100;
-      case 'GK':
-        return 0.1;
-    }
+  const isFullback = ['RB', 'LB', 'RWB', 'LWB'].includes(pos);
+  if (isFullback) {
+    return (crs * 3 + pas * 1) * fit / 40;
   }
 
-  const ratingFactor = 0.5 + (p.overall / 99) * 0.5;
-  const roleWeights: Record<PositionRole, number> = { ATT: 5, MID: 8, DEF: 2, GK: 0.1 };
-  return roleWeights[role] * ratingFactor * fit;
+  switch (role) {
+    case 'MID':
+      return (pas * 2 + crs * 1 + dri * 0.5) * fit / 30;
+    case 'ATT':
+      return (pas * 1.5 + dri * 1 + crs * 0.5) * fit / 40;
+    case 'DEF':
+      return (pas * 0.5) * fit / 100;
+    case 'GK':
+      return 0.1;
+  }
 }
 
 // --- Weighted pick ---
@@ -1219,27 +1291,27 @@ function matchRating(
   const ovrBonus = (player.overall - 70) * 0.025;
   let base = 6.5 + ovrBonus + seasonForm + (rng() * 1.0 - 0.5);
 
-  // Attribute-based contribution (key passes, dribbles, tackles, saves, etc.)
-  if (hasAttrs(player)) {
-    const a = player.attrs;
-    const o = player.overall;
-    let keyAvg: number;
-    switch (role) {
-      case 'ATT':
-        keyAvg = (statOr(a.dribbling, o) + statOr(a.pace, o) + statOr(a.shooting, o)) / 3;
-        break;
-      case 'MID':
-        keyAvg = (statOr(a.passing, o) + statOr(a.dribbling, o) + statOr(a.physical, o)) / 3;
-        break;
-      case 'DEF':
-        keyAvg = (statOr(a.defending, o) + statOr(a.physical, o) + statOr(a.pace, o)) / 3;
-        break;
-      case 'GK':
-        keyAvg = o;
-        break;
-    }
-    base += Math.max(0, (keyAvg - 65) * 0.01);
+  // Attribute-based contribution (key passes, dribbles, tackles, saves, etc.).
+  // Applied to everyone: skipping it for players without attribute data meant
+  // they quietly rated lower than identical team-mates all season, which then
+  // fed the end-of-season ratings-based progression.
+  const at = resolvedAttrs(player);
+  let keyAvg: number;
+  switch (role) {
+    case 'ATT':
+      keyAvg = (at.dribbling + at.pace + at.shooting) / 3;
+      break;
+    case 'MID':
+      keyAvg = (at.passing + at.dribbling + at.physical) / 3;
+      break;
+    case 'DEF':
+      keyAvg = (at.defending + at.physical + at.pace) / 3;
+      break;
+    case 'GK':
+      keyAvg = player.overall;
+      break;
   }
+  base += Math.max(0, (keyAvg - 65) * 0.01);
 
   const scored = match.goalScorers.filter(g => g.player === player.name).length;
   const assisted = match.assistProviders.filter(a => a.player === player.name).length;

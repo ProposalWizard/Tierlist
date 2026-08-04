@@ -77,7 +77,14 @@ export async function GET(req: NextRequest) {
   const service = createServiceClient();
 
   try {
-    let query = service.from("sofifa_players").select("*");
+    // sofifa_players carries a fat per-row `attributes` JSONB (~40-70 keys,
+    // 1.5-3 KB). A name search without a year discards these rows entirely a
+    // few lines below — it only needs their ids, then refetches every edition
+    // of each. Selecting `*` here meant pulling up to 200 heavy rows purely to
+    // read one column off them, on the same pooled connection the live game
+    // uses. That is a large part of why an admin search could stall a draft.
+    const idsOnly = !!q && !year;
+    let query = service.from("sofifa_players").select(idsOnly ? "sofifa_id" : "*");
 
     if (q) {
       const variants = generateAccentVariants(q);
@@ -103,7 +110,9 @@ export async function GET(req: NextRequest) {
       query = query.ilike("positions", `%${position}%`);
     }
 
-    query = query.order("overall", { ascending: false }).limit(limit);
+    // NULLs sort FIRST under `DESC` in Postgres, so an unrated row would
+    // otherwise fill the window ahead of every real player.
+    query = query.order("overall", { ascending: false, nullsFirst: false }).limit(limit);
 
     const { data, error } = await query;
 
@@ -111,23 +120,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    let players = data ?? [];
+    let players = (data ?? []) as Record<string, unknown>[];
 
     // When searching by name without a year filter, expand results to include
     // ALL editions for each matched sofifa_id. This handles players whose name
     // changed across editions (e.g. "Beto" in FIFA 20-25 vs "Norberto Gomez
     // Betunsal" in FC 26) — they share the same sofifa_id so should group together.
-    if (q && !year && players.length > 0) {
-      const ids = Array.from(new Set(players.map((p: { sofifa_id: string }) => p.sofifa_id)));
-      const { data: allEditions } = await service
+    if (idsOnly && players.length > 0) {
+      // Bound the id set as well as the row count. 20 editions exist, so 20 per
+      // id is the true ceiling; the old 2000-row cap could pull several MB of
+      // JSONB for a single search.
+      const ids = Array.from(
+        new Set(players.map(p => p.sofifa_id as string))
+      ).slice(0, 60);
+
+      const { data: allEditions, error: edErr } = await service
         .from("sofifa_players")
         .select("*")
         .in("sofifa_id", ids)
-        .order("overall", { ascending: false })
-        .limit(Math.min(ids.length * 20, 2000));
-      if (allEditions && allEditions.length > players.length) {
-        players = allEditions;
+        .order("overall", { ascending: false, nullsFirst: false })
+        .limit(ids.length * 20);
+
+      if (edErr) {
+        return NextResponse.json({ error: edErr.message }, { status: 500 });
       }
+      // This is the ONLY source of full rows on this path — the first query
+      // deliberately fetched ids alone — so an empty result must be reported as
+      // empty rather than falling back to id-only rows the UI cannot render.
+      players = (allEditions ?? []) as Record<string, unknown>[];
     }
 
     return NextResponse.json({ players, count: players.length });

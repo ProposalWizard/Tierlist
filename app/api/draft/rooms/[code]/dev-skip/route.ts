@@ -102,7 +102,9 @@ export async function POST(
     const seasonNumber = room.season_number ?? 1;
     const previousLeagueTable = (room as Record<string, unknown>).previous_league_table as
       { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; isPlayer?: boolean }[] | null | undefined;
-    const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined);
+    // See simulate/route.ts — the league needs 20 - N AI clubs, which is more
+    // than "survivors + 3" once any human has been relegated or left.
+    const seasonTeams = getSeasonTeams(previousLeagueTable as LeagueTeam[] | undefined, undefined, 20 - N);
     const aiOpponents = [...seasonTeams]
       .sort((a, b) => b.strength - a.strength)
       .slice(0, 20 - N)

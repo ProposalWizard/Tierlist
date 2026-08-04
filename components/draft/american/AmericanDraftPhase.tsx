@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import AmericanDraftRoom from "./AmericanDraftRoom";
-import type { AmericanState } from "@/lib/americanDraft";
+import type { AmericanState, AmPlayer } from "@/lib/americanDraft";
+import { getFlagUrl } from "@/lib/nationalities";
 import type { DraftPlayer } from "@/app/draft/page";
 
 interface Props {
@@ -181,9 +182,98 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
   const draftLive = !state || !state.complete;
   useEffect(() => {
     if (!draftLive) return;
-    const t = setInterval(() => { void refetchState(); }, awaitingSeed ? 2000 : 3000);
+    const t = setInterval(() => { void refetchState(); }, 2000);
     return () => clearInterval(t);
-  }, [draftLive, awaitingSeed, refetchState]);
+  }, [draftLive, refetchState]);
+
+  // ── Turn clock ─────────────────────────────────────────────────────────────
+  // Every turn carries a server-set deadline. Once it passes, ANY client in the
+  // room asks the server to auto-pick for the stalled manager; the server
+  // re-checks the deadline against its own clock, so several clients firing at
+  // once is harmless and a wrong local clock proves nothing. Without this, one
+  // player closing their laptop mid-draft froze the room permanently.
+  const deadline = state?.pick_deadline ?? null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!deadline || !draftLive) return;
+    const t = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(t);
+  }, [deadline, draftLive]);
+
+  const secondsLeft = deadline ? Math.max(0, Math.ceil((deadline - now) / 1000)) : null;
+
+  // Grace past the deadline before anyone auto-picks, so a pick already in
+  // flight — or a slightly slow clock — wins the race.
+  const AUTO_GRACE_MS = 1500;
+  const autoFiredRef = useRef<string | null>(null);
+  const autoBusyRef = useRef(false);
+
+  useEffect(() => {
+    if (!state || state.complete || !deadline || pendingPickRef.current) return;
+    if ((state.round_players?.length ?? 0) === 0) return;
+    if (now < deadline + AUTO_GRACE_MS) return;
+    if (autoBusyRef.current) return;
+
+    // Once per turn — unless the attempt fails, in which case the ref is
+    // cleared and the next tick of the clock tries again. Without that retry a
+    // single failed call (a 409 from clock skew, a dropped request) would leave
+    // the room stalled exactly as it was before there was a timer at all.
+    const turnKey = `${state.mode ?? "initial"}-${state.current_round}-${state.current_pick_idx}-${deadline}`;
+    if (autoFiredRef.current === turnKey) return;
+    autoFiredRef.current = turnKey;
+    autoBusyRef.current = true;
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/draft/rooms/${roomCode}/american/pick`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ auto: true }),
+        });
+        const payload = await res.json().catch(() => null) as
+          | { state?: AmericanState; complete?: boolean } | null;
+        if (res.ok && payload?.complete) { void finish(); return; }
+        if (res.ok && payload?.state) { applyServerState(payload.state, true); return; }
+        // Someone else got there first, or it was rejected — take the server's
+        // word for the current state and allow another attempt after that.
+        autoFiredRef.current = null;
+        await refetchState(true);
+      } catch {
+        autoFiredRef.current = null;
+      } finally {
+        autoBusyRef.current = false;
+      }
+    })();
+  }, [state, deadline, now, roomCode, applyServerState, refetchState, finish]);
+
+  // As soon as a round begins, ask the server to build the NEXT round's pool in
+  // the background and warm the browser's image cache with it. By the time the
+  // round flips, the pool is a stored file and every face, badge and flag is
+  // already local — the new board appears fully drawn instead of popping in.
+  // Once per round per client; a failure costs nothing but the head start.
+  const stagedKeyRef = useRef<string | null>(null);
+  const roundKey = state && !state.complete && (state.round_players?.length ?? 0) > 0
+    ? `${state.mode ?? "initial"}-${state.current_round}`
+    : null;
+  useEffect(() => {
+    if (!roundKey || stagedKeyRef.current === roundKey) return;
+    stagedKeyRef.current = roundKey;
+    (async () => {
+      try {
+        const res = await fetch(`/api/draft/rooms/${roomCode}/american/stage`, { method: "POST" });
+        if (!res.ok) return;
+        const data = await res.json() as { players?: AmPlayer[] };
+        for (const p of data.players ?? []) {
+          if (p.image_url) new Image().src = p.image_url;
+          if (p.club_logo_url) new Image().src = p.club_logo_url;
+          const flag = getFlagUrl(p.nationality);
+          if (flag) new Image().src = flag;
+        }
+      } catch {
+        // Staging is only a head start — the draft works without it.
+      }
+    })();
+  }, [roundKey, roomCode]);
 
   const makePick = useCallback(async (sofifaId: string) => {
     setError(null);
@@ -222,7 +312,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     }
 
     const payload = await res.json().catch(() => null) as
-      | { ok?: boolean; complete?: boolean; error?: string }
+      | { ok?: boolean; complete?: boolean; error?: string; state?: AmericanState }
       | null;
 
     if (!res.ok) {
@@ -236,12 +326,17 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
     // The last pick produces no further room update for this client to observe.
     if (payload?.complete) { setAwaitingServer(false); void finish(); return; }
 
-    // Happy path: let Realtime deliver the authoritative state. Reconcile only
-    // if it hasn't arrived shortly, rather than paying for a read every pick.
+    // The authoritative state rides back on the pick response itself, so the
+    // board — including a whole new round — is exact the moment the request
+    // lands, with no Realtime round-trip to wait for.
+    if (payload?.state) { applyServerState(payload.state, true); return; }
+
+    // Older server without state in the response: let Realtime deliver it, and
+    // reconcile only if it hasn't arrived shortly.
     setTimeout(() => {
       if (pendingPickRef.current === sofifaId) void refetchState(true);
     }, 2500);
-  }, [roomCode, finish, refetchState]);
+  }, [roomCode, finish, refetchState, applyServerState]);
 
   if (loading) {
     return (
@@ -329,6 +424,7 @@ export default function AmericanDraftPhase({ roomCode, userId, onComplete }: Pro
         userId={userId}
         hideRatings={hideRatings}
         locked={awaitingServer}
+        secondsLeft={secondsLeft}
         onPick={makePick}
       />
     </>

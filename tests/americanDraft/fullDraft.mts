@@ -5,6 +5,7 @@ import {
   participantsForRound, goalkeepersNeeded, playerNameKey,
 } from "../../lib/americanDraft";
 import type { SquadPick } from "../../lib/americanDraft";
+import { positionFitness } from "../../lib/seasonSimulator";
 
 const db = makeFakeDb({ rows: buildRows() });
 const USERS = ["alice", "bob"];
@@ -41,18 +42,21 @@ for (const u of USERS) {
   if (squad.length !== 14) problems.push(`${u}: squad has ${squad.length}, expected 14`);
   if (starters !== 11) problems.push(`${u}: ${starters} starters, expected 11`);
   if (subs !== 3) problems.push(`${u}: ${subs} subs, expected 3`);
-  // everyone must be eligible for the slot they were drafted into
+  // Everyone must be eligible for the slot they were drafted into. Eligibility
+  // IS the simulator's fitness score — asserting against that rather than a
+  // hand-copied list of equivalences means this test cannot drift away from the
+  // rule the draft actually applies.
   for (const pick of picks[u]) {
     if (pick.position === "ANY") continue;
-    const nat = pick.player.positions.toUpperCase().split(",").map(s => s.trim());
-    const ok = nat.includes(pick.position) ||
-      (pick.position === "CM" && (nat.includes("CDM") || nat.includes("CAM"))) ||
-      (pick.position === "RB" && nat.includes("RWB")) ||
-      (pick.position === "LB" && nat.includes("LWB")) ||
-      (pick.position === "RW" && nat.includes("RM")) ||
-      (pick.position === "LW" && nat.includes("LM")) ||
-      (pick.position === "ST" && nat.includes("CF"));
-    if (!ok) problems.push(`${u}: ${pick.player.name} (${pick.player.positions}) drafted at ${pick.position}`);
+    const fit = positionFitness({
+      assignedPosition: pick.position,
+      positions: pick.player.positions,
+    } as never);
+    if (fit < 0.98) {
+      problems.push(
+        `${u}: ${pick.player.name} (${pick.player.positions}) drafted at ${pick.position} — fitness ${fit}`
+      );
+    }
   }
 }
 
