@@ -51,7 +51,6 @@ export default function HallOfFameLeaderboard({
           <div className="space-y-1.5">
             {table.map((row, i) => {
               const style = RANK_STYLES[i] ?? RANK_STYLES[4];
-              const golds = row.placings[0];
               return (
                 <div
                   key={row.username}
@@ -69,20 +68,6 @@ export default function HallOfFameLeaderboard({
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-black text-white truncate leading-tight">
                       {row.username}
-                    </div>
-                    <div className="text-[10px] text-white/75 leading-tight">
-                      {golds > 0 && (
-                        <span className="text-amber-300 font-bold">
-                          {golds} record{golds === 1 ? "" : "s"} held
-                          <span className="text-white/50"> · </span>
-                        </span>
-                      )}
-                      {row.boards} board{row.boards === 1 ? "" : "s"}
-                      <span className="text-white/50"> · </span>
-                      {row.placings
-                        .map((n, r) => (n > 0 ? `${n}×${r + 1}${["st", "nd", "rd", "th", "th"][r]}` : null))
-                        .filter(Boolean)
-                        .join(", ")}
                     </div>
                   </div>
 
