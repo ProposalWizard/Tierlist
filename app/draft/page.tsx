@@ -46,6 +46,13 @@ export interface DraftPlayer {
   age: number;
   isSub?: boolean;
   attrs?: PlayerAttributes;
+  /**
+   * Which formation slot this starter occupies, by index. Layout only — the
+   * simulator reads assignedPosition. See the note on the same field in
+   * lib/seasonSimulator.ts: a formation can hold two slots with the same label,
+   * and matching by label alone let left and right swap places.
+   */
+  slotIndex?: number;
 }
 
 type GamePhase = "setup" | "lobby" | "american-draft" | "formation-pick" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";

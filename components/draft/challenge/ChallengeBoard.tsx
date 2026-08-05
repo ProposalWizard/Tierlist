@@ -1,6 +1,7 @@
 "use client";
 import DraftPlayerCard from "@/components/draft/american/DraftPlayerCard";
 import type { AmPlayer } from "@/lib/americanDraft";
+import { matchedPosition } from "@/lib/challengeDraft";
 import type { Brief } from "@/lib/challengeDraft";
 
 /** Accent per brief kind, so a round reads at a glance. */
@@ -36,10 +37,12 @@ interface Props {
   error: string | null;
   onPick: (sofifaId: string) => void | Promise<void>;
   onRestart: () => void;
+  /** Cards this round should hold — drives the loading skeleton. */
+  boardSize: number;
 }
 
 export default function ChallengeBoard({
-  brief, round, totalRounds, players, picks, loading, error, onPick, onRestart,
+  brief, round, totalRounds, players, picks, loading, error, onPick, onRestart, boardSize,
 }: Props) {
   const accent = KIND_ACCENT[brief.kind] ?? "#06b6d4";
 
@@ -49,7 +52,7 @@ export default function ChallengeBoard({
       <aside className="lg:w-64 xl:w-72 shrink-0 bg-[#07101f] border-b lg:border-b-0 lg:border-r border-white/[0.06] flex flex-col">
         <div className="p-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[9px] font-bold tracking-widest text-white/50 uppercase">
+            <span className="text-[9px] font-bold tracking-widest text-white/70 uppercase">
               Round {round + 1} of {totalRounds}
             </span>
             <span
@@ -66,7 +69,7 @@ export default function ChallengeBoard({
           >
             {brief.title}
           </div>
-          <p className="text-[11px] text-white/70 leading-snug">{brief.detail}</p>
+          <p className="text-[11px] text-white/85 leading-snug">{brief.detail}</p>
 
           <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
             <div
@@ -80,22 +83,23 @@ export default function ChallengeBoard({
         </div>
 
         <div className="p-4 flex-1 overflow-y-auto">
-          <div className="text-[9px] font-bold tracking-widest text-white/50 uppercase mb-2.5">
+          <div className="text-[9px] font-bold tracking-widest text-white/70 uppercase mb-2.5">
             Your squad ({picks.length})
           </div>
           {picks.length === 0 ? (
-            <p className="text-[11px] text-white/40">Nothing drafted yet.</p>
+            <p className="text-[11px] text-white/70">Nothing drafted yet.</p>
           ) : (
             <div className="space-y-1.5">
               {picks.map(({ brief: b, player }, i) => (
                 <div key={`${player.sofifa_id}-${i}`} className="flex items-center gap-2">
-                  <span className="w-4 text-[9px] font-black text-white/40 tabular-nums">{i + 1}</span>
+                  <span className="w-4 text-[9px] font-black text-white/75 tabular-nums">{i + 1}</span>
                   <div className="min-w-0 flex-1">
                     <div className="text-[11px] font-bold text-white truncate leading-tight">
                       {player.name}
                     </div>
-                    <div className="text-[9px] text-white/45 truncate leading-tight">
-                      {(player.positions || "").split(",")[0]?.trim()} · {b.title}
+                    <div className="text-[9px] text-white/75 truncate leading-tight">
+                      {matchedPosition(b, player.positions)
+                        ?? (player.positions || "").split(",")[0]?.trim()} · {b.title}
                     </div>
                   </div>
                   <span className="text-[11px] font-black text-emerald-400 tabular-nums">
@@ -110,7 +114,7 @@ export default function ChallengeBoard({
         <div className="p-4 border-t border-white/[0.06]">
           <button
             onClick={onRestart}
-            className="w-full py-2 rounded-lg text-[10px] font-black uppercase tracking-widest text-white/70 border border-white/10 hover:text-white hover:border-white/25 transition-colors"
+            className="w-full py-2 rounded-lg text-[10px] font-black uppercase tracking-widest text-white/85 border border-white/15 hover:text-white hover:border-white/25 transition-colors"
           >
             Restart draft
           </button>
@@ -123,7 +127,7 @@ export default function ChallengeBoard({
           <span className="text-sm font-black text-white uppercase italic tracking-tight">
             Pick one
           </span>
-          <span className="ml-2 text-[11px] text-white/50">
+          <span className="ml-2 text-[11px] text-white/75">
             {players.length} available
           </span>
         </div>
@@ -137,7 +141,7 @@ export default function ChallengeBoard({
         <div className="flex-1 overflow-y-auto p-3 sm:p-4">
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3">
-              {Array.from({ length: 10 }, (_, i) => (
+              {Array.from({ length: boardSize }, (_, i) => (
                 <div
                   key={i}
                   className="rounded-2xl border border-white/[0.05] aspect-[3/4] animate-pulse"
@@ -154,6 +158,7 @@ export default function ChallengeBoard({
                   canPick
                   onPick={onPick}
                   slotPosition="ANY"
+                  displayPosition={matchedPosition(brief, p.positions)}
                 />
               ))}
             </div>

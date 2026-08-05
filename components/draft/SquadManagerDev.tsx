@@ -15,6 +15,16 @@ interface Props {
   seasonNumber?: number;
   isMultiplayer?: boolean;
   initialSpeed?: 0.5 | 1 | 1.5;
+  /**
+   * Let the manager switch formation here.
+   *
+   * Off by default: in the normal draft the formation is chosen up front and
+   * the squad was SPUN for it, so changing it afterwards would invalidate the
+   * slots people drafted into. The Challenge draft has no positional rounds at
+   * all, so its squad only takes shape at this screen and picking the shape is
+   * part of the game.
+   */
+  allowFormationChange?: boolean;
 }
 
 const ordinal = (n: number) => {
@@ -24,11 +34,30 @@ const ordinal = (n: number) => {
 };
 
 
-export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1, isMultiplayer = false, initialSpeed }: Props) {
+export default function SquadManagerDev({ players, onConfirm, title, subtitle, formationName, seasonNumber = 1, isMultiplayer = false, initialSpeed, allowFormationChange = false }: Props) {
   const [squad, setSquad] = useState<DraftPlayer[]>(() => [...players]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [simSpeed, setSimSpeed] = useState<0.5 | 1 | 1.5>(initialSpeed ?? 1);
-  const formation = formationName ? FORMATIONS.find(f => f.name === formationName) : null;
+  // Only tracked when the switcher is on; otherwise the prop is the sole source.
+  const [chosenFormation, setChosenFormation] = useState<string | undefined>(formationName);
+  const activeFormationName = allowFormationChange ? chosenFormation : formationName;
+  const formation = activeFormationName ? FORMATIONS.find(f => f.name === activeFormationName) : null;
+
+  /**
+   * Switching formation clears every slot and lets the normalisation effect
+   * re-seat the squad against the new shape.
+   *
+   * Slots are indices into a specific formation's list, so slot 6 in a 4-3-3 is
+   * not slot 6 in a 3-5-2 — carrying them across would scatter people. Dropping
+   * them means the effect re-places everyone by position first, which keeps a
+   * full eleven together through a switch, and benches anyone the new shape has
+   * no room for.
+   */
+  const changeFormation = useCallback((name: string) => {
+    setChosenFormation(name);
+    setSelectedIdx(null);
+    setSquad(prev => prev.map(p => ({ ...p, slotIndex: undefined })));
+  }, []);
 
   // Drag state — ref so it doesn't cause re-renders during drag
   const dragSrcIdx = useRef<number | null>(null);
@@ -65,51 +94,75 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
       const labels = formation.slots.map(s => s.label);
       const used = new Set<number>();
       const unplaced: number[] = [];
-
-      // Same two passes as slotMap, so nobody visibly moves — only their
-      // recorded position changes to match where they already appear.
-      prev.forEach((p, i) => {
-        if (p.isSub) return;
-        const slotIdx = labels.findIndex((l, li) => !used.has(li) && l === p.assignedPosition);
-        if (slotIdx >= 0) used.add(slotIdx);
-        else unplaced.push(i);
-      });
-      if (unplaced.length === 0) return prev;
-
       const next = [...prev];
+      let changed = false;
+
+      // Pass 1 — honour any slot a starter already holds, as long as it is
+      // valid for THIS formation. Switching formation invalidates them, which
+      // is why they are re-checked rather than trusted.
+      next.forEach((p, i) => {
+        if (p.isSub) return;
+        const si = p.slotIndex;
+        if (si !== undefined && si >= 0 && si < labels.length && !used.has(si)) {
+          used.add(si);
+          if (p.assignedPosition !== labels[si]) {
+            next[i] = { ...p, assignedPosition: labels[si] };
+            changed = true;
+          }
+        } else {
+          unplaced.push(i);
+        }
+      });
+
+      // Pass 2 — anyone without a slot takes one matching their position…
+      for (const i of [...unplaced]) {
+        const match = labels.findIndex((l, li) => !used.has(li) && l === next[i].assignedPosition);
+        if (match >= 0) {
+          used.add(match);
+          next[i] = { ...next[i], slotIndex: match, assignedPosition: labels[match] };
+          unplaced.splice(unplaced.indexOf(i), 1);
+          changed = true;
+        }
+      }
+
+      // …and whoever is left fills a gap, or goes to the bench if the formation
+      // has no room. Extras used to be in neither the pitch nor the bench list,
+      // so they were invisible while still inflating team strength.
       for (const i of unplaced) {
         const free = labels.findIndex((_, li) => !used.has(li));
         if (free >= 0) {
           used.add(free);
-          next[i] = { ...next[i], assignedPosition: labels[free] };
+          next[i] = { ...next[i], slotIndex: free, assignedPosition: labels[free] };
         } else {
           const natural = (next[i].positions || "").split(",")[0]?.trim();
-          next[i] = { ...next[i], isSub: true, assignedPosition: natural || next[i].assignedPosition };
+          next[i] = {
+            ...next[i], isSub: true, slotIndex: undefined,
+            assignedPosition: natural || next[i].assignedPosition,
+          };
         }
+        changed = true;
       }
-      return next;
+
+      return changed ? next : prev;
     });
   }, [formation]);
 
-  // Map each formation slot to the starter occupying it
+  // Each formation slot and the starter holding it, by explicit slot index.
+  //
+  // This used to match starters to slots by LABEL, which cannot tell two slots
+  // of the same name apart — so with two CB slots, left versus right came down
+  // to array order. Dropping a substitute into the left centre-back slot could
+  // land him on the right and shunt the incumbent across.
   const slotMap = useMemo(() => {
-    if (!formation) return new Map<number, { player: DraftPlayer; idx: number }>();
     const map = new Map<number, { player: DraftPlayer; idx: number }>();
-    const usedSlots = new Set<number>();
+    if (!formation) return map;
     for (const s of starters) {
-      const slotIdx = formation.slots.findIndex((slot, i) =>
-        !usedSlots.has(i) && slot.label === s.player.assignedPosition
-      );
-      if (slotIdx >= 0) { usedSlots.add(slotIdx); map.set(slotIdx, s); }
-    }
-    for (const s of starters) {
-      if (!Array.from(map.values()).some(v => v.idx === s.idx)) {
-        const emptySlotIdx = formation.slots.findIndex((_, i) => !usedSlots.has(i));
-        if (emptySlotIdx >= 0) { usedSlots.add(emptySlotIdx); map.set(emptySlotIdx, s); }
-      }
+      const si = s.player.slotIndex;
+      if (si === undefined || si < 0 || si >= formation.slots.length) continue;
+      if (!map.has(si)) map.set(si, s);
     }
     return map;
-  }, [squad, starters, formation]);
+  }, [starters, formation]);
 
   const naturalPositions = (p: DraftPlayer) =>
     (p.positions || "").split(",").map(s => s.trim()).filter(Boolean);
@@ -133,6 +186,8 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
   const allStartersFilled = starters.length === 11;
 
   // Core swap — shared by tap and drag
+  // Swaps carry the SLOT, not just the position label — otherwise a player
+  // moving into one of two identically-named slots could surface in the other.
   const performSwap = useCallback((aIdx: number, bIdx: number) => {
     setSquad(prev => {
       const next = [...prev];
@@ -141,15 +196,18 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
       const aIsStarter = !a.isSub;
       const bIsStarter = !b.isSub;
       if (aIsStarter && bIsStarter) {
-        next[aIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
-        next[bIdx] = { ...a, assignedPosition: b.assignedPosition, isSub: false };
+        // Straight exchange of places.
+        next[aIdx] = { ...b, assignedPosition: a.assignedPosition, slotIndex: a.slotIndex, isSub: false };
+        next[bIdx] = { ...a, assignedPosition: b.assignedPosition, slotIndex: b.slotIndex, isSub: false };
       } else if (aIsStarter && !bIsStarter) {
-        next[aIdx] = { ...b, assignedPosition: a.assignedPosition, isSub: false };
-        next[bIdx] = { ...a, assignedPosition: a.assignedPosition, isSub: true };
+        // b comes on into a's slot; a goes to the bench and holds no slot.
+        next[aIdx] = { ...b, assignedPosition: a.assignedPosition, slotIndex: a.slotIndex, isSub: false };
+        next[bIdx] = { ...a, assignedPosition: a.assignedPosition, slotIndex: undefined, isSub: true };
       } else if (!aIsStarter && bIsStarter) {
-        next[bIdx] = { ...a, assignedPosition: b.assignedPosition, isSub: false };
-        next[aIdx] = { ...b, assignedPosition: b.assignedPosition, isSub: true };
+        next[bIdx] = { ...a, assignedPosition: b.assignedPosition, slotIndex: b.slotIndex, isSub: false };
+        next[aIdx] = { ...b, assignedPosition: b.assignedPosition, slotIndex: undefined, isSub: true };
       } else {
+        // Two substitutes — nothing to do but reorder the bench.
         next[aIdx] = { ...b };
         next[bIdx] = { ...a };
       }
@@ -163,7 +221,12 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
     const slot = formation.slots[slotIdx];
     setSquad(prev => {
       const next = [...prev];
-      next[playerIdx] = { ...next[playerIdx], assignedPosition: slot.label, isSub: false };
+      next[playerIdx] = {
+        ...next[playerIdx],
+        assignedPosition: slot.label,
+        slotIndex: slotIdx,
+        isSub: false,
+      };
       return next;
     });
   }, [formation]);
@@ -362,6 +425,37 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* ────── FORMATION ────── */}
+      {allowFormationChange && (
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <h3 className="text-[10px] font-bold tracking-widest text-cyan-400 uppercase mb-3">
+            Formation
+          </h3>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {FORMATIONS.map(f => {
+              const selected = f.name === activeFormationName;
+              return (
+                <button
+                  key={f.name}
+                  onClick={() => changeFormation(f.name)}
+                  className={`py-2 rounded-lg text-xs font-black tracking-wide transition-colors border-2 ${
+                    selected
+                      ? "border-cyan-400 bg-cyan-900/40 text-white"
+                      : "border-transparent bg-gray-800/60 text-white hover:bg-gray-800"
+                  }`}
+                >
+                  {f.name}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2.5 text-[11px] text-white">
+            Players keep their place where the new shape has one. Anyone it has
+            no room for drops to the bench.
+          </p>
         </div>
       )}
 

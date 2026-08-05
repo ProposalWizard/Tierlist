@@ -34,6 +34,17 @@ export interface DraftPlayer {
   isSub?: boolean;
   attrs?: PlayerAttributes;
   image_url?: string | null;
+  /**
+   * Which formation slot this starter occupies, by index.
+   *
+   * Purely a layout concern — the simulator reads assignedPosition, never this.
+   * It exists because a formation can hold two slots with the SAME label (two
+   * CBs, two CMs, two STs), and matching starters to slots by label alone left
+   * left-versus-right decided by array order: dropping a substitute into the
+   * left centre-back slot could put him on the right and shunt the incumbent
+   * across. Undefined for substitutes and for squads saved before this existed.
+   */
+  slotIndex?: number;
 }
 
 export interface MatchResult {

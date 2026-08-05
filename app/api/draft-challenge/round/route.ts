@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { briefById, fetchChallengeRound, MIN_BRIEF_POOL } from "@/lib/challengeDraft";
+import { boardSizeForPlayers, briefById, fetchChallengeRound } from "@/lib/challengeDraft";
 import { playerNameKey } from "@/lib/americanDraft";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -20,6 +20,8 @@ export async function POST(req: Request) {
     briefId?: string;
     taken?: { sofifa_id?: string; name?: string }[];
     eraStart?: number; eraEnd?: number; prime?: boolean;
+    /** Managers in the draft. Ten cards for one or two, +2 for each after. */
+    playerCount?: number;
   };
 
   const brief = body.briefId ? briefById(body.briefId) : undefined;
@@ -40,9 +42,11 @@ export async function POST(req: Request) {
     prime: body.prime === true,
   };
 
+  const size = boardSizeForPlayers(Number(body.playerCount) || 1);
+
   try {
     const service = createServiceClient();
-    const players = await fetchChallengeRound(service, brief, excludeKeys, opts, MIN_BRIEF_POOL);
+    const players = await fetchChallengeRound(service, brief, excludeKeys, opts, size);
 
     if (players.length === 0) {
       return NextResponse.json(
@@ -51,7 +55,7 @@ export async function POST(req: Request) {
       );
     }
     // A short board is playable — say so rather than failing the round.
-    return NextResponse.json({ players, short: players.length < MIN_BRIEF_POOL });
+    return NextResponse.json({ players, size, short: players.length < size });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Could not load this round" },
