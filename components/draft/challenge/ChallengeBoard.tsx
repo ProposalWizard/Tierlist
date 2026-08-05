@@ -39,12 +39,36 @@ interface Props {
   onRestart: () => void;
   /** Cards this round should hold — drives the loading skeleton. */
   boardSize: number;
+
+  // ── Multiplayer. Omitted entirely in the solo sandbox. ──
+  /** Draft order for THIS round, already snaked. */
+  pickOrder?: string[];
+  currentPickIdx?: number;
+  /** userId → display name. */
+  names?: Record<string, string>;
+  /** userId → their most recent pick, shown under their name. */
+  lastPick?: Record<string, { name: string; image_url: string | null }>;
+  /** This client's user id, so it can tell whose turn it is. */
+  userId?: string;
+  /** Seconds left on the current turn; null when there is no clock. */
+  secondsLeft?: number | null;
+  /** True while this client's own pick is in flight. */
+  locked?: boolean;
 }
 
 export default function ChallengeBoard({
   brief, round, totalRounds, players, picks, loading, error, onPick, onRestart, boardSize,
+  pickOrder, currentPickIdx = 0, names = {}, lastPick = {}, userId, secondsLeft, locked,
 }: Props) {
   const accent = KIND_ACCENT[brief.kind] ?? "#06b6d4";
+
+  // Solo when there is no order to show. Everything below branches on this
+  // rather than on a separate mode flag, so the sandbox and a real room share
+  // one board.
+  const multiplayer = !!pickOrder && pickOrder.length > 0;
+  const currentPickerId = multiplayer ? pickOrder![currentPickIdx] : undefined;
+  const isMyPick = !multiplayer || currentPickerId === userId;
+  const canPick = isMyPick && !locked;
 
   return (
     <div className="min-h-screen bg-[#060d1a] flex flex-col lg:flex-row">
@@ -71,6 +95,22 @@ export default function ChallengeBoard({
           </div>
           <p className="text-[11px] text-white/85 leading-snug">{brief.detail}</p>
 
+          {multiplayer && secondsLeft !== null && secondsLeft !== undefined && (
+            <div className="mt-2.5 flex items-baseline gap-1.5">
+              <span
+                className={`text-2xl font-black tabular-nums leading-none ${
+                  secondsLeft <= 10 ? "text-red-400" : "text-white"
+                }`}
+                aria-live={secondsLeft <= 10 ? "polite" : "off"}
+              >
+                {secondsLeft}s
+              </span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-white/75">
+                {secondsLeft === 0 ? "auto-picking" : isMyPick ? "your pick" : "on the clock"}
+              </span>
+            </div>
+          )}
+
           <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
@@ -81,6 +121,70 @@ export default function ChallengeBoard({
             />
           </div>
         </div>
+
+        {multiplayer && (
+          <div className="p-4 border-b border-white/[0.06]">
+            <div className="text-[9px] font-bold tracking-widest text-white/70 uppercase mb-2.5">
+              Pick order
+            </div>
+            <div className="flex lg:flex-col gap-2 overflow-x-auto pb-1 lg:pb-0 lg:overflow-visible">
+              {pickOrder!.map((uid, idx) => {
+                const isCurrent = idx === currentPickIdx;
+                const hasPicked = idx < currentPickIdx;
+                const isMe = uid === userId;
+                const theirLast = lastPick[uid];
+                return (
+                  <div
+                    key={uid}
+                    className={`shrink-0 min-w-[140px] lg:min-w-0 rounded-xl p-2 border transition-all ${
+                      isCurrent
+                        ? "border-cyan-400/40 bg-cyan-400/[0.08]"
+                        : hasPicked
+                          ? "border-white/[0.05] bg-white/[0.02] opacity-70"
+                          : "border-white/[0.06] bg-white/[0.03]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[9px] font-black ${
+                        isCurrent ? "bg-cyan-500 text-white" : "bg-white/10 text-white/85"
+                      }`}>
+                        {idx + 1}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className={`text-xs font-bold truncate leading-tight ${isMe ? "text-cyan-300" : "text-white"}`}>
+                          {names[uid] ?? "Player"}{isMe ? " (You)" : ""}
+                        </div>
+                        <div className="text-[9px] leading-tight">
+                          {isCurrent ? (
+                            <span className="text-cyan-400 font-bold">Picking now…</span>
+                          ) : hasPicked ? (
+                            <span className="text-emerald-400">Picked</span>
+                          ) : (
+                            <span className="text-white/75">Waiting</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {theirLast && (
+                      <div className="mt-1.5 flex items-center gap-1.5 pl-7">
+                        {theirLast.image_url && (
+                          <img
+                            src={theirLast.image_url}
+                            alt=""
+                            referrerPolicy="no-referrer"
+                            className="w-4 h-4 rounded-full object-cover shrink-0"
+                            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        )}
+                        <span className="text-[9px] text-white/75 truncate">{theirLast.name}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="p-4 flex-1 overflow-y-auto">
           <div className="text-[9px] font-bold tracking-widest text-white/70 uppercase mb-2.5">
@@ -125,7 +229,9 @@ export default function ChallengeBoard({
       <main className="flex-1 flex flex-col min-h-0">
         <div className="px-4 sm:px-5 py-3 border-b border-white/[0.06] bg-[#07101f]">
           <span className="text-sm font-black text-white uppercase italic tracking-tight">
-            Pick one
+            {!multiplayer || isMyPick
+              ? (locked ? "Confirming…" : "Pick one")
+              : `${names[currentPickerId!] ?? "Player"} is picking`}
           </span>
           <span className="ml-2 text-[11px] text-white/75">
             {players.length} available
@@ -155,7 +261,7 @@ export default function ChallengeBoard({
                 <DraftPlayerCard
                   key={`${p.sofifa_id}-${p.fifa_year}`}
                   player={p}
-                  canPick
+                  canPick={canPick}
                   onPick={onPick}
                   slotPosition="ANY"
                   displayPosition={matchedPosition(brief, p.positions)}
