@@ -8,6 +8,8 @@ import {
   fetchChallengeRound,
   MIN_BRIEF_POOL,
   STAT_BRIEF_MIN_OVERALL,
+  boardSizeForPlayers,
+  matchedPosition,
 } from "../../lib/challengeDraft";
 import { playerNameKey } from "../../lib/americanDraft";
 
@@ -160,6 +162,38 @@ check(
   drafted.some(d => d.positions.toUpperCase().includes("GK")),
   "the finished squad contains at least one goalkeeper",
 );
+
+// ── Attribute briefs must never offer a goalkeeper ──────────────────────────
+// A keeper's card carries the six GOALKEEPING stats in the same slots an
+// outfielder uses for pace and shooting, so an 85-handling keeper reads as "85
+// shooting" and turned up in a finishing round.
+for (const b of catalogue.filter(x => x.kind === "stat")) {
+  const board = await fetchChallengeRound(db as never, b, [], opts, MIN_BRIEF_POOL);
+  const keeper = board.find(p => p.positions.toUpperCase().split(",").map(s => s.trim()).includes("GK"));
+  if (keeper) problems.push(`${b.title} offered goalkeeper ${keeper.name}`);
+  if (board.length === 0) problems.push(`${b.title} could not fill a board at all`);
+}
+
+// ── Club briefs are limited to the big six ──────────────────────────────────
+const BIG_SIX = ["MANCHESTER UNITED", "MANCHESTER CITY", "LIVERPOOL", "CHELSEA", "ARSENAL", "TOTTENHAM HOTSPUR"];
+for (const b of catalogue.filter(x => x.kind === "club")) {
+  if (!BIG_SIX.includes(b.title)) problems.push(`club brief "${b.title}" is outside the big six`);
+}
+check(catalogue.filter(x => x.kind === "club").length === 6, "there are exactly six club briefs");
+
+// ── Board size scales with the number of managers ───────────────────────────
+check(boardSizeForPlayers(1) === 10, "one manager gets 10 cards");
+check(boardSizeForPlayers(2) === 10, "two managers get 10 cards");
+check(boardSizeForPlayers(3) === 12, "three managers get 12 cards");
+check(boardSizeForPlayers(4) === 14, "four managers get 14 cards");
+check(boardSizeForPlayers(6) === 18, "six managers get 18 cards");
+
+// ── A position brief reports the position that actually qualified a player ──
+const fullBackBrief = catalogue.find(x => x.kind === "position" && String(x.params.parts).includes("RWB"))!;
+check(matchedPosition(fullBackBrief, "CB, LB") === "LB", "a CB/LB shows LB in a full-backs round");
+check(matchedPosition(fullBackBrief, "CB") === null, "a pure CB matches no full-back position");
+check(matchedPosition(catalogue.find(x => x.kind === "rating")!, "CB, LB") === null,
+  "non-position briefs do not override the badge");
 
 console.log(`briefs available: ${catalogue.length}`);
 console.log("a generated run:");

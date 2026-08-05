@@ -71,11 +71,17 @@ const NATIONS = [
   "Australia", "United States", "Mexico", "Morocco", "Algeria", "Egypt", "Cameroon",
 ];
 
+/**
+ * Club briefs are limited to the traditional big six.
+ *
+ * A club round is only interesting if the club has fielded enough good players
+ * across the era to make choosing hard. Smaller clubs technically clear the
+ * ten-player bar, but a "BLACKBURN ROVERS" round is a list of squad players
+ * rather than a decision.
+ */
 const CLUBS = [
-  "Manchester United", "Manchester City", "Liverpool", "Chelsea", "Arsenal",
-  "Tottenham Hotspur", "Everton", "Newcastle United", "Aston Villa", "West Ham United",
-  "Leicester City", "Southampton", "Fulham", "Crystal Palace", "Wolverhampton Wanderers",
-  "Brighton & Hove Albion", "Leeds United", "Sunderland", "Blackburn Rovers", "Bolton Wanderers",
+  "Manchester United", "Manchester City", "Liverpool",
+  "Chelsea", "Arsenal", "Tottenham Hotspur",
 ];
 
 const POSITION_GROUPS: { key: string; title: string; detail: string; parts: string[] }[] = [
@@ -131,6 +137,39 @@ const AGE_BRIEFS: { key: string; title: string; detail: string; min: number; max
 const positionsOf = (c: PoolCandidate) =>
   (c.positions || "").toUpperCase().split(",").map(s => s.trim()).filter(Boolean);
 
+/** Keepers are excluded from attribute briefs — see the "stat" case below. */
+const isGoalkeeper = (c: PoolCandidate) => positionsOf(c).includes("GK");
+
+/**
+ * Which of a player's positions actually satisfied a position brief.
+ *
+ * A centre back who can also play left back qualifies for FULL BACKS, but his
+ * FIRST listed position is CB — so the card was labelling him a centre back in
+ * a full-back round. The board shows this instead: the position that got him
+ * onto the board.
+ */
+export function matchedPosition(brief: Brief, positions: string): string | null {
+  if (brief.kind !== "position") return null;
+  const wanted = String(brief.params.parts).split("|");
+  const mine = (positions || "").toUpperCase().split(",").map(s => s.trim()).filter(Boolean);
+  return mine.find(p => wanted.includes(p)) ?? null;
+}
+
+/**
+ * Cards on the board per round.
+ *
+ * Ten is the floor and covers a solo run or a two-player room. Beyond that each
+ * extra manager adds two, so a bigger draft still leaves real choice by the
+ * time the board reaches the last picker rather than handing them whatever is
+ * left. Exported ahead of any multiplayer wiring so the rule lives in one place
+ * when that arrives.
+ */
+export function boardSizeForPlayers(playerCount: number): number {
+  const n = Number.isFinite(playerCount) ? Math.floor(playerCount) : 1;
+  if (n <= 2) return MIN_BRIEF_POOL;
+  return MIN_BRIEF_POOL + (n - 2) * 2;
+}
+
 /** The rule for a brief, rebuilt from its params — never trusted from a client. */
 export function briefMatcher(brief: Brief): (c: PoolCandidate) => boolean {
   const p = brief.params;
@@ -159,7 +198,13 @@ export function briefMatcher(brief: Brief): (c: PoolCandidate) => boolean {
       // Stat briefs cannot be judged from the cached pool — attributes are not
       // in it. The rating floor is the part that IS checkable here; the stat
       // itself is applied in fetchChallengeRound once attributes are loaded.
-      return c => c.ovr >= STAT_BRIEF_MIN_OVERALL;
+      //
+      // Goalkeepers are excluded outright. A keeper's card carries the SIX
+      // GOALKEEPING stats — diving, handling, kicking, reflexes, speed,
+      // positioning — in the same six slots an outfielder uses for pace,
+      // shooting and the rest. So an 85-handling keeper read as "85 shooting"
+      // and turned up in a finishing round, which is nonsense on its face.
+      return c => c.ovr >= STAT_BRIEF_MIN_OVERALL && !isGoalkeeper(c);
   }
 }
 

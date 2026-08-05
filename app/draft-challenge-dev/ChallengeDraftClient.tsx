@@ -1,9 +1,11 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChallengeBoard from "@/components/draft/challenge/ChallengeBoard";
+import BriefReel from "@/components/draft/challenge/BriefReel";
 import SquadManager from "@/components/draft/SquadManagerDev";
 import { getFlagUrl } from "@/lib/nationalities";
 import type { AmPlayer } from "@/lib/americanDraft";
+import { boardSizeForPlayers } from "@/lib/challengeDraft";
 import type { Brief } from "@/lib/challengeDraft";
 import type { DraftPlayer } from "@/app/draft/page";
 
@@ -50,7 +52,13 @@ export default function ChallengeDraftClient() {
   const [picks, setPicks] = useState<{ brief: Brief; player: AmPlayer }[]>([]);
   const [squad, setSquad] = useState<DraftPlayer[]>([]);
   const [loading, setLoading] = useState(false);
+  // Set while the round-intro reel is on screen. The board loads behind it.
+  const [reelFor, setReelFor] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // One manager in the sandbox. The API applies the same rule for a real room:
+  // ten cards for one or two players, two more for each manager after that.
+  const playerCount = 1;
+  const boardSize = boardSizeForPlayers(playerCount);
 
   // Everyone drafted so far, sent with each round so nobody is offered twice.
   const takenRef = useRef<{ sofifa_id: string; name: string }[]>([]);
@@ -68,6 +76,7 @@ export default function ChallengeDraftClient() {
           taken: takenRef.current,
           eraStart: era.start,
           eraEnd: era.end,
+          playerCount,
         }),
       });
       const data = await res.json().catch(() => null) as
@@ -101,6 +110,7 @@ export default function ChallengeDraftClient() {
           taken: takenRef.current,
           eraStart: era.start,
           eraEnd: era.end,
+          playerCount,
         }),
       });
       if (!res.ok) return;
@@ -135,6 +145,7 @@ export default function ChallengeDraftClient() {
       }
       setBriefs(data.briefs);
       setPhase("drafting");
+      setReelFor(0);
       await loadRound(data.briefs, 0);
     } catch {
       setError("Network problem starting the draft.");
@@ -160,6 +171,7 @@ export default function ChallengeDraftClient() {
     }
     setRound(nextRound);
     setPlayers([]);
+    setReelFor(nextRound);
     await loadRound(briefs, nextRound);
   }, [players, briefs, round, picks, loadRound]);
 
@@ -170,6 +182,7 @@ export default function ChallengeDraftClient() {
     setPlayers([]);
     setRound(0);
     setError(null);
+    setReelFor(null);
     takenRef.current = [];
   }, []);
 
@@ -179,7 +192,7 @@ export default function ChallengeDraftClient() {
       <div className="min-h-screen bg-[#060d1a] px-4 py-10 flex items-center justify-center">
         <div className="w-full max-w-lg">
           <div className="flex items-center gap-3 mb-5">
-            <span className="text-white/40 font-black text-xl select-none">{">>"}</span>
+            <span className="text-white/70 font-black text-xl select-none">{">>"}</span>
             <h1 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight leading-none">
               <span className="text-white">CHALLENGE </span>
               <span className="text-cyan-400">DRAFT</span>
@@ -193,20 +206,20 @@ export default function ChallengeDraftClient() {
               every one is a randomly drawn <strong className="text-white">brief</strong>:
               a rating band, a nationality, a minimum attribute, a club, an era.
             </p>
-            <p className="text-sm text-white/60 leading-relaxed mb-4">
+            <p className="text-sm text-white/80 leading-relaxed mb-4">
               You draft whoever the brief throws up, then work out a formation
               from the fourteen players you ended up with. Premier League only.
             </p>
 
             <div className="flex flex-wrap gap-1.5 mb-5">
               {["88 – 92 RATED", "90+ PACE", "BRAZIL", "KEEPERS ONLY", "2010 – 2014", "UNDER 21"].map(t => (
-                <span key={t} className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded border border-white/10 text-white/60">
+                <span key={t} className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded border border-white/15 text-white/85">
                   {t}
                 </span>
               ))}
             </div>
 
-            <label className="block text-[10px] font-bold tracking-widest text-white/50 uppercase mb-2">
+            <label className="block text-[10px] font-bold tracking-widest text-white/75 uppercase mb-2">
               Era
             </label>
             <div className="grid gap-2 mb-5">
@@ -217,7 +230,7 @@ export default function ChallengeDraftClient() {
                   className={`text-left px-3 py-2.5 rounded-lg border text-xs font-bold transition-colors ${
                     era.label === o.label
                       ? "border-cyan-400/50 bg-cyan-400/10 text-white"
-                      : "border-white/10 text-white/60 hover:border-white/25"
+                      : "border-white/15 text-white/85 hover:border-white/30"
                   }`}
                 >
                   {o.label}
@@ -239,7 +252,7 @@ export default function ChallengeDraftClient() {
             </button>
           </div>
 
-          <p className="text-[11px] text-white/35 text-center">
+          <p className="text-[11px] text-white/70 text-center">
             Dev sandbox — single player, nothing is saved.
           </p>
         </div>
@@ -249,18 +262,32 @@ export default function ChallengeDraftClient() {
 
   // ── Drafting ─────────────────────────────────────────────────────────────
   if (phase === "drafting" && briefs[round]) {
+    // Decoy titles for the reel — other briefs from this run, so the roll is
+    // made of things that could genuinely have come up.
+    const decoys = briefs.filter((_, i) => i !== round).map(b => b.title);
+    const reeling = reelFor === round;
     return (
-      <ChallengeBoard
-        brief={briefs[round]}
-        round={round}
-        totalRounds={briefs.length}
-        players={players}
-        picks={picks}
-        loading={loading}
-        error={error}
-        onPick={handlePick}
-        onRestart={restart}
-      />
+      <>
+        <ChallengeBoard
+          brief={briefs[round]}
+          round={round}
+          totalRounds={briefs.length}
+          players={players}
+          picks={picks}
+          loading={loading}
+          error={error}
+          onPick={handlePick}
+          onRestart={restart}
+          boardSize={boardSize}
+        />
+        {reeling && (
+          <BriefReel
+            brief={briefs[round]}
+            decoys={decoys}
+            onDone={() => setReelFor(null)}
+          />
+        )}
+      </>
     );
   }
 
@@ -273,6 +300,7 @@ export default function ChallengeDraftClient() {
           formationName="4-3-3"
           title="Challenge Draft"
           subtitle="Arrange Your Squad"
+          allowFormationChange
           isMultiplayer
           onConfirm={(arranged) => { setSquad(arranged); setPhase("done"); window.scrollTo({ top: 0 }); }}
         />
@@ -287,17 +315,17 @@ export default function ChallengeDraftClient() {
         <h1 className="text-2xl font-black uppercase italic tracking-tight text-white mb-1">
           Squad locked in
         </h1>
-        <p className="text-sm text-white/60 mb-6">
+        <p className="text-sm text-white/80 mb-6">
           Fourteen briefs, fourteen players. Here is what each round asked for.
         </p>
 
         <div className="bg-[#080f1e] rounded-2xl border border-white/[0.08] divide-y divide-white/[0.05] mb-6">
           {picks.map(({ brief, player }, i) => (
             <div key={`${player.sofifa_id}-${i}`} className="flex items-center gap-3 p-3">
-              <span className="w-5 text-[10px] font-black text-white/35 tabular-nums">{i + 1}</span>
+              <span className="w-5 text-[10px] font-black text-white/75 tabular-nums">{i + 1}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-bold text-white truncate">{player.name}</div>
-                <div className="text-[10px] text-white/45 truncate">
+                <div className="text-[10px] text-white/75 truncate">
                   {brief.title} · {player.club} {player.season}
                 </div>
               </div>

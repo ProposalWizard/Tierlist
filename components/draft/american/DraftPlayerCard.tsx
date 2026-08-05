@@ -43,7 +43,7 @@ export function ovrTextColor(ovr: number): string {
 }
 
 export default function DraftPlayerCard({
-  player, canPick, onPick, slotPosition, hideRatings,
+  player, canPick, onPick, slotPosition, hideRatings, displayPosition,
 }: {
   player: AmPlayer;
   canPick: boolean;
@@ -51,6 +51,13 @@ export default function DraftPlayerCard({
   /** Formation slot being filled, or "ANY" for a bench/free pick. */
   slotPosition: string;
   hideRatings?: boolean;
+  /**
+   * Overrides the position shown on the card. The Challenge draft passes the
+   * position that actually satisfied the round's brief — a centre back who can
+   * also play left back belongs on a FULL BACKS board, and labelling him "CB"
+   * there just looks like a bug.
+   */
+  displayPosition?: string | null;
 }) {
   const [picking, setPicking] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
@@ -69,7 +76,9 @@ export default function DraftPlayerCard({
   // actually plays. In the initial draft it shows the slot being filled, and
   // "ANY" there means a substitute.
   const naturalPos = (player.positions || "").split(",")[0]?.trim().toUpperCase() || "";
-  const badgePos = slotPosition === "ANY" && naturalPos ? naturalPos : slotPosition;
+  const badgePos = displayPosition
+    ? displayPosition.toUpperCase()
+    : slotPosition === "ANY" && naturalPos ? naturalPos : slotPosition;
   const accent = POS_ACCENT[badgePos] || "#64748b";
   const badgeLabel = badgePos === "ANY" ? "SUB" : badgePos;
   const showImage = !!player.image_url && !imgFailed;
@@ -104,16 +113,20 @@ export default function DraftPlayerCard({
           style={{ background: accent }}
         />
 
-        {/* The silhouette sits UNDERNEATH the face and is always rendered, so a
-            card is never blank while the photo downloads. Ten faces load at the
-            start of every round, and without this they popped in one by one
-            over empty cards, which reads as the board buffering. */}
-        <img
-          src={SILHOUETTE_SRC}
-          alt=""
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 w-full h-full object-contain object-bottom opacity-45"
-        />
+        {/* The silhouette is a STAND-IN, not a backdrop. It shows when a player
+            has no photo, and while one is still downloading so the card is
+            never blank — but it is removed the moment the real face paints.
+            Leaving it underneath meant every player was drawn on top of a
+            second, larger shadow figure, because the photos are transparent
+            cut-outs. */}
+        {(!showImage || !imgLoaded) && (
+          <img
+            src={SILHOUETTE_SRC}
+            alt=""
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 w-full h-full object-contain object-bottom opacity-45"
+          />
+        )}
         {showImage && (
           <img
             src={player.image_url!}
