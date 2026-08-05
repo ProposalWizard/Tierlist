@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ChallengeBoard from "@/components/draft/challenge/ChallengeBoard";
 import BriefReel from "@/components/draft/challenge/BriefReel";
 import SquadManager from "@/components/draft/SquadManagerDev";
+import ChallengeRoomClient from "./ChallengeRoomClient";
 import { getFlagUrl } from "@/lib/nationalities";
 import type { AmPlayer } from "@/lib/americanDraft";
 import { boardSizeForPlayers } from "@/lib/challengeDraft";
@@ -44,6 +45,9 @@ function toDraftPlayer(p: AmPlayer): DraftPlayer {
 }
 
 export default function ChallengeDraftClient() {
+  // Multiplayer is a separate client with its own room state; the solo
+  // sandbox below stays exactly as it was.
+  const [multiplayer, setMultiplayer] = useState(false);
   const [phase, setPhase] = useState<Phase>("intro");
   const [era, setEra] = useState<EraOption>(ERA_OPTIONS[0]);
   const [briefs, setBriefs] = useState<Brief[]>([]);
@@ -186,6 +190,8 @@ export default function ChallengeDraftClient() {
     takenRef.current = [];
   }, []);
 
+  if (multiplayer) return <ChallengeRoomClient onExit={() => setMultiplayer(false)} />;
+
   // ── Intro ────────────────────────────────────────────────────────────────
   if (phase === "intro" || phase === "loading") {
     return (
@@ -248,12 +254,19 @@ export default function ChallengeDraftClient() {
               className="w-full py-3.5 rounded-xl font-black uppercase tracking-widest text-white text-sm disabled:opacity-60"
               style={{ background: "linear-gradient(135deg,#0d9488,#06b6d4)" }}
             >
-              {phase === "loading" ? "Drawing briefs…" : "Start draft"}
+              {phase === "loading" ? "Drawing briefs…" : "Start solo draft"}
+            </button>
+
+            <button
+              onClick={() => setMultiplayer(true)}
+              className="mt-2.5 w-full py-3 rounded-xl font-black uppercase tracking-widest text-white text-sm border border-white/15 hover:border-white/30 transition-colors"
+            >
+              Play with friends
             </button>
           </div>
 
           <p className="text-[11px] text-white/70 text-center">
-            Dev sandbox — single player, nothing is saved.
+            Dev sandbox. Solo runs are not saved; a room needs everyone signed in.
           </p>
         </div>
       </div>
