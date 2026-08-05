@@ -2,6 +2,8 @@
 import { useState, useEffect, type ComponentType } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import HallOfFameLeaderboard from "@/components/draft/HallOfFameLeaderboard";
+import { computeHallOfFameLeaderboard } from "@/lib/hallOfFameLeaderboard";
 import {
   accentFor, CrownIcon, Laurel, AngledTab, HallOfFameBanner, StatTile,
   BoardIcon, PeopleIcon, StarIcon, ShieldIcon,
@@ -110,7 +112,7 @@ function OvrBadge({ ovr }: { ovr: number }) {
   const colour =
     ovr >= 88 ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/40" :
     ovr >= 80 ? "bg-yellow-500/10 text-yellow-300 border-yellow-500/30" :
-    "bg-gray-800/80 text-gray-300 border-gray-700/50";
+    "bg-gray-800/80 text-white/85 border-gray-700/50";
   return (
     <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border tracking-wide ${colour}`}>
       {ovr} OVR
@@ -134,7 +136,7 @@ function LeaderboardRow({ entry, index: i, rt }: { entry: RecordEntry; index: nu
           : "bg-black/30 border-white/5"
       }`}
     >
-      <span className={`leading-none w-5 text-center shrink-0 ${i >= 3 ? "text-[10px] font-black text-gray-500" : "text-base"}`}>
+      <span className={`leading-none w-5 text-center shrink-0 ${i >= 3 ? "text-[10px] font-black text-white/75" : "text-base"}`}>
         {MEDALS[i]}
       </span>
 
@@ -150,7 +152,7 @@ function LeaderboardRow({ entry, index: i, rt }: { entry: RecordEntry; index: nu
             <span className="flex items-center gap-1.5 flex-wrap">
               <span className="text-white font-black text-base tabular-nums">{formatValue(entry.value, rt, entry.playerName)}</span>
               {isOfficial ? (
-                entry.clubName && <span className="text-gray-300 font-bold">{entry.clubName}</span>
+                entry.clubName && <span className="text-white/85 font-bold">{entry.clubName}</span>
               ) : (
                 <>
                   <span className="text-emerald-400 font-black">{entry.username}</span>
@@ -162,7 +164,7 @@ function LeaderboardRow({ entry, index: i, rt }: { entry: RecordEntry; index: nu
           ) : (
             <span className="flex items-center gap-1.5 flex-wrap">
               {isOfficial ? (
-                entry.clubName && <span className="text-gray-300 font-bold">{entry.clubName}</span>
+                entry.clubName && <span className="text-white/85 font-bold">{entry.clubName}</span>
               ) : (
                 <>
                   <span className="text-emerald-400 font-black">{entry.username}</span>
@@ -170,7 +172,7 @@ function LeaderboardRow({ entry, index: i, rt }: { entry: RecordEntry; index: nu
                 </>
               )}
               {!isOfficial && entry.seasonNumber && (
-                <span className="text-gray-500">· S{entry.seasonNumber}</span>
+                <span className="text-white/70">· S{entry.seasonNumber}</span>
               )}
             </span>
           )}
@@ -197,7 +199,7 @@ function LeaderboardRow({ entry, index: i, rt }: { entry: RecordEntry; index: nu
 function Leaderboard({ entries, rt, expanded }: { entries: RecordEntry[]; rt: RecordType; expanded: boolean }) {
   if (entries.length === 0) {
     return (
-      <div className="text-center py-5 text-gray-500 text-xs font-bold uppercase tracking-widest">
+      <div className="text-center py-5 text-white/70 text-xs font-bold uppercase tracking-widest">
         No records yet — be the first
       </div>
     );
@@ -228,8 +230,8 @@ function YourBest({ entry, rt }: { entry: { value: number; playerName: string | 
     <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-emerald-600/40 bg-emerald-950/40 px-2.5 py-2">
       <span className="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-400 shrink-0">Your best</span>
       <span className="text-base font-black text-white tabular-nums">{formatValue(entry.value, rt, entry.playerName)}</span>
-      {!rt.isTeam && entry.playerName && <span className="text-xs text-gray-300 truncate">{entry.playerName}</span>}
-      {entry.seasonNumber != null && <span className="text-[10px] text-gray-500 shrink-0">· S{entry.seasonNumber}</span>}
+      {!rt.isTeam && entry.playerName && <span className="text-xs text-white/85 truncate">{entry.playerName}</span>}
+      {entry.seasonNumber != null && <span className="text-[10px] text-white/70 shrink-0">· S{entry.seasonNumber}</span>}
     </div>
   );
 }
@@ -291,7 +293,7 @@ function RecordCard({
               </p>
             </div>
             {rt.ascending && !hasMore && (
-              <span className="shrink-0 text-[9px] text-gray-500 font-black tracking-wider uppercase">Lower is better</span>
+              <span className="shrink-0 text-[9px] text-white/70 font-black tracking-wider uppercase">Lower is better</span>
             )}
             {hasMore && (
               <button
@@ -469,7 +471,7 @@ export default function DraftRecordsPage() {
       <div className="max-w-2xl mx-auto px-3 sm:px-4 py-6">
         <Link
           href="/draft"
-          className="inline-flex items-center gap-1.5 text-gray-300 hover:text-amber-300 text-sm font-bold mb-4 transition-colors"
+          className="inline-flex items-center gap-1.5 text-white/85 hover:text-amber-300 text-sm font-bold mb-4 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -497,8 +499,8 @@ export default function DraftRecordsPage() {
               </h1>
               <Laurel flip className="w-8 h-14 sm:w-11 sm:h-20 shrink-0" />
             </div>
-            <p className="mt-1.5 text-[11px] sm:text-sm text-gray-300 font-medium">All-time season records</p>
-            <p className="mt-0.5 text-[10px] sm:text-xs text-gray-400">
+            <p className="mt-1.5 text-[11px] sm:text-sm text-white/85 font-medium">All-time season records</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs text-white/75">
               <span className="text-amber-300 font-black">★ OFFICIAL</span> = real-world PL record to beat
             </p>
           </div>
@@ -557,12 +559,29 @@ export default function DraftRecordsPage() {
           const yourEntries = allVisibleKeys.filter(k => (personal[k]?.value ?? 0) > 0).length;
           const officialMarks = allVisibleKeys.filter(k => OFFICIAL[k]).length;
 
+          // Standings are counted from the SAME top-five lists the cards below
+          // render — via mergeWithOfficial, not the raw rows — so the points
+          // always agree with what is on screen, including where a seeded
+          // "Official" mark pushes a real holder down a place.
+          const scoringBoards = allVisibleKeys.map(k => {
+            const rt = [...SEASON_RECORD_TYPES, ...CAREER_RECORD_TYPES].find(t => k.endsWith(t.key));
+            return { key: k, entries: rt ? mergeWithOfficial(records[k] ?? [], k, rt) : (records[k] ?? []) };
+          }).filter(b => b.entries.length > 0);
+          const standings = computeHallOfFameLeaderboard(scoringBoards);
+          const modeLabel = mode === "best" ? "Best" : mode === "prime" ? "Prime" : "Normal";
+
           return (
           <div className="space-y-3">
+            <HallOfFameLeaderboard
+              table={standings}
+              scope={`${compLabel} · ${modeLabel}`}
+              boardCount={scoringBoards.length}
+            />
+
             <div className="flex justify-end px-1">
               <button
                 onClick={() => setExpandedKeys(allExpanded ? new Set() : new Set(allVisibleKeys))}
-                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400 hover:text-amber-300 transition-colors"
+                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-white/75 hover:text-amber-300 transition-colors"
               >
                 {allExpanded ? "Collapse All" : "Expand All"}
                 <svg
@@ -628,7 +647,7 @@ export default function DraftRecordsPage() {
               </div>
             </div>
 
-            <p className="text-center text-gray-500 text-[11px] pb-4 pt-1">
+            <p className="text-center text-white/70 text-[11px] pb-4 pt-1">
               Only signed-in players appear on these boards. ★ Official = real-world PL benchmark.
             </p>
           </div>
