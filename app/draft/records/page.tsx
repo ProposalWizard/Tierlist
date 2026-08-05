@@ -572,11 +572,6 @@ export default function DraftRecordsPage() {
 
           return (
           <div className="space-y-3">
-            <HallOfFameLeaderboard
-              table={standings}
-              scope={`${compLabel} · ${modeLabel}`}
-              boardCount={scoringBoards.length}
-            />
 
             <div className="flex justify-end px-1">
               <button
@@ -646,6 +641,12 @@ export default function DraftRecordsPage() {
                 <StatTile label="Official" value={String(officialMarks)} caption="Real-world marks" icon={<ShieldIcon className="w-4 h-4" />} />
               </div>
             </div>
+
+            <HallOfFameLeaderboard
+              table={standings}
+              scope={`${compLabel} · ${modeLabel}`}
+              boardCount={scoringBoards.length}
+            />
 
             <p className="text-center text-white/70 text-[11px] pb-4 pt-1">
               Only signed-in players appear on these boards. ★ Official = real-world PL benchmark.
