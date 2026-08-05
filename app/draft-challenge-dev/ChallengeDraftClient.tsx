@@ -138,7 +138,7 @@ export default function ChallengeDraftClient() {
       const res = await fetch("/api/draft-challenge/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eraStart: era.start, eraEnd: era.end }),
+        body: JSON.stringify({ eraStart: era.start, eraEnd: era.end, playerCount }),
       });
       const data = await res.json().catch(() => null) as
         | { briefs?: Brief[]; error?: string } | null;
