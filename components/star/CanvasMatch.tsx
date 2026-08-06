@@ -735,12 +735,39 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // `dive` is a lean while patrolling and a committed lunge once a save has
       // been decided; saveLunge eases the second one in after the fact.
       const lunge = kk.saveLunge > 0 ? kk.saveLunge : 0;
-      const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * 0.55;
+
+      // ── Which save is being played ──
+      // Set by the engine only after the outcome was decided, so the pose always
+      // matches what actually happened rather than predicting it.
+      // lean   : how far the body pitches over
+      // armUp  : -1 arms driven down, +1 thrown up
+      // spread : how wide the arms go
+      // reachK : how far the leading glove extends
+      // crouch : vertical drop of the whole body
+      const KIND = {
+        catch:     { lean: 0.15, armUp:  0.25, spread: 0.45, reachK: 0.55, crouch: 0.10 },
+        central:   { lean: 0.05, armUp: -0.10, spread: 1.05, reachK: 0.80, crouch: 0.22 },
+        low:       { lean: 1.15, armUp: -0.85, spread: 0.95, reachK: 1.35, crouch: 0.30 },
+        high:      { lean: 0.55, armUp:  1.00, spread: 0.80, reachK: 1.30, crouch: -0.35 },
+        fingertip: { lean: 1.30, armUp:  0.35, spread: 0.70, reachK: 1.70, crouch: 0.05 },
+      } as const;
+      const kind = kk.saveKind ?? null;
+      const K = kind ? KIND[kind] : null;
+
+      // ── Idle life ──
+      // Breathing and a slow weight shift, so a keeper waiting on his line never
+      // looks frozen. Tiny on purpose — it should read as alive, not as fidgeting.
+      const breathe = Math.sin(kk.idleT * 2.1) * 0.02;
+      const weight = Math.sin(kk.idleT * 0.9) * 0.05;
+
+      // How far the body is committed: a lean while patrolling, a full lunge once
+      // a save is being played.
+      const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * 0.82 * kScale;              // smaller than an outfielder, and
-                                                 // smaller again for being far away
-      const lean = sign * diveN * 1.0;
-      const cx = px + sign * KR * lunge * 1.4;
+      const KR = R * 0.82 * kScale;   // smaller than an outfielder, smaller again far away
+      const lean = sign * diveN * (K ? K.lean : 0.9);
+      const cx = px + sign * KR * lunge * (K ? K.reachK : 1.0) * 1.2;
+      const cyOff = KR * ((K ? K.crouch : 0) * lunge + breathe);
       const gloveR = KR * 0.24;
 
       ctx.save();
@@ -758,7 +785,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         ctx.fill();
       }
 
-      ctx.translate(cx, py);
+      ctx.translate(cx + KR * weight * (1 - lunge), py + cyOff);
       ctx.rotate(lean);
       ctx.lineCap = "round";
 
@@ -781,15 +808,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       if (!ctx.roundRect) ctx.rect(-KR * 0.40, -KR * 0.02, KR * 0.80, KR * 0.32);
       ctx.fill();
 
-      // Arms — held out, and thrown further on a committed save
-      const reach = KR * (0.62 + diveN * 0.85);
+      // Arms — direction and spread come from the save being played. A high save
+      // drives them up, a low save down, a catch brings them together in front.
+      const spread = K ? K.spread : 1;
+      const armUp = K ? K.armUp : 0;
+      const reach = KR * (0.62 + diveN * 0.85) * (0.55 + spread * 0.45);
+      const armY = -KR * 0.28 - armUp * diveN * KR * 0.85;
       ctx.strokeStyle = SKIN;
       ctx.lineWidth = Math.max(1.1, KR * 0.24);
+      const gloves: { x: number; y: number }[] = [];
       for (const s2 of [-1, 1]) {
+        // The leading glove goes furthest; the trailing one stays tucked.
+        const leading = sign === 0 || Math.sign(s2) === sign;
+        const ex = s2 * reach * (leading ? 1 : 0.62);
+        const ey = armY - (leading ? diveN * KR * 0.2 : 0);
         ctx.beginPath();
         ctx.moveTo(s2 * KR * 0.32, -KR * 0.28);
-        ctx.lineTo(s2 * reach, -KR * 0.28 - diveN * KR * 0.45);
+        ctx.lineTo(ex, ey);
         ctx.stroke();
+        gloves.push({ x: ex, y: ey });
       }
 
       // Shirt
@@ -806,9 +843,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.fillStyle = "#f8fafc";
       ctx.strokeStyle = C.gkRim;
       ctx.lineWidth = Math.max(1, KR * 0.09);
-      for (const s2 of [-1, 1]) {
+      for (const g of gloves) {
         ctx.beginPath();
-        ctx.arc(s2 * reach, -KR * 0.28 - diveN * KR * 0.45, gloveR, 0, Math.PI * 2);
+        ctx.arc(g.x, g.y, gloveR, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       }
