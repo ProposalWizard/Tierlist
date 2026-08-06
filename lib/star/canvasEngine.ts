@@ -30,6 +30,12 @@ export interface Ball {
   z: number;   // metres above the turf
   vz: number;  // m/s vertical
   spin: number; // curl coefficient (sign = direction)
+  /**
+   * Vertical spin: -1 is heavy backspin, +1 heavy topspin. Taken from where on
+   * the ball it was struck, and only used at a bounce — topspin flattens and
+   * runs on, backspin sits up and checks.
+   */
+  topspin?: number;
   resting: boolean;
   loose: boolean;      // true once the ball has been parried/deflected and is a live rebound
   contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
@@ -148,14 +154,29 @@ export interface Contact { cx: number; cy: number; } // -1..1, cx=right, cy=down
 
 // --- Tunable constants — all in real units (metres, seconds, m/s) ---
 const G = 9.8;                 // gravity, m/s^2
-const GROUND_FRICTION = 2.6;   // m/s^2 rolling resistance on grass. A firm 18 m/s
-                               // pass covers ~30 m and still arrives at ~12 m/s.
-                               // (This was 15 — 1.5x gravity — which killed every
-                               // pass within a second and produced "the ball only
-                               // went a fifth of the way" shots.)
-const AIR_DRAG = 0.2;          // per-second horizontal drag while airborne
-const BOUNCE_VZ = 0.55;        // vertical restitution off turf
-const BOUNCE_H = 0.72;         // horizontal speed kept on bounce
+const GROUND_FRICTION = 1.9;   // m/s^2 rolling resistance. Lowered from 2.6 so the
+                               // ball settles under friction instead of appearing
+                               // to hit an invisible brake.
+const AIR_DRAG = 0.12;         // per-second horizontal drag while airborne. Was 0.2,
+                               // which bled enough speed that shots stopped
+                               // carrying through the air.
+
+// ── Bounce ───────────────────────────────────────────────────────────────────
+// Tuned by simulating the loop rather than by how the numbers read. At the old
+// 0.55/0.72 a firm shot bounced to [1.91, 0.58, 0.17] and carried 12.7 m after
+// the first bounce — the second bounce was under a third of the first and the
+// ball died. These give [1.91, 0.93, 0.45, 0.22, 0.11] and 31.2 m of carry:
+// high, medium, small, tiny, roll, stop.
+const BOUNCE_VZ = 0.70;        // vertical restitution off turf
+const BOUNCE_H = 0.88;         // horizontal speed kept on bounce — it skips across
+                               // the grass rather than sticking to it
+const MIN_BOUNCE_VZ = 0.5;     // below this it stops bouncing and rolls. Was 1.2,
+                               // which swallowed the last visible bounces.
+const BOUNCE_SPIN_KEEP = 0.82; // curl survives a bounce, so a curling ball keeps
+                               // bending after it lands
+const BOUNCE_TOPSPIN_VZ = 0.18;// topspin flattens the bounce, backspin lifts it
+const BOUNCE_TOPSPIN_H = 0.10; // …and topspin runs on while backspin checks up
+const BOUNCE_SIDESPIN_TURN = 0.12; // sidespin nudges the bounce off straight
 const CURL_K = 0.48;           // Magnus-ish lateral bend, applied perpendicular to
                                // travel so it rotates the flight rather than shoving
                                // it sideways. At 0.16 a maximum-curve strike bent
@@ -798,6 +819,10 @@ export function launch(
   const vz = loft * power * (7.5 + skills.power * 0.035);
   // Curl from striking the side of the ball, magnified by technique.
   const spin = contact.cx * (0.65 + tech / 100 * 1.2) * power;
+  // Struck above the middle drives it on with topspin; struck underneath puts
+  // backspin on it. Same contact point the loft already reads, used for how it
+  // behaves off the turf.
+  const topspin = clamp(-contact.cy, -1, 1) * (0.5 + tech / 200);
 
   // Keeper commits to the predicted crossing point.
   // No prediction here either — see stepKeeper. The keeper never learns the
@@ -809,6 +834,7 @@ export function launch(
     z: 0.08,
     vz,
     spin,
+    topspin,
     resting: false,
     loose: false,
     contactCd: 0,
@@ -1072,17 +1098,41 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   ball.pos.y += ball.vel.y * dt;
 
   // --- Bounce / roll ---
+  let bouncedThisStep = false;
   if (ball.z <= 0) {
     ball.z = 0;
-    if (ball.vz < -1.2) {
-      ball.vz = -ball.vz * BOUNCE_VZ;
-      ball.vel.x *= BOUNCE_H;
-      ball.vel.y *= BOUNCE_H;
+    if (ball.vz < -MIN_BOUNCE_VZ) {
+      const top = clamp(ball.topspin ?? 0, -1, 1);
+      // Topspin flattens the bounce and runs on; backspin sits up and checks.
+      ball.vz = -ball.vz * BOUNCE_VZ * (1 - top * BOUNCE_TOPSPIN_VZ);
+      const keep = BOUNCE_H * (1 + top * BOUNCE_TOPSPIN_H);
+      ball.vel.x *= keep;
+      ball.vel.y *= keep;
+
+      // Sidespin bites on the turf and turns the ball a little off straight —
+      // small enough to stay readable, big enough that a curler visibly keeps
+      // working after it lands.
+      if (Math.abs(ball.spin) > 0.0001) {
+        const sp = Math.hypot(ball.vel.x, ball.vel.y);
+        if (sp > 0.01) {
+          const a = ball.spin * BOUNCE_SIDESPIN_TURN;
+          const cos = Math.cos(a), sin = Math.sin(a);
+          const vx = ball.vel.x, vy = ball.vel.y;
+          ball.vel.x = vx * cos - vy * sin;
+          ball.vel.y = vx * sin + vy * cos;
+        }
+      }
+      // Curl survives the bounce rather than being wiped by it.
+      ball.spin *= BOUNCE_SPIN_KEEP;
+      bouncedThisStep = true;
     } else {
       ball.vz = 0;
     }
   }
-  if (ball.z <= 0.03) {
+  // Rolling resistance, and ONLY while genuinely rolling. Applying it on the
+  // same step as a bounce charged a skipping ball twice and was part of why it
+  // pulled up so sharply.
+  if (ball.z <= 0.03 && !bouncedThisStep && ball.vz <= 0.01) {
     const s = Math.hypot(ball.vel.x, ball.vel.y);
     const drop = GROUND_FRICTION * dt;
     if (s <= drop) {

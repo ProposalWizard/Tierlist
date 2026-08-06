@@ -128,6 +128,13 @@ interface Particle {
 }
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
+/** How far ahead of the ball the camera looks, in seconds of its travel. */
+const CAM_LEAD_S = 0.35;
+/** How much of the way from the scenario framing to the ball the camera pans. */
+const CAM_PULL = 0.55;
+/** Easing per 60th of a second — lower is lazier. Never a cut. */
+const CAM_EASE = 0.055;
+
 /** How long "PASS" / "GOAL" stays on screen after the action. */
 const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
@@ -284,29 +291,85 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   // --- Announce the very first scenario + set its viewport ---
   useEffect(() => {
-    viewportRef.current = scenarioRef.current.viewport;
+    viewportRef.current = { ...scenarioRef.current.viewport };
+    baseViewportRef.current = { ...scenarioRef.current.viewport };
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
     playWhistle(); // no-op until the first user gesture primes audio — harmless
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- Coordinate helpers (pitch <-> canvas pixels, viewport-aware) ---
+  //
+  // The camera used to be a flat orthographic map: pitch metres scaled straight
+  // onto pixels, so the far end of the pitch was exactly as wide as the near
+  // end and the goal read as a flat bar. There was no depth to judge a chip or
+  // a bouncing ball against.
+  //
+  // It is now a shallow pinhole perspective, looking down the pitch from behind
+  // the player. `d` is depth from the camera: 1 at the near edge, 1 + PERSPECTIVE
+  // at the far edge (the goal). Screen position divides by depth, exactly as a
+  // real camera does, so the pitch narrows toward the goal and the goal sits
+  // higher and smaller.
+  //
+  // Two properties make this safe to drop under the existing drawing code:
+  //  · straight lines stay straight, because screen y is an affine function of
+  //    1/d and screen x is linear in it — so every pLine, pRect and marking
+  //    still draws correctly, and now converges the way it should;
+  //  · it is exactly invertible, which pitchFromPointer needs for aiming.
   const viewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
+  /** The scenario's framing. The live viewport eases around this, never jumps. */
+  const baseViewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
+
+  /** Depth strength. 0 is the old flat camera; higher tilts it further over. */
+  const PERSPECTIVE = 0.55;
+
+  /** Normalised depth 0..1 (0 = far end / goal, 1 = near edge) -> screen 0..1. */
+  const depthToScreen = useCallback((t: number) => {
+    const dFar = 1 + PERSPECTIVE;
+    const inv = 1 / (1 + PERSPECTIVE * (1 - t));
+    const invFar = 1 / dFar;
+    return (inv - invFar) / (1 - invFar);
+  }, []);
+
+  /** Inverse of depthToScreen. */
+  const screenToDepth = useCallback((sy: number) => {
+    const dFar = 1 + PERSPECTIVE;
+    const invFar = 1 / dFar;
+    const inv = invFar + sy * (1 - invFar);
+    return 1 - (1 / inv - 1) / PERSPECTIVE;
+  }, []);
+
+  /** How much a metre at this depth is squeezed horizontally. */
+  const depthScale = useCallback((t: number) => 1 / (1 + PERSPECTIVE * (1 - t)), []);
+
   const toPx = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current!;
     const vp = viewportRef.current;
     const nx = (x - vp.x1) / (vp.x2 - vp.x1);
-    const ny = (y - vp.y1) / (vp.y2 - vp.y1);
-    return { px: nx * canvas.width, py: ny * canvas.height };
-  }, []);
+    // t = 0 at the goal (far from the camera), 1 at the near edge behind the
+    // player. The camera looks DOWN the pitch, so the goal end is the distant one.
+    const t = (y - vp.y1) / (vp.y2 - vp.y1);
+    const k = depthScale(t);
+    return {
+      px: (0.5 + (nx - 0.5) * k) * canvas.width,
+      py: depthToScreen(t) * canvas.height,
+      // Exposed so height, player size and the ball all shrink with distance.
+      scale: k,
+    };
+  }, [depthScale, depthToScreen]);
 
   const pitchFromPointer = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const vp = viewportRef.current;
+    const sx = (clientX - rect.left) / rect.width;
+    const sy = (clientY - rect.top) / rect.height;
+    const t = clamp(screenToDepth(clamp(sy, 0, 1)), 0, 1);
+    const k = depthScale(t);
+    const nx = 0.5 + (sx - 0.5) / k;
     return {
-      x: ((clientX - rect.left) / rect.width) * (vp.x2 - vp.x1) + vp.x1,
-      y: ((clientY - rect.top) / rect.height) * (vp.y2 - vp.y1) + vp.y1,
+      x: nx * (vp.x2 - vp.x1) + vp.x1,
+      y: t * (vp.y2 - vp.y1) + vp.y1,
     };
   };
 
@@ -488,11 +551,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     type Pose = "idle" | "run" | "kick" | "receive";
 
     const footballer = (
-      x: number, y: number, r: number,
+      x: number, y: number, rBase: number,
       shirt: string, rim: string,
       opts: { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string } = {},
     ) => {
-      const { px, py } = toPx(x, y);
+      const { px, py, scale } = toPx(x, y);
+      // Further up the pitch is further from the camera, so figures there are
+      // drawn smaller. This is most of what sells the depth.
+      const r = rBase * scale;
       const pose = opts.pose ?? "idle";
       const phase = opts.phase ?? 0;
       const shorts = opts.shorts ?? "#111827";
@@ -665,13 +731,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // only the artwork is restrained.
     {
       const kk = sc.keeper;
-      const { px, py } = toPx(kk.x, kk.y);
+      const { px, py, scale: kScale } = toPx(kk.x, kk.y);
       // `dive` is a lean while patrolling and a committed lunge once a save has
       // been decided; saveLunge eases the second one in after the fact.
       const lunge = kk.saveLunge > 0 ? kk.saveLunge : 0;
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * 0.55;
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * 0.82;                       // smaller than an outfielder
+      const KR = R * 0.82 * kScale;              // smaller than an outfielder, and
+                                                 // smaller again for being far away
       const lean = sign * diveN * 1.0;
       const cx = px + sign * KR * lunge * 1.4;
       const gloveR = KR * 0.24;
@@ -763,31 +830,45 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     for (let i = 0; i < trail.length; i++) {
       const t = trail[i];
       const k = (i + 1) / trail.length;
-      const { px, py } = toPx(t.x, t.y);
+      const { px, py, scale } = toPx(t.x, t.y);
       ctx.beginPath();
-      ctx.arc(px, py - t.z * heightScale, BALL_PX * (0.3 + 0.5 * k), 0, Math.PI * 2);
+      ctx.arc(px, py - t.z * heightScale * scale, BALL_PX * scale * (0.3 + 0.5 * k), 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,255,255,${0.06 + 0.24 * k})`;
       ctx.fill();
     }
 
-    // --- Ball (shadow at ground, seam patches roll with spin) ---
+    // --- Ball ---
+    // Three cues tell you how high it is, because one is never enough:
+    //   1. it lifts off its own shadow, and the gap grows with height;
+    //   2. the shadow shrinks and fades as it climbs away from the grass;
+    //   3. the ball itself grows as it rises toward the camera.
+    // The old version had the first of these and almost none of the other two,
+    // which is why a chip and a driven shot looked much the same.
     const drawBall = (x: number, y: number, z: number) => {
-      const { px, py } = toPx(x, y);
+      const { px, py, scale } = toPx(x, y);
+      const bScale = BALL_PX * scale;
+      const h = Math.max(0, z);
+
+      // Ground shadow — stays ON the pitch, directly under the ball.
+      const shadowShrink = 1 / (1 + h * 0.16);
       ctx.beginPath();
-      ctx.ellipse(px, py, BALL_PX, BALL_PX * 0.55, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.ellipse(px, py, bScale * 1.05 * shadowShrink, bScale * 0.5 * shadowShrink, 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,0,0,${0.34 * shadowShrink})`;
       ctx.fill();
-      const by = py - z * heightScale;
-      const br = BALL_PX * (1 + z / 14);
+
+      // The ball, lifted off the shadow and grown a little with height.
+      const by = py - h * heightScale * scale;
+      const br = bScale * (1 + Math.min(h, 8) * 0.055);
       ctx.beginPath();
       ctx.arc(px, by, br, 0, Math.PI * 2);
       ctx.fillStyle = "#fefefe";
       ctx.fill();
-      ctx.lineWidth = 2;
+      ctx.lineWidth = Math.max(1, 2 * scale);
       ctx.strokeStyle = "#0f172a";
       ctx.stroke();
       // rolling seam patches
       const a = seamRef.current;
+
       ctx.save();
       ctx.beginPath();
       ctx.arc(px, by, br * 0.92, 0, Math.PI * 2);
@@ -975,6 +1056,42 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       // Cosmetic FX advance (pausing the rAF pauses everything together)
       if (kickPoseRef.current > 0) kickPoseRef.current = Math.max(0, kickPoseRef.current - dt);
+
+      // ── Camera follow ──
+      // Eases toward the ball rather than cutting to it, and only ever pans —
+      // the zoom stays as the scenario framed it, so the pitch never lurches.
+      // Deliberately leads the ball a little so there is room ahead to read the
+      // trajectory, which is the whole reason to follow it at all.
+      {
+        const base = baseViewportRef.current;
+        const vpNow = viewportRef.current;
+        const b = ballRef.current;
+        const w = base.x2 - base.x1, hgt = base.y2 - base.y1;
+        let wantCx = (base.x1 + base.x2) / 2;
+        let wantCy = (base.y1 + base.y2) / 2;
+
+        if (b && !b.resting) {
+          // Lead the ball by a fraction of a second of its own travel.
+          const leadX = b.vel.x * CAM_LEAD_S;
+          const leadY = b.vel.y * CAM_LEAD_S;
+          // Pan only part of the way, so the goal stays in frame rather than the
+          // camera chasing the ball out of context.
+          wantCx += ((b.pos.x + leadX) - wantCx) * CAM_PULL;
+          wantCy += ((b.pos.y + leadY) - wantCy) * CAM_PULL;
+        }
+
+        const curCx = (vpNow.x1 + vpNow.x2) / 2;
+        const curCy = (vpNow.y1 + vpNow.y2) / 2;
+        // Frame-rate independent easing — the same feel at 30 fps and 144.
+        const ease = 1 - Math.pow(1 - CAM_EASE, dt * 60);
+        const cx = curCx + (wantCx - curCx) * ease;
+        const cy = curCy + (wantCy - curCy) * ease;
+        viewportRef.current = {
+          x1: cx - w / 2, x2: cx + w / 2,
+          y1: cy - hgt / 2, y2: cy + hgt / 2,
+        };
+      }
+
       if (shakeRef.current.t > 0) shakeRef.current.t = Math.max(0, shakeRef.current.t - dt);
       if (flashRef.current.t > 0) flashRef.current.t = Math.max(0, flashRef.current.t - dt);
       for (const p of particlesRef.current) {
@@ -1213,7 +1330,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current);
     }
 
-    viewportRef.current = scenarioRef.current.viewport;
+    viewportRef.current = { ...scenarioRef.current.viewport };
+    baseViewportRef.current = { ...scenarioRef.current.viewport };
     ballRef.current = null;
     setAim(null);
     setOutcome(null);
