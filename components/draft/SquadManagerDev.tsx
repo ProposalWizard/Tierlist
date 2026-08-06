@@ -428,37 +428,6 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
         </div>
       )}
 
-      {/* ────── FORMATION ────── */}
-      {allowFormationChange && (
-        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
-          <h3 className="text-[10px] font-bold tracking-widest text-cyan-400 uppercase mb-3">
-            Formation
-          </h3>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {FORMATIONS.map(f => {
-              const selected = f.name === activeFormationName;
-              return (
-                <button
-                  key={f.name}
-                  onClick={() => changeFormation(f.name)}
-                  className={`py-2 rounded-lg text-xs font-black tracking-wide transition-colors border-2 ${
-                    selected
-                      ? "border-cyan-400 bg-cyan-900/40 text-white"
-                      : "border-transparent bg-gray-800/60 text-white hover:bg-gray-800"
-                  }`}
-                >
-                  {f.name}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-2.5 text-[11px] text-white">
-            Players keep their place where the new shape has one. Anyone it has
-            no room for drops to the bench.
-          </p>
-        </div>
-      )}
-
       {/* ────── BENCH ────── */}
       <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
         <h3 className="text-[10px] font-bold tracking-widest text-purple-400 uppercase mb-3">
@@ -531,6 +500,37 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
           )}
         </div>
       </div>
+
+      {/* ────── FORMATION ────── */}
+      {allowFormationChange && (
+        <div className="bg-gray-900 rounded-xl p-4 mb-4 border border-gray-800/50">
+          <h3 className="text-[10px] font-bold tracking-widest text-cyan-400 uppercase mb-3">
+            Formation
+          </h3>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {FORMATIONS.map(f => {
+              const selected = f.name === activeFormationName;
+              return (
+                <button
+                  key={f.name}
+                  onClick={() => changeFormation(f.name)}
+                  className={`py-2 rounded-lg text-xs font-black tracking-wide transition-colors border-2 ${
+                    selected
+                      ? "border-cyan-400 bg-cyan-900/40 text-white"
+                      : "border-transparent bg-gray-800/60 text-white hover:bg-gray-800"
+                  }`}
+                >
+                  {f.name}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2.5 text-[11px] text-white">
+            Players keep their place where the new shape has one. Anyone it has
+            no room for drops to the bench.
+          </p>
+        </div>
+      )}
 
       {/* ────── PRE-SEASON PREDICTIONS ────── */}
       <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-800/50">

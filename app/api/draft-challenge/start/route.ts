@@ -16,7 +16,7 @@ import { createServiceClient } from "@/lib/supabase/service";
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({})) as {
-    eraStart?: number; eraEnd?: number; prime?: boolean;
+    eraStart?: number; eraEnd?: number; prime?: boolean; playerCount?: number;
   };
 
   const opts = {
@@ -27,7 +27,10 @@ export async function POST(req: Request) {
 
   try {
     const service = createServiceClient();
-    const briefs = await buildBriefSequence(service, opts);
+    // Boards grow with the room, so a brief has to be deep enough for THIS
+    // room — a nationality with eleven players is fine solo and unusable for
+    // three managers.
+    const briefs = await buildBriefSequence(service, opts, Number(body.playerCount) || 1);
     if (briefs.length === 0) {
       return NextResponse.json(
         { error: "No usable briefs — is the Premier League player data imported?" },

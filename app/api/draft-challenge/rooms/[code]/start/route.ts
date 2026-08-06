@@ -57,7 +57,7 @@ export async function POST(
   const opts = { eraStart: era.start, eraEnd: era.end };
 
   try {
-    const briefs = await buildBriefSequence(service, opts);
+    const briefs = await buildBriefSequence(service, opts, userIds.length);
     if (briefs.length === 0) {
       return NextResponse.json(
         { error: "No usable briefs — is the Premier League player data imported?" },

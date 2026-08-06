@@ -58,6 +58,13 @@ export const STAT_BRIEF_MIN_OVERALL = 74;
 
 /** A brief must be able to offer a full board, or it is not worth playing. */
 export const MIN_BRIEF_POOL = 10;
+/**
+ * Attribute briefs are validated on their rating floor alone, because the
+ * attribute itself lives in a column the cached pool does not carry. Their real
+ * pool is therefore a fraction of the counted one, so they have to clear a much
+ * wider bar to be trusted to fill a board.
+ */
+export const STAT_BRIEF_SAFETY = 12;
 /** How many rounds a challenge draft runs for: 11 starters + 3 subs. */
 export const CHALLENGE_ROUNDS = 14;
 
@@ -286,16 +293,25 @@ export function briefById(briefId: string): Brief | undefined {
 export async function buildBriefSequence(
   service: any,
   opts: RoundOptions = {},
+  playerCount = 1,
 ): Promise<Brief[]> {
   const candidates = allBriefs();
 
-  // Which briefs can actually fill a board? Stat briefs are checked by their
-  // rating floor only; their pool is far larger than ten in practice and the
-  // exact check needs attributes.
+  // A brief must be able to fill THIS room's board, not merely a ten-card one.
+  // Boards grow with the room — twelve cards for three managers, fourteen for
+  // four — so a nationality with eleven Premier League players is fine for a
+  // solo run and unusable for a three-player draft. Checking against the fixed
+  // ten would have offered it anyway and come up short mid-round.
+  const required = boardSizeForPlayers(playerCount);
+
   const usable: Brief[] = [];
   for (const b of candidates) {
+    // Stat briefs are counted by their rating floor only — the attribute
+    // threshold needs data the pool does not carry — so their true pool is
+    // smaller than this count. They are given a wider margin below.
     const n = await countMatching(service, briefMatcher(b), opts);
-    if (n >= MIN_BRIEF_POOL) usable.push(b);
+    const need = b.kind === "stat" ? required * STAT_BRIEF_SAFETY : required;
+    if (n >= need) usable.push(b);
   }
 
   const keeperBriefs = usable.filter(b => b.kind === "position" && b.params.parts === "GK");

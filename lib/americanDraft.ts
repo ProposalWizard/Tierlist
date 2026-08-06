@@ -509,6 +509,41 @@ async function getPLLeagueNames(service: any): Promise<string[]> {
   return names;
 }
 
+/** Slices fired at once. Twenty-four together is what triggered the timeouts. */
+const SLICE_BATCH = 6;
+
+/**
+ * Run a Supabase query, retrying the transient failures.
+ *
+ * A statement timeout is not a real error — it means the database was busy for
+ * a moment. Surfacing it to the player was wrong: they saw "canceling statement
+ * due to statement timeout", pressed Start again, and it worked. Backing off and
+ * retrying turns that into a slightly slower success. Only genuine failures
+ * (a missing column, bad SQL) survive all the attempts and get reported.
+ */
+async function withQueryRetry<T>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  run: () => PromiseLike<{ data: T[] | null; error?: { message: string } | null }>,
+  label: string,
+  attempts = 3,
+): Promise<T[]> {
+  let lastMessage = "unknown error";
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt > 0) {
+      await new Promise(r => setTimeout(r, 250 * Math.pow(3, attempt - 1)));
+    }
+    const { data, error } = await run();
+    if (!error) return data ?? [];
+    lastMessage = error.message;
+    // A timeout or a dropped connection is worth another go; anything else is
+    // a real fault and retrying only delays the report.
+    if (!/timeout|timed out|canceling statement|connection|fetch failed|network/i.test(error.message)) {
+      break;
+    }
+  }
+  throw new Error(`${label}: ${lastMessage}`);
+}
+
 // Bounds of the eligible id range, cached. Two tiny indexed queries.
 let idBoundsCache: { key: string; min: number; max: number; at: number } | null = null;
 const BOUNDS_TTL_MS = 10 * 60 * 1000;
@@ -534,11 +569,19 @@ async function getIdBounds(service: any, leagues: string[], eraStart: number, er
     return idBoundsCache;
   }
   const [lo, hi] = await Promise.all([
-    eligible(service, leagues, eraStart, eraEnd).order("id", { ascending: true }).limit(1),
-    eligible(service, leagues, eraStart, eraEnd).order("id", { ascending: false }).limit(1),
+    withQueryRetry<{ id: number }>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      () => eligible(service, leagues, eraStart, eraEnd).order("id", { ascending: true }).limit(1) as any,
+      "pool bounds (min)",
+    ),
+    withQueryRetry<{ id: number }>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      () => eligible(service, leagues, eraStart, eraEnd).order("id", { ascending: false }).limit(1) as any,
+      "pool bounds (max)",
+    ),
   ]);
-  const min = lo?.data?.[0]?.id ?? 0;
-  const max = hi?.data?.[0]?.id ?? 0;
+  const min = lo?.[0]?.id ?? 0;
+  const max = hi?.[0]?.id ?? 0;
   if (!max) throw new Error("No Premier League players found — is the player data imported?");
   const bounds = { key, min, max, at: Date.now() };
   idBoundsCache = bounds;
@@ -725,30 +768,45 @@ async function getEraPool(service: any, leagues: string[], eraStart: number, era
   const PAGE = 1000;
   const step = Math.max(1, Math.ceil((max - min + 1) / SLICES));
 
-  const slices = await Promise.all(
-    Array.from({ length: SLICES }, (_, i) => {
-      const lo = min + i * step;
-      return eligible(service, leagues, eraStart, eraEnd)
-        .gte("id", lo)
-        .lt("id", lo + step)
-        .order("id", { ascending: true })
-        .limit(PAGE);
-    })
-  );
-
+  // Fired in BATCHES, not all at once, and every slice retries on its own.
+  //
+  // Twenty-four simultaneous scans over the biggest table in the database is
+  // enough load to make Postgres cancel one of them for exceeding the statement
+  // timeout — and because a single failed slice aborted the whole build, that
+  // surfaced as "canceling statement due to statement timeout" on Start. The
+  // very next attempt then worked, since by then the pool was cached, which is
+  // the worst kind of error: intermittent and invisible in testing.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const byId = new Map<number, any>();
+  const saturated: number[] = [];
+
+  const fetchSlice = (i: number) => {
+    const lo = min + i * step;
+    return eligible(service, leagues, eraStart, eraEnd)
+      .gte("id", lo)
+      .lt("id", lo + step)
+      .order("id", { ascending: true })
+      .limit(PAGE);
+  };
+
+  for (let start = 0; start < SLICES; start += SLICE_BATCH) {
+    const batch = Array.from(
+      { length: Math.min(SLICE_BATCH, SLICES - start) },
+      (_, k) => start + k,
+    );
+    const results = await Promise.all(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      batch.map(i => withQueryRetry<any>(() => fetchSlice(i) as any, `pool slice ${i}`)),
+    );
+    results.forEach((rows, k) => {
+      for (const row of rows) byId.set(row.id, row);
+      if (rows.length >= PAGE) saturated.push(batch[k]);
+    });
+  }
+
   // A slice that comes back exactly full may have been truncated by the
   // server's row cap, so walk the rest of that slice by keyset. Silently
   // keeping a short slice would drop players from the pool entirely.
-  const saturated: number[] = [];
-  slices.forEach((r, i) => {
-    if (r?.error) throw new Error(r.error.message);
-    const rows = r?.data ?? [];
-    for (const row of rows) byId.set(row.id, row);
-    if (rows.length >= PAGE) saturated.push(i);
-  });
-
   for (const i of saturated) {
     const lo = min + i * step;
     const hi = lo + step;
@@ -759,13 +817,16 @@ async function getEraPool(service: any, leagues: string[], eraStart: number, era
       if (row.id >= lo && row.id < hi && row.id > cursor) cursor = row.id;
     }
     for (let guard = 0; guard < 20; guard++) {
-      const { data, error } = await eligible(service, leagues, eraStart, eraEnd)
-        .gt("id", cursor)
-        .lt("id", hi)
-        .order("id", { ascending: true })
-        .limit(PAGE);
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0) break;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await withQueryRetry<any>(
+        () => eligible(service, leagues, eraStart, eraEnd)
+          .gt("id", cursor)
+          .lt("id", hi)
+          .order("id", { ascending: true })
+          .limit(PAGE) as any,
+        `pool top-up ${i}`,
+      );
+      if (data.length === 0) break;
       for (const row of data) byId.set(row.id, row);
       cursor = data[data.length - 1].id;
       if (data.length < PAGE) break;

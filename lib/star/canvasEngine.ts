@@ -30,6 +30,12 @@ export interface Ball {
   z: number;   // metres above the turf
   vz: number;  // m/s vertical
   spin: number; // curl coefficient (sign = direction)
+  /**
+   * Vertical spin: -1 is heavy backspin, +1 heavy topspin. Taken from where on
+   * the ball it was struck, and only used at a bounce — topspin flattens and
+   * runs on, backspin sits up and checks.
+   */
+  topspin?: number;
   resting: boolean;
   loose: boolean;      // true once the ball has been parried/deflected and is a live rebound
   contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
@@ -39,15 +45,42 @@ export interface Ball {
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
+/**
+ * The keeper is a TIMING PUZZLE, not an opponent trying to read your shot.
+ *
+ * He patrols his line continuously, before and during the shot, and never
+ * reacts to where you aim. Whether a shot goes in is decided by comparing where
+ * the ball crosses the goal plane against where he happens to be at that
+ * moment. So the question a shot asks is "can I predict where he will be when
+ * the ball arrives", not "can he react fast enough" — and beating him feels
+ * earned rather than lucky.
+ *
+ * This replaced a keeper that called predictCrossX() the instant you struck the
+ * ball and dived straight to the crossing point. That is the thing the design
+ * most needed to lose: it read your input, so a save never felt like a save you
+ * could have avoided.
+ */
 export interface Keeper {
   x: number;
   y: number;
   startX: number;
-  targetX: number;   // committed crossing x the keeper dives for
-  dive: number;      // signed dive extension in metres (for rendering the lunge)
-  saves: number;     // save attempts already spent on this ball (each one weakens the next)
+  targetX: number;   // only used when scrambling after a loose ball
+  dive: number;      // signed lean/dive extension in metres (for rendering)
+  saves: number;     // save attempts already spent on this ball
   done: boolean;     // caught / tipped — keeper is out of the equation
   flash: number;     // seconds of "just made contact" glow (render only)
+
+  // ── Patrol ──
+  patrolT: number;       // seconds elapsed along the patrol
+  patrolSeed: number;    // phase offset so no two scenarios start identically
+  patrolAmp: number;     // metres either side of his standing spot
+  patrolPeriod: number;  // seconds for one full there-and-back
+  /** Chasing a spill rather than patrolling. */
+  scrambling: boolean;
+  /** 0..1 lunge played AFTER the outcome is decided (render only). */
+  saveLunge: number;
+  /** Which way that lunge goes. */
+  saveDir: number;
 }
 
 // A poacher lurking for the rebound.
@@ -121,24 +154,60 @@ export interface Contact { cx: number; cy: number; } // -1..1, cx=right, cy=down
 
 // --- Tunable constants — all in real units (metres, seconds, m/s) ---
 const G = 9.8;                 // gravity, m/s^2
-const GROUND_FRICTION = 2.6;   // m/s^2 rolling resistance on grass. A firm 18 m/s
-                               // pass covers ~30 m and still arrives at ~12 m/s.
-                               // (This was 15 — 1.5x gravity — which killed every
-                               // pass within a second and produced "the ball only
-                               // went a fifth of the way" shots.)
-const AIR_DRAG = 0.2;          // per-second horizontal drag while airborne
-const BOUNCE_VZ = 0.55;        // vertical restitution off turf
-const BOUNCE_H = 0.72;         // horizontal speed kept on bounce
-const CURL_K = 0.16;           // Magnus-ish lateral bend. A well-struck curler bends
-                               // ~2-3 m over 25 m — enough to beat a wall, not a banana.
+const GROUND_FRICTION = 1.9;   // m/s^2 rolling resistance. Lowered from 2.6 so the
+                               // ball settles under friction instead of appearing
+                               // to hit an invisible brake.
+const AIR_DRAG = 0.12;         // per-second horizontal drag while airborne. Was 0.2,
+                               // which bled enough speed that shots stopped
+                               // carrying through the air.
+
+// ── Bounce ───────────────────────────────────────────────────────────────────
+// Tuned by simulating the loop rather than by how the numbers read. At the old
+// 0.55/0.72 a firm shot bounced to [1.91, 0.58, 0.17] and carried 12.7 m after
+// the first bounce — the second bounce was under a third of the first and the
+// ball died. These give [1.91, 0.93, 0.45, 0.22, 0.11] and 31.2 m of carry:
+// high, medium, small, tiny, roll, stop.
+const BOUNCE_VZ = 0.70;        // vertical restitution off turf
+const BOUNCE_H = 0.88;         // horizontal speed kept on bounce — it skips across
+                               // the grass rather than sticking to it
+const MIN_BOUNCE_VZ = 0.5;     // below this it stops bouncing and rolls. Was 1.2,
+                               // which swallowed the last visible bounces.
+const BOUNCE_SPIN_KEEP = 0.82; // curl survives a bounce, so a curling ball keeps
+                               // bending after it lands
+const BOUNCE_TOPSPIN_VZ = 0.18;// topspin flattens the bounce, backspin lifts it
+const BOUNCE_TOPSPIN_H = 0.10; // …and topspin runs on while backspin checks up
+const BOUNCE_SIDESPIN_TURN = 0.12; // sidespin nudges the bounce off straight
+const CURL_K = 0.48;           // Magnus-ish lateral bend, applied perpendicular to
+                               // travel so it rotates the flight rather than shoving
+                               // it sideways. At 0.16 a maximum-curve strike bent
+                               // only ~2-3 m over 25 m, which barely read as curl at
+                               // all; this is 3x that, so a hard shot struck on the
+                               // outside of the ball bends properly round a keeper.
 
 const SHOT_REF_SPEED = 32;     // m/s — about as hard as a professional strikes it
-const KEEPER_LATERAL_MAX = 3.2;// metres along the line a keeper can cover diving
-const KEEPER_DIVE_SPEED = 5.4; // m/s lateral — a real dive, not a teleport
-const KEEPER_VREACH = 2.5;     // metres — fingertips at full stretch; the top corners
-                               // sit right at the edge of this, so they stay beatable
-const KEEPER_REACH_MIN = 1.05; // arm's reach floor for a wrong-footed keeper
-const KEEPER_REACH_MAX = 1.95; // reach ceiling for a top keeper on a comfortable shot
+const KEEPER_LATERAL_MAX = 3.2;// metres along the line a keeper can cover scrambling
+const KEEPER_DIVE_SPEED = 5.4; // m/s lateral when chasing a loose ball
+const KEEPER_VREACH = 2.5;     // metres — fingertips at full stretch
+
+// ── The two numbers that balance the keeper ──────────────────────────────────
+// Everything else about him is presentation. Widen the save radius or speed up
+// the patrol to make him harder; nothing else should need touching, and neither
+// makes him unfair because both stay visible to the player before they shoot.
+const KEEPER_PATROL_AMP = 2.6;     // metres either side of centre he ranges over.
+                                   // Tuned so that when he is at one extreme the
+                                   // FAR corner is genuinely open — that gap is
+                                   // the whole game.
+const KEEPER_PATROL_PERIOD = 4.2;  // seconds for one full sweep and back — slow
+                                   // enough to watch for a second and commit
+const KEEPER_SAVE_R_MIN = 2.15;    // save radius at the goal plane, weakest keeper
+const KEEPER_SAVE_R_MAX = 2.95;    // …and the strongest
+// Height costs more than width: a keeper covers his line far more easily than he
+// gets up. This is what makes the top corners the safest target without any
+// hidden bonus for aiming there — they are simply furthest from him.
+const KEEPER_SAVE_Z_SCALE = 1.15;
+const KEEPER_BODY_R = 0.75;        // his actual body, for a ball that runs into him
+const KEEPER_CENTRE_Z = 0.95;      // metres — roughly his chest, the centre of the
+                                   // save volume
 
 const DEF_BLOCK_R = 0.95;      // metres — body + outstretched leg
 const DEF_BLOCK_H = 1.9;       // defenders can only block below head height — chip over them
@@ -175,9 +244,20 @@ const CROSSBAR = GOAL_H;
 // Keepers stand on their line. `y` is how far off it they are — a set-piece keeper
 // is a metre out, a keeper rushing a one-on-one might be eight, and nothing puts
 // him outside his own penalty area.
-function makeKeeper(x: number, y = 0.8): Keeper {
+function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
   const kx = clamp(x, POST_L - 2.5, POST_R + 2.5);
-  return { x: kx, y: clamp(y, 0.3, BOX_DEPTH - 2), startX: kx, targetX: kx, dive: 0, saves: 0, done: false, flash: 0 };
+  const r = rng ? rng() : 0.5;
+  return {
+    x: kx, y: clamp(y, 0.3, BOX_DEPTH - 2), startX: kx, targetX: kx,
+    dive: 0, saves: 0, done: false, flash: 0,
+    patrolT: r * 4,                 // start somewhere along the sweep, not always centre
+    patrolSeed: r * Math.PI * 2,
+    patrolAmp: KEEPER_PATROL_AMP,
+    patrolPeriod: KEEPER_PATROL_PERIOD,
+    scrambling: false,
+    saveLunge: 0,
+    saveDir: 0,
+  };
 }
 
 function makeRunner(to: Vec2, from: Vec2, speed = RUNNER_SPEED): Runner {
@@ -300,7 +380,7 @@ function buildOneOnOne(rng: () => number, keeperStrength: number, teamRelationsh
     defenders: [
       { x: clamp(bx + (rng() - 0.5) * 6, 8, PITCH_W - 8), y: by + 3 + rng() * 4 }, // recovering behind you
     ],
-    keeper: makeKeeper(keeperX, keeperY),
+    keeper: makeKeeper(keeperX, keeperY, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "one_on_one" as const, teammates: [], runner: null, passTarget: null,
@@ -321,7 +401,7 @@ function buildTightAngle(rng: () => number, keeperStrength: number, teamRelation
     defenders: [
       { x: clamp(bx - side * 2.5, 6, PITCH_W - 6), y: clamp(by + 1.5, 2, 10) },
     ],
-    keeper: makeKeeper(keeperX, 0.9 + rng() * 0.8),
+    keeper: makeKeeper(keeperX, 0.9 + rng() * 0.8, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "tight_angle" as const, teammates: [], runner: null, passTarget: null,
@@ -340,7 +420,7 @@ function buildLongRange(rng: () => number, keeperStrength: number, teamRelations
       { x: clamp(bx + (rng() - 0.5) * 5, 10, PITCH_W - 10), y: by - 3 - rng() * 2 },
       { x: clamp(bx + (rng() - 0.5) * 12, 10, PITCH_W - 10), y: by - 6 - rng() * 3 },
     ],
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
@@ -361,7 +441,7 @@ function buildVolley(rng: () => number, keeperStrength: number, teamRelationship
       { x: clamp(bx - 2.5 + rng() * 1.5, 10, PITCH_W - 10), y: clamp(by - 1.5, 5, by) },
       { x: clamp(bx + 3.5 - rng() * 1.5, 10, PITCH_W - 10), y: clamp(by - 2.5, 5, by) },
     ],
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.4 + rng() * 1.2),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.4 + rng() * 1.2, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "volley" as const, teammates: [crosser], runner: null, passTarget: null,
@@ -382,7 +462,7 @@ function buildHeader(rng: () => number, keeperStrength: number, teamRelationship
       // Marking you goal-side, close but not standing inside you.
       { x: clamp(bx - side * (1.5 + rng() * 1.1), 8, PITCH_W - 8), y: clamp(by - 0.8, 1.5, 8) },
     ],
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 0.7 + rng() * 0.8),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 0.7 + rng() * 0.8, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "header" as const, teammates: [crosser], runner: null, passTarget: null,
@@ -405,7 +485,7 @@ function buildCutback(rng: () => number, keeperStrength: number, teamRelationshi
     defenders: [
       { x: clamp(to.x - side * 3.5, 8, PITCH_W - 8), y: clamp(to.y - 1.5, 4, 12) },
     ],
-    keeper: makeKeeper(CX + side * 1.5, 0.7 + rng() * 0.7),
+    keeper: makeKeeper(CX + side * 1.5, 0.7 + rng() * 0.7, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "cutback" as const, teammates: [],
@@ -428,7 +508,7 @@ function buildBylineCross(rng: () => number, keeperStrength: number, teamRelatio
       { x: clamp(to.x - side * 2.2, 8, PITCH_W - 8), y: clamp(to.y - 0.8, 3, 11) },
       { x: clamp(CX + side * 3, 8, PITCH_W - 8), y: clamp(to.y + 2.5, 5, 13) },
     ],
-    keeper: makeKeeper(CX - side * 1.2, 1 + rng() * 0.9),
+    keeper: makeKeeper(CX - side * 1.2, 1 + rng() * 0.9, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "byline_cross" as const, teammates: [],
@@ -463,7 +543,7 @@ function buildThroughBall(rng: () => number, keeperStrength: number, teamRelatio
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.3 },
     defenders,
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 2 + rng() * 2),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 2 + rng() * 2, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "through_ball" as const, teammates: [],
@@ -486,7 +566,7 @@ function buildMidfieldPass(rng: () => number, keeperStrength: number, teamRelati
     defenders: [
       { x: clamp((bx + to.x) / 2 + (rng() - 0.5) * 7, 8, PITCH_W - 8), y: clamp((by + to.y) / 2, 28, 44) },
     ],
-    keeper: makeKeeper(CX, 1.5),
+    keeper: makeKeeper(CX, 1.5, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "midfield_pass" as const, teammates: [],
@@ -501,7 +581,7 @@ function buildPenalty(rng: () => number, keeperStrength: number, teamRelationshi
     ball: { x: CX, y: PEN_SPOT_Y },
     player: { x: CX, y: PEN_SPOT_Y + 1.6 },
     defenders: [],
-    keeper: makeKeeper(CX + (rng() - 0.5) * 1.2, 0.4),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 1.2, 0.4, rng),
     keeperStrength, follower: { x: CX + 3, y: PEN_SPOT_Y + 2, active: false, shot: false } as Follower,
     goal: GOAL, crossbar: CROSSBAR,
     kind: "penalty" as const, teammates: [], runner: null, passTarget: null,
@@ -533,7 +613,7 @@ function buildFreeKick(rng: () => number, keeperStrength: number, teamRelationsh
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 2 },
     defenders,
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 1 + rng() * 0.8),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 1 + rng() * 0.8, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "free_kick" as const, teammates: [], runner: null, passTarget: null,
@@ -555,7 +635,7 @@ function buildCorner(rng: () => number, keeperStrength: number, teamRelationship
       { x: clamp(to.x + (rng() - 0.5) * 4, 8, PITCH_W - 8), y: clamp(to.y + 0.8, 3, 11) },
       { x: clamp(CX - side * 3, 8, PITCH_W - 8), y: clamp(to.y + 2.5, 5, 13) },
     ],
-    keeper: makeKeeper(CX + side * 1.5, 1.2 + rng() * 1),
+    keeper: makeKeeper(CX + side * 1.5, 1.2 + rng() * 1, rng),
     keeperStrength, follower: makeFollower(rng, 9),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "corner" as const, teammates: [],
@@ -583,7 +663,7 @@ function buildBuildup(rng: () => number, keeperStrength: number, teamRelationshi
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.3 },
     defenders,
-    keeper: makeKeeper(CX, 1.5),
+    keeper: makeKeeper(CX, 1.5, rng),
     keeperStrength, follower: { x: CX, y: 40, active: false, shot: false } as Follower,
     goal: GOAL, crossbar: CROSSBAR,
     kind: "buildup" as const,
@@ -675,11 +755,6 @@ export function buildAttackingScenario(rng: () => number, keeperStrength = 62, t
 }
 
 // Where a ball on this heading will cross the goal line — what the keeper commits to.
-function predictCrossX(from: Vec2, dir: Vec2): number {
-  if (dir.y >= -0.001) return from.x; // not heading toward goal
-  const s = -from.y / dir.y;
-  return clamp(from.x + dir.x * s, POST_L - 2, POST_R + 2);
-}
 
 const RECEIVER_CONTROL_T = 0.45; // seconds the teammate takes to control the ball before shooting
 
@@ -715,7 +790,8 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   ball.loose = false;
   ball.contactCd = 0.15;
   ball.event = "receiverShot";
-  scenario.keeper.targetX = predictCrossX(ball.pos, dir);
+  // Deliberately does NOT tell the keeper where this is going. He keeps
+  // patrolling; whether he is in the way is settled when the ball arrives.
 }
 
 // Launch the ball from a slingshot aim + a contact point.
@@ -743,9 +819,14 @@ export function launch(
   const vz = loft * power * (7.5 + skills.power * 0.035);
   // Curl from striking the side of the ball, magnified by technique.
   const spin = contact.cx * (0.65 + tech / 100 * 1.2) * power;
+  // Struck above the middle drives it on with topspin; struck underneath puts
+  // backspin on it. Same contact point the loft already reads, used for how it
+  // behaves off the turf.
+  const topspin = clamp(-contact.cy, -1, 1) * (0.5 + tech / 200);
 
   // Keeper commits to the predicted crossing point.
-  scenario.keeper.targetX = predictCrossX(scenario.ball, d);
+  // No prediction here either — see stepKeeper. The keeper never learns the
+  // aim, which is what lets curl and placement genuinely beat him.
 
   return {
     pos: { x: scenario.ball.x, y: scenario.ball.y },
@@ -753,6 +834,7 @@ export function launch(
     z: 0.08,
     vz,
     spin,
+    topspin,
     resting: false,
     loose: false,
     contactCd: 0,
@@ -762,21 +844,54 @@ export function launch(
   };
 }
 
-// Advance the keeper's slide/dive toward its committed target.
+/**
+ * Advance the keeper.
+ *
+ * Normally he simply patrols: a smooth, continuous sweep across his line that
+ * runs whether or not a shot is on its way. He does NOT react to the ball. The
+ * player is reading him, not the other way round.
+ *
+ * The one exception is a loose ball he has already spilled, where he scrambles
+ * toward it — that is a visible chase, not a prediction.
+ */
 export function stepKeeper(scenario: Scenario, dt: number) {
   const k = scenario.keeper;
   if (k.flash > 0) k.flash = Math.max(0, k.flash - dt);
+  // The lunge is pure animation, played out after an outcome is already decided.
+  if (k.saveLunge > 0 && k.saveLunge < 1) k.saveLunge = Math.min(1, k.saveLunge + dt * 6);
   if (k.done) return;
 
-  const target = clamp(k.targetX, k.startX - KEEPER_LATERAL_MAX, k.startX + KEEPER_LATERAL_MAX);
-  const dx = target - k.x;
-  // A keeper already committed to one save recovers a touch slower for the next.
-  const speed = KEEPER_DIVE_SPEED * (k.saves > 0 ? 0.78 : 1);
-  const move = Math.sign(dx) * Math.min(Math.abs(dx), speed * dt);
-  k.x += move;
-  // Dive extension eases toward how far he is from his standing spot.
-  const wanted = clamp(k.x - k.startX, -KEEPER_LATERAL_MAX, KEEPER_LATERAL_MAX);
-  k.dive += (wanted - k.dive) * Math.min(1, dt * 12);
+  if (k.scrambling) {
+    const target = clamp(k.targetX, k.startX - KEEPER_LATERAL_MAX, k.startX + KEEPER_LATERAL_MAX);
+    const dx = target - k.x;
+    const speed = KEEPER_DIVE_SPEED * (k.saves > 0 ? 0.78 : 1);
+    k.x += Math.sign(dx) * Math.min(Math.abs(dx), speed * dt);
+    const wanted = clamp(k.x - k.startX, -KEEPER_LATERAL_MAX, KEEPER_LATERAL_MAX);
+    k.dive += (wanted - k.dive) * Math.min(1, dt * 12);
+    return;
+  }
+
+  // ── Patrol ──
+  // A dominant sweep plus a smaller one at an irrational-ish ratio, so the path
+  // is smooth and learnable — the same rhythm every time — without being a
+  // perfect metronome the player can solve once and forget. No snapping, no
+  // instant reversals: both terms are sinusoids, so acceleration is continuous.
+  const prevX = k.x;
+  k.patrolT += dt;
+  const w = (Math.PI * 2) / k.patrolPeriod;
+  const sweep =
+    Math.sin(k.patrolT * w + k.patrolSeed) * 0.82 +
+    Math.sin(k.patrolT * w * 1.618 + k.patrolSeed * 1.7) * 0.18;
+
+  const want = k.startX + sweep * k.patrolAmp;
+  // Never past his own posts.
+  k.x = clamp(want, POST_L + 0.35, POST_R - 0.35);
+
+  // Lean into the direction of travel — the figure reads as gliding rather than
+  // sliding, and it telegraphs which way he is going, which is the whole point.
+  const vx = dt > 0 ? (k.x - prevX) / dt : 0;
+  const lean = clamp(vx / KEEPER_DIVE_SPEED, -1, 1) * 0.85;
+  k.dive += (lean - k.dive) * Math.min(1, dt * 8);
 }
 
 // Advance the team-mate making the run. They move at a real sprinting pace, which
@@ -829,18 +944,49 @@ export function stepFollower(scenario: Scenario, ball: Ball, rng: () => number, 
     ball.contactCd = 0.18;
     f.shot = true;
     // Keeper reacts late, already out of position from the first save.
-    scenario.keeper.targetX = predictCrossX(ball.pos, dir);
+    // Deliberately does NOT tell the keeper where this is going. He keeps
+  // patrolling; whether he is in the way is settled when the ball arrives.
   }
 }
 
-// The keeper's effective reach shrinks against pace, corners and elevation.
-function keeperReach(scenario: Scenario, ball: Ball, speed: number): number {
-  const base = KEEPER_REACH_MIN + (scenario.keeperStrength / 100) * (KEEPER_REACH_MAX - KEEPER_REACH_MIN);
-  const speedPen = clamp(speed / SHOT_REF_SPEED, 0, 1);              // fierce shots are harder to reach
-  const cornerPen = clamp(Math.abs(ball.pos.x - CX) / 4.5, 0, 1);    // shots into the corners stretch him
-  const heightPen = clamp(ball.z / KEEPER_VREACH, 0, 1);             // high shots into the top bins
-  const wear = Math.max(0.35, 1 - 0.4 * scenario.keeper.saves);      // each prior save leaves him grounded
-  return base * (1 - speedPen * 0.42) * (1 - cornerPen * 0.28) * (1 - heightPen * 0.30) * wear;
+/**
+ * How far from the keeper a shot can cross the line and still be saved.
+ *
+ * Deliberately depends on the KEEPER and nothing else — not on the shot's pace,
+ * not on which corner it is heading for, not on its height. Those all used to
+ * carry their own penalty multipliers, which is a hidden hand on the scales.
+ * They now matter for the honest reason instead:
+ *
+ *   · a fast shot gives him less time to patrol into the way;
+ *   · a corner is simply further from wherever he is;
+ *   · a high shot is further once height is scaled;
+ *   · curl bends the ball away from the point he was heading for.
+ *
+ * Each prior save on the same ball leaves him grounded, which is the one
+ * concession to a scramble rather than a first shot.
+ */
+function keeperSaveRadius(scenario: Scenario): number {
+  const base = KEEPER_SAVE_R_MIN
+    + (clamp(scenario.keeperStrength, 0, 100) / 100) * (KEEPER_SAVE_R_MAX - KEEPER_SAVE_R_MIN);
+  const wear = Math.max(0.45, 1 - 0.35 * scenario.keeper.saves);
+  return base * wear;
+}
+
+/**
+ * Is a ball crossing the plane at (x, z) inside the keeper's save volume?
+ *
+ * Height is scaled, so the volume is a flattened ellipse — wide across the line
+ * and shallow upward. That is what makes the top corners the safest target
+ * without giving them any explicit bonus.
+ */
+function keeperCovers(scenario: Scenario, xCross: number, zCross: number): { saved: boolean; margin: number } {
+  const k = scenario.keeper;
+  const r = keeperSaveRadius(scenario);
+  const dx = xCross - k.x;
+  const dz = (zCross - KEEPER_CENTRE_Z) * KEEPER_SAVE_Z_SCALE;
+  const d = Math.hypot(dx, dz);
+  // margin: 1 = straight at him, 0 = right on the edge of his reach.
+  return { saved: d < r, margin: clamp((r - d) / r, 0, 1) };
 }
 
 // Resolve a keeper contact into catch / parry / tip. Returns a terminal Outcome
@@ -882,8 +1028,10 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   ball.spin *= 0.4;
   ball.loose = true;
   ball.contactCd = 0.28;
-  // Keeper scrambles back toward where the ball spills.
+  // Keeper scrambles back toward where the ball spills — a visible chase, and
+  // the only time he stops patrolling.
   k.targetX = ball.pos.x;
+  k.scrambling = true;
   return null;
 }
 
@@ -950,17 +1098,41 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   ball.pos.y += ball.vel.y * dt;
 
   // --- Bounce / roll ---
+  let bouncedThisStep = false;
   if (ball.z <= 0) {
     ball.z = 0;
-    if (ball.vz < -1.2) {
-      ball.vz = -ball.vz * BOUNCE_VZ;
-      ball.vel.x *= BOUNCE_H;
-      ball.vel.y *= BOUNCE_H;
+    if (ball.vz < -MIN_BOUNCE_VZ) {
+      const top = clamp(ball.topspin ?? 0, -1, 1);
+      // Topspin flattens the bounce and runs on; backspin sits up and checks.
+      ball.vz = -ball.vz * BOUNCE_VZ * (1 - top * BOUNCE_TOPSPIN_VZ);
+      const keep = BOUNCE_H * (1 + top * BOUNCE_TOPSPIN_H);
+      ball.vel.x *= keep;
+      ball.vel.y *= keep;
+
+      // Sidespin bites on the turf and turns the ball a little off straight —
+      // small enough to stay readable, big enough that a curler visibly keeps
+      // working after it lands.
+      if (Math.abs(ball.spin) > 0.0001) {
+        const sp = Math.hypot(ball.vel.x, ball.vel.y);
+        if (sp > 0.01) {
+          const a = ball.spin * BOUNCE_SIDESPIN_TURN;
+          const cos = Math.cos(a), sin = Math.sin(a);
+          const vx = ball.vel.x, vy = ball.vel.y;
+          ball.vel.x = vx * cos - vy * sin;
+          ball.vel.y = vx * sin + vy * cos;
+        }
+      }
+      // Curl survives the bounce rather than being wiped by it.
+      ball.spin *= BOUNCE_SPIN_KEEP;
+      bouncedThisStep = true;
     } else {
       ball.vz = 0;
     }
   }
-  if (ball.z <= 0.03) {
+  // Rolling resistance, and ONLY while genuinely rolling. Applying it on the
+  // same step as a bounce charged a skipping ball twice and was part of why it
+  // pulled up so sharply.
+  if (ball.z <= 0.03 && !bouncedThisStep && ball.vz <= 0.01) {
     const s = Math.hypot(ball.vel.x, ball.vel.y);
     const drop = GROUND_FRICTION * dt;
     if (s <= drop) {
@@ -986,13 +1158,16 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     }
   }
 
-  // --- Keeper save (before the goal line; must be low enough to be reachable) ---
+  // --- Keeper body contact (a ball that physically runs into him) ---
+  // NOT the shot-stopping test. That happens at the goal plane below, where the
+  // ball's crossing point is compared against where he actually is. This is only
+  // for a ball rolling or dribbled into the keeper himself — a smother — so it
+  // uses his real body width and nothing else.
   const k = scenario.keeper;
   if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.1) {
-    const reach = keeperReach(scenario, ball, speed);
     const dist = Math.hypot(k.x - ball.pos.x, k.y - ball.pos.y);
-    if (dist < reach) {
-      const res = resolveKeeper(ball, scenario, dist, reach, speed, rng);
+    if (dist < KEEPER_BODY_R) {
+      const res = resolveKeeper(ball, scenario, dist, KEEPER_BODY_R, speed, rng);
       if (res) return res; // caught or tipped
       // parried — ball is loose, keep simulating this tick
     }
@@ -1050,6 +1225,29 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     if (insideGoalMouth(xCross)) {
       if (zCross > crossbar + BALL_R) return "over";
       if (zCross > crossbar - BALL_R) return "post"; // clipped the underside of the bar
+
+      // ── THE SAVE DECISION ──
+      // Gameplay first, animation second. Where the ball crosses is compared
+      // against where the keeper actually is at this instant — he never knew
+      // where it was going, so curl that bends away from him beats him, and a
+      // corner beats him simply by being far from wherever he had patrolled to.
+      if (!k.done) {
+        const cover = keeperCovers(scenario, xCross, zCross);
+        if (cover.saved) {
+          // Only NOW is an animation picked, and it is chosen to match the
+          // outcome that has already been decided: he lunges toward the ball so
+          // the save reads as a save.
+          k.saveDir = Math.sign(xCross - k.x) || 0;
+          k.saveLunge = 0.001;
+          k.scrambling = false;
+          ball.pos.x = xCross;
+          ball.pos.y = 0.02;
+          ball.z = Math.max(0, zCross);
+          return resolveKeeper(ball, scenario, (1 - cover.margin) * keeperSaveRadius(scenario),
+            keeperSaveRadius(scenario), speed, rng) ?? null;
+        }
+      }
+
       // Beat the keeper and crossed the line. Let it carry on into the netting so
       // the goal is SEEN rather than announced — the UI keeps stepping it while
       // the net slows it down.

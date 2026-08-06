@@ -181,6 +181,23 @@ for (const b of catalogue.filter(x => x.kind === "club")) {
 }
 check(catalogue.filter(x => x.kind === "club").length === 6, "there are exactly six club briefs");
 
+// ── Every offered brief can fill THIS room's board ──────────────────────────
+// Boards grow with the room, so a brief deep enough for a solo run can be too
+// thin for three managers. Validation has to use the room's board size.
+for (const count of [1, 3, 6]) {
+  const need = boardSizeForPlayers(count);
+  const seq = await buildBriefSequence(db as never, opts, count);
+  if (seq.length !== CHALLENGE_ROUNDS) {
+    problems.push(`${count} managers: got ${seq.length} briefs, expected ${CHALLENGE_ROUNDS}`);
+  }
+  for (const b of seq) {
+    const board = await fetchChallengeRound(db as never, b, [], opts, need);
+    if (board.length < need) {
+      problems.push(`${count} managers: "${b.title}" offered ${board.length}/${need} cards`);
+    }
+  }
+}
+
 // ── Board size scales with the number of managers ───────────────────────────
 check(boardSizeForPlayers(1) === 10, "one manager gets 10 cards");
 check(boardSizeForPlayers(2) === 10, "two managers get 10 cards");

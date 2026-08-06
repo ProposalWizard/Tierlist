@@ -13,6 +13,9 @@ import type { Brief } from "@/lib/challengeDraft";
  * behind it is already loading while this plays.
  */
 
+/** How long the landed brief stays on screen before the board appears. */
+const REVEAL_HOLD_MS = 1000;
+
 const KIND_ACCENT: Record<string, string> = {
   rating: "#06b6d4", stat: "#f59e0b", nation: "#22c55e", position: "#3b82f6",
   club: "#a855f7", era: "#ec4899", age: "#14b8a6", wildcard: "#ffffff",
@@ -36,8 +39,10 @@ export default function BriefReel({
       doneRef.current = true;
       setLabel(brief.title);
       setLanded(true);
-      // Hold the landed title briefly so it registers before the board shows.
-      window.setTimeout(onDone, 320);
+      // Hold the landed title for a full second. At 320ms the reveal was over
+      // before you could read what the round actually was, which defeats the
+      // point of running the reel at all.
+      window.setTimeout(onDone, REVEAL_HOLD_MS);
     };
 
     const reduce = typeof window !== "undefined"
@@ -63,7 +68,7 @@ export default function BriefReel({
   const accent = KIND_ACCENT[brief.kind] ?? "#06b6d4";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#060d1a]/95 px-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#060d1a] px-6">
       <div className="text-center">
         <div className="text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase mb-3">
           This round
