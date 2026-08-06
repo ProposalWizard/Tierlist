@@ -73,14 +73,16 @@ export interface Keeper {
   // ── Patrol ──
   patrolT: number;       // seconds elapsed along the patrol
   patrolSeed: number;    // phase offset so no two scenarios start identically
-  patrolAmp: number;     // metres either side of his standing spot
-  patrolPeriod: number;  // seconds for one full there-and-back
   /** Chasing a spill rather than patrolling. */
   scrambling: boolean;
   /** 0..1 lunge played AFTER the outcome is decided (render only). */
   saveLunge: number;
   /** Which way that lunge goes. */
   saveDir: number;
+  /** Which save animation to play. Set only once the outcome is already decided. */
+  saveKind: SaveKind | null;
+  /** Seconds of life, for idle breathing and weight shifts (render only). */
+  idleT: number;
 }
 
 // A poacher lurking for the rebound.
@@ -201,6 +203,36 @@ const KEEPER_PATROL_PERIOD = 4.2;  // seconds for one full sweep and back — sl
                                    // enough to watch for a second and commit
 const KEEPER_SAVE_R_MIN = 2.15;    // save radius at the goal plane, weakest keeper
 const KEEPER_SAVE_R_MAX = 2.95;    // …and the strongest
+
+/**
+ * Difficulty tiers.
+ *
+ * Two numbers do all the balancing — how far he ranges and how much he covers
+ * when he gets there — plus how quickly he sweeps. Nothing here makes him
+ * cleverer or gives him foreknowledge, so even the hardest keeper stays fair:
+ * he is simply harder to find a gap in, and gives you less time to find it.
+ */
+export type KeeperTier = "easy" | "normal" | "hard" | "expert";
+export const KEEPER_TIERS: Record<KeeperTier, { amp: number; period: number; radius: number }> = {
+  easy:   { amp: 2.15, period: 5.2, radius: 2.05 },
+  normal: { amp: 2.60, period: 4.2, radius: 2.55 },
+  hard:   { amp: 2.95, period: 3.5, radius: 2.80 },
+  // Expert refines the movement rather than cheating: a wider beat and a
+  // slightly less even rhythm, never a reaction to the shot.
+  expert: { amp: 3.15, period: 3.0, radius: 2.95 },
+};
+
+/** Which tier a keeper of this rating plays at. */
+export function keeperTierFor(strength: number): KeeperTier {
+  const s = clamp(strength, 0, 100);
+  if (s < 45) return "easy";
+  if (s < 70) return "normal";
+  if (s < 88) return "hard";
+  return "expert";
+}
+
+/** How a save is played out. Chosen AFTER the outcome, purely for the animation. */
+export type SaveKind = "catch" | "central" | "low" | "high" | "fingertip";
 // Height costs more than width: a keeper covers his line far more easily than he
 // gets up. This is what makes the top corners the safest target without any
 // hidden bonus for aiming there — they are simply furthest from him.
@@ -252,11 +284,11 @@ function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
     dive: 0, saves: 0, done: false, flash: 0,
     patrolT: r * 4,                 // start somewhere along the sweep, not always centre
     patrolSeed: r * Math.PI * 2,
-    patrolAmp: KEEPER_PATROL_AMP,
-    patrolPeriod: KEEPER_PATROL_PERIOD,
     scrambling: false,
     saveLunge: 0,
     saveDir: 0,
+    saveKind: null,
+    idleT: r * 3,
   };
 }
 
@@ -859,6 +891,9 @@ export function stepKeeper(scenario: Scenario, dt: number) {
   if (k.flash > 0) k.flash = Math.max(0, k.flash - dt);
   // The lunge is pure animation, played out after an outcome is already decided.
   if (k.saveLunge > 0 && k.saveLunge < 1) k.saveLunge = Math.min(1, k.saveLunge + dt * 6);
+  // Keeps ticking even once he is done, so a keeper who has just caught it is
+  // still breathing rather than frozen mid-frame.
+  k.idleT += k.done ? dt : 0;
   if (k.done) return;
 
   if (k.scrambling) {
@@ -878,12 +913,14 @@ export function stepKeeper(scenario: Scenario, dt: number) {
   // instant reversals: both terms are sinusoids, so acceleration is continuous.
   const prevX = k.x;
   k.patrolT += dt;
-  const w = (Math.PI * 2) / k.patrolPeriod;
+  k.idleT += dt;
+  const tier = KEEPER_TIERS[keeperTierFor(scenario.keeperStrength)];
+  const w = (Math.PI * 2) / tier.period;
   const sweep =
     Math.sin(k.patrolT * w + k.patrolSeed) * 0.82 +
     Math.sin(k.patrolT * w * 1.618 + k.patrolSeed * 1.7) * 0.18;
 
-  const want = k.startX + sweep * k.patrolAmp;
+  const want = k.startX + sweep * tier.amp;
   // Never past his own posts.
   k.x = clamp(want, POST_L + 0.35, POST_R - 0.35);
 
@@ -966,10 +1003,43 @@ export function stepFollower(scenario: Scenario, ball: Ball, rng: () => number, 
  * concession to a scramble rather than a first shot.
  */
 function keeperSaveRadius(scenario: Scenario): number {
-  const base = KEEPER_SAVE_R_MIN
+  // Blend of the smooth rating curve and the tier's headline number, so a
+  // keeper still improves gradually within a tier rather than stepping.
+  const smooth = KEEPER_SAVE_R_MIN
     + (clamp(scenario.keeperStrength, 0, 100) / 100) * (KEEPER_SAVE_R_MAX - KEEPER_SAVE_R_MIN);
+  const tier = KEEPER_TIERS[keeperTierFor(scenario.keeperStrength)].radius;
+  const base = smooth * 0.5 + tier * 0.5;
   const wear = Math.max(0.45, 1 - 0.35 * scenario.keeper.saves);
   return base * wear;
+}
+
+/**
+ * Which save animation best fits a save that has ALREADY been decided.
+ *
+ * This is the spec's rule made literal: gameplay determines the animation, and
+ * the animation never determines gameplay. By the time this is called the shot
+ * is saved — all that is left is to pick the version of it that matches where
+ * the ball actually was, so the keeper looks like he did the thing that just
+ * happened.
+ */
+function classifySave(
+  xCross: number, zCross: number, keeperX: number, margin: number, outcome: Outcome | null,
+): SaveKind {
+  const dx = Math.abs(xCross - keeperX);
+  const dz = zCross - KEEPER_CENTRE_Z;
+
+  // Right on the edge of his reach, or clawed away — fingertips.
+  if (margin < 0.18 || outcome === "tipped") {
+    return zCross > 1.6 ? "high" : "fingertip";
+  }
+  // Gathered cleanly and close to the body — a catch.
+  if (outcome === "caught" && dx < 1.0 && Math.abs(dz) < 0.8) return "catch";
+  // Straight at him: blocked with the body rather than dived at.
+  if (dx < 0.7) return Math.abs(dz) < 0.7 ? "central" : (dz > 0 ? "high" : "low");
+  // Otherwise it is a dive, and only the height decides which kind.
+  if (zCross > 1.55) return "high";
+  if (zCross < 0.6) return "low";
+  return margin < 0.4 ? "fingertip" : "low";
 }
 
 /**
@@ -1243,8 +1313,11 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
           ball.pos.x = xCross;
           ball.pos.y = 0.02;
           ball.z = Math.max(0, zCross);
-          return resolveKeeper(ball, scenario, (1 - cover.margin) * keeperSaveRadius(scenario),
-            keeperSaveRadius(scenario), speed, rng) ?? null;
+          const r = keeperSaveRadius(scenario);
+          const outcome = resolveKeeper(ball, scenario, (1 - cover.margin) * r, r, speed, rng);
+          // Animation LAST, and chosen to match the outcome that is now settled.
+          k.saveKind = classifySave(xCross, zCross, k.x, cover.margin, outcome);
+          return outcome ?? null;
         }
       }
 
