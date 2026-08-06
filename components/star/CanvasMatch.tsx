@@ -658,94 +658,100 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     });
 
     // ── Keeper ──
-    // A keeper, not an oval: gloves held out from the body, and on a dive the
-    // whole figure pitches over toward the ball with the leading glove thrown
-    // out ahead of it.
+    // Drawn DELIBERATELY SMALL and at reduced opacity while the ball is live.
+    // He stands right in the mouth of the goal from this camera, so a keeper
+    // drawn at full size hid the very thing you are trying to watch: whether
+    // your shot went in. He is still exactly where the save maths says he is —
+    // only the artwork is restrained.
     {
       const kk = sc.keeper;
       const { px, py } = toPx(kk.x, kk.y);
-      const diveN = clamp(Math.abs(kk.dive) / 3.2, 0, 1); // 3.2 m is a full-stretch dive
-      const sign = kk.dive === 0 ? 0 : Math.sign(kk.dive);
-      const lean = sign * diveN * 1.05;                   // radians of pitch-over
-      const cx = px + sign * R * diveN * 1.5;
-      const gloveR = R * 0.26;
+      // `dive` is a lean while patrolling and a committed lunge once a save has
+      // been decided; saveLunge eases the second one in after the fact.
+      const lunge = kk.saveLunge > 0 ? kk.saveLunge : 0;
+      const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * 0.55;
+      const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
+      const KR = R * 0.82;                       // smaller than an outfielder
+      const lean = sign * diveN * 1.0;
+      const cx = px + sign * KR * lunge * 1.4;
+      const gloveR = KR * 0.24;
+
+      ctx.save();
+      ctx.globalAlpha = 0.92;
 
       ctx.beginPath();
-      ctx.ellipse(cx, py + R * 0.72, R * (0.8 + diveN * 0.7), R * 0.3, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.34)";
+      ctx.ellipse(cx, py + KR * 0.72, KR * (0.7 + diveN * 0.5), KR * 0.26, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.fill();
 
       if (kk.flash > 0) {
         ctx.beginPath();
-        ctx.arc(cx, py, R * 1.5, 0, Math.PI * 2);
+        ctx.arc(cx, py, KR * 1.3, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(250,204,21,0.35)";
         ctx.fill();
       }
 
-      ctx.save();
       ctx.translate(cx, py);
       ctx.rotate(lean);
       ctx.lineCap = "round";
 
-      // Legs — trailing behind the dive
+      // Legs
       ctx.strokeStyle = SKIN;
-      ctx.lineWidth = Math.max(1.4, R * 0.30);
+      ctx.lineWidth = Math.max(1.2, KR * 0.28);
       ctx.beginPath();
-      ctx.moveTo(-R * 0.24, R * 0.18);
-      ctx.lineTo(-R * 0.34 - diveN * R * 0.3, R * 0.80);
+      ctx.moveTo(-KR * 0.22, KR * 0.16);
+      ctx.lineTo(-KR * 0.30 - diveN * KR * 0.3, KR * 0.76);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(R * 0.24, R * 0.18);
-      ctx.lineTo(R * 0.34 + diveN * R * 0.3, R * 0.80);
+      ctx.moveTo(KR * 0.22, KR * 0.16);
+      ctx.lineTo(KR * 0.30 + diveN * KR * 0.3, KR * 0.76);
       ctx.stroke();
 
       // Shorts
       ctx.fillStyle = "#0f172a";
       ctx.beginPath();
-      ctx.roundRect?.(-R * 0.42, -R * 0.02, R * 0.84, R * 0.34, R * 0.12);
-      if (!ctx.roundRect) ctx.rect(-R * 0.42, -R * 0.02, R * 0.84, R * 0.34);
+      ctx.roundRect?.(-KR * 0.40, -KR * 0.02, KR * 0.80, KR * 0.32, KR * 0.12);
+      if (!ctx.roundRect) ctx.rect(-KR * 0.40, -KR * 0.02, KR * 0.80, KR * 0.32);
       ctx.fill();
 
-      // Arms, spread wide — wider still as the dive extends
-      const reach = R * (0.72 + diveN * 0.95);
+      // Arms — held out, and thrown further on a committed save
+      const reach = KR * (0.62 + diveN * 0.85);
       ctx.strokeStyle = SKIN;
-      ctx.lineWidth = Math.max(1.2, R * 0.26);
-      ctx.beginPath();
-      ctx.moveTo(-R * 0.34, -R * 0.30);
-      ctx.lineTo(-reach, -R * 0.30 - diveN * R * 0.5);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(R * 0.34, -R * 0.30);
-      ctx.lineTo(reach, -R * 0.30 - diveN * R * 0.5);
-      ctx.stroke();
+      ctx.lineWidth = Math.max(1.1, KR * 0.24);
+      for (const s2 of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(s2 * KR * 0.32, -KR * 0.28);
+        ctx.lineTo(s2 * reach, -KR * 0.28 - diveN * KR * 0.45);
+        ctx.stroke();
+      }
 
       // Shirt
       ctx.fillStyle = C.gk;
       ctx.beginPath();
-      ctx.roundRect?.(-R * 0.46, -R * 0.52, R * 0.92, R * 0.62, R * 0.16);
-      if (!ctx.roundRect) ctx.rect(-R * 0.46, -R * 0.52, R * 0.92, R * 0.62);
+      ctx.roundRect?.(-KR * 0.44, -KR * 0.50, KR * 0.88, KR * 0.58, KR * 0.15);
+      if (!ctx.roundRect) ctx.rect(-KR * 0.44, -KR * 0.50, KR * 0.88, KR * 0.58);
       ctx.fill();
-      ctx.lineWidth = Math.max(1, R * 0.12);
+      ctx.lineWidth = Math.max(1, KR * 0.11);
       ctx.strokeStyle = C.gkRim;
       ctx.stroke();
 
-      // Gloves — the part that actually makes him read as a keeper
+      // Gloves — what actually makes him read as a keeper
       ctx.fillStyle = "#f8fafc";
       ctx.strokeStyle = C.gkRim;
-      ctx.lineWidth = Math.max(1, R * 0.10);
-      for (const gx of [-reach, reach]) {
+      ctx.lineWidth = Math.max(1, KR * 0.09);
+      for (const s2 of [-1, 1]) {
         ctx.beginPath();
-        ctx.arc(gx, -R * 0.30 - diveN * R * 0.5, gloveR, 0, Math.PI * 2);
+        ctx.arc(s2 * reach, -KR * 0.28 - diveN * KR * 0.45, gloveR, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       }
 
       // Head
       ctx.beginPath();
-      ctx.arc(0, -R * 0.72, R * 0.30, 0, Math.PI * 2);
+      ctx.arc(0, -KR * 0.70, KR * 0.28, 0, Math.PI * 2);
       ctx.fillStyle = SKIN;
       ctx.fill();
-      ctx.lineWidth = Math.max(1, R * 0.10);
+      ctx.lineWidth = Math.max(1, KR * 0.09);
       ctx.strokeStyle = "rgba(0,0,0,0.35)";
       ctx.stroke();
 
