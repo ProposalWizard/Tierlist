@@ -128,6 +128,11 @@ interface Particle {
 }
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
+/** How long "PASS" / "GOAL" stays on screen after the action. */
+const ACTION_BANNER_MS = 1000;
+/** Seconds the kicking pose is held so the swing is actually visible. */
+const KICK_POSE_S = 0.28;
+
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -227,6 +232,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
+  // Last-seen position per figure, so the renderer can tell who is moving and
+  // put them in a running pose. Purely cosmetic — nothing reads it back.
+  const motionRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  // Seconds remaining on the player's kicking pose. A strike takes one frame,
+  // so without a hold the swing would never actually be seen.
+  const kickPoseRef = useRef(0);
+  // Action banner ("PASS" / "GOAL") and how long it stays up.
+  const [actionBanner, setActionBanner] = useState<string | null>(null);
+  const bannerTimerRef = useRef<number | null>(null);
+  const showAction = useCallback((text: string) => {
+    setActionBanner(text);
+    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+    bannerTimerRef.current = window.setTimeout(() => setActionBanner(null), ACTION_BANNER_MS);
+  }, []);
 
   // --- Cosmetic FX state (never touches physics) ---
   const reducedMotionRef = useRef(false);
@@ -455,99 +474,282 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.setLineDash([]);
     }
 
-    // --- Stylised "puck" players: drop shadow, rim, top-light ---
-    const puck = (x: number, y: number, r: number, fill: string, rim: string, label?: string, labelColor = "#fff") => {
+    // --- Footballers ---
+    //
+    // Drawn as actual figures rather than discs: shadow, legs, shorts, shirt,
+    // arms and head, with the limbs posed by what the player is doing. The
+    // camera looks down the pitch from behind and slightly above, so the head
+    // sits high on the body and the limbs splay out below it.
+    //
+    // Poses are cosmetic only. Every position, collision and reception test
+    // still uses the single point the figure is centred on, exactly as the
+    // discs did — so nothing about the physics changed with the artwork.
+    const SKIN = "#c68642";
+    type Pose = "idle" | "run" | "kick" | "receive";
+
+    const footballer = (
+      x: number, y: number, r: number,
+      shirt: string, rim: string,
+      opts: { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string } = {},
+    ) => {
       const { px, py } = toPx(x, y);
+      const pose = opts.pose ?? "idle";
+      const phase = opts.phase ?? 0;
+      const shorts = opts.shorts ?? "#111827";
+      const lw = Math.max(1.4, r * 0.30);
+
+      // Ground shadow stays put while the figure above it moves.
       ctx.beginPath();
-      ctx.ellipse(px, py + r * 0.55, r * 0.95, r * 0.4, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.32)";
+      ctx.ellipse(px, py + r * 0.72, r * 0.78, r * 0.30, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.34)";
       ctx.fill();
+
+      ctx.save();
+      ctx.translate(px, py);
+      if (opts.facing) ctx.rotate(opts.facing);
+
+      // Limb swing. Running scissors the legs and counter-swings the arms;
+      // a kick throws one leg through and the arms wide for balance.
+      const swing = pose === "run" ? Math.sin(phase) : 0;
+      const kick = pose === "kick" ? 1 : 0;
+      const open = pose === "receive" ? 1 : 0;
+
+      ctx.lineCap = "round";
+      ctx.lineWidth = lw;
+
+      // ── Legs ──
+      ctx.strokeStyle = SKIN;
+      const hipY = r * 0.18;
+      const legL = r * 0.62;
+      const legSwing = swing * r * 0.42 + kick * r * 0.55;
       ctx.beginPath();
-      ctx.arc(px, py, r, 0, Math.PI * 2);
-      ctx.fillStyle = fill;
-      ctx.fill();
-      ctx.lineWidth = Math.max(1.5, r * 0.18);
-      ctx.strokeStyle = rim;
+      ctx.moveTo(-r * 0.24, hipY);
+      ctx.lineTo(-r * 0.24 - legSwing * 0.35, hipY + legL - Math.abs(legSwing) * 0.15);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(px - r * 0.28, py - r * 0.3, r * 0.42, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.moveTo(r * 0.24, hipY);
+      ctx.lineTo(r * 0.24 + legSwing * 0.35, hipY + legL - Math.abs(legSwing) * 0.15);
+      ctx.stroke();
+
+      // ── Shorts ──
+      ctx.fillStyle = shorts;
+      ctx.beginPath();
+      ctx.roundRect?.(-r * 0.42, -r * 0.02, r * 0.84, r * 0.34, r * 0.12);
+      if (!ctx.roundRect) ctx.rect(-r * 0.42, -r * 0.02, r * 0.84, r * 0.34);
       ctx.fill();
-      if (label) {
-        ctx.fillStyle = labelColor;
-        ctx.font = `bold ${Math.round(r * 0.85)}px sans-serif`;
+
+      // ── Arms ── (counter-swing to the legs, thrown wide to receive)
+      ctx.strokeStyle = SKIN;
+      ctx.lineWidth = lw * 0.85;
+      const armOut = r * (0.52 + open * 0.34 + kick * 0.26);
+      const armDrop = r * (0.24 - open * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.34, -r * 0.30);
+      ctx.lineTo(-armOut, armDrop + swing * r * 0.22);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(r * 0.34, -r * 0.30);
+      ctx.lineTo(armOut, armDrop - swing * r * 0.22);
+      ctx.stroke();
+
+      // ── Shirt ──
+      ctx.fillStyle = shirt;
+      ctx.beginPath();
+      ctx.roundRect?.(-r * 0.46, -r * 0.52, r * 0.92, r * 0.62, r * 0.16);
+      if (!ctx.roundRect) ctx.rect(-r * 0.46, -r * 0.52, r * 0.92, r * 0.62);
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, r * 0.12);
+      ctx.strokeStyle = rim;
+      ctx.stroke();
+
+      // ── Head ──
+      ctx.beginPath();
+      ctx.arc(0, -r * 0.72, r * 0.30, 0, Math.PI * 2);
+      ctx.fillStyle = SKIN;
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, r * 0.10);
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.stroke();
+
+      ctx.restore();
+
+      if (opts.label) {
+        ctx.fillStyle = opts.labelColor ?? "#fff";
+        ctx.font = `bold ${Math.round(r * 0.52)}px sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(label, px, py + r * 0.05);
+        ctx.fillText(opts.label, px, py - r * 0.22);
       }
     };
 
     // A player occupies roughly a metre across the shoulders — sized in real
     // metres now, so players no longer dwarf or vanish against the markings.
-    const R = unit * 0.95;
+    const R = unit * 1.25;
+
+    // Running phase, shared by everyone so the crowd of figures does not march
+    // in lockstep — each is offset by its own position.
+    const now = performance.now() / 1000;
+    const runPhase = (seedX: number) => now * 9 + seedX * 1.7;
+
+    // Whether a figure is moving, from how far it travelled since last frame.
+    // Cheaper and more reliable than threading velocity out of every entity,
+    // and it works for the ones that only expose a position.
+    const motion = motionRef.current;
+    const poseFor = (id: string, x: number, y: number): Pose => {
+      const prev = motion.get(id);
+      motion.set(id, { x, y });
+      if (!prev) return "idle";
+      return Math.hypot(x - prev.x, y - prev.y) > 0.02 ? "run" : "idle";
+    };
 
     // Highlight the runner while they control a pass they've just won
     const rb = ballRef.current;
     if (rb && rb.receiverControlT > 0 && sc.runner) {
       const { px, py } = toPx(sc.runner.pos.x, sc.runner.pos.y);
       ctx.beginPath();
-      ctx.arc(px, py, R * 1.9, 0, Math.PI * 2);
+      ctx.arc(px, py, R * 1.5, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(167,139,250,0.4)";
       ctx.fill();
     }
 
     // Rebound poacher — only worth drawing once he's actually chasing something
-    if (sc.follower.active) puck(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim);
+    if (sc.follower.active) {
+      footballer(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim, {
+        pose: poseFor("follower", sc.follower.x, sc.follower.y),
+        phase: runPhase(sc.follower.x),
+      });
+    }
 
     // Decorative team-mates (the crosser on a volley/header)
-    for (const t of sc.teammates) puck(t.x, t.y, R, C.mate, C.mateRim);
+    sc.teammates.forEach((t, i) => {
+      footballer(t.x, t.y, R, C.mate, C.mateRim, {
+        pose: poseFor(`mate${i}`, t.x, t.y),
+        phase: runPhase(t.x),
+      });
+    });
 
     // The runner a pass is aimed at — drawn at their LIVE position, which is the
     // exact point reception is tested against, so the ball can never appear to
     // pass through them without being controlled.
-    for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
-      puck(r.pos.x, r.pos.y, R, C.mate, C.mateRim);
-    }
+    [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].forEach((r, i) => {
+      // Arms out the moment they take the ball down, so a completed pass reads
+      // on the pitch and not only in the commentary.
+      const receiving = i === 0 && !!rb && rb.receiverControlT > 0;
+      footballer(r.pos.x, r.pos.y, R, C.mate, C.mateRim, {
+        pose: receiving ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
+        phase: runPhase(r.pos.x),
+      });
+    });
 
     // Defenders + you
-    for (const d of sc.defenders) puck(d.x, d.y, R, C.opp, C.oppRim);
-    puck(sc.player.x, sc.player.y, R, C.you, C.youRim, "YOU");
+    sc.defenders.forEach((d, i) => {
+      footballer(d.x, d.y, R, C.opp, C.oppRim, {
+        pose: poseFor(`def${i}`, d.x, d.y),
+        phase: runPhase(d.x),
+      });
+    });
+    footballer(sc.player.x, sc.player.y, R, C.you, C.youRim, {
+      // Held briefly after a strike so the swing is visible rather than
+      // happening entirely between two frames.
+      pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
+      phase: runPhase(sc.player.x),
+      label: "YOU",
+      labelColor: "#fff",
+    });
 
-    // Keeper — body stretches into the dive it commits to
+    // ── Keeper ──
+    // A keeper, not an oval: gloves held out from the body, and on a dive the
+    // whole figure pitches over toward the ball with the leading glove thrown
+    // out ahead of it.
     {
       const kk = sc.keeper;
       const { px, py } = toPx(kk.x, kk.y);
       const diveN = clamp(Math.abs(kk.dive) / 3.2, 0, 1); // 3.2 m is a full-stretch dive
       const sign = kk.dive === 0 ? 0 : Math.sign(kk.dive);
-      const rx = R * (1.15 + diveN * 1.9);
-      const ry = R * (1.15 - diveN * 0.3);
-      const cx = px + sign * rx * 0.35;
+      const lean = sign * diveN * 1.05;                   // radians of pitch-over
+      const cx = px + sign * R * diveN * 1.5;
+      const gloveR = R * 0.26;
+
       ctx.beginPath();
-      ctx.ellipse(cx, py + ry * 0.55, rx * 0.95, ry * 0.4, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.32)";
+      ctx.ellipse(cx, py + R * 0.72, R * (0.8 + diveN * 0.7), R * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.34)";
       ctx.fill();
+
       if (kk.flash > 0) {
         ctx.beginPath();
-        ctx.ellipse(cx, py, rx * 1.28, ry * 1.28, 0, 0, Math.PI * 2);
+        ctx.arc(cx, py, R * 1.5, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(250,204,21,0.35)";
         ctx.fill();
       }
+
+      ctx.save();
+      ctx.translate(cx, py);
+      ctx.rotate(lean);
+      ctx.lineCap = "round";
+
+      // Legs — trailing behind the dive
+      ctx.strokeStyle = SKIN;
+      ctx.lineWidth = Math.max(1.4, R * 0.30);
       ctx.beginPath();
-      ctx.ellipse(cx, py, rx, ry, 0, 0, Math.PI * 2);
-      ctx.fillStyle = C.gk;
-      ctx.fill();
-      ctx.lineWidth = Math.max(1.5, R * 0.18);
-      ctx.strokeStyle = C.gkRim;
+      ctx.moveTo(-R * 0.24, R * 0.18);
+      ctx.lineTo(-R * 0.34 - diveN * R * 0.3, R * 0.80);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(cx - rx * 0.25, py - ry * 0.3, ry * 0.42, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.22)";
+      ctx.moveTo(R * 0.24, R * 0.18);
+      ctx.lineTo(R * 0.34 + diveN * R * 0.3, R * 0.80);
+      ctx.stroke();
+
+      // Shorts
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.roundRect?.(-R * 0.42, -R * 0.02, R * 0.84, R * 0.34, R * 0.12);
+      if (!ctx.roundRect) ctx.rect(-R * 0.42, -R * 0.02, R * 0.84, R * 0.34);
       ctx.fill();
-      ctx.fillStyle = "#111827";
-      ctx.font = `bold ${Math.round(R * 0.85)}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("GK", px, py);
+
+      // Arms, spread wide — wider still as the dive extends
+      const reach = R * (0.72 + diveN * 0.95);
+      ctx.strokeStyle = SKIN;
+      ctx.lineWidth = Math.max(1.2, R * 0.26);
+      ctx.beginPath();
+      ctx.moveTo(-R * 0.34, -R * 0.30);
+      ctx.lineTo(-reach, -R * 0.30 - diveN * R * 0.5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(R * 0.34, -R * 0.30);
+      ctx.lineTo(reach, -R * 0.30 - diveN * R * 0.5);
+      ctx.stroke();
+
+      // Shirt
+      ctx.fillStyle = C.gk;
+      ctx.beginPath();
+      ctx.roundRect?.(-R * 0.46, -R * 0.52, R * 0.92, R * 0.62, R * 0.16);
+      if (!ctx.roundRect) ctx.rect(-R * 0.46, -R * 0.52, R * 0.92, R * 0.62);
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, R * 0.12);
+      ctx.strokeStyle = C.gkRim;
+      ctx.stroke();
+
+      // Gloves — the part that actually makes him read as a keeper
+      ctx.fillStyle = "#f8fafc";
+      ctx.strokeStyle = C.gkRim;
+      ctx.lineWidth = Math.max(1, R * 0.10);
+      for (const gx of [-reach, reach]) {
+        ctx.beginPath();
+        ctx.arc(gx, -R * 0.30 - diveN * R * 0.5, gloveR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Head
+      ctx.beginPath();
+      ctx.arc(0, -R * 0.72, R * 0.30, 0, Math.PI * 2);
+      ctx.fillStyle = SKIN;
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, R * 0.10);
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.stroke();
+
+      ctx.restore();
     }
 
     // --- Ball trail (fades along the flight; curl makes it sing) ---
@@ -753,8 +955,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const ev = ballRef.current?.event;
         const receiver = scenarioRef.current.receiver;
         if (ev && receiver) {
-          if (ev === "received") pushLine(commentaryReceived(receiver.roleLabel, rngRef.current));
-          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(receiver.roleLabel, rngRef.current)); playKick(); }
+          if (ev === "received") { pushLine(commentaryReceived(receiver.roleLabel, rngRef.current)); showAction("PASS"); }
+          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(receiver.roleLabel, rngRef.current)); playKick(); kickPoseRef.current = KICK_POSE_S; }
         }
         if (ballRef.current) ballRef.current.event = null;
       }
@@ -766,6 +968,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
 
       // Cosmetic FX advance (pausing the rAF pauses everything together)
+      if (kickPoseRef.current > 0) kickPoseRef.current = Math.max(0, kickPoseRef.current - dt);
       if (shakeRef.current.t > 0) shakeRef.current.t = Math.max(0, shakeRef.current.t - dt);
       if (flashRef.current.t > 0) flashRef.current.t = Math.max(0, flashRef.current.t - dt);
       for (const p of particlesRef.current) {
@@ -826,6 +1029,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     // Celebration / impact FX + sound, matched to what the physics produced.
     if (kind === "goal") {
+      showAction("GOAL");
       spawnGoalFx();
       playNet();
       playCrowdSwell("cheer");
@@ -1076,6 +1280,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current));
     playKick();
+    kickPoseRef.current = KICK_POSE_S;
   };
 
   const scenarioLabel = SCENARIO_LABEL[scenarioRef.current.kind];
@@ -1110,12 +1315,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       {matchMode && (
         <div className="mb-2 flex items-center justify-between gap-1">
           <div className="flex-1 bg-red-600 border border-red-500 rounded-l-lg px-2 py-1.5 text-white font-black text-xs truncate">
-            {homeTeam.slice(0, 8).toUpperCase()}
+            {homeTeam.toUpperCase()}
           </div>
           <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{homeScore}</div>
           <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{awayScore}</div>
           <div className="flex-1 bg-amber-500 border border-amber-400 rounded-r-lg px-2 py-1.5 text-white font-black text-xs truncate text-right">
-            {awayTeam.slice(0, 8).toUpperCase()}
+            {awayTeam.toUpperCase()}
           </div>
         </div>
       )}
@@ -1180,6 +1385,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           />
         )}
 
+        {/* Action banner — the moment an action actually completes. "PASS" when
+            a team-mate brings your ball under control, "GOAL" when it goes in.
+            Sits high so it never covers the strike itself. */}
+        {actionBanner && (
+          <div className="absolute inset-x-0 top-[18%] flex items-center justify-center pointer-events-none z-20">
+            <div
+              className={`kib-pop text-5xl font-black italic tracking-wider drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)] ${
+                actionBanner === "GOAL" ? "text-emerald-300" : "text-cyan-200"
+              }`}
+            >
+              {actionBanner}
+            </div>
+          </div>
+        )}
+
         {/* Outcome. Deliberately NOT announced for anything the pitch already
             shows you — the ball in the net, off the post, wide, in the keeper's
             hands. The only banner is the referee's call, which has no visual. */}
@@ -1199,9 +1419,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             {/* Scoreline */}
             {matchMode && (
               <div className="text-sm font-bold text-gray-300 mb-4">
-                {homeTeam.slice(0, 10)} <span className="text-white text-lg tabular-nums mx-1">{homeScore}</span>
+                <span className="truncate">{homeTeam}</span> <span className="text-white text-lg tabular-nums mx-1">{homeScore}</span>
                 <span className="text-gray-500 mx-1">-</span>
-                <span className="text-white text-lg tabular-nums mx-1">{awayScore}</span> {awayTeam.slice(0, 10)}
+                <span className="text-white text-lg tabular-nums mx-1">{awayScore}</span> <span className="truncate">{awayTeam}</span>
               </div>
             )}
             {/* Scrolling events */}

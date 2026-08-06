@@ -129,8 +129,12 @@ const GROUND_FRICTION = 2.6;   // m/s^2 rolling resistance on grass. A firm 18 m
 const AIR_DRAG = 0.2;          // per-second horizontal drag while airborne
 const BOUNCE_VZ = 0.55;        // vertical restitution off turf
 const BOUNCE_H = 0.72;         // horizontal speed kept on bounce
-const CURL_K = 0.16;           // Magnus-ish lateral bend. A well-struck curler bends
-                               // ~2-3 m over 25 m — enough to beat a wall, not a banana.
+const CURL_K = 0.48;           // Magnus-ish lateral bend, applied perpendicular to
+                               // travel so it rotates the flight rather than shoving
+                               // it sideways. At 0.16 a maximum-curve strike bent
+                               // only ~2-3 m over 25 m, which barely read as curl at
+                               // all; this is 3x that, so a hard shot struck on the
+                               // outside of the ball bends properly round a keeper.
 
 const SHOT_REF_SPEED = 32;     // m/s — about as hard as a professional strikes it
 const KEEPER_LATERAL_MAX = 3.2;// metres along the line a keeper can cover diving
