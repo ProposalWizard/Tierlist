@@ -121,10 +121,33 @@ export interface Receiver {
   roleLabel: string; // e.g. "the striker" — used in commentary
 }
 
+/**
+ * A defender.
+ *
+ * Extends Vec2, so the thirteen scenario builders that create plain {x, y}
+ * literals still satisfy it and needed no changes. The AI fields are filled in
+ * by initDefenders() when the scenario starts.
+ */
+export interface Defender extends Vec2 {
+  /** Where he started — cover defenders hold a shape relative to this. */
+  homeX?: number;
+  homeY?: number;
+  /**
+   * press: closes the ball carrier down and contains him.
+   * cover: slides onto the passing lane to the most dangerous runner.
+   * hold : a wall or a marker. Drifts only; never charges. Used for dead balls.
+   */
+  role?: "press" | "cover" | "hold";
+  /** Metres per second. Varied slightly per defender so they don't move as one. */
+  speed?: number;
+  /** Seconds spent within containment range of the carrier. Drives the tackle. */
+  containT?: number;
+}
+
 export interface Scenario {
   ball: Vec2;
   player: Vec2;
-  defenders: Vec2[];
+  defenders: Defender[];
   keeper: Keeper;
   keeperStrength: number;   // 0-100 — better keepers cover more of the goal
   follower: Follower;
@@ -145,7 +168,9 @@ export interface Scenario {
 
 export type Outcome =
   | "goal" | "rebound" | "delivered" | "saved" | "caught" | "tipped"
-  | "over" | "post" | "wide" | "blocked" | "out" | "short" | "offside";
+  | "over" | "post" | "wide" | "blocked" | "out" | "short" | "offside"
+  /** Dwelt too long and the closing defender took it off you. */
+  | "tackled";
 
 export interface KickSkills {
   power: number;      // 0-100
@@ -931,6 +956,116 @@ export function stepKeeper(scenario: Scenario, dt: number) {
   k.dive += (lean - k.dive) * Math.min(1, dt * 8);
 }
 
+/**
+ * THE PRESSURE CURVE
+ *
+ * Defenders used to be static dots, and the world was frozen while you aimed —
+ * so a scenario had no time pressure at all and you could deliberate forever.
+ * That is the single largest difference from the game this is modelled on,
+ * where every moment on the ball is a shrinking window.
+ *
+ * Pressure now emerges from geometry alone. There is no clock and nothing on
+ * screen counting down: the nearest defender closes you down, others slide onto
+ * your passing lanes, and the longer you hold the ball the worse every option
+ * becomes. Urgency without an artificial timer.
+ *
+ * Tackling is the CULMINATION of that, not a dice roll. A defender only takes
+ * the ball after he has contained you and you have still not acted.
+ */
+const DEF_PRESS_SPEED = 4.3;   // m/s closing down. A jog into position, not a sprint.
+const DEF_CONTAIN_R = 1.75;    // metres he stands off at. Patience — he contains
+                               // rather than lunging, which is what makes the
+                               // pressure feel like football instead of tag.
+const DEF_TACKLE_S = 1.15;     // seconds contained before he commits to the tackle
+const DEF_COVER_SPEED = 3.4;   // m/s sliding across to block a passing lane
+const DEF_LANE_BIAS = 0.62;    // how far along the lane a cover defender sits,
+                               // 0 = beside you, 1 = on top of the receiver
+
+/** Assign roles once, when a scenario starts. */
+export function initDefenders(scenario: Scenario, rng: () => number) {
+  const deadBall = scenario.kind === "penalty"
+    || scenario.kind === "free_kick"
+    || scenario.kind === "corner";
+
+  // Nearest to the ball presses; the rest cover. On a dead ball nobody moves —
+  // a wall that charged you before the whistle would be nonsense.
+  const order = scenario.defenders
+    .map((d, i) => ({ i, dist: Math.hypot(d.x - scenario.player.x, d.y - scenario.player.y) }))
+    .sort((a, b) => a.dist - b.dist);
+
+  scenario.defenders.forEach((d, i) => {
+    d.homeX = d.x;
+    d.homeY = d.y;
+    d.containT = 0;
+    // Small per-defender variation so a back four does not move as one object.
+    d.speed = 1 + (rng() - 0.5) * 0.18;
+    d.role = deadBall ? "hold" : (order[0]?.i === i ? "press" : "cover");
+  });
+}
+
+/**
+ * Advance the defence. Runs during AIMING as well as flight — that is the
+ * whole point, and the reason a decision window exists at all.
+ *
+ * Returns "tackled" when a contained carrier has dwelt too long.
+ */
+export function stepDefenders(
+  scenario: Scenario,
+  dt: number,
+  carrier: Vec2,
+  carrierHasBall: boolean,
+): Outcome | null {
+  let lost: Outcome | null = null;
+
+  // The most dangerous option to cut out: the runner a pass is aimed at, or
+  // failing that the goal itself.
+  const threat = scenario.runner?.pos
+    ?? scenario.secondaryRunners[0]?.pos
+    ?? { x: (scenario.goal.x1 + scenario.goal.x2) / 2, y: 0 };
+
+  for (const d of scenario.defenders) {
+    const role = d.role ?? "hold";
+    const spd = d.speed ?? 1;
+
+    if (role === "press") {
+      // Close to the containment ring and hold there. Approaching all the way
+      // in would read as lunging, and would make every scenario a race rather
+      // than a decision.
+      const dx = carrier.x - d.x, dy = carrier.y - d.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const gap = dist - DEF_CONTAIN_R;
+      if (gap > 0.02) {
+        const step = Math.min(gap, DEF_PRESS_SPEED * spd * dt);
+        d.x += (dx / dist) * step;
+        d.y += (dy / dist) * step;
+      }
+
+      // Contained. Now patience runs out — but only while you still have it.
+      if (carrierHasBall && dist <= DEF_CONTAIN_R + 0.35) {
+        d.containT = (d.containT ?? 0) + dt;
+        if ((d.containT ?? 0) >= DEF_TACKLE_S) lost = "tackled";
+      } else {
+        d.containT = 0;
+      }
+    } else if (role === "cover") {
+      // Slide onto the line between the carrier and the danger, shrinking the
+      // passing lane rather than chasing the ball. Every option gets worse.
+      const tx = carrier.x + (threat.x - carrier.x) * DEF_LANE_BIAS;
+      const ty = carrier.y + (threat.y - carrier.y) * DEF_LANE_BIAS;
+      const dx = tx - d.x, dy = ty - d.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.05) {
+        const step = Math.min(dist, DEF_COVER_SPEED * spd * dt);
+        d.x += (dx / dist) * step;
+        d.y += (dy / dist) * step;
+      }
+    }
+    // "hold" defenders stay exactly where the scenario placed them.
+  }
+
+  return lost;
+}
+
 // Advance the team-mate making the run. They move at a real sprinting pace, which
 // is what makes a through-ball a question of weight and timing rather than of
 // hitting a static circle.
@@ -1378,4 +1513,5 @@ export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass"
   out: { text: "Out of play.", kind: "neutral" },
   short: { text: "Scrambled clear.", kind: "neutral" },
   offside: { text: "OFFSIDE!", kind: "neutral" },
+  tackled: { text: "DISPOSSESSED", kind: "miss" },
 };

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, launch, stepBall, stepBallInNet,
-  stepKeeper, stepFollower, stepRunner,
+  stepKeeper, stepFollower, stepRunner, stepDefenders, initDefenders,
   OUTCOME_TEXT, clamp,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
@@ -291,6 +291,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   // --- Announce the very first scenario + set its viewport ---
   useEffect(() => {
+    // The opening scenario is built before this component mounts, so it needs
+    // its defensive shape assigning here too.
+    initDefenders(scenarioRef.current, rngRef.current);
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
@@ -1064,11 +1067,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       lastTsRef.current = ts;
       dt = Math.min(dt, 0.05); // clamp big frame gaps
 
+      // ── The world runs while you AIM ──
+      // It used to be frozen until you struck the ball, so a scenario had no
+      // time pressure at all: defenders were static dots and you could
+      // deliberate forever. Running the defence here is what creates the
+      // decision window — the nearest defender closes you down and the others
+      // shut your passing lanes, so every option quietly gets worse the longer
+      // you hold it. No timer, no countdown; just football closing in.
+      if (phaseRef.current === "aim") {
+        const sc = scenarioRef.current;
+        const lost = stepDefenders(sc, dt, sc.player, true);
+        stepKeeper(sc, dt);
+        stepRunner(sc, dt);
+        if (lost) resolveOutcome(lost);
+      }
+
       if (phaseRef.current === "flight" && ballRef.current) {
         // Substep for stable physics
         const steps = 3;
         const h = dt / steps;
         for (let i = 0; i < steps; i++) {
+          // Defenders keep working during the flight too, so a slow pass can
+          // still be cut out by the man who was already sliding across.
+          stepDefenders(scenarioRef.current, h, ballRef.current.pos, false);
           stepKeeper(scenarioRef.current, h);
           stepRunner(scenarioRef.current, h);
           stepFollower(scenarioRef.current, ballRef.current, rngRef.current, h);
@@ -1366,6 +1387,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     } else {
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current);
     }
+
+    // Give the defence its shape: who presses, who covers a lane, who holds.
+    initDefenders(scenarioRef.current, rng);
 
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
