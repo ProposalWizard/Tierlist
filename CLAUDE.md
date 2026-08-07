@@ -212,10 +212,42 @@ npm run lint   # Run ESLint
 - `lib/star/season.ts` — league/fixture builders, `simulateOtherFixtures`
 - `components/star/CanvasMatch.tsx` — canvas match engine (goal events, commentary)
 - `components/star/LeagueScreen.tsx` — Table / Fixtures / Squad tabs
+- `lib/star/canvasEngine.ts` — all match physics + AI: ball flight, keeper, defenders,
+  support play, space evaluation, interception, aerial duels, chaining, vision
+- `lib/star/hiddenMatch.ts` — the ninety minutes you are not playing (possession,
+  territory, momentum, scenario requests)
+- `tests/star/*.mts` — five suites. **Run them before changing match behaviour**;
+  `tests/star/README.md` records the tuned distributions and the mistakes the
+  measurements caught. `npx tsx tests/star/<name>.mts`
 
 ---
 
 ## Recent Session
+
+**7 August 2026 — Star career match engine rebuilt against the NSS specification.**
+
+Twelve items, five commits, five new test suites under `tests/star/`. Every
+constant tuned by measurement rather than by eye — `tests/star/README.md` records
+both the numbers and the mistakes the measurements caught.
+
+- **Hidden match** (`lib/star/hiddenMatch.ts`) — chances used to arrive on a
+  countdown with an independent coin flip for opponent goals. There is now a
+  match around you: possession, five-zone territory, momentum. You are pulled in
+  when your side works it into a dangerous area, and the zone decides the kind of
+  chance. Your outcome feeds back. Set pieces come from moves breaking down.
+- **Support play** — team-mates were a `Vec2[]` nothing read. Now: `spaceScore`,
+  supporting runs that re-read the pitch every 0.3 s, pursuit of a ball not
+  played straight at anyone, and a completed pass chaining into the next
+  decision built from where the ball actually arrived.
+- **Defending** — interception with commitment, recovery runs, live offside on
+  the through-ball.
+- **Contest** — ball ownership, 50-50s on a loose ball, aerial duels on headers,
+  first touch on a chained scenario.
+- **Perception** — vision changes what you are told, not how accurately you
+  strike; energy drains across the match and costs execution only.
+
+Verified end to end: 300 full simulated matches, no soft-locks, 6.5 chances and
+1.75 goals per match.
 
 **4 August 2026 — American draft performance + six-agent site-wide audit.**
 
