@@ -210,6 +210,11 @@ export function awardLeagueTrophyIfWon(career: CareerState): { career: CareerSta
   const sorted = sortLeague(career.league);
   const wonLeague = sorted[0]?.name === career.player.club;
   if (!wonLeague) return { career, wonLeague: false };
+  // Idempotent: the end of a season can now be reached twice — once through the
+  // post-match screen and once through the dashboard's end-of-season prompt after
+  // a refresh — and a title must not be awarded twice for it.
+  const already = career.trophies.some(t => t.season === career.season && t.competition === "Premier League");
+  if (already) return { career, wonLeague: true };
   const trophy = { season: career.season, competition: "Premier League", club: career.player.club };
   return { career: { ...career, trophies: [...career.trophies, trophy] }, wonLeague: true };
 }

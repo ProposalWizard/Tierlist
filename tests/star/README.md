@@ -5,6 +5,7 @@
     npx tsx tests/star/defending.mts
     npx tsx tests/star/contest.mts
     npx tsx tests/star/perception.mts
+    npx tsx tests/star/career.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -145,3 +146,24 @@ The legs model is mirrored here exactly as the component implements it, so
 changing one without the other fails the file. A 90-minute match with seven
 chances leaves an unfit player (40) on 39 and a fit one (95) on 69; an empty
 player loses a fifth of his technique and a fifth of his power, and never more.
+
+---
+
+**career** — the season loop, and the dead end at the end of it.
+
+The career state has always been saved to localStorage; the PHASE was React
+state only, so a reload always dropped you on the dashboard. Everywhere else
+that is harmless — you navigate back. At the end of a season it was a soft-lock:
+every fixture played, so the dashboard had no match to offer and no route to the
+Ballon d'Or, and the career could never advance again.
+
+The fix has two halves and this file covers both. The phase is persisted for the
+three screens you cannot navigate back to (`ballon-dor`, `contract-renewal`,
+`dilemma`) and explicitly NOT for the rest — resuming into a `match` whose state
+was never saved would be worse than the bug. And the dashboard offers the end of
+the season directly, which means it can now be reached twice, so awarding the
+title had to become idempotent.
+
+Also asserted: a corrupt or hand-edited phase record is refused rather than
+trusted, and clearing a career clears the pending phase with it — otherwise a
+brand new career resumes the old one's awards screen.

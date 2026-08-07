@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture } from "@/lib/star/types";
-import { loadCareer, saveCareer, clearCareer } from "@/lib/star/storage";
+import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
@@ -34,17 +34,49 @@ export default function StarDevPage() {
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
 
+  // Nothing is written back until the load has run, so the initial
+  // "profile-setup" render cannot wipe a pending phase before we have read it.
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
+    setHydrated(true);
     const saved = loadCareer();
-    if (saved) {
-      setCareer(saved);
-      setPhase("dashboard");
+    if (!saved) return;
+    setCareer(saved);
+
+    // Resume a phase the career cannot get out of on its own. Reloading used to
+    // always land on the dashboard, which at the end of a season meant no
+    // fixture left to play and no way to reach the Ballon d'Or — the career was
+    // stuck there for good.
+    const pending = loadStarPhase();
+    const seasonOver = saved.fixtures.every((f) => f.played);
+    if (pending?.phase === "ballon-dor" && seasonOver) {
+      setPhase("ballon-dor");
+      return;
     }
+    if (pending?.phase === "contract-renewal") {
+      setContractOfferReason(pending.offerReason ?? null);
+      setPhase("contract-renewal");
+      return;
+    }
+    if (pending?.phase === "dilemma") {
+      // Re-derived rather than stored: the seed is the week and season, neither
+      // of which has moved, so this is the same dilemma you were looking at.
+      const d = pickDilemma(saved, mulberry32(saved.week * 131 + saved.season));
+      if (d) { setCurrentDilemma(d); setPhase("dilemma"); return; }
+    }
+    setPhase("dashboard");
   }, []);
 
   useEffect(() => {
     if (career) saveCareer(career);
   }, [career]);
+
+  // Only the phases a refresh must return you to are written; everything else
+  // clears the record — see RESUMABLE in storage.ts.
+  useEffect(() => {
+    if (hydrated) saveStarPhase(phase, contractOfferReason ?? undefined);
+  }, [hydrated, phase, contractOfferReason]);
 
   // The fixture the post-match screen is reporting on. Held in state because
   // crediting the result marks it played, so re-deriving "first unplayed" would
@@ -53,6 +85,10 @@ export default function StarDevPage() {
   const [playedFixture, setPlayedFixture] = useState<Fixture | null>(null);
 
   const nextFixture = career?.fixtures.find((f) => !f.played) ?? null;
+  // Every fixture played and the season not yet rolled over. The dashboard has
+  // nothing to offer in this state on its own, which is what made a refresh here
+  // a dead end.
+  const seasonOver = !!career && career.fixtures.length > 0 && !nextFixture;
   const nextMatchLabel = nextFixture
     ? `Next: ${nextFixture.home ? career!.player.club : nextFixture.opponent} v ${nextFixture.home ? nextFixture.opponent : career!.player.club}`
     : "Season complete";
@@ -137,13 +173,22 @@ export default function StarDevPage() {
     setPhase("post-match");
   }, [career, nextFixture]);
 
+  // The end of a season, reachable from the post-match screen and — after a
+  // refresh dropped you on the dashboard — from the dashboard prompt too.
+  // awardLeagueTrophyIfWon is idempotent, so arriving twice is safe.
+  const handleSeasonEnd = useCallback(() => {
+    if (!career) return;
+    const { career: next } = awardLeagueTrophyIfWon(career);
+    setCareer(next);
+    setActiveNav(null);
+    setPhase("ballon-dor");
+  }, [career]);
+
   const handlePostMatchContinue = useCallback(() => {
     if (!career) return;
     const remaining = career.fixtures.filter((f) => !f.played).length;
     if (remaining === 0) {
-      const { career: next } = awardLeagueTrophyIfWon(career);
-      setCareer(next);
-      setPhase("ballon-dor");
+      handleSeasonEnd();
       return;
     }
 
@@ -171,7 +216,7 @@ export default function StarDevPage() {
 
     setActiveNav(null);
     setPhase("dashboard");
-  }, [career]);
+  }, [career, handleSeasonEnd]);
 
   const handleDilemmaChoose = useCallback((effects: DilemmaEffect) => {
     if (!career || !currentDilemma) return;
@@ -465,6 +510,18 @@ export default function StarDevPage() {
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
           ⭐ Achievement Unlocked: {unlockedAchievements[0]} ⭐
+        </div>
+      )}
+      {phase === "dashboard" && seasonOver && (
+        <div className="mb-3 rounded-xl border border-amber-400/50 bg-gradient-to-b from-amber-500/20 to-amber-600/10 p-4 text-center">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">Season {career.season} complete</div>
+          <p className="mt-1 text-xs text-amber-50/90">Every fixture has been played. The awards are next.</p>
+          <button
+            onClick={handleSeasonEnd}
+            className="mt-3 w-full rounded-xl bg-amber-400 py-2.5 font-black text-gray-950 hover:bg-amber-300"
+          >
+            End of Season 🏆
+          </button>
         </div>
       )}
       {phase === "dashboard" && <DashboardStats career={career} />}
