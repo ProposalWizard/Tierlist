@@ -7,6 +7,7 @@ import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagu
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf } from "@/lib/star/competitions";
+import { spendAction, rest, canAct } from "@/lib/star/week";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
@@ -133,9 +134,17 @@ export default function StarDevPage() {
   }, []);
 
   const handleTrain = useCallback((skill: keyof Skills) => {
+    if (!career || !canAct(career)) return;
     setTrainingSkill(skill);
     setPhase("training");
-  }, []);
+  }, [career]);
+
+  // Put your feet up. Costs a day of the week and buys back real energy — the
+  // only reliable way to have any left by the end of a season.
+  const handleRest = useCallback(() => {
+    if (!career) return;
+    setCareer(rest(career));
+  }, [career]);
 
   const handleTrainingComplete = useCallback((xp: number) => {
     if (!career || !trainingSkill) return;
@@ -148,7 +157,7 @@ export default function StarDevPage() {
       starRating: Math.min(5, career.starRating + gain * 0.005),
     };
     checkAndSetAchievements(updated);
-    setCareer(updated);
+    setCareer(spendAction(updated));
     setTrainingSkill(null);
     setPhase("skills");
   }, [career, trainingSkill]);
@@ -353,7 +362,7 @@ export default function StarDevPage() {
       };
     }
     checkAndSetAchievements(updated);
-    setCareer(updated);
+    setCareer(spendAction(updated));
     setRelationshipGameKind(null);
     setActiveNav("life");
     setPhase("life");
@@ -627,6 +636,7 @@ export default function StarDevPage() {
             onOpenContract={() => setPhase("contract-renewal")}
             onUseDrink={handleUseDrink}
             onPlayRelationshipGame={handleOpenRelationshipGame}
+            onRest={handleRest}
           />
         </div>
       )}

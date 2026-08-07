@@ -120,3 +120,78 @@ export const MISSED_WEEK = {
   energy: +25,
   boss: +3,
 } as const;
+
+/**
+ * BEING TAKEN OFF
+ *
+ * The other half of the manager picking the side, and the half that was
+ * completely absent: your rating and your legs decided nothing about how long
+ * you stayed on the pitch. You played every minute of every match you started,
+ * however badly it was going and however empty you were.
+ *
+ * Three reasons a manager takes a player off, and this models all three,
+ * including the flattering one — being rested with the game won is not a
+ * punishment and should not read as one.
+ */
+export type HookReason = "form" | "legs" | "rested";
+
+export interface HookDecision {
+  hooked: boolean;
+  reason: HookReason | null;
+  message: string;
+}
+
+/** Nobody is hooked before the hour, or within a quarter of an hour of coming on. */
+const HOOK_EARLIEST = 60;
+const HOOK_SETTLE_IN = 15;
+
+export function hookCheck(args: {
+  minute: number;
+  startMinute: number;
+  liveRating: number;
+  energy: number;
+  /** Your goals minus theirs. */
+  scoreDiff: number;
+  rng: () => number;
+}): HookDecision {
+  const none: HookDecision = { hooked: false, reason: null, message: "" };
+  if (args.minute < HOOK_EARLIEST) return none;
+  if (args.minute - args.startMinute < HOOK_SETTLE_IN) return none;
+
+  // Later is likelier, in all three cases — a manager who was going to change it
+  // has more reason to as the clock runs down.
+  const late = Math.max(0, Math.min(1, (args.minute - HOOK_EARLIEST) / 30));
+
+  // Empty legs. The steepest of the three, because it is the one the player can
+  // see coming in the bar on the HUD and could have managed during the week.
+  if (args.energy < 28) {
+    const p = (0.16 + late * 0.3) * (1 - args.energy / 28);
+    if (args.rng() < p) {
+      return { hooked: true, reason: "legs", message: "You are out on your feet — the manager takes you off." };
+    }
+  }
+
+  // A bad afternoon.
+  //
+  // The threshold is 6.05 rather than the 5.6 that reads like a poor mark,
+  // because of where the rating formula actually LIVES: it starts at 6.0 and the
+  // only thing that can pull it down is a defeat, worth 0.3. A contributionless
+  // game while losing bottoms out at 5.7, so a 5.6 threshold could never once
+  // have fired. Six flat means you have done nothing all afternoon, which is
+  // exactly the game a manager changes.
+  if (args.liveRating < 6.05) {
+    const p = (0.1 + late * 0.22) * Math.min(1, (6.05 - args.liveRating) / 0.4);
+    if (args.rng() < p) {
+      return { hooked: true, reason: "form", message: "Your number is up. You are replaced." };
+    }
+  }
+
+  // Game won, legs saved for the next one. A compliment, not a hook.
+  if (args.scoreDiff >= 3 && args.minute >= 72) {
+    if (args.rng() < 0.14 + late * 0.2) {
+      return { hooked: true, reason: "rested", message: "Job done — you get a standing ovation as you come off." };
+    }
+  }
+
+  return none;
+}

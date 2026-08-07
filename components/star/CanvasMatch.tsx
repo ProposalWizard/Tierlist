@@ -25,7 +25,8 @@ import {
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
-import { finaliseMatch } from "@/lib/star/matchStats";
+import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
+import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
@@ -200,6 +201,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
   const startMinuteRef = useRef(startMinute);
   startMinuteRef.current = startMinute;
+  /** Set once the manager has taken you off, so nothing after it can play. */
+  const hookedRef = useRef<HookReason | null>(null);
+  /** The minute you came off. The rest of the match is played without you, so
+   *  the clock runs on to ninety and this is what you were actually on for. */
+  const hookedAtRef = useRef<number | null>(null);
   const dutiesRef = useRef(duties);
   dutiesRef.current = duties;
 
@@ -1529,6 +1535,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // The minutes you were not playing still cost you.
     setEnergy(energyRef.current - (st.minute - matchMinuteRef.current) * drainPerMinute);
 
+    // ── Being taken off ──
+    // Checked here, between chances, because that is where the clock actually
+    // moves. Your legs and your afternoon decide it; the game being won decides
+    // the flattering version of it.
+    if (!hookedRef.current && !step.fullTime) {
+      const t = tallyRef.current;
+      const decision = hookCheck({
+        minute: st.minute,
+        startMinute: startMinuteRef.current,
+        liveRating: liveRating(t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
+        energy: energyRef.current,
+        scoreDiff: st.userScore - st.oppScore,
+        rng,
+      });
+      if (decision.hooked) {
+        hookedRef.current = decision.reason;
+        hookedAtRef.current = st.minute;
+        events.push({ minute: st.minute, text: decision.message });
+        // The rest of the match is played without you, exactly as the hour
+        // before kick-off is when you come off the bench.
+        const after = advanceTo(st, hiddenInputs(), rng, MATCH_DURATION);
+        for (const e of after) {
+          events.push({
+            minute: e.minute,
+            text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
+            isGoal: e.isGoal,
+          });
+        }
+        userScoreRef.current = st.userScore;
+        oppScoreRef.current = st.oppScore;
+        setScore({ user: st.userScore, opp: st.oppScore });
+        step = { ...step, request: null, fullTime: true };
+      }
+    }
+
     pendingRequestRef.current = step.request;
     matchMinuteRef.current = st.minute;
     setMatchMinute(st.minute);
@@ -1546,8 +1587,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const t = tallyRef.current;
         const stats = finaliseMatch(
           attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-          MATCH_DURATION - startMinuteRef.current, userScoreRef.current, oppScoreRef.current, careerForStats,
-          goalEventsRef.current,
+          Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+          userScoreRef.current, oppScoreRef.current, careerForStats,
+          goalEventsRef.current, hookedRef.current,
         );
         if (matchModeRef.current && onCompleteRef.current) {
           onCompleteRef.current(stats);
@@ -1631,6 +1673,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setEnergy(career?.energy ?? 85);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
     pendingRequestRef.current = null;
+    hookedRef.current = null;
+    hookedAtRef.current = null;
     chainRef.current = null;
     setScore({ user: 0, opp: 0 });
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });

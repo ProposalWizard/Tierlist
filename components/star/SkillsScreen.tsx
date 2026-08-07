@@ -1,6 +1,7 @@
 "use client";
 import type { CareerState, Skills } from "@/lib/star/types";
 import { setPieceDuties } from "@/lib/star/setPieces";
+import { actionsLeft, WEEK_ACTIONS } from "@/lib/star/week";
 
 interface Props {
   career: CareerState;
@@ -19,11 +20,23 @@ const ENERGY_COST = 15;
 
 export default function SkillsScreen({ career, onTrain }: Props) {
   const duties = setPieceDuties(career);
+  const left = actionsLeft(career);
   return (
     <div className="mt-2 space-y-2">
       <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3 text-center">
         <div className="text-[10px] font-black text-emerald-300 uppercase tracking-widest">Training</div>
-        <div className="text-sm text-white mt-0.5">Each session costs {ENERGY_COST} energy</div>
+        <div className="text-sm text-white mt-0.5">Each session costs a day and {ENERGY_COST} energy</div>
+        <div className="mt-2 flex items-center justify-center gap-1.5">
+          {Array.from({ length: WEEK_ACTIONS }, (_, i) => (
+            <span
+              key={i}
+              className={`h-2.5 w-8 rounded-full ${i < left ? "bg-emerald-400" : "bg-white/15"}`}
+            />
+          ))}
+        </div>
+        <div className="mt-1 text-[10px] text-emerald-100/80">
+          {left > 0 ? `${left} of ${WEEK_ACTIONS} days left this week` : "No days left — the next match is the next week"}
+        </div>
       </div>
 
       {/* What the free-kick rating actually buys. It was trainable, had an
@@ -44,7 +57,7 @@ export default function SkillsScreen({ career, onTrain }: Props) {
 
       {SKILL_LABELS.map(([key, label, icon, desc]) => {
         const val = career.skills[key];
-        const canTrain = career.energy >= ENERGY_COST && val < 100;
+        const canTrain = career.energy >= ENERGY_COST && val < 100 && left > 0;
         return (
           <button
             key={key}

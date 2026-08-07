@@ -114,6 +114,8 @@ export interface GoalEvent {
 export interface MatchStats {
   /** Minutes actually played. Under 90 when you came off the bench. */
   minutes?: number;
+  /** Why you were taken off, when you were. */
+  hooked?: "form" | "legs" | "rested" | null;
   chances: number;
   goals: number;
   assists: number;
@@ -225,6 +227,8 @@ export interface CareerState {
   internationalGoals?: number;
   /** What the last knockout tie did to the run, for the post-match screen. */
   knockoutMessage?: string | null;
+  /** Things you can still do before the next match. Refills every week. */
+  weekActions?: number;
 }
 
 export type StarPhase =

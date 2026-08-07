@@ -10,6 +10,7 @@ import {
   simulateFixtureScore,
 } from "./season";
 import { selectionFor, MISSED_WEEK } from "./selection";
+import { startNewWeek, WEEK_ACTIONS } from "./week";
 import {
   seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
 } from "./competitions";
@@ -67,6 +68,7 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     contractStarMilestones: [],
     contractFormOfferSeason: -1,
     europeanQualification: null,
+    weekActions: WEEK_ACTIONS,
     cups: [],
     caps: 0,
     internationalGoals: 0,
@@ -235,7 +237,8 @@ export function creditMatchResult(
     fixtures: [...fixtures, ...extraFixtures],
     money: career.money + stats.totalCash,
     // Twenty minutes off the bench does not take as much out of you as ninety,
-    // and does not sharpen you as much either.
+    // and does not sharpen you as much either. The week that follows gives some
+    // of it back — see startNewWeek, applied below.
     energy: Math.max(15, career.energy - 40 * minuteShare),
     matchFitness: Math.min(100, career.matchFitness + 3 * minuteShare),
     relationships: {
@@ -254,6 +257,14 @@ export function creditMatchResult(
     squad: updatedSquad,
     form: [stats.rating, ...career.form].slice(0, 5),
   };
+  // The match is over, so a new week starts: some energy back, and three things
+  // you can do with it before the next one.
+  Object.assign(next, startNewWeek(next.energy));
+  // Being hooked for your form is a message from the manager as well as a
+  // scoreline — it costs you a little more of him than the rating alone.
+  if (stats.hooked === "form") {
+    next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss - 3) };
+  }
   // The manager's view going into next week, so the dashboard's status is live
   // rather than the "1st Team" it was stamped with when the career was created.
   next.status = selectionFor(next).status;
@@ -317,6 +328,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0 })),
     europeanQualification: qualification,
     knockoutMessage: null,
+    weekActions: WEEK_ACTIONS,
   };
 
   // Seeded after the rest of the state is in place, because what you are in
@@ -411,6 +423,7 @@ export function simulateMissedFixture(
     knockoutMessage,
     money: career.money + career.contract.wage,
     energy: Math.min(100, career.energy + MISSED_WEEK.energy),
+    weekActions: WEEK_ACTIONS,
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
     relationships: {
       ...career.relationships,

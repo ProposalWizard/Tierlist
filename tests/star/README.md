@@ -8,6 +8,7 @@
     npx tsx tests/star/career.mts
     npx tsx tests/star/selection.mts
     npx tsx tests/star/competitions.mts
+    npx tsx tests/star/week.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -239,3 +240,37 @@ The assertions that matter most:
 - **A tie cannot be drawn**, and a shootout is nudged by quality rather than
   decided by it: 99-strength beats 95-strength opposition in roughly two thirds
   of 200 shootouts, never all of them.
+
+---
+
+**week** — the week between matches, and being taken off during one.
+
+Energy was a one-way street. It started at 100, cost 40 a match and 15 a
+training session, and outside an NRG drink or a dilemma never came back.
+Eighteen league matches drain 720 against a pool of 100, so by the third week of
+the first season you sat pinned at the floor and could never train again — the
+one currency the whole life side of the game runs on was unspendable. The file
+plays a whole season and asserts you are still training in its closing weeks.
+
+A week is now three days: train, work on a relationship, or rest (+35 energy).
+The week itself returns 45. Measured over a full season, three styles:
+
+    train hard   66 sessions   arrives at every match on 15-17 energy
+    balanced     50 sessions   67 average at kick-off
+    rest a lot   44 sessions   100 every week
+
+Arriving empty is a real cost now, not a cosmetic one: it feeds the hidden
+match (fewer chances), the strike (worse execution) and the manager (hooked for
+your legs).
+
+**Being taken off** was completely absent — you played every minute of every
+match you started, however badly it was going. Three reasons a manager makes a
+change, and this has all three including the flattering one.
+
+One measurement mattered more than the rest: **the "bad form" threshold could
+never have fired.** The rating formula starts at 6.0 and the only thing that
+pulls it down is a defeat, worth 0.3 — a contributionless loss bottoms out at
+exactly 5.7, so a threshold of 5.6 was unreachable. It is 6.05, and the file
+asserts the floor of the formula directly so the two cannot drift apart again.
+The manager also reads the same `liveRating` mid-match that the scoresheet reads
+at the end, rather than a second formula that could disagree with it.
