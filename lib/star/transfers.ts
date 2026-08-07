@@ -3,6 +3,7 @@ import { sortLeague } from "./season";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { assignSquadNumber } from "./recognition";
 import { makeManager, bossOnArrival } from "./manager";
+import { offerClauses, canTriggerClause } from "./contracts";
 
 /**
  * TRANSFERS
@@ -33,6 +34,10 @@ export interface TransferOffer {
   seasons: number;
   /** Paid on signing. */
   signingFee: number;
+  /** Clauses this club is willing to write in. */
+  clauses: Partial<import("./types").Contract>;
+  /** True when they met your release clause rather than being talked into it. */
+  viaClause?: boolean;
   /** Where they finished last season, so the player can see what they are joining. */
   position: number;
   /** Why they want you. */
@@ -90,6 +95,9 @@ export function generateOffers(career: CareerState, rng: () => number): Transfer
     .filter(({ team }) => team.name !== career.player.club)
     .filter(({ team }) => {
       const need = interestThreshold(team.strength, mine) - (expiring ? 12 : 0);
+      // A release clause is a price at which the club cannot say no, so a side
+      // that can meet it comes for you whatever your reputation says.
+      if (canTriggerClause(career.contract, team.strength, career.contract.wage)) return true;
       // A club that is interested does not always act on it.
       return rep >= need && rng() < 0.55 + (rep - need) / 240;
     })
@@ -109,6 +117,8 @@ export function generateOffers(career: CareerState, rng: () => number): Transfer
       assistBonus: Math.max(1, Math.round(career.contract.assistBonus + rep / 45)),
       seasons,
       signingFee: Math.round(wage * seasons * (0.6 + rng() * 0.8)),
+      clauses: offerClauses(career, wage, rng),
+      viaClause: canTriggerClause(career.contract, team.strength, career.contract.wage),
       pitch: step > 6
         ? `${team.name} finished ${position}. They think you are ready for the step up.`
         : step < -6
@@ -142,6 +152,7 @@ export function acceptOffer(career: CareerState, offer: TransferOffer): CareerSt
     goalBonus: offer.goalBonus,
     assistBonus: offer.assistBonus,
     seasonsRemaining: offer.seasons,
+    ...offer.clauses,
   };
   const record: TransferRecord = {
     season: career.season,

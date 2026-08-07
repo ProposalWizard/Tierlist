@@ -2,6 +2,7 @@
 import type { CareerState } from "@/lib/star/types";
 import type { TransferOffer } from "@/lib/star/transfers";
 import { reputation, MOVE_RESET } from "@/lib/star/transfers";
+import { clauseSummary } from "@/lib/star/contracts";
 
 interface Props {
   career: CareerState;
@@ -51,6 +52,24 @@ export default function TransferWindow({ career, offers, onAccept, onStay }: Pro
                   <Cell label="Signing" value={`★${o.signingFee}`} highlight />
                   <Cell label="Years" value={`${o.seasons}`} />
                 </div>
+
+                {(() => {
+                  const clauses = clauseSummary({ ...career.contract, ...o.clauses });
+                  return clauses.length > 0 ? (
+                    <div className="mt-2 space-y-0.5">
+                      {clauses.map(c => (
+                        <div key={c.label} className="text-[10px] text-gray-200">
+                          <span className="font-black text-white">{c.label}</span> — {c.detail}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
+                {o.viaClause && (
+                  <div className="mt-2 rounded-lg bg-amber-500/20 px-2 py-1 text-[10px] font-bold text-amber-100">
+                    They have met your release clause. Your club cannot say no.
+                  </div>
+                )}
 
                 <button
                   onClick={() => onAccept(o)}

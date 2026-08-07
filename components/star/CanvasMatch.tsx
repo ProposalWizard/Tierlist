@@ -13,6 +13,7 @@ import {
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
+import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
 import {
   newDribble, stepDribble, flick, dribbleProgress, type DribbleState,
 } from "@/lib/star/dribble";
@@ -51,6 +52,8 @@ interface Props {
   startMinute?: number;
   /** Which dead balls are yours to take. Ones that are not go to someone else. */
   duties?: SetPieceDuties;
+  /** The surface and the air. Absent is a perfect pitch in still air. */
+  conditions?: Conditions;
   keeperStrength?: number;
   position?: string;
   teamRelationship?: number;
@@ -159,7 +162,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const careerRef = useRef(career);
@@ -211,6 +214,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const hookedAtRef = useRef<number | null>(null);
   const dutiesRef = useRef(duties);
   dutiesRef.current = duties;
+  // Fixed for the whole match: every scenario is played in the same conditions,
+  // because the weather does not change between one chance and the next.
+  const conditionsRef = useRef<Conditions>(conditions ?? conditionsFor(0, 0));
+  conditionsRef.current = conditions ?? conditionsRef.current;
 
   // ── The run ──
   // A scenario where you carry it rather than strike it. Lives outside the
@@ -394,6 +401,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   useEffect(() => {
     // The opening scenario is built before this component mounts, so it needs
     // its defensive shape assigning here too.
+    scenarioRef.current.conditions = conditionsRef.current;
     initDefenders(scenarioRef.current, rngRef.current);
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -930,10 +938,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       });
     });
 
-    // Defenders + you
+    // Defenders + you. A wall man in the air is drawn where he actually is —
+    // the same height the block test uses, so what you see is what resolves.
     sc.defenders.forEach((d, i) => {
-      footballer(d.x, d.y, R, C.opp, C.oppRim, {
-        pose: poseFor(`def${i}`, d.x, d.y),
+      const lift = (d.z ?? 0) * 0.42;
+      footballer(d.x, d.y - lift, R, C.opp, C.oppRim, {
+        pose: (d.z ?? 0) > 0.15 ? "kick" : poseFor(`def${i}`, d.x, d.y),
         phase: runPhase(d.x),
       });
     });
@@ -1772,6 +1782,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     } else {
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current);
     }
+
+    scenarioRef.current.conditions = conditionsRef.current;
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);

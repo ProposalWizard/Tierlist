@@ -1,6 +1,6 @@
 "use client";
 import type { CareerState } from "@/lib/star/types";
-import { careerVerdict, retirementCheck } from "@/lib/star/retirement";
+import { careerVerdict, retirementCheck, testimonialFor, TESTIMONIAL_APPEARANCES } from "@/lib/star/retirement";
 
 /**
  * Two screens that share their numbers: the decision, and what it added up to.
@@ -28,6 +28,20 @@ export function RetirementChoice({ career, onRetire, onPlayOn }: {
           <div className="mt-1 text-lg font-black text-white">{verdict.title}</div>
           <p className="mt-0.5 text-xs text-gray-200">{verdict.summary}</p>
         </div>
+
+        {testimonialFor(career) ? (
+          <div className="mt-3 rounded-xl border border-amber-400/50 bg-amber-500/10 p-3 text-left">
+            <div className="text-[10px] font-black uppercase tracking-widest text-amber-200">Testimonial</div>
+            <div className="mt-0.5 text-xs text-white">
+              {career.player.club} will put on a testimonial for you. ★{testimonialFor(career)!.payout}.
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 text-[10px] text-gray-300">
+            {TESTIMONIAL_APPEARANCES - (career.clubAppearances ?? 0)} more appearances for {career.player.club} would
+            have earned you a testimonial.
+          </div>
+        )}
 
         <div className="mt-5 space-y-2">
           <button
@@ -102,6 +116,18 @@ export function LegacyScreen({ career, onNewCareer }: {
           {individual.map(([kind, n]) => <Line key={kind}>{n}× {kind}</Line>)}
           {career.captain && <Line>Captain of {career.player.club}</Line>}
         </Panel>
+
+        {career.testimonial && (
+          <div className="mt-3 rounded-xl border border-amber-400/60 bg-amber-500/15 p-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-amber-200">Testimonial</div>
+            <div className="mt-1 text-xs font-bold text-white">
+              A full house at {career.testimonial.club} to say goodbye. ★{career.testimonial.payout}.
+            </div>
+            <div className="mt-0.5 text-[10px] text-gray-200">
+              {career.clubAppearances} appearances for one club will do that.
+            </div>
+          </div>
+        )}
 
         <Panel title="Clubs">
           {v.clubs.map((c) => <Line key={c}>{c}</Line>)}
