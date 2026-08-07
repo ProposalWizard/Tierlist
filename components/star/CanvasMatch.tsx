@@ -3,7 +3,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet,
-  stepKeeper, stepFollower, stepRunner, stepDefenders, initDefenders,
+  stepKeeper, stepFollower, stepRunner, stepDefenders, stepSupport, initDefenders,
+  chainKindFor, chainReturnChance, CHAIN_MAX,
   OUTCOME_TEXT, clamp,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
@@ -175,7 +176,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Simulation between chances ---
   const matchMinuteRef = useRef(0);
   const [matchMinute, setMatchMinute] = useState(0);
-  const buildupReturnRef = useRef(false); // next scenario is an attacking follow-up
+  // Where a completed pass left the move, and how many passes deep it is. The
+  // next scenario is built from this rather than drawn at random, so a move can
+  // actually be built instead of every chance starting from nothing.
+  const chainRef = useRef<{ pos: { x: number; y: number }; depth: number } | null>(null);
 
   interface SimEvent { minute: number; text: string; isGoal?: boolean; }
   const [simEvents, setSimEvents] = useState<SimEvent[]>([]);
@@ -1117,6 +1121,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const sc = scenarioRef.current;
         const lost = stepDefenders(sc, dt, sc.player, true);
         stepKeeper(sc, dt);
+        // …and your team-mates work against that. While the cover slides onto
+        // your lane, the man they are covering moves somewhere they are not, so
+        // your options shift rather than only decaying.
+        stepSupport(sc, ballRef.current, sc.player, dt);
         stepRunner(sc, dt);
         if (lost) resolveOutcome(lost);
       }
@@ -1130,6 +1138,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           // still be cut out by the man who was already sliding across.
           stepDefenders(scenarioRef.current, h, ballRef.current.pos, false);
           stepKeeper(scenarioRef.current, h);
+          // Everyone goes for a ball that was not played straight at them.
+          stepSupport(scenarioRef.current, ballRef.current, ballRef.current.pos, h);
           stepRunner(scenarioRef.current, h);
           stepFollower(scenarioRef.current, ballRef.current, rngRef.current, h);
           const res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
@@ -1303,22 +1313,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: commentaryRoleLabel, isPass: isSimplePass }));
 
-    // Build-up pass that succeeded → check for ball return
-    if (sc.kind === "buildup" && (res === "delivered" || (kind === "goal"))) {
-      if (res === "delivered") {
-        const returnChance = 0.2 + sc.passDifficulty * 0.5;
-        if (rngRef.current() < returnChance) {
-          buildupReturnRef.current = true;
-          pushLine("Great pass! The ball comes back in an attacking position...");
-        }
+    // A pass that found its man can keep the move going. This used to apply to
+    // build-up only, and jumped to a random attacking situation; now any
+    // completed pass can come back, and what you get next is read off where the
+    // ball actually arrived.
+    if (res === "delivered") {
+      const depth = sc.chainDepth ?? 0;
+      const at = sc.receivedAt ?? sc.runner?.pos ?? sc.passTarget;
+      if (at && depth < CHAIN_MAX && rngRef.current() < chainReturnChance(sc)) {
+        chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1 };
+        pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
       }
     }
 
     attemptsRef.current += 1;
 
-    // Build-up return: skip simulation, go straight to an attacking scenario
-    if (buildupReturnRef.current) {
-      buildupReturnRef.current = false;
+    // The move continues: no simulation, straight into the next link.
+    if (chainRef.current) {
       window.setTimeout(() => loadScenario(true), 1600);
       return;
     }
@@ -1443,7 +1454,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const request = attacking ? null : pendingRequestRef.current;
     pendingRequestRef.current = null;
 
-    if (attacking) {
+    const chain = chainRef.current;
+    chainRef.current = null;
+
+    if (chain) {
+      // Built from where the pass actually arrived, so playing it into the
+      // corner gives you a cutback and finding someone central gives you a shot.
+      const kind = chainKindFor(chain.pos, rng);
+      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current);
+      scenarioRef.current.chainDepth = chain.depth;
+    } else if (attacking) {
       scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current);
     } else if (request) {
       const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
@@ -1484,7 +1504,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setMatchMinute(0);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
     pendingRequestRef.current = null;
-    buildupReturnRef.current = false;
+    chainRef.current = null;
     setScore({ user: 0, opp: 0 });
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
     setFinalStats(null);

@@ -42,6 +42,13 @@ export interface Ball {
   receiverControlT: number; // seconds a teammate spends controlling a received pass before shooting
   event: BallEvent | null;  // one-shot flag for the UI to narrate, cleared once read
   inNet: boolean;      // crossed the line — the UI keeps animating it into the netting
+  /**
+   * Struck at goal rather than played to a team-mate. Decided once, at the
+   * strike, and sticky: a shot that deflects, curls away or is parried is still
+   * your shot, so a support player can never wander into it and turn a goal
+   * into a completed pass.
+   */
+  shot?: boolean;
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -102,6 +109,17 @@ export interface Runner {
   to: Vec2;       // where they are running
   speed: number;  // m/s (a sprinting footballer tops out around 8)
   moving: boolean;
+  /**
+   * target : the man the scenario aimed the pass at. Runs his scripted line.
+   * support: making himself available. He looks for space while you hold the
+   *          ball, so your options improve rather than only decaying, and he
+   *          goes after a ball that was not played straight to him.
+   */
+  role?: "target" | "support";
+  /** Seconds until this runner re-reads the situation. Keeps him from jittering. */
+  replanIn?: number;
+  /** False while jogging into space, true while chasing a ball. */
+  sprint?: boolean;
 }
 
 // The kind of match situation the player has been put in. Shooting kinds
@@ -161,9 +179,13 @@ export interface Scenario {
   receiverDone: boolean;       // true once the ball has reached the runner (guards re-trigger)
   teamRelationship: number;    // 0-100 — how well the team combines, feeds the receiver's shot quality
   viewport: Viewport;
-  secondaryRunners: Runner[];  // extra options in build-up play
+  secondaryRunners: Runner[];  // extra options: support players and build-up outlets
   passDifficulty: number;      // 0-1, set when a pass resolves — harder pass = higher ball-return chance
   offsideRisk: number;         // 0-1 chance the run is flagged, set at build time from the real line
+  /** How many passes deep into one move this is. Chained scenarios count up. */
+  chainDepth?: number;
+  /** Where a completed pass was actually received. The next link starts here. */
+  receivedAt?: Vec2;
 }
 
 export type Outcome =
@@ -317,8 +339,8 @@ function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
   };
 }
 
-function makeRunner(to: Vec2, from: Vec2, speed = RUNNER_SPEED): Runner {
-  return { pos: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, speed, moving: true };
+function makeRunner(to: Vec2, from: Vec2, speed = RUNNER_SPEED, role: "target" | "support" = "target"): Runner {
+  return { pos: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, speed, moving: true, role, replanIn: 0, sprint: true };
 }
 
 // A poacher lurking around the penalty spot for a spill.
@@ -755,8 +777,53 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
   if (!sc.secondaryRunners) sc.secondaryRunners = [];
   if (sc.passDifficulty === undefined) sc.passDifficulty = 0;
   if (sc.offsideRisk === undefined) sc.offsideRisk = 0;
+  if (sc.chainDepth === undefined) sc.chainDepth = 0;
+  addSupport(sc, rng);
   if (!sc.viewport) sc.viewport = scenarioViewport(sc);
   return sc;
+}
+
+// How many team-mates come and make themselves available, by situation. Dead
+// balls get none — a wall and a set piece are a still frame by design — and
+// build-up already ships with two outlets of its own.
+const SUPPORT_COUNT: Record<ScenarioKind, number> = {
+  one_on_one: 1, tight_angle: 1, volley: 1, header: 1,
+  long_range: 2, cutback: 2, byline_cross: 2, through_ball: 1,
+  midfield_pass: 1, buildup: 0,
+  penalty: 0, free_kick: 0, corner: 0,
+};
+
+/**
+ * Give the attack some life.
+ *
+ * Team-mates were a decorative `Vec2[]`, so in a shooting scenario you had
+ * exactly one option — hit it — while the defence closed you down. These are
+ * real runners: they start somewhere plausible, immediately find the best space
+ * available to them, and keep looking for a better spot while you hold the ball.
+ */
+function addSupport(sc: Scenario, rng: () => number) {
+  const want = SUPPORT_COUNT[sc.kind] ?? 0;
+  for (let i = 0; i < want; i++) {
+    // A plausible starting point — level with or just behind the ball, off to
+    // one side — which the space evaluation then improves on immediately.
+    const side = i === 0 ? (rng() < 0.5 ? -1 : 1) : (rng() < 0.5 ? -1 : 1);
+    const start = {
+      x: clamp(sc.player.x + side * (7 + rng() * 7), 5, PITCH_W - 5),
+      y: clamp(sc.player.y + (rng() - 0.35) * 10, 2.5, HALF_LEN + 4),
+    };
+    // Wide scenarios put the carrier near a touchline, where the clamp above
+    // would fold the start position back on top of him.
+    if (Math.hypot(start.x - sc.player.x, start.y - sc.player.y) < 5) {
+      start.x = clamp(sc.player.x - side * (8 + rng() * 6), 5, PITCH_W - 5);
+      if (Math.hypot(start.x - sc.player.x, start.y - sc.player.y) < 5) {
+        start.x = clamp(CX + (CX - sc.player.x) * 0.5, 5, PITCH_W - 5);
+        start.y = clamp(sc.player.y + 7 + rng() * 5, 2.5, HALF_LEN + 4);
+      }
+    }
+    const r = makeRunner(bestSupportPoint(sc, sc.ball, start), start, RUNNER_SPEED * 0.95, "support");
+    r.sprint = false;
+    sc.secondaryRunners.push(r);
+  }
 }
 
 // How often each scenario kind shows up, by the player's position. Attackers see
@@ -833,6 +900,47 @@ export function buildAttackingScenario(rng: () => number, keeperStrength = 62, t
   return buildScenario(kind, rng, keeperStrength, teamRelationship);
 }
 
+// ── CHAINING ────────────────────────────────────────────────────────────────
+//
+// A completed pass used to END the move: outcome "delivered", credit a pass,
+// next chance please. Only build-up had a follow-up, and even that jumped to a
+// random attacking situation with no relationship to the pass you had just
+// played. So passing was never a way of BUILDING anything — the only way to
+// progress a move was to shoot.
+//
+// Now a pass that finds its man can hand the ball back to you further up, and
+// the situation you get is read off where the ball actually arrived: play it
+// into the corner and you get a cutback to deal with, find someone in the middle
+// and you are shooting.
+
+/** How many passes one move can be strung together from. */
+export const CHAIN_MAX = 2;
+
+/** The situation a completed pass has left you in. */
+export function chainKindFor(at: Vec2, rng: () => number): ScenarioKind {
+  const wide = Math.abs(at.x - CX) > 13;
+  if (at.y < BOX_DEPTH + 2) {
+    if (wide) return rng() < 0.55 ? "cutback" : "tight_angle";
+    return rng() < 0.45 ? "one_on_one" : rng() < 0.6 ? "volley" : "tight_angle";
+  }
+  if (at.y < 32) {
+    if (wide) return rng() < 0.6 ? "byline_cross" : "cutback";
+    return rng() < 0.5 ? "through_ball" : "long_range";
+  }
+  return rng() < 0.55 ? "midfield_pass" : "buildup";
+}
+
+/**
+ * How likely the ball comes back to you.
+ *
+ * A harder ball played to a better-connected team is likelier to come straight
+ * back — the same relationship the old build-up return used, kept because it is
+ * the one thing that made a difficult pass worth attempting.
+ */
+export function chainReturnChance(sc: Scenario): number {
+  return clamp(0.22 + sc.passDifficulty * 0.42 + (sc.teamRelationship - 50) / 260, 0.1, 0.85);
+}
+
 // Where a ball on this heading will cross the goal line — what the keeper commits to.
 
 const RECEIVER_CONTROL_T = 0.45; // seconds the teammate takes to control the ball before shooting
@@ -907,7 +1015,7 @@ export function launch(
   // No prediction here either — see stepKeeper. The keeper never learns the
   // aim, which is what lets curl and placement genuinely beat him.
 
-  return {
+  const ball: Ball = {
     pos: { x: scenario.ball.x, y: scenario.ball.y },
     vel: { x: d.x * Sh, y: d.y * Sh },
     z: 0.08,
@@ -921,6 +1029,9 @@ export function launch(
     event: null,
     inNet: false,
   };
+  // Decided here, once, from what you actually did with it — see isDriveAtGoal.
+  ball.shot = isDriveAtGoal(ball, scenario);
+  return ball;
 }
 
 /**
@@ -1000,6 +1111,10 @@ const DEF_CONTAIN_R = 1.75;    // metres he stands off at. Patience — he conta
                                // pressure feel like football instead of tag.
 const DEF_TACKLE_S = 1.15;     // seconds contained before he commits to the tackle
 const DEF_COVER_SPEED = 3.4;   // m/s sliding across to block a passing lane
+const DEF_SUPPORT_BIAS = 0.85; // …and how far along it he sits when the man he is
+                               // covering is a support player who can move. Close
+                               // enough to him that outrunning the marker is
+                               // possible, which at 0.62 it provably was not.
 const DEF_LANE_BIAS = 0.62;    // how far along the lane a cover defender sits,
                                // 0 = beside you, 1 = on top of the receiver
 
@@ -1042,8 +1157,23 @@ export function stepDefenders(
   // The most dangerous option to cut out: the runner a pass is aimed at, or
   // failing that the goal itself.
   const threat = scenario.runner?.pos
-    ?? scenario.secondaryRunners[0]?.pos
+    ?? scenario.secondaryRunners.find(r => r.role !== "support")?.pos
     ?? { x: (scenario.goal.x1 + scenario.goal.x2) / 2, y: 0 };
+
+  // The best of the support players, if there is a spare defender to worry
+  // about him. He is marked at a bias much closer to himself than the scripted
+  // threat is, which is what makes him beatable: at 0.62 the marker only has to
+  // move 62% as far as he does, so no amount of running could ever open a lane.
+  let secondThreat: Vec2 | null = null;
+  if (scenario.defenders.length > 1) {
+    let bestS = -1;
+    for (const r of scenario.secondaryRunners) {
+      if (r.role !== "support") continue;
+      const s = spaceScore(r.pos, scenario, carrier);
+      if (s > bestS) { bestS = s; secondThreat = r.pos; }
+    }
+  }
+  let coverIndex = 0;
 
   for (const d of scenario.defenders) {
     const role = d.role ?? "hold";
@@ -1072,8 +1202,11 @@ export function stepDefenders(
     } else if (role === "cover") {
       // Slide onto the line between the carrier and the danger, shrinking the
       // passing lane rather than chasing the ball. Every option gets worse.
-      const tx = carrier.x + (threat.x - carrier.x) * DEF_LANE_BIAS;
-      const ty = carrier.y + (threat.y - carrier.y) * DEF_LANE_BIAS;
+      const mine = coverIndex === 0 || !secondThreat ? threat : secondThreat;
+      const bias = mine === secondThreat ? DEF_SUPPORT_BIAS : DEF_LANE_BIAS;
+      coverIndex += 1;
+      const tx = carrier.x + (mine.x - carrier.x) * bias;
+      const ty = carrier.y + (mine.y - carrier.y) * bias;
       const dx = tx - d.x, dy = ty - d.y;
       const dist = Math.hypot(dx, dy);
       if (dist > 0.05) {
@@ -1088,6 +1221,256 @@ export function stepDefenders(
   return lost;
 }
 
+// ── SPACE, SUPPORT AND PURSUIT ───────────────────────────────────────────────
+//
+// Everything below exists because the attack used to be furniture. Team-mates
+// were a `Vec2[]` the renderer drew and nothing read; the one runner a pass was
+// aimed at ran a scripted line to a fixed point and ignored the ball unless it
+// arrived on top of him. So while the defence closed you down, your options
+// only ever got worse — there was no release valve, and a pass that was not
+// struck perfectly was simply wasted, because nobody would come and get it.
+//
+// Now: support players read where the space is and move into it while you hold
+// the ball, and everybody chases a ball that was not played straight to them.
+
+/** Perpendicular distance from a point to the segment a→b. */
+function distToSegment(p: Vec2, a: Vec2, b: Vec2): number {
+  const sx = b.x - a.x, sy = b.y - a.y;
+  const len2 = sx * sx + sy * sy;
+  if (len2 < 1e-6) return Math.hypot(p.x - a.x, p.y - a.y);
+  const t = clamp(((p.x - a.x) * sx + (p.y - a.y) * sy) / len2, 0, 1);
+  return Math.hypot(p.x - (a.x + sx * t), p.y - (a.y + sy * t));
+}
+
+/**
+ * How open the ball's path from a to b is, in metres of clearance.
+ *
+ * A defender only blocks a lane he is actually IN. The man closing YOU down
+ * stands within a couple of metres of the start of every lane at once, so
+ * measuring raw distance-to-segment made him block every option equally — the
+ * best available pass then fell by the same amount wherever a support player
+ * ran, and moving was mathematically pointless. He is skipped here, which is
+ * also just true: a defender at your feet is not between you and anybody.
+ */
+function laneClearance(a: Vec2, b: Vec2, defenders: Vec2[]): number {
+  const sx = b.x - a.x, sy = b.y - a.y;
+  const len2 = sx * sx + sy * sy;
+  if (len2 < 1e-6) return 99;
+  let worst = 99;
+  for (const d of defenders) {
+    const t = ((d.x - a.x) * sx + (d.y - a.y) * sy) / len2;
+    if (t < 0.2 || t > 1.05) continue;              // not in this lane
+    const cl = clamp(t, 0, 1);
+    worst = Math.min(worst, Math.hypot(d.x - (a.x + sx * cl), d.y - (a.y + sy * cl)));
+  }
+  return worst;
+}
+
+const SUPPORT_MIN_PASS = 6;    // metres — closer than this and you may as well carry it
+const SUPPORT_MAX_PASS = 26;   // …and beyond this it stops being a support option
+const SUPPORT_REPLAN_S = 0.3;  // how often a support player re-reads the pitch
+const SUPPORT_SPEED = 4.6;     // m/s — finding space is a jog, not a sprint
+const PURSUIT_HORIZON = 2.6;   // seconds ahead a player will chase a ball
+const PURSUIT_STEP = 0.08;     // seconds per prediction step
+
+/**
+ * How good a position is to receive a pass, 0..1.
+ *
+ * The five things a player actually weighs up, in the order they matter:
+ * can the ball reach me (is the lane open), am I marked, is it worth playing
+ * (am I further forward), am I in a sensible range, and am I standing in the
+ * way of my own team-mate's shot. That last one is why a support player drifts
+ * off the shooting line rather than blocking it — a real footballing concern
+ * that also stops him eating shots you meant for the goal.
+ */
+export function spaceScore(p: Vec2, scenario: Scenario, carrier: Vec2): number {
+  // Off the pitch is not space.
+  if (p.x < 3 || p.x > PITCH_W - 3 || p.y < 1.5 || p.y > HALF_LEN + 6) return 0;
+
+  const passLen = Math.hypot(p.x - carrier.x, p.y - carrier.y);
+  if (passLen < SUPPORT_MIN_PASS * 0.5) return 0;
+
+  let nearestDef = 99;
+  for (const d of scenario.defenders) {
+    nearestDef = Math.min(nearestDef, Math.hypot(d.x - p.x, d.y - p.y));
+  }
+  const lane = laneClearance(carrier, p, scenario.defenders);
+
+  const laneOpen = clamp(lane / 3.5, 0, 1);
+  const unmarked = clamp(nearestDef / 7, 0, 1);
+  // Forward of the ball is worth more, but dropping in is still an option.
+  const advance = clamp((carrier.y - p.y) / 18, -0.4, 1) * 0.5 + 0.5;
+  // A bell over the sensible passing range.
+  const range = passLen < SUPPORT_MIN_PASS
+    ? passLen / SUPPORT_MIN_PASS
+    : clamp(1 - (passLen - SUPPORT_MIN_PASS) / (SUPPORT_MAX_PASS - SUPPORT_MIN_PASS), 0, 1);
+
+  const goalC = { x: (scenario.goal.x1 + scenario.goal.x2) / 2, y: 0 };
+  const blocksShot = distToSegment(p, carrier, goalC) < 2.6 && p.y < carrier.y ? 1 : 0;
+
+  return clamp(
+    laneOpen * 0.34 + unmarked * 0.26 + advance * 0.2 + range * 0.2 - blocksShot * 0.3,
+    0, 1,
+  );
+}
+
+/**
+ * Where a support player should go from where he is.
+ *
+ * Sampled rather than solved: three rings of candidate positions around him,
+ * scored, best one wins. He only moves if the new spot is meaningfully better,
+ * so he settles instead of drifting forever, and never more than one stride's
+ * worth of decision per replan.
+ */
+export function bestSupportPoint(scenario: Scenario, carrier: Vec2, from: Vec2): Vec2 {
+  let best = { x: from.x, y: from.y };
+  let bestScore = spaceScore(from, scenario, carrier) + 0.04; // incumbency bonus
+  for (const radius of [3.5, 7, 11]) {
+    for (let a = 0; a < 12; a++) {
+      const ang = (a / 12) * Math.PI * 2;
+      const p = { x: from.x + Math.cos(ang) * radius, y: from.y + Math.sin(ang) * radius };
+      const s = spaceScore(p, scenario, carrier);
+      if (s > bestScore) { bestScore = s; best = p; }
+    }
+  }
+  return best;
+}
+
+/**
+ * Where a moving ball will be in `t` seconds.
+ *
+ * The same integrator the real step uses, minus curl and collisions — close
+ * enough to run onto, and deliberately not perfect: a player reading a curling
+ * ball should be slightly wrong about it.
+ */
+function predictBall(ball: Ball, t: number): { pos: Vec2; z: number } {
+  let x = ball.pos.x, y = ball.pos.y, z = ball.z;
+  let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
+  const dt = PURSUIT_STEP;
+  for (let s = 0; s < t - 1e-6; s += dt) {
+    if (z > 0.02) {
+      const k = Math.max(0, 1 - AIR_DRAG * dt);
+      vx *= k; vy *= k;
+    }
+    vz -= G * dt;
+    z += vz * dt;
+    x += vx * dt;
+    y += vy * dt;
+    if (z <= 0) {
+      z = 0;
+      if (vz < -MIN_BOUNCE_VZ) { vz = -vz * BOUNCE_VZ; vx *= BOUNCE_H; vy *= BOUNCE_H; }
+      else {
+        vz = 0;
+        const sp = Math.hypot(vx, vy), drop = GROUND_FRICTION * dt;
+        if (sp <= drop) { vx = 0; vy = 0; }
+        else { const f = (sp - drop) / sp; vx *= f; vy *= f; }
+      }
+    }
+  }
+  return { pos: { x, y }, z };
+}
+
+/**
+ * The soonest point on the ball's path this player can actually get to.
+ *
+ * Null when he cannot reach it at all, which is what makes an overhit pass a
+ * genuine mistake rather than one the receiver silently rescues.
+ */
+export function interceptPoint(ball: Ball, r: Runner): Vec2 | null {
+  for (let t = PURSUIT_STEP; t <= PURSUIT_HORIZON; t += PURSUIT_STEP) {
+    const b = predictBall(ball, t);
+    if (b.z > 2.4) continue;                       // over his head at that moment
+    const need = Math.hypot(b.pos.x - r.pos.x, b.pos.y - r.pos.y);
+    if (need <= r.speed * t + PASS_CONTROL_R * 0.7) return b.pos;
+  }
+  return null;
+}
+
+/**
+ * Advance the attack.
+ *
+ * Two jobs, and which one applies is decided by whether the ball is live:
+ *
+ * BALL IN FLIGHT — everyone goes for it. A player who can reach the ball's path
+ * before it passes him redirects onto the interception point instead of running
+ * his scripted line, so a pass that was not struck straight at a man can still
+ * be won, and a pass nobody can reach is genuinely wasted.
+ *
+ * BALL AT YOUR FEET — support players look for space. They re-read the pitch
+ * every 0.4 s, so as the cover defenders slide across to shut your lane down,
+ * the man they are covering moves somewhere they are not. This is the release
+ * valve the Pressure Curve had been missing: options no longer only decay.
+ */
+/**
+ * Is this ball your strike at goal rather than a ball for a team-mate?
+ *
+ * Judged on where it was struck and how hard, not on where it will end up: a
+ * shot that curls, clips a defender or is parried is still your shot, and a
+ * support player who wandered into it and "controlled" it would turn a goal
+ * into a completed pass — much the worst thing this system could produce.
+ *
+ * A lay-off is slow, or played at a real angle away from goal. Anything driven
+ * within a narrow cone of the goal belongs to you.
+ */
+const LAYOFF_MAX_SPEED = 10;        // m/s — above this it is a strike, not a pass
+const SHOT_CONE_COS = 0.883;        // cos 28°
+
+export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
+  // A rebound belongs to the poacher, never to a support player.
+  if (ball.loose) return true;
+  const speed = Math.hypot(ball.vel.x, ball.vel.y);
+  if (speed < LAYOFF_MAX_SPEED) return false;
+  const goalCx = (scenario.goal.x1 + scenario.goal.x2) / 2;
+  const gx = goalCx - scenario.ball.x, gy = -scenario.ball.y;
+  const gl = Math.hypot(gx, gy);
+  if (gl < 0.5) return true;
+  return (ball.vel.x * gx + ball.vel.y * gy) / (speed * gl) > SHOT_CONE_COS;
+}
+
+export function stepSupport(scenario: Scenario, ball: Ball | null, carrier: Vec2, dt: number) {
+  const all: Runner[] = scenario.runner
+    ? [scenario.runner, ...scenario.secondaryRunners]
+    : [...scenario.secondaryRunners];
+  if (all.length === 0) return;
+
+  const live = !!ball && !ball.resting && !ball.inNet && !scenario.receiverDone
+    && Math.hypot(ball.vel.x, ball.vel.y) > 1.5;
+  // Nobody runs across their own team-mate's shot. Without this a support player
+  // standing anywhere near the flight would collect it and the goal would be
+  // stolen by his own side, which is the worst outcome this whole system could
+  // produce.
+  const shot = !!ball?.shot;
+
+  for (const r of all) {
+    r.replanIn = (r.replanIn ?? 0) - dt;
+
+    if (live && ball && !(shot && r.role === "support")) {
+      const p = interceptPoint(ball, r);
+      if (p) {
+        r.to = p;
+        r.moving = true;
+        r.sprint = true;
+        continue;
+      }
+      // Cannot get there. A target man keeps running his line; a support player
+      // stops chasing something he was never going to reach.
+      if (r.role === "support") r.moving = false;
+      continue;
+    }
+    if (live) continue;   // ball is in the air and this man is not going for it
+
+    if (r.role !== "support") continue;
+    if ((r.replanIn ?? 0) > 0) continue;
+    r.replanIn = SUPPORT_REPLAN_S;
+    const target = bestSupportPoint(scenario, carrier, r.pos);
+    if (Math.hypot(target.x - r.pos.x, target.y - r.pos.y) > 0.6) {
+      r.to = target;
+      r.moving = true;
+      r.sprint = false;
+    }
+  }
+}
+
 // Advance the team-mate making the run. They move at a real sprinting pace, which
 // is what makes a through-ball a question of weight and timing rather than of
 // hitting a static circle.
@@ -1096,7 +1479,8 @@ export function stepRunner(scenario: Scenario, dt: number) {
     if (!r || !r.moving) return;
     const dx = r.to.x - r.pos.x, dy = r.to.y - r.pos.y;
     const dist = Math.hypot(dx, dy);
-    const step = r.speed * dt;
+    // Finding space is a jog; going after the ball is a sprint.
+    const step = r.speed * (r.sprint === false ? 0.72 : 1) * dt;
     if (dist <= step) { r.pos.x = r.to.x; r.pos.y = r.to.y; r.moving = false; return; }
     r.pos.x += (dx / dist) * step;
     r.pos.y += (dy / dist) * step;
@@ -1408,7 +1792,12 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     const candidates: Runner[] = scenario.runner
       ? [scenario.runner, ...scenario.secondaryRunners]
       : [...scenario.secondaryRunners];
+    // A support player will not put his foot on a ball that is going in. He
+    // steps out of the way of it, which is the only reason it is safe to have
+    // team-mates standing in front of goal at all.
+    const shotAtGoal = ball.shot === true;
     for (const r of candidates) {
+      if (shotAtGoal && r.role === "support") continue;
       const tgt = r.pos;
       let swept = Math.hypot(tgt.x - ball.pos.x, tgt.y - ball.pos.y);
       const segX = ball.pos.x - prevX, segY = ball.pos.y - prevY;
@@ -1420,6 +1809,7 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
       }
       if (swept < PASS_CONTROL_R) {
         scenario.receiverDone = true;
+        scenario.receivedAt = { x: tgt.x, y: tgt.y };
         r.moving = false;
         // How difficult was that ball? Forward + long = harder, and a harder ball
         // won back is likelier to come straight back to you.
