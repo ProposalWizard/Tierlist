@@ -1,9 +1,35 @@
 "use client";
 import { useState } from "react";
+import { objectiveLabel } from "@/lib/star/sponsors";
+import { clauseSummary, offerClauses } from "@/lib/star/contracts";
+import { mulberry32 } from "@/lib/star/season";
 import type { CareerState, Trophy } from "@/lib/star/types";
 import { ACHIEVEMENTS } from "@/lib/star/achievements";
 
 // ---------- SPONSORS ----------
+function ObjectiveRow({ deal }: { deal: import("@/lib/star/types").SponsorDeal }) {
+  const o = deal.objective;
+  if (!o) return null;
+  const pct = Math.min(100, Math.round((o.progress / Math.max(1, o.target)) * 100));
+  return (
+    <div className="mt-1.5">
+      <div className="flex items-center justify-between text-[10px] font-bold">
+        <span className={o.done ? "text-emerald-300" : "text-white"}>
+          {objectiveLabel(o)}{o.done ? " ✓" : ""}
+        </span>
+        <span className="text-amber-300">★{o.bonus}</span>
+      </div>
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/40">
+        <div className={`h-full rounded-full ${o.done ? "bg-emerald-400" : "bg-amber-400"}`} style={{ width: `${Math.max(3, pct)}%` }} />
+      </div>
+      <div className="mt-0.5 text-[9px] text-gray-300">
+        {o.kind === "rating" ? (o.progress / 10).toFixed(1) : o.progress} / {o.kind === "rating" ? (o.target / 10).toFixed(1) : o.target}
+        {" · "}{o.seasonsLeft} season{o.seasonsLeft === 1 ? "" : "s"} left
+      </div>
+    </div>
+  );
+}
+
 export function SponsorsScreen({ career, onBack }: { career: CareerState; onBack: () => void }) {
   const total = career.sponsors.reduce((s, sp) => s + (sp.active ? sp.perMatch : 0), 0);
   return (
@@ -17,15 +43,18 @@ export function SponsorsScreen({ career, onBack }: { career: CareerState; onBack
 
         <div className="bg-gray-700 rounded-xl border border-gray-600 overflow-hidden">
           {career.sponsors.map((sp, i) => (
-            <div key={sp.category} className={`flex items-center py-2.5 px-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
-              <div className="font-black text-white text-sm flex-1">{sp.category}</div>
-              {sp.active ? (
-                <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                  <StarIcon />{sp.perMatch}
-                </div>
-              ) : (
-                <div className="text-[10px] text-gray-500 uppercase font-black">Not Signed</div>
-              )}
+            <div key={sp.category} className={`py-2.5 px-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
+              <div className="flex items-center">
+                <div className="font-black text-white text-sm flex-1">{sp.category}</div>
+                {sp.active ? (
+                  <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
+                    <StarIcon />{sp.perMatch}
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-gray-300 uppercase font-black">Not Signed</div>
+                )}
+              </div>
+              <ObjectiveRow deal={sp} />
             </div>
           ))}
           <div className="bg-emerald-700 py-2.5 px-3 flex items-center border-t border-black/30">
@@ -175,12 +204,16 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
 
   const finalise = () => {
     const bonus = wins;
+    const wage = career.contract.wage + bonus;
+    // The better the negotiation went, the more of the deal they will write in.
+    // Seeded off the outcome so the same negotiation produces the same offer.
     const newContract: CareerState["contract"] = {
       club: career.contract.club,
-      wage: career.contract.wage + bonus,
+      wage,
       goalBonus: career.contract.goalBonus + Math.floor(bonus / 2),
       assistBonus: career.contract.assistBonus + Math.floor(bonus / 2),
       seasonsRemaining: 3,
+      ...offerClauses(career, wage, mulberry32(career.season * 71 + wins * 13 + rounds)),
     };
     onComplete(newContract);
   };

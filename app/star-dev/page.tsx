@@ -11,6 +11,7 @@ import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
+import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
 import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
@@ -529,6 +530,7 @@ export default function StarDevPage() {
             onComplete={handleMatchComplete}
             startMinute={selection?.onAt ?? 0}
             duties={duties ?? undefined}
+            conditions={conditionsFor(career.season, nextFixture.week, career.homeCity)}
             seed={career.season * 1000 + career.week}
           />
         </div>
@@ -666,6 +668,9 @@ export default function StarDevPage() {
             {career.currentBoot.matches === 0 && (
               <div className="mt-1 text-red-300 text-[10px] font-bold">⚠ Boots need replacing</div>
             )}
+            <div className="mt-3 rounded-lg bg-gray-700 px-2 py-1.5 text-[10px] text-white">
+              {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
+            </div>
             {career.energy < 40 && (
               <div className="mt-3 text-red-300 text-xs font-bold">⚠ Low energy — you may underperform</div>
             )}

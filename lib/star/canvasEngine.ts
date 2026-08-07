@@ -175,6 +175,15 @@ export interface Defender extends Vec2 {
   speed?: number;
   /** Seconds spent within containment range of the carrier. Drives the tackle. */
   containT?: number;
+  /**
+   * Height above the turf, metres. Only a free-kick wall ever leaves the ground:
+   * they jump as the ball is struck, which is what makes going UNDER a wall a
+   * real option and going over it a matter of clearing a moving target rather
+   * than a fixed one.
+   */
+  z?: number;
+  /** Vertical speed of that jump. */
+  vz?: number;
 }
 
 export interface Scenario {
@@ -201,6 +210,12 @@ export interface Scenario {
   chainDepth?: number;
   /** Where a completed pass was actually received. The next link starts here. */
   receivedAt?: Vec2;
+  /**
+   * The surface and the air. Absent means a perfect pitch in still air, which is
+   * what every match in the game was until now — so nothing that does not set
+   * this changes at all.
+   */
+  conditions?: { drag: number; friction: number; bounce: number; wind: number };
 }
 
 export type Outcome =
@@ -305,6 +320,16 @@ const KEEPER_CENTRE_Z = 0.95;      // metres — roughly his chest, the centre o
 
 const DEF_BLOCK_R = 0.95;      // metres — body + outstretched leg
 const DEF_BLOCK_H = 1.9;       // defenders can only block below head height — chip over them
+/**
+ * The wall jumps.
+ *
+ * It used to be four men rooted to the turf, so a free kick was a question of
+ * going round the end of it and nothing else. They now leave the ground as the
+ * ball is struck, which makes going UNDER the wall a real option — and makes
+ * going over it a matter of clearing something that is on its way up.
+ */
+const WALL_JUMP_VZ = 3.6;      // m/s off the ground
+const WALL_JUMP_DELAY = 0.1;   // seconds of reaction before they move
 
 const FOLLOWER_SPEED = 7.2;    // m/s — a sprinting poacher
 const RUNNER_SPEED = 7.0;      // m/s — the team-mate making the run
@@ -1426,6 +1451,30 @@ export function stepDefenders(
   }
   let coverIndex = 0;
 
+  // The wall, in the air. A "hold" defender in a dead-ball scenario is a wall
+  // man; nothing else ever leaves the turf.
+  //
+  // Gravity runs whether or not there is a ball. Gating the whole block on a
+  // live ball left the wall hanging in mid-air the instant the outcome
+  // resolved — which is exactly when the player is looking at the freeze frame.
+  if (scenario.kind === "free_kick") {
+    for (const d of scenario.defenders) {
+      if (d.baseRole !== "hold") continue;
+      if (d.z === undefined) { d.z = 0; d.vz = 0; }
+      // They react to the strike rather than pre-empting it, so the jump only
+      // ever STARTS while the ball is live.
+      if (ball && d.z === 0 && (d.vz ?? 0) === 0 && (d.containT ?? 0) >= WALL_JUMP_DELAY) {
+        d.vz = WALL_JUMP_VZ;
+      }
+      if (ball) d.containT = (d.containT ?? 0) + dt;
+      if ((d.z ?? 0) > 0 || (d.vz ?? 0) > 0) {
+        d.vz = (d.vz ?? 0) - 9.8 * dt;
+        d.z = Math.max(0, (d.z ?? 0) + (d.vz ?? 0) * dt);
+        if (d.z === 0) d.vz = 0;
+      }
+    }
+  }
+
   for (const d of scenario.defenders) {
     const role = d.role ?? "hold";
     const spd = d.speed ?? 1;
@@ -1975,11 +2024,15 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     ball.vel.y += ay * dt;
   }
 
-  // --- Air drag while airborne ---
+  // --- Air drag while airborne, and the wind ---
+  const cond = scenario.conditions;
   if (ball.z > 0.02) {
-    const k = Math.max(0, 1 - AIR_DRAG * dt);
+    const k = Math.max(0, 1 - AIR_DRAG * (cond?.drag ?? 1) * dt);
     ball.vel.x *= k;
     ball.vel.y *= k;
+    // Wind only touches a ball that is off the ground, which is why a driven
+    // shot is unaffected and a chip is at its mercy.
+    if (cond?.wind) ball.vel.x += cond.wind * dt;
   }
 
   // --- Gravity / height ---
@@ -1997,7 +2050,8 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     if (ball.vz < -MIN_BOUNCE_VZ) {
       const top = clamp(ball.topspin ?? 0, -1, 1);
       // Topspin flattens the bounce and runs on; backspin sits up and checks.
-      ball.vz = -ball.vz * BOUNCE_VZ * (1 - top * BOUNCE_TOPSPIN_VZ);
+      // A wet pitch skids and a heavy one deadens, both through this one number.
+      ball.vz = -ball.vz * BOUNCE_VZ * (cond?.bounce ?? 1) * (1 - top * BOUNCE_TOPSPIN_VZ);
       const keep = BOUNCE_H * (1 + top * BOUNCE_TOPSPIN_H);
       ball.vel.x *= keep;
       ball.vel.y *= keep;
@@ -2027,7 +2081,7 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   // pulled up so sharply.
   if (ball.z <= 0.03 && !bouncedThisStep && ball.vz <= 0.01) {
     const s = Math.hypot(ball.vel.x, ball.vel.y);
-    const drop = GROUND_FRICTION * dt;
+    const drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
     if (s <= drop) {
       ball.vel.x = 0;
       ball.vel.y = 0;
@@ -2041,9 +2095,14 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
 
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
 
-  // --- Defender deflection (only below head height, and only what they can reach) ---
-  if (ball.contactCd <= 0 && ball.z < DEF_BLOCK_H && speed > 4) {
+  // --- Defender deflection ---
+  // A defender blocks what he can reach: from his feet to head height, raised by
+  // however far off the ground he currently is. Only a free-kick wall is ever
+  // off the ground, so for everyone else this is exactly what it always was.
+  if (ball.contactCd <= 0 && speed > 4) {
     for (const d of scenario.defenders) {
+      const foot = d.z ?? 0;
+      if (ball.z < foot || ball.z > foot + DEF_BLOCK_H) continue;
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < DEF_BLOCK_R) {
         deflectOffDefender(ball, d, rng);
         break;

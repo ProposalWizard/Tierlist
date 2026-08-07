@@ -14,6 +14,8 @@
     npx tsx tests/star/attributes.mts
     npx tsx tests/star/recognition.mts
     npx tsx tests/star/club.mts
+    npx tsx tests/star/money.mts
+    npx tsx tests/star/conditions.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -440,3 +442,65 @@ match you had just played.
   bulletin over a hat-trick and a rout. Every question is the same decision
   underneath — back yourself, back the team, or give them nothing — and the file
   checks that shape holds for every story rather than checking the wording.
+
+---
+
+**money** — sponsors that ask for something, contracts with a shape, a
+testimonial, and the supporters finally saying something.
+
+A `SponsorDeal` was `{ category, perMatch, active }` — passive money that
+unlocked by counting, so the sponsors screen was a list of numbers going up on
+its own. A contract was a wage, two bonuses and a number of seasons, so every
+deal in the game was the same deal at a different price. A career at one club
+had nothing to show for it that six clubs did not — if anything the mercenary
+did better, because every move came with a signing fee. And the `fans`
+relationship moved for fifteen seasons without the player ever hearing from
+them.
+
+What the file pins down:
+
+- **A sponsor objective can be missed.** A term that runs out unmet lapses, and
+  it takes the retainer and some standing with everybody else. That is the only
+  thing that makes chasing one worth anything. A two-season target is not judged
+  after one, and a delivered one is cleared rather than paying twice.
+- **A release clause cuts both ways.** It is the price at which a club cannot
+  say no, so a LOW one gets a nobody offers his reputation would never attract —
+  asserted directly by giving a 0.6-star player a cheap clause and counting the
+  offers.
+- **Loyalty is the one thing that pays you for not moving**, and appearance
+  money is worth nothing to somebody who plays every week — checked against a
+  full season played end to end.
+- **The testimonial is not available to somebody who arrived last summer**,
+  however good he is.
+- **The fan feed does not reshuffle under a re-render**, and it talks about what
+  actually happened: the armband, an award, a bad run.
+
+---
+
+**conditions** — the surface, the wind, and a free-kick wall that jumps.
+
+Every match was played on a perfect pitch in still air, so the ball behaved
+identically in August and in February. And a wall was four men rooted to the
+turf, which made a free kick a question of going round the end of it and nothing
+else.
+
+Both are deliberately small: the weather multiplies three physics constants and
+pushes an airborne ball sideways, and the wall gains a height that the block test
+reads. Nothing else in the engine knows either exists — a scenario that
+specifies no conditions is byte-identical to the old behaviour, which is what
+makes it safe for the sandbox and for saves that predate it.
+
+Two things the measurements caught:
+
+- **The wall hung in mid-air once the ball resolved.** The jump physics were
+  gated on there being a live ball, so gravity stopped the instant the outcome
+  was decided — exactly when the player is looking at the freeze frame. Gravity
+  now always runs; only the START of a jump needs a ball.
+- **"Wind does not affect a driven ball" is false in this engine.** A driven
+  ball skips off the turf and spends most of its journey airborne. What is
+  genuinely untouched is a ball ROLLING on the grass, and the test now builds one
+  directly rather than striking it, because even the flattest strike leaves the
+  boot slightly airborne.
+
+Measured: a wet surface carries a ball further than a dry one and a heavy pitch
+eats it, and both deaden the bounce.

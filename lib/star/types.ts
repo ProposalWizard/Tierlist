@@ -32,6 +32,14 @@ export interface Contract {
   goalBonus: number;
   assistBonus: number;
   seasonsRemaining: number;
+  // ── Clauses. All optional, so a contract signed before they existed still
+  //    loads and simply has none. ──
+  /** Paid every match you actually play. Worth nothing to a regular. */
+  appearanceFee?: number;
+  /** Paid at the end of every season you did not leave. */
+  loyaltyBonus?: number;
+  /** The price at which the club cannot say no. Cuts both ways. */
+  releaseClause?: number;
 }
 
 export interface SeasonStats {
@@ -164,6 +172,15 @@ export interface SponsorDeal {
   category: string;
   perMatch: number;
   active: boolean;
+  /** What they want for the money. Absent on a deal signed before this existed. */
+  objective?: {
+    kind: "goals" | "assists" | "appearances" | "starMan" | "rating";
+    target: number;
+    progress: number;
+    seasonsLeft: number;
+    bonus: number;
+    done: boolean;
+  };
 }
 
 export interface Trophy {
@@ -249,6 +266,10 @@ export interface CareerState {
   manager?: { name: string; style: "trusting" | "demanding" | "rotational"; since: number; arrival: string };
   /** What happened in the dugout at the end of last season. */
   managerNews?: string | null;
+  /** Sponsor objectives settled at the last rollover, for the dashboard. */
+  sponsorNews?: string[];
+  /** A farewell match, earned by a long spell at one club. */
+  testimonial?: { club: string; season: number; payout: number } | null;
 }
 
 export type StarPhase =

@@ -101,7 +101,34 @@ export function careerVerdict(career: CareerState): CareerVerdict {
   return { title, summary, score, seasons, clubs };
 }
 
+/**
+ * A TESTIMONIAL
+ *
+ * The reward for having stayed somewhere. A career spent at one club had
+ * absolutely nothing to show for it that a career of six clubs did not — if
+ * anything the mercenary did better, because every move came with a signing fee.
+ *
+ * A full house for a man who gave a club a decade is the one thing loyalty
+ * should buy, and it is deliberately not available to somebody who arrived last
+ * summer however good he was.
+ */
+export const TESTIMONIAL_APPEARANCES = 120;
+
+export function testimonialFor(career: CareerState): { club: string; season: number; payout: number } | null {
+  const apps = career.clubAppearances ?? 0;
+  if (apps < TESTIMONIAL_APPEARANCES) return null;
+  // A bigger name fills a bigger ground, but the appearances are what earn it.
+  const payout = Math.round(apps * 0.9 + career.fame * 1.6 + career.starRating * 22);
+  return { club: career.player.club, season: career.season, payout };
+}
+
 /** Hang them up. */
 export function retire(career: CareerState): CareerState {
-  return { ...career, retired: true };
+  const testimonial = testimonialFor(career);
+  return {
+    ...career,
+    retired: true,
+    testimonial,
+    money: career.money + (testimonial?.payout ?? 0),
+  };
 }

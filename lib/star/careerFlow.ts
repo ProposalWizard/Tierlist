@@ -17,6 +17,8 @@ import {
 } from "./recognition";
 import { makeManager, sackCheck, bossOnArrival } from "./manager";
 import { isDerby, DERBY_MULTIPLIER } from "./rivals";
+import { attachObjective, progressObjectives, rollSponsorSeason } from "./sponsors";
+import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
   seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
 } from "./competitions";
@@ -196,9 +198,14 @@ export function creditMatchResult(
   const sponsorGain = Math.max(0, Math.floor(stats.fansChange / 3));
   const newSponsorRel = Math.min(100, career.relationships.sponsors + sponsorGain);
   const dealsUnlocked = Math.floor(newSponsorRel / 10);
-  const sponsors = career.sponsors.map((s, i) =>
+  const activated = career.sponsors.map((s, i) =>
     i < dealsUnlocked && !s.active ? { ...s, active: true, perMatch: 1 + Math.floor(i / 2) } : s,
   );
+  // A new deal comes with something to ask for — a sponsor who wants nothing is
+  // just a number going up on its own.
+  const withObjectives = attachObjective(career, activated);
+  const progressed = progressObjectives(withObjectives, stats, accrue(career.seasonStats));
+  const sponsors = progressed.sponsors;
 
   // Update squad player stats from this match's goal events.
   // Chain teammate goals (isUserGoal: false) → scorer gets a goal.
@@ -251,7 +258,11 @@ export function creditMatchResult(
     knockoutMessage,
     league,
     fixtures: [...fixtures, ...extraFixtures],
-    money: career.money + stats.totalCash,
+    // Match-day money: the wage and bonuses the result produced, an appearance
+    // fee if the deal has one, and anything a sponsor objective just paid out.
+    money: career.money + stats.totalCash
+      + (isInternational ? 0 : appearanceMoney(career.contract))
+      + progressed.earned,
     // Twenty minutes off the bench does not take as much out of you as ninety,
     // and does not sharpen you as much either. The week that follows gives some
     // of it back — see startNewWeek, applied below.
@@ -295,6 +306,9 @@ export function creditMatchResult(
   // Player of the Month, checked on the four-week boundary.
   const monthly = monthlyAward(next);
   if (monthly) next.awards = [...(next.awards ?? []), monthly];
+  if (progressed.completed.length > 0) {
+    next.sponsorNews = [...(career.sponsorNews ?? []), ...progressed.completed].slice(-4);
+  }
   // Being hooked for your form is a message from the manager as well as a
   // scoreline — it costs you a little more of him than the rating alone.
   if (stats.hooked === "form") {
@@ -341,6 +355,14 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     freeKick: career.skills.freeKick,
   };
 
+  // Sponsor terms run down. A deal that was not delivered lapses, which costs
+  // the retainer and some standing with everybody else — the only thing that
+  // makes an objective worth chasing rather than ignoring.
+  const sponsorRoll = rollSponsorSeason(career);
+  // Loyalty is the one thing in the career that pays you for NOT moving. Taken
+  // here, before the transfer window, because you were here for the season.
+  const loyalty = loyaltyMoney(career.contract, true);
+
   // The board's view of the manager, taken on the season the CLUB had rather
   // than the one you had — nobody is sacked because a forward was quiet.
   const sack = sackCheck(career, judgeSeason(career).score);
@@ -383,7 +405,16 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     },
     lastSeasonJudgement: judgement,
     awards: honours.length > 0 ? [...(career.awards ?? []), ...honours] : career.awards,
+    sponsors: sponsorRoll.sponsors,
+    sponsorNews: sponsorRoll.lapsed.length > 0 ? sponsorRoll.lapsed : [],
+    money: career.money + loyalty,
   };
+  if (sponsorRoll.standingHit > 0) {
+    next.relationships = {
+      ...next.relationships,
+      sponsors: clamp01to100(next.relationships.sponsors - sponsorRoll.standingHit),
+    };
+  }
 
   // A new manager has never picked you. Everything you built with the last one
   // goes with him, which is how a settled player becomes a squad player without

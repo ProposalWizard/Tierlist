@@ -5,6 +5,7 @@ import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { expectationStatus, personalDuty } from "@/lib/star/expectations";
 import { leadingScorer } from "@/lib/star/recognition";
+import { clauseSummary } from "@/lib/star/contracts";
 
 interface Props {
   career: CareerState;
@@ -82,6 +83,19 @@ export default function DashboardStats({ career }: Props) {
               <div className="font-black text-xs text-white">{val}</div>
             </div>
           ))}
+          {/* A contract was a wage, two bonuses and a number of seasons — every
+              deal in the game was the same deal at a different price. */}
+          {clauseSummary(career.contract).map((c) => (
+            <div key={c.label} className="border-t border-black/30 bg-gray-900 px-3 py-2">
+              <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">{c.label}</div>
+              <div className="text-[11px] text-white">{c.detail}</div>
+            </div>
+          ))}
+          {clauseSummary(career.contract).length === 0 && (
+            <div className="border-t border-black/30 bg-gray-900 px-3 py-2 text-[10px] text-gray-300">
+              No clauses in this one. Ask for some at the next renewal.
+            </div>
+          )}
         </div>
       )}
 
@@ -115,6 +129,15 @@ export default function DashboardStats({ career }: Props) {
               </div>
             </div>
           </div>
+
+          {(career.sponsorNews ?? []).length > 0 && (
+            <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
+              <div className="font-black text-xs text-white mb-1">Sponsors</div>
+              {(career.sponsorNews ?? []).map((n, i) => (
+                <div key={i} className={`text-[10px] ${n.includes("not delivered") ? "text-red-300" : "text-emerald-300"}`}>{n}</div>
+              ))}
+            </div>
+          )}
 
           {(career.awards ?? []).length > 0 && (
             <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
