@@ -67,6 +67,8 @@ export interface Fixture {
   //    fixture was until cups existed — so absent means league. ──
   competition?: Competition;
   kind?: "league" | "cup" | "europe" | "international";
+  /** The one against the club down the road. Same football, louder consequences. */
+  derby?: boolean;
   round?: string;
   /** For opponents that are not in your division. */
   opponentStrength?: number;
@@ -243,6 +245,10 @@ export interface CareerState {
   squadNumber?: number;
   /** Appearances at the CURRENT club, reset on a transfer. */
   clubAppearances?: number;
+  /** The man in the job. He can be sacked, and the next one has never picked you. */
+  manager?: { name: string; style: "trusting" | "demanding" | "rotational"; since: number; arrival: string };
+  /** What happened in the dugout at the end of last season. */
+  managerNews?: string | null;
 }
 
 export type StarPhase =
@@ -271,4 +277,5 @@ export type StarPhase =
   | "relationship-game"
   | "season-transfer"
   | "retirement"
-  | "legacy";
+  | "legacy"
+  | "press";

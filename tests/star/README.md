@@ -13,6 +13,7 @@
     npx tsx tests/star/context.mts
     npx tsx tests/star/attributes.mts
     npx tsx tests/star/recognition.mts
+    npx tsx tests/star/club.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -409,3 +410,33 @@ it can be had for free:
   grow with the season so the race is live all year.
 - **End-of-season honours are banked before the stats that earned them are
   wiped** — asserted through a real rollover.
+
+---
+
+**club** — the manager, the derby and the press.
+
+Your standing with "the boss" was a relationship with nobody: no name, never
+changing hands, and a number five seasons in the building that nothing could
+take away except your own form. Every fixture was the same fixture. And the
+dilemma system, which fires on a timer and asks about your life, was the only
+thing in the game that ever asked you a question — nothing ever asked about the
+match you had just played.
+
+- **A manager can be sacked**, judged on the season the CLUB had rather than the
+  one you had, with more rope in his first year. The man who walks in has never
+  picked you: a boss relationship of 96 lands somewhere in the forties, the
+  armband goes back in the drawer, and a reputation is worth something but
+  nothing like what you had built. The file asserts a good season keeps him too,
+  so this can't fire on everything.
+- **His style bends selection symmetrically** — a trusting manager is harder to
+  lose your place with AND harder to win it back from, so no style is simply
+  better to play for. Asserted as a property, not just as a number.
+- **Rivalries are symmetric by construction** and independent of the order the
+  division was listed in. An odd division leaves one club without a rival rather
+  than inventing a one-sided one. A derby is worth double to the supporters and
+  half again to the dressing room; the manager is the least moved, because three
+  points are three points to him. Losing one costs the same way.
+- **The press only ask about something that happened**, and a derby leads the
+  bulletin over a hat-trick and a rout. Every question is the same decision
+  underneath — back yourself, back the team, or give them nothing — and the file
+  checks that shape holds for every story rather than checking the wording.

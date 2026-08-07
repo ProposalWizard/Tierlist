@@ -1,4 +1,5 @@
 import type { CareerState } from "./types";
+import { STYLE_SELECTION } from "./manager";
 
 /**
  * TEAM SELECTION
@@ -73,7 +74,14 @@ export function selectionFor(career: CareerState): SelectionVerdict {
   const standing = selectionStanding(career);
   const form = recentForm(career.form);
 
-  if (standing >= START_AT) {
+  // The man in the job has a way of doing things. Deliberately symmetric: a
+  // trusting manager is harder to lose your place with AND harder to win it
+  // back from, so no style is simply better to play for.
+  const bend = career.manager ? STYLE_SELECTION[career.manager.style] : { start: 0, bench: 0 };
+  const START = START_AT + bend.start;
+  const BENCH = BENCH_AT + bend.bench;
+
+  if (standing >= START) {
     return {
       status: "1st Team",
       onAt: 0,
@@ -84,7 +92,7 @@ export function selectionFor(career: CareerState): SelectionVerdict {
     };
   }
 
-  if (standing >= BENCH_AT) {
+  if (standing >= BENCH) {
     // Somewhere in the last half hour. Seeded off the week so it is stable.
     const onAt = 58 + ((career.week * 37 + career.season * 11) % 15);
     return {

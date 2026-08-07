@@ -1,4 +1,5 @@
 import type { LeagueTeam, Fixture } from "./types";
+import { rivalOf } from "./rivals";
 
 // Deterministic PRNG so a career's season sim is reproducible
 export function mulberry32(seed: number): () => number {
@@ -58,7 +59,9 @@ export function buildFixtures(clubs: string[], userClub: string): Fixture[] {
     played: false,
   }));
 
-  return [...firstHalf, ...secondHalf];
+  const rival = rivalOf(userClub, clubs);
+  return [...firstHalf, ...secondHalf].map(f =>
+    rival && f.opponent === rival ? { ...f, derby: true } : f);
 }
 
 export function simulateOtherFixtures(

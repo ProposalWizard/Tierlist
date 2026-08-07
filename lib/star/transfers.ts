@@ -2,6 +2,7 @@ import type { CareerState, Contract } from "./types";
 import { sortLeague } from "./season";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { assignSquadNumber } from "./recognition";
+import { makeManager, bossOnArrival } from "./manager";
 
 /**
  * TRANSFERS
@@ -149,15 +150,21 @@ export function acceptOffer(career: CareerState, offer: TransferOffer): CareerSt
     fee: offer.signingFee,
   };
 
+  const manager = makeManager(career, offer.club, career.season + 1);
+
   return {
     ...career,
     player: { ...career.player, club: offer.club, clubBadge: null },
+    // A different club is a different man in the dugout, and he has never picked
+    // you either.
+    manager,
+    managerNews: null,
     contract,
     money: career.money + offer.signingFee,
     relationships: {
       ...career.relationships,
       team: MOVE_RESET.team,
-      boss: MOVE_RESET.boss,
+      boss: Math.min(MOVE_RESET.boss, bossOnArrival(career)),
       fans: Math.min(career.relationships.fans, MOVE_RESET.fansCap),
     },
     matchFitness: Math.max(20, career.matchFitness + MOVE_RESET.matchFitness),

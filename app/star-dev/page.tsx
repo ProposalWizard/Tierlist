@@ -10,6 +10,8 @@ import { nextFixtureFor, fixtureLabel, nationOf } from "@/lib/star/competitions"
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
+import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
+import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
 import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
@@ -42,6 +44,8 @@ export default function StarDevPage() {
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
+  const [pressQuestion, setPressQuestion] = useState<PressQuestion | null>(null);
+  const clampRel = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
   // Nothing is written back until the load has run, so the initial
   // "profile-setup" render cannot wipe a pending phase before we have read it.
@@ -234,6 +238,17 @@ export default function StarDevPage() {
 
   const handlePostMatchContinue = useCallback(() => {
     if (!career) return;
+
+    // The press get you on the way out of the ground, before the week rolls on.
+    // Only when the match gave them something to ask about.
+    if (playedFixture && lastMatchStats && !pressQuestion) {
+      const q = pressQuestionFor(
+        career, playedFixture, lastMatchStats, !!playedFixture.derby,
+        mulberry32(career.season * 613 + career.week * 29),
+      );
+      if (q) { setPressQuestion(q); setPhase("press"); return; }
+    }
+
     const remaining = career.fixtures.filter((f) => !f.played).length;
     if (remaining === 0) {
       handleSeasonEnd();
@@ -264,7 +279,24 @@ export default function StarDevPage() {
 
     setActiveNav(null);
     setPhase("dashboard");
-  }, [career, handleSeasonEnd]);
+  }, [career, handleSeasonEnd, playedFixture, lastMatchStats, pressQuestion]);
+
+  const handlePressAnswer = useCallback((o: PressOption) => {
+    if (!career) return;
+    setCareer({
+      ...career,
+      relationships: {
+        ...career.relationships,
+        boss: clampRel(career.relationships.boss + o.boss),
+        team: clampRel(career.relationships.team + o.team),
+        fans: clampRel(career.relationships.fans + o.fans),
+      },
+      happiness: clampRel(career.happiness + (o.happiness ?? 0)),
+    });
+    setPressQuestion(null);
+    // Straight back into the flow it interrupted.
+    setTimeout(() => handlePostMatchContinue(), 0);
+  }, [career, handlePostMatchContinue]);
 
   const handleDilemmaChoose = useCallback((effects: DilemmaEffect) => {
     if (!career || !currentDilemma) return;
@@ -536,6 +568,10 @@ export default function StarDevPage() {
     );
   }
 
+  if (phase === "press" && pressQuestion) {
+    return <PressConference question={pressQuestion} onAnswer={handlePressAnswer} />;
+  }
+
   if (phase === "ballon-dor") {
     return <BallonDor career={career} onContinue={handleBallonDorContinue} />;
   }
@@ -602,8 +638,13 @@ export default function StarDevPage() {
               Week {nextFixture.week} · {fixtureLabel(nextFixture)}
             </div>
             <h1 className="mt-2 text-2xl font-black">
-              {nextFixture.kind && nextFixture.kind !== "league" ? nextFixture.round : "Match Day"}
+              {nextFixture.derby ? "Derby Day" : nextFixture.kind && nextFixture.kind !== "league" ? nextFixture.round : "Match Day"}
             </h1>
+            {nextFixture.derby && (
+              <p className="mt-1 text-[11px] font-bold text-red-300">
+                The one that counts. Everything is worth more today.
+              </p>
+            )}
           </div>
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 text-center shadow-lg">
             <div className="text-lg font-black text-white">{home}</div>
@@ -650,6 +691,11 @@ export default function StarDevPage() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-white/90">{selection.reason}</p>
+              {career.manager && (
+                <p className="mt-0.5 text-[10px] text-white/70">
+                  {career.manager.name} · {career.manager.style}
+                </p>
+              )}
               <div className="mt-2 h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
                 <div
                   className={`h-full rounded-full ${
@@ -697,6 +743,12 @@ export default function StarDevPage() {
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
           ⭐ Achievement Unlocked: {unlockedAchievements[0]} ⭐
+        </div>
+      )}
+      {phase === "dashboard" && career.managerNews && (
+        <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/15 p-3">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-200">In the dugout</div>
+          <p className="mt-1 text-xs text-white">{career.managerNews}</p>
         </div>
       )}
       {phase === "dashboard" && seasonOver && (

@@ -15,6 +15,8 @@ import { judgeSeason } from "./expectations";
 import {
   monthlyAward, seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
 } from "./recognition";
+import { makeManager, sackCheck, bossOnArrival } from "./manager";
+import { isDerby, DERBY_MULTIPLIER } from "./rivals";
 import {
   seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
 } from "./competitions";
@@ -82,6 +84,7 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     knockoutMessage: null,
   };
   state.squadNumber = assignSquadNumber(state, player.club);
+  state.manager = makeManager(state, player.club, 1);
   const seeded = seedSeasonKnockouts(state);
   state.cups = seeded.runs;
   state.fixtures = [...state.fixtures, ...seeded.fixtures];
@@ -178,6 +181,11 @@ export function creditMatchResult(
   );
 
   const minuteShare = Math.max(0.25, Math.min(1, (stats.minutes ?? 90) / 90));
+  // A derby changes nothing about how it was played and everything about what it
+  // was worth. Applied to the relationships only — never to the football.
+  const derby = fixture.derby
+    ?? isDerby(career.player.club, fixture.opponent, career.league.map(t => t.name));
+  const derbyScale = derby ? DERBY_MULTIPLIER : { boss: 1, team: 1, fans: 1 };
   const currentBoot = { ...career.currentBoot, matches: Math.max(0, career.currentBoot.matches - 1) };
 
   // A rested week for the stable: the horse regains some energy between matches.
@@ -251,9 +259,9 @@ export function creditMatchResult(
     matchFitness: Math.min(100, career.matchFitness + 3 * minuteShare),
     relationships: {
       ...career.relationships,
-      boss: clamp01to100(career.relationships.boss + stats.bossChange),
-      team: clamp01to100(career.relationships.team + stats.teamChange),
-      fans: clamp01to100(career.relationships.fans + stats.fansChange),
+      boss: clamp01to100(career.relationships.boss + Math.round(stats.bossChange * derbyScale.boss)),
+      team: clamp01to100(career.relationships.team + Math.round(stats.teamChange * derbyScale.team)),
+      fans: clamp01to100(career.relationships.fans + Math.round(stats.fansChange * derbyScale.fans)),
       sponsors: newSponsorRel,
     },
     sponsors,
@@ -333,6 +341,10 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     freeKick: career.skills.freeKick,
   };
 
+  // The board's view of the manager, taken on the season the CLUB had rather
+  // than the one you had — nobody is sacked because a forward was quiet.
+  const sack = sackCheck(career, judgeSeason(career).score);
+
   // Individual honours for the season that has just finished, taken BEFORE the
   // stats are reset — they are a verdict on those numbers.
   const honours = seasonAwards(career);
@@ -372,6 +384,19 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     lastSeasonJudgement: judgement,
     awards: honours.length > 0 ? [...(career.awards ?? []), ...honours] : career.awards,
   };
+
+  // A new manager has never picked you. Everything you built with the last one
+  // goes with him, which is how a settled player becomes a squad player without
+  // kicking a ball differently.
+  if (sack.sacked) {
+    const incoming = makeManager(next, next.player.club, next.season);
+    next.manager = incoming;
+    next.managerNews = `${sack.reason} ${incoming.name} takes over. "${incoming.arrival}"`;
+    next.relationships = { ...next.relationships, boss: bossOnArrival(next) };
+    next.captain = false;
+  } else {
+    next.managerNews = null;
+  }
 
   // Seeded after the rest of the state is in place, because what you are in
   // depends on the season number, the qualification just computed and whether
