@@ -2,6 +2,7 @@
 
     npx tsx tests/star/hiddenMatch.mts
     npx tsx tests/star/support.mts
+    npx tsx tests/star/defending.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -62,3 +63,32 @@ by eye. What the file pins down:
 The most common way to break this file is to make one side's rates diverge from
 the other's: the pitch is deliberately symmetric, so the same numbers that
 produce your chances at their end produce theirs at yours.
+
+---
+
+**defending** — reading a pass, committing to the interception, recovering
+goal-side, and offside judged live. What this replaced: a defender only ever
+deflected a ball that happened to pass within a metre of where he was already
+standing, never turned when he was played past, and the offside risk on a
+through-ball was a fixed number decided before you had taken aim.
+
+Two measurements shaped the implementation:
+
+- **Re-solving the interception every frame is worse than not trying.** He
+  chases the earliest point he can still theoretically reach, which moves away
+  from him as fast as the ball does, so he trails it the whole way: 20,000
+  frames of chasing changed 7 passes in 500. Worse, he had vacated the lane he
+  was covering — measurably worse than standing still. He now commits to the
+  point he picked and only leaves his position for an interception he can make
+  at 80% of his pace.
+- **Defenders must not read shots.** A cone around the goal was the obvious test
+  for "is this a shot", and it is wrong: from the byline every forward pass sits
+  inside the cone, so a cutback to a team-mate was unplayable. It is now decided
+  by where the ball would actually cross the line, once, at the strike — and it
+  sticks, so a shot that deflects or curls away is still your shot.
+
+Offside is judged only on the through-ball. A scenario carries one or two
+defenders, not a back four, so `min(defender.y)` is a meaningful line only in
+the scenario built around one — applying it everywhere flagged two thirds of
+ordinary midfield passes offside, which is exactly the kind of thing that looks
+fine in code and is obvious in a distribution.

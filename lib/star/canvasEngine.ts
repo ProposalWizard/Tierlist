@@ -151,11 +151,20 @@ export interface Defender extends Vec2 {
   homeX?: number;
   homeY?: number;
   /**
-   * press: closes the ball carrier down and contains him.
-   * cover: slides onto the passing lane to the most dangerous runner.
-   * hold : a wall or a marker. Drifts only; never charges. Used for dead balls.
+   * press    : closes the ball carrier down and contains him.
+   * cover    : slides onto the passing lane to the most dangerous runner.
+   * hold     : a wall or a marker. Drifts only; never charges. Dead balls.
+   * intercept: has read the ball's path and is going for it.
+   * recover  : has been played past and is sprinting back goal-side.
+   *
+   * The last two are taken on and given up during play; `baseRole` is what he
+   * goes back to.
    */
-  role?: "press" | "cover" | "hold";
+  role?: "press" | "cover" | "hold" | "intercept" | "recover";
+  /** The role the scenario assigned him, restored when the ball is dead. */
+  baseRole?: "press" | "cover" | "hold";
+  /** Where he is running to while intercepting. */
+  interceptTo?: Vec2;
   /** Metres per second. Varied slightly per defender so they don't move as one. */
   speed?: number;
   /** Seconds spent within containment range of the carrier. Drives the tackle. */
@@ -1031,7 +1040,33 @@ export function launch(
   };
   // Decided here, once, from what you actually did with it — see isDriveAtGoal.
   ball.shot = isDriveAtGoal(ball, scenario);
+  judgeOffside(scenario);
   return ball;
+}
+
+/**
+ * Offside, judged at the moment the ball is played, against where the defence
+ * actually is.
+ *
+ * It used to be a fixed probability baked in when the scenario was built, so
+ * the defensive line could step up in front of you for two seconds and the risk
+ * never moved. Now holding the ball while your runner strays past the last man
+ * is a real cost — which is the other half of the decision window, and the only
+ * thing that makes a defence stepping up mean anything.
+ *
+ * Only the through-ball is judged, and deliberately so: a scenario carries one
+ * or two defenders, not a back four, so `min(defender.y)` is only a meaningful
+ * offside line in the scenario that was BUILT around one. Applying it
+ * everywhere flagged two thirds of ordinary midfield passes offside.
+ */
+function judgeOffside(scenario: Scenario) {
+  const r = scenario.runner;
+  if (!r || scenario.kind !== "through_ball") return;
+  if (r.pos.y > scenario.ball.y - 4) return;     // not a forward ball
+
+  const line = offsideLineY(scenario.defenders);
+  const margin = r.pos.y - line;                 // positive = the right side of it
+  scenario.offsideRisk = margin > 0.6 ? 0 : margin > -0.5 ? 0.3 : 0.85;
 }
 
 /**
@@ -1111,6 +1146,12 @@ const DEF_CONTAIN_R = 1.75;    // metres he stands off at. Patience — he conta
                                // pressure feel like football instead of tag.
 const DEF_TACKLE_S = 1.15;     // seconds contained before he commits to the tackle
 const DEF_COVER_SPEED = 3.4;   // m/s sliding across to block a passing lane
+const DEF_INTERCEPT_SPEED = 6.4;// m/s going for a ball he has read. Faster than a
+                               // press (that is a jog into position) but short of
+                               // a forward's sprint — he is reacting, not running
+                               // a planned line.
+const DEF_RECOVER_SPEED = 6.2; // m/s sprinting back after being played past
+const DEF_RECOVER_GAP = 5;     // metres goal-side of the ball he tries to get to
 const DEF_SUPPORT_BIAS = 0.85; // …and how far along it he sits when the man he is
                                // covering is a support player who can move. Close
                                // enough to him that outrunning the marker is
@@ -1137,6 +1178,8 @@ export function initDefenders(scenario: Scenario, rng: () => number) {
     // Small per-defender variation so a back four does not move as one object.
     d.speed = 1 + (rng() - 0.5) * 0.18;
     d.role = deadBall ? "hold" : (order[0]?.i === i ? "press" : "cover");
+    d.baseRole = d.role;
+    d.interceptTo = undefined;
   });
 }
 
@@ -1151,8 +1194,58 @@ export function stepDefenders(
   dt: number,
   carrier: Vec2,
   carrierHasBall: boolean,
+  ball: Ball | null = null,
 ): Outcome | null {
   let lost: Outcome | null = null;
+
+  // ── Reading the ball ──
+  // A defender used to deflect a pass only if it happened to pass within a
+  // metre of where he was already standing — he never went for it. Now he reads
+  // the flight: if he can get to a point on its path, he goes, and the existing
+  // deflection handles the contact when he arrives. That is what makes a slow
+  // ball into a covered lane a genuine mistake rather than a free pass.
+  //
+  // A defender the ball has already gone past does the other thing a defender
+  // does: turns and sprints back goal-side.
+  const liveBall = !!ball && !ball.resting && !ball.inNet
+    && Math.hypot(ball.vel.x, ball.vel.y) > 2;
+
+  for (const d of scenario.defenders) {
+    if (d.baseRole === "hold") continue;            // a wall stays a wall
+    if (!liveBall || !ball) {
+      if (d.role === "intercept" || d.role === "recover") d.role = d.baseRole ?? "cover";
+      continue;
+    }
+    // Defenders read PASSES, not shots. A block stays a matter of already being
+    // in the way — which is exactly what covering a lane earns you — rather than
+    // a defender stepping into a strike he could not have anticipated.
+    //
+    // He also COMMITS. Re-solving every frame made him chase the earliest point
+    // he could still theoretically reach, which moves away from him as fast as
+    // the ball does, so he trailed it the whole way and almost never arrived —
+    // 20,000 frames of chasing changed 7 passes in 500. He now keeps the point
+    // he picked until the ball is past it, and the solver uses HIS speed, not a
+    // nominal one, so a commitment is a commitment he can keep.
+    const committed = d.role === "intercept" && d.interceptTo
+      && (ball.vel.x * (d.interceptTo.x - ball.pos.x) + ball.vel.y * (d.interceptTo.y - ball.pos.y)) > 0;
+    const p = ball.shot
+      ? null
+      : committed
+        ? d.interceptTo!
+        // 0.8 of his real pace, so he only leaves his covering position for an
+        // interception he arrives at with something to spare. Measured: chasing
+        // one he could only just theoretically reach was WORSE than standing on
+        // the lane, because he vacated it and then did not get there.
+        : interceptFrom(ball, d, DEF_INTERCEPT_SPEED * (d.speed ?? 1) * 0.8, DEF_BLOCK_R, PURSUIT_HORIZON * 0.7);
+    if (p && ball.z < DEF_BLOCK_H + 0.6) {
+      d.role = "intercept";
+      d.interceptTo = p;
+    } else if (d.y > ball.pos.y + 2.5) {
+      d.role = "recover";
+    } else {
+      d.role = d.baseRole ?? "cover";
+    }
+  }
 
   // The most dangerous option to cut out: the runner a pass is aimed at, or
   // failing that the goal itself.
@@ -1211,6 +1304,28 @@ export function stepDefenders(
       const dist = Math.hypot(dx, dy);
       if (dist > 0.05) {
         const step = Math.min(dist, DEF_COVER_SPEED * spd * dt);
+        d.x += (dx / dist) * step;
+        d.y += (dy / dist) * step;
+      }
+    } else if (role === "intercept" && d.interceptTo) {
+      const dx = d.interceptTo.x - d.x, dy = d.interceptTo.y - d.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.02) {
+        const step = Math.min(dist, DEF_INTERCEPT_SPEED * spd * dt);
+        d.x += (dx / dist) * step;
+        d.y += (dy / dist) * step;
+      }
+    } else if (role === "recover") {
+      // Get between the ball and the goal, not back to where you started.
+      const goalC = { x: (scenario.goal.x1 + scenario.goal.x2) / 2, y: 0 };
+      const bx = carrier.x, by = carrier.y;
+      const gl = Math.hypot(goalC.x - bx, goalC.y - by) || 1;
+      const tx = bx + (goalC.x - bx) / gl * DEF_RECOVER_GAP;
+      const ty = by + (goalC.y - by) / gl * DEF_RECOVER_GAP;
+      const dx = tx - d.x, dy = ty - d.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.05) {
+        const step = Math.min(dist, DEF_RECOVER_SPEED * spd * dt);
         d.x += (dx / dist) * step;
         d.y += (dy / dist) * step;
       }
@@ -1376,14 +1491,18 @@ function predictBall(ball: Ball, t: number): { pos: Vec2; z: number } {
  * Null when he cannot reach it at all, which is what makes an overhit pass a
  * genuine mistake rather than one the receiver silently rescues.
  */
-export function interceptPoint(ball: Ball, r: Runner): Vec2 | null {
-  for (let t = PURSUIT_STEP; t <= PURSUIT_HORIZON; t += PURSUIT_STEP) {
+export function interceptFrom(ball: Ball, from: Vec2, speed: number, reach: number, horizon = PURSUIT_HORIZON): Vec2 | null {
+  for (let t = PURSUIT_STEP; t <= horizon; t += PURSUIT_STEP) {
     const b = predictBall(ball, t);
     if (b.z > 2.4) continue;                       // over his head at that moment
-    const need = Math.hypot(b.pos.x - r.pos.x, b.pos.y - r.pos.y);
-    if (need <= r.speed * t + PASS_CONTROL_R * 0.7) return b.pos;
+    const need = Math.hypot(b.pos.x - from.x, b.pos.y - from.y);
+    if (need <= speed * t + reach) return b.pos;
   }
   return null;
+}
+
+export function interceptPoint(ball: Ball, r: Runner): Vec2 | null {
+  return interceptFrom(ball, r.pos, r.speed, PASS_CONTROL_R * 0.7);
 }
 
 /**
@@ -1412,19 +1531,24 @@ export function interceptPoint(ball: Ball, r: Runner): Vec2 | null {
  * A lay-off is slow, or played at a real angle away from goal. Anything driven
  * within a narrow cone of the goal belongs to you.
  */
-const LAYOFF_MAX_SPEED = 10;        // m/s — above this it is a strike, not a pass
-const SHOT_CONE_COS = 0.883;        // cos 28°
+const LAYOFF_MAX_SPEED = 10;        // m/s — below this it is a pass however it is aimed
+const SHOT_MOUTH_PAD = 3;           // metres either side of the posts still counted as
+                                    // a shot, so a mishit is still your mishit
 
 export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
   // A rebound belongs to the poacher, never to a support player.
   if (ball.loose) return true;
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
   if (speed < LAYOFF_MAX_SPEED) return false;
-  const goalCx = (scenario.goal.x1 + scenario.goal.x2) / 2;
-  const gx = goalCx - scenario.ball.x, gy = -scenario.ball.y;
-  const gl = Math.hypot(gx, gy);
-  if (gl < 0.5) return true;
-  return (ball.vel.x * gx + ball.vel.y * gy) / (speed * gl) > SHOT_CONE_COS;
+  if (ball.vel.y >= -1) return false;                 // not going that way at all
+  // Where it would cross the line if nothing touched it. A cone around the goal
+  // was the obvious test and it was wrong: from the byline EVERY forward pass
+  // sits inside the cone, so a cutback to a team-mate was unplayable.
+  const t = ball.pos.y / -ball.vel.y;
+  const b = predictBall(ball, Math.min(t, 3));
+  return b.pos.x > scenario.goal.x1 - SHOT_MOUTH_PAD
+    && b.pos.x < scenario.goal.x2 + SHOT_MOUTH_PAD
+    && b.z < scenario.crossbar + 3;
 }
 
 export function stepSupport(scenario: Scenario, ball: Ball | null, carrier: Vec2, dt: number) {

@@ -1136,7 +1136,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         for (let i = 0; i < steps; i++) {
           // Defenders keep working during the flight too, so a slow pass can
           // still be cut out by the man who was already sliding across.
-          stepDefenders(scenarioRef.current, h, ballRef.current.pos, false);
+          // Defenders read the flight: they go for a ball they can reach and
+          // sprint back goal-side once it is past them.
+          stepDefenders(scenarioRef.current, h, ballRef.current.pos, false, ballRef.current);
           stepKeeper(scenarioRef.current, h);
           // Everyone goes for a ball that was not played straight at them.
           stepSupport(scenarioRef.current, ballRef.current, ballRef.current.pos, h);
