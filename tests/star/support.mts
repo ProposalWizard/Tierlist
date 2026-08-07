@@ -177,7 +177,10 @@ function bestOption(sc: Scenario): number {
     const sc = buildScenario(seed % 2 ? "one_on_one" : "tight_angle", rng, 62, 60);
     initDefenders(sc, rng);
     // Aim straight at the middle of the goal, hard.
-    const goalC = { x: (sc.goal.x1 + sc.goal.x2) / 2, y: 0 };
+    // The corner away from the keeper — he stands still now, so the middle of
+    // the goal is the middle of him.
+    const mid = (sc.goal.x1 + sc.goal.x2) / 2;
+    const goalC = { x: sc.keeper.x < mid ? sc.goal.x2 - 0.8 : sc.goal.x1 + 0.8, y: 0 };
     const dir = { x: goalC.x - sc.ball.x, y: goalC.y - sc.ball.y };
     const ball = launch(sc, dir, 0.9, { cx: 0, cy: -0.2 }, { power: 70, technique: 70 }, rng);
     shots += 1;
@@ -196,7 +199,36 @@ function bestOption(sc: Scenario): number {
   }
   check(stolen === 0, `no shot at goal is ever taken off you in flight (${stolen}/${shots})`);
   check(goals > shots * 0.1, `shots still go in with team-mates on the pitch (${goals}/${shots})`);
-  check(collected > 0, `and a shot that has died is tidied up rather than left lying there (${collected}/${shots})`);
+
+  // …and the other half of that rule, built rather than waited for: a shot that
+  // has died on the grass is not sacred. Somebody picks it up, or it lies there
+  // and the move never ends.
+  {
+    let tidied = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const rng = mulberry32(seed * 3 + 11);
+      const sc = buildScenario("long_range", rng, 62, 60);
+      initDefenders(sc, rng);
+      sc.defenders = [];
+      const mate = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners][0];
+      if (!mate) continue;
+      const ball: Ball = {
+        pos: { x: mate.pos.x + 4, y: mate.pos.y + 4 }, vel: { x: 0, y: 0 },
+        z: 0, vz: 0, spin: 0, resting: true, loose: false, contactCd: 0,
+        receiverControlT: 0, event: null, inNet: false, shot: true,
+      };
+      let out: Outcome | null = null;
+      for (let i = 0; i < 600 && !out; i++) {
+        stepReactions(sc, ball, DT, rng);
+        out = stepBall(ball, sc, rng, DT);
+      }
+      // Whatever he then does with it — shoots, scores, skies it — somebody
+      // picked it up. That is the whole claim.
+      if (sc.receiverDone) tidied += 1;
+      void out;
+    }
+    check(tidied === 60, `a shot that has died is tidied up rather than left lying there (${tidied}/60)`);
+  }
 }
 
 // ── Every scenario still builds, and dead balls stay still ──────────────────

@@ -97,7 +97,8 @@ produce your chances at their end produce theirs at yours.
 
 ---
 
-**defending** — nobody moves until you kick it.
+**defending** — nobody moves until you kick it, and the keeper does not move at
+all.
 
 This section replaced one that described the opposite. The engine used to run a
 whole Pressure Curve while you were still aiming: the nearest defender closed
@@ -110,8 +111,23 @@ What the model is now:
 
 - The pitch is frozen during the aim phase. The match loop calls nothing that
   moves an outfield player, and no step function moves anybody without a live
-  ball. The keeper is the single exception, deliberately — he patrols his line,
-  which is the timing puzzle a shot is actually asking you to solve.
+  ball.
+- **The keeper is not an exception.** He stands on his line — never more than
+  1.6 m off it, asserted for every scenario kind — and he stands still. He does
+  not sweep, does not track the flight, and does not move an inch before the
+  save animation, which is picked after the outcome is already settled. Where he
+  is standing is the whole puzzle: you look at him, and you put the ball where
+  he is not.
+
+  He used to patrol continuously, and it was wrong in two ways. It turned every
+  shot from a placement decision into a timing one, and on screen he was visibly
+  gliding back and forth across his six-yard box for no reason a player could
+  see. Several scenarios also started him three or four metres out, which from
+  this camera reads as a keeper standing on the penalty spot. Removing the sweep
+  made him far too easy to beat — a static keeper covering 2.55 m of a 7.32 m
+  goal leaves most of it open — so the save radius went up by about 20%, and
+  `KEEPER_TIERS` lost the two constants (`amp`, `period`) that described a sweep
+  that no longer happens.
 - Once the ball is struck, a player reacts only when it comes inside his radius
   (9 m), and then he moves at 2.6 m/s. A stretch and a step, not a chase.
 - Both sides move at exactly the same pace. Who wins a loose ball is a question
@@ -181,20 +197,25 @@ Tuned by measurement:
   a defender who gets there first hoofs it clear. Only a second ricochet off the
   frame ends it, because that is pinball rather than football.
 
-Outcome distributions the whole engine currently produces, from a full-power
-strike straight at the middle of the goal (800 runs each). These are the numbers
-to compare against after any change to physics, the keeper or the defence:
+Outcome distributions the whole engine currently produces (800 full-power
+strikes each), measured twice: at the corner away from the keeper, and at the
+middle of the goal. **The keeper stands still, so the middle of the goal is the
+middle of him** — and the gap between these two columns is the entire game.
 
-    one_on_one    goal 39%   saved 30%   lost 13%   collected 18%
-    tight_angle   goal 17%   saved 50%   lost 26%   collected  7%
-    header        goal 14%   saved 28%   lost 38%   collected 20%
-    volley        goal 20%   saved 33%   lost 38%   collected  9%
-    long_range    goal 14%   saved 24%   lost 60%   collected  2%
+                  placed        down the middle
+    one_on_one    goal 97%      goal 17%
+    tight_angle   goal 45%      goal 13%
+    header        goal 57%      goal  5%
+    volley        goal 67%      goal 10%
+    long_range    goal 38%      goal  5%
 
-"lost" is a defender getting the ball, either in front of the strike or after
-it. "collected" is a team-mate tidying up a ball that had already died. Long
-range is punishing by construction — there are bodies between you and the goal
-and it is meant to be the shot you take when nothing better is on.
+The rest is saves and defenders: long range loses 55% to a body in the way and
+is meant to, and a header loses 24% to the man marking you.
+
+Note what these numbers are and are not. They come from a bot that hits the
+exact spot it aimed at; a finger dragging on a phone does not, and the whole
+difficulty of a shot now lives in that gap. When these move, ask whether
+placement still pays before asking whether the average went up or down.
 
 ---
 
@@ -408,23 +429,46 @@ order, which measured nothing at all.
 
 Chapter 6 of the specification is a whole chapter on dribbling and the game had
 none of it: you were a fixed point who struck the ball and never moved. The run
-is a carry from deep to the edge of their box — flick to set a direction, keep
-going in it until you flick again, three or four defenders scattered across the
-corridor who are not watching you until you come near. Getting through is not
-the end of the move; §6.1 is explicit that "dribbling is rewarded when it
-creates a better football decision", so it chains straight into a chance built
-from where you got to.
+is a carry **through midfield** — you start at the bottom of the screen and have
+to get to the top of it. Swipe to set a direction, keep going that way until you
+swipe again; three or four men stand between you and the line, in different
+spots, **not moving**, each waking only when you come within seven metres.
+Getting through is not the end of the move; §6.1 is explicit that "dribbling is
+rewarded when it creates a better football decision", so it chains straight into
+a chance built from where you got to.
 
-**The measurement that changed the design: chasers were faster than a slow
-player in a straight line.** At 5.0 + strength they outran a pace-20 player
-whatever line he picked, and 500 runs at pace 20 produced not one that got
-through. Pace below a threshold was not "slow", it was locked out. Chasers now
-sit in the same speed band as a middling player, so a defender is beaten by the
-line you pick and pace decides how much room that line needs:
+**Two rounds of measurement changed the design.**
 
-    pace 20   27% through
-    pace 60   74%
-    pace 90   90%
+First: chasers were faster than a slow player in a straight line. At 5.0 +
+strength they outran a pace-20 player whatever line he picked, and 500 runs at
+pace 20 produced not one that got through — pace below a threshold was not
+"slow", it was locked out.
+
+Then, from playing it: the run was **over in a second and a half**, on whatever
+camera the previous chance had left behind — so it played out framed on a goal
+thirty metres away, with a stray defender in the corner of the screen and two
+white corridor lines nobody could identify as anything. You could not read it,
+let alone play it. What changed:
+
+- Everybody slowed down. You run at 4.0 + pace, chasers at 3.1 + strength, and a
+  competent line now takes about five seconds.
+- The run has **its own camera** (`dribbleViewport`), and it is set deep enough
+  in midfield that **neither goal is ever in frame** — asserted over 200 full
+  runs. It looks like a passing situation, because that is what it is.
+- Drifting wide **holds you inside the corridor** instead of losing the ball.
+  Running out was the commonest way a run ended, which taught you to fear the one
+  thing the situation exists to ask of you.
+- The diagram is gone: the line to reach is a lit band of turf and the sides of
+  the run are the edges of the frame.
+
+Through-rate for a competent line, which is what these numbers assume:
+
+    pace 20   67% through
+    pace 50   77%
+    pace 80   82%
+
+The older table (27% / 74% / 90%) was measured on the shorter, faster run and is
+not comparable — it is quoted above only for the shape of the bug it caught.
 
 §13.1: "Attributes should increase the player's football vocabulary, not simply
 increase their success rate. If upgrading an attribute only increases hidden

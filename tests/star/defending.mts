@@ -83,6 +83,46 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   check(lost === null, "a full minute on the ball cannot be punished — the time is yours");
 }
 
+// ── The keeper stands on his line, and stands still ────────────────────────
+//
+// He used to sweep his line continuously, which made every shot a timing puzzle
+// rather than a placement one, and several scenarios started him three or four
+// metres out — from the camera that reads as a keeper standing on the penalty
+// spot for no reason. Where he is standing IS the question now, so it has to be
+// stable and it has to be somewhere a keeper stands.
+{
+  for (const kind of SCENARIO_KINDS) {
+    for (let seed = 0; seed < 30; seed++) {
+      const rng = mulberry32(seed * 23 + 7);
+      const sc = buildScenario(kind, rng, 62, 60);
+      check(sc.keeper.y <= 1.6 && sc.keeper.y >= 0.2,
+        `${kind}: the keeper starts on his line (${sc.keeper.y.toFixed(1)} m off it)`);
+      check(sc.keeper.x > 28 && sc.keeper.x < 40, `${kind}: and in his goal`);
+
+      // Ten seconds of you deliberating, then a ball flying past him.
+      const before = { x: sc.keeper.x, y: sc.keeper.y };
+      for (let i = 0; i < 600; i++) stepKeeper(sc, DT);
+      check(sc.keeper.x === before.x && sc.keeper.y === before.y,
+        `${kind}: and he does not move an inch while you think`);
+    }
+  }
+
+  // Not even with the ball in flight, right up until he touches it.
+  const rng = mulberry32(4);
+  const sc = buildScenario("long_range", rng, 62, 60);
+  initDefenders(sc, rng);
+  const ball = launch(sc, { x: sc.goal.x1 - sc.ball.x, y: -sc.ball.y }, 0.9, { cx: 0, cy: -0.2 }, { power: 70, technique: 70 }, rng);
+  const kx = sc.keeper.x;
+  let moved = false, out: Outcome | null = null;
+  for (let i = 0; i < 600 && !out; i++) {
+    stepKeeper(sc, DT);
+    stepReactions(sc, ball, DT, rng);
+    if (sc.keeper.x !== kx) moved = true;
+    out = stepBall(ball, sc, rng, DT);
+  }
+  check(!moved, "and he does not track the flight either — he never learns where it is going");
+}
+
 // ── After the kick, they react — but only when it comes near ───────────────
 {
   const rng = mulberry32(3);
@@ -185,7 +225,8 @@ const snapshot = (sc: Scenario) => JSON.stringify({
     const rng = mulberry32(seed * 7 + 900);
     const sc = buildScenario(seed % 2 ? "one_on_one" : "tight_angle", rng, 62, 60);
     initDefenders(sc, rng);
-    const g = { x: (sc.goal.x1 + sc.goal.x2) / 2, y: 0 };
+    const mid = (sc.goal.x1 + sc.goal.x2) / 2;
+    const g = { x: sc.keeper.x < mid ? sc.goal.x2 - 0.8 : sc.goal.x1 + 0.8, y: 0 };
     const ball = launch(sc, { x: g.x - sc.ball.x, y: g.y - sc.ball.y }, 0.92, { cx: 0, cy: -0.2 }, { power: 72, technique: 72 }, rng);
     const out = playOut(sc, ball, rng);
     if (out === "goal") goals++;

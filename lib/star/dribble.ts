@@ -12,12 +12,14 @@ import { PITCH_W, CX } from "./pitch";
  * it creates a better football decision." Getting through is not the end of the
  * move; it is what earns you the chance at the end of it.
  *
- * The shape is a run from deep to the edge of their box. You flick in the
- * direction you want to go and you keep going in it until you flick again.
- * Defenders start scattered and are not paying attention — they wake when you
- * come near, and then they chase. Nobody is trying to stand in front of you at
- * kick-off, so the run is about the line you pick through them rather than
- * reaction speed.
+ * The shape is a run through midfield: you start at the bottom of the screen
+ * and you have to get to the top of it. You swipe in the direction you want to
+ * go and you keep going that way until you swipe again. Three or four men are
+ * standing between you and the line, in different spots, and NOT MOVING — each
+ * one wakes only when you come close enough to be worth going for, and then he
+ * comes for the ball. So the run is about the line you pick through them, not
+ * about reaction speed, and the goal is nowhere in sight: getting through is
+ * what earns you the chance, it is not the chance itself.
  *
  * Pure simulation: no React, no canvas, no input handling. The component draws
  * it and feeds it flicks; everything that decides anything is here.
@@ -58,15 +60,21 @@ export interface DribbleState {
 
 // ── Tuned constants ─────────────────────────────────────────────────────────
 
-/** How fast you run with the ball before pace is counted. */
-const BASE_SPEED = 5.0;
+/**
+ * How fast you run with the ball before pace is counted.
+ *
+ * Slower than it was. At 5.0 + pace a run was over in a second and a half —
+ * long before you had read where anybody was, let alone picked a way through
+ * them. A dribble you cannot see is not a dribble.
+ */
+const BASE_SPEED = 4.0;
 /**
  * …and what pace buys on top.
  *
  * This is the whole job of the Pace attribute, which until now was trainable,
  * had an achievement, and was read by no code in the match at all.
  */
-const PACE_SPEED = 3.2;
+const PACE_SPEED = 2.6;
 
 /**
  * How fast they close, before their own variation.
@@ -78,17 +86,24 @@ const PACE_SPEED = 3.2;
  * defender should be beaten by the line you pick, and pace should decide how
  * much room that line needs.
  */
-const CHASER_BASE = 4.6;
-const CHASER_STRENGTH = 1.4;
+const CHASER_BASE = 3.1;
+const CHASER_STRENGTH = 1.1;
 
-/** He notices you inside this. */
-const WAKE_R = 6.5;
+/** He notices you inside this — until then he is standing still, watching. */
+const WAKE_R = 7;
 /** …and takes it off you inside this. */
 const TACKLE_R = 0.9;
 
-/** Length of the run, and how wide you may stray. */
-const RUN_LENGTH = 20;
-const CORRIDOR = 34;
+/**
+ * Length of the run, and how wide you may stray.
+ *
+ * The run happens in MIDFIELD and the length is chosen so that neither goal is
+ * ever on screen. What you are being asked is "can you get past these men",
+ * which is a different question from "can you finish" — the chance you earn is
+ * built afterwards from wherever you got to.
+ */
+const RUN_LENGTH = 22;
+const CORRIDOR = 24;
 
 /** A run that goes nowhere still has to end. */
 export const DRIBBLE_TIMEOUT = 14;
@@ -111,7 +126,9 @@ export function newDribble(opts: {
   rng: () => number;
 }): DribbleState {
   const { rng } = opts;
-  const startY = 34 + rng() * 6;
+  // Deep enough that the far goal is off the top of the frame at the finish and
+  // your own is off the bottom at the start.
+  const startY = 50 + rng() * 3;
   const targetY = startY - RUN_LENGTH;
   const startX = CX + (rng() - 0.5) * 12;
 
@@ -198,11 +215,37 @@ export function stepDribble(state: DribbleState, dt: number): DribbleOutcome {
   }
 
   if (state.pos.y <= state.targetY) { state.outcome = "through"; return state.outcome; }
-  if (state.pos.x < state.minX || state.pos.x > state.maxX) { state.outcome = "out"; return state.outcome; }
+  // The sides of the run are the edges of the frame, and running into one costs
+  // you the ground you were making rather than the ball. Losing possession for
+  // drifting wide was the commonest way a run ended, which taught you to be
+  // afraid of the one thing the situation is asking you to do — move sideways.
+  state.pos.x = clamp(state.pos.x, state.minX, state.maxX);
+  // Turning and running away from the line is still a way to waste it.
   if (state.pos.y > state.startY + 8) { state.outcome = "out"; return state.outcome; }
   if (state.elapsed > DRIBBLE_TIMEOUT) { state.outcome = "lost"; return state.outcome; }
 
   return "running";
+}
+
+/**
+ * The camera for a run.
+ *
+ * Its own framing, and the reason it needs one: the run used to inherit whatever
+ * viewport the last chance had been given, so it played out on a camera framed
+ * on a goal thirty metres away — you saw the net, a stray defender in the corner
+ * of the screen and a couple of unexplained lines. It looks like a passing
+ * situation now, because that is what it is: you at the bottom, the men you have
+ * to get past above you, and no goal anywhere.
+ */
+export const DRIBBLE_VIEW_H = 32;   // metres of pitch visible down the screen
+
+export function dribbleViewport(state: DribbleState) {
+  const h = DRIBBLE_VIEW_H;
+  const w = h * (3 / 4);
+  // You sit low in the frame, looking at what is in front of you.
+  const cx = clamp(state.pos.x, w / 2, PITCH_W - w / 2);
+  const cy = state.pos.y - h * 0.18;
+  return { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };
 }
 
 /** How far through the run you are, 0-1. For the progress bar. */

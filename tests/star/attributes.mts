@@ -1,5 +1,5 @@
 import {
-  newDribble, stepDribble, flick, dribbleSpeed, dribbleProgress, DRIBBLE_TIMEOUT,
+  newDribble, stepDribble, flick, dribbleSpeed, dribbleProgress, dribbleViewport, DRIBBLE_TIMEOUT,
   type DribbleState,
 } from "../../lib/star/dribble";
 import {
@@ -129,6 +129,45 @@ function runDribble(pace: number, oppStrength: number, seed: number, chasers = 3
   while (stray.outcome === "running" && n++ < 2000) stepDribble(stray, DT);
   check(stray.outcome !== "through", "running sideways does not get you there");
 
+  // ── It is a run you can actually play ──
+  //
+  // What this replaced: a run over in a second and a half, on the camera the
+  // last chance had been using, with a goal in the corner of the screen and two
+  // white lines nobody could identify. You could not read it, let alone play it.
+  {
+    // Long enough to see. A straight sprint is the fastest a run can possibly
+    // be, and even that has to be worth watching.
+    const straight = newDribble({ pace: 95, oppStrength: 70, chasers: 0, rng: mulberry32(77) });
+    let t = 0;
+    while (straight.outcome === "running" && t < 30) { stepDribble(straight, DT); t += DT; }
+    check(t > 3, `even a flat-out sprint takes a few seconds (${t.toFixed(1)}s)`);
+
+    // The goal is never on screen. The run asks "can you get past these men",
+    // which is a different question from "can you finish" — the chance you earn
+    // is built afterwards, from wherever you got to.
+    let nearest = Infinity;
+    for (let seed = 0; seed < 200; seed++) {
+      const d = newDribble({ pace: 95, oppStrength: 70, chasers: 3, rng: mulberry32(seed * 5 + 2) });
+      flick(d, 0, -1);
+      let n = 0;
+      while (d.outcome === "running" && n++ < 3000) {
+        stepDribble(d, DT);
+        nearest = Math.min(nearest, dribbleViewport(d).y1);
+      }
+      nearest = Math.min(nearest, dribbleViewport(d).y1);
+    }
+    check(nearest > 3, `neither goal is ever in frame (closest edge ${nearest.toFixed(1)} m from the line)`);
+
+    // Drifting wide costs you ground, not the ball. Losing possession for it
+    // taught you to fear the one thing the situation is asking you to do.
+    const wide = newDribble({ pace: 60, oppStrength: 70, chasers: 0, rng: mulberry32(88) });
+    flick(wide, 1, 0);
+    let w = 0;
+    while (wide.outcome === "running" && w++ < 400) stepDribble(wide, DT);
+    check(wide.outcome === "running", "running into the side of the run does not lose it for you");
+    check(wide.pos.x <= wide.maxX + 1e-9, "you are held inside the corridor instead");
+  }
+
   // A run that goes nowhere still ends.
   const stall = newDribble({ pace: 60, oppStrength: 70, chasers: 0, rng: mulberry32(31) });
   flick(stall, 0, 0.001);
@@ -213,7 +252,12 @@ function runDribble(pace: number, oppStrength: number, seed: number, chasers = 3
       const rng = mulberry32(seed * 17 + 1);
       const sc = buildScenario("one_on_one", rng, 62, 60);
       initDefenders(sc, rng);
-      const g = { x: (sc.goal.x1 + sc.goal.x2) / 2, y: 0 };
+      // At the corner away from the keeper. Aiming down the middle of the goal
+      // now means aiming down the middle of HIM — he stands still, so the middle
+      // is the one part of the net that is never open, and a wild technician
+      // scored more than a sharp one purely by missing his target.
+      const mid = (sc.goal.x1 + sc.goal.x2) / 2;
+      const g = { x: sc.keeper.x < mid ? sc.goal.x2 - 0.8 : sc.goal.x1 + 0.8, y: 0 };
       const ball = launch(sc, { x: g.x - sc.ball.x, y: g.y - sc.ball.y }, 0.9, { cx: 0, cy: -0.15 }, { power: 70, technique: tech }, rng);
       let out: Outcome | null = null;
       for (let i = 0; i < 700 && !out; i++) {

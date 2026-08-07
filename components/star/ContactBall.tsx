@@ -4,11 +4,10 @@ import { useRef, useState } from "react";
 interface Props {
   power: number;
   onContact: (contact: { cx: number; cy: number }) => void;
-  onCancel: () => void;
 }
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, onCancel }: Props) {
+export default function ContactBall({ power, onContact }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const [spark, setSpark] = useState<{ left: number; top: number } | null>(null);
   const locked = useRef(false);
@@ -44,13 +43,9 @@ export default function ContactBall({ power, onContact, onCancel }: Props) {
         style={{ height: "22%", background: "linear-gradient(to bottom, #16a34a, #15803d)" }}
       />
 
-      {/* Re-aim */}
-      <button
-        onClick={onCancel}
-        className="absolute top-2 left-2 z-40 bg-black/60 hover:bg-black/80 text-white text-xs font-bold rounded-lg px-2.5 py-1.5"
-      >
-        ↩ Re-aim
-      </button>
+      {/* No way back. You have chosen your angle and your power; all that is
+          left is where on the ball you hit it. A footballer does not get to
+          reconsider his run-up halfway through it. */}
 
       {/* Header */}
       <div className="relative z-40 pt-2 px-3 text-center pointer-events-none">
