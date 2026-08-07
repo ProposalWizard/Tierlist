@@ -2,20 +2,26 @@
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
+import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
+import { goldenBootRace } from "@/lib/star/recognition";
 
 interface Props {
   career: CareerState;
 }
 
 export default function LeagueScreen({ career }: Props) {
-  const [view, setView] = useState<"table" | "fixtures" | "squad">("table");
+  /** Whose fixture this is — your club, or your country. */
+  const sideFor = (f: { kind?: string }) =>
+    f.kind === "international" ? nationOf(career) : career.player.club;
+
+  const [view, setView] = useState<"table" | "fixtures" | "cups" | "squad">("table");
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
 
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-3 gap-1 mb-2">
-        {(["table", "fixtures", "squad"] as const).map((v) => (
+      <div className="grid grid-cols-4 gap-1 mb-2">
+        {(["table", "fixtures", "cups", "squad"] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
@@ -67,17 +73,102 @@ export default function LeagueScreen({ career }: Props) {
                 f.week === career.week ? "bg-emerald-500 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
               }`}
             >
-              <div className="text-center text-[10px] font-black">W{f.week}</div>
-              <div className={`text-right ${f.home ? "font-black" : ""}`}>{f.home ? career.player.club : f.opponent}</div>
+              <div className="text-center text-[10px] font-black">
+                W{f.week}
+                {f.kind && f.kind !== "league" && (
+                  <div className={`text-[8px] font-black uppercase leading-none mt-0.5 ${
+                    f.kind === "international" ? "text-sky-300" : "text-violet-300"}`}
+                  >
+                    {f.kind === "cup" ? "CUP" : f.kind === "europe" ? "EUR" : "INT"}
+                  </div>
+                )}
+              </div>
+              <div className={`text-right ${f.home ? "font-black" : ""}`}>{f.home ? sideFor(f) : f.opponent}</div>
               <div className="text-center font-black">
                 {f.played ? f.homeScore : "-"}
               </div>
               <div className="text-center font-black">
                 {f.played ? f.awayScore : "-"}
               </div>
-              <div className={`text-left ${!f.home ? "font-black" : ""}`}>{f.home ? f.opponent : career.player.club}</div>
+              <div className={`text-left ${!f.home ? "font-black" : ""}`}>{f.home ? f.opponent : sideFor(f)}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {view === "table" && (
+        <div className="mt-2 bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
+          <div className="bg-gray-800 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300 border-b border-black/50">
+            Golden Boot
+          </div>
+          {goldenBootRace(career).slice(0, 6).map((sc, i) => (
+            <div
+              key={sc.name + sc.club}
+              className={`flex items-center gap-2 px-2 py-1.5 text-xs font-bold ${
+                sc.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
+            >
+              <span className="w-4 text-center text-[10px] font-black">{i + 1}</span>
+              <span className="flex-1 truncate">{sc.name}</span>
+              <span className="truncate text-[10px] text-gray-200 max-w-[38%]">{sc.club}</span>
+              <span className="w-6 text-right font-black tabular-nums">{sc.goals}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {view === "cups" && (
+        <div className="space-y-2">
+          {(career.cups ?? []).length === 0 && (
+            <div className="bg-gray-700 rounded-lg border border-gray-600 p-3 text-xs text-gray-200">
+              No knockout football this season. The domestic cup runs every year;
+              Europe is earned by where you finish, and the national side by how
+              well known you are.
+            </div>
+          )}
+          {(career.cups ?? []).map((run) => {
+            const rounds = roundsFor(run.competition);
+            return (
+              <div key={run.competition} className={`rounded-lg border p-3 ${
+                run.won ? "border-amber-400 bg-amber-500/15"
+                  : run.eliminated ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-black text-white">{run.competition}</span>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${
+                    run.won ? "text-amber-300" : run.eliminated ? "text-gray-300" : "text-emerald-300"}`}
+                  >
+                    {run.won ? "Winners 🏆" : run.eliminated ? "Eliminated" : rounds[run.roundIndex]}
+                  </span>
+                </div>
+                <div className="mt-2 flex gap-1">
+                  {rounds.map((r, i) => (
+                    <div
+                      key={r}
+                      title={r}
+                      className={`h-1.5 flex-1 rounded-full ${
+                        run.won || i < run.roundIndex ? "bg-emerald-400"
+                          : i === run.roundIndex && !run.eliminated ? "bg-white/70" : "bg-white/15"}`}
+                    />
+                  ))}
+                </div>
+                <div className="mt-1 text-[10px] text-gray-200">{rounds.join(" · ")}</div>
+              </div>
+            );
+          })}
+
+          <div className="bg-gray-700 rounded-lg border border-gray-600 p-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">{nationOf(career)}</div>
+            <div className="mt-1 text-xs text-white">
+              {(career.caps ?? 0)} cap{(career.caps ?? 0) === 1 ? "" : "s"} · {(career.internationalGoals ?? 0)} goal{(career.internationalGoals ?? 0) === 1 ? "" : "s"}
+            </div>
+            {(career.caps ?? 0) === 0 && (
+              <div className="mt-1 text-[10px] text-gray-300">
+                {internationalCallUp(career)
+                  ? "You are in the squad — a tournament comes round every other season."
+                  : "Not in the squad yet. Reputation is what gets you picked."}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

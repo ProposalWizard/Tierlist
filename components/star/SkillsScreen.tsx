@@ -1,5 +1,7 @@
 "use client";
 import type { CareerState, Skills } from "@/lib/star/types";
+import { setPieceDuties } from "@/lib/star/setPieces";
+import { actionsLeft, WEEK_ACTIONS } from "@/lib/star/week";
 
 interface Props {
   career: CareerState;
@@ -11,22 +13,51 @@ const SKILL_LABELS: [keyof Skills, string, string, string][] = [
   ["power", "Power", "💪", "Long shots and stronger crosses"],
   ["technique", "Technique", "🎯", "Ball control, curl, precise strikes"],
   ["vision", "Vision", "👁️", "Better passing options highlighted"],
-  ["freeKick", "Free Kick", "🎪", "Set-piece accuracy and curl"],
+  ["freeKick", "Free Kick", "🎪", "Set-piece accuracy, curl — and who takes them"],
 ];
 
 const ENERGY_COST = 15;
 
 export default function SkillsScreen({ career, onTrain }: Props) {
+  const duties = setPieceDuties(career);
+  const left = actionsLeft(career);
   return (
     <div className="mt-2 space-y-2">
       <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3 text-center">
         <div className="text-[10px] font-black text-emerald-300 uppercase tracking-widest">Training</div>
-        <div className="text-sm text-white mt-0.5">Each session costs {ENERGY_COST} energy</div>
+        <div className="text-sm text-white mt-0.5">Each session costs a day and {ENERGY_COST} energy</div>
+        <div className="mt-2 flex items-center justify-center gap-1.5">
+          {Array.from({ length: WEEK_ACTIONS }, (_, i) => (
+            <span
+              key={i}
+              className={`h-2.5 w-8 rounded-full ${i < left ? "bg-emerald-400" : "bg-white/15"}`}
+            />
+          ))}
+        </div>
+        <div className="mt-1 text-[10px] text-emerald-100/80">
+          {left > 0 ? `${left} of ${WEEK_ACTIONS} days left this week` : "No days left — the next match is the next week"}
+        </div>
+      </div>
+
+      {/* What the free-kick rating actually buys. It was trainable, had an
+          achievement and was read by no code at all. */}
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+        <div className="text-[10px] font-black text-amber-300 uppercase tracking-widest">Set-piece duty</div>
+        <div className="mt-1 text-[11px] text-gray-200">
+          {duties.freeKicks && duties.penalties
+            ? "You take the free kicks and the penalties."
+            : duties.penalties
+              ? `Penalties are yours. Free kicks need a Free Kick rating of ${duties.freeKickNeeded}.`
+              : `${career.player.club} have better takers. Penalties need ${duties.penaltyNeeded}, free kicks ${duties.freeKickNeeded}.`}
+        </div>
+        <div className="mt-1 text-[10px] text-gray-400">
+          Judged against your club — a move up the league can cost you the ball.
+        </div>
       </div>
 
       {SKILL_LABELS.map(([key, label, icon, desc]) => {
         const val = career.skills[key];
-        const canTrain = career.energy >= ENERGY_COST && val < 100;
+        const canTrain = career.energy >= ENERGY_COST && val < 100 && left > 0;
         return (
           <button
             key={key}

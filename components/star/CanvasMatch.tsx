@@ -1,11 +1,21 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  buildWeightedScenario, buildAttackingScenario, launch, stepBall, stepBallInNet,
-  stepKeeper, stepFollower, stepRunner,
-  OUTCOME_TEXT, clamp,
+  buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
+  launch, stepBall, stepBallInNet,
+  stepKeeper, stepFollower, stepRunner, stepDefenders, stepSupport, initDefenders,
+  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, visibleOptions,
+  OUTCOME_TEXT, clamp, dragForFullPower,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
+import {
+  newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
+  type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
+} from "@/lib/star/hiddenMatch";
+import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
+import {
+  newDribble, stepDribble, flick, dribbleProgress, type DribbleState,
+} from "@/lib/star/dribble";
 import {
   PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
@@ -18,13 +28,14 @@ import {
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
-import { finaliseMatch } from "@/lib/star/matchStats";
+import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
+import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 
-type Phase = "aim" | "contact" | "flight" | "result" | "sim" | "postmatch";
+type Phase = "aim" | "contact" | "flight" | "result" | "sim" | "postmatch" | "dribble";
 
 // Match runs from minute 0 to 90. Chances are distributed organically — no
 // fixed session length. The number of chances depends on player/team quality.
@@ -32,6 +43,14 @@ const MATCH_DURATION = 90;
 
 interface Props {
   skills?: KickSkills;
+  /**
+   * The minute you come on. 0 when you start. Anything else means the match has
+   * already been going on without you, and the score you inherit is one your
+   * team-mates earned.
+   */
+  startMinute?: number;
+  /** Which dead balls are yours to take. Ones that are not go to someone else. */
+  duties?: SetPieceDuties;
   keeperStrength?: number;
   position?: string;
   teamRelationship?: number;
@@ -140,7 +159,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const careerRef = useRef(career);
@@ -170,11 +189,90 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Simulation between chances ---
   const matchMinuteRef = useRef(0);
   const [matchMinute, setMatchMinute] = useState(0);
-  const buildupReturnRef = useRef(false); // next scenario is an attacking follow-up
+  // Where a completed pass left the move, and how many passes deep it is. The
+  // next scenario is built from this rather than drawn at random, so a move can
+  // actually be built instead of every chance starting from nothing.
+  const chainRef = useRef<{ pos: { x: number; y: number }; depth: number } | null>(null);
 
   interface SimEvent { minute: number; text: string; isGoal?: boolean; }
   const [simEvents, setSimEvents] = useState<SimEvent[]>([]);
   const [simVisible, setSimVisible] = useState(false);
+
+  // The match going on around you. It owns possession, territory and momentum;
+  // your chances are what it hands you, and their kind is decided by where the
+  // ball actually was when it found you.
+  const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
+  const startMinuteRef = useRef(startMinute);
+  startMinuteRef.current = startMinute;
+  /** Set once the manager has taken you off, so nothing after it can play. */
+  const hookedRef = useRef<HookReason | null>(null);
+  /** The minute you came off. The rest of the match is played without you, so
+   *  the clock runs on to ninety and this is what you were actually on for. */
+  const hookedAtRef = useRef<number | null>(null);
+  const dutiesRef = useRef(duties);
+  dutiesRef.current = duties;
+
+  // ── The run ──
+  // A scenario where you carry it rather than strike it. Lives outside the
+  // Scenario machinery entirely: no ball flight, no keeper, no builders.
+  const dribbleRef = useRef<DribbleState | null>(null);
+  const flickStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  /** Is this dead ball yours? With no duties supplied (the sandbox), everything is. */
+  const mayTake = (kind: ScenarioKind) => {
+    const d = dutiesRef.current;
+    if (!d) return true;
+    if (kind === "free_kick") return d.freeKicks;
+    if (kind === "penalty") return d.penalties;
+    return true;
+  };
+  // The situation the simulation has just produced, consumed by the next
+  // loadScenario() so the scenario matches the football that led to it.
+  const pendingRequestRef = useRef<ScenarioRequest | null>(null);
+
+  // ── Legs ──
+  // Energy was a pre-match number that never moved: you finished the ninetieth
+  // minute exactly as fresh as you started the first. It now drains with the
+  // clock and with every chance you actually take, and it costs you power and
+  // touch — never accuracy of intent, only execution. Match fitness decides how
+  // fast it goes, which is what training it is for.
+  const energyRef = useRef(career?.energy ?? 85);
+  const [energy, setEnergyState] = useState(energyRef.current);
+  const setEnergy = (v: number) => { energyRef.current = clamp(v, 0, 100); setEnergyState(energyRef.current); };
+  const fitness = career?.matchFitness ?? 80;
+  const drainPerMinute = 0.10 * (1.5 - clamp(fitness, 0, 100) / 100);
+  const DRAIN_PER_CHANCE = 1.6;
+
+  // What your legs are actually capable of right now. A tired player strikes the
+  // ball less cleanly; he does not aim somewhere else.
+  const tiredSkills = (): KickSkills => {
+    const e = clamp(energyRef.current, 0, 100) / 100;
+    return {
+      power: skills.power * (0.82 + 0.18 * e),
+      technique: skills.technique * (0.80 + 0.20 * e),
+    };
+  };
+
+  const hiddenInputs = (): HiddenMatchInputs => {
+    const car = careerRef.current;
+    return {
+      teamStrength: teamRef.current,
+      oppStrength: oppStrengthRef.current,
+      energy: energyRef.current,
+      playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
+      home: fixture?.home,
+      pace: careerRef.current?.skills.pace,
+    };
+  };
+
+  // Translate what the physics produced into what the match needs to know.
+  // Only a completed pass keeps the ball; everything else ends the move.
+  const matchResultFor = (res: Outcome): ScenarioResult => {
+    if (OUTCOME_TEXT[res].kind === "goal") return "goal";
+    if (res === "delivered") return "delivered";
+    if (res === "tackled") return "lost";
+    return "saved";
+  };
 
   const SIM_COMMENTARY = [
     "Possession is being shared evenly in midfield.",
@@ -216,6 +314,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   positionRef.current = position;
   const teamRef = useRef(teamRelationship);
   teamRef.current = teamRelationship;
+  // Vision decides how much of the pitch you are told about — see visibleOptions.
+  const visionRef = useRef(career?.skills.vision ?? 55);
+  visionRef.current = career?.skills.vision ?? 55;
 
   const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship));
   const ballRef = useRef<Ball | null>(null);
@@ -291,8 +392,45 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   // --- Announce the very first scenario + set its viewport ---
   useEffect(() => {
+    // The opening scenario is built before this component mounts, so it needs
+    // its defensive shape assigning here too.
+    initDefenders(scenarioRef.current, rngRef.current);
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
+    // In a real match, kick-off belongs to the match, not to you: it plays until
+    // the ball finds you rather than dropping you into a chance in the first
+    // minute. The sandbox still opens on a scenario, which is its whole point.
+    if (matchModeRef.current) {
+      // Coming on as a substitute: the match has already been played without
+      // you, so play it — team-mate chances, opponent goals and all — and take
+      // the scoreline you inherit rather than starting a fresh 0-0 at the hour.
+      if (startMinuteRef.current > 0) {
+        seedRef.current += 1;
+        const rng = mulberry32(seedRef.current);
+        rngRef.current = rng;
+        const st = matchStateRef.current;
+        const before = advanceTo(st, hiddenInputs(), rng, startMinuteRef.current);
+        userScoreRef.current = st.userScore;
+        oppScoreRef.current = st.oppScore;
+        setScore({ user: st.userScore, opp: st.oppScore });
+        matchMinuteRef.current = st.minute;
+        setMatchMinute(st.minute);
+        setSimEvents([
+          ...before.slice(-4).map((e) => ({
+            minute: e.minute,
+            text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
+            isGoal: e.isGoal,
+          })),
+          { minute: st.minute, text: "You are coming on." },
+        ]);
+        setSimVisible(true);
+        setPhase("sim");
+        window.setTimeout(() => { setSimVisible(false); startSimulation(); }, 3200);
+        return;
+      }
+      startSimulation();
+      return;
+    }
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
     playWhistle(); // no-op until the first user gesture primes audio — harmless
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -379,10 +517,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // fixed metre count meant that on a tightly-framed chance the longest drag the
   // screen allowed was only a fraction of full power — which is why shots
   // sometimes travelled a fifth of the way and rolled to a stop.
+  // Power now also shortens the pull: a stronger player reaches everything he
+  // has with less drag, so the same flick is worth more of a shot. See
+  // dragForFullPower — the attribute expands what a gesture buys rather than
+  // silently multiplying the result.
   const powerFromDrag = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
     const vp = viewportRef.current;
-    const full = (vp.y2 - vp.y1) * 0.30;
+    const full = (vp.y2 - vp.y1) * dragForFullPower(tiredSkills().power);
     return clamp(Math.hypot(drag.x - ball.x, drag.y - ball.y) / full, 0, 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- Render one frame ---
@@ -522,6 +665,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // ball must fully cross.
       ctx.lineWidth = Math.max(2, unit * 0.2);
       pLine(POST_L, 0, POST_R, 0);
+    }
+
+    // ── What you can SEE ──
+    // Vision buys information, not accuracy. Everyone is drawn either way —
+    // hiding players would read as a bug — but only the options a player of this
+    // vision could actually pick out are marked, and only the ones inside the
+    // range he is scanning. At 30 vision you get the obvious man; at 90 you get
+    // three, and the best of them is called out.
+    if (phaseRef.current === "aim" && !sc.receiverDone) {
+      const seen = visibleOptions(sc, sc.player, visionRef.current);
+      seen.forEach((o, i) => {
+        const m = P(o.runner.pos.x, o.runner.pos.y);
+        const best = i === 0 && seen.length > 1;
+        ctx.lineWidth = Math.max(1.2, unit * (best ? 0.15 : 0.1));
+        ctx.strokeStyle = best ? "rgba(52,211,153,0.85)" : "rgba(147,197,253,0.5)";
+        ctx.beginPath();
+        ctx.arc(m.px, m.py - unit * 1.9, unit * (best ? 0.72 : 0.55), 0, Math.PI * 2);
+        ctx.stroke();
+      });
     }
 
     // Pass aim marker — where the run is heading. Drawn small and on the grass so
@@ -684,6 +846,67 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
       });
+    }
+
+    // ── The run ──
+    // Drawn instead of the scenario: you, the men chasing you, the line you are
+    // trying to reach and the corridor you must stay inside. Everything here is
+    // read off the DribbleState — the renderer decides nothing.
+    const dr = dribbleRef.current;
+    if (phaseRef.current === "dribble" && dr) {
+      // The line to reach, and the touchlines of the run.
+      ctx.setLineDash([unit * 0.9, unit * 0.7]);
+      ctx.lineWidth = Math.max(2, unit * 0.22);
+      ctx.strokeStyle = "rgba(251,191,36,0.9)";
+      const a = P(dr.minX, dr.targetY), b = P(dr.maxX, dr.targetY);
+      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth = Math.max(1, unit * 0.1);
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      for (const x of [dr.minX, dr.maxX]) {
+        const t1 = P(x, dr.startY + 6), t2 = P(x, dr.targetY);
+        ctx.beginPath(); ctx.moveTo(t1.px, t1.py); ctx.lineTo(t2.px, t2.py); ctx.stroke();
+      }
+
+      // Chasers. A man who has not seen you yet is drawn dimmer, so "he is
+      // awake now" is information you get before it costs you the ball.
+      dr.chasers.forEach((c, i) => {
+        ctx.globalAlpha = c.awake ? 1 : 0.55;
+        footballer(c.x, c.y, R, C.opp, C.oppRim, {
+          pose: poseFor(`chase${i}`, c.x, c.y),
+          phase: runPhase(c.x),
+        });
+        ctx.globalAlpha = 1;
+      });
+
+      // You, with the ball just ahead of your feet, and the line you are on.
+      const bx = dr.pos.x + dr.heading.x * 0.9;
+      const by = dr.pos.y + dr.heading.y * 0.9;
+      const tip = P(dr.pos.x + dr.heading.x * 4.5, dr.pos.y + dr.heading.y * 4.5);
+      const base = P(dr.pos.x, dr.pos.y);
+      ctx.strokeStyle = "rgba(52,211,153,0.55)";
+      ctx.lineWidth = Math.max(2, unit * 0.16);
+      ctx.beginPath(); ctx.moveTo(base.px, base.py); ctx.lineTo(tip.px, tip.py); ctx.stroke();
+
+      footballer(dr.pos.x, dr.pos.y, R, C.you, C.youRim, {
+        pose: "run",
+        phase: runPhase(dr.pos.x),
+        label: "YOU",
+        labelColor: "#fff",
+      });
+      const bp = toPx(bx, by);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(bp.px, bp.py, Math.max(2.5, unit * 0.34 * bp.scale), 0, Math.PI * 2);
+      ctx.fill();
+
+      // How far through the run you are.
+      const prog = dribbleProgress(dr);
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(W * 0.08, H * 0.045, W * 0.84, H * 0.014);
+      ctx.fillStyle = prog > 0.75 ? "#fbbf24" : "#34d399";
+      ctx.fillRect(W * 0.08, H * 0.045, W * 0.84 * prog, H * 0.014);
+      return;
     }
 
     // Decorative team-mates (the crosser on a volley/header)
@@ -1064,12 +1287,46 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       lastTsRef.current = ts;
       dt = Math.min(dt, 0.05); // clamp big frame gaps
 
+      if (phaseRef.current === "dribble" && dribbleRef.current) {
+        // No React state per frame: the render loop already runs every frame and
+        // reads the ref directly, so a state update here would re-render the
+        // whole component sixty times a second for nothing.
+        const out = stepDribble(dribbleRef.current, dt);
+        if (out !== "running") finishDribble(out);
+      }
+
+      // ── The world runs while you AIM ──
+      // It used to be frozen until you struck the ball, so a scenario had no
+      // time pressure at all: defenders were static dots and you could
+      // deliberate forever. Running the defence here is what creates the
+      // decision window — the nearest defender closes you down and the others
+      // shut your passing lanes, so every option quietly gets worse the longer
+      // you hold it. No timer, no countdown; just football closing in.
+      if (phaseRef.current === "aim") {
+        const sc = scenarioRef.current;
+        const lost = stepDefenders(sc, dt, sc.player, true);
+        stepKeeper(sc, dt);
+        // …and your team-mates work against that. While the cover slides onto
+        // your lane, the man they are covering moves somewhere they are not, so
+        // your options shift rather than only decaying.
+        stepSupport(sc, ballRef.current, sc.player, dt);
+        stepRunner(sc, dt);
+        if (lost) resolveOutcome(lost);
+      }
+
       if (phaseRef.current === "flight" && ballRef.current) {
         // Substep for stable physics
         const steps = 3;
         const h = dt / steps;
         for (let i = 0; i < steps; i++) {
+          // Defenders keep working during the flight too, so a slow pass can
+          // still be cut out by the man who was already sliding across.
+          // Defenders read the flight: they go for a ball they can reach and
+          // sprint back goal-side once it is past them.
+          stepDefenders(scenarioRef.current, h, ballRef.current.pos, false, ballRef.current);
           stepKeeper(scenarioRef.current, h);
+          // Everyone goes for a ball that was not played straight at them.
+          stepSupport(scenarioRef.current, ballRef.current, ballRef.current.pos, h);
           stepRunner(scenarioRef.current, h);
           stepFollower(scenarioRef.current, ballRef.current, rngRef.current, h);
           const res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
@@ -1187,6 +1444,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
     }
 
+    // Hand the outcome back to the match. Without this it would carry on as
+    // though your moment never happened — you would score and the ball would
+    // still be in their box.
+    if (matchModeRef.current) resolveScenario(matchStateRef.current, matchResultFor(res));
+
     // Celebration / impact FX + sound, matched to what the physics produced.
     if (kind === "goal") {
       showAction("GOAL");
@@ -1238,22 +1500,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: commentaryRoleLabel, isPass: isSimplePass }));
 
-    // Build-up pass that succeeded → check for ball return
-    if (sc.kind === "buildup" && (res === "delivered" || (kind === "goal"))) {
-      if (res === "delivered") {
-        const returnChance = 0.2 + sc.passDifficulty * 0.5;
-        if (rngRef.current() < returnChance) {
-          buildupReturnRef.current = true;
-          pushLine("Great pass! The ball comes back in an attacking position...");
-        }
+    // A pass that found its man can keep the move going. This used to apply to
+    // build-up only, and jumped to a random attacking situation; now any
+    // completed pass can come back, and what you get next is read off where the
+    // ball actually arrived.
+    if (res === "delivered") {
+      const depth = sc.chainDepth ?? 0;
+      const at = sc.receivedAt ?? sc.runner?.pos ?? sc.passTarget;
+      if (at && depth < CHAIN_MAX && rngRef.current() < chainReturnChance(sc)) {
+        chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1 };
+        pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
       }
     }
 
     attemptsRef.current += 1;
 
-    // Build-up return: skip simulation, go straight to an attacking scenario
-    if (buildupReturnRef.current) {
-      buildupReturnRef.current = false;
+    // The move continues: no simulation, straight into the next link.
+    if (chainRef.current) {
       window.setTimeout(() => loadScenario(true), 1600);
       return;
     }
@@ -1278,54 +1541,159 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     }
   };
 
-  // Generate simulation events between chances and run the clock forward.
+  /**
+   * The run is over.
+   *
+   * Getting through is NOT the end of the move — §6.1: "dribbling is rewarded
+   * when it creates a better football decision". So it chains straight into a
+   * chance built from where you got to, using the same machinery a completed
+   * pass uses. Losing it is a turnover like any other.
+   */
+  const finishDribble = (out: "through" | "lost" | "out") => {
+    const s = dribbleRef.current;
+    dribbleRef.current = null;
+    attemptsRef.current += 1;
+
+    if (out === "through" && s) {
+      pushLine("You are through — and the chance is on.");
+      showAction("BEAT HIM");
+      chainRef.current = { pos: { x: s.pos.x, y: s.pos.y }, depth: 0 };
+      if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
+      window.setTimeout(() => loadScenario(true), 1200);
+      return;
+    }
+
+    pushLine(out === "lost" ? "Taken off you." : "You run it out of play.");
+    setOutcome("tackled");
+    setPhase("result");
+    if (matchModeRef.current) resolveScenario(matchStateRef.current, "lost");
+    const t = tallyRef.current;
+    t.chances += 1;
+    setStats({ ...t });
+    if (matchModeRef.current) {
+      window.setTimeout(() => startSimulation(), 1600);
+    } else {
+      window.setTimeout(() => loadScenario(false), 1600);
+    }
+  };
+
+  // Run the match on around you until it needs you again.
+  //
+  // This used to be a countdown: an interval computed from your skill decided
+  // when the next chance arrived, and the opponent scored on an independent
+  // coin flip. Nothing linked one moment to the next, so a chance never felt
+  // earned. The clock is now driven by the simulation — you are pulled in when
+  // your side works the ball into a dangerous area, and the situation you get
+  // is whatever that area justifies.
   const startSimulation = () => {
     seedRef.current += 1;
     const rng = mulberry32(seedRef.current);
     rngRef.current = rng;
-    const currentMin = matchMinuteRef.current;
 
-    // How long until the player's next chance? Depends on skill + quality.
-    const car = careerRef.current;
-    const skill = car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55;
-    const avgInterval = clamp(16 - (skill / 100) * 6 - (teamRef.current / 100) * 3 + (oppStrengthRef.current / 100) * 3, 6, 22);
-    const interval = Math.round(avgInterval + (rng() - 0.5) * avgInterval * 0.5);
-    const nextMin = Math.min(MATCH_DURATION, currentMin + interval);
+    // The refs are the authority on the scoreline (the HUD reads them, and your
+    // own goals are credited in resolveOutcome), so the match is synced to them
+    // before it runs rather than keeping a second, divergent count.
+    const st = matchStateRef.current;
+    st.userScore = userScoreRef.current;
+    st.oppScore = oppScoreRef.current;
 
-    const events: SimEvent[] = [];
-    let min = currentMin;
+    // Dead balls you are not the taker for go to whoever is. Keep advancing
+    // until the match hands you something that is actually yours — bounded,
+    // because every pass moves the clock and the clock ends the match.
+    let step = advanceUntilInvolved(st, hiddenInputs(), rng, MATCH_DURATION);
+    const handedOver: HiddenMatchEvent[] = [];
+    for (let guard = 0; guard < 20; guard++) {
+      const kind = step.request?.kinds.length === 1 ? step.request.kinds[0] : null;
+      if (!kind || mayTake(kind) || (kind !== "free_kick" && kind !== "penalty")) break;
 
-    // Generate commentary + opponent chances during simulation
-    while (min < nextMin) {
-      min += 2 + Math.floor(rng() * 4);
-      if (min >= nextMin) break;
-
-      // Opponent chance
-      const oppChanceRate = 0.12 + (oppStrengthRef.current - 65) / 400;
-      if (rng() < oppChanceRate) {
-        const oppScores = rng() < 0.28 + (oppStrengthRef.current - 65) / 200;
-        if (oppScores) {
-          oppScoreRef.current += 1;
-          setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
-          events.push({ minute: min, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true });
-          playCrowdSwell("groan");
-        } else {
-          const misses = [
-            `${fixtureOpponentRef.current} have a shot — goes wide.`,
-            `A chance for ${fixtureOpponentRef.current} — the keeper saves well.`,
-            `${fixtureOpponentRef.current} threaten — cleared off the line!`,
-            `${fixtureOpponentRef.current} fire wide from distance.`,
-          ];
-          events.push({ minute: min, text: misses[Math.floor(rng() * misses.length)] });
-        }
+      const label = kind === "penalty" ? "penalty" : "free kick";
+      const scored = rng() < (kind === "penalty" ? 0.76 : 0.09);
+      if (scored) {
+        st.userScore += 1;
+        handedOver.push({ minute: st.minute, text: `⚽ Your side score the ${label}!`, isGoal: true, teammateGoal: true });
       } else {
-        // Normal commentary
-        events.push({ minute: min, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
+        handedOver.push({ minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
+      }
+      resolveScenario(st, scored ? "goal" : "saved");
+      step = advanceUntilInvolved(st, hiddenInputs(), rng, MATCH_DURATION);
+    }
+
+    const raw = [...handedOver, ...step.events];
+    const events: SimEvent[] = raw.map((e) => ({
+      minute: e.minute,
+      // The opponent is named here rather than in the simulation, which has no
+      // business knowing who you are playing.
+      text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
+      isGoal: e.isGoal,
+    }));
+
+    // A teammate's goal gets a real name off the squad sheet, the same as one
+    // you set up yourself, so the scoresheet reads like a team's.
+    const squad = careerRef.current?.squad ?? [];
+    for (const e of raw) {
+      if (!e.isGoal || !e.teammateGoal) continue;
+      const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
+      const scorer = pickSquadScorer(attackers.length > 0 ? attackers : squad, rng);
+      if (!scorer) continue;
+      const assister = pickSquadAssist(squad, scorer.id, rng);
+      goalEventsRef.current.push({ minute: e.minute, scorer: scorer.name, assist: assister?.name, isUserGoal: false });
+      const ev = events.find(x => x.minute === e.minute && x.isGoal);
+      if (ev) ev.text = `⚽ ${scorer.shortName} scores!`;
+    }
+
+    if (st.oppScore > oppScoreRef.current) playCrowdSwell("groan");
+    else if (st.userScore > userScoreRef.current) playCrowdSwell("cheer");
+    userScoreRef.current = st.userScore;
+    oppScoreRef.current = st.oppScore;
+    setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
+
+    // Nothing at all happened in the skipped minutes — say so rather than
+    // showing an empty panel.
+    if (events.length === 0) {
+      events.push({ minute: st.minute, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
+    }
+
+    // The minutes you were not playing still cost you.
+    setEnergy(energyRef.current - (st.minute - matchMinuteRef.current) * drainPerMinute);
+
+    // ── Being taken off ──
+    // Checked here, between chances, because that is where the clock actually
+    // moves. Your legs and your afternoon decide it; the game being won decides
+    // the flattering version of it.
+    if (!hookedRef.current && !step.fullTime) {
+      const t = tallyRef.current;
+      const decision = hookCheck({
+        minute: st.minute,
+        startMinute: startMinuteRef.current,
+        liveRating: liveRating(t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
+        energy: energyRef.current,
+        scoreDiff: st.userScore - st.oppScore,
+        rng,
+      });
+      if (decision.hooked) {
+        hookedRef.current = decision.reason;
+        hookedAtRef.current = st.minute;
+        events.push({ minute: st.minute, text: decision.message });
+        // The rest of the match is played without you, exactly as the hour
+        // before kick-off is when you come off the bench.
+        const after = advanceTo(st, hiddenInputs(), rng, MATCH_DURATION);
+        for (const e of after) {
+          events.push({
+            minute: e.minute,
+            text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
+            isGoal: e.isGoal,
+          });
+        }
+        userScoreRef.current = st.userScore;
+        oppScoreRef.current = st.oppScore;
+        setScore({ user: st.userScore, opp: st.oppScore });
+        step = { ...step, request: null, fullTime: true };
       }
     }
 
-    matchMinuteRef.current = nextMin;
-    setMatchMinute(nextMin);
+    pendingRequestRef.current = step.request;
+    matchMinuteRef.current = st.minute;
+    setMatchMinute(st.minute);
     setSimEvents(events);
     setSimVisible(true);
     setPhase("sim");
@@ -1334,14 +1702,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const simDuration = Math.min(events.length * 800 + 1200, 5000);
     window.setTimeout(() => {
       setSimVisible(false);
-      if (nextMin >= MATCH_DURATION) {
+      if (step.fullTime) {
         // Full time
         const careerForStats = careerRef.current ?? FALLBACK_CAREER;
         const t = tallyRef.current;
         const stats = finaliseMatch(
           attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-          90, userScoreRef.current, oppScoreRef.current, careerForStats,
-          goalEventsRef.current,
+          Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+          userScoreRef.current, oppScoreRef.current, careerForStats,
+          goalEventsRef.current, hookedRef.current,
         );
         if (matchModeRef.current && onCompleteRef.current) {
           onCompleteRef.current(stats);
@@ -1361,11 +1730,57 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     rngRef.current = mulberry32(seedRef.current);
     const rng = rngRef.current;
 
-    if (attacking) {
+    // What the match has just handed you, if anything. Its zone narrows the
+    // scenario to what makes football sense from there; your position still
+    // decides which of those you are likeliest to be the one taking.
+    const request = attacking ? null : pendingRequestRef.current;
+    pendingRequestRef.current = null;
+
+    const chain = chainRef.current;
+    chainRef.current = null;
+
+    // A run at the defence rather than a ball to strike.
+    if (!attacking && request?.dribble) {
+      dribbleRef.current = newDribble({
+        pace: careerRef.current?.skills.pace ?? 50,
+        oppStrength: oppStrengthRef.current,
+        chasers: 3 + (rng() < 0.35 ? 1 : 0),
+        rng,
+      });
+      setAim(null);
+      setOutcome(null);
+      dragRef.current = null;
+      draggingRef.current = false;
+      setPhase("dribble");
+      pushLine(request.reason);
+      pushLine("Flick to run. Get to the edge of their box.");
+      playWhistle();
+      return;
+    }
+
+    if (chain) {
+      // Built from where the pass actually arrived, so playing it into the
+      // corner gives you a cutback and finding someone central gives you a shot.
+      const kind = chainKindFor(chain.pos, rng);
+      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current);
+      scenarioRef.current.chainDepth = chain.depth;
+    } else if (attacking) {
       scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current);
+    } else if (request) {
+      const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
+      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current);
     } else {
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current);
     }
+
+    // Give the defence its shape: who presses, who covers a lane, who holds.
+    initDefenders(scenarioRef.current, rng);
+
+    // You are RECEIVING this one, not starting with it at your feet, so the
+    // defence gets the time your first touch cost them. A heavy touch and they
+    // are on you before you look up; a good one and you have a moment.
+    let heavyTouch = 0;
+    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, tiredSkills().technique, rng);
 
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -1379,6 +1794,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
     setPhase("aim");
+    // Say where the chance came from before describing it, so it reads as the
+    // end of a move rather than as a situation that appeared from nowhere.
+    if (request) pushLine(request.reason);
+    if (heavyTouch > 0.55) pushLine("Heavy touch — they are on you.");
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
     playWhistle();
   };
@@ -1391,7 +1810,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     goalEventsRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
-    buildupReturnRef.current = false;
+    setEnergy(career?.energy ?? 85);
+    matchStateRef.current = newMatch(mulberry32(seedRef.current));
+    pendingRequestRef.current = null;
+    dribbleRef.current = null;
+    flickStartRef.current = null;
+    hookedRef.current = null;
+    hookedAtRef.current = null;
+    chainRef.current = null;
     setScore({ user: 0, opp: 0 });
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
     setFinalStats(null);
@@ -1404,6 +1830,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Pointer (slingshot) ---
   const onPointerDown = (e: React.PointerEvent) => {
     primeMatchSound();
+    if (phaseRef.current === "dribble") {
+      flickStartRef.current = pitchFromPointer(e.clientX, e.clientY);
+      try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
     if (phaseRef.current !== "aim") return;
     const p = pitchFromPointer(e.clientX, e.clientY);
     const b = scenarioRef.current.ball;
@@ -1416,10 +1847,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    if (phaseRef.current === "dribble") return;
     if (!draggingRef.current) return;
     dragRef.current = pitchFromPointer(e.clientX, e.clientY);
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    // A flick is a direction and nothing else. Short taps are ignored so a
+    // mis-touch cannot send the run sideways.
+    if (phaseRef.current === "dribble") {
+      const from = flickStartRef.current;
+      flickStartRef.current = null;
+      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      const d = dribbleRef.current;
+      if (!from || !d) return;
+      const to = pitchFromPointer(e.clientX, e.clientY);
+      const dx = to.x - from.x, dy = to.y - from.y;
+      if (Math.hypot(dx, dy) < 1.2) return;
+      flick(d, dx, dy);
+      return;
+    }
     if (!draggingRef.current) return;
     draggingRef.current = false;
     try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
@@ -1437,7 +1883,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Contact chosen -> launch ---
   const handleContact = (contact: { cx: number; cy: number }) => {
     if (!aim) return;
-    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, skills, rngRef.current);
+    // A dead ball is struck with your free-kick rating, not your general
+    // technique — the one strike in football that is purely placement and curl.
+    const strikeWith = setPieceSkills(
+      tiredSkills(),
+      careerRef.current?.skills.freeKick ?? skills.technique,
+      scenarioRef.current.kind,
+    );
+    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
+    setEnergy(energyRef.current - DRAIN_PER_CHANCE);
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current));
     playKick();

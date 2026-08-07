@@ -45,6 +45,14 @@ export interface SeasonStats {
   ratingCount: number;
 }
 
+/** Every competition a career can play in. */
+export type Competition =
+  | "FA Cup"
+  | "Champions League"
+  | "Europa League"
+  | "World Cup"
+  | "European Championship";
+
 export interface Fixture {
   week: number;
   opponent: string;
@@ -55,6 +63,24 @@ export interface Fixture {
   userGoals?: number;
   userAssists?: number;
   userRating?: number;
+  // ── Knockout football. Absent on a league fixture, which is what every
+  //    fixture was until cups existed — so absent means league. ──
+  competition?: Competition;
+  kind?: "league" | "cup" | "europe" | "international";
+  /** The one against the club down the road. Same football, louder consequences. */
+  derby?: boolean;
+  round?: string;
+  /** For opponents that are not in your division. */
+  opponentStrength?: number;
+}
+
+/** A knockout the player is in, or was in. */
+export interface CupRun {
+  competition: Competition;
+  kind: "cup" | "europe" | "international";
+  roundIndex: number;
+  eliminated: boolean;
+  won: boolean;
 }
 
 export interface LeagueTeam {
@@ -88,6 +114,10 @@ export interface GoalEvent {
 }
 
 export interface MatchStats {
+  /** Minutes actually played. Under 90 when you came off the bench. */
+  minutes?: number;
+  /** Why you were taken off, when you were. */
+  hooked?: "form" | "legs" | "rested" | null;
   chances: number;
   goals: number;
   assists: number;
@@ -190,6 +220,35 @@ export interface CareerState {
   // Mid-season contract offer tracking (optional for backward-compat with saved careers)
   contractStarMilestones?: number[]; // star thresholds that have already triggered an early offer
   contractFormOfferSeason?: number;  // season when the last form-based early offer fired (-1 = never)
+  // ── Cups, Europe and the national team. All optional so a career saved before
+  //    they existed still loads; they fill in at the next season rollover. ──
+  cups?: CupRun[];
+  /** Earned by LAST season's finish, played THIS season. */
+  europeanQualification?: Competition | null;
+  caps?: number;
+  internationalGoals?: number;
+  /** What the last knockout tie did to the run, for the post-match screen. */
+  knockoutMessage?: string | null;
+  /** Things you can still do before the next match. Refills every week. */
+  weekActions?: number;
+  /** Every move you made, for the legacy screen. */
+  transfers?: { season: number; from: string; to: string; fee: number }[];
+  /** Hung up. The career is over and only the legacy screen remains. */
+  retired?: boolean;
+  /** How the board saw last season. Shown on the dashboard. */
+  lastSeasonJudgement?: { score: number; bossChange: number; headline: string; detail: string };
+  /** Individual honours. The Ballon d'Or was the only one that existed. */
+  awards?: { season: number; kind: string; week?: number; detail: string }[];
+  /** Wearing the armband at your current club. */
+  captain?: boolean;
+  /** The number on your back. Reassigned when you sign for someone. */
+  squadNumber?: number;
+  /** Appearances at the CURRENT club, reset on a transfer. */
+  clubAppearances?: number;
+  /** The man in the job. He can be sacked, and the next one has never picked you. */
+  manager?: { name: string; style: "trusting" | "demanding" | "rotational"; since: number; arrival: string };
+  /** What happened in the dugout at the end of last season. */
+  managerNews?: string | null;
 }
 
 export type StarPhase =
@@ -216,4 +275,7 @@ export type StarPhase =
   | "contract-renewal"
   | "dilemma"
   | "relationship-game"
-  | "season-transfer";
+  | "season-transfer"
+  | "retirement"
+  | "legacy"
+  | "press";

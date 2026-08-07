@@ -1,4 +1,5 @@
 import type { LeagueTeam, Fixture } from "./types";
+import { rivalOf } from "./rivals";
 
 // Deterministic PRNG so a career's season sim is reproducible
 export function mulberry32(seed: number): () => number {
@@ -58,7 +59,9 @@ export function buildFixtures(clubs: string[], userClub: string): Fixture[] {
     played: false,
   }));
 
-  return [...firstHalf, ...secondHalf];
+  const rival = rivalOf(userClub, clubs);
+  return [...firstHalf, ...secondHalf].map(f =>
+    rival && f.opponent === rival ? { ...f, derby: true } : f);
 }
 
 export function simulateOtherFixtures(
@@ -98,6 +101,24 @@ export function simulateOtherFixtures(
     else { H.drawn++; A.drawn++; H.points += 1; A.points += 1; }
   }
   return updated;
+}
+
+/**
+ * A plausible scoreline between two clubs, from the same Poisson model the rest
+ * of the division is simulated with. Used when the player is not in the squad:
+ * the match still happens, it just happens without them.
+ */
+export function simulateFixtureScore(
+  homeStrength: number,
+  awayStrength: number,
+  rng: () => number,
+): { home: number; away: number } {
+  const h = homeStrength + 3;   // the same home advantage the rest of the league gets
+  const a = awayStrength;
+  return {
+    home: poisson(Math.max(0.3, (h / a) * 1.4), rng),
+    away: poisson(Math.max(0.2, (a / h) * 1.1), rng),
+  };
 }
 
 function poisson(lambda: number, rng: () => number): number {
