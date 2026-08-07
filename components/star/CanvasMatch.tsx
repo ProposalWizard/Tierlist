@@ -555,7 +555,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const heightScale = uy * 0.75;
     // A real ball is only 22 cm across — drawn true to scale it disappears, so it
     // is exaggerated a little and floored at a readable pixel size.
-    const BALL_PX = Math.max(3, unit * 0.42);
+    const BALL_PX = Math.max(4.5, unit * 0.5);
 
     // Pitch-space drawing helpers — everything below goes through these so the
     // markings sit exactly where the physics thinks they are.
@@ -752,8 +752,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const r = rBase * scale;
       const pose = opts.pose ?? "idle";
       const phase = opts.phase ?? 0;
-      const shorts = opts.shorts ?? "#111827";
-      const lw = Math.max(1.4, r * 0.30);
+      // Shorts default to the shirt's rim rather than a near-black everybody
+      // shares. Two blocks of team colour instead of one is most of what makes
+      // a figure readable when it is the size of a thumbnail: on the old
+      // proportions the shirt was a small patch and the skin-coloured head,
+      // arms and legs dominated, so at any distance both sides were the same
+      // tan smudge and a crowd in the box was unreadable.
+      const shorts = opts.shorts ?? rim;
+      const lw = Math.max(1.3, r * 0.24);
 
       // Ground shadow stays put while the figure above it moves.
       ctx.beginPath();
@@ -791,8 +797,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // ── Shorts ──
       ctx.fillStyle = shorts;
       ctx.beginPath();
-      ctx.roundRect?.(-r * 0.42, -r * 0.02, r * 0.84, r * 0.34, r * 0.12);
-      if (!ctx.roundRect) ctx.rect(-r * 0.42, -r * 0.02, r * 0.84, r * 0.34);
+      ctx.roundRect?.(-r * 0.46, -r * 0.02, r * 0.92, r * 0.36, r * 0.12);
+      if (!ctx.roundRect) ctx.rect(-r * 0.46, -r * 0.02, r * 0.92, r * 0.36);
       ctx.fill();
 
       // ── Arms ── (counter-swing to the legs, thrown wide to receive)
@@ -809,11 +815,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.lineTo(armOut, armDrop - swing * r * 0.22);
       ctx.stroke();
 
-      // ── Shirt ──
+      // ── Shirt ── (deliberately the biggest thing on the figure)
       ctx.fillStyle = shirt;
       ctx.beginPath();
-      ctx.roundRect?.(-r * 0.46, -r * 0.52, r * 0.92, r * 0.62, r * 0.16);
-      if (!ctx.roundRect) ctx.rect(-r * 0.46, -r * 0.52, r * 0.92, r * 0.62);
+      ctx.roundRect?.(-r * 0.52, -r * 0.56, r * 1.04, r * 0.72, r * 0.17);
+      if (!ctx.roundRect) ctx.rect(-r * 0.52, -r * 0.56, r * 1.04, r * 0.72);
       ctx.fill();
       ctx.lineWidth = Math.max(1, r * 0.12);
       ctx.strokeStyle = rim;
@@ -821,7 +827,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       // ── Head ──
       ctx.beginPath();
-      ctx.arc(0, -r * 0.72, r * 0.30, 0, Math.PI * 2);
+      ctx.arc(0, -r * 0.76, r * 0.26, 0, Math.PI * 2);
       ctx.fillStyle = SKIN;
       ctx.fill();
       ctx.lineWidth = Math.max(1, r * 0.10);
@@ -1059,8 +1065,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.lineTo(KR * 0.30 + diveN * KR * 0.3, KR * 0.76);
       ctx.stroke();
 
-      // Shorts
-      ctx.fillStyle = "#0f172a";
+      // Shorts — the keeper's own kit, like everybody else, so he reads as the
+      // keeper rather than as another outfield player who happens to be near
+      // the goal.
+      ctx.fillStyle = C.gkRim;
       ctx.beginPath();
       ctx.roundRect?.(-KR * 0.40, -KR * 0.02, KR * 0.80, KR * 0.32, KR * 0.12);
       if (!ctx.roundRect) ctx.rect(-KR * 0.40, -KR * 0.02, KR * 0.80, KR * 0.32);
@@ -1956,7 +1964,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   const statCell = (label: string, value: string, valueClass: string) => (
     <div className="px-1.5 py-1 text-center">
-      <div className="text-[8px] uppercase tracking-widest text-gray-500 font-bold leading-none">{label}</div>
+      <div className="text-[8px] uppercase tracking-widest text-white/70 font-bold leading-none">{label}</div>
       <div className={`text-xs font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
     </div>
   );
@@ -2007,7 +2015,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           <button
             onClick={toggleMuted}
             aria-label={muted ? "Unmute sound" : "Mute sound"}
-            className="px-2.5 flex items-center border-l border-white/5 text-gray-400 hover:text-amber-300 transition"
+            className="px-2.5 flex items-center border-l border-white/10 text-white/80 hover:text-amber-300 transition"
           >
             {muted ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
@@ -2077,9 +2085,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             <div className="text-5xl font-black text-white tabular-nums mb-1">{matchMinute}&#39;</div>
             {/* Scoreline */}
             {matchMode && (
-              <div className="text-sm font-bold text-gray-300 mb-4">
+              <div className="text-sm font-bold text-white/85 mb-4">
                 <span className="truncate">{homeTeam}</span> <span className="text-white text-lg tabular-nums mx-1">{homeScore}</span>
-                <span className="text-gray-500 mx-1">-</span>
+                <span className="text-white/60 mx-1">-</span>
                 <span className="text-white text-lg tabular-nums mx-1">{awayScore}</span> <span className="truncate">{awayTeam}</span>
               </div>
             )}
@@ -2095,7 +2103,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
                   }`}
                   style={{ animationDelay: `${i * 0.4}s` }}
                 >
-                  <span className="text-gray-400 tabular-nums mr-1.5 font-bold">{ev.minute}&#39;</span>
+                  <span className="text-white/75 tabular-nums mr-1.5 font-bold">{ev.minute}&#39;</span>
                   {ev.text}
                 </div>
               ))}
@@ -2116,15 +2124,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       <div className="mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem]">
         <div className="flex items-center gap-1.5 mb-1">
           <span className="kib-live inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
-          <span className="text-[8px] font-black tracking-[0.22em] text-gray-500 uppercase">Live Commentary</span>
+          <span className="text-[8px] font-black tracking-[0.22em] text-white/70 uppercase">Live Commentary</span>
         </div>
         <div className="space-y-0.5">
-          {feed.length === 0 && <div className="text-[11px] text-gray-600 italic">Kick-off…</div>}
+          {feed.length === 0 && <div className="text-[11px] text-white/65 italic">Kick-off…</div>}
           {feed.map((line, i) => (
             <div
               key={i}
               className={`text-[11px] leading-snug pl-2 border-l-2 ${
-                i === feed.length - 1 ? "text-white font-bold border-emerald-500/80" : "text-gray-600 border-transparent"
+                i === feed.length - 1 ? "text-white font-bold border-emerald-500/80" : "text-white/70 border-transparent"
               }`}
             >
               {line}
@@ -2134,7 +2142,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       </div>
 
       {/* Hint */}
-      <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-gray-400 text-center">
+      <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-white/85 text-center">
         {matchMode && (
           <span className="text-emerald-300 font-black mr-1">
             {matchMinute}&#39; ·
