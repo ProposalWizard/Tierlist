@@ -639,7 +639,9 @@ export default function StarDevPage() {
                   : "border-red-500/50 bg-red-500/10"}`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Team sheet</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                  Team sheet · #{career.squadNumber ?? "—"}{career.captain ? " (C)" : ""}
+                </span>
                 <span className={`text-xs font-black ${
                   selection.status === "1st Team" ? "text-emerald-300"
                     : selection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}

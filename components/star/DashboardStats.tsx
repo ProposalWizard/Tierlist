@@ -4,6 +4,7 @@ import type { CareerState } from "@/lib/star/types";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { expectationStatus, personalDuty } from "@/lib/star/expectations";
+import { leadingScorer } from "@/lib/star/recognition";
 
 interface Props {
   career: CareerState;
@@ -99,6 +100,39 @@ export default function DashboardStats({ career }: Props) {
               Match Fit ({Math.round(career.matchFitness)}%)
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-gray-600 bg-gray-800">
+              <span className="text-2xl font-black tabular-nums text-white">{career.squadNumber ?? "—"}</span>
+            </div>
+            <div className="flex-1 rounded-lg border border-gray-600 bg-gray-700 p-2">
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-300">Standing</div>
+              <div className="text-xs font-black text-white">
+                {career.captain ? "🅲 Club captain" : "Not the captain"}
+                {leadingScorer(career) && career.seasonStats.goals > 0 ? " · leading the scoring charts" : ""}
+              </div>
+              <div className="text-[10px] text-gray-300">
+                {(career.clubAppearances ?? 0)} appearance{(career.clubAppearances ?? 0) === 1 ? "" : "s"} for {career.player.club}
+              </div>
+            </div>
+          </div>
+
+          {(career.awards ?? []).length > 0 && (
+            <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
+              <div className="font-black text-xs text-white mb-1">Individual honours</div>
+              <div className="space-y-0.5">
+                {[...(career.awards ?? [])].reverse().slice(0, 5).map((a, i) => (
+                  <div key={i} className="text-[10px] text-gray-200">
+                    <span className="font-black text-amber-300">{a.kind}</span>
+                    {" · S"}{a.season}{a.week ? ` wk ${a.week}` : ""} — {a.detail}
+                  </div>
+                ))}
+                {(career.awards ?? []).length > 5 && (
+                  <div className="text-[10px] text-gray-300">…and {(career.awards ?? []).length - 5} more</div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* What the board actually wants. Finishing sixth used to be worth
               the same at every club in the division. */}
           <div className={`rounded-lg p-3 border ${onTrack ? "border-emerald-600 bg-emerald-600/15" : "border-amber-500 bg-amber-500/10"}`}>

@@ -235,6 +235,14 @@ export interface CareerState {
   retired?: boolean;
   /** How the board saw last season. Shown on the dashboard. */
   lastSeasonJudgement?: { score: number; bossChange: number; headline: string; detail: string };
+  /** Individual honours. The Ballon d'Or was the only one that existed. */
+  awards?: { season: number; kind: string; week?: number; detail: string }[];
+  /** Wearing the armband at your current club. */
+  captain?: boolean;
+  /** The number on your back. Reassigned when you sign for someone. */
+  squadNumber?: number;
+  /** Appearances at the CURRENT club, reset on a transfer. */
+  clubAppearances?: number;
 }
 
 export type StarPhase =

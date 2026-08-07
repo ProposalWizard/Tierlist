@@ -13,6 +13,9 @@ import { selectionFor, MISSED_WEEK } from "./selection";
 import { startNewWeek, WEEK_ACTIONS } from "./week";
 import { judgeSeason } from "./expectations";
 import {
+  monthlyAward, seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
+} from "./recognition";
+import {
   seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
 } from "./competitions";
 import { BOOTS_CATALOGUE } from "./shopData";
@@ -70,11 +73,15 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     contractFormOfferSeason: -1,
     europeanQualification: null,
     weekActions: WEEK_ACTIONS,
+    awards: [],
+    captain: false,
+    clubAppearances: 0,
     cups: [],
     caps: 0,
     internationalGoals: 0,
     knockoutMessage: null,
   };
+  state.squadNumber = assignSquadNumber(state, player.club);
   const seeded = seedSeasonKnockouts(state);
   state.cups = seeded.runs;
   state.fixtures = [...state.fixtures, ...seeded.fixtures];
@@ -258,9 +265,28 @@ export function creditMatchResult(
     squad: updatedSquad,
     form: [stats.rating, ...career.form].slice(0, 5),
   };
+  // Appearances at THIS club, which is what the armband is judged on — career
+  // appearances would hand it to a signing on his first day.
+  next.clubAppearances = (career.clubAppearances ?? 0) + (isInternational ? 0 : 1);
+
   // The match is over, so a new week starts: some energy back, and three things
   // you can do with it before the next one.
   Object.assign(next, startNewWeek(next.energy));
+
+  // The armband, once the dressing room and the manager are both behind you and
+  // you have actually been here a while. Once given it is not taken away for a
+  // bad month — only a transfer resets it.
+  if (!next.captain && captaincyEarned(next)) {
+    next.captain = true;
+    next.relationships = { ...next.relationships, team: clamp01to100(next.relationships.team + 3) };
+  }
+  if (next.captain) {
+    next.relationships = { ...next.relationships, team: clamp01to100(next.relationships.team + CAPTAIN_TEAM_BONUS) };
+  }
+
+  // Player of the Month, checked on the four-week boundary.
+  const monthly = monthlyAward(next);
+  if (monthly) next.awards = [...(next.awards ?? []), monthly];
   // Being hooked for your form is a message from the manager as well as a
   // scoreline — it costs you a little more of him than the rating alone.
   if (stats.hooked === "form") {
@@ -307,6 +333,10 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     freeKick: career.skills.freeKick,
   };
 
+  // Individual honours for the season that has just finished, taken BEFORE the
+  // stats are reset — they are a verdict on those numbers.
+  const honours = seasonAwards(career);
+
   // How the season went by the club's own standards, not by whether you won the
   // league. The same finish is a triumph at one club and a sacking offence at
   // another, which is the only thing that makes moving up cost you anything.
@@ -340,6 +370,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
       boss: clamp01to100(career.relationships.boss + judgement.bossChange),
     },
     lastSeasonJudgement: judgement,
+    awards: honours.length > 0 ? [...(career.awards ?? []), ...honours] : career.awards,
   };
 
   // Seeded after the rest of the state is in place, because what you are in

@@ -61,6 +61,10 @@ export function LegacyScreen({ career, onNewCareer }: {
   const byCompetition = new Map<string, number>();
   for (const t of career.trophies) byCompetition.set(t.competition, (byCompetition.get(t.competition) ?? 0) + 1);
 
+  const byAward = new Map<string, number>();
+  for (const a of career.awards ?? []) byAward.set(a.kind, (byAward.get(a.kind) ?? 0) + 1);
+  const individual = Array.from(byAward.entries());
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white px-3 py-6">
       <div className="mx-auto w-full max-w-sm">
@@ -91,6 +95,12 @@ export function LegacyScreen({ career, onNewCareer }: {
             <Line key={comp}>{n}× {comp}</Line>
           ))}
           {career.ballonDorWins > 0 && <Line>{career.ballonDorWins}× Ballon d&apos;Or</Line>}
+        </Panel>
+
+        <Panel title="Individual">
+          {individual.length === 0 && <Line>No individual awards.</Line>}
+          {individual.map(([kind, n]) => <Line key={kind}>{n}× {kind}</Line>)}
+          {career.captain && <Line>Captain of {career.player.club}</Line>}
         </Panel>
 
         <Panel title="Clubs">

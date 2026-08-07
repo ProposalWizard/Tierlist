@@ -1,6 +1,7 @@
 import type { CareerState, Contract } from "./types";
 import { sortLeague } from "./season";
 import { generateSquad, clubNameSeed } from "./squadData";
+import { assignSquadNumber } from "./recognition";
 
 /**
  * TRANSFERS
@@ -164,6 +165,11 @@ export function acceptOffer(career: CareerState, offer: TransferOffer): CareerSt
     // have you setting up players who are still at your previous club.
     squad: generateSquad(clubNameSeed(offer.club)),
     transfers: [...(career.transfers ?? []), record],
+    // A new club is a new number and no armband. Both have to be earned again,
+    // which is a large part of what a move actually costs.
+    squadNumber: assignSquadNumber(career, offer.club),
+    captain: false,
+    clubAppearances: 0,
     // Star milestones are club-specific offers; a new contract resets the run.
     contractStarMilestones: [],
     contractFormOfferSeason: -1,

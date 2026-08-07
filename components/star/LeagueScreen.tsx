@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
+import { goldenBootRace } from "@/lib/star/recognition";
 
 interface Props {
   career: CareerState;
@@ -90,6 +91,26 @@ export default function LeagueScreen({ career }: Props) {
                 {f.played ? f.awayScore : "-"}
               </div>
               <div className={`text-left ${!f.home ? "font-black" : ""}`}>{f.home ? f.opponent : sideFor(f)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {view === "table" && (
+        <div className="mt-2 bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
+          <div className="bg-gray-800 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300 border-b border-black/50">
+            Golden Boot
+          </div>
+          {goldenBootRace(career).slice(0, 6).map((sc, i) => (
+            <div
+              key={sc.name + sc.club}
+              className={`flex items-center gap-2 px-2 py-1.5 text-xs font-bold ${
+                sc.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
+            >
+              <span className="w-4 text-center text-[10px] font-black">{i + 1}</span>
+              <span className="flex-1 truncate">{sc.name}</span>
+              <span className="truncate text-[10px] text-gray-200 max-w-[38%]">{sc.club}</span>
+              <span className="w-6 text-right font-black tabular-nums">{sc.goals}</span>
             </div>
           ))}
         </div>

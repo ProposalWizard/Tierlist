@@ -12,6 +12,7 @@
     npx tsx tests/star/legacy.mts
     npx tsx tests/star/context.mts
     npx tsx tests/star/attributes.mts
+    npx tsx tests/star/recognition.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -382,3 +383,29 @@ goal." Ours did exactly the named failure case, and the file now pins the fix:
   0 and a 26% drag at power 100, so the same flick is worth more of a shot.
 - **Pace was read by no code in the match at all.** It is now the whole point of
   the run.
+
+---
+
+**recognition** — awards, the armband and the number on your back.
+
+Three things absent in the same way. The Ballon d'Or was the only individual
+honour in the game, so a season of twenty-five goals that did not win it left no
+trace at all. Captaincy existed solely as a dilemma about the CURRENT captain
+being annoyed with you. And you played fifteen seasons without a squad number.
+
+None of it changes how you play, so what the file mostly guards is that none of
+it can be had for free:
+
+- **Player of the Season needs more than goals.** Sixty goals for the worst team
+  in the league does not win it; the same season at the top of the table does.
+- **Every captaincy condition is necessary** — asserted one at a time. Not a
+  dressing room that is against you, not a manager who is, and not a player who
+  signed three weeks ago however good he is. A move takes the armband away and
+  resets your appearances at the club to zero, which is a real part of what
+  moving costs.
+- **The scoring chart is stable within a season and different between them.**
+  Rivals are derived from club strength and the season number rather than
+  simulated, so the chart cannot reshuffle under a re-render, and their tallies
+  grow with the season so the race is live all year.
+- **End-of-season honours are banked before the stats that earned them are
+  wiped** — asserted through a real rollover.
