@@ -1,0 +1,298 @@
+import {
+  seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
+  internationalCallUp, tournamentFor, roundsFor, nextFixtureFor, leagueWeeks,
+} from "../../lib/star/competitions";
+import { makeInitialCareer, creditMatchResult, simulateMissedFixture, advanceSeason, awardLeagueTrophyIfWon } from "../../lib/star/careerFlow";
+import type { CareerState, MatchStats, StarPlayer, Fixture } from "../../lib/star/types";
+
+/**
+ * Cups, Europe and the national team.
+ *
+ * There was one competition: thirty-eight weeks of league football and a title
+ * if you finished top. The `Trophy` type has always carried a `competition`
+ * field and only ever held one value.
+ *
+ * All three are the same shape underneath — a knockout you are either still in
+ * or out of — so most of what is asserted here is that the one progression
+ * function behaves for all three, and that a cup night never touches the league.
+ */
+
+const problems: string[] = [];
+const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
+
+const PLAYER: StarPlayer = {
+  firstName: "Test", lastName: "Player", age: 22, position: "ST",
+  club: "Arsenal", nationality: "England",
+} as StarPlayer;
+
+const CLUBS = ["Arsenal", "Chelsea", "Liverpool", "Man City", "Man Utd", "Spurs", "Newcastle", "Aston Villa", "Brighton", "West Ham"];
+const base = () => makeInitialCareer(PLAYER, CLUBS);
+
+const result = (userGoals: number, oppGoals: number): MatchStats => ({
+  minutes: 90, chances: 5, goals: userGoals, assists: 0, passes: 12,
+  rating: 7.5, starMan: false, bossChange: 2, teamChange: 1, fansChange: 2,
+  wage: 1, goalBonus: 0, sponsorPay: 0, totalCash: 1,
+  homeScore: userGoals, awayScore: oppGoals,
+});
+
+/** Play the next fixture with a fixed scoreline. */
+function play(c: CareerState, userGoals: number, oppGoals: number): CareerState {
+  const f = nextFixtureFor(c)!;
+  return creditMatchResult(c, f, result(userGoals, oppGoals)).career;
+}
+
+// ── A season opens with the domestic cup, and nothing it has not earned ────
+{
+  const c = base();
+  const runs = c.cups ?? [];
+  check(runs.some(r => r.competition === "FA Cup"), "the domestic cup runs from your first season");
+  check(!runs.some(r => r.kind === "europe"),
+    "…but not Europe, which you have not finished a season to qualify for");
+
+  const cupFixtures = c.fixtures.filter(f => f.kind === "cup");
+  check(cupFixtures.length === 1,
+    `only the FIRST round is on the calendar (${cupFixtures.length}) — the rest is earned`);
+  check(cupFixtures[0].round === roundsFor("FA Cup")[0], "and it is the opening round");
+  check(cupFixtures[0].week > 1 && cupFixtures[0].week <= leagueWeeks(CLUBS.length),
+    `the cup tie is inside the season (week ${cupFixtures[0].week} of ${leagueWeeks(CLUBS.length)})`);
+  check(typeof cupFixtures[0].opponentStrength === "number", "the tie carries its opponent's strength");
+}
+
+// ── Winning puts the next round on the calendar; losing does not ───────────
+{
+  let c = base();
+  // Play league games until the cup tie comes round, then win it.
+  let guard = 0;
+  while (nextFixtureFor(c)?.kind !== "cup" && guard++ < 40) c = play(c, 1, 0);
+  check(guard < 40, "the cup tie comes round");
+
+  const won = play(c, 3, 0);
+  check((won.cups ?? []).find(r => r.competition === "FA Cup")!.roundIndex === 1, "a win moves the run on a round");
+  check(won.fixtures.filter(f => f.kind === "cup" && !f.played).length === 1,
+    "and puts exactly one new tie on the calendar");
+  check(won.knockoutMessage?.includes("Quarter-Final"), `and says so ("${won.knockoutMessage}")`);
+
+  const lost = play(c, 0, 2);
+  check((lost.cups ?? []).find(r => r.competition === "FA Cup")!.eliminated, "a defeat ends the run");
+  check(lost.fixtures.filter(f => f.kind === "cup" && !f.played).length === 0,
+    "and the weeks it would have taken are weeks you do not play");
+  check(lost.knockoutMessage?.includes("Knocked out"), `and says so ("${lost.knockoutMessage}")`);
+}
+
+// ── A knockout cannot be drawn ──────────────────────────────────────────────
+{
+  const c = base();
+  const run = (c.cups ?? [])[0];
+  const tie = c.fixtures.find(f => f.kind === "cup")!;
+
+  const level = resolveKnockout(c, run, tie, 1, 1);
+  check(level.onPenalties, "a level score goes to penalties");
+  check(level.advanced || level.run.eliminated, "and produces a winner either way");
+  check(level.message.includes("penalties"), `and the player is told (\"${level.message}\")`);
+
+  // Quality nudges a shootout, it does not decide it.
+  const strong = { ...c, league: c.league.map(t => t.name === "Arsenal" ? { ...t, strength: 99 } : t) };
+  const weak = { ...c, league: c.league.map(t => t.name === "Arsenal" ? { ...t, strength: 30 } : t) };
+  const hard: Fixture = { ...tie, opponentStrength: 95 };
+  let strongThrough = 0, weakThrough = 0;
+  for (let w = 1; w <= 200; w++) {
+    const t = { ...hard, week: w };
+    if (resolveKnockout(strong, run, t, 1, 1).advanced) strongThrough++;
+    if (resolveKnockout(weak, run, t, 1, 1).advanced) weakThrough++;
+  }
+  check(strongThrough > weakThrough, `the better side wins more shootouts (${strongThrough} vs ${weakThrough} of 200)`);
+  check(weakThrough > 40, `and the worse side still wins plenty (${weakThrough})`);
+  check(strongThrough < 160, `nothing is a formality (${strongThrough})`);
+}
+
+// ── A group is played on points ─────────────────────────────────────────────
+//
+// Every round resolving identically sent you home from a tournament on a single
+// drawn group game, which is not football.
+{
+  const c = { ...base(), season: 2, starRating: 4 };
+  const run = { competition: "World Cup" as const, kind: "international" as const, roundIndex: 0, eliminated: false, won: false };
+  const tie: Fixture = { week: 19, opponent: "Brazil", home: true, played: false, competition: "World Cup", kind: "international", round: "Group Stage", opponentStrength: 91 };
+  const drawn = resolveKnockout(c, run, tie, 1, 1);
+  check(drawn.advanced && !drawn.onPenalties, "a drawn group game does not send you home, and does not go to penalties");
+  check(drawn.message.includes("point"), `and says why ("${drawn.message}")`);
+  check(!resolveKnockout(c, run, tie, 0, 2).advanced, "losing one still can");
+
+  // Everywhere else, a draw is settled.
+  const ko = { ...run, roundIndex: 1 };
+  check(resolveKnockout(c, ko, { ...tie, round: "Round of 16" }, 1, 1).onPenalties,
+    "a knockout round is still settled on the night");
+}
+
+// ── Two runs never land on the same week ───────────────────────────────────
+{
+  const c: CareerState = { ...base(), season: 3, europeanQualification: "Champions League", starRating: 4.5 };
+  const seeded = seedSeasonKnockouts(c);
+  // Play each run all the way through and collect every week it would use.
+  const weeks: Record<string, number[]> = {};
+  for (const run of seeded.runs) {
+    weeks[run.kind] = [];
+    let r = run;
+    let f = seeded.fixtures.find(x => x.competition === run.competition)!;
+    for (let i = 0; i < roundsFor(run.competition).length; i++) {
+      weeks[run.kind].push(f.week);
+      const out = resolveKnockout(c, r, f, 2, 0);
+      if (!out.nextFixture) break;
+      r = out.run; f = out.nextFixture;
+    }
+  }
+  const cup = weeks.cup ?? [], euro = weeks.europe ?? [];
+  check(cup.length > 0 && euro.length > 0, "both club runs produce a full set of weeks");
+  check(!cup.some(w => euro.includes(w)),
+    `a cup week is never a European week (${cup.join(",")} vs ${euro.join(",")})`);
+  check((weeks.international ?? []).every(w => w > leagueWeeks(CLUBS.length)),
+    "and the tournament is entirely after the league");
+}
+
+// ── Winning the final is a trophy ───────────────────────────────────────────
+{
+  const c = base();
+  const rounds = roundsFor("FA Cup");
+  const finalRun = { competition: "FA Cup" as const, kind: "cup" as const, roundIndex: rounds.length - 1, eliminated: false, won: false };
+  const tie = c.fixtures.find(f => f.kind === "cup")!;
+  const out = resolveKnockout(c, finalRun, tie, 2, 1);
+  check(out.trophy?.competition === "FA Cup", "the final produces a trophy");
+  check(out.trophy?.club === PLAYER.club, "in the club's name");
+  check(out.run.won && out.run.eliminated, "and closes the run");
+  check(out.nextFixture === null, "there is nothing after a final");
+}
+
+// ── A cup tie is none of the league's business ─────────────────────────────
+{
+  let c = base();
+  let guard = 0;
+  while (nextFixtureFor(c)?.kind !== "cup" && guard++ < 40) c = play(c, 1, 0);
+  const before = c.league.map(t => ({ name: t.name, played: t.played, points: t.points }));
+  const after = play(c, 4, 0).league;
+  const moved = before.filter(b => {
+    const a = after.find(t => t.name === b.name)!;
+    return a.played !== b.played || a.points !== b.points;
+  });
+  check(moved.length === 0,
+    `a cup night moves nobody in the table (${moved.length} teams moved) — running the round for everyone else would hand the division a free week`);
+
+  // …and a league game still does.
+  let d = base();
+  const p0 = d.league.find(t => t.name === "Arsenal")!.played;
+  d = play(d, 2, 0);
+  check(d.league.find(t => t.name === "Arsenal")!.played === p0 + 1, "a league game still counts");
+}
+
+// ── Cup goals count for the club; international goals do not ───────────────
+{
+  let c = base();
+  let guard = 0;
+  while (nextFixtureFor(c)?.kind !== "cup" && guard++ < 40) c = play(c, 0, 0);
+  const goalsBefore = c.seasonStats.goals;
+  c = play(c, 2, 0);
+  check(c.seasonStats.goals === goalsBefore + 2, "a cup goal is a goal for your season");
+
+  // Internationals are a separate record — the Ballon d'Or and the club
+  // achievements read the club numbers.
+  const withCap: CareerState = {
+    ...base(),
+    fixtures: [{ week: 1, opponent: "Brazil", home: true, played: false, competition: "World Cup", kind: "international", round: "Group Stage", opponentStrength: 91 }],
+    cups: [{ competition: "World Cup", kind: "international", roundIndex: 0, eliminated: false, won: false }],
+  };
+  const after = creditMatchResult(withCap, withCap.fixtures[0], result(1, 0)).career;
+  check((after.caps ?? 0) === 1, "an international is a cap");
+  check((after.internationalGoals ?? 0) === 1, "and an international goal");
+  check(after.seasonStats.goals === withCap.seasonStats.goals, "and neither goes into the club season");
+  check(after.seasonStats.appearances === withCap.seasonStats.appearances, "nor into club appearances");
+}
+
+// ── Europe is earned by where you finish, and played the year after ────────
+{
+  check(qualificationFor(1, 10) === "Champions League", "finishing top gets you into Europe's top competition");
+  check(qualificationFor(4, 10) === "Europa League", "and mid-table Europe is a rung below");
+  check(qualificationFor(9, 10) === null, "finishing ninth gets you nothing");
+
+  const done = (() => {
+    let c = base();
+    let guard = 0;
+    while (nextFixtureFor(c) && guard++ < 100) c = play(c, 3, 0);
+    return c;
+  })();
+  check(!nextFixtureFor(done), "a season can be played to its end");
+  check(leaguePosition(done) === 1, `winning every game wins the league (finished ${leaguePosition(done)})`);
+
+  const nextSeason = advanceSeason(awardLeagueTrophyIfWon(done).career, false).career;
+  check(nextSeason.europeanQualification === "Champions League", "and gets you into the Champions League");
+  check((nextSeason.cups ?? []).some(r => r.kind === "europe"), "which appears as a run the following season");
+  check(nextSeason.fixtures.some(f => f.kind === "europe"), "with a fixture on the calendar");
+  check(nextSeason.fixtures.filter(f => f.kind === "europe").length === 1, "one round of it, like the cup");
+  check(nextSeason.trophies.some(t => t.competition === "Premier League"), "the title carried over");
+}
+
+// ── The national team is something you reach ───────────────────────────────
+{
+  const rookie = base();
+  check(!internationalCallUp(rookie), "a young player at 2.5 stars is not in the squad");
+  check(internationalCallUp({ ...rookie, starRating: 3.4 }), "a reputation gets you picked");
+  check(internationalCallUp({ ...rookie, fame: 60 }), "…and so does fame");
+
+  check(tournamentFor(1) === null, "there is no tournament every year");
+  check(tournamentFor(2) !== null && tournamentFor(4) !== null, "one comes round every other year");
+  check(tournamentFor(4) !== tournamentFor(2), "and it alternates");
+
+  // A tournament runs AFTER the league, which is what lets it extend a season.
+  const star: CareerState = { ...base(), season: 2, starRating: 4, league: base().league };
+  const seeded = seedSeasonKnockouts(star);
+  const intl = seeded.fixtures.find(f => f.kind === "international");
+  check(!!intl, "a well-known player in a tournament year has a tournament");
+  check(intl!.week > leagueWeeks(CLUBS.length), `and it is played after the league (week ${intl!.week})`);
+}
+
+// ── The next fixture is the next one by DATE ───────────────────────────────
+//
+// It used to be `fixtures.find(f => !f.played)`, which relies on the array being
+// in calendar order — true for a league built up front, false the moment a
+// knockout round earned in week 9 is appended after week 18.
+{
+  let c = base();
+  let guard = 0;
+  while (nextFixtureFor(c)?.kind !== "cup" && guard++ < 40) c = play(c, 1, 0);
+  const afterWin = play(c, 2, 0);
+  const appended = afterWin.fixtures[afterWin.fixtures.length - 1];
+  check(appended.kind === "cup", "the earned round is appended to the end of the list");
+  const next = nextFixtureFor(afterWin)!;
+  check(next.week <= appended.week,
+    `but the next match is the next one by date (week ${next.week}, not the appended week ${appended.week})`);
+  check(afterWin.fixtures.filter(f => !f.played).every(f => f.week >= next.week), "and nothing unplayed is earlier");
+
+  // Two fixtures in the same week: the league game is played first.
+  const clash: CareerState = {
+    ...base(),
+    fixtures: [
+      { week: 5, opponent: "Ajax", home: true, played: false, competition: "Champions League", kind: "europe", round: "Round of 16" },
+      { week: 5, opponent: "Chelsea", home: false, played: false },
+    ],
+  };
+  check(nextFixtureFor(clash)?.opponent === "Chelsea", "league football comes first when two land in the same week");
+}
+
+// ── A cup tie you are left out of still resolves ───────────────────────────
+{
+  let c = base();
+  let guard = 0;
+  while (nextFixtureFor(c)?.kind !== "cup" && guard++ < 40) c = play(c, 1, 0);
+  const tie = nextFixtureFor(c)!;
+  const missed = simulateMissedFixture(c, tie).career;
+  const run = (missed.cups ?? []).find(r => r.competition === "FA Cup")!;
+  check(run.roundIndex > 0 || run.eliminated,
+    "being dropped for a cup tie does not freeze the run — your club still went through or out");
+  check(missed.league.find(t => t.name === "Arsenal")!.played === c.league.find(t => t.name === "Arsenal")!.played,
+    "and it still does not touch the table");
+}
+
+if (problems.length) {
+  console.error("FAIL");
+  for (const p of problems) console.error("  ✗ " + p);
+  process.exit(1);
+}
+console.log("PASS — cups, Europe and the national team all run, and none of them touch the league table");

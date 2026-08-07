@@ -7,6 +7,7 @@
     npx tsx tests/star/perception.mts
     npx tsx tests/star/career.mts
     npx tsx tests/star/selection.mts
+    npx tsx tests/star/competitions.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -203,3 +204,38 @@ Set-piece duty is judged against your own club, so the same player takes free
 kicks at a mid-table side and loses them on a move to the champions. The file
 asserts that specifically, because it is the whole reason the skill stays worth
 training.
+
+---
+
+**competitions** — cups, Europe and the national team.
+
+There was one competition: league football and a title if you finished top. The
+`Trophy` type has always carried a `competition` field and only ever held one
+value.
+
+All three are the same shape underneath — a knockout you are either still in or
+out of — so most of this file asserts that one progression function behaves for
+all three. A knockout cannot be drawn up in advance the way a league can,
+because who you play next depends on still being in it, so a season starts with
+the FIRST round of each on the calendar and winning it puts the next one there.
+
+The assertions that matter most:
+
+- **A cup night moves nobody in the table.** Running the division's round after
+  a cup tie would hand everyone else a free week of points; the test compares
+  every team's played and points across a cup match.
+- **The next fixture is the next one by DATE.** It used to be
+  `fixtures.find(f => !f.played)`, which relies on the array being in calendar
+  order — true for a league built up front, and false the moment a round earned
+  in week 9 is appended after week 18. League football comes first when two land
+  in the same week.
+- **A group is played on points.** Resolving every round identically sent you
+  home from a tournament on one drawn group game, which is not football.
+- **Cup goals count for your club season; international goals do not.** Caps and
+  international goals are their own record, because the club numbers are what
+  the Ballon d\'Or and the club achievements read.
+- **Cup weeks and European weeks never collide**, checked by playing both runs
+  the whole way through and comparing the calendars.
+- **A tie cannot be drawn**, and a shootout is nudged by quality rather than
+  decided by it: 99-strength beats 95-strength opposition in roughly two thirds
+  of 200 shootouts, never all of them.

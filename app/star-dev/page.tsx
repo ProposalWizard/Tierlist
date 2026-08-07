@@ -6,6 +6,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
+import { nextFixtureFor, fixtureLabel, nationOf } from "@/lib/star/competitions";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
@@ -86,7 +87,9 @@ export default function StarDevPage() {
   // used to strand the career with no way to reach the Ballon d'Or / next season.
   const [playedFixture, setPlayedFixture] = useState<Fixture | null>(null);
 
-  const nextFixture = career?.fixtures.find((f) => !f.played) ?? null;
+  // Ordered by week, not by array position — a knockout round earned mid-season
+  // is appended to the fixture list and would otherwise sort to the very end.
+  const nextFixture = career ? nextFixtureFor(career) : null;
   // Every fixture played and the season not yet rolled over. The dashboard has
   // nothing to offer in this state on its own, which is what made a refresh here
   // a dead end.
@@ -94,8 +97,10 @@ export default function StarDevPage() {
   // Who the manager has picked this week, and which dead balls would be yours.
   const selection = career ? selectionFor(career) : null;
   const duties = career && selection ? setPieceDuties(career, selection.status) : null;
+  const myTeam = (f: typeof nextFixture) =>
+    f?.kind === "international" ? nationOf(career!) : career!.player.club;
   const nextMatchLabel = nextFixture
-    ? `Next: ${nextFixture.home ? career!.player.club : nextFixture.opponent} v ${nextFixture.home ? nextFixture.opponent : career!.player.club}`
+    ? `Next: ${nextFixture.home ? myTeam(nextFixture) : nextFixture.opponent} v ${nextFixture.home ? nextFixture.opponent : myTeam(nextFixture)}`
     : "Season complete";
 
   const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[]) => {
@@ -381,8 +386,11 @@ export default function StarDevPage() {
   }
 
   if (phase === "match" && nextFixture) {
-    const opp = career.league.find((t) => t.name === nextFixture.opponent);
-    const oppStrength = opp?.strength ?? 65;
+    // European and international opponents are not in your division, so the
+    // fixture carries their strength.
+    const oppStrength = nextFixture.opponentStrength
+      ?? career.league.find((t) => t.name === nextFixture.opponent)?.strength
+      ?? 65;
     // Your worn boots actually count now: they add to the power/technique the shot
     // physics uses (capped at 100). This affects the SHOT, not the aim arrow — the
     // arrow is a fixed-scale drag indicator and never grows with power.
@@ -417,8 +425,10 @@ export default function StarDevPage() {
     return (
       <PostMatch
         stats={lastMatchStats}
-        homeTeam={playedFixture.home ? career.player.club : playedFixture.opponent}
-        awayTeam={playedFixture.home ? playedFixture.opponent : career.player.club}
+        homeTeam={playedFixture.home ? myTeam(playedFixture) : playedFixture.opponent}
+        awayTeam={playedFixture.home ? playedFixture.opponent : myTeam(playedFixture)}
+        competition={playedFixture.kind && playedFixture.kind !== "league" ? fixtureLabel(playedFixture) : undefined}
+        knockout={career.knockoutMessage}
         onContinue={handlePostMatchContinue}
       />
     );
@@ -473,16 +483,25 @@ export default function StarDevPage() {
 
   // Pre-match confirmation
   if (phase === "pre-match" && nextFixture) {
-    const home = nextFixture.home ? career.player.club : nextFixture.opponent;
-    const away = nextFixture.home ? nextFixture.opponent : career.player.club;
+    const mine = nextFixture.kind === "international" ? nationOf(career) : career.player.club;
+    const home = nextFixture.home ? mine : nextFixture.opponent;
+    const away = nextFixture.home ? nextFixture.opponent : mine;
     return (
       <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-emerald-950 text-white flex items-center justify-center px-3 py-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-4">
-            <div className="inline-block px-4 py-1 rounded-full bg-yellow-500/20 border border-yellow-400/40 text-yellow-300 text-[10px] font-black tracking-widest uppercase">
-              Week {nextFixture.week}
+            <div className={`inline-block px-4 py-1 rounded-full border text-[10px] font-black tracking-widest uppercase ${
+              !nextFixture.kind || nextFixture.kind === "league"
+                ? "bg-yellow-500/20 border-yellow-400/40 text-yellow-300"
+                : nextFixture.kind === "international"
+                  ? "bg-sky-500/20 border-sky-400/40 text-sky-200"
+                  : "bg-violet-500/20 border-violet-400/40 text-violet-200"}`}
+            >
+              Week {nextFixture.week} · {fixtureLabel(nextFixture)}
             </div>
-            <h1 className="mt-2 text-2xl font-black">Match Day</h1>
+            <h1 className="mt-2 text-2xl font-black">
+              {nextFixture.kind && nextFixture.kind !== "league" ? nextFixture.round : "Match Day"}
+            </h1>
           </div>
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 text-center shadow-lg">
             <div className="text-lg font-black text-white">{home}</div>

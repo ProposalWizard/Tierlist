@@ -34,6 +34,23 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "max-power", label: "Powerhouse", description: "Max out Power", check: (c) => c.skills.power >= 100 },
   { id: "max-vision", label: "Playmaker Vision", description: "Max out Vision", check: (c) => c.skills.vision >= 100 },
   { id: "max-fk", label: "Set Piece Specialist", description: "Max out Free Kick", check: (c) => c.skills.freeKick >= 100 },
+  // Cups, Europe and the national team.
+  { id: "cup-winner", label: "Cup Winner", description: "Win the FA Cup", check: (c) => c.trophies.some(t => t.competition === "FA Cup") },
+  { id: "european-nights", label: "European Nights", description: "Play in Europe", check: (c) => !!c.europeanQualification || c.trophies.some(t => t.competition.includes("League") && t.competition !== "Premier League") },
+  { id: "champions-of-europe", label: "Champions of Europe", description: "Win the Champions League", check: (c) => c.trophies.some(t => t.competition === "Champions League") },
+  { id: "first-cap", label: "Full International", description: "Win your first cap", check: (c) => (c.caps ?? 0) >= 1 },
+  { id: "fifty-caps", label: "Half a Century of Caps", description: "Win 50 caps", check: (c) => (c.caps ?? 0) >= 50 },
+  { id: "international-goal", label: "Goal for Your Country", description: "Score for your national side", check: (c) => (c.internationalGoals ?? 0) >= 1 },
+  { id: "world-champion", label: "World Champion", description: "Win the World Cup", check: (c) => c.trophies.some(t => t.competition === "World Cup") },
+  { id: "continental-champion", label: "Continental Champion", description: "Win the European Championship", check: (c) => c.trophies.some(t => t.competition === "European Championship") },
+  { id: "the-treble", label: "The Treble", description: "Win the league, the cup and Europe in one season", check: (c) => {
+    const seasons = Array.from(new Set(c.trophies.map(t => t.season)));
+    return seasons.some(season => {
+      const won = c.trophies.filter(t => t.season === season).map(t => t.competition);
+      return won.includes("Premier League") && won.includes("FA Cup")
+        && (won.includes("Champions League") || won.includes("Europa League"));
+    });
+  } },
 ];
 
 export function checkNewAchievements(career: CareerState): string[] {

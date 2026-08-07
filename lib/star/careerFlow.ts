@@ -4,12 +4,15 @@
 // the next CareerState, never mutating the input's nested objects. The page owns
 // phase routing and toasts; this owns the numbers.
 
-import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats } from "./types";
+import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy } from "./types";
 import {
   buildLeague, buildFixtures, simulateOtherFixtures, updateLeagueWithUserResult, sortLeague, mulberry32,
   simulateFixtureScore,
 } from "./season";
 import { selectionFor, MISSED_WEEK } from "./selection";
+import {
+  seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
+} from "./competitions";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
@@ -27,7 +30,7 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
   const league = buildLeague(clubs, player.club);
   const fixtures = buildFixtures(clubs, player.club);
   const starterBoot: Boot = { ...BOOTS_CATALOGUE[0] };
-  return {
+  const state: CareerState = {
     version: 2,
     player,
     skills: { pace: 40, power: 40, technique: 40, vision: 40, freeKick: 30 },
@@ -63,7 +66,16 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     squad: generateSquad(clubNameSeed(player.club)),
     contractStarMilestones: [],
     contractFormOfferSeason: -1,
+    europeanQualification: null,
+    cups: [],
+    caps: 0,
+    internationalGoals: 0,
+    knockoutMessage: null,
   };
+  const seeded = seedSeasonKnockouts(state);
+  state.cups = seeded.runs;
+  state.fixtures = [...state.fixtures, ...seeded.fixtures];
+  return state;
 }
 
 // Star rating thresholds that trigger an early contract offer.
@@ -129,9 +141,17 @@ export function creditMatchResult(
     ratingCount: base.ratingCount + 1,
   });
 
-  let league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, stats.homeScore, stats.awayScore);
-  const rng = mulberry32(career.season * 1000 + career.week);
-  league = simulateOtherFixtures(league, career.player.club, fixture.opponent, career.week, rng);
+  // Only a league fixture moves the league. A cup tie, a European night and an
+  // international are none of the division's business — running the round for
+  // everybody else after one of those would hand the rest of the league a free
+  // week of points.
+  const kind = fixture.kind ?? "league";
+  let league = career.league;
+  if (kind === "league") {
+    league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, stats.homeScore, stats.awayScore);
+    const rng = mulberry32(career.season * 1000 + career.week);
+    league = simulateOtherFixtures(league, career.player.club, fixture.opponent, career.week, rng);
+  }
 
   const fixtures = career.fixtures.map((f) =>
     f === fixture
@@ -179,12 +199,40 @@ export function creditMatchResult(
     };
   });
 
+  // A knockout tie settles the run: through, out, or a trophy — and winning it
+  // puts the next round on the calendar, which is the only way a knockout can
+  // be built, since who you play next depends on still being in it.
+  let cups: CupRun[] = career.cups ?? [];
+  let extraFixtures: Fixture[] = [];
+  let cupTrophy: Trophy | null = null;
+  let knockoutMessage: string | null = null;
+  if (kind !== "league" && fixture.competition) {
+    const idx = cups.findIndex(r => r.competition === fixture.competition && !r.eliminated);
+    if (idx >= 0) {
+      const out = resolveKnockout(career, cups[idx], fixture, stats.homeScore, stats.awayScore);
+      cups = cups.map((r, i) => (i === idx ? out.run : r));
+      if (out.nextFixture) extraFixtures = [out.nextFixture];
+      cupTrophy = out.trophy;
+      knockoutMessage = out.message;
+    }
+  }
+
+  // International football is its own record. Caps and international goals do
+  // not belong in a club season's numbers, and a club season's numbers are what
+  // the Ballon d'Or and the club achievements read.
+  const isInternational = kind === "international";
+
   const next: CareerState = {
     ...career,
-    seasonStats: accrue(career.seasonStats),
-    careerStats: accrue(career.careerStats),
+    seasonStats: isInternational ? career.seasonStats : accrue(career.seasonStats),
+    careerStats: isInternational ? career.careerStats : accrue(career.careerStats),
+    caps: (career.caps ?? 0) + (isInternational ? 1 : 0),
+    internationalGoals: (career.internationalGoals ?? 0) + (isInternational ? stats.goals : 0),
+    cups,
+    trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
+    knockoutMessage,
     league,
-    fixtures,
+    fixtures: [...fixtures, ...extraFixtures],
     money: career.money + stats.totalCash,
     // Twenty minutes off the bench does not take as much out of you as ninety,
     // and does not sharpen you as much either.
@@ -247,6 +295,11 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     freeKick: career.skills.freeKick,
   };
 
+  // Europe is earned by where you finished, and played the FOLLOWING season —
+  // so a good year is felt the year after it, which is what makes the table
+  // matter beyond the title.
+  const qualification = qualificationFor(leaguePosition(career), career.league.length);
+
   const next: CareerState = {
     ...career,
     player: { ...career.player, age: newAge },
@@ -262,7 +315,16 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     contract: { ...career.contract, seasonsRemaining: career.contract.seasonsRemaining - 1 },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
     squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0 })),
+    europeanQualification: qualification,
+    knockoutMessage: null,
   };
+
+  // Seeded after the rest of the state is in place, because what you are in
+  // depends on the season number, the qualification just computed and whether
+  // the national side is picking you.
+  const seeded = seedSeasonKnockouts(next);
+  next.cups = seeded.runs;
+  next.fixtures = [...next.fixtures, ...seeded.fixtures];
 
   return applyAchievements(next);
 }
@@ -303,8 +365,29 @@ export function simulateMissedFixture(
   const userScore = fixture.home ? score.home : score.away;
   const oppScore = fixture.home ? score.away : score.home;
 
-  let league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, userScore, oppScore);
-  league = simulateOtherFixtures(league, career.player.club, fixture.opponent, career.week, rng);
+  const kind = fixture.kind ?? "league";
+  let league = career.league;
+  if (kind === "league") {
+    league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, userScore, oppScore);
+    league = simulateOtherFixtures(league, career.player.club, fixture.opponent, career.week, rng);
+  }
+
+  // A cup tie you were left out of still happens, and your club still goes
+  // through or out of it. Being dropped does not freeze the season.
+  let cups: CupRun[] = career.cups ?? [];
+  let extraFixtures: Fixture[] = [];
+  let cupTrophy: Trophy | null = null;
+  let knockoutMessage: string | null = null;
+  if (kind !== "league" && fixture.competition) {
+    const idx = cups.findIndex(r => r.competition === fixture.competition && !r.eliminated);
+    if (idx >= 0) {
+      const out = resolveKnockout(career, cups[idx], fixture, userScore, oppScore);
+      cups = cups.map((r, i) => (i === idx ? out.run : r));
+      if (out.nextFixture) extraFixtures = [out.nextFixture];
+      cupTrophy = out.trophy;
+      knockoutMessage = out.message;
+    }
+  }
 
   const fixtures = career.fixtures.map((f) =>
     f === fixture
@@ -322,7 +405,10 @@ export function simulateMissedFixture(
   const next: CareerState = {
     ...career,
     league,
-    fixtures,
+    fixtures: [...fixtures, ...extraFixtures],
+    cups,
+    trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
+    knockoutMessage,
     money: career.money + career.contract.wage,
     energy: Math.min(100, career.energy + MISSED_WEEK.energy),
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),

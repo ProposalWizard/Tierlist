@@ -6,16 +6,31 @@ interface Props {
   homeTeam: string;
   awayTeam: string;
   onContinue: () => void;
+  /** The competition, when it was not a league game. */
+  competition?: string;
+  /** What the tie did to the run: through, out, or a trophy. */
+  knockout?: string | null;
 }
 
-export default function PostMatch({ stats, homeTeam, awayTeam, onContinue }: Props) {
+export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex items-center justify-center px-3 py-4">
       <div className="w-full max-w-sm">
         <div className="bg-gray-700 rounded-t-xl border border-gray-600 py-2 px-3 text-center border-b-0">
-          <div className="text-[10px] uppercase tracking-widest font-black text-gray-400">Full Time</div>
+          <div className="text-[10px] uppercase tracking-widest font-black text-gray-400">
+            {competition ? competition : "Full Time"}
+          </div>
           <div className="text-lg font-black text-white mt-0.5 truncate">{homeTeam} {stats.homeScore} — {stats.awayScore} {awayTeam}</div>
         </div>
+        {knockout && (
+          <div className={`border-x border-gray-600 py-2.5 px-3 text-center text-sm font-black ${
+            knockout.startsWith("🏆") ? "bg-amber-400 text-gray-950"
+              : knockout.startsWith("Into") || knockout.startsWith("Through") ? "bg-emerald-600 text-white"
+                : "bg-red-700 text-white"}`}
+          >
+            {knockout}
+          </div>
+        )}
         <div className="bg-gray-800 border-x border-gray-600 py-3 text-center">
           <div className="text-xl font-black text-white uppercase tracking-wider">Match Stats</div>
         </div>
