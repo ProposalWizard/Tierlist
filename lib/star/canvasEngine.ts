@@ -1094,6 +1094,48 @@ export function applyFirstTouch(scenario: Scenario, technique: number, rng: () =
   return lost;
 }
 
+/**
+ * ATTRIBUTES AS EXPANDERS
+ *
+ * Specification §13.1: "Attributes should increase the player's football
+ * vocabulary, not simply increase their success rate… If upgrading an attribute
+ * only increases hidden percentages without changing player behaviour, the
+ * system has failed its design goal."
+ *
+ * And §13.7 on Technique specifically: "Rather than increasing generic accuracy,
+ * Technique expands the player's available shot and pass types — curled
+ * finishes, chipped passes, lofted balls, dipping strikes."
+ *
+ * Ours did precisely the named failure case: technique's main job was shrinking
+ * the launch-angle error. It now decides how much of the ball you can actually
+ * USE. Strike the extreme edge with poor technique and you get a fraction of the
+ * bend a better player gets from the identical contact — the shot you are trying
+ * to play simply is not in your range yet. A little accuracy coupling remains,
+ * because a beginner does miskick, but it is no longer the point of the stat.
+ */
+export function curlRange(technique: number): number {
+  return 0.42 + clamp(technique, 0, 100) / 100 * 0.58;
+}
+
+/** The same, for how much lift and dip you can put on it. */
+export function loftRange(technique: number): number {
+  return 0.55 + clamp(technique, 0, 100) / 100 * 0.45;
+}
+
+/**
+ * How long a drag buys full power.
+ *
+ * Power's job used to be entirely inside the launch speed. It now also makes the
+ * arrow more generous: a stronger player reaches everything he has with a
+ * shorter pull, so the same flick of the thumb is worth more of a shot. This is
+ * the player's own description of what the attribute should feel like, and it is
+ * an expander rather than a multiplier — a weak player can still hit it as hard
+ * as he is able, he just has to ask for it.
+ */
+export function dragForFullPower(power: number): number {
+  return 0.42 - clamp(power, 0, 100) / 100 * 0.16;
+}
+
 // Launch the ball from a slingshot aim + a contact point.
 export function launch(
   scenario: Scenario,
@@ -1103,11 +1145,16 @@ export function launch(
   skills: KickSkills,
   rng: () => number,
 ): Ball {
-  const loft = clamp((contact.cy + 1) / 2, 0, 1); // 0 = struck top (driven), 1 = struck bottom (lofted)
   const tech = skills.technique;
+  // How much of the ball this player can actually use. Struck at the very
+  // bottom, a technique-20 player gets a little over half the lift a
+  // technique-100 player gets from the same contact.
+  const usableCy = contact.cy * loftRange(tech);
+  const loft = clamp((usableCy + 1) / 2, 0, 1); // 0 = struck top (driven), 1 = struck bottom (lofted)
 
-  // Accuracy: technique tightens the launch angle. Power adds wobble.
-  const sigmaDeg = (1 - tech / 100) * 4.5 + power * (1 - tech / 100) * 3;
+  // Accuracy: a little, so a beginner does miskick — but technique is no longer
+  // primarily an accuracy stat. See curlRange/loftRange above and §13.7.
+  const sigmaDeg = (1 - tech / 100) * 2.2 + power * (1 - tech / 100) * 1.6;
   const noise = gaussian(rng) * sigmaDeg;
   const d = rotateDeg(normalize(dir), noise);
 
@@ -1117,12 +1164,14 @@ export function launch(
   const Sh = power * (18 + skills.power * 0.18) * (1 - loft * 0.25);
   // Vertical launch speed from how low on the ball it was struck.
   const vz = loft * power * (7.5 + skills.power * 0.035);
-  // Curl from striking the side of the ball, magnified by technique.
-  const spin = contact.cx * (0.65 + tech / 100 * 1.2) * power;
+  // Curl from striking the side of the ball. Technique decides how much of that
+  // side is available to you at all, which is what makes a curled finish
+  // something you unlock rather than something you are simply better at.
+  const spin = contact.cx * curlRange(tech) * 1.85 * power;
   // Struck above the middle drives it on with topspin; struck underneath puts
   // backspin on it. Same contact point the loft already reads, used for how it
   // behaves off the turf.
-  const topspin = clamp(-contact.cy, -1, 1) * (0.5 + tech / 200);
+  const topspin = clamp(-usableCy, -1, 1) * (0.5 + tech / 200);
 
   // Keeper commits to the predicted crossing point.
   // No prediction here either — see stepKeeper. The keeper never learns the

@@ -58,6 +58,8 @@ export interface HiddenMatchInputs {
   energy: number;
   /** 0-100 average of the player's own skills. Better players see more ball. */
   playerSkill: number;
+  /** 0-100. A quicker player is handed the ball to run at them more often. */
+  pace?: number;
   /**
    * MATCH CONTEXT (specification §2.9).
    *
@@ -88,6 +90,13 @@ export interface ScenarioRequest {
   kinds: ScenarioKind[];
   /** Shown to the player so a chance never appears from nowhere. */
   reason: string;
+  /**
+   * Carry it yourself instead. A run at the defence rather than a ball to
+   * strike — see lib/star/dribble.ts. Kept off ScenarioKind deliberately: none
+   * of the thirteen scenario builders can produce one, and putting it in that
+   * union would mean every one of them had to pretend it could.
+   */
+  dribble?: boolean;
 }
 
 /**
@@ -147,6 +156,8 @@ const CHANCE_DEEP = 0.26;   // in the final third
 const CHANCE_BOX = 0.55;    // in the penalty area
 /** Minutes ignored by the match before you go looking for the ball yourself. */
 const STARVED_MIN = 20;
+/** How often a chance in open play is a run rather than a ball to strike. */
+const DRIBBLE_CHANCE = 0.26;
 /** How often a chance ends in the net when the player is not the one taking it. */
 const CONVERT_DEEP = 0.09;
 const CONVERT_BOX = 0.16;
@@ -288,7 +299,7 @@ export function tick(
 
         if (rng() < involvement) {
           state.sinceInvolved = 0;
-          return { events, request: buildRequest(state, rng) };
+          return { events, request: buildRequest(state, rng, inputs) };
         }
 
         // It fell to someone else. Reported either way, so the match reads as a
@@ -353,7 +364,23 @@ function endOfMove(state: HiddenMatchState, scored: boolean, attacker: Side) {
   if (scored) state.zone = "middle";
 }
 
-function buildRequest(state: HiddenMatchState, rng: () => number): ScenarioRequest {
+function buildRequest(state: HiddenMatchState, rng: () => number, inputs: HiddenMatchInputs): ScenarioRequest {
+  // Sometimes the ball simply arrives at your feet with grass in front of you.
+  // Only from the middle and the final third, because a run at goal has to have
+  // somewhere to run TO, and likelier for a quick player — the space is the
+  // reason the chance exists.
+  if (state.zone === "middle" || state.zone === "attacking") {
+    const quick = Math.max(0, Math.min(1, (inputs.pace ?? 50) / 100));
+    if (rng() < DRIBBLE_CHANCE * (0.7 + quick * 0.6)) {
+      return {
+        zone: state.zone,
+        kinds: ["one_on_one"],
+        dribble: true,
+        reason: "You pick it up with space to run into",
+      };
+    }
+  }
+
   // Dead balls come from the match too. They used to be a weight in a table, so
   // a corner could arrive out of open play with nothing behind it; now the move
   // has to reach a dangerous area first and then break down.

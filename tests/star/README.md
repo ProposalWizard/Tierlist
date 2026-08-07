@@ -11,6 +11,7 @@
     npx tsx tests/star/week.mts
     npx tsx tests/star/legacy.mts
     npx tsx tests/star/context.mts
+    npx tsx tests/star/attributes.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -340,3 +341,44 @@ verdict by exactly zero. At 0.6 the range is actually reachable. The test that
 caught it now builds a genuine sixth-place finish with explicit points, because
 an earlier version left every club on zero and the sort fell back to array
 order, which measured nothing at all.
+
+---
+
+**attributes** — the dribble (Chapter 6) and attributes as expanders (§13).
+
+Chapter 6 of the specification is a whole chapter on dribbling and the game had
+none of it: you were a fixed point who struck the ball and never moved. The run
+is a carry from deep to the edge of their box — flick to set a direction, keep
+going in it until you flick again, three or four defenders scattered across the
+corridor who are not watching you until you come near. Getting through is not
+the end of the move; §6.1 is explicit that "dribbling is rewarded when it
+creates a better football decision", so it chains straight into a chance built
+from where you got to.
+
+**The measurement that changed the design: chasers were faster than a slow
+player in a straight line.** At 5.0 + strength they outran a pace-20 player
+whatever line he picked, and 500 runs at pace 20 produced not one that got
+through. Pace below a threshold was not "slow", it was locked out. Chasers now
+sit in the same speed band as a middling player, so a defender is beaten by the
+line you pick and pace decides how much room that line needs:
+
+    pace 20   27% through
+    pace 60   74%
+    pace 90   90%
+
+§13.1: "Attributes should increase the player's football vocabulary, not simply
+increase their success rate. If upgrading an attribute only increases hidden
+percentages without changing player behaviour, the system has failed its design
+goal." Ours did exactly the named failure case, and the file now pins the fix:
+
+- **Technique decides how much of the ball you can use**, not how straight you
+  hit it. The same contact on the very edge bends 2.2× as much for a technique-95
+  player as for a technique-20 one, and lifts further. The accuracy coupling is
+  halved rather than removed, because a beginner does miskick. A poor technician
+  must still be able to finish a one-on-one — asserted directly, because an
+  "expander" that gates you out of the game is a difficulty multiplier wearing a
+  hat.
+- **Power makes the arrow more generous**: full power needs a 42% drag at power
+  0 and a 26% drag at power 100, so the same flick is worth more of a shot.
+- **Pace was read by no code in the match at all.** It is now the whole point of
+  the run.

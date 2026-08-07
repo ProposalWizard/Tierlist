@@ -5,7 +5,7 @@ import {
   launch, stepBall, stepBallInNet,
   stepKeeper, stepFollower, stepRunner, stepDefenders, stepSupport, initDefenders,
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, visibleOptions,
-  OUTCOME_TEXT, clamp,
+  OUTCOME_TEXT, clamp, dragForFullPower,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
 import {
@@ -13,6 +13,9 @@ import {
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
+import {
+  newDribble, stepDribble, flick, dribbleProgress, type DribbleState,
+} from "@/lib/star/dribble";
 import {
   PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
@@ -32,7 +35,7 @@ import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/typ
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 
-type Phase = "aim" | "contact" | "flight" | "result" | "sim" | "postmatch";
+type Phase = "aim" | "contact" | "flight" | "result" | "sim" | "postmatch" | "dribble";
 
 // Match runs from minute 0 to 90. Chances are distributed organically — no
 // fixed session length. The number of chances depends on player/team quality.
@@ -209,6 +212,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const dutiesRef = useRef(duties);
   dutiesRef.current = duties;
 
+  // ── The run ──
+  // A scenario where you carry it rather than strike it. Lives outside the
+  // Scenario machinery entirely: no ball flight, no keeper, no builders.
+  const dribbleRef = useRef<DribbleState | null>(null);
+  const flickStartRef = useRef<{ x: number; y: number } | null>(null);
+
   /** Is this dead ball yours? With no duties supplied (the sandbox), everything is. */
   const mayTake = (kind: ScenarioKind) => {
     const d = dutiesRef.current;
@@ -252,6 +261,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       energy: energyRef.current,
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
       home: fixture?.home,
+      pace: careerRef.current?.skills.pace,
     };
   };
 
@@ -507,10 +517,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // fixed metre count meant that on a tightly-framed chance the longest drag the
   // screen allowed was only a fraction of full power — which is why shots
   // sometimes travelled a fifth of the way and rolled to a stop.
+  // Power now also shortens the pull: a stronger player reaches everything he
+  // has with less drag, so the same flick is worth more of a shot. See
+  // dragForFullPower — the attribute expands what a gesture buys rather than
+  // silently multiplying the result.
   const powerFromDrag = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
     const vp = viewportRef.current;
-    const full = (vp.y2 - vp.y1) * 0.30;
+    const full = (vp.y2 - vp.y1) * dragForFullPower(tiredSkills().power);
     return clamp(Math.hypot(drag.x - ball.x, drag.y - ball.y) / full, 0, 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- Render one frame ---
@@ -831,6 +846,67 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
       });
+    }
+
+    // ── The run ──
+    // Drawn instead of the scenario: you, the men chasing you, the line you are
+    // trying to reach and the corridor you must stay inside. Everything here is
+    // read off the DribbleState — the renderer decides nothing.
+    const dr = dribbleRef.current;
+    if (phaseRef.current === "dribble" && dr) {
+      // The line to reach, and the touchlines of the run.
+      ctx.setLineDash([unit * 0.9, unit * 0.7]);
+      ctx.lineWidth = Math.max(2, unit * 0.22);
+      ctx.strokeStyle = "rgba(251,191,36,0.9)";
+      const a = P(dr.minX, dr.targetY), b = P(dr.maxX, dr.targetY);
+      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth = Math.max(1, unit * 0.1);
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      for (const x of [dr.minX, dr.maxX]) {
+        const t1 = P(x, dr.startY + 6), t2 = P(x, dr.targetY);
+        ctx.beginPath(); ctx.moveTo(t1.px, t1.py); ctx.lineTo(t2.px, t2.py); ctx.stroke();
+      }
+
+      // Chasers. A man who has not seen you yet is drawn dimmer, so "he is
+      // awake now" is information you get before it costs you the ball.
+      dr.chasers.forEach((c, i) => {
+        ctx.globalAlpha = c.awake ? 1 : 0.55;
+        footballer(c.x, c.y, R, C.opp, C.oppRim, {
+          pose: poseFor(`chase${i}`, c.x, c.y),
+          phase: runPhase(c.x),
+        });
+        ctx.globalAlpha = 1;
+      });
+
+      // You, with the ball just ahead of your feet, and the line you are on.
+      const bx = dr.pos.x + dr.heading.x * 0.9;
+      const by = dr.pos.y + dr.heading.y * 0.9;
+      const tip = P(dr.pos.x + dr.heading.x * 4.5, dr.pos.y + dr.heading.y * 4.5);
+      const base = P(dr.pos.x, dr.pos.y);
+      ctx.strokeStyle = "rgba(52,211,153,0.55)";
+      ctx.lineWidth = Math.max(2, unit * 0.16);
+      ctx.beginPath(); ctx.moveTo(base.px, base.py); ctx.lineTo(tip.px, tip.py); ctx.stroke();
+
+      footballer(dr.pos.x, dr.pos.y, R, C.you, C.youRim, {
+        pose: "run",
+        phase: runPhase(dr.pos.x),
+        label: "YOU",
+        labelColor: "#fff",
+      });
+      const bp = toPx(bx, by);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(bp.px, bp.py, Math.max(2.5, unit * 0.34 * bp.scale), 0, Math.PI * 2);
+      ctx.fill();
+
+      // How far through the run you are.
+      const prog = dribbleProgress(dr);
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(W * 0.08, H * 0.045, W * 0.84, H * 0.014);
+      ctx.fillStyle = prog > 0.75 ? "#fbbf24" : "#34d399";
+      ctx.fillRect(W * 0.08, H * 0.045, W * 0.84 * prog, H * 0.014);
+      return;
     }
 
     // Decorative team-mates (the crosser on a volley/header)
@@ -1211,6 +1287,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       lastTsRef.current = ts;
       dt = Math.min(dt, 0.05); // clamp big frame gaps
 
+      if (phaseRef.current === "dribble" && dribbleRef.current) {
+        // No React state per frame: the render loop already runs every frame and
+        // reads the ref directly, so a state update here would re-render the
+        // whole component sixty times a second for nothing.
+        const out = stepDribble(dribbleRef.current, dt);
+        if (out !== "running") finishDribble(out);
+      }
+
       // ── The world runs while you AIM ──
       // It used to be frozen until you struck the ball, so a scenario had no
       // time pressure at all: defenders were static dots and you could
@@ -1457,6 +1541,42 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     }
   };
 
+  /**
+   * The run is over.
+   *
+   * Getting through is NOT the end of the move — §6.1: "dribbling is rewarded
+   * when it creates a better football decision". So it chains straight into a
+   * chance built from where you got to, using the same machinery a completed
+   * pass uses. Losing it is a turnover like any other.
+   */
+  const finishDribble = (out: "through" | "lost" | "out") => {
+    const s = dribbleRef.current;
+    dribbleRef.current = null;
+    attemptsRef.current += 1;
+
+    if (out === "through" && s) {
+      pushLine("You are through — and the chance is on.");
+      showAction("BEAT HIM");
+      chainRef.current = { pos: { x: s.pos.x, y: s.pos.y }, depth: 0 };
+      if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
+      window.setTimeout(() => loadScenario(true), 1200);
+      return;
+    }
+
+    pushLine(out === "lost" ? "Taken off you." : "You run it out of play.");
+    setOutcome("tackled");
+    setPhase("result");
+    if (matchModeRef.current) resolveScenario(matchStateRef.current, "lost");
+    const t = tallyRef.current;
+    t.chances += 1;
+    setStats({ ...t });
+    if (matchModeRef.current) {
+      window.setTimeout(() => startSimulation(), 1600);
+    } else {
+      window.setTimeout(() => loadScenario(false), 1600);
+    }
+  };
+
   // Run the match on around you until it needs you again.
   //
   // This used to be a countdown: an interval computed from your skill decided
@@ -1619,6 +1739,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const chain = chainRef.current;
     chainRef.current = null;
 
+    // A run at the defence rather than a ball to strike.
+    if (!attacking && request?.dribble) {
+      dribbleRef.current = newDribble({
+        pace: careerRef.current?.skills.pace ?? 50,
+        oppStrength: oppStrengthRef.current,
+        chasers: 3 + (rng() < 0.35 ? 1 : 0),
+        rng,
+      });
+      setAim(null);
+      setOutcome(null);
+      dragRef.current = null;
+      draggingRef.current = false;
+      setPhase("dribble");
+      pushLine(request.reason);
+      pushLine("Flick to run. Get to the edge of their box.");
+      playWhistle();
+      return;
+    }
+
     if (chain) {
       // Built from where the pass actually arrived, so playing it into the
       // corner gives you a cutback and finding someone central gives you a shot.
@@ -1674,6 +1813,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setEnergy(career?.energy ?? 85);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
     pendingRequestRef.current = null;
+    dribbleRef.current = null;
+    flickStartRef.current = null;
     hookedRef.current = null;
     hookedAtRef.current = null;
     chainRef.current = null;
@@ -1689,6 +1830,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Pointer (slingshot) ---
   const onPointerDown = (e: React.PointerEvent) => {
     primeMatchSound();
+    if (phaseRef.current === "dribble") {
+      flickStartRef.current = pitchFromPointer(e.clientX, e.clientY);
+      try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
     if (phaseRef.current !== "aim") return;
     const p = pitchFromPointer(e.clientX, e.clientY);
     const b = scenarioRef.current.ball;
@@ -1701,10 +1847,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    if (phaseRef.current === "dribble") return;
     if (!draggingRef.current) return;
     dragRef.current = pitchFromPointer(e.clientX, e.clientY);
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    // A flick is a direction and nothing else. Short taps are ignored so a
+    // mis-touch cannot send the run sideways.
+    if (phaseRef.current === "dribble") {
+      const from = flickStartRef.current;
+      flickStartRef.current = null;
+      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      const d = dribbleRef.current;
+      if (!from || !d) return;
+      const to = pitchFromPointer(e.clientX, e.clientY);
+      const dx = to.x - from.x, dy = to.y - from.y;
+      if (Math.hypot(dx, dy) < 1.2) return;
+      flick(d, dx, dy);
+      return;
+    }
     if (!draggingRef.current) return;
     draggingRef.current = false;
     try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
