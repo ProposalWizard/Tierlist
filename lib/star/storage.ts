@@ -1,4 +1,6 @@
 import type { CareerState, StarPhase } from "./types";
+import { makeManager } from "./manager";
+import { assignSquadNumber } from "./recognition";
 
 const KEY = "star-career-v2";
 const OLD_KEY = "star-career-v1";
@@ -59,10 +61,31 @@ export function loadCareer(): CareerState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CareerState;
     if (parsed.version !== 2) return null;
-    return parsed;
+    return backfill(parsed);
   } catch {
     return null;
   }
+}
+
+/**
+ * Fill in anything a career saved by an older version has never heard of.
+ *
+ * Almost every field added since is optional and reads sensibly when absent —
+ * but two do not. A career with no `manager` can never have one, because a
+ * manager is only ever replaced by SACKING the previous one; and a career with
+ * no `squadNumber` is only ever given one on signing for somebody. Both would
+ * stay invisible for the rest of that save.
+ *
+ * Everything else is left alone deliberately: cups and European qualification
+ * fill themselves in at the next season rollover, which is when they would
+ * naturally arrive anyway.
+ */
+function backfill(c: CareerState): CareerState {
+  const out = { ...c };
+  if (!out.manager) out.manager = makeManager(out, out.player.club, out.season);
+  if (out.squadNumber === undefined) out.squadNumber = assignSquadNumber(out, out.player.club);
+  if (out.clubAppearances === undefined) out.clubAppearances = out.careerStats.appearances;
+  return out;
 }
 
 export function clearCareer() {
