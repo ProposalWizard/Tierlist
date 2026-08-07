@@ -49,6 +49,12 @@ export interface Ball {
    * into a completed pass.
    */
   shot?: boolean;
+  /**
+   * Who the ball belongs to right now. "none" is a genuinely loose ball — the
+   * only state in which it can be won by either side, which is what makes a
+   * deflection or a parry a 50-50 rather than a lull.
+   */
+  owner?: "you" | "mate" | "opponent" | "none";
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -990,6 +996,67 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // patrolling; whether he is in the way is settled when the ball arrives.
 }
 
+// ── AERIAL DUEL ─────────────────────────────────────────────────────────────
+// A header scenario has always placed a marker goal-side of you, and he did
+// nothing: you struck the ball as though you were alone. He now challenges. He
+// cannot be aimed away from — the ball is in the air and you are both jumping —
+// so this is the one situation the player does not control, which is exactly
+// what a header is.
+const AERIAL_R = 2.8;          // metres — inside this he is up with you. Covers the
+                               // whole range the marker is actually placed at; at
+                               // 2.2 most headers were not contested at all.
+const AERIAL_WIN_BASE = 0.3;   // his chance of winning it cleanly, at parity
+
+function applyAerialContest(ball: Ball, scenario: Scenario, skills: KickSkills, rng: () => number) {
+  if (scenario.kind !== "header") return;
+  let nearest = Infinity;
+  for (const d of scenario.defenders) {
+    nearest = Math.min(nearest, Math.hypot(d.x - scenario.ball.x, d.y - scenario.ball.y));
+  }
+  if (nearest > AERIAL_R) return;
+
+  const pressure = clamp(1 - nearest / AERIAL_R, 0, 1);
+  const strength = clamp(skills.power / 100, 0, 1);
+  const winProb = clamp(AERIAL_WIN_BASE + pressure * 0.42 - strength * 0.24, 0.05, 0.75);
+
+  if (rng() < winProb) {
+    // He gets there first and heads it clear — away from goal, up in the air,
+    // and loose, so whoever reacts to the second ball has it.
+    const away = normalize({ x: scenario.ball.x - CX, y: Math.max(scenario.ball.y, 1) });
+    const sp = 9 + rng() * 7;
+    ball.vel = { x: away.x * sp + (rng() - 0.5) * 4, y: away.y * sp };
+    ball.vz = 3 + rng() * 2.5;
+    ball.spin = 0;
+    ball.loose = true;
+    ball.owner = "none";
+    return;
+  }
+
+  // You win it, but not cleanly: he is all over you.
+  const off = rotateDeg({ x: ball.vel.x, y: ball.vel.y }, gaussian(rng) * pressure * 7);
+  const damp = 1 - pressure * 0.22;
+  ball.vel = { x: off.x * damp, y: off.y * damp };
+  ball.vz *= damp;
+}
+
+/**
+ * The touch you take when the ball comes back to you.
+ *
+ * Only ever applied to a chained scenario, because that is the only time you
+ * are receiving rather than already in possession. It is not a dice roll: the
+ * defence simply gets the time your touch cost them, using the same closing
+ * behaviour it uses everywhere else. A poor touch means they are on you when
+ * you look up.
+ *
+ * Returns the seconds it cost, so the UI can say so.
+ */
+export function applyFirstTouch(scenario: Scenario, technique: number, rng: () => number): number {
+  const lost = clamp(0.8 - clamp(technique, 0, 100) / 100 * 0.55, 0.12, 0.85) * (0.85 + rng() * 0.3);
+  const step = 1 / 60;
+  for (let t = 0; t < lost; t += step) stepDefenders(scenario, step, scenario.player, false);
+  return lost;
+}
+
 // Launch the ball from a slingshot aim + a contact point.
 export function launch(
   scenario: Scenario,
@@ -1038,8 +1105,11 @@ export function launch(
     event: null,
     inNet: false,
   };
+  // A marker challenging you in the air gets his say before anything else does.
+  applyAerialContest(ball, scenario, skills, rng);
   // Decided here, once, from what you actually did with it — see isDriveAtGoal.
   ball.shot = isDriveAtGoal(ball, scenario);
+  ball.owner = ball.loose ? "none" : "you";
   judgeOffside(scenario);
   return ball;
 }
@@ -1146,6 +1216,8 @@ const DEF_CONTAIN_R = 1.75;    // metres he stands off at. Patience — he conta
                                // pressure feel like football instead of tag.
 const DEF_TACKLE_S = 1.15;     // seconds contained before he commits to the tackle
 const DEF_COVER_SPEED = 3.4;   // m/s sliding across to block a passing lane
+const LOOSE_CONTEST_SPEED = 7;  // m/s — below this a loose ball can be won by hand
+const LOOSE_WIN_R = 1.1;        // metres — how close is close enough to take it
 const DEF_INTERCEPT_SPEED = 6.4;// m/s going for a ball he has read. Faster than a
                                // press (that is a jog into position) but short of
                                // a forward's sprint — he is reacting, not running
@@ -1889,6 +1961,34 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < DEF_BLOCK_R) {
         deflectOffDefender(ball, d, rng);
         break;
+      }
+    }
+  }
+
+  // --- The 50-50 on a loose ball ---
+  //
+  // A deflection, a parry or a header lost in the air used to just roll until it
+  // stopped and the chance fizzled out as "scrambled clear". A loose ball
+  // belongs to nobody, so it is now genuinely contested: whoever is closest when
+  // it slows down has it. Your poacher already races for these in the box; this
+  // is the other half of that race, and it is why leaving a rebound rolling in
+  // front of a defender costs you the ball.
+  if (ball.loose && !ball.inNet && ball.contactCd <= 0 && ball.z < 1.4 && speed < LOOSE_CONTEST_SPEED && ball.pos.y > 0.2) {
+    let dDef = Infinity;
+    for (const d of scenario.defenders) {
+      dDef = Math.min(dDef, Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y));
+    }
+    if (dDef < LOOSE_WIN_R) {
+      let dAtk = Math.hypot(scenario.player.x - ball.pos.x, scenario.player.y - ball.pos.y);
+      if (scenario.follower.active && !scenario.follower.shot) {
+        dAtk = Math.min(dAtk, Math.hypot(scenario.follower.x - ball.pos.x, scenario.follower.y - ball.pos.y));
+      }
+      for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
+        dAtk = Math.min(dAtk, Math.hypot(r.pos.x - ball.pos.x, r.pos.y - ball.pos.y));
+      }
+      if (dDef < dAtk) {
+        ball.owner = "opponent";
+        return "tackled";
       }
     }
   }

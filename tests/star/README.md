@@ -3,6 +3,7 @@
     npx tsx tests/star/hiddenMatch.mts
     npx tsx tests/star/support.mts
     npx tsx tests/star/defending.mts
+    npx tsx tests/star/contest.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -92,3 +93,37 @@ defenders, not a back four, so `min(defender.y)` is a meaningful line only in
 the scenario built around one — applying it everywhere flagged two thirds of
 ordinary midfield passes offside, which is exactly the kind of thing that looks
 fine in code and is obvious in a distribution.
+
+---
+
+**contest** — the ball as something both sides can win: ownership, the 50-50 on
+a loose ball, the aerial duel, and the touch you take when it comes back to you.
+
+What this replaced: a deflection or a parry rolled until it stopped and the
+chance fizzled out as "scrambled clear" with nobody involved; a header was
+struck as though the man marking you were not there; and a chained scenario
+started with the ball glued to your foot however poor your technique.
+
+Tuned by measurement:
+
+- **The aerial contest radius was too small to matter.** At 2.2 m most headers
+  were not contested at all — the marker is placed 1.5 to 2.6 m away — so a
+  powerful player lost 1.6% of duels. At 2.8 m the duel is real at both ends of
+  the scale.
+- **The 50-50 has to be a cost, not the usual outcome.** Losing the second ball
+  runs at 1-2% of chances, which is enough that leaving a rebound rolling in
+  front of a defender is a mistake and not so much that a deflection ends the
+  move.
+- **First touch is not a dice roll.** The defence simply gets the time your
+  touch cost them, using the same closing behaviour it uses everywhere else:
+  technique 20 leaves you 2.2 m of room, technique 95 leaves you 3.1 m.
+
+Outcome distributions the whole engine currently produces, from a full-power
+strike straight at the middle of the goal (800 runs each). These are the numbers
+to compare against after any change to physics, the keeper or the defence:
+
+    one_on_one    goal 53%   saved 36%   lost 1%
+    tight_angle   goal 35%   saved 51%   lost 2%
+    header        goal 27%   saved 34%   lost 1%
+    volley        goal 32%   saved 38%   lost 2%
+    long_range    goal 16%   saved 32%   lost 1%

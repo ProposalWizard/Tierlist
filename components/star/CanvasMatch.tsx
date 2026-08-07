@@ -4,7 +4,7 @@ import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet,
   stepKeeper, stepFollower, stepRunner, stepDefenders, stepSupport, initDefenders,
-  chainKindFor, chainReturnChance, CHAIN_MAX,
+  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch,
   OUTCOME_TEXT, clamp,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
@@ -1477,6 +1477,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
 
+    // You are RECEIVING this one, not starting with it at your feet, so the
+    // defence gets the time your first touch cost them. A heavy touch and they
+    // are on you before you look up; a good one and you have a moment.
+    let heavyTouch = 0;
+    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, skills.technique, rng);
+
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
     ballRef.current = null;
@@ -1492,6 +1498,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Say where the chance came from before describing it, so it reads as the
     // end of a move rather than as a situation that appeared from nowhere.
     if (request) pushLine(request.reason);
+    if (heavyTouch > 0.55) pushLine("Heavy touch — they are on you.");
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
     playWhistle();
   };
