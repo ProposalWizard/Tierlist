@@ -229,6 +229,10 @@ export interface CareerState {
   knockoutMessage?: string | null;
   /** Things you can still do before the next match. Refills every week. */
   weekActions?: number;
+  /** Every move you made, for the legacy screen. */
+  transfers?: { season: number; from: string; to: string; fee: number }[];
+  /** Hung up. The career is over and only the legacy screen remains. */
+  retired?: boolean;
 }
 
 export type StarPhase =
@@ -255,4 +259,6 @@ export type StarPhase =
   | "contract-renewal"
   | "dilemma"
   | "relationship-game"
-  | "season-transfer";
+  | "season-transfer"
+  | "retirement"
+  | "legacy";

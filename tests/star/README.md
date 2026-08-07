@@ -9,6 +9,7 @@
     npx tsx tests/star/selection.mts
     npx tsx tests/star/competitions.mts
     npx tsx tests/star/week.mts
+    npx tsx tests/star/legacy.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -274,3 +275,35 @@ exactly 5.7, so a threshold of 5.6 was unreachable. It is 6.05, and the file
 asserts the floor of the formula directly so the two cannot drift apart again.
 The manager also reads the same `liveRating` mid-match that the scoresheet reads
 at the end, rather than a second formula that could disagree with it.
+
+---
+
+**legacy** — transfers, and the end of a career.
+
+A `"season-transfer"` phase had been sitting unused in `StarPhase` since the
+game was written, and the only thing in the codebase that mentioned moving club
+was a dilemma where your agent asks how you feel about it. You signed for one
+club at eighteen and finished there whatever you did. And a career had no end:
+you aged, your pace declined a few points a year past thirty, and then you
+carried on for ever, because nothing knew how to stop.
+
+Interest is judged relative to your own club, so who comes for you says
+something about where you are. A full career, simulated end to end:
+
+    S1  Brighton   rep 44   3 offers  ->  Spurs
+    S3  Spurs      rep 58   1 offer   ->  Arsenal
+    S5  Arsenal    rep 67   3 offers  ->  Man Utd
+    S7  Chelsea    rep 73   the offers keep coming and he stays
+    S23 age 40                            forced retirement
+    FINAL: Club Legend — 368 goals and 14 trophies across 23 seasons (legacy 61)
+
+The assertion that matters most is that **moving costs you something**. Without
+it, taking the biggest wage every summer would be strictly correct and there
+would be no decision in it: a new dressing room starts at 52, a new manager at
+62, and the file checks directly that your standing with the manager — the thing
+that decides whether you are picked — is lower the day after you sign than the
+day before.
+
+The verdict is weighted toward the hard things rather than the long ones: six
+hundred quiet appearances scores under 60% of what a decorated career does, but
+still scores. Every club you played for is remembered, not only the last.

@@ -8,6 +8,10 @@ import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf } from "@/lib/star/competitions";
 import { spendAction, rest, canAct } from "@/lib/star/week";
+import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
+import { retirementCheck, retire } from "@/lib/star/retirement";
+import TransferWindow from "@/components/star/TransferWindow";
+import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
@@ -37,6 +41,7 @@ export default function StarDevPage() {
   const [contractOfferReason, setContractOfferReason] = useState<"form" | "star" | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
+  const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
 
   // Nothing is written back until the load has run, so the initial
   // "profile-setup" render cannot wipe a pending phase before we have read it.
@@ -47,6 +52,9 @@ export default function StarDevPage() {
     const saved = loadCareer();
     if (!saved) return;
     setCareer(saved);
+
+    // A finished career has one screen and no way back into the season.
+    if (saved.retired) { setPhase("legacy"); return; }
 
     // Resume a phase the career cannot get out of on its own. Reloading used to
     // always land on the dashboard, which at the end of a season meant no
@@ -62,6 +70,16 @@ export default function StarDevPage() {
       setContractOfferReason(pending.offerReason ?? null);
       setPhase("contract-renewal");
       return;
+    }
+    if (pending?.phase === "retirement" && retirementCheck(saved).canRetire) {
+      setPhase("retirement");
+      return;
+    }
+    if (pending?.phase === "season-transfer") {
+      // Regenerated rather than stored: the seed is the season and the player's
+      // fame, neither of which has moved, so these are the same offers.
+      const offers = generateOffers(saved, mulberry32(saved.season * 7717 + saved.fame));
+      if (offers.length > 0) { setTransferOffers(offers); setPhase("season-transfer"); return; }
     }
     if (pending?.phase === "dilemma") {
       // Re-derived rather than stored: the seed is the week and season, neither
@@ -259,23 +277,74 @@ export default function StarDevPage() {
     setPhase("dashboard");
   }, [career, currentDilemma]);
 
-  const handleBallonDorContinue = useCallback((userWon: boolean) => {
-    if (!career) return;
-    const { career: next, newlyUnlocked } = advanceSeason(career, userWon);
+  // Rolling into the next season, once anything that happens BETWEEN seasons is
+  // out of the way. Split out because three different screens end here.
+  const rollOverSeason = useCallback((from: CareerState, userWon: boolean) => {
+    const { career: next, newlyUnlocked } = advanceSeason(from, userWon);
     toastAchievements(newlyUnlocked);
     setCareer(next);
-
-    // If the contract has run out, force a renewal before returning to the dashboard.
+    // A new club came with a new contract, so a renewal is only forced when you
+    // stayed and let the old one run out.
     if (next.contract.seasonsRemaining <= 0) {
       setPhase("contract-renewal");
     } else {
       setActiveNav(null);
       setPhase("dashboard");
     }
+  }, []);
+
+  /** Whether they won it is only known at the ceremony, so it is carried here. */
+  const [wonBallonDor, setWonBallonDor] = useState(false);
+
+  const openTransferWindowOrRoll = useCallback((from: CareerState, userWon: boolean) => {
+    const offers = generateOffers(from, mulberry32(from.season * 7717 + from.fame));
+    if (offers.length > 0) {
+      setTransferOffers(offers);
+      setPhase("season-transfer");
+      return;
+    }
+    rollOverSeason(from, userWon);
+  }, [rollOverSeason]);
+
+  const handleBallonDorContinue = useCallback((userWon: boolean) => {
+    if (!career) return;
+    setWonBallonDor(userWon);
+    // Old enough to stop? That decision comes before anything about next season,
+    // because there might not be one.
+    if (retirementCheck(career).canRetire) {
+      setPhase("retirement");
+      return;
+    }
+    openTransferWindowOrRoll(career, userWon);
+  }, [career, openTransferWindowOrRoll]);
+
+  const handleRetire = useCallback(() => {
+    if (!career) return;
+    setCareer(retire(career));
+    setPhase("legacy");
   }, [career]);
 
+  const handlePlayOn = useCallback(() => {
+    if (!career) return;
+    openTransferWindowOrRoll(career, wonBallonDor);
+  }, [career, wonBallonDor, openTransferWindowOrRoll]);
+
+  const handleAcceptTransfer = useCallback((offer: TransferOffer) => {
+    if (!career) return;
+    const moved = acceptOffer(career, offer);
+    setCareer(moved);
+    setTransferOffers([]);
+    rollOverSeason(moved, wonBallonDor);
+  }, [career, wonBallonDor, rollOverSeason]);
+
+  const handleStayPut = useCallback(() => {
+    if (!career) return;
+    setTransferOffers([]);
+    rollOverSeason(career, wonBallonDor);
+  }, [career, wonBallonDor, rollOverSeason]);
+
   const handleFullReset = () => {
-    if (confirm("Delete this career and start over?")) {
+    if (career?.retired || confirm("Delete this career and start over?")) {
       clearCareer();
       setCareer(null);
       setPhase("profile-setup");
@@ -439,6 +508,25 @@ export default function StarDevPage() {
         competition={playedFixture.kind && playedFixture.kind !== "league" ? fixtureLabel(playedFixture) : undefined}
         knockout={career.knockoutMessage}
         onContinue={handlePostMatchContinue}
+      />
+    );
+  }
+
+  if (phase === "legacy") {
+    return <LegacyScreen career={career} onNewCareer={handleFullReset} />;
+  }
+
+  if (phase === "retirement") {
+    return <RetirementChoice career={career} onRetire={handleRetire} onPlayOn={handlePlayOn} />;
+  }
+
+  if (phase === "season-transfer" && transferOffers.length > 0) {
+    return (
+      <TransferWindow
+        career={career}
+        offers={transferOffers}
+        onAccept={handleAcceptTransfer}
+        onStay={handleStayPut}
       />
     );
   }

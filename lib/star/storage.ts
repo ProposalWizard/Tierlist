@@ -16,8 +16,13 @@ const PHASE_KEY = "star-career-phase-v1";
  * Deliberately NOT resumable: `match` (the match state is not saved, so it would
  * resume an empty game), `post-match` and `training` (their results live in
  * component state), and every browsing screen (just navigate).
+ *
+ * `season-transfer` earns its place because its offers are seeded off the season
+ * and the player's fame, neither of which moves while the window is open — so
+ * they can be regenerated on load and are the same offers. A retired career is
+ * handled separately, by the flag on the career itself.
  */
-const RESUMABLE: StarPhase[] = ["ballon-dor", "contract-renewal", "dilemma"];
+const RESUMABLE: StarPhase[] = ["ballon-dor", "contract-renewal", "dilemma", "retirement", "season-transfer"];
 
 export interface SavedPhase {
   phase: StarPhase;
