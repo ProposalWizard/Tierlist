@@ -233,6 +233,8 @@ export interface CareerState {
   transfers?: { season: number; from: string; to: string; fee: number }[];
   /** Hung up. The career is over and only the legacy screen remains. */
   retired?: boolean;
+  /** How the board saw last season. Shown on the dashboard. */
+  lastSeasonJudgement?: { score: number; bossChange: number; headline: string; detail: string };
 }
 
 export type StarPhase =

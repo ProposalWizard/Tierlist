@@ -10,6 +10,7 @@
     npx tsx tests/star/competitions.mts
     npx tsx tests/star/week.mts
     npx tsx tests/star/legacy.mts
+    npx tsx tests/star/context.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -307,3 +308,35 @@ day before.
 The verdict is weighted toward the hard things rather than the long ones: six
 hundred quiet appearances scores under 60% of what a decorated career does, but
 still scores. Every club you played for is remembered, not only the last.
+
+---
+
+**context** — match context (§2.9) and club expectations (§16.11).
+
+Two things the specification asks for that the game had no idea about. The score
+and the clock were both already in the hidden match state and read by nothing,
+so a cup final away from home 1-0 down with fifteen minutes left played exactly
+like a goalless friendly. And finishing sixth was worth the same at the club
+that won the league last year as at the one that nearly went down.
+
+Home advantage existed for every fixture in the division EXCEPT the one you
+play: `simulateOtherFixtures` gives the home side +3 and so does a match you are
+dropped for. Measured, evenly matched:
+
+    away      5.9 chances   47.7% of the ball   29% win
+    neutral   6.4           50.0%               38%
+    home      6.9           52.3%               46%
+
+Chasing the game ramps in over the closing half hour rather than switching on.
+With the scoreline held fixed to isolate it, chances in the last twenty minutes:
+1.1 while two ahead, 1.5 level, 2.0 while two behind. Two down in the first half
+is not yet a crisis — the same scoreline early changes almost nothing.
+
+One measurement changed the design: **the season judgement scale saturated
+almost immediately.** Normalising the finish by 0.35 of the division meant that
+in a ten-team league, finishing six places above target scored 1.71 against a
+ceiling of 1 — so winning a cup on top of a good league season changed the
+verdict by exactly zero. At 0.6 the range is actually reachable. The test that
+caught it now builds a genuine sixth-place finish with explicit points, because
+an earlier version left every club on zero and the sort fell back to array
+order, which measured nothing at all.

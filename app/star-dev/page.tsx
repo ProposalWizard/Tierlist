@@ -466,9 +466,14 @@ export default function StarDevPage() {
   if (phase === "match" && nextFixture) {
     // European and international opponents are not in your division, so the
     // fixture carries their strength.
-    const oppStrength = nextFixture.opponentStrength
+    // Playing away is worth about a goal a game to the home side in real
+    // football, and every OTHER fixture in this game has always modelled it —
+    // simulateOtherFixtures gives the home team +3, and so does a match you are
+    // dropped for. The one match you actually play was the exception.
+    const baseStrength = nextFixture.opponentStrength
       ?? career.league.find((t) => t.name === nextFixture.opponent)?.strength
       ?? 65;
+    const oppStrength = Math.max(20, Math.min(99, baseStrength + (nextFixture.home ? -3 : 4)));
     // Your worn boots actually count now: they add to the power/technique the shot
     // physics uses (capped at 100). This affects the SHOT, not the aim arrow — the
     // arrow is a fixed-scale drag indicator and never grows with power.

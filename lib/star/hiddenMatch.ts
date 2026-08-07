@@ -58,6 +58,20 @@ export interface HiddenMatchInputs {
   energy: number;
   /** 0-100 average of the player's own skills. Better players see more ball. */
   playerSkill: number;
+  /**
+   * MATCH CONTEXT (specification §2.9).
+   *
+   * "The Hidden Match Simulation must also understand the broader match
+   * situation: current score, remaining time, competition type, knockout or
+   * league fixture, home or away. These variables influence football behaviour
+   * without directly controlling gameplay. For example, a team trailing late in
+   * a match may naturally generate more attacking pressure."
+   *
+   * The score and the clock were already here and read by nothing: a cup final
+   * away from home, 1-0 down with fifteen minutes left, played exactly like a
+   * goalless friendly.
+   */
+  home?: boolean;
 }
 
 export interface HiddenMatchEvent {
@@ -89,6 +103,27 @@ export type ScenarioResult = "goal" | "saved" | "delivered" | "lost";
 // Every one of these was set by running whole seasons of matches and reading
 // the distributions out, not by eye. tests/star/hiddenMatch.mts holds the
 // bounds they were tuned to.
+
+/**
+ * Playing at home.
+ *
+ * Every other fixture in the division has had a home advantage since the league
+ * was written — `simulateOtherFixtures` gives the home side +3, and so does a
+ * match you are dropped for. The one match you actually PLAY was the only one
+ * in the game where it did not exist.
+ */
+const HOME_EDGE = 0.16;
+
+/**
+ * Chasing the game, and seeing it out.
+ *
+ * The specification's worked example for match context. A side behind late
+ * throws bodies forward — more of the ball, further up, more chances, and more
+ * of them falling to you. A side in front does the opposite. Both are capped
+ * well short of deciding anything.
+ */
+const LATE_FROM = 62;
+const CHASE_EDGE = 0.3;
 
 /** Chance per minute that the ball changes hands. */
 const TURNOVER = 0.55;
@@ -185,7 +220,18 @@ export function tick(
 
   // Relative quality, -1..1. Drives who tends to hold the ball and move it
   // forward WITHOUT deciding anything outright — upsets stay possible.
-  const edge = clamp1((inputs.teamStrength - inputs.oppStrength) / 40);
+  const quality = clamp1((inputs.teamStrength - inputs.oppStrength) / 40);
+  const home = inputs.home === false ? -HOME_EDGE : inputs.home === true ? HOME_EDGE : 0;
+
+  // Who needs a goal. Ramps in over the closing half hour rather than switching
+  // on, so the match tilts gradually the way a real one does.
+  const urgency = state.minute < LATE_FROM
+    ? 0
+    : Math.min(1, (state.minute - LATE_FROM) / (90 - LATE_FROM));
+  const behindBy = state.oppScore - state.userScore;
+  const chase = urgency * clamp1(behindBy / 2) * CHASE_EDGE;
+
+  const edge = clamp1(quality + home + chase);
 
   // ── Possession ──
   if (rng() < TURNOVER) {

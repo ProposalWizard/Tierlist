@@ -11,6 +11,7 @@ import {
 } from "./season";
 import { selectionFor, MISSED_WEEK } from "./selection";
 import { startNewWeek, WEEK_ACTIONS } from "./week";
+import { judgeSeason } from "./expectations";
 import {
   seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
 } from "./competitions";
@@ -306,6 +307,11 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     freeKick: career.skills.freeKick,
   };
 
+  // How the season went by the club's own standards, not by whether you won the
+  // league. The same finish is a triumph at one club and a sacking offence at
+  // another, which is the only thing that makes moving up cost you anything.
+  const judgement = judgeSeason(career);
+
   // Europe is earned by where you finished, and played the FOLLOWING season —
   // so a good year is felt the year after it, which is what makes the table
   // matter beyond the title.
@@ -329,6 +335,11 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     europeanQualification: qualification,
     knockoutMessage: null,
     weekActions: WEEK_ACTIONS,
+    relationships: {
+      ...career.relationships,
+      boss: clamp01to100(career.relationships.boss + judgement.bossChange),
+    },
+    lastSeasonJudgement: judgement,
   };
 
   // Seeded after the rest of the state is in place, because what you are in

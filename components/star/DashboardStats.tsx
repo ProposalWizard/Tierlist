@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
+import { expectationStatus, personalDuty } from "@/lib/star/expectations";
 
 interface Props {
   career: CareerState;
@@ -12,6 +13,8 @@ export default function DashboardStats({ career }: Props) {
   const [tab, setTab] = useState<"stats" | "contract" | "status">("stats");
   const selection = selectionFor(career);
   const duties = setPieceDuties(career, selection.status);
+  const { pos, exp, onTrack } = expectationStatus(career);
+  const duty = personalDuty(career);
 
   const avgSeasonRating = career.seasonStats.ratingCount > 0
     ? career.seasonStats.totalRating / career.seasonStats.ratingCount
@@ -96,6 +99,35 @@ export default function DashboardStats({ career }: Props) {
               Match Fit ({Math.round(career.matchFitness)}%)
             </div>
           </div>
+          {/* What the board actually wants. Finishing sixth used to be worth
+              the same at every club in the division. */}
+          <div className={`rounded-lg p-3 border ${onTrack ? "border-emerald-600 bg-emerald-600/15" : "border-amber-500 bg-amber-500/10"}`}>
+            <div className="flex items-center justify-between">
+              <span className="font-black text-xs text-white">Board expectation</span>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${onTrack ? "text-emerald-300" : "text-amber-200"}`}>
+                {exp.ambition}
+              </span>
+            </div>
+            <div className="mt-1 text-[10px] text-gray-200">{exp.summary}</div>
+            <div className="mt-1 text-[10px] text-white">
+              {pos}{pos === 1 ? "st" : pos === 2 ? "nd" : pos === 3 ? "rd" : "th"} of {career.league.length}
+              {" · "}target {exp.targetPosition}{exp.targetPosition === 1 ? "st" : exp.targetPosition === 2 ? "nd" : exp.targetPosition === 3 ? "rd" : "th"} or better
+            </div>
+            <div className="mt-1 text-[10px] text-gray-200">
+              <span className="font-black text-white">{duty.duty}.</span> {duty.summary} Target {duty.goalTarget} goals — you have {career.seasonStats.goals}.
+            </div>
+          </div>
+
+          {career.lastSeasonJudgement && (
+            <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
+              <div className="font-black text-xs text-white mb-0.5">Last season</div>
+              <div className={`text-[11px] font-bold ${career.lastSeasonJudgement.score >= 0 ? "text-emerald-300" : "text-amber-200"}`}>
+                {career.lastSeasonJudgement.headline}
+              </div>
+              <div className="text-[10px] text-gray-200">{career.lastSeasonJudgement.detail}</div>
+            </div>
+          )}
+
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
             <div className="font-black text-xs text-white mb-1">The manager</div>
             <div className="text-[10px] text-gray-300">{selection.reason}</div>

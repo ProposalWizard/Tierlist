@@ -251,6 +251,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       oppStrength: oppStrengthRef.current,
       energy: energyRef.current,
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
+      home: fixture?.home,
     };
   };
 
