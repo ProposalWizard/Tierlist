@@ -1,5 +1,5 @@
 import {
-  buildScenario, initDefenders, stepDefenders, stepSupport, stepRunner,
+  buildScenario, initDefenders, stepDefenders, stepReactions,
   visibleOptions, optionsSeen, scanRange, spaceScore,
   type Scenario,
 } from "../../lib/star/canvasEngine";
@@ -35,8 +35,6 @@ function settled(kind: Parameters<typeof buildScenario>[0], seed: number): Scena
   initDefenders(sc, rng);
   for (let t = 0; t < 1.5; t += DT) {
     stepDefenders(sc, DT, sc.player, false);
-    stepSupport(sc, null, sc.player, DT);
-    stepRunner(sc, DT);
   }
   return sc;
 }

@@ -181,7 +181,12 @@ export function newMatch(rng: () => number = Math.random): HiddenMatchState {
     momentum: 0,
     userScore: 0,
     oppScore: 0,
-    sinceInvolved: 0,
+    // Kick-off is treated as though you had already been waiting a while, so the
+    // first thing you do in a match happens in the opening minutes. Starting at
+    // zero meant the starve bonus only began at minute ten, and matches were
+    // routinely twenty minutes old — and sometimes two goals down — before you
+    // had touched the ball once.
+    sinceInvolved: 14,
   };
 }
 

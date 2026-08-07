@@ -22,7 +22,7 @@ export interface Vec2 { x: number; y: number; }
 export interface Viewport { x1: number; x2: number; y1: number; y2: number; }
 
 // A moment worth narrating, surfaced from the physics tick to the UI once and consumed.
-export type BallEvent = "received" | "receiverShot";
+export type BallEvent = "received" | "receiverShot" | "post";
 
 export interface Ball {
   pos: Vec2;
@@ -37,6 +37,10 @@ export interface Ball {
    */
   topspin?: number;
   resting: boolean;
+  /** Seconds this ball has been lying still, waiting for somebody to reach it. */
+  restT?: number;
+  /** How many times it has come back off the frame. Two is pinball; stop at one. */
+  postHits?: number;
   loose: boolean;      // true once the ball has been parried/deflected and is a live rebound
   contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
   receiverControlT: number; // seconds a teammate spends controlling a received pass before shooting
@@ -117,14 +121,11 @@ export interface Runner {
   moving: boolean;
   /**
    * target : the man the scenario aimed the pass at. Runs his scripted line.
-   * support: making himself available. He looks for space while you hold the
-   *          ball, so your options improve rather than only decaying, and he
-   *          goes after a ball that was not played straight to him.
+   * support: making himself available. He stands in the space he found before
+   *          the scenario opened, and stretches for a ball played near him.
    */
   role?: "target" | "support";
-  /** Seconds until this runner re-reads the situation. Keeps him from jittering. */
-  replanIn?: number;
-  /** False while jogging into space, true while chasing a ball. */
+  /** True while he is reacting to a ball that has come near him. */
   sprint?: boolean;
 }
 
@@ -249,6 +250,8 @@ const AIR_DRAG = 0.12;         // per-second horizontal drag while airborne. Was
 const BOUNCE_VZ = 0.70;        // vertical restitution off turf
 const BOUNCE_H = 0.88;         // horizontal speed kept on bounce — it skips across
                                // the grass rather than sticking to it
+const DEAD_BALL_TIMEOUT = 6;   // seconds a ball may lie untouched before the move
+                               // is written off. Nobody should ever reach it.
 const MIN_BOUNCE_VZ = 0.5;     // below this it stops bouncing and rolls. Was 1.2,
                                // which swallowed the last visible bounces.
 const BOUNCE_SPIN_KEEP = 0.82; // curl survives a bounce, so a curling ball keeps
@@ -320,6 +323,9 @@ const KEEPER_CENTRE_Z = 0.95;      // metres — roughly his chest, the centre o
 
 const DEF_BLOCK_R = 0.95;      // metres — body + outstretched leg
 const DEF_BLOCK_H = 1.9;       // defenders can only block below head height — chip over them
+const WALL_TOP = 2.05;         // …but a wall keeps its arms down, so leaping does not raise the
+                               // ceiling one-for-one. It lifts their feet instead, which is what
+                               // makes a ball rolled UNDER a jumping wall a real free kick too.
 /**
  * The wall jumps.
  *
@@ -331,7 +337,6 @@ const DEF_BLOCK_H = 1.9;       // defenders can only block below head height —
 const WALL_JUMP_VZ = 3.6;      // m/s off the ground
 const WALL_JUMP_DELAY = 0.1;   // seconds of reaction before they move
 
-const FOLLOWER_SPEED = 7.2;    // m/s — a sprinting poacher
 const RUNNER_SPEED = 7.0;      // m/s — the team-mate making the run
 
 const PASS_CONTROL_R = 2.0;    // metres — how close the ball must get to be controlled
@@ -380,7 +385,7 @@ function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
 }
 
 function makeRunner(to: Vec2, from: Vec2, speed = RUNNER_SPEED, role: "target" | "support" = "target"): Runner {
-  return { pos: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, speed, moving: true, role, replanIn: 0, sprint: true };
+  return { pos: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, speed, moving: false, role, sprint: false };
 }
 
 // A poacher lurking around the penalty spot for a spill.
@@ -597,7 +602,7 @@ function buildCutback(rng: () => number, keeperStrength: number, teamRelationshi
   const bx = CX + side * (9 + rng() * 5);
   const by = 1 + rng() * 3;
   const to = { x: CX + (rng() - 0.5) * 7, y: PEN_SPOT_Y - 1 + rng() * 3 };
-  const from = { x: to.x + (rng() - 0.5) * 3, y: to.y + 3.5 + rng() * 2 };
+  const from = { x: to.x + (rng() - 0.5) * 3, y: to.y + 2.5 + rng() * 1.5 };
   return {
     ball: { x: bx, y: by },
     player: { x: bx + side * 0.8, y: by + 0.9 },
@@ -619,7 +624,7 @@ function buildBylineCross(rng: () => number, keeperStrength: number, teamRelatio
   const bx = side < 0 ? 2 + rng() * 4 : PITCH_W - 6 + rng() * 4;
   const by = 0.8 + rng() * 3;
   const to = { x: CX + (rng() - 0.5) * 11, y: 4.5 + rng() * 5 };
-  const from = { x: to.x - side * 2.5, y: to.y + 4 + rng() * 2.5 };
+  const from = { x: to.x - side * 2.5, y: to.y + 2.5 + rng() * 1.5 };
   return {
     ball: { x: bx, y: by },
     player: { x: bx + side * 0.8, y: by + 0.9 },
@@ -636,11 +641,15 @@ function buildBylineCross(rng: () => number, keeperStrength: number, teamRelatio
   } as unknown as Scenario;
 }
 
-// Splitting the defense for a team-mate breaking in behind. The runner STARTS
-// level with or behind the second-to-last defender — onside, as the laws require,
-// judged at the moment the ball is played — and only then runs beyond the line.
-// (Spawning him already past the defence is what made every through-ball look
-// like a blatant offside.)
+// Splitting the defence for a team-mate on the shoulder of the last man. He is
+// level with or behind the second-to-last defender — onside, as the laws
+// require, judged at the moment the ball is played. (Spawning him already past
+// the defence is what made every through-ball look like a blatant offside.)
+//
+// He does not set off and run onto it: nothing moves until you kick the ball.
+// The space you are being asked to find is the yard or two in front of him, and
+// he stretches into it — so the target sits just ahead of his feet rather than
+// ten metres beyond the line where nobody will ever be.
 function buildThroughBall(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const bx = CX + (rng() - 0.5) * 16;
   const by = 28 + rng() * 10;
@@ -653,8 +662,8 @@ function buildThroughBall(rng: () => number, keeperStrength: number, teamRelatio
   // Onside by construction: level with the line, or a stride behind it.
   const startY = line + rng() * 2.0;
   const from = { x: clamp(CX + (rng() - 0.5) * 14, 12, PITCH_W - 12), y: startY };
-  // The space he runs into, beyond the defence — legal, because he set off onside.
-  const to = { x: clamp(from.x + (rng() - 0.5) * 6, 12, PITCH_W - 12), y: clamp(line - 5 - rng() * 4, 6, line - 2) };
+  // The yard in front of him, between him and the goal.
+  const to = { x: clamp(from.x + (rng() - 0.5) * 4, 12, PITCH_W - 12), y: clamp(from.y - 2 - rng() * 2, 6, HALF_LEN) };
   // Only a genuinely tight start is ever flagged, and then only sometimes.
   const marginToLine = startY - line;
   const offsideRisk = marginToLine < 0.6 ? 0.1 : 0;
@@ -746,7 +755,7 @@ function buildCorner(rng: () => number, keeperStrength: number, teamRelationship
   const bx = side < 0 ? 0.5 : PITCH_W - 0.5;
   const by = 0.5;
   const to = { x: CX + (rng() - 0.5) * 10, y: 4 + rng() * 5 };
-  const from = { x: to.x - side * 3, y: to.y + 4 + rng() * 3 };
+  const from = { x: to.x - side * 2.2, y: to.y + 2.5 + rng() * 1.5 };
   return {
     ball: { x: bx, y: by },
     player: { x: bx + side * 1.2, y: by + 1.2 },
@@ -860,7 +869,12 @@ function addSupport(sc: Scenario, rng: () => number) {
         start.y = clamp(sc.player.y + 7 + rng() * 5, 2.5, HALF_LEN + 4);
       }
     }
-    const r = makeRunner(bestSupportPoint(sc, sc.ball, start), start, RUNNER_SPEED * 0.95, "support");
+    // Nobody moves until you kick it, so a support player has to be standing
+    // somewhere worth finding from the moment the scenario opens. He is placed
+    // at the best point near where he broke from rather than setting off for it.
+    const spot = bestSupportPoint(sc, sc.ball, start);
+    const r = makeRunner(spot, spot, RUNNER_SPEED * 0.95, "support");
+    r.moving = false;
     r.sprint = false;
     sc.secondaryRunners.push(r);
   }
@@ -1105,19 +1119,30 @@ export function visibleOptions(scenario: Scenario, carrier: Vec2, vision: number
  * The touch you take when the ball comes back to you.
  *
  * Only ever applied to a chained scenario, because that is the only time you
- * are receiving rather than already in possession. It is not a dice roll: the
- * defence simply gets the time your touch cost them, using the same closing
- * behaviour it uses everywhere else. A poor touch means they are on you when
- * you look up.
+ * are receiving rather than already in possession.
  *
- * Returns the seconds it cost, so the UI can say so.
+ * It used to work by advancing the defence for however long your touch cost
+ * them — which is meaningless now that nobody moves until you kick it. A heavy
+ * touch instead pushes the BALL away from where you wanted it, so you strike
+ * from a worse angle and a longer way out. The cost is in the position, which
+ * is a thing you can see, rather than in a clock you cannot.
+ *
+ * Returns the metres it got away from you.
  */
 export function applyFirstTouch(scenario: Scenario, technique: number, rng: () => number): number {
-  const lost = clamp(0.8 - clamp(technique, 0, 100) / 100 * 0.55, 0.12, 0.85) * (0.85 + rng() * 0.3);
-  const step = 1 / 60;
-  for (let t = 0; t < lost; t += step) stepDefenders(scenario, step, scenario.player, false);
-  return lost;
+  // How far the ball got away from you. A good first touch kills it dead; a
+  // poor one bobbles a yard or two and you strike it from somewhere worse.
+  const heavy = clamp(1 - clamp(technique, 0, 100) / 100, 0, 1);
+  const away = heavy * (0.6 + rng() * 2.4);
+  const ang = rng() * Math.PI * 2;
+  scenario.ball = {
+    x: clamp(scenario.ball.x + Math.cos(ang) * away, 2, PITCH_W - 2),
+    y: clamp(scenario.ball.y + Math.sin(ang) * away, 1, HALF_LEN),
+  };
+  scenario.player = { x: scenario.ball.x, y: scenario.ball.y + 1.2 };
+  return away;
 }
+
 
 /**
  * ATTRIBUTES AS EXPANDERS
@@ -1372,175 +1397,38 @@ export function initDefenders(scenario: Scenario, rng: () => number) {
  *
  * Returns "tackled" when a contained carrier has dwelt too long.
  */
+/**
+ * The defence, which now does exactly one thing: a free-kick wall jumps.
+ *
+ * This used to press the carrier, slide onto passing lanes, commit to
+ * interceptions and make recovery runs — a whole Pressure Curve that ran WHILE
+ * you were still aiming. Nobody moves until you kick the ball; what happens
+ * after that is stepReactions.
+ */
 export function stepDefenders(
   scenario: Scenario,
   dt: number,
-  carrier: Vec2,
-  carrierHasBall: boolean,
+  _carrier: Vec2,
+  _carrierHasBall: boolean,
   ball: Ball | null = null,
 ): Outcome | null {
-  let lost: Outcome | null = null;
-
-  // ── Reading the ball ──
-  // A defender used to deflect a pass only if it happened to pass within a
-  // metre of where he was already standing — he never went for it. Now he reads
-  // the flight: if he can get to a point on its path, he goes, and the existing
-  // deflection handles the contact when he arrives. That is what makes a slow
-  // ball into a covered lane a genuine mistake rather than a free pass.
-  //
-  // A defender the ball has already gone past does the other thing a defender
-  // does: turns and sprints back goal-side.
-  const liveBall = !!ball && !ball.resting && !ball.inNet
-    && Math.hypot(ball.vel.x, ball.vel.y) > 2;
-
+  if (scenario.kind !== "free_kick") return null;
   for (const d of scenario.defenders) {
-    if (d.baseRole === "hold") continue;            // a wall stays a wall
-    if (!liveBall || !ball) {
-      if (d.role === "intercept" || d.role === "recover") d.role = d.baseRole ?? "cover";
-      continue;
+    if (d.baseRole !== "hold") continue;
+    if (d.z === undefined) { d.z = 0; d.vz = 0; }
+    // The jump only STARTS while the ball is live, but gravity runs regardless
+    // or the wall hangs in the air over the freeze frame.
+    if (ball && d.z === 0 && (d.vz ?? 0) === 0 && (d.containT ?? 0) >= WALL_JUMP_DELAY) {
+      d.vz = WALL_JUMP_VZ;
     }
-    // Defenders read PASSES, not shots. A block stays a matter of already being
-    // in the way — which is exactly what covering a lane earns you — rather than
-    // a defender stepping into a strike he could not have anticipated.
-    //
-    // He also COMMITS. Re-solving every frame made him chase the earliest point
-    // he could still theoretically reach, which moves away from him as fast as
-    // the ball does, so he trailed it the whole way and almost never arrived —
-    // 20,000 frames of chasing changed 7 passes in 500. He now keeps the point
-    // he picked until the ball is past it, and the solver uses HIS speed, not a
-    // nominal one, so a commitment is a commitment he can keep.
-    const committed = d.role === "intercept" && d.interceptTo
-      && (ball.vel.x * (d.interceptTo.x - ball.pos.x) + ball.vel.y * (d.interceptTo.y - ball.pos.y)) > 0;
-    const p = ball.shot
-      ? null
-      : committed
-        ? d.interceptTo!
-        // 0.8 of his real pace, so he only leaves his covering position for an
-        // interception he arrives at with something to spare. Measured: chasing
-        // one he could only just theoretically reach was WORSE than standing on
-        // the lane, because he vacated it and then did not get there.
-        : interceptFrom(ball, d, DEF_INTERCEPT_SPEED * (d.speed ?? 1) * 0.8, DEF_BLOCK_R, PURSUIT_HORIZON * 0.7);
-    if (p && ball.z < DEF_BLOCK_H + 0.6) {
-      d.role = "intercept";
-      d.interceptTo = p;
-    } else if (d.y > ball.pos.y + 2.5) {
-      d.role = "recover";
-    } else {
-      d.role = d.baseRole ?? "cover";
+    if (ball) d.containT = (d.containT ?? 0) + dt;
+    if ((d.z ?? 0) > 0 || (d.vz ?? 0) > 0) {
+      d.vz = (d.vz ?? 0) - 9.8 * dt;
+      d.z = Math.max(0, (d.z ?? 0) + (d.vz ?? 0) * dt);
+      if (d.z === 0) d.vz = 0;
     }
   }
-
-  // The most dangerous option to cut out: the runner a pass is aimed at, or
-  // failing that the goal itself.
-  const threat = scenario.runner?.pos
-    ?? scenario.secondaryRunners.find(r => r.role !== "support")?.pos
-    ?? { x: (scenario.goal.x1 + scenario.goal.x2) / 2, y: 0 };
-
-  // The best of the support players, if there is a spare defender to worry
-  // about him. He is marked at a bias much closer to himself than the scripted
-  // threat is, which is what makes him beatable: at 0.62 the marker only has to
-  // move 62% as far as he does, so no amount of running could ever open a lane.
-  let secondThreat: Vec2 | null = null;
-  if (scenario.defenders.length > 1) {
-    let bestS = -1;
-    for (const r of scenario.secondaryRunners) {
-      if (r.role !== "support") continue;
-      const s = spaceScore(r.pos, scenario, carrier);
-      if (s > bestS) { bestS = s; secondThreat = r.pos; }
-    }
-  }
-  let coverIndex = 0;
-
-  // The wall, in the air. A "hold" defender in a dead-ball scenario is a wall
-  // man; nothing else ever leaves the turf.
-  //
-  // Gravity runs whether or not there is a ball. Gating the whole block on a
-  // live ball left the wall hanging in mid-air the instant the outcome
-  // resolved — which is exactly when the player is looking at the freeze frame.
-  if (scenario.kind === "free_kick") {
-    for (const d of scenario.defenders) {
-      if (d.baseRole !== "hold") continue;
-      if (d.z === undefined) { d.z = 0; d.vz = 0; }
-      // They react to the strike rather than pre-empting it, so the jump only
-      // ever STARTS while the ball is live.
-      if (ball && d.z === 0 && (d.vz ?? 0) === 0 && (d.containT ?? 0) >= WALL_JUMP_DELAY) {
-        d.vz = WALL_JUMP_VZ;
-      }
-      if (ball) d.containT = (d.containT ?? 0) + dt;
-      if ((d.z ?? 0) > 0 || (d.vz ?? 0) > 0) {
-        d.vz = (d.vz ?? 0) - 9.8 * dt;
-        d.z = Math.max(0, (d.z ?? 0) + (d.vz ?? 0) * dt);
-        if (d.z === 0) d.vz = 0;
-      }
-    }
-  }
-
-  for (const d of scenario.defenders) {
-    const role = d.role ?? "hold";
-    const spd = d.speed ?? 1;
-
-    if (role === "press") {
-      // Close to the containment ring and hold there. Approaching all the way
-      // in would read as lunging, and would make every scenario a race rather
-      // than a decision.
-      const dx = carrier.x - d.x, dy = carrier.y - d.y;
-      const dist = Math.hypot(dx, dy) || 1;
-      const gap = dist - DEF_CONTAIN_R;
-      if (gap > 0.02) {
-        const step = Math.min(gap, DEF_PRESS_SPEED * spd * dt);
-        d.x += (dx / dist) * step;
-        d.y += (dy / dist) * step;
-      }
-
-      // Contained. Now patience runs out — but only while you still have it.
-      if (carrierHasBall && dist <= DEF_CONTAIN_R + 0.35) {
-        d.containT = (d.containT ?? 0) + dt;
-        if ((d.containT ?? 0) >= DEF_TACKLE_S) lost = "tackled";
-      } else {
-        d.containT = 0;
-      }
-    } else if (role === "cover") {
-      // Slide onto the line between the carrier and the danger, shrinking the
-      // passing lane rather than chasing the ball. Every option gets worse.
-      const mine = coverIndex === 0 || !secondThreat ? threat : secondThreat;
-      const bias = mine === secondThreat ? DEF_SUPPORT_BIAS : DEF_LANE_BIAS;
-      coverIndex += 1;
-      const tx = carrier.x + (mine.x - carrier.x) * bias;
-      const ty = carrier.y + (mine.y - carrier.y) * bias;
-      const dx = tx - d.x, dy = ty - d.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > 0.05) {
-        const step = Math.min(dist, DEF_COVER_SPEED * spd * dt);
-        d.x += (dx / dist) * step;
-        d.y += (dy / dist) * step;
-      }
-    } else if (role === "intercept" && d.interceptTo) {
-      const dx = d.interceptTo.x - d.x, dy = d.interceptTo.y - d.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > 0.02) {
-        const step = Math.min(dist, DEF_INTERCEPT_SPEED * spd * dt);
-        d.x += (dx / dist) * step;
-        d.y += (dy / dist) * step;
-      }
-    } else if (role === "recover") {
-      // Get between the ball and the goal, not back to where you started.
-      const goalC = { x: (scenario.goal.x1 + scenario.goal.x2) / 2, y: 0 };
-      const bx = carrier.x, by = carrier.y;
-      const gl = Math.hypot(goalC.x - bx, goalC.y - by) || 1;
-      const tx = bx + (goalC.x - bx) / gl * DEF_RECOVER_GAP;
-      const ty = by + (goalC.y - by) / gl * DEF_RECOVER_GAP;
-      const dx = tx - d.x, dy = ty - d.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > 0.05) {
-        const step = Math.min(dist, DEF_RECOVER_SPEED * spd * dt);
-        d.x += (dx / dist) * step;
-        d.y += (dy / dist) * step;
-      }
-    }
-    // "hold" defenders stay exactly where the scenario placed them.
-  }
-
-  return lost;
+  return null;
 }
 
 // ── SPACE, SUPPORT AND PURSUIT ───────────────────────────────────────────────
@@ -1590,10 +1478,7 @@ function laneClearance(a: Vec2, b: Vec2, defenders: Vec2[]): number {
 
 const SUPPORT_MIN_PASS = 6;    // metres — closer than this and you may as well carry it
 const SUPPORT_MAX_PASS = 26;   // …and beyond this it stops being a support option
-const SUPPORT_REPLAN_S = 0.3;  // how often a support player re-reads the pitch
-const SUPPORT_SPEED = 4.6;     // m/s — finding space is a jog, not a sprint
-const PURSUIT_HORIZON = 2.6;   // seconds ahead a player will chase a ball
-const PURSUIT_STEP = 0.08;     // seconds per prediction step
+const PREDICT_STEP = 0.08;     // seconds per step when projecting where a ball will be
 
 /**
  * How good a position is to receive a pass, 0..1.
@@ -1668,7 +1553,7 @@ export function bestSupportPoint(scenario: Scenario, carrier: Vec2, from: Vec2):
 function predictBall(ball: Ball, t: number): { pos: Vec2; z: number } {
   let x = ball.pos.x, y = ball.pos.y, z = ball.z;
   let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
-  const dt = PURSUIT_STEP;
+  const dt = PREDICT_STEP;
   for (let s = 0; s < t - 1e-6; s += dt) {
     if (z > 0.02) {
       const k = Math.max(0, 1 - AIR_DRAG * dt);
@@ -1692,41 +1577,6 @@ function predictBall(ball: Ball, t: number): { pos: Vec2; z: number } {
   return { pos: { x, y }, z };
 }
 
-/**
- * The soonest point on the ball's path this player can actually get to.
- *
- * Null when he cannot reach it at all, which is what makes an overhit pass a
- * genuine mistake rather than one the receiver silently rescues.
- */
-export function interceptFrom(ball: Ball, from: Vec2, speed: number, reach: number, horizon = PURSUIT_HORIZON): Vec2 | null {
-  for (let t = PURSUIT_STEP; t <= horizon; t += PURSUIT_STEP) {
-    const b = predictBall(ball, t);
-    if (b.z > 2.4) continue;                       // over his head at that moment
-    const need = Math.hypot(b.pos.x - from.x, b.pos.y - from.y);
-    if (need <= speed * t + reach) return b.pos;
-  }
-  return null;
-}
-
-export function interceptPoint(ball: Ball, r: Runner): Vec2 | null {
-  return interceptFrom(ball, r.pos, r.speed, PASS_CONTROL_R * 0.7);
-}
-
-/**
- * Advance the attack.
- *
- * Two jobs, and which one applies is decided by whether the ball is live:
- *
- * BALL IN FLIGHT — everyone goes for it. A player who can reach the ball's path
- * before it passes him redirects onto the interception point instead of running
- * his scripted line, so a pass that was not struck straight at a man can still
- * be won, and a pass nobody can reach is genuinely wasted.
- *
- * BALL AT YOUR FEET — support players look for space. They re-read the pitch
- * every 0.4 s, so as the cover defenders slide across to shut your lane down,
- * the man they are covering moves somewhere they are not. This is the release
- * valve the Pressure Curve had been missing: options no longer only decay.
- */
 /**
  * Is this ball your strike at goal rather than a ball for a team-mate?
  *
@@ -1758,104 +1608,107 @@ export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
     && b.z < scenario.crossbar + 3;
 }
 
-export function stepSupport(scenario: Scenario, ball: Ball | null, carrier: Vec2, dt: number) {
-  const all: Runner[] = scenario.runner
-    ? [scenario.runner, ...scenario.secondaryRunners]
-    : [...scenario.secondaryRunners];
-  if (all.length === 0) return;
+/**
+ * REACTIONS
+ *
+ * Nobody moves until you kick the ball — not the defence, not your team-mates,
+ * not by an inch. You have unlimited time to decide, and the only action you
+ * take in a scenario is the strike itself.
+ *
+ * Once it is struck, a player reacts ONLY when the ball comes inside his radius,
+ * and then he moves slowly. It is a stretch and a step, not a sprint: if the
+ * pass is close enough that a yard would reach it he gets there, and if it is
+ * not, he does not. Both sides move at the same pace, so who wins a loose ball
+ * is a question of where it went rather than of who is quicker.
+ *
+ * A ball that has stopped is the exception — the nearest man of either side
+ * walks to it however far away he is, because otherwise it sits on the grass
+ * and the move never ends.
+ */
+const REACT_R = 9;         // metres — he notices the ball inside this
+const REACT_SPEED = 2.6;   // m/s — a stretch and a step, not a chase
+const WALK_SPEED = 4.6;    // …and the jog he breaks into for one that has stopped
+const FETCH_SPEED = 7;     // …which becomes a run once it is a long way off
+const FETCH_FAR = 12;      // metres — beyond this, fetching it is worth running for
+const DEAD_BALL_SPEED = 4; // m/s — below this the ball is going nowhere
+const CONTROL_R = 1.15;    // metres — close enough to take it
 
-  const live = !!ball && !ball.resting && !ball.inNet && !scenario.receiverDone
-    && Math.hypot(ball.vel.x, ball.vel.y) > 1.5;
-  // Nobody runs across their own team-mate's shot. Without this a support player
-  // standing anywhere near the flight would collect it and the goal would be
-  // stolen by his own side, which is the worst outcome this whole system could
-  // produce.
-  const shot = !!ball?.shot;
-
-  for (const r of all) {
-    r.replanIn = (r.replanIn ?? 0) - dt;
-
-    if (live && ball && !(shot && r.role === "support")) {
-      const p = interceptPoint(ball, r);
-      if (p) {
-        r.to = p;
-        r.moving = true;
-        r.sprint = true;
-        continue;
-      }
-      // Cannot get there. A target man keeps running his line; a support player
-      // stops chasing something he was never going to reach.
-      if (r.role === "support") r.moving = false;
-      continue;
-    }
-    if (live) continue;   // ball is in the air and this man is not going for it
-
-    if (r.role !== "support") continue;
-    if ((r.replanIn ?? 0) > 0) continue;
-    r.replanIn = SUPPORT_REPLAN_S;
-    const target = bestSupportPoint(scenario, carrier, r.pos);
-    if (Math.hypot(target.x - r.pos.x, target.y - r.pos.y) > 0.6) {
-      r.to = target;
-      r.moving = true;
-      r.sprint = false;
-    }
-  }
-}
-
-// Advance the team-mate making the run. They move at a real sprinting pace, which
-// is what makes a through-ball a question of weight and timing rather than of
-// hitting a static circle.
-export function stepRunner(scenario: Scenario, dt: number) {
-  const move = (r: Runner | null) => {
-    if (!r || !r.moving) return;
-    const dx = r.to.x - r.pos.x, dy = r.to.y - r.pos.y;
-    const dist = Math.hypot(dx, dy);
-    // Finding space is a jog; going after the ball is a sprint.
-    const step = r.speed * (r.sprint === false ? 0.72 : 1) * dt;
-    if (dist <= step) { r.pos.x = r.to.x; r.pos.y = r.to.y; r.moving = false; return; }
-    r.pos.x += (dx / dist) * step;
-    r.pos.y += (dy / dist) * step;
-  };
-  move(scenario.runner);
-  for (const r of scenario.secondaryRunners) move(r);
-}
-
-// Advance the rebound poacher. Chases a loose ball and pokes a follow-up goalward.
-export function stepFollower(scenario: Scenario, ball: Ball, rng: () => number, dt: number) {
-  const f = scenario.follower;
-  if (f.shot) return;
-
+export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: () => number = Math.random) {
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
-  const dangerous = ball.loose && !ball.resting && ball.pos.y < BOX_DEPTH && speed < 24;
-  if (!f.active && dangerous) f.active = true;
-  if (!f.active) return;
+  const dead = ball.resting || (speed < DEAD_BALL_SPEED && ball.z < 0.4);
 
-  // Run onto the loose ball.
-  const dx = ball.pos.x - f.x, dy = ball.pos.y - f.y;
-  const dist = Math.hypot(dx, dy) || 1;
-  const step = FOLLOWER_SPEED * dt;
-  if (dist > step) {
-    f.x += (dx / dist) * step;
-    f.y += (dy / dist) * step;
-  } else {
-    f.x = ball.pos.x; f.y = ball.pos.y;
+  const move = (p: { x: number; y: number }, pace: number) => {
+    const dx = ball.pos.x - p.x, dy = ball.pos.y - p.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const step = Math.min(dist, pace * dt);
+    p.x += (dx / dist) * step;
+    p.y += (dy / dist) * step;
+  };
+
+  // Fetching a ball that has stopped is a jog, or a run if it is a long way off.
+  // Not because anybody is racing — because nobody wants to watch a man walk
+  // thirty metres before the move can end.
+  const fetch = (dist: number) => (dist > FETCH_FAR ? FETCH_SPEED : WALK_SPEED);
+
+  for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
+    const dist = Math.hypot(ball.pos.x - r.pos.x, ball.pos.y - r.pos.y);
+    if (dead) { move(r.pos, fetch(dist)); r.moving = true; continue; }
+    if (dist > REACT_R) { r.moving = false; continue; }
+    move(r.pos, REACT_SPEED);
+    r.moving = true;
+    r.sprint = false;
   }
 
-  // Close enough and the ball is low → take the second chance.
-  if (dist < 1.2 && ball.z < 1.6) {
-    const tx = POST_L + rng() * (POST_R - POST_L);
-    const dir = normalize({ x: tx - ball.pos.x, y: -Math.max(ball.pos.y, 0.5) });
-    const sp = 17 + rng() * 8;
-    ball.vel = { x: dir.x * sp, y: dir.y * sp };
-    ball.vz = 0.3 + rng() * 0.7;
-    ball.spin *= 0.3;
-    ball.loose = false;                         // a fresh shot — but it still counts as a rebound if it goes in
-    ball.contactCd = 0.18;
-    f.shot = true;
-    // Keeper reacts late, already out of position from the first save.
-    // Deliberately does NOT tell the keeper where this is going. He keeps
-  // patrolling; whether he is in the way is settled when the ball arrives.
+  // The poacher is another team-mate now rather than sprinting onto every
+  // rebound at seven metres a second. He reaches a rebound in the box the same
+  // way anybody reaches anything — by being near it — and if he gets there he
+  // does what a striker does with a loose ball six yards out.
+  if (!scenario.follower.shot) {
+    const f = scenario.follower;
+    const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
+    if (dead) { move(f, fetch(dist)); f.active = true; }
+    else if (dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
+
+    if (f.active && ball.loose && !ball.inNet && ball.z < 1.6
+        && ball.pos.y < BOX_DEPTH && ball.contactCd <= 0
+        && Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y) < CONTROL_R) {
+      const tx = POST_L + rng() * (POST_R - POST_L);
+      const dir = normalize({ x: tx - ball.pos.x, y: -Math.max(ball.pos.y, 0.5) });
+      const sp = 17 + rng() * 8;
+      ball.vel = { x: dir.x * sp, y: dir.y * sp };
+      ball.vz = 0.3 + rng() * 0.7;
+      ball.spin *= 0.3;
+      ball.loose = false;      // a fresh strike — it still counts as a rebound if it goes in
+      ball.contactCd = 0.18;
+      f.shot = true;
+      // Deliberately does NOT tell the keeper where this is going. He keeps
+      // patrolling; whether he is in the way is settled when the ball arrives.
+    }
   }
+
+  for (const d of scenario.defenders) {
+    // A wall stays a wall while the free kick is live. Once the ball has stopped
+    // there is no wall any more, only somebody who ought to go and get it.
+    if (d.baseRole === "hold" && !dead) continue;
+    const dist = Math.hypot(ball.pos.x - d.x, ball.pos.y - d.y);
+    if (dead) { move(d, fetch(dist)); continue; }
+    if (dist > REACT_R) continue;
+    move(d, REACT_SPEED);
+  }
+}
+
+/**
+ * A defender has it. He does not knock it back into play for you to have
+ * another go at — he puts it as far from his own goal as he can.
+ */
+export function clearBall(ball: Ball, rng: () => number) {
+  const away = normalize({ x: (rng() - 0.5) * 0.8, y: 1 });
+  const sp = 18 + rng() * 8;
+  ball.vel = { x: away.x * sp, y: away.y * sp };
+  ball.vz = 4 + rng() * 3;
+  ball.spin = 0;
+  ball.loose = false;
+  ball.owner = "opponent";
 }
 
 /**
@@ -1977,24 +1830,40 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   return null;
 }
 
-// A defender in the way deflects the ball rather than swallowing it.
-function deflectOffDefender(ball: Ball, d: Vec2, rng: () => number): boolean {
-  const n = normalize({ x: ball.pos.x - d.x, y: ball.pos.y - d.y }); // outward from defender
-  const vn = ball.vel.x * n.x + ball.vel.y * n.y;
-  if (vn >= 0) return false; // already moving away — no real contact
-  // Reflect the incoming component, then damp: a genuine deflection, not a wall.
-  const damp = 0.42 + rng() * 0.22;
-  const jitter = (rng() - 0.5) * 3;
-  ball.vel = {
-    x: (ball.vel.x - 2 * vn * n.x) * damp + jitter * 0.15,
-    y: (ball.vel.y - 2 * vn * n.y) * damp,
-  };
-  ball.vz += 0.8 + rng() * 1.4;    // deflections loop up off shins/knees
-  ball.spin *= 0.5;
+
+/**
+ * The ball comes back off the frame.
+ *
+ * Woodwork used to end the highlight, which is not what hitting the post looks
+ * like — it cannons back out with most of the pace still on it and the nearest
+ * man has a decision to make. It is loose from that moment: your poacher can
+ * follow it in, and a defender who gets there first hoofs it away like any
+ * other loose ball.
+ *
+ * Returns false the second time, because a ball ricocheting between the uprights
+ * is pinball rather than football.
+ */
+const POST_KEEP = 0.78;        // how much of the pace survives the impact
+
+function reboundOffFrame(ball: Ball, xCross: number, rng: () => number): boolean {
+  if ((ball.postHits ?? 0) >= 1) return false;
+  ball.postHits = (ball.postHits ?? 0) + 1;
+
+  // Which upright, and therefore which way it spits out. A ball striking the
+  // inside of the post comes back across goal; the outside of it goes wide.
+  const post = Math.abs(xCross - POST_L) < Math.abs(xCross - POST_R) ? POST_L : POST_R;
+  const side = Math.sign(xCross - post) || (rng() < 0.5 ? -1 : 1);
+
+  ball.pos.y = 0.35;
+  ball.pos.x = post + side * 0.35;
+  ball.vel.y = Math.abs(ball.vel.y) * POST_KEEP;                 // straight back out
+  ball.vel.x = ball.vel.x * POST_KEEP + side * (1.5 + rng() * 3.5);
+  ball.vz = Math.max(ball.vz * 0.4, 0.4);
+  ball.spin *= 0.25;
   ball.loose = true;
-  ball.contactCd = 0.3;
-  ball.pos.x += n.x * 0.25;        // nudge clear so it doesn't re-trigger
-  ball.pos.y += n.y * 0.25;
+  ball.owner = "none";
+  ball.contactCd = 0.25;
+  ball.event = "post";
   return true;
 }
 
@@ -2007,7 +1876,11 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     return null;
   }
 
-  if (ball.resting) return "short";
+  // A ball that has stopped does NOT end the move. It sits on the grass and
+  // everybody walks to it (see stepReactions); whoever gets there settles it —
+  // a team-mate collects, a defender clears. The timer below is only a backstop
+  // for a ball that has somehow ended up somewhere nobody can reach.
+  if (ball.resting) ball.restT = (ball.restT ?? 0) + dt;
 
   const prevY = ball.pos.y;
   const prevX = ball.pos.x;
@@ -2095,17 +1968,28 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
 
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
 
-  // --- Defender deflection ---
-  // A defender blocks what he can reach: from his feet to head height, raised by
-  // however far off the ground he currently is. Only a free-kick wall is ever
-  // off the ground, so for everyone else this is exactly what it always was.
-  if (ball.contactCd <= 0 && speed > 4) {
+  // --- A defender gets to it ---
+  //
+  // Blocking a shot, cutting out a pass, or simply arriving at a loose ball
+  // first: possession is gone either way, and he boots it clear. He reaches from
+  // his feet to head height, raised by however far off the ground he is — only a
+  // free-kick wall ever leaves the turf.
+  //
+  // This replaced a damped deflection that left the ball live, which turned
+  // every block into a scramble the attack usually still won.
+  if (ball.contactCd <= 0) {
     for (const d of scenario.defenders) {
       const foot = d.z ?? 0;
-      if (ball.z < foot || ball.z > foot + DEF_BLOCK_H) continue;
-      if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < DEF_BLOCK_R) {
-        deflectOffDefender(ball, d, rng);
-        break;
+      const top = d.baseRole === "hold"
+        ? Math.min(foot + DEF_BLOCK_H, WALL_TOP)
+        : foot + DEF_BLOCK_H;
+      if (ball.z < foot || ball.z > top) continue;
+      // Right on top of a ball travelling at pace; merely near a slow one.
+      const reach = speed > 12 ? DEF_BLOCK_R : CONTROL_R;
+      if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < reach) {
+        clearBall(ball, rng);
+        ball.contactCd = 0.4;
+        return "tackled";
       }
     }
   }
@@ -2164,7 +2048,11 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     // A support player will not put his foot on a ball that is going in. He
     // steps out of the way of it, which is the only reason it is safe to have
     // team-mates standing in front of goal at all.
-    const shotAtGoal = ball.shot === true;
+    // …but only while it is still going somewhere. Once a shot has died on the
+    // grass there is nothing left to steal, and somebody has to be able to pick
+    // it up or the move never ends.
+    const ballIsDead = ball.resting || (speed < DEAD_BALL_SPEED && ball.z < 0.4);
+    const shotAtGoal = ball.shot === true && !ballIsDead;
     for (const r of candidates) {
       if (shotAtGoal && r.role === "support") continue;
       const tgt = r.pos;
@@ -2210,7 +2098,12 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     const crossbar = scenario.crossbar;
     if (insideGoalMouth(xCross)) {
       if (zCross > crossbar + BALL_R) return "over";
-      if (zCross > crossbar - BALL_R) return "post"; // clipped the underside of the bar
+      if (zCross > crossbar - BALL_R) {
+        // Off the underside of the bar. It comes back down and stays live.
+        const again = reboundOffFrame(ball, xCross, rng);
+        if (again) { ball.z = Math.max(0.2, crossbar - 0.35); ball.vz = -Math.abs(ball.vz) * 0.5 - 1.5; return null; }
+        return "post";
+      }
 
       // ── THE SAVE DECISION ──
       // Gameplay first, animation second. Where the ball crosses is compared
@@ -2244,14 +2137,18 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
       ball.vel.x *= 0.55; ball.vel.y *= 0.55; ball.vz = Math.min(ball.vz, 0);
       return ball.loose ? "rebound" : "goal";
     }
-    if (hitsPost(xCross)) return "post";
+    if (hitsPost(xCross)) {
+      const again = reboundOffFrame(ball, xCross, rng);
+      if (again) return null;
+      return "post";
+    }
     return "wide";
   }
 
   // Out of bounds.
   if (ball.pos.x < -2 || ball.pos.x > PITCH_W + 2 || ball.pos.y > HALF_LEN + 8) return "out";
 
-  if (ball.resting) return "short";
+  if (ball.resting && (ball.restT ?? 0) > DEAD_BALL_TIMEOUT) return "short";
   return null;
 }
 
