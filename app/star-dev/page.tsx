@@ -133,7 +133,7 @@ export default function StarDevPage() {
   }, []);
 
   const handleExit = useCallback(() => {
-    if (confirm("Exit career? Progress is auto-saved.")) {
+    if (confirm("Leave the career? It stays saved — you will come back to exactly this. To delete it and start again, use New career on the dashboard.")) {
       window.location.href = "/";
     }
   }, []);
@@ -769,6 +769,20 @@ export default function StarDevPage() {
         </div>
       )}
       {phase === "dashboard" && <DashboardStats career={career} />}
+      {phase === "dashboard" && (
+        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-center">
+          <div className="text-[10px] font-black uppercase tracking-widest text-gray-300">Start over</div>
+          <p className="mt-1 text-[11px] text-gray-200">
+            Exit leaves the career saved. This deletes it and begins a new one.
+          </p>
+          <button
+            onClick={handleFullReset}
+            className="mt-2 w-full rounded-lg border border-red-500/60 bg-red-500/15 py-2 text-xs font-black text-red-200 transition hover:bg-red-500/25"
+          >
+            New career
+          </button>
+        </div>
+      )}
       {phase === "league" && (
         <div>
           <BackChip onBack={handleBackToDashboard} />
