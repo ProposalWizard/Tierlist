@@ -1039,6 +1039,43 @@ function applyAerialContest(ball: Ball, scenario: Scenario, skills: KickSkills, 
   ball.vz *= damp;
 }
 
+// ── INFORMATION ECONOMY ─────────────────────────────────────────────────────
+//
+// Vision changes what you can SEE, not how accurately you strike the ball.
+//
+// The pitch is drawn in full either way — hiding players would read as a bug
+// and would be unfair besides. What a low-vision player lacks is the KNOWLEDGE:
+// he cannot pick out who is free, so the ball goes to whoever is obvious. A
+// high-vision player has the same picture and reads three options off it,
+// including the one on the far side he had to look up to find.
+
+/** How many options a player of this vision can pick out at once. */
+export function optionsSeen(vision: number): number {
+  const v = clamp(vision, 0, 100);
+  return v < 35 ? 1 : v < 65 ? 2 : 3;
+}
+
+/** How far up the pitch he is scanning, in metres. */
+export function scanRange(vision: number): number {
+  return 11 + clamp(vision, 0, 100) / 100 * 21;
+}
+
+/**
+ * The options this player is actually aware of, best first.
+ *
+ * Everything outside his range, and everything past the number he can hold in
+ * his head, is simply not surfaced — he can still hit it, he just is not being
+ * told it is on.
+ */
+export function visibleOptions(scenario: Scenario, carrier: Vec2, vision: number): { runner: Runner; score: number }[] {
+  const range = scanRange(vision);
+  return [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]
+    .filter(r => Math.hypot(r.pos.x - carrier.x, r.pos.y - carrier.y) <= range)
+    .map(r => ({ runner: r, score: spaceScore(r.pos, scenario, carrier) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, optionsSeen(vision));
+}
+
 /**
  * The touch you take when the ball comes back to you.
  *

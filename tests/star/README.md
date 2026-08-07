@@ -4,6 +4,7 @@
     npx tsx tests/star/support.mts
     npx tsx tests/star/defending.mts
     npx tsx tests/star/contest.mts
+    npx tsx tests/star/perception.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -127,3 +128,20 @@ to compare against after any change to physics, the keeper or the defence:
     header        goal 27%   saved 34%   lost 1%
     volley        goal 32%   saved 38%   lost 2%
     long_range    goal 16%   saved 32%   lost 1%
+
+---
+
+**perception** — vision buys knowledge, not accuracy; fatigue costs execution,
+not intent.
+
+Everyone is drawn on the pitch whatever your vision is — hiding players would
+read as a bug and be unfair besides. What a low-vision player lacks is being
+TOLD who is free: at vision 20 he is shown the obvious man, at 55 two options,
+at 92 three, and only inside the range he is scanning (11 m up to 32 m). A
+high-vision player is pointed at the genuinely best option on the pitch 86% of
+the time, not merely the best of a shortlist he happened to be handed.
+
+The legs model is mirrored here exactly as the component implements it, so
+changing one without the other fails the file. A 90-minute match with seven
+chances leaves an unfit player (40) on 39 and a fit one (95) on 69; an empty
+player loses a fifth of his technique and a fifth of his power, and never more.

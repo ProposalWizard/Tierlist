@@ -4,7 +4,7 @@ import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet,
   stepKeeper, stepFollower, stepRunner, stepDefenders, stepSupport, initDefenders,
-  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch,
+  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, visibleOptions,
   OUTCOME_TEXT, clamp,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
@@ -193,12 +193,35 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // loadScenario() so the scenario matches the football that led to it.
   const pendingRequestRef = useRef<ScenarioRequest | null>(null);
 
+  // ── Legs ──
+  // Energy was a pre-match number that never moved: you finished the ninetieth
+  // minute exactly as fresh as you started the first. It now drains with the
+  // clock and with every chance you actually take, and it costs you power and
+  // touch — never accuracy of intent, only execution. Match fitness decides how
+  // fast it goes, which is what training it is for.
+  const energyRef = useRef(career?.energy ?? 85);
+  const [energy, setEnergyState] = useState(energyRef.current);
+  const setEnergy = (v: number) => { energyRef.current = clamp(v, 0, 100); setEnergyState(energyRef.current); };
+  const fitness = career?.matchFitness ?? 80;
+  const drainPerMinute = 0.10 * (1.5 - clamp(fitness, 0, 100) / 100);
+  const DRAIN_PER_CHANCE = 1.6;
+
+  // What your legs are actually capable of right now. A tired player strikes the
+  // ball less cleanly; he does not aim somewhere else.
+  const tiredSkills = (): KickSkills => {
+    const e = clamp(energyRef.current, 0, 100) / 100;
+    return {
+      power: skills.power * (0.82 + 0.18 * e),
+      technique: skills.technique * (0.80 + 0.20 * e),
+    };
+  };
+
   const hiddenInputs = (): HiddenMatchInputs => {
     const car = careerRef.current;
     return {
       teamStrength: teamRef.current,
       oppStrength: oppStrengthRef.current,
-      energy: car ? car.energy : 80,
+      energy: energyRef.current,
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
     };
   };
@@ -252,6 +275,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   positionRef.current = position;
   const teamRef = useRef(teamRelationship);
   teamRef.current = teamRelationship;
+  // Vision decides how much of the pitch you are told about — see visibleOptions.
+  const visionRef = useRef(career?.skills.vision ?? 55);
+  visionRef.current = career?.skills.vision ?? 55;
 
   const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship));
   const ballRef = useRef<Ball | null>(null);
@@ -568,6 +594,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // ball must fully cross.
       ctx.lineWidth = Math.max(2, unit * 0.2);
       pLine(POST_L, 0, POST_R, 0);
+    }
+
+    // ── What you can SEE ──
+    // Vision buys information, not accuracy. Everyone is drawn either way —
+    // hiding players would read as a bug — but only the options a player of this
+    // vision could actually pick out are marked, and only the ones inside the
+    // range he is scanning. At 30 vision you get the obvious man; at 90 you get
+    // three, and the best of them is called out.
+    if (phaseRef.current === "aim" && !sc.receiverDone) {
+      const seen = visibleOptions(sc, sc.player, visionRef.current);
+      seen.forEach((o, i) => {
+        const m = P(o.runner.pos.x, o.runner.pos.y);
+        const best = i === 0 && seen.length > 1;
+        ctx.lineWidth = Math.max(1.2, unit * (best ? 0.15 : 0.1));
+        ctx.strokeStyle = best ? "rgba(52,211,153,0.85)" : "rgba(147,197,253,0.5)";
+        ctx.beginPath();
+        ctx.arc(m.px, m.py - unit * 1.9, unit * (best ? 0.72 : 0.55), 0, Math.PI * 2);
+        ctx.stroke();
+      });
     }
 
     // Pass aim marker — where the run is heading. Drawn small and on the grass so
@@ -1412,6 +1457,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       events.push({ minute: st.minute, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
     }
 
+    // The minutes you were not playing still cost you.
+    setEnergy(energyRef.current - (st.minute - matchMinuteRef.current) * drainPerMinute);
+
     pendingRequestRef.current = step.request;
     matchMinuteRef.current = st.minute;
     setMatchMinute(st.minute);
@@ -1481,7 +1529,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // defence gets the time your first touch cost them. A heavy touch and they
     // are on you before you look up; a good one and you have a moment.
     let heavyTouch = 0;
-    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, skills.technique, rng);
+    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, tiredSkills().technique, rng);
 
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -1511,6 +1559,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     goalEventsRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
+    setEnergy(career?.energy ?? 85);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
     pendingRequestRef.current = null;
     chainRef.current = null;
@@ -1559,7 +1608,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Contact chosen -> launch ---
   const handleContact = (contact: { cx: number; cy: number }) => {
     if (!aim) return;
-    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, skills, rngRef.current);
+    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, tiredSkills(), rngRef.current);
+    setEnergy(energyRef.current - DRAIN_PER_CHANCE);
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current));
     playKick();
