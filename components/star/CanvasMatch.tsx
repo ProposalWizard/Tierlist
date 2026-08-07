@@ -1,11 +1,16 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  buildWeightedScenario, buildAttackingScenario, launch, stepBall, stepBallInNet,
+  buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
+  launch, stepBall, stepBallInNet,
   stepKeeper, stepFollower, stepRunner, stepDefenders, initDefenders,
   OUTCOME_TEXT, clamp,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
+import {
+  newMatch, advanceUntilInvolved, resolveScenario,
+  type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult,
+} from "@/lib/star/hiddenMatch";
 import {
   PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
@@ -176,6 +181,33 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const [simEvents, setSimEvents] = useState<SimEvent[]>([]);
   const [simVisible, setSimVisible] = useState(false);
 
+  // The match going on around you. It owns possession, territory and momentum;
+  // your chances are what it hands you, and their kind is decided by where the
+  // ball actually was when it found you.
+  const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
+  // The situation the simulation has just produced, consumed by the next
+  // loadScenario() so the scenario matches the football that led to it.
+  const pendingRequestRef = useRef<ScenarioRequest | null>(null);
+
+  const hiddenInputs = (): HiddenMatchInputs => {
+    const car = careerRef.current;
+    return {
+      teamStrength: teamRef.current,
+      oppStrength: oppStrengthRef.current,
+      energy: car ? car.energy : 80,
+      playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
+    };
+  };
+
+  // Translate what the physics produced into what the match needs to know.
+  // Only a completed pass keeps the ball; everything else ends the move.
+  const matchResultFor = (res: Outcome): ScenarioResult => {
+    if (OUTCOME_TEXT[res].kind === "goal") return "goal";
+    if (res === "delivered") return "delivered";
+    if (res === "tackled") return "lost";
+    return "saved";
+  };
+
   const SIM_COMMENTARY = [
     "Possession is being shared evenly in midfield.",
     "The defense holds firm under pressure.",
@@ -296,6 +328,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     initDefenders(scenarioRef.current, rngRef.current);
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
+    // In a real match, kick-off belongs to the match, not to you: it plays until
+    // the ball finds you rather than dropping you into a chance in the first
+    // minute. The sandbox still opens on a scenario, which is its whole point.
+    if (matchModeRef.current) {
+      startSimulation();
+      return;
+    }
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
     playWhistle(); // no-op until the first user gesture primes audio — harmless
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1208,6 +1247,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
     }
 
+    // Hand the outcome back to the match. Without this it would carry on as
+    // though your moment never happened — you would score and the ball would
+    // still be in their box.
+    if (matchModeRef.current) resolveScenario(matchStateRef.current, matchResultFor(res));
+
     // Celebration / impact FX + sound, matched to what the physics produced.
     if (kind === "goal") {
       showAction("GOAL");
@@ -1299,54 +1343,65 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     }
   };
 
-  // Generate simulation events between chances and run the clock forward.
+  // Run the match on around you until it needs you again.
+  //
+  // This used to be a countdown: an interval computed from your skill decided
+  // when the next chance arrived, and the opponent scored on an independent
+  // coin flip. Nothing linked one moment to the next, so a chance never felt
+  // earned. The clock is now driven by the simulation — you are pulled in when
+  // your side works the ball into a dangerous area, and the situation you get
+  // is whatever that area justifies.
   const startSimulation = () => {
     seedRef.current += 1;
     const rng = mulberry32(seedRef.current);
     rngRef.current = rng;
-    const currentMin = matchMinuteRef.current;
 
-    // How long until the player's next chance? Depends on skill + quality.
-    const car = careerRef.current;
-    const skill = car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55;
-    const avgInterval = clamp(16 - (skill / 100) * 6 - (teamRef.current / 100) * 3 + (oppStrengthRef.current / 100) * 3, 6, 22);
-    const interval = Math.round(avgInterval + (rng() - 0.5) * avgInterval * 0.5);
-    const nextMin = Math.min(MATCH_DURATION, currentMin + interval);
+    // The refs are the authority on the scoreline (the HUD reads them, and your
+    // own goals are credited in resolveOutcome), so the match is synced to them
+    // before it runs rather than keeping a second, divergent count.
+    const st = matchStateRef.current;
+    st.userScore = userScoreRef.current;
+    st.oppScore = oppScoreRef.current;
 
-    const events: SimEvent[] = [];
-    let min = currentMin;
+    const step = advanceUntilInvolved(st, hiddenInputs(), rng, MATCH_DURATION);
 
-    // Generate commentary + opponent chances during simulation
-    while (min < nextMin) {
-      min += 2 + Math.floor(rng() * 4);
-      if (min >= nextMin) break;
+    const events: SimEvent[] = step.events.map((e) => ({
+      minute: e.minute,
+      // The opponent is named here rather than in the simulation, which has no
+      // business knowing who you are playing.
+      text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
+      isGoal: e.isGoal,
+    }));
 
-      // Opponent chance
-      const oppChanceRate = 0.12 + (oppStrengthRef.current - 65) / 400;
-      if (rng() < oppChanceRate) {
-        const oppScores = rng() < 0.28 + (oppStrengthRef.current - 65) / 200;
-        if (oppScores) {
-          oppScoreRef.current += 1;
-          setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
-          events.push({ minute: min, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true });
-          playCrowdSwell("groan");
-        } else {
-          const misses = [
-            `${fixtureOpponentRef.current} have a shot — goes wide.`,
-            `A chance for ${fixtureOpponentRef.current} — the keeper saves well.`,
-            `${fixtureOpponentRef.current} threaten — cleared off the line!`,
-            `${fixtureOpponentRef.current} fire wide from distance.`,
-          ];
-          events.push({ minute: min, text: misses[Math.floor(rng() * misses.length)] });
-        }
-      } else {
-        // Normal commentary
-        events.push({ minute: min, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
-      }
+    // A teammate's goal gets a real name off the squad sheet, the same as one
+    // you set up yourself, so the scoresheet reads like a team's.
+    const squad = careerRef.current?.squad ?? [];
+    for (const e of step.events) {
+      if (!e.isGoal || !e.teammateGoal) continue;
+      const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
+      const scorer = pickSquadScorer(attackers.length > 0 ? attackers : squad, rng);
+      if (!scorer) continue;
+      const assister = pickSquadAssist(squad, scorer.id, rng);
+      goalEventsRef.current.push({ minute: e.minute, scorer: scorer.name, assist: assister?.name, isUserGoal: false });
+      const ev = events.find(x => x.minute === e.minute && x.isGoal);
+      if (ev) ev.text = `⚽ ${scorer.shortName} scores!`;
     }
 
-    matchMinuteRef.current = nextMin;
-    setMatchMinute(nextMin);
+    if (st.oppScore > oppScoreRef.current) playCrowdSwell("groan");
+    else if (st.userScore > userScoreRef.current) playCrowdSwell("cheer");
+    userScoreRef.current = st.userScore;
+    oppScoreRef.current = st.oppScore;
+    setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
+
+    // Nothing at all happened in the skipped minutes — say so rather than
+    // showing an empty panel.
+    if (events.length === 0) {
+      events.push({ minute: st.minute, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
+    }
+
+    pendingRequestRef.current = step.request;
+    matchMinuteRef.current = st.minute;
+    setMatchMinute(st.minute);
     setSimEvents(events);
     setSimVisible(true);
     setPhase("sim");
@@ -1355,7 +1410,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const simDuration = Math.min(events.length * 800 + 1200, 5000);
     window.setTimeout(() => {
       setSimVisible(false);
-      if (nextMin >= MATCH_DURATION) {
+      if (step.fullTime) {
         // Full time
         const careerForStats = careerRef.current ?? FALLBACK_CAREER;
         const t = tallyRef.current;
@@ -1382,8 +1437,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     rngRef.current = mulberry32(seedRef.current);
     const rng = rngRef.current;
 
+    // What the match has just handed you, if anything. Its zone narrows the
+    // scenario to what makes football sense from there; your position still
+    // decides which of those you are likeliest to be the one taking.
+    const request = attacking ? null : pendingRequestRef.current;
+    pendingRequestRef.current = null;
+
     if (attacking) {
       scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current);
+    } else if (request) {
+      const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
+      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current);
     } else {
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current);
     }
@@ -1403,6 +1467,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
     setPhase("aim");
+    // Say where the chance came from before describing it, so it reads as the
+    // end of a move rather than as a situation that appeared from nowhere.
+    if (request) pushLine(request.reason);
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
     playWhistle();
   };
@@ -1415,6 +1482,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     goalEventsRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
+    matchStateRef.current = newMatch(mulberry32(seedRef.current));
+    pendingRequestRef.current = null;
     buildupReturnRef.current = false;
     setScore({ user: 0, opp: 0 });
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });

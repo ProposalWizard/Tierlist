@@ -794,6 +794,28 @@ export function pickScenarioKind(position: string, rng: () => number): ScenarioK
   return SCENARIO_KINDS[SCENARIO_KINDS.length - 1];
 }
 
+/**
+ * Pick a kind from a restricted set, still honouring the position weights.
+ *
+ * The hidden match decides which chances make football sense from where the
+ * ball actually is; this decides which of THOSE a player in this position is
+ * likeliest to be the one taking. A centre-back in the box gets the header far
+ * more often than the one-on-one, without the box ever offering him a buildup.
+ */
+export function pickScenarioKindFrom(position: string, rng: () => number, allowed: ScenarioKind[]): ScenarioKind {
+  if (allowed.length === 0) return pickScenarioKind(position, rng);
+  const weights = POSITION_WEIGHTS[position] ?? DEFAULT_WEIGHTS;
+  // A floor of 1: a position weighted to zero for this kind must still be able
+  // to take it if the match hands him nothing else, rather than falling through.
+  const total = allowed.reduce((sum, k) => sum + Math.max(1, weights[k]), 0);
+  let roll = rng() * total;
+  for (const k of allowed) {
+    roll -= Math.max(1, weights[k]);
+    if (roll <= 0) return k;
+  }
+  return allowed[allowed.length - 1];
+}
+
 // Pick a scenario kind weighted by position, then build it — the single entry
 // point the UI needs for spawning the next situation.
 export function buildWeightedScenario(rng: () => number, position: string, keeperStrength = 62, teamRelationship = 60): Scenario {
