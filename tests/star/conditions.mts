@@ -1,7 +1,7 @@
 import { conditionsFor, conditionsLine, type Conditions } from "../../lib/star/weather";
 import {
   buildScenario, launch, stepBall, initDefenders, stepKeeper, stepDefenders,
-  stepSupport, stepRunner, stepFollower, type Outcome, type Scenario,
+  stepReactions, type Outcome, type Scenario,
 } from "../../lib/star/canvasEngine";
 
 /**
@@ -196,9 +196,7 @@ function firstBounce(conditions: Conditions | undefined): number {
       stepDefenders(sc, DT, ball.pos, false, ball);
       wallPeak = Math.max(wallPeak, ...sc.defenders.map(d => d.z ?? 0));
       stepKeeper(sc, DT);
-      stepSupport(sc, ball, ball.pos, DT);
-      stepRunner(sc, DT);
-      stepFollower(sc, ball, rng, DT);
+    stepReactions(sc, ball, DT, rng);
       out = stepBall(ball, sc, rng, DT);
     }
     return { out: out ?? "none", wallPeak, sc };
@@ -207,7 +205,16 @@ function firstBounce(conditions: Conditions | undefined): number {
   const runs = Array.from({ length: 120 }, (_, i) => freeKick(i * 13 + 1, -0.2));
   check(runs.some(r => r.wallPeak > 0.3), `the wall leaves the ground (peak ${Math.max(...runs.map(r => r.wallPeak)).toFixed(2)} m)`);
   check(runs.every(r => r.wallPeak < 1.6), "but they are footballers, not kangaroos");
-  check(runs.some(r => r.out === "goal"), "and a free kick can still be scored");
+
+  // Driven straight through them it is blocked, and that is correct — a wall is
+  // there to be gone round or over.
+  check(runs.filter(r => r.out === "tackled").length > 20,
+    `a free kick hit straight at the wall is blocked (${runs.filter(r => r.out === "tackled").length}/120)`);
+
+  // Lifted over them, it is a free kick again.
+  const lifted = Array.from({ length: 200 }, (_, i) => freeKick(i * 13 + 1, 0.75));
+  check(lifted.some(r => r.out === "goal"),
+    `and one lifted over the wall can still be scored (${lifted.filter(r => r.out === "goal").length}/200)`);
 
   // They come down again — a wall stuck in the air would let everything under it.
   const one = freeKick(7, -0.2);

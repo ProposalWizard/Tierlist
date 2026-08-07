@@ -17,34 +17,52 @@
     npx tsx tests/star/money.mts
     npx tsx tests/star/conditions.mts
 
-**support** — the attack: space evaluation, supporting runs, pursuit of a ball
-not played straight at anyone, and chaining a completed pass into the next
-decision. What every assertion here guards against is the state this replaced —
-team-mates as furniture, a `Vec2[]` the renderer drew and nothing read.
+**support** — the attack: space evaluation, where your team-mates are standing
+when the scenario opens, receiving a ball played near a man rather than at him,
+and chaining a completed pass into the next decision.
 
-Three of these were written because the first implementation was wrong, and the
-measurements are the reason we know:
+Two things this has had to survive. First, team-mates as furniture — a `Vec2[]`
+the renderer drew and nothing read, so a pass not struck straight at somebody
+was simply wasted. Second, and more recently, team-mates who ran about while you
+were still aiming. **Nothing moves until you kick the ball**, so the space a
+support player occupies has to be found when the scenario is BUILT, not jogged
+into while you look at it.
+
+Written because the first implementation was wrong, and the measurements are the
+reason we know:
 
 - **A cover defender at 0.62 along the lane is unbeatable.** He only has to move
   62% as far as the man he is covering, so at 3.4 m/s he can never be outrun by
-  a support player at 4.8. Support play was mathematically pointless until the
-  marker on a support player was moved to 0.85.
+  a support player at 4.8. (The whole covering system has since been deleted —
+  nobody covers anything while you aim — but the arithmetic is why `spaceScore`
+  still weights lanes the way it does.)
 - **The man closing YOU down was blocking every lane at once.** He stands within
   two metres of the start of every passing lane, so raw distance-to-segment made
-  him shut all of them equally: the best available option fell by the same
-  amount wherever a support player ran. Defenders are now only counted in lanes
-  they are actually in.
+  him shut all of them equally. Defenders are only counted in lanes they are
+  actually in.
 - **Support players were stealing 66 shots in 400.** A team-mate wandering into
   your shot and controlling it turns a goal into a completed pass. Whether a
-  ball is your strike is now decided once, at the moment you hit it, and sticks
-  — a shot that deflects, curls away or is parried is still your shot.
+  ball is your strike is decided once, at the moment you hit it, and sticks — a
+  shot that deflects, curls away or is parried is still your shot. He steps out
+  of the way of a live one and picks up a dead one, which is a different thing
+  and is counted separately.
+- **A target ten metres beyond a man's feet is an instruction to give the ball
+  away.** Every runner used to be built with a `to` he sprinted for; the game
+  marked that spot for you. With the pitch frozen, four scenarios (through-ball,
+  cutback, byline cross, corner) were asking you to hit a point five to eleven
+  metres from anybody. Every marked spot is now inside six metres of the man it
+  belongs to, and the suite asserts it for every kind and seed.
 
-Measured effect of supporting runs on the best pass available after two seconds
-of being closed down (change in the best option's space score):
+Receiving, measured over 120 passes each with only the target man on the pitch
+(a 15 m/s ball, defenders removed):
 
-    long_range   frozen +0.001   support +0.035   improved 78% of the time
-    one_on_one   frozen +0.018   support +0.077   improved 93%
-    cutback      frozen -0.027   support +0.009   improved 60%
+    3.5 m off his foot    119/120 end up his   ·  69 stretched for inside two seconds
+    24 m off his foot      83/120 end up his   ·   6 stretched for inside two seconds
+
+The difference is not whether he gets it — a ball that stops is fetched by
+somebody, always — it is whether it was a pass or a walk.
+
+---
 
 **hiddenMatch** — the ninety minutes you are not playing. Everything the
 simulation does is statistical, so it is measured over 2,000 matches per case
@@ -79,66 +97,104 @@ produce your chances at their end produce theirs at yours.
 
 ---
 
-**defending** — reading a pass, committing to the interception, recovering
-goal-side, and offside judged live. What this replaced: a defender only ever
-deflected a ball that happened to pass within a metre of where he was already
-standing, never turned when he was played past, and the offside risk on a
-through-ball was a fixed number decided before you had taken aim.
+**defending** — nobody moves until you kick it.
 
-Two measurements shaped the implementation:
+This section replaced one that described the opposite. The engine used to run a
+whole Pressure Curve while you were still aiming: the nearest defender closed
+you down, the others slid onto your passing lanes, holding the ball too long
+lost it, and team-mates drifted into space at the same time. Playing it, that is
+simply not this game. **You have unlimited time to decide. The only action you
+take is the strike. Everything else is a consequence of it.**
+
+What the model is now:
+
+- The pitch is frozen during the aim phase. The match loop calls nothing that
+  moves an outfield player, and no step function moves anybody without a live
+  ball. The keeper is the single exception, deliberately — he patrols his line,
+  which is the timing puzzle a shot is actually asking you to solve.
+- Once the ball is struck, a player reacts only when it comes inside his radius
+  (9 m), and then he moves at 2.6 m/s. A stretch and a step, not a chase.
+- Both sides move at exactly the same pace. Who wins a loose ball is a question
+  of where it went, not of who is quicker — asserted to floating-point equality.
+- A defender who reaches the ball **clears it**, and the move is over. A blocked
+  shot, a cut-out pass and a lost second ball are all the same event: possession
+  gone, hoofed back down the pitch.
+- A ball that has stopped is the one exception to the radius. Everybody jogs to
+  it (4.6 m/s, or 7 m/s if it is more than 12 m away) however far off it is,
+  because otherwise it sits on the grass and the move never ends. A resting ball
+  is no longer an outcome in itself.
+
+Deleted along with the curve: `stepSupport`, `stepRunner`, `stepFollower`,
+`interceptPoint`/`interceptFrom` and the pursuit horizon. The poacher's tap-in
+survived — folded into `stepReactions` at the same slow pace as everybody else.
+
+Two measurements from the old model are kept because they still explain code:
 
 - **Re-solving the interception every frame is worse than not trying.** He
   chases the earliest point he can still theoretically reach, which moves away
-  from him as fast as the ball does, so he trails it the whole way: 20,000
-  frames of chasing changed 7 passes in 500. Worse, he had vacated the lane he
-  was covering — measurably worse than standing still. He now commits to the
-  point he picked and only leaves his position for an interception he can make
-  at 80% of his pace.
+  from him as fast as the ball does: 20,000 frames of chasing changed 7 passes
+  in 500, and he had vacated the lane he was covering.
 - **Defenders must not read shots.** A cone around the goal was the obvious test
   for "is this a shot", and it is wrong: from the byline every forward pass sits
-  inside the cone, so a cutback to a team-mate was unplayable. It is now decided
-  by where the ball would actually cross the line, once, at the strike — and it
-  sticks, so a shot that deflects or curls away is still your shot.
+  inside the cone, so a cutback was unplayable. It is decided by where the ball
+  would actually cross the line, once, at the strike — and it sticks.
+
+The load-bearing assertion in the file is the last one: **1,200 scenarios across
+every kind, struck every which way from a barely-touched dink to a full-power
+hammer, and every single one resolves.** Nothing chases you, a stopped ball is
+not an outcome, and a defender clears rather than deflects — if any of those
+three drops a case the highlight hangs and the match cannot continue. Slowest
+resolution is well under 25 seconds of simulated time.
 
 Offside is judged only on the through-ball. A scenario carries one or two
 defenders, not a back four, so `min(defender.y)` is a meaningful line only in
 the scenario built around one — applying it everywhere flagged two thirds of
-ordinary midfield passes offside, which is exactly the kind of thing that looks
-fine in code and is obvious in a distribution.
+ordinary midfield passes offside.
 
 ---
 
 **contest** — the ball as something both sides can win: ownership, the 50-50 on
-a loose ball, the aerial duel, and the touch you take when it comes back to you.
+a loose ball, the aerial duel, the woodwork, and the touch you take when it
+comes back to you.
 
 What this replaced: a deflection or a parry rolled until it stopped and the
 chance fizzled out as "scrambled clear" with nobody involved; a header was
-struck as though the man marking you were not there; and a chained scenario
-started with the ball glued to your foot however poor your technique.
+struck as though the man marking you were not there; a chained scenario started
+with the ball glued to your foot however poor your technique; and hitting the
+post ended the highlight.
 
 Tuned by measurement:
 
 - **The aerial contest radius was too small to matter.** At 2.2 m most headers
   were not contested at all — the marker is placed 1.5 to 2.6 m away — so a
-  powerful player lost 1.6% of duels. At 2.8 m the duel is real at both ends of
-  the scale.
-- **The 50-50 has to be a cost, not the usual outcome.** Losing the second ball
-  runs at 1-2% of chances, which is enough that leaving a rebound rolling in
-  front of a defender is a mistake and not so much that a deflection ends the
-  move.
-- **First touch is not a dice roll.** The defence simply gets the time your
-  touch cost them, using the same closing behaviour it uses everywhere else:
-  technique 20 leaves you 2.2 m of room, technique 95 leaves you 3.1 m.
+  powerful player lost 1.6% of duels. At 2.8 m the duel is real at both ends.
+- **Two different things wear the outcome "tackled".** A body in the way of the
+  strike, and the second ball lost afterwards. They are counted apart, because
+  a single threshold across both hid which one had moved: currently 13% blocked
+  and 23% lost afterwards on volleys and headers.
+- **First touch is not a dice roll.** Nobody moves before you kick, so a heavy
+  touch cannot cost you time — it costs you POSITION. Technique 20 pushes the
+  ball 1.7 m away from you, technique 95 kills it inside 0.3 m, and you move
+  with it rather than being left standing where it was.
+- **The post keeps a lot of the power.** It cannons back out at 78% of the pace
+  it arrived with and is loose from that moment: your poacher can follow it in,
+  a defender who gets there first hoofs it clear. Only a second ricochet off the
+  frame ends it, because that is pinball rather than football.
 
 Outcome distributions the whole engine currently produces, from a full-power
 strike straight at the middle of the goal (800 runs each). These are the numbers
 to compare against after any change to physics, the keeper or the defence:
 
-    one_on_one    goal 53%   saved 36%   lost 1%
-    tight_angle   goal 35%   saved 51%   lost 2%
-    header        goal 27%   saved 34%   lost 1%
-    volley        goal 32%   saved 38%   lost 2%
-    long_range    goal 16%   saved 32%   lost 1%
+    one_on_one    goal 39%   saved 30%   lost 13%   collected 18%
+    tight_angle   goal 17%   saved 50%   lost 26%   collected  7%
+    header        goal 14%   saved 28%   lost 38%   collected 20%
+    volley        goal 20%   saved 33%   lost 38%   collected  9%
+    long_range    goal 14%   saved 24%   lost 60%   collected  2%
+
+"lost" is a defender getting the ball, either in front of the strike or after
+it. "collected" is a team-mate tidying up a ball that had already died. Long
+range is punishing by construction — there are bodies between you and the goal
+and it is meant to be the shot you take when nothing better is on.
 
 ---
 
@@ -490,8 +546,17 @@ reads. Nothing else in the engine knows either exists — a scenario that
 specifies no conditions is byte-identical to the old behaviour, which is what
 makes it safe for the sandbox and for saves that predate it.
 
-Two things the measurements caught:
+Three things the measurements caught:
 
+- **A jumping wall was unbeatable.** The block window was the defender's feet up
+  to head height ABOVE his feet, so leaping raised the ceiling one-for-one to
+  about 2.55 m — and the highest a free kick can be lifted over a wall nine
+  metres away is roughly 2.2 m. Every lofted free kick in 200 was blocked, at
+  every loft and every power. A wall keeps its arms down, so its ceiling is now
+  capped at 2.05 m however high it jumps; the leap lifts its FEET instead, which
+  is what makes a ball rolled under a jumping wall a real free kick too. Driven
+  straight at them it is still blocked; lifted over at the right weight it goes
+  in about 27% of the time, and overhit it clears the bar.
 - **The wall hung in mid-air once the ball resolved.** The jump physics were
   gated on there being a live ball, so gravity stopped the instant the outcome
   was decided — exactly when the player is looking at the freeze frame. Gravity

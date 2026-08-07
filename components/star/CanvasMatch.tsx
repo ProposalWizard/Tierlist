@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet,
-  stepKeeper, stepFollower, stepRunner, stepDefenders, stepSupport, initDefenders,
+  stepKeeper, stepDefenders, stepReactions, initDefenders,
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, visibleOptions,
   OUTCOME_TEXT, clamp, dragForFullPower,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
@@ -200,6 +200,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   interface SimEvent { minute: number; text: string; isGoal?: boolean; }
   const [simEvents, setSimEvents] = useState<SimEvent[]>([]);
   const [simVisible, setSimVisible] = useState(false);
+  /** What to do when the player has finished reading the highlights. */
+  const simContinueRef = useRef<(() => void) | null>(null);
 
   // The match going on around you. It owns possession, territory and momentum;
   // your chances are what it hands you, and their kind is decided by where the
@@ -433,7 +435,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         ]);
         setSimVisible(true);
         setPhase("sim");
-        window.setTimeout(() => { setSimVisible(false); startSimulation(); }, 3200);
+        simContinueRef.current = () => { setSimVisible(false); startSimulation(); };
         return;
       }
       startSimulation();
@@ -694,8 +696,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       });
     }
 
-    // Pass aim marker — where the run is heading. Drawn small and on the grass so
-    // it reads as a destination, not as a ring around a player.
+    // Pass aim marker — the yard of grass in front of the man you are looking
+    // for. Nobody runs onto anything any more, so this sits just ahead of his
+    // feet: it is a spot he can stretch into, not somewhere he is going.
     if (sc.runner && !sc.receiverDone) {
       const t = P(sc.runner.to.x, sc.runner.to.y);
       ctx.setLineDash([unit * 0.5, unit * 0.45]);
@@ -1305,23 +1308,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         if (out !== "running") finishDribble(out);
       }
 
-      // ── The world runs while you AIM ──
-      // It used to be frozen until you struck the ball, so a scenario had no
-      // time pressure at all: defenders were static dots and you could
-      // deliberate forever. Running the defence here is what creates the
-      // decision window — the nearest defender closes you down and the others
-      // shut your passing lanes, so every option quietly gets worse the longer
-      // you hold it. No timer, no countdown; just football closing in.
+      // ── Nothing moves until you kick it ──
+      //
+      // You have unlimited time to decide. The defence does not close you down,
+      // your team-mates do not drift, and no option gets quietly worse while you
+      // are looking at it — the only thing you do in a scenario is strike the
+      // ball, and everything else is a consequence of that.
+      //
+      // The keeper is the one exception, and deliberately so: he patrols his
+      // line, which is the timing puzzle a shot is actually asking you to solve.
       if (phaseRef.current === "aim") {
-        const sc = scenarioRef.current;
-        const lost = stepDefenders(sc, dt, sc.player, true);
-        stepKeeper(sc, dt);
-        // …and your team-mates work against that. While the cover slides onto
-        // your lane, the man they are covering moves somewhere they are not, so
-        // your options shift rather than only decaying.
-        stepSupport(sc, ballRef.current, sc.player, dt);
-        stepRunner(sc, dt);
-        if (lost) resolveOutcome(lost);
+        stepKeeper(scenarioRef.current, dt);
       }
 
       if (phaseRef.current === "flight" && ballRef.current) {
@@ -1329,22 +1326,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const steps = 3;
         const h = dt / steps;
         for (let i = 0; i < steps; i++) {
-          // Defenders keep working during the flight too, so a slow pass can
-          // still be cut out by the man who was already sliding across.
-          // Defenders read the flight: they go for a ball they can reach and
-          // sprint back goal-side once it is past them.
+          // Everyone reacts to the ball, and only to the ball: a player moves
+          // when it comes inside his radius and not before, slowly, and both
+          // sides at the same pace. See stepReactions.
           stepDefenders(scenarioRef.current, h, ballRef.current.pos, false, ballRef.current);
           stepKeeper(scenarioRef.current, h);
-          // Everyone goes for a ball that was not played straight at them.
-          stepSupport(scenarioRef.current, ballRef.current, ballRef.current.pos, h);
-          stepRunner(scenarioRef.current, h);
-          stepFollower(scenarioRef.current, ballRef.current, rngRef.current, h);
+          stepReactions(scenarioRef.current, ballRef.current, h, rngRef.current);
           const res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           if (res) { resolveOutcome(res); break; }
         }
-        // Surface mid-flight moments (pass reception / the teammate's own shot) once.
+        // Surface mid-flight moments (pass reception / the teammate's own shot /
+        // the woodwork) once.
         const ev = ballRef.current?.event;
         const receiver = scenarioRef.current.receiver;
+        // The frame no longer ends the move — the ball cannons back out and is
+        // live — so it is narrated here rather than in resolveOutcome.
+        if (ev === "post") {
+          pushLine("Off the woodwork — and it's still live!");
+          showAction("POST");
+          nudge(0.28, 0.25);
+          playPost();
+          playCrowdSwell("groan");
+        }
         if (ev && receiver) {
           if (ev === "received") { pushLine(commentaryReceived(receiver.roleLabel, rngRef.current)); showAction("PASS"); }
           else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(receiver.roleLabel, rngRef.current)); playKick(); kickPoseRef.current = KICK_POSE_S; }
@@ -1708,9 +1711,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setSimVisible(true);
     setPhase("sim");
 
-    // Show simulation for a few seconds, then transition
-    const simDuration = Math.min(events.length * 800 + 1200, 5000);
-    window.setTimeout(() => {
+    // The player advances this, not a timer. A whole match used to fly past in
+    // a few seconds of auto-dismissing panels — you could not read what had
+    // happened, let alone register that you were two down.
+    simContinueRef.current = () => {
       setSimVisible(false);
       if (step.fullTime) {
         // Full time
@@ -1731,7 +1735,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       } else {
         loadScenario(false);
       }
-    }, simDuration);
+    };
   };
 
   // Load a new scenario onto the canvas and enter aim phase.
@@ -1824,6 +1828,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setMatchMinute(0);
     setEnergy(career?.energy ?? 85);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
+    simContinueRef.current = null;
     pendingRequestRef.current = null;
     dribbleRef.current = null;
     flickStartRef.current = null;
@@ -2040,7 +2045,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
         {/* Simulation overlay — match clock ticking between player chances */}
         {phase === "sim" && simVisible && (
-          <div className="absolute inset-0 bg-gray-950/90 flex flex-col items-center justify-center pointer-events-none z-10">
+          <div className="absolute inset-0 bg-gray-950/92 flex flex-col items-center justify-center z-10">
             {/* Match clock */}
             <div className="text-5xl font-black text-white tabular-nums mb-1">{matchMinute}&#39;</div>
             {/* Scoreline */}
@@ -2059,15 +2064,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
                   className={`text-xs leading-snug px-3 py-1 rounded ${
                     ev.isGoal
                       ? "text-amber-300 font-black bg-amber-900/30 border border-amber-500/40"
-                      : "text-gray-400 bg-gray-800/40"
+                      : "text-gray-100 bg-gray-800/60"
                   }`}
                   style={{ animationDelay: `${i * 0.4}s` }}
                 >
-                  <span className="text-gray-500 tabular-nums mr-1.5 font-bold">{ev.minute}&#39;</span>
+                  <span className="text-gray-400 tabular-nums mr-1.5 font-bold">{ev.minute}&#39;</span>
                   {ev.text}
                 </div>
               ))}
             </div>
+
+            {/* You advance this, not a timer. */}
+            <button
+              onClick={() => { const go = simContinueRef.current; simContinueRef.current = null; go?.(); }}
+              className="mt-5 rounded-xl bg-emerald-500 px-8 py-2.5 text-sm font-black text-white transition hover:bg-emerald-400 active:scale-[0.98]"
+            >
+              Continue
+            </button>
           </div>
         )}
       </div>

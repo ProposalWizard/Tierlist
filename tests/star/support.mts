@@ -1,19 +1,21 @@
 import {
-  buildScenario, spaceScore, bestSupportPoint, interceptPoint, stepSupport, stepRunner,
-  stepDefenders, stepKeeper, stepBall, stepFollower, initDefenders, launch,
+  buildScenario, spaceScore, bestSupportPoint,
+  stepDefenders, stepKeeper, stepBall, stepReactions, initDefenders, launch,
   chainKindFor, chainReturnChance, CHAIN_MAX, SCENARIO_KINDS,
   type Scenario, type Ball, type Outcome, type Vec2,
 } from "../../lib/star/canvasEngine";
 import { PITCH_W, CX, HALF_LEN, BOX_DEPTH } from "../../lib/star/pitch";
 
 /**
- * The attack: space evaluation, supporting runs, pursuit of a loose ball, and
- * chaining a completed pass into the next decision.
+ * The attack: space evaluation, where your team-mates are standing when the
+ * scenario opens, and chaining a completed pass into the next decision.
  *
- * The thing every one of these guards against is the state this replaced —
- * team-mates as furniture. They were a Vec2[] the renderer drew and nothing
- * read, so while the defence closed you down your options only ever got worse,
- * and a pass that was not struck straight at someone was simply wasted.
+ * Two things this has had to survive. First, team-mates as furniture — a Vec2[]
+ * the renderer drew and nothing read, so a pass not struck straight at somebody
+ * was simply wasted. Second, and more recently, team-mates who ran about while
+ * you were still aiming: nothing moves until you kick the ball, so the space a
+ * support player occupies has to be found when the scenario is BUILT rather
+ * than jogged into while you look at it.
  */
 
 const problems: string[] = [];
@@ -72,83 +74,104 @@ function bestOption(sc: Scenario): number {
     "bestSupportPoint never sends anyone off the pitch");
 }
 
-// ── Supporting runs: options must not only decay ────────────────────────────
+// ── Support players are placed in space, not left to find it ────────────────
+//
+// This replaced a block that ran two seconds of the aim phase and asserted your
+// options got BETTER as team-mates drifted about. Nothing drifts any more, so
+// the whole question moves to kick-off: is the man you are being offered
+// standing somewhere worth finding, right now, before you have touched it?
 {
-  // Run the aim phase twice from the same scenario: once with support moving,
-  // once with the team-mates frozen the way they used to be.
   for (const kind of ["long_range", "one_on_one", "cutback"] as const) {
-    const withSupport: number[] = [];
-    const frozen: number[] = [];
+    const placed: number[] = [];
+    const anywhere: number[] = [];
 
     for (let seed = 0; seed < 200; seed++) {
-      for (const live of [true, false]) {
-        const rng = mulberry32(900 + seed);
-        const sc = buildScenario(kind, rng, 62, 60);
-        initDefenders(sc, rng);
-        const before = bestOption(sc);
-        for (let t = 0; t < 2.0; t += DT) {
-          stepDefenders(sc, DT, sc.player, false);   // false: we want the shape, not a tackle
-          if (live) { stepSupport(sc, null, sc.player, DT); stepRunner(sc, DT); }
-        }
-        (live ? withSupport : frozen).push(bestOption(sc) - before);
-      }
+      const rng = mulberry32(900 + seed);
+      const sc = buildScenario(kind, rng, 62, 60);
+      initDefenders(sc, rng);
+      const support = sc.secondaryRunners.filter(r => r.role === "support");
+      if (support.length === 0) continue;
+      placed.push(Math.max(...support.map(r => spaceScore(r.pos, sc, sc.player))));
+      // What a team-mate dropped on the pitch at random would have been worth.
+      const rx = 4 + rng() * (PITCH_W - 8), ry = 2 + rng() * (HALF_LEN - 4);
+      anywhere.push(spaceScore({ x: rx, y: ry }, sc, sc.player));
     }
 
-    const m = mean(withSupport), f = mean(frozen);
-    const improved = withSupport.filter(x => x > 0.01).length / withSupport.length;
-    const improvedFrozen = frozen.filter(x => x > 0.01).length / frozen.length;
-
-    check(m > f + 0.02, `${kind}: supporting runs beat standing still (${f.toFixed(3)} → ${m.toFixed(3)})`);
-    check(improved > 0.5, `${kind}: most of the time your best option is better after two seconds (${(improved * 100).toFixed(0)}%)`);
-    check(improved > improvedFrozen * 2, `${kind}: and that is the running, not the scenario (${(improvedFrozen * 100).toFixed(0)}% frozen)`);
-    check(m > 0, `${kind}: holding the ball no longer only makes things worse (${m.toFixed(3)})`);
+    const m = mean(placed), r = mean(anywhere);
+    check(m > r + 0.05, `${kind}: support is offered in real space (${r.toFixed(3)} → ${m.toFixed(3)})`);
+    check(placed.filter(x => x > 0).length / placed.length > 0.9,
+      `${kind}: and almost always a pass you could actually play`);
   }
+
+  // And the pitch really is frozen: build a scenario, run the aim phase, and
+  // nobody has moved a centimetre.
+  const rng = mulberry32(41);
+  const sc = buildScenario("cutback", rng, 62, 60);
+  initDefenders(sc, rng);
+  const before = bestOption(sc);
+  const where = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].map(r => ({ ...r.pos }));
+  for (let t = 0; t < 3.0; t += DT) stepDefenders(sc, DT, sc.player, false);
+  const after = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].map(r => r.pos);
+  check(after.every((p, i) => p.x === where[i].x && p.y === where[i].y),
+    "three seconds of thinking moves nobody");
+  check(bestOption(sc) === before, "and your best option is exactly the one you were offered");
 }
 
-// ── Pursuit: a ball not played straight at you ──────────────────────────────
+// ── A ball played near a man, not at him ────────────────────────────────────
+//
+// The reaction radius is the whole of receiving under this model: he does not
+// set off for a pass, he stretches for one that arrives near him. A ball hit
+// wide of everybody is not lost — it rolls to a stop and somebody jogs over and
+// fetches it — but that is a walk, not a pass, and it costs you the move.
 {
-  const rng = mulberry32(77);
-  const sc = buildScenario("midfield_pass", rng, 62, 60);
-  const runner = sc.runner!;
-  const mkBall = (target: Vec2, speed: number): Ball => {
+  const played = (offset: number, seed: number): { out: Outcome | "none"; frames: number } => {
+    const rng = mulberry32(seed);
+    const sc = buildScenario("midfield_pass", rng, 62, 60);
+    initDefenders(sc, rng);
+    // This is about the receiver and nobody else.
+    sc.defenders = []; sc.secondaryRunners = [];
+    sc.follower.x = -50; sc.follower.y = -50;
+    const t = sc.runner!.pos;
+    const target = { x: clamp(t.x + offset, 2, PITCH_W - 2), y: t.y };
     const dx = target.x - sc.ball.x, dy = target.y - sc.ball.y;
     const d = Math.hypot(dx, dy) || 1;
-    return {
-      pos: { x: sc.ball.x, y: sc.ball.y }, vel: { x: dx / d * speed, y: dy / d * speed },
+    const ball: Ball = {
+      pos: { x: sc.ball.x, y: sc.ball.y }, vel: { x: dx / d * 15, y: dy / d * 15 },
       z: 0.08, vz: 0, spin: 0, resting: false, loose: false, contactCd: 0,
       receiverControlT: 0, event: null, inNet: false,
     };
+    let out: Outcome | null = null, i = 0;
+    for (; i < 900 && !out; i++) {
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+    }
+    return { out: out ?? "none", frames: i };
   };
 
-  // Four metres to one side of him: reachable, and he should go and get it.
-  const near = mkBall({ x: runner.to.x + 4, y: runner.to.y }, 16);
-  check(interceptPoint(near, runner) !== null, "a pass played near a team-mate can be chased down");
+  const near = Array.from({ length: 120 }, (_, k) => played(3.5, k * 7 + 78));
+  const wide = Array.from({ length: 120 }, (_, k) => played(24, k * 7 + 78));
+  const quick = (rs: typeof near) => rs.filter(r => r.out === "delivered" && r.frames < 120).length;
 
-  // Thirty metres the wrong way: not reachable, and pretending otherwise would
-  // mean a badly overhit pass was never really a mistake.
-  const away = mkBall({ x: clamp(runner.to.x + 34, 2, PITCH_W - 2), y: runner.to.y + 26 }, 26);
-  check(interceptPoint(away, runner) === null, "a pass nobody can reach stays a wasted pass");
+  const slow = (rs: typeof near) => rs.filter(r => r.out === "delivered" && r.frames > 240).length;
 
-  // And the whole loop: an offset pass is actually received.
-  {
-    const r2 = mulberry32(78);
-    const s2 = buildScenario("midfield_pass", r2, 62, 60);
-    initDefenders(s2, r2);
-    const t = s2.runner!.to;
-    const ball = mkBall({ x: clamp(t.x + 3.5, 2, PITCH_W - 2), y: t.y }, 15);
-    let out: Outcome | null = null;
-    for (let i = 0; i < 400 && !out; i++) {
-      stepSupport(s2, ball, ball.pos, DT);
-      stepRunner(s2, DT);
-      out = stepBall(ball, s2, r2, DT);
-    }
-    check(s2.receiverDone, "an offset pass is run onto and controlled");
-  }
+  check(near.filter(r => r.out === "delivered").length > 110,
+    `a ball played a few yards off a man ends up his (${near.filter(r => r.out === "delivered").length}/120)`);
+  check(quick(near) > 55, `and over half the time he stretches and takes it there and then (${quick(near)}/120 inside two seconds)`);
+  check(quick(wide) < 15, `one hit miles wide of him is nobody's pass (${quick(wide)}/120 inside two seconds)`);
+  check(slow(wide) > slow(near), `it stops, and somebody has to go and fetch it (${slow(near)} vs ${slow(wide)} long walks)`);
+  check(!near.some(r => r.out === "short") && !wide.some(r => r.out === "short"),
+    "and a ball is never simply abandoned on the grass");
 }
 
 // ── A support player never steals your shot ─────────────────────────────────
+//
+// The single worst thing this system could produce: a team-mate wandering into
+// a ball that was going in and "controlling" it, turning your goal into a
+// completed pass. He steps out of the way of a live shot. Once it has died on
+// the grass he can pick it up like anybody else — there is nothing left to
+// steal, and somebody has to, or the move never ends.
 {
-  let stolen = 0, shots = 0, goals = 0;
+  let stolen = 0, shots = 0, goals = 0, collected = 0;
   for (let seed = 0; seed < 400; seed++) {
     const rng = mulberry32(4000 + seed);
     const sc = buildScenario(seed % 2 ? "one_on_one" : "tight_angle", rng, 62, 60);
@@ -159,19 +182,21 @@ function bestOption(sc: Scenario): number {
     const ball = launch(sc, dir, 0.9, { cx: 0, cy: -0.2 }, { power: 70, technique: 70 }, rng);
     shots += 1;
     let out: Outcome | null = null;
-    for (let i = 0; i < 600 && !out; i++) {
-      stepDefenders(sc, DT, ball.pos, false);
+    for (let i = 0; i < 900 && !out; i++) {
+      stepDefenders(sc, DT, ball.pos, false, ball);
       stepKeeper(sc, DT);
-      stepSupport(sc, ball, ball.pos, DT);
-      stepRunner(sc, DT);
-      stepFollower(sc, ball, rng, DT);
+      stepReactions(sc, ball, DT, rng);
+      const wasLive = Math.hypot(ball.vel.x, ball.vel.y) > 5 && !ball.resting;
       out = stepBall(ball, sc, rng, DT);
+      // A shot taken off you while it was still travelling. This must never
+      // happen; a dead ball tidied up afterwards is fine and is counted apart.
+      if (out === "delivered" && ball.shot) { if (wasLive) stolen += 1; else collected += 1; }
     }
-    if (out === "delivered") stolen += 1;
     if (out === "goal") goals += 1;
   }
-  check(stolen === 0, `no shot at goal is ever intercepted by your own support player (${stolen}/${shots})`);
+  check(stolen === 0, `no shot at goal is ever taken off you in flight (${stolen}/${shots})`);
   check(goals > shots * 0.1, `shots still go in with team-mates on the pitch (${goals}/${shots})`);
+  check(collected > 0, `and a shot that has died is tidied up rather than left lying there (${collected}/${shots})`);
 }
 
 // ── Every scenario still builds, and dead balls stay still ──────────────────
@@ -190,6 +215,19 @@ function bestOption(sc: Scenario): number {
           `${kind}: support players do not start on top of you`);
       }
       check(sc.viewport.x2 > sc.viewport.x1 && sc.viewport.y2 > sc.viewport.y1, `${kind}: viewport is sane`);
+    }
+  }
+
+  // Nobody runs onto anything, so the spot the game marks for you has to be one
+  // the man it belongs to can actually stretch into. A target ten metres beyond
+  // his feet is an instruction to give the ball away.
+  for (const kind of SCENARIO_KINDS) {
+    for (let seed = 0; seed < 60; seed++) {
+      const sc = buildScenario(kind, mulberry32(seed * 17 + 3), 62, 60);
+      for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
+        const reach = Math.hypot(r.to.x - r.pos.x, r.to.y - r.pos.y);
+        check(reach < 6, `${kind}: the spot marked for a team-mate is within his reach (${reach.toFixed(1)} m)`);
+      }
     }
   }
 
@@ -238,4 +276,4 @@ if (problems.length) {
   for (const p of problems) console.error("  ✗ " + p);
   process.exit(1);
 }
-console.log("PASS — space, supporting runs, pursuit, shot safety and chaining all hold");
+console.log("PASS — space, where support stands, reception, shot safety and chaining all hold");

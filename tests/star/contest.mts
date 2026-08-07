@@ -1,6 +1,6 @@
 import {
-  buildScenario, initDefenders, stepDefenders, stepKeeper, stepSupport, stepRunner,
-  stepFollower, stepBall, launch, applyFirstTouch, spaceScore,
+  buildScenario, initDefenders, stepDefenders, stepKeeper, stepReactions, stepBall,
+  launch, applyFirstTouch, spaceScore,
   type Outcome, type Scenario, type Ball,
 } from "../../lib/star/canvasEngine";
 
@@ -29,18 +29,20 @@ function mulberry32(a: number) {
 const DT = 1 / 60;
 const pct = (n: number, d: number) => `${((n / d) * 100).toFixed(1)}%`;
 
-function playOut(sc: Scenario, ball: Ball, rng: () => number): Outcome | "none" {
+function playOutTimed(sc: Scenario, ball: Ball, rng: () => number): { out: Outcome | "none"; frames: number } {
   let out: Outcome | null = null;
-  for (let i = 0; i < 900 && !out; i++) {
+  let i = 0;
+  for (; i < 900 && !out; i++) {
     stepDefenders(sc, DT, ball.pos, false, ball);
     stepKeeper(sc, DT);
-    stepSupport(sc, ball, ball.pos, DT);
-    stepRunner(sc, DT);
-    stepFollower(sc, ball, rng, DT);
+    stepReactions(sc, ball, DT, rng);
     out = stepBall(ball, sc, rng, DT);
   }
-  return out ?? "none";
+  return { out: out ?? "none", frames: i };
 }
+
+const playOut = (sc: Scenario, ball: Ball, rng: () => number): Outcome | "none" =>
+  playOutTimed(sc, ball, rng).out;
 
 function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, power = 0.9) {
   const rng = mulberry32(seed);
@@ -102,16 +104,24 @@ function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, p
 // ── The 50-50 on a loose ball ───────────────────────────────────────────────
 {
   const counts: Record<string, number> = {};
+  let blocked = 0;                       // the strike itself, stopped on its way
   const N = 800;
   for (let seed = 0; seed < N; seed++) {
     const { sc, ball, rng } = strikeAtGoal(seed % 2 ? "volley" : "header", seed * 11 + 7, 0.85);
-    const out = playOut(sc, ball, rng);
+    const { out, frames } = playOutTimed(sc, ball, rng);
     counts[out] = (counts[out] ?? 0) + 1;
+    if (out === "tackled" && frames < 30) blocked += 1;
   }
   const tackled = counts["tackled"] ?? 0;
+  const second = tackled - blocked;       // …and the ball afterwards, lost
   const goals = counts["goal"] ?? 0;
   check(tackled > 0, "a loose ball a defender reaches first is lost");
-  check(tackled < N * 0.12, `losing the second ball is a cost, not the usual outcome (${pct(tackled, N)})`);
+  // Two different things wear the same outcome, so they are counted apart. A
+  // defender who gets to the ball now CLEARS it rather than knocking it back
+  // into play, so both genuinely end the move rather than starting a scramble
+  // the attack usually still won.
+  check(blocked < N * 0.2, `a body in the way blocks some of them (${pct(blocked, N)})`);
+  check(second < N * 0.3, `and the second ball is a real contest, not a formality (${pct(second, N)} lost)`);
   check(goals > N * 0.15, `and chances still get finished (${pct(goals, N)})`);
 
   // A ball already over the line can never be stolen back.
@@ -122,26 +132,83 @@ function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, p
   }
 }
 
+// ── The woodwork ────────────────────────────────────────────────────────────
+//
+// Hitting the post used to end the highlight, which is not what it looks like:
+// it cannons back out with most of the pace on it and somebody has a decision
+// to make. It is loose from that moment — your poacher can follow it in, a
+// defender who gets there first hoofs it clear — and only a second ricochet
+// off the frame ends it, because that is pinball rather than football.
+{
+  let live = 0, resolved = 0, after: Record<string, number> = {};
+  for (let seed = 0; seed < 1500; seed++) {
+    // Aimed at an upright rather than the middle of the net, because otherwise
+    // you are waiting all night for the sample.
+    const rng = mulberry32(seed * 3 + 41);
+    const sc = buildScenario(seed % 2 ? "one_on_one" : "tight_angle", rng, 62, 60);
+    initDefenders(sc, rng);
+    const aim = { x: seed % 4 < 2 ? sc.goal.x1 : sc.goal.x2, y: 0 };
+    const ball = launch(sc, { x: aim.x - sc.ball.x, y: aim.y - sc.ball.y }, 0.9, { cx: 0, cy: -0.15 }, { power: 70, technique: 70 }, rng);
+    let out: Outcome | null = null;
+    let sawPost = false, speedOut = 0, speedIn = 0;
+    for (let i = 0; i < 900 && !out; i++) {
+      const before = Math.hypot(ball.vel.x, ball.vel.y);
+      stepDefenders(sc, DT, ball.pos, false, ball);
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+      if (ball.event === "post" && !sawPost) {
+        sawPost = true;
+        speedIn = before;
+        speedOut = Math.hypot(ball.vel.x, ball.vel.y);
+        check(ball.loose, "a ball off the post belongs to nobody");
+        check(ball.vel.y > 0, "and it comes back out, not through");
+        check(speedOut > speedIn * 0.5, `keeping a lot of the power (${speedOut.toFixed(1)} of ${speedIn.toFixed(1)} m/s)`);
+      }
+      ball.event = null;
+    }
+    if (sawPost) {
+      live += 1;
+      if (out) { resolved += 1; after[out] = (after[out] ?? 0) + 1; }
+    }
+  }
+  check(live > 20, `the frame gets hit (${live} times in 1500 shots at the upright)`);
+  check(resolved === live, "and every rebound off it is played out to something");
+  check((after["post"] ?? 0) < live, `a second ricochet is not the only way it can end (${JSON.stringify(after)})`);
+  check((after["goal"] ?? 0) + (after["rebound"] ?? 0) > 0, "and the follow-up sometimes goes in");
+}
+
 // ── The first touch ─────────────────────────────────────────────────────────
 //
 // Not a dice roll: the defence simply gets the time your touch cost them, using
 // the same closing behaviour it uses everywhere else.
 {
-  const gapAfterTouch = (technique: number) => {
-    const gaps: number[] = [];
+  // How far the ball got away from you. Nobody moves before you kick it, so the
+  // cost of a heavy touch is in the POSITION you end up striking from.
+  const strayAfterTouch = (technique: number) => {
+    const strays: number[] = [];
     for (let seed = 0; seed < 300; seed++) {
       const rng = mulberry32(seed * 7 + 21);
       const sc = buildScenario("long_range", rng, 62, 60);
       initDefenders(sc, rng);
-      applyFirstTouch(sc, technique, rng);
-      gaps.push(Math.min(...sc.defenders.map(d => Math.hypot(d.x - sc.player.x, d.y - sc.player.y))));
+      strays.push(applyFirstTouch(sc, technique, rng));
     }
-    return gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    return strays.reduce((a, b) => a + b, 0) / strays.length;
   };
 
-  const poor = gapAfterTouch(20), good = gapAfterTouch(95);
-  check(good > poor, `a better first touch leaves you more room (${poor.toFixed(2)} m vs ${good.toFixed(2)} m)`);
-  check(poor > 1.5, "even a poor touch does not put a defender on top of you");
+  const poor = strayAfterTouch(20), good = strayAfterTouch(95);
+  check(poor > good, `a heavy touch gets away from you (${poor.toFixed(2)} m vs ${good.toFixed(2)} m)`);
+  check(good < 0.6, "and a good one kills it dead");
+  check(poor < 3.5, "but a bad touch is not a giveaway");
+
+  // The player stays with the ball — he does not get left standing where it was.
+  {
+    const rng = mulberry32(3);
+    const sc = buildScenario("long_range", rng, 62, 60);
+    applyFirstTouch(sc, 20, rng);
+    check(Math.hypot(sc.player.x - sc.ball.x, sc.player.y - sc.ball.y) < 2,
+      "you are still next to the ball after taking a touch");
+  }
 
   // It costs time, and the time is bounded — you never lose a second and a half
   // to a touch.
@@ -149,8 +216,8 @@ function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, p
   const sc = buildScenario("long_range", rng, 62, 60);
   initDefenders(sc, rng);
   for (let i = 0; i < 200; i++) {
-    const lost = applyFirstTouch(buildScenario("long_range", rng, 62, 60), 50, rng);
-    check(lost > 0.1 && lost < 0.95, `the touch costs a believable amount of time (${lost.toFixed(2)} s)`);
+    const stray = applyFirstTouch(buildScenario("long_range", rng, 62, 60), 50, rng);
+    check(stray >= 0 && stray < 2.5, `the touch costs a believable distance (${stray.toFixed(2)} m)`);
   }
 
   // And your options are still there afterwards — a touch is a cost, not a

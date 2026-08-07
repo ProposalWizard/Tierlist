@@ -4,7 +4,7 @@ import {
 } from "../../lib/star/dribble";
 import {
   buildScenario, launch, curlRange, loftRange, dragForFullPower, stepBall,
-  initDefenders, stepKeeper, stepDefenders, stepSupport, stepRunner, stepFollower,
+  initDefenders, stepKeeper, stepDefenders, stepReactions,
   type Outcome,
 } from "../../lib/star/canvasEngine";
 import { newMatch, tick, resolveScenario } from "../../lib/star/hiddenMatch";
@@ -218,8 +218,7 @@ function runDribble(pace: number, oppStrength: number, seed: number, chasers = 3
       let out: Outcome | null = null;
       for (let i = 0; i < 700 && !out; i++) {
         stepDefenders(sc, DT, ball.pos, false, ball);
-        stepKeeper(sc, DT); stepSupport(sc, ball, ball.pos, DT); stepRunner(sc, DT);
-        stepFollower(sc, ball, rng, DT);
+        stepKeeper(sc, DT); stepReactions(sc, ball, DT, rng);
         out = stepBall(ball, sc, rng, DT);
       }
       if (out === "goal") scored++;
