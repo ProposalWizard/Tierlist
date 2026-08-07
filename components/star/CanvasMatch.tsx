@@ -9,9 +9,10 @@ import {
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
 import {
-  newMatch, advanceUntilInvolved, resolveScenario,
-  type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult,
+  newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
+  type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
+import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import {
   PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
@@ -38,6 +39,14 @@ const MATCH_DURATION = 90;
 
 interface Props {
   skills?: KickSkills;
+  /**
+   * The minute you come on. 0 when you start. Anything else means the match has
+   * already been going on without you, and the score you inherit is one your
+   * team-mates earned.
+   */
+  startMinute?: number;
+  /** Which dead balls are yours to take. Ones that are not go to someone else. */
+  duties?: SetPieceDuties;
   keeperStrength?: number;
   position?: string;
   teamRelationship?: number;
@@ -146,7 +155,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const careerRef = useRef(career);
@@ -189,6 +198,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // your chances are what it hands you, and their kind is decided by where the
   // ball actually was when it found you.
   const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
+  const startMinuteRef = useRef(startMinute);
+  startMinuteRef.current = startMinute;
+  const dutiesRef = useRef(duties);
+  dutiesRef.current = duties;
+
+  /** Is this dead ball yours? With no duties supplied (the sandbox), everything is. */
+  const mayTake = (kind: ScenarioKind) => {
+    const d = dutiesRef.current;
+    if (!d) return true;
+    if (kind === "free_kick") return d.freeKicks;
+    if (kind === "penalty") return d.penalties;
+    return true;
+  };
   // The situation the simulation has just produced, consumed by the next
   // loadScenario() so the scenario matches the football that led to it.
   const pendingRequestRef = useRef<ScenarioRequest | null>(null);
@@ -362,6 +384,33 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // the ball finds you rather than dropping you into a chance in the first
     // minute. The sandbox still opens on a scenario, which is its whole point.
     if (matchModeRef.current) {
+      // Coming on as a substitute: the match has already been played without
+      // you, so play it — team-mate chances, opponent goals and all — and take
+      // the scoreline you inherit rather than starting a fresh 0-0 at the hour.
+      if (startMinuteRef.current > 0) {
+        seedRef.current += 1;
+        const rng = mulberry32(seedRef.current);
+        rngRef.current = rng;
+        const st = matchStateRef.current;
+        const before = advanceTo(st, hiddenInputs(), rng, startMinuteRef.current);
+        userScoreRef.current = st.userScore;
+        oppScoreRef.current = st.oppScore;
+        setScore({ user: st.userScore, opp: st.oppScore });
+        matchMinuteRef.current = st.minute;
+        setMatchMinute(st.minute);
+        setSimEvents([
+          ...before.slice(-4).map((e) => ({
+            minute: e.minute,
+            text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
+            isGoal: e.isGoal,
+          })),
+          { minute: st.minute, text: "You are coming on." },
+        ]);
+        setSimVisible(true);
+        setPhase("sim");
+        window.setTimeout(() => { setSimVisible(false); startSimulation(); }, 3200);
+        return;
+      }
       startSimulation();
       return;
     }
@@ -1421,9 +1470,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     st.userScore = userScoreRef.current;
     st.oppScore = oppScoreRef.current;
 
-    const step = advanceUntilInvolved(st, hiddenInputs(), rng, MATCH_DURATION);
+    // Dead balls you are not the taker for go to whoever is. Keep advancing
+    // until the match hands you something that is actually yours — bounded,
+    // because every pass moves the clock and the clock ends the match.
+    let step = advanceUntilInvolved(st, hiddenInputs(), rng, MATCH_DURATION);
+    const handedOver: HiddenMatchEvent[] = [];
+    for (let guard = 0; guard < 20; guard++) {
+      const kind = step.request?.kinds.length === 1 ? step.request.kinds[0] : null;
+      if (!kind || mayTake(kind) || (kind !== "free_kick" && kind !== "penalty")) break;
 
-    const events: SimEvent[] = step.events.map((e) => ({
+      const label = kind === "penalty" ? "penalty" : "free kick";
+      const scored = rng() < (kind === "penalty" ? 0.76 : 0.09);
+      if (scored) {
+        st.userScore += 1;
+        handedOver.push({ minute: st.minute, text: `⚽ Your side score the ${label}!`, isGoal: true, teammateGoal: true });
+      } else {
+        handedOver.push({ minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
+      }
+      resolveScenario(st, scored ? "goal" : "saved");
+      step = advanceUntilInvolved(st, hiddenInputs(), rng, MATCH_DURATION);
+    }
+
+    const raw = [...handedOver, ...step.events];
+    const events: SimEvent[] = raw.map((e) => ({
       minute: e.minute,
       // The opponent is named here rather than in the simulation, which has no
       // business knowing who you are playing.
@@ -1434,7 +1503,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // A teammate's goal gets a real name off the squad sheet, the same as one
     // you set up yourself, so the scoresheet reads like a team's.
     const squad = careerRef.current?.squad ?? [];
-    for (const e of step.events) {
+    for (const e of raw) {
       if (!e.isGoal || !e.teammateGoal) continue;
       const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
       const scorer = pickSquadScorer(attackers.length > 0 ? attackers : squad, rng);
@@ -1477,7 +1546,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const t = tallyRef.current;
         const stats = finaliseMatch(
           attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-          90, userScoreRef.current, oppScoreRef.current, careerForStats,
+          MATCH_DURATION - startMinuteRef.current, userScoreRef.current, oppScoreRef.current, careerForStats,
           goalEventsRef.current,
         );
         if (matchModeRef.current && onCompleteRef.current) {
@@ -1608,7 +1677,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Contact chosen -> launch ---
   const handleContact = (contact: { cx: number; cy: number }) => {
     if (!aim) return;
-    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, tiredSkills(), rngRef.current);
+    // A dead ball is struck with your free-kick rating, not your general
+    // technique — the one strike in football that is purely placement and curl.
+    const strikeWith = setPieceSkills(
+      tiredSkills(),
+      careerRef.current?.skills.freeKick ?? skills.technique,
+      scenarioRef.current.kind,
+    );
+    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
     setEnergy(energyRef.current - DRAIN_PER_CHANCE);
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current));

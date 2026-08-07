@@ -3,7 +3,9 @@ import { useCallback, useEffect, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture } from "@/lib/star/types";
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
-import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
+import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
+import { selectionFor } from "@/lib/star/selection";
+import { setPieceDuties } from "@/lib/star/setPieces";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
@@ -89,6 +91,9 @@ export default function StarDevPage() {
   // nothing to offer in this state on its own, which is what made a refresh here
   // a dead end.
   const seasonOver = !!career && career.fixtures.length > 0 && !nextFixture;
+  // Who the manager has picked this week, and which dead balls would be yours.
+  const selection = career ? selectionFor(career) : null;
+  const duties = career && selection ? setPieceDuties(career, selection.status) : null;
   const nextMatchLabel = nextFixture
     ? `Next: ${nextFixture.home ? career!.player.club : nextFixture.opponent} v ${nextFixture.home ? nextFixture.opponent : career!.player.club}`
     : "Season complete";
@@ -146,6 +151,17 @@ export default function StarDevPage() {
   const handlePlayMatch = useCallback(() => {
     if (!career || !nextFixture) return;
     setPhase("match");
+  }, [career, nextFixture]);
+
+  // Left out of the squad. The match still happens — it just happens without
+  // you — and the week costs you sharpness while the manager softens a little.
+  const handleWatchFromStands = useCallback(() => {
+    if (!career || !nextFixture) return;
+    const { career: next, newlyUnlocked } = simulateMissedFixture(career, nextFixture);
+    toastAchievements(newlyUnlocked);
+    setCareer(next);
+    setActiveNav(null);
+    setPhase("dashboard");
   }, [career, nextFixture]);
 
   // Pop the achievement toast for ids the reducers already appended to state.
@@ -388,6 +404,8 @@ export default function StarDevPage() {
             fixture={nextFixture}
             oppStrength={oppStrength}
             onComplete={handleMatchComplete}
+            startMinute={selection?.onAt ?? 0}
+            duties={duties ?? undefined}
             seed={career.season * 1000 + career.week}
           />
         </div>
@@ -490,9 +508,55 @@ export default function StarDevPage() {
               <div className="mt-3 text-red-300 text-xs font-bold">⚠ Low energy — you may underperform</div>
             )}
           </div>
+
+          {/* The manager's team sheet. Boss, form, reputation and sharpness used
+              to move every week and decide nothing at all. */}
+          {selection && (
+            <div className={`mt-3 rounded-xl border p-3 ${
+              selection.status === "1st Team" ? "border-emerald-500/50 bg-emerald-500/10"
+                : selection.status === "Substitute" ? "border-amber-400/50 bg-amber-400/10"
+                  : "border-red-500/50 bg-red-500/10"}`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Team sheet</span>
+                <span className={`text-xs font-black ${
+                  selection.status === "1st Team" ? "text-emerald-300"
+                    : selection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
+                >
+                  {selection.status === "Substitute" ? `Bench (on ~${selection.onAt}')` : selection.status}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-white/90">{selection.reason}</p>
+              <div className="mt-2 h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    selection.standing >= 55 ? "bg-emerald-400" : selection.standing >= 34 ? "bg-amber-400" : "bg-red-500"}`}
+                  style={{ width: `${Math.max(3, selection.standing)}%` }}
+                />
+              </div>
+              <div className="mt-1 text-[10px] text-white/60">Standing with the manager</div>
+              {duties && selection.status !== "Squad" && (
+                <div className="mt-2 flex gap-1.5 text-[10px] font-bold">
+                  <span className={`px-2 py-0.5 rounded-full ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200" : "bg-white/10 text-white/50"}`}>
+                    Free kicks {duties.freeKicks ? "✓" : `(FK ${duties.freeKickNeeded})`}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full ${duties.penalties ? "bg-emerald-500/25 text-emerald-200" : "bg-white/10 text-white/50"}`}>
+                    Penalties {duties.penalties ? "✓" : `(FK ${duties.penaltyNeeded})`}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2 mt-4">
             <button onClick={handleBackToDashboard} className="py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-black">← Back</button>
-            <button onClick={handlePlayMatch} className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">Play Match ⚽</button>
+            {selection?.status === "Squad" ? (
+              <button onClick={handleWatchFromStands} className="py-3 bg-gray-600 hover:bg-gray-500 rounded-xl font-black">Watch from the stands</button>
+            ) : (
+              <button onClick={handlePlayMatch} className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">
+                {selection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
+              </button>
+            )}
           </div>
         </div>
       </div>

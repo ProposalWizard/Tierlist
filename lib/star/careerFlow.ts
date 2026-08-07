@@ -7,7 +7,9 @@
 import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats } from "./types";
 import {
   buildLeague, buildFixtures, simulateOtherFixtures, updateLeagueWithUserResult, sortLeague, mulberry32,
+  simulateFixtureScore,
 } from "./season";
+import { selectionFor, MISSED_WEEK } from "./selection";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
@@ -145,6 +147,7 @@ export function creditMatchResult(
       : f,
   );
 
+  const minuteShare = Math.max(0.25, Math.min(1, (stats.minutes ?? 90) / 90));
   const currentBoot = { ...career.currentBoot, matches: Math.max(0, career.currentBoot.matches - 1) };
 
   // A rested week for the stable: the horse regains some energy between matches.
@@ -183,8 +186,10 @@ export function creditMatchResult(
     league,
     fixtures,
     money: career.money + stats.totalCash,
-    energy: Math.max(15, career.energy - 40),
-    matchFitness: Math.min(100, career.matchFitness + 3),
+    // Twenty minutes off the bench does not take as much out of you as ninety,
+    // and does not sharpen you as much either.
+    energy: Math.max(15, career.energy - 40 * minuteShare),
+    matchFitness: Math.min(100, career.matchFitness + 3 * minuteShare),
     relationships: {
       ...career.relationships,
       boss: clamp01to100(career.relationships.boss + stats.bossChange),
@@ -201,6 +206,9 @@ export function creditMatchResult(
     squad: updatedSquad,
     form: [stats.rating, ...career.form].slice(0, 5),
   };
+  // The manager's view going into next week, so the dashboard's status is live
+  // rather than the "1st Team" it was stamped with when the career was created.
+  next.status = selectionFor(next).status;
 
   return applyAchievements(next);
 }
@@ -268,4 +276,67 @@ function applyAchievements(next: CareerState): { career: CareerState; newlyUnloc
   const newlyUnlocked = checkNewAchievements(next);
   if (newlyUnlocked.length === 0) return { career: next, newlyUnlocked };
   return { career: { ...next, achievements: [...next.achievements, ...newlyUnlocked] }, newlyUnlocked };
+}
+
+/**
+ * A week the player was not in the squad for.
+ *
+ * The match still happens: the club plays it, the division plays its round, and
+ * the table moves. What the player gets is the wage, a week of rest, a drop in
+ * sharpness — and a manager who has softened slightly, which is the only thing
+ * that stops being dropped from being permanent, since the fastest way to raise
+ * the boss relationship is to play well and you cannot.
+ */
+export function simulateMissedFixture(
+  career: CareerState,
+  fixture: Fixture,
+): { career: CareerState; newlyUnlocked: string[]; homeScore: number; awayScore: number } {
+  const rng = mulberry32(career.season * 1000 + career.week + 7717);
+  const strength = (name: string) => career.league.find((t) => t.name === name)?.strength ?? 65;
+  const mine = strength(career.player.club);
+  const theirs = strength(fixture.opponent);
+
+  // Reported from the player's point of view, the same way stats.homeScore is.
+  const score = fixture.home
+    ? simulateFixtureScore(mine, theirs, rng)
+    : simulateFixtureScore(theirs, mine, rng);
+  const userScore = fixture.home ? score.home : score.away;
+  const oppScore = fixture.home ? score.away : score.home;
+
+  let league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, userScore, oppScore);
+  league = simulateOtherFixtures(league, career.player.club, fixture.opponent, career.week, rng);
+
+  const fixtures = career.fixtures.map((f) =>
+    f === fixture
+      ? {
+          ...f,
+          played: true,
+          homeScore: f.home ? userScore : oppScore,
+          awayScore: f.home ? oppScore : userScore,
+          // No goals, no assists and no rating: deliberately left undefined so
+          // nothing averages a match the player did not play into their form.
+        }
+      : f,
+  );
+
+  const next: CareerState = {
+    ...career,
+    league,
+    fixtures,
+    money: career.money + career.contract.wage,
+    energy: Math.min(100, career.energy + MISSED_WEEK.energy),
+    matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
+    relationships: {
+      ...career.relationships,
+      boss: clamp01to100(career.relationships.boss + MISSED_WEEK.boss),
+    },
+    week: career.week + 1,
+    horse: career.horse
+      ? { ...career.horse, energy: Math.min(100, career.horse.energy + 20) }
+      : career.horse,
+  };
+  next.status = selectionFor(next).status;
+
+  const { career: withAchievements, newlyUnlocked } = applyAchievements(next);
+  return { career: withAchievements, newlyUnlocked, homeScore: userScore, awayScore: oppScore };
 }

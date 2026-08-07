@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
+import { selectionFor } from "@/lib/star/selection";
+import { setPieceDuties } from "@/lib/star/setPieces";
 
 interface Props {
   career: CareerState;
@@ -8,6 +10,8 @@ interface Props {
 
 export default function DashboardStats({ career }: Props) {
   const [tab, setTab] = useState<"stats" | "contract" | "status">("stats");
+  const selection = selectionFor(career);
+  const duties = setPieceDuties(career, selection.status);
 
   const avgSeasonRating = career.seasonStats.ratingCount > 0
     ? career.seasonStats.totalRating / career.seasonStats.ratingCount
@@ -79,12 +83,36 @@ export default function DashboardStats({ career }: Props) {
 
       {tab === "status" && (
         <div className="space-y-2">
+          {/* Derived, not read off the stored field: an old save was stamped
+              "1st Team" when the career was created and never updated. */}
           <div className="grid grid-cols-2 gap-2">
-            <div className={`py-2 rounded-lg font-black text-sm text-center ${career.status === "1st Team" ? "bg-emerald-500 text-white" : "bg-gray-700 text-gray-400"}`}>
-              1st Team
+            <div className={`py-2 rounded-lg font-black text-sm text-center ${
+              selection.status === "1st Team" ? "bg-emerald-500 text-white"
+                : selection.status === "Substitute" ? "bg-amber-500 text-gray-950" : "bg-red-600 text-white"}`}
+            >
+              {selection.status}
             </div>
             <div className={`py-2 rounded-lg font-black text-sm text-center ${career.matchFitness >= 70 ? "bg-emerald-500 text-white" : "bg-gray-700 text-gray-400"}`}>
               Match Fit ({Math.round(career.matchFitness)}%)
+            </div>
+          </div>
+          <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
+            <div className="font-black text-xs text-white mb-1">The manager</div>
+            <div className="text-[10px] text-gray-300">{selection.reason}</div>
+            <div className="mt-2 h-1.5 w-full rounded-full bg-black/30 overflow-hidden">
+              <div
+                className={`h-full rounded-full ${
+                  selection.standing >= 55 ? "bg-emerald-400" : selection.standing >= 34 ? "bg-amber-400" : "bg-red-500"}`}
+                style={{ width: `${Math.max(3, selection.standing)}%` }}
+              />
+            </div>
+            <div className="mt-1 flex gap-1.5 text-[10px] font-bold">
+              <span className={`px-2 py-0.5 rounded-full ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-gray-300"}`}>
+                Free kicks {duties.freeKicks ? "✓" : `need FK ${duties.freeKickNeeded}`}
+              </span>
+              <span className={`px-2 py-0.5 rounded-full ${duties.penalties ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-gray-300"}`}>
+                Penalties {duties.penalties ? "✓" : `need FK ${duties.penaltyNeeded}`}
+              </span>
             </div>
           </div>
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">

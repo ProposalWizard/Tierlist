@@ -100,6 +100,24 @@ export function simulateOtherFixtures(
   return updated;
 }
 
+/**
+ * A plausible scoreline between two clubs, from the same Poisson model the rest
+ * of the division is simulated with. Used when the player is not in the squad:
+ * the match still happens, it just happens without them.
+ */
+export function simulateFixtureScore(
+  homeStrength: number,
+  awayStrength: number,
+  rng: () => number,
+): { home: number; away: number } {
+  const h = homeStrength + 3;   // the same home advantage the rest of the league gets
+  const a = awayStrength;
+  return {
+    home: poisson(Math.max(0.3, (h / a) * 1.4), rng),
+    away: poisson(Math.max(0.2, (a / h) * 1.1), rng),
+  };
+}
+
 function poisson(lambda: number, rng: () => number): number {
   const L = Math.exp(-lambda);
   let k = 0, p = 1;

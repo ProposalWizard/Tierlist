@@ -24,6 +24,16 @@ export function finaliseMatch(
     + result;
   rating = Math.max(1, Math.min(10, rating));
 
+  // A cameo is judged on less evidence. The `minutes` argument had been passed
+  // in since this function was written and never read; a substitute who came on
+  // for twenty minutes was rated as though he had played the ninety. The rating
+  // now regresses toward a neutral 6.5 in proportion to the minutes NOT played,
+  // so a short appearance can neither earn a 9 nor be blamed for a 4. A full
+  // match is multiplied by exactly 1, so nothing about starting changed.
+  const share = Math.max(0.15, Math.min(1, minutes / 90));
+  rating = 6.5 + (rating - 6.5) * (0.45 + 0.55 * share);
+  rating = Math.max(1, Math.min(10, rating));
+
   const starMan = rating >= 8.5 || goals >= 2;
   const wage = career.contract.wage;
   const goalBonus = goals * career.contract.goalBonus;
@@ -46,6 +56,7 @@ export function finaliseMatch(
     goals,
     assists,
     passes,
+    minutes,
     rating: Math.round(rating * 10) / 10,
     starMan,
     bossChange: boss,

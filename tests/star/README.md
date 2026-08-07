@@ -6,6 +6,7 @@
     npx tsx tests/star/contest.mts
     npx tsx tests/star/perception.mts
     npx tsx tests/star/career.mts
+    npx tsx tests/star/selection.mts
 
 **support** — the attack: space evaluation, supporting runs, pursuit of a ball
 not played straight at anyone, and chaining a completed pass into the next
@@ -167,3 +168,38 @@ title had to become idempotent.
 Also asserted: a corrupt or hand-edited phase record is refused rather than
 trusted, and clearing a career clears the pending phase with it — otherwise a
 brand new career resumes the old one's awards screen.
+
+---
+
+**selection** — team selection and set-piece duty: two systems that existed as
+numbers deciding nothing.
+
+`career.status` was stamped "1st Team" when the career was created and never
+touched again, so you could be on 3 out of 100 with the manager and start every
+week. `skills.freeKick` was trainable, had an achievement for maxing it,
+appeared on two screens, and was read by no code anywhere.
+
+Measured shape of the selection curve, playing 4.2 every week from a standing
+start, then recovering with 8.2s:
+
+    3 bad games      -> the bench
+    11 bad games     -> out of the squad
+    3 weeks sat out  -> back on the bench (the manager softens: +3 a week)
+    4 good games     -> back in the side
+
+Two things the measurements changed:
+
+- **One bad game benched you.** Form averaged only the games actually played, so
+  a single 4.2 in your opening week swung the whole judgement. The window is a
+  fixed five, padded with neutral performances, so one poor game moves you a
+  fifth of the way.
+- **`minutes` had been an argument of `finaliseMatch` since it was written and
+  was read by nothing.** A substitute who played twenty minutes was rated as
+  though he had played ninety. Ratings now regress toward a neutral 6.5 in
+  proportion to the minutes NOT played — a full match multiplies by exactly 1,
+  so nothing about starting changed.
+
+Set-piece duty is judged against your own club, so the same player takes free
+kicks at a mid-table side and loses them on a move to the champions. The file
+asserts that specifically, because it is the whole reason the skill stays worth
+training.

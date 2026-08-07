@@ -359,6 +359,38 @@ export function resolveScenario(state: HiddenMatchState, result: ScenarioResult)
 }
 
 /**
+ * Run the match forward to a given minute with the player NOT on the pitch.
+ *
+ * Chances that would have come to you fall to whoever is playing instead, so the
+ * first hour of a match you came on in the sixtieth minute of actually happened
+ * — the score you inherit is a score your team-mates earned or conceded.
+ */
+export function advanceTo(
+  state: HiddenMatchState,
+  inputs: HiddenMatchInputs,
+  rng: () => number,
+  minute: number,
+): HiddenMatchEvent[] {
+  const events: HiddenMatchEvent[] = [];
+  while (state.minute < minute) {
+    const step = tick(state, inputs, rng);
+    events.push(...step.events);
+    if (step.request) {
+      // It went to somebody else. Resolved at the rate a team-mate converts,
+      // and reported, so watching from the bench is still watching a match.
+      const inBox = step.request.zone === "box";
+      const scored = rng() < (inBox ? CONVERT_BOX : CONVERT_DEEP);
+      if (scored) {
+        state.userScore += 1;
+        events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true });
+      }
+      resolveScenario(state, scored ? "goal" : "saved");
+    }
+  }
+  return events;
+}
+
+/**
  * Run the match forward until the player is needed or the whistle goes.
  *
  * Time compression: uneventful football costs nothing, and only the minutes

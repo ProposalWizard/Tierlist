@@ -88,6 +88,8 @@ export interface GoalEvent {
 }
 
 export interface MatchStats {
+  /** Minutes actually played. Under 90 when you came off the bench. */
+  minutes?: number;
   chances: number;
   goals: number;
   assists: number;
