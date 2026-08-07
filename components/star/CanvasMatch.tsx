@@ -15,7 +15,7 @@ import {
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
 import {
-  newDribble, stepDribble, flick, dribbleProgress, type DribbleState,
+  newDribble, stepDribble, flick, dribbleProgress, dribbleViewport, type DribbleState,
 } from "@/lib/star/dribble";
 import {
   PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH,
@@ -130,9 +130,9 @@ const SCENARIO_LABEL: Record<ScenarioKind, { verb: string; hint: string }> = {
   long_range: { verb: "SHOOT!", hint: "Long way out — give it some pace." },
   volley: { verb: "VOLLEY!", hint: "Meet it first time — drag back to strike." },
   header: { verb: "HEADER!", hint: "Get up and meet the cross." },
-  cutback: { verb: "CUTBACK!", hint: "Square it back — weight it into your team-mate's run." },
-  byline_cross: { verb: "CROSS IT!", hint: "Whip it in — pick out the run attacking the box." },
-  through_ball: { verb: "THROUGH BALL!", hint: "Split the line — play it into the space he's running into." },
+  cutback: { verb: "CUTBACK!", hint: "Square it back — find the man arriving." },
+  byline_cross: { verb: "CROSS IT!", hint: "Whip it in — pick out a man in the middle." },
+  through_ball: { verb: "THROUGH BALL!", hint: "Split the line — find the man on the last shoulder." },
   midfield_pass: { verb: "PASS!", hint: "Keep it simple — find your teammate." },
   penalty: { verb: "PENALTY!", hint: "12 yards out — pick your spot." },
   free_kick: { verb: "FREE KICK!", hint: "Bend it over the wall." },
@@ -595,6 +595,34 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // PLUG-IN (optional asset): a subtle 256px grass-noise tile can be drawn here at ~8% alpha
     // via ctx.createPattern(img, "repeat") for extra texture. See notes in the PR/commit.
 
+    // --- Behind the goal ---
+    // Everything past the dead-ball line used to be more mown grass, which read
+    // as pitch that simply carried on — so a camera that sat back far enough to
+    // frame a set piece looked like a bug. There is a terrace back there now.
+    {
+      const deadY = P(0, -NET_DEPTH - 0.6).py;
+      if (deadY > 0) {
+        ctx.fillStyle = "#0b1220";
+        ctx.fillRect(0, 0, W, deadY);
+        // Advertising hoardings along the dead-ball line.
+        const boardH = Math.max(2, H * 0.012);
+        ctx.fillStyle = "#122033";
+        ctx.fillRect(0, deadY - boardH, W, boardH);
+        // A terrace: rows of small marks that thin out toward the back, so it
+        // reads as a crowd at a glance without pretending to be one.
+        const rows = 9;
+        for (let i = 0; i < rows; i++) {
+          const ry = deadY * (1 - i / rows) - deadY / rows * 0.5;
+          if (ry < 0) continue;
+          const step = Math.max(4, W / (34 + i * 3));
+          ctx.fillStyle = i % 2 ? "rgba(148,163,184,0.20)" : "rgba(203,213,225,0.14)";
+          for (let x = (i * step) / 2; x < W; x += step) {
+            ctx.fillRect(x, ry, step * 0.42, Math.max(1.5, deadY / rows * 0.34));
+          }
+        }
+      }
+    }
+
     // Floodlight wash from the goal end...
     const flood = ctx.createLinearGradient(0, 0, 0, H * 0.5);
     flood.addColorStop(0, "rgba(255,255,235,0.10)");
@@ -696,19 +724,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       });
     }
 
-    // Pass aim marker — the yard of grass in front of the man you are looking
-    // for. Nobody runs onto anything any more, so this sits just ahead of his
-    // feet: it is a spot he can stretch into, not somewhere he is going.
-    if (sc.runner && !sc.receiverDone) {
-      const t = P(sc.runner.to.x, sc.runner.to.y);
-      ctx.setLineDash([unit * 0.5, unit * 0.45]);
-      ctx.lineWidth = Math.max(1.5, unit * 0.14);
-      ctx.strokeStyle = "rgba(167,139,250,0.8)";
-      ctx.beginPath();
-      ctx.arc(t.px, t.py, unit * 1.6, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    // There is no pass marker, and there was one for far too long: a ring on the
+    // grass showing exactly where to put the ball. Finding the man is the game.
+    // If you need to be told where he wants it, you are not playing it.
 
     // --- Footballers ---
     //
@@ -821,9 +839,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
     };
 
-    // A player occupies roughly a metre across the shoulders — sized in real
-    // metres now, so players no longer dwarf or vanish against the markings.
-    const R = unit * 1.25;
+    // A player occupies roughly a metre across the shoulders. Drawn at 1.25 he
+    // stood nearly two metres tall on a camera that foreshortens depth to
+    // almost nothing, so the ball at his feet appeared to be resting on his
+    // head. A standing man is foreshortened by this angle; the figure is now
+    // sized to match what the camera would actually see.
+    const R = unit * 0.92;
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position.
@@ -851,52 +872,57 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.fill();
     }
 
-    // Rebound poacher — only worth drawing once he's actually chasing something
-    if (sc.follower.active) {
-      footballer(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim, {
-        pose: poseFor("follower", sc.follower.x, sc.follower.y),
-        phase: runPhase(sc.follower.x),
-      });
-    }
+    // The man in the box. Always drawn — he used to appear only once he had
+    // started chasing something, so a team-mate materialised next to the keeper
+    // out of thin air halfway through a highlight. He is standing there the
+    // whole time; you should be able to see him and aim for him.
+    footballer(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim, {
+      pose: poseFor("follower", sc.follower.x, sc.follower.y),
+      phase: runPhase(sc.follower.x),
+    });
 
     // ── The run ──
-    // Drawn instead of the scenario: you, the men chasing you, the line you are
-    // trying to reach and the corridor you must stay inside. Everything here is
-    // read off the DribbleState — the renderer decides nothing.
+    //
+    // Drawn instead of the scenario: you, the men in your way, and the line you
+    // are trying to reach. What this replaced was a dashed yellow line across
+    // the pitch and two thin white verticals — a diagram, and one nobody could
+    // read as football. The line to reach is now a band of turf, and the sides
+    // of the corridor are just the edges of the frame.
     const dr = dribbleRef.current;
     if (phaseRef.current === "dribble" && dr) {
-      // The line to reach, and the touchlines of the run.
-      ctx.setLineDash([unit * 0.9, unit * 0.7]);
-      ctx.lineWidth = Math.max(2, unit * 0.22);
-      ctx.strokeStyle = "rgba(251,191,36,0.9)";
-      const a = P(dr.minX, dr.targetY), b = P(dr.maxX, dr.targetY);
-      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.lineWidth = Math.max(1, unit * 0.1);
-      ctx.strokeStyle = "rgba(255,255,255,0.18)";
-      for (const x of [dr.minX, dr.maxX]) {
-        const t1 = P(x, dr.startY + 6), t2 = P(x, dr.targetY);
-        ctx.beginPath(); ctx.moveTo(t1.px, t1.py); ctx.lineTo(t2.px, t2.py); ctx.stroke();
+      // The line. A lit band of grass rather than a rule drawn over the top.
+      {
+        const a1 = P(dr.minX - 6, dr.targetY), a2 = P(dr.maxX + 6, dr.targetY);
+        const b1 = P(dr.minX - 6, dr.targetY - 2.2), b2 = P(dr.maxX + 6, dr.targetY - 2.2);
+        ctx.beginPath();
+        ctx.moveTo(a1.px, a1.py); ctx.lineTo(a2.px, a2.py);
+        ctx.lineTo(b2.px, b2.py); ctx.lineTo(b1.px, b1.py);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(52,211,153,0.18)";
+        ctx.fill();
+        ctx.lineWidth = Math.max(2, unit * 0.16);
+        ctx.strokeStyle = "rgba(52,211,153,0.75)";
+        ctx.beginPath(); ctx.moveTo(a1.px, a1.py); ctx.lineTo(a2.px, a2.py); ctx.stroke();
       }
 
-      // Chasers. A man who has not seen you yet is drawn dimmer, so "he is
-      // awake now" is information you get before it costs you the ball.
+      // The men in your way. One who has not seen you yet is drawn dimmer, so
+      // "he is coming now" is information you get before it costs you the ball.
       dr.chasers.forEach((c, i) => {
-        ctx.globalAlpha = c.awake ? 1 : 0.55;
+        ctx.globalAlpha = c.awake ? 1 : 0.62;
         footballer(c.x, c.y, R, C.opp, C.oppRim, {
-          pose: poseFor(`chase${i}`, c.x, c.y),
+          pose: c.awake ? poseFor(`chase${i}`, c.x, c.y) : "idle",
           phase: runPhase(c.x),
         });
         ctx.globalAlpha = 1;
       });
 
       // You, with the ball just ahead of your feet, and the line you are on.
-      const bx = dr.pos.x + dr.heading.x * 0.9;
-      const by = dr.pos.y + dr.heading.y * 0.9;
+      const bx = dr.pos.x + dr.heading.x * 1.1;
+      const by = dr.pos.y + dr.heading.y * 1.1;
       const tip = P(dr.pos.x + dr.heading.x * 4.5, dr.pos.y + dr.heading.y * 4.5);
       const base = P(dr.pos.x, dr.pos.y);
-      ctx.strokeStyle = "rgba(52,211,153,0.55)";
-      ctx.lineWidth = Math.max(2, unit * 0.16);
+      ctx.strokeStyle = "rgba(52,211,153,0.5)";
+      ctx.lineWidth = Math.max(2, unit * 0.14);
       ctx.beginPath(); ctx.moveTo(base.px, base.py); ctx.lineTo(tip.px, tip.py); ctx.stroke();
 
       footballer(dr.pos.x, dr.pos.y, R, C.you, C.youRim, {
@@ -1014,12 +1040,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.fill();
 
-      if (kk.flash > 0) {
-        ctx.beginPath();
-        ctx.arc(cx, py, KR * 1.3, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(250,204,21,0.35)";
-        ctx.fill();
-      }
+      // No highlight ring on a save. The dive is the thing you are watching;
+      // a yellow disc drawn over it only told you what you had already seen.
 
       ctx.translate(cx + KR * weight * (1 - lunge), py + cyOff);
       ctx.rotate(lean);
@@ -1301,6 +1323,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       dt = Math.min(dt, 0.05); // clamp big frame gaps
 
       if (phaseRef.current === "dribble" && dribbleRef.current) {
+        // The camera stays with you the whole way up.
+        baseViewportRef.current = dribbleViewport(dribbleRef.current);
         // No React state per frame: the render loop already runs every frame and
         // reads the ref directly, so a state update here would re-render the
         // whole component sixty times a second for nothing.
@@ -1315,8 +1339,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // are looking at it — the only thing you do in a scenario is strike the
       // ball, and everything else is a consequence of that.
       //
-      // The keeper is the one exception, and deliberately so: he patrols his
-      // line, which is the timing puzzle a shot is actually asking you to solve.
+      // The keeper is no exception either: he stands on his line, and where he
+      // is standing is the thing you are reading. He only breathes.
       if (phaseRef.current === "aim") {
         stepKeeper(scenarioRef.current, dt);
       }
@@ -1765,9 +1789,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       setOutcome(null);
       dragRef.current = null;
       draggingRef.current = false;
+      // Its own camera, snapped into place rather than eased, so the run does
+      // not begin on the frame the last chance was using.
+      viewportRef.current = dribbleViewport(dribbleRef.current);
+      baseViewportRef.current = { ...viewportRef.current };
       setPhase("dribble");
       pushLine(request.reason);
-      pushLine("Flick to run. Get to the edge of their box.");
+      pushLine("Swipe the way you want to run. Get past them to the line.");
       playWhistle();
       return;
     }
@@ -1813,7 +1841,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Say where the chance came from before describing it, so it reads as the
     // end of a move rather than as a situation that appeared from nowhere.
     if (request) pushLine(request.reason);
-    if (heavyTouch > 0.55) pushLine("Heavy touch — they are on you.");
+    // Nobody is "on you" any more — the pitch is frozen until you strike it. A
+    // heavy touch costs you the POSITION you strike from, so that is what it
+    // says.
+    if (heavyTouch > 0.55) pushLine("Heavy touch — it has got away from you.");
     pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
     playWhistle();
   };
@@ -2010,11 +2041,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
         {/* Contact overlay */}
         {phase === "contact" && aim && (
-          <ContactBall
-            power={aim.power}
-            onContact={handleContact}
-            onCancel={() => { setAim(null); setPhase("aim"); }}
-          />
+          <ContactBall power={aim.power} onContact={handleContact} />
         )}
 
         {/* Action banner — the moment an action actually completes. "PASS" when

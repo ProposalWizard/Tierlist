@@ -63,19 +63,19 @@ export interface Ball {
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
 /**
- * The keeper is a TIMING PUZZLE, not an opponent trying to read your shot.
+ * The keeper is a POSITION, not an opponent.
  *
- * He patrols his line continuously, before and during the shot, and never
- * reacts to where you aim. Whether a shot goes in is decided by comparing where
- * the ball crosses the goal plane against where he happens to be at that
- * moment. So the question a shot asks is "can I predict where he will be when
- * the ball arrives", not "can he react fast enough" — and beating him feels
- * earned rather than lucky.
+ * He stands on his line and he stands still. Where he is, is the whole puzzle:
+ * you look at him and you put the ball where he is not. He never reads your
+ * aim, never tracks the flight, and does not move an inch before the save
+ * animation — which is picked after the outcome has already been settled.
  *
- * This replaced a keeper that called predictCrossX() the instant you struck the
- * ball and dived straight to the crossing point. That is the thing the design
- * most needed to lose: it read your input, so a save never felt like a save you
- * could have avoided.
+ * Two things this replaced, in order. First a keeper that called
+ * predictCrossX() the instant you struck it and dived straight to the crossing
+ * point, so a save never felt avoidable. Then a keeper who swept his line
+ * continuously — which was worse in a quieter way: it turned every shot from a
+ * placement decision into a timing one, and on screen he was visibly gliding
+ * back and forth across his six-yard box for no reason anyone could see.
  */
 export interface Keeper {
   x: number;
@@ -87,9 +87,10 @@ export interface Keeper {
   done: boolean;     // caught / tipped — keeper is out of the equation
   flash: number;     // seconds of "just made contact" glow (render only)
 
-  // ── Patrol ──
-  patrolT: number;       // seconds elapsed along the patrol
-  patrolSeed: number;    // phase offset so no two scenarios start identically
+  // ── Standing there ──
+  // Kept for the idle animation's phase, so two keepers do not breathe in step.
+  patrolT: number;
+  patrolSeed: number;
   /** Chasing a spill rather than patrolling. */
   scrambling: boolean;
   /** 0..1 lunge played AFTER the outcome is decided (render only). */
@@ -250,6 +251,7 @@ const AIR_DRAG = 0.12;         // per-second horizontal drag while airborne. Was
 const BOUNCE_VZ = 0.70;        // vertical restitution off turf
 const BOUNCE_H = 0.88;         // horizontal speed kept on bounce — it skips across
                                // the grass rather than sticking to it
+const DEAD_BALL_SETTLED = 1.2; // …or once a team-mate has already had his go
 const DEAD_BALL_TIMEOUT = 6;   // seconds a ball may lie untouched before the move
                                // is written off. Nobody should ever reach it.
 const MIN_BOUNCE_VZ = 0.5;     // below this it stops bouncing and rolls. Was 1.2,
@@ -281,25 +283,29 @@ const KEEPER_PATROL_AMP = 2.6;     // metres either side of centre he ranges ove
                                    // the whole game.
 const KEEPER_PATROL_PERIOD = 4.2;  // seconds for one full sweep and back — slow
                                    // enough to watch for a second and commit
-const KEEPER_SAVE_R_MIN = 2.15;    // save radius at the goal plane, weakest keeper
-const KEEPER_SAVE_R_MAX = 2.95;    // …and the strongest
+// How much of the goal he covers from where he is standing. Raised when the
+// patrol was removed: a keeper who sweeps his line is beaten by timing, and a
+// keeper who stands still can only be beaten by placement — so the gap either
+// side of him has to be a gap you have to find, not most of the goal.
+const KEEPER_SAVE_R_MIN = 2.55;    // save radius at the goal plane, weakest keeper
+const KEEPER_SAVE_R_MAX = 3.35;    // …and the strongest
 
 /**
  * Difficulty tiers.
  *
- * Two numbers do all the balancing — how far he ranges and how much he covers
- * when he gets there — plus how quickly he sweeps. Nothing here makes him
- * cleverer or gives him foreknowledge, so even the hardest keeper stays fair:
- * he is simply harder to find a gap in, and gives you less time to find it.
+ * One number does all the balancing now: how much of the goal he covers from
+ * where he stands. Nothing here makes him cleverer or gives him foreknowledge —
+ * a better keeper is simply a smaller gap to find.
+ *
+ * There used to be two more, `amp` and `period`, describing how far and how fast
+ * he swept his line. He does not sweep his line.
  */
 export type KeeperTier = "easy" | "normal" | "hard" | "expert";
-export const KEEPER_TIERS: Record<KeeperTier, { amp: number; period: number; radius: number }> = {
-  easy:   { amp: 2.15, period: 5.2, radius: 2.05 },
-  normal: { amp: 2.60, period: 4.2, radius: 2.55 },
-  hard:   { amp: 2.95, period: 3.5, radius: 2.80 },
-  // Expert refines the movement rather than cheating: a wider beat and a
-  // slightly less even rhythm, never a reaction to the shot.
-  expert: { amp: 3.15, period: 3.0, radius: 2.95 },
+export const KEEPER_TIERS: Record<KeeperTier, { radius: number }> = {
+  easy:   { radius: 2.45 },
+  normal: { radius: 2.95 },
+  hard:   { radius: 3.25 },
+  expert: { radius: 3.45 },
 };
 
 /** Which tier a keeper of this rating plays at. */
@@ -368,11 +374,14 @@ const CROSSBAR = GOAL_H;
 // Keepers stand on their line. `y` is how far off it they are — a set-piece keeper
 // is a metre out, a keeper rushing a one-on-one might be eight, and nothing puts
 // him outside his own penalty area.
+/** Metres off his line. A stride, never an excursion — he is a keeper, not a sweeper. */
+const KEEPER_LINE_MAX = 1.6;
+
 function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
   const kx = clamp(x, POST_L - 2.5, POST_R + 2.5);
   const r = rng ? rng() : 0.5;
   return {
-    x: kx, y: clamp(y, 0.3, BOX_DEPTH - 2), startX: kx, targetX: kx,
+    x: kx, y: clamp(y, 0.3, KEEPER_LINE_MAX), startX: kx, targetX: kx,
     dive: 0, saves: 0, done: false, flash: 0,
     patrolT: r * 4,                 // start somewhere along the sweep, not always centre
     patrolSeed: r * Math.PI * 2,
@@ -410,11 +419,14 @@ function offsideLineY(defenders: Vec2[]): number {
 // use the SAME metres-per-pixel on both axes or every distance on screen lies.
 // Framing is clamped to a sane zoom band so the pitch never appears wildly zoomed
 // in on one chance and wildly zoomed out on the next.
+/** The top of the D — the arc outside the penalty area. A set piece is framed to it. */
+const D_APEX: Vec2 = { x: CX, y: PEN_SPOT_Y + 9.15 };
+
 const VIEW_ASPECT = 3 / 4;      // width / height
 const VIEW_MIN_H = 30;          // metres of pitch visible vertically, closest zoom
 const VIEW_MAX_H = 62;          // furthest zoom
 
-function autoViewport(points: Vec2[], includeGoal: boolean): Viewport {
+function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4, wideBack = false): Viewport {
   const all = [...points];
   if (includeGoal) {
     all.push({ x: POST_L, y: 0 }, { x: POST_R, y: 0 }, { x: CX, y: -NET_DEPTH });
@@ -425,7 +437,7 @@ function autoViewport(points: Vec2[], includeGoal: boolean): Viewport {
   let y2 = Math.max(...all.map(p => p.y));
 
   // Breathing room so nothing sits on the frame edge.
-  x1 -= 4; x2 += 4; y1 -= 3.5; y2 += 3.5;
+  x1 -= pad; x2 += pad; y1 -= pad * 0.875; y2 += pad * 0.875;
 
   // Grow to whichever the content demands, then hold the canvas aspect exactly.
   let h = Math.max(y2 - y1, (x2 - x1) / VIEW_ASPECT);
@@ -438,7 +450,14 @@ function autoViewport(points: Vec2[], includeGoal: boolean): Viewport {
   let vy1 = cy - h / 2, vy2 = cy + h / 2;
 
   // Keep the frame over the pitch: slide (never squash) it back into bounds.
-  const padX = 5, backPad = NET_DEPTH + 2.5, fwdPad = 6;
+  //
+  // How far behind the goal the camera may sit is the whole of what makes a
+  // wide set piece framable. A corner needs a frame wide enough to hold the flag
+  // and both posts, and at this aspect that width buys fifty metres of depth —
+  // which the old clamp spent entirely in FRONT of the goal, so you sat looking
+  // at the halfway line. Spending it behind instead puts the box in the middle
+  // of the screen where it belongs, and there is a terrace back there to look at.
+  const padX = 5, backPad = wideBack ? 26 : NET_DEPTH + 2.5, fwdPad = 6;
   if (vx1 < -padX) { const s = -padX - vx1; vx1 += s; vx2 += s; }
   if (vx2 > PITCH_W + padX) { const s = vx2 - (PITCH_W + padX); vx1 -= s; vx2 -= s; }
   if (vy1 < -backPad) { const s = -backPad - vy1; vy1 += s; vy2 += s; }
@@ -447,12 +466,51 @@ function autoViewport(points: Vec2[], includeGoal: boolean): Viewport {
   return { x1: vx1, x2: vx2, y1: vy1, y2: vy2 };
 }
 
+/**
+ * Put a yard of grass between you and the ball.
+ *
+ * The camera looks down the pitch from behind and slightly above, so a metre of
+ * pitch depth is a small number of pixels while a standing footballer is drawn
+ * nearly two metres tall. At the standoff the builders used — a metre and a bit
+ * — the ball landed at the figure's chin, and it genuinely looked like the ball
+ * was balanced on your head in situations that had nothing to do with heading.
+ *
+ * The ball is the thing you are about to strike, so it goes where it belongs:
+ * on the deck, clearly in front of you.
+ */
+const PLAYER_STANDOFF = 2.6;   // metres between your feet and the ball
+
+function standOff(sc: Scenario) {
+  let dx = sc.player.x - sc.ball.x;
+  let dy = sc.player.y - sc.ball.y;
+  const d = Math.hypot(dx, dy);
+  if (d >= PLAYER_STANDOFF) return;
+  // Degenerate case — standing on it. Step back down the pitch, away from goal.
+  if (d < 0.01) { dx = 0; dy = 1; }
+  else { dx /= d; dy /= d; }
+  sc.player = {
+    x: clamp(sc.ball.x + dx * PLAYER_STANDOFF, 1, PITCH_W - 1),
+    y: clamp(sc.ball.y + dy * PLAYER_STANDOFF, 0.5, HALF_LEN + 6),
+  };
+}
+
+/**
+ * Is the goal on screen in this situation?
+ *
+ * One question, one answer, used by both the camera and the finisher — they
+ * must never disagree. If you can see the goal, a team-mate you find will shoot
+ * at it; if you cannot, the ball is a pass and nothing more.
+ */
+export function goalInView(kind: ScenarioKind): boolean {
+  return kind !== "buildup" && kind !== "midfield_pass";
+}
+
 function scenarioViewport(sc: {
   ball: Vec2; player: Vec2; defenders: Vec2[]; teammates: Vec2[];
   keeper: { x: number; y: number }; runner: Runner | null; secondaryRunners?: Runner[]; kind: ScenarioKind;
 }): Viewport {
   const pts: Vec2[] = [sc.ball, sc.player];
-  const showGoal = sc.kind !== "buildup" && sc.kind !== "midfield_pass";
+  const showGoal = goalInView(sc.kind);
   if (showGoal) pts.push({ x: sc.keeper.x, y: sc.keeper.y });
   for (const d of sc.defenders) pts.push(d);
   // Decorative team-mates (the crosser a volley or header came from) are
@@ -461,10 +519,43 @@ function scenarioViewport(sc: {
   // corner of the screen, which is what made the camera look so erratic.
   if (sc.runner) { pts.push(sc.runner.pos); pts.push(sc.runner.to); }
   for (const r of sc.secondaryRunners ?? []) { pts.push(r.pos); pts.push(r.to); }
+
+  // ── Set pieces are framed on the box, not on the pitch ──
+  //
+  // A corner is taken from the flag, thirty-four metres off centre, and the
+  // camera looks straight down the pitch — so framing everyone on the field
+  // meant a frame wide enough to hold the flag AND the far side of the box, and
+  // at a 3:4 portrait canvas that width buys sixty metres of depth. You could
+  // see the halfway line, and everything that mattered was the size of a stamp.
+  //
+  // So a corner is framed on exactly what a corner is: the goal, the ball, the
+  // penalty area and the D at the top of it. Nothing beyond the arc. A ball
+  // whipped in from the byline is the same shape of problem and gets the same
+  // treatment.
+  if (sc.kind === "corner" || sc.kind === "free_kick" || sc.kind === "byline_cross") {
+    const setPts: Vec2[] = [sc.ball, sc.player, { x: sc.keeper.x, y: sc.keeper.y }, D_APEX];
+    if (sc.runner) setPts.push(sc.runner.pos);
+    for (const r of sc.secondaryRunners ?? []) setPts.push(r.pos);
+    for (const d of sc.defenders) setPts.push(d);
+    return autoViewport(setPts, true, 1.6, true);
+  }
+
   return autoViewport(pts, showGoal);
 }
 
-// Who's on the end of a cutback/cross/through-ball, and their rough finishing quality.
+/**
+ * Who is on the end of the ball, and how well he finishes.
+ *
+ * The rule, and it is absolute: **if the goal is on screen, whoever you find
+ * shoots.** There is no such thing as passing to a man in an attacking position
+ * and having the move simply stop. You laid it off inside the box and the
+ * highlight ended with a shrug — that is not football, and it made finding a
+ * team-mate feel like throwing the chance away.
+ *
+ * Only the two situations built without a goal in sight — the midfield pass and
+ * the build-up ball — resolve as a plain delivery, because there is nothing for
+ * anyone to shoot at.
+ */
 const RECEIVER_ROLES: Partial<Record<ScenarioKind, { label: string; skillMin: number; skillMax: number }[]>> = {
   cutback: [
     { label: "the striker", skillMin: 62, skillMax: 90 },
@@ -482,6 +573,33 @@ const RECEIVER_ROLES: Partial<Record<ScenarioKind, { label: string; skillMin: nu
     { label: "the center-back", skillMin: 45, skillMax: 72 },
     { label: "the striker", skillMin: 55, skillMax: 82 },
   ],
+  one_on_one: [
+    { label: "the striker", skillMin: 58, skillMax: 88 },
+    { label: "the attacking midfielder", skillMin: 52, skillMax: 82 },
+  ],
+  tight_angle: [
+    { label: "the striker", skillMin: 58, skillMax: 88 },
+    { label: "the far-post runner", skillMin: 50, skillMax: 80 },
+  ],
+  long_range: [
+    { label: "the attacking midfielder", skillMin: 55, skillMax: 85 },
+    { label: "the striker", skillMin: 58, skillMax: 88 },
+  ],
+  volley: [
+    { label: "the striker", skillMin: 55, skillMax: 85 },
+    { label: "the midfielder arriving", skillMin: 48, skillMax: 78 },
+  ],
+  header: [
+    { label: "the striker", skillMin: 55, skillMax: 85 },
+    { label: "the center-back", skillMin: 42, skillMax: 70 },
+  ],
+  free_kick: [
+    { label: "the striker", skillMin: 52, skillMax: 84 },
+    { label: "the center-back", skillMin: 42, skillMax: 70 },
+  ],
+  penalty: [
+    { label: "the striker", skillMin: 58, skillMax: 88 },
+  ],
 };
 
 function rollReceiver(kind: ScenarioKind, rng: () => number): Receiver | null {
@@ -491,12 +609,13 @@ function rollReceiver(kind: ScenarioKind, rng: () => number): Receiver | null {
   return { skill: pick.skillMin + rng() * (pick.skillMax - pick.skillMin), roleLabel: pick.label };
 }
 
-// A clean run in behind — the keeper races off his line to close the angle down.
+// A clean run in behind. The keeper narrows the angle by shading across toward
+// the shooting line, not by charging out to meet you — he is on his line here
+// like he is everywhere else, and how far across he has shaded is what you read.
 function buildOneOnOne(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const bx = CX + (rng() - 0.5) * 12;
   const by = 13 + rng() * 7;
-  // He comes to meet you, but stays inside his box and roughly on the shooting line.
-  const keeperY = clamp(by * 0.42, 3.5, 9);
+  const keeperY = 0.5 + rng() * 0.8;
   const keeperX = clamp(CX + (bx - CX) * 0.45, POST_L - 1, POST_R + 1);
   return {
     ball: { x: bx, y: by },
@@ -824,6 +943,12 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
     case "buildup": sc = buildBuildup(rng, ks, tr) as Scenario; break;
   }
   if (!sc.secondaryRunners) sc.secondaryRunners = [];
+  standOff(sc);
+  // If the goal is on screen, whoever you find shoots. Set here rather than in
+  // thirteen builders so it cannot be forgotten in one of them — which is
+  // exactly how laying it off inside the box used to end the highlight with
+  // nobody having done anything.
+  if (!sc.receiver && goalInView(kind)) sc.receiver = rollReceiver(kind, rng);
   if (sc.passDifficulty === undefined) sc.passDifficulty = 0;
   if (sc.offsideRisk === undefined) sc.offsideRisk = 0;
   if (sc.chainDepth === undefined) sc.chainDepth = 0;
@@ -1278,12 +1403,11 @@ function judgeOffside(scenario: Scenario) {
 /**
  * Advance the keeper.
  *
- * Normally he simply patrols: a smooth, continuous sweep across his line that
- * runs whether or not a shot is on its way. He does NOT react to the ball. The
- * player is reading him, not the other way round.
+ * He does not advance. He breathes — see the Keeper doc above.
  *
- * The one exception is a loose ball he has already spilled, where he scrambles
- * toward it — that is a visible chase, not a prediction.
+ * The one exception is a ball he has already spilled, where he scrambles after
+ * it, and that is the point: everything he does is a consequence of something
+ * that has already happened, never an anticipation of something that has not.
  */
 export function stepKeeper(scenario: Scenario, dt: number) {
   const k = scenario.keeper;
@@ -1305,29 +1429,14 @@ export function stepKeeper(scenario: Scenario, dt: number) {
     return;
   }
 
-  // ── Patrol ──
-  // A dominant sweep plus a smaller one at an irrational-ish ratio, so the path
-  // is smooth and learnable — the same rhythm every time — without being a
-  // perfect metronome the player can solve once and forget. No snapping, no
-  // instant reversals: both terms are sinusoids, so acceleration is continuous.
-  const prevX = k.x;
-  k.patrolT += dt;
+  // ── He stands still ──
+  // Not a figure of speech: nothing here moves him. The idle clock keeps him
+  // breathing and shifting his weight so he reads as alive rather than as a
+  // cardboard cutout, and any lean left over from a scramble settles back to
+  // upright. That is the whole function.
   k.idleT += dt;
-  const tier = KEEPER_TIERS[keeperTierFor(scenario.keeperStrength)];
-  const w = (Math.PI * 2) / tier.period;
-  const sweep =
-    Math.sin(k.patrolT * w + k.patrolSeed) * 0.82 +
-    Math.sin(k.patrolT * w * 1.618 + k.patrolSeed * 1.7) * 0.18;
-
-  const want = k.startX + sweep * tier.amp;
-  // Never past his own posts.
-  k.x = clamp(want, POST_L + 0.35, POST_R - 0.35);
-
-  // Lean into the direction of travel — the figure reads as gliding rather than
-  // sliding, and it telegraphs which way he is going, which is the whole point.
-  const vx = dt > 0 ? (k.x - prevX) / dt : 0;
-  const lean = clamp(vx / KEEPER_DIVE_SPEED, -1, 1) * 0.85;
-  k.dive += (lean - k.dive) * Math.min(1, dt * 8);
+  k.patrolT += dt;
+  k.dive += (0 - k.dive) * Math.min(1, dt * 8);
 }
 
 /**
@@ -2148,7 +2257,14 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   // Out of bounds.
   if (ball.pos.x < -2 || ball.pos.x > PITCH_W + 2 || ball.pos.y > HALF_LEN + 8) return "out";
 
-  if (ball.resting && (ball.restT ?? 0) > DEAD_BALL_TIMEOUT) return "short";
+  // Once a team-mate has already had the ball, there is nobody left whose turn
+  // it is — the move is over and sitting on it for another six seconds is dead
+  // air. Otherwise the long timeout stands, as a backstop for a ball that has
+  // somehow ended up where nobody can reach it.
+  if (ball.resting) {
+    const limit = scenario.receiverDone ? DEAD_BALL_SETTLED : DEAD_BALL_TIMEOUT;
+    if ((ball.restT ?? 0) > limit) return "short";
+  }
   return null;
 }
 
