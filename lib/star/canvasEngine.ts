@@ -285,12 +285,19 @@ const KEEPER_PATROL_AMP = 2.6;     // metres either side of centre he ranges ove
                                    // the whole game.
 const KEEPER_PATROL_PERIOD = 4.2;  // seconds for one full sweep and back — slow
                                    // enough to watch for a second and commit
-// How much of the goal he covers from where he is standing. Raised when the
-// patrol was removed: a keeper who sweeps his line is beaten by timing, and a
-// keeper who stands still can only be beaten by placement — so the gap either
-// side of him has to be a gap you have to find, not most of the goal.
-const KEEPER_SAVE_R_MIN = 2.55;    // save radius at the goal plane, weakest keeper
-const KEEPER_SAVE_R_MAX = 3.35;    // …and the strongest
+// How much of the goal he covers from where he is standing — and therefore how
+// far he has to dive to cover it.
+//
+// This went UP to 2.55–3.35 when the patrol was removed, on the reasoning that a
+// stationary keeper needs to cover more or the goal is wide open. The reasoning
+// was fine and the number was not: three metres is nearly half the goal, so a
+// ball flying into the corner was "saved" by a keeper standing visibly nowhere
+// near it. Three separate times it read as a goal that had not been given.
+//
+// It is back to a distance a dive actually covers, and the dive is now DRAWN
+// covering it — see the save branch in resolveKeeper, which puts him at the ball.
+const KEEPER_SAVE_R_MIN = 1.95;    // save radius at the goal plane, weakest keeper
+const KEEPER_SAVE_R_MAX = 2.65;    // …and the strongest
 
 /**
  * Difficulty tiers.
@@ -304,10 +311,10 @@ const KEEPER_SAVE_R_MAX = 3.35;    // …and the strongest
  */
 export type KeeperTier = "easy" | "normal" | "hard" | "expert";
 export const KEEPER_TIERS: Record<KeeperTier, { radius: number }> = {
-  easy:   { radius: 2.45 },
-  normal: { radius: 2.95 },
-  hard:   { radius: 3.25 },
-  expert: { radius: 3.45 },
+  easy:   { radius: 1.85 },
+  normal: { radius: 2.25 },
+  hard:   { radius: 2.55 },
+  expert: { radius: 2.75 },
 };
 
 /** Which tier a keeper of this rating plays at. */
@@ -421,13 +428,17 @@ function offsideLineY(defenders: Vec2[]): number {
 // use the SAME metres-per-pixel on both axes or every distance on screen lies.
 // Framing is clamped to a sane zoom band so the pitch never appears wildly zoomed
 // in on one chance and wildly zoomed out on the next.
-const VIEW_ASPECT = 3 / 4;      // width / height
-const VIEW_MIN_H = 28;          // metres of pitch visible vertically, closest zoom
+// The canvas is a tall slice, not a box — see the aspect on the pitch container.
+// A shooting situation needs the goal and a player thirty metres off it in the
+// same frame, and a tall frame buys that depth without having to zoom out to
+// find it.
+const VIEW_ASPECT = 5 / 8;      // width / height
+const VIEW_MIN_H = 34;          // metres of pitch visible vertically, closest zoom
 // Furthest zoom. Held down hard, because the frame is the situation rather than
 // a window onto a pitch — anything the framing cannot hold gets pulled inside it
 // by fitToView instead of the rectangle growing to go and find it. At 62 a
 // long-range chance showed the halfway line and everything in it was tiny.
-const VIEW_MAX_H = 36;
+const VIEW_MAX_H = 46;
 
 /**
  * The rectangle a corner or a whipped cross happens in.
@@ -437,7 +448,7 @@ const VIEW_MAX_H = 36;
  * the same and you learn one picture instead of a new one each time.
  */
 const WIDE_DELIVERY_VIEW: Viewport = (() => {
-  const h = 30;
+  const h = 36;
   const w = h * VIEW_ASPECT;
   return { x1: CX - w / 2, x2: CX + w / 2, y1: -4.5, y2: -4.5 + h };
 })();
@@ -493,6 +504,11 @@ function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4): Viewport {
 function fitToView(sc: Scenario) {
   const vp = sc.viewport;
   const inset = 1.4;
+  // You aim by dragging BACK from the ball, so a chance at the very bottom of
+  // the frame is one you cannot pull the arrow far enough for — the drag ran
+  // off the bottom of the canvas and the shot stuck. The ball is kept up out of
+  // the bottom fifth, which is the room that gesture needs.
+  const floor = vp.y2 - (vp.y2 - vp.y1) * 0.2;
   const fx = (x: number) => clamp(x, vp.x1 + inset, vp.x2 - inset);
   const fy = (y: number) => clamp(y, Math.max(vp.y1 + inset, 0.3), vp.y2 - inset);
   for (const d of sc.defenders) { d.x = fx(d.x); d.y = fy(d.y); }
@@ -501,7 +517,7 @@ function fitToView(sc: Scenario) {
     r.to.x = fx(r.to.x);   r.to.y = fy(r.to.y);
   }
   if (goalInView(sc.kind)) { sc.follower.x = fx(sc.follower.x); sc.follower.y = fy(sc.follower.y); }
-  sc.ball = { x: fx(sc.ball.x), y: fy(sc.ball.y) };
+  sc.ball = { x: fx(sc.ball.x), y: Math.min(fy(sc.ball.y), floor) };
   // You go last, and through standOff, so the ball is never squeezed onto your
   // feet by the clamp — a delivery from the very edge of the frame still leaves
   // room for you to be standing beside it.
@@ -1756,6 +1772,23 @@ export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
   if (speed < LAYOFF_MAX_SPEED) return false;
   if (ball.vel.y >= -1) return false;                 // not going that way at all
+
+  // ── A man standing on the line is a man you were passing to ──
+  //
+  // Without this, hitting a team-mate firmly — which is what you do when he is
+  // ten metres away and there are defenders about — got the ball flagged as
+  // your shot, and a support player steps out of the way of your shot. So the
+  // pass went cleanly THROUGH the man you aimed at, every time, and then rolled
+  // away with nobody allowed to touch it. It was the most-reported bug in the
+  // game and it was this line missing.
+  for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
+    const dx = r.pos.x - ball.pos.x, dy = r.pos.y - ball.pos.y;
+    const along = (dx * ball.vel.x + dy * ball.vel.y) / (speed * speed);
+    if (along <= 0 || along > 1.4) continue;          // behind you, or miles past him
+    const offX = dx - ball.vel.x * along, offY = dy - ball.vel.y * along;
+    if (Math.hypot(offX, offY) < PASS_CONTROL_R * 1.4) return false;
+  }
+
   // Where it would cross the line if nothing touched it. A cone around the goal
   // was the obvious test and it was wrong: from the byline EVERY forward pass
   // sits inside the cone, so a cutback to a team-mate was unplayable.
@@ -1794,6 +1827,12 @@ const CONTROL_R = 1.15;    // metres — close enough to take it
 export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: () => number = Math.random) {
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
   const dead = ball.resting || (speed < DEAD_BALL_SPEED && ball.z < 0.4);
+
+  // Nobody walks off the edge of the situation after it. If it has left the
+  // frame it is gone; stepBall ends the move on the same tick, and until it
+  // does, everyone stays where they are.
+  const vp = scenario.viewport;
+  if (vp && (ball.pos.x < vp.x1 || ball.pos.x > vp.x2 || ball.pos.y < vp.y1 || ball.pos.y > vp.y2)) return;
 
   const move = (p: { x: number; y: number }, pace: number) => {
     const dx = ball.pos.x - p.x, dy = ball.pos.y - p.y;
@@ -2300,8 +2339,7 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         const cover = keeperCovers(scenario, xCross, zCross);
         if (cover.saved) {
           // Only NOW is an animation picked, and it is chosen to match the
-          // outcome that has already been decided: he lunges toward the ball so
-          // the save reads as a save.
+          // outcome that has already been decided.
           k.saveDir = Math.sign(xCross - k.x) || 0;
           k.saveLunge = 0.001;
           k.scrambling = false;
@@ -2309,9 +2347,22 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
           ball.pos.y = 0.02;
           ball.z = Math.max(0, zCross);
           const r = keeperSaveRadius(scenario);
+          const standingAt = k.x;
+          // ── He GETS there ──
+          // The save decision is made against where he was standing, and until
+          // now that was the end of it: the figure stayed put and the ball
+          // vanished, so a shot into the corner was recorded as a save by a
+          // keeper drawn two metres away from it. Reported three times as "I
+          // scored and it did not count", and the picture was right.
+          //
+          // The dive is the one thing he is allowed to do, so he does it: he
+          // ends the save at the ball. Nothing here changes whether it was
+          // saved — that was settled a line ago, against the position he was
+          // actually standing in.
+          k.x = clamp(xCross, POST_L - 0.6, POST_R + 0.6);
           const outcome = resolveKeeper(ball, scenario, (1 - cover.margin) * r, r, speed, rng);
           // Animation LAST, and chosen to match the outcome that is now settled.
-          k.saveKind = classifySave(xCross, zCross, k.x, cover.margin, outcome);
+          k.saveKind = classifySave(xCross, zCross, standingAt, cover.margin, outcome);
           return outcome ?? null;
         }
       }
@@ -2331,7 +2382,15 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     return "wide";
   }
 
-  // Out of bounds.
+  // ── Out ──
+  //
+  // Out of the FRAME, not out of the pitch. There is no pitch outside the frame
+  // — nothing out there is drawn, nothing out there can be reached, and the
+  // camera will never go and look. A ball that leaves is gone, and the move is
+  // over the moment it does. It used to keep rolling around out of sight with
+  // every player on the field jogging off the screen after it.
+  const vp = scenario.viewport;
+  if (vp && (ball.pos.x < vp.x1 - 1 || ball.pos.x > vp.x2 + 1 || ball.pos.y > vp.y2 + 1)) return "out";
   if (ball.pos.x < -2 || ball.pos.x > PITCH_W + 2 || ball.pos.y > HALF_LEN + 8) return "out";
 
   // Once a team-mate has already had the ball, there is nobody left whose turn
