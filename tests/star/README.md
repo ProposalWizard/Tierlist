@@ -40,6 +40,20 @@ reason we know:
   two metres of the start of every passing lane, so raw distance-to-segment made
   him shut all of them equally. Defenders are only counted in lanes they are
   actually in.
+- **A ball nobody has is a ball everybody can have.** Once ANY team-mate had
+  touched it, `receiverDone` stayed set and nobody could collect it again — so a
+  shot the keeper parried away rolled to a stop with your players walking toward
+  it and the move was cut off before the nearest of them arrived. It read,
+  correctly, as your side declining to chase a loose ball in their own box. He
+  has struck it; he no longer has it. The two-shot cap now limits the SHOOTING
+  rather than the collecting, so a scramble ends with a man in possession
+  instead of frozen two metres short. Asserted: a loose ball with somebody
+  inside six metres of it is never given up on, over 1,200 shots at the keeper.
+- **A first touch does not get to place you differently from everything else.**
+  It planted you 1.2 m straight BEHIND the ball — the old model, left behind
+  when the rest of the game moved to standing alongside — so every chance that
+  came out of a completed pass, which is most of the good ones, put the ball on
+  your chest.
 - **A firm ball at a team-mate went straight through him.** The most-reported
   bug in the game, and the cause is one line that was missing rather than one
   that was wrong. Anything struck hard toward the goal is flagged as your shot so
@@ -165,7 +179,10 @@ corner. Nothing outside it is part of the game, so:
   gets pulled inside rather than the rectangle growing to go and find it.
 - **A ball that leaves the frame is gone**, on the tick it leaves, and nobody
   walks off the edge of the situation after it. There is no pitch out there for
-  it to roll around on.
+  it to roll around on. The margin `stepReactions` stops at has to be the SAME
+  one `stepBall` calls "out" on — it was a metre tighter, which left a
+  one-metre band where the ball was still in play and everybody had stopped
+  going for it.
 - **The ball is never in the bottom fifth of the frame.** You aim by dragging
   BACK from it, and a chance at the very bottom is one you cannot pull the arrow
   far enough for — the drag ran off the canvas and the shot stuck. (The drag

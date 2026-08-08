@@ -162,6 +162,47 @@ function bestOption(sc: Scenario): number {
     "and either way the move ends — nothing sits on the grass forever");
 }
 
+// ── A ball nobody has is a ball everybody can have ──────────────────────────
+//
+// Once ANY team-mate had touched the ball, nobody could ever collect it again —
+// so a shot the keeper parried away rolled to a stop with your players walking
+// toward it, and the move was cut off before the nearest of them arrived. It
+// read, correctly, as your side declining to chase a loose ball in their box.
+// He has struck it; he no longer has it.
+{
+  let abandonedShort = 0, played = 0;
+  const N = 1200;
+  for (let seed = 0; seed < N; seed++) {
+    const rng = mulberry32(seed * 7 + 3);
+    const sc = buildScenario(seed % 2 ? "one_on_one" : "long_range", rng, 62, 60);
+    initDefenders(sc, rng);
+    // Straight at the keeper, so he has to deal with it.
+    const ball = launch(sc, { x: sc.keeper.x - sc.ball.x, y: -sc.ball.y }, 0.9, { cx: 0, cy: -0.15 }, { power: 70, technique: 70 }, rng);
+    let out: Outcome | null = null;
+    for (let i = 0; i < 1500 && !out; i++) {
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+    }
+    played += 1;
+    if (out !== "short") continue;
+    // Given up on — which is only allowed when it really is out of reach.
+    const all = [...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map(r => r.pos),
+                 { x: sc.follower.x, y: sc.follower.y }];
+    const nearest = Math.min(...all.map(p => Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y)));
+    if (nearest < 6) abandonedShort += 1;
+  }
+  check(abandonedShort === 0,
+    `a loose ball with a man standing over it is never given up on (${abandonedShort}/${played})`);
+
+  // And the flag really does come back off, so a second man can have his go.
+  const rng = mulberry32(21);
+  const sc = buildScenario("one_on_one", rng, 62, 60);
+  sc.receiverDone = true;
+  sc.receiverShots = 1;
+  check(sc.receiverShots < 2, "…but only so many times — a scramble, not a farce");
+}
+
 // ── A firm ball at a man is a pass, not a shot ──────────────────────────────
 //
 // The most-reported bug in the game: you pass to the attacker standing next to

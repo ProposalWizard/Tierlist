@@ -204,7 +204,9 @@ export interface Scenario {
   receiver: Receiver | null;   // set for cutback/byline_cross/through_ball — they shoot on reception
   receiverDone: boolean;
   /** The team-mate has actually struck the resolving shot. Drives the stat credit. */
-  receiverShot?: boolean;       // true once the ball has reached the runner (guards re-trigger)
+  receiverShot?: boolean;
+  /** How many of them he has had. Two is a scramble; three is a farce. */
+  receiverShots?: number;       // true once the ball has reached the runner (guards re-trigger)
   teamRelationship: number;    // 0-100 — how well the team combines, feeds the receiver's shot quality
   viewport: Viewport;
   secondaryRunners: Runner[];  // extra options: support players and build-up outlets
@@ -533,8 +535,8 @@ function fitToView(sc: Scenario) {
   // You go last, and through standOff, so the ball is never squeezed onto your
   // feet by the clamp — a delivery from the very edge of the frame still leaves
   // room for you to be standing beside it.
-  standOff(sc);
-  sc.player = { x: fx(sc.player.x), y: fy(sc.player.y) };
+  standOff(sc, vp.x1 + inset, vp.x2 - inset);
+  sc.player = { x: sc.player.x, y: fy(sc.player.y) };
 
 }
 
@@ -552,15 +554,28 @@ function fitToView(sc: Scenario) {
  * Sideways is a different axis. A ball a stride off your standing foot, barely
  * ahead of you, reads exactly as what it is.
  */
-const STANDOFF_SIDE = 1.5;     // metres across — the one that does the work
+const STANDOFF_SIDE = 1.3;     // metres across — the one that does the work
 const STANDOFF_BACK = 0.15;    // …and level with your boots, not ahead of them
 
-function standOff(sc: Scenario) {
-  // Keep whichever side of the ball the builder put you on, so a player working
-  // the right touchline does not get flipped into the middle of the pitch.
-  const side = sc.player.x >= sc.ball.x ? 1 : -1;
+/**
+ * Stand beside the ball, on a side that is actually in the frame.
+ *
+ * Keeping whichever side the builder chose was not enough on its own: with the
+ * ball near the edge of a tight rectangle, the far side put you outside it, the
+ * clamp pulled you straight back — and where it pulled you back TO was the ball.
+ * You ended up standing on it, which on screen is the ball on your chest.
+ */
+function standOff(sc: Scenario, lo?: number, hi?: number) {
+  const minX = lo ?? 1, maxX = hi ?? PITCH_W - 1;
+  const prefer = sc.player.x >= sc.ball.x ? 1 : -1;
+  // The preferred side unless it does not fit, and then the other one.
+  const fits = (side: number) => {
+    const x = sc.ball.x + side * STANDOFF_SIDE;
+    return x >= minX && x <= maxX;
+  };
+  const side = fits(prefer) ? prefer : fits(-prefer) ? -prefer : prefer;
   sc.player = {
-    x: clamp(sc.ball.x + side * STANDOFF_SIDE, 1, PITCH_W - 1),
+    x: clamp(sc.ball.x + side * STANDOFF_SIDE, minX, maxX),
     y: clamp(sc.ball.y + STANDOFF_BACK, 0.5, HALF_LEN + 6),
   };
 }
@@ -1259,6 +1274,15 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   ball.contactCd = 0.15;
   ball.event = "receiverShot";
   scenario.receiverShot = true;
+  scenario.receiverShots = (scenario.receiverShots ?? 0) + 1;
+  // ── The ball is live again ──
+  //
+  // He has struck it; he no longer has it. Leaving receiverDone set meant that
+  // once ANY team-mate had touched the ball, nobody could ever collect it again
+  // — so a shot the keeper parried away rolled to a stop with your players
+  // walking toward it and the move was cut off before the nearest of them got
+  // there. It read, correctly, as your side declining to chase a loose ball.
+  scenario.receiverDone = false;
   // Deliberately does NOT tell the keeper where this is going. He keeps
   // patrolling; whether he is in the way is settled when the ball arrives.
 }
@@ -1363,11 +1387,17 @@ export function applyFirstTouch(scenario: Scenario, technique: number, rng: () =
   const heavy = clamp(1 - clamp(technique, 0, 100) / 100, 0, 1);
   const away = heavy * (0.6 + rng() * 2.4);
   const ang = rng() * Math.PI * 2;
+  const vp = scenario.viewport;
+  const inset = 1.4;
   scenario.ball = {
-    x: clamp(scenario.ball.x + Math.cos(ang) * away, 2, PITCH_W - 2),
-    y: clamp(scenario.ball.y + Math.sin(ang) * away, 1, HALF_LEN),
+    x: clamp(scenario.ball.x + Math.cos(ang) * away, vp ? vp.x1 + inset : 2, vp ? vp.x2 - inset : PITCH_W - 2),
+    y: clamp(scenario.ball.y + Math.sin(ang) * away, 1, vp ? vp.y2 - inset : HALF_LEN),
   };
-  scenario.player = { x: scenario.ball.x, y: scenario.ball.y + 1.2 };
+  // Beside it, the same as everywhere else. This used to plant you 1.2 m
+  // straight BEHIND the ball — the old model, left behind here when the rest of
+  // the game moved to standing alongside — so every chance that came out of a
+  // completed pass, which is most of the good ones, put the ball on your chest.
+  standOff(scenario, vp ? vp.x1 + inset : undefined, vp ? vp.x2 - inset : undefined);
   return away;
 }
 
@@ -1843,8 +1873,15 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
   // Nobody walks off the edge of the situation after it. If it has left the
   // frame it is gone; stepBall ends the move on the same tick, and until it
   // does, everyone stays where they are.
+  //
+  // The margin has to be the SAME one stepBall calls "out" on. It was a metre
+  // tighter, which left a one-metre band around the frame where the ball was
+  // still in play but everybody had stopped going for it: a ball that stopped
+  // in that band sat there until the dead-ball timer wrote it off, with the
+  // nearest man standing five metres away doing nothing.
   const vp = scenario.viewport;
-  if (vp && (ball.pos.x < vp.x1 || ball.pos.x > vp.x2 || ball.pos.y < vp.y1 || ball.pos.y > vp.y2)) return;
+  if (vp && (ball.pos.x < vp.x1 - 1 || ball.pos.x > vp.x2 + 1
+             || ball.pos.y < vp.y1 - 1 || ball.pos.y > vp.y2 + 1)) return;
 
   const move = (p: { x: number; y: number }, pace: number) => {
     const dx = ball.pos.x - p.x, dy = ball.pos.y - p.y;
@@ -1872,13 +1909,16 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
   // rebound at seven metres a second. He reaches a rebound in the box the same
   // way anybody reaches anything — by being near it — and if he gets there he
   // does what a striker does with a loose ball six yards out.
-  if (!scenario.follower.shot) {
+  {
     const f = scenario.follower;
     const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
+    // He walks to a stopped ball whether or not he has already had a go at it.
+    // Skipping him once he had shot meant a ball could come to rest five metres
+    // from the only man near it and simply be given up on.
     if (dead) { move(f, fetch(dist)); f.active = true; }
-    else if (dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
+    else if (!f.shot && dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
 
-    if (f.active && ball.loose && !ball.inNet && ball.z < 1.6
+    if (!f.shot && f.active && ball.loose && !ball.inNet && ball.z < 1.6
         && ball.pos.y < BOX_DEPTH && ball.contactCd <= 0
         && Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y) < CONTROL_R) {
       const tx = POST_L + rng() * (POST_R - POST_L);
@@ -2317,7 +2357,11 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         // computed and ignored; when there is a defensive line worth the name,
         // this is where it goes back in.
 
-        if (scenario.receiver) {
+        // A finisher, and he has not already had two goes at it. The cap stops
+        // a scramble becoming a farce — but it stops the SHOOTING, not the
+        // collecting: he still gets to the ball, and the move ends with him in
+        // possession rather than with him frozen two metres short of it.
+        if (scenario.receiver && (scenario.receiverShots ?? 0) < 2) {
           ball.pos = { x: tgt.x, y: tgt.y };
           ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
           ball.receiverControlT = RECEIVER_CONTROL_T;
@@ -2408,12 +2452,12 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
              || ball.pos.y > vp.y2 + 1 || ball.pos.y < vp.y1 - 1)) return "out";
   if (ball.pos.x < -2 || ball.pos.x > PITCH_W + 2 || ball.pos.y > HALF_LEN + 8) return "out";
 
-  // Once a team-mate has already had the ball, there is nobody left whose turn
-  // it is — the move is over and sitting on it for another six seconds is dead
-  // air. Otherwise the long timeout stands, as a backstop for a ball that has
-  // somehow ended up where nobody can reach it.
+  // Once there is genuinely nobody left whose turn it is, the move is over and
+  // sitting on the ball is dead air. While somebody can still collect it, the
+  // ordinary timeout stands as a backstop for a ball nobody can reach.
   if (ball.resting) {
-    const limit = scenario.receiverDone ? DEAD_BALL_SETTLED : DEAD_BALL_TIMEOUT;
+    const settled = scenario.receiverDone || (scenario.receiverShots ?? 0) >= 2;
+    const limit = settled ? DEAD_BALL_SETTLED : DEAD_BALL_TIMEOUT;
     if ((ball.restT ?? 0) > limit) return "short";
   }
   return null;
