@@ -97,6 +97,33 @@ produce your chances at their end produce theirs at yours.
 
 ---
 
+**THE RECTANGLE IS THE SITUATION.** The single most important thing in this
+directory, and the thing three separate rounds of bugs came from getting wrong.
+
+There is no pitch that the camera visits. A situation is the frame you are
+looking at, entire — a run is getting from the bottom of this rectangle to the
+top of it, a pass is finding a man inside it, a cross is delivered from its
+corner. Nothing outside it is part of the game, so:
+
+- **The camera never moves.** Not to follow the ball, not to lead it, not to
+  follow you on a run. It is set when the situation loads and that is the last
+  thing that happens to it. Panning was the single most disorientating thing in
+  the game, and it is what made a run "start dribbling and then drift toward a
+  goal".
+- **The frame comes first and the situation is built inside it.** A wide
+  delivery has a FIXED rectangle — goal along the top, the D along the bottom —
+  and the ball is delivered from the corner of that, not from a flag forty
+  metres outside it. Framing the flag meant a frame wide enough to hold it and
+  the far post, which at a 3:4 portrait canvas buys fifty metres of depth: you
+  could see the halfway line and the goal was the size of a stamp.
+- **Everybody is inside it** (`fitToView`), asserted for every kind and seed. A
+  man beyond the edge is not off-camera, he is absent — and he used to be, in
+  169 byline crosses out of 200.
+- **Frames are capped at 36 m** down the screen. What the framing cannot hold
+  gets pulled inside rather than the rectangle growing to go and find it.
+
+---
+
 **defending** — nobody moves until you kick it, and the keeper does not move at
 all.
 
@@ -150,6 +177,13 @@ Two measurements from the old model are kept because they still explain code:
   chases the earliest point he can still theoretically reach, which moves away
   from him as fast as the ball does: 20,000 frames of chasing changed 7 passes
   in 500, and he had vacated the lane he was covering.
+- **Offside is switched off.** A situation carries one or two defenders rather
+  than a back four, so `min(defender.y)` was never a real line — it flagged men
+  who were plainly onside, including one standing level with the ball a yard
+  away, and stayed down on men who were plainly not. A rule that fires at random
+  is worse than no rule. `offsideRisk` is still computed and is ignored; the
+  suite asserts the flag stays down across 1,500 through-balls. It goes back in
+  when there is a defensive line worth the name.
 - **Defenders must not read shots.** A cone around the goal was the obvious test
   for "is this a shot", and it is wrong: from the byline every forward pass sits
   inside the cone, so a cutback was unplayable. It is decided by where the ball
@@ -188,6 +222,20 @@ Tuned by measurement:
   strike, and the second ball lost afterwards. They are counted apart, because
   a single threshold across both hid which one had moved: currently 13% blocked
   and 23% lost afterwards on volleys and headers.
+- **A saved ball has to LOOK saved.** The shot-stopping test decides at the goal
+  plane, having just moved the ball to (crossing point, y = 0.02) — and a catch
+  or a tip then froze it exactly there. So a save left the ball sitting still in
+  the middle of the goal mouth, on the line, which is indistinguishable from a
+  goal that was not given, and was reported as one. A catch now ends in the
+  keeper's gloves and a tip goes over the bar or round the post and behind the
+  line. Gameplay was right and the picture was lying, which is the worse way
+  round to have it.
+- **The ball goes BESIDE you, never in front.** The camera looks down the pitch,
+  so "in front of you" is "up the screen" — and a figure is drawn up the screen
+  from the point it stands on. There is no distance directly in front that reads
+  as a ball at your feet: at 1.2 m it looked like a ball resting on your head, at
+  2.6 m like one floating above it. Sideways is a different axis. 1.35 m across
+  and 0.45 m back, asserted as "across > along" for every kind.
 - **First touch is not a dice roll.** Nobody moves before you kick, so a heavy
   touch cannot cost you time — it costs you POSITION. Technique 20 pushes the
   ball 1.7 m away from you, technique 95 kills it inside 0.3 m, and you move
@@ -452,9 +500,13 @@ let alone play it. What changed:
 
 - Everybody slowed down. You run at 4.0 + pace, chasers at 3.1 + strength, and a
   competent line now takes about five seconds.
-- The run has **its own camera** (`dribbleViewport`), and it is set deep enough
-  in midfield that **neither goal is ever in frame** — asserted over 200 full
-  runs. It looks like a passing situation, because that is what it is.
+- The run is **one rectangle that never moves** (`dribbleViewport`): the line to
+  reach across the top, you at the bottom, the men in between, and the corridor
+  narrower than the frame so the sides of the run are inside what you can see.
+  It is set deep enough in midfield that **neither goal is ever in frame** —
+  asserted over 200 full runs. Giving the run a camera that followed you up the
+  pitch was the same mistake as inheriting the last chance's camera, in a
+  politer form: it looked like the situation was drifting toward a goal.
 - Drifting wide **holds you inside the corridor** instead of losing the ball.
   Running out was the commonest way a run ended, which taught you to fear the one
   thing the situation exists to ask of you.
