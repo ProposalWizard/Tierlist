@@ -58,6 +58,12 @@ export interface Ball {
   restT?: number;
   /** How many times it has come back off the frame. Two is pinball; stop at one. */
   postHits?: number;
+  /**
+   * The move is over but the ball is still travelling — a save pushed clear.
+   * The result phase keeps stepping it so you see where it went instead of
+   * finding it already there.
+   */
+  settling?: boolean;
   loose: boolean;      // true once the ball has been parried/deflected and is a live rebound
   contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
   receiverControlT: number; // seconds a teammate spends controlling a received pass before shooting
@@ -487,12 +493,15 @@ function makeFollower(rng: () => number, by: number): Follower {
 // same frame, and a tall frame buys that depth without having to zoom out to
 // find it.
 const VIEW_ASPECT = 5 / 8;      // width / height
-const VIEW_MIN_H = 34;          // metres of pitch visible vertically, closest zoom
+// How much the zoom may vary between one situation and the next. Held narrow:
+// the difference between 34 and 46 was visible chance to chance and read as the
+// camera being inconsistent rather than as the situation being tighter.
+const VIEW_MIN_H = 38;          // metres of pitch visible vertically, closest zoom
 // Furthest zoom. Held down hard, because the frame is the situation rather than
 // a window onto a pitch — anything the framing cannot hold gets pulled inside it
 // by fitToView instead of the rectangle growing to go and find it. At 62 a
 // long-range chance showed the halfway line and everything in it was tiny.
-const VIEW_MAX_H = 46;
+const VIEW_MAX_H = 44;
 
 /**
  * The rectangle a corner or a whipped cross happens in.
@@ -1441,7 +1450,10 @@ const COVER_COUNT: Record<ScenarioKind, number> = {
   one_on_one: 2, tight_angle: 3, volley: 3, header: 3,
   long_range: 3, cutback: 3, byline_cross: 3, through_ball: 2,
   midfield_pass: 1, buildup: 1,
-  penalty: 0, free_kick: 2, corner: 3,
+  // A free kick already has a wall of three or four in front of it, and they
+  // ARE the cover. Adding more put bodies across the flight of a ball lifted
+  // over the wall, so the one free kick that is supposed to work could not.
+  penalty: 0, free_kick: 0, corner: 3,
 };
 
 function addCover(sc: Scenario, rng: () => number) {
@@ -1472,15 +1484,29 @@ function addCover(sc: Scenario, rng: () => number) {
         // there with him, and a ball driven up the pitch reached that goal
         // instead of leaving the situation.
         : clamp(sc.ball.y - 6 - rng() * 8, 6, Math.max(7, sc.ball.y - 3));
-    const spread = 5 + rng() * 9;
-    const side = i % 2 === 0 ? -1 : 1;
+
+    // ── Across the width, and never behind the keeper ──
+    //
+    // They used to alternate left, right, left off a random spread, so three of
+    // them put two on the same side a stride apart, marking nobody. And the
+    // depth was free to land in front of the keeper — defenders standing
+    // between him and his own goal line, which is not a thing that happens.
+    const lane = want <= 1 ? 0 : (i / (want - 1)) - 0.5;   // -0.5 … +0.5
+    const floorY = behind ? 2.5 : Math.max(3.5, sc.keeper.y + 2);
     const at = {
-      x: clamp(CX + side * spread + (rng() - 0.5) * 4, 8, PITCH_W - 8),
-      y: clamp(band + (rng() - 0.5) * 3, 2.5, Math.max(3, sc.ball.y - 1)),
+      x: clamp(CX + lane * 26 + (rng() - 0.5) * 5, 8, PITCH_W - 8),
+      y: clamp(band + (rng() - 0.5) * 2.5, floorY, Math.max(floorY, sc.ball.y - 1)),
     };
-    // Not on top of the keeper, and not on top of each other.
+    // Not on top of the keeper, not on top of each other, and not on top of you.
     if (Math.hypot(at.x - sc.keeper.x, at.y - sc.keeper.y) < 2.5) at.y += 2.5;
-    if (sc.defenders.some(d => Math.hypot(d.x - at.x, d.y - at.y) < 2.5)) at.x = clamp(at.x + side * 3, 8, PITCH_W - 8);
+    for (let k = 0; k < 8; k++) {
+      const clash = sc.defenders.some(d => Math.hypot(d.x - at.x, d.y - at.y) < 3)
+        || Math.hypot(at.x - sc.player.x, at.y - sc.player.y) < 4.5
+        || Math.hypot(at.x - sc.ball.x, at.y - sc.ball.y) < 4;
+      if (!clash) break;
+      at.x = clamp(at.x + (lane >= 0 ? 2.6 : -2.6), 8, PITCH_W - 8);
+      at.y = clamp(at.y + 1.1, floorY, HALF_LEN);
+    }
     sc.defenders.push(at);
   }
 }
@@ -2311,8 +2337,13 @@ export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
   // did it by making a long ball to a forward unplayable. The tolerance below is
   // the real one — aim at the corner and the ball's line passes clear of him.
   const toGoal = ball.pos.y / -ball.vel.y * speed;
-  for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
-    const dx = r.pos.x - ball.pos.x, dy = r.pos.y - ball.pos.y;
+  const mates: Vec2[] = [
+    ...(scenario.runner ? [scenario.runner.pos] : []),
+    ...scenario.secondaryRunners.map(r => r.pos),
+  ];
+  if (!scenario.follower.shot) mates.push({ x: scenario.follower.x, y: scenario.follower.y });
+  for (const pos of mates) {
+    const dx = pos.x - ball.pos.x, dy = pos.y - ball.pos.y;
     const t = (dx * ball.vel.x + dy * ball.vel.y) / (speed * speed);
     if (t <= 0 || t * speed > toGoal) continue;   // behind you, or past the goal
     const offX = dx - ball.vel.x * t, offY = dy - ball.vel.y * t;
@@ -2560,18 +2591,25 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // Full-stretch, high or fierce → pushed away to safety, and it has to LOOK
   // like safety.
   //
-  // Behind the line and outside the post is where a tipped ball really goes, and
-  // from directly above it reads as the ball sitting in the side netting, which
-  // is worse than the thing it replaced. So he pushes it AWAY instead: out and
-  // in front of his goal, where you can see it is no longer a shot.
+  // Two goes at this and both were wrong for the same reason. Behind the line
+  // and outside the post is where a tipped ball really goes, and from directly
+  // above that reads as the ball sitting in the side netting. Setting it down
+  // out in front of the goal instead read as the ball being TELEPORTED there,
+  // because that is what it was: the outcome is terminal, so wherever the ball
+  // is put is where it appears, instantly, with nothing in between.
+  //
+  // So he does not put it anywhere. He hits it — away from his goal, from the
+  // point he reached it — and the result phase keeps stepping it until it
+  // stops. You watch it go, which is the whole of the difference.
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
     const side = ball.pos.x < CX ? -1 : 1;
-    ball.pos = {
-      x: clamp((side < 0 ? POST_L : POST_R) + side * (1.6 + rng() * 1.8), 2, PITCH_W - 2),
-      y: 2.2 + rng() * 2.6,
-    };
-    ball.z = 0.05;
-    ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
+    const away = normalize({ x: side * (0.7 + rng() * 0.5), y: 1 });
+    const sp = 9 + rng() * 7;
+    ball.vel = { x: away.x * sp, y: away.y * sp };
+    ball.vz = 1.4 + rng() * 2.2;
+    ball.spin *= 0.2;
+    ball.resting = false;
+    ball.settling = true;
     k.done = true;
     return "tipped";
   }
@@ -2634,6 +2672,32 @@ function reboundOffFrame(ball: Ball, xCross: number, rng: () => number): boolean
   ball.contactCd = 0.25;
   ball.event = "post";
   return true;
+}
+
+/**
+ * Roll on after the whistle.
+ *
+ * No collisions, no outcomes, no keeper — just gravity, a bounce and friction,
+ * so a ball the keeper has pushed clear is SEEN going clear. Anything that
+ * could change the result has already happened.
+ */
+export function settleBall(ball: Ball, dt: number) {
+  if (!ball.settling || ball.resting) return;
+  ball.vz -= G * dt;
+  ball.z += ball.vz * dt;
+  ball.pos.x += ball.vel.x * dt;
+  ball.pos.y += ball.vel.y * dt;
+  if (ball.z <= 0) {
+    ball.z = 0;
+    if (ball.vz < -MIN_BOUNCE_VZ) { ball.vz = -ball.vz * BOUNCE_VZ; ball.vel.x *= BOUNCE_H; ball.vel.y *= BOUNCE_H; }
+    else ball.vz = 0;
+  }
+  if (ball.z <= 0.03 && ball.vz <= 0.01) {
+    const s = Math.hypot(ball.vel.x, ball.vel.y);
+    const drop = GROUND_FRICTION * dt;
+    if (s <= drop) { ball.vel.x = 0; ball.vel.y = 0; ball.resting = true; }
+    else { const f = (s - drop) / s; ball.vel.x *= f; ball.vel.y *= f; }
+  }
 }
 
 // Advance the ball one tick and return an Outcome if the play has resolved.
@@ -2818,9 +2882,28 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     // Was this played TO him, or has he run it down? It changes what he does
     // with it when he gets there.
     const scrambled = ball.loose || ball.resting || speed < DEAD_BALL_SPEED;
+    // ── Everybody in a blue shirt, including the man in the box ──
+    //
+    // He was drawn like a team-mate, stood where a team-mate stands and was the
+    // obvious ball in half the chances in the game — and he was not on this
+    // list, so a pass hit straight at his feet went through him and rolled away.
+    // "I passed it into his feet and he let it run by": he was not allowed to
+    // want it. His only job used to be poking in a loose ball in the six-yard
+    // box, which is a poacher's job, not a whole player's.
+    const poacher: Runner = {
+      pos: { x: scenario.follower.x, y: scenario.follower.y },
+      to: { x: scenario.follower.x, y: scenario.follower.y },
+      // "support", so he steps out of the way of a ball that is going in — the
+      // same protection every other team-mate gets. He is on the line-of-the-
+      // ball check in isDriveAtGoal too, so a ball aimed AT him is still read as
+      // a pass and he takes it.
+      speed: RUNNER_SPEED, moving: false, role: "support",
+      offside: scenario.follower.offside,
+    };
     const candidates: Runner[] = scenario.runner
       ? [scenario.runner, ...scenario.secondaryRunners]
       : [...scenario.secondaryRunners];
+    if (goalInView(scenario.kind) && !scenario.follower.shot) candidates.push(poacher);
     // A support player will not put his foot on a ball that is going in. He
     // steps out of the way of it, which is the only reason it is safe to have
     // team-mates standing in front of goal at all.

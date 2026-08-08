@@ -55,6 +55,25 @@ reason we know:
   when the rest of the game moved to standing alongside — so every chance that
   came out of a completed pass, which is most of the good ones, put the ball on
   your chest.
+- **The man in the box could not be passed to.** He is drawn like a team-mate,
+  stands where a team-mate stands and is the obvious ball in half the chances in
+  the game — and he was not on the reception list, so a ball hit at his feet went
+  through him and rolled away. He was not allowed to want it: his only job was
+  poking in a loose ball in the six-yard box, which is a poacher's job rather
+  than a whole player's. He is a candidate now, at "support" role so a live shot
+  still steps around him, and he is on the line-of-the-ball check so a ball aimed
+  AT him reads as a pass.
+- **A tipped save teleported the ball.** Twice, in two different directions,
+  and for the same reason both times: the outcome is terminal, so wherever the
+  ball is PUT is where it appears, instantly, with nothing in between. He does
+  not put it anywhere now — he hits it, away from his goal, from the point he
+  reached it, and the result phase keeps stepping it (`settleBall`) until it
+  stops. You watch it go, which is the whole of the difference.
+- **Defenders standing behind their own keeper.** Cover was placed by
+  alternating left, right, left off a random spread, so three of them put two on
+  the same side a stride apart marking nobody, and the depth was free to land
+  between the keeper and his own goal line. They are spread across lanes now and
+  never nearer the goal than the keeper is.
 - **A firm ball at a team-mate went straight through him.** The most-reported
   bug in the game, and the cause is one line that was missing rather than one
   that was wrong. Anything struck hard toward the goal is flagged as your shot so
@@ -163,8 +182,11 @@ actually asks you to make. It is a CUT, not a pan — the camera is replaced, no
 moved, which is the only kind of camera change this game has.
 
 The turn goes all the way down: `toPx` and its inverse rotate together, the
-metres-per-pixel spans swap with the axes, and — the one that would have been a
-silent bug — **"beside you" is a fact about the picture, not about the pitch.**
+metres-per-pixel spans swap with the axes, **arcs turn with it** — `ctx.arc`
+takes screen-space angles, so the D detached itself from the front of the
+penalty area and floated out into the middle of the pitch until the angles were
+expressed in pitch space — and, the one that would have been a silent bug,
+**"beside you" is a fact about the picture, not about the pitch.**
 The ball sits on the axis that runs ACROSS the screen, which in a turned frame is
 pitch y rather than pitch x. Placing it along x there would have put the ball
 back on your chest, in the one situation built to show the box off.

@@ -391,6 +391,43 @@ function bestOption(sc: Scenario): number {
   check(closest > 4, `and your forwards are ahead of the ball, not beside it (${closest.toFixed(0)} m at worst)`);
 }
 
+// ── The man in the box is a team-mate, not scenery ──────────────────────────
+//
+// He is drawn like a team-mate, stands where a team-mate stands and is the
+// obvious ball in half the chances in the game — and he was not on the reception
+// list, so a pass hit straight at his feet went through him and rolled away.
+// "I passed it into his feet and he let it run by": he was not allowed to want
+// it. His only job was poking in a loose ball in the six-yard box, which is a
+// poacher's job rather than a whole player's.
+{
+  let took = 0, played = 0;
+  for (const kind of SCENARIO_KINDS) {
+    if (!goalInView(kind)) continue;
+    for (let seed = 0; seed < 60; seed++) {
+      const rng = mulberry32(seed * 29 + 4);
+      const sc = buildScenario(kind, rng, 62, 60);
+      initDefenders(sc, rng);
+      // Nobody in the way — this is about whether he is allowed to want it.
+      sc.defenders = []; sc.runner = null; sc.secondaryRunners = [];
+      const t = { x: sc.follower.x, y: sc.follower.y };
+      if (Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y) < 4) continue;
+      played += 1;
+      const ball = launch(sc, { x: t.x - sc.ball.x, y: t.y - sc.ball.y }, 0.45, { cx: 0, cy: 0 }, { power: 70, technique: 70 }, rng);
+      let out: Outcome | null = null;
+      for (let i = 0; i < 900 && !out; i++) {
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        out = stepBall(ball, sc, rng, DT);
+      }
+      // receiverDone is cleared again the moment he strikes it, so the durable
+      // evidence that he had the ball is that he had a go at goal with it.
+      if (sc.receiverShot || sc.receiverDone || out === "delivered") took += 1;
+    }
+  }
+  check(played > 200, "there are chances with a man in the box to find");
+  check(took > played * 0.8, `a ball hit at him is a ball he takes (${took}/${played})`);
+}
+
 // ── A cross is watched from the side, then cut to ───────────────────────────
 //
 // A wide ball has two rectangles: the turned one you aim from, where the box is
