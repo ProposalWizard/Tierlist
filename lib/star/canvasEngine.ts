@@ -109,6 +109,8 @@ export interface Follower {
   y: number;
   active: boolean;   // currently chasing a loose ball
   shot: boolean;     // already took its follow-up
+  /** In an offside position at the last deliberate touch. See offsideSnapshot. */
+  offside?: boolean;
 }
 
 // The team-mate a pass is aimed at. They are a real moving entity: the renderer
@@ -128,6 +130,11 @@ export interface Runner {
   role?: "target" | "support";
   /** True while he is reacting to a ball that has come near him. */
   sprint?: boolean;
+  /**
+   * He was in an offside POSITION at the last deliberate touch by your side.
+   * Not an offence on its own — it becomes one the moment he plays the ball.
+   */
+  offside?: boolean;
 }
 
 // The kind of match situation the player has been put in. Shooting kinds
@@ -204,12 +211,18 @@ export interface Scenario {
   receiver: Receiver | null;   // set for cutback/byline_cross/through_ball — they shoot on reception
   receiverDone: boolean;
   /** The team-mate has actually struck the resolving shot. Drives the stat credit. */
-  receiverShot?: boolean;       // true once the ball has reached the runner (guards re-trigger)
+  receiverShot?: boolean;
+  /** How many of them he has had. Two is a scramble; three is a farce. */
+  receiverShots?: number;       // true once the ball has reached the runner (guards re-trigger)
   teamRelationship: number;    // 0-100 — how well the team combines, feeds the receiver's shot quality
   viewport: Viewport;
   secondaryRunners: Runner[];  // extra options: support players and build-up outlets
   passDifficulty: number;      // 0-1, set when a pass resolves — harder pass = higher ball-return chance
-  offsideRisk: number;         // 0-1 chance the run is flagged, set at build time from the real line
+  /**
+   * An offside offence has been committed and the move is dead. Set the instant
+   * a flagged attacker plays the ball; read at the top of the next stepBall.
+   */
+  offsideAgainst?: boolean;
   /** How many passes deep into one move this is. Chained scenarios count up. */
   chainDepth?: number;
   /** Where a completed pass was actually received. The next link starts here. */
@@ -427,13 +440,176 @@ function makeFollower(rng: () => number, by: number): Follower {
   };
 }
 
-// The offside line: the second-to-last defender is the outfield player nearest
-// their own goal line (the keeper being the last). In these coordinates that is
-// the SMALLEST y. An attacker is offside if they are nearer the goal line than
-// that — i.e. their y is smaller still.
-function offsideLineY(defenders: Vec2[]): number {
-  if (defenders.length === 0) return BOX_DEPTH;
-  return Math.min(...defenders.map(d => d.y));
+/**
+ * OFFSIDE
+ *
+ * The law, mapped onto what this game actually has, and nothing invented to
+ * make it fit. There are no body parts here, no referee and no indirect free
+ * kick — every entity is a single point, so a point is what gets compared.
+ *
+ * The two halves of the law are kept separate, because conflating them is what
+ * makes offside systems wrong:
+ *
+ *   POSITION is a state, judged once, at the instant a team-mate deliberately
+ *   plays the ball. Everyone's position is frozen for that judgement and
+ *   nothing that happens afterwards changes it.
+ *
+ *   OFFENCE is an act. It happens only if a man who was in an offside position
+ *   then plays the ball. Standing in an offside position is legal, and a man
+ *   flagged at the snapshot who never touches the ball is never penalised.
+ *
+ * What creates a snapshot here — the deliberate touches your side has:
+ *   · you strike the ball (launch)
+ *   · the team-mate you found strikes it (launchReceiverShot)
+ *   · the man in the box pokes in a rebound (stepReactions)
+ * Each one takes a fresh snapshot against the positions at that moment, which
+ * is OFF-006: every deliberate attacking touch is a new snapshot.
+ *
+ * What does NOT clear a flag: a save, a parry, the post, the crossbar, a
+ * deflection off a defender. That is the "gains an advantage" clause, and it
+ * falls out for free — the flag simply survives, so a flagged man who buries
+ * the rebound is offside. What DOES clear it is a deliberate play by a
+ * defender: winning a header, or clearing it, both of which reset everyone.
+ *
+ * A corner cannot produce offside directly, so it never takes a snapshot.
+ *
+ * Not modelled, and honestly so: "interferes with an opponent" — blocking a
+ * keeper's line of sight, screening a defender. There is no line of sight in
+ * this engine to block.
+ */
+const OFFSIDE_EPS = 0.05;   // level is onside, and the benefit goes to the attacker
+
+/**
+ * The opponents' positions up the pitch, nearest their own goal line first.
+ *
+ * The keeper is not special — the law says opponents, not goalkeepers — but he
+ * only counts when he is part of the situation at all. A midfield rectangle has
+ * no goal in it and therefore no keeper in it, and inventing one off-screen to
+ * complete the line would be exactly the sort of fiction that made the last
+ * attempt at this flag men who were plainly onside.
+ */
+function opponentLine(sc: Scenario): number[] {
+  const ys = sc.defenders.map(d => d.y);
+  if (goalInView(sc.kind)) ys.push(sc.keeper.y);
+  return ys.sort((a, b) => a - b);
+}
+
+/** Every attacker whose position the law cares about. You are never one of them. */
+function attackers(sc: Scenario): { pos: Vec2; flag: (v: boolean) => void }[] {
+  const out: { pos: Vec2; flag: (v: boolean) => void }[] = [];
+  for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
+    out.push({ pos: r.pos, flag: (v) => { r.offside = v; } });
+  }
+  out.push({ pos: { x: sc.follower.x, y: sc.follower.y }, flag: (v) => { sc.follower.offside = v; } });
+  return out;
+}
+
+/**
+ * Freeze the pitch and judge every attacker's POSITION. Called at the instant a
+ * team-mate deliberately plays the ball, and at no other time.
+ */
+export function offsideSnapshot(sc: Scenario, ballAt: Vec2) {
+  // A corner cannot produce offside directly.
+  if (sc.kind === "corner") { clearOffside(sc); return; }
+
+  const line = opponentLine(sc);
+  // Without a second-last opponent there is no line to be beyond, and the
+  // benefit of the doubt belongs to the attacker.
+  if (line.length < 2) { clearOffside(sc); return; }
+  const secondLast = line[1];
+
+  for (const a of attackers(sc)) {
+    const inTheirHalf = a.pos.y < HALF_LEN - OFFSIDE_EPS;
+    const aheadOfBall = a.pos.y < ballAt.y - OFFSIDE_EPS;
+    const aheadOfLine = a.pos.y < secondLast - OFFSIDE_EPS;
+    a.flag(inTheirHalf && aheadOfBall && aheadOfLine);
+  }
+}
+
+/** A deliberate play by a defender puts everybody onside again. */
+export function clearOffside(sc: Scenario) {
+  for (const a of attackers(sc)) a.flag(false);
+}
+
+/**
+ * Start every attacker onside.
+ *
+ * Without this the flag goes up on nearly everything, and the reason is worth
+ * writing down because it is the trap this rule sets for a game like ours.
+ *
+ * A real penalty area has a back four in it. Ours has one or two defenders, and
+ * in a one-on-one the only one is BEHIND you, recovering — so the second-last
+ * opponent sits twenty metres from goal, and every attacker in the box is
+ * beyond him. Measured: 400 out of 400 one-on-ones flagged somebody, and 391 of
+ * them ended in an offside. The law was being applied correctly to positions
+ * that were fiction.
+ *
+ * The honest fix is not to weaken the rule but to place people legally, which
+ * is what footballers do: a striker following a shot in does not stand
+ * permanently beyond the last man, he times his run. So anybody built beyond
+ * the second-last opponent is dropped back level with him — and he still gets
+ * on the end of rebounds, because he reacts to the ball once it is struck.
+ *
+ * The one exception is the through-ball's target man. That situation is built
+ * around the offside line on purpose: sometimes he has gone a yard early, and
+ * playing him in then is an offence you can SEE, because he is drawn in front
+ * of the last defender on a flat camera with nothing moving.
+ */
+function settleOnside(sc: Scenario, rng: () => number) {
+  const line = opponentLine(sc);
+  if (line.length < 2) return;
+  const secondLast = line[1];
+  const vp = sc.viewport;
+  const floor = vp ? vp.y2 - 1.4 : HALF_LEN;
+
+  // Dropping back can land a man on the ball or on your shoulder, so he steps
+  // aside as he does it. Nobody starts on top of anybody, offside or not.
+  const settle = (p: Vec2) => {
+    if (p.y >= secondLast) return;
+    p.y = Math.min(secondLast + 0.3 + rng() * 1.4, floor);
+    for (let i = 0; i < 12; i++) {
+      const near = Math.hypot(p.x - sc.player.x, p.y - sc.player.y) < 5
+                || Math.hypot(p.x - sc.ball.x, p.y - sc.ball.y) < 5;
+      if (!near) break;
+      const away = p.x >= sc.ball.x ? 1 : -1;
+      p.x = clamp(p.x + away * 1.6, vp ? vp.x1 + 1.4 : 2, vp ? vp.x2 - 1.4 : PITCH_W - 2);
+      p.y = Math.min(p.y + 0.6, floor);
+    }
+  };
+
+  // Support players are already placed onside — see addSupport, which searches
+  // for space inside the legal area rather than being corrected out of it.
+  for (const r of sc.secondaryRunners) { settle(r.pos); r.to = { ...r.pos }; }
+  if (sc.runner && sc.kind !== "through_ball") { settle(sc.runner.pos); sc.runner.to = { ...sc.runner.pos }; }
+  const f = { x: sc.follower.x, y: sc.follower.y };
+  settle(f);
+  sc.follower.x = f.x; sc.follower.y = f.y;
+
+  // ── Last of all: nobody is standing on you ──
+  //
+  // This has to run here, because where YOU stand is not settled until standOff
+  // has put you beside the ball — which happens after everybody else has been
+  // placed. A team-mate positioned in perfectly good space can find you have
+  // since been stood on his toes.
+  const lox = vp ? vp.x1 + 1.4 : 2, hix = vp ? vp.x2 - 1.4 : PITCH_W - 2;
+  for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
+    for (let i = 0; i < 16; i++) {
+      if (Math.hypot(r.pos.x - sc.player.x, r.pos.y - sc.player.y) >= 4.5) break;
+      const away = r.pos.x >= sc.player.x ? 1 : -1;
+      const nx = r.pos.x + away * 1.5;
+      // Into the frame's wall — go the other way instead of grinding along it.
+      r.pos.x = nx > hix || nx < lox ? clamp(r.pos.x - away * 1.5, lox, hix) : nx;
+      r.pos.y = Math.min(Math.max(r.pos.y - 0.8, line.length >= 2 ? secondLast + 0.3 : 1), floor);
+    }
+    r.to = { ...r.pos };
+  }
+}
+
+/** Is this man's touch an offence? Position plus involvement, and only then. */
+function offsideOffence(sc: Scenario, flagged: boolean | undefined): boolean {
+  if (!flagged) return false;
+  sc.offsideAgainst = true;
+  return true;
 }
 
 // The camera. Canvas is a 3:4 portrait, so the viewport must be too, and it must
@@ -533,8 +709,8 @@ function fitToView(sc: Scenario) {
   // You go last, and through standOff, so the ball is never squeezed onto your
   // feet by the clamp — a delivery from the very edge of the frame still leaves
   // room for you to be standing beside it.
-  standOff(sc);
-  sc.player = { x: fx(sc.player.x), y: fy(sc.player.y) };
+  standOff(sc, vp.x1 + inset, vp.x2 - inset);
+  sc.player = { x: sc.player.x, y: fy(sc.player.y) };
 
 }
 
@@ -552,15 +728,28 @@ function fitToView(sc: Scenario) {
  * Sideways is a different axis. A ball a stride off your standing foot, barely
  * ahead of you, reads exactly as what it is.
  */
-const STANDOFF_SIDE = 1.5;     // metres across — the one that does the work
+const STANDOFF_SIDE = 1.3;     // metres across — the one that does the work
 const STANDOFF_BACK = 0.15;    // …and level with your boots, not ahead of them
 
-function standOff(sc: Scenario) {
-  // Keep whichever side of the ball the builder put you on, so a player working
-  // the right touchline does not get flipped into the middle of the pitch.
-  const side = sc.player.x >= sc.ball.x ? 1 : -1;
+/**
+ * Stand beside the ball, on a side that is actually in the frame.
+ *
+ * Keeping whichever side the builder chose was not enough on its own: with the
+ * ball near the edge of a tight rectangle, the far side put you outside it, the
+ * clamp pulled you straight back — and where it pulled you back TO was the ball.
+ * You ended up standing on it, which on screen is the ball on your chest.
+ */
+function standOff(sc: Scenario, lo?: number, hi?: number) {
+  const minX = lo ?? 1, maxX = hi ?? PITCH_W - 1;
+  const prefer = sc.player.x >= sc.ball.x ? 1 : -1;
+  // The preferred side unless it does not fit, and then the other one.
+  const fits = (side: number) => {
+    const x = sc.ball.x + side * STANDOFF_SIDE;
+    return x >= minX && x <= maxX;
+  };
+  const side = fits(prefer) ? prefer : fits(-prefer) ? -prefer : prefer;
   sc.player = {
-    x: clamp(sc.ball.x + side * STANDOFF_SIDE, 1, PITCH_W - 1),
+    x: clamp(sc.ball.x + side * STANDOFF_SIDE, minX, maxX),
     y: clamp(sc.ball.y + STANDOFF_BACK, 0.5, HALF_LEN + 6),
   };
 }
@@ -844,15 +1033,20 @@ function buildThroughBall(rng: () => number, keeperStrength: number, teamRelatio
     { x: clamp(CX - 5 - rng() * 4, 10, PITCH_W - 10), y: lineY },
     { x: clamp(CX + 5 + rng() * 4, 10, PITCH_W - 10), y: lineY + 0.6 + rng() * 1.2 },
   ];
-  const line = offsideLineY(defenders);
-  // Onside by construction: level with the line, or a stride behind it.
-  const startY = line + rng() * 2.0;
+  // ── The one situation built around the offside line ──
+  //
+  // The second-last opponent here is the deeper of these two defenders — the
+  // keeper is behind both — so that is the line the runner is measured against.
+  // Usually he is onside, level with it or a stride behind. Sometimes he has
+  // gone a yard early, and then playing him in is offside and you can SEE that
+  // it is: he is drawn in front of the last man, on a flat camera, with nothing
+  // moving. Nowhere else in the game is a man built beyond the line.
+  const line = [...defenders.map(d => d.y), 2].sort((a, b) => a - b)[1];
+  const early = rng() < 0.18;
+  const startY = early ? line - (0.4 + rng() * 1.6) : line + 0.15 + rng() * 2.2;
   const from = { x: clamp(CX + (rng() - 0.5) * 14, 12, PITCH_W - 12), y: startY };
   // The yard in front of him, between him and the goal.
   const to = { x: clamp(from.x + (rng() - 0.5) * 4, 12, PITCH_W - 12), y: clamp(from.y - 2 - rng() * 2, 6, HALF_LEN) };
-  // Only a genuinely tight start is ever flagged, and then only sometimes.
-  const marginToLine = startY - line;
-  const offsideRisk = marginToLine < 0.6 ? 0.1 : 0;
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.3 },
@@ -863,7 +1057,6 @@ function buildThroughBall(rng: () => number, keeperStrength: number, teamRelatio
     kind: "through_ball" as const, teammates: [],
     runner: makeRunner(to, from), passTarget: to,
     receiver: rollReceiver("through_ball", rng), receiverDone: false, teamRelationship,
-    offsideRisk,
   } as unknown as Scenario;
 }
 
@@ -1026,11 +1219,11 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
   // corner.
   if (kind === "corner" || kind === "byline_cross") sc.viewport = WIDE_DELIVERY_VIEW;
   if (sc.passDifficulty === undefined) sc.passDifficulty = 0;
-  if (sc.offsideRisk === undefined) sc.offsideRisk = 0;
   if (sc.chainDepth === undefined) sc.chainDepth = 0;
   addSupport(sc, rng);
   if (!sc.viewport) sc.viewport = scenarioViewport(sc);
   fitToView(sc);
+  settleOnside(sc, rng);
   return sc;
 }
 
@@ -1057,8 +1250,18 @@ function addSupport(sc: Scenario, rng: () => number) {
   // Where a man may stand: the rectangle if this situation already has one, the
   // pitch otherwise.
   const vp = sc.viewport;
-  const lo = { x: vp ? vp.x1 + 2.5 : 5, y: vp ? Math.max(vp.y1 + 2.5, 2.5) : 2.5 };
+  // …and no nearer the goal than the offside line, so the space he is offered in
+  // is space he is allowed to be standing in. Correcting him afterwards was
+  // worse: it dropped him onto a spot chosen for legality rather than for space,
+  // and a support player offered in no space at all is not an option.
+  const line = opponentLine(sc);
+  const onsideY = line.length >= 2 ? line[1] + 0.3 : 0;
+  const lo = {
+    x: vp ? vp.x1 + 2.5 : 5,
+    y: Math.max(onsideY, vp ? Math.max(vp.y1 + 2.5, 2.5) : 2.5),
+  };
   const hi = { x: vp ? vp.x2 - 2.5 : PITCH_W - 5, y: vp ? vp.y2 - 2.5 : HALF_LEN + 4 };
+  if (hi.y < lo.y) lo.y = hi.y;
 
   for (let i = 0; i < want; i++) {
     // A plausible starting point — level with or just behind the ball, off to
@@ -1095,10 +1298,14 @@ function addSupport(sc: Scenario, rng: () => number) {
     const spot = bestSupportPoint(sc, sc.ball, start);
     spot.x = clamp(spot.x, lo.x, hi.x);
     spot.y = clamp(spot.y, lo.y, hi.y);
-    for (let tries = 0; tries < 8; tries++) {
+    // Nobody starts on top of you. The fallback spot is in front of goal, which
+    // on a cross is where he was going anyway — but in a situation whose offside
+    // line is a long way out, in front of goal is not somewhere he may stand, so
+    // it walks back down the pitch until it is both clear of you and legal.
+    for (let tries = 0; tries < 14; tries++) {
       if (Math.hypot(spot.x - sc.player.x, spot.y - sc.player.y) >= 5) break;
       spot.x = clamp(CX + (rng() - 0.5) * 11, lo.x, hi.x);
-      spot.y = clamp(SIX_DEPTH + 1 + rng() * 6 + tries * 1.5, lo.y, hi.y);
+      spot.y = clamp(Math.max(SIX_DEPTH + 1, lo.y) + rng() * 6 + tries * 1.6, lo.y, hi.y);
     }
     const r = makeRunner(spot, spot, RUNNER_SPEED * 0.95, "support");
     r.moving = false;
@@ -1258,7 +1465,26 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   ball.loose = false;
   ball.contactCd = 0.15;
   ball.event = "receiverShot";
+  // It is a shot at goal, so it gets the same protection yours does: a support
+  // player steps out of the way of it rather than controlling it. Without this,
+  // now that a ball can be collected again after a team-mate has struck it, his
+  // shot was being intercepted by another of your own players on the way in.
+  ball.shot = true;
   scenario.receiverShot = true;
+  scenario.receiverShots = (scenario.receiverShots ?? 0) + 1;
+  // ── The ball is live again ──
+  //
+  // He has struck it; he no longer has it. Leaving receiverDone set meant that
+  // once ANY team-mate had touched the ball, nobody could ever collect it again
+  // — so a shot the keeper parried away rolled to a stop with your players
+  // walking toward it and the move was cut off before the nearest of them got
+  // there. It read, correctly, as your side declining to chase a loose ball.
+  scenario.receiverDone = false;
+  // His touch is a new deliberate play, so it is a new snapshot — judged
+  // against where everybody is NOW, which is not where they were when you
+  // played it. This is where offside actually arises in a game whose pitch is
+  // frozen until somebody kicks the ball.
+  offsideSnapshot(scenario, { x: ball.pos.x, y: ball.pos.y });
   // Deliberately does NOT tell the keeper where this is going. He keeps
   // patrolling; whether he is in the way is settled when the ball arrives.
 }
@@ -1274,6 +1500,12 @@ const AERIAL_R = 2.8;          // metres — inside this he is up with you. Cove
                                // 2.2 most headers were not contested at all.
 const AERIAL_WIN_BASE = 0.3;   // his chance of winning it cleanly, at parity
 
+/**
+ * A defender winning the header is a deliberate play, not a deflection, so it
+ * puts every attacker onside again. A save, a parry, the post and an accidental
+ * ricochet deliberately do NOT — that is the "gains an advantage" clause, and it
+ * works by the flags simply surviving.
+ */
 function applyAerialContest(ball: Ball, scenario: Scenario, skills: KickSkills, rng: () => number) {
   if (scenario.kind !== "header") return;
   let nearest = Infinity;
@@ -1296,6 +1528,7 @@ function applyAerialContest(ball: Ball, scenario: Scenario, skills: KickSkills, 
     ball.spin = 0;
     ball.loose = true;
     ball.owner = "none";
+    clearOffside(scenario);
     return;
   }
 
@@ -1363,11 +1596,17 @@ export function applyFirstTouch(scenario: Scenario, technique: number, rng: () =
   const heavy = clamp(1 - clamp(technique, 0, 100) / 100, 0, 1);
   const away = heavy * (0.6 + rng() * 2.4);
   const ang = rng() * Math.PI * 2;
+  const vp = scenario.viewport;
+  const inset = 1.4;
   scenario.ball = {
-    x: clamp(scenario.ball.x + Math.cos(ang) * away, 2, PITCH_W - 2),
-    y: clamp(scenario.ball.y + Math.sin(ang) * away, 1, HALF_LEN),
+    x: clamp(scenario.ball.x + Math.cos(ang) * away, vp ? vp.x1 + inset : 2, vp ? vp.x2 - inset : PITCH_W - 2),
+    y: clamp(scenario.ball.y + Math.sin(ang) * away, 1, vp ? vp.y2 - inset : HALF_LEN),
   };
-  scenario.player = { x: scenario.ball.x, y: scenario.ball.y + 1.2 };
+  // Beside it, the same as everywhere else. This used to plant you 1.2 m
+  // straight BEHIND the ball — the old model, left behind here when the rest of
+  // the game moved to standing alongside — so every chance that came out of a
+  // completed pass, which is most of the good ones, put the ball on your chest.
+  standOff(scenario, vp ? vp.x1 + inset : undefined, vp ? vp.x2 - inset : undefined);
   return away;
 }
 
@@ -1469,7 +1708,10 @@ export function launch(
     event: null,
     inNet: false,
   };
-  // A marker challenging you in the air gets his say before anything else does.
+  // Your touch, judged first: the pitch is frozen and every attacker's position
+  // is taken down. Then the marker gets his say — and if he wins the header,
+  // that is a deliberate play by a defender and it wipes the snapshot again.
+  offsideSnapshot(scenario, { x: scenario.ball.x, y: scenario.ball.y });
   applyAerialContest(ball, scenario, skills, rng);
   // Decided here, once, from what you actually did with it — see isDriveAtGoal.
   ball.shot = isDriveAtGoal(ball, scenario);
@@ -1793,11 +2035,16 @@ export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
   // pass went cleanly THROUGH the man you aimed at, every time, and then rolled
   // away with nobody allowed to touch it. It was the most-reported bug in the
   // game and it was this line missing.
+  // Near enough that hitting him is plainly what you were doing. Measured in
+  // metres rather than in seconds of flight, which is what it was: at 25 m/s a
+  // second and a half is the length of the pitch, so a team-mate loitering in
+  // front of goal turned every long shot into a pass to him.
+  const PASS_READ_RANGE = 14;
   for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
     const dx = r.pos.x - ball.pos.x, dy = r.pos.y - ball.pos.y;
-    const along = (dx * ball.vel.x + dy * ball.vel.y) / (speed * speed);
-    if (along <= 0 || along > 1.4) continue;          // behind you, or miles past him
-    const offX = dx - ball.vel.x * along, offY = dy - ball.vel.y * along;
+    const t = (dx * ball.vel.x + dy * ball.vel.y) / (speed * speed);
+    if (t <= 0 || t * speed > PASS_READ_RANGE) continue;   // behind you, or too far to be the target
+    const offX = dx - ball.vel.x * t, offY = dy - ball.vel.y * t;
     if (Math.hypot(offX, offY) < PASS_CONTROL_R * 1.4) return false;
   }
 
@@ -1843,8 +2090,15 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
   // Nobody walks off the edge of the situation after it. If it has left the
   // frame it is gone; stepBall ends the move on the same tick, and until it
   // does, everyone stays where they are.
+  //
+  // The margin has to be the SAME one stepBall calls "out" on. It was a metre
+  // tighter, which left a one-metre band around the frame where the ball was
+  // still in play but everybody had stopped going for it: a ball that stopped
+  // in that band sat there until the dead-ball timer wrote it off, with the
+  // nearest man standing five metres away doing nothing.
   const vp = scenario.viewport;
-  if (vp && (ball.pos.x < vp.x1 || ball.pos.x > vp.x2 || ball.pos.y < vp.y1 || ball.pos.y > vp.y2)) return;
+  if (vp && (ball.pos.x < vp.x1 - 1 || ball.pos.x > vp.x2 + 1
+             || ball.pos.y < vp.y1 - 1 || ball.pos.y > vp.y2 + 1)) return;
 
   const move = (p: { x: number; y: number }, pace: number) => {
     const dx = ball.pos.x - p.x, dy = ball.pos.y - p.y;
@@ -1872,15 +2126,22 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
   // rebound at seven metres a second. He reaches a rebound in the box the same
   // way anybody reaches anything — by being near it — and if he gets there he
   // does what a striker does with a loose ball six yards out.
-  if (!scenario.follower.shot) {
+  {
     const f = scenario.follower;
     const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
+    // He walks to a stopped ball whether or not he has already had a go at it.
+    // Skipping him once he had shot meant a ball could come to rest five metres
+    // from the only man near it and simply be given up on.
     if (dead) { move(f, fetch(dist)); f.active = true; }
-    else if (dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
+    else if (!f.shot && dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
 
-    if (f.active && ball.loose && !ball.inNet && ball.z < 1.6
+    if (!f.shot && f.active && ball.loose && !ball.inNet && ball.z < 1.6
         && ball.pos.y < BOX_DEPTH && ball.contactCd <= 0
-        && Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y) < CONTROL_R) {
+        && Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y) < CONTROL_R
+        // Flagged at the last touch and now playing the ball: position plus
+        // involvement, which is the offence. A save does not wipe the flag, so
+        // this is also the "gains an advantage" clause doing its job.
+        && !offsideOffence(scenario, f.offside)) {
       const tx = POST_L + rng() * (POST_R - POST_L);
       const dir = normalize({ x: tx - ball.pos.x, y: -Math.max(ball.pos.y, 0.5) });
       const sp = 17 + rng() * 8;
@@ -1910,7 +2171,11 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
  * A defender has it. He does not knock it back into play for you to have
  * another go at — he puts it as far from his own goal as he can.
  */
-export function clearBall(ball: Ball, rng: () => number) {
+export function clearBall(ball: Ball, rng: () => number, scenario?: Scenario) {
+  // A deliberate clearance is a deliberate play, and it puts every attacker
+  // onside again. It also ends the move, so this matters only for tidiness —
+  // but the law is the law.
+  if (scenario) clearOffside(scenario);
   const away = normalize({ x: (rng() - 0.5) * 0.8, y: 1 });
   const sp = 18 + rng() * 8;
   ball.vel = { x: away.x * sp, y: away.y * sp };
@@ -2102,6 +2367,10 @@ function reboundOffFrame(ball: Ball, xCross: number, rng: () => number): boolean
 
 // Advance the ball one tick and return an Outcome if the play has resolved.
 export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
+  // An offside offence was committed on a previous tick (the poacher playing a
+  // ball he was flagged for). The move is dead.
+  if (scenario.offsideAgainst) return "offside";
+
   // A teammate is controlling a pass they've just received — hold the ball, then strike.
   if (ball.receiverControlT > 0) {
     ball.receiverControlT = Math.max(0, ball.receiverControlT - dt);
@@ -2220,7 +2489,7 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
       // Right on top of a ball travelling at pace; merely near a slow one.
       const reach = speed > 12 ? DEF_BLOCK_R : CONTROL_R;
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < reach) {
-        clearBall(ball, rng);
+        clearBall(ball, rng, scenario);
         ball.contactCd = 0.4;
         return "tackled";
       }
@@ -2298,6 +2567,9 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         swept = Math.min(swept, Math.hypot(tgt.x - closestX, tgt.y - closestY));
       }
       if (swept < PASS_CONTROL_R) {
+        // Position plus involvement. He was beyond the second-last opponent
+        // when the ball was played and he has now played it.
+        if (offsideOffence(scenario, r.offside)) return "offside";
         scenario.receiverDone = true;
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
         r.moving = false;
@@ -2317,7 +2589,11 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         // computed and ignored; when there is a defensive line worth the name,
         // this is where it goes back in.
 
-        if (scenario.receiver) {
+        // A finisher, and he has not already had two goes at it. The cap stops
+        // a scramble becoming a farce — but it stops the SHOOTING, not the
+        // collecting: he still gets to the ball, and the move ends with him in
+        // possession rather than with him frozen two metres short of it.
+        if (scenario.receiver && (scenario.receiverShots ?? 0) < 2) {
           ball.pos = { x: tgt.x, y: tgt.y };
           ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
           ball.receiverControlT = RECEIVER_CONTROL_T;
@@ -2408,12 +2684,12 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
              || ball.pos.y > vp.y2 + 1 || ball.pos.y < vp.y1 - 1)) return "out";
   if (ball.pos.x < -2 || ball.pos.x > PITCH_W + 2 || ball.pos.y > HALF_LEN + 8) return "out";
 
-  // Once a team-mate has already had the ball, there is nobody left whose turn
-  // it is — the move is over and sitting on it for another six seconds is dead
-  // air. Otherwise the long timeout stands, as a backstop for a ball that has
-  // somehow ended up where nobody can reach it.
+  // Once there is genuinely nobody left whose turn it is, the move is over and
+  // sitting on the ball is dead air. While somebody can still collect it, the
+  // ordinary timeout stands as a backstop for a ball nobody can reach.
   if (ball.resting) {
-    const limit = scenario.receiverDone ? DEAD_BALL_SETTLED : DEAD_BALL_TIMEOUT;
+    const settled = scenario.receiverDone || (scenario.receiverShots ?? 0) >= 2;
+    const limit = settled ? DEAD_BALL_SETTLED : DEAD_BALL_TIMEOUT;
     if ((ball.restT ?? 0) > limit) return "short";
   }
   return null;
