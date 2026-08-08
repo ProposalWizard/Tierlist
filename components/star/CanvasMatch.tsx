@@ -7,6 +7,7 @@ import {
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
+  type Facing,
 } from "@/lib/star/canvasEngine";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
@@ -329,7 +330,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const visionRef = useRef(career?.skills.vision ?? 55);
   visionRef.current = career?.skills.vision ?? 55;
 
-  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship));
+  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship, career?.skills.vision ?? 55));
   const ballRef = useRef<Ball | null>(null);
   const rngRef = useRef<() => number>(mulberry32(seed));
   const seedRef = useRef(seed);
@@ -407,6 +408,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // its defensive shape assigning here too.
     scenarioRef.current.conditions = conditionsRef.current;
     initDefenders(scenarioRef.current, rngRef.current);
+    facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
     // In a real match, kick-off belongs to the match, not to you: it plays until
@@ -469,16 +471,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   /** The situation's framing. It is set once and never moves — see the loop. */
   const baseViewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
 
+  /**
+   * Which way the frame is turned. "up" is the ordinary view; a crossing
+   * situation is watched from the side until the ball reaches the box.
+   */
+  const facingRef = useRef<Facing>("up");
+
   const toPx = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current!;
     const vp = viewportRef.current;
-    return {
-      px: ((x - vp.x1) / (vp.x2 - vp.x1)) * canvas.width,
-      py: ((y - vp.y1) / (vp.y2 - vp.y1)) * canvas.height,
-      // Kept so every call site still reads the same; nothing shrinks with
-      // distance any more, so it is always 1.
-      scale: 1,
-    };
+    const W = canvas.width, H = canvas.height;
+    const fx = (x - vp.x1) / (vp.x2 - vp.x1);      // 0..1 across the pitch
+    const fy = (y - vp.y1) / (vp.y2 - vp.y1);      // 0..1 up the pitch, 0 = goal
+    // A quarter turn, not a mirror: "right" is the ordinary view rotated
+    // clockwise, so the goal ends up on the right and pitch x runs down the
+    // screen; "left" is the same turn the other way.
+    if (facingRef.current === "right") return { px: (1 - fy) * W, py: fx * H, scale: 1 };
+    if (facingRef.current === "left") return { px: fy * W, py: (1 - fx) * H, scale: 1 };
+    // Kept so every call site still reads the same; nothing shrinks with
+    // distance any more, so it is always 1.
+    return { px: fx * W, py: fy * H, scale: 1 };
   }, []);
 
   const pitchFromPointer = (clientX: number, clientY: number) => {
@@ -491,9 +503,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // you could not take.
     const sx = (clientX - rect.left) / rect.width;
     const sy = (clientY - rect.top) / rect.height;
+    // The exact inverse of toPx, turn and all.
+    const f = facingRef.current;
+    const fx = f === "right" ? sy : f === "left" ? 1 - sy : sx;
+    const fy = f === "right" ? 1 - sx : f === "left" ? sx : sy;
     return {
-      x: sx * (vp.x2 - vp.x1) + vp.x1,
-      y: sy * (vp.y2 - vp.y1) + vp.y1,
+      x: fx * (vp.x2 - vp.x1) + vp.x1,
+      y: fy * (vp.y2 - vp.y1) + vp.y1,
     };
   };
 
@@ -523,10 +539,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const W = canvas.width, H = canvas.height;
     const sc = scenarioRef.current;
     const vp = viewportRef.current;
-    // Pixels per metre. The viewport holds the canvas aspect exactly, so these two
-    // agree — a metre is a metre whichever way it points, and circles stay circles.
-    const unit = W / (vp.x2 - vp.x1);
-    const uy = H / (vp.y2 - vp.y1);
+    // Pixels per metre. The viewport holds the canvas aspect exactly, so these
+    // two agree — a metre is a metre whichever way it points, and circles stay
+    // circles. In a turned frame the pitch axes have swapped places on the
+    // screen, so the spans swap with them.
+    const turned = facingRef.current !== "up";
+    const unit = turned ? H / (vp.x2 - vp.x1) : W / (vp.x2 - vp.x1);
+    const uy = turned ? W / (vp.y2 - vp.y1) : H / (vp.y2 - vp.y1);
     // Ball height, slightly foreshortened as befits the near-overhead camera.
     const heightScale = uy * 0.75;
     // A real ball is only 22 cm across — drawn true to scale it disappears, so it
@@ -1032,11 +1051,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       // Shorts — the keeper's own kit, like everybody else, so he reads as the
       // keeper rather than as another outfield player who happens to be near
-      // the goal.
+      // the goal. Wider than an outfielder's: he is stood square and low.
       ctx.fillStyle = C.gkRim;
       ctx.beginPath();
-      ctx.roundRect?.(-KR * 0.40, -KR * 0.02, KR * 0.80, KR * 0.32, KR * 0.12);
-      if (!ctx.roundRect) ctx.rect(-KR * 0.40, -KR * 0.02, KR * 0.80, KR * 0.32);
+      ctx.roundRect?.(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34, KR * 0.12);
+      if (!ctx.roundRect) ctx.rect(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34);
       ctx.fill();
 
       // Arms — direction and spread come from the save being played. A high save
@@ -1063,8 +1082,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // Shirt
       ctx.fillStyle = C.gk;
       ctx.beginPath();
-      ctx.roundRect?.(-KR * 0.44, -KR * 0.50, KR * 0.88, KR * 0.58, KR * 0.15);
-      if (!ctx.roundRect) ctx.rect(-KR * 0.44, -KR * 0.50, KR * 0.88, KR * 0.58);
+      ctx.roundRect?.(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58, KR * 0.15);
+      if (!ctx.roundRect) ctx.rect(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58);
       ctx.fill();
       ctx.lineWidth = Math.max(1, KR * 0.11);
       ctx.strokeStyle = C.gkRim;
@@ -1314,6 +1333,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // is standing is the thing you are reading. He only breathes.
       if (phaseRef.current === "aim") {
         stepKeeper(scenarioRef.current, dt);
+      }
+
+      // ── The cut, on a cross ──
+      //
+      // A wide ball is watched from the side while it is in the air, because
+      // that is the only view from which the box is a box rather than a line.
+      // Once it has reached the area it cuts to the ordinary view — and it is a
+      // CUT, not a pan: the camera does not move, it is replaced. The thing you
+      // care about from here is who gets on the end of it.
+      if (ballRef.current && facingRef.current !== "up") {
+        const sc = scenarioRef.current;
+        const at = sc.crossSwitchY ?? 0;
+        if (sc.crossSwitchView && ballRef.current.pos.y < at) {
+          facingRef.current = "up";
+          viewportRef.current = { ...sc.crossSwitchView };
+          baseViewportRef.current = { ...sc.crossSwitchView };
+          // The engine reads the frame too — out of it is out of the game — so
+          // the situation moves with the picture.
+          sc.viewport = { ...sc.crossSwitchView };
+        }
       }
 
       if (phaseRef.current === "flight" && ballRef.current) {
@@ -1761,6 +1800,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       draggingRef.current = false;
       // Its own camera, snapped into place rather than eased, so the run does
       // not begin on the frame the last chance was using.
+      facingRef.current = "up";
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       setPhase("dribble");
@@ -1774,15 +1814,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // Built from where the pass actually arrived, so playing it into the
       // corner gives you a cutback and finding someone central gives you a shot.
       const kind = chainKindFor(chain.pos, rng);
-      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current);
+      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
       scenarioRef.current.chainDepth = chain.depth;
     } else if (attacking) {
-      scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current);
+      scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current, visionRef.current);
     } else if (request) {
       const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
-      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current);
+      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
     } else {
-      scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current);
+      scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current, visionRef.current);
     }
 
     scenarioRef.current.conditions = conditionsRef.current;
@@ -1796,6 +1836,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     let heavyTouch = 0;
     if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, tiredSkills().technique, rng);
 
+    facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
     ballRef.current = null;

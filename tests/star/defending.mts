@@ -83,20 +83,32 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   check(lost === null, "a full minute on the ball cannot be punished — the time is yours");
 }
 
-// ── The keeper stands on his line, and stands still ────────────────────────
+// ── The keeper stands still, usually on his line ───────────────────────────
 //
 // He used to sweep his line continuously, which made every shot a timing puzzle
-// rather than a placement one, and several scenarios started him three or four
-// metres out — from the camera that reads as a keeper standing on the penalty
-// spot for no reason. Where he is standing IS the question now, so it has to be
-// stable and it has to be somewhere a keeper stands.
+// rather than a placement one. Where he is standing IS the question now, so it
+// has to be stable — but it does not have to be the same place every time.
+// About one chance in five he has come off his line, never further than the
+// front of his six-yard box, and that is a different question you are being
+// asked rather than a keeper wandering.
 {
+  {
+    let advanced = 0;
+    const N = 900;
+    for (let seed = 0; seed < N; seed++) {
+      const sc = buildScenario("long_range", mulberry32(seed * 5 + 1), 62, 60);
+      if (sc.keeper.y > 1.6) advanced += 1;
+    }
+    check(advanced > N * 0.08 && advanced < N * 0.35,
+      `sometimes he has come to meet it (${((advanced / N) * 100).toFixed(0)}% of chances)`);
+  }
+
   for (const kind of SCENARIO_KINDS) {
     for (let seed = 0; seed < 30; seed++) {
       const rng = mulberry32(seed * 23 + 7);
       const sc = buildScenario(kind, rng, 62, 60);
-      check(sc.keeper.y <= 1.6 && sc.keeper.y >= 0.2,
-        `${kind}: the keeper starts on his line (${sc.keeper.y.toFixed(1)} m off it)`);
+      check(sc.keeper.y <= 5.5 && sc.keeper.y >= 0.2,
+        `${kind}: the keeper never strays past his six-yard box (${sc.keeper.y.toFixed(1)} m off his line)`);
       check(sc.keeper.x > 28 && sc.keeper.x < 40, `${kind}: and in his goal`);
 
       // Ten seconds of you deliberating, then a ball flying past him.
