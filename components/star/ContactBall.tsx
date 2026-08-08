@@ -73,13 +73,15 @@ export default function ContactBall({ power, onContact }: Props) {
         </div>
       </div>
 
-      {/* The ball */}
-      <div className="relative z-30 flex-1 flex items-center justify-center">
+      {/* The ball — sitting ON the grass. It used to float in the middle of the
+          sky with the turf a long way below it, which reads as a ball in the
+          air, and this screen is you standing over a ball at your feet. */}
+      <div className="relative z-30 flex-1 flex items-end justify-center pb-[12%]">
         <div
           ref={ballRef}
           onPointerDown={handleTap}
           className="relative cursor-pointer"
-          style={{ width: "55%", aspectRatio: "1 / 1", marginTop: "8%", touchAction: "none" }}
+          style={{ width: "58%", aspectRatio: "1 / 1", touchAction: "none" }}
         >
           <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_6px_10px_rgba(0,0,0,0.4)]">
             <defs>

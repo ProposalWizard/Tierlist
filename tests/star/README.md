@@ -122,6 +122,14 @@ tightening was being spent on the part of the frame with nothing in it. Two
 screenshots of the reference game settled it: it is flat, and side by side that
 is the whole difference.
 
+**Figures are anchored at the FEET.** (px, py) is where a man is standing and it
+is where his boots are: the shadow goes there and the body is drawn upward from
+it. The figure used to hang off its own middle, so every player was drawn half a
+body ahead of the spot he actually occupied — a keeper standing on his line had
+his head on the line and his boots two metres in front of it, and looked like he
+had come out to meet the ball. It also put the ball, which IS drawn at its ground
+point, level with a player's waist instead of his boots.
+
 Sized against that reference rather than against the laws of the game: a sprite
 there stands about 7% of the frame's width tall, which is roughly two and a half
 metres. Footballers are not two and a half metres tall and it does not matter —
@@ -281,12 +289,17 @@ Tuned by measurement:
   keeper's gloves and a tip goes over the bar or round the post and behind the
   line. Gameplay was right and the picture was lying, which is the worse way
   round to have it.
-- **The ball goes BESIDE you, never in front.** The camera looks down the pitch,
+- **A tipped save is pushed AWAY, out in front of goal.** Behind the line and
+  outside the post is where a tipped ball really goes, and from directly above
+  that reads as the ball sitting in the side netting — worse than the thing it
+  replaced.
+- **The ball goes BESIDE you and level with your boots, never in front.** The camera looks down the pitch,
   so "in front of you" is "up the screen" — and a figure is drawn up the screen
   from the point it stands on. There is no distance directly in front that reads
   as a ball at your feet: at 1.2 m it looked like a ball resting on your head, at
-  2.6 m like one floating above it. Sideways is a different axis. 1.35 m across
-  and 0.45 m back, asserted as "across > along" for every kind.
+  2.6 m like one floating above it. Sideways is a different axis. 1.5 m across
+  and 0.15 m back — asserted as across > 4 × along, and as within 0.4 m of level,
+  which only became meaningful once figures stood on their own feet.
 - **First touch is not a dice roll.** Nobody moves before you kick, so a heavy
   touch cannot cost you time — it costs you POSITION. Technique 20 pushes the
   ball 1.7 m away from you, technique 95 kills it inside 0.3 m, and you move

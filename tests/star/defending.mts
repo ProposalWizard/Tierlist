@@ -313,6 +313,31 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   check(out === "out", `a ball driven off the bottom of the frame ends the move (${out})`);
   check(frames < 60, `and it ends as it leaves, not eventually (${frames} frames)`);
 
+  // Every direction, not just the one that was easiest to check. Overhitting a
+  // pass UP the screen was the case that slipped through, and it is the commonest
+  // way to overhit one: the move ran on for ten seconds with the ball rolling
+  // around somewhere nobody could see.
+  for (const [name, dx, dy] of [["up", 0, -1], ["down", 0, 1], ["left", -1, 0], ["right", 1, 0]] as const) {
+    let slowest = 0, stayed = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const r2 = mulberry32(seed * 7 + 2);
+      const s2 = buildScenario(seed % 2 ? "midfield_pass" : "buildup", r2, 62, 60);
+      initDefenders(s2, r2);
+      s2.runner = null; s2.secondaryRunners = []; s2.defenders = [];   // nothing to intercept it
+      const b2: Ball = {
+        pos: { x: s2.ball.x, y: s2.ball.y }, vel: { x: dx * 34, y: dy * 34 }, z: 0.1, vz: 0,
+        spin: 0, resting: false, loose: false, contactCd: 0,
+        receiverControlT: 0, event: null, inNet: false,
+      };
+      let o: Outcome | null = null, n = 0;
+      for (; n < 2000 && !o; n++) { stepReactions(s2, b2, DT, r2); o = stepBall(b2, s2, r2, DT); }
+      if (o !== "out") stayed += 1;
+      slowest = Math.max(slowest, n);
+    }
+    check(stayed < 3, `${name}: an overhit ball leaves the situation (${stayed}/200 did not)`);
+    check(slowest < 150, `${name}: and it is over when it goes (${(slowest / 60).toFixed(1)}s at worst)`);
+  }
+
   // Now park one outside and make sure nobody sets off after it.
   const gone: Ball = { ...ball, pos: { x: vp.x2 + 8, y: vp.y2 + 8 }, vel: { x: 0, y: 0 }, resting: true };
   const before = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].map(r => ({ ...r.pos }));
