@@ -287,6 +287,42 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   check(flagged === 0, `nobody is ever given offside (${flagged}/${N})`);
 }
 
+// ── A ball that leaves the frame is gone ────────────────────────────────────
+//
+// There is no pitch outside the rectangle. Nothing out there is drawn, nothing
+// out there can be reached, and the camera will never go and look — so a ball
+// that leaves ends the move on the tick it leaves, and nobody walks off the
+// edge of the situation after it. It used to keep rolling around out of sight
+// with every player on the field jogging off the screen behind it.
+{
+  const rng = mulberry32(31);
+  const sc = buildScenario("midfield_pass", rng, 62, 60);
+  initDefenders(sc, rng);
+  const vp = sc.viewport;
+  const ball: Ball = {
+    pos: { x: (vp.x1 + vp.x2) / 2, y: vp.y2 - 3 }, vel: { x: 0, y: 26 }, z: 0.1, vz: 0,
+    spin: 0, resting: false, loose: false, contactCd: 0,
+    receiverControlT: 0, event: null, inNet: false,
+  };
+  const where = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].map(r => ({ ...r.pos }));
+  let out: Outcome | null = null, frames = 0;
+  for (; frames < 900 && !out; frames++) {
+    stepReactions(sc, ball, DT, rng);
+    out = stepBall(ball, sc, rng, DT);
+  }
+  check(out === "out", `a ball driven off the bottom of the frame ends the move (${out})`);
+  check(frames < 60, `and it ends as it leaves, not eventually (${frames} frames)`);
+
+  // Now park one outside and make sure nobody sets off after it.
+  const gone: Ball = { ...ball, pos: { x: vp.x2 + 8, y: vp.y2 + 8 }, vel: { x: 0, y: 0 }, resting: true };
+  const before = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].map(r => ({ ...r.pos }));
+  for (let i = 0; i < 300; i++) stepReactions(sc, gone, DT, rng);
+  const after = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].map(r => r.pos);
+  check(after.every((p, i) => p.x === before[i].x && p.y === before[i].y),
+    "and nobody walks off the edge of the situation after it");
+  void where;
+}
+
 // ── The move always ends ────────────────────────────────────────────────────
 //
 // The single risk this model runs. Nothing chases you, a ball that stops is not

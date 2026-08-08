@@ -103,7 +103,7 @@ const TACKLE_R = 0.9;
  * built afterwards from wherever you got to.
  */
 const RUN_LENGTH = 22;
-const CORRIDOR = 19;
+const CORRIDOR = 18;
 
 /** A run that goes nowhere still has to end. */
 export const DRIBBLE_TIMEOUT = 14;
@@ -241,12 +241,12 @@ export function stepDribble(state: DribbleState, dt: number): DribbleOutcome {
  * pitch — which is the same mistake in a politer form. The situation is not
  * somewhere on a pitch that a camera visits. The situation is this rectangle.
  */
-export const DRIBBLE_PAD = 4.5;     // metres of grass beyond each end of the run
+export const DRIBBLE_PAD = 6;       // metres of grass beyond each end of the run
 
 export function dribbleViewport(state: DribbleState) {
   const y1 = state.targetY - DRIBBLE_PAD;
   const y2 = state.startY + DRIBBLE_PAD;
-  const w = (y2 - y1) * (3 / 4);
+  const w = (y2 - y1) * (5 / 8);
   const cx = clamp((state.minX + state.maxX) / 2, w / 2, PITCH_W - w / 2);
   return { x1: cx - w / 2, x2: cx + w / 2, y1, y2 };
 }

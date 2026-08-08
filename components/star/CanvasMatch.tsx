@@ -450,76 +450,50 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   // --- Coordinate helpers (pitch <-> canvas pixels, viewport-aware) ---
   //
-  // The camera used to be a flat orthographic map: pitch metres scaled straight
-  // onto pixels, so the far end of the pitch was exactly as wide as the near
-  // end and the goal read as a flat bar. There was no depth to judge a chip or
-  // a bouncing ball against.
+  // FLAT. A metre is the same number of pixels everywhere on the frame, in both
+  // directions: the pitch is a grid seen from directly above, lines stay
+  // parallel, the centre circle is a circle, and a player at the goal is exactly
+  // the size of a player at your feet.
   //
-  // It is now a shallow pinhole perspective, looking down the pitch from behind
-  // the player. `d` is depth from the camera: 1 at the near edge, 1 + PERSPECTIVE
-  // at the far edge (the goal). Screen position divides by depth, exactly as a
-  // real camera does, so the pitch narrows toward the goal and the goal sits
-  // higher and smaller.
+  // There used to be a shallow pinhole perspective here, and it was the single
+  // biggest reason the game looked wrong. Everything at the goal end was drawn
+  // at 64% scale — and in a shooting situation the goal end is where all of it
+  // happens, so the goal, the keeper and every defender were a third smaller
+  // than they should have been while the empty grass in front of you was full
+  // size. It read as "zoomed out" no matter how tight the framing got, because
+  // the tightening was being spent on the part of the frame with nothing in it.
   //
-  // Two properties make this safe to drop under the existing drawing code:
-  //  · straight lines stay straight, because screen y is an affine function of
-  //    1/d and screen x is linear in it — so every pLine, pRect and marking
-  //    still draws correctly, and now converges the way it should;
-  //  · it is exactly invertible, which pitchFromPointer needs for aiming.
+  // The game this is modelled on is flat, and looking at the two side by side
+  // that is the whole difference.
   const viewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
-  /** The scenario's framing. The live viewport eases around this, never jumps. */
+  /** The situation's framing. It is set once and never moves — see the loop. */
   const baseViewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
-
-  /** Depth strength. 0 is the old flat camera; higher tilts it further over. */
-  const PERSPECTIVE = 0.55;
-
-  /** Normalised depth 0..1 (0 = far end / goal, 1 = near edge) -> screen 0..1. */
-  const depthToScreen = useCallback((t: number) => {
-    const dFar = 1 + PERSPECTIVE;
-    const inv = 1 / (1 + PERSPECTIVE * (1 - t));
-    const invFar = 1 / dFar;
-    return (inv - invFar) / (1 - invFar);
-  }, []);
-
-  /** Inverse of depthToScreen. */
-  const screenToDepth = useCallback((sy: number) => {
-    const dFar = 1 + PERSPECTIVE;
-    const invFar = 1 / dFar;
-    const inv = invFar + sy * (1 - invFar);
-    return 1 - (1 / inv - 1) / PERSPECTIVE;
-  }, []);
-
-  /** How much a metre at this depth is squeezed horizontally. */
-  const depthScale = useCallback((t: number) => 1 / (1 + PERSPECTIVE * (1 - t)), []);
 
   const toPx = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current!;
     const vp = viewportRef.current;
-    const nx = (x - vp.x1) / (vp.x2 - vp.x1);
-    // t = 0 at the goal (far from the camera), 1 at the near edge behind the
-    // player. The camera looks DOWN the pitch, so the goal end is the distant one.
-    const t = (y - vp.y1) / (vp.y2 - vp.y1);
-    const k = depthScale(t);
     return {
-      px: (0.5 + (nx - 0.5) * k) * canvas.width,
-      py: depthToScreen(t) * canvas.height,
-      // Exposed so height, player size and the ball all shrink with distance.
-      scale: k,
+      px: ((x - vp.x1) / (vp.x2 - vp.x1)) * canvas.width,
+      py: ((y - vp.y1) / (vp.y2 - vp.y1)) * canvas.height,
+      // Kept so every call site still reads the same; nothing shrinks with
+      // distance any more, so it is always 1.
+      scale: 1,
     };
-  }, [depthScale, depthToScreen]);
+  }, []);
 
   const pitchFromPointer = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const vp = viewportRef.current;
+    // NOT clamped to the canvas. You aim by dragging back from the ball, and a
+    // chance near the bottom of the frame needs to be dragged back past the
+    // bottom of it — clamping turned that into an arrow that stuck and a shot
+    // you could not take.
     const sx = (clientX - rect.left) / rect.width;
     const sy = (clientY - rect.top) / rect.height;
-    const t = clamp(screenToDepth(clamp(sy, 0, 1)), 0, 1);
-    const k = depthScale(t);
-    const nx = 0.5 + (sx - 0.5) / k;
     return {
-      x: nx * (vp.x2 - vp.x1) + vp.x1,
-      y: t * (vp.y2 - vp.y1) + vp.y1,
+      x: sx * (vp.x2 - vp.x1) + vp.x1,
+      y: sy * (vp.y2 - vp.y1) + vp.y1,
     };
   };
 
@@ -815,12 +789,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
     };
 
-    // A player occupies roughly a metre across the shoulders. This is deliberately
-    // small: the camera looks down the pitch, so a figure drawn tall reaches up
-    // the screen into the ground that the ball in front of him occupies, and the
-    // two become impossible to tell apart. Small figures and a big shirt read
-    // better than accurate ones.
-    const R = unit * 0.78;
+    // Sized against the reference rather than against the laws of the game: a
+    // sprite there stands about 7% of the frame's width tall, which works out
+    // near enough to two and a half metres. Footballers are not two and a half
+    // metres tall, and it does not matter — at a true 1.8 m they are specks.
+    //
+    // Now that the projection is flat this holds everywhere on the frame, which
+    // it never could before: a man at the goal used to be drawn at 64% of a man
+    // at your feet.
+    const R = unit * 1.15;
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position.
@@ -1010,7 +987,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
       const KR = R * 0.82 * kScale;   // smaller than an outfielder, smaller again far away
       const lean = sign * diveN * (K ? K.lean : 0.9);
-      const cx = px + sign * KR * lunge * (K ? K.reachK : 1.0) * 1.2;
+      // He is already standing at the ball by the time a save is drawn (the
+      // engine puts him there), so the lunge is a pose rather than a journey —
+      // a big horizontal offset here would throw the figure straight past the
+      // thing he just saved.
+      const cx = px + sign * KR * lunge * (K ? K.reachK : 1.0) * 0.3;
       const cyOff = KR * ((K ? K.crouch : 0) * lunge + breathe);
       const gloveR = KR * 0.24;
 
@@ -1992,7 +1973,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       <div
         ref={wrapRef}
-        className="relative w-full aspect-[3/4] rounded-xl overflow-hidden border-2 border-emerald-800/80 shadow-2xl shadow-emerald-950/60"
+        className="relative w-full aspect-[5/8] rounded-xl overflow-hidden border-2 border-emerald-800/80 shadow-2xl shadow-emerald-950/60"
         style={{ touchAction: "none" }}
       >
         <canvas

@@ -40,6 +40,16 @@ reason we know:
   two metres of the start of every passing lane, so raw distance-to-segment made
   him shut all of them equally. Defenders are only counted in lanes they are
   actually in.
+- **A firm ball at a team-mate went straight through him.** The most-reported
+  bug in the game, and the cause is one line that was missing rather than one
+  that was wrong. Anything struck hard toward the goal is flagged as your shot so
+  a team-mate cannot wander into it — and a support player steps out of the way
+  of your shot. Hit a man firmly, which is what you do when he is ten metres off
+  with defenders about, and he stood aside from a ball aimed at his feet. **A man
+  on the line of the ball, before it reaches the goal, means you meant to find
+  him.** Asserted at under 2% misread for every situation with a goal in it;
+  headers are exempt and legitimately so, because a ball won in the air off you
+  belongs to nobody.
 - **Support players were stealing 66 shots in 400.** A team-mate wandering into
   your shot and controlling it turns a goal into a completed pass. Whether a
   ball is your strike is decided once, at the moment you hit it, and sticks — a
@@ -97,6 +107,30 @@ produce your chances at their end produce theirs at yours.
 
 ---
 
+**THE CAMERA IS FLAT.** A metre is the same number of pixels everywhere in the
+frame, in both directions. The pitch is a grid seen from directly above: lines
+stay parallel, the centre circle is a circle, and a player at the goal is exactly
+the size of a player at your feet.
+
+There was a shallow pinhole perspective here for a long time, and it was the
+single biggest reason the game looked wrong. Everything at the goal end was drawn
+at 64% scale — and in a shooting situation the goal end is where all of it
+happens, so the goal, the keeper and every defender were a third smaller than
+they should have been while the empty grass in front of you was full size. It
+read as "too zoomed out" no matter how tight the framing got, because the
+tightening was being spent on the part of the frame with nothing in it. Two
+screenshots of the reference game settled it: it is flat, and side by side that
+is the whole difference.
+
+Sized against that reference rather than against the laws of the game: a sprite
+there stands about 7% of the frame's width tall, which is roughly two and a half
+metres. Footballers are not two and a half metres tall and it does not matter —
+at a true 1.8 m they are specks. The canvas is a tall slice (5:8, was 3:4),
+because a shooting situation needs the goal and a player thirty metres off it in
+the same frame.
+
+---
+
 **THE RECTANGLE IS THE SITUATION.** The single most important thing in this
 directory, and the thing three separate rounds of bugs came from getting wrong.
 
@@ -119,8 +153,15 @@ corner. Nothing outside it is part of the game, so:
 - **Everybody is inside it** (`fitToView`), asserted for every kind and seed. A
   man beyond the edge is not off-camera, he is absent — and he used to be, in
   169 byline crosses out of 200.
-- **Frames are capped at 36 m** down the screen. What the framing cannot hold
+- **Frames are capped at 46 m** down the screen. What the framing cannot hold
   gets pulled inside rather than the rectangle growing to go and find it.
+- **A ball that leaves the frame is gone**, on the tick it leaves, and nobody
+  walks off the edge of the situation after it. There is no pitch out there for
+  it to roll around on.
+- **The ball is never in the bottom fifth of the frame.** You aim by dragging
+  BACK from it, and a chance at the very bottom is one you cannot pull the arrow
+  far enough for — the drag ran off the canvas and the shot stuck. (The drag
+  itself is no longer clamped to the canvas either.)
 
 ---
 
@@ -145,6 +186,16 @@ What the model is now:
   save animation, which is picked after the outcome is already settled. Where he
   is standing is the whole puzzle: you look at him, and you put the ball where
   he is not.
+
+  **And he dives to the ball he saves.** The save is decided against where he
+  was standing — that part is untouched — but until recently that was the end of
+  it: the figure stayed put and the ball vanished, so a shot into the corner was
+  recorded as a save by a keeper drawn two metres clear of it. Reported three
+  separate times as "I scored and it did not count", and the picture was the one
+  telling the truth. The same mistake in reverse also had to be undone: the save
+  radius had been raised to 2.55–3.35 m to compensate for a keeper who no longer
+  moved, which is nearly half the goal. It is back to 1.95–2.65 m — a distance a
+  dive actually covers — and the dive is drawn covering it.
 
   He used to patrol continuously, and it was wrong in two ways. It turned every
   shot from a placement decision into a timing one, and on screen he was visibly
