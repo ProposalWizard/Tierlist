@@ -103,7 +103,7 @@ const TACKLE_R = 0.9;
  * built afterwards from wherever you got to.
  */
 const RUN_LENGTH = 22;
-const CORRIDOR = 24;
+const CORRIDOR = 19;
 
 /** A run that goes nowhere still has to end. */
 export const DRIBBLE_TIMEOUT = 14;
@@ -228,24 +228,27 @@ export function stepDribble(state: DribbleState, dt: number): DribbleOutcome {
 }
 
 /**
- * The camera for a run.
+ * The frame the run happens in.
  *
- * Its own framing, and the reason it needs one: the run used to inherit whatever
- * viewport the last chance had been given, so it played out on a camera framed
- * on a goal thirty metres away — you saw the net, a stray defender in the corner
- * of the screen and a couple of unexplained lines. It looks like a passing
- * situation now, because that is what it is: you at the bottom, the men you have
- * to get past above you, and no goal anywhere.
+ * The whole run, in one rectangle that never moves: the line to reach across the
+ * top, you at the bottom, the men in between. It is computed once, from the run,
+ * and the corridor is narrower than the frame so the sides of the run are inside
+ * what you can see.
+ *
+ * Two versions of this were wrong. First the run inherited whatever viewport the
+ * last chance had left behind, so it played out on a frame built around a goal
+ * thirty metres away. Then it had a camera of its own that followed you up the
+ * pitch — which is the same mistake in a politer form. The situation is not
+ * somewhere on a pitch that a camera visits. The situation is this rectangle.
  */
-export const DRIBBLE_VIEW_H = 32;   // metres of pitch visible down the screen
+export const DRIBBLE_PAD = 4.5;     // metres of grass beyond each end of the run
 
 export function dribbleViewport(state: DribbleState) {
-  const h = DRIBBLE_VIEW_H;
-  const w = h * (3 / 4);
-  // You sit low in the frame, looking at what is in front of you.
-  const cx = clamp(state.pos.x, w / 2, PITCH_W - w / 2);
-  const cy = state.pos.y - h * 0.18;
-  return { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };
+  const y1 = state.targetY - DRIBBLE_PAD;
+  const y2 = state.startY + DRIBBLE_PAD;
+  const w = (y2 - y1) * (3 / 4);
+  const cx = clamp((state.minX + state.maxX) / 2, w / 2, PITCH_W - w / 2);
+  return { x1: cx - w / 2, x2: cx + w / 2, y1, y2 };
 }
 
 /** How far through the run you are, 0-1. For the progress bar. */

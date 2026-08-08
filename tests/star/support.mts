@@ -1,7 +1,7 @@
 import {
   buildScenario, spaceScore, bestSupportPoint,
   stepDefenders, stepKeeper, stepBall, stepReactions, initDefenders, launch,
-  chainKindFor, chainReturnChance, CHAIN_MAX, SCENARIO_KINDS,
+  chainKindFor, chainReturnChance, CHAIN_MAX, SCENARIO_KINDS, goalInView,
   type Scenario, type Ball, type Outcome, type Vec2,
 } from "../../lib/star/canvasEngine";
 import { PITCH_W, CX, HALF_LEN, BOX_DEPTH } from "../../lib/star/pitch";
@@ -269,6 +269,43 @@ function bestOption(sc: Scenario): number {
     const sc = buildScenario(kind, mulberry32(7), 62, 60);
     const opts = (sc.runner ? 1 : 0) + sc.secondaryRunners.length;
     check(opts >= 1, `${kind}: you have someone to pass to`);
+  }
+}
+
+// ── The rectangle IS the situation ──────────────────────────────────────────
+//
+// Not a window onto a pitch that a camera visits. There is nothing outside the
+// frame, because the camera never moves and never will, so anybody the builder
+// leaves out there is not off-screen — he is not in the game. Every man in
+// every situation starts inside his own frame, and stays a readable distance
+// from the ball and from you.
+{
+  for (const kind of SCENARIO_KINDS) {
+    for (let seed = 0; seed < 120; seed++) {
+      const sc = buildScenario(kind, mulberry32(seed * 41 + 13), 62, 60);
+      const vp = sc.viewport;
+      const inside = (p: Vec2) => p.x >= vp.x1 && p.x <= vp.x2 && p.y >= vp.y1 && p.y <= vp.y2;
+
+      const everyone: Vec2[] = [sc.ball, sc.player, ...sc.defenders,
+        ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map(r => r.pos)];
+      // The keeper and the man in the box belong to situations with a goal in
+      // them; the others do not draw either.
+      if (goalInView(kind)) everyone.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: sc.follower.x, y: sc.follower.y });
+      check(everyone.every(inside), `${kind}: everyone in the situation is inside the frame it is played in`);
+
+      // …and the frame is a frame, not the whole half.
+      check(vp.y2 - vp.y1 <= 36.5, `${kind}: framed on the situation (${(vp.y2 - vp.y1).toFixed(0)} m down the screen)`);
+    }
+  }
+
+  // The ball is BESIDE you, not in front. "In front" is up the screen, and so is
+  // your own body — at any standoff worth the name the ball climbs to your head.
+  for (const kind of SCENARIO_KINDS) {
+    const sc = buildScenario(kind, mulberry32(99), 62, 60);
+    const across = Math.abs(sc.player.x - sc.ball.x);
+    const along = Math.abs(sc.player.y - sc.ball.y);
+    check(across > along, `${kind}: the ball is off your standing foot, not out in front of you`);
+    check(Math.hypot(across, along) < 2, `${kind}: and it is a stride away, not a pass away`);
   }
 }
 

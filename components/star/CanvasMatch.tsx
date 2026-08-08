@@ -4,7 +4,7 @@ import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet,
   stepKeeper, stepDefenders, stepReactions, initDefenders,
-  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, visibleOptions,
+  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
 } from "@/lib/star/canvasEngine";
@@ -82,25 +82,32 @@ interface CreditDelta {
 const NO_CREDIT: CreditDelta = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
 
 // Credit a resolved chance from WHAT ACTUALLY HAPPENED — who struck the resolving
-// shot and whether it scored — never from the scenario's shape. Keying off "is this
-// a passing scenario" was the root of the miscredit bug: the physics lets you shoot
-// straight at goal in a cutback/cross/through-ball without ever finding your man, so
-// a scenario-shape branch dropped those goals on the floor (ball in the net, zero
-// credit). Every crediting decision must flow through here so that split can't
-// reappear. Exactly one of shots/passes/chances is incremented per call, which the
+// shot and whether it scored — never from the scenario's SHAPE. That distinction
+// has now been the root of two separate bugs.
+//
+// The first: keying off "is this a passing scenario" dropped goals on the floor,
+// because the physics lets you shoot straight at goal in a cutback or a cross
+// without ever finding your man — ball in the net, zero credit.
+//
+// The second, and the reason this reads off the ball now: "does this scenario
+// have a finisher attached" USED to mean "you were setting somebody up". Since
+// every situation with the goal in view has a finisher attached, it came to mean
+// nothing at all — so every shot you took and missed was filed as a chance
+// created, and a match could reach half time reading SHOTS 0 after seven of them.
+//
+// Exactly one of shots/passes/chances is incremented per call, which the
 // "Chance N/N" progress counter relies on.
-function creditChance(res: Outcome, ctx: { isChain: boolean; isSimplePass: boolean; receiverReached: boolean }): CreditDelta {
+function creditChance(res: Outcome, ctx: { youShot: boolean; receiverShot: boolean; isSimplePass: boolean }): CreditDelta {
   const isGoal = OUTCOME_TEXT[res].kind === "goal";
-  // A plain pass that reached its man.
+  // A plain pass that reached its man and stopped there.
   if (res === "delivered") return { ...NO_CREDIT, passes: 1, passesCompleted: 1 };
-  // The team-mate you picked out took the resolving shot.
-  if (ctx.isChain && ctx.receiverReached) return { ...NO_CREDIT, chances: 1, assists: isGoal ? 1 : 0 };
-  // You went for goal yourself and scored — credit it even in a passing scenario.
-  if (isGoal) return { ...NO_CREDIT, shots: 1, goals: 1 };
-  // A passing move that broke down without a goal stays an attempted ball, not a shot.
-  if (ctx.isChain) return { ...NO_CREDIT, chances: 1 };
+  // You struck it at goal — decided at YOUR contact, and it stays your shot
+  // whatever happens to it afterwards.
+  if (ctx.youShot) return { ...NO_CREDIT, shots: 1, goals: isGoal ? 1 : 0 };
+  // You found a man and he had the shot.
+  if (ctx.receiverShot) return { ...NO_CREDIT, chances: 1, assists: isGoal ? 1 : 0 };
+  // A ball played to nobody.
   if (ctx.isSimplePass) return { ...NO_CREDIT, passes: 1 };
-  // A shooting scenario you didn't convert.
   return { ...NO_CREDIT, shots: 1 };
 }
 
@@ -150,12 +157,7 @@ interface Particle {
 }
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
-/** How far ahead of the ball the camera looks, in seconds of its travel. */
-const CAM_LEAD_S = 0.35;
-/** How much of the way from the scenario framing to the ball the camera pans. */
-const CAM_PULL = 0.55;
-/** Easing per 60th of a second — lower is lazier. Never a cut. */
-const CAM_EASE = 0.055;
+// The frame never moves — see "There is no camera" in the loop below.
 
 /** How long "PASS" / "GOAL" stays on screen after the action. */
 const ACTION_BANNER_MS = 1000;
@@ -595,33 +597,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // PLUG-IN (optional asset): a subtle 256px grass-noise tile can be drawn here at ~8% alpha
     // via ctx.createPattern(img, "repeat") for extra texture. See notes in the PR/commit.
 
-    // --- Behind the goal ---
-    // Everything past the dead-ball line used to be more mown grass, which read
-    // as pitch that simply carried on — so a camera that sat back far enough to
-    // frame a set piece looked like a bug. There is a terrace back there now.
-    {
-      const deadY = P(0, -NET_DEPTH - 0.6).py;
-      if (deadY > 0) {
-        ctx.fillStyle = "#0b1220";
-        ctx.fillRect(0, 0, W, deadY);
-        // Advertising hoardings along the dead-ball line.
-        const boardH = Math.max(2, H * 0.012);
-        ctx.fillStyle = "#122033";
-        ctx.fillRect(0, deadY - boardH, W, boardH);
-        // A terrace: rows of small marks that thin out toward the back, so it
-        // reads as a crowd at a glance without pretending to be one.
-        const rows = 9;
-        for (let i = 0; i < rows; i++) {
-          const ry = deadY * (1 - i / rows) - deadY / rows * 0.5;
-          if (ry < 0) continue;
-          const step = Math.max(4, W / (34 + i * 3));
-          ctx.fillStyle = i % 2 ? "rgba(148,163,184,0.20)" : "rgba(203,213,225,0.14)";
-          for (let x = (i * step) / 2; x < W; x += step) {
-            ctx.fillRect(x, ry, step * 0.42, Math.max(1.5, deadY / rows * 0.34));
-          }
-        }
-      }
-    }
+    // There is nothing behind the goal, and nothing needs to be. A terrace was
+    // drawn back there so the camera could sit further back and still frame a
+    // corner — a black band of speckles that read, correctly, as nonsense. The
+    // camera does not sit back any more; a wide delivery has its own rectangle.
 
     // Floodlight wash from the goal end...
     const flood = ctx.createLinearGradient(0, 0, 0, H * 0.5);
@@ -706,23 +685,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     }
 
     // ── What you can SEE ──
-    // Vision buys information, not accuracy. Everyone is drawn either way —
-    // hiding players would read as a bug — but only the options a player of this
-    // vision could actually pick out are marked, and only the ones inside the
-    // range he is scanning. At 30 vision you get the obvious man; at 90 you get
-    // three, and the best of them is called out.
-    if (phaseRef.current === "aim" && !sc.receiverDone) {
-      const seen = visibleOptions(sc, sc.player, visionRef.current);
-      seen.forEach((o, i) => {
-        const m = P(o.runner.pos.x, o.runner.pos.y);
-        const best = i === 0 && seen.length > 1;
-        ctx.lineWidth = Math.max(1.2, unit * (best ? 0.15 : 0.1));
-        ctx.strokeStyle = best ? "rgba(52,211,153,0.85)" : "rgba(147,197,253,0.5)";
-        ctx.beginPath();
-        ctx.arc(m.px, m.py - unit * 1.9, unit * (best ? 0.72 : 0.55), 0, Math.PI * 2);
-        ctx.stroke();
-      });
-    }
+    //
+    // Vision buys information, and for a while that information was drawn as a
+    // ring floating over the men you could pick out. It was the last of the
+    // rings on the pitch and it went the same way as the others: two of your
+    // three team-mates wearing a marker and one not is not a hint, it is a
+    // puzzle about the UI. Vision still decides what the commentary tells you
+    // and what the engine considers an option — it just does not draw on the
+    // grass any more.
 
     // There is no pass marker, and there was one for far too long: a ring on the
     // grass showing exactly where to put the ball. Finding the man is the game.
@@ -845,12 +815,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
     };
 
-    // A player occupies roughly a metre across the shoulders. Drawn at 1.25 he
-    // stood nearly two metres tall on a camera that foreshortens depth to
-    // almost nothing, so the ball at his feet appeared to be resting on his
-    // head. A standing man is foreshortened by this angle; the figure is now
-    // sized to match what the camera would actually see.
-    const R = unit * 0.92;
+    // A player occupies roughly a metre across the shoulders. This is deliberately
+    // small: the camera looks down the pitch, so a figure drawn tall reaches up
+    // the screen into the ground that the ball in front of him occupies, and the
+    // two become impossible to tell apart. Small figures and a big shirt read
+    // better than accurate ones.
+    const R = unit * 0.78;
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position.
@@ -881,11 +851,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // The man in the box. Always drawn — he used to appear only once he had
     // started chasing something, so a team-mate materialised next to the keeper
     // out of thin air halfway through a highlight. He is standing there the
-    // whole time; you should be able to see him and aim for him.
-    footballer(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim, {
-      pose: poseFor("follower", sc.follower.x, sc.follower.y),
-      phase: runPhase(sc.follower.x),
-    });
+    // whole time; you should be able to see him and aim for him. There is no
+    // box to lurk in when the goal is not part of the situation.
+    if (goalInView(sc.kind)) {
+      footballer(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim, {
+        pose: poseFor("follower", sc.follower.x, sc.follower.y),
+        phase: runPhase(sc.follower.x),
+      });
+    }
 
     // ── The run ──
     //
@@ -992,6 +965,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     });
 
     // ── Keeper ──
+    // Only where there is a goal to keep. A midfield situation has no goal in
+    // the rectangle, so it has no keeper in it either.
+    if (goalInView(sc.kind))
     // Drawn DELIBERATELY SMALL and at reduced opacity while the ball is live.
     // He stands right in the mouth of the goal from this camera, so a keeper
     // drawn at full size hid the very thing you are trying to watch: whether
@@ -1331,8 +1307,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       dt = Math.min(dt, 0.05); // clamp big frame gaps
 
       if (phaseRef.current === "dribble" && dribbleRef.current) {
-        // The camera stays with you the whole way up.
-        baseViewportRef.current = dribbleViewport(dribbleRef.current);
         // No React state per frame: the render loop already runs every frame and
         // reads the ref directly, so a state update here would re-render the
         // whole component sixty times a second for nothing.
@@ -1396,40 +1370,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // Cosmetic FX advance (pausing the rAF pauses everything together)
       if (kickPoseRef.current > 0) kickPoseRef.current = Math.max(0, kickPoseRef.current - dt);
 
-      // ── Camera follow ──
-      // Eases toward the ball rather than cutting to it, and only ever pans —
-      // the zoom stays as the scenario framed it, so the pitch never lurches.
-      // Deliberately leads the ball a little so there is room ahead to read the
-      // trajectory, which is the whole reason to follow it at all.
-      {
-        const base = baseViewportRef.current;
-        const vpNow = viewportRef.current;
-        const b = ballRef.current;
-        const w = base.x2 - base.x1, hgt = base.y2 - base.y1;
-        let wantCx = (base.x1 + base.x2) / 2;
-        let wantCy = (base.y1 + base.y2) / 2;
-
-        if (b && !b.resting) {
-          // Lead the ball by a fraction of a second of its own travel.
-          const leadX = b.vel.x * CAM_LEAD_S;
-          const leadY = b.vel.y * CAM_LEAD_S;
-          // Pan only part of the way, so the goal stays in frame rather than the
-          // camera chasing the ball out of context.
-          wantCx += ((b.pos.x + leadX) - wantCx) * CAM_PULL;
-          wantCy += ((b.pos.y + leadY) - wantCy) * CAM_PULL;
-        }
-
-        const curCx = (vpNow.x1 + vpNow.x2) / 2;
-        const curCy = (vpNow.y1 + vpNow.y2) / 2;
-        // Frame-rate independent easing — the same feel at 30 fps and 144.
-        const ease = 1 - Math.pow(1 - CAM_EASE, dt * 60);
-        const cx = curCx + (wantCx - curCx) * ease;
-        const cy = curCy + (wantCy - curCy) * ease;
-        viewportRef.current = {
-          x1: cx - w / 2, x2: cx + w / 2,
-          y1: cy - hgt / 2, y2: cy + hgt / 2,
-        };
-      }
+      // ── There is no camera ──
+      //
+      // The rectangle IS the situation. It is set when the scenario loads and it
+      // does not move again — not to follow the ball, not to lead it, not to
+      // follow you on a run.
+      //
+      // This replaced a camera that panned toward the ball, and the panning was
+      // the single most disorientating thing in the game. It is built on a
+      // misreading: that there is a whole pitch and each situation is a snapshot
+      // of some part of it that the camera visits. There is not. A situation is
+      // the frame you are looking at, entire. A run is getting from the bottom
+      // of this rectangle to the top of it; a pass is finding a man inside it.
+      // Nothing outside the frame is part of the game, so there is nothing out
+      // there to pan to — and when the camera went looking anyway, you lost your
+      // bearings and, twice, the thing you were aiming at.
+      viewportRef.current = baseViewportRef.current;
 
       if (shakeRef.current.t > 0) shakeRef.current.t = Math.max(0, shakeRef.current.t - dt);
       if (flashRef.current.t > 0) flashRef.current.t = Math.max(0, flashRef.current.t - dt);
@@ -1463,16 +1419,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setOutcome(res);
     setPhase("result");
     const sc = scenarioRef.current;
-    const isChain = sc.receiver != null;
-    const isSimplePass = sc.passTarget != null && !isChain;
-    const receiverReached = sc.receiverDone;
+    // Read off the ball and off what the team-mate actually did, never off the
+    // scenario's shape. See creditChance.
+    const youShot = ballRef.current?.shot === true;
+    const receiverShot = sc.receiverShot === true;
+    const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
 
     // The tally lives in a ref so it's authoritative the instant this chance
     // resolves — the rAF loop calls a stale resolveOutcome closure, so reading it
     // back off React state would risk under-counting the final chance. State is
     // just a mirror for the HUD.
-    const d = creditChance(res, { isChain, isSimplePass, receiverReached });
+    const d = creditChance(res, { youShot, receiverShot, isSimplePass });
     const t = tallyRef.current;
     t.shots += d.shots;
     t.goals += d.goals;
@@ -1543,7 +1501,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
     }
 
-    pushLine(commentaryResult(res, rngRef.current, { chain: isChain, receiverReached, roleLabel: commentaryRoleLabel, isPass: isSimplePass }));
+    pushLine(commentaryResult(res, rngRef.current, { chain: receiverShot, receiverReached: sc.receiverDone, roleLabel: commentaryRoleLabel, isPass: isSimplePass }));
 
     // A pass that found its man can keep the move going. This used to apply to
     // build-up only, and jumped to a random attacking situation; now any

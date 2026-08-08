@@ -258,6 +258,35 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   check(openLost < N * 0.2, `and a clear lane is a pass you complete (${pct(openLost, N)} lost)`);
 }
 
+// ── The flag stays down ─────────────────────────────────────────────────────
+//
+// Offside is switched off, deliberately and completely. A situation carries one
+// or two defenders rather than a back four, so there was no real line to judge
+// anything against: it flagged men who were plainly onside — including one
+// standing level with you, a yard away — and stayed down on men who were
+// plainly not. A rule that fires at random is worse than no rule. It goes back
+// in when there is a defensive line worth the name.
+{
+  let flagged = 0;
+  const N = 1500;
+  for (let seed = 0; seed < N; seed++) {
+    const rng = mulberry32(seed * 19 + 6);
+    const sc = buildScenario("through_ball", rng, 62, 60);
+    initDefenders(sc, rng);
+    // Straight at the man, from every angle these scenarios produce.
+    const t = sc.runner!.pos;
+    const ball = launch(sc, { x: t.x - sc.ball.x, y: t.y - sc.ball.y }, 0.45, { cx: 0, cy: 0 }, { power: 70, technique: 70 }, rng);
+    let out: Outcome | null = null;
+    for (let i = 0; i < 900 && !out; i++) {
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+    }
+    if (out === "offside") flagged += 1;
+  }
+  check(flagged === 0, `nobody is ever given offside (${flagged}/${N})`);
+}
+
 // ── The move always ends ────────────────────────────────────────────────────
 //
 // The single risk this model runs. Nothing chases you, a ball that stops is not
