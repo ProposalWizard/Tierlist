@@ -16,6 +16,7 @@
     npx tsx tests/star/club.mts
     npx tsx tests/star/money.mts
     npx tsx tests/star/conditions.mts
+    npx tsx tests/star/offside.mts
 
 **support** — the attack: space evaluation, where your team-mates are standing
 when the scenario opens, receiving a ball played near a man rather than at him,
@@ -253,13 +254,6 @@ Two measurements from the old model are kept because they still explain code:
   chases the earliest point he can still theoretically reach, which moves away
   from him as fast as the ball does: 20,000 frames of chasing changed 7 passes
   in 500, and he had vacated the lane he was covering.
-- **Offside is switched off.** A situation carries one or two defenders rather
-  than a back four, so `min(defender.y)` was never a real line — it flagged men
-  who were plainly onside, including one standing level with the ball a yard
-  away, and stayed down on men who were plainly not. A rule that fires at random
-  is worse than no rule. `offsideRisk` is still computed and is ignored; the
-  suite asserts the flag stays down across 1,500 through-balls. It goes back in
-  when there is a defensive line worth the name.
 - **Defenders must not read shots.** A cone around the goal was the obvious test
   for "is this a shot", and it is wrong: from the byline every forward pass sits
   inside the cone, so a cutback was unplayable. It is decided by where the ball
@@ -276,6 +270,61 @@ Offside is judged only on the through-ball. A scenario carries one or two
 defenders, not a back four, so `min(defender.y)` is a meaningful line only in
 the scenario built around one — applying it everywhere flagged two thirds of
 ordinary midfield passes offside.
+
+---
+
+**offside** — the law, mapped onto what this game has and nothing invented to
+make it fit. There are no body parts here, no referee and no indirect free kick;
+every entity is a single point, so a point is what gets compared.
+
+The two halves are kept apart, because conflating them is what makes offside
+systems wrong. **Position** is a state, judged once, at the instant a team-mate
+deliberately plays the ball, with the pitch frozen for the judgement. **Offence**
+is an act: a man who was in an offside position then playing the ball. Standing
+in an offside position is legal and is asserted to be.
+
+Three deliberate touches by your side create a snapshot — you striking the ball,
+the team-mate you found striking it, and the man in the box poking in a rebound.
+Each judges everybody afresh against the line as it is at that moment.
+
+What does NOT clear a flag: a save, a parry, the post, the crossbar, a deflection
+off a defender. That is the "gains an advantage" clause and it needs no code at
+all — the flag simply survives, so a flagged man who buries a rebound is offside.
+What DOES clear it is a deliberate play by a defender: winning a header, or
+clearing the ball.
+
+**The trap this rule sets for a game like ours, and the measurement that caught
+it.** A real penalty area has a back four in it. Ours has one or two defenders,
+and in a one-on-one the only one is BEHIND you, recovering — so the second-last
+opponent sits twenty metres from goal and every attacker in the box is beyond
+him. Applied straight: **400 of 400 one-on-ones flagged somebody and 391 ended
+in an offside.** The law was being applied correctly to positions that were
+fiction.
+
+The answer is not to weaken the rule but to place people legally, which is what
+footballers do — a striker following a shot in times his run rather than standing
+permanently beyond the last man. Support players are now offered space inside the
+legal area rather than corrected out of it afterwards, and the poacher drops in
+level with the line. He still gets on the end of rebounds, because he reacts to
+the ball once it is struck.
+
+That leaves exactly one situation that can produce an offside at your own touch,
+and it is the one built around the line: the through-ball's target man has gone
+a yard early about a fifth of the time, and playing him in then is an offence you
+can SEE — he is drawn in front of the last defender, on a flat camera, with
+nothing moving. Everywhere else it arises on the SECOND snapshot, once the ball
+has been struck and everybody has reacted into new positions.
+
+Rate across a realistic mix of chances, half of them looking for a man and half
+having a go at goal:
+
+    ST    1.0% of chances
+    CAM   1.8%
+    CM    2.1%
+
+Not modelled, and honestly so: "interferes with an opponent" — blocking a
+keeper's line of sight, screening a defender. There is no line of sight in this
+engine to block.
 
 ---
 
