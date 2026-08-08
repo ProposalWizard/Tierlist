@@ -1447,6 +1447,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       spawnGoalFx();
       playNet();
       playCrowdSwell("cheer");
+    } else if (res === "tackled" || res === "blocked") {
+      // It says what happened, like a goal or a pass does. Losing the ball used
+      // to resolve into a beat of nothing and then the next highlight, so you
+      // were left working out from the replay what had gone wrong.
+      showAction("BLOCKED");
+      nudge(0.18, 0.14);
+      playSave();
+    } else if (res === "offside") {
+      showAction("OFFSIDE");
+      playWhistle();
     } else if (res === "delivered") {
       // A pass that found its man is a thing you DID, and in a situation with no
       // goal in it, it is the only thing you can do — so it says so, the same
@@ -1462,11 +1472,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       nudge(0.18, 0.14);
       playSave();
       playCrowdSwell("groan");
-    } else if (res === "caught" || res === "blocked") {
+    } else if (res === "caught") {
       nudge(0.18, 0.14);
       playSave();
-    } else if (res === "offside") {
-      playWhistle();
     }
 
     // Assign named squad players to goals and update the goal events log.

@@ -308,6 +308,24 @@ legal area rather than corrected out of it afterwards, and the poacher drops in
 level with the line. He still gets on the end of rebounds, because he reacts to
 the ball once it is struck.
 
+**Which exposed something the rule had been hiding.** Defenders were placed
+relative to YOU — three and six metres up the pitch from wherever you were
+standing — so a long-range chance had a back line thirty metres from its own
+goal. That had always been wrong; it only became visible once the offside line
+started following it, because your team-mates may not go past the second-last
+opponent and so settled level with a line drawn round your feet. Six players in
+a knot, twenty-five metres of open grass between them and the goal, and nothing
+to aim at but the keeper.
+
+A block belongs to the goal it is defending. It drops as you come deeper, the way
+a real one does, and it never comes out to meet you; forwards hold its shoulder
+and move ACROSS to find an angle rather than walking back down the pitch to find
+a cleaner lane. Measured on the long-range chance — you, the defence, your
+forwards, in metres from goal:
+
+    before   you 27.7    defence 23.2    forwards 26.2
+    after    you 27.3    defence 13.8    forwards 16.9
+
 That leaves exactly one situation that can produce an offside at your own touch,
 and it is the one built around the line: the through-ball's target man has gone
 a yard early about a fifth of the time, and playing him in then is an offence you

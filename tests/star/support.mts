@@ -351,6 +351,29 @@ function bestOption(sc: Scenario): number {
   }
 }
 
+// ── The shape of an attack ──────────────────────────────────────────────────
+//
+// Defenders belong to the goal they are defending. They used to be placed
+// relative to YOU — three and six metres up the pitch from wherever you were —
+// so a long-range chance had a back line thirty metres from its own goal. And
+// because your team-mates may not go past the second-last opponent, they
+// settled level with a line drawn round your feet: six players in a knot with
+// twenty-five metres of open grass between them and the goal, and nothing to
+// aim at but the keeper.
+{
+  const N = 300;
+  let deepestLine = 0, closest = Infinity;
+  for (let seed = 0; seed < N; seed++) {
+    const sc = buildScenario("long_range", mulberry32(seed * 13 + 9), 62, 60);
+    const line = Math.max(...sc.defenders.map(d => d.y));
+    const mates = [...sc.secondaryRunners.map(r => r.pos), { x: sc.follower.x, y: sc.follower.y }];
+    deepestLine = Math.max(deepestLine, line);
+    closest = Math.min(closest, sc.player.y - Math.min(...mates.map(m => m.y)));
+  }
+  check(deepestLine < 22, `a block sits in front of its own goal, not next to you (deepest ${deepestLine.toFixed(0)} m out)`);
+  check(closest > 4, `and your forwards are ahead of the ball, not beside it (${closest.toFixed(0)} m at worst)`);
+}
+
 // ── The rectangle IS the situation ──────────────────────────────────────────
 //
 // Not a window onto a pitch that a camera visits. There is nothing outside the
