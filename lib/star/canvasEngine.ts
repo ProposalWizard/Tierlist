@@ -254,7 +254,11 @@ const BOUNCE_VZ = 0.70;        // vertical restitution off turf
 const BOUNCE_H = 0.88;         // horizontal speed kept on bounce — it skips across
                                // the grass rather than sticking to it
 const DEAD_BALL_SETTLED = 1.2; // …or once a team-mate has already had his go
-const DEAD_BALL_TIMEOUT = 6;   // seconds a ball may lie untouched before the move
+// Seconds a ball may lie untouched before the move is written off. Short,
+// because the frame is small and everyone in it can reach anything in it — if
+// this is firing at all, something is stuck, and six seconds of watching a
+// stationary ball to find that out is five and a half too many.
+const DEAD_BALL_TIMEOUT = 3;   // seconds a ball may lie untouched before the move
                                // is written off. Nobody should ever reach it.
 const MIN_BOUNCE_VZ = 0.5;     // below this it stops bouncing and rolls. Was 1.2,
                                // which swallowed the last visible bounces.
@@ -383,8 +387,16 @@ const CROSSBAR = GOAL_H;
 // Keepers stand on their line. `y` is how far off it they are — a set-piece keeper
 // is a metre out, a keeper rushing a one-on-one might be eight, and nothing puts
 // him outside his own penalty area.
-/** Metres off his line. A stride, never an excursion — he is a keeper, not a sweeper. */
-const KEEPER_LINE_MAX = 1.6;
+/**
+ * Metres off his line. Barely any: he stands ON it.
+ *
+ * 1.6 was already a stride rather than an excursion, and it still looked wrong —
+ * because the figure hung off its own middle, so a keeper "1.4 m off his line"
+ * had his head on the line and his boots two metres in front of it. The sprite
+ * stands on its feet now, and this comes down to match: whatever this number
+ * says is what you will see.
+ */
+const KEEPER_LINE_MAX = 0.55;
 
 function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
   const kx = clamp(x, POST_L - 2.5, POST_R + 2.5);
@@ -540,8 +552,8 @@ function fitToView(sc: Scenario) {
  * Sideways is a different axis. A ball a stride off your standing foot, barely
  * ahead of you, reads exactly as what it is.
  */
-const STANDOFF_SIDE = 1.35;    // metres across — the one that does the work
-const STANDOFF_BACK = 0.45;    // …and a touch behind it
+const STANDOFF_SIDE = 1.5;     // metres across — the one that does the work
+const STANDOFF_BACK = 0.15;    // …and level with your boots, not ahead of them
 
 function standOff(sc: Scenario) {
   // Keep whichever side of the ball the builder put you on, so a player working
@@ -2009,18 +2021,20 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     return "caught";
   }
 
-  // Full-stretch, high or fierce → tipped to safety, and it has to LOOK like
-  // safety: over the bar, or round the post and behind the line.
+  // Full-stretch, high or fierce → pushed away to safety, and it has to LOOK
+  // like safety.
+  //
+  // Behind the line and outside the post is where a tipped ball really goes, and
+  // from directly above it reads as the ball sitting in the side netting, which
+  // is worse than the thing it replaced. So he pushes it AWAY instead: out and
+  // in front of his goal, where you can see it is no longer a shot.
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
-    const high = ball.z > scenario.crossbar * 0.72;
-    if (high) {
-      ball.pos = { x: clamp(ball.pos.x, POST_L, POST_R), y: -0.7 };
-      ball.z = scenario.crossbar + 0.7;
-    } else {
-      const side = ball.pos.x < CX ? -1 : 1;
-      ball.pos = { x: clamp((side < 0 ? POST_L : POST_R) + side * 1.1, 1, PITCH_W - 1), y: -0.5 };
-      ball.z = Math.max(0.3, Math.min(ball.z, scenario.crossbar));
-    }
+    const side = ball.pos.x < CX ? -1 : 1;
+    ball.pos = {
+      x: clamp((side < 0 ? POST_L : POST_R) + side * (1.6 + rng() * 1.8), 2, PITCH_W - 2),
+      y: 2.2 + rng() * 2.6,
+    };
+    ball.z = 0.05;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
     k.done = true;
     return "tipped";
@@ -2390,7 +2404,8 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   // over the moment it does. It used to keep rolling around out of sight with
   // every player on the field jogging off the screen after it.
   const vp = scenario.viewport;
-  if (vp && (ball.pos.x < vp.x1 - 1 || ball.pos.x > vp.x2 + 1 || ball.pos.y > vp.y2 + 1)) return "out";
+  if (vp && (ball.pos.x < vp.x1 - 1 || ball.pos.x > vp.x2 + 1
+             || ball.pos.y > vp.y2 + 1 || ball.pos.y < vp.y1 - 1)) return "out";
   if (ball.pos.x < -2 || ball.pos.x > PITCH_W + 2 || ball.pos.y > HALF_LEN + 8) return "out";
 
   // Once a team-mate has already had the ball, there is nobody left whose turn

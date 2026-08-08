@@ -705,14 +705,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const shorts = opts.shorts ?? rim;
       const lw = Math.max(1.3, r * 0.24);
 
-      // Ground shadow stays put while the figure above it moves.
+      // ── Anchored at the FEET ──
+      //
+      // (px, py) is where this man is standing, and it is now where his boots
+      // are: the shadow goes there and the body is drawn upward from it. The
+      // figure used to hang off its own middle, so every player was drawn half a
+      // body ahead of the spot he actually occupied — a keeper on his line had
+      // his head on the line and his feet two metres in front of it, and looked
+      // like he had come out. It also put the ball, which IS drawn at its ground
+      // point, level with a player's waist rather than his boots.
       ctx.beginPath();
-      ctx.ellipse(px, py + r * 0.72, r * 0.78, r * 0.30, 0, 0, Math.PI * 2);
+      ctx.ellipse(px, py, r * 0.78, r * 0.30, 0, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(0,0,0,0.34)";
       ctx.fill();
 
       ctx.save();
-      ctx.translate(px, py);
+      ctx.translate(px, py - r * 0.8);
       if (opts.facing) ctx.rotate(opts.facing);
 
       // Limb swing. Running scissors the legs and counter-swings the arms;
@@ -785,7 +793,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         ctx.font = `bold ${Math.round(r * 0.52)}px sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(opts.label, px, py - r * 0.22);
+        ctx.fillText(opts.label, px, py - r * 1.02);
       }
     };
 
@@ -999,14 +1007,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.globalAlpha = 0.92;
 
       ctx.beginPath();
-      ctx.ellipse(cx, py + KR * 0.72, KR * (0.7 + diveN * 0.5), KR * 0.26, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, py, KR * (0.7 + diveN * 0.5), KR * 0.26, 0, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.fill();
 
       // No highlight ring on a save. The dive is the thing you are watching;
       // a yellow disc drawn over it only told you what you had already seen.
 
-      ctx.translate(cx + KR * weight * (1 - lunge), py + cyOff);
+      ctx.translate(cx + KR * weight * (1 - lunge), py - KR * 0.8 + cyOff);
       ctx.rotate(lean);
       ctx.lineCap = "round";
 
@@ -1439,6 +1447,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       spawnGoalFx();
       playNet();
       playCrowdSwell("cheer");
+    } else if (res === "delivered") {
+      // A pass that found its man is a thing you DID, and in a situation with no
+      // goal in it, it is the only thing you can do — so it says so, the same
+      // way a goal does. It only said PASS when the move carried on into a
+      // finish, so the safe ball in midfield resolved in silence and read as
+      // nothing having happened.
+      showAction("PASS");
     } else if (res === "post") {
       nudge(0.28, 0.25);
       playPost();

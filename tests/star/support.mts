@@ -336,14 +336,27 @@ function bestOption(sc: Scenario): number {
     }
   }
 
-  // The ball is BESIDE you, not in front. "In front" is up the screen, and so is
-  // your own body — at any standoff worth the name the ball climbs to your head.
+  // The ball is BESIDE you and level with your boots. "In front" is up the
+  // screen, and so is your own body, so anything in front climbs to your head —
+  // it was drawn over the top of it. Sideways is a different axis, and the
+  // figure now stands on its own feet, so "level" means level.
   for (const kind of SCENARIO_KINDS) {
     const sc = buildScenario(kind, mulberry32(99), 62, 60);
     const across = Math.abs(sc.player.x - sc.ball.x);
     const along = Math.abs(sc.player.y - sc.ball.y);
-    check(across > along, `${kind}: the ball is off your standing foot, not out in front of you`);
-    check(Math.hypot(across, along) < 2, `${kind}: and it is a stride away, not a pass away`);
+    check(across > along * 4, `${kind}: the ball is off your standing foot, not out in front of you`);
+    check(along < 0.4, `${kind}: and level with your boots (${along.toFixed(2)} m ahead)`);
+    check(Math.hypot(across, along) < 2, `${kind}: a stride away, not a pass away`);
+  }
+
+  // The keeper is ON his line, and now that a figure stands on its own feet
+  // rather than hanging off its middle, that is also what you see.
+  for (const kind of SCENARIO_KINDS) {
+    if (!goalInView(kind)) continue;
+    for (let seed = 0; seed < 60; seed++) {
+      const sc = buildScenario(kind, mulberry32(seed * 13 + 7), 62, 60);
+      check(sc.keeper.y <= 0.6, `${kind}: the keeper is on his line (${sc.keeper.y.toFixed(2)} m off it)`);
+    }
   }
 }
 
