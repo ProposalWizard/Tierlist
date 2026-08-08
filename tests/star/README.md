@@ -154,6 +154,29 @@ the same frame.
 
 ---
 
+**A CROSS IS WATCHED FROM THE SIDE.** A wide ball has two rectangles: a turned
+one you aim from, and the ordinary one it cuts to when the ball reaches the area.
+From the ordinary camera a crossing position puts the goal off in the corner and
+the whole penalty area edge-on; turned a quarter turn, you are looking straight
+across the six-yard box at everybody in it, which is the decision a cross
+actually asks you to make. It is a CUT, not a pan — the camera is replaced, not
+moved, which is the only kind of camera change this game has.
+
+The turn goes all the way down: `toPx` and its inverse rotate together, the
+metres-per-pixel spans swap with the axes, and — the one that would have been a
+silent bug — **"beside you" is a fact about the picture, not about the pitch.**
+The ball sits on the axis that runs ACROSS the screen, which in a turned frame is
+pitch y rather than pitch x. Placing it along x there would have put the ball
+back on your chest, in the one situation built to show the box off.
+
+Both frames have to hold everybody who matters after the cut, because the engine
+treats outside-the-frame as not-in-the-game: a man stranded outside the second
+frame would stop going for the ball the instant the picture changed. You are the
+exception, and rightly — you are on the touchline, and once the ball has gone you
+are not part of what happens next.
+
+---
+
 **THE RECTANGLE IS THE SITUATION.** The single most important thing in this
 directory, and the thing three separate rounds of bugs came from getting wrong.
 
@@ -270,6 +293,36 @@ Offside is judged only on the through-ball. A scenario carries one or two
 defenders, not a back four, so `min(defender.y)` is a meaningful line only in
 the scenario built around one — applying it everywhere flagged two thirds of
 ordinary midfield passes offside.
+
+---
+
+**HOW MANY PLAYERS, AND WHOSE.** Counted off the reference: four to seven
+opponents in a chance, and ONE team-mate beside you, sometimes two. Ours had it
+exactly the wrong way round — two or three team-mates and one or two defenders —
+which is why the pitch looked empty at the goal end and crowded around the ball,
+and why the offside line was a fiction drawn round the nearest recovering
+full-back.
+
+    before   1-2 opponents,  2-3 team-mates
+    after    4-6 opponents,  1-3 team-mates
+
+And the team-mate count is **what vision buys**. §13.1 asks that an attribute
+widen your vocabulary rather than raise a hidden percentage, and the player's own
+words for this one were "vision gives you more players to pass to in scenarios".
+So it does, literally: at 30 you have the man in the box and nobody else, at 90
+you have three. It used to draw rings over people instead, which is a HUD feature
+wearing an attribute's clothes.
+
+The keeper, too, was over-corrected. "Always on his line" made him readable and
+made every chance the same question; he is on it about four times in five and
+otherwise somewhere out to the front of his six-yard box, which is a different
+question and gives the ball somewhere to go it would not otherwise have.
+
+And he is drawn smaller. Measured off the reference: its goal is about five and a
+half keepers wide and its keeper is roughly as wide as he is tall — a squat
+figure spreading himself. Ours was three and a half goals wide and drawn like an
+outfielder in gloves, so he filled the mouth, every save looked inevitable and
+every goal looked like it had squeezed past him.
 
 ---
 

@@ -21,6 +21,23 @@ import {
 export interface Vec2 { x: number; y: number; }
 export interface Viewport { x1: number; x2: number; y1: number; y2: number; }
 
+/**
+ * Which way the frame is turned.
+ *
+ * "up" is the ordinary view: you at the bottom, the goal at the top, the pitch
+ * running away from you. "left" and "right" are the same rectangle rotated a
+ * quarter turn, with the goal at that side of the screen — which is the only
+ * way to look at a ball wide on the byline. From the ordinary camera a crossing
+ * position puts the goal off in the corner and the whole box edge-on; turned,
+ * you are looking straight across the six-yard box at everybody in it, which is
+ * the decision a cross actually asks you to make.
+ *
+ * The rotation is a rotation, not a mirror: "right" is the ordinary view turned
+ * clockwise, "left" turned anticlockwise, and each is chosen so that you end up
+ * near the bottom of the screen the way you always are.
+ */
+export type Facing = "up" | "left" | "right";
+
 // A moment worth narrating, surfaced from the physics tick to the UI once and consumed.
 export type BallEvent = "received" | "receiverShot" | "post";
 
@@ -216,6 +233,16 @@ export interface Scenario {
   receiverShots?: number;       // true once the ball has reached the runner (guards re-trigger)
   teamRelationship: number;    // 0-100 — how well the team combines, feeds the receiver's shot quality
   viewport: Viewport;
+  /** Which way this situation's rectangle is turned. Defaults to "up". */
+  facing?: Facing;
+  /**
+   * A crossing situation is watched from the side while the ball is in the air
+   * and then cut to the ordinary view once it reaches the box, which is where
+   * the thing you actually care about happens. This is the y it cuts at, and
+   * the frame it cuts to.
+   */
+  crossSwitchY?: number;
+  crossSwitchView?: Viewport;
   secondaryRunners: Runner[];  // extra options: support players and build-up outlets
   passDifficulty: number;      // 0-1, set when a pass resolves — harder pass = higher ball-return chance
   /**
@@ -401,21 +428,32 @@ const CROSSBAR = GOAL_H;
 // is a metre out, a keeper rushing a one-on-one might be eight, and nothing puts
 // him outside his own penalty area.
 /**
- * Metres off his line. Barely any: he stands ON it.
+ * How far off his line he may stand.
  *
- * 1.6 was already a stride rather than an excursion, and it still looked wrong —
- * because the figure hung off its own middle, so a keeper "1.4 m off his line"
- * had his head on the line and his boots two metres in front of it. The sprite
- * stands on its feet now, and this comes down to match: whatever this number
- * says is what you will see.
+ * USUALLY on it — that is what makes his position readable, and a keeper who
+ * wanders looks like a bug. But not always: about one chance in five he has
+ * come to the edge of his six-yard box, and that is a different question you are
+ * being asked. It gives the ball somewhere to go that it would not otherwise
+ * have, which is the whole reason the reference does it.
+ *
+ * Both numbers mean exactly what they say now that the sprite stands on its own
+ * feet. When it hung off its own middle, a keeper "1.4 m off his line" had his
+ * head on the line and his boots two metres in front of it, so this was pinned
+ * at 0.55 to stop him looking like he had charged out.
  */
 const KEEPER_LINE_MAX = 0.55;
+const KEEPER_OFF_LINE_MAX = 5.5;   // …to the front edge of his six-yard box
+const KEEPER_OFF_LINE_ODDS = 0.2;
 
 function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
   const kx = clamp(x, POST_L - 2.5, POST_R + 2.5);
   const r = rng ? rng() : 0.5;
+  const advanced = rng ? rng() < KEEPER_OFF_LINE_ODDS : false;
+  const ky = advanced
+    ? 1.6 + (rng ? rng() : 0.5) * (KEEPER_OFF_LINE_MAX - 1.6)
+    : clamp(y, 0.3, KEEPER_LINE_MAX);
   return {
-    x: kx, y: clamp(y, 0.3, KEEPER_LINE_MAX), startX: kx, targetX: kx,
+    x: kx, y: ky, startX: kx, targetX: kx,
     dive: 0, saves: 0, done: false, flash: 0,
     patrolT: r * 4,                 // start somewhere along the sweep, not always centre
     patrolSeed: r * Math.PI * 2,
@@ -438,6 +476,90 @@ function makeFollower(rng: () => number, by: number): Follower {
     y: clamp(by * 0.5, SIX_DEPTH, PEN_SPOT_Y + 3),
     active: false, shot: false,
   };
+}
+
+// The camera. Canvas is a 3:4 portrait, so the viewport must be too, and it must
+// use the SAME metres-per-pixel on both axes or every distance on screen lies.
+// Framing is clamped to a sane zoom band so the pitch never appears wildly zoomed
+// in on one chance and wildly zoomed out on the next.
+// The canvas is a tall slice, not a box — see the aspect on the pitch container.
+// A shooting situation needs the goal and a player thirty metres off it in the
+// same frame, and a tall frame buys that depth without having to zoom out to
+// find it.
+const VIEW_ASPECT = 5 / 8;      // width / height
+const VIEW_MIN_H = 34;          // metres of pitch visible vertically, closest zoom
+// Furthest zoom. Held down hard, because the frame is the situation rather than
+// a window onto a pitch — anything the framing cannot hold gets pulled inside it
+// by fitToView instead of the rectangle growing to go and find it. At 62 a
+// long-range chance showed the halfway line and everything in it was tiny.
+const VIEW_MAX_H = 46;
+
+/**
+ * The rectangle a corner or a whipped cross happens in.
+ *
+ * Goal across the top, the D along the bottom, and just enough either side of
+ * the six-yard box to swing a ball in from. Fixed, so every wide delivery looks
+ * the same and you learn one picture instead of a new one each time.
+ */
+const WIDE_DELIVERY_VIEW: Viewport = (() => {
+  const h = 36;
+  const w = h * VIEW_ASPECT;
+  return { x1: CX - w / 2, x2: CX + w / 2, y1: -4.5, y2: -4.5 + h };
+})();
+/** Where the ball is delivered from — just inside the near edge of that frame. */
+const WIDE_DELIVERY_X = (side: number) => CX + side * (WIDE_DELIVERY_VIEW.x2 - CX - 3.4);
+
+/**
+ * The rectangle a cross is aimed from, turned a quarter turn.
+ *
+ * Across the screen: the goal and everybody in front of it. Down the screen:
+ * the width of the pitch from the touchline you are on to beyond the far post.
+ * Because it is rotated, the viewport's Y span is what fills the screen's WIDTH,
+ * so it is the Y span that has to hold the canvas aspect.
+ */
+const CROSS_VIEW_X = 46;   // metres across the pitch, filling the screen's height
+const CROSS_SWITCH_Y = 15; // …and where the ball has got close enough to cut
+
+function crossViewport(side: number): Viewport {
+  const h = CROSS_VIEW_X;
+  const w = h * VIEW_ASPECT;          // metres up the pitch, filling the width
+  // Held against the touchline you are crossing from.
+  const x1 = side > 0 ? PITCH_W + 3 - h : -3;
+  return { x1, x2: x1 + h, y1: -4.5, y2: -4.5 + w };
+}
+
+
+function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4): Viewport {
+  const all = [...points];
+  if (includeGoal) {
+    all.push({ x: POST_L, y: 0 }, { x: POST_R, y: 0 }, { x: CX, y: -NET_DEPTH });
+  }
+  let x1 = Math.min(...all.map(p => p.x));
+  let x2 = Math.max(...all.map(p => p.x));
+  let y1 = Math.min(...all.map(p => p.y));
+  let y2 = Math.max(...all.map(p => p.y));
+
+  // Breathing room so nothing sits on the frame edge.
+  x1 -= pad; x2 += pad; y1 -= pad * 0.875; y2 += pad * 0.875;
+
+  // Grow to whichever the content demands, then hold the canvas aspect exactly.
+  let h = Math.max(y2 - y1, (x2 - x1) / VIEW_ASPECT);
+  h = clamp(h, VIEW_MIN_H, VIEW_MAX_H);
+  const w = h * VIEW_ASPECT;
+
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  let vx1 = cx - w / 2, vx2 = cx + w / 2;
+  let vy1 = cy - h / 2, vy2 = cy + h / 2;
+
+  // Keep the frame over the pitch: slide (never squash) it back into bounds.
+  const padX = 5, backPad = NET_DEPTH + 2.5, fwdPad = 6;
+  if (vx1 < -padX) { const s = -padX - vx1; vx1 += s; vx2 += s; }
+  if (vx2 > PITCH_W + padX) { const s = vx2 - (PITCH_W + padX); vx1 -= s; vx2 -= s; }
+  if (vy1 < -backPad) { const s = -backPad - vy1; vy1 += s; vy2 += s; }
+  if (vy2 > HALF_LEN + fwdPad) { const s = vy2 - (HALF_LEN + fwdPad); vy1 -= s; vy2 -= s; }
+
+  return { x1: vx1, x2: vx2, y1: vy1, y2: vy2 };
 }
 
 /**
@@ -526,6 +648,13 @@ export function offsideSnapshot(sc: Scenario, ballAt: Vec2) {
   }
 }
 
+/** Is this man's touch an offence? Position plus involvement, and only then. */
+function offsideOffence(sc: Scenario, flagged: boolean | undefined): boolean {
+  if (!flagged) return false;
+  sc.offsideAgainst = true;
+  return true;
+}
+
 /** A deliberate play by a defender puts everybody onside again. */
 export function clearOffside(sc: Scenario) {
   for (const a of attackers(sc)) a.flag(false);
@@ -592,89 +721,28 @@ function settleOnside(sc: Scenario, rng: () => number) {
   // placed. A team-mate positioned in perfectly good space can find you have
   // since been stood on his toes.
   const lox = vp ? vp.x1 + 1.4 : 2, hix = vp ? vp.x2 - 1.4 : PITCH_W - 2;
+  const loy = line.length >= 2 ? secondLast + 0.3 : 1;
+  const CLEAR = 4.5;
   for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
-    for (let i = 0; i < 16; i++) {
-      if (Math.hypot(r.pos.x - sc.player.x, r.pos.y - sc.player.y) >= 4.5) break;
-      const away = r.pos.x >= sc.player.x ? 1 : -1;
-      const nx = r.pos.x + away * 1.5;
-      // Into the frame's wall — go the other way instead of grinding along it.
-      r.pos.x = nx > hix || nx < lox ? clamp(r.pos.x - away * 1.5, lox, hix) : nx;
-      r.pos.y = Math.min(Math.max(r.pos.y - 0.8, line.length >= 2 ? secondLast + 0.3 : 1), floor);
+    if (Math.hypot(r.pos.x - sc.player.x, r.pos.y - sc.player.y) >= CLEAR) { r.to = { ...r.pos }; continue; }
+    // Walk a ring outward from you and take the first point that is far enough,
+    // inside the frame and onside. Nudging him along one axis and hoping was not
+    // enough: the cases that survived were the ones where YOU are in the corner
+    // of a tight rectangle, and every push either hit the wall or came back.
+    let best: Vec2 | null = null;
+    outer:
+    for (let ring = CLEAR; ring <= CLEAR + 7 && !best; ring += 1.2) {
+      for (let k = 0; k < 16; k++) {
+        const a2 = (k / 16) * Math.PI * 2;
+        const p = { x: sc.player.x + Math.cos(a2) * ring, y: sc.player.y + Math.sin(a2) * ring };
+        if (p.x < lox || p.x > hix || p.y < loy || p.y > floor) continue;
+        best = p;
+        break outer;
+      }
     }
+    if (best) r.pos = best;
     r.to = { ...r.pos };
   }
-}
-
-/** Is this man's touch an offence? Position plus involvement, and only then. */
-function offsideOffence(sc: Scenario, flagged: boolean | undefined): boolean {
-  if (!flagged) return false;
-  sc.offsideAgainst = true;
-  return true;
-}
-
-// The camera. Canvas is a 3:4 portrait, so the viewport must be too, and it must
-// use the SAME metres-per-pixel on both axes or every distance on screen lies.
-// Framing is clamped to a sane zoom band so the pitch never appears wildly zoomed
-// in on one chance and wildly zoomed out on the next.
-// The canvas is a tall slice, not a box — see the aspect on the pitch container.
-// A shooting situation needs the goal and a player thirty metres off it in the
-// same frame, and a tall frame buys that depth without having to zoom out to
-// find it.
-const VIEW_ASPECT = 5 / 8;      // width / height
-const VIEW_MIN_H = 34;          // metres of pitch visible vertically, closest zoom
-// Furthest zoom. Held down hard, because the frame is the situation rather than
-// a window onto a pitch — anything the framing cannot hold gets pulled inside it
-// by fitToView instead of the rectangle growing to go and find it. At 62 a
-// long-range chance showed the halfway line and everything in it was tiny.
-const VIEW_MAX_H = 46;
-
-/**
- * The rectangle a corner or a whipped cross happens in.
- *
- * Goal across the top, the D along the bottom, and just enough either side of
- * the six-yard box to swing a ball in from. Fixed, so every wide delivery looks
- * the same and you learn one picture instead of a new one each time.
- */
-const WIDE_DELIVERY_VIEW: Viewport = (() => {
-  const h = 36;
-  const w = h * VIEW_ASPECT;
-  return { x1: CX - w / 2, x2: CX + w / 2, y1: -4.5, y2: -4.5 + h };
-})();
-/** Where the ball is delivered from — just inside the near edge of that frame. */
-const WIDE_DELIVERY_X = (side: number) => CX + side * (WIDE_DELIVERY_VIEW.x2 - CX - 3.4);
-
-
-function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4): Viewport {
-  const all = [...points];
-  if (includeGoal) {
-    all.push({ x: POST_L, y: 0 }, { x: POST_R, y: 0 }, { x: CX, y: -NET_DEPTH });
-  }
-  let x1 = Math.min(...all.map(p => p.x));
-  let x2 = Math.max(...all.map(p => p.x));
-  let y1 = Math.min(...all.map(p => p.y));
-  let y2 = Math.max(...all.map(p => p.y));
-
-  // Breathing room so nothing sits on the frame edge.
-  x1 -= pad; x2 += pad; y1 -= pad * 0.875; y2 += pad * 0.875;
-
-  // Grow to whichever the content demands, then hold the canvas aspect exactly.
-  let h = Math.max(y2 - y1, (x2 - x1) / VIEW_ASPECT);
-  h = clamp(h, VIEW_MIN_H, VIEW_MAX_H);
-  const w = h * VIEW_ASPECT;
-
-  const cx = (x1 + x2) / 2;
-  const cy = (y1 + y2) / 2;
-  let vx1 = cx - w / 2, vx2 = cx + w / 2;
-  let vy1 = cy - h / 2, vy2 = cy + h / 2;
-
-  // Keep the frame over the pitch: slide (never squash) it back into bounds.
-  const padX = 5, backPad = NET_DEPTH + 2.5, fwdPad = 6;
-  if (vx1 < -padX) { const s = -padX - vx1; vx1 += s; vx2 += s; }
-  if (vx2 > PITCH_W + padX) { const s = vx2 - (PITCH_W + padX); vx1 -= s; vx2 -= s; }
-  if (vy1 < -backPad) { const s = -backPad - vy1; vy1 += s; vy2 += s; }
-  if (vy2 > HALF_LEN + fwdPad) { const s = vy2 - (HALF_LEN + fwdPad); vy1 -= s; vy2 -= s; }
-
-  return { x1: vx1, x2: vx2, y1: vy1, y2: vy2 };
 }
 
 /**
@@ -696,7 +764,11 @@ function fitToView(sc: Scenario) {
   // the frame is one you cannot pull the arrow far enough for — the drag ran
   // off the bottom of the canvas and the shot stuck. The ball is kept up out of
   // the bottom fifth, which is the room that gesture needs.
-  const floor = vp.y2 - (vp.y2 - vp.y1) * 0.2;
+  // The bottom of the SCREEN, which in a turned frame is not the bottom of the
+  // viewport. In a crossing view the screen's vertical axis is pitch x, and the
+  // room the drag needs is along that.
+  const turned = sc.facing === "left" || sc.facing === "right";
+  const floor = turned ? vp.y2 - 1.4 : vp.y2 - (vp.y2 - vp.y1) * 0.2;
   const fx = (x: number) => clamp(x, vp.x1 + inset, vp.x2 - inset);
   const fy = (y: number) => clamp(y, Math.max(vp.y1 + inset, 0.3), vp.y2 - inset);
   for (const d of sc.defenders) { d.x = fx(d.x); d.y = fy(d.y); }
@@ -712,6 +784,52 @@ function fitToView(sc: Scenario) {
   standOff(sc, vp.x1 + inset, vp.x2 - inset);
   sc.player = { x: sc.player.x, y: fy(sc.player.y) };
 
+}
+
+/**
+ * Everybody except the crosser lives inside the frame it CUTS to.
+ *
+ * A crossing situation has two rectangles: the wide one you aim from and the
+ * ordinary one it cuts to when the ball arrives. Anybody who matters after the
+ * cut has to be inside the second as well as the first, or half the box would
+ * be off-screen the moment the picture changed — and worse, the engine treats
+ * outside-the-frame as not-in-the-game, so they would stop going for the ball.
+ *
+ * You are the exception, and rightly: you are out on the touchline, and once
+ * the ball has gone you are not part of what happens next.
+ */
+function keepInsideTheCut(sc: Scenario) {
+  const cut = sc.crossSwitchView;
+  if (!cut) return;
+  const inset = 1.4;
+  const fx = (x: number) => clamp(x, cut.x1 + inset, cut.x2 - inset);
+  const fy = (y: number) => clamp(y, Math.max(cut.y1 + inset, 0.3), cut.y2 - inset);
+  for (const d of sc.defenders) { d.x = fx(d.x); d.y = fy(d.y); }
+  for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
+    r.pos.x = fx(r.pos.x); r.pos.y = fy(r.pos.y);
+    r.to = { ...r.pos };
+  }
+  sc.follower.x = fx(sc.follower.x);
+  sc.follower.y = fy(sc.follower.y);
+  sc.keeper.x = fx(sc.keeper.x);
+
+  // Squeezing the box into a second, narrower rectangle can put a man back on
+  // the crosser's shoulder — so the same ring search that keeps everybody clear
+  // of you elsewhere runs once more, against this frame.
+  for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
+    if (Math.hypot(r.pos.x - sc.player.x, r.pos.y - sc.player.y) >= 4.5) continue;
+    for (let ring = 4.5; ring <= 11; ring += 1.2) {
+      let placed = false;
+      for (let k = 0; k < 16 && !placed; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const p = { x: sc.player.x + Math.cos(a) * ring, y: sc.player.y + Math.sin(a) * ring };
+        if (p.x < cut.x1 + inset || p.x > cut.x2 - inset) continue;
+        if (p.y < Math.max(cut.y1 + inset, 0.3) || p.y > cut.y2 - inset) continue;
+        r.pos = p; r.to = { ...p }; placed = true;
+      }
+      if (placed) break;
+    }
+  }
 }
 
 /**
@@ -740,6 +858,22 @@ const STANDOFF_BACK = 0.15;    // …and level with your boots, not ahead of the
  * You ended up standing on it, which on screen is the ball on your chest.
  */
 function standOff(sc: Scenario, lo?: number, hi?: number) {
+  // ── Beside him ON SCREEN ──
+  //
+  // "Beside" is a fact about the picture, not about the pitch: it is the axis
+  // that runs ACROSS the screen, because the figure is drawn up the screen from
+  // its boots and anything on that axis climbs into it. In the ordinary view
+  // that axis is pitch x. In a crossing view the frame is turned a quarter
+  // turn, so it is pitch y — and placing him along x there would have put the
+  // ball back on his chest, in the one situation built to show it off.
+  if (sc.facing === "left" || sc.facing === "right") {
+    const prefer = sc.player.y >= sc.ball.y ? 1 : -1;
+    sc.player = {
+      x: clamp(sc.ball.x + STANDOFF_BACK * (sc.ball.x > CX ? 1 : -1), 1, PITCH_W - 1),
+      y: clamp(sc.ball.y + prefer * STANDOFF_SIDE, 0.5, HALF_LEN + 6),
+    };
+    return;
+  }
   const minX = lo ?? 1, maxX = hi ?? PITCH_W - 1;
   const prefer = sc.player.x >= sc.ball.x ? 1 : -1;
   // The preferred side unless it does not fit, and then the other one.
@@ -1199,7 +1333,7 @@ function buildBuildup(rng: () => number, keeperStrength: number, teamRelationshi
 }
 
 // Build one scenario of a given kind, applying default viewport + new fields.
-export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStrength = 62, teamRelationship = 60): Scenario {
+export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStrength = 62, teamRelationship = 60, vision = 55): Scenario {
   const ks = clamp(keeperStrength, 0, 100);
   const tr = clamp(teamRelationship, 0, 100);
   let sc: Scenario;
@@ -1219,6 +1353,7 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
     case "buildup": sc = buildBuildup(rng, ks, tr) as Scenario; break;
   }
   if (!sc.secondaryRunners) sc.secondaryRunners = [];
+  addCover(sc, rng);
   standOff(sc);
   // If the goal is on screen, whoever you find shoots. Set here rather than in
   // thirteen builders so it cannot be forgotten in one of them — which is
@@ -1230,25 +1365,125 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
   // the other way round — scatter people across a penalty area, then squeeze
   // them into a frame two thirds as wide — piled them onto the taker in the
   // corner.
-  if (kind === "corner" || kind === "byline_cross") sc.viewport = WIDE_DELIVERY_VIEW;
+  if (kind === "corner" || kind === "byline_cross") {
+    // Watched from the side, then cut to the ordinary view when it arrives.
+    const side = sc.ball.x >= CX ? 1 : -1;
+    sc.facing = side > 0 ? "right" : "left";
+    sc.viewport = crossViewport(side);
+    sc.crossSwitchY = CROSS_SWITCH_Y;
+    sc.crossSwitchView = WIDE_DELIVERY_VIEW;
+  }
   if (sc.passDifficulty === undefined) sc.passDifficulty = 0;
   if (sc.chainDepth === undefined) sc.chainDepth = 0;
-  addSupport(sc, rng);
+  addSupport(sc, rng, vision);
   if (!sc.viewport) sc.viewport = scenarioViewport(sc);
   fitToView(sc);
   settleOnside(sc, rng);
+  keepInsideTheCut(sc);
   return sc;
 }
 
 // How many team-mates come and make themselves available, by situation. Dead
 // balls get none — a wall and a set piece are a still frame by design — and
 // build-up already ships with two outlets of its own.
+/**
+ * How many team-mates come and make themselves available — before vision.
+ *
+ * Fewer than there were, and deliberately. Counting the players in the game this
+ * is modelled on: four to seven opponents in a chance, and ONE team-mate beside
+ * you, sometimes two. Ours had it exactly the wrong way round — two or three
+ * team-mates and one or two defenders — which is why the pitch looked empty at
+ * the goal end and crowded around the ball, and why the offside line was a
+ * fiction.
+ */
 const SUPPORT_COUNT: Record<ScenarioKind, number> = {
-  one_on_one: 1, tight_angle: 1, volley: 1, header: 1,
-  long_range: 2, cutback: 2, byline_cross: 2, through_ball: 1,
+  // A shooting chance comes with the man in the box and nobody else, unless you
+  // can see further than that. In the reference there are two blue shirts on the
+  // screen: you, and one other.
+  one_on_one: 0, tight_angle: 0, volley: 0, header: 0, long_range: 0,
+  // A ball that has to be played to somebody already HAS somebody to play it to
+  // — the target runner is not counted here — so these add nobody of their own.
+  cutback: 0, byline_cross: 0, through_ball: 0, corner: 0,
   midfield_pass: 1, buildup: 0,
-  penalty: 0, free_kick: 0, corner: 0,
+  penalty: 0, free_kick: 0,
 };
+
+/**
+ * …and how many of them you can actually SEE.
+ *
+ * §13.1 again — vision is meant to widen your vocabulary rather than raise a
+ * hidden percentage, and the player's own words for it were "vision gives you
+ * more players to pass to in scenarios". So it does, literally: at 30 you have
+ * the obvious man, at 90 you have three. It used to draw rings over people
+ * instead, which is a HUD feature wearing an attribute's clothes.
+ */
+export function supportSeen(vision: number): number {
+  const v = clamp(vision, 0, 100);
+  return v < 40 ? 0 : v < 70 ? 1 : 2;
+}
+
+/**
+ * Give the DEFENCE some numbers.
+ *
+ * Counting the players in the game this is modelled on: four to seven opponents
+ * in a chance, and one team-mate beside you. Ours had one or two defenders, and
+ * the consequences ran a long way — the goal end of the pitch was empty, the
+ * offside line was drawn round the nearest recovering full-back, and shooting
+ * from anywhere was a question of beating the keeper and nobody else.
+ *
+ * These are the men between the ball and the goal that the builders do not
+ * place: a covering pair in front of the keeper, and a body or two further out.
+ * They are laid out relative to the GOAL, never relative to you, for the same
+ * reason the back line is — a defence that arranges itself around wherever the
+ * ball happens to be is not a defence.
+ */
+const COVER_COUNT: Record<ScenarioKind, number> = {
+  one_on_one: 2, tight_angle: 3, volley: 3, header: 3,
+  long_range: 3, cutback: 3, byline_cross: 3, through_ball: 2,
+  midfield_pass: 1, buildup: 1,
+  penalty: 0, free_kick: 2, corner: 3,
+};
+
+function addCover(sc: Scenario, rng: () => number) {
+  const want = COVER_COUNT[sc.kind] ?? 0;
+  // ── The one situation whose line is already drawn ──
+  //
+  // A through-ball is built around its offside line: the runner is placed
+  // against the deeper of two defenders on purpose, sometimes a yard the wrong
+  // side of it. Dropping a covering man in FRONT of that line makes him the
+  // second-last opponent, moves the line to him, and puts the runner comfortably
+  // onside every time — which is how a fifth of through-balls went from being
+  // offside to none of them being.
+  //
+  // So here he covers from behind, as a midfielder tracking back would.
+  const behind = sc.kind === "through_ball";
+  const existing = sc.defenders.map(d => d.y).sort((a, b) => a - b);
+  for (let i = 0; i < want; i++) {
+    // Otherwise a cover defender lives between the goal and the ball, spread
+    // across the width of the box, deeper than the men already placed.
+    const deepest = Math.min(...sc.defenders.map(d => d.y), sc.ball.y);
+    const band = behind
+      ? (existing[existing.length - 1] ?? sc.ball.y * 0.6) + 1.5 + rng() * 4
+      : goalInView(sc.kind)
+        ? clamp(deepest * (0.35 + 0.3 * (i / Math.max(1, want))), 3.5, 15)
+        // No goal in the rectangle means no goal to defend: a midfield man
+        // covers the space just ahead of the ball. Sending him back to guard a
+        // penalty area thirty metres outside the frame dragged the frame down
+        // there with him, and a ball driven up the pitch reached that goal
+        // instead of leaving the situation.
+        : clamp(sc.ball.y - 6 - rng() * 8, 6, Math.max(7, sc.ball.y - 3));
+    const spread = 5 + rng() * 9;
+    const side = i % 2 === 0 ? -1 : 1;
+    const at = {
+      x: clamp(CX + side * spread + (rng() - 0.5) * 4, 8, PITCH_W - 8),
+      y: clamp(band + (rng() - 0.5) * 3, 2.5, Math.max(3, sc.ball.y - 1)),
+    };
+    // Not on top of the keeper, and not on top of each other.
+    if (Math.hypot(at.x - sc.keeper.x, at.y - sc.keeper.y) < 2.5) at.y += 2.5;
+    if (sc.defenders.some(d => Math.hypot(d.x - at.x, d.y - at.y) < 2.5)) at.x = clamp(at.x + side * 3, 8, PITCH_W - 8);
+    sc.defenders.push(at);
+  }
+}
 
 /**
  * Give the attack some life.
@@ -1258,8 +1493,11 @@ const SUPPORT_COUNT: Record<ScenarioKind, number> = {
  * real runners: they start somewhere plausible, immediately find the best space
  * available to them, and keep looking for a better spot while you hold the ball.
  */
-function addSupport(sc: Scenario, rng: () => number) {
-  const want = SUPPORT_COUNT[sc.kind] ?? 0;
+function addSupport(sc: Scenario, rng: () => number, vision = 55) {
+  const base = SUPPORT_COUNT[sc.kind] ?? 0;
+  // Dead balls are a still frame by design and gain nobody from vision.
+  const dead = sc.kind === "penalty" || sc.kind === "free_kick";
+  const want = dead ? base : base + supportSeen(vision);
   // Where a man may stand: the rectangle if this situation already has one, the
   // pitch otherwise.
   const vp = sc.viewport;
@@ -1401,9 +1639,9 @@ export function pickScenarioKindFrom(position: string, rng: () => number, allowe
 
 // Pick a scenario kind weighted by position, then build it — the single entry
 // point the UI needs for spawning the next situation.
-export function buildWeightedScenario(rng: () => number, position: string, keeperStrength = 62, teamRelationship = 60): Scenario {
+export function buildWeightedScenario(rng: () => number, position: string, keeperStrength = 62, teamRelationship = 60, vision = 55): Scenario {
   const kind = pickScenarioKind(position, rng);
-  return buildScenario(kind, rng, keeperStrength, teamRelationship);
+  return buildScenario(kind, rng, keeperStrength, teamRelationship, vision);
 }
 
 // After a successful build-up pass, the ball returns in an attacking situation.
@@ -1411,7 +1649,7 @@ const ATTACKING_KINDS: ScenarioKind[] = [
   "one_on_one", "tight_angle", "long_range", "volley", "header",
   "cutback", "byline_cross", "through_ball",
 ];
-export function buildAttackingScenario(rng: () => number, keeperStrength = 62, teamRelationship = 60): Scenario {
+export function buildAttackingScenario(rng: () => number, keeperStrength = 62, teamRelationship = 60, vision = 55): Scenario {
   const kind = ATTACKING_KINDS[Math.floor(rng() * ATTACKING_KINDS.length)];
   return buildScenario(kind, rng, keeperStrength, teamRelationship);
 }
@@ -2063,17 +2301,22 @@ export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
   // pass went cleanly THROUGH the man you aimed at, every time, and then rolled
   // away with nobody allowed to touch it. It was the most-reported bug in the
   // game and it was this line missing.
-  // Near enough that hitting him is plainly what you were doing. Measured in
-  // metres rather than in seconds of flight, which is what it was: at 25 m/s a
-  // second and a half is the length of the pitch, so a team-mate loitering in
-  // front of goal turned every long shot into a pass to him.
-  const PASS_READ_RANGE = 14;
+  // What separates a shot from a pass is not how far away he is, it is whether
+  // you aimed AT him. He has to be on the line of the ball, and reached before
+  // the goal is — a forward on the shoulder of the last man is eighteen metres
+  // away and finding him is still a pass.
+  //
+  // This was bounded to fourteen metres for a while, which was the wrong lever:
+  // it fixed a team-mate loitering in front of goal absorbing long shots, and it
+  // did it by making a long ball to a forward unplayable. The tolerance below is
+  // the real one — aim at the corner and the ball's line passes clear of him.
+  const toGoal = ball.pos.y / -ball.vel.y * speed;
   for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
     const dx = r.pos.x - ball.pos.x, dy = r.pos.y - ball.pos.y;
     const t = (dx * ball.vel.x + dy * ball.vel.y) / (speed * speed);
-    if (t <= 0 || t * speed > PASS_READ_RANGE) continue;   // behind you, or too far to be the target
+    if (t <= 0 || t * speed > toGoal) continue;   // behind you, or past the goal
     const offX = dx - ball.vel.x * t, offY = dy - ball.vel.y * t;
-    if (Math.hypot(offX, offY) < PASS_CONTROL_R * 1.4) return false;
+    if (Math.hypot(offX, offY) < PASS_CONTROL_R * 1.2) return false;
   }
 
   // Where it would cross the line if nothing touched it. A cone around the goal

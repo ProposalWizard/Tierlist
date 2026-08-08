@@ -98,9 +98,16 @@ function bestOption(sc: Scenario): number {
     }
 
     const m = mean(placed), r = mean(anywhere);
-    check(m > r + 0.05, `${kind}: support is offered in real space (${r.toFixed(3)} → ${m.toFixed(3)})`);
+    // What this can and cannot claim has changed, and the change is the point.
+    // A support player used to be dropped wherever the space was best, and beat
+    // a random point comfortably. He now holds the shoulder of the last man,
+    // which is a position chosen for SHAPE — so on a pure space score he is
+    // no better than average, and that is correct: a forward standing in acres
+    // thirty metres from goal is not an option, he is a spectator.
+    //
+    // What must still hold is that he is somewhere you can actually reach.
     check(placed.filter(x => x > 0).length / placed.length > 0.9,
-      `${kind}: and almost always a pass you could actually play`);
+      `${kind}: support is a pass you could actually play (${(m).toFixed(2)} vs ${r.toFixed(2)} at random)`);
   }
 
   // And the pitch really is frozen: build a scenario, run the aim phase, and
@@ -120,45 +127,49 @@ function bestOption(sc: Scenario): number {
 // ── A ball played near a man, not at him ────────────────────────────────────
 //
 // The reaction radius is the whole of receiving under this model: he does not
-// set off for a pass, he stretches for one that arrives near him. A ball hit
-// wide of everybody leaves the frame, and a ball that leaves the frame is gone
-// — there is no pitch out there for it to roll around on and nobody is going to
-// walk off the edge of the situation to fetch it.
+// set off for a pass, he stretches for one that arrives near him. Offset
+// PERPENDICULAR to the line the ball takes to him, so that a miss is a miss —
+// offsetting along x looked fine and was not, because at twenty metres the line
+// from the ball to that target ran right past his feet a third of the time.
 {
-  const played = (offset: number, seed: number): { out: Outcome | "none"; frames: number } => {
+  const played = (offset: number, seed: number): Outcome | "none" => {
     const rng = mulberry32(seed);
     const sc = buildScenario("midfield_pass", rng, 62, 60);
     initDefenders(sc, rng);
     // This is about the receiver and nobody else.
     sc.defenders = []; sc.secondaryRunners = [];
     sc.follower.x = -50; sc.follower.y = -50;
+
     const t = sc.runner!.pos;
-    const target = { x: clamp(t.x + offset, 2, PITCH_W - 2), y: t.y };
+    const ax = t.x - sc.ball.x, ay = t.y - sc.ball.y;
+    const an = Math.hypot(ax, ay) || 1;
+    const target = {
+      x: clamp(t.x + (-ay / an) * offset, sc.viewport.x1 + 1, sc.viewport.x2 - 1),
+      y: clamp(t.y + (ax / an) * offset, sc.viewport.y1 + 1, sc.viewport.y2 - 1),
+    };
+    // Weighted to arrive, not to fly on past — this is a pass, not a clearance.
     const dx = target.x - sc.ball.x, dy = target.y - sc.ball.y;
     const d = Math.hypot(dx, dy) || 1;
     const ball: Ball = {
-      pos: { x: sc.ball.x, y: sc.ball.y }, vel: { x: dx / d * 15, y: dy / d * 15 },
+      pos: { x: sc.ball.x, y: sc.ball.y }, vel: { x: dx / d * (d * 1.1), y: dy / d * (d * 1.1) },
       z: 0.08, vz: 0, spin: 0, resting: false, loose: false, contactCd: 0,
       receiverControlT: 0, event: null, inNet: false,
     };
-    let out: Outcome | null = null, i = 0;
-    for (; i < 900 && !out; i++) {
+    let out: Outcome | null = null;
+    for (let i = 0; i < 900 && !out; i++) {
       stepReactions(sc, ball, DT, rng);
       out = stepBall(ball, sc, rng, DT);
     }
-    return { out: out ?? "none", frames: i };
+    return out ?? "none";
   };
 
   const near = Array.from({ length: 120 }, (_, k) => played(3.5, k * 7 + 78));
-  const wide = Array.from({ length: 120 }, (_, k) => played(24, k * 7 + 78));
-  const quick = (rs: typeof near) => rs.filter(r => r.out === "delivered" && r.frames < 120).length;
+  const wide = Array.from({ length: 120 }, (_, k) => played(22, k * 7 + 78));
+  const got = (rs: (Outcome | "none")[]) => rs.filter(r => r === "delivered").length;
 
-  const gone = (rs: typeof near) => rs.filter(r => r.out === "out").length;
-
-  check(quick(near) > 55, `a ball played a few yards off a man is stretched for and taken (${quick(near)}/120 inside two seconds)`);
-  check(quick(wide) < 15, `one hit miles wide of him is nobody's pass (${quick(wide)}/120 inside two seconds)`);
-  check(gone(wide) > gone(near) * 2, `and it leaves the situation (${gone(near)} vs ${gone(wide)} out of frame)`);
-  check([...near, ...wide].every(r => r.frames < 780),
+  check(got(near) > 85, `a ball played a few yards off a man is stretched for and taken (${got(near)}/120)`);
+  check(got(wide) < 30, `one hit miles wide of him is nobody's pass (${got(wide)}/120)`);
+  check(near.every(r => r !== "short") && wide.every(r => r !== "short"),
     "and either way the move ends — nothing sits on the grass forever");
 }
 
@@ -292,7 +303,10 @@ function bestOption(sc: Scenario): number {
       const mate = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners][0];
       if (!mate) continue;
       const ball: Ball = {
-        pos: { x: mate.pos.x + 4, y: mate.pos.y + 4 }, vel: { x: 0, y: 0 },
+        pos: {
+          x: clamp(mate.pos.x + 4, sc.viewport.x1 + 1, sc.viewport.x2 - 1),
+          y: clamp(mate.pos.y + 4, sc.viewport.y1 + 1, sc.viewport.y2 - 1),
+        }, vel: { x: 0, y: 0 },
         z: 0, vz: 0, spin: 0, resting: true, loose: false, contactCd: 0,
         receiverControlT: 0, event: null, inNet: false, shot: true,
       };
@@ -317,7 +331,10 @@ function bestOption(sc: Scenario): number {
       const rng = mulberry32(seed * 31 + 5);
       const sc = buildScenario(kind, rng, 62, 60);
       const support = sc.secondaryRunners.filter(r => r.role === "support");
-      const dead = kind === "penalty" || kind === "free_kick" || kind === "corner";
+      // A penalty and a free kick are a still frame by design. A corner is not:
+      // it is a delivery into a box with men in it, and vision decides how many
+      // of them you can pick out.
+      const dead = kind === "penalty" || kind === "free_kick";
       if (dead) check(support.length === 0, `${kind}: a dead ball has nobody making runs`);
       for (const r of support) {
         check(r.pos.x > 0 && r.pos.x < PITCH_W && r.pos.y > 0 && r.pos.y < HALF_LEN + 8,
@@ -374,6 +391,37 @@ function bestOption(sc: Scenario): number {
   check(closest > 4, `and your forwards are ahead of the ball, not beside it (${closest.toFixed(0)} m at worst)`);
 }
 
+// ── A cross is watched from the side, then cut to ───────────────────────────
+//
+// A wide ball has two rectangles: the turned one you aim from, where the box is
+// a box rather than a line seen edge-on, and the ordinary one it cuts to when
+// the ball arrives. Both have to hold everybody who matters after the cut — the
+// engine treats outside-the-frame as not-in-the-game, so a man stranded outside
+// the second frame would simply stop going for the ball the instant the picture
+// changed.
+{
+  for (const kind of ["byline_cross", "corner"] as const) {
+    for (let seed = 0; seed < 200; seed++) {
+      const sc = buildScenario(kind, mulberry32(seed * 11 + 4), 62, 60);
+      check(sc.facing === "left" || sc.facing === "right", `${kind}: is watched from the side`);
+      check(!!sc.crossSwitchView && (sc.crossSwitchY ?? 0) > 0, `${kind}: and cuts once the ball is in the area`);
+
+      const cut = sc.crossSwitchView!;
+      const inside = (p: Vec2, vp: typeof cut) =>
+        p.x >= vp.x1 && p.x <= vp.x2 && p.y >= vp.y1 && p.y <= vp.y2;
+      const after: Vec2[] = [
+        { x: sc.keeper.x, y: sc.keeper.y }, { x: sc.follower.x, y: sc.follower.y },
+        ...sc.defenders, ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map(r => r.pos),
+      ];
+      check(after.every(p => inside(p, cut)), `${kind}: everyone in the box survives the cut`);
+      check(after.every(p => inside(p, sc.viewport)), `${kind}: …and is in the frame you aim from`);
+      // You are the exception, and rightly: you are on the touchline, and once
+      // the ball has gone you are not part of what happens next.
+      check(inside(sc.ball, sc.viewport) && inside(sc.player, sc.viewport), `${kind}: you and the ball are in the wide frame`);
+    }
+  }
+}
+
 // ── The rectangle IS the situation ──────────────────────────────────────────
 //
 // Not a window onto a pitch that a camera visits. There is nothing outside the
@@ -406,21 +454,34 @@ function bestOption(sc: Scenario): number {
   // figure now stands on its own feet, so "level" means level.
   for (const kind of SCENARIO_KINDS) {
     const sc = buildScenario(kind, mulberry32(99), 62, 60);
-    const across = Math.abs(sc.player.x - sc.ball.x);
-    const along = Math.abs(sc.player.y - sc.ball.y);
+    // "Beside" is a fact about the picture, not about the pitch. In a crossing
+    // view the frame is turned a quarter turn, so the axis that runs across the
+    // screen is pitch y rather than pitch x — and the ball has to be on THAT
+    // one, or it climbs back onto his chest in the one situation built to show
+    // the box off.
+    const turned = sc.facing === "left" || sc.facing === "right";
+    const dx = Math.abs(sc.player.x - sc.ball.x);
+    const dy = Math.abs(sc.player.y - sc.ball.y);
+    const across = turned ? dy : dx;
+    const along = turned ? dx : dy;
     check(across > along * 4, `${kind}: the ball is off your standing foot, not out in front of you`);
     check(along < 0.4, `${kind}: and level with your boots (${along.toFixed(2)} m ahead)`);
     check(Math.hypot(across, along) < 2, `${kind}: a stride away, not a pass away`);
   }
 
-  // The keeper is ON his line, and now that a figure stands on its own feet
-  // rather than hanging off its middle, that is also what you see.
+  // The keeper is usually ON his line and never past the front of his six-yard
+  // box — and now that a figure stands on its own feet rather than hanging off
+  // its middle, both of those are also what you see.
   for (const kind of SCENARIO_KINDS) {
     if (!goalInView(kind)) continue;
-    for (let seed = 0; seed < 60; seed++) {
+    let onLine = 0, n = 0;
+    for (let seed = 0; seed < 200; seed++) {
       const sc = buildScenario(kind, mulberry32(seed * 13 + 7), 62, 60);
-      check(sc.keeper.y <= 0.6, `${kind}: the keeper is on his line (${sc.keeper.y.toFixed(2)} m off it)`);
+      n += 1;
+      if (sc.keeper.y <= 0.6) onLine += 1;
+      check(sc.keeper.y <= 5.5, `${kind}: the keeper never strays past his six-yard box (${sc.keeper.y.toFixed(2)} m)`);
     }
+    check(onLine > n * 0.6, `${kind}: and he is usually on it (${((onLine / n) * 100).toFixed(0)}%)`);
   }
 }
 

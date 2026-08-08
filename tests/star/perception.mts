@@ -29,9 +29,12 @@ const DT = 1 / 60;
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
 /** A scenario a couple of seconds into the aim phase, where the options exist. */
-function settled(kind: Parameters<typeof buildScenario>[0], seed: number): Scenario {
+function settled(kind: Parameters<typeof buildScenario>[0], seed: number, vision = 90): Scenario {
   const rng = mulberry32(seed);
-  const sc = buildScenario(kind, rng, 62, 60);
+  // Built at the vision being tested, because vision now decides how many
+  // team-mates are THERE rather than how many get a ring drawn over them. A
+  // shooting chance at 55 has one man beside you; at 90 it has three.
+  const sc = buildScenario(kind, rng, 62, 60, vision);
   initDefenders(sc, rng);
   for (let t = 0; t < 1.5; t += DT) {
     stepDefenders(sc, DT, sc.player, false);
