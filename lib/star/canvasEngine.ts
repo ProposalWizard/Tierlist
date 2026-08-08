@@ -912,12 +912,25 @@ function buildTightAngle(rng: () => number, keeperStrength: number, teamRelation
 function buildLongRange(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const bx = CX + (rng() - 0.5) * 20;
   const by = 24 + rng() * 10;
+  // ── A block, in front of their own goal ──
+  //
+  // They used to be placed relative to YOU — three and six metres up the pitch
+  // from wherever you were standing — which put a defence thirty metres from
+  // its own goal for no reason a defender would recognise. Worse, the offside
+  // line went with them: your team-mates are not allowed past the second-last
+  // opponent, so they settled level with a line drawn round your feet, and the
+  // whole situation collapsed into a knot of six players with twenty-five metres
+  // of open grass between it and the goal.
+  //
+  // The line belongs to the goal it is defending. It drops as you come deeper,
+  // the way a real one does, but it never comes out to meet you.
+  const line = clamp(by * 0.42, 8, 17);
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.3 },
     defenders: [
-      { x: clamp(bx + (rng() - 0.5) * 5, 10, PITCH_W - 10), y: by - 3 - rng() * 2 },
-      { x: clamp(bx + (rng() - 0.5) * 12, 10, PITCH_W - 10), y: by - 6 - rng() * 3 },
+      { x: clamp(CX - 3.5 - rng() * 7, 9, PITCH_W - 9), y: line + rng() * 1.8 },
+      { x: clamp(CX + 3.5 + rng() * 7, 9, PITCH_W - 9), y: line + 1.2 + rng() * 2.4 },
     ],
     keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4, rng),
     keeperStrength, follower: makeFollower(rng, by),
@@ -1267,9 +1280,19 @@ function addSupport(sc: Scenario, rng: () => number) {
     // A plausible starting point — level with or just behind the ball, off to
     // one side — which the space evaluation then improves on immediately.
     const side = i === 0 ? (rng() < 0.5 ? -1 : 1) : (rng() < 0.5 ? -1 : 1);
+    // ── Where a forward stands ──
+    //
+    // On the shoulder of the last man when the defence is set in front of you,
+    // not loitering beside you. Starting the space search from your own position
+    // meant that with a block eighteen metres ahead, the best spot it could find
+    // was six metres from your feet — so nobody was ever ahead of the ball and
+    // there was nothing to aim at but the keeper.
+    const onShoulder = onsideY > 0 && sc.player.y - onsideY > 6;
     const start = {
       x: clamp(sc.player.x + side * (7 + rng() * 7), lo.x, hi.x),
-      y: clamp(sc.player.y + (rng() - 0.35) * 10, lo.y, hi.y),
+      y: onShoulder
+        ? clamp(onsideY + 0.5 + rng() * 4.5, lo.y, hi.y)
+        : clamp(sc.player.y + (rng() - 0.35) * 10, lo.y, hi.y),
     };
     // Wide situations put the carrier at the edge of the frame, where the clamp
     // above would fold the start position back on top of him. Try the other
@@ -1298,6 +1321,11 @@ function addSupport(sc: Scenario, rng: () => number) {
     const spot = bestSupportPoint(sc, sc.ball, start);
     spot.x = clamp(spot.x, lo.x, hi.x);
     spot.y = clamp(spot.y, lo.y, hi.y);
+    // The space search will happily walk him back down the pitch to find a
+    // cleaner lane, which is good reasoning and the wrong shape: a forward
+    // holds the line and moves ACROSS to find the angle. Kept within a few
+    // metres of the shoulder; the search still picks which side of it.
+    if (onShoulder) spot.y = Math.min(spot.y, lo.y + 5);
     // Nobody starts on top of you. The fallback spot is in front of goal, which
     // on a cross is where he was going anyway — but in a situation whose offside
     // line is a long way out, in front of goal is not somewhere he may stand, so
@@ -2544,6 +2572,9 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   // was aimed at. This is what stops a pass visually going straight through a
   // team-mate: the man and the reception test are now the same object.
   if (!scenario.receiverDone && ball.z < 2.6) {
+    // Was this played TO him, or has he run it down? It changes what he does
+    // with it when he gets there.
+    const scrambled = ball.loose || ball.resting || speed < DEAD_BALL_SPEED;
     const candidates: Runner[] = scenario.runner
       ? [scenario.runner, ...scenario.secondaryRunners]
       : [...scenario.secondaryRunners];
@@ -2596,8 +2627,20 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         if (scenario.receiver && (scenario.receiverShots ?? 0) < 2) {
           ball.pos = { x: tgt.x, y: tgt.y };
           ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
-          ball.receiverControlT = RECEIVER_CONTROL_T;
-          ball.event = "received";
+          // ── A ball you chase down is hit first time ──
+          //
+          // The touch to control it belongs to a pass played INTO him, in
+          // stride, and it is worth the beat. A ball that has come loose and
+          // been run down is not that: he arrives at it with defenders closing,
+          // and standing over it for half a second while they get there is not a
+          // decision anybody would take. It looked like a bug, because it was
+          // one — the pause was written for the other case and applied to both.
+          if (scrambled) {
+            launchReceiverShot(ball, scenario, rng);
+          } else {
+            ball.receiverControlT = RECEIVER_CONTROL_T;
+            ball.event = "received";
+          }
           return null;
         }
         return "delivered";

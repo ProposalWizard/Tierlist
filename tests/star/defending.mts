@@ -115,6 +115,11 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   const kx = sc.keeper.x;
   let moved = false, out: Outcome | null = null;
   for (let i = 0; i < 600 && !out; i++) {
+    // …up to the moment he touches it. What he does AFTER a save is a
+    // consequence of the save: he dives to the ball he stopped, and he
+    // scrambles after one he has spilled. Both are things that have already
+    // happened, which is the whole rule.
+    if (sc.keeper.saves > 0) break;
     stepKeeper(sc, DT);
     stepReactions(sc, ball, DT, rng);
     if (sc.keeper.x !== kx) moved = true;
