@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
-  launch, stepBall, stepBallInNet,
+  launch, stepBall, stepBallInNet, settleBall,
   stepKeeper, stepDefenders, stepReactions, initDefenders,
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower,
@@ -609,6 +609,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     ctx.fillRect(-unit * 2, -unit * 2, W + unit * 4, H + unit * 4);
 
     // --- Markings: every line at its real IFAB distance, drawn in pitch space ---
+    //
+    // Straight lines go through P and rotate with everything else. ARCS do not:
+    // ctx.arc takes screen-space angles, and those were written for the ordinary
+    // view — so in a turned frame the D detached itself from the front of the
+    // penalty area and floated out into the middle of the pitch, which is
+    // exactly what it looked like. A pitch-space angle turns with the frame.
+    const facing = facingRef.current;
+    const arcAngle = (pitchAngle: number) =>
+      pitchAngle + (facing === "right" ? Math.PI / 2 : facing === "left" ? -Math.PI / 2 : 0);
     const lw = Math.max(1, unit * 0.12); // ~12 cm painted line
     ctx.lineWidth = lw;
     ctx.strokeStyle = C.line;
@@ -630,14 +639,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // Only the portion beyond the 16.5 m line is painted.
       const half = Math.acos(clamp((BOX_DEPTH - PEN_SPOT_Y) / ARC_R, -1, 1));
       ctx.beginPath();
-      ctx.arc(spot.px, spot.py, unit * ARC_R, Math.PI / 2 - half, Math.PI / 2 + half);
+      ctx.arc(spot.px, spot.py, unit * ARC_R, arcAngle(Math.PI / 2 - half), arcAngle(Math.PI / 2 + half));
       ctx.stroke();
     }
     // Corner arcs (1 m quarter circles at each corner flag)
     {
       const c1 = P(0, 0), c2 = P(PITCH_W, 0);
-      ctx.beginPath(); ctx.arc(c1.px, c1.py, unit * CORNER_R, 0, Math.PI / 2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(c2.px, c2.py, unit * CORNER_R, Math.PI / 2, Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.arc(c1.px, c1.py, unit * CORNER_R, arcAngle(0), arcAngle(Math.PI / 2)); ctx.stroke();
+      ctx.beginPath(); ctx.arc(c2.px, c2.py, unit * CORNER_R, arcAngle(Math.PI / 2), arcAngle(Math.PI)); ctx.stroke();
     }
     // Halfway line + centre circle
     ctx.strokeStyle = C.lineFaint;
@@ -1393,6 +1402,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // resolved, so the goal is seen rather than announced.
       if (phaseRef.current === "result" && ballRef.current?.inNet) {
         stepBallInNet(ballRef.current, dt);
+      }
+      // …and a ball the keeper has pushed clear keeps going, so you watch it go
+      // rather than finding it already there.
+      if (phaseRef.current === "result" && ballRef.current?.settling) {
+        settleBall(ballRef.current, dt);
       }
 
       // Cosmetic FX advance (pausing the rAF pauses everything together)
