@@ -318,6 +318,38 @@ ordinary midfield passes offside.
 
 ---
 
+**THE GOAL.** Built off the reference and checked by rendering it beside the
+screenshots, not by reasoning about it — which caught two mistakes a description
+would not have. The first version drew the inside DARK, and it read as a hole cut
+in the pitch; what you are looking at is white netting catching the light, so it
+is lighter than the grass. The second had no crossbar — the back edge was the
+same weight as the mesh, so the frame never closed.
+
+What it is: a thick white crossbar standing ON the goal line, black posts down
+both sides running the full depth of the side netting, close-woven white mesh
+filling the rectangle behind, and a faint edge closing the back. The netting
+reaches 2.6 m rather than 2.0 — a real goal is about two metres deep at the base
+and the reference exaggerates it, for a reason that is obvious once both are on
+screen: at two it is a line with a smear behind it rather than a thing with an
+inside.
+
+It also used to be drawn with `fillRect` off two corners, which silently assumed
+the ordinary camera — in a crossing frame that rectangle would have come out
+inside out.
+
+**Not** widened. Measured against its own pitch markings the reference's goal is
+about 1.4× wider than the laws allow, but its camera is wider too, so on screen
+its goal takes the same fraction of the width as ours already does. Widening ours
+would either make the picture lie about where the posts are or quietly make
+scoring much easier.
+
+**WHERE IT WILL LAND.** A ball in the air gets a mark on the grass at the spot it
+will first bounce, and only the first: once it is down you can see where a
+rolling ball is going. This is the one thing drawn on the pitch that is not part
+of the pitch — every other aid has been taken out — and it earns its place
+because height is the single thing a flat overhead camera cannot show you, so
+judging a lofted ball is otherwise guesswork.
+
 **HOW MANY PLAYERS, AND WHOSE.** Counted off the reference: four to seven
 opponents in a chance, and ONE team-mate beside you, sometimes two. Ours had it
 exactly the wrong way round — two or three team-mates and one or two defenders —
