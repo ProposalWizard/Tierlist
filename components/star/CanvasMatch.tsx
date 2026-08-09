@@ -658,31 +658,64 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.stroke();
     }
 
-    // --- Goal: the net sits BEHIND the goal line (negative y), so a ball that
-    // scores is visibly in the netting. Previously this was pinned to the top of
-    // the canvas while the physics line stayed at pitch y=0 — which is why a goal
-    // could register with the ball still apparently short of the net. ---
+    // --- The goal ---
+    //
+    // Built off the reference rather than off the laws: a dark hollow you can
+    // put the ball INTO, close-woven white netting inside it, dark uprights down
+    // both sides that are plainly the two things a shot can hit, and a bright
+    // bar across the back. What it replaced was a pale rectangle with a coarse
+    // grid over it — correct to the centimetre and reading as a patch of paint
+    // rather than as a goal.
+    //
+    // Every part of it goes through P, so it turns with the frame. It also used
+    // to be drawn with fillRect off two corners, which silently assumed the
+    // ordinary view: in a crossing frame the rectangle would have come out
+    // inside out.
     {
-      const back = P(POST_L, -NET_DEPTH);
-      const front = P(POST_R, 0);
-      const nx = back.px, ny = back.py;
-      const nw = front.px - back.px, nh = front.py - back.py;
-      ctx.fillStyle = "rgba(255,255,255,0.12)";
-      ctx.fillRect(nx, ny, nw, nh);
-      // Net mesh, roughly 0.6 m squares
-      ctx.strokeStyle = "rgba(255,255,255,0.28)";
-      ctx.lineWidth = 1;
-      for (let x = POST_L; x <= POST_R + 0.01; x += 0.6) pLine(x, -NET_DEPTH, x, 0);
-      for (let y = -NET_DEPTH; y <= 0.01; y += 0.6) pLine(POST_L, y, POST_R, y);
-      // Posts + crossbar line
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = Math.max(2, unit * 0.24);
+      const a = P(POST_L, 0), b = P(POST_R, 0);
+      const c = P(POST_R, -NET_DEPTH), d = P(POST_L, -NET_DEPTH);
+
+      // The inside. LIGHTER than the grass, not darker: what you are looking at
+      // is white netting catching the light, and drawing it as a dark hollow
+      // read as a hole cut in the pitch. Checked against the reference by
+      // rendering both side by side.
+      ctx.beginPath();
+      ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py);
+      ctx.lineTo(c.px, c.py); ctx.lineTo(d.px, d.py);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(228,240,233,0.30)";
+      ctx.fill();
+
+      // The netting — fine and close-woven. Clipped to the goal so the mesh can
+      // be drawn at a size that reads as string rather than as fencing.
+      ctx.save();
+      ctx.clip();
+      ctx.strokeStyle = "rgba(255,255,255,0.78)";
+      ctx.lineWidth = Math.max(0.7, unit * 0.035);
+      const mesh = 0.34;
+      for (let x = POST_L; x <= POST_R + 0.01; x += mesh) pLine(x, -NET_DEPTH, x, 0);
+      for (let y = -NET_DEPTH; y <= 0.01; y += mesh) pLine(POST_L, y, POST_R, y);
+      ctx.restore();
+
+      // The uprights: the darkest thing on the pitch, running the full depth of
+      // the side netting, so the two objects a shot can hit are unmistakable.
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#101c15";
+      ctx.lineWidth = Math.max(2, unit * 0.20);
       pLine(POST_L, 0, POST_L, -NET_DEPTH);
       pLine(POST_R, 0, POST_R, -NET_DEPTH);
+      ctx.lineCap = "butt";
+
+      // The crossbar, along the back of the net and drawn over the posts so it
+      // closes the frame rather than being nibbled by them.
+      ctx.strokeStyle = "#f2f8f4";
+      ctx.lineWidth = Math.max(2, unit * 0.17);
       pLine(POST_L, -NET_DEPTH, POST_R, -NET_DEPTH);
-      // The goal line between the posts, drawn brightest — this is the line the
-      // ball must fully cross.
-      ctx.lineWidth = Math.max(2, unit * 0.2);
+
+      // The goal line between them, brightest of all — this is the line the ball
+      // must fully cross, and it must never be in any doubt where it is.
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = Math.max(2, unit * 0.22);
       pLine(POST_L, 0, POST_R, 0);
     }
 
