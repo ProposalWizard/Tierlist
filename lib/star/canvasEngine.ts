@@ -493,15 +493,26 @@ function makeFollower(rng: () => number, by: number): Follower {
 // same frame, and a tall frame buys that depth without having to zoom out to
 // find it.
 const VIEW_ASPECT = 5 / 8;      // width / height
-// How much the zoom may vary between one situation and the next. Held narrow:
-// the difference between 34 and 46 was visible chance to chance and read as the
-// camera being inconsistent rather than as the situation being tighter.
-const VIEW_MIN_H = 38;          // metres of pitch visible vertically, closest zoom
+/**
+ * How much the zoom may vary between one situation and the next: it does not.
+ *
+ * A tactics board does not zoom. Every situation is framed at the same height,
+ * so a player is the same size and a metre is the same distance in every chance
+ * you ever get — which is the whole point of an overhead camera, and is worth
+ * more than fitting each situation snugly. Anything the frame cannot hold gets
+ * pulled inside it by fitToView rather than the rectangle growing.
+ *
+ * It was a band (34-46, then 38-44) and even the narrow one was visible chance
+ * to chance, reading as the camera being inconsistent rather than as the
+ * situation being tighter.
+ */
+const VIEW_H = 42;
+const VIEW_MIN_H = VIEW_H;      // metres of pitch visible vertically
 // Furthest zoom. Held down hard, because the frame is the situation rather than
 // a window onto a pitch — anything the framing cannot hold gets pulled inside it
 // by fitToView instead of the rectangle growing to go and find it. At 62 a
 // long-range chance showed the halfway line and everything in it was tiny.
-const VIEW_MAX_H = 44;
+const VIEW_MAX_H = VIEW_H;
 
 /**
  * The rectangle a corner or a whipped cross happens in.
@@ -511,7 +522,7 @@ const VIEW_MAX_H = 44;
  * the same and you learn one picture instead of a new one each time.
  */
 const WIDE_DELIVERY_VIEW: Viewport = (() => {
-  const h = 36;
+  const h = VIEW_H;
   const w = h * VIEW_ASPECT;
   return { x1: CX - w / 2, x2: CX + w / 2, y1: -4.5, y2: -4.5 + h };
 })();
@@ -526,7 +537,7 @@ const WIDE_DELIVERY_X = (side: number) => CX + side * (WIDE_DELIVERY_VIEW.x2 - C
  * Because it is rotated, the viewport's Y span is what fills the screen's WIDTH,
  * so it is the Y span that has to hold the canvas aspect.
  */
-const CROSS_VIEW_X = 46;   // metres across the pitch, filling the screen's height
+const CROSS_VIEW_X = VIEW_H;  // metres across the pitch, filling the screen's height
 const CROSS_SWITCH_Y = 15; // …and where the ball has got close enough to cut
 
 function crossViewport(side: number): Viewport {
