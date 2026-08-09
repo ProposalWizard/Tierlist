@@ -4,7 +4,7 @@ import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall,
   stepKeeper, stepDefenders, stepReactions, initDefenders,
-  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
+  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView, firstBounceAt,
   OUTCOME_TEXT, clamp, dragForFullPower,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing,
@@ -697,26 +697,31 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       for (let y = -NET_DEPTH; y <= 0.01; y += mesh) pLine(POST_L, y, POST_R, y);
       ctx.restore();
 
-      // The uprights: the darkest thing on the pitch, running the full depth of
-      // the side netting, so the two objects a shot can hit are unmistakable.
-      ctx.lineCap = "round";
+      // The posts, running the full depth of the side netting: the darkest thing
+      // on the pitch, so the two objects a shot can hit are unmistakable. Square
+      // ends, not round — round caps put a black blob on the grass at each foot.
+      ctx.lineCap = "butt";
       ctx.strokeStyle = "#101c15";
-      ctx.lineWidth = Math.max(2, unit * 0.20);
+      ctx.lineWidth = Math.max(2.5, unit * 0.26);
       pLine(POST_L, 0, POST_L, -NET_DEPTH);
       pLine(POST_R, 0, POST_R, -NET_DEPTH);
-      ctx.lineCap = "butt";
 
-      // The crossbar, along the back of the net and drawn over the posts so it
-      // closes the frame rather than being nibbled by them.
-      ctx.strokeStyle = "#f2f8f4";
-      ctx.lineWidth = Math.max(2, unit * 0.17);
+      // The back of the net, closing the rectangle.
+      ctx.strokeStyle = "rgba(242,248,244,0.75)";
+      ctx.lineWidth = Math.max(1.5, unit * 0.11);
       pLine(POST_L, -NET_DEPTH, POST_R, -NET_DEPTH);
 
-      // The goal line between them, brightest of all — this is the line the ball
-      // must fully cross, and it must never be in any doubt where it is.
+      // ── The crossbar, ON the line ──
+      //
+      // The crossbar and the posts stand on the goal line and the netting is the
+      // rectangle behind them, which is what gives the goal an inside. So the
+      // bar across the mouth is the heaviest white on the pitch: the goal is a
+      // frame you shoot through with a net behind it, not a rectangle with a
+      // line along the bottom.
       ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = Math.max(2, unit * 0.22);
+      ctx.lineWidth = Math.max(2.5, unit * 0.26);
       pLine(POST_L, 0, POST_R, 0);
+
     }
 
     // ── What you can SEE ──
@@ -1212,6 +1217,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.fill();
       ctx.restore();
     };
+
+    // ── Where it will land ──
+    //
+    // A ball in the air gets a mark on the grass at the spot it will first
+    // bounce, and only the first: once it is down you can see perfectly well
+    // where a rolling ball is going. It is the one thing drawn on the pitch that
+    // is not part of the pitch, and it earns that because judging the flight of
+    // a lofted ball from directly above is otherwise guesswork — height is the
+    // one thing this camera cannot show you.
+    if (ballRef.current && phaseRef.current === "flight" && !ballRef.current.inNet) {
+      const land = firstBounceAt(ballRef.current);
+      if (land) {
+        const m = P(land.x, land.y);
+        const r = Math.max(3.5, unit * 0.5);
+        ctx.strokeStyle = "rgba(250,214,74,0.95)";
+        ctx.lineWidth = Math.max(2.5, unit * 0.19);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(m.px - r, m.py - r); ctx.lineTo(m.px + r, m.py + r);
+        ctx.moveTo(m.px + r, m.py - r); ctx.lineTo(m.px - r, m.py + r);
+        ctx.stroke();
+        ctx.lineCap = "butt";
+      }
+    }
 
     const ball = ballRef.current;
     if (ball) drawBall(ball.pos.x, ball.pos.y, ball.z);

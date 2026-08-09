@@ -2312,6 +2312,36 @@ const LAYOFF_MAX_SPEED = 10;        // m/s — below this it is a pass however i
 const SHOT_MOUTH_PAD = 3;           // metres either side of the posts still counted as
                                     // a shot, so a mishit is still your mishit
 
+/**
+ * Where a ball in the air will first touch the grass.
+ *
+ * The first bounce and no further: once it has landed it is a rolling ball and
+ * you can see perfectly well where that is going. Returns null for a ball that
+ * is already down, or one that will leave the situation before it lands.
+ */
+export function firstBounceAt(ball: Ball, horizon = 4): Vec2 | null {
+  if (ball.z <= 0.25 && ball.vz <= 0) return null;
+  let x = ball.pos.x, y = ball.pos.y, z = ball.z;
+  let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
+  const dt = PREDICT_STEP;
+  for (let t = 0; t < horizon; t += dt) {
+    if (z > 0.02) {
+      const k = Math.max(0, 1 - AIR_DRAG * dt);
+      vx *= k; vy *= k;
+    }
+    vz -= G * dt;
+    const nz = z + vz * dt;
+    x += vx * dt; y += vy * dt;
+    if (nz <= 0) {
+      // Land it on the exact crossing rather than a step past it.
+      const f = z / (z - nz || 1);
+      return { x: x - vx * dt * (1 - f), y: y - vy * dt * (1 - f) };
+    }
+    z = nz;
+  }
+  return null;
+}
+
 export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
   // A rebound belongs to the poacher, never to a support player.
   if (ball.loose) return true;
