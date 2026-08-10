@@ -191,6 +191,59 @@ function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, p
   check((after["goal"] ?? 0) + (after["rebound"] ?? 0) > 0, "and the follow-up sometimes goes in");
 }
 
+// ── Where it will land ──────────────────────────────────────────────────────
+//
+// A ball in the air is marked on the grass at the spot it will first bounce.
+// The mark is worked out ONCE, at the kick, and pinned — recomputing it each
+// frame from the ball's current state was the obvious thing and it was wrong:
+// a curling ball's projection sweeps round as the curl bites, so the mark
+// crawled across the pitch and chased the ball in.
+//
+// Pinning it only works if it is right. It runs the same flight the ball
+// actually flies — curl, drag, wind and the same integration step — so this
+// asserts the thing that matters: the ball lands ON the mark.
+{
+  const errs: number[] = [];
+  let marked = 0, curled = 0, n = 0;
+  for (let seed = 0; seed < 1500; seed++) {
+    const rng = mulberry32(seed * 13 + 7);
+    const sc = buildScenario(seed % 2 ? "long_range" : "byline_cross", rng, 62, 60);
+    initDefenders(sc, rng);
+    // Nothing to intervene: this is about the flight and nothing else.
+    sc.defenders = []; sc.runner = null; sc.secondaryRunners = [];
+    sc.follower = { ...sc.follower, x: -90, y: -90 };
+    sc.keeper = { ...sc.keeper, x: -90, y: -90 };
+    const cx = (rng() - 0.5) * 1.6;                    // deliberately curled
+    const ball = launch(sc, { x: (rng() - 0.5) * 0.6, y: -1 }, 0.8, { cx, cy: 0.55 }, { power: 70, technique: 80 }, rng);
+    n += 1;
+    if (Math.abs(ball.spin) > 0.05) curled += 1;
+    if (!ball.landAt) continue;
+    marked += 1;
+    const pinned = { ...ball.landAt };
+
+    let prevZ = ball.z, done = false;
+    for (let i = 0; i < 900 && !done; i++) {
+      // The match loop substeps three times a frame, and the prediction is
+      // matched to that step, so this has to be too.
+      for (let k = 0; k < 3; k++) {
+        const o = stepBall(ball, sc, rng, DT / 3);
+        if (ball.z <= 0.001 && prevZ > 0.001) {
+          errs.push(Math.hypot(ball.pos.x - pinned.x, ball.pos.y - pinned.y));
+          done = true; break;
+        }
+        prevZ = ball.z;
+        if (o) { done = true; break; }
+      }
+    }
+  }
+  errs.sort((a, b) => a - b);
+  const worst = errs[errs.length - 1] ?? 99;
+  check(marked === n, `every lofted ball is marked (${marked}/${n})`);
+  check(curled > n * 0.8, `and these are genuinely curling (${curled}/${n})`);
+  check(errs.length > 400, `enough of them land inside the situation to measure (${errs.length})`);
+  check(worst < 0.15, `the ball lands on the mark (worst miss ${worst.toFixed(2)} m over ${errs.length} flights)`);
+}
+
 // ── The first touch ─────────────────────────────────────────────────────────
 //
 // Not a dice roll: the defence simply gets the time your touch cost them, using

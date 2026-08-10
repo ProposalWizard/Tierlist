@@ -59,6 +59,11 @@ export interface Ball {
   /** How many times it has come back off the frame. Two is pinball; stop at one. */
   postHits?: number;
   /**
+   * Where this ball will first touch the grass, worked out once at the moment it
+   * was struck. Undefined for a ball that is already down.
+   */
+  landAt?: Vec2;
+  /**
    * The move is over but the ball is still travelling — a save pushed clear.
    * The result phase keeps stepping it so you see where it went instead of
    * finding it already there.
@@ -1767,6 +1772,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   ball.z = 0.1;
   ball.loose = false;
   ball.contactCd = 0.15;
+  markLanding(ball, scenario);
   ball.event = "receiverShot";
   // It is a shot at goal, so it gets the same protection yours does: a support
   // player steps out of the way of it rather than controlling it. Without this,
@@ -2019,6 +2025,7 @@ export function launch(
   // Decided here, once, from what you actually did with it — see isDriveAtGoal.
   ball.shot = isDriveAtGoal(ball, scenario);
   ball.owner = ball.loose ? "none" : "you";
+  markLanding(ball, scenario);
   return ball;
 }
 
@@ -2326,19 +2333,39 @@ const SHOT_MOUTH_PAD = 3;           // metres either side of the posts still cou
 /**
  * Where a ball in the air will first touch the grass.
  *
- * The first bounce and no further: once it has landed it is a rolling ball and
- * you can see perfectly well where that is going. Returns null for a ball that
- * is already down, or one that will leave the situation before it lands.
+ * Runs the SAME flight the ball is about to fly — curl, drag and the wind
+ * included — so the answer is where it lands rather than an estimate of where
+ * it lands. That matters because of how the mark is used: it is worked out once,
+ * at the kick, and pinned there.
+ *
+ * Recomputing it every frame from the ball's current state was the obvious
+ * thing and it was wrong. A curling ball's straight-line projection sweeps round
+ * as the curl bites, so the mark crawled across the grass and chased the ball
+ * in. You are told where it is going to land, once, and then it lands there.
+ *
+ * The first bounce and no further: after that it is a rolling ball and you can
+ * see perfectly well where that is going.
  */
-export function firstBounceAt(ball: Ball, horizon = 4): Vec2 | null {
+export function firstBounceAt(ball: Ball, conditions?: Scenario["conditions"], horizon = 5): Vec2 | null {
   if (ball.z <= 0.25 && ball.vz <= 0) return null;
   let x = ball.pos.x, y = ball.pos.y, z = ball.z;
   let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
-  const dt = PREDICT_STEP;
+  // The SAME step the match loop integrates at. At the coarse step used for
+  // reading passing lanes this came out a metre and a bit long, every time —
+  // a systematic offset rather than noise, because a bigger step under gravity
+  // consistently overshoots. It runs once per kick, so it can afford the steps.
+  const dt = 1 / 180;
   for (let t = 0; t < horizon; t += dt) {
+    const sp = Math.hypot(vx, vy);
+    if (sp > 0.01 && Math.abs(ball.spin) > 0.0001) {
+      const ax = ball.spin * CURL_K * vy;
+      const ay = ball.spin * CURL_K * -vx;
+      vx += ax * dt; vy += ay * dt;
+    }
     if (z > 0.02) {
-      const k = Math.max(0, 1 - AIR_DRAG * dt);
+      const k = Math.max(0, 1 - AIR_DRAG * (conditions?.drag ?? 1) * dt);
       vx *= k; vy *= k;
+      if (conditions?.wind) vx += conditions.wind * dt;
     }
     vz -= G * dt;
     const nz = z + vz * dt;
@@ -2351,6 +2378,11 @@ export function firstBounceAt(ball: Ball, horizon = 4): Vec2 | null {
     z = nz;
   }
   return null;
+}
+
+/** Work out where this ball will land and pin it. Called whenever one is struck. */
+export function markLanding(ball: Ball, scenario: Scenario) {
+  ball.landAt = firstBounceAt(ball, scenario.conditions) ?? undefined;
 }
 
 export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
@@ -2493,6 +2525,7 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
       ball.spin *= 0.3;
       ball.loose = false;      // a fresh strike — it still counts as a rebound if it goes in
       ball.contactCd = 0.18;
+      markLanding(ball, scenario);
       f.shot = true;
       // Deliberately does NOT tell the keeper where this is going. He keeps
       // patrolling; whether he is in the way is settled when the ball arrives.
@@ -2668,6 +2701,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   const newSpeed = speed * (dangerous ? 0.22 + rng() * 0.12 : 0.4 + rng() * 0.2);
   ball.vel = { x: dir.x * newSpeed, y: dir.y * newSpeed };
   ball.vz = 0.6 + rng() * 1.6; // the ball pops up off the parry
+  markLanding(ball, scenario);
   ball.spin *= 0.4;
   ball.loose = true;
   ball.contactCd = 0.28;
@@ -2693,7 +2727,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
  */
 const POST_KEEP = 0.78;        // how much of the pace survives the impact
 
-function reboundOffFrame(ball: Ball, xCross: number, rng: () => number): boolean {
+function reboundOffFrame(ball: Ball, xCross: number, rng: () => number, scenario?: Scenario): boolean {
   if ((ball.postHits ?? 0) >= 1) return false;
   ball.postHits = (ball.postHits ?? 0) + 1;
 
@@ -2712,6 +2746,7 @@ function reboundOffFrame(ball: Ball, xCross: number, rng: () => number): boolean
   ball.owner = "none";
   ball.contactCd = 0.25;
   ball.event = "post";
+  if (scenario) markLanding(ball, scenario);
   return true;
 }
 
@@ -3025,7 +3060,7 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
       if (zCross > crossbar + BALL_R) return "over";
       if (zCross > crossbar - BALL_R) {
         // Off the underside of the bar. It comes back down and stays live.
-        const again = reboundOffFrame(ball, xCross, rng);
+        const again = reboundOffFrame(ball, xCross, rng, scenario);
         if (again) { ball.z = Math.max(0.2, crossbar - 0.35); ball.vz = -Math.abs(ball.vz) * 0.5 - 1.5; return null; }
         return "post";
       }
@@ -3075,7 +3110,7 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
       return ball.loose ? "rebound" : "goal";
     }
     if (hitsPost(xCross)) {
-      const again = reboundOffFrame(ball, xCross, rng);
+      const again = reboundOffFrame(ball, xCross, rng, scenario);
       if (again) return null;
       return "post";
     }
