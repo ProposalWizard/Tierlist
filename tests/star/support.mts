@@ -480,8 +480,12 @@ function bestOption(sc: Scenario): number {
       if (goalInView(kind)) everyone.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: sc.follower.x, y: sc.follower.y });
       check(everyone.every(inside), `${kind}: everyone in the situation is inside the frame it is played in`);
 
-      // …and the frame is a frame, not the whole half.
-      check(vp.y2 - vp.y1 <= 46.5, `${kind}: framed on the situation (${(vp.y2 - vp.y1).toFixed(0)} m down the screen)`);
+      // …and it is the SAME frame every time. A tactics board does not zoom:
+      // a player is the same size and a metre is the same distance in every
+      // chance you ever get. 42 m fills the screen's long side — down it in the
+      // ordinary view, across it in a turned one, which is the same zoom.
+      const long = Math.max(vp.y2 - vp.y1, vp.x2 - vp.x1);
+      check(Math.abs(long - 42) < 0.01, `${kind}: framed at the one zoom (${long.toFixed(1)} m)`);
     }
   }
 

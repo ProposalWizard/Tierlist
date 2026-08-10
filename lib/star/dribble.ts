@@ -241,7 +241,9 @@ export function stepDribble(state: DribbleState, dt: number): DribbleOutcome {
  * pitch — which is the same mistake in a politer form. The situation is not
  * somewhere on a pitch that a camera visits. The situation is this rectangle.
  */
-export const DRIBBLE_PAD = 6;       // metres of grass beyond each end of the run
+// Chosen so the run is framed at exactly the same height as every other
+// situation — a tactics board does not zoom, and a run is not a special case.
+export const DRIBBLE_PAD = 10;      // metres of grass beyond each end of the run
 
 export function dribbleViewport(state: DribbleState) {
   const y1 = state.targetY - DRIBBLE_PAD;
