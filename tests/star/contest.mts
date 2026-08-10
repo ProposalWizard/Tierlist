@@ -191,6 +191,83 @@ function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, p
   check((after["goal"] ?? 0) + (after["rebound"] ?? 0) > 0, "and the follow-up sometimes goes in");
 }
 
+// ── The ball never goes through anybody ─────────────────────────────────────
+//
+// "If the ball goes anywhere within my player, he should have the ball." Two
+// things were letting it through. A support player steps out of the way of a
+// ball that is going in — right, but he was stepping out of EXISTENCE, so a
+// shot that would have hit him in the chest carried on. And `shot` is sticky so
+// a team-mate cannot turn your goal into a completed pass, which is right while
+// it is still your shot and wrong the moment the keeper has palmed it away:
+// every one of your players stepped aside from the rebound and it rolled
+// visibly through them.
+{
+  let reached = 0, through = 0;
+  for (let seed = 0; seed < 2500; seed++) {
+    const rng = mulberry32(seed * 7 + 3);
+    const kind = (["long_range", "one_on_one", "volley"] as const)[seed % 3];
+    const sc = buildScenario(kind, rng, 62, 60);
+    initDefenders(sc, rng);
+    sc.defenders = [];                                  // nobody to clear it
+    // Straight at the keeper, so he has to push it out.
+    const ball = launch(sc, { x: sc.keeper.x - sc.ball.x, y: -sc.ball.y }, 0.9, { cx: 0, cy: -0.15 }, { power: 70, technique: 70 }, rng);
+    const mates = () => [
+      ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map(r => r.pos),
+      { x: sc.follower.x, y: sc.follower.y },
+    ];
+    let out: Outcome | null = null, pending = -1;
+    for (let i = 0; i < 1500 && !out; i++) {
+      if (ball.loose && pending < 0 && ball.contactCd <= 0) {
+        for (const m of mates()) {
+          if (Math.hypot(ball.pos.x - m.x, ball.pos.y - m.y) < 0.55) { pending = i; reached += 1; break; }
+        }
+      }
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+      if (pending >= 0) {
+        if (!ball.loose || sc.receiverDone || sc.receiverShot || out) pending = -1;
+        else if (i - pending > 6) { through += 1; pending = -1; }
+      }
+    }
+  }
+  check(through === 0, `a loose ball never passes through a team-mate (${through} of ${reached} that reached one)`);
+}
+
+// ── A scramble is a scramble, not a machine ─────────────────────────────────
+//
+// Reception was the one contact test that did not respect contactCd, and it is
+// the one place it mattered most: a team-mate who shoots is standing ON the
+// ball he has just hit, so on the very next frame he was inside his own control
+// radius and collected it again. Then shot. Then collected. A move either had
+// no team-mate shot at all or ran to the runaway cap — 306 of 1200, and never
+// one, two or three of them.
+{
+  const hist: Record<number, number> = {};
+  const N = 1200;
+  for (let seed = 0; seed < N; seed++) {
+    const rng = mulberry32(seed * 13 + 5);
+    const kind = (["one_on_one", "tight_angle", "long_range", "volley", "header"] as const)[seed % 5];
+    const sc = buildScenario(kind, rng, 62, 60);
+    initDefenders(sc, rng);
+    const mid = (sc.goal.x1 + sc.goal.x2) / 2;
+    const g = { x: sc.keeper.x < mid ? sc.goal.x2 - 0.8 : sc.goal.x1 + 0.8, y: 0 };
+    const ball = launch(sc, { x: g.x - sc.ball.x, y: g.y - sc.ball.y }, 0.9, { cx: 0, cy: -0.2 }, { power: 70, technique: 70 }, rng);
+    let out: Outcome | null = null;
+    for (let i = 0; i < 1500 && !out; i++) {
+      stepDefenders(sc, DT, ball.pos, false, ball);
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+    }
+    const n = sc.receiverShots ?? 0;
+    hist[n] = (hist[n] ?? 0) + 1;
+  }
+  const one = hist[1] ?? 0, many = (hist[3] ?? 0) + (hist[4] ?? 0);
+  check(one > N * 0.1, `a rebound is often followed in once (${one}/${N})`);
+  check(many < N * 0.02, `and hardly ever more than twice (${many}/${N} went three or four)`);
+}
+
 // ── Where it will land ──────────────────────────────────────────────────────
 //
 // A ball in the air is marked on the grass at the spot it will first bounce.

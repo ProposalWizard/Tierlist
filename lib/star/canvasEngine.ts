@@ -410,6 +410,8 @@ const WALL_JUMP_DELAY = 0.1;   // seconds of reaction before they move
 const RUNNER_SPEED = 7.0;      // m/s — the team-mate making the run
 
 const PASS_CONTROL_R = 2.0;    // metres — how close the ball must get to be controlled
+const BODY_R = 0.55;           // …and how close is close enough that it went through him
+const SCRAMBLE_MAX = 4;        // runaway guard only — the keeper smothers it long before this
 
 export function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -2688,6 +2690,24 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     return "tipped";
   }
 
+  // ── He smothers it ──
+  //
+  // A keeper who has already been beaten twice in one move does not palm it
+  // back out a third time; he falls on it. Without this the goalmouth scramble
+  // was a perpetual motion machine, and the mechanism was neat: he scrambles
+  // ACROSS to the ball he has spilled, your team-mate collects it at that same
+  // spot, and so shoots from directly on top of him — which he saves, and
+  // spills, and so on. Measured, it never once broke out: a move either had no
+  // team-mate shot at all or ran to the cap, 306 times in 1200, and never one,
+  // two or three.
+  if (k.saves >= 3) {
+    ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
+    ball.z = 1.05;
+    ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
+    k.done = true;
+    return "caught";
+  }
+
   // Otherwise: a parry that stays in play.
   const away = normalize({ x: ball.pos.x - k.x, y: ball.pos.y - k.y });
   const dangerous = rng() < 0.34; // sometimes spilled straight back into the danger zone
@@ -2704,6 +2724,15 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   markLanding(ball, scenario);
   ball.spin *= 0.4;
   ball.loose = true;
+  // ── It stopped being your shot the moment he touched it ──
+  //
+  // `shot` is sticky so a team-mate cannot wander into a ball that is going in
+  // and turn your goal into a completed pass. That is right while it is still
+  // your shot — and a ball the keeper has just pushed away is not. Leaving the
+  // flag on meant every one of your players stepped aside from the rebound: it
+  // rolled visibly THROUGH them, 862 times in 1047 parries, until somebody the
+  // rule did not cover finally picked it up.
+  ball.shot = false;
   ball.contactCd = 0.28;
   // Keeper scrambles back toward where the ball spills — a visible chase, and
   // the only time he stops patrolling.
@@ -2744,6 +2773,8 @@ function reboundOffFrame(ball: Ball, xCross: number, rng: () => number, scenario
   ball.spin *= 0.25;
   ball.loose = true;
   ball.owner = "none";
+  // Off the woodwork it is a loose ball, not your shot — see the parry.
+  ball.shot = false;
   ball.contactCd = 0.25;
   ball.event = "post";
   if (scenario) markLanding(ball, scenario);
@@ -2954,7 +2985,15 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   // Swept along the ball's path so a fast pass can't tunnel past the player it
   // was aimed at. This is what stops a pass visually going straight through a
   // team-mate: the man and the reception test are now the same object.
-  if (!scenario.receiverDone && ball.z < 2.6) {
+  // ── …and not on the same tick somebody struck it ──
+  //
+  // Every other contact test in this function respects contactCd; reception did
+  // not, and it is the one place it mattered most. A team-mate who shoots is
+  // standing ON the ball he has just hit, so on the very next frame he was
+  // inside his own two-metre control radius and collected it again — then
+  // shot, then collected, then shot. A move either had no team-mate shot at all
+  // or ran to the cap: 306 of 1200, and never one, two or three of them.
+  if (!scenario.receiverDone && ball.z < 2.6 && ball.contactCd <= 0) {
     // Was this played TO him, or has he run it down? It changes what he does
     // with it when he gets there.
     const scrambled = ball.loose || ball.resting || speed < DEAD_BALL_SPEED;
@@ -2989,7 +3028,6 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     const ballIsDead = ball.resting || (speed < DEAD_BALL_SPEED && ball.z < 0.4);
     const shotAtGoal = ball.shot === true && !ballIsDead;
     for (const r of candidates) {
-      if (shotAtGoal && r.role === "support") continue;
       const tgt = r.pos;
       let swept = Math.hypot(tgt.x - ball.pos.x, tgt.y - ball.pos.y);
       const segX = ball.pos.x - prevX, segY = ball.pos.y - prevY;
@@ -2999,6 +3037,12 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         const closestX = prevX + segX * t, closestY = prevY + segY * t;
         swept = Math.min(swept, Math.hypot(tgt.x - closestX, tgt.y - closestY));
       }
+      // A support player steps out of the way of a ball that is going in — but
+      // only out of the way. He does not become intangible: a ball that would
+      // pass through his body is a ball he has, whatever it was aimed at. "If
+      // the ball goes anywhere within my player, he should have the ball."
+      if (shotAtGoal && r.role === "support" && swept > BODY_R) continue;
+
       if (swept < PASS_CONTROL_R) {
         // Position plus involvement. He was beyond the second-last opponent
         // when the ball was played and he has now played it.
@@ -3022,11 +3066,15 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         // computed and ignored; when there is a defensive line worth the name,
         // this is where it goes back in.
 
-        // A finisher, and he has not already had two goes at it. The cap stops
-        // a scramble becoming a farce — but it stops the SHOOTING, not the
-        // collecting: he still gets to the ball, and the move ends with him in
-        // possession rather than with him frozen two metres short of it.
-        if (scenario.receiver && (scenario.receiverShots ?? 0) < 2) {
+        // ── If he has it and there is a goal, he shoots ──
+        //
+        // The cap is a runaway guard and nothing more. It used to be two, which
+        // is not a runaway — it is a normal goalmouth scramble, and it bit
+        // often: your shot, parried, collected, shot, parried, collected, shot,
+        // parried, collected, and then a team-mate stood on the ball six yards
+        // out and the highlight ended saying PASS. It says four now, which no
+        // real scramble reaches.
+        if (scenario.receiver && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
           ball.pos = { x: tgt.x, y: tgt.y };
           ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
           // ── A ball you chase down is hit first time ──
@@ -3045,6 +3093,11 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
           }
           return null;
         }
+        // Nobody left to shoot: the move has petered out in the six-yard box,
+        // and that is a scramble ending, not a pass you completed. Saying
+        // "delivered" credited you with a pass you never played and put PASS on
+        // the screen at the end of a shot.
+        if (scenario.receiver) return "short";
         return "delivered";
       }
     }

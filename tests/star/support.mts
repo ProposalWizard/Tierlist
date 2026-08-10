@@ -316,8 +316,9 @@ function bestOption(sc: Scenario): number {
         out = stepBall(ball, sc, rng, DT);
       }
       // Whatever he then does with it — shoots, scores, skies it — somebody
-      // picked it up. That is the whole claim.
-      if (sc.receiverDone) tidied += 1;
+      // picked it up. That is the whole claim. receiverDone is cleared again
+      // the moment he strikes it, so the durable evidence is the shot.
+      if (sc.receiverShot || sc.receiverDone) tidied += 1;
       void out;
     }
     check(tidied > 45, `a shot that has died is tidied up rather than left lying there (${tidied}/60)`);
