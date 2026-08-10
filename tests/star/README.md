@@ -41,6 +41,30 @@ reason we know:
   two metres of the start of every passing lane, so raw distance-to-segment made
   him shut all of them equally. Defenders are only counted in lanes they are
   actually in.
+- **The ball never goes through anybody.** Two things were letting it. A support
+  player steps out of the way of a ball that is going in — right, but he was
+  stepping out of EXISTENCE, so a shot that would have hit him in the chest
+  carried straight on. He now takes anything that would pass within a body's
+  width of him, whatever it was aimed at. And `shot` is sticky so a team-mate
+  cannot turn your goal into a completed pass, which is right while it is still
+  your shot and wrong the moment the keeper has palmed it away: **every one of
+  your players stepped aside from the rebound and it rolled visibly through
+  them**, 862 times in 1047 parries. A parried ball, and one off the woodwork, is
+  a loose ball and nobody's shot.
+- **A scramble was a perpetual motion machine.** Reception was the one contact
+  test in `stepBall` that did not respect `contactCd`, and it is the one place it
+  mattered most: a team-mate who shoots is standing ON the ball he has just hit,
+  so on the very next frame he was inside his own two-metre control radius and
+  collected it again. Then shot. Then collected. A move either had no team-mate
+  shot at all or ran to the runaway cap — 306 of 1200, and **never one, two or
+  three of them**, which is the shape of a loop rather than of football. With the
+  guard in: 288 followed in once, 17 twice, 1 three times.
+
+  Two other things came out of chasing it. When the cap does bite, the move ends
+  as a scramble petering out rather than as `delivered` — which credited you with
+  a pass you never played and put PASS on the screen at the end of a shot. And a
+  keeper who has already been beaten twice in one move falls on the third rather
+  than palming it out again.
 - **A ball nobody has is a ball everybody can have.** Once ANY team-mate had
   touched it, `receiverDone` stayed set and nobody could collect it again — so a
   shot the keeper parried away rolled to a stop with your players walking toward
@@ -318,20 +342,30 @@ ordinary midfield passes offside.
 
 ---
 
-**THE GOAL.** Built off the reference and checked by rendering it beside the
-screenshots, not by reasoning about it — which caught two mistakes a description
-would not have. The first version drew the inside DARK, and it read as a hole cut
-in the pitch; what you are looking at is white netting catching the light, so it
-is lighter than the grass. The second had no crossbar — the back edge was the
-same weight as the mesh, so the frame never closed.
+**THE GOAL STANDS UP.** The pitch is a flat plan and the goal is the one thing on
+it drawn with HEIGHT: posts standing on the goal line, a crossbar across their
+tops, the netting stretched back behind them. That is not a departure from the
+overhead camera — it is the same trick the ball already uses, being lifted off
+its own shadow — and the goal is drawn at exactly that scale, so a ball over the
+bar is visibly over the bar and one that hits the bar hits the bar you can see.
 
-What it is: a thick white crossbar standing ON the goal line, black posts down
-both sides running the full depth of the side netting, close-woven white mesh
-filling the rectangle behind, and a faint edge closing the back. The netting
-reaches 2.6 m rather than 2.0 — a real goal is about two metres deep at the base
-and the reference exaggerates it, for a reason that is obvious once both are on
-screen: at two it is a line with a smear behind it rather than a thing with an
-inside.
+Three versions of this, each caught by rendering it beside the screenshots
+rather than reasoning about it, and each mistake invisible from a description:
+
+1. The inside was DARK, and read as a hole cut in the pitch. What you are
+   looking at is white netting catching the light.
+2. No crossbar — the back edge was the same weight as the mesh, so the frame
+   never closed. And the posts had round caps, which put a black blob on the
+   grass at each foot.
+3. It was still FLAT: a footprint drawn on the ground. Correct to the centimetre
+   from directly above, and unrecognisable as a goal, because from directly
+   above a goal is a line with a rectangle behind it. Cropping the reference goal
+   out of the screenshot and magnifying it settled it — the posts are standing.
+
+Height is therefore drawn at TRUE scale (`heightScale = uy`, was `uy * 0.75`).
+Foreshortening it broke the agreement between the ball's height and the goal's,
+and that agreement is the only thing that makes drawing height honest on a camera
+which is otherwise a flat plan.
 
 It also used to be drawn with `fillRect` off two corners, which silently assumed
 the ordinary camera — in a crossing frame that rectangle would have come out
@@ -349,6 +383,18 @@ rolling ball is going. This is the one thing drawn on the pitch that is not part
 of the pitch — every other aid has been taken out — and it earns its place
 because height is the single thing a flat overhead camera cannot show you, so
 judging a lofted ball is otherwise guesswork.
+
+It is worked out ONCE, at the kick, and pinned. Recomputing it each frame from
+the ball's current state was the obvious thing and it was wrong: a curling ball's
+projection sweeps round as the curl bites, so the mark crawled across the grass
+and chased the ball in.
+
+Pinning it only works if it is right, so it runs the same flight the ball
+actually flies — curl, drag, wind — **and at the same integration step**. At the
+coarse step used for reading passing lanes it came out 1.17 m long, every single
+time: a systematic offset rather than noise, because a bigger step under gravity
+consistently overshoots. Matched to the match loop's substep it is 2 cm, and the
+suite asserts the ball lands on the mark across 700 curling flights.
 
 **HOW MANY PLAYERS, AND WHOSE.** Counted off the reference: four to seven
 opponents in a chance, and ONE team-mate beside you, sometimes two. Ours had it

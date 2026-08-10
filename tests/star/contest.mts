@@ -191,6 +191,136 @@ function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, p
   check((after["goal"] ?? 0) + (after["rebound"] ?? 0) > 0, "and the follow-up sometimes goes in");
 }
 
+// ── The ball never goes through anybody ─────────────────────────────────────
+//
+// "If the ball goes anywhere within my player, he should have the ball." Two
+// things were letting it through. A support player steps out of the way of a
+// ball that is going in — right, but he was stepping out of EXISTENCE, so a
+// shot that would have hit him in the chest carried on. And `shot` is sticky so
+// a team-mate cannot turn your goal into a completed pass, which is right while
+// it is still your shot and wrong the moment the keeper has palmed it away:
+// every one of your players stepped aside from the rebound and it rolled
+// visibly through them.
+{
+  let reached = 0, through = 0;
+  for (let seed = 0; seed < 2500; seed++) {
+    const rng = mulberry32(seed * 7 + 3);
+    const kind = (["long_range", "one_on_one", "volley"] as const)[seed % 3];
+    const sc = buildScenario(kind, rng, 62, 60);
+    initDefenders(sc, rng);
+    sc.defenders = [];                                  // nobody to clear it
+    // Straight at the keeper, so he has to push it out.
+    const ball = launch(sc, { x: sc.keeper.x - sc.ball.x, y: -sc.ball.y }, 0.9, { cx: 0, cy: -0.15 }, { power: 70, technique: 70 }, rng);
+    const mates = () => [
+      ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map(r => r.pos),
+      { x: sc.follower.x, y: sc.follower.y },
+    ];
+    let out: Outcome | null = null, pending = -1;
+    for (let i = 0; i < 1500 && !out; i++) {
+      if (ball.loose && pending < 0 && ball.contactCd <= 0) {
+        for (const m of mates()) {
+          if (Math.hypot(ball.pos.x - m.x, ball.pos.y - m.y) < 0.55) { pending = i; reached += 1; break; }
+        }
+      }
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+      if (pending >= 0) {
+        if (!ball.loose || sc.receiverDone || sc.receiverShot || out) pending = -1;
+        else if (i - pending > 6) { through += 1; pending = -1; }
+      }
+    }
+  }
+  check(through === 0, `a loose ball never passes through a team-mate (${through} of ${reached} that reached one)`);
+}
+
+// ── A scramble is a scramble, not a machine ─────────────────────────────────
+//
+// Reception was the one contact test that did not respect contactCd, and it is
+// the one place it mattered most: a team-mate who shoots is standing ON the
+// ball he has just hit, so on the very next frame he was inside his own control
+// radius and collected it again. Then shot. Then collected. A move either had
+// no team-mate shot at all or ran to the runaway cap — 306 of 1200, and never
+// one, two or three of them.
+{
+  const hist: Record<number, number> = {};
+  const N = 1200;
+  for (let seed = 0; seed < N; seed++) {
+    const rng = mulberry32(seed * 13 + 5);
+    const kind = (["one_on_one", "tight_angle", "long_range", "volley", "header"] as const)[seed % 5];
+    const sc = buildScenario(kind, rng, 62, 60);
+    initDefenders(sc, rng);
+    const mid = (sc.goal.x1 + sc.goal.x2) / 2;
+    const g = { x: sc.keeper.x < mid ? sc.goal.x2 - 0.8 : sc.goal.x1 + 0.8, y: 0 };
+    const ball = launch(sc, { x: g.x - sc.ball.x, y: g.y - sc.ball.y }, 0.9, { cx: 0, cy: -0.2 }, { power: 70, technique: 70 }, rng);
+    let out: Outcome | null = null;
+    for (let i = 0; i < 1500 && !out; i++) {
+      stepDefenders(sc, DT, ball.pos, false, ball);
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+    }
+    const n = sc.receiverShots ?? 0;
+    hist[n] = (hist[n] ?? 0) + 1;
+  }
+  const one = hist[1] ?? 0, many = (hist[3] ?? 0) + (hist[4] ?? 0);
+  check(one > N * 0.1, `a rebound is often followed in once (${one}/${N})`);
+  check(many < N * 0.02, `and hardly ever more than twice (${many}/${N} went three or four)`);
+}
+
+// ── Where it will land ──────────────────────────────────────────────────────
+//
+// A ball in the air is marked on the grass at the spot it will first bounce.
+// The mark is worked out ONCE, at the kick, and pinned — recomputing it each
+// frame from the ball's current state was the obvious thing and it was wrong:
+// a curling ball's projection sweeps round as the curl bites, so the mark
+// crawled across the pitch and chased the ball in.
+//
+// Pinning it only works if it is right. It runs the same flight the ball
+// actually flies — curl, drag, wind and the same integration step — so this
+// asserts the thing that matters: the ball lands ON the mark.
+{
+  const errs: number[] = [];
+  let marked = 0, curled = 0, n = 0;
+  for (let seed = 0; seed < 1500; seed++) {
+    const rng = mulberry32(seed * 13 + 7);
+    const sc = buildScenario(seed % 2 ? "long_range" : "byline_cross", rng, 62, 60);
+    initDefenders(sc, rng);
+    // Nothing to intervene: this is about the flight and nothing else.
+    sc.defenders = []; sc.runner = null; sc.secondaryRunners = [];
+    sc.follower = { ...sc.follower, x: -90, y: -90 };
+    sc.keeper = { ...sc.keeper, x: -90, y: -90 };
+    const cx = (rng() - 0.5) * 1.6;                    // deliberately curled
+    const ball = launch(sc, { x: (rng() - 0.5) * 0.6, y: -1 }, 0.8, { cx, cy: 0.55 }, { power: 70, technique: 80 }, rng);
+    n += 1;
+    if (Math.abs(ball.spin) > 0.05) curled += 1;
+    if (!ball.landAt) continue;
+    marked += 1;
+    const pinned = { ...ball.landAt };
+
+    let prevZ = ball.z, done = false;
+    for (let i = 0; i < 900 && !done; i++) {
+      // The match loop substeps three times a frame, and the prediction is
+      // matched to that step, so this has to be too.
+      for (let k = 0; k < 3; k++) {
+        const o = stepBall(ball, sc, rng, DT / 3);
+        if (ball.z <= 0.001 && prevZ > 0.001) {
+          errs.push(Math.hypot(ball.pos.x - pinned.x, ball.pos.y - pinned.y));
+          done = true; break;
+        }
+        prevZ = ball.z;
+        if (o) { done = true; break; }
+      }
+    }
+  }
+  errs.sort((a, b) => a - b);
+  const worst = errs[errs.length - 1] ?? 99;
+  check(marked === n, `every lofted ball is marked (${marked}/${n})`);
+  check(curled > n * 0.8, `and these are genuinely curling (${curled}/${n})`);
+  check(errs.length > 400, `enough of them land inside the situation to measure (${errs.length})`);
+  check(worst < 0.15, `the ball lands on the mark (worst miss ${worst.toFixed(2)} m over ${errs.length} flights)`);
+}
+
 // ── The first touch ─────────────────────────────────────────────────────────
 //
 // Not a dice roll: the defence simply gets the time your touch cost them, using

@@ -4,7 +4,7 @@ import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall,
   stepKeeper, stepDefenders, stepReactions, initDefenders,
-  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView, firstBounceAt,
+  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing,
@@ -19,7 +19,7 @@ import {
   newDribble, stepDribble, flick, dribbleProgress, dribbleViewport, type DribbleState,
 } from "@/lib/star/dribble";
 import {
-  PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH,
+  PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH, GOAL_H,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
   PEN_SPOT_Y, ARC_R, CENTRE_R, CORNER_R,
 } from "@/lib/star/pitch";
@@ -546,8 +546,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const turned = facingRef.current !== "up";
     const unit = turned ? H / (vp.x2 - vp.x1) : W / (vp.x2 - vp.x1);
     const uy = turned ? W / (vp.y2 - vp.y1) : H / (vp.y2 - vp.y1);
-    // Ball height, slightly foreshortened as befits the near-overhead camera.
-    const heightScale = uy * 0.75;
+    // ── Height ──
+    //
+    // One metre up is drawn as one metre across. TRUE scale, not foreshortened:
+    // the goal is drawn standing on its line at this same scale, so a ball that
+    // clears the crossbar visibly clears it and one that hits the bar hits the
+    // bar you can see. Foreshortening height to 0.75 broke that agreement — and
+    // the agreement is the only reason drawing height at all is honest on a
+    // camera that is otherwise a flat plan.
+    const heightScale = uy;
     // A real ball is only 22 cm across — drawn true to scale it disappears, so it
     // is exaggerated a little and floored at a readable pixel size.
     const BALL_PX = Math.max(4.5, unit * 0.5);
@@ -660,68 +667,107 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     // --- The goal ---
     //
-    // Built off the reference rather than off the laws: a dark hollow you can
-    // put the ball INTO, close-woven white netting inside it, dark uprights down
-    // both sides that are plainly the two things a shot can hit, and a bright
-    // bar across the back. What it replaced was a pale rectangle with a coarse
-    // grid over it — correct to the centimetre and reading as a patch of paint
-    // rather than as a goal.
+    // The pitch is a flat plan and the goal is the one thing on it drawn with
+    // HEIGHT: posts standing on the goal line, a crossbar across their tops, the
+    // netting stretched back behind. That is not a departure from the overhead
+    // camera — it is the same trick the ball already uses, which is lifted off
+    // its own shadow by exactly this scale. The goal is drawn at that scale too,
+    // so a ball over the bar is visibly over the bar.
     //
-    // Every part of it goes through P, so it turns with the frame. It also used
-    // to be drawn with fillRect off two corners, which silently assumed the
-    // ordinary view: in a crossing frame the rectangle would have come out
-    // inside out.
+    // It was a flat footprint before: correct to the centimetre from directly
+    // above, and unrecognisable as a goal, because from directly above a goal is
+    // a line with a rectangle behind it.
+    //
+    // Everything here goes through P, so it turns with the frame — and "up" is
+    // up the SCREEN, which is where a post goes whichever way the frame is
+    // turned.
     {
-      const a = P(POST_L, 0), b = P(POST_R, 0);
-      const c = P(POST_R, -NET_DEPTH), d = P(POST_L, -NET_DEPTH);
+      const bl = P(POST_L, 0), br = P(POST_R, 0);
+      const hpx = GOAL_H * heightScale;
+      const tl = { px: bl.px, py: bl.py - hpx };
+      const tr = { px: br.px, py: br.py - hpx };
 
-      // The inside. LIGHTER than the grass, not darker: what you are looking at
-      // is white netting catching the light, and drawing it as a dark hollow
-      // read as a hole cut in the pitch. Checked against the reference by
-      // rendering both side by side.
+      // The floor of the goal: the netting's footprint behind the line, which is
+      // the space a ball that has gone in comes to rest in.
+      const fl = P(POST_L, -NET_DEPTH), fr = P(POST_R, -NET_DEPTH);
       ctx.beginPath();
-      ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py);
-      ctx.lineTo(c.px, c.py); ctx.lineTo(d.px, d.py);
+      ctx.moveTo(bl.px, bl.py); ctx.lineTo(br.px, br.py);
+      ctx.lineTo(fr.px, fr.py); ctx.lineTo(fl.px, fl.py);
       ctx.closePath();
-      ctx.fillStyle = "rgba(228,240,233,0.30)";
+      ctx.fillStyle = "rgba(210,226,216,0.22)";
       ctx.fill();
 
-      // The netting — fine and close-woven. Clipped to the goal so the mesh can
-      // be drawn at a size that reads as string rather than as fencing.
+      // The face of the net, standing between the posts. Lighter than the grass
+      // — it is white netting catching the light, not a hole.
+      ctx.beginPath();
+      ctx.moveTo(bl.px, bl.py); ctx.lineTo(br.px, br.py);
+      ctx.lineTo(tr.px, tr.py); ctx.lineTo(tl.px, tl.py);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(226,238,231,0.30)";
+      ctx.fill();
+
+      // …and its mesh, close-woven, clipped to the face.
       ctx.save();
       ctx.clip();
-      ctx.strokeStyle = "rgba(255,255,255,0.78)";
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
       ctx.lineWidth = Math.max(0.7, unit * 0.035);
       const mesh = 0.34;
-      for (let x = POST_L; x <= POST_R + 0.01; x += mesh) pLine(x, -NET_DEPTH, x, 0);
-      for (let y = -NET_DEPTH; y <= 0.01; y += mesh) pLine(POST_L, y, POST_R, y);
+      for (let x = POST_L; x <= POST_R + 0.01; x += mesh) {
+        const p = P(x, 0);
+        ctx.beginPath(); ctx.moveTo(p.px, p.py); ctx.lineTo(p.px, p.py - hpx); ctx.stroke();
+      }
+      for (let h = 0; h <= GOAL_H + 0.01; h += mesh) {
+        const dy = h * heightScale;
+        ctx.beginPath(); ctx.moveTo(bl.px, bl.py - dy); ctx.lineTo(br.px, br.py - dy); ctx.stroke();
+      }
       ctx.restore();
 
-      // The posts, running the full depth of the side netting: the darkest thing
-      // on the pitch, so the two objects a shot can hit are unmistakable. Square
-      // ends, not round — round caps put a black blob on the grass at each foot.
+      // The roof of the net, going back from the crossbar. Mesh, not a solid
+      // bar: drawn solid it read as a black lid sitting on top of the goal.
+      ctx.beginPath();
+      ctx.moveTo(tl.px, tl.py); ctx.lineTo(tr.px, tr.py);
+      ctx.lineTo(fr.px, fr.py); ctx.lineTo(fl.px, fl.py);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(226,238,231,0.22)";
+      ctx.fill();
+      ctx.save();
+      ctx.clip();
+      ctx.strokeStyle = "rgba(255,255,255,0.5)";
+      ctx.lineWidth = Math.max(0.7, unit * 0.032);
+      for (let x = POST_L; x <= POST_R + 0.01; x += mesh) {
+        const a1 = P(x, 0), a2 = P(x, -NET_DEPTH);
+        ctx.beginPath(); ctx.moveTo(a1.px, a1.py - hpx); ctx.lineTo(a2.px, a2.py); ctx.stroke();
+      }
+      for (let dp = 0; dp <= NET_DEPTH + 0.01; dp += mesh) {
+        const f = dp / NET_DEPTH;
+        const p1 = P(POST_L, -dp), p2 = P(POST_R, -dp);
+        ctx.beginPath();
+        ctx.moveTo(p1.px, p1.py - hpx * (1 - f));
+        ctx.lineTo(p2.px, p2.py - hpx * (1 - f));
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // The stanchions running back from the top of each post, dark, so the goal
+      // has a depth you can see rather than one you have to take on trust.
+      ctx.strokeStyle = "rgba(16,28,21,0.8)";
+      ctx.lineWidth = Math.max(1.5, unit * 0.13);
+      ctx.beginPath(); ctx.moveTo(tl.px, tl.py); ctx.lineTo(fl.px, fl.py); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(tr.px, tr.py); ctx.lineTo(fr.px, fr.py); ctx.stroke();
+
+      // The frame: two posts standing on the line, and the bar across their tops.
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#f4f8f5";
+      ctx.lineWidth = Math.max(2.5, unit * 0.24);
+      ctx.beginPath(); ctx.moveTo(bl.px, bl.py); ctx.lineTo(tl.px, tl.py); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(br.px, br.py); ctx.lineTo(tr.px, tr.py); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(tl.px, tl.py); ctx.lineTo(tr.px, tr.py); ctx.stroke();
       ctx.lineCap = "butt";
-      ctx.strokeStyle = "#101c15";
-      ctx.lineWidth = Math.max(2.5, unit * 0.26);
-      pLine(POST_L, 0, POST_L, -NET_DEPTH);
-      pLine(POST_R, 0, POST_R, -NET_DEPTH);
 
-      // The back of the net, closing the rectangle.
-      ctx.strokeStyle = "rgba(242,248,244,0.75)";
-      ctx.lineWidth = Math.max(1.5, unit * 0.11);
-      pLine(POST_L, -NET_DEPTH, POST_R, -NET_DEPTH);
-
-      // ── The crossbar, ON the line ──
-      //
-      // The crossbar and the posts stand on the goal line and the netting is the
-      // rectangle behind them, which is what gives the goal an inside. So the
-      // bar across the mouth is the heaviest white on the pitch: the goal is a
-      // frame you shoot through with a net behind it, not a rectangle with a
-      // line along the bottom.
+      // The goal line between the posts, on the ground where it belongs.
       ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = Math.max(2.5, unit * 0.26);
+      ctx.lineWidth = Math.max(2, unit * 0.2);
       pLine(POST_L, 0, POST_R, 0);
-
     }
 
     // ── What you can SEE ──
@@ -1226,8 +1272,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // is not part of the pitch, and it earns that because judging the flight of
     // a lofted ball from directly above is otherwise guesswork — height is the
     // one thing this camera cannot show you.
-    if (ballRef.current && phaseRef.current === "flight" && !ballRef.current.inNet) {
-      const land = firstBounceAt(ballRef.current);
+    // Worked out once, at the kick, and pinned — see markLanding. Recomputing it
+    // each frame made it crawl across the grass after a curling ball.
+    if (ballRef.current && phaseRef.current === "flight" && !ballRef.current.inNet
+        && ballRef.current.z > 0.15) {
+      const land = ballRef.current.landAt;
       if (land) {
         const m = P(land.x, land.y);
         const r = Math.max(3.5, unit * 0.5);
