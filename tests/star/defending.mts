@@ -336,6 +336,41 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   void where;
 }
 
+// ── A keeper off his line can be beaten ─────────────────────────────────────
+//
+// The save is judged where the KEEPER is, not at the goal line. He is usually
+// on it, so most of the time those are the same test — but about one chance in
+// five he has come out, and then they are not remotely the same. Judging at the
+// goal line meant a keeper standing five metres off it could save a ball that
+// had sailed past him three metres wide: it flew visibly beyond him, and was
+// then compared against his x once it reached a line he was nowhere near.
+{
+  let saved = 0, past = 0;
+  for (let seed = 0; seed < 1500; seed++) {
+    const rng = mulberry32(seed * 11 + 7);
+    const sc = buildScenario("long_range", rng, 62, 60);
+    initDefenders(sc, rng);
+    sc.defenders = []; sc.runner = null; sc.secondaryRunners = [];
+    sc.follower = { ...sc.follower, x: -90, y: -90 };
+    sc.keeper = { ...sc.keeper, x: 34, y: 5, startX: 34 };
+    // Aimed to cross his line four metres to one side of him.
+    const side = seed % 2 ? 1 : -1;
+    const ball = launch(sc, { x: 34 + side * 4 - sc.ball.x, y: 5 - sc.ball.y }, 0.8, { cx: 0, cy: -0.15 }, { power: 70, technique: 95 }, rng);
+    let out: Outcome | null = null, clear = false, prev = ball.pos.y;
+    for (let i = 0; i < 900 && !out; i++) {
+      stepKeeper(sc, DT);
+      out = stepBall(ball, sc, rng, DT);
+      if (prev > 5 && ball.pos.y <= 5) clear = Math.abs(ball.pos.x - 34) > 3;
+      prev = ball.pos.y;
+    }
+    if (!clear) continue;
+    past += 1;
+    if (out === "tipped" || out === "caught") saved += 1;
+  }
+  check(past > 500, `shots do get past him out there (${past})`);
+  check(saved === 0, `and one that has beaten him stays beaten (${saved}/${past} saved from behind)`);
+}
+
 // ── The move always ends ────────────────────────────────────────────────────
 //
 // The single risk this model runs. Nothing chases you, a ball that stops is not

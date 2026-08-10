@@ -2658,7 +2658,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // Comfortable, gathered save — it ends up in his gloves.
   if (marginNorm > 0.5 && lowAndSlow && rng() < 0.72) {
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
-    ball.z = 1.05;
+    ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
     k.done = true;
     return "caught";
@@ -2702,7 +2702,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // two or three.
   if (k.saves >= 3) {
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
-    ball.z = 1.05;
+    ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
     k.done = true;
     return "caught";
@@ -3103,6 +3103,41 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
     }
   }
 
+  // ── THE KEEPER'S OWN LINE ──
+  //
+  // A save is judged where the KEEPER is, not at the goal line. He is usually on
+  // it, so most of the time these are the same test — but about one chance in
+  // five he has come out, and then they are not remotely the same. Judging at
+  // the goal line meant a keeper standing five metres off it could save a ball
+  // that had sailed past him three metres wide: it flew visibly beyond him, and
+  // was then compared against his x once it reached a line he was nowhere near.
+  //
+  // He is a man standing somewhere with arms of a certain length. The ball
+  // either comes within reach of him as it passes him, or it does not, and if it
+  // does not he has been beaten and nothing later can change that.
+  if (!k.done && prevY > k.y && ball.pos.y <= k.y && ball.pos.y > -0.6) {
+    const f = (prevY - k.y) / (prevY - ball.pos.y || 1);
+    const xAt = prevX + (ball.pos.x - prevX) * f;
+    const zAt = prevZ + (ball.z - prevZ) * f;
+    const cover = keeperCovers(scenario, xAt, zAt);
+    if (cover.saved) {
+      k.saveDir = Math.sign(xAt - k.x) || 0;
+      k.saveLunge = 0.001;
+      k.scrambling = false;
+      ball.pos.x = xAt;
+      ball.pos.y = Math.max(k.y, 0.02);
+      ball.z = Math.max(0, zAt);
+      const r = keeperSaveRadius(scenario);
+      const standingAt = k.x;
+      // He dives to it. The decision was made against where he was standing;
+      // this is only the picture agreeing with it.
+      k.x = clamp(xAt, POST_L - 2.5, POST_R + 2.5);
+      const outcome = resolveKeeper(ball, scenario, (1 - cover.margin) * r, r, speed, rng);
+      k.saveKind = classifySave(xAt, zAt, standingAt, cover.margin, outcome);
+      if (outcome) return outcome;
+    }
+  }
+
   // --- Goal line crossing (interpolate the exact x and z at y=0) ---
   if (prevY > 0 && ball.pos.y <= 0) {
     const frac = prevY / (prevY - ball.pos.y);
@@ -3118,42 +3153,9 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         return "post";
       }
 
-      // ── THE SAVE DECISION ──
-      // Gameplay first, animation second. Where the ball crosses is compared
-      // against where the keeper actually is at this instant — he never knew
-      // where it was going, so curl that bends away from him beats him, and a
-      // corner beats him simply by being far from wherever he had patrolled to.
-      if (!k.done) {
-        const cover = keeperCovers(scenario, xCross, zCross);
-        if (cover.saved) {
-          // Only NOW is an animation picked, and it is chosen to match the
-          // outcome that has already been decided.
-          k.saveDir = Math.sign(xCross - k.x) || 0;
-          k.saveLunge = 0.001;
-          k.scrambling = false;
-          ball.pos.x = xCross;
-          ball.pos.y = 0.02;
-          ball.z = Math.max(0, zCross);
-          const r = keeperSaveRadius(scenario);
-          const standingAt = k.x;
-          // ── He GETS there ──
-          // The save decision is made against where he was standing, and until
-          // now that was the end of it: the figure stayed put and the ball
-          // vanished, so a shot into the corner was recorded as a save by a
-          // keeper drawn two metres away from it. Reported three times as "I
-          // scored and it did not count", and the picture was right.
-          //
-          // The dive is the one thing he is allowed to do, so he does it: he
-          // ends the save at the ball. Nothing here changes whether it was
-          // saved — that was settled a line ago, against the position he was
-          // actually standing in.
-          k.x = clamp(xCross, POST_L - 0.6, POST_R + 0.6);
-          const outcome = resolveKeeper(ball, scenario, (1 - cover.margin) * r, r, speed, rng);
-          // Animation LAST, and chosen to match the outcome that is now settled.
-          k.saveKind = classifySave(xCross, zCross, standingAt, cover.margin, outcome);
-          return outcome ?? null;
-        }
-      }
+      // The keeper has already had his say — at his own line, not this one.
+      // See "THE KEEPER'S OWN LINE" above. If the ball is still going when it
+      // gets here, he has been beaten.
 
       // Beat the keeper and crossed the line. Let it carry on into the netting so
       // the goal is SEEN rather than announced — the UI keeps stepping it while

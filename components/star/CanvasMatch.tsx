@@ -712,20 +712,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       // Its shadow on the grass.
       const sh = unit * 0.5;
-      quad([rl, rr, br, bl].map(q => ({ px: q.px + sh, py: q.py + sh * 0.3 })), "rgba(0,0,0,0.16)");
-      // The floor inside, the back of the net, and the frame at the back.
-      quad([bl, br, rr, rl], "rgba(20,50,32,0.10)");
-      quad([rl, rr, ur, ul], "rgba(24,54,36,0.10)");
-      netting([rl, rr, ur, ul], 34, 10, 0.4);
+      quad([rl, rr, br, bl].map(q => ({ px: q.px + sh, py: q.py + sh * 0.3 })), "rgba(0,0,0,0.09)");
+      // The floor inside — barely shaded, because it is grass and you are
+      // looking straight at it through an open mouth.
+      quad([bl, br, rr, rl], "rgba(20,50,32,0.05)");
+      // The back of the net: the deepest surface, and the one you see through
+      // the mouth. Dimmer than the roof, which is what separates the two — in a
+      // straight-down view a horizontal roof and a vertical back wall both come
+      // out as flat bands, so shading is the only thing that can tell them apart.
+      quad([rl, rr, ur, ul], "rgba(22,52,34,0.16)");
+      netting([rl, rr, ur, ul], 34, 10, 0.42);
       ctx.strokeStyle = "#0f1a14";
       ctx.lineWidth = Math.max(1.8, unit * 0.15);
       seg(rl, ul); seg(rr, ur); seg(ul, ur);
-      // The roof, catching the light…
-      quad([tl, tr, ur, ul], "rgba(232,242,236,0.20)");
-      netting([tl, tr, ur, ul], 34, 5, 0.7);
-      // …and the mouth, in shadow, because you are looking INTO it.
-      quad([bl, br, tr, tl], "rgba(16,42,28,0.10)");
-      netting([bl, br, tr, tl], 34, 10, 0.5);
+      // The roof, catching the light — brighter than the back, deliberately.
+      quad([tl, tr, ur, ul], "rgba(236,245,239,0.30)");
+      netting([tl, tr, ur, ul], 34, 5, 0.8);
+      // ── Nothing is drawn across the mouth ──
+      //
+      // The mouth is a hole. The net hangs BEHIND the posts and across the back,
+      // and what you see through the opening is that back net in the upper part
+      // and plain grass below it — which is exactly what the geometry gives you
+      // once you stop drawing a second net across the front. Meshing the front
+      // face too put netting on both sides of the frame: "it's everywhere, it's
+      // at the front of the goal as well."
 
       // The frame at the front. The two objects a shot can actually hit.
       ctx.lineCap = "round";
