@@ -34,12 +34,15 @@ export const POST_R = CX + GOAL_W / 2; // 37.66
 /**
  * How far the netting reaches back behind the goal line.
  *
- * A real goal is about two metres deep at the base. This is drawn a little
- * deeper, because at two the goal read as a line with a smear behind it rather
- * than as a thing with an inside — the reference exaggerates it for the same
- * reason. It is only ever the netting: the line the ball must cross is y = 0.
+ * A real goal is about two metres deep at the base, and this is drawn shallower.
+ * The reason is the camera: it looks straight down, so depth is NOT foreshortened
+ * the way it is in the reference, and a true two metres of depth against two and
+ * a half metres of height gave a goal that was as deep as it was tall. Measured
+ * off the reference, its net reads about half its height, which is what this is.
+ *
+ * It is only ever the netting: the line the ball must cross is y = 0.
  */
-export const NET_DEPTH = 2.6;
+export const NET_DEPTH = 1.2;
 
 /** Six-yard box: 5.5 m deep, 5.5 m either side of each post. */
 export const SIX_DEPTH = 5.5;
