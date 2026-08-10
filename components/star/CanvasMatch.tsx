@@ -115,10 +115,15 @@ function creditChance(res: Outcome, ctx: { youShot: boolean; receiverShot: boole
 // --- Knowitball match identity: "night match under floodlights" ---
 // Deep cool pitch greens + floodlight wash, near-black glass chrome, gold accent.
 const C = {
-  pitchA: "#149046",
-  pitchB: "#0e763a",
-  line: "rgba(255,253,245,0.55)",
-  lineFaint: "rgba(255,253,245,0.22)",
+  // Sampled off the reference: rgb(31,144,6). See the pitch block in render().
+  pitch: "#1f9006",
+  // Sampled off the reference too: its markings come back at rgb(224,255,217)
+  // at their brightest — near enough solid white, with a green cast that is the
+  // grass bleeding through the compression. Ours were at 0.55 alpha, which lands
+  // at rgb(154,204,137): a pale grey-green, and the reason the pitch read as a
+  // diagram rather than as a painted field.
+  line: "rgba(255,255,250,0.85)",
+  lineFaint: "rgba(255,255,250,0.5)",
   you: "#10b981",
   youRim: "#065f46",
   mate: "#3b82f6",
@@ -159,6 +164,38 @@ interface Particle {
 
 // Draws the pitch, entities and ball to a canvas. Physics runs in an rAF loop.
 // The frame never moves — see "There is no camera" in the loop below.
+
+/**
+ * A tile of grass grain.
+ *
+ * Deliberately almost invisible: the reference's grass spans about eight
+ * luminance levels from p5 to p95, so this is ±4 either side of nothing. It is
+ * there to stop the pitch reading as flat paint, not to be seen.
+ */
+const GRASS_TILE = 96;
+
+function makeGrassTile(): HTMLCanvasElement | null {
+  if (typeof document === "undefined") return null;
+  const c = document.createElement("canvas");
+  c.width = GRASS_TILE; c.height = GRASS_TILE;
+  const g = c.getContext("2d");
+  if (!g) return null;
+  const img = g.createImageData(GRASS_TILE, GRASS_TILE);
+  // A fixed pattern rather than Math.random, so the grain is the same every
+  // session and never shimmers between one frame and the next.
+  let seed = 0x2f6f2b;
+  for (let i = 0; i < img.data.length; i += 4) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const n = ((seed >>> 16) & 0xff) / 255;          // 0..1
+    const light = n > 0.5;
+    img.data[i] = light ? 255 : 0;
+    img.data[i + 1] = light ? 255 : 0;
+    img.data[i + 2] = light ? 255 : 0;
+    img.data[i + 3] = Math.round(Math.abs(n - 0.5) * 2 * 16);   // ≤ 16/255
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
 
 /** How long "PASS" / "GOAL" stays on screen after the action. */
 const ACTION_BANNER_MS = 1000;
@@ -476,6 +513,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
    * situation is watched from the side until the ball reaches the box.
    */
   const facingRef = useRef<Facing>("up");
+  /** The grass grain, built once on first paint. */
+  const grassRef = useRef<HTMLCanvasElement | null>(null);
 
   const toPx = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current!;
@@ -583,37 +622,70 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     ctx.save();
     ctx.translate(ox, oy);
 
-    // --- Pitch: mowing stripes, 5 m bands laid out in PITCH space so they stay
-    // pinned to the grass as the camera reframes between chances. ---
-    ctx.fillStyle = C.pitchA;
+    // --- Pitch ---
+    //
+    // Sampled off the reference rather than chosen: its grass is rgb(31,144,6),
+    // a saturated yellow-green with almost no blue in it. Ours was rgb(20,144,70)
+    // — the same green with seventy points of blue, which is why it read as
+    // emerald or teal beside it.
+    //
+    // And it has NO MOWING STRIPES. Six patches sampled at six different heights
+    // came back within two units of each other; if there were five-metre bands
+    // they would differ by far more than that. Ours differed by twenty-six, and
+    // that banding was the loudest thing on the screen.
+    //
+    // What it does have is a very fine grain: luminance p5 to p95 spans about
+    // eight levels, so the noise below is deliberately almost invisible. It stops
+    // the pitch reading as flat paint without ever becoming a texture you notice.
+    ctx.fillStyle = C.pitch;
     ctx.fillRect(0, 0, W, H);
-    const BAND = 5;
-    const firstBand = Math.floor((vp.y1 - NET_DEPTH) / BAND) * BAND;
-    for (let by = firstBand; by < vp.y2 + BAND; by += BAND * 2) {
-      const top = P(0, by).py, bot = P(0, by + BAND).py;
-      ctx.fillStyle = C.pitchB;
-      ctx.fillRect(0, top, W, bot - top + 1);
+
+    // The grain, built once and tiled. Pinned to PITCH space, so it sits still
+    // on the grass rather than crawling when the frame changes between chances.
+    if (!grassRef.current) grassRef.current = makeGrassTile();
+    if (grassRef.current) {
+      const pat = ctx.createPattern(grassRef.current, "repeat");
+      if (pat) {
+        const o = P(0, 0);
+        ctx.save();
+        ctx.translate(o.px % GRASS_TILE, o.py % GRASS_TILE);
+        ctx.fillStyle = pat;
+        ctx.fillRect(-GRASS_TILE, -GRASS_TILE, W + GRASS_TILE * 2, H + GRASS_TILE * 2);
+        ctx.restore();
+      }
     }
-    // PLUG-IN (optional asset): a subtle 256px grass-noise tile can be drawn here at ~8% alpha
-    // via ctx.createPattern(img, "repeat") for extra texture. See notes in the PR/commit.
+
+    // Worn grass where a season's football happens: the goalmouth, the penalty
+    // spot, the centre. The reference has these and they are most of what stops
+    // a pitch looking printed — measured at rgb(78,134,16), which is the same
+    // green with the red pushed up.
+    {
+      const wear = (x: number, y: number, rx: number, ry: number, alpha: number) => {
+        const c = P(x, y);
+        const g = ctx.createRadialGradient(c.px, c.py, 0, c.px, c.py, Math.max(rx, ry) * unit);
+        g.addColorStop(0, `rgba(120,132,26,${alpha})`);
+        g.addColorStop(1, "rgba(120,132,26,0)");
+        ctx.save();
+        ctx.translate(c.px, c.py);
+        ctx.scale(1, ry / rx);
+        ctx.translate(-c.px, -c.py);
+        ctx.fillStyle = g;
+        ctx.fillRect(c.px - rx * unit * 1.2, c.py - rx * unit * 1.2, rx * unit * 2.4, rx * unit * 2.4);
+        ctx.restore();
+      };
+      wear(CX, 1.9, 6.2, 2.4, 0.22);      // the goalmouth
+      wear(CX, PEN_SPOT_Y, 3.2, 2.2, 0.16); // the penalty spot
+      wear(CX, HALF_LEN, 3.4, 2.4, 0.14);   // the centre
+    }
 
     // There is nothing behind the goal, and nothing needs to be. A terrace was
     // drawn back there so the camera could sit further back and still frame a
     // corner — a black band of speckles that read, correctly, as nonsense. The
     // camera does not sit back any more; a wide delivery has its own rectangle.
-
-    // Floodlight wash from the goal end...
-    const flood = ctx.createLinearGradient(0, 0, 0, H * 0.5);
-    flood.addColorStop(0, "rgba(255,255,235,0.10)");
-    flood.addColorStop(1, "rgba(255,255,235,0)");
-    ctx.fillStyle = flood;
-    ctx.fillRect(-unit * 2, 0, W + unit * 4, H * 0.5);
-    // ...and a vignette so the edges fall away.
-    const vig = ctx.createRadialGradient(W / 2, H * 0.42, Math.min(W, H) * 0.3, W / 2, H * 0.42, Math.max(W, H) * 0.78);
-    vig.addColorStop(0, "rgba(1,14,8,0)");
-    vig.addColorStop(1, "rgba(1,14,8,0.34)");
-    ctx.fillStyle = vig;
-    ctx.fillRect(-unit * 2, -unit * 2, W + unit * 4, H + unit * 4);
+    //
+    // The floodlight wash and the vignette went with the same reasoning. The
+    // reference is evenly lit from end to end: a gradient across the pitch is a
+    // television idea, and it fought the flat overhead camera every time.
 
     // --- Markings: every line at its real IFAB distance, drawn in pitch space ---
     //
