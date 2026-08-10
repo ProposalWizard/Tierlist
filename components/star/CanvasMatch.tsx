@@ -669,104 +669,76 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     //
     // The pitch is a flat plan and the goal is the one thing on it drawn with
     // HEIGHT: posts standing on the goal line, a crossbar across their tops, the
-    // netting stretched back behind. That is not a departure from the overhead
-    // camera — it is the same trick the ball already uses, which is lifted off
-    // its own shadow by exactly this scale. The goal is drawn at that scale too,
-    // so a ball over the bar is visibly over the bar.
+    // netting stretched back behind them and a second frame at the back. That is
+    // not a departure from the overhead camera — it is the same trick the ball
+    // already uses, being lifted off its own shadow — and it is drawn at exactly
+    // that scale, so a ball over the bar is visibly over the bar.
     //
-    // It was a flat footprint before: correct to the centimetre from directly
-    // above, and unrecognisable as a goal, because from directly above a goal is
-    // a line with a rectangle behind it.
-    //
-    // Everything here goes through P, so it turns with the frame — and "up" is
-    // up the SCREEN, which is where a post goes whichever way the frame is
-    // turned.
+    // Built as five surfaces, drawn back to front, because that is what a goal
+    // is. What it replaced was a single flat panel with an even mesh over it,
+    // and rendering the two side by side at matched width said why that read as
+    // a window rather than a goal: **no tonal separation**. A goal's roof
+    // catches the light and its mouth is in shadow, and with both the same
+    // brightness there is nothing to tell you which way is in.
     {
-      const bl = P(POST_L, 0), br = P(POST_R, 0);
       const hpx = GOAL_H * heightScale;
-      const tl = { px: bl.px, py: bl.py - hpx };
+      const bl = P(POST_L, 0), br = P(POST_R, 0);                 // feet of the posts
+      const tl = { px: bl.px, py: bl.py - hpx };                  // top of the near post
       const tr = { px: br.px, py: br.py - hpx };
+      const rl = P(POST_L, -NET_DEPTH), rr = P(POST_R, -NET_DEPTH); // feet at the back
+      const ul = { px: rl.px, py: rl.py - hpx };                  // and the back frame
+      const ur = { px: rr.px, py: rr.py - hpx };
 
-      // The floor of the goal: the netting's footprint behind the line, which is
-      // the space a ball that has gone in comes to rest in.
-      const fl = P(POST_L, -NET_DEPTH), fr = P(POST_R, -NET_DEPTH);
-      ctx.beginPath();
-      ctx.moveTo(bl.px, bl.py); ctx.lineTo(br.px, br.py);
-      ctx.lineTo(fr.px, fr.py); ctx.lineTo(fl.px, fl.py);
-      ctx.closePath();
-      ctx.fillStyle = "rgba(210,226,216,0.22)";
-      ctx.fill();
-
-      // The face of the net, standing between the posts. Lighter than the grass
-      // — it is white netting catching the light, not a hole.
-      ctx.beginPath();
-      ctx.moveTo(bl.px, bl.py); ctx.lineTo(br.px, br.py);
-      ctx.lineTo(tr.px, tr.py); ctx.lineTo(tl.px, tl.py);
-      ctx.closePath();
-      ctx.fillStyle = "rgba(226,238,231,0.30)";
-      ctx.fill();
-
-      // …and its mesh, close-woven, clipped to the face.
-      ctx.save();
-      ctx.clip();
-      ctx.strokeStyle = "rgba(255,255,255,0.6)";
-      ctx.lineWidth = Math.max(0.7, unit * 0.035);
-      const mesh = 0.34;
-      for (let x = POST_L; x <= POST_R + 0.01; x += mesh) {
-        const p = P(x, 0);
-        ctx.beginPath(); ctx.moveTo(p.px, p.py); ctx.lineTo(p.px, p.py - hpx); ctx.stroke();
-      }
-      for (let h = 0; h <= GOAL_H + 0.01; h += mesh) {
-        const dy = h * heightScale;
-        ctx.beginPath(); ctx.moveTo(bl.px, bl.py - dy); ctx.lineTo(br.px, br.py - dy); ctx.stroke();
-      }
-      ctx.restore();
-
-      // The roof of the net, going back from the crossbar. Mesh, not a solid
-      // bar: drawn solid it read as a black lid sitting on top of the goal.
-      ctx.beginPath();
-      ctx.moveTo(tl.px, tl.py); ctx.lineTo(tr.px, tr.py);
-      ctx.lineTo(fr.px, fr.py); ctx.lineTo(fl.px, fl.py);
-      ctx.closePath();
-      ctx.fillStyle = "rgba(226,238,231,0.22)";
-      ctx.fill();
-      ctx.save();
-      ctx.clip();
-      ctx.strokeStyle = "rgba(255,255,255,0.5)";
-      ctx.lineWidth = Math.max(0.7, unit * 0.032);
-      for (let x = POST_L; x <= POST_R + 0.01; x += mesh) {
-        const a1 = P(x, 0), a2 = P(x, -NET_DEPTH);
-        ctx.beginPath(); ctx.moveTo(a1.px, a1.py - hpx); ctx.lineTo(a2.px, a2.py); ctx.stroke();
-      }
-      for (let dp = 0; dp <= NET_DEPTH + 0.01; dp += mesh) {
-        const f = dp / NET_DEPTH;
-        const p1 = P(POST_L, -dp), p2 = P(POST_R, -dp);
+      type Pt = { px: number; py: number };
+      const path = (q: Pt[]) => {
         ctx.beginPath();
-        ctx.moveTo(p1.px, p1.py - hpx * (1 - f));
-        ctx.lineTo(p2.px, p2.py - hpx * (1 - f));
-        ctx.stroke();
-      }
-      ctx.restore();
+        ctx.moveTo(q[0].px, q[0].py);
+        for (let i = 1; i < q.length; i++) ctx.lineTo(q[i].px, q[i].py);
+        ctx.closePath();
+      };
+      const quad = (q: Pt[], fill: string) => { path(q); ctx.fillStyle = fill; ctx.fill(); };
+      const seg = (a2: Pt, b2: Pt) => { ctx.beginPath(); ctx.moveTo(a2.px, a2.py); ctx.lineTo(b2.px, b2.py); ctx.stroke(); };
+      const lerp = (a2: Pt, b2: Pt, f: number) => ({ px: a2.px + (b2.px - a2.px) * f, py: a2.py + (b2.py - a2.py) * f });
+      // Netting over a surface: strands both ways, clipped to it.
+      const netting = (q: Pt[], cols: number, rows: number, alpha: number) => {
+        ctx.save();
+        path(q); ctx.clip();
+        ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+        ctx.lineWidth = Math.max(0.7, unit * 0.028);
+        for (let i = 0; i <= cols; i++) { const f = i / cols; seg(lerp(q[0], q[1], f), lerp(q[3], q[2], f)); }
+        for (let j = 0; j <= rows; j++) { const f = j / rows; seg(lerp(q[0], q[3], f), lerp(q[1], q[2], f)); }
+        ctx.restore();
+      };
 
-      // The stanchions running back from the top of each post, dark, so the goal
-      // has a depth you can see rather than one you have to take on trust.
-      ctx.strokeStyle = "rgba(16,28,21,0.8)";
-      ctx.lineWidth = Math.max(1.5, unit * 0.13);
-      ctx.beginPath(); ctx.moveTo(tl.px, tl.py); ctx.lineTo(fl.px, fl.py); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(tr.px, tr.py); ctx.lineTo(fr.px, fr.py); ctx.stroke();
+      // Its shadow on the grass.
+      const sh = unit * 0.5;
+      quad([rl, rr, br, bl].map(q => ({ px: q.px + sh, py: q.py + sh * 0.3 })), "rgba(0,0,0,0.16)");
+      // The floor inside, the back of the net, and the frame at the back.
+      quad([bl, br, rr, rl], "rgba(20,50,32,0.10)");
+      quad([rl, rr, ur, ul], "rgba(24,54,36,0.10)");
+      netting([rl, rr, ur, ul], 34, 10, 0.4);
+      ctx.strokeStyle = "#0f1a14";
+      ctx.lineWidth = Math.max(1.8, unit * 0.15);
+      seg(rl, ul); seg(rr, ur); seg(ul, ur);
+      // The roof, catching the light…
+      quad([tl, tr, ur, ul], "rgba(232,242,236,0.20)");
+      netting([tl, tr, ur, ul], 34, 5, 0.7);
+      // …and the mouth, in shadow, because you are looking INTO it.
+      quad([bl, br, tr, tl], "rgba(16,42,28,0.10)");
+      netting([bl, br, tr, tl], 34, 10, 0.5);
 
-      // The frame: two posts standing on the line, and the bar across their tops.
+      // The frame at the front. The two objects a shot can actually hit.
       ctx.lineCap = "round";
-      ctx.strokeStyle = "#f4f8f5";
-      ctx.lineWidth = Math.max(2.5, unit * 0.24);
-      ctx.beginPath(); ctx.moveTo(bl.px, bl.py); ctx.lineTo(tl.px, tl.py); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(br.px, br.py); ctx.lineTo(tr.px, tr.py); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(tl.px, tl.py); ctx.lineTo(tr.px, tr.py); ctx.stroke();
+      ctx.strokeStyle = "#f6faf7";
+      ctx.lineWidth = Math.max(1.8, unit * 0.12);
+      seg(bl, tl); seg(br, tr);
+      ctx.lineWidth = Math.max(2, unit * 0.16);
+      seg(tl, tr);
       ctx.lineCap = "butt";
 
-      // The goal line between the posts, on the ground where it belongs.
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = Math.max(2, unit * 0.2);
+      // The goal line on the ground, thin — the frame above it is the loud part.
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = Math.max(1.5, unit * 0.11);
       pLine(POST_L, 0, POST_R, 0);
     }
 
