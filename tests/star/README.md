@@ -353,6 +353,32 @@ ordinary midfield passes offside.
 
 ---
 
+**THE PITCH**, sampled off the reference rather than chosen by eye — which is
+the only reason any of these numbers are right:
+
+    plain grass      rgb(31,144,6)     ours was rgb(20,144,70)
+    markings         rgb(224,255,217)  ours landed at rgb(154,204,137)
+    goalmouth wear   rgb(78,134,16)    ours had none
+    grain            8 luminance levels, p5 to p95
+
+Three things came out of that. The green had **seventy points of blue in it**
+that the reference does not, which is why it read as emerald or teal beside it.
+The markings were at 0.55 alpha, which over grass lands at a pale grey-green and
+made the pitch read as a diagram rather than a painted field. And there are **no
+mowing stripes**: six patches sampled at six different heights came back within
+two units of each other, where five-metre bands would differ by far more. Ours
+differed by twenty-six, and that banding was the loudest thing on the screen.
+
+What the reference does have is a very fine grain and worn grass where a season's
+football happens — the goalmouth, the penalty spot, the centre. The grain is
+deliberately almost invisible (±4 levels, pinned to pitch space so it does not
+crawl when the frame changes); the wear is most of what stops a pitch looking
+printed. The floodlight wash and the vignette went at the same time: the
+reference is evenly lit end to end, and a gradient across the pitch is a
+television idea that fought the flat overhead camera every time.
+
+---
+
 **THE GOAL STANDS UP.** The pitch is a flat plan and the goal is the one thing on
 it drawn with HEIGHT: posts standing on the goal line, a crossbar across their
 tops, the netting stretched back behind them. That is not a departure from the
