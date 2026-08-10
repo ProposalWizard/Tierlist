@@ -292,6 +292,17 @@ What the model is now:
   moved, which is nearly half the goal. It is back to 1.95–2.65 m — a distance a
   dive actually covers — and the dive is drawn covering it.
 
+  **And the save is judged where HE is, not at the goal line.** He is usually on
+  it, so most of the time those are the same test — but about one chance in five
+  he has come out, and then they are not remotely the same. Judging at the goal
+  line meant a keeper standing five metres off it could save a ball that had
+  sailed past him three metres wide: it flew visibly beyond him, and was then
+  compared against his x once it reached a line he was nowhere near. He is a man
+  standing somewhere with arms of a certain length; the ball either comes within
+  reach as it passes him or it does not, and if it does not, he is beaten and
+  nothing later changes that. Asserted over 1,500 shots threaded past an advanced
+  keeper: none of them saved from behind.
+
   He used to patrol continuously, and it was wrong in two ways. It turned every
   shot from a placement decision into a timing one, and on screen he was visibly
   gliding back and forth across his six-yard box for no reason a player could
