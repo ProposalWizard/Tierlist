@@ -1122,3 +1122,76 @@ The keeper is not shoved away like a defender: a goalkeeper who needs room alway
 has the same room available to him, which is his own goal. He drops back toward
 the line first, and steps across only if being on the line still leaves him
 underneath the ball.
+
+---
+
+## `finishing.mts` — where a team-mate puts it
+
+`npx tsx tests/star/finishing.mts`
+
+Reported from playing it: *"when I pass to a teammate, they tend to shoot at the
+center of the goal, which almost always is saved."* They did, and it was.
+
+The aim model scattered the receiver around the **centre** of the mouth, in a
+window that **narrowed as he got better**:
+
+```
+spread = 7 - composite * 0.05        aimX = centre ± spread/2
+```
+
+At the top of the range that is ±1.10 m. A keeper reaches about 2.4 m either side
+of where he stands. So the better the finisher, the more certainly he shot
+straight at him — and loft was subtracted for quality too, so he did it along the
+floor. Measured over 1,500 chances per situation:
+
+| | mean aim from centre | crossed within 2.4 m of the middle | height at the line | scored |
+|---|---|---|---|---|
+| cutback | 1.05 m | **97.6%** | 0.07 m | 16.8% |
+| byline_cross | 0.90 m | **99.8%** | 0.13 m | 36.7% |
+| corner | 0.99 m | **98.9%** | 0.12 m | 15.3% |
+| through_ball | 2.50 m | 48.3% | 0.01 m | 24.2% |
+
+The through-ball was the only one that converted respectably, for an accidental
+reason: it is struck from further out, so the **angular** error had more distance
+to spray him off the keeper. Being worse at it was the only thing that made it
+work.
+
+Three things came out of fixing it:
+
+- **He aims at a side, not at the middle.** Which side is read off where the
+  keeper is standing — the same thing the player does by looking at the screen —
+  and how near the frame he dares aim rises with quality while his execution
+  error falls with it. That is the trade a finisher is actually making.
+- **`RECEIVER_CONTROL`.** These chances are not equally easy to *strike*, and the
+  engine had no representation of that at all: a centre-back heading a corner in
+  traffic was as composed as a striker with the ball rolled across the six-yard
+  box. It scales what he aims for and divides into the error he makes, so a hard
+  chance is both less ambitious and less accurate.
+- **The keeper covers a ball played across him.** Fixing the aim alone took a
+  byline cross to **45%**, because the keeper stood exactly where he had been
+  when the ball was thirty yards away — leaving five metres of undefended goal
+  against 2.4 m of reach. He now shuffles (3.4 m/s, at most 2.6 m) toward the
+  angle once the ball is *at somebody else's feet*. He still never reads a shot
+  in flight, which is the rule `defending.mts` protects; "does not read your aim"
+  and "does not react to the ball being somewhere else" are not the same claim.
+
+A fourth thing fell out of the measurements. In a one-on-one **the ball reached a
+team-mate 43% of the time** and the team-mate scored more of them than the player
+did — because the poacher is placed at half the distance to the goal, in the width
+band the shot travels through, and any shot passing within a flat 2.4 m of him was
+read as a pass *to* him. That lane now tightens with pace: a rolled ball near a
+man is a pass, a ball struck at 25 m/s is a shot he would have to step into.
+
+Measured after, end to end (the player picking corners, the whole scenario
+including the delivery failing):
+
+| | before | after |
+|---|---|---|
+| cutback | 16.7% | 37.3% |
+| through_ball | 21.7% | 35.8% |
+| byline_cross | 35.5% | 14.7% |
+| corner | 11.8% | 12.2% |
+| one_on_one | 43.3% | 55.7% |
+
+The byline cross falling is the same fix as the cutback rising: it was converting
+at 36% *because* the keeper never moved, not because anybody was finishing well.

@@ -120,24 +120,75 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   }
 
   // Not even with the ball in flight, right up until he touches it.
-  const rng = mulberry32(4);
-  const sc = buildScenario("long_range", rng, 62, 60);
-  initDefenders(sc, rng);
-  const ball = launch(sc, { x: sc.goal.x1 - sc.ball.x, y: -sc.ball.y }, 0.9, { cx: 0, cy: -0.2 }, { power: 70, technique: 70 }, rng);
-  const kx = sc.keeper.x;
-  let moved = false, out: Outcome | null = null;
-  for (let i = 0; i < 600 && !out; i++) {
-    // …up to the moment he touches it. What he does AFTER a save is a
-    // consequence of the save: he dives to the ball he stopped, and he
-    // scrambles after one he has spilled. Both are things that have already
-    // happened, which is the whole rule.
-    if (sc.keeper.saves > 0) break;
-    stepKeeper(sc, DT);
-    stepReactions(sc, ball, DT, rng);
-    if (sc.keeper.x !== kx) moved = true;
-    out = stepBall(ball, sc, rng, DT);
+  //
+  // The rule is that he never reads your AIM — not that he is furniture. Two
+  // things legitimately move him and both are consequences of something that
+  // has already happened: a save he has made, and a ball that has been played
+  // to somebody else and is now at that man's feet. Neither is him learning
+  // where your shot is going, so both are excluded here and the second is
+  // asserted directly below.
+  {
+    let checked = 0, moved = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const rng = mulberry32(seed * 31 + 4);
+      const sc = buildScenario("long_range", rng, 62, 60);
+      initDefenders(sc, rng);
+      const ball = launch(sc, { x: sc.goal.x1 - sc.ball.x, y: -sc.ball.y }, 0.9, { cx: 0, cy: -0.2 }, { power: 70, technique: 70 }, rng);
+      const kx = sc.keeper.x;
+      let out: Outcome | null = null, dirty = false;
+      for (let i = 0; i < 600 && !out; i++) {
+        if (sc.keeper.saves > 0 || sc.keeper.adjusting) break;
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        if (sc.keeper.x !== kx) dirty = true;
+        out = stepBall(ball, sc, rng, DT);
+      }
+      checked++;
+      if (dirty) moved++;
+    }
+    check(moved === 0, `and he does not track the flight either — he never learns where it is going (${moved}/${checked})`);
   }
-  check(!moved, "and he does not track the flight either — he never learns where it is going");
+
+  // ── …but he does cover a ball played across him ──
+  //
+  // He used to stand exactly where he had been when the ball was thirty yards
+  // away, however far across his goal it had since been moved — so a cross to
+  // an unmarked man at the far post met five metres of undefended goal against
+  // two and a half metres of reach, and converted at 45%.
+  {
+    let receptions = 0, adjusted = 0, totalShift = 0, strayed = 0;
+    for (let seed = 0; seed < 400; seed++) {
+      const rng = mulberry32(seed * 17 + 909);
+      const sc = buildScenario(seed % 2 ? "byline_cross" : "cutback", rng, 62, 60);
+      initDefenders(sc, rng);
+      const t = sc.runner?.pos ?? sc.secondaryRunners[0]?.pos;
+      if (!t) continue;
+      const kx = sc.keeper.x;
+      const ball = launch(sc, { x: t.x - sc.ball.x, y: t.y - sc.ball.y },
+        Math.min(0.9, 0.2 + Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y) / 32),
+        { cx: 0, cy: -0.25 }, { power: 62, technique: 62 }, rng);
+      let out: Outcome | null = null, shift = 0;
+      for (let i = 0; i < 900 && !out; i++) {
+        stepDefenders(sc, DT, ball.pos, false, ball);
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        out = stepBall(ball, sc, rng, DT);
+        if (sc.receiverReached) shift = Math.max(shift, Math.abs(sc.keeper.x - kx));
+      }
+      if (!sc.receiverReached) continue;
+      receptions++;
+      if (shift > 0.05) adjusted++;
+      totalShift += shift;
+      // …and he covers the angle rather than wandering out of his goal.
+      if (sc.keeper.x < 27 || sc.keeper.x > 41) strayed++;
+    }
+    check(receptions > 100, `deliveries reach their man (${receptions})`);
+    check(adjusted / Math.max(1, receptions) > 0.7,
+      `and the keeper shifts to cover most of them (${((adjusted / receptions) * 100).toFixed(0)}%)`);
+    check(totalShift / Math.max(1, receptions) < 1.7,
+      `by a shuffle rather than a sprint (mean ${(totalShift / Math.max(1, receptions)).toFixed(2)} m)`);
+    check(strayed === 0, `and never leaves his goal doing it (${strayed})`);
+  }
 }
 
 // ── After the kick, they react — but only when it comes near ───────────────
