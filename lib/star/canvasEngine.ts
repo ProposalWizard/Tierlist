@@ -842,7 +842,7 @@ function fitToView(sc: Scenario) {
   standOff(sc, vp.x1 + inset, vp.x2 - inset);
   sc.player = { x: sc.player.x, y: fy(sc.player.y) };
   syncPassTarget(sc, fx, fy);
-  clearOfTheBall(sc, fx, fy);
+  clearOfTheBall(sc);
 }
 
 /**
@@ -861,7 +861,11 @@ function fitToView(sc: Scenario) {
  */
 const CLEAR_OF_BALL = 1.8;
 
-function clearOfTheBall(sc: Scenario, fx: (x: number) => number, fy: (y: number) => number) {
+function clearOfTheBall(sc: Scenario) {
+  const vp = sc.viewport;
+  const inset = 1.4;
+  const fx = (x: number) => (vp ? clamp(x, vp.x1 + inset, vp.x2 - inset) : x);
+  const fy = (y: number) => (vp ? clamp(y, Math.max(vp.y1 + inset, 0.3), vp.y2 - inset) : Math.max(y, 0.3));
   const push = (p: { x: number; y: number }, want: number) => {
     const dx = p.x - sc.ball.x, dy = p.y - sc.ball.y;
     const d = Math.hypot(dx, dy);
@@ -2051,6 +2055,10 @@ export function applyFirstTouch(scenario: Scenario, technique: number, rng: () =
   // the game moved to standing alongside — so every chance that came out of a
   // completed pass, which is most of the good ones, put the ball on your chest.
   standOff(scenario, vp ? vp.x1 + inset : undefined, vp ? vp.x2 - inset : undefined);
+  // A heavy touch moves the ball up to three metres, and it can move it onto
+  // somebody. Everywhere else the whistle goes with nobody standing on it; a
+  // bad first touch was the one way back into a chance that could not be played.
+  clearOfTheBall(scenario);
   return away;
 }
 
