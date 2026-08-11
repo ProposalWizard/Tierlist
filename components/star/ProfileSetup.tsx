@@ -111,7 +111,7 @@ export default function ProfileSetup({ onComplete }: Props) {
                   <button
                     key={a}
                     onClick={() => setAge(a)}
-                    className={`py-3 rounded-lg font-black text-lg transition ${age === a ? "bg-emerald-500 text-white ring-2 ring-emerald-300" : "bg-gray-800 text-gray-300"}`}
+                    className={`py-3 rounded-lg font-black text-lg transition ${age === a ? "bg-emerald-500 text-white ring-2 ring-emerald-300" : "bg-gray-800 text-white/85"}`}
                   >
                     {a}
                   </button>
@@ -148,7 +148,7 @@ export default function ProfileSetup({ onComplete }: Props) {
                 <button
                   key={p}
                   onClick={() => setPosition(p)}
-                  className={`py-2 rounded-lg font-black text-sm transition ${position === p ? "bg-emerald-500 text-white ring-2 ring-emerald-300" : "bg-gray-800 text-gray-300"}`}
+                  className={`py-2 rounded-lg font-black text-sm transition ${position === p ? "bg-emerald-500 text-white ring-2 ring-emerald-300" : "bg-gray-800 text-white/85"}`}
                 >
                   {p}
                 </button>
@@ -172,7 +172,7 @@ export default function ProfileSetup({ onComplete }: Props) {
                   <button
                     key={c}
                     onClick={() => setSelectedClub(c)}
-                    className={`w-full py-2 px-3 text-left font-bold text-sm rounded-lg transition ${selectedClub === c ? "bg-emerald-500 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
+                    className={`w-full py-2 px-3 text-left font-bold text-sm rounded-lg transition ${selectedClub === c ? "bg-emerald-500 text-white" : "bg-gray-800 text-white/85 hover:bg-gray-700"}`}
                   >
                     {c}
                   </button>

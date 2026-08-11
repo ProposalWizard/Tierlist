@@ -1,4 +1,5 @@
 import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason } from "../../lib/star/careerFlow";
+import { saveStarPhase, loadStarPhase } from "../../lib/star/storage";
 import type { CareerState, MatchStats, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -140,6 +141,47 @@ function playWholeSeason(start: CareerState): CareerState {
   check(loadCareer() === null, "clearing a career removes the career");
   check(loadStarPhase() === null,
     "…and the pending phase with it — otherwise a new career resumes the old one's awards screen");
+}
+
+// ── What a refresh has to carry ─────────────────────────────────────────────
+//
+// The career itself has always been saved. The PHASE was React state only, and
+// so was everything each phase needs to draw its screen — which is why these
+// two are worth pinning down.
+{
+  // A tiny localStorage so the storage module can run headless.
+  const store = new Map<string, string>();
+  (globalThis as unknown as { localStorage: Storage }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, v); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+    key: (i: number) => [...store.keys()][i] ?? null,
+    get length() { return store.size; },
+  } as Storage;
+
+  // The Ballon d'Or is decided at the ceremony and not credited until the season
+  // rolls over — and both screens in between are resumable. It used to live in
+  // React state, so refreshing on either of them lost the win: you watched
+  // yourself collect it and then found it had never happened.
+  saveStarPhase("retirement", undefined, true);
+  check(loadStarPhase()?.wonBallonDor === true, "a Ballon d'Or survives a refresh at the retirement screen");
+  saveStarPhase("season-transfer", undefined, true);
+  check(loadStarPhase()?.wonBallonDor === true, "…and at the transfer window");
+  saveStarPhase("season-transfer", undefined, false);
+  check(loadStarPhase()?.wonBallonDor === false, "and a runner-up stays a runner-up");
+
+  // Only the phases that cannot get out of their own way are written. Landing
+  // back in a match or a training minigame would resume a game that is not
+  // there; every browsing screen you can simply navigate out of.
+  for (const p of ["dashboard", "match", "post-match", "training", "life", "press"] as const) {
+    saveStarPhase(p);
+    check(loadStarPhase() === null, `${p} is not resumed after a refresh`);
+  }
+  for (const p of ["ballon-dor", "contract-renewal", "dilemma", "retirement", "season-transfer"] as const) {
+    saveStarPhase(p);
+    check(loadStarPhase()?.phase === p, `${p} is`);
+  }
 }
 
 if (problems.length) {

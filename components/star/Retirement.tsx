@@ -24,7 +24,7 @@ export function RetirementChoice({ career, onRetire, onPlayOn }: {
         <p className="mt-2 text-sm text-gray-200">{check.reason}</p>
 
         <div className="mt-4 rounded-xl border border-gray-700 bg-gray-800 p-4 text-left">
-          <div className="text-[10px] font-black uppercase tracking-widest text-gray-300">As it stands</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">As it stands</div>
           <div className="mt-1 text-lg font-black text-white">{verdict.title}</div>
           <p className="mt-0.5 text-xs text-gray-200">{verdict.summary}</p>
         </div>
@@ -37,7 +37,7 @@ export function RetirementChoice({ career, onRetire, onPlayOn }: {
             </div>
           </div>
         ) : (
-          <div className="mt-3 text-[10px] text-gray-300">
+          <div className="mt-3 text-[10px] text-white/85">
             {TESTIMONIAL_APPEARANCES - (career.clubAppearances ?? 0)} more appearances for {career.player.club} would
             have earned you a testimonial.
           </div>
@@ -91,7 +91,7 @@ export function LegacyScreen({ career, onNewCareer }: {
           <div className="mx-auto mt-3 h-2 w-40 overflow-hidden rounded-full bg-white/10">
             <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-200" style={{ width: `${Math.max(3, v.score)}%` }} />
           </div>
-          <div className="mt-1 text-[10px] text-gray-300">Legacy {Math.round(v.score)}/100</div>
+          <div className="mt-1 text-[10px] text-white/85">Legacy {Math.round(v.score)}/100</div>
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-2">
@@ -152,7 +152,7 @@ export function LegacyScreen({ career, onNewCareer }: {
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-lg border border-gray-700 bg-gray-800 py-2 text-center">
-      <div className="text-[9px] font-bold uppercase tracking-wider text-gray-300">{label}</div>
+      <div className="text-[9px] font-bold uppercase tracking-wider text-white/85">{label}</div>
       <div className="text-lg font-black tabular-nums text-white">{value}</div>
     </div>
   );

@@ -53,7 +53,7 @@ export default function DilemmaModal({ dilemma, onChoose }: Props) {
                 className="w-full bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg py-3 px-3 text-left transition active:scale-[0.98]"
               >
                 <div className="font-black text-white text-sm">{c.label}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5 flex flex-wrap gap-x-2">
+                <div className="text-[10px] text-white/75 mt-0.5 flex flex-wrap gap-x-2">
                   {formatEffects(c.effects)}
                 </div>
               </button>

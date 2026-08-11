@@ -147,7 +147,7 @@ export default function BallonDor({ career, onContinue }: Props) {
                     </div>
                     <div className="flex-1">
                       <div className="font-black text-sm text-white truncate">{revealed ? n.name : "???"}</div>
-                      <div className="text-[10px] text-gray-400 truncate">{revealed ? n.club : ""}</div>
+                      <div className="text-[10px] text-white/75 truncate">{revealed ? n.club : ""}</div>
                     </div>
                     {revealed && (
                       <div className="font-black text-yellow-300 text-sm">{Math.round(n.score)}</div>

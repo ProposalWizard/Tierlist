@@ -29,12 +29,22 @@ const RESUMABLE: StarPhase[] = ["ballon-dor", "contract-renewal", "dilemma", "re
 export interface SavedPhase {
   phase: StarPhase;
   offerReason?: "form" | "star";
+  /**
+   * Whether the Ballon d'Or was won at the ceremony this phase follows.
+   *
+   * It is decided at the ceremony and not credited until the season rolls over,
+   * and BOTH screens in between — retirement and the transfer window — are
+   * resumable. It lived in React state, so refreshing on either of them lost the
+   * win: you would watch yourself collect it and then find it had never
+   * happened.
+   */
+  wonBallonDor?: boolean;
 }
 
-export function saveStarPhase(phase: StarPhase, offerReason?: "form" | "star") {
+export function saveStarPhase(phase: StarPhase, offerReason?: "form" | "star", wonBallonDor?: boolean) {
   try {
     if (!RESUMABLE.includes(phase)) { localStorage.removeItem(PHASE_KEY); return; }
-    localStorage.setItem(PHASE_KEY, JSON.stringify({ phase, offerReason }));
+    localStorage.setItem(PHASE_KEY, JSON.stringify({ phase, offerReason, wonBallonDor }));
   } catch {}
 }
 

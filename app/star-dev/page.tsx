@@ -46,6 +46,8 @@ export default function StarDevPage() {
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
   const [pressQuestion, setPressQuestion] = useState<PressQuestion | null>(null);
+  /** Whether they won it is only known at the ceremony, so it is carried here. */
+  const [wonBallonDor, setWonBallonDor] = useState(false);
   const clampRel = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
   // Nothing is written back until the load has run, so the initial
@@ -77,6 +79,7 @@ export default function StarDevPage() {
       return;
     }
     if (pending?.phase === "retirement" && retirementCheck(saved).canRetire) {
+      setWonBallonDor(!!pending.wonBallonDor);
       setPhase("retirement");
       return;
     }
@@ -84,7 +87,12 @@ export default function StarDevPage() {
       // Regenerated rather than stored: the seed is the season and the player's
       // fame, neither of which has moved, so these are the same offers.
       const offers = generateOffers(saved, mulberry32(saved.season * 7717 + saved.fame));
-      if (offers.length > 0) { setTransferOffers(offers); setPhase("season-transfer"); return; }
+      if (offers.length > 0) {
+        setWonBallonDor(!!pending.wonBallonDor);
+        setTransferOffers(offers);
+        setPhase("season-transfer");
+        return;
+      }
     }
     if (pending?.phase === "dilemma") {
       // Re-derived rather than stored: the seed is the week and season, neither
@@ -102,8 +110,8 @@ export default function StarDevPage() {
   // Only the phases a refresh must return you to are written; everything else
   // clears the record — see RESUMABLE in storage.ts.
   useEffect(() => {
-    if (hydrated) saveStarPhase(phase, contractOfferReason ?? undefined);
-  }, [hydrated, phase, contractOfferReason]);
+    if (hydrated) saveStarPhase(phase, contractOfferReason ?? undefined, wonBallonDor);
+  }, [hydrated, phase, contractOfferReason, wonBallonDor]);
 
   // The fixture the post-match screen is reporting on. Held in state because
   // crediting the result marks it played, so re-deriving "first unplayed" would
@@ -229,48 +237,59 @@ export default function StarDevPage() {
   // The end of a season, reachable from the post-match screen and — after a
   // refresh dropped you on the dashboard — from the dashboard prompt too.
   // awardLeagueTrophyIfWon is idempotent, so arriving twice is safe.
-  const handleSeasonEnd = useCallback(() => {
-    if (!career) return;
-    const { career: next } = awardLeagueTrophyIfWon(career);
+  const endSeason = useCallback((from: CareerState) => {
+    const { career: next } = awardLeagueTrophyIfWon(from);
     setCareer(next);
     setActiveNav(null);
     setPhase("ballon-dor");
-  }, [career]);
+  }, []);
+  const handleSeasonEnd = useCallback(() => {
+    if (career) endSeason(career);
+  }, [career, endSeason]);
 
-  const handlePostMatchContinue = useCallback(() => {
-    if (!career) return;
-
+  /**
+   * Everything that happens between the final whistle and the next week, run
+   * against a career you hand it.
+   *
+   * It takes the career as an argument rather than reading it out of the
+   * closure, and that is the whole point. The press conference interrupts this
+   * flow and then resumes it — and when it resumed by calling back into a
+   * closure captured BEFORE the answer was applied, every branch that writes
+   * state wrote a career that predated the answer. Reply to the press and then
+   * hit the end of a season, or a contract offer, and the relationships you had
+   * just moved were silently rolled back.
+   */
+  const continueAfterMatch = useCallback((from: CareerState, askPress: boolean) => {
     // The press get you on the way out of the ground, before the week rolls on.
     // Only when the match gave them something to ask about.
-    if (playedFixture && lastMatchStats && !pressQuestion) {
+    if (askPress && playedFixture && lastMatchStats) {
       const q = pressQuestionFor(
-        career, playedFixture, lastMatchStats, !!playedFixture.derby,
-        mulberry32(career.season * 613 + career.week * 29),
+        from, playedFixture, lastMatchStats, !!playedFixture.derby,
+        mulberry32(from.season * 613 + from.week * 29),
       );
       if (q) { setPressQuestion(q); setPhase("press"); return; }
     }
 
-    const remaining = career.fixtures.filter((f) => !f.played).length;
+    const remaining = from.fixtures.filter((f) => !f.played).length;
     if (remaining === 0) {
-      handleSeasonEnd();
+      endSeason(from);
       return;
     }
 
     // Mid-season contract offer — fires when the club wants to lock in a player
     // who has hit a star milestone or maintained exceptional form for 5+ matches.
-    const earlyOffer = checkForContractOffer(career);
+    const earlyOffer = checkForContractOffer(from);
     if (earlyOffer) {
-      const updated = markContractOfferUsed(career, earlyOffer);
-      setCareer(updated);
+      setCareer(markContractOfferUsed(from, earlyOffer));
       setContractOfferReason(earlyOffer);
       setPhase("contract-renewal");
       return;
     }
 
-    // 30% chance of a dilemma between weeks
-    const rng = mulberry32(career.week * 131 + career.season);
+    // A dilemma between weeks, about a third of the time.
+    const rng = mulberry32(from.week * 131 + from.season);
     if (rng() < 0.35) {
-      const d = pickDilemma(career, rng);
+      const d = pickDilemma(from, rng);
       if (d) {
         setCurrentDilemma(d);
         setPhase("dilemma");
@@ -280,11 +299,15 @@ export default function StarDevPage() {
 
     setActiveNav(null);
     setPhase("dashboard");
-  }, [career, handleSeasonEnd, playedFixture, lastMatchStats, pressQuestion]);
+  }, [endSeason, playedFixture, lastMatchStats]);
+
+  const handlePostMatchContinue = useCallback(() => {
+    if (career) continueAfterMatch(career, !pressQuestion);
+  }, [career, continueAfterMatch, pressQuestion]);
 
   const handlePressAnswer = useCallback((o: PressOption) => {
     if (!career) return;
-    setCareer({
+    const answered: CareerState = {
       ...career,
       relationships: {
         ...career.relationships,
@@ -293,11 +316,13 @@ export default function StarDevPage() {
         fans: clampRel(career.relationships.fans + o.fans),
       },
       happiness: clampRel(career.happiness + (o.happiness ?? 0)),
-    });
+    };
+    setCareer(answered);
     setPressQuestion(null);
-    // Straight back into the flow it interrupted.
-    setTimeout(() => handlePostMatchContinue(), 0);
-  }, [career, handlePostMatchContinue]);
+    // Straight back into the flow it interrupted — carrying the answer with it,
+    // rather than through a setTimeout into a closure that never saw it.
+    continueAfterMatch(answered, false);
+  }, [career, continueAfterMatch]);
 
   const handleDilemmaChoose = useCallback((effects: DilemmaEffect) => {
     if (!career || !currentDilemma) return;
@@ -325,9 +350,6 @@ export default function StarDevPage() {
       setPhase("dashboard");
     }
   }, []);
-
-  /** Whether they won it is only known at the ceremony, so it is carried here. */
-  const [wonBallonDor, setWonBallonDor] = useState(false);
 
   const openTransferWindowOrRoll = useCallback((from: CareerState, userWon: boolean) => {
     const offers = generateOffers(from, mulberry32(from.season * 7717 + from.fame));
@@ -472,7 +494,9 @@ export default function StarDevPage() {
 
   const handleCasinoExit = useCallback((finalBank: number) => {
     if (!career) return;
-    setCareer({ ...career, money: finalBank });
+    // Clamped: the casino owns the bank for the length of a session and hands
+    // back a number, and a career with negative money has no way to recover.
+    setCareer({ ...career, money: Math.max(0, Math.round(finalBank)) });
     setActiveNav("life");
     setPhase("life");
   }, [career]);
@@ -486,6 +510,37 @@ export default function StarDevPage() {
     setActiveNav(null);
     setPhase("dashboard");
   }, [career]);
+
+  /**
+   * A phase whose screen cannot be built is not a phase.
+   *
+   * Every guard below reads `phase === X && theStateThatScreenNeeds`, and that
+   * state lives in React rather than in the save — so a phase that outlives it
+   * matched no guard at all and fell through to the dashboard shell with none of
+   * the dashboard in it. A blank screen with a nav bar, escapable only if you
+   * noticed the nav was still there.
+   *
+   * Rather than add a fallback to each one, anything that cannot render is put
+   * back on the dashboard, which is always renderable once a career exists.
+   */
+  useEffect(() => {
+    if (!career) return;
+    const missing =
+      (phase === "training" && !trainingSkill)
+      || (phase === "match" && !nextFixture)
+      || (phase === "pre-match" && !nextFixture)
+      || (phase === "post-match" && !(lastMatchStats && playedFixture))
+      || (phase === "press" && !pressQuestion)
+      || (phase === "dilemma" && !currentDilemma)
+      || (phase === "season-transfer" && transferOffers.length === 0)
+      || (phase === "relationship-game" && !relationshipGameKind)
+      || (phase === "retirement" && !retirementCheck(career).canRetire);
+    if (missing) {
+      setActiveNav(null);
+      setPhase("dashboard");
+    }
+  }, [career, phase, trainingSkill, nextFixture, lastMatchStats, playedFixture,
+      pressQuestion, currentDilemma, transferOffers, relationshipGameKind]);
 
   // ---------- RENDER ----------
   if (phase === "profile-setup" || !career) {
@@ -650,19 +705,19 @@ export default function StarDevPage() {
           </div>
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 text-center shadow-lg">
             <div className="text-lg font-black text-white">{home}</div>
-            <div className="my-3 text-gray-400 font-black">vs</div>
+            <div className="my-3 text-white/75 font-black">vs</div>
             <div className="text-lg font-black text-white">{away}</div>
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
               <div className="bg-gray-700 rounded-lg py-2">
-                <div className="text-gray-400 text-[10px] font-bold">Your Energy</div>
+                <div className="text-white/75 text-[10px] font-bold">Your Energy</div>
                 <div className="font-black text-emerald-300 text-lg">{Math.round(career.energy)}%</div>
               </div>
               <div className="bg-gray-700 rounded-lg py-2">
-                <div className="text-gray-400 text-[10px] font-bold">Match Fitness</div>
+                <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
                 <div className="font-black text-emerald-300 text-lg">{Math.round(career.matchFitness)}%</div>
               </div>
             </div>
-            <div className="mt-3 text-[10px] text-gray-400">
+            <div className="mt-3 text-[10px] text-white/75">
               Boot: <span className="text-white font-bold">{career.currentBoot.name}</span> ({career.currentBoot.matches} matches left)
             </div>
             {career.currentBoot.matches === 0 && (
@@ -771,7 +826,7 @@ export default function StarDevPage() {
       {phase === "dashboard" && <DashboardStats career={career} />}
       {phase === "dashboard" && (
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-center">
-          <div className="text-[10px] font-black uppercase tracking-widest text-gray-300">Start over</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Start over</div>
           <p className="mt-1 text-[11px] text-gray-200">
             Exit leaves the career saved. This deletes it and begins a new one.
           </p>
@@ -810,9 +865,6 @@ export default function StarDevPage() {
         <div>
           <BackChip onBack={handleBackToDashboard} />
           <SkillsScreen career={career} onTrain={handleTrain} />
-          <button onClick={handleFullReset} className="mt-4 w-full py-2 text-xs text-red-400 underline">
-            [dev] Reset career
-          </button>
         </div>
       )}
     </DashboardShell>

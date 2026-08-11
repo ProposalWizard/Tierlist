@@ -25,7 +25,7 @@ export default function LeagueScreen({ career }: Props) {
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`py-1.5 rounded-t-lg font-black text-xs uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-gray-300"}`}
+            className={`py-1.5 rounded-t-lg font-black text-xs uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
           >
             {v}
           </button>
@@ -135,7 +135,7 @@ export default function LeagueScreen({ career }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-black text-white">{run.competition}</span>
                   <span className={`text-[10px] font-black uppercase tracking-widest ${
-                    run.won ? "text-amber-300" : run.eliminated ? "text-gray-300" : "text-emerald-300"}`}
+                    run.won ? "text-amber-300" : run.eliminated ? "text-white/85" : "text-emerald-300"}`}
                   >
                     {run.won ? "Winners 🏆" : run.eliminated ? "Eliminated" : rounds[run.roundIndex]}
                   </span>
@@ -162,7 +162,7 @@ export default function LeagueScreen({ career }: Props) {
               {(career.caps ?? 0)} cap{(career.caps ?? 0) === 1 ? "" : "s"} · {(career.internationalGoals ?? 0)} goal{(career.internationalGoals ?? 0) === 1 ? "" : "s"}
             </div>
             {(career.caps ?? 0) === 0 && (
-              <div className="mt-1 text-[10px] text-gray-300">
+              <div className="mt-1 text-[10px] text-white/85">
                 {internationalCallUp(career)
                   ? "You are in the squad — a tournament comes round every other season."
                   : "Not in the squad yet. Reputation is what gets you picked."}
@@ -200,16 +200,16 @@ export default function LeagueScreen({ career }: Props) {
                   }`}
                 >
                   <div className="truncate">{p.name}</div>
-                  <div className="text-center text-gray-400">{p.position}</div>
+                  <div className="text-center text-white/75">{p.position}</div>
                   <div className="text-center">
                     {p.seasonGoals > 0
                       ? <span className="text-yellow-300 font-black">{p.seasonGoals}</span>
-                      : <span className="text-gray-600">0</span>}
+                      : <span className="text-white/60">0</span>}
                   </div>
                   <div className="text-center">
                     {p.seasonAssists > 0
                       ? <span className="text-blue-300 font-black">{p.seasonAssists}</span>
-                      : <span className="text-gray-600">0</span>}
+                      : <span className="text-white/60">0</span>}
                   </div>
                 </div>
               ))}
@@ -217,13 +217,13 @@ export default function LeagueScreen({ career }: Props) {
           {/* Career totals footer for top scorers */}
           {squad.some(p => p.careerGoals > 0 || p.careerAssists > 0) && (
             <div className="bg-gray-800 border-t border-black/30 px-2 py-1.5">
-              <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Career Top Scorers</div>
+              <div className="text-[9px] font-black text-white/75 uppercase tracking-widest mb-1">Career Top Scorers</div>
               {[...squad]
                 .sort((a, b) => (b.careerGoals + b.careerAssists) - (a.careerGoals + a.careerAssists))
                 .slice(0, 3)
                 .filter(p => p.careerGoals > 0 || p.careerAssists > 0)
                 .map(p => (
-                  <div key={p.id} className="flex items-center gap-1 text-[9px] text-gray-300 mb-0.5">
+                  <div key={p.id} className="flex items-center gap-1 text-[9px] text-white/85 mb-0.5">
                     <span className="font-black text-white truncate flex-1">{p.shortName}</span>
                     <span className="text-yellow-400 font-black">{p.careerGoals}G</span>
                     <span className="text-blue-400 font-black">{p.careerAssists}A</span>

@@ -102,7 +102,7 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
           <button onClick={onCancel} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
           <div className="text-center">
             <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">{LABELS[kind]}</div>
-            <div className="text-xs text-gray-400 font-bold">Currently {currentValue}/100</div>
+            <div className="text-xs text-white/75 font-bold">Currently {currentValue}/100</div>
           </div>
           <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-2 py-2 border border-gray-600">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -112,10 +112,10 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
         </div>
 
         <div className="bg-gray-700 rounded-xl border border-gray-600 p-3 mb-3 text-center">
-          <div className="text-xs text-gray-300">
+          <div className="text-xs text-white/85">
             Match all pairs. Every miss costs a life. 3 misses and you go home tired.
           </div>
-          <div className="text-[10px] text-gray-500 mt-1">Costs ★{ENERGY_COST} energy</div>
+          <div className="text-[10px] text-white/65 mt-1">Costs ★{ENERGY_COST} energy</div>
         </div>
 
         <div className="grid grid-cols-4 gap-1 max-w-[280px] mx-auto w-full">
