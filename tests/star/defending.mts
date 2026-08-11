@@ -1,6 +1,6 @@
 import {
   buildScenario, initDefenders, stepDefenders, stepKeeper, stepReactions, stepBall,
-  launch, clearBall, SCENARIO_KINDS,
+  launch, clearBall, goalInView, SCENARIO_KINDS,
   type Outcome, type Scenario, type Ball,
 } from "../../lib/star/canvasEngine";
 
@@ -403,6 +403,56 @@ const snapshot = (sc: Scenario) => JSON.stringify({
   }
   check(hung === 0, `${hung}/${N} scenarios never resolved — the match would hang there`);
   check(slowest < 1500, `and the longest took ${(slowest / 60).toFixed(1)}s, which is a highlight, not a wait`);
+}
+
+// ── The situation is playable as drawn ────────────────────────────────────
+//
+// "The rectangle is the situation" is only true if everything the situation
+// asks of you is INSIDE the rectangle, and if nobody is standing on the ball
+// when the whistle goes. Both were quietly false.
+//
+//   · `passTarget` is documented as "where the runner is heading" and is drawn
+//     as the aim marker — but the builders hand it a different object from the
+//     one they hand the runner, so every clamp that pulled the runner inside
+//     the frame left the marker behind. It was off the frame in 7.3% of
+//     build-ups and 4.3% of byline crosses: you were being asked to pick out a
+//     man on a part of the pitch the camera will never show you.
+//   · The clamps squeeze everybody inward, and at the edges they squeeze two
+//     people onto the same square metre. A defender inside 1.2 m of the ball in
+//     5.4% of tight angles; the keeper — who is off his line one chance in five,
+//     against a header met three to seven metres out — as close as 32 cm. A
+//     defender inside DEF_BLOCK_R takes it on the first frame, so the chance
+//     was over before the strike left the boot.
+{
+  const N = 1500;
+  let offFrame = 0, onTheBall = 0, keeperOnTheBall = 0, goalHidden = 0;
+  for (const kind of SCENARIO_KINDS) {
+    for (let seed = 0; seed < N; seed++) {
+      const rng = mulberry32(seed * 211 + kind.length * 4409);
+      const sc = buildScenario(kind, rng, 30 + rng() * 60, 20 + rng() * 70, 10 + rng() * 85);
+      initDefenders(sc, rng);
+      const vp = sc.viewport;
+      const inside = (p: { x: number; y: number }, pad = 0) =>
+        p.x >= vp.x1 - pad && p.x <= vp.x2 + pad && p.y >= vp.y1 - pad && p.y <= vp.y2 + pad;
+
+      if (!inside(sc.ball) || !inside(sc.player)) offFrame++;
+      else if (sc.passTarget && !inside(sc.passTarget)) offFrame++;
+      else if (sc.runner && !inside(sc.runner.pos)) offFrame++;
+      else if (sc.defenders.some(d => !inside(d, 1.5))) offFrame++;
+      else if (sc.secondaryRunners.some(r => !inside(r.pos, 1.5))) offFrame++;
+      if (goalInView(kind) && !inside({ x: sc.goal.x1, y: 0 })) goalHidden++;
+
+      for (const d of sc.defenders) {
+        if (Math.hypot(d.x - sc.ball.x, d.y - sc.ball.y) < 1.5) { onTheBall++; break; }
+      }
+      if (Math.hypot(sc.keeper.x - sc.ball.x, sc.keeper.y - sc.ball.y) < 1.8) keeperOnTheBall++;
+    }
+  }
+  const total = SCENARIO_KINDS.length * N;
+  check(offFrame === 0, `everything you are asked to see is on the screen (${offFrame}/${total} outside)`);
+  check(goalHidden === 0, `and the goal is on it whenever there is one (${goalHidden}/${total})`);
+  check(onTheBall === 0, `nobody is standing on the ball at the whistle (${onTheBall}/${total})`);
+  check(keeperOnTheBall === 0, `and neither is the keeper (${keeperOnTheBall}/${total})`);
 }
 
 if (problems.length) {

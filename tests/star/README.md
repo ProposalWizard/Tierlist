@@ -1094,3 +1094,31 @@ honours the pitch conditions and pulls up at the edge of the rectangle instead
 of rolling out of it. There is no pitch outside the frame; `stepBall` already
 says so and calls a ball that leaves it "out". Now 0.1% leave, and about half
 come to rest against the touchline, which is what a tipped ball does.
+
+---
+
+## Situations that are playable as drawn (in `defending.mts`)
+
+"The rectangle is the situation" is only true if everything the situation asks
+of you is inside the rectangle, and if nobody is standing on the ball when the
+whistle goes. Both were quietly false.
+
+- **The aim marker could be off the screen.** `passTarget` is documented as
+  "where the runner is heading" and is drawn as the marker — but the builders
+  hand it a *different object* from the one they hand the runner, so every clamp
+  that pulled the runner inside the frame left the marker behind. Measured off
+  the frame in **7.3% of build-ups and 4.3% of byline crosses**: you were being
+  asked to pick out a man on a part of the pitch the camera will never show you.
+- **Somebody could be standing on the ball.** The clamps squeeze everybody
+  inward, and at the edges they squeeze two people onto the same square metre. A
+  defender inside 1.2 m of the ball in **5.4% of tight angles**; the keeper — off
+  his line one chance in five, against a header met three to seven metres out —
+  as close as **32 cm**. A defender inside `DEF_BLOCK_R` takes it on the first
+  frame, and the keeper smothers anything inside `KEEPER_BODY_R`, so the chance
+  was over before the strike left the boot and nothing you could have done would
+  have changed it.
+
+The keeper is not shoved away like a defender: a goalkeeper who needs room always
+has the same room available to him, which is his own goal. He drops back toward
+the line first, and steps across only if being on the line still leaves him
+underneath the ball.

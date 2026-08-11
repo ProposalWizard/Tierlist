@@ -841,7 +841,87 @@ function fitToView(sc: Scenario) {
   // room for you to be standing beside it.
   standOff(sc, vp.x1 + inset, vp.x2 - inset);
   sc.player = { x: sc.player.x, y: fy(sc.player.y) };
+  syncPassTarget(sc, fx, fy);
+  clearOfTheBall(sc, fx, fy);
+}
 
+/**
+ * Nobody is standing ON the ball when the whistle goes.
+ *
+ * The clamps above squeeze everybody toward the middle, and at the edges of the
+ * frame they squeeze two people onto the same square metre. Measured: a defender
+ * inside 1.2 m of the ball in 5.4% of tight angles, the keeper inside 1.5 m in
+ * 2.3% of headers. A defender within DEF_BLOCK_R takes it on the first frame,
+ * so the chance was over before the strike had left the boot — and nothing you
+ * could have done would have changed it, which is the one thing a situation must
+ * never be.
+ *
+ * He is pushed straight off the ball, and back the other way if that would put
+ * him through the side of the rectangle.
+ */
+const CLEAR_OF_BALL = 1.8;
+
+function clearOfTheBall(sc: Scenario, fx: (x: number) => number, fy: (y: number) => number) {
+  const push = (p: { x: number; y: number }, want: number) => {
+    const dx = p.x - sc.ball.x, dy = p.y - sc.ball.y;
+    const d = Math.hypot(dx, dy);
+    if (d >= want) return;
+    // Straight out from the ball, or straight up the pitch if he is on top of it.
+    const ux = d > 0.01 ? dx / d : 0, uy = d > 0.01 ? dy / d : 1;
+    const to = { x: fx(sc.ball.x + ux * want), y: fy(sc.ball.y + uy * want) };
+    // Clamped back onto the ball by the frame? Go the other way instead.
+    if (Math.hypot(to.x - sc.ball.x, to.y - sc.ball.y) < want - 0.05) {
+      to.x = fx(sc.ball.x - ux * want);
+      to.y = fy(sc.ball.y - uy * want);
+    }
+    p.x = to.x; p.y = to.y;
+  };
+  for (const d of sc.defenders) push(d, CLEAR_OF_BALL);
+
+  // ── And the keeper, who retreats rather than being shoved ──
+  //
+  // He is off his line one time in five, and a header is met three to seven
+  // metres out — so a keeper five and a half metres off his line was standing on
+  // the ball. Measured at its worst: 32 centimetres. He smothers anything inside
+  // KEEPER_BODY_R on the first frame, so that header was over before it was
+  // struck.
+  //
+  // He is not pushed away like a defender: a goalkeeper who needs room always
+  // has the same room available to him, which is his own goal. He drops back
+  // toward the line first, and only steps across if being ON the line still
+  // leaves him underneath it.
+  const k = sc.keeper;
+  const want = KEEPER_BODY_R + 1.6;
+  const off = () => Math.hypot(k.x - sc.ball.x, k.y - sc.ball.y);
+  if (off() < want) {
+    k.y = clamp(Math.min(k.y, sc.ball.y - want), 0.35, k.y);
+    if (off() < want) {
+      const dy = Math.abs(k.y - sc.ball.y);
+      const need = Math.sqrt(Math.max(0, want * want - dy * dy)) + 0.05;
+      const side = Math.sign(k.x - sc.ball.x) || 1;
+      const across = (s: number) => fx(clamp(sc.ball.x + s * need, POST_L - 2.5, POST_R + 2.5));
+      k.x = across(side);
+      if (off() < want) k.x = across(-side);
+    }
+    k.startX = k.x;
+  }
+}
+
+/**
+ * The marker you aim at is where the man is actually going.
+ *
+ * `passTarget` is documented as "where the runner is heading" and is drawn as
+ * the aim marker — but the builders hand it a DIFFERENT object from the one they
+ * hand the runner, so every clamp that pulled the runner inside the rectangle
+ * left the marker behind. Measured: the target was off the frame in 7.3% of
+ * build-ups and 4.3% of byline crosses. You were being asked to pick out a man
+ * on a part of the pitch the camera will never show you, which is the exact
+ * thing the fixed frame exists to make impossible.
+ */
+function syncPassTarget(sc: Scenario, fx: (x: number) => number, fy: (y: number) => number) {
+  if (!sc.passTarget) return;
+  const to = sc.runner ? sc.runner.to : sc.passTarget;
+  sc.passTarget = { x: fx(to.x), y: fy(to.y) };
 }
 
 /**
@@ -888,6 +968,7 @@ function keepInsideTheCut(sc: Scenario) {
       if (placed) break;
     }
   }
+  syncPassTarget(sc, fx, fy);
 }
 
 /**
