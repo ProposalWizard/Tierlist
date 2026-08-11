@@ -1003,3 +1003,58 @@ Three things the measurements caught:
 
 Measured: a wet surface carries a ball further than a dry one and a heavy pitch
 eats it, and both deaden the bounce.
+
+---
+
+## `outcomes.mts` — every outcome happens, and each one is called what it is
+
+`npx tsx tests/star/outcomes.mts`
+
+An 11,700-chance anomaly sweep over all thirteen scenario kinds found no bad
+values at all, and then the outcome-coverage table underneath it found the real
+problem: **four of the fourteen outcomes the engine declares had never once
+occurred.**
+
+| Outcome | Why it could not happen |
+|---|---|
+| `saved` | `resolveKeeper` only ever returns catch, tip or a live parry. A shot he pushed away and a defender then belted clear was reported `tackled` — "DISPOSSESSED". One that rolled out of the frame was "Out of play." |
+| `post` | Returned only on a SECOND frame hit, which is pinball and never occurred. Hitting the woodwork once said nothing at all. |
+| `rebound` | Tested `ball.loose`, which every re-strike clears before the ball reaches the line. Every rebound finish was filed as an ordinary goal. |
+| `blocked` | Never returned anywhere in the engine — while `CanvasMatch` had a live branch for it and showed its **BLOCKED** banner for `tackled`, whose own text reads **DISPOSSESSED**. The banner and the line under it disagreed about the same moment. |
+
+All four had commentary written for them; three had sound and screen-shake wired
+up to fire. The fix is naming rather than physics: `ball.lastTouch` records who
+stopped it, `ball.deflected` records that the chance went through a second phase,
+and `stepBall` wraps the physics to say what happened rather than where the ball
+finished. `blocked` and `tackled` are now the real distinction — a defender in
+the way of a ball **going in**, versus a defender reading one played to somebody.
+
+Three things these measurements caught:
+
+- **The keeper caught 7 balls in 2,484.** The gate was `speed < 17` when the
+  median shot he gets a hand to travels at 21.2 m/s, and `margin > 0.5` — which
+  sounds like half his reach and is not, because height is folded into the same
+  distance and a ball along the ground spends 1.09 m of a 2.4 m budget before it
+  has moved sideways at all. Half a metre either side of his boots was the whole
+  catch window. A keeper who never holds one is not a hard keeper, he is a broken
+  one: it made every save a rebound or a corner. At `speed < 23` and
+  `margin > 0.35` he holds about one in ten, palms two thirds clear and spills
+  the rest back into play.
+- **47.5% of volleys were blocked before they started.** The two defenders were
+  placed off YOU — one 1.5 m to your left, one 3 m to your right, both a stride
+  in front — so a volley was struck into a pair of shins from two metres.
+  `buildLongRange` documents exactly why that is wrong and `addCover` already
+  avoids it; the volley was the one situation left doing it, and it is the
+  situation where being crowded hurts most. Pushing them back changed almost
+  nothing (48.8%) — **two** men spread across a 7.3 m mouth cover it between
+  them however far out they stand, and that was the real fault. One man shades
+  one side and leaves a lane: blocked 14.5%, scored 30% (was 21%).
+- **Losing a 50-50 on a loose ball was reported as a tackle.** Nobody took
+  anything off you — it is the scramble going the other way, which is what
+  "Scrambled clear" is for. Calling it DISPOSSESSED put the blame for a keeper's
+  parry on your last touch.
+
+Measured after: all fourteen outcomes reachable; every chance the keeper ends is
+called a save; a ball off the frame either goes in or is reported as the
+woodwork; `goal` and `rebound` are never confused; nothing in midfield is ever
+"blocked", because there is no goal in the rectangle to block it into.

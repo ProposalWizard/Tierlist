@@ -319,7 +319,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const matchResultFor = (res: Outcome): ScenarioResult => {
     if (OUTCOME_TEXT[res].kind === "goal") return "goal";
     if (res === "delivered") return "delivered";
-    if (res === "tackled") return "lost";
+    if (res === "tackled" || res === "blocked") return "lost";
     return "saved";
   };
 
@@ -1669,7 +1669,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // It says what happened, like a goal or a pass does. Losing the ball used
       // to resolve into a beat of nothing and then the next highlight, so you
       // were left working out from the replay what had gone wrong.
-      showAction("BLOCKED");
+      //
+      // …and it says WHICH thing happened. Both used to read BLOCKED, including
+      // the one the outcome text called DISPOSSESSED, so the banner and the line
+      // under it disagreed about your own move.
+      showAction(res === "blocked" ? "BLOCKED" : "INTERCEPTED");
       nudge(0.18, 0.14);
       playSave();
     } else if (res === "offside") {
