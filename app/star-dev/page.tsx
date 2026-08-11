@@ -6,11 +6,12 @@ import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
-import { nextFixtureFor, fixtureLabel, nationOf } from "@/lib/star/competitions";
+import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
+import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -19,7 +20,7 @@ import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/l
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
 import ProfileSetup from "@/components/star/ProfileSetup";
-import DashboardShell from "@/components/star/DashboardShell";
+import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
 import LifeScreen from "@/components/star/LifeScreen";
@@ -27,6 +28,7 @@ import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScre
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
+import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
 import Casino from "@/components/star/Casino";
@@ -37,7 +39,7 @@ import RelationshipMinigame, { type RelationshipKind } from "@/components/star/R
 export default function StarDevPage() {
   const [career, setCareer] = useState<CareerState | null>(null);
   const [phase, setPhase] = useState<StarPhase>("profile-setup");
-  const [activeNav, setActiveNav] = useState<"league" | "skills" | "life" | "play" | null>(null);
+  const [activeNav, setActiveNav] = useState<NavTab | null>(null);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
@@ -146,11 +148,12 @@ export default function StarDevPage() {
     }
   }, []);
 
-  const handleNavigate = useCallback((tab: "league" | "skills" | "life" | "play") => {
+  const handleNavigate = useCallback((tab: NavTab) => {
     setActiveNav(tab);
     if (tab === "league") setPhase("league");
     else if (tab === "skills") setPhase("skills");
     else if (tab === "life") setPhase("life");
+    else if (tab === "media") setPhase("media");
     else if (tab === "play") setPhase("pre-match");
   }, []);
 
@@ -230,6 +233,9 @@ export default function StarDevPage() {
     setPlayedFixture(nextFixture);
     const { career: next, newlyUnlocked } = creditMatchResult(career, nextFixture, stats);
     toastAchievements(newlyUnlocked);
+    // The world reacts. Generated once, here, from the career on both sides of
+    // the match — "went top" is a comparison and the after state cannot make it.
+    next.media = generateForMatch(career, next, nextFixture, stats);
     setCareer(next);
     setPhase("post-match");
   }, [career, nextFixture]);
@@ -301,7 +307,20 @@ export default function StarDevPage() {
     setPhase("dashboard");
   }, [endSeason, playedFixture, lastMatchStats]);
 
+  /**
+   * Out of the ground.
+   *
+   * The papers react before they ask you about it, so the feed sits between the
+   * stats and the press conference. It is skipped when the match produced
+   * nothing worth reading, which a 0-0 in September genuinely can.
+   */
   const handlePostMatchContinue = useCallback(() => {
+    if (!career) return;
+    if (hasFreshMedia(career)) { setPhase("media"); return; }
+    continueAfterMatch(career, !pressQuestion);
+  }, [career, continueAfterMatch, pressQuestion]);
+
+  const handleMediaContinue = useCallback(() => {
     if (career) continueAfterMatch(career, !pressQuestion);
   }, [career, continueAfterMatch, pressQuestion]);
 
@@ -340,6 +359,30 @@ export default function StarDevPage() {
   const rollOverSeason = useCallback((from: CareerState, userWon: boolean) => {
     const { career: next, newlyUnlocked } = advanceSeason(from, userWon);
     toastAchievements(newlyUnlocked);
+    // ── The close season has a media cycle too ──
+    //
+    // Career moments go through exactly the same pipeline as a match: same
+    // events, same accounts, same templates. A sacking, a Ballon d'Or and a
+    // hat-trick are the same shape of thing to the engine, which is the whole
+    // reason there is one engine rather than two.
+    if (userWon) {
+      next.media = generateForCareer(next, { kind: "ballon-dor", won: true, total: next.ballonDorWins }, "bdor");
+    }
+    const honours = (next.awards ?? []).filter(a => a.season === from.season);
+    for (const a of honours) {
+      next.media = generateForCareer({ ...next, media: next.media },
+        { kind: "award", award: a.kind, detail: a.detail }, `award-${a.kind}`);
+    }
+    if (next.managerNews && next.manager) {
+      next.media = generateForCareer({ ...next, media: next.media },
+        { kind: "manager-out", name: from.manager?.name ?? "The manager",
+          incoming: next.manager.name, reason: next.managerNews }, "gaffer");
+    }
+    if (next.lastSeasonJudgement) {
+      next.media = generateForCareer({ ...next, media: next.media },
+        { kind: "season-end", position: leaguePosition(from),
+          headline: next.lastSeasonJudgement.headline, detail: next.lastSeasonJudgement.detail }, "review");
+    }
     setCareer(next);
     // A new club came with a new contract, so a renewal is only forced when you
     // stayed and let the old one run out.
@@ -375,7 +418,12 @@ export default function StarDevPage() {
 
   const handleRetire = useCallback(() => {
     if (!career) return;
-    setCareer(retire(career));
+    const done = retire(career);
+    done.media = generateForCareer(done, {
+      kind: "retirement", goals: done.careerStats.goals,
+      apps: done.careerStats.appearances, trophies: done.trophies.length,
+    }, "retire");
+    setCareer(done);
     setPhase("legacy");
   }, [career]);
 
@@ -387,6 +435,11 @@ export default function StarDevPage() {
   const handleAcceptTransfer = useCallback((offer: TransferOffer) => {
     if (!career) return;
     const moved = acceptOffer(career, offer);
+    // Done deal, farewell and unveiling — three posts from one moment, and the
+    // roster regenerates around the new club, so from here it is his fans
+    // talking about you and your old rival who has stopped caring.
+    moved.media = generateForCareer(moved,
+      { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.signingFee }, "transfer");
     setCareer(moved);
     setTransferOffers([]);
     rollOverSeason(moved, wonBallonDor);
@@ -504,7 +557,12 @@ export default function StarDevPage() {
   const handleContractComplete = useCallback((newContract: CareerState["contract"] | null) => {
     if (!career) return;
     if (newContract) {
-      setCareer({ ...career, contract: newContract });
+      const signed: CareerState = { ...career, contract: newContract };
+      signed.media = generateForCareer(signed, {
+        kind: "contract", club: newContract.club, wage: newContract.wage,
+        seasons: newContract.seasonsRemaining,
+      }, `contract-s${career.season}`);
+      setCareer(signed);
     }
     setContractOfferReason(null);
     setActiveNav(null);
@@ -604,6 +662,14 @@ export default function StarDevPage() {
         onContinue={handlePostMatchContinue}
       />
     );
+  }
+
+  // Straight out of the ground it is a moment with a Continue; reached from the
+  // nav it is a place you can browse and leave.
+  if (phase === "media") {
+    return activeNav === "media"
+      ? <MediaFeed career={career} mode="browse" onBack={handleBackToDashboard} />
+      : <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} />;
   }
 
   if (phase === "legacy") {
@@ -798,6 +864,7 @@ export default function StarDevPage() {
       onExit={handleExit}
       onNavigate={handleNavigate}
       activeNav={activeNav}
+      mediaUnread={hasFreshMedia(career) && activeNav !== "media"}
       nextMatchLabel={nextMatchLabel}
     >
       {unlockedAchievements.length > 0 && (

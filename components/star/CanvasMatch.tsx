@@ -1710,6 +1710,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const playerName = `${pFirst} ${pLast}`;
       const rng = rngRef.current;
 
+      // ── How it was scored ──
+      //
+      // The scenario the chance was built from and how far out the ball was
+      // struck. Both are sitting right here and were thrown away, which meant a
+      // goal was a number: nothing downstream could tell a tap-in from a
+      // thirty-yard volley, so nothing downstream could say so. `res` is a
+      // rebound outcome when it came off a second phase, which is a different
+      // kind of goal again.
+      const how = res === "rebound" ? "rebound" : sc.kind;
+      const distance = Math.hypot(sc.ball.x - (sc.goal.x1 + sc.goal.x2) / 2, sc.ball.y);
+
       if (d.assists === 1 && sc.receiver) {
         // Teammate scored (chain scenario) — replace role label with a real player name
         const scorer = pickSquadScorer(squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position)).length > 0
@@ -1717,12 +1728,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           : squad, rng);
         if (scorer) {
           commentaryRoleLabel = scorer.shortName;
-          goalEventsRef.current.push({ minute: matchMinuteRef.current, scorer: scorer.name, assist: playerName, isUserGoal: false });
+          goalEventsRef.current.push({
+            minute: matchMinuteRef.current, scorer: scorer.name, assist: playerName,
+            isUserGoal: false, how, distance: Math.round(distance),
+          });
         }
       } else if (d.goals === 1) {
         // User scored directly — optionally pick a squad assister
         const assister = squad.length > 0 ? pickSquadAssist(squad, "", rng) : null;
-        goalEventsRef.current.push({ minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name, isUserGoal: true });
+        goalEventsRef.current.push({
+          minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name,
+          isUserGoal: true, how, distance: Math.round(distance),
+        });
         if (assister) pushLine(`Assist: ${assister.shortName}`);
       }
     }

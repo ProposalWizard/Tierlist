@@ -1,6 +1,8 @@
 # The Football Media Engine
 
-> Design document. No code yet — this is the thing the code is built against.
+> Design document, and the thing the code was built against. **Built** — see §16
+> for what the implementation changed, and `tests/star/media.mts` for the
+> measurements that changed it.
 
 ---
 
@@ -687,3 +689,53 @@ rather than golden-file, because the output is generative:
 - thread arithmetic is correct: 3 + 2 + 1 goals over three matches produces
   "six in three", not "six in six"
 - stored feed stays under 25 KB after 15 seasons
+
+
+---
+
+## 16. What building it changed
+
+Six things the design got wrong, all found by writing the thing and reading the
+output rather than by thinking harder about the design. They are recorded here
+because each one is a trap the next person to extend this will otherwise fall
+into.
+
+**Threads must not do arithmetic.** §4 has a thread accumulating goals across
+every event that touches it. A hat-trick fires four detectors, so over a season
+the form thread reached *"67 goals in 25 matches"*. The run detectors already
+measure properly — `red-hot` reads `goalsInLast(memory, 3)` — so a thread's job
+is only to carry the latest measured pair forward and remember the story is
+open. Facts are replaced, never summed, and only by events that arrive with
+their own window.
+
+**A template must not be usable twice in one cycle.** Two stat accounts wrote
+the identical line a minute apart; so did both broadsheets; so did two
+supporters. `chooseTemplate` now takes the set already used this cycle, and
+`commit` also suppresses any post whose rendered text matches one of the last 24
+— because the same template with the same facts produces a byte-identical post a
+fortnight later, and reading it twice is the same tell.
+
+**`position` meant two things.** Your position on the pitch and the club's
+position in the table, in one fact bag, and whichever detector wrote last won:
+*"Arsenal — NaNth, 43 points"*. Your position is now `role`.
+
+**A word like "today" needs a guard.** `goals: 7` means seven this afternoon on
+a hat-trick and seven across three matches on a run. `Template.excludes` is the
+valve: a line that says "today" excludes `matches`.
+
+**Register was doing two jobs.** A tabloid and a supporter are both "raw", and
+only one of them types in lower case — so every back-page headline came out as
+*"arsenal 2-1 aston villa"*. `VoiceProfile.lowercase` is now its own field.
+
+**Reveal is driven by navigation, not a clock.** §7 assumes a virtual clock the
+feed is filtered against, which is right — but crediting a match advances the
+career week *before* the feed is ever shown, so staging off `career.week` makes
+every post instantly visible and quietly deletes the news cycle.
+`MediaState.lastCycleClock` records what the cycle was stamped from; walking out
+of the ground shows the first fifteen minutes, and opening the tab later in the
+week shows the rest.
+
+Everything else in this document is as built. The volley of small things — one
+defender rather than two, the club account's coverage gaps, "both of them" as a
+bare noun phrase — came out of reading 135 generated posts and fixing what read
+wrong, which is the only way any of it was ever going to be found.
