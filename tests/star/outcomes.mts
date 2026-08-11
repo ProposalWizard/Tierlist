@@ -4,6 +4,7 @@ import {
   type Outcome, type Scenario, type ScenarioKind,
 } from "../../lib/star/canvasEngine";
 import { POST_L, POST_R } from "../../lib/star/pitch";
+import { commentaryResult } from "../../lib/star/matchCommentary";
 
 /**
  * WHAT HAPPENED, not where the ball stopped.
@@ -264,6 +265,54 @@ function played(kind: ScenarioKind, seed: number) {
   check(nearest / N > 5, `nobody is standing on top of you at a volley (nearest ${(nearest / N).toFixed(1)} m)`);
   check(blocked / N < 0.25, `so it is not blocked before it starts (${pct(blocked, N)})`);
   check(goals / N > 0.2, `and it is worth having a go (${pct(goals, N)} scored)`);
+}
+
+// ── The line under the result describes the result ────────────────────────
+{
+  // Two flags, both read wrong, and between them the commentary was exactly
+  // inverted on every chained chance in the game. `chain` was `receiverShot`,
+  // so a pass that never reached anybody was not a chain at all and could never
+  // be called a failed pass. `receiverReached` was `receiverDone`, which is
+  // cleared the instant he strikes it — so it was false for every chance where
+  // the pass had WORKED. You picked out a team-mate, he shot, the keeper saved
+  // it, and the game said "Cut out! A defender reads it well."
+  const FAILURE = /cut out|intercepted|under-hit|overhit|before it can find|reaches anyone/i;
+  let reached = 0, wrongOnReached = 0, missed = 0, wrongOnMissed = 0;
+  for (const kind of ["cutback", "byline_cross", "through_ball", "corner"] as ScenarioKind[]) {
+    for (let seed = 0; seed < 300; seed++) {
+      const rng = mulberry32(seed * 1013 + kind.length * 7919);
+      const sc = buildScenario(kind, rng, 55 + rng() * 20, 55 + rng() * 20, 55 + rng() * 20);
+      initDefenders(sc, rng);
+      const t = sc.runner?.pos ?? sc.secondaryRunners[0]?.pos;
+      if (!t || !sc.receiver) continue;
+      const d = Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y);
+      // Deliberately sloppier than `played` — some of these have to miss him.
+      const ball = launch(sc,
+        { x: t.x - sc.ball.x + (rng() - 0.5) * 3.5, y: t.y - sc.ball.y + (rng() - 0.5) * 3.5 },
+        Math.min(0.95, 0.2 + d / 32) * (0.8 + rng() * 0.45),
+        { cx: (rng() - 0.5) * 0.8, cy: -0.1 - rng() * 0.45 },
+        { power: 55 + rng() * 25, technique: 55 + rng() * 25 }, rng);
+      let out: Outcome | null = null;
+      for (let i = 0; i < 2000 && !out; i++) {
+        stepDefenders(sc, DT, ball.pos, false, ball);
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        out = stepBall(ball, sc, rng, DT);
+      }
+      if (!out) continue;
+      const line = commentaryResult(out, rng, {
+        chain: sc.receiver != null,
+        receiverReached: sc.receiverReached === true,
+        roleLabel: "the striker",
+        isPass: false,
+      });
+      if (sc.receiverReached) { reached++; if (FAILURE.test(line)) wrongOnReached++; }
+      else { missed++; if (out !== "offside" && !FAILURE.test(line) && !/out of play/i.test(line)) wrongOnMissed++; }
+    }
+  }
+  check(reached > 400 && missed > 40, `passes both find their man and fail to (${reached} reached, ${missed} missed)`);
+  check(wrongOnReached === 0, `a pass that found him is never called a failed pass (${wrongOnReached}/${reached})`);
+  check(wrongOnMissed < missed * 0.2, `and one that did not is not credited to him (${wrongOnMissed}/${missed})`);
 }
 
 if (problems.length) {

@@ -142,6 +142,7 @@ const RESULT_TEAMMATE_TEMPLATES: Partial<Record<Outcome, string[]>> = {
   wide: ["{role} drags it wide — so close to rewarding your pass."],
   blocked: ["Blocked! A defender recovers just in time to deny {role}."],
   tackled: ["Taken off {role} before he can get his shot away."],
+  offside: ["The flag is up — {role} had gone too early.", "Offside against {role}. The ball was perfect; the run was not."],
   out: ["{role}'s effort balloons out of play."],
   short: ["{role} can't quite get enough on it."],
 };

@@ -255,7 +255,20 @@ export interface Scenario {
   runner: Runner | null;    // the team-mate a pass is aimed at, if any
   passTarget: Vec2 | null;  // where the runner is heading (drawn as the aim marker)
   receiver: Receiver | null;   // set for cutback/byline_cross/through_ball — they shoot on reception
+  /** He has the ball AT HIS FEET right now. Cleared the instant he strikes it. */
   receiverDone: boolean;
+  /**
+   * The ball reached the man you played it to, at any point in this move.
+   *
+   * `receiverDone` is not that, and reading it as though it were is why the
+   * commentary was exactly inverted on every chained chance. It is cleared when
+   * he shoots, so by the time the move resolved it was false for every chance
+   * where the pass had WORKED — and the line that fires on a failed pass ("Cut
+   * out! A defender reads it well") fired on the one where you had picked him
+   * out and his shot had been saved. It could not fire on a genuine failure,
+   * because a pass that never arrives produces no team-mate shot to test.
+   */
+  receiverReached?: boolean;
   /** The team-mate has actually struck the resolving shot. Drives the stat credit. */
   receiverShot?: boolean;
   /** How many of them he has had. Two is a scramble; three is a farce. */
@@ -3190,6 +3203,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // when the ball was played and he has now played it.
         if (offsideOffence(scenario, r.offside)) return "offside";
         scenario.receiverDone = true;
+        scenario.receiverReached = true;
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
         r.moving = false;
         ball.lastTouch = "attack";

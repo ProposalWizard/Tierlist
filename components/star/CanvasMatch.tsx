@@ -1727,7 +1727,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
     }
 
-    pushLine(commentaryResult(res, rngRef.current, { chain: receiverShot, receiverReached: sc.receiverDone, roleLabel: commentaryRoleLabel, isPass: isSimplePass }));
+    // ── The two questions the commentary is asking ──
+    //
+    // "Was there a man to find?" and "did the ball get to him?" — and both were
+    // being answered with the wrong flag, which inverted the line on every
+    // chained chance in the game.
+    //
+    // `chain` was `receiverShot`, so a pass that never reached anybody was not
+    // a chain at all and could never be described as a failed pass.
+    // `receiverReached` was `receiverDone`, which is cleared the instant he
+    // strikes it — so it was false for every chance where the pass had WORKED.
+    // Between them: you picked out a team-mate, he shot, the keeper saved it,
+    // and the game said "Cut out! A defender reads it well."
+    pushLine(commentaryResult(res, rngRef.current, {
+      chain: sc.receiver != null,
+      receiverReached: sc.receiverReached === true,
+      roleLabel: commentaryRoleLabel,
+      isPass: isSimplePass,
+    }));
 
     // A pass that found its man can keep the move going. This used to apply to
     // build-up only, and jumped to a random attacking situation; now any

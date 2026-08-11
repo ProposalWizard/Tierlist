@@ -1058,3 +1058,22 @@ Measured after: all fourteen outcomes reachable; every chance the keeper ends is
 called a save; a ball off the frame either goes in or is reported as the
 woodwork; `goal` and `rebound` are never confused; nothing in midfield is ever
 "blocked", because there is no goal in the rectangle to block it into.
+
+### …and the line under the result
+
+The same suite caught a second inversion, in the commentary rather than the
+physics. `commentaryResult` asks two questions — "was there a man to find?" and
+"did the ball get to him?" — and both were answered with the wrong flag.
+
+`chain` was passed `receiverShot`, so a pass that never reached anybody was not
+a chain at all and could never be described as a failed pass. `receiverReached`
+was passed `receiverDone`, which is cleared the instant he strikes it, so it was
+false for every chance where the pass had **worked**. Between them the two lines
+were exactly swapped: you picked out a team-mate, he shot, the keeper saved it,
+and the game said *"Cut out! A defender reads it well."* — while a ball
+genuinely cut out in front of him fell through to a line about your own shot.
+
+Measured over 1,600 chained chances: 1,398 where the ball reached him, all of
+which drew from the failed-pass pool; 202 genuine failures, none of which could.
+`Scenario.receiverReached` now records that he got it at any point in the move
+and is never cleared, and `chain` is simply whether the situation had a receiver.
