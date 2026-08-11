@@ -1,6 +1,6 @@
 import {
   buildScenario, initDefenders, stepDefenders, stepKeeper, stepReactions, stepBall,
-  launch, SCENARIO_KINDS, OUTCOME_TEXT,
+  launch, settleBall, stepBallInNet, SCENARIO_KINDS, OUTCOME_TEXT,
   type Outcome, type Scenario, type ScenarioKind,
 } from "../../lib/star/canvasEngine";
 import { POST_L, POST_R } from "../../lib/star/pitch";
@@ -313,6 +313,35 @@ function played(kind: ScenarioKind, seed: number) {
   check(reached > 400 && missed > 40, `passes both find their man and fail to (${reached} reached, ${missed} missed)`);
   check(wrongOnReached === 0, `a pass that found him is never called a failed pass (${wrongOnReached}/${reached})`);
   check(wrongOnMissed < missed * 0.2, `and one that did not is not credited to him (${wrongOnMissed}/${missed})`);
+}
+
+// ── After the whistle, the ball stays where you can see it ────────────────
+{
+  // "You watch it go" was the whole reason a saved ball keeps travelling after
+  // the outcome is decided. Measured: 74% of them were off the visible frame
+  // within two and a half seconds — some seventeen metres past it — and 1,695
+  // of 1,701 were still rolling when the highlight ended. You watched it leave
+  // and then watched an empty rectangle. A keeper's tip left at 9-16 m/s
+  // against 1.9 m/s² of rolling resistance, which is forty metres of running.
+  let settled = 0, gone = 0, goals = 0, outsideTheNet = 0;
+  for (const kind of SCENARIO_KINDS) {
+    for (let seed = 0; seed < 250; seed++) {
+      const { out, sc, ball } = played(kind, seed + 61000);
+      if (out === "none") continue;
+      for (let i = 0; i < 150; i++) { settleBall(ball, DT, sc); stepBallInNet(ball, DT); }
+      if (OUTCOME_TEXT[out as Outcome].kind === "goal") {
+        goals++;
+        if (ball.pos.x < POST_L - 0.3 || ball.pos.x > POST_R + 0.3 || ball.pos.y > 0.6) outsideTheNet++;
+      } else if (ball.settling) {
+        settled++;
+        const vp = sc.viewport;
+        if (ball.pos.x < vp.x1 || ball.pos.x > vp.x2 || ball.pos.y < vp.y1 || ball.pos.y > vp.y2) gone++;
+      }
+    }
+  }
+  check(settled > 300 && goals > 300, `plenty of both to look at (${settled} settling, ${goals} goals)`);
+  check(gone <= settled * 0.01, `a ball pushed clear finishes inside the frame (${gone}/${settled} left it)`);
+  check(outsideTheNet === 0, `and a goal finishes inside the net (${outsideTheNet}/${goals} did not)`);
 }
 
 if (problems.length) {

@@ -1571,7 +1571,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // …and a ball the keeper has pushed clear keeps going, so you watch it go
       // rather than finding it already there.
       if (phaseRef.current === "result" && ballRef.current?.settling) {
-        settleBall(ballRef.current, dt);
+        settleBall(ballRef.current, dt, scenarioRef.current);
       }
 
       // Cosmetic FX advance (pausing the rAF pauses everything together)

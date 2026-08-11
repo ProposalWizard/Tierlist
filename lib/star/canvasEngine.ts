@@ -2781,7 +2781,11 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
     const side = ball.pos.x < CX ? -1 : 1;
     const away = normalize({ x: side * (0.7 + rng() * 0.5), y: 1 });
-    const sp = 9 + rng() * 7;
+    // A push to safety, not a clearance. At 9-16 m/s a tipped ball ran for the
+    // better part of forty metres and was off the screen long before it stopped
+    // — which is not what "you watch it go" was supposed to mean. This dies
+    // inside the rectangle, most of the time without needing the touchline.
+    const sp = 6 + rng() * 6;
     ball.vel = { x: away.x * sp, y: away.y * sp };
     ball.vz = 1.4 + rng() * 2.2;
     ball.spin *= 0.2;
@@ -2891,22 +2895,49 @@ function reboundOffFrame(ball: Ball, xCross: number, rng: () => number, scenario
  * so a ball the keeper has pushed clear is SEEN going clear. Anything that
  * could change the result has already happened.
  */
-export function settleBall(ball: Ball, dt: number) {
+export function settleBall(ball: Ball, dt: number, scenario?: Scenario) {
   if (!ball.settling || ball.resting) return;
+  const cond = scenario?.conditions;
   ball.vz -= G * dt;
   ball.z += ball.vz * dt;
   ball.pos.x += ball.vel.x * dt;
   ball.pos.y += ball.vel.y * dt;
   if (ball.z <= 0) {
     ball.z = 0;
-    if (ball.vz < -MIN_BOUNCE_VZ) { ball.vz = -ball.vz * BOUNCE_VZ; ball.vel.x *= BOUNCE_H; ball.vel.y *= BOUNCE_H; }
-    else ball.vz = 0;
+    // The surface is the surface after the whistle too. This used to use the
+    // bare constants, so a ball pushed clear on a bog skipped away exactly as it
+    // would in August.
+    if (ball.vz < -MIN_BOUNCE_VZ) {
+      ball.vz = -ball.vz * BOUNCE_VZ * (cond?.bounce ?? 1);
+      ball.vel.x *= BOUNCE_H; ball.vel.y *= BOUNCE_H;
+    } else ball.vz = 0;
   }
   if (ball.z <= 0.03 && ball.vz <= 0.01) {
     const s = Math.hypot(ball.vel.x, ball.vel.y);
-    const drop = GROUND_FRICTION * dt;
+    const drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
     if (s <= drop) { ball.vel.x = 0; ball.vel.y = 0; ball.resting = true; }
     else { const f = (s - drop) / s; ball.vel.x *= f; ball.vel.y *= f; }
+  }
+
+  // ── It stops at the edge of the situation ──
+  //
+  // A keeper's tip leaves at 9-16 m/s and rolling resistance is 1.9 m/s², so it
+  // runs for the better part of forty metres. Measured: 74% of settling balls
+  // were off the visible frame within two and a half seconds, some of them
+  // seventeen metres past it, still rolling. The point of settling the ball was
+  // that you SEE where it went — instead you watched it leave and then watched
+  // an empty rectangle.
+  //
+  // There is no pitch outside the frame. stepBall already says so, and calls a
+  // ball that leaves it "out"; the whistle has already gone here, so it simply
+  // pulls up on the touchline and stays where you can see it.
+  const vp = scenario?.viewport;
+  if (vp) {
+    const m = 0.6;   // the ball's own width in from the edge
+    if (ball.pos.x < vp.x1 + m) { ball.pos.x = vp.x1 + m; ball.vel.x = 0; ball.vel.y *= 0.4; }
+    else if (ball.pos.x > vp.x2 - m) { ball.pos.x = vp.x2 - m; ball.vel.x = 0; ball.vel.y *= 0.4; }
+    if (ball.pos.y > vp.y2 - m) { ball.pos.y = vp.y2 - m; ball.vel.y = 0; ball.vel.x *= 0.4; }
+    else if (ball.pos.y < vp.y1 + m) { ball.pos.y = vp.y1 + m; ball.vel.y = 0; ball.vel.x *= 0.4; }
   }
 }
 

@@ -1077,3 +1077,20 @@ Measured over 1,600 chained chances: 1,398 where the ball reached him, all of
 which drew from the failed-pass pool; 202 genuine failures, none of which could.
 `Scenario.receiverReached` now records that he got it at any point in the move
 and is never cleared, and `chain` is simply whether the situation had a receiver.
+
+### …and where the ball finishes
+
+`settleBall` exists so that a ball the keeper has pushed clear is SEEN going
+clear rather than found already there. Measured: **74% of settling balls were
+off the visible frame within two and a half seconds** — some seventeen metres
+past it — and 1,695 of 1,701 were still rolling when the highlight ended. You
+watched it leave, and then watched an empty rectangle.
+
+The arithmetic: a tip left the keeper's hand at 9–16 m/s against 1.9 m/s² of
+rolling resistance, which is the better part of forty metres of running, in a
+frame twenty-six metres tall. Two changes — the tip is now a push to safety
+(6–12 m/s) rather than a clearance, and `settleBall` takes the scenario so it
+honours the pitch conditions and pulls up at the edge of the rectangle instead
+of rolling out of it. There is no pitch outside the frame; `stepBall` already
+says so and calls a ball that leaves it "out". Now 0.1% leave, and about half
+come to rest against the touchline, which is what a tipped ball does.
