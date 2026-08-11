@@ -119,6 +119,18 @@ export interface GoalEvent {
   scorer: string;   // full player name
   assist?: string;  // full player name, or undefined
   isUserGoal: boolean;
+  /**
+   * How it was scored, and from how far.
+   *
+   * The match engine knows both at the moment it records a goal — the scenario
+   * the chance was built from and where the ball was struck — and threw them
+   * away. Without them a goal is a number, and "35-YARD SCREAMER" is a headline
+   * nothing in the game can produce. Optional, so a career saved before this
+   * existed still loads and simply never gets the spectacular ones.
+   */
+  how?: string;
+  /** Metres from the centre of the goal at the strike. */
+  distance?: number;
 }
 
 export interface MatchStats {
@@ -270,6 +282,13 @@ export interface CareerState {
   sponsorNews?: string[];
   /** A farewell match, earned by a long spell at one club. */
   testimonial?: { club: string; season: number; payout: number } | null;
+  /**
+   * The football world's reaction to your career. See lib/star/media.
+   *
+   * Optional so every existing save loads with an empty feed that fills itself
+   * from the next match onwards.
+   */
+  media?: import("./media/types").MediaState;
 }
 
 export type StarPhase =
@@ -282,6 +301,7 @@ export type StarPhase =
   | "pre-match"
   | "match"
   | "post-match"
+  | "media"
   | "ballon-dor"
   | "shop-nrg"
   | "shop-boots"

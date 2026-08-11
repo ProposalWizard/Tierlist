@@ -6,12 +6,16 @@ interface Props {
   career: CareerState;
   onExit: () => void;
   children: React.ReactNode;
-  onNavigate: (tab: "league" | "skills" | "life" | "play") => void;
-  activeNav?: "league" | "skills" | "life" | "play" | null;
+  onNavigate: (tab: NavTab) => void;
+  activeNav?: NavTab | null;
+  /** A dot on the Feed button when there is reaction the player has not read. */
+  mediaUnread?: boolean;
   nextMatchLabel?: string;
 }
 
-export default function DashboardShell({ career, onExit, children, onNavigate, activeNav = null, nextMatchLabel }: Props) {
+export type NavTab = "league" | "skills" | "life" | "media" | "play";
+
+export default function DashboardShell({ career, onExit, children, onNavigate, activeNav = null, nextMatchLabel, mediaUnread }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -96,10 +100,11 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
         )}
 
         {/* Bottom nav */}
-        <div className="grid grid-cols-4 gap-1 p-2 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50">
+        <div className="grid grid-cols-5 gap-1 p-2 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50">
           <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => onNavigate("league")} />
           <NavBtn label="Skills" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
           <NavBtn label="Life" icon="👥" active={activeNav === "life"} onClick={() => onNavigate("life")} />
+          <NavBtn label="Feed" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
           <NavBtn label="Play" icon="▶" active={activeNav === "play"} onClick={() => onNavigate("play")} highlight />
         </div>
       </div>
@@ -107,11 +112,11 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
   );
 }
 
-function NavBtn({ label, icon, active, onClick, highlight }: { label: string; icon: string; active: boolean; onClick: () => void; highlight?: boolean }) {
+function NavBtn({ label, icon, active, onClick, highlight, dot }: { label: string; icon: string; active: boolean; onClick: () => void; highlight?: boolean; dot?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className={`py-2 rounded-lg font-black text-xs flex flex-col items-center gap-0.5 transition ${
+      className={`relative py-2 rounded-lg font-black text-xs flex flex-col items-center gap-0.5 transition ${
         highlight
           ? "bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-900/50"
           : active
@@ -121,6 +126,7 @@ function NavBtn({ label, icon, active, onClick, highlight }: { label: string; ic
     >
       <span className="text-lg">{icon}</span>
       <span>{label}</span>
+      {dot && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-gray-700" />}
     </button>
   );
 }
