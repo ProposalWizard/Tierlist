@@ -87,6 +87,24 @@ export interface Ball {
    * deflection or a parry a 50-50 rather than a lull.
    */
   owner?: "you" | "mate" | "opponent" | "none";
+  /**
+   * Who touched it last, and whether the move has been through a deflection.
+   *
+   * Both exist to NAME what happened, and neither changes any physics. A shot
+   * the keeper pushed away and a defender then hoofed clear was reported as
+   * "DISPOSSESSED"; the same shot rolling out of the frame was "Out of play";
+   * one that struck the post and died in the six-yard box was "Scrambled
+   * clear". In every case the thing that actually happened — a save, the
+   * woodwork — went unmentioned, because the engine only ever described the
+   * ball's last few metres.
+   *
+   * `lastTouch` is the ball's most recent contact and is read the tick AFTER
+   * it is set, so a terminal outcome can be attributed to whoever stopped it.
+   * `deflected` is sticky for the whole move: it survives a fresh strike,
+   * which is what makes a follow-up finish a rebound rather than a plain goal.
+   */
+  lastTouch?: "attack" | "defence" | "keeper" | "frame";
+  deflected?: "keeper" | "frame";
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -237,7 +255,20 @@ export interface Scenario {
   runner: Runner | null;    // the team-mate a pass is aimed at, if any
   passTarget: Vec2 | null;  // where the runner is heading (drawn as the aim marker)
   receiver: Receiver | null;   // set for cutback/byline_cross/through_ball — they shoot on reception
+  /** He has the ball AT HIS FEET right now. Cleared the instant he strikes it. */
   receiverDone: boolean;
+  /**
+   * The ball reached the man you played it to, at any point in this move.
+   *
+   * `receiverDone` is not that, and reading it as though it were is why the
+   * commentary was exactly inverted on every chained chance. It is cleared when
+   * he shoots, so by the time the move resolved it was false for every chance
+   * where the pass had WORKED — and the line that fires on a failed pass ("Cut
+   * out! A defender reads it well") fired on the one where you had picked him
+   * out and his shot had been saved. It could not fire on a genuine failure,
+   * because a pass that never arrives produces no team-mate shot to test.
+   */
+  receiverReached?: boolean;
   /** The team-mate has actually struck the resolving shot. Drives the stat credit. */
   receiverShot?: boolean;
   /** How many of them he has had. Two is a scramble; three is a farce. */
@@ -810,7 +841,91 @@ function fitToView(sc: Scenario) {
   // room for you to be standing beside it.
   standOff(sc, vp.x1 + inset, vp.x2 - inset);
   sc.player = { x: sc.player.x, y: fy(sc.player.y) };
+  syncPassTarget(sc, fx, fy);
+  clearOfTheBall(sc);
+}
 
+/**
+ * Nobody is standing ON the ball when the whistle goes.
+ *
+ * The clamps above squeeze everybody toward the middle, and at the edges of the
+ * frame they squeeze two people onto the same square metre. Measured: a defender
+ * inside 1.2 m of the ball in 5.4% of tight angles, the keeper inside 1.5 m in
+ * 2.3% of headers. A defender within DEF_BLOCK_R takes it on the first frame,
+ * so the chance was over before the strike had left the boot — and nothing you
+ * could have done would have changed it, which is the one thing a situation must
+ * never be.
+ *
+ * He is pushed straight off the ball, and back the other way if that would put
+ * him through the side of the rectangle.
+ */
+const CLEAR_OF_BALL = 1.8;
+
+function clearOfTheBall(sc: Scenario) {
+  const vp = sc.viewport;
+  const inset = 1.4;
+  const fx = (x: number) => (vp ? clamp(x, vp.x1 + inset, vp.x2 - inset) : x);
+  const fy = (y: number) => (vp ? clamp(y, Math.max(vp.y1 + inset, 0.3), vp.y2 - inset) : Math.max(y, 0.3));
+  const push = (p: { x: number; y: number }, want: number) => {
+    const dx = p.x - sc.ball.x, dy = p.y - sc.ball.y;
+    const d = Math.hypot(dx, dy);
+    if (d >= want) return;
+    // Straight out from the ball, or straight up the pitch if he is on top of it.
+    const ux = d > 0.01 ? dx / d : 0, uy = d > 0.01 ? dy / d : 1;
+    const to = { x: fx(sc.ball.x + ux * want), y: fy(sc.ball.y + uy * want) };
+    // Clamped back onto the ball by the frame? Go the other way instead.
+    if (Math.hypot(to.x - sc.ball.x, to.y - sc.ball.y) < want - 0.05) {
+      to.x = fx(sc.ball.x - ux * want);
+      to.y = fy(sc.ball.y - uy * want);
+    }
+    p.x = to.x; p.y = to.y;
+  };
+  for (const d of sc.defenders) push(d, CLEAR_OF_BALL);
+
+  // ── And the keeper, who retreats rather than being shoved ──
+  //
+  // He is off his line one time in five, and a header is met three to seven
+  // metres out — so a keeper five and a half metres off his line was standing on
+  // the ball. Measured at its worst: 32 centimetres. He smothers anything inside
+  // KEEPER_BODY_R on the first frame, so that header was over before it was
+  // struck.
+  //
+  // He is not pushed away like a defender: a goalkeeper who needs room always
+  // has the same room available to him, which is his own goal. He drops back
+  // toward the line first, and only steps across if being ON the line still
+  // leaves him underneath it.
+  const k = sc.keeper;
+  const want = KEEPER_BODY_R + 1.6;
+  const off = () => Math.hypot(k.x - sc.ball.x, k.y - sc.ball.y);
+  if (off() < want) {
+    k.y = clamp(Math.min(k.y, sc.ball.y - want), 0.35, k.y);
+    if (off() < want) {
+      const dy = Math.abs(k.y - sc.ball.y);
+      const need = Math.sqrt(Math.max(0, want * want - dy * dy)) + 0.05;
+      const side = Math.sign(k.x - sc.ball.x) || 1;
+      const across = (s: number) => fx(clamp(sc.ball.x + s * need, POST_L - 2.5, POST_R + 2.5));
+      k.x = across(side);
+      if (off() < want) k.x = across(-side);
+    }
+    k.startX = k.x;
+  }
+}
+
+/**
+ * The marker you aim at is where the man is actually going.
+ *
+ * `passTarget` is documented as "where the runner is heading" and is drawn as
+ * the aim marker — but the builders hand it a DIFFERENT object from the one they
+ * hand the runner, so every clamp that pulled the runner inside the rectangle
+ * left the marker behind. Measured: the target was off the frame in 7.3% of
+ * build-ups and 4.3% of byline crosses. You were being asked to pick out a man
+ * on a part of the pitch the camera will never show you, which is the exact
+ * thing the fixed frame exists to make impossible.
+ */
+function syncPassTarget(sc: Scenario, fx: (x: number) => number, fy: (y: number) => number) {
+  if (!sc.passTarget) return;
+  const to = sc.runner ? sc.runner.to : sc.passTarget;
+  sc.passTarget = { x: fx(to.x), y: fy(to.y) };
 }
 
 /**
@@ -857,6 +972,7 @@ function keepInsideTheCut(sc: Scenario) {
       if (placed) break;
     }
   }
+  syncPassTarget(sc, fx, fy);
 }
 
 /**
@@ -1107,12 +1223,31 @@ function buildVolley(rng: () => number, keeperStrength: number, teamRelationship
   const by = 11 + rng() * 6;
   const side = rng() < 0.5 ? -1 : 1;
   const crosser = { x: side < 0 ? 4 + rng() * 5 : PITCH_W - 9 + rng() * 5, y: 5 + rng() * 5 };
+  // ── The men in the box belong to the box ──
+  //
+  // These two were placed off YOU — one a metre and a half to your left, one
+  // three to your right, both a stride in front — so a volley was struck into a
+  // pair of shins from two metres, and 47.5% of them were blocked. That is not a
+  // defence; it is two men standing on the ball. It is the same mistake
+  // buildLongRange documents and addCover avoids, left in the one situation
+  // where being crowded hurts most: a volley is a chance BECAUSE nobody is
+  // close enough to stop you hitting it.
+  //
+  // They cover the goal instead, spread across the mouth and dropping with the
+  // ball the way the back line does. You still have to beat them — there is now
+  // room to try.
+  // One of them, not two. Two spread across a seven-metre mouth is a screen, and
+  // between them they covered the goal: the block rate barely moved when they
+  // were pushed back, because it was never about the distance — it was about
+  // there being no lane left. One man shades one side and leaves the other open,
+  // which is a question you can answer.
+  const line = clamp(by * 0.45, 5.5, 9.5);
+  const shade = rng() < 0.5 ? -1 : 1;
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.0 },
     defenders: [
-      { x: clamp(bx - 2.5 + rng() * 1.5, 10, PITCH_W - 10), y: clamp(by - 1.5, 5, by) },
-      { x: clamp(bx + 3.5 - rng() * 1.5, 10, PITCH_W - 10), y: clamp(by - 2.5, 5, by) },
+      { x: clamp(CX + shade * (2 + rng() * 3.5), 10, PITCH_W - 10), y: line + rng() * 1.8 },
     ],
     keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.4 + rng() * 1.2, rng),
     keeperStrength, follower: makeFollower(rng, by),
@@ -1465,7 +1600,7 @@ export function supportSeen(vision: number): number {
  * ball happens to be is not a defence.
  */
 const COVER_COUNT: Record<ScenarioKind, number> = {
-  one_on_one: 2, tight_angle: 3, volley: 3, header: 3,
+  one_on_one: 2, tight_angle: 3, volley: 2, header: 3,
   long_range: 3, cutback: 3, byline_cross: 3, through_ball: 2,
   midfield_pass: 1, buildup: 1,
   // A free kick already has a wall of three or four in front of it, and they
@@ -1774,6 +1909,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   ball.z = 0.1;
   ball.loose = false;
   ball.contactCd = 0.15;
+  ball.lastTouch = "attack";
   markLanding(ball, scenario);
   ball.event = "receiverShot";
   // It is a shot at goal, so it gets the same protection yours does: a support
@@ -1839,6 +1975,7 @@ function applyAerialContest(ball: Ball, scenario: Scenario, skills: KickSkills, 
     ball.spin = 0;
     ball.loose = true;
     ball.owner = "none";
+    ball.lastTouch = "defence";
     clearOffside(scenario);
     return;
   }
@@ -1918,6 +2055,10 @@ export function applyFirstTouch(scenario: Scenario, technique: number, rng: () =
   // the game moved to standing alongside — so every chance that came out of a
   // completed pass, which is most of the good ones, put the ball on your chest.
   standOff(scenario, vp ? vp.x1 + inset : undefined, vp ? vp.x2 - inset : undefined);
+  // A heavy touch moves the ball up to three metres, and it can move it onto
+  // somebody. Everywhere else the whistle goes with nobody standing on it; a
+  // bad first touch was the one way back into a chance that could not be played.
+  clearOfTheBall(scenario);
   return away;
 }
 
@@ -2015,6 +2156,7 @@ export function launch(
     resting: false,
     loose: false,
     contactCd: 0,
+    lastTouch: "attack",
     receiverControlT: 0,
     event: null,
     inNet: false,
@@ -2527,6 +2669,7 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
       ball.spin *= 0.3;
       ball.loose = false;      // a fresh strike — it still counts as a rebound if it goes in
       ball.contactCd = 0.18;
+      ball.lastTouch = "attack";
       markLanding(ball, scenario);
       f.shot = true;
       // Deliberately does NOT tell the keeper where this is going. He keeps
@@ -2561,6 +2704,32 @@ export function clearBall(ball: Ball, rng: () => number, scenario?: Scenario) {
   ball.spin = 0;
   ball.loose = false;
   ball.owner = "opponent";
+  ball.lastTouch = "defence";
+}
+
+/**
+ * Is this ball, right now, on its way into the goal?
+ *
+ * Not "did somebody shoot" — the flight itself, extrapolated to the line. It is
+ * what separates a defender BLOCKING something from a defender cutting a pass
+ * out, and it holds however the ball came to be travelling: your strike, a
+ * team-mate's, or a poacher's stab at a rebound.
+ *
+ * Deliberately generous at the edges. A defender who gets a foot to a ball that
+ * would have shaved the post has blocked a shot, and being a metre out on the
+ * counterfactual is not worth calling it something else.
+ */
+function headedForGoal(ball: Ball, scenario: Scenario): boolean {
+  // In midfield the goal is forty metres off the top of the frame. A forward
+  // pass extrapolated that far will sometimes land between the posts, and a
+  // defender cutting it out is not blocking a shot — nobody was shooting.
+  if (!goalInView(scenario.kind)) return false;
+  if (ball.vel.y >= -1) return false;                       // not going that way
+  if (Math.hypot(ball.vel.x, ball.vel.y) < 8) return false; // not going anywhere
+  const t = ball.pos.y / -ball.vel.y;
+  const xAt = ball.pos.x + ball.vel.x * t;
+  const zAt = ball.z + ball.vz * t - 0.5 * G * t * t;
+  return xAt > POST_L - 1.2 && xAt < POST_R + 1.2 && zAt < scenario.crossbar + 1.0;
 }
 
 /**
@@ -2642,8 +2811,23 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   const k = scenario.keeper;
   k.saves += 1;
   k.flash = 0.35;
+  // Whatever he does with it from here, he got to it — so if the move dies
+  // afterwards it died because of the save, and says so.
+  ball.lastTouch = "keeper";
+  ball.deflected = "keeper";
   const marginNorm = clamp((reach - dist) / reach, 0, 1); // 1 = right at the body, 0 = full stretch
-  const lowAndSlow = speed < 17 && ball.z < 1.2;
+  // ── What a keeper can hold ──
+  //
+  // This was `speed < 17 && z < 1.2`, and the median shot he gets a hand to
+  // travels at 21.2 m/s — so the gate sat down at the tenth percentile and he
+  // caught 7 balls in 2,484. Everything else was tipped or spilled. A keeper who
+  // never holds one is not a hard keeper, he is a broken one: it made every save
+  // a rebound or a corner, and it left the catch animation and two lines of
+  // commentary written for something that could not happen.
+  //
+  // Chest-high or below, hit at a pace a man can absorb, and inside his reach
+  // rather than at full stretch — that is a ball you catch.
+  const lowAndSlow = speed < 23 && ball.z < 1.5;
 
   // ── Where a saved ball ENDS UP ──
   //
@@ -2656,7 +2840,13 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // round to have it.
 
   // Comfortable, gathered save — it ends up in his gloves.
-  if (marginNorm > 0.5 && lowAndSlow && rng() < 0.72) {
+  // …and how near "at him" has to be. This was 0.5, which sounds like half his
+  // reach and is not: height is scaled into the same distance, so a shot along
+  // the ground already spends 1.09 m of a 2.4 m budget before it has moved
+  // sideways at all. Half a metre either side of his boots was the entire catch
+  // window. At 0.35 it is a metre or so — a ball at the body — and he holds one
+  // in ten, palms two thirds clear and spills the rest back into play.
+  if (marginNorm > 0.35 && lowAndSlow && rng() < 0.72) {
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
@@ -2680,7 +2870,11 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
     const side = ball.pos.x < CX ? -1 : 1;
     const away = normalize({ x: side * (0.7 + rng() * 0.5), y: 1 });
-    const sp = 9 + rng() * 7;
+    // A push to safety, not a clearance. At 9-16 m/s a tipped ball ran for the
+    // better part of forty metres and was off the screen long before it stopped
+    // — which is not what "you watch it go" was supposed to mean. This dies
+    // inside the rectangle, most of the time without needing the touchline.
+    const sp = 6 + rng() * 6;
     ball.vel = { x: away.x * sp, y: away.y * sp };
     ball.vz = 1.4 + rng() * 2.2;
     ball.spin *= 0.2;
@@ -2776,6 +2970,8 @@ function reboundOffFrame(ball: Ball, xCross: number, rng: () => number, scenario
   // Off the woodwork it is a loose ball, not your shot — see the parry.
   ball.shot = false;
   ball.contactCd = 0.25;
+  ball.lastTouch = "frame";
+  ball.deflected = "frame";
   ball.event = "post";
   if (scenario) markLanding(ball, scenario);
   return true;
@@ -2788,27 +2984,92 @@ function reboundOffFrame(ball: Ball, xCross: number, rng: () => number, scenario
  * so a ball the keeper has pushed clear is SEEN going clear. Anything that
  * could change the result has already happened.
  */
-export function settleBall(ball: Ball, dt: number) {
+export function settleBall(ball: Ball, dt: number, scenario?: Scenario) {
   if (!ball.settling || ball.resting) return;
+  const cond = scenario?.conditions;
   ball.vz -= G * dt;
   ball.z += ball.vz * dt;
   ball.pos.x += ball.vel.x * dt;
   ball.pos.y += ball.vel.y * dt;
   if (ball.z <= 0) {
     ball.z = 0;
-    if (ball.vz < -MIN_BOUNCE_VZ) { ball.vz = -ball.vz * BOUNCE_VZ; ball.vel.x *= BOUNCE_H; ball.vel.y *= BOUNCE_H; }
-    else ball.vz = 0;
+    // The surface is the surface after the whistle too. This used to use the
+    // bare constants, so a ball pushed clear on a bog skipped away exactly as it
+    // would in August.
+    if (ball.vz < -MIN_BOUNCE_VZ) {
+      ball.vz = -ball.vz * BOUNCE_VZ * (cond?.bounce ?? 1);
+      ball.vel.x *= BOUNCE_H; ball.vel.y *= BOUNCE_H;
+    } else ball.vz = 0;
   }
   if (ball.z <= 0.03 && ball.vz <= 0.01) {
     const s = Math.hypot(ball.vel.x, ball.vel.y);
-    const drop = GROUND_FRICTION * dt;
+    const drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
     if (s <= drop) { ball.vel.x = 0; ball.vel.y = 0; ball.resting = true; }
     else { const f = (s - drop) / s; ball.vel.x *= f; ball.vel.y *= f; }
   }
+
+  // ── It stops at the edge of the situation ──
+  //
+  // A keeper's tip leaves at 9-16 m/s and rolling resistance is 1.9 m/s², so it
+  // runs for the better part of forty metres. Measured: 74% of settling balls
+  // were off the visible frame within two and a half seconds, some of them
+  // seventeen metres past it, still rolling. The point of settling the ball was
+  // that you SEE where it went — instead you watched it leave and then watched
+  // an empty rectangle.
+  //
+  // There is no pitch outside the frame. stepBall already says so, and calls a
+  // ball that leaves it "out"; the whistle has already gone here, so it simply
+  // pulls up on the touchline and stays where you can see it.
+  const vp = scenario?.viewport;
+  if (vp) {
+    const m = 0.6;   // the ball's own width in from the edge
+    if (ball.pos.x < vp.x1 + m) { ball.pos.x = vp.x1 + m; ball.vel.x = 0; ball.vel.y *= 0.4; }
+    else if (ball.pos.x > vp.x2 - m) { ball.pos.x = vp.x2 - m; ball.vel.x = 0; ball.vel.y *= 0.4; }
+    if (ball.pos.y > vp.y2 - m) { ball.pos.y = vp.y2 - m; ball.vel.y = 0; ball.vel.x *= 0.4; }
+    else if (ball.pos.y < vp.y1 + m) { ball.pos.y = vp.y1 + m; ball.vel.y = 0; ball.vel.x *= 0.4; }
+  }
 }
 
-// Advance the ball one tick and return an Outcome if the play has resolved.
+/**
+ * Advance the ball one tick and return an Outcome if the play has resolved.
+ *
+ * The physics live in `stepBallRaw`, which reports where the ball ended up. This
+ * reports what HAPPENED, which is not always the same sentence — a shot the
+ * keeper turned onto the post and a defender then belted into row Z ends up
+ * "out of play", and calling it that is technically true and completely useless.
+ *
+ * Four outcomes the engine declares were unreachable before this: `saved`,
+ * `blocked`, `rebound` and `post`. All four had commentary written for them, and
+ * three of them had sound and screen-shake wired up to fire and never fired
+ * once in 11,700 simulated chances. The keeper made saves and they were reported
+ * as the ball running out of play; the woodwork was hit and the highlight said
+ * the move had been scrambled clear; every rebound finish was filed as an
+ * ordinary goal.
+ */
 export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
+  // Read BEFORE the tick: the touch that ends a move happens on an earlier tick
+  // than the outcome it causes, and the tick that reports "out" may itself have
+  // set lastTouch to the defender who put it there.
+  const touchedLast = ball.lastTouch;
+  const res = stepBallRaw(ball, scenario, rng, dt);
+  if (res === null) return null;
+
+  // A finish from a second phase is a rebound, whoever struck it. `deflected`
+  // is sticky precisely so that a fresh strike does not erase where the chance
+  // came from — the old test read `ball.loose`, which every re-strike clears
+  // before the ball reaches the line, so it could never be true here.
+  if (res === "goal" && ball.deflected) return "rebound";
+
+  // The move died after a save or off the woodwork, and nobody in your shirt
+  // touched it in between. Name it for the thing that stopped it.
+  if (res === "short" || res === "out" || res === "tackled" || res === "wide") {
+    if (touchedLast === "keeper") return "saved";
+    if (touchedLast === "frame") return "post";
+  }
+  return res;
+}
+
+function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
   // An offside offence was committed on a previous tick (the poacher playing a
   // ball he was flagged for). The move is dead.
   if (scenario.offsideAgainst) return "offside";
@@ -2931,9 +3192,16 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
       // Right on top of a ball travelling at pace; merely near a slow one.
       const reach = speed > 12 ? DEF_BLOCK_R : CONTROL_R;
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < reach) {
+        // A defender in the way of a ball going in has BLOCKED it; a defender
+        // in the way of anything else has cut it out. Both cost you the ball and
+        // always did — but the game reported them identically, so a shot charged
+        // down on the line and a pass read and intercepted in midfield produced
+        // the same three words. It is the same distinction the commentary has
+        // always drawn and never been given the outcome to draw it with.
+        const wasGoingIn = headedForGoal(ball, scenario);
         clearBall(ball, rng, scenario);
         ball.contactCd = 0.4;
-        return "tackled";
+        return wasGoingIn ? "blocked" : "tackled";
       }
     }
   }
@@ -2961,7 +3229,14 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
       }
       if (dDef < dAtk) {
         ball.owner = "opponent";
-        return "tackled";
+        ball.lastTouch = "defence";
+        ball.settling = true;   // let the last metre of it be seen
+        // Losing a 50-50 on a ball that is already loose is not a tackle and
+        // never was one — nobody took anything off you. It is the scramble
+        // going the other way, and the outcome that reads "Scrambled clear" is
+        // the one that describes it. Calling it DISPOSSESSED put the blame for
+        // a keeper's parry on your last touch.
+        return "short";
       }
     }
   }
@@ -3048,8 +3323,10 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
         // when the ball was played and he has now played it.
         if (offsideOffence(scenario, r.offside)) return "offside";
         scenario.receiverDone = true;
+        scenario.receiverReached = true;
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
         r.moving = false;
+        ball.lastTouch = "attack";
         // How difficult was that ball? Forward + long = harder, and a harder ball
         // won back is likelier to come straight back to you.
         const passLen = Math.hypot(tgt.x - scenario.ball.x, tgt.y - scenario.ball.y);
@@ -3234,5 +3511,7 @@ export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass"
   out: { text: "Out of play.", kind: "neutral" },
   short: { text: "Scrambled clear.", kind: "neutral" },
   offside: { text: "OFFSIDE!", kind: "neutral" },
-  tackled: { text: "DISPOSSESSED", kind: "miss" },
+  // A defender reading a ball you played to somebody. Distinct from `blocked`,
+  // which is a defender in the way of one you played at the goal.
+  tackled: { text: "Intercepted!", kind: "miss" },
 };

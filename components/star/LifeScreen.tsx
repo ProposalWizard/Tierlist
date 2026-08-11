@@ -38,7 +38,7 @@ export default function LifeScreen({
             <span key={i} className={`h-2.5 flex-1 rounded-full ${i < left ? "bg-emerald-400" : "bg-white/15"}`} />
           ))}
         </div>
-        <div className="mt-1 text-[10px] text-gray-300">
+        <div className="mt-1 text-[10px] text-white/85">
           {left > 0
             ? `${left} of ${WEEK_ACTIONS} days left. Train, work on a relationship, or rest.`
             : "The week is gone. The next match is the next week."}
@@ -48,7 +48,7 @@ export default function LifeScreen({
           disabled={left === 0 || career.energy >= 100}
           className={`mt-2 w-full py-2 rounded-lg font-black text-sm transition ${
             left === 0 || career.energy >= 100
-              ? "bg-gray-700 text-gray-500"
+              ? "bg-gray-700 text-white/65"
               : "bg-emerald-600 hover:bg-emerald-500 text-white active:scale-[0.98]"}`}
         >
           {career.energy >= 100 ? "Fully rested" : `Rest — +${REST_ENERGY} energy 😴`}
@@ -101,7 +101,7 @@ export default function LifeScreen({
 
       {/* NRG drinks quick-use */}
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
-        <div className="text-[10px] font-black uppercase text-gray-300 tracking-widest mb-2">NRG Drinks</div>
+        <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">NRG Drinks</div>
         <div className="grid grid-cols-3 gap-2">
           {(["basic", "premium", "elite"] as const).map((k) => {
             const count = career.nrgDrinks[k];
@@ -118,7 +118,7 @@ export default function LifeScreen({
                 <div className={`w-8 h-10 mx-auto ${color} rounded border border-black/40 mb-1`} />
                 <div className="text-[10px] font-black text-white">{label}</div>
                 <div className="text-[9px] text-emerald-300 font-bold">+{restore}</div>
-                <div className="text-[9px] text-gray-400">{count} owned</div>
+                <div className="text-[9px] text-white/75">{count} owned</div>
               </button>
             );
           })}
@@ -132,9 +132,9 @@ export default function LifeScreen({
       >
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[10px] font-black uppercase text-gray-300 tracking-widest">Contract</div>
+            <div className="text-[10px] font-black uppercase text-white/85 tracking-widest">Contract</div>
             <div className="font-black text-white text-sm">{career.contract.club}</div>
-            <div className="text-[10px] text-gray-400">★{career.contract.wage}/match · {career.contract.seasonsRemaining} seasons left</div>
+            <div className="text-[10px] text-white/75">★{career.contract.wage}/match · {career.contract.seasonsRemaining} seasons left</div>
           </div>
           <div className="text-emerald-400 font-black">Renew →</div>
         </div>

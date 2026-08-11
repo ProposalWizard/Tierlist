@@ -1003,3 +1003,122 @@ Three things the measurements caught:
 
 Measured: a wet surface carries a ball further than a dry one and a heavy pitch
 eats it, and both deaden the bounce.
+
+---
+
+## `outcomes.mts` — every outcome happens, and each one is called what it is
+
+`npx tsx tests/star/outcomes.mts`
+
+An 11,700-chance anomaly sweep over all thirteen scenario kinds found no bad
+values at all, and then the outcome-coverage table underneath it found the real
+problem: **four of the fourteen outcomes the engine declares had never once
+occurred.**
+
+| Outcome | Why it could not happen |
+|---|---|
+| `saved` | `resolveKeeper` only ever returns catch, tip or a live parry. A shot he pushed away and a defender then belted clear was reported `tackled` — "DISPOSSESSED". One that rolled out of the frame was "Out of play." |
+| `post` | Returned only on a SECOND frame hit, which is pinball and never occurred. Hitting the woodwork once said nothing at all. |
+| `rebound` | Tested `ball.loose`, which every re-strike clears before the ball reaches the line. Every rebound finish was filed as an ordinary goal. |
+| `blocked` | Never returned anywhere in the engine — while `CanvasMatch` had a live branch for it and showed its **BLOCKED** banner for `tackled`, whose own text reads **DISPOSSESSED**. The banner and the line under it disagreed about the same moment. |
+
+All four had commentary written for them; three had sound and screen-shake wired
+up to fire. The fix is naming rather than physics: `ball.lastTouch` records who
+stopped it, `ball.deflected` records that the chance went through a second phase,
+and `stepBall` wraps the physics to say what happened rather than where the ball
+finished. `blocked` and `tackled` are now the real distinction — a defender in
+the way of a ball **going in**, versus a defender reading one played to somebody.
+
+Three things these measurements caught:
+
+- **The keeper caught 7 balls in 2,484.** The gate was `speed < 17` when the
+  median shot he gets a hand to travels at 21.2 m/s, and `margin > 0.5` — which
+  sounds like half his reach and is not, because height is folded into the same
+  distance and a ball along the ground spends 1.09 m of a 2.4 m budget before it
+  has moved sideways at all. Half a metre either side of his boots was the whole
+  catch window. A keeper who never holds one is not a hard keeper, he is a broken
+  one: it made every save a rebound or a corner. At `speed < 23` and
+  `margin > 0.35` he holds about one in ten, palms two thirds clear and spills
+  the rest back into play.
+- **47.5% of volleys were blocked before they started.** The two defenders were
+  placed off YOU — one 1.5 m to your left, one 3 m to your right, both a stride
+  in front — so a volley was struck into a pair of shins from two metres.
+  `buildLongRange` documents exactly why that is wrong and `addCover` already
+  avoids it; the volley was the one situation left doing it, and it is the
+  situation where being crowded hurts most. Pushing them back changed almost
+  nothing (48.8%) — **two** men spread across a 7.3 m mouth cover it between
+  them however far out they stand, and that was the real fault. One man shades
+  one side and leaves a lane: blocked 14.5%, scored 30% (was 21%).
+- **Losing a 50-50 on a loose ball was reported as a tackle.** Nobody took
+  anything off you — it is the scramble going the other way, which is what
+  "Scrambled clear" is for. Calling it DISPOSSESSED put the blame for a keeper's
+  parry on your last touch.
+
+Measured after: all fourteen outcomes reachable; every chance the keeper ends is
+called a save; a ball off the frame either goes in or is reported as the
+woodwork; `goal` and `rebound` are never confused; nothing in midfield is ever
+"blocked", because there is no goal in the rectangle to block it into.
+
+### …and the line under the result
+
+The same suite caught a second inversion, in the commentary rather than the
+physics. `commentaryResult` asks two questions — "was there a man to find?" and
+"did the ball get to him?" — and both were answered with the wrong flag.
+
+`chain` was passed `receiverShot`, so a pass that never reached anybody was not
+a chain at all and could never be described as a failed pass. `receiverReached`
+was passed `receiverDone`, which is cleared the instant he strikes it, so it was
+false for every chance where the pass had **worked**. Between them the two lines
+were exactly swapped: you picked out a team-mate, he shot, the keeper saved it,
+and the game said *"Cut out! A defender reads it well."* — while a ball
+genuinely cut out in front of him fell through to a line about your own shot.
+
+Measured over 1,600 chained chances: 1,398 where the ball reached him, all of
+which drew from the failed-pass pool; 202 genuine failures, none of which could.
+`Scenario.receiverReached` now records that he got it at any point in the move
+and is never cleared, and `chain` is simply whether the situation had a receiver.
+
+### …and where the ball finishes
+
+`settleBall` exists so that a ball the keeper has pushed clear is SEEN going
+clear rather than found already there. Measured: **74% of settling balls were
+off the visible frame within two and a half seconds** — some seventeen metres
+past it — and 1,695 of 1,701 were still rolling when the highlight ended. You
+watched it leave, and then watched an empty rectangle.
+
+The arithmetic: a tip left the keeper's hand at 9–16 m/s against 1.9 m/s² of
+rolling resistance, which is the better part of forty metres of running, in a
+frame twenty-six metres tall. Two changes — the tip is now a push to safety
+(6–12 m/s) rather than a clearance, and `settleBall` takes the scenario so it
+honours the pitch conditions and pulls up at the edge of the rectangle instead
+of rolling out of it. There is no pitch outside the frame; `stepBall` already
+says so and calls a ball that leaves it "out". Now 0.1% leave, and about half
+come to rest against the touchline, which is what a tipped ball does.
+
+---
+
+## Situations that are playable as drawn (in `defending.mts`)
+
+"The rectangle is the situation" is only true if everything the situation asks
+of you is inside the rectangle, and if nobody is standing on the ball when the
+whistle goes. Both were quietly false.
+
+- **The aim marker could be off the screen.** `passTarget` is documented as
+  "where the runner is heading" and is drawn as the marker — but the builders
+  hand it a *different object* from the one they hand the runner, so every clamp
+  that pulled the runner inside the frame left the marker behind. Measured off
+  the frame in **7.3% of build-ups and 4.3% of byline crosses**: you were being
+  asked to pick out a man on a part of the pitch the camera will never show you.
+- **Somebody could be standing on the ball.** The clamps squeeze everybody
+  inward, and at the edges they squeeze two people onto the same square metre. A
+  defender inside 1.2 m of the ball in **5.4% of tight angles**; the keeper — off
+  his line one chance in five, against a header met three to seven metres out —
+  as close as **32 cm**. A defender inside `DEF_BLOCK_R` takes it on the first
+  frame, and the keeper smothers anything inside `KEEPER_BODY_R`, so the chance
+  was over before the strike left the boot and nothing you could have done would
+  have changed it.
+
+The keeper is not shoved away like a defender: a goalkeeper who needs room always
+has the same room available to him, which is his own goal. He drops back toward
+the line first, and steps across only if being on the line still leaves him
+underneath the ball.

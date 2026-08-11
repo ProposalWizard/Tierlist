@@ -50,7 +50,7 @@ export default function Shop({ career, kind, onBack, onBuyNrg, onBuyBoot, onBuyI
                   <div className="flex-1 text-left">
                     <div className="font-black text-white text-sm">{d.name}</div>
                     <div className="text-[10px] text-emerald-300 font-bold">+{d.restore} energy</div>
-                    <div className="text-[10px] text-gray-400">Owned: {career.nrgDrinks[d.id]}</div>
+                    <div className="text-[10px] text-white/75">Owned: {career.nrgDrinks[d.id]}</div>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
@@ -59,7 +59,7 @@ export default function Shop({ career, kind, onBack, onBuyNrg, onBuyBoot, onBuyI
                     <button
                       disabled={!canBuy}
                       onClick={(e) => { e.stopPropagation(); onBuyNrg(d); }}
-                      className={`mt-1 px-3 py-1 rounded text-[10px] font-black ${canBuy ? "bg-emerald-500 text-white" : "bg-gray-600 text-gray-400"}`}
+                      className={`mt-1 px-3 py-1 rounded text-[10px] font-black ${canBuy ? "bg-emerald-500 text-white" : "bg-gray-600 text-white/75"}`}
                     >
                       Buy
                     </button>
@@ -101,7 +101,7 @@ export default function Shop({ career, kind, onBack, onBuyNrg, onBuyBoot, onBuyI
               </div>
             </div>
             <div className="bg-gray-700 rounded-lg p-3 border border-gray-600 text-center">
-              <div className="text-xs text-gray-300">Current boot</div>
+              <div className="text-xs text-white/85">Current boot</div>
               <div className="font-black text-white">{career.currentBoot.name} — {career.currentBoot.matches} matches left</div>
             </div>
             <button
@@ -121,7 +121,7 @@ export default function Shop({ career, kind, onBack, onBuyNrg, onBuyBoot, onBuyI
                 <button
                   key={t}
                   onClick={() => setTab(t)}
-                  className={`py-2 rounded font-black text-xs uppercase transition ${tab === t ? "bg-emerald-500 text-white" : "bg-gray-700 text-gray-300"}`}
+                  className={`py-2 rounded font-black text-xs uppercase transition ${tab === t ? "bg-emerald-500 text-white" : "bg-gray-700 text-white/85"}`}
                 >
                   {t}
                 </button>
@@ -143,7 +143,7 @@ export default function Shop({ career, kind, onBack, onBuyNrg, onBuyBoot, onBuyI
                     </div>
                     <div className="flex-1">
                       <div className="font-black text-white text-sm">{i.name}</div>
-                      <div className="text-[10px] text-gray-400">Lifestyle +{i.lifestyleValue}</div>
+                      <div className="text-[10px] text-white/75">Lifestyle +{i.lifestyleValue}</div>
                     </div>
                     <div className="text-right">
                       <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">

@@ -22,7 +22,7 @@ function ObjectiveRow({ deal }: { deal: import("@/lib/star/types").SponsorDeal }
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/40">
         <div className={`h-full rounded-full ${o.done ? "bg-emerald-400" : "bg-amber-400"}`} style={{ width: `${Math.max(3, pct)}%` }} />
       </div>
-      <div className="mt-0.5 text-[9px] text-gray-300">
+      <div className="mt-0.5 text-[9px] text-white/85">
         {o.kind === "rating" ? (o.progress / 10).toFixed(1) : o.progress} / {o.kind === "rating" ? (o.target / 10).toFixed(1) : o.target}
         {" · "}{o.seasonsLeft} season{o.seasonsLeft === 1 ? "" : "s"} left
       </div>
@@ -51,7 +51,7 @@ export function SponsorsScreen({ career, onBack }: { career: CareerState; onBack
                     <StarIcon />{sp.perMatch}
                   </div>
                 ) : (
-                  <div className="text-[10px] text-gray-300 uppercase font-black">Not Signed</div>
+                  <div className="text-[10px] text-white/85 uppercase font-black">Not Signed</div>
                 )}
               </div>
               <ObjectiveRow deal={sp} />
@@ -65,7 +65,7 @@ export function SponsorsScreen({ career, onBack }: { career: CareerState; onBack
           </div>
         </div>
 
-        <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-700 text-[10px] text-gray-400 text-center leading-tight">
+        <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-700 text-[10px] text-white/75 text-center leading-tight">
           Grow your fame and performances to unlock sponsors. Each ★20 of Sponsor relationship = ★1/match.
         </div>
       </div>
@@ -91,8 +91,8 @@ export function AchievementsScreen({ career, onBack }: { career: CareerState; on
               <div key={a.id} className={`flex items-center gap-3 p-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
                 <div className={`text-3xl ${unlocked ? "" : "opacity-20 grayscale"}`}>⭐</div>
                 <div className="flex-1">
-                  <div className={`font-black text-sm ${unlocked ? "text-yellow-300" : "text-gray-500"}`}>{a.label}</div>
-                  <div className={`text-[10px] ${unlocked ? "text-gray-300" : "text-gray-500"}`}>{a.description}</div>
+                  <div className={`font-black text-sm ${unlocked ? "text-yellow-300" : "text-white/65"}`}>{a.label}</div>
+                  <div className={`text-[10px] ${unlocked ? "text-white/85" : "text-white/65"}`}>{a.description}</div>
                 </div>
                 {unlocked && <div className="text-emerald-400 font-black text-lg">✓</div>}
               </div>
@@ -100,7 +100,7 @@ export function AchievementsScreen({ career, onBack }: { career: CareerState; on
           })}
         </div>
 
-        <div className="mt-2 text-xs text-center text-gray-400 font-bold">
+        <div className="mt-2 text-xs text-center text-white/75 font-bold">
           {career.achievements.length} / {ACHIEVEMENTS.length} unlocked
         </div>
       </div>
@@ -126,7 +126,7 @@ export function TrophiesScreen({ trophies, onBack, ballonDors }: { trophies: Tro
         </div>
 
         {trophies.length === 0 ? (
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 text-center text-gray-400 text-sm">
+          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 text-center text-white/75 text-sm">
             No trophies yet — win the league or a cup!
           </div>
         ) : (
@@ -136,7 +136,7 @@ export function TrophiesScreen({ trophies, onBack, ballonDors }: { trophies: Tro
                 <div className="text-2xl">🥇</div>
                 <div className="flex-1">
                   <div className="font-black text-white text-sm">{t.competition}</div>
-                  <div className="text-[10px] text-gray-400">{t.club} · Season {t.season}</div>
+                  <div className="text-[10px] text-white/75">{t.club} · Season {t.season}</div>
                 </div>
               </div>
             ))}
@@ -232,7 +232,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
             <div className="text-sm text-gray-200 mb-1 leading-snug font-bold">
               You&apos;re under contract for {career.contract.seasonsRemaining} more seasons.
             </div>
-            <div className="text-xs text-gray-400 mb-4 leading-snug">
+            <div className="text-xs text-white/75 mb-4 leading-snug">
               The club will only renegotiate in the final year of your deal. Come back then to improve your terms.
             </div>
             <button onClick={() => onComplete(null)} className="w-full py-3 bg-emerald-500 rounded-xl font-black">Back</button>
@@ -257,7 +257,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
                 </div>
               </div>
             )}
-            <div className="text-xs text-gray-300 mb-3 leading-snug">
+            <div className="text-xs text-white/85 mb-3 leading-snug">
               {offerReason
                 ? "Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms."
                 : "Your contract is up. Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms by ★1 wage."}
@@ -266,7 +266,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{career.contract.wage}/match</span></div>
               <div className="flex justify-between"><span>Goal bonus</span><span className="text-yellow-300 font-black">★{career.contract.goalBonus}</span></div>
               <div className="flex justify-between"><span>Assist bonus</span><span className="text-yellow-300 font-black">★{career.contract.assistBonus}</span></div>
-              <div className="flex justify-between"><span>Seasons remaining</span><span className="text-gray-300 font-black">{career.contract.seasonsRemaining}</span></div>
+              <div className="flex justify-between"><span>Seasons remaining</span><span className="text-white/85 font-black">{career.contract.seasonsRemaining}</span></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => onComplete(null)} className="py-3 bg-gray-600 rounded-xl font-black">
@@ -279,7 +279,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
 
         {phase === "playing" && (
           <div className="bg-gray-700 rounded-2xl p-4 border border-gray-600 text-center">
-            <div className="text-xs text-gray-400 mb-2">Round {rounds + 1} of 5 · {wins} correct</div>
+            <div className="text-xs text-white/75 mb-2">Round {rounds + 1} of 5 · {wins} correct</div>
             <div className="flex justify-center gap-3 items-center mb-4">
               <CardBig value={current} />
               <div className="text-xl">→</div>
@@ -295,7 +295,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
 
         {phase === "done" && (
           <div className="bg-gray-700 rounded-2xl p-5 border border-gray-600 text-center">
-            <div className="text-xs text-gray-400 mb-1">Final terms</div>
+            <div className="text-xs text-white/75 mb-1">Final terms</div>
             <div className="text-3xl font-black text-yellow-300 mb-2">{wins} correct</div>
             <div className="bg-gray-800 rounded-lg p-3 text-xs mb-3 space-y-1">
               <div className="flex justify-between"><span>New wage</span><span className="text-emerald-300 font-black">★{career.contract.wage + wins}/match</span></div>
@@ -315,7 +315,7 @@ function CardBig({ value }: { value: number | string }) {
   const display = isNum ? (value === 1 ? "A" : value === 11 ? "J" : value === 12 ? "Q" : value === 13 ? "K" : value) : value;
   return (
     <div className="w-20 h-28 rounded-lg bg-white border-2 border-gray-300 flex items-center justify-center shadow-lg">
-      <div className={`text-4xl font-black ${isNum ? "text-black" : "text-gray-400"}`}>{display}</div>
+      <div className={`text-4xl font-black ${isNum ? "text-black" : "text-white/75"}`}>{display}</div>
     </div>
   );
 }

@@ -62,7 +62,7 @@ export default function PressConference({ question, onAnswer }: {
 }
 
 function Delta({ label, n }: { label: string; n: number }) {
-  if (n === 0) return <span className="rounded-full bg-white/10 px-2 py-0.5 text-gray-300">{label} —</span>;
+  if (n === 0) return <span className="rounded-full bg-white/10 px-2 py-0.5 text-white/85">{label} —</span>;
   return (
     <span className={`rounded-full px-2 py-0.5 ${n > 0 ? "bg-emerald-500/25 text-emerald-200" : "bg-red-500/25 text-red-200"}`}>
       {label} {n > 0 ? "+" : ""}{n}

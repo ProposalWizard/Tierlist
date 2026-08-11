@@ -207,9 +207,12 @@ function firstBounce(conditions: Conditions | undefined): number {
   check(runs.every(r => r.wallPeak < 1.6), "but they are footballers, not kangaroos");
 
   // Driven straight through them it is blocked, and that is correct — a wall is
-  // there to be gone round or over.
-  check(runs.filter(r => r.out === "tackled").length > 20,
-    `a free kick hit straight at the wall is blocked (${runs.filter(r => r.out === "tackled").length}/120)`);
+  // there to be gone round or over. It reports "blocked" rather than "tackled":
+  // a defender in the way of a ball going in has blocked a shot, and a defender
+  // in the way of one played to somebody has cut a pass out. They were the same
+  // outcome, so the wall doing its job was announced as you being dispossessed.
+  check(runs.filter(r => r.out === "blocked").length > 20,
+    `a free kick hit straight at the wall is blocked (${runs.filter(r => r.out === "blocked").length}/120)`);
 
   // Lifted over them, it is a free kick again.
   const lifted = Array.from({ length: 200 }, (_, i) => freeKick(i * 13 + 1, 0.75));

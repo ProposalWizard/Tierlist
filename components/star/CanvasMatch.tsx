@@ -319,7 +319,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const matchResultFor = (res: Outcome): ScenarioResult => {
     if (OUTCOME_TEXT[res].kind === "goal") return "goal";
     if (res === "delivered") return "delivered";
-    if (res === "tackled") return "lost";
+    if (res === "tackled" || res === "blocked") return "lost";
     return "saved";
   };
 
@@ -1571,7 +1571,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // …and a ball the keeper has pushed clear keeps going, so you watch it go
       // rather than finding it already there.
       if (phaseRef.current === "result" && ballRef.current?.settling) {
-        settleBall(ballRef.current, dt);
+        settleBall(ballRef.current, dt, scenarioRef.current);
       }
 
       // Cosmetic FX advance (pausing the rAF pauses everything together)
@@ -1669,7 +1669,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // It says what happened, like a goal or a pass does. Losing the ball used
       // to resolve into a beat of nothing and then the next highlight, so you
       // were left working out from the replay what had gone wrong.
-      showAction("BLOCKED");
+      //
+      // …and it says WHICH thing happened. Both used to read BLOCKED, including
+      // the one the outcome text called DISPOSSESSED, so the banner and the line
+      // under it disagreed about your own move.
+      showAction(res === "blocked" ? "BLOCKED" : "INTERCEPTED");
       nudge(0.18, 0.14);
       playSave();
     } else if (res === "offside") {
@@ -1723,7 +1727,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
     }
 
-    pushLine(commentaryResult(res, rngRef.current, { chain: receiverShot, receiverReached: sc.receiverDone, roleLabel: commentaryRoleLabel, isPass: isSimplePass }));
+    // ── The two questions the commentary is asking ──
+    //
+    // "Was there a man to find?" and "did the ball get to him?" — and both were
+    // being answered with the wrong flag, which inverted the line on every
+    // chained chance in the game.
+    //
+    // `chain` was `receiverShot`, so a pass that never reached anybody was not
+    // a chain at all and could never be described as a failed pass.
+    // `receiverReached` was `receiverDone`, which is cleared the instant he
+    // strikes it — so it was false for every chance where the pass had WORKED.
+    // Between them: you picked out a team-mate, he shot, the keeper saved it,
+    // and the game said "Cut out! A defender reads it well."
+    pushLine(commentaryResult(res, rngRef.current, {
+      chain: sc.receiver != null,
+      receiverReached: sc.receiverReached === true,
+      roleLabel: commentaryRoleLabel,
+      isPass: isSimplePass,
+    }));
 
     // A pass that found its man can keep the move going. This used to apply to
     // build-up only, and jumped to a random attacking situation; now any

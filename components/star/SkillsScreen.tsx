@@ -50,7 +50,7 @@ export default function SkillsScreen({ career, onTrain }: Props) {
               ? `Penalties are yours. Free kicks need a Free Kick rating of ${duties.freeKickNeeded}.`
               : `${career.player.club} have better takers. Penalties need ${duties.penaltyNeeded}, free kicks ${duties.freeKickNeeded}.`}
         </div>
-        <div className="mt-1 text-[10px] text-gray-400">
+        <div className="mt-1 text-[10px] text-white/75">
           Judged against your club — a move up the league can cost you the ball.
         </div>
       </div>
@@ -72,11 +72,11 @@ export default function SkillsScreen({ career, onTrain }: Props) {
             <div className="text-2xl">{icon}</div>
             <div className="flex-1 text-left">
               <div className="font-black text-white text-sm">{label}</div>
-              <div className="text-[10px] text-gray-400">{desc}</div>
+              <div className="text-[10px] text-white/75">{desc}</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-black text-emerald-400">{val}</div>
-              <div className="text-[9px] text-gray-500">/100</div>
+              <div className="text-[9px] text-white/65">/100</div>
             </div>
           </button>
         );

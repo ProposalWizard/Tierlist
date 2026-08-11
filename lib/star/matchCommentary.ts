@@ -121,6 +121,7 @@ const RESULT_SELF: Partial<Record<Outcome, string[]>> = {
   post: ["Off the woodwork! So close!", "Cannons back off the post!"],
   wide: ["Wide of the mark!", "Just can't find the target."],
   blocked: ["Blocked! A defender gets across in time.", "Charged down before it can trouble the keeper."],
+  tackled: ["Cut out! A defender reads it and steps in.", "Intercepted — the defence saw that coming."],
   out: ["Runs out of play.", "That one's gone out."],
   short: ["Doesn't have the legs on it.", "Comes up just short."],
   offside: ["The flag is up — offside!", "Offside! The linesman's flag is raised.", "Caught offside — the run was timed too early."],
@@ -140,6 +141,8 @@ const RESULT_TEAMMATE_TEMPLATES: Partial<Record<Outcome, string[]>> = {
   post: ["Off the post! {role} will be gutted with that."],
   wide: ["{role} drags it wide — so close to rewarding your pass."],
   blocked: ["Blocked! A defender recovers just in time to deny {role}."],
+  tackled: ["Taken off {role} before he can get his shot away."],
+  offside: ["The flag is up — {role} had gone too early.", "Offside against {role}. The ball was perfect; the run was not."],
   out: ["{role}'s effort balloons out of play."],
   short: ["{role} can't quite get enough on it."],
 };
@@ -147,7 +150,8 @@ const RESULT_TEAMMATE_TEMPLATES: Partial<Record<Outcome, string[]>> = {
 const RESULT_PASS_FAIL: Partial<Record<Outcome, string[]>> = {
   wide: ["Overhit — nobody could get on the end of that.", "Runs away from everyone — too much on it."],
   short: ["Under-hit — cut out before it reaches anyone.", "Doesn't have the legs to find him."],
-  blocked: ["Cut out! A defender reads it well.", "Intercepted before it can find its man."],
+  blocked: ["Charged down on its way through.", "A defender throws himself in front of it."],
+  tackled: ["Cut out! A defender reads it well.", "Intercepted before it can find its man."],
   out: ["Runs out of play — possession lost.", "Overhit and out of play."],
   saved: ["Claimed by the keeper before it can find its man."],
   caught: ["The keeper comes to collect it first."],

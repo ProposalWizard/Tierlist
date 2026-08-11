@@ -105,7 +105,7 @@ export default function TransferWindow({ career, offers, onAccept, onStay }: Pro
 function Cell({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="rounded-lg bg-gray-700 py-1.5">
-      <div className="text-[9px] font-bold uppercase tracking-wider text-gray-300">{label}</div>
+      <div className="text-[9px] font-bold uppercase tracking-wider text-white/85">{label}</div>
       <div className={`text-sm font-black ${highlight ? "text-emerald-300" : "text-white"}`}>{value}</div>
     </div>
   );

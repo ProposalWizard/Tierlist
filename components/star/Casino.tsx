@@ -312,11 +312,11 @@ function HorseRacingGame(props: HorseRacingProps) {
               <div className="mt-3 text-center">
                 {isMyHorseRace ? (
                   <>
-                    <div className={`text-3xl font-black ${result.finish === 1 ? "text-yellow-300" : result.finish <= 3 ? "text-emerald-300" : "text-gray-300"}`}>
+                    <div className={`text-3xl font-black ${result.finish === 1 ? "text-yellow-300" : result.finish <= 3 ? "text-emerald-300" : "text-white/85"}`}>
                       {ordinal(result.finish)} Place
                     </div>
                     <div className="text-sm font-bold mt-1">
-                      {result.payout > 0 ? <span className="text-emerald-300">Won ★{result.payout}!</span> : <span className="text-gray-400">Out of the money.</span>}
+                      {result.payout > 0 ? <span className="text-emerald-300">Won ★{result.payout}!</span> : <span className="text-white/75">Out of the money.</span>}
                     </div>
                   </>
                 ) : (
@@ -324,7 +324,7 @@ function HorseRacingGame(props: HorseRacingProps) {
                     <div className={`text-2xl font-black ${result.payout > 0 ? "text-yellow-300" : "text-red-400"}`}>
                       {result.payout > 0 ? `YOU WIN! +★${result.payout}` : "No luck!"}
                     </div>
-                    <div className="text-sm text-gray-300 mt-1">Winner: {result.winnerName}</div>
+                    <div className="text-sm text-white/85 mt-1">Winner: {result.winnerName}</div>
                   </>
                 )}
                 <button onClick={collectResult} className="mt-3 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">
@@ -351,11 +351,11 @@ function HorseRacingGame(props: HorseRacingProps) {
           <div className="flex gap-1 mb-3">
             <button
               onClick={() => setTab("bet")}
-              className={`flex-1 py-2 rounded-lg font-black text-sm transition ${tab === "bet" ? "bg-emerald-600" : "bg-gray-700 text-gray-400"}`}
+              className={`flex-1 py-2 rounded-lg font-black text-sm transition ${tab === "bet" ? "bg-emerald-600" : "bg-gray-700 text-white/75"}`}
             >Bet on Races</button>
             <button
               onClick={() => setTab("my-horses")}
-              className={`flex-1 py-2 rounded-lg font-black text-sm transition ${tab === "my-horses" ? "bg-emerald-600" : "bg-gray-700 text-gray-400"}`}
+              className={`flex-1 py-2 rounded-lg font-black text-sm transition ${tab === "my-horses" ? "bg-emerald-600" : "bg-gray-700 text-white/75"}`}
             >My Horses</button>
           </div>
         )}
@@ -363,7 +363,7 @@ function HorseRacingGame(props: HorseRacingProps) {
         {/* Betting tab */}
         {tab === "bet" && (
           <>
-            <div className="text-[10px] text-center text-gray-400 mb-2">Pick a horse, place your bet, and watch the race!</div>
+            <div className="text-[10px] text-center text-white/75 mb-2">Pick a horse, place your bet, and watch the race!</div>
             <div className="space-y-2 mb-3">
               {horses.map((h, i) => (
                 <button
@@ -378,11 +378,11 @@ function HorseRacingGame(props: HorseRacingProps) {
                   <div className="text-2xl">🐎</div>
                   <div className="flex-1 text-left">
                     <div className="font-black text-white text-sm">{h.name}</div>
-                    <div className="text-[10px] text-gray-400">Rating: {h.rating}</div>
+                    <div className="text-[10px] text-white/75">Rating: {h.rating}</div>
                   </div>
                   <div className="text-right">
                     <div className="font-black text-yellow-300 text-sm">{h.odds.toFixed(1)}:1</div>
-                    <div className="text-[9px] text-gray-500">odds</div>
+                    <div className="text-[9px] text-white/65">odds</div>
                   </div>
                 </button>
               ))}
@@ -402,7 +402,7 @@ function HorseRacingGame(props: HorseRacingProps) {
           <>
             {!myHorse ? (
               <>
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-[11px] text-gray-300 leading-snug text-center">
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-[11px] text-white/85 leading-snug text-center">
                   Buy a racehorse and enter it in races to win prize money. Racing tires your horse — its energy comes back as the season plays out.
                 </div>
                 <div className="space-y-2">
@@ -413,7 +413,7 @@ function HorseRacingGame(props: HorseRacingProps) {
                         <div className="text-3xl">🐎</div>
                         <div className="flex-1">
                           <div className="font-black text-white text-sm">{s.horse.name}</div>
-                          <div className="text-[10px] text-gray-400">{s.horse.breed} - SPD {s.horse.speed} - STA {s.horse.stamina}</div>
+                          <div className="text-[10px] text-white/75">{s.horse.breed} - SPD {s.horse.speed} - STA {s.horse.stamina}</div>
                         </div>
                         <button
                           onClick={() => {
@@ -423,7 +423,7 @@ function HorseRacingGame(props: HorseRacingProps) {
                             }
                           }}
                           disabled={!canAfford}
-                          className={`px-3 py-2 rounded-lg font-black text-xs flex items-center gap-1 ${canAfford ? "bg-emerald-500 hover:bg-emerald-400" : "bg-gray-700 text-gray-500"}`}
+                          className={`px-3 py-2 rounded-lg font-black text-xs flex items-center gap-1 ${canAfford ? "bg-emerald-500 hover:bg-emerald-400" : "bg-gray-700 text-white/65"}`}
                         >
                           <StarIcon />{s.price}
                         </button>
@@ -439,20 +439,20 @@ function HorseRacingGame(props: HorseRacingProps) {
                     <div className="text-5xl">🐎</div>
                     <div className="flex-1">
                       <div className="font-black text-white text-lg">{myHorse.name}</div>
-                      <div className="text-[11px] text-gray-400">{myHorse.breed}</div>
+                      <div className="text-[11px] text-white/75">{myHorse.breed}</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-center mb-3">
                     <div className="bg-gray-900/50 rounded-lg py-1.5">
-                      <div className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Speed</div>
+                      <div className="text-[9px] uppercase tracking-widest text-white/75 font-bold">Speed</div>
                       <div className="text-lg font-black text-emerald-300 tabular-nums">{myHorse.speed}</div>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg py-1.5">
-                      <div className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Stamina</div>
+                      <div className="text-[9px] uppercase tracking-widest text-white/75 font-bold">Stamina</div>
                       <div className="text-lg font-black text-emerald-300 tabular-nums">{myHorse.stamina}</div>
                     </div>
                   </div>
-                  <div className="mb-1 flex justify-between text-[10px] font-bold text-gray-300">
+                  <div className="mb-1 flex justify-between text-[10px] font-bold text-white/85">
                     <span>Energy</span><span>{myHorse.energy}%</span>
                   </div>
                   <div className="h-2.5 w-full rounded-full bg-black/40 overflow-hidden">
@@ -460,31 +460,31 @@ function HorseRacingGame(props: HorseRacingProps) {
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px]">
                     <div className="bg-gray-900/50 rounded-lg py-1.5">
-                      <div className="text-gray-400 font-bold">Runs</div>
+                      <div className="text-white/75 font-bold">Runs</div>
                       <div className="text-white font-black">{myHorse.racesRun}</div>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg py-1.5">
-                      <div className="text-gray-400 font-bold">Wins</div>
+                      <div className="text-white/75 font-bold">Wins</div>
                       <div className="text-white font-black">{myHorse.racesWon}</div>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg py-1.5">
-                      <div className="text-gray-400 font-bold">Winnings</div>
+                      <div className="text-white/75 font-bold">Winnings</div>
                       <div className="text-white font-black">★{myHorse.earnings}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="text-[10px] text-center text-gray-400 mb-2">Prize: 1st = bet x5, 2nd = bet x2, 3rd = bet x1</div>
+                <div className="text-[10px] text-center text-white/75 mb-2">Prize: 1st = bet x5, 2nd = bet x2, 3rd = bet x1</div>
 
                 <button
                   onClick={startMyHorseRace}
                   disabled={myHorse.energy < MY_HORSE_RACE_COST}
-                  className={`w-full py-3 rounded-xl font-black text-lg ${myHorse.energy >= MY_HORSE_RACE_COST ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400" : "bg-gray-700 text-gray-500"}`}
+                  className={`w-full py-3 rounded-xl font-black text-lg ${myHorse.energy >= MY_HORSE_RACE_COST ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400" : "bg-gray-700 text-white/65"}`}
                 >
                   {myHorse.energy >= MY_HORSE_RACE_COST ? `Enter Race (-${MY_HORSE_RACE_COST} energy)` : "Too tired — rest needed"}
                 </button>
                 {myHorse.energy < MY_HORSE_RACE_COST && (
-                  <div className="mt-2 text-[10px] text-center text-gray-400">Your horse regains 20 energy after each match you play.</div>
+                  <div className="mt-2 text-[10px] text-center text-white/75">Your horse regains 20 energy after each match you play.</div>
                 )}
               </>
             )}
@@ -804,7 +804,7 @@ function Roulette(props: CasinoGameProps) {
             >{c}</button>
           ))}
         </div>
-        <div className="mt-2 text-[10px] text-center text-gray-400">Red/Black/Even/Odd: 2x • Single number: 35x</div>
+        <div className="mt-2 text-[10px] text-center text-white/75">Red/Black/Even/Odd: 2x • Single number: 35x</div>
         <div className="mt-2 grid grid-cols-6 gap-1 max-h-24 overflow-y-auto">
           {Array.from({ length: 37 }).map((_, i) => {
             const bg = i === 0 ? "bg-emerald-700" : isRed(i) ? "bg-red-700" : "bg-gray-900";

@@ -72,7 +72,7 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
           <div className="bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-white border border-gray-600">
             Age {career.player.age}
           </div>
-          <div className="flex-1 text-center text-[10px] font-black text-gray-400 tracking-widest">
+          <div className="flex-1 text-center text-[10px] font-black text-white/75 tracking-widest">
             {career.player.club.toUpperCase()}
           </div>
           <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-yellow-300 border border-gray-600">
@@ -89,9 +89,9 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
         {/* Next match banner */}
         {nextMatchLabel && (
           <div className="mx-3 mb-1 bg-gradient-to-r from-gray-700 to-gray-600 border border-gray-500 rounded-lg px-3 py-1.5 flex items-center justify-between">
-            <div className="text-[10px] font-black text-gray-300">Year {career.season}</div>
+            <div className="text-[10px] font-black text-white/85">Year {career.season}</div>
             <div className="text-xs font-black text-white truncate mx-2">{nextMatchLabel}</div>
-            <div className="text-[10px] font-black text-gray-300">Week {career.week}</div>
+            <div className="text-[10px] font-black text-white/85">Week {career.week}</div>
           </div>
         )}
 

@@ -34,7 +34,7 @@ export default function DashboardStats({ career }: Props) {
             key={t}
             onClick={() => setTab(t)}
             className={`py-1.5 rounded-t-lg font-black text-xs uppercase tracking-wider transition ${
-              tab === t ? "bg-yellow-500 text-white" : "bg-gray-700 text-gray-300"
+              tab === t ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"
             }`}
           >
             {t}
@@ -92,7 +92,7 @@ export default function DashboardStats({ career }: Props) {
             </div>
           ))}
           {clauseSummary(career.contract).length === 0 && (
-            <div className="border-t border-black/30 bg-gray-900 px-3 py-2 text-[10px] text-gray-300">
+            <div className="border-t border-black/30 bg-gray-900 px-3 py-2 text-[10px] text-white/85">
               No clauses in this one. Ask for some at the next renewal.
             </div>
           )}
@@ -110,7 +110,7 @@ export default function DashboardStats({ career }: Props) {
             >
               {selection.status}
             </div>
-            <div className={`py-2 rounded-lg font-black text-sm text-center ${career.matchFitness >= 70 ? "bg-emerald-500 text-white" : "bg-gray-700 text-gray-400"}`}>
+            <div className={`py-2 rounded-lg font-black text-sm text-center ${career.matchFitness >= 70 ? "bg-emerald-500 text-white" : "bg-gray-700 text-white/75"}`}>
               Match Fit ({Math.round(career.matchFitness)}%)
             </div>
           </div>
@@ -119,12 +119,12 @@ export default function DashboardStats({ career }: Props) {
               <span className="text-2xl font-black tabular-nums text-white">{career.squadNumber ?? "—"}</span>
             </div>
             <div className="flex-1 rounded-lg border border-gray-600 bg-gray-700 p-2">
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-300">Standing</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Standing</div>
               <div className="text-xs font-black text-white">
                 {career.captain ? "🅲 Club captain" : "Not the captain"}
                 {leadingScorer(career) && career.seasonStats.goals > 0 ? " · leading the scoring charts" : ""}
               </div>
-              <div className="text-[10px] text-gray-300">
+              <div className="text-[10px] text-white/85">
                 {(career.clubAppearances ?? 0)} appearance{(career.clubAppearances ?? 0) === 1 ? "" : "s"} for {career.player.club}
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function DashboardStats({ career }: Props) {
                   </div>
                 ))}
                 {(career.awards ?? []).length > 5 && (
-                  <div className="text-[10px] text-gray-300">…and {(career.awards ?? []).length - 5} more</div>
+                  <div className="text-[10px] text-white/85">…and {(career.awards ?? []).length - 5} more</div>
                 )}
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function DashboardStats({ career }: Props) {
 
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
             <div className="font-black text-xs text-white mb-1">The manager</div>
-            <div className="text-[10px] text-gray-300">{selection.reason}</div>
+            <div className="text-[10px] text-white/85">{selection.reason}</div>
             <div className="mt-2 h-1.5 w-full rounded-full bg-black/30 overflow-hidden">
               <div
                 className={`h-full rounded-full ${
@@ -196,21 +196,21 @@ export default function DashboardStats({ career }: Props) {
               />
             </div>
             <div className="mt-1 flex gap-1.5 text-[10px] font-bold">
-              <span className={`px-2 py-0.5 rounded-full ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-gray-300"}`}>
+              <span className={`px-2 py-0.5 rounded-full ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-white/85"}`}>
                 Free kicks {duties.freeKicks ? "✓" : `need FK ${duties.freeKickNeeded}`}
               </span>
-              <span className={`px-2 py-0.5 rounded-full ${duties.penalties ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-gray-300"}`}>
+              <span className={`px-2 py-0.5 rounded-full ${duties.penalties ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-white/85"}`}>
                 Penalties {duties.penalties ? "✓" : `need FK ${duties.penaltyNeeded}`}
               </span>
             </div>
           </div>
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
             <div className="font-black text-xs text-white mb-1">NRG Drinks: {career.nrgDrinks.basic + career.nrgDrinks.premium + career.nrgDrinks.elite}</div>
-            <div className="text-[10px] text-gray-300">Restores energy before a match. Manage on the Life screen.</div>
+            <div className="text-[10px] text-white/85">Restores energy before a match. Manage on the Life screen.</div>
           </div>
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
             <div className="font-black text-xs text-white mb-1">Boots — {career.currentBoot.name}</div>
-            <div className="text-[10px] text-gray-300">
+            <div className="text-[10px] text-white/85">
               {career.currentBoot.matches} matches remaining · Pace +{career.currentBoot.pace} · Pow +{career.currentBoot.power} · Tec +{career.currentBoot.technique}
             </div>
           </div>
@@ -219,7 +219,7 @@ export default function DashboardStats({ career }: Props) {
             <div className="grid grid-cols-5 gap-1 text-center">
               {(["pace", "power", "technique", "vision", "freeKick"] as const).map((k) => (
                 <div key={k}>
-                  <div className="text-[9px] text-gray-400 uppercase font-bold">{k === "freeKick" ? "FK" : k.slice(0, 4)}</div>
+                  <div className="text-[9px] text-white/75 uppercase font-bold">{k === "freeKick" ? "FK" : k.slice(0, 4)}</div>
                   <div className="text-sm font-black text-emerald-400">{career.skills[k]}</div>
                 </div>
               ))}

@@ -98,7 +98,7 @@ export default function HorseRacing({ career, onBuyHorse, onRace, onBack }: Prop
         {/* No horse yet → the stable to buy one */}
         {!horse && (
           <>
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-[11px] text-gray-300 leading-snug text-center">
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-[11px] text-white/85 leading-snug text-center">
               Buy a racehorse and enter it in races to win prize money. Racing tires your horse — its energy comes back as the season plays out.
             </div>
             <div className="space-y-2">
@@ -109,12 +109,12 @@ export default function HorseRacing({ career, onBuyHorse, onRace, onBack }: Prop
                     <div className="text-3xl">🐎</div>
                     <div className="flex-1">
                       <div className="font-black text-white text-sm">{s.horse.name}</div>
-                      <div className="text-[10px] text-gray-400">{s.horse.breed} · SPD {s.horse.speed} · STA {s.horse.stamina}</div>
+                      <div className="text-[10px] text-white/75">{s.horse.breed} · SPD {s.horse.speed} · STA {s.horse.stamina}</div>
                     </div>
                     <button
                       onClick={() => canAfford && onBuyHorse({ ...s.horse, energy: 100, racesRun: 0, racesWon: 0, earnings: 0 }, s.price)}
                       disabled={!canAfford}
-                      className={`px-3 py-2 rounded-lg font-black text-xs flex items-center gap-1 ${canAfford ? "bg-emerald-500 hover:bg-emerald-400" : "bg-gray-700 text-gray-500"}`}
+                      className={`px-3 py-2 rounded-lg font-black text-xs flex items-center gap-1 ${canAfford ? "bg-emerald-500 hover:bg-emerald-400" : "bg-gray-700 text-white/65"}`}
                     >
                       <StarIcon />{s.price}
                     </button>
@@ -133,14 +133,14 @@ export default function HorseRacing({ career, onBuyHorse, onRace, onBack }: Prop
                 <div className="text-5xl">🐎</div>
                 <div className="flex-1">
                   <div className="font-black text-white text-lg">{horse.name}</div>
-                  <div className="text-[11px] text-gray-400">{horse.breed}</div>
+                  <div className="text-[11px] text-white/75">{horse.breed}</div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-center mb-3">
                 <Stat label="Speed" value={horse.speed} />
                 <Stat label="Stamina" value={horse.stamina} />
               </div>
-              <div className="mb-1 flex justify-between text-[10px] font-bold text-gray-300">
+              <div className="mb-1 flex justify-between text-[10px] font-bold text-white/85">
                 <span>Energy</span><span>{horse.energy}%</span>
               </div>
               <div className="h-2.5 w-full rounded-full bg-black/40 overflow-hidden">
@@ -156,12 +156,12 @@ export default function HorseRacing({ career, onBuyHorse, onRace, onBack }: Prop
             <button
               onClick={startRace}
               disabled={horse.energy < RACE_COST}
-              className={`w-full py-3 rounded-xl font-black text-lg ${horse.energy >= RACE_COST ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400" : "bg-gray-700 text-gray-500"}`}
+              className={`w-full py-3 rounded-xl font-black text-lg ${horse.energy >= RACE_COST ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400" : "bg-gray-700 text-white/65"}`}
             >
               {horse.energy >= RACE_COST ? `Enter Race (−${RACE_COST} energy)` : "Too tired — rest needed"}
             </button>
             {horse.energy < RACE_COST && (
-              <div className="mt-2 text-[10px] text-center text-gray-400">Your horse regains {20} energy after each match you play.</div>
+              <div className="mt-2 text-[10px] text-center text-white/75">Your horse regains {20} energy after each match you play.</div>
             )}
           </>
         )}
@@ -192,11 +192,11 @@ export default function HorseRacing({ career, onBuyHorse, onRace, onBack }: Prop
 
             {result && (
               <div className="mt-3 text-center">
-                <div className={`text-3xl font-black ${result.finish === 1 ? "text-yellow-300" : result.finish <= 3 ? "text-emerald-300" : "text-gray-300"}`}>
+                <div className={`text-3xl font-black ${result.finish === 1 ? "text-yellow-300" : result.finish <= 3 ? "text-emerald-300" : "text-white/85"}`}>
                   {ordinal(result.finish)} place
                 </div>
                 <div className="text-sm font-bold mt-1">
-                  {result.prize > 0 ? <span className="text-emerald-300">Won ★{result.prize}!</span> : <span className="text-gray-400">Out of the money.</span>}
+                  {result.prize > 0 ? <span className="text-emerald-300">Won ★{result.prize}!</span> : <span className="text-white/75">Out of the money.</span>}
                 </div>
                 <button onClick={collect} className="mt-3 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">
                   {result.prize > 0 ? "Collect Winnings" : "Back to Stable"}
@@ -219,7 +219,7 @@ function ordinal(n: number) {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="bg-gray-900/50 rounded-lg py-1.5">
-      <div className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">{label}</div>
+      <div className="text-[9px] uppercase tracking-widest text-white/75 font-bold">{label}</div>
       <div className="text-lg font-black text-emerald-300 tabular-nums">{value}</div>
     </div>
   );
@@ -227,7 +227,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 function RecordChip({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="bg-gray-900/50 rounded-lg py-1.5">
-      <div className="text-gray-400 font-bold">{label}</div>
+      <div className="text-white/75 font-bold">{label}</div>
       <div className="text-white font-black">{value}</div>
     </div>
   );

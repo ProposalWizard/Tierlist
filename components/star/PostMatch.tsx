@@ -17,7 +17,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex items-center justify-center px-3 py-4">
       <div className="w-full max-w-sm">
         <div className="bg-gray-700 rounded-t-xl border border-gray-600 py-2 px-3 text-center border-b-0">
-          <div className="text-[10px] uppercase tracking-widest font-black text-gray-400">
+          <div className="text-[10px] uppercase tracking-widest font-black text-white/75">
             {competition ? competition : "Full Time"}
           </div>
           <div className="text-lg font-black text-white mt-0.5 truncate">{homeTeam} {stats.homeScore} — {stats.awayScore} {awayTeam}</div>
