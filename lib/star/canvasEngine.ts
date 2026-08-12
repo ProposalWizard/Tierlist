@@ -139,6 +139,24 @@ export interface Keeper {
   patrolSeed: number;
   /** Chasing a spill rather than patrolling. */
   scrambling: boolean;
+  /**
+   * Sliding across because the ball has been played to somebody else.
+   *
+   * The keeper stands still, and that is the whole design — you look at where
+   * he is and you put it where he is not, and he never reads your aim. But
+   * "never moves" and "never reacts to the ball being somewhere else" are not
+   * the same thing, and the engine had only the first.
+   *
+   * So the far side of the goal was free. He shades a post for a cross from the
+   * byline, the ball goes across him to an unmarked man, and the man now has
+   * five metres of undefended goal against two and a half metres of reach —
+   * measured at 45% conversion on a byline cross, and the keeper standing
+   * exactly where he had been when the ball was thirty yards away.
+   *
+   * He never tracks a SHOT. He tracks the ball being moved, in the beat before
+   * it is struck, which is the one thing every real keeper is doing.
+   */
+  adjusting?: boolean;
   /** 0..1 lunge played AFTER the outcome is decided (render only). */
   saveLunge: number;
   /** Which way that lunge goes. */
@@ -359,6 +377,15 @@ const CURL_K = 0.48;           // Magnus-ish lateral bend, applied perpendicular
 const SHOT_REF_SPEED = 32;     // m/s — about as hard as a professional strikes it
 const KEEPER_LATERAL_MAX = 3.2;// metres along the line a keeper can cover scrambling
 const KEEPER_DIVE_SPEED = 5.4; // m/s lateral when chasing a loose ball
+// Shuffling across to cover a ball played to somebody else. Deliberately slower
+// and shorter than a dive: this is a keeper adjusting his angle in the half
+// second before a shot, not a keeper flying at one.
+const KEEPER_SHUFFLE_SPEED = 3.4;
+const KEEPER_SHUFFLE_MAX = 2.6;
+// How far toward the ball's side he shades. A keeper does not stand on the line
+// between the ball and the centre of his goal — he covers his near post and
+// gives you the far one, which is why the far post is a finish at all.
+const KEEPER_SHADE = 0.38;
 const KEEPER_VREACH = 2.5;     // metres — fingertips at full stretch
 
 // ── The two numbers that balance the keeper ──────────────────────────────────
@@ -502,6 +529,7 @@ function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
     patrolT: r * 4,                 // start somewhere along the sweep, not always centre
     patrolSeed: r * Math.PI * 2,
     scrambling: false,
+    adjusting: false,
     saveLunge: 0,
     saveDir: 0,
     saveKind: null,
@@ -1133,6 +1161,31 @@ const RECEIVER_ROLES: Partial<Record<ScenarioKind, { label: string; skillMin: nu
   penalty: [
     { label: "the striker", skillMin: 58, skillMax: 88 },
   ],
+};
+
+/**
+ * How cleanly a receiver can strike what you have played him, by situation.
+ *
+ * Not a difficulty dial bolted on to tune conversion — it is the one fact about
+ * these chances the engine had no representation of at all. Every receiver
+ * finished every chance with the same technique, so a centre-back heading a
+ * corner in a crowd was as composed as a striker with the ball rolled across
+ * the six-yard box, and the only thing separating them was a skill number.
+ *
+ * Scales what he AIMS for and divides into the error he makes, so a hard
+ * chance is both less ambitious and less accurate — which is what makes a
+ * cutback the best ball in football and a corner mostly a way of losing
+ * possession.
+ */
+const RECEIVER_CONTROL: Partial<Record<ScenarioKind, number>> = {
+  cutback: 1.0,        // on the floor, into his stride, facing goal
+  one_on_one: 0.95,
+  through_ball: 0.8,   // running onto it with a keeper coming
+  tight_angle: 0.7,
+  byline_cross: 0.5,   // meeting it first time, in the air
+  volley: 0.5,
+  header: 0.45,
+  corner: 0.3,         // a header in traffic — nobody picks the top corner
 };
 
 function rollReceiver(kind: ScenarioKind, rng: () => number): Receiver | null {
@@ -1891,14 +1944,83 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   const teamQuality = clamp(scenario.teamRelationship / 100, 0, 1); // how well you two combine
   const composite = clamp(receiver.skill * 0.5 + posQuality * 50 + teamQuality * 25, 10, 96);
 
+  /**
+   * How much the situation lets him DO with it.
+   *
+   * The first attempt at fixing the aim used `composite` for placement, and
+   * composite folds in how close to goal he is — so being six yards out made
+   * him both more ambitious and more accurate while the keeper got no better,
+   * and a corner converted at 55%. Distance is not the difficulty here. What
+   * the ball is doing when it reaches him is.
+   *
+   * A cutback arrives on the floor, into his stride, facing goal: he can pick
+   * his spot. A cross has to be met first time. A corner is a header in
+   * traffic, and nobody heads a ball into the top corner on purpose. So
+   * `control` scales what he aims for AND divides into the error he makes —
+   * a hard chance is both less ambitious and more sprayed.
+   */
+  const control = RECEIVER_CONTROL[scenario.kind] ?? 0.85;
+  // His striking quality, which is his own and the understanding between you —
+  // and deliberately NOT where he is standing.
+  const quality = clamp(clamp(receiver.skill, 0, 100) / 100 * 0.72 + teamQuality * 0.28, 0, 1);
+
+  // ── HE AIMS AT THE GOAL, NOT AT THE GOALKEEPER ──
+  //
+  // This used to scatter him around the CENTRE of the mouth, in a window that
+  // narrowed as he got better:
+  //
+  //     spread = 7 - composite * 0.05        aimX = centre ± spread/2
+  //
+  // At composite 96 that is ±1.10 m — and the keeper reaches about 2.4 m either
+  // side of where he is standing. So the better the finisher, the more certainly
+  // he shot straight at him. Measured over 1,500 chances per situation: mean aim
+  // 0.9-1.05 m from the centre spot, and 97.6% of cutbacks, 98.9% of corners and
+  // 99.8% of crosses crossing the line within 2.4 m of the middle. On target
+  // 100% of the time and saved almost all of it.
+  //
+  // The only situation that converted respectably was the through-ball, and for
+  // an accidental reason: it is struck from further out, so the ANGULAR error had
+  // more distance to work over and sprayed him off the keeper. Being worse at it
+  // was the only thing that made it work.
+  //
+  // A finisher looks at the goalkeeper and puts it where he is not. So: pick a
+  // side — usually the one the keeper is not shading — and place it toward the
+  // frame, with how near the frame he dares aim RISING with quality and the
+  // execution error still falling with it. Reading the keeper's position is not
+  // the engine cheating on his behalf; it is the same thing the player does by
+  // looking at the screen before he drags.
   const goalCx = (scenario.goal.x1 + scenario.goal.x2) / 2;
-  const spread = 7 - composite * 0.05;   // metres of aim scatter across the mouth
-  const aimX = goalCx + (rng() - 0.5) * spread;
+  const halfMouth = (POST_R - POST_L) / 2;
+  const keeperSide = Math.sign(scenario.keeper.x - goalCx) || (rng() < 0.5 ? -1 : 1);
+  // Mostly away from him — but only as reliably as the contact allows. A
+  // striker with the ball rolled across him looks up and picks the other side;
+  // a defender heading a corner is aiming at the goal and hoping. Letting the
+  // header read the keeper as well as the cutback did was worth twenty-eight
+  // points of conversion on its own.
+  const readsKeeper = 0.5 + control * 0.36;
+  const side = rng() < readsKeeper ? -keeperSide : keeperSide;
+  // Where he is trying to put it, as a fraction of the half-mouth: barely off
+  // centre for a defender heading a corner, close to the frame for a striker
+  // with a cutback laid into his stride.
+  const placement = (0.22 + quality * 0.62) * control;
+  const aimX = clamp(
+    goalCx + side * placement * (halfMouth - BALL_R * 2),
+    POST_L + BALL_R * 2, POST_R - BALL_R * 2,
+  );
   const baseDir = normalize({ x: aimX - ball.pos.x, y: -Math.max(ball.pos.y, 0.5) });
-  const sigmaDeg = (1 - composite / 100) * 9;
+  // …and how far off it he ends up. Quality tightens it; a difficult contact
+  // widens it. Over ten metres a degree is about 17 centimetres, so this is the
+  // number that decides whether aiming at the corner finds it or misses the
+  // target altogether — which is exactly the trade a finisher is making.
+  const sigmaDeg = (1 - quality * 0.82) * 7.5 / Math.max(0.45, control);
   const dir = rotateDeg(baseDir, gaussian(rng) * sigmaDeg);
 
-  const loft = clamp(0.16 + rng() * 0.22 - composite / 600, 0.03, 0.55);
+  // …and he is allowed to lift it. Loft used to be SUBTRACTED for quality, so
+  // every good finish was along the floor: measured mean height at the line was
+  // 7 to 13 centimetres. The keeper's save volume is flattened, so height is
+  // only a modest help — but a game where no team-mate ever scores above knee
+  // height reads as broken long before anybody works out why.
+  const loft = clamp(0.10 + rng() * 0.26 + (composite / 100) * 0.14, 0.03, 0.62);
   const Sh = (16 + composite * 0.16) * (1 - loft * 0.25);
   const vz = loft * (7 + composite * 0.04);
   const spin = (rng() - 0.5) * 0.9;
@@ -1912,6 +2034,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   ball.lastTouch = "attack";
   markLanding(ball, scenario);
   ball.event = "receiverShot";
+  scenario.keeper.adjusting = false;
   // It is a shot at goal, so it gets the same protection yours does: a support
   // player steps out of the way of it rather than controlling it. Without this,
   // now that a ball can be collected again after a team-mate has struck it, his
@@ -2191,6 +2314,17 @@ export function stepKeeper(scenario: Scenario, dt: number) {
   // still breathing rather than frozen mid-frame.
   k.idleT += k.done ? dt : 0;
   if (k.done) return;
+
+  // ── Covering the angle to where the ball actually is ──
+  if (k.adjusting && !k.scrambling) {
+    const target = clamp(k.targetX, k.startX - KEEPER_SHUFFLE_MAX, k.startX + KEEPER_SHUFFLE_MAX);
+    const dx = target - k.x;
+    k.x += Math.sign(dx) * Math.min(Math.abs(dx), KEEPER_SHUFFLE_SPEED * dt);
+    k.idleT += dt;
+    k.patrolT += dt;
+    k.dive += (0 - k.dive) * Math.min(1, dt * 8);
+    return;
+  }
 
   if (k.scrambling) {
     const target = clamp(k.targetX, k.startX - KEEPER_LATERAL_MAX, k.startX + KEEPER_LATERAL_MAX);
@@ -2564,7 +2698,18 @@ export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
     const t = (dx * ball.vel.x + dy * ball.vel.y) / (speed * speed);
     if (t <= 0 || t * speed > toGoal) continue;   // behind you, or past the goal
     const offX = dx - ball.vel.x * t, offY = dy - ball.vel.y * t;
-    if (Math.hypot(offX, offY) < PASS_CONTROL_R * 1.2) return false;
+    // ── How near his line a man has to be for it to be a ball TO him ──
+    //
+    // A flat 2.4 m regardless of pace, and the poacher is placed at half the
+    // distance to the goal in the same width band your shot travels through —
+    // so in a one-on-one your own striker was standing in your shooting line and
+    // the engine read 43% of your clean-through chances as passes to him. He
+    // then took the shot, and scored more of them than you did.
+    //
+    // A rolled ball near a man is a pass. A ball struck at twenty-five metres a
+    // second is a shot he would have to step INTO, and it is not his.
+    const lane = PASS_CONTROL_R * 1.2 * clamp(1.35 - speed / 34, 0.35, 1.2);
+    if (Math.hypot(offX, offY) < lane) return false;
   }
 
   // Where it would cross the line if nothing touched it. A cone around the goal
@@ -2705,6 +2850,7 @@ export function clearBall(ball: Ball, rng: () => number, scenario?: Scenario) {
   ball.loose = false;
   ball.owner = "opponent";
   ball.lastTouch = "defence";
+  if (scenario) scenario.keeper.adjusting = false;
 }
 
 /**
@@ -3325,6 +3471,13 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         scenario.receiverDone = true;
         scenario.receiverReached = true;
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
+        // The ball is somewhere else now, and the keeper has the beat before it
+        // is struck to do something about it. See Keeper.adjusting.
+        if (goalInView(scenario.kind) && !scenario.keeper.done) {
+          const gcx = (scenario.goal.x1 + scenario.goal.x2) / 2;
+          scenario.keeper.targetX = clamp(gcx + (tgt.x - gcx) * KEEPER_SHADE, POST_L - 0.6, POST_R + 0.6);
+          scenario.keeper.adjusting = true;
+        }
         r.moving = false;
         ball.lastTouch = "attack";
         // How difficult was that ball? Forward + long = harder, and a harder ball
