@@ -34,6 +34,26 @@ export interface TransferHereWeGoProps {
   faceSrc?: string;
   /** Where the face sits on THIS pose, as fractions of the frame. */
   faceAnchor?: { x: number; y: number; size: number };
+  /**
+   * Where this pose's neck is, as a fraction down the figure layer.
+   *
+   * THE thing that makes a face swap work or not. Laying a face over an
+   * existing head leaves the original head showing round the edges — different
+   * hair, different jaw, different ears, a halo of the wrong person — which no
+   * amount of feathering hides. So the pose's own head is not covered, it is
+   * REMOVED: everything above this line fades out, and the face supplies the
+   * whole head rather than a patch of one.
+   */
+  neckY?: number;
+  /**
+   * Luminance correction on the face alone, before the duotone.
+   *
+   * The pose and the face are two photographs taken by different people under
+   * different lights, and the duotone unifies hue but not exposure — a face two
+   * stops darker than the arms it sits on still reads as pasted. This lifts or
+   * drops the face until the two match, and then the tint lands on both equally.
+   */
+  faceLift?: number;
   kitPrimary: string;
   kitSecondary?: string;
   /** 0 = untouched photo, 1 = full duotone. */
@@ -45,6 +65,7 @@ export default function TransferHereWeGo01({
   headline = "HERE WE GO",
   byline = "TRANSFER CONFIRMED",
   poseSrc, faceSrc, faceAnchor = { x: 0.5, y: 0.17, size: 0.135 },
+  neckY = 0.235, faceLift = 1,
   kitPrimary, kitSecondary, treatment = 0.85,
 }: TransferHereWeGoProps) {
   const c = paletteFor(kitPrimary, kitSecondary);
@@ -99,7 +120,15 @@ export default function TransferHereWeGo01({
               src={poseSrc}
               alt=""
               className="absolute inset-0 h-full w-full object-contain object-bottom"
-              style={{ filter: `grayscale(${treatment}) contrast(${1 + treatment * 0.25}) brightness(1.06)` }}
+              style={{
+                filter: `grayscale(${treatment}) contrast(${1 + treatment * 0.25}) brightness(1.06)`,
+                // The head is cut off, not covered. A short fade rather than a
+                // hard line, so the join reads as shadow under a jaw.
+                ...(faceSrc ? {
+                  WebkitMaskImage: `linear-gradient(180deg, transparent ${(neckY - 0.055) * 100}%, #000 ${neckY * 100}%)`,
+                  maskImage: `linear-gradient(180deg, transparent ${(neckY - 0.055) * 100}%, #000 ${neckY * 100}%)`,
+                } : {}),
+              }}
             />
           ) : (
             <StandIn />
@@ -116,11 +145,13 @@ export default function TransferHereWeGo01({
                 width: `${faceAnchor.size * 100}%`,
                 transform: "translate(-50%, -50%)",
                 aspectRatio: "1 / 1",
-                filter: `grayscale(${treatment}) contrast(${1 + treatment * 0.25}) brightness(1.06)`,
-                // Feathered, so there is no hard disc edge where the face meets
-                // the neck. The duotone above finishes the join.
-                WebkitMaskImage: "radial-gradient(circle at 50% 46%, #000 56%, transparent 74%)",
-                maskImage: "radial-gradient(circle at 50% 46%, #000 56%, transparent 74%)",
+                filter: `grayscale(${treatment}) contrast(${1 + treatment * 0.25}) brightness(${(1.06 * faceLift).toFixed(3)})`,
+                // Generous and soft at the bottom only. The sides and top are
+                // left alone — with the pose's head already gone there is
+                // nothing behind the face to hide, and a tight circular crop was
+                // cutting off hair and ears and making it look like a sticker.
+                WebkitMaskImage: "radial-gradient(115% 92% at 50% 40%, #000 62%, transparent 88%)",
+                maskImage: "radial-gradient(115% 92% at 50% 40%, #000 62%, transparent 88%)",
               }}
             />
           )}
