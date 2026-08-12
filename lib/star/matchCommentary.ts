@@ -170,6 +170,18 @@ export function commentaryStrike(kind: ScenarioKind, rng: () => number): string 
   return pick(STRIKE[kind], rng);
 }
 
+/**
+ * Sentences begin with a capital letter.
+ *
+ * Half of these lines open on {role}, and a role label is written lower case
+ * because it is usually mid-sentence — so a name substituted in reads fine and a
+ * label reads as "IT'S THERE! the attacking midfielder finishes it off". Which
+ * is what it said.
+ */
+function startSentences(line: string): string {
+  return line.replace(/(^|[.!?]\s+)([a-z])/g, (_m, lead: string, c: string) => lead + c.toUpperCase());
+}
+
 export function commentaryReceived(roleLabel: string, rng: () => number): string {
   const label = roleLabel.charAt(0).toUpperCase() + roleLabel.slice(1);
   return `${label} ${pick(RECEIVED, rng)}`;
@@ -194,7 +206,7 @@ export function commentaryResult(
   }
   if (opts.chain && opts.receiverReached) {
     const template = pick(RESULT_TEAMMATE_TEMPLATES[outcome] ?? ["The chance goes begging for {role}."], rng);
-    return template.replace(/\{role\}/g, opts.roleLabel ?? "your team-mate");
+    return startSentences(template.replace(/\{role\}/g, opts.roleLabel ?? "your team-mate"));
   }
   if (outcome === "delivered") {
     return pick(RESULT_PASS_OK.delivered!, rng);
