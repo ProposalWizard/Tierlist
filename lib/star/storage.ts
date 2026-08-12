@@ -1,6 +1,7 @@
 import type { CareerState, StarPhase } from "./types";
 import { makeManager } from "./manager";
 import { assignSquadNumber } from "./recognition";
+import { generateSquad, clubNameSeed } from "./squadData";
 
 const KEY = "star-career-v2";
 const OLD_KEY = "star-career-v1";
@@ -95,6 +96,15 @@ function backfill(c: CareerState): CareerState {
   if (!out.manager) out.manager = makeManager(out, out.player.club, out.season);
   if (out.squadNumber === undefined) out.squadNumber = assignSquadNumber(out, out.player.club);
   if (out.clubAppearances === undefined) out.clubAppearances = out.careerStats.appearances;
+  // ── …and the squad, which is the third of exactly the same kind ──
+  //
+  // A squad is only ever created when a career is created or when you sign for
+  // somebody, so a career saved before squads existed had none and could never
+  // get one. `LeagueScreen` reads `career.squad ?? []`, so the Squad tab showed
+  // one row — you — for the rest of that save, while a career started a week
+  // later had a full dressing room. Reported as exactly that: "it just says me
+  // on there."
+  if (!out.squad?.length) out.squad = generateSquad(clubNameSeed(out.player.club));
   return out;
 }
 

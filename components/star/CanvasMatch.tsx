@@ -1882,27 +1882,53 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     }
 
     const raw = [...handedOver, ...step.events];
-    const events: SimEvent[] = raw.map((e) => ({
-      minute: e.minute,
-      // The opponent is named here rather than in the simulation, which has no
-      // business knowing who you are playing.
-      text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
-      isGoal: e.isGoal,
-    }));
 
-    // A teammate's goal gets a real name off the squad sheet, the same as one
-    // you set up yourself, so the scoresheet reads like a team's.
+    // ── WHO SCORED ──
+    //
+    // A goal your side scores while you are not on the ball used to be reported
+    // as "Your side score" and then vanish: no name on the sim screen, no line
+    // in the running commentary, and nothing in the scoresheet. Half your team's
+    // goals across a whole career belonged to nobody.
+    //
+    // Done in ONE pass now, mapping each raw event to its own SimEvent. The
+    // previous version named the goal and then went looking for the line to
+    // rename with `events.find(minute === e.minute && isGoal)`, which is not an
+    // identity — two goals in the same minute renamed the same line twice and
+    // left the other anonymous, and a minute where BOTH sides scored could put
+    // your striker's name on the opposition's goal.
     const squad = careerRef.current?.squad ?? [];
-    for (const e of raw) {
-      if (!e.isGoal || !e.teammateGoal) continue;
-      const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
+    const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
+
+    const events: SimEvent[] = raw.map((e) => {
+      if (!e.isGoal) return { minute: e.minute, text: e.text };
+
+      // The opponent is named here rather than in the simulation, which has no
+      // business knowing who you are playing. Their scorer stays anonymous —
+      // we hold no squad for them, and inventing one would put made-up names
+      // beside real ones.
+      if (!e.teammateGoal) {
+        return { minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true };
+      }
+
       const scorer = pickSquadScorer(attackers.length > 0 ? attackers : squad, rng);
-      if (!scorer) continue;
+      // No squad at all — a career saved before squads existed, or the match
+      // running without one. The goal still counts and still says so.
+      if (!scorer) return { minute: e.minute, text: e.text, isGoal: true };
+
       const assister = pickSquadAssist(squad, scorer.id, rng);
-      goalEventsRef.current.push({ minute: e.minute, scorer: scorer.name, assist: assister?.name, isUserGoal: false });
-      const ev = events.find(x => x.minute === e.minute && x.isGoal);
-      if (ev) ev.text = `⚽ ${scorer.shortName} scores!`;
-    }
+      goalEventsRef.current.push({
+        minute: e.minute, scorer: scorer.name, assist: assister?.name, isUserGoal: false,
+      });
+
+      const line = assister
+        ? `⚽ ${scorer.shortName} scores! (${assister.shortName})`
+        : `⚽ ${scorer.shortName} scores!`;
+      // …and into the running commentary too, not just the between-chances
+      // screen, so the next time you are on the ball the feed still carries who
+      // put your side in front while you were watching.
+      pushLine(`${e.minute}' ${line}`);
+      return { minute: e.minute, text: line, isGoal: true };
+    });
 
     if (st.oppScore > oppScoreRef.current) playCrowdSwell("groan");
     else if (st.userScore > userScoreRef.current) playCrowdSwell("cheer");
