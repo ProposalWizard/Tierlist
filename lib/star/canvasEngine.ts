@@ -69,6 +69,18 @@ export interface Ball {
    * finding it already there.
    */
   settling?: boolean;
+  /**
+   * YOU struck this ball at goal.
+   *
+   * Decided once, at your contact, and never touched again. `shot` cannot answer
+   * this question: `launchReceiverShot` sets it too, because a team-mate's shot
+   * needs the same protection from your own players stepping in front of it. So
+   * the moment a team-mate you found pulled the trigger, `shot` went true and
+   * the credit read it as YOURS — you were given the goal, he was given nothing,
+   * and the assist you had just played was never recorded. Every symptom of
+   * "it counted as a team goal" came from this one line.
+   */
+  youStruckAtGoal?: boolean;
   loose: boolean;      // true once the ball has been parried/deflected and is a live rebound
   contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
   receiverControlT: number; // seconds a teammate spends controlling a received pass before shooting
@@ -168,9 +180,31 @@ export interface Keeper {
 }
 
 // A poacher lurking for the rebound.
+/**
+ * A real footballer, standing in one of the shirts on the pitch.
+ *
+ * Every team-mate figure in a situation carries one — see lib/star/lineup.ts.
+ * The engine never invents a name and never looks one up: it is handed the
+ * squad, it hands identities back out to the men it has already placed, and
+ * whatever happens next happens to a person rather than to "the attacking
+ * midfielder".
+ *
+ * Optional throughout, because the engine also runs with no career attached at
+ * all (the sandbox, and every test in tests/star). Without one, everything falls
+ * back to the role label it always used.
+ */
+export interface Identity {
+  id: string;
+  name: string;
+  shortName: string;
+  position: string;
+}
+
 export interface Follower {
   x: number;
   y: number;
+  /** Who this is. See Identity. */
+  who?: Identity;
   active: boolean;   // currently chasing a loose ball
   shot: boolean;     // already took its follow-up
   /** In an offside position at the last deliberate touch. See offsideSnapshot. */
@@ -194,6 +228,8 @@ export interface Runner {
   role?: "target" | "support";
   /** True while he is reacting to a ball that has come near him. */
   sprint?: boolean;
+  /** Who this is. See Identity. */
+  who?: Identity;
   /**
    * He was in an offside POSITION at the last deliberate touch by your side.
    * Not an offence on its own — it becomes one the moment he plays the ball.
@@ -216,6 +252,14 @@ export type ScenarioKind = typeof SCENARIO_KINDS[number];
 export interface Receiver {
   skill: number;     // 0-100 baseline finishing quality, rolled by role
   roleLabel: string; // e.g. "the striker" — used in commentary
+  /**
+   * Who actually got on the end of it.
+   *
+   * Set at reception, off the man the ball reached — not at kick-off, because
+   * until the ball is played there is no telling which of them it finds. Whoever
+   * this is is the man the commentary names and the man the goal goes to.
+   */
+  who?: Identity;
 }
 
 /**
@@ -321,6 +365,13 @@ export interface Scenario {
   passAmbition?: number;
   /** The y of the most advanced man on offer when the situation was built. */
   forwardMostY?: number;
+  /**
+   * The man who put the ball into you, on the situations that have one — the
+   * volley and the header arrive from somebody. He is who the assist belongs to
+   * when YOU finish, and the reason the game no longer picks a name out of the
+   * squad at random and calls it a creator.
+   */
+  crosser?: Identity;
   /**
    * An offside offence has been committed and the move is dead. Set the instant
    * a flagged attacker plays the ball; read at the top of the next stepBall.
@@ -2455,6 +2506,9 @@ export function launch(
   applyAerialContest(ball, scenario, skills, rng);
   // Decided here, once, from what you actually did with it — see isDriveAtGoal.
   ball.shot = isDriveAtGoal(ball, scenario);
+  // …and remembered separately, because `shot` does not stay yours. See
+  // Ball.youStruckAtGoal.
+  ball.youStruckAtGoal = ball.shot;
   ball.owner = ball.loose ? "none" : "you";
   markLanding(ball, scenario);
   return ball;
@@ -3599,6 +3653,9 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       // a pass and he takes it.
       speed: RUNNER_SPEED, moving: false, role: "support",
       offside: scenario.follower.offside,
+      // He is somebody too. A tap-in off a parry is still a goal for the man
+      // who put it away.
+      who: scenario.follower.who,
     };
     const candidates: Runner[] = scenario.runner
       ? [scenario.runner, ...scenario.secondaryRunners]
@@ -3634,6 +3691,10 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         if (offsideOffence(scenario, r.offside)) return "offside";
         scenario.receiverDone = true;
         scenario.receiverReached = true;
+        // Whoever it reached is who is about to shoot. Rolled at kick-off it
+        // could only ever be a role, because until the ball is played there is
+        // no telling which of the men in front of you it finds.
+        if (scenario.receiver && r.who) scenario.receiver.who = r.who;
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
         // The ball is somewhere else now, and the keeper has the beat before it
         // is struck to do something about it. See Keeper.adjusting.

@@ -33,6 +33,7 @@ import {
 import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
+import { castScenario, creatorOf } from "@/lib/star/lineup";
 import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
@@ -1559,8 +1560,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           playCrowdSwell("groan");
         }
         if (ev && receiver) {
-          if (ev === "received") { pushLine(commentaryReceived(receiver.roleLabel, rngRef.current)); showAction("PASS"); }
-          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(receiver.roleLabel, rngRef.current)); playKick(); kickPoseRef.current = KICK_POSE_S; }
+          // His name, if we know it — and by now we do, because the identity is
+          // taken off whoever the ball actually reached. See lib/star/lineup.ts.
+          const label = receiver.who?.shortName ?? receiver.roleLabel;
+          if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); showAction("PASS"); }
+          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); kickPoseRef.current = KICK_POSE_S; }
         }
         if (ballRef.current) ballRef.current.event = null;
       }
@@ -1630,7 +1634,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const sc = scenarioRef.current;
     // Read off the ball and off what the team-mate actually did, never off the
     // scenario's shape. See creditChance.
-    const youShot = ballRef.current?.shot === true;
+    // ── What YOU did, not what the ball is doing ──
+    //
+    // `ball.shot` is true after a team-mate strikes it too — `launchReceiverShot`
+    // sets it so your own players step out of HIS shot as well as yours. Reading
+    // it here meant that the moment somebody you found pulled the trigger, the
+    // chance was filed as your shot: you were credited with his goal, he got
+    // nothing, and the assist you had just played was never recorded. That is
+    // the whole of "it counted as a team goal", and of ASSISTS reading 0/0 on a
+    // goal the commentary had just described you setting up.
+    const youShot = ballRef.current?.youStruckAtGoal === true;
     const receiverShot = sc.receiverShot === true;
     const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
@@ -1724,18 +1737,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const distance = Math.hypot(sc.ball.x - (sc.goal.x1 + sc.goal.x2) / 2, sc.ball.y);
 
       if (d.assists === 1 && sc.receiver) {
-        // Teammate scored (chain scenario) — replace role label with a real player name
-        const forwards = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
-        const scorer = pickSquadScorer(forwards.length > 0 ? forwards : squad, rng);
-        // ── The goal goes down either way ──
+        // ── The man who scored it is the man who scored it ──
         //
-        // It used to be recorded only if a name could be found for it, and a
-        // career with no squad — every save made before squads existed — could
-        // never find one. So you set up a goal, nobody was named for it, and
-        // nothing appeared against anybody's stats: "no one has any goals or
-        // assists still". The squad is backfilled on load now (see storage.ts),
-        // but a goal that has been scored is a fact about the match and does not
-        // depend on our being able to attribute it.
+        // He is decided on the pitch, at the moment the ball reaches him, and
+        // carried on the receiver — not drawn from the squad list here. Drawing
+        // him here was the bug: the game picked a plausible forward at the
+        // whistle, which is a different question from "who was standing there",
+        // and when there was no squad to draw from it picked nobody and the goal
+        // went down as a team goal with the commentary saying "the attacking
+        // midfielder". Now the commentary, the goal and the squad row all read
+        // off one identity.
+        //
+        // The fallback still picks a forward, for the sandbox and for careers
+        // whose squad has not loaded — and the goal is recorded either way,
+        // because a goal that has been scored is a fact about the match whether
+        // or not we can put a name to it.
+        const scorer = sc.receiver.who
+          ?? (() => {
+            const forwards = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
+            return pickSquadScorer(forwards.length > 0 ? forwards : squad, rng) ?? undefined;
+          })();
         if (scorer) commentaryRoleLabel = scorer.shortName;
         goalEventsRef.current.push({
           minute: matchMinuteRef.current,
@@ -1744,8 +1765,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           isUserGoal: false, how, distance: Math.round(distance),
         });
       } else if (d.goals === 1) {
-        // User scored directly — optionally pick a squad assister
-        const assister = squad.length > 0 ? pickSquadAssist(squad, "", rng) : null;
+        // ── And an assist is somebody who was actually in the move ──
+        //
+        // The man who crossed it, on the situations that arrive from somebody;
+        // nobody at all otherwise, which is the honest answer for a goal you cut
+        // in and curled home on your own. It used to pull a random creator out
+        // of the squad 65% of the time — so assists appeared against players who
+        // had not been on the screen, which is exactly the kind of thing that
+        // makes the whole stats column untrustworthy.
+        const assister = creatorOf(sc);
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name,
           isUserGoal: true, how, distance: Math.round(distance),
@@ -2082,6 +2110,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     }
 
     scenarioRef.current.conditions = conditionsRef.current;
+
+    // ── Put your actual team-mates in the shirts ──
+    //
+    // Every blue figure on the pitch becomes a man from your squad, chosen for
+    // where he is standing. Whoever the ball reaches is who shoots, is who the
+    // commentary names, and is who the goal goes to. See lib/star/lineup.ts.
+    castScenario(scenarioRef.current, careerRef.current?.squad ?? []);
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
