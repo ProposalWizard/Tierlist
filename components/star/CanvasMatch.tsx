@@ -235,7 +235,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // Where a completed pass left the move, and how many passes deep it is. The
   // next scenario is built from this rather than drawn at random, so a move can
   // actually be built instead of every chance starting from nothing.
-  const chainRef = useRef<{ pos: { x: number; y: number }; depth: number } | null>(null);
+  // `ambition` is how brave the ball that got you here was — see passAmbition.
+  // The next situation is read off it as well as off where the ball arrived.
+  const chainRef = useRef<{ pos: { x: number; y: number }; depth: number; ambition: number } | null>(null);
 
   interface SimEvent { minute: number; text: string; isGoal?: boolean; }
   const [simEvents, setSimEvents] = useState<SimEvent[]>([]);
@@ -1723,16 +1725,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
       if (d.assists === 1 && sc.receiver) {
         // Teammate scored (chain scenario) — replace role label with a real player name
-        const scorer = pickSquadScorer(squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position)).length > 0
-          ? squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position))
-          : squad, rng);
-        if (scorer) {
-          commentaryRoleLabel = scorer.shortName;
-          goalEventsRef.current.push({
-            minute: matchMinuteRef.current, scorer: scorer.name, assist: playerName,
-            isUserGoal: false, how, distance: Math.round(distance),
-          });
-        }
+        const forwards = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
+        const scorer = pickSquadScorer(forwards.length > 0 ? forwards : squad, rng);
+        // ── The goal goes down either way ──
+        //
+        // It used to be recorded only if a name could be found for it, and a
+        // career with no squad — every save made before squads existed — could
+        // never find one. So you set up a goal, nobody was named for it, and
+        // nothing appeared against anybody's stats: "no one has any goals or
+        // assists still". The squad is backfilled on load now (see storage.ts),
+        // but a goal that has been scored is a fact about the match and does not
+        // depend on our being able to attribute it.
+        if (scorer) commentaryRoleLabel = scorer.shortName;
+        goalEventsRef.current.push({
+          minute: matchMinuteRef.current,
+          scorer: scorer?.name ?? sc.receiver.roleLabel ?? "Team-mate",
+          assist: playerName,
+          isUserGoal: false, how, distance: Math.round(distance),
+        });
       } else if (d.goals === 1) {
         // User scored directly — optionally pick a squad assister
         const assister = squad.length > 0 ? pickSquadAssist(squad, "", rng) : null;
@@ -1771,7 +1781,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const depth = sc.chainDepth ?? 0;
       const at = sc.receivedAt ?? sc.runner?.pos ?? sc.passTarget;
       if (at && depth < CHAIN_MAX && rngRef.current() < chainReturnChance(sc)) {
-        chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1 };
+        const ambition = Math.max(sc.passDifficulty, sc.passAmbition ?? 0);
+        chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1, ambition };
         pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
       }
     }
@@ -1820,7 +1831,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     if (out === "through" && s) {
       pushLine("You are through — and the chance is on.");
       showAction("BEAT HIM");
-      chainRef.current = { pos: { x: s.pos.x, y: s.pos.y }, depth: 0 };
+      // Beating your man is the bravest thing available, so what follows is read
+      // the same way the ambitious pass is.
+      chainRef.current = { pos: { x: s.pos.x, y: s.pos.y }, depth: 0, ambition: 1 };
       if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
       window.setTimeout(() => loadScenario(true), 1200);
       return;
@@ -2056,7 +2069,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     if (chain) {
       // Built from where the pass actually arrived, so playing it into the
       // corner gives you a cutback and finding someone central gives you a shot.
-      const kind = chainKindFor(chain.pos, rng);
+      const kind = chainKindFor(chain.pos, rng, chain.ambition);
       scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
       scenarioRef.current.chainDepth = chain.depth;
     } else if (attacking) {

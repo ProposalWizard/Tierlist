@@ -20,6 +20,7 @@ import { PITCH_W, CX, HALF_LEN, BOX_DEPTH } from "../../lib/star/pitch";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
+const pct = (n: number, d: number) => `${((n / d) * 100).toFixed(1)}%`;
 
 function mulberry32(a: number) {
   return function () {
@@ -543,17 +544,131 @@ function bestOption(sc: Scenario): number {
   check(own.every(k => ["midfield_pass", "buildup"].includes(k)),
     "a ball played backwards does not hand you a shooting chance");
 
+  // …and so does the ball you played to get there, whatever the map says. A
+  // ball that has just found the furthest forward man is an attack even when it
+  // stopped short of the final third.
+  const brave = Array.from({ length: 400 }, () => chainKindFor({ x: CX, y: 40 }, rng, 1));
+  const braveAttack = brave.filter(k => !["midfield_pass", "buildup"].includes(k)).length;
+  check(braveAttack >= 400 * 0.9,
+    `the ambitious ball gives you something to attack even from deep (${pct(braveAttack, 400)})`);
+  const timid = Array.from({ length: 400 }, () => chainKindFor({ x: CX, y: 46 }, rng, 0));
+  check(timid.every(k => ["midfield_pass", "buildup"].includes(k)),
+    "the safe ball keeps the move going without handing you a chance");
+
   // The return chance rewards a difficult ball to a well-drilled side.
   const sc = buildScenario("buildup", mulberry32(9), 62, 60);
-  sc.passDifficulty = 0; sc.teamRelationship = 50;
+  sc.passDifficulty = 0; sc.passAmbition = 0; sc.teamRelationship = 50;
   const easy = chainReturnChance(sc);
-  sc.passDifficulty = 1;
-  const hard = chainReturnChance(sc);
+  sc.passDifficulty = 0.4;
+  const mid = chainReturnChance(sc);
   sc.teamRelationship = 95;
-  const hardAndDrilled = chainReturnChance(sc);
-  check(hard > easy, `a harder ball is likelier to come back (${easy.toFixed(2)} → ${hard.toFixed(2)})`);
-  check(hardAndDrilled > hard, `a better-drilled side returns it more (${hard.toFixed(2)} → ${hardAndDrilled.toFixed(2)})`);
-  check(easy >= 0.1 && hardAndDrilled <= 0.85, "the return chance stays inside its bounds");
+  const midAndDrilled = chainReturnChance(sc);
+  sc.passDifficulty = 1; sc.teamRelationship = 50;
+  const hard = chainReturnChance(sc);
+  check(mid > easy, `a harder ball is likelier to come back (${easy.toFixed(2)} → ${mid.toFixed(2)})`);
+  check(midAndDrilled > mid, `a better-drilled side returns it more (${mid.toFixed(2)} → ${midAndDrilled.toFixed(2)})`);
+  check(easy >= 0.2 && hard <= 1, "the return chance stays inside its bounds");
+  // The rule this was rebuilt to satisfy, in the words it was reported in: play
+  // the ambitious ball successfully and you are as good as guaranteed the move
+  // comes to something.
+  check(hard >= 0.95, `the ambitious ball comes back (${hard.toFixed(2)})`);
+
+  // ── And the same thing measured end to end ──
+  //
+  // Build a passing situation, play the furthest forward man in it, and ask
+  // what you get. Before the fix: 4.9% of completed build-up passes produced a
+  // chance, and five ambitious passes in a row produced none at all two thirds
+  // of the time. Seventy-five minutes without a sight of goal, as reported.
+  for (const kind of ["buildup", "midfield_pass"] as const) {
+    const r2 = mulberry32(kind === "buildup" ? 4242 : 8484);
+    const N = 3000;
+    let bold = 0, safe = 0;
+    for (let i = 0; i < N; i++) {
+      const s = buildScenario(kind, r2, 62, 60, 55);
+      const opts = [...(s.runner ? [s.runner] : []), ...s.secondaryRunners];
+      if (!opts.length) continue;
+      const forwardMost = opts.reduce((a, b) => (b.pos.y < a.pos.y ? b : a));
+      const backMost = opts.reduce((a, b) => (b.pos.y > a.pos.y ? b : a));
+      for (const [tgt, tally] of [[forwardMost, "bold"], [backMost, "safe"]] as const) {
+        const fwd = s.ball.y - tgt.pos.y;
+        const len = Math.hypot(tgt.pos.x - s.ball.x, tgt.pos.y - s.ball.y);
+        const probe = {
+          ...s,
+          passDifficulty: clamp(fwd / 25 + len / 45, 0, 1),
+          passAmbition: fwd > 2 && s.forwardMostY !== undefined
+            ? clamp(1 - (tgt.pos.y - s.forwardMostY) / 8, 0, 1) : 0,
+        };
+        if (r2() >= chainReturnChance(probe)) continue;
+        const k = chainKindFor(tgt.pos, r2, Math.max(probe.passDifficulty, probe.passAmbition));
+        if (["midfield_pass", "buildup"].includes(k)) continue;
+        if (tally === "bold") bold++; else safe++;
+      }
+    }
+    check(bold >= N * 0.9, `${kind}: the ambitious ball all but always leads to a chance (${pct(bold, N)})`);
+    check(safe < bold * 0.6, `${kind}: and the safe one does not (${pct(safe, N)})`);
+  }
+}
+
+// ── There is always a ball on ─────────────────────────────────────
+//
+// A build-up or a midfield ball is a situation whose whole content is one pass.
+// A defender standing in the only lane there is makes it a chance that was over
+// before you touched the ball, and that is the one thing a situation must never
+// be. See clearThePassingLane.
+{
+  for (const kind of ["buildup", "midfield_pass"] as const) {
+    const rng = mulberry32(kind === "buildup" ? 515 : 616);
+    const N = 2000;
+    let blocked = 0;
+    for (let i = 0; i < N; i++) {
+      const sc = buildScenario(kind, rng, 62, 60, 55);
+      initDefenders(sc, rng);
+      const t = (sc.runner ? sc.runner.pos : sc.passTarget)!;
+      const vx = t.x - sc.ball.x, vy = t.y - sc.ball.y;
+      const len = Math.hypot(vx, vy) || 1;
+      const ux = vx / len, uy = vy / len;
+      for (const d of sc.defenders) {
+        const px = d.x - sc.ball.x, py = d.y - sc.ball.y;
+        const along = px * ux + py * uy;
+        if (along < 0.5 || along > len - 0.5) continue;
+        if (Math.abs(px * -uy + py * ux) < 1.5) { blocked += 1; break; }
+      }
+    }
+    check(blocked < N * 0.05, `${kind}: nobody is stood in the only passing lane there is (${pct(blocked, N)})`);
+  }
+
+  // And the pass itself: struck firmly at the furthest forward man it finds him;
+  // under-hit, it is read. The risk lives in the weight of the ball, which you
+  // control, rather than in a defender the builder parked in the lane.
+  const playOut = (sc: Scenario, ball: Ball, rng: () => number): Outcome | "none" => {
+    let out: Outcome | null = null;
+    for (let i = 0; i < 900 && !out; i++) {
+      stepDefenders(sc, DT, ball.pos, false, ball);
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT);
+      out = stepBall(ball, sc, rng, DT);
+    }
+    return out ?? "none";
+  };
+  const tryPass = (kind: "buildup" | "midfield_pass", power: number, seed: number) => {
+    const rng = mulberry32(seed);
+    const N = 1200;
+    let ok = 0;
+    for (let i = 0; i < N; i++) {
+      const sc = buildScenario(kind, rng, 62, 60, 55);
+      initDefenders(sc, rng);
+      const opts = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
+      const t = opts.reduce((a, b) => (b.pos.y < a.pos.y ? b : a)).pos;
+      const ball = launch(sc, { x: t.x - sc.ball.x, y: t.y - sc.ball.y }, power,
+        { cx: 0, cy: 0 }, { power: 72, technique: 72 }, rng);
+      if (playOut(sc, ball, rng) === "delivered") ok += 1;
+    }
+    return ok / N;
+  };
+  const firm = tryPass("buildup", 0.62, 771);
+  const soft = tryPass("buildup", 0.45, 772);
+  check(firm > 0.85, `a firmly struck ambitious ball finds its man (${(firm * 100).toFixed(0)}%)`);
+  check(soft < 0.7, `an under-hit one is read (${(soft * 100).toFixed(0)}%)`);
 }
 
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
