@@ -30,6 +30,11 @@ export default function Graphic({ spec }: { spec: GraphicSpec }) {
 }
 
 function Scoreline({ s }: { s: Extract<GraphicSpec, { type: "scoreline" }> }) {
+  // `scorers` is the old single list, saved into careers before the goals were
+  // split by side. It was always printed under the left-hand team, so that is
+  // where it stays.
+  const homeScorers = s.homeScorers ?? s.scorers ?? [];
+  const awayScorers = s.awayScorers ?? [];
   return (
     <div className={PANEL}>
       <div className="bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-white/85">
@@ -42,9 +47,17 @@ function Scoreline({ s }: { s: Extract<GraphicSpec, { type: "scoreline" }> }) {
         </div>
         <div className="flex-1 text-left text-sm font-black text-white leading-tight">{s.away}</div>
       </div>
-      {s.scorers.length > 0 && (
-        <div className="border-t border-white/10 px-3 py-1.5 text-[10px] font-bold text-white/80">
-          {s.scorers.join("  ·  ")}
+      {(homeScorers.length > 0 || awayScorers.length > 0) && (
+        // Under the team that scored them: home on the left, away on the right,
+        // matching the two names above. A scorer floating on the wrong side of a
+        // 0-1 reads as the wrong team having scored.
+        <div className="flex items-start gap-2 border-t border-white/10 px-3 py-1.5 text-[10px] font-bold text-white/80">
+          <div className="flex-1 space-y-0.5 text-left">
+            {homeScorers.map(g => <div key={g}>{g}</div>)}
+          </div>
+          <div className="flex-1 space-y-0.5 text-right">
+            {awayScorers.map(g => <div key={g}>{g}</div>)}
+          </div>
         </div>
       )}
     </div>

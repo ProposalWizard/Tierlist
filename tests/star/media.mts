@@ -365,6 +365,37 @@ function season(seed: number, weeks = 20): CareerState {
   check(fired.size >= 20, `a wide spread of events actually occurs (${fired.size} distinct)`);
 }
 
+// ── A scorer stands under his own team ──────────────────────────────────────
+//
+// "Forest 0-1 Liverpool" with "Isak 59'" printed under Forest reads as Forest
+// having scored in a game they lost. The goals belong to a side, so they are
+// listed on that side.
+{
+  let seen = 0, wrongSide = 0;
+  let c = newCareer(73);
+  for (let w = 1; w <= 20; w++) {
+    if (!c.fixtures.some(f => !f.played)) break;
+    const fixture = c.fixtures.find(f => !f.played)!;
+    const wasHome = fixture.home;
+    c = playOne(c, 73_000 + w);
+    // Only this week's — the feed keeps the previous matches too, and they were
+    // played at the other end of the country.
+    const cycle = mediaOf(c).lastCycleId;
+    for (const p of mediaOf(c).posts.filter(x => x.id.startsWith(cycle))) {
+      const g = p.graphic;
+      if (!g || g.type !== "scoreline") continue;
+      const ours = wasHome ? g.homeScorers ?? [] : g.awayScorers ?? [];
+      const theirs = wasHome ? g.awayScorers ?? [] : g.homeScorers ?? [];
+      if (ours.length + theirs.length === 0) continue;
+      seen += 1;
+      // Only our goals are ever named, so the other side must always be empty.
+      if (theirs.length > 0) wrongSide += 1;
+    }
+  }
+  check(seen > 5, `scorelines with goals on them were produced (${seen})`);
+  check(wrongSide === 0, `every scorer is listed under his own team (${wrongSide} were not)`);
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log("  ✗ " + p);
