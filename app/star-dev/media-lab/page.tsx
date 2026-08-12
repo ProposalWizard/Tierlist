@@ -28,6 +28,8 @@ export default function MediaLab() {
   const [pose, setPose] = useState<string | null>(null);
   const [face, setFace] = useState<string | null>(null);
   const [anchor, setAnchor] = useState({ x: 0.5, y: 0.17, size: 0.135 });
+  const [neckY, setNeckY] = useState(0.235);
+  const [faceLift, setFaceLift] = useState(1);
   const [treatment, setTreatment] = useState(0.85);
   const [club, setClub] = useState(0);
 
@@ -83,11 +85,16 @@ export default function MediaLab() {
             <Slider label="Face X" value={anchor.x} onChange={x => setAnchor(a => ({ ...a, x }))} />
             <Slider label="Face Y" value={anchor.y} onChange={y => setAnchor(a => ({ ...a, y }))} />
             <Slider label="Face size" value={anchor.size} max={0.4} onChange={size => setAnchor(a => ({ ...a, size }))} />
+            <Slider label="Neck line" value={neckY} max={0.6} onChange={setNeckY}
+              hint="everything above this is cut off the pose" />
+            <Slider label="Face brightness" value={faceLift} max={2} onChange={setFaceLift}
+              hint="match the face's exposure to the arms" />
 
             <div className="rounded-lg border border-white/15 bg-gray-800 p-3">
               <div className="text-[10px] font-black uppercase tracking-widest text-white/70">Anchor</div>
               <code className="mt-1 block break-all text-[11px] font-bold text-emerald-300">
-                {`{ x: ${anchor.x.toFixed(3)}, y: ${anchor.y.toFixed(3)}, size: ${anchor.size.toFixed(3)} }`}
+                {`{ x: ${anchor.x.toFixed(3)}, y: ${anchor.y.toFixed(3)}, size: ${anchor.size.toFixed(3)}, `
+                  + `neckY: ${neckY.toFixed(3)}, faceLift: ${faceLift.toFixed(2)} }`}
               </code>
             </div>
           </div>
@@ -103,6 +110,8 @@ export default function MediaLab() {
                 poseSrc={pose ?? undefined}
                 faceSrc={face ?? undefined}
                 faceAnchor={anchor}
+                neckY={neckY}
+                faceLift={faceLift}
                 kitPrimary={c.primary}
                 kitSecondary={c.secondary}
                 treatment={treatment}
@@ -122,6 +131,8 @@ export default function MediaLab() {
                   poseSrc={pose ?? undefined}
                   faceSrc={face ?? undefined}
                   faceAnchor={anchor}
+                  neckY={neckY}
+                  faceLift={faceLift}
                   kitPrimary={k.primary}
                   kitSecondary={k.secondary}
                   treatment={treatment}
