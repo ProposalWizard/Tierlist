@@ -306,6 +306,22 @@ export interface Scenario {
   secondaryRunners: Runner[];  // extra options: support players and build-up outlets
   passDifficulty: number;      // 0-1, set when a pass resolves — harder pass = higher ball-return chance
   /**
+   * Was that the ambitious ball, of the balls that were ON?
+   *
+   * 0-1, set when a pass resolves. Not the same question as `passDifficulty`,
+   * which is absolute: a ten-metre ball forward in midfield is not a hard pass
+   * by any measure, but if the man you found was the furthest forward option in
+   * the picture then it was the ambitious choice, and that is what the player is
+   * being asked to judge. Keying the reward off difficulty alone meant the
+   * bravest ball available in a midfield situation was treated as a safe one,
+   * because the situation is not built to contain a forty-metre pass.
+   *
+   * A ball that did not go forward at all scores zero, however long it was.
+   */
+  passAmbition?: number;
+  /** The y of the most advanced man on offer when the situation was built. */
+  forwardMostY?: number;
+  /**
    * An offside offence has been committed and the move is dead. Set the instant
    * a flagged attacker plays the ball; read at the top of the next stepBall.
    */
@@ -719,6 +735,16 @@ function attackers(sc: Scenario): { pos: Vec2; flag: (v: boolean) => void }[] {
 export function offsideSnapshot(sc: Scenario, ballAt: Vec2) {
   // A corner cannot produce offside directly.
   if (sc.kind === "corner") { clearOffside(sc); return; }
+  // ── Nor can a situation with no goal in it ──
+  //
+  // Same argument as the one below, taken one step further. A build-up or a
+  // midfield ball is framed on a piece of midfield: the goal is thirty metres
+  // outside the picture and so is the defensive line that would be playing
+  // anybody on. Its one or two opponents are midfielders. Judging the law
+  // against them is judging it against fiction — and it would be an unwatchable
+  // decision besides, because there is no goal on the screen for the flag to
+  // mean anything against.
+  if (!goalInView(sc.kind)) { clearOffside(sc); return; }
 
   const line = opponentLine(sc);
   // Without a second-last opponent there is no line to be beyond, and the
@@ -769,18 +795,37 @@ export function clearOffside(sc: Scenario) {
  * around the offside line on purpose: sometimes he has gone a yard early, and
  * playing him in then is an offence you can SEE, because he is drawn in front
  * of the last defender on a flat camera with nothing moving.
+ *
+ * ── And the second exception, which was doing real damage ──
+ *
+ * A situation with no goal in the rectangle has no offside line in it either.
+ * `opponentLine` for a build-up or a midfield ball is one or two men standing
+ * in FRONT of you in midfield — the goal is thirty metres outside the frame and
+ * so is the defence that would be playing anybody on. Treating the nearest
+ * midfielder as the second-last opponent dragged your most advanced team-mate
+ * back level with him, every single time.
+ *
+ * That is why the ambitious ball never went anywhere. Build-up places its target
+ * man at y 18-34 — the edge of the final third — and he was arriving at a
+ * measured median of y 37, behind a covering midfielder. `chainKindFor` reads
+ * the situation you are left in off where the ball ARRIVED, and its "you are in
+ * the final third now" test is y < 32, which almost never fired. So the furthest
+ * forward pass in the game returned another midfield pass: 4.9% of completed
+ * build-up passes produced a chance, and five ambitious passes in a row produced
+ * nothing at all 67% of the time. Reported as exactly that — seventy-five
+ * minutes without a sight of goal.
  */
 function settleOnside(sc: Scenario, rng: () => number) {
+  const judged = goalInView(sc.kind);
   const line = opponentLine(sc);
-  if (line.length < 2) return;
-  const secondLast = line[1];
+  const secondLast = judged && line.length >= 2 ? line[1] : null;
   const vp = sc.viewport;
   const floor = vp ? vp.y2 - 1.4 : HALF_LEN;
 
   // Dropping back can land a man on the ball or on your shoulder, so he steps
   // aside as he does it. Nobody starts on top of anybody, offside or not.
   const settle = (p: Vec2) => {
-    if (p.y >= secondLast) return;
+    if (secondLast === null || p.y >= secondLast) return;
     p.y = Math.min(secondLast + 0.3 + rng() * 1.4, floor);
     for (let i = 0; i < 12; i++) {
       const near = Math.hypot(p.x - sc.player.x, p.y - sc.player.y) < 5
@@ -807,7 +852,9 @@ function settleOnside(sc: Scenario, rng: () => number) {
   // placed. A team-mate positioned in perfectly good space can find you have
   // since been stood on his toes.
   const lox = vp ? vp.x1 + 1.4 : 2, hix = vp ? vp.x2 - 1.4 : PITCH_W - 2;
-  const loy = line.length >= 2 ? secondLast + 0.3 : 1;
+  // Stepping clear of you must not step him offside — and where there is no
+  // line to be offside from, the top of the frame is the only limit.
+  const loy = secondLast !== null ? secondLast + 0.3 : (vp ? Math.max(vp.y1 + 1.4, 0.3) : 1);
   const CLEAR = 4.5;
   for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
     if (Math.hypot(r.pos.x - sc.player.x, r.pos.y - sc.player.y) >= CLEAR) { r.to = { ...r.pos }; continue; }
@@ -871,6 +918,68 @@ function fitToView(sc: Scenario) {
   sc.player = { x: sc.player.x, y: fy(sc.player.y) };
   syncPassTarget(sc, fx, fy);
   clearOfTheBall(sc);
+}
+
+/**
+ * There is always a ball ON.
+ *
+ * The companion to the rule below, and it exists for exactly the same reason: a
+ * situation you cannot play is not a situation. A build-up or a midfield ball is
+ * a scenario whose entire content is one pass — there is no goal in the frame to
+ * shoot at — so a defender standing in the only lane there is makes it a chance
+ * that was over before you touched the ball.
+ *
+ * It went unnoticed for as long as it did because `settleOnside` was hiding it.
+ * It dropped the target man back level with the deepest defender, so the line to
+ * him never had to pass anybody: measured, the nearest defender to the passing
+ * lane sat a median 3.6 m off it. Stop dragging him back — which is the fix for
+ * the ambitious pass leading nowhere — and the same measurement reads 1.2 m,
+ * with a man inside 1.5 m of the lane in 62% of build-ups. Half of every
+ * ambitious ball was cut out by somebody the builder had put there.
+ *
+ * So the men in the lane step off it. Not out of the situation — a metre and a
+ * half either way, which is the difference between a pass that has to be
+ * threaded and a pass that cannot be played. What is left of the risk lives in
+ * the weight of the ball, which is yours: struck firmly it finds him 95% of the
+ * time, under-hit it is read 67% of the time.
+ */
+const LANE_CLEAR = 1.7;
+
+function clearThePassingLane(sc: Scenario) {
+  // Only where the pass IS the situation. Bodies in front of goal are the point
+  // of every other kind, and this must not tidy them out of the way.
+  if (goalInView(sc.kind)) return;
+  const t = sc.runner ? sc.runner.pos : sc.passTarget;
+  if (!t) return;
+  const vp = sc.viewport;
+  const inset = 1.4;
+  const lox = vp ? vp.x1 + inset : 2, hix = vp ? vp.x2 - inset : PITCH_W - 2;
+
+  const vx = t.x - sc.ball.x, vy = t.y - sc.ball.y;
+  const len = Math.hypot(vx, vy);
+  if (len < 1) return;
+  const ux = vx / len, uy = vy / len;
+
+  for (const d of sc.defenders) {
+    const px = d.x - sc.ball.x, py = d.y - sc.ball.y;
+    const along = px * ux + py * uy;
+    // Only the men actually between the two of you. Somebody behind the ball or
+    // beyond the receiver is not in the lane whatever his sideways offset.
+    if (along < 0.5 || along > len - 0.5) continue;
+    const off = px * -uy + py * ux;
+    if (Math.abs(off) >= LANE_CLEAR) continue;
+    // Out the way he was already leaning, and back the other way if the frame
+    // will not take him.
+    const side = off >= 0 ? 1 : -1;
+    const place = (s: number) => ({
+      x: sc.ball.x + ux * along + -uy * s * LANE_CLEAR,
+      y: sc.ball.y + uy * along + ux * s * LANE_CLEAR,
+    });
+    let to = place(side);
+    if (to.x < lox || to.x > hix) to = place(-side);
+    d.x = clamp(to.x, lox, hix);
+    d.y = to.y;
+  }
 }
 
 /**
@@ -1526,8 +1635,16 @@ function buildBuildup(rng: () => number, keeperStrength: number, teamRelationshi
   const defenders: Vec2[] = [
     { x: clamp((bx + hardTo.x) / 2 + (rng() - 0.5) * 7, 8, PITCH_W - 8), y: clamp((by + hardTo.y) / 2, 24, 44) },
   ];
+  // ── The second man marks him, GOAL-side ──
+  //
+  // He used to stand 2.5 m in front of the target on the ball side, which is
+  // not where a marker stands — it is where a man cutting the pass out stands,
+  // and having him there by construction took the decision out of the
+  // situation. It did not show while the target man was being dropped back
+  // behind him by settleOnside; the moment the target was allowed to stay
+  // forward he was sitting in the lane.
   if (rng() < 0.55) {
-    defenders.push({ x: clamp(hardTo.x + (rng() - 0.5) * 9, 8, PITCH_W - 8), y: clamp(hardTo.y + 2.5, 20, 40) });
+    defenders.push({ x: clamp(hardTo.x + (rng() - 0.5) * 9, 8, PITCH_W - 8), y: clamp(hardTo.y - 2.5, 12, 40) });
   }
   const hardRunner = makeRunner(hardTo, { x: hardTo.x + (rng() - 0.5) * 3, y: hardTo.y + 3 }, RUNNER_SPEED * 0.8);
   const easyRunner = makeRunner(easyTo, { x: easyTo.x, y: easyTo.y + 1.5 }, RUNNER_SPEED * 0.5);
@@ -1594,7 +1711,31 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
   if (!sc.viewport) sc.viewport = scenarioViewport(sc);
   fitToView(sc);
   settleOnside(sc, rng);
+  // ── The guide points at the man, not at where he used to be ──
+  //
+  // `fitToView` syncs the pass target to the runner, and then `settleOnside`
+  // MOVES the runner — dropping him back onside, or stepping him clear of you.
+  // Nothing re-synced afterwards, so the target sat wherever he had been: in a
+  // build-up, measured eight metres in front of him. You aimed where the game
+  // told you to and the ball went over his head.
+  if (sc.viewport) {
+    const vp = sc.viewport, inset = 1.4;
+    syncPassTarget(
+      sc,
+      (x) => clamp(x, vp.x1 + inset, vp.x2 - inset),
+      (y) => clamp(y, Math.max(vp.y1 + inset, 0.3), vp.y2 - inset),
+    );
+  }
   keepInsideTheCut(sc);
+  clearThePassingLane(sc);
+  // Who was the ambitious ball, now that everybody has stopped being moved
+  // around. Read once here rather than at reception, because by reception the
+  // runners have run and "the furthest forward option" would mean the furthest
+  // forward option NOW, which is not the choice you were offered.
+  {
+    const opts = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
+    sc.forwardMostY = opts.length ? Math.min(...opts.map(r => r.pos.y)) : undefined;
+  }
   return sc;
 }
 
@@ -1902,14 +2043,28 @@ export function buildAttackingScenario(rng: () => number, keeperStrength = 62, t
 /** How many passes one move can be strung together from. */
 export const CHAIN_MAX = 2;
 
-/** The situation a completed pass has left you in. */
-export function chainKindFor(at: Vec2, rng: () => number): ScenarioKind {
+/**
+ * The situation a completed pass has left you in.
+ *
+ * Two things decide it, and it used to be only the first: WHERE the ball ended
+ * up, and WHAT you played to get it there. Position alone was a hard line at
+ * y = 32 — one metre the wrong side of it and the ambitious ball that had just
+ * broken the opposition midfield returned you another build-up.
+ *
+ * Now the line is a ramp, and the pass gets a vote. A ball into the final third
+ * is an attack whatever it was; a ball that found the furthest forward man is an
+ * attack because of what it was.
+ */
+export function chainKindFor(at: Vec2, rng: () => number, ambition = 0): ScenarioKind {
   const wide = Math.abs(at.x - CX) > 13;
   if (at.y < BOX_DEPTH + 2) {
     if (wide) return rng() < 0.55 ? "cutback" : "tight_angle";
     return rng() < 0.45 ? "one_on_one" : rng() < 0.6 ? "volley" : "tight_angle";
   }
-  if (at.y < 32) {
+  // y 44 is your own half and none of it; y 33 is the edge of the final third
+  // and all of it.
+  const byPosition = clamp((44 - at.y) / 11, 0, 1);
+  if (rng() < Math.max(byPosition, ambition * 0.95)) {
     if (wide) return rng() < 0.6 ? "byline_cross" : "cutback";
     return rng() < 0.5 ? "through_ball" : "long_range";
   }
@@ -1919,12 +2074,21 @@ export function chainKindFor(at: Vec2, rng: () => number): ScenarioKind {
 /**
  * How likely the ball comes back to you.
  *
- * A harder ball played to a better-connected team is likelier to come straight
- * back — the same relationship the old build-up return used, kept because it is
- * the one thing that made a difficult pass worth attempting.
+ * The rule this has to satisfy, in the words it was reported in: play the right
+ * ball and you should always have a chance of the move coming to something;
+ * play the ambitious one and you should be as good as guaranteed it. It did not
+ * come close — a completed build-up pass came back 52% of the time, and 5% of
+ * them produced a chance.
+ *
+ * So it is keyed off the braver of the two readings of the ball you played: how
+ * hard it was in absolute terms, and whether it was the furthest forward man on
+ * offer. The second matters because a midfield situation is not built to contain
+ * a difficult pass, and the player who picks the bravest ball in it deserves the
+ * same answer as the player who picks the bravest ball in a build-up.
  */
 export function chainReturnChance(sc: Scenario): number {
-  return clamp(0.22 + sc.passDifficulty * 0.42 + (sc.teamRelationship - 50) / 260, 0.1, 0.85);
+  const ambition = Math.max(sc.passDifficulty, sc.passAmbition ?? 0);
+  return clamp(0.30 + ambition * 0.72 + (sc.teamRelationship - 50) / 260, 0.2, 1);
 }
 
 // Where a ball on this heading will cross the goal line — what the keeper commits to.
@@ -3485,6 +3649,12 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         const passLen = Math.hypot(tgt.x - scenario.ball.x, tgt.y - scenario.ball.y);
         const forward = scenario.ball.y - tgt.y;
         scenario.passDifficulty = clamp(forward / 25 + passLen / 45, 0, 1);
+        // …and whether it was the brave one. Full marks for the furthest forward
+        // man in the picture, nothing for a ball that went sideways or back —
+        // and nothing at all if he was eight metres short of the man who was on.
+        scenario.passAmbition = forward > 2 && scenario.forwardMostY !== undefined
+          ? clamp(1 - (tgt.y - scenario.forwardMostY) / 8, 0, 1)
+          : 0;
 
         // ── No offside ──
         //
