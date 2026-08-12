@@ -625,7 +625,7 @@ function makeFollower(rng: () => number, by: number): Follower {
 // A shooting situation needs the goal and a player thirty metres off it in the
 // same frame, and a tall frame buys that depth without having to zoom out to
 // find it.
-const VIEW_ASPECT = 5 / 8;      // width / height
+export const VIEW_ASPECT = 5 / 8;      // width / height
 /**
  * How much the zoom may vary between one situation and the next: it does not.
  *
@@ -2430,7 +2430,7 @@ export function loftRange(technique: number): number {
 }
 
 /**
- * How long a drag buys full power.
+ * How long a drag buys full power, as a fraction of the screen.
  *
  * Power's job used to be entirely inside the launch speed. It now also makes the
  * arrow more generous: a stronger player reaches everything he has with a
@@ -2438,9 +2438,30 @@ export function loftRange(technique: number): number {
  * the player's own description of what the attribute should feel like, and it is
  * an expander rather than a multiplier — a weak player can still hit it as hard
  * as he is able, he just has to ask for it.
+ *
+ * ── Why it is 0.18 and not 0.42 ──
+ *
+ * Because 0.42 could not be reached with a thumb. `fitToView` keeps the ball out
+ * of the bottom fifth of the frame, so the room below it — which is all the room
+ * a straight pull has — is at worst exactly 20% of the screen. Asking for 34% of
+ * the screen (0.42 at a typical power) meant the gesture had to leave the canvas
+ * entirely and finish somewhere down the page, and on a phone that is the edge of
+ * the device, the navigation bar, or the back-swipe gutter.
+ *
+ * Measured across all thirteen situations: 24% of chances could not be pulled to
+ * full power without leaving the canvas, and for the three framed hardest against
+ * the floor — a shot from distance, a through-ball, a build-up — it was none of
+ * them. Reported as "it's hard to actually pull the power arrow back to anywhere
+ * near 100% on mobile".
+ *
+ * 0.18 fits inside that worst-case 20% with a little room to spare, so every
+ * situation in the game can be struck at full power with the thumb still on the
+ * pitch. The cost, accepted knowingly, is resolution: the same range of power now
+ * lives in about half the travel, so choosing 60% rather than 70% is a finer
+ * movement than it was.
  */
 export function dragForFullPower(power: number): number {
-  return 0.42 - clamp(power, 0, 100) / 100 * 0.16;
+  return 0.18 - clamp(power, 0, 100) / 100 * 0.06;
 }
 
 // Launch the ball from a slingshot aim + a contact point.

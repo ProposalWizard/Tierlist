@@ -275,13 +275,21 @@ function runDribble(pace: number, oppStrength: number, seed: number, chasers = 3
 }
 
 // ── Power makes the arrow more generous ────────────────────────────────────
+//
+// The numbers here are a little over half what they were, because the whole
+// scale is: a full pull used to want 34% of the screen and the room below the
+// ball is at worst 20% of it, so full power could not be reached with a thumb.
+// See dragForFullPower and tests/star/aiming.mts. What the attribute DOES is
+// unchanged, which is what this block is about.
 {
   check(dragForFullPower(0) > dragForFullPower(100), "a stronger player reaches full power with a shorter pull");
-  check(dragForFullPower(100) > 0.15, "but still has to ask for it");
-  check(dragForFullPower(0) < 0.6, "and a weak one is not dragging off the screen");
+  check(dragForFullPower(100) > 0.10, "but still has to ask for it");
+  check(dragForFullPower(0) <= 0.20, "and a weak one is not dragging off the screen");
 
-  // The same gesture, two players: the stronger one gets more of a shot.
-  const dragFraction = 0.3;
+  // The same gesture, two players: the stronger one gets more of a shot. The
+  // probe drag has to sit BELOW what either of them needs, or both saturate at
+  // full power and the comparison says nothing.
+  const dragFraction = 0.10;
   const weak = Math.min(1, dragFraction / dragForFullPower(20));
   const strong = Math.min(1, dragFraction / dragForFullPower(90));
   check(strong > weak, `the same flick is worth more of a shot (${weak.toFixed(2)} vs ${strong.toFixed(2)} of full power)`);
