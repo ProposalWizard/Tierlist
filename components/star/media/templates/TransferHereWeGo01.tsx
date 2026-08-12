@@ -46,6 +46,20 @@ export interface TransferHereWeGoProps {
    */
   neckY?: number;
   /**
+   * How much of the frame the figure fills, and where it sits.
+   *
+   * A pose generated head-to-shin arrives with air above the head and below the
+   * feet, and a figure floating in space reads as a cut-out placed ON a
+   * background rather than as the subject of the poster. Every real signing
+   * graphic crops the player somewhere around the thigh with his head near the
+   * top edge. Scaling from the bottom of the frame does that with one number,
+   * and takes the face anchor with it — the face is positioned inside this
+   * layer, so it grows and moves in step rather than needing re-setting.
+   */
+  figureScale?: number;
+  /** Nudge up or down, as a fraction of the frame. Positive moves down. */
+  figureY?: number;
+  /**
    * Luminance correction on the face alone, before the duotone.
    *
    * The pose and the face are two photographs taken by different people under
@@ -65,7 +79,7 @@ export default function TransferHereWeGo01({
   headline = "HERE WE GO",
   byline = "TRANSFER CONFIRMED",
   poseSrc, faceSrc, faceAnchor = { x: 0.5, y: 0.17, size: 0.135 },
-  neckY = 0.235, faceLift = 1,
+  neckY = 0.235, faceLift = 1, figureScale = 1, figureY = 0,
   kitPrimary, kitSecondary, treatment = 0.85,
 }: TransferHereWeGoProps) {
   const c = paletteFor(kitPrimary, kitSecondary);
@@ -113,8 +127,14 @@ export default function TransferHereWeGo01({
              greyscale first so the ramp has a clean luminance to work from,
              then the club colour multiplied into the shadows and a near-white
              screened into the highlights. Two blend layers, one figure. */}
-      <div className="absolute inset-x-0 bottom-0 top-[6%]" style={{ isolation: "isolate" }}>
-        <div className="relative h-full w-full">
+      <div className="absolute inset-x-0 bottom-0 top-[6%] overflow-hidden" style={{ isolation: "isolate" }}>
+        <div
+          className="relative h-full w-full"
+          style={{
+            transform: `translateY(${figureY * 100}%) scale(${figureScale})`,
+            transformOrigin: "50% 100%",
+          }}
+        >
           {poseSrc ? (
             <img
               src={poseSrc}

@@ -1,0 +1,178 @@
+import type { SquadPlayer } from "./types";
+import { generateSquad, clubNameSeed } from "./squadData";
+
+/**
+ * THE REAL SQUAD.
+ *
+ * The career already knows which club you play for, and it is not a made-up
+ * one: `ProfileSetup` builds its club list from `/api/draft/clubs` filtered to
+ * clubs that exist in FC 26, so "Liverpool" in a career IS the "Liverpool" in
+ * `sofifa_players`. That means the squad can be the actual squad, and the goal
+ * crediting that already exists — `creditMatchResult` matches goal events to
+ * squad players BY NAME — starts attributing goals to Salah without a line
+ * changing.
+ *
+ * Everything here is best-effort. A club with no rows, a failed request, a
+ * career started offline: all of them fall back to the generated squad, because
+ * a career that cannot be created is very much worse than a career with
+ * invented team-mates.
+ */
+
+/** What the roster endpoint gives back, of the parts we use. */
+interface RosterPlayer {
+  sofifa_id: string;
+  name: string;
+  overall: number;
+  positions: string;
+  age: number;
+  image_url: string | null;
+  nationality: string;
+}
+
+type Slot = SquadPlayer["position"];
+
+/**
+ * The shape of a squad, in the order the rest of the game expects.
+ *
+ * The first twelve are the side that plays; the last eight are depth. Matching
+ * `SQUAD_POSITIONS` in squadData.ts is not cosmetic — `pickSquadScorer` and the
+ * media engine both read positions off this list to decide who is plausible as
+ * a scorer.
+ */
+const SLOTS: Slot[] = [
+  "GK", "CB", "CB", "RB", "LB",
+  "CDM", "CM", "CM",
+  "RW", "LW", "CAM",
+  "ST",
+  "GK", "CB", "CDM", "CM",
+  "RW", "LW", "CAM", "ST",
+];
+
+/**
+ * SoFIFA writes positions as a list, and inconsistently: "CAM, LM, CM, LW" in
+ * one row and "CAM,RB,CM" in the next. Split on anything that is not a letter.
+ */
+function positionsOf(raw: string): string[] {
+  return (raw || "").split(/[^A-Za-z]+/).map(p => p.trim().toUpperCase()).filter(Boolean);
+}
+
+/**
+ * How well a player fits a slot. Exact first, then the neighbouring role a
+ * footballer would actually be asked to fill — a left-back covers left
+ * midfield, a striker covers the wing, nobody covers goalkeeper.
+ */
+const NEIGHBOURS: Record<Slot, string[]> = {
+  GK: [],
+  CB: ["RB", "LB", "CDM"],
+  RB: ["RM", "RWB", "CB", "RW"],
+  LB: ["LM", "LWB", "CB", "LW"],
+  CDM: ["CM", "CB"],
+  CM: ["CDM", "CAM", "LM", "RM"],
+  CAM: ["CM", "LW", "RW", "ST", "LM", "RM"],
+  RW: ["RM", "LW", "ST", "CAM"],
+  LW: ["LM", "RW", "ST", "CAM"],
+  ST: ["CF", "LW", "RW", "CAM"],
+};
+
+function fit(slot: Slot, player: RosterPlayer): number {
+  const ps = positionsOf(player.positions);
+  if (ps.length === 0) return 0;
+  // A goalkeeper is never anything else, and nobody else is ever a goalkeeper.
+  if (slot === "GK") return ps[0] === "GK" ? 100 : 0;
+  if (ps.includes("GK")) return 0;
+
+  if (ps[0] === slot) return 100;              // his actual position
+  if (ps.includes(slot)) return 82;            // one he is listed for
+  const near = NEIGHBOURS[slot] ?? [];
+  for (let i = 0; i < near.length; i++) {
+    if (ps.includes(near[i])) return 64 - i * 6;
+  }
+  return 12;                                    // out of position, but a body
+}
+
+/**
+ * A surname that reads like a surname.
+ *
+ * SoFIFA abbreviates: "M. Salah", "V. van Dijk", "A. Mac Allister". Taking the
+ * last word gives "Dijk", which is not what anyone calls him. Dropping the
+ * initial and keeping the rest gives "van Dijk" and "Mac Allister", and leaves
+ * single-name players ("Alisson") alone.
+ */
+export function shortNameOf(full: string): string {
+  const parts = full.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  // "M." / "V." — an initial, so everything after it is the name.
+  if (/^[A-Z]\.?$/.test(parts[0])) return parts.slice(1).join(" ");
+  return parts[parts.length - 1];
+}
+
+/**
+ * Fill the formation from the roster.
+ *
+ * Greedy by slot rather than by player: walk the slots in order and give each
+ * one the best available fit, weighted by rating. Picking the twenty best
+ * players and then assigning positions produces a squad with four centre-backs
+ * and no left-back, which is how squads look when nobody thinks about shape.
+ */
+export function buildSquadFromRoster(roster: RosterPlayer[], club: string): SquadPlayer[] {
+  if (!roster.length) return generateSquad(clubNameSeed(club));
+
+  const pool = [...roster].sort((a, b) => (b.overall || 0) - (a.overall || 0));
+  const taken = new Set<string>();
+  const out: SquadPlayer[] = [];
+
+  for (const slot of SLOTS) {
+    let best: RosterPlayer | null = null;
+    let bestScore = -1;
+    for (const p of pool) {
+      if (taken.has(p.sofifa_id)) continue;
+      const f = fit(slot, p);
+      if (f <= 0) continue;
+      // Fit dominates, rating breaks ties. A 79 right-back beats an 86 striker
+      // for the right-back slot, which is the whole point of doing it this way.
+      const score = f * 100 + (p.overall || 0);
+      if (score > bestScore) { bestScore = score; best = p; }
+    }
+    if (!best) continue;
+    taken.add(best.sofifa_id);
+    out.push({
+      id: `sf_${best.sofifa_id}`,
+      name: best.name,
+      shortName: shortNameOf(best.name),
+      position: slot,
+      seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
+      sofifaId: best.sofifa_id,
+      overall: best.overall || undefined,
+      imageUrl: best.image_url || undefined,
+      nationality: best.nationality || undefined,
+      age: best.age || undefined,
+    });
+  }
+
+  // A thin roster leaves holes. Rather than a short squad, top it up from the
+  // generated one — the club still has a bench, it is just not a real one.
+  if (out.length < SLOTS.length) {
+    const filler = generateSquad(clubNameSeed(club));
+    for (let i = out.length; i < SLOTS.length; i++) {
+      out.push({ ...filler[i], id: `gen_${i}`, position: SLOTS[i] });
+    }
+  }
+  return out;
+}
+
+/**
+ * Go and get it.
+ *
+ * Never throws and never rejects: a career is created from whatever comes back,
+ * and what comes back on a bad day is the generated squad.
+ */
+export async function fetchRealSquad(club: string, year = 2026): Promise<SquadPlayer[]> {
+  try {
+    const res = await fetch(`/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`);
+    if (!res.ok) return generateSquad(clubNameSeed(club));
+    const data = await res.json() as { roster?: RosterPlayer[] };
+    return buildSquadFromRoster(data.roster ?? [], club);
+  } catch {
+    return generateSquad(clubNameSeed(club));
+  }
+}

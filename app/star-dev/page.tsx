@@ -12,6 +12,7 @@ import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/tran
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
+import { fetchRealSquad } from "@/lib/star/realSquad";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -137,9 +138,28 @@ export default function StarDevPage() {
     ? `Next: ${nextFixture.home ? myTeam(nextFixture) : nextFixture.opponent} v ${nextFixture.home ? nextFixture.opponent : myTeam(nextFixture)}`
     : "Season complete";
 
+  /**
+   * A new career, with the actual squad of the club you picked.
+   *
+   * The club list already comes from the database — ProfileSetup builds it from
+   * the clubs that exist in FC 26 — so the name in the career matches the name
+   * in `sofifa_players` and the roster can simply be fetched. Once it is, the
+   * goal crediting that already exists starts attributing goals to real
+   * players, because it matches on name and always did.
+   *
+   * The career is created and shown FIRST, then the squad arrives and replaces
+   * the generated one. Blocking character creation on a network request to make
+   * a screen you are not looking at correct would be the wrong trade; and if the
+   * request never lands, the generated squad it was born with is a working
+   * squad.
+   */
   const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[]) => {
-    setCareer(makeInitialCareer(player, clubs));
+    const created = makeInitialCareer(player, clubs);
+    setCareer(created);
     setPhase("dashboard");
+    fetchRealSquad(player.club).then((squad) => {
+      setCareer(c => (c && c.player.club === player.club ? { ...c, squad } : c));
+    });
   }, []);
 
   const handleExit = useCallback(() => {
@@ -435,6 +455,12 @@ export default function StarDevPage() {
   const handleAcceptTransfer = useCallback((offer: TransferOffer) => {
     if (!career) return;
     const moved = acceptOffer(career, offer);
+    // New club, new team-mates. Same best-effort rule as career creation: the
+    // move completes immediately with the generated squad acceptOffer gives it,
+    // and the real one lands a moment later.
+    fetchRealSquad(offer.club).then((squad) => {
+      setCareer(c => (c && c.player.club === offer.club ? { ...c, squad } : c));
+    });
     // Done deal, farewell and unveiling — three posts from one moment, and the
     // roster regenerates around the new club, so from here it is his fans
     // talking about you and your old rival who has stopped caring.

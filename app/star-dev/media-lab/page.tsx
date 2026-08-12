@@ -30,6 +30,8 @@ export default function MediaLab() {
   const [anchor, setAnchor] = useState({ x: 0.5, y: 0.17, size: 0.135 });
   const [neckY, setNeckY] = useState(0.235);
   const [faceLift, setFaceLift] = useState(1);
+  const [figureScale, setFigureScale] = useState(1);
+  const [figureY, setFigureY] = useState(0);
   const [treatment, setTreatment] = useState(0.85);
   const [club, setClub] = useState(0);
 
@@ -89,12 +91,16 @@ export default function MediaLab() {
               hint="everything above this is cut off the pose" />
             <Slider label="Face brightness" value={faceLift} max={2} onChange={setFaceLift}
               hint="match the face's exposure to the arms" />
+            <Slider label="Figure size" value={figureScale} max={2.2} onChange={setFigureScale}
+              hint="fill the frame — crop him around the thigh" />
+            <Slider label="Figure up / down" value={figureY} min={-0.4} max={0.4} onChange={setFigureY} />
 
             <div className="rounded-lg border border-white/15 bg-gray-800 p-3">
               <div className="text-[10px] font-black uppercase tracking-widest text-white/70">Anchor</div>
               <code className="mt-1 block break-all text-[11px] font-bold text-emerald-300">
                 {`{ x: ${anchor.x.toFixed(3)}, y: ${anchor.y.toFixed(3)}, size: ${anchor.size.toFixed(3)}, `
-                  + `neckY: ${neckY.toFixed(3)}, faceLift: ${faceLift.toFixed(2)} }`}
+                  + `neckY: ${neckY.toFixed(3)}, faceLift: ${faceLift.toFixed(2)}, `
+                  + `figureScale: ${figureScale.toFixed(2)}, figureY: ${figureY.toFixed(3)} }`}
               </code>
             </div>
           </div>
@@ -112,6 +118,8 @@ export default function MediaLab() {
                 faceAnchor={anchor}
                 neckY={neckY}
                 faceLift={faceLift}
+                figureScale={figureScale}
+                figureY={figureY}
                 kitPrimary={c.primary}
                 kitSecondary={c.secondary}
                 treatment={treatment}
@@ -133,6 +141,8 @@ export default function MediaLab() {
                   faceAnchor={anchor}
                   neckY={neckY}
                   faceLift={faceLift}
+                  figureScale={figureScale}
+                  figureY={figureY}
                   kitPrimary={k.primary}
                   kitSecondary={k.secondary}
                   treatment={treatment}
@@ -178,8 +188,8 @@ function Drop({ label, src, onDrop, onPick, onClear }: {
   );
 }
 
-function Slider({ label, value, onChange, max = 1, hint }: {
-  label: string; value: number; onChange: (v: number) => void; max?: number; hint?: string;
+function Slider({ label, value, onChange, min = 0, max = 1, hint }: {
+  label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; hint?: string;
 }) {
   return (
     <div className="rounded-lg border border-white/15 bg-gray-800 p-3">
@@ -188,7 +198,7 @@ function Slider({ label, value, onChange, max = 1, hint }: {
         <span className="text-[11px] font-black tabular-nums text-white">{value.toFixed(2)}</span>
       </div>
       <input
-        type="range" min={0} max={max} step={0.005} value={value}
+        type="range" min={min} max={max} step={0.005} value={value}
         onChange={e => onChange(Number(e.target.value))}
         className="mt-1.5 w-full accent-emerald-500"
       />

@@ -112,6 +112,17 @@ export interface SquadPlayer {
   seasonAssists: number;
   careerGoals: number;
   careerAssists: number;
+  // ── When the team-mate is a real footballer ──
+  //
+  // All optional, because a squad can also be generated — offline, at a club
+  // with no rows in the database, or in a career that predates this. Everything
+  // downstream reads names and positions, which both squads have; these only
+  // add the face and the number next to it.
+  sofifaId?: string;
+  overall?: number;
+  imageUrl?: string;
+  nationality?: string;
+  age?: number;
 }
 
 export interface GoalEvent {
