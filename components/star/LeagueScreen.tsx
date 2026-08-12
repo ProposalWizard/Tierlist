@@ -175,16 +175,22 @@ export default function LeagueScreen({ career }: Props) {
       {view === "squad" && (
         <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_36px_26px_26px] text-[10px] font-black text-white bg-gray-800 py-1.5 px-2 border-b border-black/50 gap-1">
+          <div className="grid grid-cols-[26px_1fr_30px_36px_26px_26px] text-[10px] font-black text-white bg-gray-800 py-1.5 px-2 border-b border-black/50 gap-1 items-center">
+            <div />
             <div>Name</div>
+            <div className="text-center">OVR</div>
             <div className="text-center">Pos</div>
             <div className="text-center text-yellow-300">G</div>
             <div className="text-center text-blue-300">A</div>
           </div>
           <div className="max-h-[420px] overflow-y-auto">
             {/* User row first — reads from seasonStats */}
-            <div className="grid grid-cols-[1fr_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 bg-emerald-700 text-white">
+            <div className="grid grid-cols-[26px_1fr_30px_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 bg-emerald-700 text-white">
+              <div className="grid h-[22px] w-[22px] place-items-center rounded-full bg-white/20 text-[9px] font-black">
+                {career.squadNumber ?? "★"}
+              </div>
               <div className="truncate font-black">{career.player.firstName} {career.player.lastName} ★</div>
+              <div className="text-center text-emerald-200">{Math.round(career.starRating * 18 + 10)}</div>
               <div className="text-center text-emerald-200">{career.player.position}</div>
               <div className="text-center font-black text-yellow-300">{career.seasonStats.goals}</div>
               <div className="text-center font-black text-blue-300">{career.seasonStats.assists}</div>
@@ -195,11 +201,28 @@ export default function LeagueScreen({ career }: Props) {
               .map((p, i) => (
                 <div
                   key={p.id}
-                  className={`grid grid-cols-[1fr_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${
+                  className={`grid grid-cols-[26px_1fr_30px_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${
                     i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
                   }`}
                 >
+                  {/* A real team-mate has a face. A generated one gets his
+                      initials — the standing rule is a silhouette only when
+                      there is no image, never a stock photo of somebody else. */}
+                  {p.imageUrl ? (
+                    <img
+                      src={p.imageUrl}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-[22px] w-[22px] place-items-center rounded-full bg-white/10 text-[8px] font-black text-white/80">
+                      {p.shortName.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                   <div className="truncate">{p.name}</div>
+                  <div className="text-center font-black text-white/85">{p.overall ?? "—"}</div>
                   <div className="text-center text-white/75">{p.position}</div>
                   <div className="text-center">
                     {p.seasonGoals > 0
