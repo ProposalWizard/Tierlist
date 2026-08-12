@@ -1,5 +1,5 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
-import { generateForMatch, generateForCareer, feedFor, mediaOf } from "../../lib/star/media/feed";
+import { generateForMatch, generateForCareer, feedFor, mediaOf, hasFreshMedia } from "../../lib/star/media/feed";
 import { templateCount } from "../../lib/star/media/templates";
 import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch } from "../../lib/star/media/detect";
 import { buildMatchRecord } from "../../lib/star/media/record";
@@ -275,10 +275,57 @@ function season(seed: number, weeks = 20): CareerState {
 // ── The news cycle has a shape ──────────────────────────────────────────────
 {
   const c = season(81, 10);
-  const instant = feedFor(c, "instant").posts.length;
+  const instant = feedFor(c, "moment").posts.length;
   const settled = feedFor(c, "settled").posts.length;
   check(settled > instant, `walking out of the ground shows less than the week does (${instant} vs ${settled})`);
   check(instant >= 1, "…but it shows something");
+}
+
+// ── Walking out of the ground shows THIS match ──────────────────────────────
+//
+// The post-match screen was bounded above and not below, so its early `now`
+// correctly hid the waves that had not landed yet and hid nothing at all of
+// every match before it — all of which are timestamped earlier and therefore
+// passed the filter. Four games in, the reaction to the game you had just
+// played sat at the bottom of a month of history. Reported as exactly that.
+{
+  for (const weeks of [1, 2, 4, 10, 20]) {
+    const c = season(64, weeks);
+    const state = mediaOf(c);
+    const { posts } = feedFor(c, "moment");
+    const stale = posts.filter(p => p.at < state.lastCycleClock);
+    check(stale.length === 0,
+      `after ${weeks} match(es), the reaction is only this match's (${stale.length} stale posts)`);
+    check(posts.length > 0, `after ${weeks} match(es), the reaction is not empty`);
+    // And it does not grow with the season, which is the shape of the bug.
+    check(posts.length < 14, `after ${weeks} match(es), it is a screenful (${posts.length})`);
+  }
+
+  // The screen is only ever opened when there is something on it.
+  let opened = 0, empty = 0;
+  let c = newCareer(65);
+  for (let w = 1; w <= 24; w++) {
+    if (!c.fixtures.some(f => !f.played)) break;
+    c = playOne(c, 65_000 + w);
+    if (!hasFreshMedia(c)) continue;
+    opened++;
+    if (feedFor(c, "moment").posts.length === 0) empty++;
+  }
+  check(opened > 15, `the reaction screen opens most weeks (${opened})`);
+  check(empty === 0, `and never opens on an empty page (${empty} times)`);
+}
+
+// ── The Feed keeps about a month, and no more ───────────────────────────────
+{
+  const c = season(66, 20);
+  const { posts, now } = feedFor(c, "settled");
+  const week = (at: number) => Math.floor((at % 1_000_000) / 10_000);
+  const oldest = Math.min(...posts.map(p => p.at));
+  check(posts.length > 0, "the Feed has something in it");
+  check(week(now) - week(oldest) <= 4,
+    `the Feed reaches back about a month, not a season (${week(now) - week(oldest)} weeks)`);
+  check(mediaOf(c).posts.length > posts.length,
+    "…while the history behind it is still kept, for the record");
 }
 
 // ── It fits in a save ───────────────────────────────────────────────────────

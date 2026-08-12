@@ -13,7 +13,7 @@ import { chooseAngle } from "./narrate";
 import { chooseTemplate } from "./templates";
 import { buildGraphic } from "./graphics";
 import { metricsFor, resolve, rngFor, speak, surname } from "./grammar";
-import { clockAt, timeFor, visible } from "./schedule";
+import { clockAt, timeFor, visible, FEED_HORIZON, FIRST_WAVE } from "./schedule";
 import { buildTrends } from "./trending";
 
 /**
@@ -228,23 +228,52 @@ function render(
  *
  * "instant" and "hour" are measured from the CYCLE's clock, not the career's,
  * because crediting a match advances the week before any of this is shown.
+ *
+ * ── Both ends, not just one ──
+ *
+ * Every stage has a floor as well as a ceiling now. Straight out of the ground
+ * you get THIS match and nothing else; the Feed keeps about a month. The
+ * post-match screen used to be bounded only above, so its early `now` hid the
+ * waves that had not landed yet and hid nothing at all of the four matches
+ * before it — every one of which is timestamped earlier and therefore passed.
+ * Four games in, the reaction to the game you had just played was at the bottom
+ * of the pile.
  */
 export function feedFor(
   career: CareerState,
-  stage: "instant" | "hour" | "settled" = "settled",
+  stage: "moment" | "settled" = "settled",
 ): { posts: StoredPost[]; trends: Trend[]; now: number } {
   const state = mediaOf(career);
-  const now = stage === "settled"
-    ? clockAt(career.season, career.week, 9_999)
-    : state.lastCycleClock + (stage === "instant" ? 14 : 90);
-  return { posts: visible(state.posts, now), trends: state.trends, now };
+  if (stage === "settled") {
+    const now = clockAt(career.season, career.week, 9_999);
+    return { posts: visible(state.posts, now, now - FEED_HORIZON), trends: state.trends, now };
+  }
+  // ── The first wave is the hour after, not the quarter of an hour ──
+  //
+  // It used to be the `instant` window alone. That was only ever safe because
+  // the screen was showing a month of history behind it: a cycle whose events
+  // all land in `hour` — a quiet win, a clean sheet, a run ticking over — puts
+  // nothing at all in the first fifteen minutes, and the page would have been
+  // blank. Walking out of the ground covers the hour after it; the write-ups,
+  // the back pages and Monday's awards still wait for the Feed, which is where
+  // the staging was always doing its work.
+  const now = state.lastCycleClock + FIRST_WAVE;
+  return { posts: visible(state.posts, now, state.lastCycleClock), trends: state.trends, now };
 }
 
-/** Whether the last cycle produced anything worth interrupting the player for. */
+/**
+ * Whether the last cycle produced anything worth interrupting the player for.
+ *
+ * Asked of exactly the slice the screen will show. It used to ask a broader
+ * question — "did this cycle produce any post at all" — which includes the
+ * write-ups and the back pages that do not land until later in the week. That
+ * was harmless while the screen fell back to a month of history; with the
+ * history correctly gone it would have opened on an empty page.
+ */
 export function hasFreshMedia(career: CareerState): boolean {
   const state = mediaOf(career);
   if (!state.lastCycleClock) return false;
-  return state.posts.some(p => p.at >= state.lastCycleClock);
+  return feedFor(career, "moment").posts.length > 0;
 }
 
 /** How many posts have arrived since the player last opened the feed. */

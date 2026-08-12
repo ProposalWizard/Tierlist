@@ -485,7 +485,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       startSimulation();
       return;
     }
-    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
+    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     playWhistle(); // no-op until the first user gesture primes audio — harmless
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1628,6 +1628,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * The man this situation is about.
+   *
+   * The target of the pass on the situations that are a pass, and the man who
+   * put it into you on the two that arrive from somebody. Undefined on a
+   * one-on-one or a shot from distance, which are about you and the keeper — and
+   * on any career whose squad has not loaded, where the commentary falls back to
+   * the shapes it always described.
+   */
+  const targetName = (sc: Scenario | null): string | undefined => {
+    if (!sc) return undefined;
+    if (sc.kind === "volley" || sc.kind === "header") return sc.crosser?.shortName;
+    return sc.runner?.who?.shortName
+      ?? sc.secondaryRunners.find(r => r.role === "target")?.who?.shortName;
+  };
+
   const resolveOutcome = (res: Outcome) => {
     setOutcome(res);
     setPhase("result");
@@ -2147,7 +2163,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // heavy touch costs you the POSITION you strike from, so that is what it
     // says.
     if (heavyTouch > 0.55) pushLine("Heavy touch — it has got away from you.");
-    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
+    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     playWhistle();
   };
 
@@ -2243,7 +2259,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
     setEnergy(energyRef.current - DRAIN_PER_CHANCE);
     setPhase("flight");
-    pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current));
+    pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     playKick();
     kickPoseRef.current = KICK_POSE_S;
   };

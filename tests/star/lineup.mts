@@ -7,6 +7,7 @@ import { castScenario, creatorOf } from "../../lib/star/lineup";
 import { generateSquad } from "../../lib/star/squadData";
 import { creditMatchResult, makeInitialCareer } from "../../lib/star/careerFlow";
 import type { SquadPlayer, GoalEvent } from "../../lib/star/types";
+import { commentaryBuildup, commentaryStrike, commentaryResult } from "../../lib/star/matchCommentary";
 
 /**
  * Who did what.
@@ -232,6 +233,56 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
   const bystanders = (after.squad ?? []).filter(
     p => p.id !== scorer.id && p.id !== creator.id && (p.seasonGoals > 0 || p.seasonAssists > 0));
   check(bystanders.length === 0, `nobody who was not involved is credited (${bystanders.length} were)`);
+}
+
+// ── And the commentary says his name ────────────────────────────────────────
+//
+// The whole point of knowing who is on the pitch. "A team-mate is arriving in
+// the middle" was true of nobody; "Chiesa is arriving in the middle" is true of
+// somebody. Every moment that can name a man now does: the situation, the
+// strike, the touch, the shot and the result.
+{
+  const PASSING = ["cutback", "byline_cross", "through_ball", "midfield_pass", "buildup", "corner"] as const;
+  for (const kind of PASSING) {
+    const rng = mulberry32(kind.length * 13 + 7);
+    const N = 200;
+    let named = 0, anon = 0;
+    for (let i = 0; i < N; i++) {
+      const sc = buildScenario(kind, rng, 62, 60, 55);
+      castScenario(sc, SQUAD);
+      const who = sc.runner?.who?.shortName
+        ?? sc.secondaryRunners.find(r => r.role === "target")?.who?.shortName;
+      const line = commentaryBuildup(kind, rng, who) + " " + commentaryStrike(kind, rng, who);
+      if (who && line.includes(who)) named += 1;
+      // The same call with nobody to name must still produce a sentence, and
+      // must never leave a hole where the name would have gone.
+      const blank = commentaryBuildup(kind, rng) + " " + commentaryStrike(kind, rng);
+      if (blank.trim().length > 10 && !blank.includes("{")) anon += 1;
+    }
+    check(named === N, `${kind}: the commentary names the man it is about (${named}/${N})`);
+    check(anon === N, `${kind}: …and reads fine when there is nobody to name (${anon}/${N})`);
+  }
+
+  // A one-on-one is you and the keeper. Nobody else gets written into it.
+  const r = mulberry32(21);
+  for (const kind of ["one_on_one", "long_range", "penalty"] as const) {
+    const line = commentaryBuildup(kind, r, "Chiesa") + " " + commentaryStrike(kind, r, "Chiesa");
+    check(!line.includes("Chiesa"), `${kind}: a chance that is about you does not invent an involvement`);
+  }
+
+  // And the result line, which is where the report started: "IT'S THERE! the
+  // attacking midfielder finishes it off" — lower case, mid-sentence, nobody.
+  const r2 = mulberry32(88);
+  let capitalised = 0;
+  for (let i = 0; i < 300; i++) {
+    const line = commentaryResult("goal", r2, { chain: true, receiverReached: true, roleLabel: "Chiesa" });
+    if (line.includes("Chiesa")) capitalised += 1;
+  }
+  check(capitalised === 300, "a team-mate's goal is announced by name");
+  const roleLine = commentaryResult("goal", mulberry32(2), {
+    chain: true, receiverReached: true, roleLabel: "the attacking midfielder",
+  });
+  check(!/[.!?] [a-z]/.test(roleLine), `sentences start with a capital ("${roleLine}")`);
 }
 
 if (problems.length) {

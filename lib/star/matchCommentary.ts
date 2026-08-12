@@ -162,12 +162,79 @@ const RESULT_PASS_OK: Partial<Record<Outcome, string[]>> = {
   delivered: ["Picks him out perfectly — nice bit of play.", "Finds his team-mate — simple and effective."],
 };
 
-export function commentaryBuildup(kind: ScenarioKind, rng: () => number): string {
-  return pick(BUILDUP[kind], rng);
+/**
+ * The same two moments, with somebody in them.
+ *
+ * Now that every shirt on the pitch is a real player (lib/star/lineup.ts), the
+ * situation and the strike can name the man rather than describe the shape:
+ * "a team-mate is arriving in the middle" was true of nobody, and "Cuts it back
+ * for Chiesa!" is true of somebody. Only the kinds where a name means something
+ * have an entry — a one-on-one and a shot from distance are about you and the
+ * keeper, and inserting a team-mate into them would be inventing an involvement.
+ *
+ * Both fall back to the anonymous pools, which are still what the sandbox and
+ * any career without a loaded squad get.
+ */
+const BUILDUP_NAMED: Partial<Record<ScenarioKind, string[]>> = {
+  volley: [
+    "{name} whips it across — get up and meet it first time!",
+    "Here comes the ball from {name} — first-time effort on!",
+    "{name} flashes it across the box — volley chance!",
+  ],
+  header: [
+    "{name} floats it in — rise and meet it.",
+    "The delivery is in from {name} — attack it with your head.",
+    "Great ball from {name} — header on target?",
+  ],
+  cutback: [
+    "Bursts to the byline — {name} is arriving in the middle.",
+    "Gets to the line, and {name} has found the space behind them.",
+    "Byline reached — {name} is screaming for it across the six-yard box.",
+  ],
+  byline_cross: [
+    "Out by the corner flag — {name} is attacking the far post.",
+    "Reaches the byline, {name} peeling off his marker.",
+    "Down the line and to the byline — {name} is the target.",
+  ],
+  through_ball: [
+    "{name} is making the run in behind — can you thread it through?",
+    "The defence is stepping up and {name} is away — a ball over the top could be lethal.",
+    "Eyes up: {name} has split the back line with his run.",
+  ],
+  midfield_pass: [
+    "{name} shows for it — keep it simple.",
+    "No rush here — {name} is the free man.",
+    "Patient build-up, and {name} has come short.",
+  ],
+  corner: [
+    "Corner kick — {name} is the one to find.",
+    "Swinging one in, and {name} is attacking it.",
+    "Corner from the flag — {name} wants it most.",
+  ],
+  buildup: [
+    "Deep in midfield — {name} has pulled off the front.",
+    "On the ball, and {name} is the pass that breaks the line.",
+    "Building from the back — {name} is showing between the lines.",
+  ],
+};
+
+const STRIKE_NAMED: Partial<Record<ScenarioKind, string[]>> = {
+  cutback: ["Cuts it back for {name}!", "Pulls it back into {name}!", "Squares it for {name}!"],
+  byline_cross: ["Whips it in towards {name}!", "Delivers it onto {name}!", "Hangs one up for {name}!"],
+  through_ball: ["Threads it through for {name}!", "Slips {name} in behind!", "Splits them open for {name}!"],
+  midfield_pass: ["Rolls it into {name}.", "Finds {name}.", "Plays it simple, into {name}."],
+  corner: ["Swings it in towards {name}!", "Picks out {name} in the crowd!", "A teasing delivery onto {name}!"],
+  buildup: ["Picks out {name}!", "Plays it forward into {name}!", "Threads it up to {name}!"],
+};
+
+export function commentaryBuildup(kind: ScenarioKind, rng: () => number, name?: string): string {
+  const named = name ? BUILDUP_NAMED[kind] : undefined;
+  return named ? pick(named, rng).replace(/\{name\}/g, name!) : pick(BUILDUP[kind], rng);
 }
 
-export function commentaryStrike(kind: ScenarioKind, rng: () => number): string {
-  return pick(STRIKE[kind], rng);
+export function commentaryStrike(kind: ScenarioKind, rng: () => number, name?: string): string {
+  const named = name ? STRIKE_NAMED[kind] : undefined;
+  return named ? pick(named, rng).replace(/\{name\}/g, name!) : pick(STRIKE[kind], rng);
 }
 
 /**
