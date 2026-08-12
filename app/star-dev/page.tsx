@@ -63,6 +63,27 @@ export default function StarDevPage() {
     if (!saved) return;
     setCareer(saved);
 
+    // ── An existing career gets the real dressing room too ──
+    //
+    // Careers created before the roster fetch have a generated squad — or, if
+    // they predate squads entirely, one backfilled on load. Either way the
+    // names are invented, and the club they play for is a real club whose real
+    // squad is one request away.
+    //
+    // Only when nothing has been earned on it. A generated team-mate who has
+    // scored eleven goals across two seasons is a record of matches you played,
+    // and replacing him would quietly delete them; that squad is left alone and
+    // upgrades at the next transfer.
+    const squad = saved.squad ?? [];
+    const isReal = squad.some(p => p.sofifaId);
+    const hasHistory = squad.some(p => p.careerGoals > 0 || p.careerAssists > 0);
+    if (!isReal && !hasHistory) {
+      fetchRealSquad(saved.player.club).then((real) => {
+        setCareer(c => (c && c.player.club === saved.player.club && !(c.squad ?? []).some(p => p.sofifaId)
+          ? { ...c, squad: real } : c));
+      });
+    }
+
     // A finished career has one screen and no way back into the season.
     if (saved.retired) { setPhase("legacy"); return; }
 
