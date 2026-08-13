@@ -295,7 +295,21 @@ export interface GraphicTableRow { pos: number; name: string; played: number; gd
 export interface TotwSlot { name: string; position: string; note: string; isYou: boolean }
 
 export type GraphicSpec =
-  | { type: "scoreline"; home: string; away: string; hs: number; as: number; competition: string; scorers: string[] }
+  /**
+   * A scoreline, with the goals under the team that scored them.
+   *
+   * Two lists rather than one, because a scorer belongs to a side: Liverpool are
+   * on the right of "Forest 0-1 Liverpool", so "Isak 59'" goes on the right. It
+   * used to be a single list printed under the left-hand team whoever had
+   * scored, which reads as Forest having scored in a game they lost 0-1.
+   *
+   * `scorers` is the old single list. Kept, and read as the home side, because
+   * posts are saved into the career and old ones still have to render.
+   */
+  | {
+      type: "scoreline"; home: string; away: string; hs: number; as: number; competition: string;
+      homeScorers?: string[]; awayScorers?: string[]; scorers?: string[];
+    }
   | { type: "breaking"; strapline: string; headline: string }
   | { type: "playerCard"; name: string; number: number; position: string; rating: number; rows: GraphicRow[] }
   | { type: "statLine"; title: string; rows: GraphicRow[] }

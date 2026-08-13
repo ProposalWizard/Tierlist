@@ -5,7 +5,7 @@ import {
   launch, stepBall, stepBallInNet, settleBall,
   stepKeeper, stepDefenders, stepReactions, initDefenders,
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
-  OUTCOME_TEXT, clamp, dragForFullPower,
+  OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing,
 } from "@/lib/star/canvasEngine";
@@ -82,6 +82,13 @@ interface CreditDelta {
   shots: number; goals: number; passes: number; passesCompleted: number; chances: number; assists: number;
 }
 const NO_CREDIT: CreditDelta = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
+
+/**
+ * The shortest drag that counts as aiming at all, as a fraction of the canvas
+ * height. About a thumb's width of slop — below it, you pressed the ball and
+ * your finger moved, which is not a shot.
+ */
+const MIN_PULL = 0.04;
 
 // Credit a resolved chance from WHAT ACTUALLY HAPPENED — who struck the resolving
 // shot and whether it scored — never from the scenario's SHAPE. That distinction
@@ -485,7 +492,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       startSimulation();
       return;
     }
-    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
+    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     playWhistle(); // no-op until the first user gesture primes audio — harmless
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -565,10 +572,37 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // has with less drag, so the same flick is worth more of a shot. See
   // dragForFullPower — the attribute expands what a gesture buys rather than
   // silently multiplying the result.
-  const powerFromDrag = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
+  /**
+   * How far the thumb travelled, as a fraction of the canvas height.
+   *
+   * Measured on the SCREEN, not on the pitch, and that is a fix rather than a
+   * detail. A crossing situation is watched from the side, so the frame is
+   * turned a quarter turn and the screen's vertical axis is pitch X — and the
+   * frame is 5:8, so the same physical drag bought 1.6× fewer metres there than
+   * it did anywhere else. Full power in a byline cross needed a pull 60% of the
+   * screen long. The thumb does not know which way the pitch is facing; it only
+   * knows how far it moved.
+   */
+  const screenPull = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
     const vp = viewportRef.current;
-    const full = (vp.y2 - vp.y1) * dragForFullPower(tiredSkills().power);
-    return clamp(Math.hypot(drag.x - ball.x, drag.y - ball.y) / full, 0, 1);
+    const W = vp.x2 - vp.x1, H = vp.y2 - vp.y1;
+    // The exact inverse of pitchFromPointer, turn and all.
+    const f = facingRef.current;
+    const toScreen = (p: { x: number; y: number }) => {
+      const fx = (p.x - vp.x1) / W, fy = (p.y - vp.y1) / H;
+      if (f === "right") return { sx: 1 - fy, sy: fx };
+      if (f === "left") return { sx: fy, sy: 1 - fx };
+      return { sx: fx, sy: fy };
+    };
+    const a = toScreen(drag), b = toScreen(ball);
+    // sx is a fraction of the canvas WIDTH and sy of its HEIGHT, so put them in
+    // the same units before measuring.
+    return Math.hypot((a.sx - b.sx) * VIEW_ASPECT, a.sy - b.sy);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const powerFromDrag = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
+    return clamp(screenPull(drag, ball) / dragForFullPower(tiredSkills().power), 0, 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1628,6 +1662,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * The man this situation is about.
+   *
+   * The target of the pass on the situations that are a pass, and the man who
+   * put it into you on the two that arrive from somebody. Undefined on a
+   * one-on-one or a shot from distance, which are about you and the keeper — and
+   * on any career whose squad has not loaded, where the commentary falls back to
+   * the shapes it always described.
+   */
+  const targetName = (sc: Scenario | null): string | undefined => {
+    if (!sc) return undefined;
+    if (sc.kind === "volley" || sc.kind === "header") return sc.crosser?.shortName;
+    return sc.runner?.who?.shortName
+      ?? sc.secondaryRunners.find(r => r.role === "target")?.who?.shortName;
+  };
+
   const resolveOutcome = (res: Outcome) => {
     setOutcome(res);
     setPhase("result");
@@ -2147,7 +2197,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // heavy touch costs you the POSITION you strike from, so that is what it
     // says.
     if (heavyTouch > 0.55) pushLine("Heavy touch — it has got away from you.");
-    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current));
+    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     playWhistle();
   };
 
@@ -2224,6 +2274,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     if (!d) return;
     const b = scenarioRef.current.ball;
     const power = powerFromDrag(d, b);
+    // ── Two floors, and the second one is not redundant ──
+    //
+    // A shot has to be worth taking, AND the gesture has to have been a gesture.
+    // Shortening the full-power pull shortened everything proportionally, so
+    // 12% power went from a 26-pixel drag to a 13-pixel one — inside the slop of
+    // a thumb pressing the ball and slipping. The absolute floor keeps the
+    // dead zone the size it has always been on the glass.
+    if (screenPull(d, b) < MIN_PULL) return;
     if (power < 0.12) return; // too weak — stay in aim
     const dir = { x: b.x - d.x, y: b.y - d.y };
     setAim({ dir, power });
@@ -2243,7 +2301,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
     setEnergy(energyRef.current - DRAIN_PER_CHANCE);
     setPhase("flight");
-    pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current));
+    pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     playKick();
     kickPoseRef.current = KICK_POSE_S;
   };

@@ -82,6 +82,19 @@ export interface Fixture {
   opponentStrength?: number;
 }
 
+/** One game in the division's schedule. */
+export interface LeagueFixture {
+  week: number;
+  home: string;
+  away: string;
+}
+
+/** …and how it finished. `hs`/`as` are the home and away scores. */
+export interface LeagueResult extends LeagueFixture {
+  hs: number;
+  as: number;
+}
+
 /** A knockout the player is in, or was in. */
 export interface CupRun {
   competition: Competition;
@@ -269,6 +282,13 @@ export interface CareerState {
   internationalGoals?: number;
   /** What the last knockout tie did to the run, for the post-match screen. */
   knockoutMessage?: string | null;
+  /**
+   * Every league result this season, yours included — the ten games a week that
+   * the table is built from. Cleared at the rollover; absent on a career saved
+   * before the division had a real schedule, which simply has no results to show
+   * until its next match.
+   */
+  results?: LeagueResult[];
   /** Things you can still do before the next match. Refills every week. */
   weekActions?: number;
   /** Every move you made, for the legacy screen. */

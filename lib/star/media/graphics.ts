@@ -35,13 +35,17 @@ export function buildGraphic(
       if (!r) return undefined;
       const home = r.home ? r.club : r.opponent;
       const away = r.home ? r.opponent : r.club;
+      // Every goal on the record is one of ours — the opponent's are simulated
+      // and never named — so they all belong to whichever side we are.
+      const ours = r.goals.map(g => `${surname(g.scorer)} ${g.minute}'`);
       return {
         type: "scoreline",
         home, away,
         hs: r.home ? r.score.us : r.score.them,
         as: r.home ? r.score.them : r.score.us,
         competition: r.competition,
-        scorers: r.goals.map(g => `${surname(g.scorer)} ${g.minute}'`),
+        homeScorers: r.home ? ours : [],
+        awayScorers: r.home ? [] : ours,
       };
     }
 

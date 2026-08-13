@@ -37,7 +37,7 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
   const [filter, setFilter] = useState("all");
 
   const { posts, trends, now } = useMemo(
-    () => feedFor(career, mode === "moment" ? "instant" : "settled"),
+    () => feedFor(career, mode === "moment" ? "moment" : "settled"),
     [career, mode],
   );
 
@@ -73,7 +73,7 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
             <p className="text-[10px] font-bold text-white/70">
               {mode === "moment"
                 ? "What they made of that"
-                : `Season ${career.season} · Week ${career.week}`}
+                : `Season ${career.season} · Week ${career.week} · the last month`}
             </p>
           </div>
         </header>

@@ -1,5 +1,5 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
-import { generateForMatch, generateForCareer, feedFor, mediaOf } from "../../lib/star/media/feed";
+import { generateForMatch, generateForCareer, feedFor, mediaOf, hasFreshMedia } from "../../lib/star/media/feed";
 import { templateCount } from "../../lib/star/media/templates";
 import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch } from "../../lib/star/media/detect";
 import { buildMatchRecord } from "../../lib/star/media/record";
@@ -275,10 +275,60 @@ function season(seed: number, weeks = 20): CareerState {
 // ── The news cycle has a shape ──────────────────────────────────────────────
 {
   const c = season(81, 10);
-  const instant = feedFor(c, "instant").posts.length;
+  const instant = feedFor(c, "moment").posts.length;
   const settled = feedFor(c, "settled").posts.length;
   check(settled > instant, `walking out of the ground shows less than the week does (${instant} vs ${settled})`);
   check(instant >= 1, "…but it shows something");
+}
+
+// ── Walking out of the ground shows THIS match ──────────────────────────────
+//
+// The post-match screen was bounded above and not below, so its early `now`
+// correctly hid the waves that had not landed yet and hid nothing at all of
+// every match before it — all of which are timestamped earlier and therefore
+// passed the filter. Four games in, the reaction to the game you had just
+// played sat at the bottom of a month of history. Reported as exactly that.
+{
+  const sizes: number[] = [];
+  for (const weeks of [1, 2, 4, 10, 20, 30]) {
+    const c = season(64, weeks);
+    const state = mediaOf(c);
+    const { posts } = feedFor(c, "moment");
+    const stale = posts.filter(p => p.at < state.lastCycleClock);
+    check(stale.length === 0,
+      `after ${weeks} match(es), the reaction is only this match's (${stale.length} stale posts)`);
+    check(posts.length <= 20, `after ${weeks} match(es), it is still a screenful (${posts.length})`);
+    sizes.push(posts.length);
+  }
+  // The shape of the bug was growth: match four showed four matches. What the
+  // reaction costs must not depend on how long the season has been going.
+  const early = (sizes[0] + sizes[1]) / 2, late = (sizes[4] + sizes[5]) / 2;
+  check(late <= early + 4, `the reaction does not grow with the season (${early} early vs ${late} late)`);
+
+  // The screen is only ever opened when there is something on it.
+  let opened = 0, empty = 0, quiet = 0;
+  let c = newCareer(65);
+  for (let w = 1; w <= 30; w++) {
+    if (!c.fixtures.some(f => !f.played)) break;
+    if (!hasFreshMedia(c = playOne(c, 65_000 + w))) { quiet++; continue; }
+    opened++;
+    if (feedFor(c, "moment").posts.length === 0) empty++;
+  }
+  check(opened > 15, `the reaction screen opens most weeks (${opened}, quiet ${quiet})`);
+  check(empty === 0, `and never opens on an empty page (${empty} times)`);
+}
+
+// ── The Feed keeps about a month, and no more ───────────────────────────────
+{
+  const c = season(66, 20);
+  const { posts, now } = feedFor(c, "settled");
+  const week = (at: number) => Math.floor((at % 1_000_000) / 10_000);
+  const oldest = Math.min(...posts.map(p => p.at));
+  check(posts.length > 0, "the Feed has something in it");
+  check(week(now) - week(oldest) <= 4,
+    `the Feed reaches back about a month, not a season (${week(now) - week(oldest)} weeks)`);
+  check(mediaOf(c).posts.length > posts.length,
+    "…while the history behind it is still kept, for the record");
 }
 
 // ── It fits in a save ───────────────────────────────────────────────────────
@@ -316,6 +366,37 @@ function season(seed: number, weeks = 20): CareerState {
   const always = [...fired.entries()].filter(([id, n]) => n >= matches && id !== "win" && id !== "draw" && id !== "loss");
   check(always.length === 0, `no detector fires on every single match (${always.map(a => a[0]).join(", ")})`);
   check(fired.size >= 20, `a wide spread of events actually occurs (${fired.size} distinct)`);
+}
+
+// ── A scorer stands under his own team ──────────────────────────────────────
+//
+// "Forest 0-1 Liverpool" with "Isak 59'" printed under Forest reads as Forest
+// having scored in a game they lost. The goals belong to a side, so they are
+// listed on that side.
+{
+  let seen = 0, wrongSide = 0;
+  let c = newCareer(73);
+  for (let w = 1; w <= 34; w++) {
+    if (!c.fixtures.some(f => !f.played)) break;
+    const fixture = c.fixtures.find(f => !f.played)!;
+    const wasHome = fixture.home;
+    c = playOne(c, 73_000 + w);
+    // Only this week's — the feed keeps the previous matches too, and they were
+    // played at the other end of the country.
+    const cycle = mediaOf(c).lastCycleId;
+    for (const p of mediaOf(c).posts.filter(x => x.id.startsWith(cycle))) {
+      const g = p.graphic;
+      if (!g || g.type !== "scoreline") continue;
+      const ours = wasHome ? g.homeScorers ?? [] : g.awayScorers ?? [];
+      const theirs = wasHome ? g.awayScorers ?? [] : g.homeScorers ?? [];
+      if (ours.length + theirs.length === 0) continue;
+      seen += 1;
+      // Only our goals are ever named, so the other side must always be empty.
+      if (theirs.length > 0) wrongSide += 1;
+    }
+  }
+  check(seen >= 3, `scorelines with goals on them were produced (${seen})`);
+  check(wrongSide === 0, `every scorer is listed under his own team (${wrongSide} were not)`);
 }
 
 if (problems.length) {

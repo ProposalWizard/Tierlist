@@ -6,7 +6,7 @@
 
 import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy } from "./types";
 import {
-  buildLeague, buildFixtures, simulateOtherFixtures, updateLeagueWithUserResult, sortLeague, mulberry32,
+  buildLeague, buildFixtures, playLeagueWeek, updateLeagueWithUserResult, sortLeague, mulberry32,
   simulateFixtureScore,
 } from "./season";
 import { selectionFor, MISSED_WEEK } from "./selection";
@@ -162,10 +162,21 @@ export function creditMatchResult(
   // week of points.
   const kind = fixture.kind ?? "league";
   let league = career.league;
+  // This week's ten results, yours first. Kept on the career so the league
+  // screen can show the round rather than only the table it produced.
+  let weekResults = career.results ?? [];
   if (kind === "league") {
     league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, stats.homeScore, stats.awayScore);
     const rng = mulberry32(career.season * 1000 + career.week);
-    league = simulateOtherFixtures(league, career.player.club, fixture.opponent, career.week, rng);
+    // Reported from your point of view, so unpick it back into home and away.
+    const scored = fixture.home ? stats.homeScore : stats.awayScore;
+    const conceded = fixture.home ? stats.awayScore : stats.homeScore;
+    const round = playLeagueWeek(league, fixture.week, {
+      club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded,
+    }, rng);
+    league = round.league;
+    // Replaying a week replaces it rather than doubling it.
+    weekResults = [...weekResults.filter(r => r.week !== fixture.week), ...round.results];
   }
 
   const fixtures = career.fixtures.map((f) =>
@@ -257,6 +268,7 @@ export function creditMatchResult(
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
     league,
+    results: weekResults,
     fixtures: [...fixtures, ...extraFixtures],
     // Match-day money: the wage and bonuses the result produced, an appearance
     // fee if the deal has one, and anything a sponsor objective just paid out.
@@ -389,6 +401,8 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     week: 1,
     fixtures: buildFixtures(clubs, career.player.club),
     league: buildLeague(clubs, career.player.club),
+    // Last season's results belong to last season.
+    results: [],
     seasonStats: { ...EMPTY_SEASON_STATS },
     energy: 100,
     matchFitness: 85,
@@ -477,9 +491,15 @@ export function simulateMissedFixture(
 
   const kind = fixture.kind ?? "league";
   let league = career.league;
+  let weekResults = career.results ?? [];
   if (kind === "league") {
     league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, userScore, oppScore);
-    league = simulateOtherFixtures(league, career.player.club, fixture.opponent, career.week, rng);
+    const round = playLeagueWeek(league, fixture.week, {
+      club: career.player.club, opponent: fixture.opponent, home: fixture.home,
+      scored: userScore, conceded: oppScore,
+    }, rng);
+    league = round.league;
+    weekResults = [...weekResults.filter(r => r.week !== fixture.week), ...round.results];
   }
 
   // A cup tie you were left out of still happens, and your club still goes
@@ -515,6 +535,7 @@ export function simulateMissedFixture(
   const next: CareerState = {
     ...career,
     league,
+    results: weekResults,
     fixtures: [...fixtures, ...extraFixtures],
     cups,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,

@@ -36,15 +36,37 @@ export function timeFor(season: number, week: number, window: Window, jitter: nu
 }
 
 /**
+ * How far back the Feed remembers. Four weeks, which reads as "about a month".
+ *
+ * Beyond that it is not a feed, it is an archive — and the state is capped at
+ * POST_CAP posts anyway, so an old season's reaction was only ever going to be
+ * pushed out silently. Better to draw the line somewhere legible.
+ */
+export const FEED_HORIZON = 4 * 10_000;
+
+/**
+ * How much of a cycle the post-match screen shows: the ninety minutes after the
+ * whistle, which is the `instant` and `hour` windows. Everything later belongs
+ * to the Feed.
+ */
+export const FIRST_WAVE = 90;
+
+/**
  * What the player can see right now.
  *
- * "Now" is where the career has got to — the start of the current week — so
- * everything from earlier weeks is fully visible and the current match's later
- * waves arrive as the week rolls on. The post-match screen passes a deliberately
- * early `now` so it shows the immediate reaction and nothing else.
+ * "Now" is where the career has got to — the start of the current week — so the
+ * current match's later waves arrive as the week rolls on.
+ *
+ * `since` is the other end, and it was missing. Without it the post-match screen
+ * showed every post ever written: its early `now` correctly hid the waves that
+ * had not landed yet, but nothing at all hid the four previous matches, whose
+ * posts are all timestamped EARLIER and therefore all pass `at <= now`. So the
+ * reaction to Saturday's game arrived at the bottom of a month of history, and
+ * it got worse every week — reported after four games as "it's showing the full
+ * history of the social media every time".
  */
-export function visible(posts: StoredPost[], now: number): StoredPost[] {
-  return posts.filter(p => p.at <= now).sort((a, b) => b.at - a.at);
+export function visible(posts: StoredPost[], now: number, since = -Infinity): StoredPost[] {
+  return posts.filter(p => p.at <= now && p.at >= since).sort((a, b) => b.at - a.at);
 }
 
 /** How the timestamp reads on the card. */
