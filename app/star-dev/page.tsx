@@ -13,6 +13,7 @@ import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { fetchRealSquad } from "@/lib/star/realSquad";
+import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -81,6 +82,18 @@ export default function StarDevPage() {
       fetchRealSquad(saved.player.club).then((real) => {
         setCareer(c => (c && c.player.club === saved.player.club && !(c.squad ?? []).some(p => p.sofifaId)
           ? { ...c, squad: real } : c));
+      });
+    }
+
+    // ── …and so does the rest of the division ──
+    //
+    // An existing career has no league squads at all, so its Golden Boot is
+    // still the old invented race. Fetched once, in the background, and only
+    // when there is nothing there — a division that has been scoring all season
+    // must not be wiped back to nought by a page refresh.
+    if (!(saved.leagueSquads ?? []).length) {
+      fetchLeagueSquads(saved.league.map(t => t.name)).then((leagueSquads) => {
+        setCareer(c => (c && !(c.leagueSquads ?? []).length ? { ...c, leagueSquads } : c));
       });
     }
 
@@ -180,6 +193,15 @@ export default function StarDevPage() {
     setPhase("dashboard");
     fetchRealSquad(player.club).then((squad) => {
       setCareer(c => (c && c.player.club === player.club ? { ...c, squad } : c));
+    });
+    // ── And the other nineteen dressing rooms ──
+    //
+    // One request for the whole division, not nineteen. See
+    // app/api/star/league-squads — the Draft's roster endpoint reads a JSONB
+    // blob per player, which is right for the Draft and far too heavy to ask
+    // twenty times for six fields.
+    fetchLeagueSquads(clubs).then((leagueSquads) => {
+      setCareer(c => (c ? { ...c, leagueSquads } : c));
     });
   }, []);
 

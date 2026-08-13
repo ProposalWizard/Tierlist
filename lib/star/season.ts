@@ -1,4 +1,5 @@
-import type { LeagueTeam, Fixture, LeagueFixture, LeagueResult } from "./types";
+import type { LeagueTeam, Fixture, LeagueFixture, LeagueResult, LeagueSquad } from "./types";
+import { nameGoals } from "./leagueSquads";
 import { rivalOf } from "./rivals";
 
 // Deterministic PRNG so a career's season sim is reproducible
@@ -110,11 +111,13 @@ export function buildFixtures(clubs: string[], userClub: string): Fixture[] {
 export function playLeagueWeek(
   league: LeagueTeam[],
   week: number,
-  user: { club: string; opponent: string; home: boolean; scored: number; conceded: number },
+  user: { club: string; opponent: string; home: boolean; scored: number; conceded: number; goals?: LeagueResult["hg"] },
   rng: () => number,
+  squads?: LeagueSquad[],
 ): { league: LeagueTeam[]; results: LeagueResult[] } {
   const clubs = league.map(t => t.name);
   const strength = new Map(league.map(t => [t.name, t.strength]));
+  const squadOf = new Map((squads ?? []).map(s => [s.club, s]));
   const updated = league.map(t => ({ ...t }));
 
   const results: LeagueResult[] = [{
@@ -123,6 +126,10 @@ export function playLeagueWeek(
     away: user.home ? user.opponent : user.club,
     hs: user.home ? user.scored : user.conceded,
     as: user.home ? user.conceded : user.scored,
+    // Your own scorers are the real ones off the match. Theirs are simulated and
+    // anonymous — we hold no squad for the club you played, and inventing one
+    // would put made-up names beside your team-mates'.
+    ...(user.goals?.length ? (user.home ? { hg: user.goals } : { ag: user.goals }) : {}),
   }];
 
   const used = new Set([user.club, user.opponent]);
@@ -130,7 +137,14 @@ export function playLeagueWeek(
     const hs = strength.get(home) ?? 65;
     const as = strength.get(away) ?? 65;
     const sc = simulateFixtureScore(hs, as, rng);
-    results.push({ week, home, away, hs: sc.home, as: sc.away });
+    // Every goal in the division belongs to somebody. This is what turns the
+    // Golden Boot from a formula run over team strength into a count.
+    const hg = nameGoals(squadOf.get(home), sc.home, rng);
+    const ag = nameGoals(squadOf.get(away), sc.away, rng);
+    results.push({
+      week, home, away, hs: sc.home, as: sc.away,
+      ...(hg.length ? { hg } : {}), ...(ag.length ? { ag } : {}),
+    });
     const H = updated.find(t => t.name === home);
     const A = updated.find(t => t.name === away);
     if (!H || !A) return;
