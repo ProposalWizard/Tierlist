@@ -3,7 +3,8 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
-import { goldenBootRace } from "@/lib/star/recognition";
+import { goldenBootRace, assistRace } from "@/lib/star/recognition";
+import LineupBuilder from "./LineupBuilder";
 
 interface Props {
   career: CareerState;
@@ -14,7 +15,7 @@ export default function LeagueScreen({ career }: Props) {
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
 
-  const [view, setView] = useState<"table" | "results" | "fixtures" | "cups" | "squad">("table");
+  const [view, setView] = useState<"table" | "results" | "fixtures" | "cups" | "squad" | "xi">("table");
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
 
@@ -33,17 +34,19 @@ export default function LeagueScreen({ career }: Props) {
 
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-5 gap-1 mb-2">
-        {(["table", "results", "fixtures", "cups", "squad"] as const).map((v) => (
+      <div className="grid grid-cols-6 gap-1 mb-2">
+        {(["table", "results", "fixtures", "cups", "squad", "xi"] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`py-1.5 rounded-t-lg font-black text-[10px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
+            className={`py-1.5 rounded-t-lg font-black text-[9px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
           >
             {v}
           </button>
         ))}
       </div>
+
+      {view === "xi" && <LineupBuilder career={career} />}
 
       {view === "results" && (
         <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
@@ -89,6 +92,18 @@ export default function LeagueScreen({ career }: Props) {
                   {r.hs}-{r.as}
                 </span>
                 <span className={`truncate ${r.as > r.hs ? "font-black" : ""}`}>{r.away}</span>
+                {(r.hg?.length || r.ag?.length) ? (
+                  <>
+                    <div className="col-span-3 mt-0.5 grid grid-cols-2 gap-2 text-[9px] font-bold leading-tight text-white/70">
+                      <div className="space-y-0.5 text-right">
+                        {(r.hg ?? []).map((g, k) => <div key={k}>{g.s} {g.m}&#39;</div>)}
+                      </div>
+                      <div className="space-y-0.5 text-left">
+                        {(r.ag ?? []).map((g, k) => <div key={k}>{g.s} {g.m}&#39;</div>)}
+                      </div>
+                    </div>
+                  </>
+                ) : null}
               </div>
             );
           })}
@@ -160,20 +175,29 @@ export default function LeagueScreen({ career }: Props) {
       )}
 
       {view === "table" && (
-        <div className="mt-2 bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
-          <div className="bg-gray-800 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300 border-b border-black/50">
-            Golden Boot
-          </div>
-          {goldenBootRace(career).slice(0, 6).map((sc, i) => (
-            <div
-              key={sc.name + sc.club}
-              className={`flex items-center gap-2 px-2 py-1.5 text-xs font-bold ${
-                sc.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
-            >
-              <span className="w-4 text-center text-[10px] font-black">{i + 1}</span>
-              <span className="flex-1 truncate">{sc.name}</span>
-              <span className="truncate text-[10px] text-gray-200 max-w-[38%]">{sc.club}</span>
-              <span className="w-6 text-right font-black tabular-nums">{sc.goals}</span>
+        <div className="mt-2 grid gap-2">
+          {/* Both charts are a COUNT now — every goal in all 380 league games
+              belongs to a named player. See recognition.goldenBootRace. */}
+          {([["Golden Boot", goldenBootRace(career)], ["Assist King", assistRace(career)]] as const).map(([title, race]) => (
+            <div key={title} className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
+              <div className="bg-gray-800 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300 border-b border-black/50">
+                {title}
+              </div>
+              {race.slice(0, 6).map((sc, i) => (
+                <div
+                  key={sc.name + sc.club}
+                  className={`flex items-center gap-2 px-2 py-1.5 text-xs font-bold ${
+                    sc.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
+                >
+                  <span className="w-4 text-center text-[10px] font-black">{i + 1}</span>
+                  <span className="flex-1 truncate">{sc.name}</span>
+                  <span className="truncate text-[10px] text-gray-200 max-w-[38%]">{sc.club}</span>
+                  <span className="w-6 text-right font-black tabular-nums">{sc.goals}</span>
+                </div>
+              ))}
+              {race.every(r => r.goals === 0) && (
+                <div className="px-2 py-2 text-[11px] font-bold text-white/70">Nobody has scored yet.</div>
+              )}
             </div>
           ))}
         </div>

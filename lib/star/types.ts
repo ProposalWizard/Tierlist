@@ -82,6 +82,28 @@ export interface Fixture {
   opponentStrength?: number;
 }
 
+/**
+ * A player at one of the OTHER nineteen clubs.
+ *
+ * Deliberately thinner than `SquadPlayer`. Your team-mates appear on the pitch,
+ * get named in commentary and carry career totals; these men only ever have to
+ * answer "who scored?", so they cost six fields instead of twelve. Twenty
+ * squads stored this way are 15.6 KB; stored as SquadPlayers they are 105 KB.
+ */
+export interface LeaguePlayer {
+  id: string;
+  name: string;
+  position: SquadPlayer["position"];
+  overall: number;
+  goals: number;
+  assists: number;
+}
+
+export interface LeagueSquad {
+  club: string;
+  players: LeaguePlayer[];
+}
+
 /** One game in the division's schedule. */
 export interface LeagueFixture {
   week: number;
@@ -93,6 +115,9 @@ export interface LeagueFixture {
 export interface LeagueResult extends LeagueFixture {
   hs: number;
   as: number;
+  /** Who scored them: minute, scorer, assister. Home side then away side. */
+  hg?: { m: number; s: string; a?: string }[];
+  ag?: { m: number; s: string; a?: string }[];
 }
 
 /** A knockout the player is in, or was in. */
@@ -289,6 +314,13 @@ export interface CareerState {
    * until its next match.
    */
   results?: LeagueResult[];
+  /**
+   * The other clubs' players, and what they have done this season.
+   *
+   * Absent on a career saved before the division had squads — the Golden Boot
+   * falls back to the old invented race until the next rollover fills it in.
+   */
+  leagueSquads?: LeagueSquad[];
   /** Things you can still do before the next match. Refills every week. */
   weekActions?: number;
   /** Every move you made, for the legacy screen. */

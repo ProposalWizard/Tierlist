@@ -35,6 +35,7 @@ import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, creatorOf } from "@/lib/star/lineup";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
+import { kitsFor, labelInk, type MatchKits } from "@/lib/star/kits";
 import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
@@ -193,6 +194,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const fixtureOpponent = fixture?.opponent ?? "The opposition";
   const fixtureOpponentRef = useRef(fixtureOpponent);
   fixtureOpponentRef.current = fixtureOpponent;
+  const fixtureHomeRef = useRef(fixture?.home !== false);
+  fixtureHomeRef.current = fixture?.home !== false;
 
   // --- Session / scoreline tracking ---
   const attemptsRef = useRef(0);
@@ -342,6 +345,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // Vision decides how much of the pitch you are told about — see visibleOptions.
   const visionRef = useRef(career?.skills.vision ?? 55);
   visionRef.current = career?.skills.vision ?? 55;
+
+  /**
+   * What the two sides are wearing.
+   *
+   * Resolved once per match from who is at home — see lib/star/kits. Everybody
+   * used to be in the same two colours whoever was playing: you green, your
+   * team-mates blue, the opposition red, at Manchester City, for fifteen
+   * seasons. The sandbox has no fixture and no clubs, so it keeps a neutral
+   * pair rather than pretending to be a game between two teams.
+   */
+  const kitsRef = useRef<MatchKits>(
+    fixture && career
+      ? (fixture.home
+        ? kitsFor(career.player.club, fixture.opponent)
+        : kitsFor(fixture.opponent, career.player.club))
+      : { home: { shirt: C.mate, trim: C.mateRim }, away: { shirt: C.opp, trim: C.oppRim },
+          keeper: { shirt: C.gk, trim: C.gkRim } },
+  );
+  /** Yours and theirs, whichever end of the fixture you are. */
+  const ourKit = () => (fixtureHomeRef.current ? kitsRef.current.home : kitsRef.current.away);
+  const theirKit = () => (fixtureHomeRef.current ? kitsRef.current.away : kitsRef.current.home);
 
   const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship, career?.skills.vision ?? 55));
   const ballRef = useRef<Ball | null>(null);
@@ -1035,7 +1059,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // "he is coming now" is information you get before it costs you the ball.
       dr.chasers.forEach((c, i) => {
         ctx.globalAlpha = c.awake ? 1 : 0.62;
-        footballer(c.x, c.y, R, C.opp, C.oppRim, {
+        footballer(c.x, c.y, R, theirKit().shirt, theirKit().trim, {
           pose: c.awake ? poseFor(`chase${i}`, c.x, c.y) : "idle",
           phase: runPhase(c.x),
         });
@@ -1051,11 +1075,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.lineWidth = Math.max(2, unit * 0.14);
       ctx.beginPath(); ctx.moveTo(base.px, base.py); ctx.lineTo(tip.px, tip.py); ctx.stroke();
 
-      footballer(dr.pos.x, dr.pos.y, R, C.you, C.youRim, {
+      footballer(dr.pos.x, dr.pos.y, R, ourKit().shirt, ourKit().trim, {
         pose: "run",
         phase: runPhase(dr.pos.x),
         label: "YOU",
-        labelColor: "#fff",
+        labelColor: labelInk(ourKit().shirt),
       });
       const bp = toPx(bx, by);
       ctx.fillStyle = "#fff";
@@ -1094,7 +1118,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // left over from the scenario before. Same leak as the panel above: a figure
     // from a situation that is not the one on screen.
     if (goalInView(sc.kind)) {
-      footballer(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim, {
+      footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
       });
@@ -1102,7 +1126,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     // Decorative team-mates (the crosser on a volley/header)
     sc.teammates.forEach((t, i) => {
-      footballer(t.x, t.y, R, C.mate, C.mateRim, {
+      footballer(t.x, t.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor(`mate${i}`, t.x, t.y),
         phase: runPhase(t.x),
       });
@@ -1115,7 +1139,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // Arms out the moment they take the ball down, so a completed pass reads
       // on the pitch and not only in the commentary.
       const receiving = i === 0 && !!rb && rb.receiverControlT > 0;
-      footballer(r.pos.x, r.pos.y, R, C.mate, C.mateRim, {
+      footballer(r.pos.x, r.pos.y, R, ourKit().shirt, ourKit().trim, {
         pose: receiving ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
         phase: runPhase(r.pos.x),
       });
@@ -1125,18 +1149,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // the same height the block test uses, so what you see is what resolves.
     sc.defenders.forEach((d, i) => {
       const lift = (d.z ?? 0) * 0.42;
-      footballer(d.x, d.y - lift, R, C.opp, C.oppRim, {
+      footballer(d.x, d.y - lift, R, theirKit().shirt, theirKit().trim, {
         pose: (d.z ?? 0) > 0.15 ? "kick" : poseFor(`def${i}`, d.x, d.y),
         phase: runPhase(d.x),
       });
     });
-    footballer(sc.player.x, sc.player.y, R, C.you, C.youRim, {
+    // You wear the same shirt as everybody else on your side — you are one of
+    // eleven, not a differently-coloured avatar. The armband of a name label is
+    // what picks you out, which is how you pick a player out watching football.
+    footballer(sc.player.x, sc.player.y, R, ourKit().shirt, ourKit().trim, {
       // Held briefly after a strike so the swing is visible rather than
       // happening entirely between two frames.
       pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
       phase: runPhase(sc.player.x),
       label: "YOU",
-      labelColor: "#fff",
+      labelColor: labelInk(ourKit().shirt),
     });
 
     // ── Keeper ──
@@ -1223,7 +1250,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // Shorts — the keeper's own kit, like everybody else, so he reads as the
       // keeper rather than as another outfield player who happens to be near
       // the goal. Wider than an outfielder's: he is stood square and low.
-      ctx.fillStyle = C.gkRim;
+      ctx.fillStyle = kitsRef.current.keeper.trim;
       ctx.beginPath();
       ctx.roundRect?.(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34, KR * 0.12);
       if (!ctx.roundRect) ctx.rect(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34);
@@ -1251,18 +1278,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
 
       // Shirt
-      ctx.fillStyle = C.gk;
+      ctx.fillStyle = kitsRef.current.keeper.shirt;
       ctx.beginPath();
       ctx.roundRect?.(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58, KR * 0.15);
       if (!ctx.roundRect) ctx.rect(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58);
       ctx.fill();
       ctx.lineWidth = Math.max(1, KR * 0.11);
-      ctx.strokeStyle = C.gkRim;
+      ctx.strokeStyle = kitsRef.current.keeper.trim;
       ctx.stroke();
 
       // Gloves — what actually makes him read as a keeper
       ctx.fillStyle = "#f8fafc";
-      ctx.strokeStyle = C.gkRim;
+      ctx.strokeStyle = kitsRef.current.keeper.trim;
       ctx.lineWidth = Math.max(1, KR * 0.09);
       for (const g of gloves) {
         ctx.beginPath();

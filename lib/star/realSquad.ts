@@ -161,6 +161,27 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
 }
 
 /**
+ * Should this squad be replaced with the real one?
+ *
+ * Only if it is not already real. That is the whole rule now, and it used to
+ * have a second half: "…and only if nothing has been earned on it", so a squad
+ * whose invented team-mates had scored was left alone rather than have those
+ * goals deleted along with the men who scored them.
+ *
+ * Deliberately dropped. It meant a career started before real squads existed
+ * could never get them — play two matches with the invented eleven and you were
+ * locked out for the rest of the save. Reported as exactly that: Liverpool and
+ * Man United on real players, Chelsea permanently on made-up ones.
+ *
+ * What is lost is only the invented team-mates' tallies. YOUR goals and assists
+ * live on `career.seasonStats` and `career.careerStats`, not on the squad, so
+ * nothing you did is touched.
+ */
+export function shouldUpgradeSquad(squad: SquadPlayer[]): boolean {
+  return !squad.some(p => p.sofifaId);
+}
+
+/**
  * Go and get it.
  *
  * Never throws and never rejects: a career is created from whatever comes back,

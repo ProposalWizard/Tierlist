@@ -35,16 +35,71 @@ export interface Scorer {
 /**
  * The scoring chart, with you in it.
  *
- * Rivals are derived rather than simulated: each club's leading scorer is drawn
- * from its own strength and the season number, so the chart is stable across
- * renders, consistent within a season and different between them. Simulating
- * every forward in the division would be a great deal of machinery to produce a
- * number nobody would check.
+ * It is a COUNT now. Every one of the 380 league games in a season is played,
+ * and every goal in the 342 you are not in is given to a named player from that
+ * club's real squad — so this reads the division's actual scorers rather than
+ * describing them.
  *
- * Their tallies grow with the season so the race is live all year rather than
- * appearing at the end.
+ * What it replaced is worth writing down, because it looked identical on screen
+ * and was not the same thing at all: one invented player per club, first name
+ * and surname drawn from two lists, with a goal tally derived from a formula on
+ * team strength times how far through the season it was. Nobody had scored any
+ * of them. A striker could not have a bad season, a bad team could not have a
+ * good striker, and the number never moved because of anything that happened.
+ *
+ * The fallback below is that old behaviour, kept for careers saved before the
+ * division had squads. They get it until the next rollover fills them in.
  */
 export function goldenBootRace(career: CareerState): Scorer[] {
+  const squads = career.leagueSquads ?? [];
+  if (squads.length === 0) return legacyRace(career);
+
+  const out: Scorer[] = [];
+  for (const sq of squads) {
+    // Your own club's scorers are on `career.squad`, which is the real thing —
+    // named men who were on the pitch. These rows for your club exist but were
+    // never played, so they would all read nought.
+    if (sq.club === career.player.club) continue;
+    for (const p of sq.players) {
+      if (p.goals > 0) out.push({ name: p.name, club: sq.club, goals: p.goals, isYou: false });
+    }
+  }
+  for (const p of career.squad ?? []) {
+    if (p.seasonGoals > 0) out.push({ name: p.name, club: career.player.club, goals: p.seasonGoals, isYou: false });
+  }
+  out.push({
+    name: `${career.player.firstName} ${career.player.lastName}`,
+    club: career.player.club,
+    goals: career.seasonStats.goals,
+    isYou: true,
+  });
+  return out.sort((a, b) => b.goals - a.goals || (a.isYou ? -1 : b.isYou ? 1 : 0));
+}
+
+/** The same shape for assists, which the division now also counts. */
+export function assistRace(career: CareerState): Scorer[] {
+  const squads = career.leagueSquads ?? [];
+  const out: Scorer[] = [];
+  for (const sq of squads) {
+    if (sq.club === career.player.club) continue;
+    for (const p of sq.players) {
+      if (p.assists > 0) out.push({ name: p.name, club: sq.club, goals: p.assists, isYou: false });
+    }
+  }
+  for (const p of career.squad ?? []) {
+    if (p.seasonAssists > 0) out.push({ name: p.name, club: career.player.club, goals: p.seasonAssists, isYou: false });
+  }
+  out.push({
+    name: `${career.player.firstName} ${career.player.lastName}`,
+    club: career.player.club,
+    goals: career.seasonStats.assists,
+    isYou: true,
+  });
+  return out.sort((a, b) => b.goals - a.goals || (a.isYou ? -1 : b.isYou ? 1 : 0));
+}
+
+/** How it worked before the division had players in it. See above. */
+function legacyRace(career: CareerState): Scorer[] {
   const weeks = Math.max(1, career.league.reduce((n, t) => Math.max(n, t.played), 0));
   const totalWeeks = Math.max(weeks, (career.league.length - 1) * 2);
   const through = Math.min(1, weeks / totalWeeks);
@@ -55,7 +110,6 @@ export function goldenBootRace(career: CareerState): Scorer[] {
       const rng = mulberry32(clubNameSeed(t.name) + career.season * 9173);
       const first = RIVAL_FIRST[Math.floor(rng() * RIVAL_FIRST.length)];
       const last = RIVAL_LAST[Math.floor(rng() * RIVAL_LAST.length)];
-      // A strong club's leading scorer gets more of the ball and better service.
       const season = Math.round((4 + (t.strength / 100) * 20) * (0.7 + rng() * 0.7));
       return { name: `${first} ${last}`, club: t.name, goals: Math.round(season * through), isYou: false };
     });

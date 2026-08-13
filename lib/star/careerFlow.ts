@@ -25,6 +25,9 @@ import {
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
+import { resetLeagueSquads } from "./leagueSquads";
+import { kitsOf } from "./kits";
+import { surname } from "./media/grammar";
 
 export const SPONSOR_CATEGORIES = [
   "Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food",
@@ -66,8 +69,11 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, perMatch: 0, active: false })),
     trophies: [],
     form: [],
-    kitPrimary: "#ff0000",
-    kitSecondary: "#ffffff",
+    // Your club's actual colours. These were `#ff0000` and `#ffffff` for every
+    // club in the game — a Manchester City career stored red — and read by
+    // nothing at all. The media graphics build their whole palette off them.
+    kitPrimary: kitsOf(player.club).home.shirt,
+    kitSecondary: kitsOf(player.club).home.trim,
     homeCity: "London",
     seenDilemmas: [],
     ballonDorWins: 0,
@@ -165,6 +171,7 @@ export function creditMatchResult(
   // This week's ten results, yours first. Kept on the career so the league
   // screen can show the round rather than only the table it produced.
   let weekResults = career.results ?? [];
+  let leagueSquads = career.leagueSquads;
   if (kind === "league") {
     league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, stats.homeScore, stats.awayScore);
     const rng = mulberry32(career.season * 1000 + career.week);
@@ -179,10 +186,20 @@ export function creditMatchResult(
     // fixtures page, which converts properly, had it right.
     const scored = stats.homeScore;
     const conceded = stats.awayScore;
+    // Your own goals are real: they were scored by named men in the match you
+    // just played, so the results page carries those names rather than a
+    // simulation of them.
+    const yours = (stats.goalEvents ?? []).map(e => ({
+      m: e.minute, s: surname(e.scorer), ...(e.assist ? { a: surname(e.assist) } : {}),
+    }));
+    // The squads are mutated in place as goals are named, so they come back out
+    // of the call with this week's tallies already on them.
+    const squads = (career.leagueSquads ?? []).map(sq => ({ ...sq, players: sq.players.map(p => ({ ...p })) }));
     const round = playLeagueWeek(league, fixture.week, {
-      club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded,
-    }, rng);
+      club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded, goals: yours,
+    }, rng, squads);
     league = round.league;
+    leagueSquads = squads;
     // Replaying a week replaces it rather than doubling it.
     weekResults = [...weekResults.filter(r => r.week !== fixture.week), ...round.results];
   }
@@ -277,6 +294,7 @@ export function creditMatchResult(
     knockoutMessage,
     league,
     results: weekResults,
+    leagueSquads,
     fixtures: [...fixtures, ...extraFixtures],
     // Match-day money: the wage and bonuses the result produced, an appearance
     // fee if the deal has one, and anything a sponsor objective just paid out.
@@ -411,6 +429,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     league: buildLeague(clubs, career.player.club),
     // Last season's results belong to last season.
     results: [],
+    leagueSquads: resetLeagueSquads(career.leagueSquads ?? []),
     seasonStats: { ...EMPTY_SEASON_STATS },
     energy: 100,
     matchFitness: 85,
@@ -500,13 +519,16 @@ export function simulateMissedFixture(
   const kind = fixture.kind ?? "league";
   let league = career.league;
   let weekResults = career.results ?? [];
+  let leagueSquads = career.leagueSquads;
   if (kind === "league") {
     league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, userScore, oppScore);
+    const squads = (career.leagueSquads ?? []).map(sq => ({ ...sq, players: sq.players.map(p => ({ ...p })) }));
     const round = playLeagueWeek(league, fixture.week, {
       club: career.player.club, opponent: fixture.opponent, home: fixture.home,
       scored: userScore, conceded: oppScore,
-    }, rng);
+    }, rng, squads);
     league = round.league;
+    leagueSquads = squads;
     weekResults = [...weekResults.filter(r => r.week !== fixture.week), ...round.results];
   }
 
@@ -544,6 +566,7 @@ export function simulateMissedFixture(
     ...career,
     league,
     results: weekResults,
+    leagueSquads,
     fixtures: [...fixtures, ...extraFixtures],
     cups,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
