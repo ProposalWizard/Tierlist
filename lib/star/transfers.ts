@@ -1,4 +1,5 @@
 import type { CareerState, Contract } from "./types";
+import { kitsOf } from "./kits";
 import { sortLeague } from "./season";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { assignSquadNumber } from "./recognition";
@@ -166,6 +167,11 @@ export function acceptOffer(career: CareerState, offer: TransferOffer): CareerSt
   return {
     ...career,
     player: { ...career.player, club: offer.club, clubBadge: null },
+    // A different club is a different shirt. Signing for Everton and playing on
+    // in red would be a strange way to be unveiled — and the media graphics
+    // build their palette off these two.
+    kitPrimary: kitsOf(offer.club).home.shirt,
+    kitSecondary: kitsOf(offer.club).home.trim,
     // A different club is a different man in the dugout, and he has never picked
     // you either.
     manager,

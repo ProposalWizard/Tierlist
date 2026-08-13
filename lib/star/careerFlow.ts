@@ -26,6 +26,7 @@ import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { resetLeagueSquads } from "./leagueSquads";
+import { kitsOf } from "./kits";
 import { surname } from "./media/grammar";
 
 export const SPONSOR_CATEGORIES = [
@@ -68,8 +69,11 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, perMatch: 0, active: false })),
     trophies: [],
     form: [],
-    kitPrimary: "#ff0000",
-    kitSecondary: "#ffffff",
+    // Your club's actual colours. These were `#ff0000` and `#ffffff` for every
+    // club in the game — a Manchester City career stored red — and read by
+    // nothing at all. The media graphics build their whole palette off them.
+    kitPrimary: kitsOf(player.club).home.shirt,
+    kitSecondary: kitsOf(player.club).home.trim,
     homeCity: "London",
     seenDilemmas: [],
     ballonDorWins: 0,
