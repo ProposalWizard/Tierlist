@@ -1113,6 +1113,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       return;
     }
 
+    // ── Nobody is on the pitch while the match is somewhere else ──
+    //
+    // The simulation panel sits over the canvas between chances, and the canvas
+    // was still drawing a scenario underneath it — at kick-off the throwaway one
+    // `scenarioRef` was initialised with, and later the frozen aftermath of the
+    // chance you had just taken. Neither is what happens next: press Continue
+    // and a completely different situation is built. So the first thing every
+    // match showed you was a fully drawn chance that was never played, and every
+    // panel after it showed one that already had been.
+    //
+    // Reported as "why does it always start off previewing something that
+    // doesn't ever show". It was visible at all because the panel's own backdrop
+    // was `bg-gray-950/92`, and 92 is not on Tailwind's opacity scale — the class
+    // was silently dropped and the overlay had no background whatsoever.
+    if (phaseRef.current === "sim") return;
+
     // Decorative team-mates (the crosser on a volley/header)
     sc.teammates.forEach((t, i) => {
       footballer(t.x, t.y, R, C.mate, C.mateRim, {
@@ -2432,7 +2448,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
         {/* Simulation overlay — match clock ticking between player chances */}
         {phase === "sim" && simVisible && (
-          <div className="absolute inset-0 bg-gray-950/92 flex flex-col items-center justify-center z-10">
+          <div className="absolute inset-0 bg-gray-950/[0.92] flex flex-col items-center justify-center z-10">
             {/* Match clock */}
             <div className="text-5xl font-black text-white tabular-nums mb-1">{matchMinute}&#39;</div>
             {/* Scoreline */}

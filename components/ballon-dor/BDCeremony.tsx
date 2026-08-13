@@ -284,7 +284,7 @@ export default function BDCeremony({ season, player, rival, onComplete }: Props)
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-700">Positions 25 – 11</p>
             <div className="grid grid-cols-5 gap-1.5">
               {entries.slice(0, 15).map(entry => (
-                <div key={entry.rank} className={`rounded-lg border px-1 py-1.5 text-center ${entry.isPlayer ? 'border-amber-500/30 bg-amber-500/8' : 'border-gray-800 bg-gray-900/60'}`}>
+                <div key={entry.rank} className={`rounded-lg border px-1 py-1.5 text-center ${entry.isPlayer ? 'border-amber-500/30 bg-amber-500/[0.08]' : 'border-gray-800 bg-gray-900/60'}`}>
                   <p className="text-[9px] font-bold text-gray-600">#{entry.rank}</p>
                   <p className={`text-[9px] font-semibold leading-tight truncate ${entry.isPlayer ? 'text-amber-400' : 'text-gray-400'}`}>
                     {entry.name.split(' ').slice(-1)[0]}
@@ -335,7 +335,7 @@ export default function BDCeremony({ season, player, rival, onComplete }: Props)
         <div className="flex-1 px-4 py-6">
           <div className="mx-auto max-w-sm space-y-3">
             {alreadyRevealed.map(entry => (
-              <div key={entry.rank} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${entry.isPlayer ? 'border-amber-500/40 bg-amber-500/8' : 'border-gray-800 bg-gray-900/60'}`}>
+              <div key={entry.rank} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${entry.isPlayer ? 'border-amber-500/40 bg-amber-500/[0.08]' : 'border-gray-800 bg-gray-900/60'}`}>
                 <span className={`text-sm font-black tabular-nums w-8 text-center ${entry.rank === 3 ? 'text-amber-600' : 'text-gray-500'}`}>
                   {entry.rank === 3 ? '🥉' : `#${entry.rank}`}
                 </span>
@@ -450,7 +450,7 @@ export default function BDCeremony({ season, player, rival, onComplete }: Props)
             className={`rounded-2xl border p-5 transition-all duration-700 ${
               revealStep >= 2
                 ? winner.isPlayer
-                  ? 'border-amber-400 bg-amber-400/8'
+                  ? 'border-amber-400 bg-amber-400/[0.08]'
                   : 'border-amber-600/50 bg-amber-900/20'
                 : 'border-gray-800/40 bg-gray-900/30'
             }`}
@@ -484,7 +484,7 @@ export default function BDCeremony({ season, player, rival, onComplete }: Props)
                   </div>
                 )}
                 {winner.isPlayer && (
-                  <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/8 px-4 py-3">
+                  <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3">
                     <p className="text-base font-black text-amber-300">You did it.</p>
                     <p className="mt-1 text-xs text-gray-300 leading-relaxed">
                       Ballon d'Or champion. Your name joins the legends of the game forever.
@@ -526,7 +526,7 @@ export default function BDCeremony({ season, player, rival, onComplete }: Props)
       <div ref={shareRef} className="mx-auto max-w-sm px-4 pt-10 space-y-4">
         <div className={`rounded-2xl border p-6 text-center ${
           playerWon
-            ? 'border-amber-400 bg-amber-400/8'
+            ? 'border-amber-400 bg-amber-400/[0.08]'
             : playerNominated && playerRank <= 3
             ? 'border-gray-600 bg-gray-900'
             : playerNominated
@@ -676,7 +676,7 @@ function InterludeScreen({ year, children }: { year: number; children: React.Rea
 function FinalistMysteryCard({ entry }: { entry: CeremonyEntry }) {
   return (
     <div
-      className={`rounded-2xl border p-4 text-center ${entry.isPlayer ? 'border-amber-500/40 bg-amber-500/8' : 'border-gray-700 bg-gray-900'}`}
+      className={`rounded-2xl border p-4 text-center ${entry.isPlayer ? 'border-amber-500/40 bg-amber-500/[0.08]' : 'border-gray-700 bg-gray-900'}`}
       style={{ animation: 'dropIn 0.5s ease-out' }}
     >
       <div className="w-10 h-10 rounded-full bg-gray-800/60 border border-dashed border-amber-400/30 flex items-center justify-center mx-auto mb-3">
@@ -718,7 +718,7 @@ function BulkCard({ entry }: { entry: CeremonyEntry }) {
 function MidCard({ entry }: { entry: CeremonyEntry }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${entry.isPlayer ? 'border-amber-500/50 bg-amber-500/8' : 'border-gray-700 bg-gray-900'}`}
+      className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${entry.isPlayer ? 'border-amber-500/50 bg-amber-500/[0.08]' : 'border-gray-700 bg-gray-900'}`}
       style={{ animation: 'slideUp 0.5s ease-out' }}
     >
       <div className="w-8 text-center shrink-0">
@@ -747,7 +747,7 @@ function SpotlightCard({ entry }: { entry: CeremonyEntry }) {
   const rankEmoji = entry.rank === 3 ? '🥉' : '';
   return (
     <div
-      className={`rounded-2xl border p-5 ${entry.isPlayer ? 'border-amber-400/60 bg-amber-400/8' : 'border-gray-600 bg-gray-900'}`}
+      className={`rounded-2xl border p-5 ${entry.isPlayer ? 'border-amber-400/60 bg-amber-400/[0.08]' : 'border-gray-600 bg-gray-900'}`}
       style={{ animation: 'dropIn 0.6s ease-out' }}
     >
       <div className="flex items-start justify-between mb-4">

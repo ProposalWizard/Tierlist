@@ -1104,7 +1104,7 @@ function SquadView({ teammates, playerName, playerPosition, playerOverall, clubI
                 const hasStats = tracked && tracked.appearances > 0;
 
                 return (
-                  <div key={p.name} className={`rounded-xl border p-3 ${isPlayer ? 'border-amber-500/40 bg-amber-500/8' : 'border-gray-800 bg-gray-900'}`}>
+                  <div key={p.name} className={`rounded-xl border p-3 ${isPlayer ? 'border-amber-500/40 bg-amber-500/[0.08]' : 'border-gray-800 bg-gray-900'}`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isPlayer ? 'bg-amber-500' : posColor[pos]}`}>
                         <span className="text-[9px] font-black text-white">{posLabel[pos]}</span>

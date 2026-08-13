@@ -575,7 +575,7 @@ function TransferScreen({ career, offers, onAccept, onStay, onBackToHub }: Trans
               onClick={() => setSelectedOffer(prev => prev?.clubId === offer.clubId ? null : offer)}
               className={`w-full rounded-xl border p-4 text-left transition ${
                 selectedOffer?.clubId === offer.clubId
-                  ? 'border-amber-500/60 bg-amber-500/8'
+                  ? 'border-amber-500/60 bg-amber-500/[0.08]'
                   : 'border-gray-700 bg-gray-900 hover:border-gray-600'
               }`}
             >
