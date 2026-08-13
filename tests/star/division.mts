@@ -3,6 +3,8 @@ import { buildLeagueSquad, nameGoals, resetLeagueSquads, type RosterRow } from "
 import { goldenBootRace, assistRace } from "../../lib/star/recognition";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import type { CareerState, LeagueSquad } from "../../lib/star/types";
+import { shouldUpgradeSquad } from "../../lib/star/realSquad";
+import { generateSquad } from "../../lib/star/squadData";
 
 /**
  * EVERY GOAL IN THE DIVISION BELONGS TO SOMEBODY.
@@ -196,6 +198,28 @@ function roster(club: string, n = 26): RosterRow[] {
   // The save stays small.
   const kb = JSON.stringify(career).length / 1024;
   check(kb < 400, `six weeks in, the career is ${kb.toFixed(0)} KB`);
+}
+
+// ── A generated squad always upgrades to the real one ───────────────────────
+//
+// The rule used to be "…and only if nothing has been earned on it", which meant
+// a career that had played two matches with its invented eleven was locked out
+// of real players for the rest of the save. Reported as exactly that: Liverpool
+// and Man United on real squads, Chelsea permanently on made-up ones.
+{
+  const invented = generateSquad("chelsea");
+  check(shouldUpgradeSquad(invented), "an invented squad is replaced");
+
+  const played = invented.map((p, i) => ({ ...p, careerGoals: i === 3 ? 11 : 0, seasonGoals: i === 3 ? 4 : 0 }));
+  check(shouldUpgradeSquad(played), "…even after the invented team-mates have scored");
+
+  const real = invented.map((p, i) => ({ ...p, sofifaId: String(1000 + i) }));
+  check(!shouldUpgradeSquad(real), "a real squad is left alone");
+
+  const mixed = real.map((p, i) => (i === 0 ? { ...p, sofifaId: undefined } : p));
+  check(!shouldUpgradeSquad(mixed), "…and so is one that is mostly real");
+
+  check(shouldUpgradeSquad([]), "an empty squad is filled");
 }
 
 if (problems.length) {

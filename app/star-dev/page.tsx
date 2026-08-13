@@ -12,7 +12,7 @@ import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/tran
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
-import { fetchRealSquad } from "@/lib/star/realSquad";
+import { fetchRealSquad, shouldUpgradeSquad } from "@/lib/star/realSquad";
 import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
@@ -67,20 +67,13 @@ export default function StarDevPage() {
     // ── An existing career gets the real dressing room too ──
     //
     // Careers created before the roster fetch have a generated squad — or, if
-    // they predate squads entirely, one backfilled on load. Either way the
-    // names are invented, and the club they play for is a real club whose real
-    // squad is one request away.
-    //
-    // Only when nothing has been earned on it. A generated team-mate who has
-    // scored eleven goals across two seasons is a record of matches you played,
-    // and replacing him would quietly delete them; that squad is left alone and
-    // upgrades at the next transfer.
-    const squad = saved.squad ?? [];
-    const isReal = squad.some(p => p.sofifaId);
-    const hasHistory = squad.some(p => p.careerGoals > 0 || p.careerAssists > 0);
-    if (!isReal && !hasHistory) {
+    // they predate squads entirely, one backfilled on load. Either way the names
+    // are invented, and the club they play for is a real club whose real squad
+    // is one request away. See shouldUpgradeSquad for what the rule is and what
+    // it used to be.
+    if (shouldUpgradeSquad(saved.squad ?? [])) {
       fetchRealSquad(saved.player.club).then((real) => {
-        setCareer(c => (c && c.player.club === saved.player.club && !(c.squad ?? []).some(p => p.sofifaId)
+        setCareer(c => (c && c.player.club === saved.player.club && shouldUpgradeSquad(c.squad ?? [])
           ? { ...c, squad: real } : c));
       });
     }
