@@ -14,23 +14,86 @@ export default function LeagueScreen({ career }: Props) {
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
 
-  const [view, setView] = useState<"table" | "fixtures" | "cups" | "squad">("table");
+  const [view, setView] = useState<"table" | "results" | "fixtures" | "cups" | "squad">("table");
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
 
+  // ── The round, not just the table it produced ──
+  //
+  // Every league week is ten games and the game only ever showed you one of
+  // them. `career.results` is the whole division's week, yours included.
+  const results = career.results ?? [];
+  const weeksPlayed = Array.from(new Set(results.map(r => r.week))).sort((a, b) => a - b);
+  const [weekIdx, setWeekIdx] = useState<number | null>(null);
+  const shownWeek = weekIdx ?? weeksPlayed[weeksPlayed.length - 1] ?? 0;
+  const round = results.filter(r => r.week === shownWeek)
+    .sort((a, b) => Number(b.home === career.player.club || b.away === career.player.club)
+      - Number(a.home === career.player.club || a.away === career.player.club));
+  const canGo = (d: number) => weeksPlayed.includes(shownWeek + d);
+
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-4 gap-1 mb-2">
-        {(["table", "fixtures", "cups", "squad"] as const).map((v) => (
+      <div className="grid grid-cols-5 gap-1 mb-2">
+        {(["table", "results", "fixtures", "cups", "squad"] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`py-1.5 rounded-t-lg font-black text-xs uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
+            className={`py-1.5 rounded-t-lg font-black text-[10px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
           >
             {v}
           </button>
         ))}
       </div>
+
+      {view === "results" && (
+        <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
+          <div className="flex items-center gap-2 bg-gray-800 px-2 py-1.5 border-b border-black/50">
+            <button
+              onClick={() => setWeekIdx(shownWeek - 1)}
+              disabled={!canGo(-1)}
+              aria-label="Previous gameweek"
+              className="grid h-6 w-6 place-items-center rounded bg-white/10 text-xs font-black text-white disabled:opacity-30"
+            >
+              ←
+            </button>
+            <div className="flex-1 text-center text-[10px] font-black uppercase tracking-widest text-amber-300">
+              {round.length > 0 ? `Matchweek ${shownWeek}` : "No results yet"}
+            </div>
+            <button
+              onClick={() => setWeekIdx(shownWeek + 1)}
+              disabled={!canGo(1)}
+              aria-label="Next gameweek"
+              className="grid h-6 w-6 place-items-center rounded bg-white/10 text-xs font-black text-white disabled:opacity-30"
+            >
+              →
+            </button>
+          </div>
+
+          {round.length === 0 && (
+            <div className="p-3 text-xs font-bold text-gray-200">
+              Play a league match and this week&apos;s ten results will appear here.
+            </div>
+          )}
+
+          {round.map((r, i) => {
+            const yours = r.home === career.player.club || r.away === career.player.club;
+            return (
+              <div
+                key={`${r.home}-${r.away}`}
+                className={`grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-1.5 text-[11px] font-bold ${
+                  yours ? "bg-emerald-600 text-white"
+                    : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
+              >
+                <span className={`truncate text-right ${r.hs > r.as ? "font-black" : ""}`}>{r.home}</span>
+                <span className="rounded bg-black/35 px-1.5 py-0.5 font-black tabular-nums">
+                  {r.hs}-{r.as}
+                </span>
+                <span className={`truncate ${r.as > r.hs ? "font-black" : ""}`}>{r.away}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {view === "table" && (
         <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
