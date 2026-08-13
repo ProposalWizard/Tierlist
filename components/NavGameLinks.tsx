@@ -7,6 +7,7 @@ const LIVE_GAMES = [
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
   { name: "Rankings", href: "/tierlists" },
+  { name: "Squad Builder", href: "/lineups" },
 ];
 
 export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {

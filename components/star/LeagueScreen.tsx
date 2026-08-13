@@ -4,7 +4,6 @@ import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
-import LineupBuilder from "./LineupBuilder";
 
 interface Props {
   career: CareerState;
@@ -15,7 +14,7 @@ export default function LeagueScreen({ career }: Props) {
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
 
-  const [view, setView] = useState<"table" | "results" | "fixtures" | "cups" | "squad" | "xi">("table");
+  const [view, setView] = useState<"table" | "results" | "fixtures" | "cups" | "squad">("table");
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
 
@@ -34,19 +33,17 @@ export default function LeagueScreen({ career }: Props) {
 
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-6 gap-1 mb-2">
-        {(["table", "results", "fixtures", "cups", "squad", "xi"] as const).map((v) => (
+      <div className="grid grid-cols-5 gap-1 mb-2">
+        {(["table", "results", "fixtures", "cups", "squad"] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`py-1.5 rounded-t-lg font-black text-[9px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
+            className={`py-1.5 rounded-t-lg font-black text-[10px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
           >
             {v}
           </button>
         ))}
       </div>
-
-      {view === "xi" && <LineupBuilder career={career} />}
 
       {view === "results" && (
         <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
