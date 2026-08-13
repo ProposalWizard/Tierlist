@@ -146,6 +146,47 @@ const WANTED = [
   check(fitness("LB", "RB") > fitness("LB", "ST"), "a full-back covers the other flank first");
 }
 
+// ── Saved per club, manager and all ────────────────────────────────────────
+{
+  const store = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, String(v)); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+  };
+  const { loadLineup, saveLineup, clearLineup } = await import("../../lib/star/lineupStore");
+
+  check(loadLineup("Arsenal") === null, "a club you have never opened has nothing saved");
+
+  saveLineup("Arsenal", { formation: "352", xi: ["a", "b", null], manager: "Mikel Arteta" });
+  const a = loadLineup("Arsenal")!;
+  check(a.formation === "352", `the shape comes back (${a.formation})`);
+  check(a.xi.length === 3 && a.xi[2] === null, "…and the side, holes included");
+  check(a.manager === "Mikel Arteta", `…and the manager (${a.manager})`);
+
+  // Two clubs do not tread on each other.
+  saveLineup("Everton", { formation: "442", xi: ["x"], manager: "David Moyes" });
+  check(loadLineup("Arsenal")!.manager === "Mikel Arteta", "one club's manager is not another's");
+  check(loadLineup("Everton")!.formation === "442", "and neither is his shape");
+
+  // A lineup saved before managers existed still loads.
+  store.set("star-lineups-v1", JSON.stringify({ Chelsea: { formation: "433", xi: ["p"] } }));
+  const old = loadLineup("Chelsea")!;
+  check(old.formation === "433" && old.manager === "", "a lineup saved before managers loads with none");
+
+  // Junk in the box is not a crash.
+  store.set("star-lineups-v1", "{{{not json");
+  check(loadLineup("Arsenal") === null, "a corrupted store reads as empty rather than throwing");
+  store.set("star-lineups-v1", JSON.stringify({ Arsenal: { formation: "433" } }));
+  check(loadLineup("Arsenal") === null, "…and so does a row with no side in it");
+
+  store.clear();
+  saveLineup("Leeds United", { formation: "433", xi: ["q"], manager: "X" });
+  clearLineup("Leeds United");
+  check(loadLineup("Leeds United") === null, "and it can be cleared");
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems.slice(0, 15)) console.error("  ✗ " + p);
