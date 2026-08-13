@@ -311,8 +311,17 @@ export type GraphicSpec =
       homeScorers?: string[]; awayScorers?: string[]; scorers?: string[];
     }
   | { type: "breaking"; strapline: string; headline: string }
-  | { type: "playerCard"; name: string; number: number; position: string; rating: number; rows: GraphicRow[] }
-  | { type: "statLine"; title: string; rows: GraphicRow[] }
+  /**
+   * `context` is what the numbers are FROM — "v Crystal Palace (H)".
+   *
+   * Without it a card is a bare number under a name, and the post above it is
+   * usually about a run: "Mikey Vass has 4 assists in his last 4" over a card
+   * reading "Assists 3" looks like the graphic disagreeing with the sentence.
+   * It does not — the sentence is the run and the card is today — but nothing
+   * on screen said so. Absent on a career moment, which has no match to be from.
+   */
+  | { type: "playerCard"; name: string; number: number; position: string; rating: number; rows: GraphicRow[]; context?: string }
+  | { type: "statLine"; title: string; rows: GraphicRow[]; context?: string }
   | { type: "tableSnippet"; rows: GraphicTableRow[]; highlight: string }
   | { type: "topScorers"; title: string; rows: GraphicRow[]; highlight: string }
   | { type: "teamOfTheWeek"; formation: string; players: TotwSlot[] }

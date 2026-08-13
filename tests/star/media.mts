@@ -399,6 +399,33 @@ function season(seed: number, weeks = 20): CareerState {
   check(wrongSide === 0, `every scorer is listed under his own team (${wrongSide} were not)`);
 }
 
+// ── A stat card says which match it is from ─────────────────────────────────
+//
+// Every card in the feed is TODAY's number and the post above it is usually
+// about a run, so "Mikey Vass has 4 assists in his last 4" sat over a card
+// reading "Assists 3" and read as the graphic contradicting the sentence.
+{
+  let cards = 0, unlabelled = 0, wrongVenue = 0;
+  let c = newCareer(88);
+  for (let w = 1; w <= 24; w++) {
+    const fixture = c.fixtures.find(f => !f.played);
+    if (!fixture) break;
+    const wasHome = fixture.home, opp = fixture.opponent;
+    c = playOne(c, 88_000 + w);
+    const cyc = mediaOf(c).lastCycleId;
+    for (const p of mediaOf(c).posts.filter(x => x.id.startsWith(cyc))) {
+      const g = p.graphic;
+      if (!g || (g.type !== "statLine" && g.type !== "playerCard")) continue;
+      cards += 1;
+      if (!g.context) { unlabelled += 1; continue; }
+      if (g.context !== `v ${opp} (${wasHome ? "H" : "A"})`) wrongVenue += 1;
+    }
+  }
+  check(cards > 5, `stat cards were produced (${cards})`);
+  check(unlabelled === 0, `every stat card says which match it is from (${unlabelled} did not)`);
+  check(wrongVenue === 0, `…and names the right opponent and the right ground (${wrongVenue} wrong)`);
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log("  ✗ " + p);

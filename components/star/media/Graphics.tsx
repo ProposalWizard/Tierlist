@@ -87,7 +87,9 @@ function PlayerCard({ s }: { s: Extract<GraphicSpec, { type: "playerCard" }> }) 
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-black text-white">{s.name}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-white/70">{s.position}</div>
+          <div className="truncate text-[10px] font-bold uppercase tracking-wider text-white/70">
+            {s.position}{s.context ? ` · ${s.context}` : ""}
+          </div>
         </div>
         <div className={`text-2xl font-black tabular-nums ${tone}`}>{s.rating.toFixed(1)}</div>
       </div>
@@ -106,8 +108,15 @@ function PlayerCard({ s }: { s: Extract<GraphicSpec, { type: "playerCard" }> }) 
 function StatLine({ s }: { s: Extract<GraphicSpec, { type: "statLine" }> }) {
   return (
     <div className={PANEL}>
-      <div className="bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-white/85">
-        {s.title}
+      <div className="flex items-baseline justify-between gap-2 bg-white/10 px-3 py-1">
+        <span className="truncate text-[9px] font-black uppercase tracking-[0.2em] text-white/85">
+          {s.title}
+        </span>
+        {s.context && (
+          <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-white/70">
+            {s.context}
+          </span>
+        )}
       </div>
       <div className="divide-y divide-white/10">
         {s.rows.map(r => (

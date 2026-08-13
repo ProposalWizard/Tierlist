@@ -94,7 +94,7 @@ export default function BDLegacy({ career, onNewCareer }: Props) {
           </div>
 
           {legacy.bdoWinYears.length > 0 && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-center">
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.08] px-4 py-3 text-center">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-400 mb-1">Ballon d'Or Wins</p>
               <p className="text-sm font-black text-amber-300">{legacy.bdoWinYears.join(' · ')}</p>
             </div>

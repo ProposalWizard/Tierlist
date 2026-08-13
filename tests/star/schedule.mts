@@ -1,4 +1,5 @@
 import { buildSeasonFixtures, buildFixtures, playLeagueWeek, buildLeague, mulberry32, updateLeagueWithUserResult } from "../../lib/star/season";
+import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 
 /**
  * A real fixture list.
@@ -125,6 +126,49 @@ const key = (a: string, b: string) => [a, b].sort().join(" v ");
       seen.add(r.home); seen.add(r.away);
     }
     check(dup === 0 && seen.size === 20, `week ${w}: twenty clubs, one game each`);
+  }
+}
+
+// ── An away win is an away win on the results page too ───────────────────────
+//
+// `stats.homeScore` is YOUR score whichever ground it was played on — the names
+// are a leftover, and everything else in the codebase reads them that way.
+// Reading them as home and away flipped every away scoreline: a 2-1 win at
+// Bournemouth was filed as "AFC Bournemouth 2-1 Liverpool" on the results page
+// while the fixtures page, which converts properly, had it right.
+{
+  const player = {
+    firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
+    club: "Liverpool", nationality: "England",
+  } as never;
+  const career = makeInitialCareer(player, CLUBS);
+
+  const statsFor = (scored: number, conceded: number) => ({
+    // finaliseMatch writes these two straight from the user's own tally.
+    homeScore: scored, awayScore: conceded,
+    chances: 2, goals: 1, assists: 1, passes: 10, rating: 7.5, starMan: false,
+    bossChange: 0, teamChange: 0, fansChange: 0, wage: 0, goalBonus: 0,
+    sponsorPay: 0, totalCash: 0, goalEvents: [],
+  }) as never;
+
+  for (const wantHome of [true, false]) {
+    const fixture = career.fixtures.find(f => f.home === wantHome)!;
+    const after = creditMatchResult(career, fixture, statsFor(2, 1)).career;
+    const mine = (after.results ?? []).find(r => r.home === "Liverpool" || r.away === "Liverpool")!;
+    const venue = wantHome ? "at home" : "away";
+    check(mine !== undefined, `${venue}: your game is on the results page`);
+    if (!mine) continue;
+    // You won 2-1. Whichever end you were at, you have two and they have one.
+    const yours = mine.home === "Liverpool" ? mine.hs : mine.as;
+    const theirs = mine.home === "Liverpool" ? mine.as : mine.hs;
+    check(yours === 2 && theirs === 1,
+      `${venue}: a 2-1 win reads as a 2-1 win (${mine.home} ${mine.hs}-${mine.as} ${mine.away})`);
+    // …and it agrees with the fixture list, which is the other place it shows.
+    const f = after.fixtures.find(x => x.week === fixture.week)!;
+    const fYours = f.home ? f.homeScore : f.awayScore;
+    const fTheirs = f.home ? f.awayScore : f.homeScore;
+    check(fYours === yours && fTheirs === theirs,
+      `${venue}: the results page and the fixtures page agree (${fYours}-${fTheirs} vs ${yours}-${theirs})`);
   }
 }
 

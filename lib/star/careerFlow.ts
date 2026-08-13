@@ -168,9 +168,17 @@ export function creditMatchResult(
   if (kind === "league") {
     league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, stats.homeScore, stats.awayScore);
     const rng = mulberry32(career.season * 1000 + career.week);
-    // Reported from your point of view, so unpick it back into home and away.
-    const scored = fixture.home ? stats.homeScore : stats.awayScore;
-    const conceded = fixture.home ? stats.awayScore : stats.homeScore;
+    // ── homeScore is YOURS, not the home team's ──
+    //
+    // `finaliseMatch` writes `homeScore: userScore` whichever ground it was
+    // played on — the names are a leftover, and the whole codebase reads them as
+    // "yours" and "theirs" (see the fixture list two blocks down, which converts
+    // them the other way for exactly this reason). Reading them as home and away
+    // swapped the scoreline on every away game: a 2-1 win at Bournemouth was
+    // filed as "AFC Bournemouth 2-1 Liverpool" on the results page while the
+    // fixtures page, which converts properly, had it right.
+    const scored = stats.homeScore;
+    const conceded = stats.awayScore;
     const round = playLeagueWeek(league, fixture.week, {
       club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded,
     }, rng);
