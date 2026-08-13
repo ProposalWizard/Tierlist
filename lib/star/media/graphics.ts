@@ -69,6 +69,7 @@ export function buildGraphic(
         position: career.player.position,
         rating: r?.you.rating ?? 7,
         rows,
+        context: matchContext(r),
       };
     }
 
@@ -78,7 +79,12 @@ export function buildGraphic(
       // Whose card is this? The event knows — a club unbeaten run headed with
       // the player's name reads as though he personally did not concede.
       const aboutYou = e.subject.kind === "you" || e.subject.kind === "teammate";
-      return { type: "statLine", title: aboutYou ? String(f.player ?? you) : String(f.club ?? you), rows };
+      return {
+        type: "statLine",
+        title: aboutYou ? String(f.player ?? you) : String(f.club ?? you),
+        rows,
+        context: matchContext(r),
+      };
     }
 
     case "tableSnippet": {
@@ -164,6 +170,18 @@ export function buildGraphic(
     }
   }
   return undefined;
+}
+
+/**
+ * Which match these numbers came out of. "v Crystal Palace (H)".
+ *
+ * Every stat card in the feed is TODAY's stat, and the post above it is usually
+ * about a run — so "4 assists in his last 4" sat over a card reading "Assists 3"
+ * and read as the graphic contradicting the sentence. One line fixes it.
+ */
+function matchContext(r: MatchRecord | null): string | undefined {
+  if (!r) return undefined;
+  return `v ${r.opponent} (${r.home ? "H" : "A"})`;
 }
 
 function statRows(e: FootballEvent, r: MatchRecord | null, _memory: StoryMemory) {

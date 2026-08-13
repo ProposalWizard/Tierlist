@@ -34,6 +34,7 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, creatorOf } from "@/lib/star/lineup";
+import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
@@ -78,47 +79,12 @@ const FALLBACK_CAREER = {
   relationships: { sponsors: 0 },
 } as unknown as CareerState;
 
-interface CreditDelta {
-  shots: number; goals: number; passes: number; passesCompleted: number; chances: number; assists: number;
-}
-const NO_CREDIT: CreditDelta = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
-
 /**
  * The shortest drag that counts as aiming at all, as a fraction of the canvas
  * height. About a thumb's width of slop — below it, you pressed the ball and
  * your finger moved, which is not a shot.
  */
 const MIN_PULL = 0.04;
-
-// Credit a resolved chance from WHAT ACTUALLY HAPPENED — who struck the resolving
-// shot and whether it scored — never from the scenario's SHAPE. That distinction
-// has now been the root of two separate bugs.
-//
-// The first: keying off "is this a passing scenario" dropped goals on the floor,
-// because the physics lets you shoot straight at goal in a cutback or a cross
-// without ever finding your man — ball in the net, zero credit.
-//
-// The second, and the reason this reads off the ball now: "does this scenario
-// have a finisher attached" USED to mean "you were setting somebody up". Since
-// every situation with the goal in view has a finisher attached, it came to mean
-// nothing at all — so every shot you took and missed was filed as a chance
-// created, and a match could reach half time reading SHOTS 0 after seven of them.
-//
-// Exactly one of shots/passes/chances is incremented per call, which the
-// "Chance N/N" progress counter relies on.
-function creditChance(res: Outcome, ctx: { youShot: boolean; receiverShot: boolean; isSimplePass: boolean }): CreditDelta {
-  const isGoal = OUTCOME_TEXT[res].kind === "goal";
-  // A plain pass that reached its man and stopped there.
-  if (res === "delivered") return { ...NO_CREDIT, passes: 1, passesCompleted: 1 };
-  // You struck it at goal — decided at YOUR contact, and it stays your shot
-  // whatever happens to it afterwards.
-  if (ctx.youShot) return { ...NO_CREDIT, shots: 1, goals: isGoal ? 1 : 0 };
-  // You found a man and he had the shot.
-  if (ctx.receiverShot) return { ...NO_CREDIT, chances: 1, assists: isGoal ? 1 : 0 };
-  // A ball played to nobody.
-  if (ctx.isSimplePass) return { ...NO_CREDIT, passes: 1 };
-  return { ...NO_CREDIT, shots: 1 };
-}
 
 // --- Knowitball match identity: "night match under floodlights" ---
 // Deep cool pitch greens + floodlight wash, near-black glass chrome, gold accent.
@@ -1041,13 +1007,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // out of thin air halfway through a highlight. He is standing there the
     // whole time; you should be able to see him and aim for him. There is no
     // box to lurk in when the goal is not part of the situation.
-    if (goalInView(sc.kind)) {
-      footballer(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim, {
-        pose: poseFor("follower", sc.follower.x, sc.follower.y),
-        phase: runPhase(sc.follower.x),
-      });
-    }
-
     // ── The run ──
     //
     // Drawn instead of the scenario: you, the men in your way, and the line you
@@ -1128,6 +1087,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // was `bg-gray-950/92`, and 92 is not on Tailwind's opacity scale — the class
     // was silently dropped and the overlay had no background whatsoever.
     if (phaseRef.current === "sim") return;
+
+    // The poacher. He used to be drawn ABOVE the run, which meant a dribble —
+    // built with no team-mates in it on purpose, because the question it asks is
+    // whether YOU can beat these men — had one lone blue shirt standing in it,
+    // left over from the scenario before. Same leak as the panel above: a figure
+    // from a situation that is not the one on screen.
+    if (goalInView(sc.kind)) {
+      footballer(sc.follower.x, sc.follower.y, R, C.mate, C.mateRim, {
+        pose: poseFor("follower", sc.follower.x, sc.follower.y),
+        phase: runPhase(sc.follower.x),
+      });
+    }
 
     // Decorative team-mates (the crosser on a volley/header)
     sc.teammates.forEach((t, i) => {
@@ -1845,6 +1816,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           isUserGoal: true, how, distance: Math.round(distance),
         });
         if (assister) pushLine(`Assist: ${assister.shortName}`);
+      } else {
+        // The scoreline has gone up and neither branch claimed it. It is still a
+        // goal, and a goal with nobody's name on it is a goal missing from the
+        // match report, the scoresheet and the squad stats. Yours: nobody else
+        // was involved, or one of the branches above would have fired.
+        goalEventsRef.current.push({
+          minute: matchMinuteRef.current, scorer: playerName,
+          isUserGoal: true, how, distance: Math.round(distance),
+        });
       }
     }
 

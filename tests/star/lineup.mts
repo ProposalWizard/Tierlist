@@ -8,6 +8,7 @@ import { generateSquad } from "../../lib/star/squadData";
 import { creditMatchResult, makeInitialCareer } from "../../lib/star/careerFlow";
 import type { SquadPlayer, GoalEvent } from "../../lib/star/types";
 import { commentaryBuildup, commentaryStrike, commentaryResult } from "../../lib/star/matchCommentary";
+import { creditChance } from "../../lib/star/credit";
 
 /**
  * Who did what.
@@ -283,6 +284,41 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
     chain: true, receiverReached: true, roleLabel: "the attacking midfielder",
   });
   check(!/[.!?] [a-z]/.test(roleLine), `sentences start with a capital ("${roleLine}")`);
+}
+
+// ── Every goal on the scoreline has a name against it ───────────────────────
+//
+// `creditChance` returned zero goals on its last two branches, so a ball that
+// went in without you having struck it AT goal and without a team-mate touching
+// it — a cross that curls in, a pass deflected past the keeper — put the score
+// up and credited nobody. A 4-0 in the feed listed three scorers.
+{
+  const OUTCOMES = ["goal", "rebound"] as const;
+  for (const res of OUTCOMES) {
+    for (const ctx of [
+      { youShot: true, receiverShot: false, isSimplePass: false },
+      { youShot: false, receiverShot: true, isSimplePass: false },
+      { youShot: false, receiverShot: false, isSimplePass: true },
+      { youShot: false, receiverShot: false, isSimplePass: false },
+    ]) {
+      const d = creditChance(res, ctx);
+      // Somebody is credited: you scored it, or you made it.
+      check(d.goals + d.assists === 1,
+        `${res} ${JSON.stringify(ctx)}: exactly one of goal/assist is credited (g${d.goals} a${d.assists})`);
+    }
+  }
+  // And nothing that is not a goal ever credits one.
+  for (const res of ["saved", "wide", "delivered", "tackled", "over", "post"] as const) {
+    for (const ctx of [
+      { youShot: true, receiverShot: false, isSimplePass: false },
+      { youShot: false, receiverShot: true, isSimplePass: false },
+      { youShot: false, receiverShot: false, isSimplePass: true },
+      { youShot: false, receiverShot: false, isSimplePass: false },
+    ]) {
+      const d = creditChance(res, ctx);
+      check(d.goals === 0 && d.assists === 0, `${res}: nothing is credited for a chance that did not go in`);
+    }
+  }
 }
 
 if (problems.length) {
