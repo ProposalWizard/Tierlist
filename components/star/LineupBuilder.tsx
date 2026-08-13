@@ -91,10 +91,19 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [club, squad.length]);
 
-  // Save whenever it settles.
+  // ── Save whenever it settles, and SAY so ──
+  //
+  // There is no save button because there is nothing to press it for: every
+  // change is written the moment you make it. But a screen that saves silently
+  // is indistinguishable from one that does not save at all — "there's no save
+  // button so I assume once it's done it saves every change" — so it says.
+  const [saved, setSaved] = useState(false);
   useEffect(() => {
     if (xi.length === 0) return;
     saveLineup(club, { formation: formationId, xi });
+    setSaved(true);
+    const t = window.setTimeout(() => setSaved(false), 1400);
+    return () => window.clearTimeout(t);
   }, [club, formationId, xi]);
 
   const byId = useMemo(() => new Map(squad.map(p => [p.id, p])), [squad]);
@@ -226,8 +235,12 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
             })}
           </div>
 
-          {/* ── The bench, as a grid so it does not need scrolling ── */}
-          <div className="shrink-0 rounded-lg border border-gray-700 bg-gray-900 p-1">
+          {/* ── The rest of the squad ──
+              A grid rather than a list, so three fit across where one used to.
+              A full Premier League register is 25-30 men, which is fifteen-odd
+              here — more than a phone screen holds beside a pitch, so this box
+              scrolls inside itself while the page still does not. */}
+          <div className="max-h-[27%] shrink-0 overflow-y-auto rounded-lg border border-gray-700 bg-gray-900 p-1">
             <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
               {bench.map(p => (
                 <button
@@ -260,11 +273,15 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
             </div>
           </div>
 
-          <p className="shrink-0 text-center text-[10px] font-bold text-white/60">
-            {held
-              ? "Tap where he goes — a shirt, or a substitute to swap him for."
-              : "Tap a player, then tap another to swap. Amber means out of position."}
-          </p>
+          <div className="flex shrink-0 items-center justify-between gap-2 text-[10px] font-bold">
+            <span className="text-white/55">{squad.length} in the squad · {bench.length} on the bench</span>
+            <span className="min-w-0 flex-1 truncate text-center text-white/60">
+              {held ? "Tap where he goes" : "Tap a player, then another, to swap"}
+            </span>
+            <span className={`transition-opacity ${saved ? "text-emerald-400 opacity-100" : "opacity-0"}`}>
+              Saved ✓
+            </span>
+          </div>
         </>
       )}
     </div>

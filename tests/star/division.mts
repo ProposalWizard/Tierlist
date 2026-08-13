@@ -70,6 +70,31 @@ function roster(club: string, n = 26): RosterRow[] {
   // A thin club is topped up rather than fielding fifteen men.
   const thin = buildLeagueSquad("Thin FC", roster("Thin FC", 9));
   check(thin.players.length === 20, `a nine-man roster is topped up to twenty (${thin.players.length})`);
+
+  // ── …and the squad builder wants the whole register ──
+  //
+  // The twenty is what a CAREER keeps: it exists to answer "who scored?", and a
+  // club's twenty-fifth choice never will. Picking a side is a different
+  // question, and a side is picked from everybody on the books — reported as
+  // "it's not showing everyone in a squad, only 9 players on the bench".
+  for (const club of ["Arsenal", "Chelsea"]) {
+    const full = buildLeagueSquad(club, roster(club, 28), true);
+    const lean = buildLeagueSquad(club, roster(club, 28));
+    check(lean.players.length === 20, `${club}: a career keeps twenty (${lean.players.length})`);
+    check(full.players.length === 28, `${club}: the builder keeps all 28 (${full.players.length})`);
+    check(new Set(full.players.map(p => p.id)).size === 28, `${club}: nobody is duplicated in the full squad`);
+    // The first twenty are the same men in the same order — the shape is filled
+    // before the leftovers are appended.
+    check(full.players.slice(0, 20).every((p, i) => p.id === lean.players[i].id),
+      `${club}: the side and the bench come first, the rest after`);
+    // And everybody has a position we can put on a shirt.
+    const VALID = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
+    check(full.players.every(p => VALID.includes(p.position)),
+      `${club}: everybody has a position the pitch understands`);
+  }
+  // A club with nothing in the database is not padded to a fictional 28.
+  check(buildLeagueSquad("Nowhere FC", [], true).players.length === 20,
+    "an empty club still falls back to a generated twenty");
 }
 
 // ── Goals go to the men who would score them ────────────────────────────────
