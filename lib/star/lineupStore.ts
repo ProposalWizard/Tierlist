@@ -18,6 +18,8 @@ export interface SavedLineup {
   formation: string;
   /** Eleven entries, one per slot, in the formation's own order. */
   xi: (string | null)[];
+  /** Whoever is in the dugout. Typed in, because the database has no managers. */
+  manager?: string;
 }
 
 type Store = Record<string, SavedLineup>;
@@ -36,7 +38,11 @@ function read(): Store {
 export function loadLineup(club: string): SavedLineup | null {
   const saved = read()[club];
   if (!saved || !Array.isArray(saved.xi)) return null;
-  return { formation: saved.formation || DEFAULT_FORMATION, xi: saved.xi };
+  return {
+    formation: saved.formation || DEFAULT_FORMATION,
+    xi: saved.xi,
+    manager: typeof saved.manager === "string" ? saved.manager : "",
+  };
 }
 
 export function saveLineup(club: string, lineup: SavedLineup): void {

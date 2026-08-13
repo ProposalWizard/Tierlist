@@ -34,7 +34,9 @@ export default function LineupsPage() {
         if (!alive) return;
         if (names.length === 0) { setError("No 2025/26 Premier League clubs found in the database."); return; }
         setClubs(names);
-        const sq = await fetchLeagueSquads(names);
+        // The WHOLE squad, not the twenty a career keeps: here you are picking
+        // a side, and a side is picked from everybody on the books.
+        const sq = await fetchLeagueSquads(names, 2026, true);
         if (alive) setSquads(sq);
       } catch {
         if (alive) setError("Could not load the clubs. Check your connection and try again.");

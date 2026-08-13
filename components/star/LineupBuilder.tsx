@@ -34,11 +34,28 @@ interface Props {
   initialClub?: string;
 }
 
+/**
+ * A team sheet, and the club it belongs to, in one piece of state.
+ *
+ * Kept together on purpose. They were four separate `useState`s, and switching
+ * club ran the load effect and the save effect in the same commit: the loader
+ * called setXi, which does not apply until the next render, so the saver then
+ * wrote the PREVIOUS club's eleven under the NEW club's key. A second, correct
+ * write followed a moment later and papered over it, but only by luck. One
+ * object cannot disagree with itself.
+ */
+interface Sheet {
+  club: string;
+  formationId: string;
+  xi: (string | null)[];
+  manager: string;
+}
+
 export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
   const [club, setClub] = useState(initialClub ?? clubs[0] ?? "");
-  const [formationId, setFormationId] = useState(DEFAULT_FORMATION);
-  const [xi, setXi] = useState<(string | null)[]>([]);
+  const [sheet, setSheet] = useState<Sheet>({ club: "", formationId: DEFAULT_FORMATION, xi: [], manager: "" });
   const [held, setHeld] = useState<string | null>(null);
+  const { formationId, xi, manager } = sheet;
 
   // ── One screen ──
   //
@@ -75,27 +92,49 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
 
   // Load the saved side, or pick one. Runs on every club change.
   useEffect(() => {
-    if (squad.length === 0) { setXi([]); return; }
+    if (squad.length === 0) return;
     const saved = loadLineup(club);
     const known = new Set(squad.map(p => p.id));
     if (saved && saved.xi.some(id => id && known.has(id))) {
-      setFormationId(saved.formation);
-      // A saved id no longer in the squad is dropped rather than shown as a
-      // hole with a stranger's name in it.
-      setXi(saved.xi.map(id => (id && known.has(id) ? id : null)));
+      setSheet({
+        club,
+        formationId: saved.formation,
+        // A saved id no longer in the squad is dropped rather than shown as a
+        // hole with a stranger's name in it.
+        xi: saved.xi.map(id => (id && known.has(id) ? id : null)),
+        manager: saved.manager ?? "",
+      });
     } else {
-      setFormationId(DEFAULT_FORMATION);
-      setXi(autoPick(squad, formationOf(DEFAULT_FORMATION)));
+      setSheet({
+        club,
+        formationId: DEFAULT_FORMATION,
+        xi: autoPick(squad, formationOf(DEFAULT_FORMATION)),
+        manager: saved?.manager ?? "",
+      });
     }
     setHeld(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [club, squad.length]);
 
-  // Save whenever it settles.
+  // ── Save whenever it settles, and SAY so ──
+  //
+  // There is no save button because there is nothing to press it for: every
+  // change is written the moment you make it. But a screen that saves silently
+  // is indistinguishable from one that does not save at all — "there's no save
+  // button so I assume once it's done it saves every change" — so it says.
+  const [saved, setSaved] = useState(false);
   useEffect(() => {
-    if (xi.length === 0) return;
-    saveLineup(club, { formation: formationId, xi });
-  }, [club, formationId, xi]);
+    if (!sheet.club || sheet.xi.length === 0) return;
+    // Written under the club the sheet is FOR, never the one the dropdown has
+    // moved on to. Typing a manager's name would otherwise save on every
+    // keystroke, so it settles first.
+    const t = window.setTimeout(() => {
+      saveLineup(sheet.club, { formation: sheet.formationId, xi: sheet.xi, manager: sheet.manager });
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 1400);
+    }, 250);
+    return () => window.clearTimeout(t);
+  }, [sheet]);
 
   const byId = useMemo(() => new Map(squad.map(p => [p.id, p])), [squad]);
   const bench = useMemo(() => {
@@ -104,9 +143,8 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
   }, [squad, xi]);
 
   const changeFormation = (id: string) => {
-    setFormationId(id);
     // The men you chose stay chosen — they stand somewhere else. See refit.
-    setXi(prev => refit(prev, squad, formationOf(id)));
+    setSheet(s => ({ ...s, formationId: id, xi: refit(s.xi, squad, formationOf(id)) }));
     setHeld(null);
   };
 
@@ -115,14 +153,14 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     const here = xi[index] ?? null;
     if (!held) { if (here) setHeld(here); return; }
     if (held === here) { setHeld(null); return; }
-    setXi((prev) => {
-      const next = [...prev];
+    setSheet((s) => {
+      const next = [...s.xi];
       const from = next.indexOf(held);
       next[index] = held;
       // He was already on the pitch: the two swap rather than one of them
       // vanishing, which is what a straight assignment would do.
       if (from >= 0) next[from] = here;
-      return next;
+      return { ...s, xi: next };
     });
     setHeld(null);
   };
@@ -132,7 +170,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     if (!held) { setHeld(id); return; }
     const from = xi.indexOf(held);
     if (from >= 0) {
-      setXi((prev) => { const n = [...prev]; n[from] = id; return n; });
+      setSheet((s) => { const n = [...s.xi]; n[from] = id; return { ...s, xi: n }; });
       setHeld(null);
       return;
     }
@@ -167,14 +205,27 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
           {FORMATIONS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
         </select>
         <button
-          onClick={() => { setXi(autoPick(squad, formation)); setHeld(null); }}
+          onClick={() => { setSheet(s => ({ ...s, xi: autoPick(squad, formation) })); setHeld(null); }}
           className="shrink-0 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-black uppercase text-white transition hover:bg-emerald-500"
         >
           Best XI
         </button>
       </div>
 
-      {squad.length === 0 ? (
+      {/* ── The dugout ──
+          There are no managers in the database, so this is the one thing on the
+          page you tell IT rather than the other way round. Saved per club like
+          everything else. */}
+      <input
+        value={manager}
+        onChange={e => setSheet(s => ({ ...s, manager: e.target.value }))}
+        placeholder={`Who manages ${club}?`}
+        aria-label="Manager"
+        maxLength={40}
+        className="shrink-0 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1.5 text-[12px] font-bold text-white placeholder:font-normal placeholder:text-white/40"
+      />
+
+      {squad.length === 0 || sheet.club !== club ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-gray-700 bg-gray-900 p-4 text-center text-xs font-bold text-white/75">
           Loading {club}&apos;s squad…
         </div>
@@ -226,8 +277,12 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
             })}
           </div>
 
-          {/* ── The bench, as a grid so it does not need scrolling ── */}
-          <div className="shrink-0 rounded-lg border border-gray-700 bg-gray-900 p-1">
+          {/* ── The rest of the squad ──
+              A grid rather than a list, so three fit across where one used to.
+              A full Premier League register is 25-30 men, which is fifteen-odd
+              here — more than a phone screen holds beside a pitch, so this box
+              scrolls inside itself while the page still does not. */}
+          <div className="max-h-[27%] shrink-0 overflow-y-auto rounded-lg border border-gray-700 bg-gray-900 p-1">
             <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
               {bench.map(p => (
                 <button
@@ -260,11 +315,15 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
             </div>
           </div>
 
-          <p className="shrink-0 text-center text-[10px] font-bold text-white/60">
-            {held
-              ? "Tap where he goes — a shirt, or a substitute to swap him for."
-              : "Tap a player, then tap another to swap. Amber means out of position."}
-          </p>
+          <div className="flex shrink-0 items-center justify-between gap-2 text-[10px] font-bold">
+            <span className="text-white/55">{squad.length} in the squad · {bench.length} on the bench</span>
+            <span className="min-w-0 flex-1 truncate text-center text-white/60">
+              {held ? "Tap where he goes" : "Tap a player, then another, to swap"}
+            </span>
+            <span className={`transition-opacity ${saved ? "text-emerald-400 opacity-100" : "opacity-0"}`}>
+              Saved ✓
+            </span>
+          </div>
         </>
       )}
     </div>

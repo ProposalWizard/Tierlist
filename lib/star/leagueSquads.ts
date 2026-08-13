@@ -18,7 +18,15 @@ import { shortNameOf } from "./realSquad";
  * come after — transfers, matchups, a squad you can actually look at.
  */
 
-/** How many of a club's players we keep. A matchday squad, not a wage bill. */
+/**
+ * How many of a club's players the CAREER keeps. A matchday squad, not a wage
+ * bill: it exists to answer "who scored?" in matches you are not in, and a
+ * club's twenty-fifth choice never will.
+ *
+ * The squad builder asks for `keepAll` and gets the lot, because there the
+ * question is different — you are picking a side, and a side is picked from
+ * everybody. See buildLeagueSquad.
+ */
 const SQUAD_SIZE = 20;
 
 type Pos = SquadPlayer["position"];
@@ -68,7 +76,7 @@ export interface RosterRow { id: string; name: string; positions: string; overal
  * for the same reason: taking the twenty best players and then assigning
  * positions gives you four centre-backs and no left-back.
  */
-export function buildLeagueSquad(club: string, roster: RosterRow[]): LeagueSquad {
+export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = false): LeagueSquad {
   if (!roster.length) return generatedSquad(club);
 
   const taken = new Set<string>();
@@ -99,7 +107,41 @@ export function buildLeagueSquad(club: string, roster: RosterRow[]): LeagueSquad
       players.push({ ...filler[i], id: `gen:${club}:${i}` });
     }
   }
+
+  // ── …and everybody else, when the whole squad is wanted ──
+  //
+  // The shape above is filled first on purpose, so the twenty who would start
+  // and sit are in a sensible order. What is left over is the rest of the
+  // register — the fourth-choice keeper, the academy right-back — appended in
+  // rating order and each in his own position rather than squeezed into a slot
+  // the formation happened to have going spare.
+  if (keepAll) {
+    for (const p of roster) {
+      if (taken.has(p.id)) continue;
+      taken.add(p.id);
+      players.push({
+        id: p.id, name: p.name, position: naturalPosition(p.positions),
+        overall: p.overall || 60, goals: 0, assists: 0,
+      });
+    }
+  }
   return { club, players };
+}
+
+/** What he actually is, for a man the formation had no slot for. */
+function naturalPosition(positions: string): Pos {
+  const ps = positionsOf(positions);
+  const VALID: Pos[] = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
+  for (const p of ps) {
+    if ((VALID as string[]).includes(p)) return p as Pos;
+    // The ones SoFIFA uses that our ten do not.
+    if (p === "LM") return "LW";
+    if (p === "RM") return "RW";
+    if (p === "LWB") return "LB";
+    if (p === "RWB") return "RB";
+    if (p === "CF") return "ST";
+  }
+  return "CM";
 }
 
 /** Nobody real available: the club still has a team, it is just an invented one. */
@@ -124,12 +166,16 @@ function generatedSquad(club: string): LeagueSquad {
  * throws: a career that cannot be created is very much worse than a career
  * whose Burnley are invented.
  */
-export async function fetchLeagueSquads(clubs: string[], year = 2026): Promise<LeagueSquad[]> {
+export async function fetchLeagueSquads(
+  clubs: string[],
+  year = 2026,
+  keepAll = false,
+): Promise<LeagueSquad[]> {
   try {
     const res = await fetch(`/api/star/league-squads?clubs=${encodeURIComponent(clubs.join("|"))}&year=${year}`);
     if (!res.ok) return clubs.map(generatedSquad);
     const data = await res.json() as { squads?: Record<string, RosterRow[]> };
-    return clubs.map(c => buildLeagueSquad(c, data.squads?.[c] ?? []));
+    return clubs.map(c => buildLeagueSquad(c, data.squads?.[c] ?? [], keepAll));
   } catch {
     return clubs.map(generatedSquad);
   }
