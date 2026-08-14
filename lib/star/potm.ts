@@ -264,7 +264,10 @@ function lastWord(s: string): string {
   return parts[parts.length - 1] ?? s;
 }
 
-export function faceOf(career: CareerState, name: string, club: string): string | undefined {
+/** What a squad knows about a man a goal record only names. */
+export interface KnownPlayer { name: string; image?: string }
+
+export function playerOf(career: CareerState, name: string, club: string): KnownPlayer | undefined {
   const want = nameKey(name);
   if (!want) return undefined;
 
@@ -273,7 +276,7 @@ export function faceOf(career: CareerState, name: string, club: string): string 
   if (club === career.player.club) {
     const mine = (career.squad ?? []).find(p =>
       nameKey(p.shortName ?? "") === want || nameKey(p.name) === want || nameKey(lastWord(p.name)) === want);
-    if (mine?.imageUrl) return mine.imageUrl;
+    if (mine) return { name: mine.name, image: mine.imageUrl };
   }
 
   const squad = (career.leagueSquads ?? []).find(s => s.club === club);
@@ -284,7 +287,11 @@ export function faceOf(career: CareerState, name: string, club: string): string 
     nameKey(p.name) === want
     || nameKey(shortNameOf(p.name)) === want
     || nameKey(lastWord(p.name)) === want);
-  return him?.image;
+  return him ? { name: him.name, image: him.image } : undefined;
+}
+
+export function faceOf(career: CareerState, name: string, club: string): string | undefined {
+  return playerOf(career, name, club)?.image;
 }
 
 /** Has this month already been awarded? */

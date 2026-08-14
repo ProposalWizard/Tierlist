@@ -50,19 +50,25 @@ const POTM_RACE: Detector = (r) => {
   const place = race.place;
   const placed = place !== undefined;
 
-  if (race.decidesToday) {
+  // ── The shortlist, with a round still to play ──
+  //
+  // Not on the last round. The vote runs the moment that round is played, so by
+  // then the winner exists and a nominees card is a question somebody has
+  // already answered. See MatchRecord.potmRace.decidesNextWeek.
+  if (race.decidesNextWeek) {
     // Below this there is no shortlist to publish — see the graphic, which
     // returns nothing rather than a grid with holes in it.
     if (race.contenders < 6) return null;
     return ev(
       "potm-decides",
       you(r),
-      place === 1 ? 78 : placed && place <= 3 ? 62 : 48,
+      place === 1 ? 74 : placed && place <= 3 ? 60 : 48,
       ["award", "form", "stat"],
       placed ? { ...facts, place } : facts,
       "hour",
     );
   }
+  if (race.decidesToday) return null;   // the award detector has this one
 
   if (place === undefined || place > 3) return null;
   if (race.goals + race.assists < 2) return null;
@@ -159,7 +165,44 @@ const RUN_ENDED: Detector = (r, m) => {
   }, "hour");
 };
 
+/**
+ * And the award itself.
+ *
+ * Separate from the race above because it is a different kind of thing: the race
+ * is a running story and this is a result, it happens exactly ten times a season,
+ * and it is the one event here that is worth posting about when it has nothing
+ * to do with you. A month of football ending with nobody saying who won it is
+ * the gap this closes.
+ *
+ * The subject stays `you` even when the winner is somebody else. It is not quite
+ * true and it is deliberate: subject drives which accounts take an interest, and
+ * a card the player has asked to see every month should not be at the mercy of
+ * whether a Manchester City post reaches a Liverpool feed.
+ */
+const POTM_AWARD: Detector = (r) => {
+  const a = r.potmAward;
+  if (!a) return null;
+  const runnerUp = a.nominees.find(n => n.name !== a.winner);
+  return ev(
+    a.isYou ? "potm-won" : "potm-winner",
+    you(r),
+    a.isYou ? 88 : 56,
+    ["award", "stat"],
+    {
+      ...base(r),
+      month: a.monthName,
+      winner: a.winner,
+      winnerClub: a.club,
+      goals: a.goals,
+      assists: a.assists,
+      ...(runnerUp ? { runnerUp: runnerUp.name } : {}),
+      ...(a.yourPlace !== undefined ? { place: a.yourPlace } : {}),
+    },
+    "hour",
+  );
+};
+
 export const STREAK_DETECTORS: Detector[] = [
   SCORING_RUN, HOT_STREAK, CREATING_RUN, UNBEATEN, WINNING_RUN,
-  LOSING_RUN, CLEAN_SHEET_RUN, RUN_ENDED, POTM_RACE,
+  LOSING_RUN, CLEAN_SHEET_RUN, RUN_ENDED, POTM_RACE, POTM_AWARD,
 ];

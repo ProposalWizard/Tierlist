@@ -89,7 +89,7 @@ export const DATA_TEMPLATES: Template[] = [
     // statLine on purpose — a race is a number and a shortlist is a list of
     // people, and printing the same card for both wastes the distinction.
     id: "st-potm-decides", archetype: "stats", events: ["potm-decides"], requires: ["month", "place"],
-    body: "Last round of {month}. {player} is {place|ordinal} in the Player of the Month race.",
+    body: "{month} Player of the Month shortlist, one round to play. {player} is {place|ordinal}.",
     graphic: "potmNominees", weight: 3,
   },
   {
@@ -101,6 +101,18 @@ export const DATA_TEMPLATES: Template[] = [
     requires: ["month", "leader"], excludes: ["place"],
     body: "{month} Player of the Month shortlist. {leader} leads it from {contenders} contenders.",
     graphic: "potmNominees", weight: 3,
+  },
+  {
+    // Won it. The loudest line this archetype has, and the only POTM template
+    // that is about a result rather than a race.
+    id: "st-potm-won", archetype: "stats", events: ["potm-won"], requires: ["month", "goals"],
+    body: "{player} is {month} Player of the Month. {goals} goals, {assists} assists.",
+    graphic: "potmWinner", weight: 4,
+  },
+  {
+    id: "st-potm-winner", archetype: "stats", events: ["potm-winner"], requires: ["month", "winner"],
+    body: "{winner} wins Player of the Month for {month}. {goals} goals, {assists} assists.",
+    graphic: "potmWinner", weight: 3,
   },
   {
     id: "st-boot", archetype: "stats", events: ["golden-boot-race"], requires: ["goals"],

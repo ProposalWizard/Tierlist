@@ -82,9 +82,40 @@ export interface MatchRecord {
     contenders: number;
     goals: number;
     assists: number;
-    /** True on the last league week of the month — the vote is imminent. */
+    /** True on the last league week of the month — the vote runs after it. */
     decidesToday: boolean;
+    /**
+     * True on the league week BEFORE that one.
+     *
+     * Which is when the shortlist card goes out, and the distinction matters
+     * more than it looks. The vote runs the moment the last round of a month is
+     * played, so on `decidesToday` the award already exists — a "here are the
+     * nominees" card published then is asking a question that has been answered.
+     * The month reads as it does in life instead: the race through the month,
+     * the shortlist with a round to go, the winner when it is done.
+     */
+    decidesNextWeek: boolean;
     leader: string;
+  };
+
+  /**
+   * The month's award, on the match whose result decided it.
+   *
+   * Set by comparing the career either side of the match — the award is made
+   * inside `creditMatchResult`, so `after` has one `before` does not. Absent on
+   * every other match, which is all but ten a season.
+   */
+  potmAward?: {
+    monthName: string;
+    winner: string;
+    club: string;
+    goals: number;
+    assists: number;
+    isYou: boolean;
+    /** The shortlist it came from, winner first. */
+    nominees: { name: string; club: string; goals: number; assists: number; isYou: boolean }[];
+    /** Where you finished, when you were on it. */
+    yourPlace?: number;
   };
   you: {
     name: string;
@@ -367,6 +398,31 @@ export type GraphicSpec =
       month: string;
       nominees: PotmNominee[];
       winner?: string;
+    }
+  /**
+   * One man, once a month.
+   *
+   * A different card from the shortlist rather than the shortlist with a ring
+   * round somebody, because it is a different piece of news and it is the only
+   * graphic in this file whose subject is one person — so it is the only one
+   * that can afford to give him the whole frame.
+   */
+  | {
+      type: "potmWinner";
+      month: string;
+      /** Split, because the card sets them at different sizes. */
+      firstName: string;
+      lastName: string;
+      club: string;
+      goals: number;
+      assists: number;
+      isYou: boolean;
+      face?: string;
+      number?: number;
+      /** Who he beat. Absent when the shortlist was one name long. */
+      runnerUp?: string;
+      /** Where you came, when the winner was somebody else and you were on it. */
+      yourPlace?: number;
     };
 
 export interface PotmNominee {

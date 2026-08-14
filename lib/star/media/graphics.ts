@@ -1,7 +1,7 @@
 import type { CareerState } from "../types";
 import { sortLeague } from "../season";
 import { goldenBootRace } from "../recognition";
-import { MONTH_NAMES, faceOf, monthOf, monthRace } from "../potm";
+import { MONTH_NAMES, faceOf, monthOf, monthRace, playerOf } from "../potm";
 import type {
   FootballEvent, GraphicKind, GraphicSpec, MatchRecord, StoryMemory,
 } from "./types";
@@ -139,6 +139,38 @@ export function buildGraphic(
             ? { number: career.squadNumber ?? 0 }
             : { face: faceOf(career, c.name, c.club) }),
         })),
+      };
+    }
+
+    case "potmWinner": {
+      const month = String(f.month ?? "");
+      const isYou = e.id === "potm-won";
+      // The name a goal was filed under, which is a surname and sometimes an
+      // initial and a surname.
+      const filed = isYou ? career.player.lastName : String(f.winner ?? "");
+      const club = isYou ? career.player.club : String(f.winnerClub ?? career.player.club);
+      if (!month || !filed) return undefined;
+
+      // …and the name his club knows him by, which is the one worth setting at
+      // this size. "ERLING HAALAND", not "HAALAND", and certainly not "E."
+      const known = isYou ? undefined : playerOf(career, filed, club);
+      const full = isYou ? `${career.player.firstName} ${career.player.lastName}` : (known?.name ?? filed);
+      const parts = full.trim().split(/\s+/);
+      const lastName = parts[parts.length - 1];
+      // A lone initial is not a first name — it is the absence of one, and it
+      // reads worse above a surname than nothing does.
+      const head = parts.slice(0, -1).join(" ");
+      const firstName = /^[A-Z]\.?$/.test(head) ? "" : head;
+
+      return {
+        type: "potmWinner",
+        month, firstName, lastName, club,
+        goals: Number(f.goals ?? 0),
+        assists: Number(f.assists ?? 0),
+        isYou,
+        ...(isYou ? { number: career.squadNumber ?? 0 } : { face: known?.image }),
+        ...(f.runnerUp ? { runnerUp: String(f.runnerUp) } : {}),
+        ...(!isYou && f.place !== undefined ? { yourPlace: Number(f.place) } : {}),
       };
     }
 

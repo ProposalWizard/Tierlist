@@ -8,6 +8,7 @@ import { shortClub } from "../../lib/star/media/grammar";
 import { detectMatch } from "../../lib/star/media/detect";
 import { chooseTemplate } from "../../lib/star/media/templates";
 import { emptyMemory } from "../../lib/star/media/memory";
+import { buildMatchRecord } from "../../lib/star/media/record";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { nextFixtureFor } from "../../lib/star/competitions";
 import type { CareerState } from "../../lib/star/types";
@@ -348,9 +349,11 @@ const CLUBS = [
 // produces the card, and that being on the list only changes the sentence over
 // it.
 {
+  // A round to go, which is when the shortlist goes up. NOT the last round —
+  // by then the vote has run and the winner exists, and the winner card has it.
   const race = (place: number | undefined, contenders = 9) => ({
     monthName: "August", place, contenders, goals: place ? 4 : 0,
-    assists: place ? 1 : 0, decidesToday: true, leader: "Haaland",
+    assists: place ? 1 : 0, decidesToday: false, decidesNextWeek: true, leader: "Haaland",
   });
   const record = (potmRace: unknown) => ({
     id: "s1-w4-league-Everton", season: 1, week: 4, competition: "Premier League",
@@ -383,6 +386,11 @@ const CLUBS = [
   // A month with nobody in it is still not a shortlist.
   check(fire(record(race(undefined, 3))).length === 0, "three contenders produce no card");
 
+  // …and on the round that actually decides it, the shortlist stands down.
+  const decided = { ...race(2), decidesToday: true, decidesNextWeek: false };
+  check(fire(record(decided)).length === 0,
+    "the last round does not publish a shortlist — the vote has already run");
+
   // …and the line that gets written has to exist for both. A template that
   // requires a place cannot serve a player who has not got one, and before this
   // there was no other template — which is the whole reason nothing appeared.
@@ -390,6 +398,99 @@ const CLUBS = [
     const t = chooseTemplate(ev, "stats", "analyse", emptyMemory(), mulberry(3), false);
     check(!!t, `${label}: a stats account has a line for it`);
     check(t?.graphic === "potmNominees", `${label}: and the line carries the shortlist card (${t?.graphic})`);
+  }
+}
+
+// ── The winner reaches the feed ─────────────────────────────────────────────
+//
+// A month of football that ends with nobody saying who won it is the gap this
+// closes: the award existed, went onto your honours if you won it, and was never
+// once mentioned. What has to hold is that the match which decides a month
+// carries the award on its record, that it fires exactly once, and that the
+// winner being somebody else does not make it silent.
+{
+  const player = {
+    firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
+    club: "Liverpool", nationality: "England",
+  } as never;
+  let c: CareerState = {
+    ...makeInitialCareer(player, CLUBS),
+    leagueSquads: CLUBS.map(x => buildLeagueSquad(x, roster(x))),
+  };
+  const stats = {
+    homeScore: 2, awayScore: 1, chances: 2, goals: 1, assists: 1, passes: 10,
+    rating: 7.6, starMan: false, bossChange: 0, teamChange: 0, fansChange: 0,
+    wage: 0, goalBonus: 0, sponsorPay: 0, totalCash: 0,
+    goalEvents: [{ minute: 20, scorer: "Mikey Vass", isUserGoal: true }],
+  } as never;
+
+  let awarded = 0, carried = 0, posted = 0, shortlists = 0;
+  const winners = new Set<string>();
+  for (let w = 0; w < 20; w++) {
+    const f = nextFixtureFor(c);
+    if (!f) break;
+    const before = c;
+    const out = creditMatchResult(c, f, stats);
+    c = out.career;
+    if (out.potmAwarded) awarded++;
+
+    const rec = buildMatchRecord(before, c, f, stats);
+    if (rec.potmAward) {
+      carried++;
+      winners.add(rec.potmAward.winner);
+      check(rec.potmAward.monthName.length > 0, "the award on the record knows its month");
+    }
+    const events = detectMatch(rec, emptyMemory());
+    const award = events.filter(e => e.id === "potm-won" || e.id === "potm-winner");
+    const list = events.filter(e => e.id === "potm-decides");
+    posted += award.length;
+    shortlists += list.length;
+    check(award.length <= 1, "the award is announced once, not once per detector");
+    // The two cards never land in the same cycle: one is a question and the
+    // other is its answer.
+    check(!(award.length && list.length), "a shortlist and its winner never post together");
+  }
+
+  check(awarded > 0, `months were awarded (${awarded})`);
+  check(carried === awarded, `every award reaches the record (${carried} of ${awarded})`);
+  check(posted === awarded, `and every one of them is posted (${posted} of ${awarded})`);
+  check(shortlists > 0, `and the shortlist still goes up in the round before (${shortlists})`);
+  check(winners.size > 0, "the winners have names");
+
+  // The card the post carries.
+  const spec = buildGraphic(
+    "potmWinner",
+    { id: "potm-winner", tags: [], subject: { kind: "you" },
+      facts: { month: "September", winner: "Haaland", winnerClub: "Manchester City",
+        goals: 6, assists: 1, runnerUp: "Saka", place: 4 } } as never,
+    { week: 8 } as never, c, {} as never, mulberry(11),
+  );
+  if (spec?.type === "potmWinner") {
+    check(spec.lastName === "Haaland", `the surname is set on its own (${spec.lastName})`);
+    check(spec.month === "September", "and the month it was won in");
+    check(spec.goals === 6 && spec.assists === 1, "with the numbers that won it");
+    check(spec.runnerUp === "Saka", "and who he beat");
+    check(spec.yourPlace === 4, "and where you came");
+    check(spec.isYou === false && spec.number === undefined, "somebody else's card is not yours");
+  } else {
+    check(false, "the winner card built");
+  }
+
+  const yours = buildGraphic(
+    "potmWinner",
+    { id: "potm-won", tags: [], subject: { kind: "you" },
+      facts: { month: "October", goals: 7, assists: 3 } } as never,
+    { week: 12 } as never, { ...c, squadNumber: 19 }, {} as never, mulberry(12),
+  );
+  if (yours?.type === "potmWinner") {
+    check(yours.isYou, "winning it yourself is marked");
+    check(yours.firstName === "Mikey" && yours.lastName === "Vass",
+      `and it uses your full name (${yours.firstName} ${yours.lastName})`);
+    check(yours.number === 19, `with your shirt number where a photograph would be (${yours.number})`);
+    check(yours.face === undefined, "…and never somebody else's face");
+    check(yours.yourPlace === undefined, "\"you finished 1st\" is not worth saying to a winner");
+  } else {
+    check(false, "your own winner card built");
   }
 }
 

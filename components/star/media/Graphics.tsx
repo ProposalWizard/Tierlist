@@ -1,7 +1,7 @@
 "use client";
 import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
 import { kitsOf, labelInk } from "@/lib/star/kits";
-import { initialsOf, shortClub, surname } from "@/lib/star/media/grammar";
+import { initialsOf, ordinal, shortClub, surname } from "@/lib/star/media/grammar";
 
 /**
  * The cards a post can carry.
@@ -29,6 +29,7 @@ export default function Graphic({ spec }: { spec: GraphicSpec }) {
     case "poll": return <Poll s={spec} />;
     case "thumbnail": return <Thumbnail s={spec} />;
     case "potmNominees": return <PotmNominees s={spec} />;
+    case "potmWinner": return <PotmWinner s={spec} />;
   }
 }
 
@@ -394,6 +395,103 @@ function NomineeTile({ n, won }: { n: PotmNominee; won: boolean }) {
         </div>
         <div className="text-[8px] font-black leading-tight tabular-nums text-amber-200/90">
           {n.goals}G {n.assists}A
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * THE WINNER.
+ *
+ * The shortlist card is eight people and has to give each of them an eighth of
+ * the frame. This one is about a single footballer, so it gives him most of it:
+ * a portrait at a size you can see a face in, the first name small over a
+ * surname set as large as the card will take, and the month and his numbers
+ * along the bottom.
+ *
+ * The bottom bar is the piece of grammar worth keeping from the real thing — a
+ * dark month chip against a light strap — except that ours carries the goals and
+ * assists instead of repeating the words already at the top. The award is named
+ * once, in the eyebrow, where it belongs.
+ */
+function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) {
+  const kit = kitsOf(s.club).home;
+  return (
+    <div className={PANEL}>
+      <div className="flex">
+        <div className="relative h-28 w-[40%] shrink-0 overflow-hidden" style={{ backgroundColor: kit.shirt }}>
+          <div
+            className="absolute inset-y-0 left-2 w-9 -skew-x-[14deg]"
+            style={{ backgroundColor: kit.trim }}
+          />
+          {s.face ? (
+            <img
+              src={s.face}
+              alt=""
+              referrerPolicy="no-referrer"
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-contain object-bottom"
+            />
+          ) : s.number !== undefined ? (
+            <div
+              className="absolute inset-0 grid place-items-center text-4xl font-black tabular-nums"
+              style={{ color: labelInk(kit.shirt) }}
+            >
+              {s.number}
+            </div>
+          ) : (
+            <div
+              className="absolute inset-0 grid place-items-center text-xl font-black tracking-tight"
+              style={{ color: labelInk(kit.shirt) }}
+            >
+              {initialsOf(`${s.firstName} ${s.lastName}`.trim())}
+            </div>
+          )}
+          {s.isYou && (
+            <div className="absolute left-0 top-0 bg-amber-300 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-gray-900">
+              You
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5">
+          <div className="text-[9px] font-black uppercase leading-none tracking-[0.18em] text-amber-200">
+            Player of the Month
+          </div>
+          {s.firstName && (
+            <div className="mt-2 truncate text-[11px] font-bold leading-none text-white/85">{s.firstName}</div>
+          )}
+          <div className="mt-1 truncate text-2xl font-black uppercase leading-none tracking-tight text-white">
+            {s.lastName}
+          </div>
+          <div className="mt-1.5 truncate text-[9px] font-bold uppercase leading-none tracking-wider text-white/80">
+            {shortClub(s.club)}
+          </div>
+          {s.yourPlace !== undefined && !s.isYou && (
+            <div className="mt-2 truncate text-[9px] font-bold leading-none text-white/70">
+              You finished {ordinal(s.yourPlace)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-stretch border-t border-white/10 text-[9px] font-black uppercase">
+        <div className="shrink-0 bg-amber-300 px-2.5 py-1.5 tracking-[0.15em] text-gray-900">{s.month}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-3 bg-gray-900/80 px-2.5 tracking-wider text-white/85">
+          {/* "1 Assists" is the sort of thing that makes a graphic look
+              generated, and it happens most months. */}
+          <span className="shrink-0 tabular-nums">
+            <b className="text-amber-200">{s.goals}</b> Goal{s.goals === 1 ? "" : "s"}
+          </span>
+          <span className="shrink-0 tabular-nums">
+            <b className="text-amber-200">{s.assists}</b> Assist{s.assists === 1 ? "" : "s"}
+          </span>
+          {s.runnerUp && (
+            <span className="truncate font-bold normal-case tracking-normal text-white/70">
+              ahead of {s.runnerUp}
+            </span>
+          )}
         </div>
       </div>
     </div>

@@ -160,8 +160,12 @@ export default function MediaLab() {
             a post actually renders at rather than full-screen. */}
         <div className="mt-8">
           <h2 className="text-[11px] font-black uppercase tracking-widest text-white/70">Post cards</h2>
-          <div className="mt-3 max-w-sm">
-            <Graphic spec={SAMPLE_NOMINEES} />
+          <div className="mt-3 flex max-w-3xl flex-wrap items-start gap-4">
+            <div className="w-full max-w-sm space-y-4">
+              <Graphic spec={SAMPLE_NOMINEES} />
+              <Graphic spec={SAMPLE_WINNER} />
+              <Graphic spec={SAMPLE_WINNER_YOU} />
+            </div>
           </div>
         </div>
       </div>
@@ -183,6 +187,35 @@ const SAMPLE_NOMINEES: GraphicSpec = {
     { name: "A. Semenyo", club: "AFC Bournemouth", goals: 3, assists: 1, isYou: false },
     { name: "D. Szoboszlai", club: "Tottenham Hotspur", goals: 2, assists: 4, isYou: false, face: FACE(233419) },
   ],
+};
+
+/** Somebody else winning it, which is nine months in ten. */
+const SAMPLE_WINNER: GraphicSpec = {
+  type: "potmWinner",
+  month: "September",
+  firstName: "Erling",
+  lastName: "Haaland",
+  club: "Manchester City",
+  goals: 6,
+  assists: 1,
+  isYou: false,
+  face: FACE(239085),
+  runnerUp: "Calafiori",
+  yourPlace: 4,
+};
+
+/** …and the month you win it, where there is no photograph to use. */
+const SAMPLE_WINNER_YOU: GraphicSpec = {
+  type: "potmWinner",
+  month: "October",
+  firstName: "Mikey",
+  lastName: "Vass",
+  club: "Liverpool",
+  goals: 7,
+  assists: 3,
+  isYou: true,
+  number: 19,
+  runnerUp: "Haaland",
 };
 
 /** The portrait URL the importer writes, for judging the card against real ones.
