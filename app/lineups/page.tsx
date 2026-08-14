@@ -21,6 +21,17 @@ export default function LineupsPage() {
   const [clubs, setClubs] = useState<string[]>([]);
   const [squads, setSquads] = useState<LeagueSquad[]>([]);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Which edition is on screen.
+   *
+   * Normally STAR_FIFA_YEAR and nothing else. But FC 27 is built by hand over
+   * the course of a transfer window, so there is a stretch of days where the
+   * edition the game wants does not exist yet — and a page that dead-ends for a
+   * month is not much of a page. When that happens it offers the newest edition
+   * that DOES have clubs, and says loudly which one you are looking at.
+   */
+  const [year, setYear] = useState(STAR_FIFA_YEAR);
+  const [available, setAvailable] = useState<number[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -29,45 +40,69 @@ export default function LineupsPage() {
         const res = await fetch("/api/draft/clubs", { cache: "no-store" });
         const data = await res.json() as { clubs?: { name: string; seasons: number[] }[] };
         const all = data.clubs ?? [];
+        const years = Array.from(new Set(all.flatMap(c => c.seasons)))
+          .filter(y => y > 2000)
+          .sort((a, b) => b - a);
         const names = all
-          .filter(c => c.seasons.includes(STAR_FIFA_YEAR))
+          .filter(c => c.seasons.includes(year))
           .map(c => c.name)
           .sort((a, b) => a.localeCompare(b));
         if (!alive) return;
+        setAvailable(years);
+
         if (names.length === 0) {
-          // ── Say what IS there ──
-          //
-          // "No FC 27 clubs found" is true and useless: it cannot tell you
-          // whether the migration has not been run, or has been run and the
-          // clubs list is a minute stale, or the rows went in under a league
-          // name nothing matches. The years that DO exist answer all three.
-          const years = Array.from(new Set(all.flatMap(c => c.seasons))).sort((a, b) => b - a);
+          setClubs([]);
           setError(
             years.length === 0
               ? "No Premier League clubs in the database at all — check the Supabase connection."
-              : `No ${STAR_SEASON_LABEL} (${STAR_EDITION_LABEL}) clubs yet. The database has: `
-                + `${years.slice(0, 8).map(y => `${y}`).join(", ")}`
-                + `${years.length > 8 ? "…" : ""}. Run fc27_clone_premier_league.sql, then reload.`,
+              : `No ${year - 1}/${String(year % 100).padStart(2, "0")} clubs yet.`,
           );
           return;
         }
+        setError(null);
         setClubs(names);
         // The WHOLE squad, not the twenty a career keeps: here you are picking
         // a side, and a side is picked from everybody on the books.
-        const sq = await fetchLeagueSquads(names, STAR_FIFA_YEAR, true);
+        const sq = await fetchLeagueSquads(names, year, true);
         if (alive) setSquads(sq);
       } catch {
         if (alive) setError("Could not load the clubs. Check your connection and try again.");
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [year]);
+
+  const newest = available.find(y => y !== year);
 
   return (
     <main className="w-full py-2">
+      {year !== STAR_FIFA_YEAR && (
+        <div className="mx-auto mb-2 max-w-5xl rounded-lg border border-amber-700 bg-amber-950/40 px-3 py-2 text-[11px] font-bold text-amber-200">
+          Showing <b>FC {String(year % 100).padStart(2, "0")}</b> — the game itself plays{" "}
+          {STAR_EDITION_LABEL}, which has no clubs yet.{" "}
+          <button onClick={() => setYear(STAR_FIFA_YEAR)} className="underline">
+            Try {STAR_EDITION_LABEL} again
+          </button>
+        </div>
+      )}
+
       {error ? (
         <div className="mx-auto max-w-md rounded-lg border border-red-800 bg-red-950/50 p-4 text-sm font-bold text-red-200">
-          {error}
+          <p>{error}</p>
+          {available.length > 0 && (
+            <p className="mt-2 text-[12px] font-normal text-red-200/80">
+              The database has: {available.slice(0, 8).join(", ")}{available.length > 8 ? "…" : ""}.
+              {year === STAR_FIFA_YEAR && ` Run fc27_clone_premier_league.sql in the Supabase SQL Editor to build ${STAR_EDITION_LABEL}.`}
+            </p>
+          )}
+          {newest && (
+            <button
+              onClick={() => setYear(newest)}
+              className="mt-3 w-full rounded bg-red-800 py-2 text-[12px] font-black uppercase text-white transition hover:bg-red-700"
+            >
+              Use FC {String(newest % 100).padStart(2, "0")} for now
+            </button>
+          )}
         </div>
       ) : clubs.length === 0 ? (
         <div className="mx-auto max-w-md p-8 text-center text-sm font-bold text-emerald-300">
