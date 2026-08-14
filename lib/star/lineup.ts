@@ -1,5 +1,5 @@
 import type { SquadPlayer } from "./types";
-import type { Identity, Scenario, Runner } from "./canvasEngine";
+import type { Identity, Scenario, Runner, ScenarioKind } from "./canvasEngine";
 import { goalInView } from "./canvasEngine";
 
 /**
@@ -143,12 +143,58 @@ export function castScenario(sc: Scenario, squad: SquadPlayer[]): void {
 /**
  * The creator of a goal YOU scored.
  *
- * Only ever a man who was actually part of the move: the one who crossed it, or
- * the one who played you in. Returns nothing otherwise, and nothing is the right
- * answer — a goal you cut in and curled home from twenty-five yards has no
- * assist, and inventing one out of the squad list (which is what this used to
- * do, 65% of the time) put goals against players who had not been on the screen.
+ * ── Why this is generated rather than observed ──
+ *
+ * The engine only ever shows you the last touch of a move: you are handed a
+ * ball and you strike it. Nobody passes it to you on screen, because there is no
+ * screen before the screen. So the man who set you up is real football that the
+ * highlight cannot contain, and if the game does not name him nobody ever gets
+ * an assist for anything you score — which is what was happening.
+ *
+ * Preference order, and it matters. First the man who ACTUALLY put it into you,
+ * on the two situations that arrive from somebody. Then one of the team-mates
+ * who was on the pitch in that very scenario — he was there, you can see him.
+ * Only then the squad at large, weighted toward the men who make goals.
+ *
+ * Three situations are left alone, because football leaves them alone: a
+ * penalty and a free kick are never assisted, and a rebound you followed in was
+ * created by whoever's shot came back, which was yours.
  */
-export function creatorOf(sc: Scenario): Identity | undefined {
-  return sc.crosser;
+const NEVER_ASSISTED: ScenarioKind[] = ["penalty", "free_kick"];
+
+const CREATOR_WEIGHT: Record<string, number> = {
+  LW: 18, RW: 18, CAM: 16, CM: 12, ST: 9, LB: 7, RB: 7, CDM: 4, CB: 2, GK: 0.2,
+};
+
+export function creatorOf(sc: Scenario, squad: SquadPlayer[] = [], rng?: () => number): Identity | undefined {
+  if (NEVER_ASSISTED.includes(sc.kind)) return undefined;
+  // The man who crossed it. Real, and always preferred.
+  if (sc.crosser) return sc.crosser;
+
+  // Somebody who was on the pitch with you. Also real.
+  const onPitch = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]
+    .map(r => r.who)
+    .filter((w): w is Identity => !!w);
+  if (onPitch.length > 0) {
+    const i = rng ? Math.floor(rng() * onPitch.length) : 0;
+    return onPitch[Math.min(i, onPitch.length - 1)];
+  }
+
+  // Nobody identifiable was in frame. Somebody still played the pass that got
+  // the ball to you — pick whoever in the squad most plausibly did.
+  const pool = squad.filter(p => p.position !== "GK");
+  if (pool.length === 0) return undefined;
+  let total = 0;
+  const w = pool.map((p) => {
+    const x = CREATOR_WEIGHT[p.position] ?? 5;
+    total += x;
+    return x;
+  });
+  let r = (rng ? rng() : 0.5) * total;
+  for (let i = 0; i < pool.length; i++) {
+    r -= w[i];
+    if (r <= 0) return idOf(pool[i]);
+  }
+  const last = pool[pool.length - 1];
+  return idOf(last);
 }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
+import { exitRound } from "@/lib/star/cups";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 
 interface Props {
@@ -202,7 +203,56 @@ export default function LeagueScreen({ career }: Props) {
 
       {view === "cups" && (
         <div className="space-y-2">
-          {(career.cups ?? []).length === 0 && (
+          {/* ── The two real ones: a hat, a draw, and every tie in the country ── */}
+          {(career.cupState ?? []).map((cup) => {
+            const round = cup.rounds[cup.rounds.length - 1];
+            const you = career.player.club;
+            const out = exitRound(cup, you);
+            return (
+              <div key={cup.competition} className={`rounded-lg border p-2 ${
+                cup.winner === you ? "border-amber-400 bg-amber-500/15"
+                  : out ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-xs font-black text-white">{cup.competition}</span>
+                  <span className="text-[10px] font-bold text-white/80">
+                    {cup.winner === you ? "WON IT"
+                      : cup.winner ? `${cup.winner} won it`
+                      : out ? `Out — ${out}`
+                      : round?.name}
+                  </span>
+                </div>
+                {round && (
+                  <div className="mt-1.5 space-y-0.5">
+                    {round.ties.map((t) => {
+                      const yours = t.home === you || t.away === you;
+                      const done = t.hs !== undefined;
+                      return (
+                        <div
+                          key={`${t.home}-${t.away}`}
+                          className={`grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                            yours ? "bg-emerald-600 text-white" : "text-white/85"}`}
+                        >
+                          <span className="truncate text-right">{t.home}</span>
+                          <span className="rounded bg-black/40 px-1 font-black tabular-nums">
+                            {done ? `${t.hs}-${t.as}` : "v"}
+                          </span>
+                          <span className="truncate">{t.away}</span>
+                          {t.pens && (
+                            <span className="col-span-3 text-center text-[9px] font-bold text-amber-300">
+                              {t.pens.home}-{t.pens.away} on penalties
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {(career.cups ?? []).length === 0 && (career.cupState ?? []).length === 0 && (
             <div className="bg-gray-700 rounded-lg border border-gray-600 p-3 text-xs text-gray-200">
               No knockout football this season. The domestic cup runs every year;
               Europe is earned by where you finish, and the national side by how

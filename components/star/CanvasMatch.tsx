@@ -1837,7 +1837,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         // of the squad 65% of the time — so assists appeared against players who
         // had not been on the screen, which is exactly the kind of thing that
         // makes the whole stats column untrustworthy.
-        const assister = creatorOf(sc);
+        // A rebound you followed in was created by whoever's shot came back,
+        // which was yours.
+        const assister = res === "rebound" ? undefined : creatorOf(sc, squad, rng);
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name,
           isUserGoal: true, how, distance: Math.round(distance),
