@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 
 export const maxDuration = 30;
 // Reads the live DB, so it must never be frozen into a build-time snapshot.
@@ -33,7 +34,7 @@ interface LeanPlayer {
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const clubsParam = searchParams.get("clubs");
-  const year = parseInt(searchParams.get("year") ?? "2026", 10);
+  const year = parseInt(searchParams.get("year") ?? String(STAR_FIFA_YEAR), 10);
 
   if (!clubsParam) {
     return NextResponse.json({ error: "Missing required query param: clubs" }, { status: 400 });

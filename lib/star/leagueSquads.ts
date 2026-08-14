@@ -1,6 +1,7 @@
 import type { LeaguePlayer, LeagueSquad, SquadPlayer } from "./types";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { shortNameOf } from "./realSquad";
+import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "./edition";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS.
@@ -168,11 +169,11 @@ function generatedSquad(club: string): LeagueSquad {
  */
 export async function fetchLeagueSquads(
   clubs: string[],
-  year = 2026,
+  year = STAR_FIFA_YEAR,
   keepAll = false,
 ): Promise<LeagueSquad[]> {
   try {
-    const res = await fetch(`/api/star/league-squads?clubs=${encodeURIComponent(clubs.join("|"))}&year=${year}`);
+    const res = await fetch(`/api/star/league-squads?clubs=${encodeURIComponent(clubs.join("|"))}&year=${year}`, SQUAD_FETCH_INIT);
     if (!res.ok) return clubs.map(generatedSquad);
     const data = await res.json() as { squads?: Record<string, RosterRow[]> };
     return clubs.map(c => buildLeagueSquad(c, data.squads?.[c] ?? [], keepAll));
@@ -258,4 +259,17 @@ export function nameGoals(squad: LeagueSquad | undefined, count: number, rng: ()
 /** A new season: the table resets, and so does everybody's tally. */
 export function resetLeagueSquads(squads: LeagueSquad[]): LeagueSquad[] {
   return squads.map(s => ({ ...s, players: s.players.map(p => ({ ...p, goals: 0, assists: 0 })) }));
+}
+
+
+/** The same, for the other nineteen clubs. See mergeSquadStats. */
+export function mergeLeagueSquadStats(fresh: LeagueSquad[], previous: LeagueSquad[]): LeagueSquad[] {
+  const before = new Map(previous.map(sq => [sq.club, new Map(sq.players.map(p => [p.id, p]))]));
+  return fresh.map(sq => ({
+    ...sq,
+    players: sq.players.map((p) => {
+      const was = before.get(sq.club)?.get(p.id);
+      return was ? { ...p, goals: was.goals, assists: was.assists } : p;
+    }),
+  }));
 }
