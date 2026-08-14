@@ -1,6 +1,7 @@
 import type { CareerState, Fixture, MatchStats } from "../types";
 import { sortLeague } from "../season";
 import { isDerby } from "../rivals";
+import { monthOf, monthRace, endsMonth, MONTH_NAMES } from "../potm";
 import type { MatchRecord, GoalRecord, TableSnapshot } from "./types";
 
 /**
@@ -92,6 +93,26 @@ export function buildMatchRecord(
     us, them,
   );
 
+  // Where you stand in the month's award race, off the same results the table
+  // is built from. League only — there is no Player of the Month for a cup tie.
+  const potmRace = (() => {
+    if (kind !== "league") return undefined;
+    const month = monthOf(fixture.week);
+    const race = monthRace(after, month);
+    if (race.length === 0) return undefined;
+    const i = race.findIndex(c => c.isYou);
+    const lastWeek = Math.max(...after.fixtures.map(f => f.week), fixture.week);
+    return {
+      monthName: MONTH_NAMES[month],
+      place: i >= 0 ? i + 1 : undefined,
+      contenders: race.length,
+      goals: i >= 0 ? race[i].goals : 0,
+      assists: i >= 0 ? race[i].assists : 0,
+      decidesToday: endsMonth(fixture.week, lastWeek),
+      leader: race[0].name,
+    };
+  })();
+
   const knockout = after.knockoutMessage ?? "";
   const cup = kind !== "league"
     ? {
@@ -109,6 +130,7 @@ export function buildMatchRecord(
     kind,
     round: fixture.round,
     derby,
+    potmRace,
     home: fixture.home,
     neutral: fixture.round === "Final",
 

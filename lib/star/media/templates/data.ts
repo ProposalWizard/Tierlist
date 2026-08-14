@@ -75,6 +75,20 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "statLine",
   },
   {
+    // ── The month's award, before it is given ──
+    //
+    // Football talks about this for a fortnight and the game used to say nothing
+    // until the moment it landed.
+    id: "st-potm-race", archetype: "stats", events: ["potm-race"], requires: ["month", "place"],
+    body: "{month} Player of the Month race — {player} sits {place|ordinal}. {goals} goals, {assists} assists.",
+    graphic: "statLine", weight: 2,
+  },
+  {
+    id: "st-potm-decides", archetype: "stats", events: ["potm-decides"], requires: ["month", "place"],
+    body: "Last round of {month}. {player} is {place|ordinal} in the Player of the Month race.",
+    graphic: "statLine", weight: 3,
+  },
+  {
     id: "st-boot", archetype: "stats", events: ["golden-boot-race"], requires: ["goals"],
     body: "GOLDEN BOOT | {player} — {goals} with {left} to play.",
     graphic: "topScorers", weight: 3,

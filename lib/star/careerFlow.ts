@@ -26,6 +26,7 @@ import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { resetLeagueSquads } from "./leagueSquads";
+import { monthOf, endsMonth, alreadyAwarded, voteMonth, type MonthAward } from "./potm";
 import { kitsOf } from "./kits";
 import { surname } from "./media/grammar";
 
@@ -154,7 +155,7 @@ export function creditMatchResult(
   career: CareerState,
   fixture: Fixture,
   stats: MatchStats,
-): { career: CareerState; newlyUnlocked: string[] } {
+): { career: CareerState; newlyUnlocked: string[]; potmAwarded?: MonthAward } {
   const accrue = (base: CareerState["seasonStats"]) => ({
     appearances: base.appearances + 1,
     goals: base.goals + stats.goals,
@@ -308,8 +309,38 @@ export function creditMatchResult(
     ? { goals: priorLeague.goals + stats.goals, assists: priorLeague.assists + stats.assists }
     : priorLeague;
 
+  // ── Player of the Month ──
+  //
+  // Awarded once the last league week of a month has been played. It reads
+  // `results`, which by this point already has this week's ten games in it, so
+  // the month it votes on is complete. See lib/star/potm.
+  let potm = career.potm;
+  let potmJustAwarded: MonthAward | null = null;
+  if (kind === "league") {
+    const month = monthOf(fixture.week);
+    const lastWeek = Math.max(...career.fixtures.map(f => f.week), fixture.week);
+    if (endsMonth(fixture.week, lastWeek) && !alreadyAwarded(career, month)) {
+      const forVote = { ...career, results: weekResults, fixtures } as CareerState;
+      const award = voteMonth(forVote, month);
+      if (award) {
+        potm = [...(career.potm ?? []), award];
+        potmJustAwarded = award;
+      }
+    }
+  }
+
   const next: CareerState = {
     ...career,
+    potm,
+    // …and on the honours list beside the Ballon d'Or, but only when it is
+    // yours. A month somebody else won is a fact about the league, not an
+    // individual honour of yours.
+    awards: potmJustAwarded?.isYou
+      ? [...(career.awards ?? []), {
+        season: career.season, kind: "Player of the Month", week: fixture.week,
+        detail: `${potmJustAwarded.monthName} — ${potmJustAwarded.goals} goals, ${potmJustAwarded.assists} assists`,
+      }]
+      : career.awards,
     seasonStats: isInternational ? career.seasonStats : accrue(career.seasonStats),
     careerStats: isInternational ? career.careerStats : accrue(career.careerStats),
     leagueSeasonStats,
@@ -383,7 +414,7 @@ export function creditMatchResult(
   // rather than the "1st Team" it was stamped with when the career was created.
   next.status = selectionFor(next).status;
 
-  return applyAchievements(next);
+  return { ...applyAchievements(next), potmAwarded: potmJustAwarded ?? undefined };
 }
 
 // After the final fixture: award the league title if the user finished top.

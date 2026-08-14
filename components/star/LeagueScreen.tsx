@@ -15,7 +15,7 @@ export default function LeagueScreen({ career }: Props) {
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
 
-  const [view, setView] = useState<"table" | "results" | "fixtures" | "cups" | "squad">("table");
+  const [view, setView] = useState<"table" | "results" | "fixtures" | "cups" | "awards" | "squad">("table");
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
 
@@ -34,12 +34,12 @@ export default function LeagueScreen({ career }: Props) {
 
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-5 gap-1 mb-2">
-        {(["table", "results", "fixtures", "cups", "squad"] as const).map((v) => (
+      <div className="grid grid-cols-6 gap-1 mb-2">
+        {(["table", "results", "fixtures", "cups", "awards", "squad"] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`py-1.5 rounded-t-lg font-black text-[10px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
+            className={`py-1.5 rounded-t-lg font-black text-[9px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
           >
             {v}
           </button>
@@ -172,10 +172,44 @@ export default function LeagueScreen({ career }: Props) {
         </div>
       )}
 
-      {view === "table" && (
-        <div className="mt-2 grid gap-2">
-          {/* Both charts are a COUNT now — every goal in all 380 league games
-              belongs to a named player. See recognition.goldenBootRace. */}
+      {view === "awards" && (
+        <div className="grid gap-2">
+          {/* ── Player of the Month ──
+              Newest first, because the one you want is the one just given. */}
+          <div className="rounded-lg border border-gray-600 bg-gray-700 overflow-hidden">
+            <div className="bg-gray-800 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300">
+              Player of the Month
+            </div>
+            {(career.potm ?? []).filter(a => a.season === career.season).length === 0 && (
+              <div className="px-2 py-2 text-[11px] font-bold text-white/70">
+                Nothing awarded yet — the first one is given at the end of August.
+              </div>
+            )}
+            {[...(career.potm ?? [])]
+              .filter(a => a.season === career.season)
+              .sort((a, b) => b.month - a.month)
+              .map((a) => (
+                <div key={`${a.season}-${a.month}`} className="border-b border-black/25 px-2 py-1.5 last:border-b-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-white/70">{a.monthName}</span>
+                    {a.isYou
+                      ? <span className="text-[10px] font-black text-amber-300">YOU WON IT</span>
+                      : a.yourPlace
+                        ? <span className="text-[10px] font-bold text-white/70">You were {a.yourPlace}{["st","nd","rd"][a.yourPlace-1] ?? "th"}</span>
+                        : <span className="text-[10px] font-bold text-white/50">Not shortlisted</span>}
+                  </div>
+                  <div className={`text-xs font-black ${a.isYou ? "text-amber-300" : "text-white"}`}>
+                    {a.winner} <span className="font-bold text-white/70">· {a.club}</span>
+                  </div>
+                  <div className="text-[10px] font-bold text-white/60">
+                    {a.goals}G {a.assists}A · shortlist: {a.nominees.map(n => n.name).join(", ")}
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          {/* Both charts are a COUNT — every league goal belongs to a named
+              player. Cup goals stay out of them. See recognition.goldenBootRace. */}
           {([["Golden Boot", goldenBootRace(career)], ["Assist King", assistRace(career)]] as const).map(([title, race]) => (
             <div key={title} className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
               <div className="bg-gray-800 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300 border-b border-black/50">

@@ -287,11 +287,29 @@ export default function StarDevPage() {
     if (!career || !nextFixture) return;
     setLastMatchStats(stats);
     setPlayedFixture(nextFixture);
-    const { career: next, newlyUnlocked } = creditMatchResult(career, nextFixture, stats);
+    const { career: next, newlyUnlocked, potmAwarded } = creditMatchResult(career, nextFixture, stats);
     toastAchievements(newlyUnlocked);
     // The world reacts. Generated once, here, from the career on both sides of
     // the match — "went top" is a comparison and the after state cannot make it.
     next.media = generateForMatch(career, next, nextFixture, stats);
+    // …and again if the month ended with it, so the award is its own moment in
+    // the feed rather than a line buried under the match report.
+    if (potmAwarded) {
+      const place = potmAwarded.isYou ? "won it"
+        : potmAwarded.yourPlace ? `${potmAwarded.yourPlace}${["st", "nd", "rd"][potmAwarded.yourPlace - 1] ?? "th"} on the shortlist`
+        : "not shortlisted";
+      next.media = generateForCareer(
+        { ...next, media: next.media },
+        {
+          kind: "award",
+          award: `${potmAwarded.monthName} Player of the Month`,
+          detail: potmAwarded.isYou
+            ? `${potmAwarded.goals} goals and ${potmAwarded.assists} assists in ${potmAwarded.monthName}.`
+            : `${potmAwarded.winner} of ${potmAwarded.club} takes it — ${potmAwarded.goals} goals. You were ${place}.`,
+        },
+        `potm-${potmAwarded.season}-${potmAwarded.month}`,
+      );
+    }
     setCareer(next);
     setPhase("post-match");
   }, [career, nextFixture]);

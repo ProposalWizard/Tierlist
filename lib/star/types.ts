@@ -356,6 +356,14 @@ export interface CareerState {
   retired?: boolean;
   /** How the board saw last season. Shown on the dashboard. */
   lastSeasonJudgement?: { score: number; bossChange: number; headline: string; detail: string };
+  /**
+   * Every Player of the Month awarded, this season and the ones before it.
+   *
+   * Kept whole rather than as a line of text, because the awards screen shows
+   * the shortlist and where you finished on it — which is most of the point when
+   * you did not win.
+   */
+  potm?: import("./potm").MonthAward[];
   /** Individual honours. The Ballon d'Or was the only one that existed. */
   awards?: { season: number; kind: string; week?: number; detail: string }[];
   /** Wearing the armband at your current club. */
