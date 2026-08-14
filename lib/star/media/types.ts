@@ -76,6 +76,16 @@ export interface MatchRecord {
    * ninety minutes. Absent outside the league, where there is no award.
    */
   potmRace?: {
+    /**
+     * 0-9, August first — the index `monthCandidates` files results under.
+     *
+     * Here rather than recomputed downstream, and that is the whole point. The
+     * graphic used to work it out again from `record.week`, which is the CAREER
+     * week and drifts from the fixture week the moment a cup tie is played:
+     * at league week 7 the career was on week 9, so the card asked for the
+     * wrong month, got no contenders, and silently refused to render.
+     */
+    month: number;
     monthName: string;
     /** 1-based. Absent when you have not scored or made one all month. */
     place?: number;
@@ -421,8 +431,6 @@ export type GraphicSpec =
       number?: number;
       /** See PotmNominee.own. */
       own?: boolean;
-      /** Who he beat. Absent when the shortlist was one name long. */
-      runnerUp?: string;
       /** Where you came, when the winner was somebody else and you were on it. */
       yourPlace?: number;
     };

@@ -62,8 +62,15 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
             >
               ←
             </button>
-            <div className="flex-1 text-center text-[10px] font-black uppercase tracking-widest text-amber-300">
-              {round.length > 0 ? `Matchweek ${shownWeek}` : "No results yet"}
+            <div className="flex-1 text-center">
+              <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                {round.length > 0 ? `Matchweek ${shownWeek}` : "No results yet"}
+              </div>
+              {round.length > 0 && (
+                <div className="text-[9px] font-bold text-white/70">
+                  {fixtureDateLabel(career.player.startYear, career.season, shownWeek, "league")}
+                </div>
+              )}
             </div>
             <button
               onClick={() => setWeekIdx(shownWeek + 1)}
@@ -226,8 +233,15 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                   <div className={`text-xs font-black ${a.isYou ? "text-amber-300" : "text-white"}`}>
                     {a.winner} <span className="font-bold text-white/70">· {a.club}</span>
                   </div>
+                  {/* The shortlist is the interesting part of somebody ELSE
+                      winning it — it is where you came and who else was close.
+                      On a month you won, it is a list of people you beat, and
+                      printing it under YOU WON IT reads as a consolation. */}
                   <div className="text-[10px] font-bold text-white/60">
-                    {a.goals}G {a.assists}A · shortlist: {a.nominees.map(n => n.name).join(", ")}
+                    {a.goals}G {a.assists}A
+                    {!a.isYou && a.nominees.length > 1 && (
+                      <> · shortlist: {a.nominees.map(n => n.name).join(", ")}</>
+                    )}
                   </div>
                 </div>
               ))}

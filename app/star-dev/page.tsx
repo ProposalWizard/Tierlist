@@ -7,10 +7,12 @@ import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagu
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
+import { fixtureDateLabel } from "@/lib/star/calendar";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
+import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats } from "@/lib/star/leagueSquads";
@@ -26,6 +28,7 @@ import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
 import LifeScreen from "@/components/star/LifeScreen";
+import PotmWinModal from "@/components/star/PotmWinModal";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
@@ -164,6 +167,11 @@ export default function StarDevPage() {
   const nextMatchLabel = nextFixture
     ? `Next: ${nextFixture.home ? myTeam(nextFixture) : nextFixture.opponent} v ${nextFixture.home ? nextFixture.opponent : myTeam(nextFixture)}`
     : "Season complete";
+  // When it is played, in real dates. The fixture list has had these since the
+  // calendar landed; this is the screen everybody actually looks at.
+  const nextMatchDate = nextFixture && career
+    ? fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)
+    : null;
 
   /**
    * A new career, with the actual squad of the club you picked.
@@ -207,6 +215,14 @@ export default function StarDevPage() {
    * has to be a way to say "I have made my edits, bring them in". Goals and
    * assists survive; see mergeSquadStats.
    */
+  /**
+   * The month you won, held until you dismiss it.
+   *
+   * Only ever set when the winner is you. Somebody else taking it is news and
+   * belongs in the feed; yours stops the game once.
+   */
+  const [potmWin, setPotmWin] = useState<MonthAward | null>(null);
+
   const [refreshing, setRefreshing] = useState(false);
   const refreshSquads = useCallback(async () => {
     if (!career || refreshing) return;
@@ -351,6 +367,7 @@ export default function StarDevPage() {
         `potm-${potmAwarded.season}-${potmAwarded.month}`,
       );
     }
+    if (potmAwarded?.isYou) setPotmWin(potmAwarded);
     setCareer(next);
     setPhase("post-match");
   }, [career, nextFixture]);
@@ -987,6 +1004,7 @@ export default function StarDevPage() {
       activeNav={activeNav}
       mediaUnread={hasFreshMedia(career) && activeNav !== "media"}
       nextMatchLabel={nextMatchLabel}
+      nextMatchDate={nextMatchDate ?? undefined}
     >
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
@@ -1055,6 +1073,11 @@ export default function StarDevPage() {
           <BackChip onBack={handleBackToDashboard} />
           <SkillsScreen career={career} onTrain={handleTrain} />
         </div>
+      )}
+      {/* Above every phase, because winning it can land on the post-match
+          screen and must not be something you have to go looking for. */}
+      {potmWin && career && (
+        <PotmWinModal award={potmWin} career={career} onClose={() => setPotmWin(null)} />
       )}
     </DashboardShell>
   );

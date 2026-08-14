@@ -472,11 +472,7 @@ function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) 
           <span className="shrink-0 tabular-nums">
             <b className="text-amber-200">{s.assists}</b> Assist{s.assists === 1 ? "" : "s"}
           </span>
-          {s.runnerUp && (
-            <span className="truncate font-bold normal-case tracking-normal text-white/70">
-              ahead of {s.runnerUp}
-            </span>
-          )}
+
         </div>
       </div>
     </div>
