@@ -62,9 +62,31 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "statLine", weight: 2,
   },
   {
-    id: "st-losing", archetype: "stats", events: ["losing-run", "drought"], requires: ["matches"],
+    id: "st-losing", archetype: "stats", events: ["losing-run"], requires: ["matches"],
     body: "{matches} without a win for {club}.",
     graphic: "statLine",
+  },
+  {
+    // A drought is one man not scoring. It used to share the line above, so a
+    // striker who had not scored in six was reported as his CLUB not having won
+    // in six — a different thing, about different people, and often not true.
+    id: "st-drought", archetype: "stats", events: ["drought"], requires: ["matches"],
+    body: "{player} — {matches} matches without a goal.",
+    graphic: "statLine",
+  },
+  {
+    // ── The month's award, before it is given ──
+    //
+    // Football talks about this for a fortnight and the game used to say nothing
+    // until the moment it landed.
+    id: "st-potm-race", archetype: "stats", events: ["potm-race"], requires: ["month", "place"],
+    body: "{month} Player of the Month race — {player} sits {place|ordinal}. {goals} goals, {assists} assists.",
+    graphic: "statLine", weight: 2,
+  },
+  {
+    id: "st-potm-decides", archetype: "stats", events: ["potm-decides"], requires: ["month", "place"],
+    body: "Last round of {month}. {player} is {place|ordinal} in the Player of the Month race.",
+    graphic: "statLine", weight: 3,
   },
   {
     id: "st-boot", archetype: "stats", events: ["golden-boot-race"], requires: ["goals"],
@@ -82,9 +104,44 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "statLine",
   },
   {
-    id: "st-generic", archetype: "stats",
+    // ── The stats account's fallback, and it is about ONE match ──
+    //
+    // It writes the scoreline and this afternoon's rating, so it must not be
+    // reached for a run: paired with a scoring-run event it produced "Chelsea
+    // 3-1 Liverpool. Mikey Vassiliou: 9.6." above a card reading "Goals 7 /
+    // Over 3 matches" — a sentence about Saturday over numbers about a
+    // fortnight. Reported as the card not being relevant to the line above it.
+    //
+    // `excludes` exists for exactly this and was not being used by anything.
+    id: "st-generic", archetype: "stats", excludes: ["matches"],
     body: "{club} {us}-{them} {opponent}. {player}: {rating}.",
     graphic: "statLine", weight: 0.5,
+  },
+  {
+    // …and the ones it falls through to when there IS a run. Two of them,
+    // because a run belongs to somebody: "0 goals in his last 6" is a sentence
+    // about a striker and nonsense about a club that has not lost in six. The
+    // first version of this was one template for both and said exactly that.
+    id: "st-run-player", archetype: "stats",
+    events: ["scoring-run", "red-hot", "purple-patch", "drought", "creating"],
+    requires: ["matches", "goals"],
+    body: "{player} — {goals} in his last {matches}.",
+    graphic: "statLine", weight: 0.5,
+  },
+  {
+    id: "st-run-club", archetype: "stats",
+    events: ["unbeaten-run", "winning-run", "losing-run", "clean-sheet-run", "run-ended"],
+    requires: ["matches"],
+    body: "{club} — {matches} matches.",
+    graphic: "statLine", weight: 0.4,
+  },
+  {
+    // The terminator. Every archetype needs one that requires nothing, or a
+    // combination nobody wrote a line for renders as a blank post — and
+    // excluding `matches` from st-generic took the stats account's away.
+    id: "st-any", archetype: "stats", requires: ["matches"],
+    body: "{player} — the last {matches} matches, in numbers.",
+    graphic: "statLine", weight: 0.15,
   },
 
   // ── The insider ───────────────────────────────────────────────────────────

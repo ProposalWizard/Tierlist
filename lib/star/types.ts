@@ -150,6 +150,16 @@ export interface SquadPlayer {
   seasonAssists: number;
   careerGoals: number;
   careerAssists: number;
+  /**
+   * …and the league-only subset, for the Golden Boot and the Assist King.
+   *
+   * A team-mate's cup goals belong on his club record — `seasonGoals` — and not
+   * on a chart that has only ever counted league football. Optional, so a career
+   * saved before the cups were real reads its existing totals as league ones,
+   * which for that career they were.
+   */
+  leagueGoals?: number;
+  leagueAssists?: number;
   // ── When the team-mate is a real footballer ──
   //
   // All optional, because a squad can also be generated — offline, at a club
@@ -315,6 +325,23 @@ export interface CareerState {
    */
   results?: LeagueResult[];
   /**
+   * The two domestic cups, as thirty-two-club draws.
+   *
+   * Kept beside `cups`, which is the old counter-style run and still carries
+   * Europe and international tournaments. These two are the real thing: a hat, a
+   * draw every round, and every tie in the country played.
+   */
+  cupState?: import("./cups").CupState[];
+  /**
+   * Goals and assists in the LEAGUE only.
+   *
+   * The Golden Boot and the Assist King are league competitions — a hat-trick in
+   * the FA Cup does not count towards either, and never has. `seasonStats` is
+   * everything you did, which is what your own club record should be; this is
+   * the subset the charts are allowed to read.
+   */
+  leagueSeasonStats?: { goals: number; assists: number };
+  /**
    * The other clubs' players, and what they have done this season.
    *
    * Absent on a career saved before the division had squads — the Golden Boot
@@ -329,6 +356,14 @@ export interface CareerState {
   retired?: boolean;
   /** How the board saw last season. Shown on the dashboard. */
   lastSeasonJudgement?: { score: number; bossChange: number; headline: string; detail: string };
+  /**
+   * Every Player of the Month awarded, this season and the ones before it.
+   *
+   * Kept whole rather than as a line of text, because the awards screen shows
+   * the shortlist and where you finished on it — which is most of the point when
+   * you did not win.
+   */
+  potm?: import("./potm").MonthAward[];
   /** Individual honours. The Ballon d'Or was the only one that existed. */
   awards?: { season: number; kind: string; week?: number; detail: string }[];
   /** Wearing the armband at your current club. */

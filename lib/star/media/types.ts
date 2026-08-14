@@ -66,6 +66,26 @@ export interface MatchRecord {
   score: { us: number; them: number };
   result: "win" | "draw" | "loss";
 
+  /**
+   * Where you stand in this month's Player of the Month race, and how much of
+   * the month is left.
+   *
+   * On the record rather than looked up by a detector, because a detector is
+   * handed the match and the memory and never the career — and the race is a
+   * fact about the league table's own record of the month, not about the
+   * ninety minutes. Absent outside the league, where there is no award.
+   */
+  potmRace?: {
+    monthName: string;
+    /** 1-based. Absent when you have not scored or made one all month. */
+    place?: number;
+    contenders: number;
+    goals: number;
+    assists: number;
+    /** True on the last league week of the month — the vote is imminent. */
+    decidesToday: boolean;
+    leader: string;
+  };
   you: {
     name: string;
     shortName: string;

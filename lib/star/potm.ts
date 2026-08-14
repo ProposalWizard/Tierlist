@@ -1,0 +1,224 @@
+import type { CareerState, LeagueResult } from "./types";
+import { mulberry32 } from "./season";
+
+/**
+ * PLAYER OF THE MONTH.
+ *
+ * Every league game played in a month, and one name at the end of it.
+ *
+ * ── Why it is a vote and not a sum ──
+ *
+ * The real award is decided by a panel who watched the football. Goals help
+ * enormously and do not settle it: a striker with four in a month his side lost
+ * three of loses to a midfielder with two and four wins, and sometimes he just
+ * loses. So this scores the things that are countable — goals, assists, the
+ * points his side took — and then puts a deterministic wobble through it, so the
+ * leading scorer is usually the winner and never automatically the winner.
+ *
+ * Deterministic because everything in this career is: the same month replays to
+ * the same result, and refreshing the page does not re-run the vote.
+ *
+ * ── Where the numbers come from ──
+ *
+ * `career.results`, which already holds every league game in the season with its
+ * scorers and assisters. Nothing new is tracked and nothing can drift out of
+ * step with the table, because it IS the table's own record.
+ */
+
+/** A season is ten months of four weeks. Close enough to a real calendar. */
+export const MONTH_NAMES = [
+  "August", "September", "October", "November", "December",
+  "January", "February", "March", "April", "May",
+];
+
+export const WEEKS_PER_MONTH = 4;
+
+export function monthOf(week: number): number {
+  return Math.min(MONTH_NAMES.length - 1, Math.floor(Math.max(0, week - 1) / WEEKS_PER_MONTH));
+}
+
+export function monthName(week: number): string {
+  return MONTH_NAMES[monthOf(week)];
+}
+
+/** Is this the last league week of its month? */
+export function endsMonth(week: number, lastWeek: number): boolean {
+  return week % WEEKS_PER_MONTH === 0 || week >= lastWeek;
+}
+
+export interface MonthCandidate {
+  name: string;
+  club: string;
+  goals: number;
+  assists: number;
+  /** Points his side took in the month — 3 a win, 1 a draw. */
+  points: number;
+  /** Yours only. Nobody else in the division is rated. */
+  rating?: number;
+  isYou: boolean;
+  /** What the panel scored him. Not shown; it decides the order. */
+  score: number;
+}
+
+export interface MonthAward {
+  season: number;
+  /** 0-9. August is 0. */
+  month: number;
+  monthName: string;
+  winner: string;
+  club: string;
+  goals: number;
+  assists: number;
+  isYou: boolean;
+  /** Everybody who made the shortlist, best first, the winner included. */
+  nominees: { name: string; club: string; goals: number; assists: number; isYou: boolean }[];
+  /** Where you finished, 1-based, when you were on the shortlist. */
+  yourPlace?: number;
+}
+
+/** How many names go on the shortlist. */
+const SHORTLIST = 5;
+
+/**
+ * What a month's football says about everybody who played in it.
+ *
+ * Goals and assists come off the results; points come off who won the game the
+ * goal was scored in. A player who did not score or assist all month is not a
+ * candidate, which is also how the real award works — you cannot be nominated
+ * for having been available.
+ */
+export function monthCandidates(career: CareerState, month: number): MonthCandidate[] {
+  const results = (career.results ?? []).filter(r => monthOf(r.week) === month);
+  if (results.length === 0) return [];
+
+  const by = new Map<string, MonthCandidate>();
+  const key = (name: string, club: string) => `${club}|${name}`;
+  const touch = (name: string, club: string): MonthCandidate => {
+    const k = key(name, club);
+    let c = by.get(k);
+    if (!c) {
+      c = { name, club, goals: 0, assists: 0, points: 0, isYou: false, score: 0 };
+      by.set(k, c);
+    }
+    return c;
+  };
+
+  // Points a club took in the month, so a scorer's side's results count for him.
+  const clubPoints = new Map<string, number>();
+  const addPoints = (club: string, n: number) => clubPoints.set(club, (clubPoints.get(club) ?? 0) + n);
+  for (const r of results) {
+    if (r.hs > r.as) { addPoints(r.home, 3); }
+    else if (r.hs < r.as) { addPoints(r.away, 3); }
+    else { addPoints(r.home, 1); addPoints(r.away, 1); }
+  }
+
+  for (const r of results) {
+    for (const [club, goals] of [[r.home, r.hg], [r.away, r.ag]] as const) {
+      for (const g of goals ?? []) {
+        touch(g.s, club).goals += 1;
+        if (g.a) touch(g.a, club).assists += 1;
+      }
+    }
+  }
+
+  const yourName = `${career.player.firstName} ${career.player.lastName}`;
+  const yourSurname = career.player.lastName;
+  for (const c of Array.from(by.values())) {
+    c.points = clubPoints.get(c.club) ?? 0;
+    c.isYou = c.club === career.player.club && (c.name === yourSurname || c.name === yourName);
+  }
+
+  // Your rating is the only one in the division, because you are the only one
+  // whose matches are actually played.
+  const mine = Array.from(by.values()).find(c => c.isYou);
+  if (mine) {
+    const rated = (career.fixtures ?? []).filter(
+      f => f.played && (f.kind ?? "league") === "league"
+        && monthOf(f.week) === month && typeof f.userRating === "number");
+    if (rated.length) {
+      mine.rating = rated.reduce((a, f) => a + (f.userRating ?? 0), 0) / rated.length;
+    }
+  }
+
+  return Array.from(by.values());
+}
+
+/**
+ * The panel votes.
+ *
+ * Goals dominate, assists matter, the side's month matters, and a rating —
+ * which only you have — is worth a nudge either way from a competent 6.5. Then
+ * every candidate is multiplied by a wobble drawn from the month's own seed, so
+ * the same month always votes the same way and the top scorer is a strong
+ * favourite rather than a certainty.
+ */
+export function voteMonth(career: CareerState, month: number): MonthAward | null {
+  const candidates = monthCandidates(career, month);
+  if (candidates.length === 0) return null;
+
+  // ── Warming the generator ──
+  //
+  // mulberry32's FIRST output barely mixes a structured seed, and these seeds
+  // are structured — season, month and a headcount. Measured: across four
+  // hundred seasons of an identical month the leading scorer won all four
+  // hundred, because every first draw came out in the same part of the range.
+  // Discarding the first few makes it a wobble again.
+  const rng = mulberry32(career.season * 100003 + month * 7919 + candidates.length * 31);
+  rng(); rng(); rng();
+  for (const c of candidates) {
+    const base = c.goals * 3.4 + c.assists * 2.1 + c.points * 0.55
+      + (c.rating !== undefined ? (c.rating - 6.5) * 2.4 : 0);
+    // 0.58 … 1.42, and the width was measured rather than guessed. Over 3,000
+    // votes on a month of four, three, two and one goals it returns:
+    //
+    //   four goals   75%      two goals    2%
+    //   three goals  24%      one goal     0%
+    //
+    // Which is the shape the award has in life: the leading scorer is a strong
+    // favourite, the man behind him takes it often enough to be worth arguing
+    // about, and a quiet month never wins it however the panel felt.
+    c.score = base * (0.58 + rng() * 0.84);
+  }
+
+  const ranked = [...candidates].sort((a, b) =>
+    b.score - a.score || b.goals - a.goals || a.name.localeCompare(b.name));
+  const shortlist = ranked.slice(0, SHORTLIST);
+  const winner = shortlist[0];
+  const yourIndex = shortlist.findIndex(c => c.isYou);
+
+  return {
+    season: career.season,
+    month,
+    monthName: MONTH_NAMES[month],
+    winner: winner.name,
+    club: winner.club,
+    goals: winner.goals,
+    assists: winner.assists,
+    isYou: winner.isYou,
+    nominees: shortlist.map(c => ({
+      name: c.name, club: c.club, goals: c.goals, assists: c.assists, isYou: c.isYou,
+    })),
+    yourPlace: yourIndex >= 0 ? yourIndex + 1 : undefined,
+  };
+}
+
+/**
+ * Where you stand while the month is still running.
+ *
+ * Used for the build-up rather than the award: the same scoring without the
+ * wobble, because a race is about the numbers and the vote is the thing that
+ * has not happened yet.
+ */
+export function monthRace(career: CareerState, month: number): MonthCandidate[] {
+  const candidates = monthCandidates(career, month);
+  for (const c of candidates) {
+    c.score = c.goals * 3.4 + c.assists * 2.1 + c.points * 0.55
+      + (c.rating !== undefined ? (c.rating - 6.5) * 2.4 : 0);
+  }
+  return candidates.sort((a, b) => b.score - a.score || b.goals - a.goals);
+}
+
+/** Has this month already been awarded? */
+export function alreadyAwarded(career: CareerState, month: number): boolean {
+  return (career.potm ?? []).some(a => a.season === career.season && a.month === month);
+}

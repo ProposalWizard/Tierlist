@@ -12,6 +12,38 @@ import { base, club, ev, you } from "./kit";
  * write.
  */
 
+/**
+ * The Player of the Month race, while it is still a race.
+ *
+ * Football talks about this award for a fortnight before it is given and the
+ * game said nothing until the moment it landed. Two lines: one when you are in
+ * contention at all, and a louder one on the day the month ends, which is the
+ * day it is actually worth talking about.
+ *
+ * Only ever about YOU. The panel's shortlist is not news until it is announced.
+ */
+const POTM_RACE: Detector = (r) => {
+  const race = r.potmRace;
+  if (!race || race.place === undefined || race.place > 3) return null;
+  if (race.goals + race.assists < 2) return null;
+  const leading = race.place === 1;
+  return ev(
+    race.decidesToday ? "potm-decides" : "potm-race",
+    you(r),
+    race.decidesToday ? (leading ? 78 : 62) : (leading ? 58 : 44),
+    ["award", "form", "stat"],
+    {
+      ...base(r),
+      month: race.monthName,
+      place: race.place,
+      goals: race.goals,
+      assists: race.assists,
+      leader: race.leader,
+    },
+    race.decidesToday ? "hour" : "evening",
+  );
+};
+
 const SCORING_RUN: Detector = (r, m) => {
   if (m.streaks.scoring < 3) return null;
   const n = m.streaks.scoring;
@@ -97,5 +129,5 @@ const RUN_ENDED: Detector = (r, m) => {
 
 export const STREAK_DETECTORS: Detector[] = [
   SCORING_RUN, HOT_STREAK, CREATING_RUN, UNBEATEN, WINNING_RUN,
-  LOSING_RUN, CLEAN_SHEET_RUN, RUN_ENDED,
+  LOSING_RUN, CLEAN_SHEET_RUN, RUN_ENDED, POTM_RACE,
 ];

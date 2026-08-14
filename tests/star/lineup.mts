@@ -186,17 +186,45 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
 // ── An assist is somebody who was in the move ───────────────────────────────
 {
   const rng = mulberry32(31);
-  let crossed = 0, open = 0;
+  let crossed = 0, named = 0, unassisted = 0;
   for (let i = 0; i < 300; i++) {
     const volley = buildScenario("volley", rng, 62, 60, 55);
     castScenario(volley, SQUAD);
-    if (creatorOf(volley)) crossed += 1;
+    if (creatorOf(volley, SQUAD, rng)?.id === volley.crosser?.id) crossed += 1;
+
+    // ── A goal you score has a creator now ──
+    //
+    // It used to have one only when somebody had visibly crossed it, so a goal
+    // from open play was credited to nobody and no team-mate ever got an assist
+    // for anything you scored. The engine shows you the last touch of a move and
+    // nothing before it, so the man who set you up is real football the
+    // highlight cannot contain — it is generated, preferring the men who were
+    // actually on the pitch. See creatorOf.
     const solo = buildScenario("long_range", rng, 62, 60, 55);
     castScenario(solo, SQUAD);
-    if (!creatorOf(solo)) open += 1;
+    if (creatorOf(solo, SQUAD, rng)) named += 1;
+
+    // …except where football never awards one.
+    const spot = buildScenario("penalty", rng, 62, 60, 55);
+    castScenario(spot, SQUAD);
+    if (!creatorOf(spot, SQUAD, rng)) unassisted += 1;
   }
-  check(crossed === 300, `a volley was crossed by somebody (${crossed}/300)`);
-  check(open === 300, `a shot from distance has no creator to invent (${open}/300)`);
+  check(crossed === 300, `a volley is credited to the man who crossed it (${crossed}/300)`);
+  check(named === 300, `a goal from open play is credited to somebody (${named}/300)`);
+  check(unassisted === 300, `a penalty is never assisted (${unassisted}/300)`);
+
+  // And the creator is always a real member of the squad.
+  const r3 = mulberry32(77);
+  let real = 0, tries2 = 0;
+  for (let i = 0; i < 400; i++) {
+    const sc = buildScenario(SCENARIO_KINDS[i % SCENARIO_KINDS.length], r3, 62, 60, 55);
+    castScenario(sc, SQUAD);
+    const who = creatorOf(sc, SQUAD, r3);
+    if (!who) continue;
+    tries2 += 1;
+    if (SQUAD.some(p => p.id === who.id)) real += 1;
+  }
+  check(tries2 > 300 && real === tries2, `every creator is somebody in the squad (${real}/${tries2})`);
 }
 
 // ── …and it lands on his row in the squad screen ────────────────────────────

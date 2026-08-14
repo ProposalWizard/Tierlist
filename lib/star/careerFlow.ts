@@ -20,12 +20,13 @@ import { isDerby, DERBY_MULTIPLIER } from "./rivals";
 import { attachObjective, progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
-  seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
+  seedSeasonKnockouts, seedCups, settleCupTie, resolveKnockout, qualificationFor, leaguePosition,
 } from "./competitions";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { resetLeagueSquads } from "./leagueSquads";
+import { monthOf, endsMonth, alreadyAwarded, voteMonth, type MonthAward } from "./potm";
 import { kitsOf } from "./kits";
 import { surname } from "./media/grammar";
 
@@ -95,7 +96,11 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
   state.manager = makeManager(state, player.club, 1);
   const seeded = seedSeasonKnockouts(state);
   state.cups = seeded.runs;
-  state.fixtures = [...state.fixtures, ...seeded.fixtures];
+  // Both domestic cups: thirty-two clubs, a first-round draw, and your tie on
+  // the calendar. See lib/star/cups.
+  const drawn = seedCups(state);
+  state.cupState = drawn.states;
+  state.fixtures = [...state.fixtures, ...seeded.fixtures, ...drawn.fixtures];
   return state;
 }
 
@@ -150,7 +155,7 @@ export function creditMatchResult(
   career: CareerState,
   fixture: Fixture,
   stats: MatchStats,
-): { career: CareerState; newlyUnlocked: string[] } {
+): { career: CareerState; newlyUnlocked: string[]; potmAwarded?: MonthAward } {
   const accrue = (base: CareerState["seasonStats"]) => ({
     appearances: base.appearances + 1,
     goals: base.goals + stats.goals,
@@ -257,6 +262,11 @@ export function creditMatchResult(
       seasonAssists: p.seasonAssists + assisted,
       careerGoals: p.careerGoals + scored,
       careerAssists: p.careerAssists + assisted,
+      // …and the league-only subset. The Golden Boot and the Assist King are
+      // league competitions; a hat-trick in the FA Cup does not count towards
+      // either and never has. The club record above counts everything.
+      leagueGoals: (p.leagueGoals ?? p.seasonGoals) + (kind === "league" ? scored : 0),
+      leagueAssists: (p.leagueAssists ?? p.seasonAssists) + (kind === "league" ? assisted : 0),
     };
   });
 
@@ -267,14 +277,23 @@ export function creditMatchResult(
   let extraFixtures: Fixture[] = [];
   let cupTrophy: Trophy | null = null;
   let knockoutMessage: string | null = null;
+  let cupState = career.cupState;
   if (kind !== "league" && fixture.competition) {
-    const idx = cups.findIndex(r => r.competition === fixture.competition && !r.eliminated);
-    if (idx >= 0) {
-      const out = resolveKnockout(career, cups[idx], fixture, stats.homeScore, stats.awayScore);
-      cups = cups.map((r, i) => (i === idx ? out.run : r));
-      if (out.nextFixture) extraFixtures = [out.nextFixture];
-      cupTrophy = out.trophy;
-      knockoutMessage = out.message;
+    const settled = settleCupTie(career, fixture, stats.homeScore, stats.awayScore);
+    if (settled) {
+      cupState = settled.states;
+      extraFixtures = settled.nextFixture ? [settled.nextFixture] : [];
+      cupTrophy = settled.trophy;
+      knockoutMessage = settled.message;
+    } else {
+      const idx = cups.findIndex(r => r.competition === fixture.competition && !r.eliminated);
+      if (idx >= 0) {
+        const out = resolveKnockout(career, cups[idx], fixture, stats.homeScore, stats.awayScore);
+        cups = cups.map((r, i) => (i === idx ? out.run : r));
+        if (out.nextFixture) extraFixtures = [out.nextFixture];
+        cupTrophy = out.trophy;
+        knockoutMessage = out.message;
+      }
     }
   }
 
@@ -283,15 +302,54 @@ export function creditMatchResult(
   // the Ballon d'Or and the club achievements read.
   const isInternational = kind === "international";
 
+  // Your own league-only tally, for the same reason.
+  const priorLeague = career.leagueSeasonStats
+    ?? { goals: career.seasonStats.goals, assists: career.seasonStats.assists };
+  const leagueSeasonStats = kind === "league"
+    ? { goals: priorLeague.goals + stats.goals, assists: priorLeague.assists + stats.assists }
+    : priorLeague;
+
+  // ── Player of the Month ──
+  //
+  // Awarded once the last league week of a month has been played. It reads
+  // `results`, which by this point already has this week's ten games in it, so
+  // the month it votes on is complete. See lib/star/potm.
+  let potm = career.potm;
+  let potmJustAwarded: MonthAward | null = null;
+  if (kind === "league") {
+    const month = monthOf(fixture.week);
+    const lastWeek = Math.max(...career.fixtures.map(f => f.week), fixture.week);
+    if (endsMonth(fixture.week, lastWeek) && !alreadyAwarded(career, month)) {
+      const forVote = { ...career, results: weekResults, fixtures } as CareerState;
+      const award = voteMonth(forVote, month);
+      if (award) {
+        potm = [...(career.potm ?? []), award];
+        potmJustAwarded = award;
+      }
+    }
+  }
+
   const next: CareerState = {
     ...career,
+    potm,
+    // …and on the honours list beside the Ballon d'Or, but only when it is
+    // yours. A month somebody else won is a fact about the league, not an
+    // individual honour of yours.
+    awards: potmJustAwarded?.isYou
+      ? [...(career.awards ?? []), {
+        season: career.season, kind: "Player of the Month", week: fixture.week,
+        detail: `${potmJustAwarded.monthName} — ${potmJustAwarded.goals} goals, ${potmJustAwarded.assists} assists`,
+      }]
+      : career.awards,
     seasonStats: isInternational ? career.seasonStats : accrue(career.seasonStats),
     careerStats: isInternational ? career.careerStats : accrue(career.careerStats),
+    leagueSeasonStats,
     caps: (career.caps ?? 0) + (isInternational ? 1 : 0),
     internationalGoals: (career.internationalGoals ?? 0) + (isInternational ? stats.goals : 0),
     cups,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
+    cupState,
     league,
     results: weekResults,
     leagueSquads,
@@ -356,7 +414,7 @@ export function creditMatchResult(
   // rather than the "1st Team" it was stamped with when the career was created.
   next.status = selectionFor(next).status;
 
-  return applyAchievements(next);
+  return { ...applyAchievements(next), potmAwarded: potmJustAwarded ?? undefined };
 }
 
 // After the final fixture: award the league title if the user finished top.
@@ -429,6 +487,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     league: buildLeague(clubs, career.player.club),
     // Last season's results belong to last season.
     results: [],
+    leagueSeasonStats: { goals: 0, assists: 0 },
     leagueSquads: resetLeagueSquads(career.leagueSquads ?? []),
     seasonStats: { ...EMPTY_SEASON_STATS },
     energy: 100,
@@ -436,7 +495,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     form: [],
     contract: { ...career.contract, seasonsRemaining: career.contract.seasonsRemaining - 1 },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
-    squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0 })),
+    squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
     europeanQualification: qualification,
     knockoutMessage: null,
     weekActions: WEEK_ACTIONS,
@@ -475,7 +534,9 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
   // the national side is picking you.
   const seeded = seedSeasonKnockouts(next);
   next.cups = seeded.runs;
-  next.fixtures = [...next.fixtures, ...seeded.fixtures];
+  const drawn = seedCups(next);
+  next.cupState = drawn.states;
+  next.fixtures = [...next.fixtures, ...seeded.fixtures, ...drawn.fixtures];
 
   return applyAchievements(next);
 }
@@ -538,8 +599,16 @@ export function simulateMissedFixture(
   let extraFixtures: Fixture[] = [];
   let cupTrophy: Trophy | null = null;
   let knockoutMessage: string | null = null;
+  let cupState = career.cupState;
   if (kind !== "league" && fixture.competition) {
-    const idx = cups.findIndex(r => r.competition === fixture.competition && !r.eliminated);
+    const settled = settleCupTie(career, fixture, userScore, oppScore);
+    if (settled) {
+      cupState = settled.states;
+      extraFixtures = settled.nextFixture ? [settled.nextFixture] : [];
+      cupTrophy = settled.trophy;
+      knockoutMessage = settled.message;
+    }
+    const idx = settled ? -1 : cups.findIndex(r => r.competition === fixture.competition && !r.eliminated);
     if (idx >= 0) {
       const out = resolveKnockout(career, cups[idx], fixture, userScore, oppScore);
       cups = cups.map((r, i) => (i === idx ? out.run : r));
@@ -569,6 +638,7 @@ export function simulateMissedFixture(
     leagueSquads,
     fixtures: [...fixtures, ...extraFixtures],
     cups,
+    cupState,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
     money: career.money + career.contract.wage,

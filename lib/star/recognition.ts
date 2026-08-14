@@ -65,12 +65,15 @@ export function goldenBootRace(career: CareerState): Scorer[] {
     }
   }
   for (const p of career.squad ?? []) {
-    if (p.seasonGoals > 0) out.push({ name: p.name, club: career.player.club, goals: p.seasonGoals, isYou: false });
+    // League football only. A hat-trick in the FA Cup is on his club record and
+    // not on this chart, which has only ever counted the league.
+    const g = p.leagueGoals ?? p.seasonGoals;
+    if (g > 0) out.push({ name: p.name, club: career.player.club, goals: g, isYou: false });
   }
   out.push({
     name: `${career.player.firstName} ${career.player.lastName}`,
     club: career.player.club,
-    goals: career.seasonStats.goals,
+    goals: career.leagueSeasonStats?.goals ?? career.seasonStats.goals,
     isYou: true,
   });
   return out.sort((a, b) => b.goals - a.goals || (a.isYou ? -1 : b.isYou ? 1 : 0));
@@ -87,12 +90,13 @@ export function assistRace(career: CareerState): Scorer[] {
     }
   }
   for (const p of career.squad ?? []) {
-    if (p.seasonAssists > 0) out.push({ name: p.name, club: career.player.club, goals: p.seasonAssists, isYou: false });
+    const a = p.leagueAssists ?? p.seasonAssists;
+    if (a > 0) out.push({ name: p.name, club: career.player.club, goals: a, isYou: false });
   }
   out.push({
     name: `${career.player.firstName} ${career.player.lastName}`,
     club: career.player.club,
-    goals: career.seasonStats.assists,
+    goals: career.leagueSeasonStats?.assists ?? career.seasonStats.assists,
     isYou: true,
   });
   return out.sort((a, b) => b.goals - a.goals || (a.isYou ? -1 : b.isYou ? 1 : 0));

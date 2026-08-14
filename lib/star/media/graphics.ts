@@ -69,7 +69,7 @@ export function buildGraphic(
         position: career.player.position,
         rating: r?.you.rating ?? 7,
         rows,
-        context: matchContext(r),
+        context: matchContext(r, e),
       };
     }
 
@@ -83,7 +83,7 @@ export function buildGraphic(
         type: "statLine",
         title: aboutYou ? String(f.player ?? you) : String(f.club ?? you),
         rows,
-        context: matchContext(r),
+        context: matchContext(r, e),
       };
     }
 
@@ -173,13 +173,27 @@ export function buildGraphic(
 }
 
 /**
- * Which match these numbers came out of. "v Crystal Palace (H)".
+ * What these numbers are FROM. "v Crystal Palace (H)", or "Last 3 matches".
  *
- * Every stat card in the feed is TODAY's stat, and the post above it is usually
- * about a run — so "4 assists in his last 4" sat over a card reading "Assists 3"
- * and read as the graphic contradicting the sentence. One line fixes it.
+ * ── It has to answer the question the card actually raises ──
+ *
+ * The first version of this labelled EVERY card with the match, because the bug
+ * it was fixing was a card of today's numbers sitting under a sentence about a
+ * run. That fix was right for the cards it was looking at and a lie for the
+ * others: a card reading "Goals 7 / Over 3 matches" is a RUN, and stamping
+ * "v Liverpool (A)" on it says those seven went in at Anfield on Saturday.
+ * Reported as exactly that.
+ *
+ * So it reads the same fact the rows are built from. `matches` present means the
+ * numbers span a run and the label says so; absent means they are this
+ * afternoon's and the label names the match.
  */
-function matchContext(r: MatchRecord | null): string | undefined {
+function matchContext(r: MatchRecord | null, e?: FootballEvent): string | undefined {
+  const over = e?.facts.matches;
+  if (over !== undefined) {
+    const n = Number(over);
+    return Number.isFinite(n) && n > 1 ? `Last ${n} matches` : undefined;
+  }
   if (!r) return undefined;
   return `v ${r.opponent} (${r.home ? "H" : "A"})`;
 }
@@ -196,8 +210,13 @@ function statRows(e: FootballEvent, r: MatchRecord | null, _memory: StoryMemory)
     // "Over: 5 matches" on its own is a caption, not a card — and pairing it
     // with "Unbeaten: 5" is the same number twice. It becomes the one row it
     // was always trying to be.
+    // A drought belongs to a player and a winless run to a club, and calling
+    // either of them "Unbeaten" — which is what everything fell through to —
+    // says the opposite of what happened.
     const label = e.id.includes("clean-sheet") ? "Clean sheets"
-      : e.id.includes("losing") || e.id.includes("drought") ? "Without a win"
+      : e.id.includes("drought") ? "Without a goal"
+      : e.id.includes("losing") ? "Without a win"
+      : e.id.includes("winning") ? "Wins in a row"
         : "Unbeaten";
     rows[0] = { label, value: String(f.matches), highlight: true };
   }

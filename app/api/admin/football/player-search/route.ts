@@ -300,6 +300,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Source player/year not found" }, { status: 404 });
   }
 
+  // ── The club he is moving to decides the league he is in ──
+  //
+  // `league` used to be copied straight off the source. Promote a Real Madrid
+  // player into FC 27 and drop him at Arsenal — which is the whole point of
+  // cloning a player forward a year — and he arrived as an Arsenal player in La
+  // Liga. Every league-filtered query then disagreed with the club column.
+  const club = overrides?.club ?? source.club;
+  let league = source.league;
+  if (club && club !== source.club) {
+    // Whatever league that club plays in. Prefer the target year, because a
+    // promoted club is in a different division in each.
+    for (const year of [target_year, source_year]) {
+      const { data: mate } = await service
+        .from("sofifa_players")
+        .select("league")
+        .eq("club", club)
+        .eq("fifa_year", year)
+        .not("league", "is", null)
+        .limit(1)
+        .maybeSingle();
+      if (mate?.league) { league = mate.league as string; break; }
+    }
+  }
+
+  // ── …and a year forward is a year older ──
+  //
+  // The age was copied unchanged, so a player promoted from FC 26 to FC 27 was
+  // the same age in both — while everybody cloned by the bulk migration had
+  // aged. Two players in one squad on two different calendars.
+  const fromBlob = parseInt(
+    String((source.attributes as Record<string, unknown>)?.age ?? "").replace(/\D/g, ""), 10);
+  const sourceAge = typeof source.age === "number" && source.age > 0
+    ? source.age
+    : (Number.isFinite(fromBlob) ? fromBlob : null);
+  const age = sourceAge === null ? source.age : sourceAge + (target_year - source_year);
+
   const newRow = {
     sofifa_id: source.sofifa_id,
     fifa_year: target_year,
@@ -307,11 +343,11 @@ export async function POST(req: NextRequest) {
     name: source.name,
     positions: overrides?.positions ?? source.positions,
     nationality: source.nationality,
-    club: overrides?.club ?? source.club,
-    league: source.league,
+    club,
+    league,
     overall: overrides?.overall ?? source.overall,
     potential: source.potential,
-    age: source.age,
+    age,
     image_url: source.image_url,
     attributes: source.attributes,
     manual_overall: null,

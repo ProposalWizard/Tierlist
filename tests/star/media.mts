@@ -399,13 +399,24 @@ function season(seed: number, weeks = 20): CareerState {
   check(wrongSide === 0, `every scorer is listed under his own team (${wrongSide} were not)`);
 }
 
+/**
+ * Does this card's numbers span a run?
+ *
+ * Either it carries an explicit "Over: N matches" row, or `statRows` collapsed a
+ * lone run into its own label — "Unbeaten", "Without a goal" and the rest are
+ * all counts of matches, not of this afternoon.
+ */
+const RUN_LABELS = ["Over", "Unbeaten", "Clean sheets", "Without a win", "Without a goal", "Wins in a row"];
+const RUN_ROW = (rows: { label: string; value: string }[]) =>
+  rows.some(r => RUN_LABELS.includes(r.label) || /matches$/.test(r.value));
+
 // ── A stat card says which match it is from ─────────────────────────────────
 //
 // Every card in the feed is TODAY's number and the post above it is usually
 // about a run, so "Mikey Vass has 4 assists in his last 4" sat over a card
 // reading "Assists 3" and read as the graphic contradicting the sentence.
 {
-  let cards = 0, unlabelled = 0, wrongVenue = 0;
+  let matchCards = 0, runCards = 0, lying = 0, unlabelled = 0;
   let c = newCareer(88);
   for (let w = 1; w <= 24; w++) {
     const fixture = c.fixtures.find(f => !f.played);
@@ -416,14 +427,47 @@ function season(seed: number, weeks = 20): CareerState {
     for (const p of mediaOf(c).posts.filter(x => x.id.startsWith(cyc))) {
       const g = p.graphic;
       if (!g || (g.type !== "statLine" && g.type !== "playerCard")) continue;
-      cards += 1;
+      // A card with an "Over: N matches" row spans a run; anything else is this
+      // afternoon. The label has to agree with the rows, which is the whole
+      // point of it — "Goals 7 / Over 3 matches" under "v Liverpool (A)" says
+      // those seven went in at Anfield on Saturday.
+      const isRun = RUN_ROW(g.rows);
       if (!g.context) { unlabelled += 1; continue; }
-      if (g.context !== `v ${opp} (${wasHome ? "H" : "A"})`) wrongVenue += 1;
+      if (isRun) {
+        runCards += 1;
+        if (!/^Last \d+ matches$/.test(g.context)) lying += 1;
+      } else {
+        matchCards += 1;
+        if (g.context !== `v ${opp} (${wasHome ? "H" : "A"})`) lying += 1;
+      }
     }
   }
-  check(cards > 5, `stat cards were produced (${cards})`);
-  check(unlabelled === 0, `every stat card says which match it is from (${unlabelled} did not)`);
-  check(wrongVenue === 0, `…and names the right opponent and the right ground (${wrongVenue} wrong)`);
+  check(matchCards + runCards > 5, `stat cards were produced (${matchCards} match, ${runCards} run)`);
+  check(unlabelled === 0, `every stat card says what its numbers are from (${unlabelled} did not)`);
+  check(lying === 0, `…and none of them says the wrong thing (${lying} did)`);
+}
+
+// ── A line about one match never sits over a card about a fortnight ─────────
+{
+  let mismatched = 0, checked = 0;
+  let c = newCareer(64);
+  for (let w = 1; w <= 30; w++) {
+    if (!c.fixtures.some(f => !f.played)) break;
+    c = playOne(c, 64_500 + w);
+    const cyc = mediaOf(c).lastCycleId;
+    for (const p of mediaOf(c).posts.filter(x => x.id.startsWith(cyc))) {
+      const g = p.graphic;
+      if (!g || g.type !== "statLine") continue;
+      const isRun = RUN_ROW(g.rows);
+      if (!isRun) continue;
+      checked += 1;
+      // The text above a run card must not be the one that reads the scoreline
+      // and this match's rating.
+      if (/^\S.*\d+-\d+.*: \d/.test(p.text)) mismatched += 1;
+    }
+  }
+  check(checked > 3, `run cards were produced (${checked})`);
+  check(mismatched === 0, `none of them sits under a scoreline-and-rating line (${mismatched})`);
 }
 
 if (problems.length) {

@@ -1,4 +1,8 @@
 import type { CareerState, Fixture, CupRun, Competition } from "./types";
+import {
+  openCup, playCupRound, yourTie, currentRound, cupStrength, tieWinner,
+  CUP_ROUND_NAMES, type CupState, type CupId,
+} from "./cups";
 import { mulberry32, sortLeague } from "./season";
 
 /**
@@ -168,7 +172,9 @@ export function seedSeasonKnockouts(career: CareerState): { runs: CupRun[]; fixt
     fixtures.push(makeRoundFixture(run, career, weeks[0], rng));
   };
 
-  open("FA Cup", "cup");
+  // The FA Cup and the League Cup are real draws now — see lib/star/cups and
+  // seedCups below. What is left here is Europe and the national team, which are
+  // still counter-style runs against an invented opponent.
   if (career.europeanQualification) open(career.europeanQualification, "europe");
 
   const tournament = tournamentFor(career.season);
@@ -304,4 +310,150 @@ export function nextFixtureFor(career: CareerState): Fixture | null {
 export function fixtureLabel(f: Fixture): string {
   if (!f.kind || f.kind === "league") return "League";
   return f.round ? `${f.competition} · ${f.round}` : f.competition ?? "Cup";
+}
+
+
+// ── The two domestic cups ───────────────────────────────────────────────────
+
+/**
+ * Open both cups and put your first-round tie on the calendar.
+ *
+ * The League Cup runs early and finishes before the FA Cup starts its later
+ * rounds, which is both how the two actually sit in a season and how they avoid
+ * landing on the same week as each other.
+ */
+export function seedCups(career: CareerState): { states: CupState[]; fixtures: Fixture[] } {
+  const rng = mulberry32(career.season * 6151 + career.league.length * 13);
+  const states = [openCup("League Cup", career.league, rng), openCup("FA Cup", career.league, rng)];
+  const fixtures: Fixture[] = [];
+  for (const st of states) {
+    const f = cupFixtureFor(st, career, 0);
+    if (f) fixtures.push(f);
+  }
+  return { states, fixtures };
+}
+
+/**
+ * Where each cup round sits in the season.
+ *
+ * The League Cup runs early and is done by about the sixty per cent mark; the
+ * FA Cup starts later and finishes near the end. That is both how the two sit in
+ * a real season and how they stay out of each other's way.
+ *
+ * The fractions are not evenly spaced, and that is the point: at 38 weeks the
+ * obvious even spread put a League Cup round and an FA Cup round both in week
+ * 18, and you cannot play two cup ties in the same week. These interleave, and
+ * anything that still collides after rounding is pushed a week later.
+ */
+const CUP_WEEK_FRACTIONS: Record<CupId, number[]> = {
+  "League Cup": [0.10, 0.21, 0.32, 0.45, 0.58],
+  "FA Cup":     [0.27, 0.39, 0.52, 0.68, 0.90],
+};
+
+export function cupRoundWeek(competition: CupId, roundIndex: number, clubCount: number): number {
+  const lw = leagueWeeks(clubCount);
+  const at = (comp: CupId, i: number) => {
+    const f = CUP_WEEK_FRACTIONS[comp];
+    return Math.max(2, Math.min(lw, Math.round(lw * (f[Math.min(i, f.length - 1)]))));
+  };
+  const week = at(competition, roundIndex);
+  if (competition === "League Cup") return week;
+  // The FA Cup gives way, because it is the one with room to move.
+  const taken = new Set(CUP_WEEK_FRACTIONS["League Cup"].map((_, i) => at("League Cup", i)));
+  let w = week;
+  while (taken.has(w) && w < lw) w += 1;
+  return w;
+}
+
+/** Your fixture for the round this cup is on, if you are in it. */
+export function cupFixtureFor(state: CupState, career: CareerState, roundIndex: number): Fixture | null {
+  const tie = yourTie(state, career.player.club);
+  if (!tie || tie.hs !== undefined) return null;
+  const home = tie.home === career.player.club;
+  const opponent = home ? tie.away : tie.home;
+  return {
+    week: cupRoundWeek(state.competition, roundIndex, career.league.length),
+    opponent,
+    home,
+    played: false,
+    competition: state.competition as Competition,
+    kind: "cup",
+    round: currentRound(state)?.name,
+    opponentStrength: cupStrength(opponent, career.league),
+  };
+}
+
+export interface CupTieOutcome {
+  states: CupState[];
+  nextFixture: Fixture | null;
+  trophy: { season: number; competition: string; club: string } | null;
+  message: string;
+}
+
+/**
+ * Settle your tie, then play the rest of the round and draw the next one.
+ *
+ * The whole country's cup moves on at once, which is the point: you do not just
+ * beat somebody and get handed another random opponent, you go back into a hat
+ * with everybody else who won this weekend.
+ *
+ * Returns null when this fixture is not one of the two real cups — Europe and
+ * the national team still go through the old run.
+ */
+export function settleCupTie(
+  career: CareerState,
+  fixture: Fixture,
+  userScore: number,
+  oppScore: number,
+): CupTieOutcome | null {
+  const states = career.cupState ?? [];
+  const idx = states.findIndex(st => st.competition === fixture.competition && !st.winner);
+  if (idx < 0) return null;
+
+  const club = career.player.club;
+  const before = states[idx];
+  const roundName = currentRound(before)?.name ?? CUP_ROUND_NAMES[0];
+  const rng = mulberry32(career.season * 977 + fixture.week * 31 + idx * 7);
+
+  // Reported from your point of view; the tie wants home and away.
+  const hs = fixture.home ? userScore : oppScore;
+  const as = fixture.home ? oppScore : userScore;
+  const after = playCupRound(before, career.league, club, { hs, as }, rng);
+  const next = states.map((st, i) => (i === idx ? after : st));
+
+  const tie = before.rounds[before.rounds.length - 1]?.ties
+    .find(t => t.home === club || t.away === club);
+  const played = after.rounds[before.rounds.length - 1]?.ties
+    .find(t => t.home === club || t.away === club);
+  const won = played ? tieWinner(played) === club : false;
+  const onPens = played?.pens !== undefined;
+  const opponent = tie ? (tie.home === club ? tie.away : tie.home) : fixture.opponent;
+
+  if (!won) {
+    return {
+      states: next,
+      nextFixture: null,
+      trophy: null,
+      message: onPens
+        ? `Out of the ${fixture.competition} on penalties, beaten by ${opponent} in the ${roundName}.`
+        : `Out of the ${fixture.competition} — ${opponent} win the ${roundName} tie.`,
+    };
+  }
+
+  if (after.winner === club) {
+    return {
+      states: next,
+      nextFixture: null,
+      trophy: { season: career.season, competition: String(fixture.competition), club },
+      message: `${club} win the ${fixture.competition}!${onPens ? " On penalties." : ""}`,
+    };
+  }
+
+  const roundIndex = after.rounds.length - 1;
+  return {
+    states: next,
+    nextFixture: cupFixtureFor(after, career, roundIndex),
+    trophy: null,
+    message: `Through to the ${currentRound(after)?.name}${onPens ? ", on penalties" : ""}.`,
+  };
 }
