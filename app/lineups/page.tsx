@@ -28,12 +28,29 @@ export default function LineupsPage() {
       try {
         const res = await fetch("/api/draft/clubs", { cache: "no-store" });
         const data = await res.json() as { clubs?: { name: string; seasons: number[] }[] };
-        const names = (data.clubs ?? [])
+        const all = data.clubs ?? [];
+        const names = all
           .filter(c => c.seasons.includes(STAR_FIFA_YEAR))
           .map(c => c.name)
           .sort((a, b) => a.localeCompare(b));
         if (!alive) return;
-        if (names.length === 0) { setError(`No ${STAR_SEASON_LABEL} Premier League clubs found — is the ${STAR_EDITION_LABEL} data imported?`); return; }
+        if (names.length === 0) {
+          // ── Say what IS there ──
+          //
+          // "No FC 27 clubs found" is true and useless: it cannot tell you
+          // whether the migration has not been run, or has been run and the
+          // clubs list is a minute stale, or the rows went in under a league
+          // name nothing matches. The years that DO exist answer all three.
+          const years = Array.from(new Set(all.flatMap(c => c.seasons))).sort((a, b) => b - a);
+          setError(
+            years.length === 0
+              ? "No Premier League clubs in the database at all — check the Supabase connection."
+              : `No ${STAR_SEASON_LABEL} (${STAR_EDITION_LABEL}) clubs yet. The database has: `
+                + `${years.slice(0, 8).map(y => `${y}`).join(", ")}`
+                + `${years.length > 8 ? "…" : ""}. Run fc27_clone_premier_league.sql, then reload.`,
+          );
+          return;
+        }
         setClubs(names);
         // The WHOLE squad, not the twenty a career keeps: here you are picking
         // a side, and a side is picked from everybody on the books.

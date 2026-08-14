@@ -94,7 +94,15 @@ export async function GET() {
   return NextResponse.json(
     { clubs },
     {
-      headers: { "Cache-Control": "public, max-age=3600" },
+      // ── A minute, not an hour ──
+      //
+      // This is the list of clubs that exist in each edition, and FC 27 is being
+      // built by hand right now — cloned in, edited, players moved between clubs
+      // while the transfer window is open. An hour-long cache meant a club that
+      // had just gained its first FC 27 player did not appear for an hour, with
+      // nothing on screen to say the answer was stale. A minute still spares the
+      // database the repeat traffic this was added for.
+      headers: { "Cache-Control": "public, max-age=60" },
     }
   );
 }
