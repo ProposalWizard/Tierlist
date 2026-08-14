@@ -349,7 +349,33 @@ export type GraphicSpec =
   | { type: "transfer"; player: string; from: string; to: string; fee?: string }
   | { type: "trophy"; competition: string; club: string; season: number }
   | { type: "poll"; question: string; options: string[]; votes: number[] }
-  | { type: "thumbnail"; title: string; badge: string };
+  | { type: "thumbnail"; title: string; badge: string }
+  /**
+   * The month's shortlist, before anybody has voted.
+   *
+   * Eight names in a grid, which is the shape the award has actually had for
+   * years — a shortlist is a different piece of information from a race, and the
+   * race already has a card. `st-potm-race` runs through the month and is a
+   * number; this goes out once, on the last round, and is a list of people.
+   *
+   * `winner` is deliberately optional and unset by anything today: the shortlist
+   * is published before the vote. It exists so the same card can be reissued
+   * with the result on it without a second component that looks almost the same.
+   */
+  | {
+      type: "potmNominees";
+      month: string;
+      nominees: PotmNominee[];
+      winner?: string;
+    };
+
+export interface PotmNominee {
+  name: string;
+  club: string;
+  goals: number;
+  assists: number;
+  isYou: boolean;
+}
 
 export type GraphicKind = GraphicSpec["type"];
 

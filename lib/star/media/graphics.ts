@@ -1,6 +1,7 @@
 import type { CareerState } from "../types";
 import { sortLeague } from "../season";
 import { goldenBootRace } from "../recognition";
+import { MONTH_NAMES, monthOf, monthRace } from "../potm";
 import type {
   FootballEvent, GraphicKind, GraphicSpec, MatchRecord, StoryMemory,
 } from "./types";
@@ -112,6 +113,27 @@ export function buildGraphic(
         title: "Golden Boot",
         highlight: you,
         rows: race.map(s => ({ label: s.isYou ? you : s.name, value: String(s.goals), highlight: s.isYou })),
+      };
+    }
+
+    case "potmNominees": {
+      if (!r) return undefined;
+      // `monthRace`, not `voteMonth`. The shortlist is published before the
+      // panel sits, so it is ordered by what the month's football actually was
+      // — and using the vote here would leak its result a round early.
+      const month = monthOf(r.week);
+      const race = monthRace(career, month).slice(0, 8);
+      // Four names is not a shortlist, it is a table with gaps in it. Early in a
+      // month, or after a weekend of goalless draws, there genuinely are not
+      // eight people who scored or made one, and a grid half full of blanks
+      // reads as a bug.
+      if (race.length < 6) return undefined;
+      return {
+        type: "potmNominees",
+        month: MONTH_NAMES[month],
+        nominees: race.map(c => ({
+          name: c.name, club: c.club, goals: c.goals, assists: c.assists, isYou: c.isYou,
+        })),
       };
     }
 

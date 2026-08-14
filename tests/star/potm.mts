@@ -3,6 +3,8 @@ import {
   monthCandidates, voteMonth, monthRace, alreadyAwarded,
 } from "../../lib/star/potm";
 import { buildLeagueSquad, type RosterRow } from "../../lib/star/leagueSquads";
+import { buildGraphic } from "../../lib/star/media/graphics";
+import { shortClub } from "../../lib/star/media/grammar";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { nextFixtureFor } from "../../lib/star/competitions";
 import type { CareerState } from "../../lib/star/types";
@@ -258,6 +260,107 @@ const CLUBS = [
   const yoursWon = (c.potm ?? []).filter(a => a.isYou).length;
   const honours = (c.awards ?? []).filter(a => a.kind === "Player of the Month").length;
   check(honours === yoursWon, `only the ones you won go on your honours (${honours} of ${yoursWon})`);
+}
+
+// ── The nominees graphic ────────────────────────────────────────────────────
+//
+// A shortlist card is eight names, eight clubs and eight sets of colours, and
+// every one of those is a chance to render something unreadable or something
+// blank. What has to hold: the right eight in the right order, a club label that
+// fits the box it is drawn in, and nothing at all when the month has not
+// produced a shortlist yet.
+{
+  const player = {
+    firstName: "Mikey", lastName: "Vass", age: 19, position: "ST",
+    club: "Liverpool", nationality: "England",
+  } as never;
+  const base = makeInitialCareer(player, CLUBS);
+
+  // Ten different scorers across August, on ten different clubs, so there is
+  // more than a shortlist's worth to cut down.
+  const scorers = CLUBS.slice(0, 10).map((club, i) => ({ club, name: `Scorer${i}`, goals: 10 - i }));
+  const results = scorers.map((s, i) => ({
+    week: 1 + (i % 4),
+    home: s.club, away: CLUBS[19 - (i % 10)], hs: s.goals, as: 0,
+    hg: Array.from({ length: s.goals }, (_, g) => ({ m: 3 + g * 8, s: s.name })),
+    ag: [],
+  }));
+  // …and you, on four goals, so a middling entry is present and identified.
+  results.push({
+    week: 2, home: "Liverpool", away: "Burnley", hs: 4, as: 0,
+    hg: Array.from({ length: 4 }, (_, g) => ({ m: 10 + g * 15, s: "Vass" })), ag: [],
+  });
+  const career: CareerState = { ...base, results: results as never };
+
+  const asRecord = (week: number) => ({ week }) as never;
+  const asEvent = { id: "potm-decides", facts: {}, subject: { kind: "you" }, tags: [] } as never;
+  const rng = mulberry(7);
+
+  const spec = buildGraphic("potmNominees", asEvent, asRecord(4), career, {} as never, rng);
+  check(spec?.type === "potmNominees", `the last round of a busy month makes a card (${spec?.type})`);
+
+  if (spec?.type === "potmNominees") {
+    check(spec.month === "August", `it names the month it is about (${spec.month})`);
+    check(spec.nominees.length === 8, `eight nominees, not ten (${spec.nominees.length})`);
+    check(spec.winner === undefined, "and no winner, because nobody has voted yet");
+
+    // The order is the month's football, best first.
+    const race = monthRace(career, 0).slice(0, 8);
+    check(
+      spec.nominees.every((n, i) => n.name === race[i].name),
+      "the card is in the same order as the race it is drawn from",
+    );
+    check(spec.nominees[0].goals >= spec.nominees[7].goals, "…which puts the strongest month first");
+
+    const you = spec.nominees.find(n => n.isYou);
+    check(you?.name === "Vass", `you are on it and marked as you (${you?.name})`);
+    check(spec.nominees.filter(n => n.isYou).length === 1, "and exactly once");
+    check(spec.nominees.every(n => n.club.length > 0), "every nominee has a club to be drawn in");
+  }
+
+  // A month nobody has played is not a shortlist with gaps — it is no card.
+  const empty = buildGraphic("potmNominees", asEvent, asRecord(30), career, {} as never, rng);
+  check(empty === undefined, "a month with no football produces no card at all");
+
+  // Nor is a thin one. Three scorers in a grid of eight is five empty boxes.
+  const thin: CareerState = {
+    ...base,
+    results: [{
+      week: 1, home: "Arsenal", away: "Everton", hs: 3, as: 0,
+      hg: [{ m: 10, s: "A" }, { m: 20, s: "B" }, { m: 30, s: "C" }], ag: [],
+    }] as never,
+  };
+  check(
+    buildGraphic("potmNominees", asEvent, asRecord(4), thin, {} as never, rng) === undefined,
+    "and neither does a month only three men scored in",
+  );
+}
+
+// ── Club names at caption width ─────────────────────────────────────────────
+{
+  const expected: Record<string, string> = {
+    "Wolverhampton Wanderers": "Wolves",
+    "Manchester United": "Man Utd",
+    "Manchester City": "Man City",
+    "Brighton & Hove Albion": "Brighton",
+    "AFC Bournemouth": "Bournemouth",
+    "Fulham FC": "Fulham",
+    "Leeds United": "Leeds",
+    "Newcastle United": "Newcastle",
+    "West Ham United": "West Ham",
+    "Tottenham Hotspur": "Tottenham",
+    "Nottingham Forest": "Nottingham Forest",
+    "Crystal Palace": "Crystal Palace",
+    "Aston Villa": "Aston Villa",
+    "Liverpool": "Liverpool",
+  };
+  for (const [full, want] of Object.entries(expected)) {
+    check(shortClub(full) === want, `${full} → ${want} (got ${shortClub(full)})`);
+  }
+  // The two Manchesters and the two Uniteds must stay tellable apart.
+  const shorts = CLUBS.map(shortClub);
+  check(new Set(shorts).size === CLUBS.length, "no two clubs shorten to the same caption");
+  check(shorts.every(s => s.length >= 4), `nothing shortens to an initial (${shorts.filter(s => s.length < 4)})`);
 }
 
 function roster(club: string, n = 24): RosterRow[] {

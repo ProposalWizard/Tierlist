@@ -84,9 +84,13 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "statLine", weight: 2,
   },
   {
+    // The last round of the month is when the shortlist goes up, so this one
+    // carries the eight names rather than your row of it. The race above stays a
+    // statLine on purpose — a race is a number and a shortlist is a list of
+    // people, and printing the same card for both wastes the distinction.
     id: "st-potm-decides", archetype: "stats", events: ["potm-decides"], requires: ["month", "place"],
     body: "Last round of {month}. {player} is {place|ordinal} in the Player of the Month race.",
-    graphic: "statLine", weight: 3,
+    graphic: "potmNominees", weight: 3,
   },
   {
     id: "st-boot", archetype: "stats", events: ["golden-boot-race"], requires: ["goals"],

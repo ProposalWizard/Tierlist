@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useState } from "react";
 import TransferHereWeGo01 from "@/components/star/media/templates/TransferHereWeGo01";
+import Graphic from "@/components/star/media/Graphics";
+import type { GraphicSpec } from "@/lib/star/media/types";
 
 /**
  * THE MEDIA LAB
@@ -151,10 +153,37 @@ export default function MediaLab() {
             </div>
           </div>
         </div>
+
+        {/* ── The typed cards ──
+            The templates above need assets; these need nothing but data, so
+            they belong on the same bench where they can be judged at the width
+            a post actually renders at rather than full-screen. */}
+        <div className="mt-8">
+          <h2 className="text-[11px] font-black uppercase tracking-widest text-white/70">Post cards</h2>
+          <div className="mt-3 max-w-sm">
+            <Graphic spec={SAMPLE_NOMINEES} />
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
+/** A busy August, for judging the shortlist card. */
+const SAMPLE_NOMINEES: GraphicSpec = {
+  type: "potmNominees",
+  month: "August",
+  nominees: [
+    { name: "Mikey Vass", club: "Liverpool", goals: 6, assists: 2, isYou: true },
+    { name: "R. Calafiori", club: "Arsenal", goals: 5, assists: 1, isYou: false },
+    { name: "J. Grealish", club: "Everton", goals: 4, assists: 3, isYou: false },
+    { name: "M. Guehi", club: "Crystal Palace", goals: 4, assists: 0, isYou: false },
+    { name: "E. Haaland", club: "Manchester City", goals: 4, assists: 0, isYou: false },
+    { name: "J. Pedro", club: "Chelsea", goals: 3, assists: 2, isYou: false },
+    { name: "A. Semenyo", club: "AFC Bournemouth", goals: 3, assists: 1, isYou: false },
+    { name: "D. Szoboszlai", club: "Tottenham Hotspur", goals: 2, assists: 4, isYou: false },
+  ],
+};
 
 function Drop({ label, src, onDrop, onPick, onClear }: {
   label: string; src: string | null;

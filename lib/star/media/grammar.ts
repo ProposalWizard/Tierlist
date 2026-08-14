@@ -240,6 +240,48 @@ export function ordinal(n: number): string {
 }
 
 /**
+ * A club's name at the width of a caption.
+ *
+ * Not the nickname below — this is what goes under a player on a graphic, where
+ * "Wolverhampton Wanderers" is twenty-three characters in a box eighty pixels
+ * wide, and a truncated club name reads as a rendering bug rather than as a
+ * club. It is what a broadcaster puts on the same caption.
+ *
+ * Rules first, exceptions second, and only three exceptions. Dropping the
+ * trailing "United" or "Hotspur" leaves Leeds, Newcastle, West Ham and
+ * Tottenham correct on its own; it leaves Wolverhampton, and nobody calls them
+ * that. Manchester is the other one — two clubs share the distinctive half, so
+ * neither can lose it.
+ */
+const CLUB_SHORT_EXCEPTIONS: Record<string, string> = {
+  "wolverhampton wanderers": "Wolves",
+  "manchester united": "Man Utd",
+  "manchester city": "Man City",
+};
+
+/** Words that identify no club on their own — every one is shared by several. */
+const CLUB_SUFFIXES = new Set(["united", "city", "town", "rovers", "albion", "wanderers", "county", "hotspur"]);
+
+export function shortClub(club: string): string {
+  const trimmed = club.trim();
+  const exception = CLUB_SHORT_EXCEPTIONS[trimmed.toLowerCase()];
+  if (exception) return exception;
+
+  // "Brighton & Hove Albion" is Brighton to everyone, including Brighton.
+  let name = trimmed.split(/\s*&\s*/)[0];
+  // "AFC Bournemouth", "Fulham FC" — the letters are the club's, not its name.
+  name = name.replace(/^(AFC|FC)\s+/i, "").replace(/\s+(AFC|FC)$/i, "");
+
+  const parts = name.split(/\s+/);
+  if (parts.length > 1 && CLUB_SUFFIXES.has(parts[parts.length - 1].toLowerCase())) {
+    const without = parts.slice(0, -1).join(" ");
+    // "City" alone is not a club, but nor is anything shorter than a name.
+    if (without.length >= 4) return without;
+  }
+  return name;
+}
+
+/**
  * A club nickname, invented from the name and stable for the career.
  *
  * Real supporters do not say "Manchester United have won" — they say "United"
