@@ -93,6 +93,16 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "potmNominees", weight: 3,
   },
   {
+    // The same card on the months you are not on the list. It says the same
+    // thing the card says — here is the shortlist — without pretending you are
+    // on it, which is what `excludes: ["place"]` buys: the line above wins
+    // whenever there is a place to print, and this one covers the rest.
+    id: "st-potm-shortlist", archetype: "stats", events: ["potm-decides"],
+    requires: ["month", "leader"], excludes: ["place"],
+    body: "{month} Player of the Month shortlist. {leader} leads it from {contenders} contenders.",
+    graphic: "potmNominees", weight: 3,
+  },
+  {
     id: "st-boot", archetype: "stats", events: ["golden-boot-race"], requires: ["goals"],
     body: "GOLDEN BOOT | {player} — {goals} with {left} to play.",
     graphic: "topScorers", weight: 3,

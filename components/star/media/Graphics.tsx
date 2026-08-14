@@ -340,7 +340,7 @@ function NomineeTile({ n, won }: { n: PotmNominee; won: boolean }) {
   const kit = kitsOf(n.club).home;
   return (
     <div className={`bg-gray-900/80 ${won ? "ring-1 ring-inset ring-amber-300" : ""}`}>
-      <div className="relative h-14 overflow-hidden" style={{ backgroundColor: kit.shirt }}>
+      <div className="relative h-16 overflow-hidden" style={{ backgroundColor: kit.shirt }}>
         {/* The trim, worn as a sash. Without it a white or a black kit is an
             empty rectangle and every club in those colours looks alike. Wide
             enough to read as a decision — a sliver at the very edge of the tile
@@ -349,12 +349,38 @@ function NomineeTile({ n, won }: { n: PotmNominee; won: boolean }) {
           className="absolute inset-y-0 left-1 w-6 -skew-x-[14deg]"
           style={{ backgroundColor: kit.trim }}
         />
-        <div
-          className="absolute inset-0 grid place-items-center text-base font-black tracking-tight"
-          style={{ color: labelInk(kit.shirt) }}
-        >
-          {initialsOf(n.name)}
-        </div>
+        {/* Three cases, in the order they should be preferred.
+            A photograph of the man. Failing that — and only for you, who never
+            had one taken — the back of your shirt. Failing that, a monogram,
+            which is where a generated squad or a career whose division has not
+            been refreshed ends up. Never somebody else's face. */}
+        {n.face ? (
+          <img
+            src={n.face}
+            alt=""
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            // `contain` and bottom-aligned: the portraits are busts on a
+            // transparent square, so cropping them to fill takes the top of the
+            // head off. Standing them on the bottom edge is what the real card
+            // does with a cut-out.
+            className="absolute inset-0 h-full w-full object-contain object-bottom"
+          />
+        ) : n.number !== undefined ? (
+          <div
+            className="absolute inset-0 grid place-items-center text-2xl font-black tabular-nums"
+            style={{ color: labelInk(kit.shirt) }}
+          >
+            {n.number}
+          </div>
+        ) : (
+          <div
+            className="absolute inset-0 grid place-items-center text-base font-black tracking-tight"
+            style={{ color: labelInk(kit.shirt) }}
+          >
+            {initialsOf(n.name)}
+          </div>
+        )}
         {n.isYou && (
           <div className="absolute right-0 top-0 bg-amber-300 px-1 text-[7px] font-black uppercase tracking-wider text-gray-900">
             You

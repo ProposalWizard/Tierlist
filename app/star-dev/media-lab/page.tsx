@@ -174,16 +174,24 @@ const SAMPLE_NOMINEES: GraphicSpec = {
   type: "potmNominees",
   month: "August",
   nominees: [
-    { name: "Mikey Vass", club: "Liverpool", goals: 6, assists: 2, isYou: true },
-    { name: "R. Calafiori", club: "Arsenal", goals: 5, assists: 1, isYou: false },
-    { name: "J. Grealish", club: "Everton", goals: 4, assists: 3, isYou: false },
-    { name: "M. Guehi", club: "Crystal Palace", goals: 4, assists: 0, isYou: false },
-    { name: "E. Haaland", club: "Manchester City", goals: 4, assists: 0, isYou: false },
-    { name: "J. Pedro", club: "Chelsea", goals: 3, assists: 2, isYou: false },
+    { name: "Mikey Vass", club: "Liverpool", goals: 6, assists: 2, isYou: true, number: 19 },
+    { name: "R. Calafiori", club: "Arsenal", goals: 5, assists: 1, isYou: false, face: FACE(243812) },
+    { name: "J. Grealish", club: "Everton", goals: 4, assists: 3, isYou: false, face: FACE(209331) },
+    { name: "M. Guehi", club: "Crystal Palace", goals: 4, assists: 0, isYou: false, face: FACE(235243) },
+    { name: "E. Haaland", club: "Manchester City", goals: 4, assists: 0, isYou: false, face: FACE(239085) },
+    { name: "J. Pedro", club: "Chelsea", goals: 3, assists: 2, isYou: false, face: FACE(247635) },
     { name: "A. Semenyo", club: "AFC Bournemouth", goals: 3, assists: 1, isYou: false },
-    { name: "D. Szoboszlai", club: "Tottenham Hotspur", goals: 2, assists: 4, isYou: false },
+    { name: "D. Szoboszlai", club: "Tottenham Hotspur", goals: 2, assists: 4, isYou: false, face: FACE(233419) },
   ],
 };
+
+/** The portrait URL the importer writes, for judging the card against real ones.
+ *  Semenyo above is deliberately left without one — the monogram fallback has to
+ *  be looked at too, because a partly-imported division will produce it. */
+function FACE(id: number): string {
+  const s = String(id).padStart(6, "0");
+  return `https://cdn.sofifa.net/players/${s.slice(0, 3)}/${s.slice(3)}/26_120.png`;
+}
 
 function Drop({ label, src, onDrop, onPick, onClear }: {
   label: string; src: string | null;

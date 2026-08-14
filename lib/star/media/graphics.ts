@@ -1,7 +1,7 @@
 import type { CareerState } from "../types";
 import { sortLeague } from "../season";
 import { goldenBootRace } from "../recognition";
-import { MONTH_NAMES, monthOf, monthRace } from "../potm";
+import { MONTH_NAMES, faceOf, monthOf, monthRace } from "../potm";
 import type {
   FootballEvent, GraphicKind, GraphicSpec, MatchRecord, StoryMemory,
 } from "./types";
@@ -133,6 +133,11 @@ export function buildGraphic(
         month: MONTH_NAMES[month],
         nominees: race.map(c => ({
           name: c.name, club: c.club, goals: c.goals, assists: c.assists, isYou: c.isYou,
+          // A photograph for the real footballers; the back of your shirt for
+          // you, who never had one taken. See PotmNominee.
+          ...(c.isYou
+            ? { number: career.squadNumber ?? 0 }
+            : { face: faceOf(career, c.name, c.club) }),
         })),
       };
     }

@@ -375,6 +375,18 @@ export interface PotmNominee {
   goals: number;
   assists: number;
   isYou: boolean;
+  /** His portrait, when the database has one for him. */
+  face?: string;
+  /**
+   * Your squad number, and only ever yours.
+   *
+   * You are the one footballer in the division with no photograph — you were
+   * invented at the start of the career and there is nothing to photograph. The
+   * tile shows the back of your shirt instead of a face: the club's colours, the
+   * number you actually wear. It is the one thing on a pitch that identifies a
+   * player without showing him.
+   */
+  number?: number;
 }
 
 export type GraphicKind = GraphicSpec["type"];

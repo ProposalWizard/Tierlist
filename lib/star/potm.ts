@@ -1,5 +1,6 @@
 import type { CareerState, LeagueResult } from "./types";
 import { mulberry32 } from "./season";
+import { shortNameOf } from "./realSquad";
 
 /**
  * PLAYER OF THE MONTH.
@@ -216,6 +217,74 @@ export function monthRace(career: CareerState, month: number): MonthCandidate[] 
       + (c.rating !== undefined ? (c.rating - 6.5) * 2.4 : 0);
   }
   return candidates.sort((a, b) => b.score - a.score || b.goals - a.goals);
+}
+
+// ── Faces ───────────────────────────────────────────────────────────────────
+
+/**
+ * The portrait that belongs to a name on the shortlist.
+ *
+ * Harder than it sounds, because a candidate is a STRING and not a player. The
+ * month's numbers are read back out of `career.results`, where a goal records
+ * who scored it and nothing else — and the two halves of the division write that
+ * string differently. Your own club's goals are filed by `surname()` because
+ * they were scored by named men in a match you played; everybody else's come
+ * from `nameGoals`, which files them by `shortNameOf()`. "Szoboszlai" and
+ * "D. Szoboszlai" are the same footballer and neither spelling is wrong.
+ *
+ * So the match is made on a flattened key — no case, no punctuation, no
+ * accents — against every spelling of a player's name a squad holds. Accents
+ * matter more than they look: the database has Guéhi and a goal record can
+ * carry Guehi, and comparing them raw silently loses the face.
+ */
+/**
+ * Letters NFD will not take apart.
+ *
+ * Decomposition strips a combining accent off its letter \u2014 \u00e9 becomes e plus a
+ * mark, and the mark is thrown away. It does nothing for the letters that are
+ * their own character rather than a letter wearing a hat, and football is full
+ * of them: \u00d8degaard's \u00d8 survives NFD intact and is then deleted as "not a-z",
+ * leaving "degaard" to be compared against "odegaard". They stop being the same
+ * player, and he loses his photograph.
+ */
+const HARD_LETTERS: Record<string, string> = {
+  \u00f8: "o", \u0111: "d", \u00f0: "d", \u0142: "l", \u00df: "ss", \u00e6: "ae", \u0153: "oe", \u00fe: "th", \u0127: "h", \u0131: "i",
+};
+
+function nameKey(s: string): string {
+  return s
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[\u00f8\u0111\u00f0\u0142\u00df\u00e6\u0153\u00fe\u0127\u0131]/g, c => HARD_LETTERS[c] ?? c)
+    .replace(/[^a-z]/g, "");
+}
+
+function lastWord(s: string): string {
+  const parts = s.trim().split(/\s+/);
+  return parts[parts.length - 1] ?? s;
+}
+
+export function faceOf(career: CareerState, name: string, club: string): string | undefined {
+  const want = nameKey(name);
+  if (!want) return undefined;
+
+  // Your own dressing room first. It is a different shape from the other
+  // nineteen — full `SquadPlayer`s, with `shortName` already on them.
+  if (club === career.player.club) {
+    const mine = (career.squad ?? []).find(p =>
+      nameKey(p.shortName ?? "") === want || nameKey(p.name) === want || nameKey(lastWord(p.name)) === want);
+    if (mine?.imageUrl) return mine.imageUrl;
+  }
+
+  const squad = (career.leagueSquads ?? []).find(s => s.club === club);
+  // `shortNameOf` as well as the last word, and they are not the same thing:
+  // "V. van Dijk" shortens to "van Dijk", which is what the goal record holds,
+  // while its last word is "Dijk", which is not a footballer anybody has.
+  const him = squad?.players.find(p =>
+    nameKey(p.name) === want
+    || nameKey(shortNameOf(p.name)) === want
+    || nameKey(lastWord(p.name)) === want);
+  return him?.image;
 }
 
 /** Has this month already been awarded? */

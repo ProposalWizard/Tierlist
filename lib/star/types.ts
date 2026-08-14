@@ -97,6 +97,17 @@ export interface LeaguePlayer {
   overall: number;
   goals: number;
   assists: number;
+  /**
+   * His portrait, when the database has one.
+   *
+   * The only field here that is not needed to answer "who scored?", and it is
+   * here because the Player of the Month shortlist is eight faces and a grid of
+   * monograms is not that card. About 45 characters a player, so a division's
+   * worth is roughly 22 KB on top of the 15.6 KB this was sized at — still
+   * nothing against the save budget. Absent for a generated squad, which has no
+   * real footballers in it to photograph.
+   */
+  image?: string;
 }
 
 export interface LeagueSquad {
