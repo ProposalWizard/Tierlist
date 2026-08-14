@@ -139,7 +139,7 @@ export default function PlayerSearchPage() {
   const [deletingEdition, setDeletingEdition] = useState<string | null>(null);
   const [deletingInProgress, setDeletingInProgress] = useState<string | null>(null);
   const [cloningEdition, setCloningEdition] = useState<string | null>(null);
-  const [cloneTargetYear, setCloneTargetYear] = useState<number>(26);
+  const [cloneTargetYear, setCloneTargetYear] = useState<number>(YEAR_OPTIONS[0].value);
   const [cloneOvr, setCloneOvr] = useState("");
   const [cloneClub, setCloneClub] = useState("");
   const [clonePositions, setClonePositions] = useState("");
@@ -398,7 +398,18 @@ export default function PlayerSearchPage() {
     setClonePositions((p.manual_positions ?? p.positions) ?? "");
     setCloneMoveMode(false);
     setCloneError(null);
-    for (let y = 26; y >= 7; y--) {
+    // ── Four-digit years, because that is what fifa_year is ──
+    //
+    // This loop counted 26 down to 7 while `existingYears` holds 2026 and the
+    // dropdown's option values are 2026 too. So `existingYears.has(26)` was
+    // never true, the state was set to 26 on the first pass, and — because 26
+    // is not one of the options — the <select> DISPLAYED the first real option
+    // while the state stayed 26. You picked FC 27, it posted 26.
+    //
+    // Which produced a row with fifa_year 26 (rendered "FC 26", because the
+    // label helper normalises anything over 100) and an age of
+    // 23 + (26 - 2026) = -1977. Both reported.
+    for (let y = YEAR_OPTIONS[0].value; y >= YEAR_OPTIONS[YEAR_OPTIONS.length - 1].value; y--) {
       if (!existingYears.has(y)) {
         setCloneTargetYear(y);
         break;
