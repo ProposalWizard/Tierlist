@@ -3,6 +3,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
 import { actionsLeft, WEEK_ACTIONS, REST_ENERGY } from "@/lib/star/week";
 import { fanFeed, fanMood } from "@/lib/star/fanmail";
+import PortraitPicker from "./PortraitPicker";
 
 interface Props {
   career: CareerState;
@@ -15,12 +16,20 @@ interface Props {
   onUseDrink: (id: "basic" | "premium" | "elite") => void;
   onPlayRelationshipGame: (kind: RelationshipKind) => void;
   onRest: () => void;
+  /**
+   * Change the photograph on your graphics, or take it back off.
+   *
+   * Here rather than only at Profile Setup, because a career runs for years and
+   * the one decision you are most likely to want to revisit is the picture of
+   * yourself you chose in thirty seconds before your first match.
+   */
+  onSetPortrait?: (portrait: string | undefined) => void;
 }
 
 const TRAINING_ENERGY = 15;
 
 export default function LifeScreen({
-  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink, onPlayRelationshipGame, onRest,
+  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink, onPlayRelationshipGame, onRest, onSetPortrait,
 }: Props) {
   const left = actionsLeft(career);
   const canPlay = career.energy >= TRAINING_ENERGY && left > 0;
@@ -139,6 +148,15 @@ export default function LifeScreen({
           <div className="text-emerald-400 font-black">Renew →</div>
         </div>
       </button>
+
+      {onSetPortrait && (
+        <PortraitPicker
+          value={career.player.portrait}
+          onChange={onSetPortrait}
+          club={career.player.club}
+          number={career.squadNumber}
+        />
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 import { useCallback, useState } from "react";
 import TransferHereWeGo01 from "@/components/star/media/templates/TransferHereWeGo01";
 import Graphic from "@/components/star/media/Graphics";
+import PortraitPicker from "@/components/star/PortraitPicker";
 import type { GraphicSpec } from "@/lib/star/media/types";
 
 /**
@@ -165,6 +166,8 @@ export default function MediaLab() {
               <Graphic spec={SAMPLE_NOMINEES} />
               <Graphic spec={SAMPLE_WINNER} />
               <Graphic spec={SAMPLE_WINNER_YOU} />
+              <Graphic spec={SAMPLE_WINNER_PHOTO} />
+              <PortraitPicker value={undefined} onChange={() => {}} club="Liverpool" number={19} />
             </div>
           </div>
         </div>
@@ -172,6 +175,21 @@ export default function MediaLab() {
     </div>
   );
 }
+
+/**
+ * A stand-in for a photograph somebody took of themselves — a face-shaped thing
+ * against a room-coloured background, which is exactly the case the duotone
+ * exists to handle. Inline, because the bench must not need the network.
+ */
+const PLACEHOLDER_PHOTO =
+  "data:image/svg+xml;utf8," + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+       <rect width="200" height="200" fill="#8a9a7b"/>
+       <rect y="130" width="200" height="70" fill="#6b7a5e"/>
+       <ellipse cx="100" cy="88" rx="46" ry="54" fill="#e0b48f"/>
+       <path d="M40 200 C40 150 70 138 100 138 C130 138 160 150 160 200 Z" fill="#3f4a5a"/>
+       <path d="M56 74 C60 34 140 34 144 74 C144 52 128 38 100 38 C72 38 56 52 56 74 Z" fill="#4a3527"/>
+     </svg>`);
 
 /** A busy August, for judging the shortlist card. */
 const SAMPLE_NOMINEES: GraphicSpec = {
@@ -216,6 +234,15 @@ const SAMPLE_WINNER_YOU: GraphicSpec = {
   isYou: true,
   number: 19,
   runnerUp: "Haaland",
+};
+
+/** The same, once you have taken a picture — the treated case. */
+const SAMPLE_WINNER_PHOTO: GraphicSpec = {
+  ...SAMPLE_WINNER_YOU,
+  month: "November",
+  number: undefined,
+  face: PLACEHOLDER_PHOTO,
+  own: true,
 };
 
 /** The portrait URL the importer writes, for judging the card against real ones.

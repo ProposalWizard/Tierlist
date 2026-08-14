@@ -264,6 +264,19 @@ export default function StarDevPage() {
     setCareer(rest(career));
   }, [career]);
 
+  /**
+   * Set or clear the photograph on your graphics.
+   *
+   * Functional update rather than reading `career` from the closure: this is
+   * called from a control that can sit open across a save, and the picture is
+   * the one piece of the career a stale copy would silently discard the rest of.
+   */
+  const handleSetPortrait = useCallback((portrait: string | undefined) => {
+    setCareer(c => (c
+      ? { ...c, player: { ...c.player, ...(portrait ? { portrait } : { portrait: undefined }) } }
+      : c));
+  }, []);
+
   const handleTrainingComplete = useCallback((xp: number) => {
     if (!career || !trainingSkill) return;
     const currentVal = career.skills[trainingSkill];
@@ -1033,6 +1046,7 @@ export default function StarDevPage() {
             onUseDrink={handleUseDrink}
             onPlayRelationshipGame={handleOpenRelationshipGame}
             onRest={handleRest}
+            onSetPortrait={handleSetPortrait}
           />
         </div>
       )}

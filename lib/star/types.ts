@@ -8,6 +8,14 @@ export interface StarPlayer {
   position: string;
   nationality: string;
   startYear: number;
+  /**
+   * A picture of you, cropped square and stored as a data URI.
+   *
+   * Optional and expected to be absent — the cards fall back to the back of your
+   * shirt, which is a real answer rather than a placeholder. Never uploaded
+   * anywhere; see lib/star/portrait.ts.
+   */
+  portrait?: string;
 }
 
 export interface Skills {
