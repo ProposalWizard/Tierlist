@@ -20,13 +20,16 @@ import { isDerby, DERBY_MULTIPLIER } from "./rivals";
 import { attachObjective, progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
-  seedSeasonKnockouts, seedCups, settleCupTie, resolveKnockout, qualificationFor, leaguePosition,
+  seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
+  qualificationFor, leaguePosition,
 } from "./competitions";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { resetLeagueSquads } from "./leagueSquads";
-import { monthOf, endsMonth, alreadyAwarded, voteMonth, type MonthAward } from "./potm";
+import {
+  monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
+} from "./potm";
 import { kitsOf } from "./kits";
 import { surname } from "./media/grammar";
 
@@ -101,6 +104,8 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
   const drawn = seedCups(state);
   state.cupState = drawn.states;
   state.fixtures = [...state.fixtures, ...seeded.fixtures, ...drawn.fixtures];
+  // No European campaign here on purpose: a first season cannot have qualified
+  // for one, any more than it can have a Community Shield or a Super Cup.
   return state;
 }
 
@@ -278,9 +283,20 @@ export function creditMatchResult(
   let cupTrophy: Trophy | null = null;
   let knockoutMessage: string | null = null;
   let cupState = career.cupState;
+  let euroState = career.euroState;
   if (kind !== "league" && fixture.competition) {
-    const settled = settleCupTie(career, fixture, stats.homeScore, stats.awayScore);
-    if (settled) {
+    // Europe first: a league-phase night and a two-legged tie are neither a
+    // domestic cup round nor a counter-style run, and asking the other two
+    // handlers about it would have them answer for a competition they do not
+    // know about.
+    const euro = settleEuro(career, fixture, stats.homeScore, stats.awayScore);
+    const settled = euro ? null : settleCupTie(career, fixture, stats.homeScore, stats.awayScore);
+    if (euro) {
+      euroState = euro.state;
+      extraFixtures = euro.nextFixture ? [euro.nextFixture] : [];
+      cupTrophy = euro.trophy;
+      knockoutMessage = euro.message;
+    } else if (settled) {
       cupState = settled.states;
       extraFixtures = settled.nextFixture ? [settled.nextFixture] : [];
       cupTrophy = settled.trophy;
@@ -317,9 +333,9 @@ export function creditMatchResult(
   let potm = career.potm;
   let potmJustAwarded: MonthAward | null = null;
   if (kind === "league") {
-    const month = monthOf(fixture.week);
+    const month = monthOfCareer(career, fixture.week);
     const lastWeek = Math.max(...career.fixtures.map(f => f.week), fixture.week);
-    if (endsMonth(fixture.week, lastWeek) && !alreadyAwarded(career, month)) {
+    if (endsMonthOn(career, fixture.week, lastWeek) && !alreadyAwarded(career, month)) {
       const forVote = { ...career, results: weekResults, fixtures } as CareerState;
       const award = voteMonth(forVote, month);
       if (award) {
@@ -350,6 +366,7 @@ export function creditMatchResult(
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
     cupState,
+    euroState,
     league,
     results: weekResults,
     leagueSquads,
@@ -497,6 +514,9 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
     squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
     europeanQualification: qualification,
+    // Kept because the European draw seeds you into a pot off it, and by the
+    // time that draw happens the table below has already been wiped.
+    lastSeasonPosition: leaguePosition(career),
     knockoutMessage: null,
     weekActions: WEEK_ACTIONS,
     relationships: {
@@ -536,7 +556,11 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
   next.cups = seeded.runs;
   const drawn = seedCups(next);
   next.cupState = drawn.states;
-  next.fixtures = [...next.fixtures, ...seeded.fixtures, ...drawn.fixtures];
+  // Europe: the field, and all eight league-phase games at once. A league phase
+  // can be drawn up in advance because nothing you do changes who is in it.
+  const euro = seedEurope(next);
+  next.euroState = euro.state ?? undefined;
+  next.fixtures = [...next.fixtures, ...seeded.fixtures, ...drawn.fixtures, ...euro.fixtures];
 
   return applyAchievements(next);
 }

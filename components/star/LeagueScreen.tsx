@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { fixtureDateLabel, isPostSeason } from "@/lib/star/calendar";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
@@ -149,12 +150,21 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
           {career.fixtures.map((f, i) => (
             <div
               key={i}
-              className={`grid grid-cols-[36px_1fr_32px_32px_1fr] items-center py-2 px-2 gap-1 text-xs font-bold ${
+              className={`grid grid-cols-[58px_1fr_28px_28px_1fr] items-center py-2 px-2 gap-1 text-xs font-bold ${
                 f.week === career.week ? "bg-emerald-500 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
               }`}
             >
-              <div className="text-center text-[10px] font-black">
-                W{f.week}
+              {/* The date, not the week number. A fixture list that says "W25"
+                  is a spreadsheet; one that says "Sat 14 Feb" is a season. The
+                  week is kept underneath because every other screen, and every
+                  message the game writes, still counts in them. */}
+              <div className="text-center text-[9px] font-black leading-none">
+                <div className="whitespace-nowrap">
+                  {fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind)}
+                </div>
+                <div className="mt-0.5 text-[8px] font-bold text-white/60">
+                  {isPostSeason(f.week) ? "FINAL" : f.week === 0 ? "PRE" : `W${f.week}`}
+                </div>
                 {f.kind && f.kind !== "league" && (
                   <div className={`text-[8px] font-black uppercase leading-none mt-0.5 ${
                     f.kind === "international" ? "text-sky-300" : "text-violet-300"}`}
@@ -170,7 +180,14 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
               <div className="text-center font-black">
                 {f.played ? f.awayScore : "-"}
               </div>
-              <div className={`text-left ${!f.home ? "font-black" : ""}`}>{f.home ? f.opponent : sideFor(f)}</div>
+              <div className={`text-left ${!f.home ? "font-black" : ""}`}>
+                {f.home ? f.opponent : sideFor(f)}
+                {f.round && (
+                  <div className="truncate text-[8px] font-bold uppercase leading-none text-white/60">
+                    {f.round}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -186,7 +203,11 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
             </div>
             {(career.potm ?? []).filter(a => a.season === career.season).length === 0 && (
               <div className="px-2 py-2 text-[11px] font-bold text-white/70">
-                Nothing awarded yet — the first one is given at the end of August.
+                {/* This used to say "the first one is given at the end of
+                    August" whatever month it actually was, which read as a bug
+                    to anybody seeing it in February — and usually WAS one. */}
+                Nothing awarded yet. The first goes to whoever has the best
+                August, once that month&apos;s last league game is played.
               </div>
             )}
             {[...(career.potm ?? [])]

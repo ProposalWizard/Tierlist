@@ -161,7 +161,10 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   // The two domestic cups now have their own calendar. Nothing may land twice.
   const lc = CUP_ROUND_NAMES.map((_, i) => cupRoundWeek("League Cup", i, CLUBS.length));
   const fa = CUP_ROUND_NAMES.map((_, i) => cupRoundWeek("FA Cup", i, CLUBS.length));
-  check(euro.length > 0, "the European run produces a full set of weeks");
+  // Europe is no longer a counter-style run — it is a league phase and a
+  // knockout, seeded separately (see seedEurope). What has to hold here is that
+  // the two DOMESTIC cups keep out of each other's way.
+  check(euro.length === 0, `Europe is not a counter-style run any more (${euro.join(",")})`);
   check(new Set(lc).size === lc.length, `the League Cup never plays twice in a week (${lc.join(",")})`);
   check(new Set(fa).size === fa.length, `nor does the FA Cup (${fa.join(",")})`);
   check(!lc.some(w => fa.includes(w)),
@@ -252,9 +255,16 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
 
   const nextSeason = advanceSeason(awardLeagueTrophyIfWon(done).career, false).career;
   check(nextSeason.europeanQualification === "Champions League", "and gets you into the Champions League");
-  check((nextSeason.cups ?? []).some(r => r.kind === "europe"), "which appears as a run the following season");
-  check(nextSeason.fixtures.some(f => f.kind === "europe"), "with a fixture on the calendar");
-  check(nextSeason.fixtures.filter(f => f.kind === "europe").length === 1, "one round of it, like the cup");
+  check(!!nextSeason.euroState, "which opens a European campaign the following season");
+  check(nextSeason.euroState?.competition === "Champions League", "in the competition it earned");
+  check(nextSeason.euroState?.clubs.length === 36, `against a field of thirty-six (${nextSeason.euroState?.clubs.length})`);
+  // A league phase can be drawn up in advance — every opponent is known on the
+  // day of the draw — so all eight go on the calendar at once. A knockout
+  // cannot, which is why the cups still arrive one round at a time.
+  const euroFixtures = nextSeason.fixtures.filter(f => f.kind === "europe");
+  check(euroFixtures.length === 8, `with all eight league-phase games on the calendar (${euroFixtures.length})`);
+  check(new Set(euroFixtures.map(f => f.week)).size === 8, "no two of them in the same week");
+  check(euroFixtures.filter(f => f.home).length === 4, "four at home and four away");
   check(nextSeason.trophies.some(t => t.competition === "Premier League"), "the title carried over");
 }
 
