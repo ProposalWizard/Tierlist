@@ -68,7 +68,7 @@ function fit(slot: Pos, positions: string): number {
 }
 
 /** What the endpoint gives back, of the parts we use. */
-export interface RosterRow { id: string; name: string; positions: string; overall: number }
+export interface RosterRow { id: string; name: string; positions: string; overall: number; image?: string }
 
 /**
  * Fill a shape from a roster.
@@ -98,6 +98,7 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
     players.push({
       id: best.id, name: best.name, position: slot,
       overall: best.overall || 65, goals: 0, assists: 0,
+      ...(best.image ? { image: best.image } : {}),
     });
   }
 
@@ -123,6 +124,7 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
       players.push({
         id: p.id, name: p.name, position: naturalPosition(p.positions),
         overall: p.overall || 60, goals: 0, assists: 0,
+        ...(p.image ? { image: p.image } : {}),
       });
     }
   }

@@ -1,6 +1,7 @@
 import type { CareerState } from "../types";
 import { sortLeague } from "../season";
 import { goldenBootRace } from "../recognition";
+import { MONTH_NAMES, faceOf, monthOf, monthRace, playerOf } from "../potm";
 import type {
   FootballEvent, GraphicKind, GraphicSpec, MatchRecord, StoryMemory,
 } from "./types";
@@ -112,6 +113,64 @@ export function buildGraphic(
         title: "Golden Boot",
         highlight: you,
         rows: race.map(s => ({ label: s.isYou ? you : s.name, value: String(s.goals), highlight: s.isYou })),
+      };
+    }
+
+    case "potmNominees": {
+      if (!r) return undefined;
+      // `monthRace`, not `voteMonth`. The shortlist is published before the
+      // panel sits, so it is ordered by what the month's football actually was
+      // — and using the vote here would leak its result a round early.
+      const month = monthOf(r.week);
+      const race = monthRace(career, month).slice(0, 8);
+      // Four names is not a shortlist, it is a table with gaps in it. Early in a
+      // month, or after a weekend of goalless draws, there genuinely are not
+      // eight people who scored or made one, and a grid half full of blanks
+      // reads as a bug.
+      if (race.length < 6) return undefined;
+      return {
+        type: "potmNominees",
+        month: MONTH_NAMES[month],
+        nominees: race.map(c => ({
+          name: c.name, club: c.club, goals: c.goals, assists: c.assists, isYou: c.isYou,
+          // A photograph for the real footballers; the back of your shirt for
+          // you, who never had one taken. See PotmNominee.
+          ...(c.isYou
+            ? { number: career.squadNumber ?? 0 }
+            : { face: faceOf(career, c.name, c.club) }),
+        })),
+      };
+    }
+
+    case "potmWinner": {
+      const month = String(f.month ?? "");
+      const isYou = e.id === "potm-won";
+      // The name a goal was filed under, which is a surname and sometimes an
+      // initial and a surname.
+      const filed = isYou ? career.player.lastName : String(f.winner ?? "");
+      const club = isYou ? career.player.club : String(f.winnerClub ?? career.player.club);
+      if (!month || !filed) return undefined;
+
+      // …and the name his club knows him by, which is the one worth setting at
+      // this size. "ERLING HAALAND", not "HAALAND", and certainly not "E."
+      const known = isYou ? undefined : playerOf(career, filed, club);
+      const full = isYou ? `${career.player.firstName} ${career.player.lastName}` : (known?.name ?? filed);
+      const parts = full.trim().split(/\s+/);
+      const lastName = parts[parts.length - 1];
+      // A lone initial is not a first name — it is the absence of one, and it
+      // reads worse above a surname than nothing does.
+      const head = parts.slice(0, -1).join(" ");
+      const firstName = /^[A-Z]\.?$/.test(head) ? "" : head;
+
+      return {
+        type: "potmWinner",
+        month, firstName, lastName, club,
+        goals: Number(f.goals ?? 0),
+        assists: Number(f.assists ?? 0),
+        isYou,
+        ...(isYou ? { number: career.squadNumber ?? 0 } : { face: known?.image }),
+        ...(f.runnerUp ? { runnerUp: String(f.runnerUp) } : {}),
+        ...(!isYou && f.place !== undefined ? { yourPlace: Number(f.place) } : {}),
       };
     }
 

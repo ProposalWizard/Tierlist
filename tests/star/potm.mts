@@ -1,8 +1,14 @@
 import {
   MONTH_NAMES, WEEKS_PER_MONTH, monthOf, monthName, endsMonth,
-  monthCandidates, voteMonth, monthRace, alreadyAwarded,
+  monthCandidates, voteMonth, monthRace, alreadyAwarded, faceOf,
 } from "../../lib/star/potm";
 import { buildLeagueSquad, type RosterRow } from "../../lib/star/leagueSquads";
+import { buildGraphic } from "../../lib/star/media/graphics";
+import { shortClub } from "../../lib/star/media/grammar";
+import { detectMatch } from "../../lib/star/media/detect";
+import { chooseTemplate } from "../../lib/star/media/templates";
+import { emptyMemory } from "../../lib/star/media/memory";
+import { buildMatchRecord } from "../../lib/star/media/record";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { nextFixtureFor } from "../../lib/star/competitions";
 import type { CareerState } from "../../lib/star/types";
@@ -258,6 +264,347 @@ const CLUBS = [
   const yoursWon = (c.potm ?? []).filter(a => a.isYou).length;
   const honours = (c.awards ?? []).filter(a => a.kind === "Player of the Month").length;
   check(honours === yoursWon, `only the ones you won go on your honours (${honours} of ${yoursWon})`);
+}
+
+// ── The nominees graphic ────────────────────────────────────────────────────
+//
+// A shortlist card is eight names, eight clubs and eight sets of colours, and
+// every one of those is a chance to render something unreadable or something
+// blank. What has to hold: the right eight in the right order, a club label that
+// fits the box it is drawn in, and nothing at all when the month has not
+// produced a shortlist yet.
+{
+  const player = {
+    firstName: "Mikey", lastName: "Vass", age: 19, position: "ST",
+    club: "Liverpool", nationality: "England",
+  } as never;
+  const base = makeInitialCareer(player, CLUBS);
+
+  // Ten different scorers across August, on ten different clubs, so there is
+  // more than a shortlist's worth to cut down.
+  const scorers = CLUBS.slice(0, 10).map((club, i) => ({ club, name: `Scorer${i}`, goals: 10 - i }));
+  const results = scorers.map((s, i) => ({
+    week: 1 + (i % 4),
+    home: s.club, away: CLUBS[19 - (i % 10)], hs: s.goals, as: 0,
+    hg: Array.from({ length: s.goals }, (_, g) => ({ m: 3 + g * 8, s: s.name })),
+    ag: [],
+  }));
+  // …and you, on four goals, so a middling entry is present and identified.
+  results.push({
+    week: 2, home: "Liverpool", away: "Burnley", hs: 4, as: 0,
+    hg: Array.from({ length: 4 }, (_, g) => ({ m: 10 + g * 15, s: "Vass" })), ag: [],
+  });
+  const career: CareerState = { ...base, results: results as never };
+
+  const asRecord = (week: number) => ({ week }) as never;
+  const asEvent = { id: "potm-decides", facts: {}, subject: { kind: "you" }, tags: [] } as never;
+  const rng = mulberry(7);
+
+  const spec = buildGraphic("potmNominees", asEvent, asRecord(4), career, {} as never, rng);
+  check(spec?.type === "potmNominees", `the last round of a busy month makes a card (${spec?.type})`);
+
+  if (spec?.type === "potmNominees") {
+    check(spec.month === "August", `it names the month it is about (${spec.month})`);
+    check(spec.nominees.length === 8, `eight nominees, not ten (${spec.nominees.length})`);
+    check(spec.winner === undefined, "and no winner, because nobody has voted yet");
+
+    // The order is the month's football, best first.
+    const race = monthRace(career, 0).slice(0, 8);
+    check(
+      spec.nominees.every((n, i) => n.name === race[i].name),
+      "the card is in the same order as the race it is drawn from",
+    );
+    check(spec.nominees[0].goals >= spec.nominees[7].goals, "…which puts the strongest month first");
+
+    const you = spec.nominees.find(n => n.isYou);
+    check(you?.name === "Vass", `you are on it and marked as you (${you?.name})`);
+    check(spec.nominees.filter(n => n.isYou).length === 1, "and exactly once");
+    check(spec.nominees.every(n => n.club.length > 0), "every nominee has a club to be drawn in");
+  }
+
+  // A month nobody has played is not a shortlist with gaps — it is no card.
+  const empty = buildGraphic("potmNominees", asEvent, asRecord(30), career, {} as never, rng);
+  check(empty === undefined, "a month with no football produces no card at all");
+
+  // Nor is a thin one. Three scorers in a grid of eight is five empty boxes.
+  const thin: CareerState = {
+    ...base,
+    results: [{
+      week: 1, home: "Arsenal", away: "Everton", hs: 3, as: 0,
+      hg: [{ m: 10, s: "A" }, { m: 20, s: "B" }, { m: 30, s: "C" }], ag: [],
+    }] as never,
+  };
+  check(
+    buildGraphic("potmNominees", asEvent, asRecord(4), thin, {} as never, rng) === undefined,
+    "and neither does a month only three men scored in",
+  );
+}
+
+// ── The shortlist is news whether or not you are on it ──────────────────────
+//
+// This was the bug: the card was gated behind your being in the top three of the
+// race, so it appeared in months you were having a good one and vanished in the
+// months you were not. A graphic that only shows up when you are winning is not
+// a media feed. What has to hold now is that the last round of a month always
+// produces the card, and that being on the list only changes the sentence over
+// it.
+{
+  // A round to go, which is when the shortlist goes up. NOT the last round —
+  // by then the vote has run and the winner exists, and the winner card has it.
+  const race = (place: number | undefined, contenders = 9) => ({
+    monthName: "August", place, contenders, goals: place ? 4 : 0,
+    assists: place ? 1 : 0, decidesToday: false, decidesNextWeek: true, leader: "Haaland",
+  });
+  const record = (potmRace: unknown) => ({
+    id: "s1-w4-league-Everton", season: 1, week: 4, competition: "Premier League",
+    kind: "league", derby: false, home: true, neutral: false,
+    club: "Liverpool", opponent: "Everton", clubStrength: 80, opponentStrength: 72,
+    score: { us: 2, them: 1 }, result: "win", goals: [], potmRace,
+    you: {
+      name: "Mikey Vass", shortName: "Vass", position: "ST", squadNumber: 19, rating: 7.4,
+      goals: 1, assists: 0, seasonGoals: 6, seasonAssists: 2, careerGoals: 6,
+      careerAppearances: 4, minutes: 90, starMan: false,
+    },
+    table: { after: { position: 3, points: 9, gd: 4 }, before: { position: 4, points: 6, gd: 3 }, matchesLeft: 34 },
+    context: { managerName: "R. Hughes", teamMorale: 70, fanOpinion: 70, bossOpinion: 70 },
+  }) as never;
+
+  const fire = (r: unknown) => detectMatch(r as never, emptyMemory()).filter(e => e.id === "potm-decides");
+
+  const notOnIt = fire(record(race(undefined)));
+  check(notOnIt.length === 1, `the last round fires when you are nowhere near it (${notOnIt.length})`);
+  check(notOnIt[0]?.facts.place === undefined, "…with no place, because you do not have one");
+  check(notOnIt[0]?.facts.leader === "Haaland", "…and the man who does");
+
+  const onIt = fire(record(race(1)));
+  check(onIt[0]?.facts.place === 1, "leading it still says so");
+  check(
+    (onIt[0]?.baseImportance ?? 0) > (notOnIt[0]?.baseImportance ?? 0),
+    "leading it is the bigger story of the two",
+  );
+
+  // A month with nobody in it is still not a shortlist.
+  check(fire(record(race(undefined, 3))).length === 0, "three contenders produce no card");
+
+  // …and on the round that actually decides it, the shortlist stands down.
+  const decided = { ...race(2), decidesToday: true, decidesNextWeek: false };
+  check(fire(record(decided)).length === 0,
+    "the last round does not publish a shortlist — the vote has already run");
+
+  // …and the line that gets written has to exist for both. A template that
+  // requires a place cannot serve a player who has not got one, and before this
+  // there was no other template — which is the whole reason nothing appeared.
+  for (const [label, ev] of [["not nominated", notOnIt[0]], ["nominated", onIt[0]]] as const) {
+    const t = chooseTemplate(ev, "stats", "analyse", emptyMemory(), mulberry(3), false);
+    check(!!t, `${label}: a stats account has a line for it`);
+    check(t?.graphic === "potmNominees", `${label}: and the line carries the shortlist card (${t?.graphic})`);
+  }
+}
+
+// ── The winner reaches the feed ─────────────────────────────────────────────
+//
+// A month of football that ends with nobody saying who won it is the gap this
+// closes: the award existed, went onto your honours if you won it, and was never
+// once mentioned. What has to hold is that the match which decides a month
+// carries the award on its record, that it fires exactly once, and that the
+// winner being somebody else does not make it silent.
+{
+  const player = {
+    firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
+    club: "Liverpool", nationality: "England",
+  } as never;
+  let c: CareerState = {
+    ...makeInitialCareer(player, CLUBS),
+    leagueSquads: CLUBS.map(x => buildLeagueSquad(x, roster(x))),
+  };
+  const stats = {
+    homeScore: 2, awayScore: 1, chances: 2, goals: 1, assists: 1, passes: 10,
+    rating: 7.6, starMan: false, bossChange: 0, teamChange: 0, fansChange: 0,
+    wage: 0, goalBonus: 0, sponsorPay: 0, totalCash: 0,
+    goalEvents: [{ minute: 20, scorer: "Mikey Vass", isUserGoal: true }],
+  } as never;
+
+  let awarded = 0, carried = 0, posted = 0, shortlists = 0;
+  const winners = new Set<string>();
+  for (let w = 0; w < 20; w++) {
+    const f = nextFixtureFor(c);
+    if (!f) break;
+    const before = c;
+    const out = creditMatchResult(c, f, stats);
+    c = out.career;
+    if (out.potmAwarded) awarded++;
+
+    const rec = buildMatchRecord(before, c, f, stats);
+    if (rec.potmAward) {
+      carried++;
+      winners.add(rec.potmAward.winner);
+      check(rec.potmAward.monthName.length > 0, "the award on the record knows its month");
+    }
+    const events = detectMatch(rec, emptyMemory());
+    const award = events.filter(e => e.id === "potm-won" || e.id === "potm-winner");
+    const list = events.filter(e => e.id === "potm-decides");
+    posted += award.length;
+    shortlists += list.length;
+    check(award.length <= 1, "the award is announced once, not once per detector");
+    // The two cards never land in the same cycle: one is a question and the
+    // other is its answer.
+    check(!(award.length && list.length), "a shortlist and its winner never post together");
+  }
+
+  check(awarded > 0, `months were awarded (${awarded})`);
+  check(carried === awarded, `every award reaches the record (${carried} of ${awarded})`);
+  check(posted === awarded, `and every one of them is posted (${posted} of ${awarded})`);
+  check(shortlists > 0, `and the shortlist still goes up in the round before (${shortlists})`);
+  check(winners.size > 0, "the winners have names");
+
+  // The card the post carries.
+  const spec = buildGraphic(
+    "potmWinner",
+    { id: "potm-winner", tags: [], subject: { kind: "you" },
+      facts: { month: "September", winner: "Haaland", winnerClub: "Manchester City",
+        goals: 6, assists: 1, runnerUp: "Saka", place: 4 } } as never,
+    { week: 8 } as never, c, {} as never, mulberry(11),
+  );
+  if (spec?.type === "potmWinner") {
+    check(spec.lastName === "Haaland", `the surname is set on its own (${spec.lastName})`);
+    check(spec.month === "September", "and the month it was won in");
+    check(spec.goals === 6 && spec.assists === 1, "with the numbers that won it");
+    check(spec.runnerUp === "Saka", "and who he beat");
+    check(spec.yourPlace === 4, "and where you came");
+    check(spec.isYou === false && spec.number === undefined, "somebody else's card is not yours");
+  } else {
+    check(false, "the winner card built");
+  }
+
+  const yours = buildGraphic(
+    "potmWinner",
+    { id: "potm-won", tags: [], subject: { kind: "you" },
+      facts: { month: "October", goals: 7, assists: 3 } } as never,
+    { week: 12 } as never, { ...c, squadNumber: 19 }, {} as never, mulberry(12),
+  );
+  if (yours?.type === "potmWinner") {
+    check(yours.isYou, "winning it yourself is marked");
+    check(yours.firstName === "Mikey" && yours.lastName === "Vass",
+      `and it uses your full name (${yours.firstName} ${yours.lastName})`);
+    check(yours.number === 19, `with your shirt number where a photograph would be (${yours.number})`);
+    check(yours.face === undefined, "…and never somebody else's face");
+    check(yours.yourPlace === undefined, "\"you finished 1st\" is not worth saying to a winner");
+  } else {
+    check(false, "your own winner card built");
+  }
+}
+
+// ── Faces ───────────────────────────────────────────────────────────────────
+//
+// A candidate is a string, not a player, and the two halves of the division
+// write that string differently: your own club's goals are filed by surname,
+// everybody else's by shortNameOf. Getting a photograph onto a tile means
+// matching one against the other, through accents and two-part surnames, and
+// showing nothing at all rather than the wrong man.
+{
+  const player = {
+    firstName: "Mikey", lastName: "Vass", age: 19, position: "ST",
+    club: "Liverpool", nationality: "England",
+  } as never;
+  const career: CareerState = {
+    ...makeInitialCareer(player, CLUBS),
+    squad: [
+      { id: "1", name: "Danny Reeves", shortName: "Reeves", position: "CM",
+        seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
+        imageUrl: "https://cdn/reeves.png" },
+      { id: "2", name: "Sam Nolan", shortName: "Nolan", position: "CB",
+        seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0 },
+    ] as never,
+    leagueSquads: [
+      { club: "Arsenal", players: [
+        { id: "a1", name: "M. Ødegaard", position: "CAM", overall: 88, goals: 0, assists: 0, image: "https://cdn/ode.png" },
+        { id: "a2", name: "V. van Dijk", position: "CB", overall: 89, goals: 0, assists: 0, image: "https://cdn/vvd.png" },
+        { id: "a3", name: "K. Havertz", position: "ST", overall: 84, goals: 0, assists: 0 },
+      ] },
+    ] as never,
+  };
+
+  check(faceOf(career, "Reeves", "Liverpool") === "https://cdn/reeves.png",
+    "a team-mate filed by surname finds his photograph");
+  check(faceOf(career, "Nolan", "Liverpool") === undefined,
+    "a team-mate the database has no photograph of gets none");
+  check(faceOf(career, "Ødegaard", "Arsenal") === "https://cdn/ode.png",
+    "another club's scorer, filed the way nameGoals files him");
+  check(faceOf(career, "Odegaard", "Arsenal") === "https://cdn/ode.png",
+    "…and the accent is not allowed to lose him");
+  check(faceOf(career, "van Dijk", "Arsenal") === "https://cdn/vvd.png",
+    "a two-part surname is a surname, not its last word");
+  check(faceOf(career, "Havertz", "Arsenal") === undefined, "no image, no face");
+  check(faceOf(career, "Nobody", "Arsenal") === undefined, "an unknown name gets nothing");
+  check(faceOf(career, "Ødegaard", "Chelsea") === undefined,
+    "and a name is only looked for at the club it was filed under");
+
+  // What the card ends up carrying: photographs for the eight, the back of a
+  // shirt for the one man who never had a photograph taken.
+  // Eight clubs that are not yours, so nothing here can be mistaken for you.
+  const others = CLUBS.filter(c => c !== "Liverpool" && c !== "Burnley").slice(0, 8);
+  const withYou: CareerState = {
+    ...career,
+    squadNumber: 19,
+    results: [
+      ...others.map((club, i) => ({
+        week: 1 + (i % 4), home: club, away: "Sunderland", hs: 9 - i, as: 0,
+        hg: Array.from({ length: 9 - i }, (_, g) => ({
+          // The first is Ødegaard, filed at Arsenal, which is the squad his
+          // photograph is in. The rest are nobody, and get monograms.
+          m: 4 + g * 9, s: club === "Arsenal" ? "Ødegaard" : `Man${i}`,
+        })),
+        ag: [],
+      })),
+      // Six for you, clear of the tie at the bottom of the eight, so the test is
+      // about what your tile carries rather than about whether you made the cut.
+      { week: 2, home: "Liverpool", away: "Burnley", hs: 7, as: 0,
+        hg: [
+          ...Array.from({ length: 6 }, (_, g) => ({ m: 8 + g * 12, s: "Vass" })),
+          { m: 85, s: "Reeves" },
+        ], ag: [] },
+    ] as never,
+  };
+  const card = buildGraphic("potmNominees", { id: "potm-decides", facts: {}, subject: { kind: "you" }, tags: [] } as never,
+    { week: 4 } as never, withYou, {} as never, mulberry(5));
+  if (card?.type === "potmNominees") {
+    const mine = card.nominees.find(n => n.isYou);
+    check(mine?.number === 19, `your tile carries your squad number (${mine?.number})`);
+    check(mine?.face === undefined, "…and never a photograph of somebody else");
+    const ode = card.nominees.find(n => n.name === "Ødegaard");
+    check(ode?.face === "https://cdn/ode.png", `a real footballer carries his (${ode?.face})`);
+    check(card.nominees.filter(n => n.number !== undefined).length === 1,
+      "exactly one tile is a shirt back");
+  } else {
+    check(false, "the card built at all");
+  }
+}
+
+// ── Club names at caption width ─────────────────────────────────────────────
+{
+  const expected: Record<string, string> = {
+    "Wolverhampton Wanderers": "Wolves",
+    "Manchester United": "Man Utd",
+    "Manchester City": "Man City",
+    "Brighton & Hove Albion": "Brighton",
+    "AFC Bournemouth": "Bournemouth",
+    "Fulham FC": "Fulham",
+    "Leeds United": "Leeds",
+    "Newcastle United": "Newcastle",
+    "West Ham United": "West Ham",
+    "Tottenham Hotspur": "Tottenham",
+    "Nottingham Forest": "Nottingham Forest",
+    "Crystal Palace": "Crystal Palace",
+    "Aston Villa": "Aston Villa",
+    "Liverpool": "Liverpool",
+  };
+  for (const [full, want] of Object.entries(expected)) {
+    check(shortClub(full) === want, `${full} → ${want} (got ${shortClub(full)})`);
+  }
+  // The two Manchesters and the two Uniteds must stay tellable apart.
+  const shorts = CLUBS.map(shortClub);
+  check(new Set(shorts).size === CLUBS.length, "no two clubs shorten to the same caption");
+  check(shorts.every(s => s.length >= 4), `nothing shortens to an initial (${shorts.filter(s => s.length < 4)})`);
 }
 
 function roster(club: string, n = 24): RosterRow[] {

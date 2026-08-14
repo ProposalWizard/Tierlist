@@ -13,34 +13,72 @@ import { base, club, ev, you } from "./kit";
  */
 
 /**
- * The Player of the Month race, while it is still a race.
+ * The Player of the Month race, and the shortlist it produces.
  *
  * Football talks about this award for a fortnight before it is given and the
- * game said nothing until the moment it landed. Two lines: one when you are in
- * contention at all, and a louder one on the day the month ends, which is the
- * day it is actually worth talking about.
+ * game said nothing until the moment it landed.
  *
- * Only ever about YOU. The panel's shortlist is not news until it is announced.
+ * ── Two different pieces of news ──
+ *
+ * THROUGH the month it is only news if it is about you: "third in the race with
+ * two goals" is a line about your season, and a table of eight strangers you are
+ * not in is not. So the mid-month line still needs you near the top of it.
+ *
+ * The SHORTLIST is not that. It goes up once, on the last round of the month,
+ * and it is news whoever is on it — the same way the real one is. It used to be
+ * gated behind your being in the top three, which meant the card existed for a
+ * player having a good month and vanished for one who was not, and a graphic
+ * that only appears when you are winning is not a media feed. So the last round
+ * always fires; whether you are on the list only changes how loud it is and
+ * which line gets written about it.
  */
 const POTM_RACE: Detector = (r) => {
   const race = r.potmRace;
-  if (!race || race.place === undefined || race.place > 3) return null;
+  if (!race) return null;
+
+  const facts = {
+    ...base(r),
+    month: race.monthName,
+    goals: race.goals,
+    assists: race.assists,
+    leader: race.leader,
+    contenders: race.contenders,
+  };
+  // `place` is deliberately spread in only when you have one. A template asks
+  // for the facts it needs and refuses the ones it cannot use, so an absent
+  // place is what picks the line about the shortlist over the line about you.
+  const place = race.place;
+  const placed = place !== undefined;
+
+  // ── The shortlist, with a round still to play ──
+  //
+  // Not on the last round. The vote runs the moment that round is played, so by
+  // then the winner exists and a nominees card is a question somebody has
+  // already answered. See MatchRecord.potmRace.decidesNextWeek.
+  if (race.decidesNextWeek) {
+    // Below this there is no shortlist to publish — see the graphic, which
+    // returns nothing rather than a grid with holes in it.
+    if (race.contenders < 6) return null;
+    return ev(
+      "potm-decides",
+      you(r),
+      place === 1 ? 74 : placed && place <= 3 ? 60 : 48,
+      ["award", "form", "stat"],
+      placed ? { ...facts, place } : facts,
+      "hour",
+    );
+  }
+  if (race.decidesToday) return null;   // the award detector has this one
+
+  if (place === undefined || place > 3) return null;
   if (race.goals + race.assists < 2) return null;
-  const leading = race.place === 1;
   return ev(
-    race.decidesToday ? "potm-decides" : "potm-race",
+    "potm-race",
     you(r),
-    race.decidesToday ? (leading ? 78 : 62) : (leading ? 58 : 44),
+    place === 1 ? 58 : 44,
     ["award", "form", "stat"],
-    {
-      ...base(r),
-      month: race.monthName,
-      place: race.place,
-      goals: race.goals,
-      assists: race.assists,
-      leader: race.leader,
-    },
-    race.decidesToday ? "hour" : "evening",
+    { ...facts, place },
+    "evening",
   );
 };
 
@@ -127,7 +165,44 @@ const RUN_ENDED: Detector = (r, m) => {
   }, "hour");
 };
 
+/**
+ * And the award itself.
+ *
+ * Separate from the race above because it is a different kind of thing: the race
+ * is a running story and this is a result, it happens exactly ten times a season,
+ * and it is the one event here that is worth posting about when it has nothing
+ * to do with you. A month of football ending with nobody saying who won it is
+ * the gap this closes.
+ *
+ * The subject stays `you` even when the winner is somebody else. It is not quite
+ * true and it is deliberate: subject drives which accounts take an interest, and
+ * a card the player has asked to see every month should not be at the mercy of
+ * whether a Manchester City post reaches a Liverpool feed.
+ */
+const POTM_AWARD: Detector = (r) => {
+  const a = r.potmAward;
+  if (!a) return null;
+  const runnerUp = a.nominees.find(n => n.name !== a.winner);
+  return ev(
+    a.isYou ? "potm-won" : "potm-winner",
+    you(r),
+    a.isYou ? 88 : 56,
+    ["award", "stat"],
+    {
+      ...base(r),
+      month: a.monthName,
+      winner: a.winner,
+      winnerClub: a.club,
+      goals: a.goals,
+      assists: a.assists,
+      ...(runnerUp ? { runnerUp: runnerUp.name } : {}),
+      ...(a.yourPlace !== undefined ? { place: a.yourPlace } : {}),
+    },
+    "hour",
+  );
+};
+
 export const STREAK_DETECTORS: Detector[] = [
   SCORING_RUN, HOT_STREAK, CREATING_RUN, UNBEATEN, WINNING_RUN,
-  LOSING_RUN, CLEAN_SHEET_RUN, RUN_ENDED, POTM_RACE,
+  LOSING_RUN, CLEAN_SHEET_RUN, RUN_ENDED, POTM_RACE, POTM_AWARD,
 ];

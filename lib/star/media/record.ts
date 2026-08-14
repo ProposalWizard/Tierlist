@@ -109,7 +109,28 @@ export function buildMatchRecord(
       goals: i >= 0 ? race[i].goals : 0,
       assists: i >= 0 ? race[i].assists : 0,
       decidesToday: endsMonth(fixture.week, lastWeek),
+      decidesNextWeek: !endsMonth(fixture.week, lastWeek) && endsMonth(fixture.week + 1, lastWeek),
       leader: race[0].name,
+    };
+  })();
+
+  // The award itself, on the one match a month that produces one. Read off the
+  // difference between the two careers rather than passed in, because
+  // `creditMatchResult` has already made it by the time this runs and a record
+  // that asked for it as an argument would be a record that could be told a lie.
+  const potmAward = (() => {
+    const had = new Set((before.potm ?? []).map(a => `${a.season}|${a.month}`));
+    const fresh = (after.potm ?? []).find(a => !had.has(`${a.season}|${a.month}`));
+    if (!fresh) return undefined;
+    return {
+      monthName: fresh.monthName,
+      winner: fresh.winner,
+      club: fresh.club,
+      goals: fresh.goals,
+      assists: fresh.assists,
+      isYou: fresh.isYou,
+      nominees: fresh.nominees,
+      yourPlace: fresh.yourPlace,
     };
   })();
 
@@ -131,6 +152,7 @@ export function buildMatchRecord(
     round: fixture.round,
     derby,
     potmRace,
+    potmAward,
     home: fixture.home,
     neutral: fixture.round === "Final",
 

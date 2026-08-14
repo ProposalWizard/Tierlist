@@ -1,5 +1,7 @@
 "use client";
-import type { GraphicSpec } from "@/lib/star/media/types";
+import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
+import { kitsOf, labelInk } from "@/lib/star/kits";
+import { initialsOf, ordinal, shortClub, surname } from "@/lib/star/media/grammar";
 
 /**
  * The cards a post can carry.
@@ -26,6 +28,8 @@ export default function Graphic({ spec }: { spec: GraphicSpec }) {
     case "trophy": return <Trophy s={spec} />;
     case "poll": return <Poll s={spec} />;
     case "thumbnail": return <Thumbnail s={spec} />;
+    case "potmNominees": return <PotmNominees s={spec} />;
+    case "potmWinner": return <PotmWinner s={spec} />;
   }
 }
 
@@ -275,6 +279,219 @@ function Thumbnail({ s }: { s: Extract<GraphicSpec, { type: "thumbnail" }> }) {
       <div className="absolute inset-0 grid place-items-center">
         <div className="grid h-9 w-9 place-items-center rounded-full bg-white/25 backdrop-blur-sm">
           <div className="ml-0.5 h-0 w-0 border-y-[7px] border-l-[11px] border-y-transparent border-l-white" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * THE MONTH'S SHORTLIST.
+ *
+ * Eight names in a four-by-two grid, a title band above and a strap below —
+ * the shape every one of these graphics has had for years, because it is the
+ * shape that lets you read eight faces at a glance and know which competition
+ * and which month you are looking at.
+ *
+ * What it does NOT have is a photograph. Nobody in this division has a portrait
+ * we are entitled to use, and a card that borrows one is a card showing somebody
+ * who is not the player named under it. So a nominee is drawn as the thing that
+ * actually identifies him on a pitch: his club's home shirt, its trim across the
+ * shoulder, his initials in whichever of black or white can be read against it.
+ * `labelInk` is the same function that keeps a scoreline legible over Tottenham
+ * white and Newcastle black, so the tiles cannot come out unreadable.
+ *
+ * Amber, not the colours a broadcaster uses for this. Amber is already what
+ * this file means by an honour — the trophy card and the Golden Boot are amber —
+ * and the award belongs in that set rather than in a set of one.
+ */
+function PotmNominees({ s }: { s: Extract<GraphicSpec, { type: "potmNominees" }> }) {
+  return (
+    <div className={PANEL}>
+      <div className="border-b border-amber-300/25 bg-amber-400/10 px-3 py-2 text-center">
+        <div className="text-[13px] font-black uppercase leading-none tracking-[0.12em] text-amber-200">
+          Player of the Month
+        </div>
+        <div className="mt-1 text-[10px] font-bold text-white/75">
+          Premier League nominees — {s.month}
+        </div>
+      </div>
+
+      {/* gap-px over a light background is the hairline rule between tiles —
+          one border rather than eight that double up where they meet. */}
+      <div className="grid grid-cols-4 gap-px bg-white/10">
+        {s.nominees.map(n => (
+          <NomineeTile key={`${n.club}|${n.name}`} n={n} won={s.winner === n.name} />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-white/10 bg-gray-900/80 px-3 py-1.5">
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-200">
+          {s.winner ? "Winner" : "Nominees"}
+        </span>
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/80">
+          {s.month}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function NomineeTile({ n, won }: { n: PotmNominee; won: boolean }) {
+  const kit = kitsOf(n.club).home;
+  return (
+    <div className={`bg-gray-900/80 ${won ? "ring-1 ring-inset ring-amber-300" : ""}`}>
+      <div className="relative h-16 overflow-hidden" style={{ backgroundColor: kit.shirt }}>
+        {/* The trim, worn as a sash. Without it a white or a black kit is an
+            empty rectangle and every club in those colours looks alike. Wide
+            enough to read as a decision — a sliver at the very edge of the tile
+            reads as something that went wrong in the render. */}
+        <div
+          className="absolute inset-y-0 left-1 w-6 -skew-x-[14deg]"
+          style={{ backgroundColor: kit.trim }}
+        />
+        {/* Three cases, in the order they should be preferred.
+            A photograph of the man. Failing that — and only for you, who never
+            had one taken — the back of your shirt. Failing that, a monogram,
+            which is where a generated squad or a career whose division has not
+            been refreshed ends up. Never somebody else's face. */}
+        {n.face ? (
+          <img
+            src={n.face}
+            alt=""
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            // `contain` and bottom-aligned: the portraits are busts on a
+            // transparent square, so cropping them to fill takes the top of the
+            // head off. Standing them on the bottom edge is what the real card
+            // does with a cut-out.
+            className="absolute inset-0 h-full w-full object-contain object-bottom"
+          />
+        ) : n.number !== undefined ? (
+          <div
+            className="absolute inset-0 grid place-items-center text-2xl font-black tabular-nums"
+            style={{ color: labelInk(kit.shirt) }}
+          >
+            {n.number}
+          </div>
+        ) : (
+          <div
+            className="absolute inset-0 grid place-items-center text-base font-black tracking-tight"
+            style={{ color: labelInk(kit.shirt) }}
+          >
+            {initialsOf(n.name)}
+          </div>
+        )}
+        {n.isYou && (
+          <div className="absolute right-0 top-0 bg-amber-300 px-1 text-[7px] font-black uppercase tracking-wider text-gray-900">
+            You
+          </div>
+        )}
+      </div>
+      <div className="px-1 py-1 text-center">
+        <div className="truncate text-[10px] font-black leading-tight text-white">{surname(n.name)}</div>
+        <div className="truncate text-[8px] font-bold uppercase leading-tight tracking-wide text-white/80">
+          {shortClub(n.club)}
+        </div>
+        <div className="text-[8px] font-black leading-tight tabular-nums text-amber-200/90">
+          {n.goals}G {n.assists}A
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * THE WINNER.
+ *
+ * The shortlist card is eight people and has to give each of them an eighth of
+ * the frame. This one is about a single footballer, so it gives him most of it:
+ * a portrait at a size you can see a face in, the first name small over a
+ * surname set as large as the card will take, and the month and his numbers
+ * along the bottom.
+ *
+ * The bottom bar is the piece of grammar worth keeping from the real thing — a
+ * dark month chip against a light strap — except that ours carries the goals and
+ * assists instead of repeating the words already at the top. The award is named
+ * once, in the eyebrow, where it belongs.
+ */
+function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) {
+  const kit = kitsOf(s.club).home;
+  return (
+    <div className={PANEL}>
+      <div className="flex">
+        <div className="relative h-28 w-[40%] shrink-0 overflow-hidden" style={{ backgroundColor: kit.shirt }}>
+          <div
+            className="absolute inset-y-0 left-2 w-9 -skew-x-[14deg]"
+            style={{ backgroundColor: kit.trim }}
+          />
+          {s.face ? (
+            <img
+              src={s.face}
+              alt=""
+              referrerPolicy="no-referrer"
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-contain object-bottom"
+            />
+          ) : s.number !== undefined ? (
+            <div
+              className="absolute inset-0 grid place-items-center text-4xl font-black tabular-nums"
+              style={{ color: labelInk(kit.shirt) }}
+            >
+              {s.number}
+            </div>
+          ) : (
+            <div
+              className="absolute inset-0 grid place-items-center text-xl font-black tracking-tight"
+              style={{ color: labelInk(kit.shirt) }}
+            >
+              {initialsOf(`${s.firstName} ${s.lastName}`.trim())}
+            </div>
+          )}
+          {s.isYou && (
+            <div className="absolute left-0 top-0 bg-amber-300 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-gray-900">
+              You
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5">
+          <div className="text-[9px] font-black uppercase leading-none tracking-[0.18em] text-amber-200">
+            Player of the Month
+          </div>
+          {s.firstName && (
+            <div className="mt-2 truncate text-[11px] font-bold leading-none text-white/85">{s.firstName}</div>
+          )}
+          <div className="mt-1 truncate text-2xl font-black uppercase leading-none tracking-tight text-white">
+            {s.lastName}
+          </div>
+          <div className="mt-1.5 truncate text-[9px] font-bold uppercase leading-none tracking-wider text-white/80">
+            {shortClub(s.club)}
+          </div>
+          {s.yourPlace !== undefined && !s.isYou && (
+            <div className="mt-2 truncate text-[9px] font-bold leading-none text-white/70">
+              You finished {ordinal(s.yourPlace)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-stretch border-t border-white/10 text-[9px] font-black uppercase">
+        <div className="shrink-0 bg-amber-300 px-2.5 py-1.5 tracking-[0.15em] text-gray-900">{s.month}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-3 bg-gray-900/80 px-2.5 tracking-wider text-white/85">
+          {/* "1 Assists" is the sort of thing that makes a graphic look
+              generated, and it happens most months. */}
+          <span className="shrink-0 tabular-nums">
+            <b className="text-amber-200">{s.goals}</b> Goal{s.goals === 1 ? "" : "s"}
+          </span>
+          <span className="shrink-0 tabular-nums">
+            <b className="text-amber-200">{s.assists}</b> Assist{s.assists === 1 ? "" : "s"}
+          </span>
+          {s.runnerUp && (
+            <span className="truncate font-bold normal-case tracking-normal text-white/70">
+              ahead of {s.runnerUp}
+            </span>
+          )}
         </div>
       </div>
     </div>

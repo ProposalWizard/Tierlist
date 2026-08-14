@@ -29,6 +29,8 @@ interface LeanPlayer {
   name: string;
   positions: string;
   overall: number;
+  /** Portrait URL. One more short string, not the JSONB blob. */
+  image?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -61,7 +63,10 @@ export async function GET(request: NextRequest) {
   // overrides and are cheap scalars, so they come along and win where set.
   const { data, error } = await supabase
     .from("sofifa_players")
-    .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions")
+    // `image_url` is a short text column, not the JSONB blob this route exists
+    // to avoid — the shortlist graphic needs faces and twenty extra queries to
+    // get them would undo the whole point of the endpoint.
+    .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url")
     .eq("fifa_year", year)
     .in("club", clubs)
     .order("overall", { ascending: false, nullsFirst: false });
@@ -82,7 +87,8 @@ export async function GET(request: NextRequest) {
     const name = ((row.name as string) || "").trim();
     // A row with no name is not a footballer we can put on a team sheet.
     if (!name) continue;
-    list.push({ id: String(row.sofifa_id), name, positions, overall });
+    const image = ((row.image_url as string) || "").trim();
+    list.push({ id: String(row.sofifa_id), name, positions, overall, ...(image ? { image } : {}) });
   }
 
   // Ordered by rating, best first — which is the order every consumer wants and
