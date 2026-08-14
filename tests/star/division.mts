@@ -1,9 +1,9 @@
 import { buildFixtures, playLeagueWeek, buildLeague, mulberry32, updateLeagueWithUserResult } from "../../lib/star/season";
-import { buildLeagueSquad, nameGoals, resetLeagueSquads, type RosterRow } from "../../lib/star/leagueSquads";
+import { buildLeagueSquad, nameGoals, resetLeagueSquads, mergeLeagueSquadStats, type RosterRow } from "../../lib/star/leagueSquads";
 import { goldenBootRace, assistRace } from "../../lib/star/recognition";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import type { CareerState, LeagueSquad } from "../../lib/star/types";
-import { shouldUpgradeSquad } from "../../lib/star/realSquad";
+import { shouldUpgradeSquad, mergeSquadStats } from "../../lib/star/realSquad";
 import { generateSquad } from "../../lib/star/squadData";
 
 /**
@@ -245,6 +245,51 @@ function roster(club: string, n = 26): RosterRow[] {
   check(!shouldUpgradeSquad(mixed), "…and so is one that is mostly real");
 
   check(shouldUpgradeSquad([]), "an empty squad is filled");
+}
+
+// ── Refreshing a squad keeps what happened in it ────────────────────────────
+//
+// FC 27 is being written by hand while careers are being played, so a career
+// has to be able to say "bring my edits in". The squads change; the eleven
+// goals your centre-forward has scored do not.
+{
+  const before = generateSquad("liverpool").map((p, i) => ({
+    ...p,
+    sofifaId: String(9000 + i),
+    seasonGoals: i, seasonAssists: i * 2,
+    careerGoals: i * 3, careerAssists: i * 4,
+    leagueGoals: i, leagueAssists: i * 2,
+  }));
+  // The same men, re-rated and one of them at a new club — an edit, in other
+  // words — plus a signing who was not there before.
+  const fresh = before.map((p, i) => ({
+    ...p, overall: (p.overall ?? 70) + 3, name: `${p.name}`,
+    seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
+    leagueGoals: 0, leagueAssists: 0,
+  })).slice(1).concat([{
+    ...before[0], id: "new-signing", sofifaId: "12345", name: "New Signing",
+    seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
+  }]);
+
+  const merged = mergeSquadStats(fresh, before);
+  check(merged.length === fresh.length, "the fresh squad is the one you keep");
+  const kept = merged.find(p => p.sofifaId === "9005")!;
+  check(kept.seasonGoals === 5 && kept.careerAssists === 20,
+    `a man who is still there keeps his numbers (${kept.seasonGoals}G ${kept.careerAssists}A)`);
+  check(kept.overall === (before[5].overall ?? 70) + 3, "…and takes the new rating");
+  const signing = merged.find(p => p.sofifaId === "12345")!;
+  check(signing.seasonGoals === 0, "a new signing arrives on nought");
+  check(!merged.some(p => p.sofifaId === "9000" && p.name !== "New Signing"),
+    "and a man who has left is gone");
+
+  // The other nineteen, the same way.
+  const div = [buildLeagueSquad("Arsenal", roster("Arsenal"))];
+  div[0].players[2].goals = 7;
+  div[0].players[2].assists = 3;
+  const freshDiv = [buildLeagueSquad("Arsenal", roster("Arsenal"))];
+  const mergedDiv = mergeLeagueSquadStats(freshDiv, div);
+  check(mergedDiv[0].players[2].goals === 7, `a rival's tally survives too (${mergedDiv[0].players[2].goals})`);
+  check(mergedDiv[0].players[0].goals === 0, "…and nobody else gains one");
 }
 
 if (problems.length) {

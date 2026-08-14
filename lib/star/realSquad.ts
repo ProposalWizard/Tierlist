@@ -1,5 +1,6 @@
 import type { SquadPlayer } from "./types";
 import { generateSquad, clubNameSeed } from "./squadData";
+import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "./edition";
 
 /**
  * THE REAL SQUAD.
@@ -187,13 +188,43 @@ export function shouldUpgradeSquad(squad: SquadPlayer[]): boolean {
  * Never throws and never rejects: a career is created from whatever comes back,
  * and what comes back on a bad day is the generated squad.
  */
-export async function fetchRealSquad(club: string, year = 2026): Promise<SquadPlayer[]> {
+export async function fetchRealSquad(club: string, year = STAR_FIFA_YEAR): Promise<SquadPlayer[]> {
   try {
-    const res = await fetch(`/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`);
+    const res = await fetch(`/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`, SQUAD_FETCH_INIT);
     if (!res.ok) return generateSquad(clubNameSeed(club));
     const data = await res.json() as { roster?: RosterPlayer[] };
     return buildSquadFromRoster(data.roster ?? [], club);
   } catch {
     return generateSquad(clubNameSeed(club));
   }
+}
+
+
+/**
+ * Bring a squad up to date without losing what happened in it.
+ *
+ * The FC 27 database is being edited while careers are being played — a rating
+ * corrected, a signing moved to his new club — and a career holds a SNAPSHOT
+ * taken when it was created. Refetching is easy; refetching without wiping the
+ * eleven goals your centre-forward has scored is the part worth writing down.
+ *
+ * So the fresh rows carry the new name, club, rating and image, and the old
+ * rows carry the tallies, matched on the player himself. Anybody who has left
+ * takes his numbers with him, which is correct: he is not in your squad.
+ */
+export function mergeSquadStats(fresh: SquadPlayer[], previous: SquadPlayer[]): SquadPlayer[] {
+  const before = new Map(previous.map(p => [p.sofifaId ?? p.id, p]));
+  return fresh.map((p) => {
+    const was = before.get(p.sofifaId ?? p.id);
+    if (!was) return p;
+    return {
+      ...p,
+      seasonGoals: was.seasonGoals,
+      seasonAssists: was.seasonAssists,
+      careerGoals: was.careerGoals,
+      careerAssists: was.careerAssists,
+      leagueGoals: was.leagueGoals,
+      leagueAssists: was.leagueAssists,
+    };
+  });
 }

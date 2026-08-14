@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "@/lib/star/edition";
 import type { CareerState } from "@/lib/star/types";
 
 interface Props {
@@ -34,12 +35,12 @@ export default function BallonDor({ career, onContinue }: Props) {
     fetch("/api/draft/clubs")
       .then((r) => r.json())
       .then(async (d: { clubs: { name: string; seasons: number[] }[] }) => {
-        const clubs = (d.clubs ?? []).filter((c) => c.seasons.includes(2026)).slice(0, 8);
+        const clubs = (d.clubs ?? []).filter((c) => c.seasons.includes(STAR_FIFA_YEAR)).slice(0, 8);
         // Grab a top player from each club
         const results = await Promise.all(
           clubs.map(async (c) => {
             try {
-              const r = await fetch(`/api/draft/roster?club=${encodeURIComponent(c.name)}&year=2026`);
+              const r = await fetch(`/api/draft/roster?club=${encodeURIComponent(c.name)}&year=${STAR_FIFA_YEAR}`, SQUAD_FETCH_INIT);
               if (!r.ok) return null;
               const data = await r.json();
               const top = (data.roster ?? []).sort((a: { overall: number }, b: { overall: number }) => b.overall - a.overall)[0];

@@ -273,6 +273,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Source and target year must be different" }, { status: 400 });
   }
 
+  // ── Both years must be real editions ──
+  //
+  // `fifa_year` is four digits. The clone form was posting a two-digit one, so
+  // rows were written with fifa_year 26 — which `editionLabel` normalises and
+  // therefore renders as "FC 26", hiding it — and an age of
+  // 23 + (26 - 2026) = -1977. The form is fixed; this makes the shape of the
+  // row impossible to create rather than merely unlikely.
+  const YEAR_MIN = 2007, YEAR_MAX = 2030;
+  for (const [label, y] of [["source_year", source_year], ["target_year", target_year]] as const) {
+    if (!Number.isInteger(y) || y < YEAR_MIN || y > YEAR_MAX) {
+      return NextResponse.json(
+        { error: `${label} must be a four-digit edition between ${YEAR_MIN} and ${YEAR_MAX} — got ${y}` },
+        { status: 400 },
+      );
+    }
+  }
+
   const service = createServiceClient();
 
   const { data: existing } = await service

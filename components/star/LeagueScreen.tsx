@@ -4,13 +4,17 @@ import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
 import { exitRound } from "@/lib/star/cups";
+import { STAR_EDITION_LABEL } from "@/lib/star/edition";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 
 interface Props {
   career: CareerState;
+  /** Pull the squads down from the database again. See page.tsx. */
+  onRefreshSquads?: () => void;
+  refreshing?: boolean;
 }
 
-export default function LeagueScreen({ career }: Props) {
+export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Props) {
   /** Whose fixture this is — your club, or your country. */
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
@@ -337,6 +341,22 @@ export default function LeagueScreen({ career }: Props) {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {view === "squad" && onRefreshSquads && (
+        <div className="mb-2 rounded-lg border border-gray-600 bg-gray-800 p-2">
+          <button
+            onClick={onRefreshSquads}
+            disabled={refreshing}
+            className="w-full rounded bg-emerald-600 py-1.5 text-[11px] font-black uppercase tracking-wide text-white transition hover:bg-emerald-500 disabled:opacity-50"
+          >
+            {refreshing ? "Fetching…" : "Update squads from the database"}
+          </button>
+          <p className="mt-1 text-[10px] font-bold leading-tight text-white/60">
+            Your career holds the squads as they were when it started. Press this after editing
+            {" "}{STAR_EDITION_LABEL} to bring in new ratings and transfers. Goals and assists are kept.
+          </p>
         </div>
       )}
 

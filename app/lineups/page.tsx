@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import LineupBuilder from "@/components/star/LineupBuilder";
 import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
+import { STAR_FIFA_YEAR, STAR_SEASON_LABEL, STAR_EDITION_LABEL } from "@/lib/star/edition";
 import type { LeagueSquad } from "@/lib/star/types";
 
 /**
@@ -25,18 +26,18 @@ export default function LineupsPage() {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch("/api/draft/clubs");
+        const res = await fetch("/api/draft/clubs", { cache: "no-store" });
         const data = await res.json() as { clubs?: { name: string; seasons: number[] }[] };
         const names = (data.clubs ?? [])
-          .filter(c => c.seasons.includes(2026))
+          .filter(c => c.seasons.includes(STAR_FIFA_YEAR))
           .map(c => c.name)
           .sort((a, b) => a.localeCompare(b));
         if (!alive) return;
-        if (names.length === 0) { setError("No 2025/26 Premier League clubs found in the database."); return; }
+        if (names.length === 0) { setError(`No ${STAR_SEASON_LABEL} Premier League clubs found — is the ${STAR_EDITION_LABEL} data imported?`); return; }
         setClubs(names);
         // The WHOLE squad, not the twenty a career keeps: here you are picking
         // a side, and a side is picked from everybody on the books.
-        const sq = await fetchLeagueSquads(names, 2026, true);
+        const sq = await fetchLeagueSquads(names, STAR_FIFA_YEAR, true);
         if (alive) setSquads(sq);
       } catch {
         if (alive) setError("Could not load the clubs. Check your connection and try again.");

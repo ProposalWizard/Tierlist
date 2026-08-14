@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { STAR_FIFA_YEAR, STAR_SEASON_LABEL, STAR_EDITION_LABEL } from "@/lib/star/edition";
 import type { StarPlayer } from "@/lib/star/types";
 
 interface Props {
@@ -27,9 +28,9 @@ export default function ProfileSetup({ onComplete }: Props) {
     fetch("/api/draft/clubs")
       .then((r) => r.json())
       .then((d: { clubs: { name: string; seasons: number[] }[] }) => {
-        const inPl2026 = (d.clubs ?? []).filter((c) => c.seasons.includes(2026)).map((c) => c.name).sort();
-        setClubs(inPl2026);
-        if (inPl2026.length > 0) setSelectedClub(inPl2026[0]);
+        const inPl = (d.clubs ?? []).filter((c) => c.seasons.includes(STAR_FIFA_YEAR)).map((c) => c.name).sort();
+        setClubs(inPl);
+        if (inPl.length > 0) setSelectedClub(inPl[0]);
       })
       .finally(() => setLoading(false));
   }, [step, clubs.length]);
@@ -48,7 +49,7 @@ export default function ProfileSetup({ onComplete }: Props) {
         clubBadge: null,
         position,
         nationality,
-        startYear: 2026,
+        startYear: STAR_FIFA_YEAR,
       },
       clubs,
     );
@@ -140,7 +141,7 @@ export default function ProfileSetup({ onComplete }: Props) {
             <div className="bg-white text-emerald-600 text-center font-black text-2xl py-3 rounded-lg tracking-widest mb-4">
               ENGLAND
             </div>
-            <div className="text-center text-emerald-300 text-xs mb-4">Premier League 2026/27</div>
+            <div className="text-center text-emerald-300 text-xs mb-4">Premier League {STAR_SEASON_LABEL}</div>
 
             <div className="bg-gray-700 text-white text-center font-black py-2 rounded-lg mb-2">Position</div>
             <div className="grid grid-cols-4 gap-1.5">
@@ -163,7 +164,7 @@ export default function ProfileSetup({ onComplete }: Props) {
             {loading && <div className="text-center py-6 text-emerald-300 text-sm">Loading clubs…</div>}
             {!loading && clubs.length === 0 && (
               <div className="text-center py-6 text-red-300 text-sm">
-                No 2026 PL clubs found. Check that FC 26 data is imported.
+                No {STAR_SEASON_LABEL} PL clubs found. Check that {STAR_EDITION_LABEL} data is imported.
               </div>
             )}
             {!loading && clubs.length > 0 && (

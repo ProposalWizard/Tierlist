@@ -12,8 +12,8 @@ import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/tran
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
-import { fetchRealSquad, shouldUpgradeSquad } from "@/lib/star/realSquad";
-import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
+import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
+import { fetchLeagueSquads, mergeLeagueSquadStats } from "@/lib/star/leagueSquads";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -197,6 +197,34 @@ export default function StarDevPage() {
       setCareer(c => (c ? { ...c, leagueSquads } : c));
     });
   }, []);
+
+  /**
+   * Pull the squads down again, keeping everything that has happened in them.
+   *
+   * A career holds a snapshot of the database taken when it was created, which
+   * is right — the alternative is a squad that changes under you mid-season.
+   * But FC 27 is being written by hand while careers are being played, so there
+   * has to be a way to say "I have made my edits, bring them in". Goals and
+   * assists survive; see mergeSquadStats.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshSquads = useCallback(async () => {
+    if (!career || refreshing) return;
+    setRefreshing(true);
+    try {
+      const [mine, division] = await Promise.all([
+        fetchRealSquad(career.player.club),
+        fetchLeagueSquads(career.league.map(t => t.name)),
+      ]);
+      setCareer(c => (c ? {
+        ...c,
+        squad: mergeSquadStats(mine, c.squad ?? []),
+        leagueSquads: mergeLeagueSquadStats(division, c.leagueSquads ?? []),
+      } : c));
+    } finally {
+      setRefreshing(false);
+    }
+  }, [career, refreshing]);
 
   const handleExit = useCallback(() => {
     if (confirm("Leave the career? It stays saved — you will come back to exactly this. To delete it and start again, use New career on the dashboard.")) {
@@ -988,7 +1016,7 @@ export default function StarDevPage() {
       {phase === "league" && (
         <div>
           <BackChip onBack={handleBackToDashboard} />
-          <LeagueScreen career={career} />
+          <LeagueScreen career={career} onRefreshSquads={refreshSquads} refreshing={refreshing} />
         </div>
       )}
       {phase === "life" && (
