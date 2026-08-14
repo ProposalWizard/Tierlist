@@ -32,13 +32,19 @@ export default function LineupsPage() {
    */
   const [year, setYear] = useState(STAR_FIFA_YEAR);
   const [available, setAvailable] = useState<number[]>([]);
+  /** What the clubs endpoint says about itself — see its `meta`. Shown only when
+   *  there is nothing to draw, because that is the only time it helps. */
+  const [meta, setMeta] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const res = await fetch("/api/draft/clubs", { cache: "no-store" });
-        const data = await res.json() as { clubs?: { name: string; seasons: number[] }[] };
+        const data = await res.json() as {
+          clubs?: { name: string; seasons: number[] }[];
+          meta?: { rpc: boolean; playersFoundByName: number };
+        };
         const all = data.clubs ?? [];
         const years = Array.from(new Set(all.flatMap(c => c.seasons)))
           .filter(y => y > 2000)
@@ -49,6 +55,11 @@ export default function LineupsPage() {
           .sort((a, b) => a.localeCompare(b));
         if (!alive) return;
         setAvailable(years);
+        setMeta(
+          data.meta
+            ? `${all.length} clubs, ${data.meta.playersFoundByName} ${STAR_EDITION_LABEL} players matched by name, SQL function ${data.meta.rpc ? "installed" : "missing"}`
+            : null,
+        );
 
         if (names.length === 0) {
           setClubs([]);
@@ -92,8 +103,10 @@ export default function LineupsPage() {
           {available.length > 0 && (
             <p className="mt-2 text-[12px] font-normal text-red-200/80">
               The database has: {available.slice(0, 8).join(", ")}{available.length > 8 ? "…" : ""}.
-              {year === STAR_FIFA_YEAR && ` Run fc27_clone_premier_league.sql in the Supabase SQL Editor to build ${STAR_EDITION_LABEL}.`}
             </p>
+          )}
+          {meta && (
+            <p className="mt-2 text-[11px] font-normal text-red-200/70">{meta}</p>
           )}
           {newest && (
             <button
