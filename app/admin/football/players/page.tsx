@@ -73,9 +73,13 @@ function yearLabel(year: number): string {
   return `FIFA ${String(y).padStart(2, "0")}`;
 }
 
-/* ── Year options (2007-2026) — must match fifa_year as stored in DB ── */
+/* ── Year options (2007-2027) — must match fifa_year as stored in DB ──
+   2027 is FC 27, which does not exist yet: it is the FC 26 Premier League
+   cloned a year older by supabase/migrations/fc27_clone_premier_league.sql and
+   then edited by hand. Without it in this list there is no way to open the
+   season you are building. */
 const YEAR_OPTIONS: { value: number; label: string }[] = [];
-for (let y = 2026; y >= 2007; y--) {
+for (let y = 2027; y >= 2007; y--) {
   YEAR_OPTIONS.push({ value: y, label: yearLabel(y) });
 }
 
