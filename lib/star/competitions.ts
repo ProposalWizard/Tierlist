@@ -4,6 +4,15 @@ import {
   CUP_ROUND_NAMES, type CupState, type CupId,
 } from "./cups";
 import { mulberry32, sortLeague } from "./season";
+import {
+  PRE_SEASON_WEEK, TOURNAMENT_WEEKS, EURO_LEAGUE_PHASE_WEEKS,
+  LEAGUE_CUP_SLOTS, FA_CUP_SLOTS,
+} from "./calendar";
+import {
+  openEuro, poolFor, knockoutSlots, buildEuroTable, leaguePhaseComplete, drawTie,
+  currentTie, currentLeg, settleTie, nextRound, firstRound, crownEurope, phaseVerdict,
+  type EuroState, type EuroTie,
+} from "./euro";
 
 /**
  * CUPS, EUROPE AND THE NATIONAL TEAM
@@ -72,13 +81,135 @@ export function leagueWeeks(clubCount: number): number {
 function roundWeeks(kind: CupRun["kind"], rounds: number, clubCount: number): number[] {
   const lw = leagueWeeks(clubCount);
   if (kind === "international") {
-    return Array.from({ length: rounds }, (_, i) => lw + 1 + i);
+    // A summer tournament is played when the clubs have finished, which is the
+    // one thing in the calendar that genuinely runs past the last league week.
+    return Array.from({ length: rounds }, (_, i) => TOURNAMENT_WEEKS[i] ?? lw + 1 + i);
   }
-  // Cup rounds sit at 30/50/70/90% of the season; Europe a week later each time
-  // so the two runs never land on the same week.
+  // Europe is no longer a counter — see lib/star/euro and seedEurope below. This
+  // is left for a career saved mid-run under the old system, which still has to
+  // be able to finish it.
   const offset = kind === "europe" ? 1 : 0;
   return Array.from({ length: rounds }, (_, i) =>
     Math.max(2, Math.min(lw, Math.round(lw * (0.3 + 0.2 * i)) + offset)));
+}
+
+// ── The one-off matches ─────────────────────────────────────────────────────
+
+/**
+ * What last season earned you before this one starts.
+ *
+ * Both are single matches played the week before the league begins, and both
+ * are entirely a consequence of the previous season — which is why a first
+ * season can never have either, and why they are the only fixtures in the game
+ * that are decided by looking backwards.
+ */
+export function seedPreSeason(career: CareerState): Fixture[] {
+  const last = career.season - 1;
+  if (last < 1) return [];
+  const won = (competition: string) =>
+    (career.trophies ?? []).some(t => t.season === last && t.competition === competition);
+
+  const rng = mulberry32(career.season * 3301 + career.league.length);
+  const fixtures: Fixture[] = [];
+  const table = sortLeague(career.league);
+
+  // ── Community Shield: champions v FA Cup holders ──
+  //
+  // You are in it if you were either. Who you meet is the other one, and when
+  // you were both — a Double — the opponent is the side that finished second,
+  // which is what the real competition does.
+  const wonLeague = won("Premier League");
+  const wonFaCup = won("FA Cup");
+  if (wonLeague || wonFaCup) {
+    const other = table.find(t => t.name !== career.player.club) ?? table[0];
+    fixtures.push({
+      week: PRE_SEASON_WEEK,
+      opponent: other?.name ?? "Manchester City",
+      home: rng() < 0.5,
+      played: false,
+      competition: "Community Shield",
+      kind: "cup",
+      round: "Final",
+      opponentStrength: other?.strength ?? 82,
+    });
+  }
+
+  // ── Super Cup: the two European holders ──
+  if (won("Champions League") || won("Europa League")) {
+    const pool = poolFor(won("Champions League") ? "Europa League" : "Champions League");
+    const opp = pool[Math.floor(rng() * Math.min(9, pool.length))];
+    fixtures.push({
+      week: PRE_SEASON_WEEK,
+      opponent: opp?.name ?? "Sevilla",
+      home: false,
+      played: false,
+      competition: "Super Cup",
+      kind: "europe",
+      round: "Final",
+      opponentStrength: opp?.strength ?? 82,
+    });
+  }
+
+  return fixtures;
+}
+
+// ── Europe ──────────────────────────────────────────────────────────────────
+
+/**
+ * Open the European campaign and put all eight league-phase games on the
+ * calendar at once.
+ *
+ * Unlike a knockout, a league phase CAN be drawn up in advance — you know all
+ * eight opponents on the day of the draw, and nothing you do changes them. Only
+ * the knockout that follows has to be earned a round at a time.
+ */
+export function seedEurope(career: CareerState): { state: EuroState | null; fixtures: Fixture[] } {
+  const competition = career.europeanQualification;
+  if (competition !== "Champions League" && competition !== "Europa League") {
+    return { state: null, fixtures: [] };
+  }
+  const rng = mulberry32(career.season * 5441 + career.league.length * 7);
+  const mine = career.league.find(t => t.name === career.player.club);
+  const finish = career.lastSeasonPosition ?? 4;
+  const state = openEuro(competition, career.player.club, mine?.strength ?? 75, finish, rng);
+
+  const fixtures: Fixture[] = state.leaguePhase.map((m, i) => ({
+    week: EURO_LEAGUE_PHASE_WEEKS[i] ?? 5 + i * 2,
+    opponent: m.opponent,
+    home: m.home,
+    played: false,
+    competition,
+    kind: "europe",
+    round: `League Phase · MD${i + 1}`,
+    opponentStrength: state.clubs.find(c => c.name === m.opponent)?.strength ?? 78,
+  }));
+
+  return { state, fixtures };
+}
+
+/** The fixture for a European knockout round, once it has been drawn. */
+export function euroTieFixture(
+  state: EuroState,
+  career: CareerState,
+  tie: EuroTie,
+  legIndex: number,
+): Fixture | null {
+  const position = state.position ?? 24;
+  const slots = knockoutSlots(position);
+  const slot = slots.find(s =>
+    s.round === tie.round && (s.leg ?? 1) === legIndex + 1);
+  if (!slot) return null;
+  const leg = tie.legs[legIndex];
+  return {
+    week: slot.week,
+    opponent: tie.opponent,
+    home: leg?.home ?? false,
+    played: false,
+    competition: state.competition,
+    kind: "europe",
+    round: tie.legs.length > 1 ? `${tie.round} · Leg ${legIndex + 1}` : tie.round,
+    opponentStrength: tie.opponentStrength,
+  };
 }
 
 // ── Qualification and call-ups ──────────────────────────────────────────────
@@ -172,13 +303,16 @@ export function seedSeasonKnockouts(career: CareerState): { runs: CupRun[]; fixt
     fixtures.push(makeRoundFixture(run, career, weeks[0], rng));
   };
 
-  // The FA Cup and the League Cup are real draws now — see lib/star/cups and
-  // seedCups below. What is left here is Europe and the national team, which are
-  // still counter-style runs against an invented opponent.
-  if (career.europeanQualification) open(career.europeanQualification, "europe");
-
+  // The FA Cup and the League Cup are real draws (lib/star/cups, seedCups), and
+  // Europe is a real league phase (lib/star/euro, seedEurope). What is left here
+  // is the national team, which is still a counter-style run — and rightly so:
+  // a World Cup is five matches against five nations, and there is no table to
+  // build or draw to redo.
   const tournament = tournamentFor(career.season);
   if (tournament && internationalCallUp(career)) open(tournament, "international");
+
+  // …and the two matches last season earned.
+  fixtures.push(...seedPreSeason(career));
 
   return { runs, fixtures };
 }
@@ -345,24 +479,29 @@ export function seedCups(career: CareerState): { states: CupState[]; fixtures: F
  * 18, and you cannot play two cup ties in the same week. These interleave, and
  * anything that still collides after rounding is pushed a week later.
  */
-const CUP_WEEK_FRACTIONS: Record<CupId, number[]> = {
-  "League Cup": [0.10, 0.21, 0.32, 0.45, 0.58],
-  "FA Cup":     [0.27, 0.39, 0.52, 0.68, 0.90],
-};
+export function cupRoundWeek(competition: CupId, roundIndex: number, _clubCount?: number): number {
+  const slots = competition === "League Cup" ? LEAGUE_CUP_SLOTS : FA_CUP_SLOTS;
+  // One entry per ROUND, not per match: the League Cup's two-legged semi-final
+  // occupies two slots and is still the fourth round of the competition.
+  const byRound: string[] = [];
+  for (const s of slots) if (!byRound.includes(s.round)) byRound.push(s.round);
+  const round = byRound[Math.min(roundIndex, byRound.length - 1)];
+  const slot = slots.find(s => s.round === round);
+  return slot?.week ?? 3 + roundIndex * 6;
+}
 
-export function cupRoundWeek(competition: CupId, roundIndex: number, clubCount: number): number {
-  const lw = leagueWeeks(clubCount);
-  const at = (comp: CupId, i: number) => {
-    const f = CUP_WEEK_FRACTIONS[comp];
-    return Math.max(2, Math.min(lw, Math.round(lw * (f[Math.min(i, f.length - 1)]))));
-  };
-  const week = at(competition, roundIndex);
-  if (competition === "League Cup") return week;
-  // The FA Cup gives way, because it is the one with room to move.
-  const taken = new Set(CUP_WEEK_FRACTIONS["League Cup"].map((_, i) => at("League Cup", i)));
-  let w = week;
-  while (taken.has(w) && w < lw) w += 1;
-  return w;
+/**
+ * The second leg of a round, when it has one.
+ *
+ * Only the League Cup semi-final does, which is exactly how it works in England
+ * and the reason that competition needs six dates for five rounds.
+ */
+export function cupSecondLegWeek(competition: CupId, roundIndex: number): number | null {
+  const slots = competition === "League Cup" ? LEAGUE_CUP_SLOTS : FA_CUP_SLOTS;
+  const byRound: string[] = [];
+  for (const s of slots) if (!byRound.includes(s.round)) byRound.push(s.round);
+  const round = byRound[Math.min(roundIndex, byRound.length - 1)];
+  return slots.find(s => s.round === round && s.leg === 2)?.week ?? null;
 }
 
 /** Your fixture for the round this cup is on, if you are in it. */
@@ -456,4 +595,170 @@ export function settleCupTie(
     trophy: null,
     message: `Through to the ${currentRound(after)?.name}${onPens ? ", on penalties" : ""}.`,
   };
+}
+
+// ── Playing in Europe ───────────────────────────────────────────────────────
+
+export interface EuroOutcome {
+  state: EuroState;
+  /** The next European fixture this result created, if any. */
+  nextFixture: Fixture | null;
+  trophy: { season: number; competition: string; club: string } | null;
+  message: string;
+}
+
+/**
+ * Record a European result and move the campaign on.
+ *
+ * Three different things happen here depending on where in the campaign you
+ * are, and keeping them in one function is deliberate — they are one sequence,
+ * and splitting them is how a campaign ends up half in the league phase and half
+ * in the knockout.
+ *
+ *  1. A league-phase game just fills in a scoreline. Nothing is decided until
+ *     all eight are played, and then the table is built and it decides
+ *     everything at once: through, into the play-off, or out.
+ *  2. The first leg of a tie puts the second leg on the calendar and says
+ *     nothing else. A one-goal lead at half-time in a tie is not a result.
+ *  3. The second leg settles it on aggregate, and drawing the next round.
+ *
+ * Returns null when this fixture is not European, so the caller can fall
+ * through to whatever else it might be.
+ */
+export function settleEuro(
+  career: CareerState,
+  fixture: Fixture,
+  userScore: number,
+  oppScore: number,
+): EuroOutcome | null {
+  const state = career.euroState;
+  if (!state || fixture.kind !== "europe") return null;
+  // The Super Cup is a European fixture that is not part of the campaign — one
+  // match, its own trophy, and it must not be mistaken for a league-phase game.
+  if (fixture.competition === "Super Cup") return null;
+  if (fixture.competition !== state.competition) return null;
+
+  const yourStrength = career.league.find(t => t.name === career.player.club)?.strength ?? 75;
+  const rng = mulberry32(career.season * 8161 + fixture.week * 29 + userScore * 7 + oppScore);
+
+  // ── 1. The league phase ──
+  const mdIndex = state.leaguePhase.findIndex(
+    m => m.us === undefined && m.opponent === fixture.opponent);
+  if (mdIndex >= 0) {
+    const leaguePhase = state.leaguePhase.map((m, i) =>
+      (i === mdIndex ? { ...m, us: userScore, them: oppScore } : m));
+    const next: EuroState = { ...state, leaguePhase };
+    if (!leaguePhaseComplete(next)) {
+      const left = leaguePhase.filter(m => m.us === undefined).length;
+      return {
+        state: next,
+        nextFixture: null,
+        trophy: null,
+        message: `${result(userScore, oppScore)} in the ${state.competition} league phase — ${left} to play.`,
+      };
+    }
+
+    // All eight in: build the table, and it decides the rest of the campaign.
+    const table = buildEuroTable(next, career.player.club, career.season * 104729 + 17);
+    const position = table.findIndex(r => r.isYou) + 1;
+    const settled: EuroState = { ...next, table, position };
+    const opening = firstRound(position);
+    if (!opening) {
+      return {
+        state: { ...settled, eliminated: true, winner: crownEurope(settled, career.season * 31 + 5) },
+        nextFixture: null,
+        trophy: null,
+        message: `${ordinalOf(position)} in the ${state.competition} league phase. ${phaseVerdict(position)}`,
+      };
+    }
+    const tie = drawTie(settled, opening, career.player.club, rng);
+    const withTie: EuroState = { ...settled, ties: [tie] };
+    return {
+      state: withTie,
+      nextFixture: euroTieFixture(withTie, career, tie, 0),
+      trophy: null,
+      message: `${ordinalOf(position)} in the ${state.competition} league phase. ${phaseVerdict(position)}`,
+    };
+  }
+
+  // ── 2 and 3. The knockout ──
+  const tie = currentTie(state);
+  if (!tie) return null;
+  const legIndex = currentLeg(state) ?? 0;
+  const legs = tie.legs.map((l, i) =>
+    (i === legIndex ? { ...l, us: userScore, them: oppScore } : l));
+  const played: EuroTie = { ...tie, legs };
+
+  // A first leg is not a result.
+  if (legs.some(l => l.us === undefined)) {
+    const withLeg: EuroState = {
+      ...state,
+      ties: state.ties.map((t, i) => (i === state.ties.length - 1 ? played : t)),
+    };
+    const agg = `${legs[0].us}-${legs[0].them}`;
+    return {
+      state: withLeg,
+      nextFixture: euroTieFixture(withLeg, career, played, legIndex + 1),
+      trophy: null,
+      message: `${agg} in the first leg. It is settled at ${tie.opponent}.`,
+    };
+  }
+
+  const decided = settleTie(played, yourStrength, rng);
+  const ties = state.ties.map((t, i) => (i === state.ties.length - 1 ? decided : t));
+  const us = legs.reduce((s, l) => s + (l.us ?? 0), 0);
+  const them = legs.reduce((s, l) => s + (l.them ?? 0), 0);
+  const aggregate = legs.length > 1 ? ` (${us}-${them} on aggregate)` : "";
+
+  if (decided.result === "L") {
+    const out: EuroState = {
+      ...state, ties, eliminated: true,
+      winner: crownEurope({ ...state, ties }, career.season * 31 + 5),
+    };
+    return {
+      state: out,
+      nextFixture: null,
+      trophy: null,
+      message: decided.onPenalties
+        ? `Out of the ${state.competition} on penalties in the ${tie.round}.`
+        : `Out of the ${state.competition} in the ${tie.round}${aggregate}.`,
+    };
+  }
+
+  if (tie.round === "Final") {
+    const won: EuroState = { ...state, ties, won: true, winner: career.player.club };
+    return {
+      state: won,
+      nextFixture: null,
+      trophy: { season: career.season, competition: state.competition, club: career.player.club },
+      message: decided.onPenalties
+        ? `🏆 ${state.competition} winners — on penalties!`
+        : `🏆 ${state.competition} winners!`,
+    };
+  }
+
+  const after = nextRound(state.position ?? 24, tie.round);
+  if (!after) {
+    return { state: { ...state, ties }, nextFixture: null, trophy: null, message: "Through." };
+  }
+  const drawn = drawTie({ ...state, ties }, after, career.player.club, rng);
+  const advanced: EuroState = { ...state, ties: [...ties, drawn] };
+  return {
+    state: advanced,
+    nextFixture: euroTieFixture(advanced, career, drawn, 0),
+    trophy: null,
+    message: decided.onPenalties
+      ? `Through to the ${after} on penalties. ${drawn.opponent} next.`
+      : `Into the ${after}${aggregate}. ${drawn.opponent} next.`,
+  };
+}
+
+function result(us: number, them: number): string {
+  return us > them ? "Won" : us === them ? "Drew" : "Lost";
+}
+
+function ordinalOf(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }

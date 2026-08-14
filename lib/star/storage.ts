@@ -2,6 +2,7 @@ import type { CareerState, StarPhase } from "./types";
 import { makeManager } from "./manager";
 import { assignSquadNumber } from "./recognition";
 import { generateSquad, clubNameSeed } from "./squadData";
+import { catchUpAwards } from "./potm";
 
 const KEY = "star-career-v2";
 const OLD_KEY = "star-career-v1";
@@ -105,6 +106,25 @@ function backfill(c: CareerState): CareerState {
   // later had a full dressing room. Reported as exactly that: "it just says me
   // on there."
   if (!out.squad?.length) out.squad = generateSquad(clubNameSeed(out.player.club));
+
+  // ── …and the months that were played before anybody was counting ──
+  //
+  // Player of the Month reads results that were always being kept, so a career
+  // that was mid-season when the award arrived has everything it needs to be
+  // judged — it was simply never asked. Same for a career saved when a "month"
+  // was four weeks rather than a month. Both are silent: the tab just says
+  // nothing has been awarded, in February.
+  const caught = catchUpAwards(out);
+  if (caught.length) {
+    out.potm = [...(out.potm ?? []), ...caught];
+    // Winning one is an honour, and an honour credited late is still an honour.
+    const won = caught.filter(a => a.isYou).map(a => ({
+      season: a.season,
+      kind: "Player of the Month",
+      detail: `${a.monthName} — ${a.goals} goals, ${a.assists} assists`,
+    }));
+    if (won.length) out.awards = [...(out.awards ?? []), ...won];
+  }
   return out;
 }
 

@@ -133,11 +133,9 @@ export function buildGraphic(
         month: MONTH_NAMES[month],
         nominees: race.map(c => ({
           name: c.name, club: c.club, goals: c.goals, assists: c.assists, isYou: c.isYou,
-          // A photograph for the real footballers; the back of your shirt for
-          // you, who never had one taken. See PotmNominee.
-          ...(c.isYou
-            ? { number: career.squadNumber ?? 0 }
-            : { face: faceOf(career, c.name, c.club) }),
+          // A photograph for the real footballers. For you: the one you took if
+          // you took one, and the back of your shirt if you did not.
+          ...(c.isYou ? yourFace(career) : { face: faceOf(career, c.name, c.club) }),
         })),
       };
     }
@@ -168,7 +166,7 @@ export function buildGraphic(
         goals: Number(f.goals ?? 0),
         assists: Number(f.assists ?? 0),
         isYou,
-        ...(isYou ? { number: career.squadNumber ?? 0 } : { face: known?.image }),
+        ...(isYou ? yourFace(career) : { face: known?.image }),
         ...(f.runnerUp ? { runnerUp: String(f.runnerUp) } : {}),
         ...(!isYou && f.place !== undefined ? { yourPlace: Number(f.place) } : {}),
       };
@@ -247,6 +245,19 @@ export function buildGraphic(
  * numbers span a run and the label says so; absent means they are this
  * afternoon's and the label names the match.
  */
+/**
+ * What goes in your tile.
+ *
+ * One place, because the shortlist and the winner card both ask and answering it
+ * twice is how the two of them end up disagreeing about whether you have a
+ * photograph. `own` is what tells the renderer this is a picture with a room
+ * behind it rather than a cut-out on transparent.
+ */
+function yourFace(career: CareerState): { face: string; own: true } | { number: number } {
+  const portrait = career.player.portrait;
+  return portrait ? { face: portrait, own: true } : { number: career.squadNumber ?? 0 };
+}
+
 function matchContext(r: MatchRecord | null, e?: FootballEvent): string | undefined {
   const over = e?.facts.matches;
   if (over !== undefined) {

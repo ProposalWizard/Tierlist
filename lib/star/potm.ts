@@ -1,6 +1,7 @@
 import type { CareerState, LeagueResult } from "./types";
 import { mulberry32 } from "./season";
 import { shortNameOf } from "./realSquad";
+import { calendarMonthOf } from "./calendar";
 
 /**
  * PLAYER OF THE MONTH.
@@ -26,16 +27,58 @@ import { shortNameOf } from "./realSquad";
  * step with the table, because it IS the table's own record.
  */
 
-/** A season is ten months of four weeks. Close enough to a real calendar. */
+/**
+ * The ten months a season is played in, August to May.
+ *
+ * These used to be blocks of four weeks each, which was fine while a week was
+ * an abstraction and wrong the moment the calendar grew real dates: week 24 is
+ * not "January" because 24 divided by 4 is 6. `monthOf` now reads the actual
+ * date of a matchweek — see lib/star/calendar — so August is the weeks played in
+ * August, which is three of them, and September is four.
+ */
 export const MONTH_NAMES = [
   "August", "September", "October", "November", "December",
   "January", "February", "March", "April", "May",
 ];
 
+/** Retained for careers and tests written against the old four-week blocks. */
 export const WEEKS_PER_MONTH = 4;
 
-export function monthOf(week: number): number {
+/** Calendar month (0 = January) → our 0-9 index, August first. */
+function seasonMonthIndex(calendarMonth: number): number {
+  // August is 7 and comes first; May is 4 and comes last.
+  const i = calendarMonth >= 7 ? calendarMonth - 7 : calendarMonth + 5;
+  return Math.max(0, Math.min(MONTH_NAMES.length - 1, i));
+}
+
+/**
+ * Which month of the season a matchweek falls in.
+ *
+ * The season and start year are optional so every existing caller keeps
+ * working: without them it falls back to the old four-week blocks, which is
+ * exactly what a career saved before the calendar existed was scored on.
+ */
+export function monthOf(week: number, startYear?: number, season?: number): number {
+  if (startYear !== undefined && season !== undefined) {
+    return seasonMonthIndex(calendarMonthOf(startYear, season, week));
+  }
   return Math.min(MONTH_NAMES.length - 1, Math.floor(Math.max(0, week - 1) / WEEKS_PER_MONTH));
+}
+
+/** The same question, asked of a career, which knows both. */
+export function monthOfCareer(career: CareerState, week: number): number {
+  return monthOf(week, career.player.startYear, career.season);
+}
+
+/**
+ * The last league week of a month, read off the calendar.
+ *
+ * A month ends when the next matchweek belongs to a different one — which is
+ * what "the end of August" means, and is not the same as "every fourth week".
+ */
+export function endsMonthOn(career: CareerState, week: number, lastWeek: number): boolean {
+  if (week >= lastWeek) return true;
+  return monthOfCareer(career, week) !== monthOfCareer(career, week + 1);
 }
 
 export function monthName(week: number): string {
@@ -89,7 +132,7 @@ const SHORTLIST = 5;
  * for having been available.
  */
 export function monthCandidates(career: CareerState, month: number): MonthCandidate[] {
-  const results = (career.results ?? []).filter(r => monthOf(r.week) === month);
+  const results = (career.results ?? []).filter(r => monthOfCareer(career, r.week) === month);
   if (results.length === 0) return [];
 
   const by = new Map<string, MonthCandidate>();
@@ -135,7 +178,7 @@ export function monthCandidates(career: CareerState, month: number): MonthCandid
   if (mine) {
     const rated = (career.fixtures ?? []).filter(
       f => f.played && (f.kind ?? "league") === "league"
-        && monthOf(f.week) === month && typeof f.userRating === "number");
+        && monthOfCareer(career, f.week) === month && typeof f.userRating === "number");
     if (rated.length) {
       mine.rating = rated.reduce((a, f) => a + (f.userRating ?? 0), 0) / rated.length;
     }
@@ -297,4 +340,52 @@ export function faceOf(career: CareerState, name: string, club: string): string 
 /** Has this month already been awarded? */
 export function alreadyAwarded(career: CareerState, month: number): boolean {
   return (career.potm ?? []).some(a => a.season === career.season && a.month === month);
+}
+
+/**
+ * Award every month that has already been played and never judged.
+ *
+ * Two careers need this and they are not the same case.
+ *
+ * The first is a career that was in progress when the award was added. Twenty-
+ * five weeks of football had been played, seven months of it were complete, and
+ * the Awards tab said "nothing awarded yet — the first one is given at the end
+ * of August" while the player was in February. The results were all there; the
+ * code that reads them simply did not exist when those months ended.
+ *
+ * The second is a career whose months moved. They used to be blocks of four
+ * weeks and are now real calendar months, so a save made under the old scheme
+ * can hold an award for a month that no longer ends where it did.
+ *
+ * Both are answered the same way: run the vote for every complete month with no
+ * award against it. The vote is deterministic, so doing this now gives exactly
+ * the result it would have given at the time.
+ *
+ * A month is only complete if the week AFTER it has been played — otherwise
+ * February gets awarded on the strength of one game because that is all that has
+ * happened in it so far.
+ */
+export function catchUpAwards(career: CareerState): MonthAward[] {
+  const played = (career.fixtures ?? []).filter(f => f.played && (f.kind ?? "league") === "league");
+  if (!played.length) return [];
+  const lastPlayed = Math.max(...played.map(f => f.week));
+  const lastWeek = Math.max(...(career.fixtures ?? []).map(f => f.week), lastPlayed);
+
+  const out: MonthAward[] = [];
+  const have = new Set((career.potm ?? [])
+    .filter(a => a.season === career.season)
+    .map(a => a.month));
+
+  for (const f of played) {
+    const month = monthOfCareer(career, f.week);
+    if (have.has(month)) continue;
+    if (!endsMonthOn(career, f.week, lastWeek)) continue;
+    // Complete only if the season has moved past it.
+    if (f.week >= lastPlayed && f.week < lastWeek) continue;
+    const award = voteMonth(career, month);
+    if (!award) continue;
+    have.add(month);
+    out.push(award);
+  }
+  return out.sort((a, b) => a.month - b.month);
 }

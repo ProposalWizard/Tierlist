@@ -8,6 +8,14 @@ export interface StarPlayer {
   position: string;
   nationality: string;
   startYear: number;
+  /**
+   * A picture of you, cropped square and stored as a data URI.
+   *
+   * Optional and expected to be absent — the cards fall back to the back of your
+   * shirt, which is a real answer rather than a placeholder. Never uploaded
+   * anywhere; see lib/star/portrait.ts.
+   */
+  portrait?: string;
 }
 
 export interface Skills {
@@ -56,8 +64,13 @@ export interface SeasonStats {
 /** Every competition a career can play in. */
 export type Competition =
   | "FA Cup"
+  | "League Cup"
   | "Champions League"
   | "Europa League"
+  /** One match, before the season: last season's champions v the FA Cup holders. */
+  | "Community Shield"
+  /** One match, before the season: the Champions League holders v the Europa League holders. */
+  | "Super Cup"
   | "World Cup"
   | "European Championship";
 
@@ -344,6 +357,14 @@ export interface CareerState {
    */
   cupState?: import("./cups").CupState[];
   /**
+   * This season's European campaign: the field, your eight league-phase games,
+   * the table they produce and the knockout that follows.
+   *
+   * Absent when you did not qualify, which is most careers most seasons. See
+   * lib/star/euro.
+   */
+  euroState?: import("./euro").EuroState;
+  /**
    * Goals and assists in the LEAGUE only.
    *
    * The Golden Boot and the Assist King are league competitions — a hat-trick in
@@ -367,6 +388,14 @@ export interface CareerState {
   retired?: boolean;
   /** How the board saw last season. Shown on the dashboard. */
   lastSeasonJudgement?: { score: number; bossChange: number; headline: string; detail: string };
+  /**
+   * Where the club finished last season, 1-based.
+   *
+   * Needed by the European draw, which seeds you into one of four pots off it —
+   * and by the time the draw happens the table has already been reset, so it
+   * cannot be read back off `league`.
+   */
+  lastSeasonPosition?: number;
   /**
    * Every Player of the Month awarded, this season and the ones before it.
    *

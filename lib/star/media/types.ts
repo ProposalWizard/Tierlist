@@ -419,6 +419,8 @@ export type GraphicSpec =
       isYou: boolean;
       face?: string;
       number?: number;
+      /** See PotmNominee.own. */
+      own?: boolean;
       /** Who he beat. Absent when the shortlist was one name long. */
       runnerUp?: string;
       /** Where you came, when the winner was somebody else and you were on it. */
@@ -436,13 +438,23 @@ export interface PotmNominee {
   /**
    * Your squad number, and only ever yours.
    *
-   * You are the one footballer in the division with no photograph — you were
-   * invented at the start of the career and there is nothing to photograph. The
-   * tile shows the back of your shirt instead of a face: the club's colours, the
-   * number you actually wear. It is the one thing on a pitch that identifies a
-   * player without showing him.
+   * You are the one footballer in the division the database has no photograph
+   * of — you were invented at the start of the career. Unless you took one (see
+   * `own`), the tile shows the back of your shirt instead of a face: the club's
+   * colours, the number you actually wear. It is the one thing on a pitch that
+   * identifies a player without showing him.
    */
   number?: number;
+  /**
+   * This face is a photograph you supplied, not a database cut-out.
+   *
+   * It changes how it is drawn, and it has to. The cut-outs are busts on
+   * transparent, so they are contained and stood on the bottom edge; a
+   * photograph has a room behind it and is covered and centred, then put through
+   * the club duotone so the background reads as texture rather than as the one
+   * tile somebody pasted in.
+   */
+  own?: boolean;
 }
 
 export type GraphicKind = GraphicSpec["type"];

@@ -492,6 +492,27 @@ const CLUBS = [
   } else {
     check(false, "your own winner card built");
   }
+
+  // …and the same card once you have taken a picture. The shirt is a fallback,
+  // not a rule, and `own` is what tells the renderer this one has a room behind
+  // it rather than being a cut-out on transparent.
+  const withPhoto = {
+    ...c, squadNumber: 19,
+    player: { ...c.player, portrait: "data:image/webp;base64,AAAA" },
+  } as CareerState;
+  const shot = buildGraphic(
+    "potmWinner",
+    { id: "potm-won", tags: [], subject: { kind: "you" },
+      facts: { month: "October", goals: 7, assists: 3 } } as never,
+    { week: 12 } as never, withPhoto, {} as never, mulberry(13),
+  );
+  if (shot?.type === "potmWinner") {
+    check(shot.face === "data:image/webp;base64,AAAA", "your photograph is used when you have one");
+    check(shot.own === true, "…and is marked as yours, so it is treated rather than stood on the plate");
+    check(shot.number === undefined, "the shirt number steps aside for it");
+  } else {
+    check(false, "the winner card built with a photograph");
+  }
 }
 
 // ── Faces ───────────────────────────────────────────────────────────────────

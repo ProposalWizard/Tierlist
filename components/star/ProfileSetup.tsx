@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { STAR_FIFA_YEAR, STAR_SEASON_LABEL, STAR_EDITION_LABEL } from "@/lib/star/edition";
 import type { StarPlayer } from "@/lib/star/types";
+import PortraitPicker from "./PortraitPicker";
 
 interface Props {
   onComplete: (player: StarPlayer, clubs: string[]) => void;
@@ -21,6 +22,7 @@ export default function ProfileSetup({ onComplete }: Props) {
   const [clubs, setClubs] = useState<string[]>([]);
   const [selectedClub, setSelectedClub] = useState("");
   const [loading, setLoading] = useState(false);
+  const [portrait, setPortrait] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (step !== 3 || clubs.length > 0) return;
@@ -50,6 +52,7 @@ export default function ProfileSetup({ onComplete }: Props) {
         position,
         nationality,
         startYear: STAR_FIFA_YEAR,
+        ...(portrait ? { portrait } : {}),
       },
       clubs,
     );
@@ -178,6 +181,15 @@ export default function ProfileSetup({ onComplete }: Props) {
                     {c}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Last, and after the club, because the preview is drawn in that
+                club's colours — offering it before you have picked one would
+                mean showing you a shirt you might not end up wearing. */}
+            {selectedClub && (
+              <div className="mt-4">
+                <PortraitPicker value={portrait} onChange={setPortrait} club={selectedClub} />
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@
 import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { initialsOf, ordinal, shortClub, surname } from "@/lib/star/media/grammar";
+import { paletteFor } from "@/lib/star/media/graphics/palette";
 
 /**
  * The cards a post can carry.
@@ -351,22 +352,12 @@ function NomineeTile({ n, won }: { n: PotmNominee; won: boolean }) {
           style={{ backgroundColor: kit.trim }}
         />
         {/* Three cases, in the order they should be preferred.
-            A photograph of the man. Failing that — and only for you, who never
-            had one taken — the back of your shirt. Failing that, a monogram,
-            which is where a generated squad or a career whose division has not
-            been refreshed ends up. Never somebody else's face. */}
+            A photograph — the database's of him, or yours of you. Failing that,
+            the back of your shirt. Failing that, a monogram, which is where a
+            generated squad or a career whose division has not been refreshed
+            ends up. Never somebody else's face. */}
         {n.face ? (
-          <img
-            src={n.face}
-            alt=""
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            // `contain` and bottom-aligned: the portraits are busts on a
-            // transparent square, so cropping them to fill takes the top of the
-            // head off. Standing them on the bottom edge is what the real card
-            // does with a cut-out.
-            className="absolute inset-0 h-full w-full object-contain object-bottom"
-          />
+          <Face src={n.face} own={n.own} kit={kit} />
         ) : n.number !== undefined ? (
           <div
             className="absolute inset-0 grid place-items-center text-2xl font-black tabular-nums"
@@ -426,13 +417,7 @@ function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) 
             style={{ backgroundColor: kit.trim }}
           />
           {s.face ? (
-            <img
-              src={s.face}
-              alt=""
-              referrerPolicy="no-referrer"
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-contain object-bottom"
-            />
+            <Face src={s.face} own={s.own} kit={kit} />
           ) : s.number !== undefined ? (
             <div
               className="absolute inset-0 grid place-items-center text-4xl font-black tabular-nums"
@@ -497,3 +482,63 @@ function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) 
     </div>
   );
 }
+
+/**
+ * A face in a tile, drawn according to what kind of face it is.
+ *
+ * The database portraits are busts on a transparent square, so they are
+ * contained and stood on the bottom edge — cropping one to fill takes the top of
+ * the head off, and standing it on the plate is what a cut-out is for.
+ *
+ * A photograph you took is a different object. It has a room behind it, so it is
+ * covered and centred like any photograph, and then it goes through the duotone
+ * the transfer graphic already uses: desaturate, lift the contrast, then screen
+ * the club's dark end over the shadows and multiply its light end into the
+ * highlights. Untreated, in a grid of seven cut-outs, yours is instantly the one
+ * that looks pasted in. Treated, the background becomes texture in your club's
+ * colours and the tile reads as designed.
+ *
+ * `isolate` matters: mix-blend-mode composites against the nearest stacking
+ * context, and without it the two layers reach past the tile and tint the card.
+ */
+function Face({ src, own, kit }: { src: string; own?: boolean; kit: { shirt: string; trim: string } }) {
+  if (!own) {
+    return (
+      <img
+        src={src}
+        alt=""
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        className="absolute inset-0 h-full w-full object-contain object-bottom"
+      />
+    );
+  }
+  const c = paletteFor(kit.shirt, kit.trim);
+  return (
+    <div className="absolute inset-0 isolate">
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        className="absolute inset-0 h-full w-full object-cover"
+        // Harder than the transfer graphic's treatment, and it has to be. That
+        // one runs at 340px with a figure filling it; this is a tile the size of
+        // a stamp, and a duotone is only as strong as the tonal range it is
+        // given — at the transfer card's brightness the small version came out
+        // as pale mush with no club colour in it at all.
+        style={{ filter: `grayscale(1) contrast(${1 + TREATMENT * 0.65}) brightness(0.96)` }}
+      />
+      <div className="absolute inset-0" style={{ background: c.duoDark, mixBlendMode: "screen", opacity: TREATMENT }} />
+      <div className="absolute inset-0" style={{ background: c.duoLight, mixBlendMode: "multiply", opacity: TREATMENT }} />
+      {/* And the club's own colour forced over the top, because the duotone ends
+          are derived from the kit rather than being it — this is what makes a
+          Liverpool tile read as red rather than as warm grey. */}
+      <div className="absolute inset-0" style={{ background: kit.shirt, mixBlendMode: "color", opacity: 0.7 }} />
+    </div>
+  );
+}
+
+/** How far into the club's colours a supplied photograph is pushed. The same
+ *  0.85 the transfer graphic settled on: below it the original colours fight the
+ *  kit, above it the face stops being a face. */
+const TREATMENT = 0.85;
