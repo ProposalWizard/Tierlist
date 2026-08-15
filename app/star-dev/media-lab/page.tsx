@@ -5,6 +5,7 @@ import Graphic from "@/components/star/media/Graphics";
 import PortraitPicker from "@/components/star/PortraitPicker";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
+import PositionPicker from "@/components/star/PositionPicker";
 import { SAMPLE_MATCHDAY, SAMPLE_CAREER, SAMPLE_FIXTURE } from "@/components/star/media/sampleMatchday";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import type { Role } from "@/lib/star/formations";
@@ -195,15 +196,23 @@ export default function MediaLab() {
 
       {showTeams && (
         <div className="fixed inset-0 z-[70] overflow-y-auto bg-gray-950">
+          {/* The picker itself lives on the dashboard now, not on this screen —
+              exercised here as a standalone control so the "play as" path can
+              still be judged without leaving the bench. */}
+          <div className="mx-auto max-w-md px-3 pt-3">
+            <PositionPicker
+              club={SAMPLE_CAREER.player.club}
+              realPosition={SAMPLE_CAREER.player.position}
+              playAs={labPlayAs}
+              onChange={setLabPlayAs}
+            />
+          </div>
           <VersusScreen
             matchday={labPlayAs
               ? matchdayFor(SAMPLE_CAREER, SAMPLE_FIXTURE, true, labPlayAs)
               : SAMPLE_MATCHDAY}
             date="Sat 29 Aug"
             competition="Premier League · Matchday 3"
-            realPosition={SAMPLE_CAREER.player.position as Role}
-            playAs={labPlayAs}
-            onPlayAs={setLabPlayAs}
             onKickOff={() => setShowTeams(false)}
             onBack={() => setShowTeams(false)}
           />

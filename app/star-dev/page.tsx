@@ -32,6 +32,7 @@ import LeagueScreen from "@/components/star/LeagueScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
+import PositionPicker from "@/components/star/PositionPicker";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
@@ -924,9 +925,6 @@ export default function StarDevPage() {
               ? `Premier League · Matchday ${nextFixture.week}`
               : `${nextFixture.competition}${nextFixture.round ? ` · ${nextFixture.round}` : ""}`
           }
-          realPosition={career.player.position as Role}
-          playAs={playAs}
-          onPlayAs={setPlayAs}
           onKickOff={() => { setShowTeams(false); setPlayAs(null); handlePlayMatch(); }}
           onBack={() => setShowTeams(false)}
         />
@@ -1089,6 +1087,17 @@ export default function StarDevPage() {
         </div>
       )}
       {phase === "dashboard" && <DashboardStats career={career} />}
+      {/* Not on the pre-match screen: this is a decision for the build-up, not
+          for the day of the match, and it needs nothing about the opponent —
+          only your own club's shape, which does not change fixture to fixture. */}
+      {phase === "dashboard" && nextFixture && nextFixture.kind !== "international" && (
+        <PositionPicker
+          club={career.player.club}
+          realPosition={career.player.position}
+          playAs={playAs}
+          onChange={setPlayAs}
+        />
+      )}
       {phase === "dashboard" && (
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-center">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Start over</div>

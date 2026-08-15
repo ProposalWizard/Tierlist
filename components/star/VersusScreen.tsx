@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react";
 import type { Matchday, SheetPlayer, TeamSheet } from "@/lib/star/teamsheet";
-import { offeredPositions, POSITION_NAMES } from "@/lib/star/teamsheet";
-import type { Role } from "@/lib/star/formations";
 import { kitsFor, labelInk, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
@@ -10,18 +8,18 @@ import { shortClub } from "@/lib/star/media/grammar";
 /**
  * THE TEAM SHEETS.
  *
- * Both elevens, in their shapes, on one pitch — the away side defending the top
- * goal and the home side the bottom one, which is how every broadcast lineup
- * graphic in the world does it and the only arrangement that shows you a match
- * rather than two lists.
+ * Both elevens, in their shapes, on one pitch — the home side at the top and
+ * the away side at the bottom. Not the broadcast convention (which usually puts
+ * the away side at the top); the club you actually support belongs where you
+ * see it first, and you should not have to work out which colour is yours
+ * before you can find yourself on the pitch.
  *
  * ── Why one pitch and not two ──
  *
  * Two pitches stacked is a scroll, and a scroll turns "who am I playing" into a
  * comparison you have to hold in your head. On one pitch a flat back four
- * against a back three is a fact you can see. The cost is that each side gets
- * half the height, which is why the chips are small and the faces are 30px —
- * everything here is sized around eleven names fitting in half a phone screen.
+ * against a back three is a fact you can see rather than something you have to
+ * remember from the screen above.
  *
  * ── Kits ──
  *
@@ -29,6 +27,13 @@ import { shortClub } from "@/lib/star/media/grammar";
  * the away side wears theirs unless the two clash. So the two teams on this
  * pitch are in the same colours they will be in when the match starts, and the
  * one screen where you might confuse them is the one that answers it.
+ *
+ * ── Asking to play somewhere else ──
+ *
+ * That choice lives on the dashboard now, not here — see PositionPicker. This
+ * screen only draws whichever matchday it is handed; by the time you reach it
+ * the decision is already made, which is one more reason it fits on one screen
+ * without scrolling.
  */
 
 interface Props {
@@ -39,16 +44,6 @@ interface Props {
   competition: string;
   onKickOff: () => void;
   onBack: () => void;
-  /**
-   * Your named position, and where you have asked to play instead.
-   *
-   * Both optional: a match you are not starting has no shirt to move, and the
-   * screen simply does not offer the choice — the picker only appears next to
-   * a man who is actually on the pitch.
-   */
-  realPosition?: Role;
-  playAs?: Role | null;
-  onPlayAs?: (role: Role | null) => void;
 }
 
 /**
@@ -56,21 +51,14 @@ interface Props {
  *
  * The formation's own y runs from a striker at 0.17 to the goalkeeper at 0.94.
  * Mapping that straight onto [0.5, 1] puts both sides' forward lines exactly on
- * the halfway line, on top of each other — which is what the first version did,
- * and Vass and Halvorsen were drawn in the same place.
- *
- * So the two ends are inset by what a chip actually measures. A tile is a 30px
- * face and a 13px name, and the name sits on the side AWAY from the halfway
- * line — below for the home side, above for the away side — so the only things
- * that can meet in the middle are two faces, and they are held apart by their
- * own radius. The far end is inset by the same amount so the goalkeeper's name
- * is not cut off by the goal line.
+ * the halfway line, on top of each other. So the two ends are inset by what a
+ * chip actually measures: a face plus its name, held apart from the man facing
+ * it by its own radius, and inset from the goal line by the same amount so a
+ * goalkeeper's name is never cut off by the edge of the pitch.
  */
 const NEAR = 0.17, FAR = 0.94;
-/** As a fraction of the pitch: half a face at the halfway line… */
-const HALFWAY_INSET = 0.045;
-/** …and a face plus its name at the goal line. */
-const GOAL_INSET = 0.075;
+const HALFWAY_INSET = 0.075;
+const GOAL_INSET = 0.105;
 
 function place(y: number, bottom: boolean): number {
   const t = (y - NEAR) / (FAR - NEAR);          // 0 at the striker, 1 at the keeper
@@ -80,21 +68,24 @@ function place(y: number, bottom: boolean): number {
   return bottom ? at : 1 - at;
 }
 
-export default function VersusScreen({
-  matchday, date, competition, onKickOff, onBack, realPosition, playAs, onPlayAs,
-}: Props) {
+/**
+ * A crisp black line around white (or amber) text, without a background box.
+ *
+ * `-webkit-text-stroke` alone is not enough — Firefox's support is recent
+ * enough that a stack still running an older build gets no outline at all and
+ * unreadable pale text over grass. Layered shadows in the four ordinal
+ * directions plus a soft blur reads as a genuine outline everywhere, not just
+ * in Chromium.
+ */
+const TEXT_OUTLINE = {
+  textShadow:
+    "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000, 0 0 3px rgba(0,0,0,0.9)",
+};
+
+export default function VersusScreen({ matchday, date, competition, onKickOff, onBack }: Props) {
   const { home, away } = matchday;
   const kits = kitsFor(home.club, away.club);
   const [showSubs, setShowSubs] = useState(false);
-
-  // Only worth asking when there is a shirt to move: you have to be starting,
-  // and the SHAPE YOUR CLUB ACTUALLY PLAYS has to have somewhere else to put
-  // you — not every formation has a winger, and offering "LW" against a
-  // 4-3-2-1 is offering a slot that does not exist. See offeredPositions.
-  const starting = home.xi.some(p => p.isYou) || away.xi.some(p => p.isYou);
-  const yours = home.yours ? home : away;
-  const alternates = realPosition ? offeredPositions(realPosition, yours.formation) : [];
-  const canMove = starting && !!onPlayAs && alternates.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 px-3 py-3 text-white">
@@ -107,11 +98,11 @@ export default function VersusScreen({
         </button>
 
         {/* ── The header ── */}
-        <div className="rounded-t-xl border border-white/15 bg-gray-900/80 px-3 py-2.5">
+        <div className="rounded-t-xl border border-white/15 bg-gray-900/80 px-3 py-1.5">
           <div className="text-center text-[9px] font-black uppercase tracking-[0.22em] text-emerald-300">
             {competition}
           </div>
-          <div className="mt-2 flex items-center justify-center gap-3">
+          <div className="mt-1 flex items-center justify-center gap-3">
             <Crest club={home.club} kit={kits.home} />
             <div className="text-center">
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">vs</div>
@@ -119,48 +110,16 @@ export default function VersusScreen({
             </div>
             <Crest club={away.club} kit={kits.away} />
           </div>
-          <div className="mt-2 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider text-white/70">
+          <div className="mt-1 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider text-white/70">
             <span>{home.formation.name}</span>
             <span className="text-white/30">·</span>
             <span>{away.formation.name}</span>
           </div>
         </div>
 
-        {/* ── Play somewhere else, for this match only ── */}
-        {canMove && realPosition && (
-          <div className="border-x border-white/15 bg-gray-900/60 px-3 py-2">
-            <div className="text-[9px] font-black uppercase tracking-widest text-white/60">
-              Play as — this match only
-            </div>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              <button
-                onClick={() => onPlayAs!(null)}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
-                  !playAs ? "bg-emerald-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
-              >
-                {POSITION_NAMES[realPosition]} (your position)
-              </button>
-              {alternates.map(role => (
-                <button
-                  key={role}
-                  onClick={() => onPlayAs!(role)}
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
-                    playAs === role ? "bg-amber-400 text-gray-950" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
-                >
-                  {POSITION_NAMES[role]}
-                </button>
-              ))}
-            </div>
-            {playAs && (
-              <p className="mt-1.5 text-[10px] font-bold text-amber-200/90">
-                Your side's best {POSITION_NAMES[realPosition].toLowerCase()} starts in your place.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* ── The pitch ── */}
-        <div className="relative aspect-[3/5] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
+        {/* ── The pitch ──
+            Home at the top, away at the bottom — see the file note on why. */}
+        <div className="relative aspect-[3/4.15] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
           {/* Markings, drawn once and read by nothing. */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
@@ -174,11 +133,11 @@ export default function VersusScreen({
             ))}
           </div>
 
-          {away.xi.map(p => (
-            <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom={false} />
-          ))}
           {home.xi.map(p => (
-            <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom />
+            <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} />
+          ))}
+          {away.xi.map(p => (
+            <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom />
           ))}
         </div>
 
@@ -186,7 +145,7 @@ export default function VersusScreen({
         <div className="rounded-b-xl border border-white/15 bg-gray-900/80">
           <button
             onClick={() => setShowSubs(s => !s)}
-            className="w-full px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/70"
+            className="w-full px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/70"
           >
             {showSubs ? "Hide" : "Show"} substitutes
           </button>
@@ -200,7 +159,7 @@ export default function VersusScreen({
 
         <button
           onClick={onKickOff}
-          className="mt-3 w-full rounded-xl bg-emerald-500 py-3.5 text-base font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-emerald-400 active:scale-[0.99]"
+          className="mt-2 w-full rounded-xl bg-emerald-500 py-3 text-base font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-emerald-400 active:scale-[0.99]"
         >
           Kick Off
         </button>
@@ -220,12 +179,12 @@ function Crest({ club, kit }: { club: string; kit: Kit }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
       <div
-        className="grid h-11 w-11 place-items-center rounded-full border-2 text-[13px] font-black"
+        className="grid h-10 w-10 place-items-center rounded-full border-2 text-[12px] font-black"
         style={{ backgroundColor: kit.shirt, borderColor: kit.trim, color: labelInk(kit.shirt) }}
       >
         {initials(club)}
       </div>
-      <div className="w-full truncate text-center text-[11px] font-black leading-tight text-white">
+      <div className="w-full truncate text-center text-[10px] font-black leading-tight text-white">
         {shortClub(club)}
       </div>
     </div>
@@ -247,11 +206,11 @@ function Man({ p, kit, keeper, bottom }: {
   return (
     <div
       className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-      style={{ left: `${p.x * 100}%`, top: `${place(p.y, bottom) * 100}%`, width: "23%" }}
+      style={{ left: `${p.x * 100}%`, top: `${place(p.y, bottom) * 100}%`, width: "22%" }}
       title={`${p.name} — ${p.slot}`}
     >
       <div
-        className={`relative order-2 h-[30px] w-[30px] overflow-hidden rounded-full border-2 ${
+        className={`relative order-2 h-[34px] w-[34px] overflow-hidden rounded-full border-2 ${
           p.isYou ? "border-amber-300 shadow-[0_0_10px_-1px_rgba(252,211,77,0.9)]" : "border-white/60"}`}
         style={{ backgroundColor: worn.shirt }}
       >
@@ -266,24 +225,29 @@ function Man({ p, kit, keeper, bottom }: {
           />
         ) : (
           <div
-            className="absolute inset-0 grid place-items-center text-[10px] font-black"
+            className="absolute inset-0 grid place-items-center text-[11px] font-black"
             style={{ color: labelInk(worn.shirt) }}
           >
             {p.short.slice(0, 2).toUpperCase()}
           </div>
         )}
       </div>
-      <div className={`flex w-full items-center justify-center gap-0.5 rounded bg-gray-950/85 px-1 py-px ${
+      {/* No background pill — the outline is what keeps this legible over
+          grass of any shade, in either theme this game has (there is only
+          the one, but the point stands): a box was a second colour to clash
+          with the kit, an outline is just ink. */}
+      <div className={`flex w-full items-center justify-center gap-0.5 px-0.5 ${
         bottom ? "order-3 mt-0.5" : "order-1 mb-0.5"}`}
       >
-        <span className={`truncate text-[8px] font-black leading-tight ${
-          p.isYou ? "text-amber-300" : "text-white"}`}
+        <span
+          className={`truncate text-[9px] font-black leading-tight ${p.isYou ? "text-amber-300" : "text-white"}`}
+          style={TEXT_OUTLINE}
         >
           {p.short}
         </span>
         {flag && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={flag} alt="" className="h-[6px] w-[9px] shrink-0 rounded-[1px] object-cover" />
+          <img src={flag} alt="" className="h-[7px] w-[10px] shrink-0 rounded-[1px] object-cover shadow-[0_0_0_1px_rgba(0,0,0,0.6)]" />
         )}
       </div>
     </div>
