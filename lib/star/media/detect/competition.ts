@@ -62,6 +62,16 @@ const GOLDEN_BOOT: Detector = (r) => {
   }, "weekly", "golden-boot");
 };
 
+/** The same chart, for creators rather than scorers — Assist King had the
+ *  race (`assistRace`, on the Awards tab since it existed) and never the post. */
+const ASSIST_KING: Detector = (r) => {
+  if (r.kind !== "league" || r.you.assists === 0) return null;
+  if (r.you.seasonAssists < 6) return null;
+  return ev("assist-king-race", you(r), r.table.matchesLeft <= 8 ? 64 : 42, ["stat", "award", "assist"], {
+    ...base(r), assists: r.you.seasonAssists, left: r.table.matchesLeft,
+  }, "weekly", "assist-king");
+};
+
 export const COMPETITION_DETECTORS: Detector[] = [
-  ROUND, EUROPEAN_NIGHT, INTERNATIONAL, GOLDEN_BOOT,
+  ROUND, EUROPEAN_NIGHT, INTERNATIONAL, GOLDEN_BOOT, ASSIST_KING,
 ];

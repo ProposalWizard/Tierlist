@@ -68,6 +68,31 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(continued[0].minute === undefined, "a passage continuing the current minute stays silent");
 }
 
+// ── An assist follows its goal, and never repeats the minute ────────────────
+//
+// Reported as too much yellow: every beat of a scenario's buildup — the cross,
+// the knock-down, the shot — used to be logged as its own highlighted line, so
+// a five-line passage read as five highlights. What survives now is three
+// things only: a chance opening up for a named player, a goal, and — as its own
+// line, not a parenthetical — who made it. This is the third of those: an
+// assist has to read as belonging to the goal above it, not as its own moment
+// with its own minute.
+{
+  const withAssist = linesFrom([
+    { minute: 54, text: "⚽ Vass scores!", isGoal: true },
+    { minute: 54, text: "A: Salah", tone: "assist" },
+  ]);
+  check(withAssist[0].tone === "goal" && withAssist[0].minute === 54, "the goal carries the minute");
+  check(withAssist[1].tone === "assist", `the assist has its own tone (${withAssist[1].tone})`);
+  check(withAssist[1].minute === undefined,
+    "…and never repeats the minute — it reads as part of the line above it");
+
+  // An explicit tone always wins over whatever isGoal/isOpponent would have
+  // produced on their own — an assist is never mistaken for a goal itself.
+  const overridden = linesFrom([{ minute: 10, text: "A: Someone", isGoal: true, tone: "assist" }]);
+  check(overridden[0].tone === "assist", `an explicit tone overrides isGoal (${overridden[0].tone})`);
+}
+
 // ── Half time lands once, in the right place ────────────────────────────────
 {
   const firstHalf = linesFrom([
@@ -107,10 +132,14 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(goal === opp, "their goal holds as long as ours — it matters just as much");
   check(period > play, `the interval holds longer than ordinary play (${period}/${play})`);
 
+  const assist = dwellFor("assist", speed);
+  check(assist < goal && assist > play,
+    `an assist holds less than the goal it follows but more than ordinary play (${assist} vs ${goal}/${play})`);
+
   // Speed divides, and never divides away to nothing — a zero-length timer is
   // a whole half arriving in one frame.
   for (const s of [1, 2, 4]) {
-    for (const tone of ["play", "goal", "oppGoal", "period", "chance"] as const) {
+    for (const tone of ["play", "goal", "oppGoal", "period", "chance", "assist"] as const) {
       const d = dwellFor(tone, s);
       check(d >= 60, `${tone} at ${s}x still takes time (${d}ms)`);
       check(d <= dwellFor(tone, 1), `${tone} at ${s}x is no slower than at 1x`);

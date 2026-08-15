@@ -34,9 +34,10 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, creatorOf } from "@/lib/star/lineup";
+import { startingTeammateIds, onPitchToday } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, labelInk, type MatchKits } from "@/lib/star/kits";
-import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/types";
+import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
@@ -189,6 +190,79 @@ const ACTION_BANNER_MS = 1000;
 const KICK_POSE_S = 0.28;
 
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions }: Props) {
+
+  // ── Who else is actually out there ──
+  //
+  // A goal your side scores while you are not on the ball has always needed a
+  // name — see the note above `goalEventsRef.current.push` for the version of
+  // this bug that meant nobody had one. The version that replaced it was worse
+  // in a quieter way: the name it gave was drawn from the WHOLE squad, so a
+  // sub who was an unused substitute — or never made the eighteen at all —
+  // could be credited with a goal in a match he did not play in. See
+  // lib/star/teamsheet.ts — this is the same eleven the pre-match team sheet
+  // showed, and every place that puts a name to a team-mate's goal reads from
+  // it instead of from the full squad list.
+  const startingXI = career && fixture ? startingTeammateIds(career, fixture) : null;
+  const onPitch = (squad: SquadPlayer[]): SquadPlayer[] => onPitchToday(squad, startingXI);
+
+  /**
+   * Put a name to every goal in a run of hidden-match events, and record it.
+   *
+   * The one function both the normal in-match flow and the "coming on as a
+   * substitute" replay use, which is the point of it existing: the replay used
+   * to show the hour before you arrived as TEXT only, with no call to
+   * `goalEventsRef.current.push` anywhere in that branch — so a goal scored
+   * before you came on counted on the scoreboard and nowhere else. It was
+   * missing from the scorer's season tally and missing from the scoreline
+   * graphic the game posts about the result, both of which read `goalEvents`,
+   * not the score.
+   *
+   * The other half of the same guarantee: `pickSquadScorer` returning null used
+   * to mean the goal was reported as text and then simply not recorded — one
+   * fewer name than the scoreline had goals, which is the "5-0 with four
+   * scorers" report. It cannot return null against a starting XI (ten
+   * outfielders, always), but a career saved before squads existed, or a
+   * fixture with no restriction to compute, still can — so the fallback now
+   * credits an unnamed team-mate rather than dropping the goal from the count.
+   * An unnamed scorer in the graphic is honest; a goal with no line in it at
+   * all reads as a mistake in the goal difference.
+   */
+  const nameTeamGoals = (
+    raw: { minute: number; text: string; isGoal?: boolean; teammateGoal?: boolean }[],
+    squad: SquadPlayer[],
+    rng: () => number,
+    announce: boolean,
+  ): SimEvent[] => {
+    const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
+    return raw.flatMap((e): SimEvent[] => {
+      if (!e.isGoal) return [{ minute: e.minute, text: e.text }];
+
+      if (!e.teammateGoal) {
+        return [{ minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true, isOpponent: true }];
+      }
+
+      const scorer = pickSquadScorer(attackers.length > 0 ? attackers : squad, rng)
+        // No name reachable at all — still a goal, still recorded, under an
+        // identity that names what it is rather than inventing who.
+        ?? { id: "unnamed", name: "Team-mate", shortName: "Team-mate" } as SquadPlayer;
+      const assister = scorer.id !== "unnamed" ? pickSquadAssist(squad, scorer.id, rng) : null;
+      goalEventsRef.current.push({
+        minute: e.minute, scorer: scorer.name, assist: assister?.name, isUserGoal: false,
+      });
+
+      const goalLine = `⚽ ${scorer.shortName} scores!`;
+      if (announce) pushLine(`${e.minute}' ${goalLine}${assister ? ` (${assister.shortName})` : ""}`);
+      // The assist is its own line, not a parenthetical on the goal's — "A:
+      // Cucurella" reads as a fact about the goal rather than as trivia tucked
+      // onto the end of the sentence.
+      return assister
+        ? [
+            { minute: e.minute, text: goalLine, isGoal: true },
+            { minute: e.minute, text: `A: ${assister.shortName}`, tone: "assist" },
+          ]
+        : [{ minute: e.minute, text: goalLine, isGoal: true }];
+    });
+  };
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const careerRef = useRef(career);
@@ -227,7 +301,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // The next situation is read off it as well as off where the ball arrived.
   const chainRef = useRef<{ pos: { x: number; y: number }; depth: number; ambition: number } | null>(null);
 
-  interface SimEvent { minute: number; text: string; isGoal?: boolean; isOpponent?: boolean }
+  interface SimEvent {
+    minute: number; text: string; isGoal?: boolean; isOpponent?: boolean;
+    /** Overrides the isGoal-derived tone — an assist line is not itself a goal. */
+    tone?: LogLine["tone"];
+  }
 
   // ── The running commentary ──
   //
@@ -405,14 +483,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
   const [feed, setFeed] = useState<string[]>([]);
+  /**
+   * The four-line ticker under the canvas, and ONLY the ticker.
+   *
+   * Every beat of a scenario building up gets one of these — the cross being
+   * swung in, the knock-down, the shot going in off the woodwork — and that is
+   * right for a strip that lives beside the pitch and only has to say what is
+   * happening right now. It is wrong for the permanent record: piping every one
+   * of these into the match log put a whole buildup's worth of flavour text
+   * into the highlighted list meant for the moments that actually matter, and
+   * a five-line scramble in the six-yard box read as five separate highlights.
+   * See `logMoment` for what is actually worth keeping.
+   */
   const pushLine = useCallback((line: string) => {
     setFeed((f) => [...f, line].slice(-4));
-    // …and into the permanent record, so what happened on the pitch is still
-    // there when the screen comes back to the commentary. The ticker under the
-    // canvas keeps four lines because it is four lines tall; the log keeps
-    // everything because the match is the log.
-    setLog((l) => [...l, logLine(line, "you")]);
   }, []);
+
+  /**
+   * The permanent record — a chance opening up, a goal, who made it.
+   *
+   * Three things only. Not "everything said while the ball was near your
+   * player": one line when a chance becomes yours to play, one when it ends in
+   * a goal, one more when that goal had a name behind it.
+   */
+  const logMoment = useCallback((text: string, tone: LogLine["tone"], minute?: number) => {
+    // An assist follows straight under its goal, which has already printed the
+    // minute — repeating it a line down says the same minute twice for what
+    // reads as one moment. See the matching rule in linesFrom.
+    const shown = tone === "assist" ? undefined : (minute ?? matchMinuteRef.current);
+    setLog(l => [...l, logLine(text, tone, shown)]);
+  }, []);
+
+  /** Your own name, the way the commentary says everybody else's — a surname,
+   *  never the second person. The sandbox has no career and so no name; "you"
+   *  is right there, since there is nobody else it could mean. */
+  const playerLabel = () => careerRef.current?.player.lastName || "you";
 
   /**
    * Read out the next line, and stop when the queue is empty.
@@ -544,14 +649,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         // whole point of the commentary screen is that the match you are
         // walking into is one you watched.
         halfTimeShownRef.current = st.minute > HALF_TIME_MINUTE;
+        // `announce: false` — nothing here goes into the four-line ticker,
+        // which does not exist yet at this point in the match; it all goes
+        // straight into the permanent log below instead.
+        const named = nameTeamGoals(before, onPitch(careerRef.current?.squad ?? []), rng, false);
         setLog([
           logLine("Kick Off", "period", 0),
-          ...linesFrom(before.map(e => ({
-            minute: e.minute,
-            text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
-            isGoal: e.isGoal,
-            isOpponent: e.isGoal && !e.teammateGoal,
-          })).slice(-14)),
+          ...linesFrom(named.slice(-14)),
           logLine("You are coming on.", "you", st.minute),
         ]);
         setPhase("feed");
@@ -1869,7 +1973,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Direct user goals → optionally pick a named squad member as assister.
     let commentaryRoleLabel = sc.receiver?.roleLabel;
     if (kind === "goal" && careerRef.current) {
-      const squad = careerRef.current.squad ?? [];
+      const squad = onPitch(careerRef.current.squad ?? []);
       const pFirst = careerRef.current.player.firstName;
       const pLast = careerRef.current.player.lastName;
       const playerName = `${pFirst} ${pLast}`;
@@ -1908,12 +2012,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             return pickSquadScorer(forwards.length > 0 ? forwards : squad, rng) ?? undefined;
           })();
         if (scorer) commentaryRoleLabel = scorer.shortName;
+        const scorerLabel = scorer?.shortName ?? sc.receiver.roleLabel ?? "Team-mate";
         goalEventsRef.current.push({
           minute: matchMinuteRef.current,
           scorer: scorer?.name ?? sc.receiver.roleLabel ?? "Team-mate",
           assist: playerName,
           isUserGoal: false, how, distance: Math.round(distance),
         });
+        logMoment(`⚽ ${scorerLabel} scores!`, "goal");
+        logMoment(`A: ${playerLabel()}`, "assist");
       } else if (d.goals === 1) {
         // ── And an assist is somebody who was actually in the move ──
         //
@@ -1930,7 +2037,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name,
           isUserGoal: true, how, distance: Math.round(distance),
         });
-        if (assister) pushLine(`Assist: ${assister.shortName}`);
+        logMoment(`⚽ ${playerLabel()} scores!`, "goal");
+        if (assister) logMoment(`A: ${assister.shortName}`, "assist");
       } else {
         // The scoreline has gone up and neither branch claimed it. It is still a
         // goal, and a goal with nobody's name on it is a goal missing from the
@@ -1940,6 +2048,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           minute: matchMinuteRef.current, scorer: playerName,
           isUserGoal: true, how, distance: Math.round(distance),
         });
+        logMoment(`⚽ ${playerLabel()} scores!`, "goal");
       }
     }
 
@@ -2098,39 +2207,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // identity — two goals in the same minute renamed the same line twice and
     // left the other anonymous, and a minute where BOTH sides scored could put
     // your striker's name on the opposition's goal.
-    const squad = careerRef.current?.squad ?? [];
-    const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
-
-    const events: SimEvent[] = raw.map((e) => {
-      if (!e.isGoal) return { minute: e.minute, text: e.text };
-
-      // The opponent is named here rather than in the simulation, which has no
-      // business knowing who you are playing. Their scorer stays anonymous —
-      // we hold no squad for them, and inventing one would put made-up names
-      // beside real ones.
-      if (!e.teammateGoal) {
-        return { minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true, isOpponent: true };
-      }
-
-      const scorer = pickSquadScorer(attackers.length > 0 ? attackers : squad, rng);
-      // No squad at all — a career saved before squads existed, or the match
-      // running without one. The goal still counts and still says so.
-      if (!scorer) return { minute: e.minute, text: e.text, isGoal: true };
-
-      const assister = pickSquadAssist(squad, scorer.id, rng);
-      goalEventsRef.current.push({
-        minute: e.minute, scorer: scorer.name, assist: assister?.name, isUserGoal: false,
-      });
-
-      const line = assister
-        ? `⚽ ${scorer.shortName} scores! (${assister.shortName})`
-        : `⚽ ${scorer.shortName} scores!`;
-      // …and into the running commentary too, not just the between-chances
-      // screen, so the next time you are on the ball the feed still carries who
-      // put your side in front while you were watching.
-      pushLine(`${e.minute}' ${line}`);
-      return { minute: e.minute, text: line, isGoal: true };
-    });
+    const squad = onPitch(careerRef.current?.squad ?? []);
+    // `announce: true` — these are happening now, live, so they belong in the
+    // four-line ticker as well as in the permanent log.
+    const events: SimEvent[] = nameTeamGoals(raw, squad, rng, true);
 
     if (st.oppScore > oppScoreRef.current) playCrowdSwell("groan");
     else if (st.userScore > userScoreRef.current) playCrowdSwell("cheer");
@@ -2260,6 +2340,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       setPhase("dribble");
+      logMoment(`The move works its way to ${playerLabel()}.`, "you");
       pushLine(request.reason);
       pushLine("Swipe the way you want to run. Get past them to the line.");
       playWhistle();
@@ -2288,7 +2369,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Every blue figure on the pitch becomes a man from your squad, chosen for
     // where he is standing. Whoever the ball reaches is who shoots, is who the
     // commentary names, and is who the goal goes to. See lib/star/lineup.ts.
-    castScenario(scenarioRef.current, careerRef.current?.squad ?? []);
+    castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
@@ -2312,6 +2393,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
     setPhase("aim");
+    // One line, once per chance — see logMoment. This is the single thing kept
+    // from what used to be an unbroken flood of buildup commentary: the moment
+    // the ball actually reaches a player of yours to do something with.
+    logMoment(`The move works its way to ${playerLabel()}.`, "you");
     // Say where the chance came from before describing it, so it reads as the
     // end of a move rather than as a situation that appeared from nowhere.
     if (request) pushLine(request.reason);

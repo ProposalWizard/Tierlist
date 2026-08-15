@@ -1,6 +1,6 @@
 import type { CareerState } from "../types";
 import { sortLeague } from "../season";
-import { goldenBootRace } from "../recognition";
+import { goldenBootRace, assistRace } from "../recognition";
 import { MONTH_NAMES, faceOf, monthOfCareer, monthRace, playerOf } from "../potm";
 import type {
   FootballEvent, GraphicKind, GraphicSpec, MatchRecord, StoryMemory,
@@ -106,11 +106,19 @@ export function buildGraphic(
     }
 
     case "topScorers": {
-      const race = goldenBootRace(career).slice(0, 5);
+      // One card, two charts. Assist King reads the same way as Golden Boot —
+      // a ranked list with you picked out of it — so it is the same graphic
+      // with a different race and a different number pulled off each row,
+      // decided by which detector actually fired.
+      // `Scorer.goals` is a generic count, not literally goals — assistRace
+      // fills it with each player's assist total, the same field golden boot
+      // fills with goals. One shape, whichever race actually fired.
+      const isAssists = e.id === "assist-king-race";
+      const race = (isAssists ? assistRace(career) : goldenBootRace(career)).slice(0, 5);
       if (!race.length) return undefined;
       return {
         type: "topScorers",
-        title: "Golden Boot",
+        title: isAssists ? "Assist King" : "Golden Boot",
         highlight: you,
         rows: race.map(s => ({ label: s.isYou ? you : s.name, value: String(s.goals), highlight: s.isYou })),
       };

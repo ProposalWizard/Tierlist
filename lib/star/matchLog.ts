@@ -24,7 +24,18 @@ export type LogTone =
   | "goal"
   /** They scored. */
   | "oppGoal"
-  /** Something you did — on the ball, in a scenario. */
+  /** Who made it. Always follows a "goal" line, never stands alone. */
+  | "assist"
+  /**
+   * A chance has opened up for a named player of yours to play out.
+   *
+   * The ONLY thing this tone means. It used to mean "everything narrated while
+   * you had the ball" — every cross, every knock-down, every deflection in a
+   * passage that ended in somebody else's shot — which was every line of a
+   * five-line buildup highlighted as though each one mattered on its own.
+   * Reported as exactly that: "a lot of text there… I don't think it needs to
+   * be there." One line, once per chance: who the ball has reached.
+   */
   | "you"
   /** Kick-off, half time, full time. A marker, not an event. */
   | "period"
@@ -73,14 +84,22 @@ export function line(text: string, tone: LogTone = "play", minute?: number): Log
  * them turns it into four unrelated things that happened to share a number.
  */
 export function linesFrom(
-  events: { minute: number; text: string; isGoal?: boolean; isOpponent?: boolean }[],
+  events: {
+    minute: number; text: string; isGoal?: boolean; isOpponent?: boolean;
+    /** Overrides the isGoal/isOpponent-derived tone — the assist line that
+     *  follows a goal is not itself a goal, and has no other way to say so. */
+    tone?: LogTone;
+  }[],
   startAfterMinute = -1,
 ): LogLine[] {
   const out: LogLine[] = [];
   let last = startAfterMinute;
   for (const e of events) {
-    const tone: LogTone = e.isGoal ? (e.isOpponent ? "oppGoal" : "goal") : "play";
-    const showMinute = e.minute !== last;
+    const tone: LogTone = e.tone ?? (e.isGoal ? (e.isOpponent ? "oppGoal" : "goal") : "play");
+    // An assist follows its goal in the same minute, so the goal above it has
+    // already printed the number — repeating it would say the same minute
+    // twice for what reads as one moment.
+    const showMinute = e.minute !== last && e.tone !== "assist";
     out.push(line(e.text, tone, showMinute ? e.minute : undefined));
     last = e.minute;
   }
@@ -112,8 +131,9 @@ export function halfTimeSplit(lines: LogLine[], alreadyShown: boolean): number {
  */
 export function dwellFor(tone: LogTone, speed: number): number {
   const base = tone === "goal" || tone === "oppGoal" ? 1500
-    : tone === "period" ? 1200
-      : tone === "chance" ? 900
-        : 620;
+    : tone === "assist" ? 1000
+      : tone === "period" ? 1200
+        : tone === "chance" ? 900
+          : 620;
   return Math.max(60, Math.round(base / Math.max(1, speed)));
 }

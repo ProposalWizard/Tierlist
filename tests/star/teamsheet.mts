@@ -1,5 +1,6 @@
 import {
   matchdayFor, sheetReady, formationForClub, alternatePositions, offeredPositions,
+  startingTeammateIds, onPitchToday,
 } from "../../lib/star/teamsheet";
 import { formationOf } from "../../lib/star/formations";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -239,3 +240,49 @@ if (problems.length) {
   process.exit(1);
 }
 console.log("PASS — two elevens, one goalkeeper each, everybody in a shirt that fits");
+
+// ── A team-mate's goal can only be credited to a team-mate who is playing ────
+//
+// The bug this exists to catch: a goal your side scores while you are off the
+// ball has always needed a name, and the name used to come from the WHOLE
+// squad — twenty-odd men deep, bench and reserves included. A player never
+// selected for this match could still be credited with the goal that won it.
+// Reported as exactly that, twice, in two different careers.
+{
+  const c = career();   // you are ST at Liverpool, per the fixture helper above
+  const fx = fixture("Everton", true);
+
+  const ids = startingTeammateIds(c, fx);
+  check(ids !== null, "a normal club fixture has a restriction to compute");
+  check(ids !== null && !ids.has("you"), "you are never in your OWN team-mates list");
+  check(ids !== null && ids.size === 10, `ten other starters, not the whole squad (${ids?.size})`);
+
+  const md = matchdayFor(c, fx, true);
+  const startersXI = md.home.xi.filter(p => !p.isYou).map(p => p.id);
+  check(startersXI.every(id => ids?.has(id)), "every id is one of the eleven the team sheet actually showed");
+  check(new Set(startersXI).size === startersXI.size, "…with no starter counted twice");
+
+  // The full squad is twenty-plus; restricted to today's XI it is ten.
+  const wholeSquad = (c.squad ?? []).map(p => ({ id: p.id }));
+  check(wholeSquad.length > 15, `the squad itself is much bigger than eleven (${wholeSquad.length})`);
+  const restricted = onPitchToday(wholeSquad, ids);
+  check(restricted.length === 10, `narrowed down to the ten actually playing (${restricted.length})`);
+  check(restricted.every(p => ids?.has(p.id)), "and every one of them is a genuine starter");
+
+  // A reserve who did not make today's eleven must not survive the narrowing.
+  const benchIds = new Set(md.home.bench.map(p => p.id));
+  const benchInWholeSquad = wholeSquad.filter(p => benchIds.has(p.id));
+  check(benchInWholeSquad.length > 0, "the sample squad does have substitutes to test against");
+  check(!onPitchToday(wholeSquad, ids).some(p => benchIds.has(p.id)),
+    "…and none of them come back out of the restriction");
+
+  // With no restriction at all (international, or the sandbox with no fixture),
+  // nothing is narrowed — the credit-restriction costs nothing when there is
+  // nothing to restrict it to.
+  check(onPitchToday(wholeSquad, null).length === wholeSquad.length,
+    "no restriction means the full squad is still eligible");
+
+  // An international fixture has no club sheet to restrict by.
+  const intl = startingTeammateIds(c, { ...fx, kind: "international" });
+  check(intl === null, "an international fixture is not restricted at all");
+}
