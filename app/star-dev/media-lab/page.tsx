@@ -5,7 +5,9 @@ import Graphic from "@/components/star/media/Graphics";
 import PortraitPicker from "@/components/star/PortraitPicker";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
-import { SAMPLE_MATCHDAY } from "@/components/star/media/sampleMatchday";
+import { SAMPLE_MATCHDAY, SAMPLE_CAREER, SAMPLE_FIXTURE } from "@/components/star/media/sampleMatchday";
+import { matchdayFor } from "@/lib/star/teamsheet";
+import type { Role } from "@/lib/star/formations";
 import type { GraphicSpec } from "@/lib/star/media/types";
 
 /**
@@ -42,6 +44,7 @@ export default function MediaLab() {
   const [club, setClub] = useState(0);
   const [showWin, setShowWin] = useState(false);
   const [showTeams, setShowTeams] = useState(false);
+  const [labPlayAs, setLabPlayAs] = useState<Role | null>(null);
 
   const read = (file: File, set: (s: string) => void) => {
     const r = new FileReader();
@@ -193,9 +196,14 @@ export default function MediaLab() {
       {showTeams && (
         <div className="fixed inset-0 z-[70] overflow-y-auto bg-gray-950">
           <VersusScreen
-            matchday={SAMPLE_MATCHDAY}
+            matchday={labPlayAs
+              ? matchdayFor(SAMPLE_CAREER, SAMPLE_FIXTURE, true, labPlayAs)
+              : SAMPLE_MATCHDAY}
             date="Sat 29 Aug"
             competition="Premier League · Matchday 3"
+            realPosition={SAMPLE_CAREER.player.position as Role}
+            playAs={labPlayAs}
+            onPlayAs={setLabPlayAs}
             onKickOff={() => setShowTeams(false)}
             onBack={() => setShowTeams(false)}
           />
