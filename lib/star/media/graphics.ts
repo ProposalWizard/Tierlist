@@ -324,6 +324,11 @@ function headlineFor(e: FootballEvent, you: string): string {
     case "manager-sacked": return `${f.manager} sacked`;
     case "derby-win": return `Derby won`;
     case "comeback": return `${f.deficit} down and won`;
+    // Career-level news, not match news — `f.us`/`f.them`/`f.opponent` are
+    // scoreline facts a career moment never carries, so the default below
+    // rendered "Club undefined-undefined undefined" for every award.
+    case "award-won": return String(f.award ?? `${short} wins an award`);
+    case "ballon-dor": return `${short} wins the Ballon d'Or`;
     default: return `${f.club} ${f.us}-${f.them} ${f.opponent}`;
   }
 }

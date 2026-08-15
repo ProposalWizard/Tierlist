@@ -26,7 +26,7 @@ export const DATA_TEMPLATES: Template[] = [
   {
     id: "st-run", archetype: "stats", events: ["scoring-run", "red-hot", "purple-patch"],
     requires: ["matches", "goals"],
-    body: "{goals} goals in {matches} matches for {player}.",
+    body: "{goalsN} goal{goalsN|plural} in {matches} matches for {player}.",
     threadBody: "{thread.goals} in {thread.matches}. {player} has not stopped.",
     graphic: "statLine", weight: 4,
   },
@@ -80,7 +80,7 @@ export const DATA_TEMPLATES: Template[] = [
     // Football talks about this for a fortnight and the game used to say nothing
     // until the moment it landed.
     id: "st-potm-race", archetype: "stats", events: ["potm-race"], requires: ["month", "place"],
-    body: "{month} Player of the Month race — {player} sits {place|ordinal}. {goals} goals, {assists} assists.",
+    body: "{month} Player of the Month race — {player} sits {place|ordinal}. {goalsN} goal{goalsN|plural}, {assists} assist{assists|plural}.",
     graphic: "statLine", weight: 2,
   },
   {
@@ -106,12 +106,12 @@ export const DATA_TEMPLATES: Template[] = [
     // Won it. The loudest line this archetype has, and the only POTM template
     // that is about a result rather than a race.
     id: "st-potm-won", archetype: "stats", events: ["potm-won"], requires: ["month", "goals"],
-    body: "{player} is {month} Player of the Month. {goals} goals, {assists} assists.",
+    body: "{player} is {month} Player of the Month. {goalsN} goal{goalsN|plural}, {assists} assist{assists|plural}.",
     graphic: "potmWinner", weight: 4,
   },
   {
     id: "st-potm-winner", archetype: "stats", events: ["potm-winner"], requires: ["month", "winner"],
-    body: "{winner} wins Player of the Month for {month}. {goals} goals, {assists} assists.",
+    body: "{winner} wins Player of the Month for {month}. {goalsN} goal{goalsN|plural}, {assists} assist{assists|plural}.",
     graphic: "potmWinner", weight: 3,
   },
   {
@@ -120,7 +120,7 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "topScorers", weight: 3,
   },
   {
-    id: "st-assists", archetype: "stats", events: ["assist-king-race"], requires: ["assists"],
+    id: "st-assist-king", archetype: "stats", events: ["assist-king-race"], requires: ["assists"],
     body: "ASSIST KING | {player} — {assists} with {left} to play.",
     graphic: "topScorers", weight: 3,
   },

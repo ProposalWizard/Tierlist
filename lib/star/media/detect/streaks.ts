@@ -40,6 +40,7 @@ const POTM_RACE: Detector = (r) => {
     ...base(r),
     month: race.monthName,
     goals: race.goals,
+    goalsN: race.goals,
     assists: race.assists,
     leader: race.leader,
     contenders: race.contenders,
@@ -85,8 +86,14 @@ const POTM_RACE: Detector = (r) => {
 const SCORING_RUN: Detector = (r, m) => {
   if (m.streaks.scoring < 3) return null;
   const n = m.streaks.scoring;
+  const goals = goalsInLast(m, n);
+  // `goals` also feeds the `{goals}` grammar slot elsewhere, which turns a
+  // count of 1-5 into "a hat-trick"/"the matchball" — perfect for "he scored
+  // {goals}" but wrong glued to a literal "goals" ("a hat-trick goals in 3
+  // matches"). `goalsN` is the same number, resolved plainly, for templates
+  // that print their own unit word.
   return ev("scoring-run", you(r), Math.min(84, 38 + n * 8), ["streak", "goal", "stat"], {
-    ...base(r), matches: n, goals: goalsInLast(m, n),
+    ...base(r), matches: n, goals, goalsN: goals,
   }, "hour", "form-hot");
 };
 
@@ -193,6 +200,7 @@ const POTM_AWARD: Detector = (r) => {
       winner: a.winner,
       winnerClub: a.club,
       goals: a.goals,
+      goalsN: a.goals,
       assists: a.assists,
       ...(a.yourPlace !== undefined ? { place: a.yourPlace } : {}),
     },
