@@ -39,8 +39,19 @@ import { kitsFor, labelInk, type MatchKits } from "@/lib/star/kits";
 import type { CareerState, MatchStats, Fixture, GoalEvent } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
+import MatchCommentary from "./MatchCommentary";
+import {
+  line as logLine, linesFrom, halfTimeSplit, dwellFor, HALF_TIME_MINUTE,
+  type LogLine,
+} from "@/lib/star/matchLog";
 
-type Phase = "aim" | "contact" | "flight" | "result" | "sim" | "postmatch" | "dribble";
+/**
+ * `feed` is the commentary screen, and it is where a match LIVES — see
+ * lib/star/matchLog. The pitch phases are what it cuts away to. It used to be
+ * called `sim` and was a panel that appeared over the pitch to report minutes
+ * you had already skipped past.
+ */
+type Phase = "aim" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble";
 
 // Match runs from minute 0 to 90. Chances are distributed organically — no
 // fixed session length. The number of chances depends on player/team quality.
@@ -216,10 +227,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // The next situation is read off it as well as off where the ball arrived.
   const chainRef = useRef<{ pos: { x: number; y: number }; depth: number; ambition: number } | null>(null);
 
-  interface SimEvent { minute: number; text: string; isGoal?: boolean; }
-  const [simEvents, setSimEvents] = useState<SimEvent[]>([]);
-  const [simVisible, setSimVisible] = useState(false);
-  /** What to do when the player has finished reading the highlights. */
+  interface SimEvent { minute: number; text: string; isGoal?: boolean; isOpponent?: boolean }
+
+  // ── The running commentary ──
+  //
+  // `log` is everything that has happened, kept for the whole match. `queue` is
+  // what has happened but has not been read out yet — the streaming screen
+  // moves one line at a time from the second into the first. Splitting them is
+  // what makes the match play out rather than arrive: the simulation still
+  // computes a whole passage at once, but you watch it.
+  const [log, setLog] = useState<LogLine[]>([]);
+  const [queue, setQueue] = useState<LogLine[]>([]);
+  const [speed, setSpeed] = useState(1);
+  const [pause, setPause] = useState<{ label: string; cta: string; onContinue: () => void } | null>(null);
+  const halfTimeShownRef = useRef(false);
+  /** What to do once the queue has emptied. */
   const simContinueRef = useRef<(() => void) | null>(null);
 
   // The match going on around you. It owns possession, territory and momentum;
@@ -385,7 +407,59 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const [feed, setFeed] = useState<string[]>([]);
   const pushLine = useCallback((line: string) => {
     setFeed((f) => [...f, line].slice(-4));
+    // …and into the permanent record, so what happened on the pitch is still
+    // there when the screen comes back to the commentary. The ticker under the
+    // canvas keeps four lines because it is four lines tall; the log keeps
+    // everything because the match is the log.
+    setLog((l) => [...l, logLine(line, "you")]);
   }, []);
+
+  /**
+   * Read out the next line, and stop when the queue is empty.
+   *
+   * A timer rather than a Continue button, because a match is a thing that
+   * happens to you at its own pace. The pace is `dwellFor`, which holds a goal
+   * longer than a throw-in, divided by whatever speed you have chosen — and
+   * `pause` freezes it entirely at the interval and at full time, which are the
+   * only two moments the game genuinely needs an answer from you.
+   */
+  useEffect(() => {
+    if (pause || queue.length === 0) return;
+    const next = queue[0];
+    const t = setTimeout(() => {
+      setLog(l => [...l, next]);
+      setQueue(q => q.slice(1));
+      if (next.minute !== undefined) {
+        matchMinuteRef.current = next.minute;
+        setMatchMinute(next.minute);
+      }
+      // Half time is inserted by the streamer rather than by the simulation,
+      // which runs 1 to 90 and has never had an interval. See matchLog.
+      if (!halfTimeShownRef.current && next.minute !== undefined && next.minute > HALF_TIME_MINUTE) {
+        halfTimeShownRef.current = true;
+        setLog(l => [...l, logLine(
+          `Half Time  ${userScoreRef.current} - ${oppScoreRef.current}`, "period", HALF_TIME_MINUTE)]);
+        setPause({
+          label: "The half is over",
+          cta: "Second half →",
+          onContinue: () => setPause(null),
+        });
+      }
+    }, dwellFor(next.tone, speed));
+    return () => clearTimeout(t);
+  }, [queue, pause, speed]);
+
+  /** The queue has run dry: go wherever the passage was heading. */
+  useEffect(() => {
+    if (pause || queue.length > 0 || phase !== "feed") return;
+    const go = simContinueRef.current;
+    if (!go) return;
+    simContinueRef.current = null;
+    // A beat on the last line before the pitch takes the screen, so a chance
+    // does not arrive on top of the sentence that set it up.
+    const t = setTimeout(go, Math.round(700 / Math.max(1, speed)));
+    return () => clearTimeout(t);
+  }, [queue, pause, phase, speed]);
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
@@ -466,19 +540,31 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         setScore({ user: st.userScore, opp: st.oppScore });
         matchMinuteRef.current = st.minute;
         setMatchMinute(st.minute);
-        setSimEvents([
-          ...before.slice(-4).map((e) => ({
+        // The hour you were not on for, read out rather than summarised — the
+        // whole point of the commentary screen is that the match you are
+        // walking into is one you watched.
+        halfTimeShownRef.current = st.minute > HALF_TIME_MINUTE;
+        setLog([
+          logLine("Kick Off", "period", 0),
+          ...linesFrom(before.map(e => ({
             minute: e.minute,
             text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
             isGoal: e.isGoal,
-          })),
-          { minute: st.minute, text: "You are coming on." },
+            isOpponent: e.isGoal && !e.teammateGoal,
+          })).slice(-14)),
+          logLine("You are coming on.", "you", st.minute),
         ]);
-        setSimVisible(true);
-        setPhase("sim");
-        simContinueRef.current = () => { setSimVisible(false); startSimulation(); };
+        setPhase("feed");
+        setPause({
+          label: "You are going on",
+          cta: "Get out there →",
+          onContinue: () => { setPause(null); startSimulation(); },
+        });
         return;
       }
+      // Starting: the match opens on the commentary, at nil-nil, with a
+      // whistle — not on a pitch waiting for a chance that has not arrived.
+      setLog([logLine("Kick Off", "period", 0)]);
       startSimulation();
       return;
     }
@@ -1110,7 +1196,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // doesn't ever show". It was visible at all because the panel's own backdrop
     // was `bg-gray-950/92`, and 92 is not on Tailwind's opacity scale — the class
     // was silently dropped and the overlay had no background whatsoever.
-    if (phaseRef.current === "sim") return;
+    if (phaseRef.current === "feed") return;
 
     // The poacher. He used to be drawn ABOVE the run, which meant a dribble —
     // built with no team-mates in it on purpose, because the question it asks is
@@ -2023,7 +2109,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // we hold no squad for them, and inventing one would put made-up names
       // beside real ones.
       if (!e.teammateGoal) {
-        return { minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true };
+        return { minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true, isOpponent: true };
       }
 
       const scorer = pickSquadScorer(attackers.length > 0 ? attackers : squad, rng);
@@ -2097,33 +2183,44 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     }
 
     pendingRequestRef.current = step.request;
-    matchMinuteRef.current = st.minute;
-    setMatchMinute(st.minute);
-    setSimEvents(events);
-    setSimVisible(true);
-    setPhase("sim");
 
-    // The player advances this, not a timer. A whole match used to fly past in
-    // a few seconds of auto-dismissing panels — you could not read what had
-    // happened, let alone register that you were two down.
+    // ── Into the commentary, a line at a time ──
+    //
+    // The minute is NOT jumped to here: it is advanced by the streamer as each
+    // line is read out, which is the difference between watching the clock run
+    // and being told where it got to. See the queue effect.
+    setQueue(linesFrom(events, matchMinuteRef.current));
+    setPhase("feed");
+
     simContinueRef.current = () => {
-      setSimVisible(false);
       if (step.fullTime) {
-        // Full time
-        const careerForStats = careerRef.current ?? FALLBACK_CAREER;
-        const t = tallyRef.current;
-        const stats = finaliseMatch(
-          attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-          Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
-          userScoreRef.current, oppScoreRef.current, careerForStats,
-          goalEventsRef.current, hookedRef.current,
-        );
-        if (matchModeRef.current && onCompleteRef.current) {
-          onCompleteRef.current(stats);
-        } else {
-          setFinalStats(stats);
-          setPhase("postmatch");
-        }
+        // Full time stops the match rather than sliding into the summary: a
+        // final whistle you did not notice is a result you find out about on a
+        // stats screen.
+        setLog(l => [...l, logLine(
+          `Full Time  ${userScoreRef.current} - ${oppScoreRef.current}`, "period", MATCH_DURATION)]);
+        setMatchMinute(MATCH_DURATION);
+        setPause({
+          label: "That's the whistle",
+          cta: "Full time →",
+          onContinue: () => {
+            setPause(null);
+            const careerForStats = careerRef.current ?? FALLBACK_CAREER;
+            const t = tallyRef.current;
+            const stats = finaliseMatch(
+              attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+              Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+              userScoreRef.current, oppScoreRef.current, careerForStats,
+              goalEventsRef.current, hookedRef.current,
+            );
+            if (matchModeRef.current && onCompleteRef.current) {
+              onCompleteRef.current(stats);
+            } else {
+              setFinalStats(stats);
+              setPhase("postmatch");
+            }
+          },
+        });
       } else {
         loadScenario(false);
       }
@@ -2247,8 +2344,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
     setFinalStats(null);
     setFeed([]);
-    setSimEvents([]);
-    setSimVisible(false);
+    setLog([]);
+    setQueue([]);
+    setPause(null);
+    halfTimeShownRef.current = false;
     loadScenario(false);
   };
 
@@ -2455,50 +2554,43 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           </div>
         )}
 
-        {/* Simulation overlay — match clock ticking between player chances */}
-        {phase === "sim" && simVisible && (
-          <div className="absolute inset-0 bg-gray-950/[0.92] flex flex-col items-center justify-center z-10">
-            {/* Match clock */}
-            <div className="text-5xl font-black text-white tabular-nums mb-1">{matchMinute}&#39;</div>
-            {/* Scoreline */}
-            {matchMode && (
-              <div className="text-sm font-bold text-white/85 mb-4">
-                <span className="truncate">{homeTeam}</span> <span className="text-white text-lg tabular-nums mx-1">{homeScore}</span>
-                <span className="text-white/60 mx-1">-</span>
-                <span className="text-white text-lg tabular-nums mx-1">{awayScore}</span> <span className="truncate">{awayTeam}</span>
-              </div>
-            )}
-            {/* Scrolling events */}
-            <div className="w-full max-w-[85%] space-y-1.5 overflow-hidden max-h-[55%]">
-              {simEvents.map((ev, i) => (
-                <div
-                  key={i}
-                  className={`text-xs leading-snug px-3 py-1 rounded ${
-                    ev.isGoal
-                      ? "text-amber-300 font-black bg-amber-900/30 border border-amber-500/40"
-                      : "text-gray-100 bg-gray-800/60"
-                  }`}
-                  style={{ animationDelay: `${i * 0.4}s` }}
-                >
-                  <span className="text-white/75 tabular-nums mr-1.5 font-bold">{ev.minute}&#39;</span>
-                  {ev.text}
-                </div>
-              ))}
-            </div>
-
-            {/* You advance this, not a timer. */}
-            <button
-              onClick={() => { const go = simContinueRef.current; simContinueRef.current = null; go?.(); }}
-              className="mt-5 rounded-xl bg-emerald-500 px-8 py-2.5 text-sm font-black text-white transition hover:bg-emerald-400 active:scale-[0.98]"
-            >
-              Continue
-            </button>
-          </div>
+        {/* ── The match itself ──
+            Not an overlay over the pitch: the commentary IS the match, and the
+            canvas above is what it cuts away to. See lib/star/matchLog. */}
+        {phase === "feed" && (
+          <MatchCommentary
+            lines={log}
+            minute={matchMinute}
+            homeTeam={homeTeam}
+            awayTeam={awayTeam}
+            homeScore={homeScore}
+            awayScore={awayScore}
+            energy={energy}
+            stats={stats}
+            speed={speed}
+            onSpeed={() => setSpeed(sp => (sp === 1 ? 2 : sp === 2 ? 4 : 1))}
+            pause={pause}
+            // Tapping the commentary empties the queue in one go. Nobody wants
+            // to sit through four minutes of build-up twice, and the alternative
+            // to letting them skip it is that they turn the speed up and leave
+            // it there.
+            onSkip={queue.length > 0 && !pause ? () => {
+              setLog(l => [...l, ...queue]);
+              const last = queue[queue.length - 1];
+              if (last?.minute !== undefined) {
+                matchMinuteRef.current = last.minute;
+                setMatchMinute(last.minute);
+              }
+              setQueue([]);
+            } : undefined}
+          />
         )}
       </div>
 
-      {/* Live commentary ticker */}
-      <div className="mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem]">
+      {/* Live commentary ticker — only while the pitch has the screen. The
+          commentary phase shows every line of this and more, and running both
+          is the same four lines twice. */}
+      <div className={`mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem] ${phase === "feed" ? "hidden" : ""}`}>
         <div className="flex items-center gap-1.5 mb-1">
           <span className="kib-live inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
           <span className="text-[8px] font-black tracking-[0.22em] text-white/70 uppercase">Live Commentary</span>

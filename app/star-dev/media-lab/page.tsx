@@ -6,6 +6,8 @@ import PortraitPicker from "@/components/star/PortraitPicker";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
 import PositionPicker from "@/components/star/PositionPicker";
+import MatchCommentary from "@/components/star/MatchCommentary";
+import { line as logLine } from "@/lib/star/matchLog";
 import { SAMPLE_MATCHDAY, SAMPLE_CAREER, SAMPLE_FIXTURE } from "@/components/star/media/sampleMatchday";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import type { Role } from "@/lib/star/formations";
@@ -46,6 +48,8 @@ export default function MediaLab() {
   const [showWin, setShowWin] = useState(false);
   const [showTeams, setShowTeams] = useState(false);
   const [labPlayAs, setLabPlayAs] = useState<Role | null>(null);
+  const [showFeed, setShowFeed] = useState(false);
+  const [feedSpeed, setFeedSpeed] = useState(1);
 
   const read = (file: File, set: (s: string) => void) => {
     const r = new FileReader();
@@ -189,10 +193,36 @@ export default function MediaLab() {
               >
                 Preview the team sheets
               </button>
+              <button
+                onClick={() => setShowFeed(true)}
+                className="w-full rounded-lg bg-sky-500 py-2 text-[12px] font-black uppercase text-white"
+              >
+                Preview the match commentary
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {showFeed && (
+        <div className="fixed inset-0 z-[70] bg-gray-950" onClick={() => setShowFeed(false)}>
+          <div className="relative mx-auto h-full w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <MatchCommentary
+              lines={SAMPLE_COMMENTARY}
+              minute={68}
+              homeTeam="Liverpool"
+              awayTeam="Man Utd"
+              homeScore={1}
+              awayScore={1}
+              energy={62}
+              stats={{ shots: 3, goals: 1, assists: 0, passesCompleted: 14 }}
+              speed={feedSpeed}
+              onSpeed={() => setFeedSpeed(sp => (sp === 1 ? 2 : sp === 2 ? 4 : 1))}
+              pause={null}
+            />
+          </div>
+        </div>
+      )}
 
       {showTeams && (
         <div className="fixed inset-0 z-[70] overflow-y-auto bg-gray-950">
@@ -250,6 +280,36 @@ const PLACEHOLDER_PHOTO =
        <path d="M40 200 C40 150 70 138 100 138 C130 138 160 150 160 200 Z" fill="#3f4a5a"/>
        <path d="M56 74 C60 34 140 34 144 74 C144 52 128 38 100 38 C72 38 56 52 56 74 Z" fill="#4a3527"/>
      </svg>`);
+
+/**
+ * A passage of a match, for judging the commentary screen.
+ *
+ * Written to contain every tone the screen can render — ordinary play, a goal
+ * either way, something you did, a chance that came to nothing, and the
+ * interval — because the risk in a list of styled rows is that two of the
+ * styles turn out to be indistinguishable and nobody notices until a goal reads
+ * like a throw-in.
+ */
+const SAMPLE_COMMENTARY = [
+  logLine("Kick Off", "period", 0),
+  logLine("Liverpool get us under way", "play", 1),
+  logLine("They are passing it around well", "play"),
+  logLine("It comes to Vass", "you", 12),
+  logLine("Vass plays a simple pass", "you"),
+  logLine("They push forward", "play"),
+  logLine("Man Utd have a chance to score...", "chance", 18),
+  logLine("But the shot goes wide", "play"),
+  logLine("\u26bd Man Utd score!", "oppGoal", 23),
+  logLine("Liverpool are taking it easy", "play", 31),
+  logLine("Half Time  0 - 1", "period", 45),
+  logLine("Vass collects the ball", "you", 49),
+  logLine("A great pass by Vass", "you"),
+  logLine("\u26bd Vass scores! (Salah)", "goal", 54),
+  logLine("Liverpool are moving the ball nicely...", "chance", 61),
+  logLine("But it's scrambled to safety", "play"),
+  logLine("That's nice football from Man Utd...", "chance", 68),
+  logLine("But the keeper saves it", "play"),
+];
 
 /** A busy August, for judging the shortlist card. */
 const SAMPLE_NOMINEES: GraphicSpec = {
