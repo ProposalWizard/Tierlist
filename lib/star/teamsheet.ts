@@ -315,3 +315,44 @@ export const POSITION_NAMES: Record<Role, string> = {
   CDM: "Defensive Mid", CM: "Central Mid", CAM: "Attacking Mid",
   LW: "Left Wing", RW: "Right Wing", ST: "Striker",
 };
+
+// ── Who is actually out there ───────────────────────────────────────────────
+
+/**
+ * The ids of your own club's OTHER ten starters, for a given fixture.
+ *
+ * Every place that puts a name to a team-mate's goal — a goal scored while you
+ * were off the ball, an assist credited on one you scored yourself, the man a
+ * scenario casts into a shirt beside you — used to draw from the whole squad,
+ * twenty-odd names deep. A reserve who had never made the eighteen, or a
+ * winger rested for this exact match, could still be credited with the goal
+ * that won it. Reported as exactly that: two different careers, two different
+ * players scoring in matches the team sheet said they were not part of.
+ *
+ * Computed the same way the pre-match team sheet is (`matchdayFor`, forcing
+ * yourself into it so the other ten are whoever is left once your slot is
+ * taken), so the eleven a goal can be credited to is the same eleven you were
+ * shown before kick-off.
+ *
+ * Null rather than an empty set when there is nothing to restrict to — an
+ * international fixture (no club sheet exists for it) or a squad too thin to
+ * draw eleven from — so a caller can tell "nobody is eligible" apart from
+ * "everybody is", and fall back to the full squad rather than to nobody.
+ */
+export function startingTeammateIds(career: CareerState, fixture: Fixture): Set<string> | null {
+  if (fixture.kind === "international") return null;
+  try {
+    const md = matchdayFor(career, fixture, true);
+    const mine = md.home.yours ? md.home : md.away;
+    if (!sheetReady(md) && mine.xi.length < 9) return null;
+    return new Set(mine.xi.filter(p => !p.isYou).map(p => p.id));
+  } catch {
+    return null;
+  }
+}
+
+/** The full squad, narrowed to whoever is actually out there — or the full
+ *  squad, when there is nothing to narrow by. See startingTeammateIds. */
+export function onPitchToday<T extends { id: string }>(squad: T[], ids: Set<string> | null): T[] {
+  return ids ? squad.filter(p => ids.has(p.id)) : squad;
+}

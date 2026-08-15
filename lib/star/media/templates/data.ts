@@ -120,6 +120,11 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "topScorers", weight: 3,
   },
   {
+    id: "st-assists", archetype: "stats", events: ["assist-king-race"], requires: ["assists"],
+    body: "ASSIST KING | {player} — {assists} with {left} to play.",
+    graphic: "topScorers", weight: 3,
+  },
+  {
     id: "st-table", archetype: "stats", tags: ["table"], requires: ["position"],
     body: "{club} — {position|ordinal}, {points} points, {left} to play.",
     graphic: "tableSnippet",

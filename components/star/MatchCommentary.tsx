@@ -161,9 +161,13 @@ function Line({ l }: { l: LogLine }) {
   const tone =
     l.tone === "goal" ? "bg-emerald-600/25 text-emerald-100 font-black"
       : l.tone === "oppGoal" ? "bg-red-600/20 text-red-100 font-black"
-        : l.tone === "you" ? "bg-amber-500/15 text-amber-100 font-bold"
-          : l.tone === "chance" ? "text-white/95 font-bold"
-            : "text-white/85";
+        // Follows straight under its goal — a lighter touch than the goal
+        // itself, since it is the supporting fact rather than the headline,
+        // and violet to match the Assists stat cell below.
+        : l.tone === "assist" ? "pl-8 text-violet-200 font-bold"
+          : l.tone === "you" ? "bg-amber-500/15 text-amber-100 font-bold"
+            : l.tone === "chance" ? "text-white/95 font-bold"
+              : "text-white/85";
 
   return (
     <div className={`kib-line flex items-baseline gap-2 border-b border-white/[0.04] px-3 py-1.5 ${tone}`}>
