@@ -8,6 +8,7 @@ import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { fixtureDateLabel } from "@/lib/star/calendar";
+import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
@@ -29,6 +30,7 @@ import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
+import VersusScreen from "@/components/star/VersusScreen";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
@@ -222,6 +224,8 @@ export default function StarDevPage() {
    * belongs in the feed; yours stops the game once.
    */
   const [potmWin, setPotmWin] = useState<MonthAward | null>(null);
+  /** The team sheets, shown between the pre-match screen and kick-off. */
+  const [showTeams, setShowTeams] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
   const refreshSquads = useCallback(async () => {
@@ -882,6 +886,36 @@ export default function StarDevPage() {
 
   // Pre-match confirmation
   if (phase === "pre-match" && nextFixture) {
+    // ── The team sheets ──
+    //
+    // Between the pre-match screen and kick-off, because the eleven you are
+    // about to play against is the last thing worth knowing and the game has
+    // never once said it. Only for club football: an international squad is not
+    // in `leagueSquads` and there is nothing honest to draw.
+    // Decided BEFORE the branch, never inside it: falling back by calling a
+    // state setter mid-render is a React error, and "can we draw this?" is a
+    // question about data that render is entitled to ask.
+    const matchday = nextFixture.kind === "international"
+      ? null
+      : matchdayFor(career, nextFixture, selection?.status === "1st Team");
+    const teamsReady = !!matchday && sheetReady(matchday);
+
+    if (showTeams && matchday && teamsReady) {
+      return (
+        <VersusScreen
+          matchday={matchday}
+          date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)}
+          competition={
+            !nextFixture.kind || nextFixture.kind === "league"
+              ? `Premier League · Matchday ${nextFixture.week}`
+              : `${nextFixture.competition}${nextFixture.round ? ` · ${nextFixture.round}` : ""}`
+          }
+          onKickOff={() => { setShowTeams(false); handlePlayMatch(); }}
+          onBack={() => setShowTeams(false)}
+        />
+      );
+    }
+
     const mine = nextFixture.kind === "international" ? nationOf(career) : career.player.club;
     const home = nextFixture.home ? mine : nextFixture.opponent;
     const away = nextFixture.home ? nextFixture.opponent : mine;
@@ -986,8 +1020,16 @@ export default function StarDevPage() {
             {selection?.status === "Squad" ? (
               <button onClick={handleWatchFromStands} className="py-3 bg-gray-600 hover:bg-gray-500 rounded-xl font-black">Watch from the stands</button>
             ) : (
-              <button onClick={handlePlayMatch} className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">
-                {selection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
+              <button
+                onClick={() => (teamsReady ? setShowTeams(true) : handlePlayMatch())}
+                className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black"
+              >
+                {/* No sheets for an international, and none for a club whose
+                    squad has not been fetched — both go straight to the match
+                    rather than to a pitch with holes in it. */}
+                {teamsReady
+                  ? "Team sheets →"
+                  : selection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
               </button>
             )}
           </div>
