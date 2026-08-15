@@ -11,11 +11,13 @@ interface Props {
   /** A dot on the Feed button when there is reaction the player has not read. */
   mediaUnread?: boolean;
   nextMatchLabel?: string;
+  /** "Sat 14 Feb" — see lib/star/calendar. */
+  nextMatchDate?: string;
 }
 
 export type NavTab = "league" | "skills" | "life" | "media" | "play";
 
-export default function DashboardShell({ career, onExit, children, onNavigate, activeNav = null, nextMatchLabel, mediaUnread }: Props) {
+export default function DashboardShell({ career, onExit, children, onNavigate, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -93,9 +95,14 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
         {/* Next match banner */}
         {nextMatchLabel && (
           <div className="mx-3 mb-1 bg-gradient-to-r from-gray-700 to-gray-600 border border-gray-500 rounded-lg px-3 py-1.5 flex items-center justify-between">
-            <div className="text-[10px] font-black text-white/85">Year {career.season}</div>
-            <div className="text-xs font-black text-white truncate mx-2">{nextMatchLabel}</div>
-            <div className="text-[10px] font-black text-white/85">Week {career.week}</div>
+            {/* The date, not just the week. This banner is the most-looked-at
+                strip in the game and it read "Week 25", which is a row number.
+                "Sat 14 Feb" is where you are in a season. */}
+            <div className="shrink-0 text-[10px] font-black text-white/85">
+              {nextMatchDate ?? `Year ${career.season}`}
+            </div>
+            <div className="mx-2 truncate text-xs font-black text-white">{nextMatchLabel}</div>
+            <div className="shrink-0 text-[10px] font-black text-white/85">Week {career.week}</div>
           </div>
         )}
 

@@ -7,10 +7,13 @@ import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagu
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
+import { fixtureDateLabel } from "@/lib/star/calendar";
+import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
+import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats } from "@/lib/star/leagueSquads";
@@ -26,6 +29,8 @@ import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
 import LifeScreen from "@/components/star/LifeScreen";
+import PotmWinModal from "@/components/star/PotmWinModal";
+import VersusScreen from "@/components/star/VersusScreen";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
@@ -164,6 +169,11 @@ export default function StarDevPage() {
   const nextMatchLabel = nextFixture
     ? `Next: ${nextFixture.home ? myTeam(nextFixture) : nextFixture.opponent} v ${nextFixture.home ? nextFixture.opponent : myTeam(nextFixture)}`
     : "Season complete";
+  // When it is played, in real dates. The fixture list has had these since the
+  // calendar landed; this is the screen everybody actually looks at.
+  const nextMatchDate = nextFixture && career
+    ? fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)
+    : null;
 
   /**
    * A new career, with the actual squad of the club you picked.
@@ -207,6 +217,16 @@ export default function StarDevPage() {
    * has to be a way to say "I have made my edits, bring them in". Goals and
    * assists survive; see mergeSquadStats.
    */
+  /**
+   * The month you won, held until you dismiss it.
+   *
+   * Only ever set when the winner is you. Somebody else taking it is news and
+   * belongs in the feed; yours stops the game once.
+   */
+  const [potmWin, setPotmWin] = useState<MonthAward | null>(null);
+  /** The team sheets, shown between the pre-match screen and kick-off. */
+  const [showTeams, setShowTeams] = useState(false);
+
   const [refreshing, setRefreshing] = useState(false);
   const refreshSquads = useCallback(async () => {
     if (!career || refreshing) return;
@@ -351,6 +371,7 @@ export default function StarDevPage() {
         `potm-${potmAwarded.season}-${potmAwarded.month}`,
       );
     }
+    if (potmAwarded?.isYou) setPotmWin(potmAwarded);
     setCareer(next);
     setPhase("post-match");
   }, [career, nextFixture]);
@@ -865,6 +886,36 @@ export default function StarDevPage() {
 
   // Pre-match confirmation
   if (phase === "pre-match" && nextFixture) {
+    // ── The team sheets ──
+    //
+    // Between the pre-match screen and kick-off, because the eleven you are
+    // about to play against is the last thing worth knowing and the game has
+    // never once said it. Only for club football: an international squad is not
+    // in `leagueSquads` and there is nothing honest to draw.
+    // Decided BEFORE the branch, never inside it: falling back by calling a
+    // state setter mid-render is a React error, and "can we draw this?" is a
+    // question about data that render is entitled to ask.
+    const matchday = nextFixture.kind === "international"
+      ? null
+      : matchdayFor(career, nextFixture, selection?.status === "1st Team");
+    const teamsReady = !!matchday && sheetReady(matchday);
+
+    if (showTeams && matchday && teamsReady) {
+      return (
+        <VersusScreen
+          matchday={matchday}
+          date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)}
+          competition={
+            !nextFixture.kind || nextFixture.kind === "league"
+              ? `Premier League · Matchday ${nextFixture.week}`
+              : `${nextFixture.competition}${nextFixture.round ? ` · ${nextFixture.round}` : ""}`
+          }
+          onKickOff={() => { setShowTeams(false); handlePlayMatch(); }}
+          onBack={() => setShowTeams(false)}
+        />
+      );
+    }
+
     const mine = nextFixture.kind === "international" ? nationOf(career) : career.player.club;
     const home = nextFixture.home ? mine : nextFixture.opponent;
     const away = nextFixture.home ? nextFixture.opponent : mine;
@@ -969,8 +1020,16 @@ export default function StarDevPage() {
             {selection?.status === "Squad" ? (
               <button onClick={handleWatchFromStands} className="py-3 bg-gray-600 hover:bg-gray-500 rounded-xl font-black">Watch from the stands</button>
             ) : (
-              <button onClick={handlePlayMatch} className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">
-                {selection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
+              <button
+                onClick={() => (teamsReady ? setShowTeams(true) : handlePlayMatch())}
+                className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black"
+              >
+                {/* No sheets for an international, and none for a club whose
+                    squad has not been fetched — both go straight to the match
+                    rather than to a pitch with holes in it. */}
+                {teamsReady
+                  ? "Team sheets →"
+                  : selection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
               </button>
             )}
           </div>
@@ -987,6 +1046,7 @@ export default function StarDevPage() {
       activeNav={activeNav}
       mediaUnread={hasFreshMedia(career) && activeNav !== "media"}
       nextMatchLabel={nextMatchLabel}
+      nextMatchDate={nextMatchDate ?? undefined}
     >
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
@@ -1055,6 +1115,11 @@ export default function StarDevPage() {
           <BackChip onBack={handleBackToDashboard} />
           <SkillsScreen career={career} onTrain={handleTrain} />
         </div>
+      )}
+      {/* Above every phase, because winning it can land on the post-match
+          screen and must not be something you have to go looking for. */}
+      {potmWin && career && (
+        <PotmWinModal award={potmWin} career={career} onClose={() => setPotmWin(null)} />
       )}
     </DashboardShell>
   );

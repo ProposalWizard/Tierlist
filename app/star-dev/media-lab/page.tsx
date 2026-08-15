@@ -3,6 +3,9 @@ import { useCallback, useState } from "react";
 import TransferHereWeGo01 from "@/components/star/media/templates/TransferHereWeGo01";
 import Graphic from "@/components/star/media/Graphics";
 import PortraitPicker from "@/components/star/PortraitPicker";
+import PotmWinModal from "@/components/star/PotmWinModal";
+import VersusScreen from "@/components/star/VersusScreen";
+import { SAMPLE_MATCHDAY } from "@/components/star/media/sampleMatchday";
 import type { GraphicSpec } from "@/lib/star/media/types";
 
 /**
@@ -37,6 +40,8 @@ export default function MediaLab() {
   const [figureY, setFigureY] = useState(0);
   const [treatment, setTreatment] = useState(0.85);
   const [club, setClub] = useState(0);
+  const [showWin, setShowWin] = useState(false);
+  const [showTeams, setShowTeams] = useState(false);
 
   const read = (file: File, set: (s: string) => void) => {
     const r = new FileReader();
@@ -168,10 +173,48 @@ export default function MediaLab() {
               <Graphic spec={SAMPLE_WINNER_YOU} />
               <Graphic spec={SAMPLE_WINNER_PHOTO} />
               <PortraitPicker value={undefined} onChange={() => {}} club="Liverpool" number={19} />
+              <button
+                onClick={() => setShowWin(true)}
+                className="w-full rounded-lg bg-amber-400 py-2 text-[12px] font-black uppercase text-gray-950"
+              >
+                Preview the "you won it" modal
+              </button>
+              <button
+                onClick={() => setShowTeams(true)}
+                className="w-full rounded-lg bg-emerald-500 py-2 text-[12px] font-black uppercase text-white"
+              >
+                Preview the team sheets
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {showTeams && (
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-gray-950">
+          <VersusScreen
+            matchday={SAMPLE_MATCHDAY}
+            date="Sat 29 Aug"
+            competition="Premier League · Matchday 3"
+            onKickOff={() => setShowTeams(false)}
+            onBack={() => setShowTeams(false)}
+          />
+        </div>
+      )}
+
+      {showWin && (
+        <PotmWinModal
+          award={{
+            season: 1, month: 5, monthName: "January", winner: "Vass", club: "Liverpool",
+            goals: 7, assists: 3, isYou: true, nominees: [],
+          }}
+          career={{
+            player: { firstName: "Mikey", lastName: "Vass", club: "Liverpool" },
+            squadNumber: 19,
+          } as never}
+          onClose={() => setShowWin(false)}
+        />
+      )}
     </div>
   );
 }
@@ -218,7 +261,6 @@ const SAMPLE_WINNER: GraphicSpec = {
   assists: 1,
   isYou: false,
   face: FACE(239085),
-  runnerUp: "Calafiori",
   yourPlace: 4,
 };
 
@@ -233,7 +275,6 @@ const SAMPLE_WINNER_YOU: GraphicSpec = {
   assists: 3,
   isYou: true,
   number: 19,
-  runnerUp: "Haaland",
 };
 
 /** The same, once you have taken a picture — the treated case. */

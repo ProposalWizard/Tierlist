@@ -296,7 +296,9 @@ const CLUBS = [
   });
   const career: CareerState = { ...base, results: results as never };
 
-  const asRecord = (week: number) => ({ week }) as never;
+  const asRecord = (week: number, month = 0) =>
+    ({ week, potmRace: { month, monthName: "August", contenders: 9, goals: 0, assists: 0,
+      decidesToday: false, decidesNextWeek: true, leader: "x" } }) as never;
   const asEvent = { id: "potm-decides", facts: {}, subject: { kind: "you" }, tags: [] } as never;
   const rng = mulberry(7);
 
@@ -323,7 +325,7 @@ const CLUBS = [
   }
 
   // A month nobody has played is not a shortlist with gaps — it is no card.
-  const empty = buildGraphic("potmNominees", asEvent, asRecord(30), career, {} as never, rng);
+  const empty = buildGraphic("potmNominees", asEvent, asRecord(30, 7), career, {} as never, rng);
   check(empty === undefined, "a month with no football produces no card at all");
 
   // Nor is a thin one. Three scorers in a grid of eight is five empty boxes.
@@ -462,14 +464,14 @@ const CLUBS = [
     "potmWinner",
     { id: "potm-winner", tags: [], subject: { kind: "you" },
       facts: { month: "September", winner: "Haaland", winnerClub: "Manchester City",
-        goals: 6, assists: 1, runnerUp: "Saka", place: 4 } } as never,
+        goals: 6, assists: 1, place: 4 } } as never,
     { week: 8 } as never, c, {} as never, mulberry(11),
   );
   if (spec?.type === "potmWinner") {
     check(spec.lastName === "Haaland", `the surname is set on its own (${spec.lastName})`);
     check(spec.month === "September", "and the month it was won in");
     check(spec.goals === 6 && spec.assists === 1, "with the numbers that won it");
-    check(spec.runnerUp === "Saka", "and who he beat");
+    check(!("runnerUp" in spec), "and nothing about who he beat — the card does not say it");
     check(spec.yourPlace === 4, "and where you came");
     check(spec.isYou === false && spec.number === undefined, "somebody else's card is not yours");
   } else {
@@ -513,6 +515,74 @@ const CLUBS = [
   } else {
     check(false, "the winner card built with a photograph");
   }
+}
+
+// ── Both cards actually reach the feed, over a real season ──────────────────
+//
+// The regression this exists to stop: `record.ts` asked the OLD four-week
+// `monthOf` while `careerFlow` used the real calendar, so the two disagreed
+// about which month a week belonged to. `monthRace` was handed an index the
+// results were not filed under, came back with two or three contenders instead
+// of nine, tripped the "fewer than six is not a shortlist" guard, and the
+// nominees card silently never rendered. Reported as exactly that: the winner
+// showed up in the feed and the nominees never did.
+//
+// Counting them over a played season is the only way to catch it — every piece
+// in isolation looked right.
+{
+  const player = {
+    firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
+    club: "Liverpool", nationality: "England",
+  } as never;
+  let c: CareerState = {
+    ...makeInitialCareer(player, CLUBS),
+    leagueSquads: CLUBS.map(x => buildLeagueSquad(x, roster(x))),
+  };
+  const stats = {
+    homeScore: 2, awayScore: 1, chances: 2, goals: 1, assists: 1, passes: 10,
+    rating: 7.6, starMan: false, bossChange: 0, teamChange: 0, fansChange: 0,
+    wage: 0, goalBonus: 0, sponsorPay: 0, totalCash: 0,
+    goalEvents: [{ minute: 20, scorer: "Mikey Vass", isUserGoal: true }],
+  } as never;
+
+  let shortlists = 0, winners = 0, awards = 0;
+  const monthsSeen = new Set<string>();
+  for (let w = 0; w < 30; w++) {
+    const f = nextFixtureFor(c);
+    if (!f) break;
+    const before = c;
+    const out = creditMatchResult(c, f, stats);
+    c = out.career;
+    if (out.potmAwarded) awards++;
+
+    const rec = buildMatchRecord(before, c, f, stats);
+    const events = detectMatch(rec, emptyMemory());
+    for (const e of events) {
+      if (e.id === "potm-decides") {
+        shortlists++;
+        monthsSeen.add(String(e.facts.month));
+        // …and the card it carries must actually build. A fired event with no
+        // graphic is the same silence with an extra step.
+        const card = buildGraphic("potmNominees", e, rec, c, emptyMemory(), mulberry(w + 1));
+        check(card?.type === "potmNominees", `week ${f.week}: the shortlist event builds its card`);
+        if (card?.type === "potmNominees") {
+          check(card.nominees.length === 8, `week ${f.week}: eight nominees (${card.nominees.length})`);
+        }
+      }
+      if (e.id === "potm-won" || e.id === "potm-winner") winners++;
+    }
+  }
+
+  check(awards > 0, `months were awarded (${awards})`);
+  check(shortlists > 0, `and the shortlist card fired at all (${shortlists})`);
+  check(winners > 0, `as did the winner card (${winners})`);
+  // One shortlist per month, and never the same month twice.
+  check(monthsSeen.size === shortlists,
+    `one shortlist per month, not several (${shortlists} cards, ${monthsSeen.size} months)`);
+  // The two are a pair: a month that gets a winner should have had a shortlist
+  // the round before it.
+  check(Math.abs(shortlists - winners) <= 1,
+    `the two arrive in pairs (${shortlists} shortlists, ${winners} winners)`);
 }
 
 // ── Faces ───────────────────────────────────────────────────────────────────
@@ -586,8 +656,11 @@ const CLUBS = [
         ], ag: [] },
     ] as never,
   };
+  const asRecordFor = (month: number) =>
+    ({ week: 4, potmRace: { month, monthName: "August", contenders: 9, goals: 0, assists: 0,
+      decidesToday: false, decidesNextWeek: true, leader: "x" } }) as never;
   const card = buildGraphic("potmNominees", { id: "potm-decides", facts: {}, subject: { kind: "you" }, tags: [] } as never,
-    { week: 4 } as never, withYou, {} as never, mulberry(5));
+    asRecordFor(0), withYou, {} as never, mulberry(5));
   if (card?.type === "potmNominees") {
     const mine = card.nominees.find(n => n.isYou);
     check(mine?.number === 19, `your tile carries your squad number (${mine?.number})`);

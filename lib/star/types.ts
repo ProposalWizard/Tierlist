@@ -121,6 +121,13 @@ export interface LeaguePlayer {
    * real footballers in it to photograph.
    */
   image?: string;
+  /**
+   * Where he is from, for the flag beside his name on a team sheet.
+   *
+   * Same reasoning as `image`: not needed to answer "who scored?", and needed
+   * the moment the pre-match screen names an opposition eleven.
+   */
+  nation?: string;
 }
 
 export interface LeagueSquad {

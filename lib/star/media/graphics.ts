@@ -1,7 +1,7 @@
 import type { CareerState } from "../types";
 import { sortLeague } from "../season";
 import { goldenBootRace } from "../recognition";
-import { MONTH_NAMES, faceOf, monthOf, monthRace, playerOf } from "../potm";
+import { MONTH_NAMES, faceOf, monthOfCareer, monthRace, playerOf } from "../potm";
 import type {
   FootballEvent, GraphicKind, GraphicSpec, MatchRecord, StoryMemory,
 } from "./types";
@@ -121,7 +121,12 @@ export function buildGraphic(
       // `monthRace`, not `voteMonth`. The shortlist is published before the
       // panel sits, so it is ordered by what the month's football actually was
       // — and using the vote here would leak its result a round early.
-      const month = monthOf(r.week);
+      // Straight off the record. Recomputing it here is what broke this card:
+      // `r.week` is the CAREER week, which is not the fixture's week once a cup
+      // tie has been played, so the month came out wrong and the race came back
+      // empty. The record already decided which month this is — see potmRace.
+      const month = r.potmRace?.month;
+      if (month === undefined) return undefined;
       const race = monthRace(career, month).slice(0, 8);
       // Four names is not a shortlist, it is a table with gaps in it. Early in a
       // month, or after a weekend of goalless draws, there genuinely are not
@@ -167,7 +172,6 @@ export function buildGraphic(
         assists: Number(f.assists ?? 0),
         isYou,
         ...(isYou ? yourFace(career) : { face: known?.image }),
-        ...(f.runnerUp ? { runnerUp: String(f.runnerUp) } : {}),
         ...(!isYou && f.place !== undefined ? { yourPlace: Number(f.place) } : {}),
       };
     }

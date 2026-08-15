@@ -182,7 +182,6 @@ const RUN_ENDED: Detector = (r, m) => {
 const POTM_AWARD: Detector = (r) => {
   const a = r.potmAward;
   if (!a) return null;
-  const runnerUp = a.nominees.find(n => n.name !== a.winner);
   return ev(
     a.isYou ? "potm-won" : "potm-winner",
     you(r),
@@ -195,7 +194,6 @@ const POTM_AWARD: Detector = (r) => {
       winnerClub: a.club,
       goals: a.goals,
       assists: a.assists,
-      ...(runnerUp ? { runnerUp: runnerUp.name } : {}),
       ...(a.yourPlace !== undefined ? { place: a.yourPlace } : {}),
     },
     "hour",

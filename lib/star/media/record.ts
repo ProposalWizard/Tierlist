@@ -1,7 +1,7 @@
 import type { CareerState, Fixture, MatchStats } from "../types";
 import { sortLeague } from "../season";
 import { isDerby } from "../rivals";
-import { monthOf, monthRace, endsMonth, MONTH_NAMES } from "../potm";
+import { monthOfCareer, monthRace, endsMonthOn, MONTH_NAMES } from "../potm";
 import type { MatchRecord, GoalRecord, TableSnapshot } from "./types";
 
 /**
@@ -97,19 +97,27 @@ export function buildMatchRecord(
   // is built from. League only — there is no Player of the Month for a cup tie.
   const potmRace = (() => {
     if (kind !== "league") return undefined;
-    const month = monthOf(fixture.week);
+    const month = monthOfCareer(after, fixture.week);
     const race = monthRace(after, month);
     if (race.length === 0) return undefined;
     const i = race.findIndex(c => c.isYou);
     const lastWeek = Math.max(...after.fixtures.map(f => f.week), fixture.week);
     return {
+      month,
       monthName: MONTH_NAMES[month],
       place: i >= 0 ? i + 1 : undefined,
       contenders: race.length,
       goals: i >= 0 ? race[i].goals : 0,
       assists: i >= 0 ? race[i].assists : 0,
-      decidesToday: endsMonth(fixture.week, lastWeek),
-      decidesNextWeek: !endsMonth(fixture.week, lastWeek) && endsMonth(fixture.week + 1, lastWeek),
+      // The SAME functions creditMatchResult uses to decide when to run the
+      // vote. They used to be the old four-week versions here and the real
+      // calendar there, so the record and the career disagreed about which month
+      // a week belonged to — which meant `monthRace` was asked for a month the
+      // results were not filed under, came back with two or three contenders
+      // instead of nine, and the shortlist card silently never rendered.
+      decidesToday: endsMonthOn(after, fixture.week, lastWeek),
+      decidesNextWeek: !endsMonthOn(after, fixture.week, lastWeek)
+        && endsMonthOn(after, fixture.week + 1, lastWeek),
       leader: race[0].name,
     };
   })();
