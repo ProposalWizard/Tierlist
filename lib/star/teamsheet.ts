@@ -210,7 +210,21 @@ function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
  * it is false the sheet is simply the eleven he picked instead of you, which is
  * the honest answer and the one the screen above it is already giving.
  */
-export function matchdayFor(career: CareerState, fixture: Fixture, starting: boolean): Matchday {
+export function matchdayFor(
+  career: CareerState,
+  fixture: Fixture,
+  starting: boolean,
+  /**
+   * Play somewhere other than your named position, for this match only.
+   *
+   * Nothing downstream needs to know this is a departure from normal — `you`
+   * simply claims a different `position`, and `autoPick`/`forceIntoXI` do
+   * exactly what they always do: put you in the slot for that role and let your
+   * actual position's best man take the shirt you just vacated. See
+   * `alternatePositions` for which roles are worth offering.
+   */
+  playAs?: Role,
+): Matchday {
   const mine = career.player.club;
   const theirs = fixture.opponent;
 
@@ -218,7 +232,7 @@ export function matchdayFor(career: CareerState, fixture: Fixture, starting: boo
     id: "you",
     name: `${career.player.firstName} ${career.player.lastName}`,
     short: career.player.lastName,
-    position: (career.player.position as Role) ?? "ST",
+    position: playAs ?? (career.player.position as Role) ?? "ST",
     // Rated off your star rating so you are not permanently the worst man on
     // the sheet — 2.5 stars is a squad player and 5 is the best in the league.
     overall: Math.round(58 + (career.starRating ?? 2.5) * 6.5),
@@ -245,3 +259,59 @@ export function matchdayFor(career: CareerState, fixture: Fixture, starting: boo
 export function sheetReady(m: Matchday): boolean {
   return m.home.xi.length >= 9 && m.away.xi.length >= 9;
 }
+
+// ── Asking to play somewhere else ───────────────────────────────────────────
+
+/**
+ * Where a man in this position could plausibly be asked to play instead.
+ *
+ * Not the fitness graph in formations.ts — that one is tuned for "who is an
+ * acceptable emergency fill-in for an empty slot", which is a different
+ * question and a more forgiving one. This is "what a manager would actually ask
+ * a specialist to do": a striker drops into the hole or goes wide, a winger
+ * cuts inside or swaps flanks, a deep midfielder pushes on. A centre-back or a
+ * goalkeeper gets nothing — that is not a request anyone makes.
+ *
+ * `LM`/`RM` are not separate values here because they are not a separate `Role`
+ * — every formation that plays a flat midfield four labels the `LW`/`RW` slot
+ * that way already (see formations.ts), so asking for `LW` is asking for
+ * "the left of midfield" in whichever shape actually has one.
+ */
+const ALTERNATE_POSITIONS: Partial<Record<Role, Role[]>> = {
+  ST: ["CAM", "LW", "RW", "CM"],
+  CAM: ["ST", "LW", "RW", "CM"],
+  LW: ["ST", "RW", "CAM", "CM"],
+  RW: ["ST", "LW", "CAM", "CM"],
+  CM: ["CAM", "CDM", "LW", "RW"],
+  CDM: ["CM", "CB"],
+  LB: ["LW", "CM"],
+  RB: ["RW", "CM"],
+  CB: ["CDM"],
+};
+
+export function alternatePositions(realPosition: string): Role[] {
+  return ALTERNATE_POSITIONS[realPosition as Role] ?? [];
+}
+
+/**
+ * The alternates worth OFFERING, for the shape your club actually plays.
+ *
+ * Not every formation has a slot for every role — 4-3-2-1 has no wide men at
+ * all, three centre-mids and two number tens and nothing out wide — and asking
+ * `forceIntoXI` for a role with no matching slot does not refuse, it falls back
+ * to "the weakest outfielder", which is however a full-back ends up standing in
+ * for a winger. That is not what asking to play wide should do, so the picker
+ * never offers a role the shape cannot seat you in to begin with.
+ */
+export function offeredPositions(realPosition: string, formation: Formation): Role[] {
+  const has = new Set(formation.slots.map(s => s.role));
+  return alternatePositions(realPosition).filter(r => has.has(r));
+}
+
+/** What to call a role in a picker — not what the pitch calls the SLOT, which
+ *  depends on the formation and is decided at render time. */
+export const POSITION_NAMES: Record<Role, string> = {
+  GK: "Goalkeeper", CB: "Centre Back", LB: "Left Back", RB: "Right Back",
+  CDM: "Defensive Mid", CM: "Central Mid", CAM: "Attacking Mid",
+  LW: "Left Wing", RW: "Right Wing", ST: "Striker",
+};

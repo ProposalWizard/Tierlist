@@ -9,6 +9,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { fixtureDateLabel } from "@/lib/star/calendar";
 import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
+import type { Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
@@ -16,7 +17,7 @@ import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/st
 import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
-import { fetchLeagueSquads, mergeLeagueSquadStats } from "@/lib/star/leagueSquads";
+import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads } from "@/lib/star/leagueSquads";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -92,6 +93,13 @@ export default function StarDevPage() {
     if (!(saved.leagueSquads ?? []).length) {
       fetchLeagueSquads(saved.league.map(t => t.name)).then((leagueSquads) => {
         setCareer(c => (c && !(c.leagueSquads ?? []).length ? { ...c, leagueSquads } : c));
+      });
+    } else if (shouldUpgradeLeagueSquads(saved.leagueSquads!)) {
+      // A division fetched before faces and flags existed. Re-fetched once, in
+      // the background, and merged rather than replaced — this season's goals
+      // and assists were real and stay real; only the missing fields fill in.
+      fetchLeagueSquads(saved.league.map(t => t.name)).then((fresh) => {
+        setCareer(c => (c ? { ...c, leagueSquads: mergeLeagueSquadStats(fresh, c.leagueSquads ?? []) } : c));
       });
     }
 
@@ -226,6 +234,12 @@ export default function StarDevPage() {
   const [potmWin, setPotmWin] = useState<MonthAward | null>(null);
   /** The team sheets, shown between the pre-match screen and kick-off. */
   const [showTeams, setShowTeams] = useState(false);
+  /**
+   * Asked to play somewhere other than your named position, for the match about
+   * to be played. Reset the moment you kick off, so the next match always
+   * offers your real position first rather than quietly keeping today's choice.
+   */
+  const [playAs, setPlayAs] = useState<Role | null>(null);
 
   const [refreshing, setRefreshing] = useState(false);
   const refreshSquads = useCallback(async () => {
@@ -897,7 +911,7 @@ export default function StarDevPage() {
     // question about data that render is entitled to ask.
     const matchday = nextFixture.kind === "international"
       ? null
-      : matchdayFor(career, nextFixture, selection?.status === "1st Team");
+      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined);
     const teamsReady = !!matchday && sheetReady(matchday);
 
     if (showTeams && matchday && teamsReady) {
@@ -910,7 +924,10 @@ export default function StarDevPage() {
               ? `Premier League · Matchday ${nextFixture.week}`
               : `${nextFixture.competition}${nextFixture.round ? ` · ${nextFixture.round}` : ""}`
           }
-          onKickOff={() => { setShowTeams(false); handlePlayMatch(); }}
+          realPosition={career.player.position as Role}
+          playAs={playAs}
+          onPlayAs={setPlayAs}
+          onKickOff={() => { setShowTeams(false); setPlayAs(null); handlePlayMatch(); }}
           onBack={() => setShowTeams(false)}
         />
       );

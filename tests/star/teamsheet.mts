@@ -1,4 +1,7 @@
-import { matchdayFor, sheetReady, formationForClub } from "../../lib/star/teamsheet";
+import {
+  matchdayFor, sheetReady, formationForClub, alternatePositions, offeredPositions,
+} from "../../lib/star/teamsheet";
+import { formationOf } from "../../lib/star/formations";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { buildLeagueSquad, type RosterRow } from "../../lib/star/leagueSquads";
 import { fitness } from "../../lib/star/formations";
@@ -165,6 +168,51 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
   // Nothing is invented: a man with no photograph gets none rather than
   // somebody else's.
   check(theirs.some(p => !p.face), "…and a man without one is simply without one");
+}
+
+// ── Asking to play somewhere else ────────────────────────────────────────────
+{
+  const c = career();   // you are ST, per the fixture above
+  const fx = fixture("Everton", true);
+  const shape = formationForClub("Liverpool");
+
+  const asStriker = matchdayFor(c, fx, true);
+  const asStrikerYou = asStriker.home.xi.find(p => p.isYou);
+  check(asStrikerYou?.role === "ST", `by default you take your own slot (${asStrikerYou?.role})`);
+
+  // Only what the club's own shape can actually seat you in — see
+  // offeredPositions. A formation with no wide men (the "Christmas tree",
+  // 4-3-2-1) has nothing to offer for LW, and asking for it anyway used to fall
+  // back to "the weakest outfielder", which was a full-back standing in for a
+  // winger. This is the same list VersusScreen offers as buttons.
+  const offered = offeredPositions("ST", shape);
+  check(offered.every(r => shape.slots.some(s => s.role === r)),
+    `every offered role is one the shape actually has (${shape.name}: ${offered.join(",")})`);
+
+  for (const role of offered) {
+    const md = matchdayFor(c, fx, true, role);
+    const you = md.home.xi.find(p => p.isYou);
+    check(you?.role === role, `asking for ${role} seats you at ${role} (got ${you?.role})`);
+    check(md.home.xi.length === 11, `…and ${role} is still an eleven`);
+    // The real striker did not stop existing — he plays the shirt you vacated.
+    const strikers = md.home.xi.filter(p => p.role === "ST");
+    check(strikers.length === (role === "ST" ? 1 : 1) && !strikers.some(s => s.isYou),
+      `your club's actual striker starts at ST instead (${strikers.map(s => s.short).join(",")})`);
+  }
+
+  // Across every shape a club can actually play, offeredPositions never lies
+  // about what is there — this is the check that would have caught the bug.
+  for (const shapeId of ["433", "4231", "442", "352", "4321", "4141", "3421"]) {
+    const f = formationOf(shapeId);
+    for (const real of ["ST", "CM", "CB"] as const) {
+      const off = offeredPositions(real, f);
+      check(off.every(r => f.slots.some(s => s.role === r)),
+        `${f.name}: nothing is offered for ${real} that the shape does not have (${off.join(",")})`);
+    }
+  }
+
+  // A goalkeeper has nothing sensible to ask for.
+  check(alternatePositions("GK").length === 0, "a goalkeeper has no alternates offered");
 }
 
 // ── A thin or missing squad does not produce a broken pitch ─────────────────

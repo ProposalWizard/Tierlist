@@ -70,7 +70,9 @@ function roster(club: string): RosterRow[] {
   }));
 }
 
-const career = {
+// Exported alongside the pre-built matchday so the bench can exercise the
+// "play as" picker too, which needs to call matchdayFor again itself.
+export const SAMPLE_CAREER = {
   player: {
     firstName: "Mikey", lastName: "Vass", age: 19, position: "ST",
     club: "Liverpool", nationality: "England", startYear: 2027,
@@ -85,6 +87,6 @@ const career = {
   leagueSquads: CLUBS.map(c => buildLeagueSquad(c, roster(c))),
 } as unknown as CareerState;
 
-const fixture: Fixture = { week: 3, opponent: "Manchester United", home: true, played: false };
+export const SAMPLE_FIXTURE: Fixture = { week: 3, opponent: "Manchester United", home: true, played: false };
 
-export const SAMPLE_MATCHDAY = matchdayFor(career, fixture, true);
+export const SAMPLE_MATCHDAY = matchdayFor(SAMPLE_CAREER, SAMPLE_FIXTURE, true);

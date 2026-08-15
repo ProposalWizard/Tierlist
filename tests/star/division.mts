@@ -1,5 +1,8 @@
 import { buildFixtures, playLeagueWeek, buildLeague, mulberry32, updateLeagueWithUserResult } from "../../lib/star/season";
-import { buildLeagueSquad, nameGoals, resetLeagueSquads, mergeLeagueSquadStats, type RosterRow } from "../../lib/star/leagueSquads";
+import {
+  buildLeagueSquad, nameGoals, resetLeagueSquads, mergeLeagueSquadStats,
+  shouldUpgradeLeagueSquads, type RosterRow,
+} from "../../lib/star/leagueSquads";
 import { goldenBootRace, assistRace } from "../../lib/star/recognition";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import type { CareerState, LeagueSquad } from "../../lib/star/types";
@@ -245,6 +248,46 @@ function roster(club: string, n = 26): RosterRow[] {
   check(!shouldUpgradeSquad(mixed), "…and so is one that is mostly real");
 
   check(shouldUpgradeSquad([]), "an empty squad is filled");
+}
+
+// ── …and so does a division fetched before faces and flags existed ──────────
+//
+// image_url and nationality joined the league-squads query after clubs started
+// being cached, and a career already holding a full leagueSquads list never
+// re-fetches on its own — the fetch only fires when the list is empty. Reported
+// as exactly this: the versus screen drew photographs and flags for your own
+// squad and bare initials for the other nineteen clubs, because your own squad
+// comes through a path that always carried those fields and the division did
+// not.
+{
+  const withoutEither: LeagueSquad[] = [
+    { club: "Arsenal", players: [{ id: "a1", name: "Saka", position: "RW", overall: 88, goals: 0, assists: 0 }] },
+  ];
+  check(shouldUpgradeLeagueSquads(withoutEither), "a division with no faces or flags at all is upgraded");
+
+  const withImageOnly: LeagueSquad[] = [
+    { club: "Arsenal", players: [{ id: "a1", name: "Saka", position: "RW", overall: 88, goals: 0, assists: 0, image: "https://cdn/a1.png" }] },
+  ];
+  check(shouldUpgradeLeagueSquads(withImageOnly),
+    "…and so is one with photographs but no nationality — nation is the signal, not image");
+
+  const withNation: LeagueSquad[] = [
+    { club: "Arsenal", players: [{ id: "a1", name: "Saka", position: "RW", overall: 88, goals: 0, assists: 0, nation: "England" }] },
+  ];
+  check(!shouldUpgradeLeagueSquads(withNation), "a division that has nationalities is left alone");
+
+  // Real life: twenty clubs, and only one player anywhere needs a nation set to
+  // prove the fetch already carries the field — a sparse import is not a stale
+  // cache.
+  const mostlyBare: LeagueSquad[] = CLUBS.map((c, i) => ({
+    club: c,
+    players: [{ id: `${c}-1`, name: "Somebody", position: "CM" as const, overall: 70, goals: 0, assists: 0,
+      ...(i === 0 ? { nation: "France" } : {}) }],
+  }));
+  check(!shouldUpgradeLeagueSquads(mostlyBare),
+    "one real nationality anywhere in the division is enough to trust the rest of the import");
+
+  check(!shouldUpgradeLeagueSquads([]), "no division at all is not a stale one — there is nothing to upgrade yet");
 }
 
 // ── Refreshing a squad keeps what happened in it ────────────────────────────

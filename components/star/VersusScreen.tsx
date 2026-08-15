@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import type { Matchday, SheetPlayer, TeamSheet } from "@/lib/star/teamsheet";
+import { offeredPositions, POSITION_NAMES } from "@/lib/star/teamsheet";
+import type { Role } from "@/lib/star/formations";
 import { kitsFor, labelInk, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
@@ -37,6 +39,16 @@ interface Props {
   competition: string;
   onKickOff: () => void;
   onBack: () => void;
+  /**
+   * Your named position, and where you have asked to play instead.
+   *
+   * Both optional: a match you are not starting has no shirt to move, and the
+   * screen simply does not offer the choice — the picker only appears next to
+   * a man who is actually on the pitch.
+   */
+  realPosition?: Role;
+  playAs?: Role | null;
+  onPlayAs?: (role: Role | null) => void;
 }
 
 /**
@@ -68,10 +80,21 @@ function place(y: number, bottom: boolean): number {
   return bottom ? at : 1 - at;
 }
 
-export default function VersusScreen({ matchday, date, competition, onKickOff, onBack }: Props) {
+export default function VersusScreen({
+  matchday, date, competition, onKickOff, onBack, realPosition, playAs, onPlayAs,
+}: Props) {
   const { home, away } = matchday;
   const kits = kitsFor(home.club, away.club);
   const [showSubs, setShowSubs] = useState(false);
+
+  // Only worth asking when there is a shirt to move: you have to be starting,
+  // and the SHAPE YOUR CLUB ACTUALLY PLAYS has to have somewhere else to put
+  // you — not every formation has a winger, and offering "LW" against a
+  // 4-3-2-1 is offering a slot that does not exist. See offeredPositions.
+  const starting = home.xi.some(p => p.isYou) || away.xi.some(p => p.isYou);
+  const yours = home.yours ? home : away;
+  const alternates = realPosition ? offeredPositions(realPosition, yours.formation) : [];
+  const canMove = starting && !!onPlayAs && alternates.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 px-3 py-3 text-white">
@@ -102,6 +125,39 @@ export default function VersusScreen({ matchday, date, competition, onKickOff, o
             <span>{away.formation.name}</span>
           </div>
         </div>
+
+        {/* ── Play somewhere else, for this match only ── */}
+        {canMove && realPosition && (
+          <div className="border-x border-white/15 bg-gray-900/60 px-3 py-2">
+            <div className="text-[9px] font-black uppercase tracking-widest text-white/60">
+              Play as — this match only
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                onClick={() => onPlayAs!(null)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
+                  !playAs ? "bg-emerald-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+              >
+                {POSITION_NAMES[realPosition]} (your position)
+              </button>
+              {alternates.map(role => (
+                <button
+                  key={role}
+                  onClick={() => onPlayAs!(role)}
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
+                    playAs === role ? "bg-amber-400 text-gray-950" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+                >
+                  {POSITION_NAMES[role]}
+                </button>
+              ))}
+            </div>
+            {playAs && (
+              <p className="mt-1.5 text-[10px] font-bold text-amber-200/90">
+                Your side's best {POSITION_NAMES[realPosition].toLowerCase()} starts in your place.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* ── The pitch ── */}
         <div className="relative aspect-[3/5] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
@@ -220,15 +276,15 @@ function Man({ p, kit, keeper, bottom }: {
       <div className={`flex w-full items-center justify-center gap-0.5 rounded bg-gray-950/85 px-1 py-px ${
         bottom ? "order-3 mt-0.5" : "order-1 mb-0.5"}`}
       >
-        {flag && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={flag} alt="" className="h-[6px] w-[9px] shrink-0 rounded-[1px] object-cover" />
-        )}
         <span className={`truncate text-[8px] font-black leading-tight ${
           p.isYou ? "text-amber-300" : "text-white"}`}
         >
           {p.short}
         </span>
+        {flag && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={flag} alt="" className="h-[6px] w-[9px] shrink-0 rounded-[1px] object-cover" />
+        )}
       </div>
     </div>
   );
@@ -253,13 +309,13 @@ function Bench({ sheet, kit }: { sheet: TeamSheet; kit: Kit }) {
         const flag = getFlagUrl(p.nation);
         return (
           <div key={p.id} className="flex items-center gap-1 py-px">
-            {flag ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={flag} alt="" className="h-[6px] w-[9px] shrink-0 rounded-[1px] object-cover" />
-            ) : <span className="w-[9px] shrink-0" />}
             <span className={`truncate text-[9px] font-bold ${p.isYou ? "text-amber-300" : "text-white/85"}`}>
               {p.short}
             </span>
+            {flag && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={flag} alt="" className="h-[6px] w-[9px] shrink-0 rounded-[1px] object-cover" />
+            )}
             <span className="ml-auto shrink-0 text-[8px] font-black text-white/50">{p.slot}</span>
           </div>
         );

@@ -168,6 +168,25 @@ function generatedSquad(club: string): LeagueSquad {
 }
 
 /**
+ * Was this division fetched before faces and flags existed?
+ *
+ * `image` and `nation` were added to the query well after clubs started being
+ * cached — a career already holding a full set of `leagueSquads` never re-fetches
+ * (see `fetchLeagueSquads`'s caller, which only asks when the list is empty), so
+ * every save made before this landed is stuck showing initials and no flag for
+ * the other nineteen clubs forever, while its OWN squad — fetched by a different
+ * path that always carried these fields — looks fine. That mismatch is the whole
+ * bug: one side of the pitch has faces, the other does not.
+ *
+ * `nation` is the signal rather than `image`: a database can legitimately have
+ * no photo for plenty of players, but a whole division with not one nationality
+ * set is not a sparse import, it is a cache from before the column was read.
+ */
+export function shouldUpgradeLeagueSquads(squads: LeagueSquad[]): boolean {
+  return squads.length > 0 && !squads.some(s => s.players.some(p => p.nation));
+}
+
+/**
  * Go and get the division.
  *
  * One request for every club at once — see app/api/star/league-squads. Never
