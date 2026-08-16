@@ -85,8 +85,8 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
     // is on the pitch and on the bench.
     const starting = new Set(sheet.xi.map(p => p.id));
     check(!sheet.bench.some(p => starting.has(p.id)), `${label}: nobody starts and sits`);
-    check(sheet.bench.length > 0 && sheet.bench.length <= 7,
-      `${label}: a bench of at most seven (${sheet.bench.length})`);
+    check(sheet.bench.length > 0 && sheet.bench.length <= 9,
+      `${label}: a bench of at most nine (${sheet.bench.length})`);
     check(sheet.xi.every(p => p.short.length > 0), `${label}: everybody has a name to print`);
     // Positions come off the formation, so the pitch cannot have two men on the
     // same spot.

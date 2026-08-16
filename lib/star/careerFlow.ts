@@ -489,10 +489,16 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
   // another, which is the only thing that makes moving up cost you anything.
   const judgement = judgeSeason(career);
 
-  // Europe is earned by where you finished, and played the FOLLOWING season —
-  // so a good year is felt the year after it, which is what makes the table
-  // matter beyond the title.
-  const qualification = qualificationFor(leaguePosition(career), career.league.length);
+  // Europe is earned by where you finished — and by what you won. A cup winner
+  // earns their European slot regardless of table position, and a team already
+  // in a higher competition keeps the better one (so an FA Cup win for a top-
+  // four side stays Champions League, not Europa League).
+  const thisSeason = career.trophies.filter(t => t.season === career.season);
+  const wonFaCup = thisSeason.some(t => t.competition === "FA Cup");
+  const wonLeagueCup = thisSeason.some(t => t.competition === "League Cup");
+  const qualification = qualificationFor(
+    leaguePosition(career), career.league.length, wonFaCup, wonLeagueCup,
+  );
 
   const next: CareerState = {
     ...career,
