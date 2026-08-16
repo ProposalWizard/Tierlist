@@ -120,7 +120,7 @@ function fromLeagueSquad(squad: LeagueSquad | undefined): Candidate[] {
   }));
 }
 
-function build(club: string, pool: Candidate[], yours: boolean): TeamSheet {
+function build(club: string, pool: Candidate[], yours: boolean, savedBenchIds?: string[]): TeamSheet {
   const formation = formationForClub(club);
   const picked = autoPick(pool, formation);
   const byId = new Map(pool.map(p => [p.id, p]));
@@ -145,14 +145,28 @@ function build(club: string, pool: Candidate[], yours: boolean): TeamSheet {
   });
 
   const started = new Set(xi.map(p => p.id));
-  const bench = pool
-    .filter(p => !started.has(p.id))
-    .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
-    .slice(0, 7)
-    .map(p => ({
-      id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
-      overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
-    }));
+
+  let bench: SheetPlayer[];
+  if (savedBenchIds && savedBenchIds.length > 0) {
+    bench = savedBenchIds
+      .filter(id => !started.has(id))
+      .map(id => byId.get(id))
+      .filter((p): p is Candidate => !!p)
+      .slice(0, 7)
+      .map(p => ({
+        id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
+        overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
+      }));
+  } else {
+    bench = pool
+      .filter(p => !started.has(p.id))
+      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
+      .slice(0, 7)
+      .map(p => ({
+        id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
+        overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
+      }));
+  }
 
   return { club, formation, xi, bench, yours };
 }
@@ -224,6 +238,8 @@ export function matchdayFor(
    * `alternatePositions` for which roles are worth offering.
    */
   playAs?: Role,
+  /** Saved bench from the lineup builder — overrides the auto-rated sort. */
+  savedBench?: string[],
 ): Matchday {
   const mine = career.player.club;
   const theirs = fixture.opponent;
@@ -244,7 +260,7 @@ export function matchdayFor(
   // Your own squad, minus any duplicate of you: a career whose squad was
   // fetched from the database can contain the real player whose shirt you took.
   const ownPool = fromSquad(career.squad ?? []).filter(p => p.short !== you.short);
-  let ours = build(mine, starting ? [...ownPool, you] : ownPool, true);
+  let ours = build(mine, starting ? [...ownPool, you] : ownPool, true, savedBench);
   if (starting) ours = forceIntoXI(ours, you);
 
   const oppSquad = (career.leagueSquads ?? []).find(s => s.club === theirs);

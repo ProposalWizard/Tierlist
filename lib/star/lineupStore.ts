@@ -18,6 +18,8 @@ export interface SavedLineup {
   formation: string;
   /** Eleven entries, one per slot, in the formation's own order. */
   xi: (string | null)[];
+  /** Up to seven designated substitutes, in the order the user chose. */
+  bench?: string[];
   /** Whoever is in the dugout. Typed in, because the database has no managers. */
   manager?: string;
 }

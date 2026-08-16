@@ -48,21 +48,18 @@ interface Sheet {
   club: string;
   formationId: string;
   xi: (string | null)[];
+  /** Up to seven designated substitutes. Everyone else is a reserve. */
+  bench7: string[];
   manager: string;
 }
 
 export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
   const [club, setClub] = useState(initialClub ?? clubs[0] ?? "");
-  const [sheet, setSheet] = useState<Sheet>({ club: "", formationId: DEFAULT_FORMATION, xi: [], manager: "" });
+  const [sheet, setSheet] = useState<Sheet>({ club: "", formationId: DEFAULT_FORMATION, xi: [], bench7: [], manager: "" });
   const [held, setHeld] = useState<string | null>(null);
-  const { formationId, xi, manager } = sheet;
+  const { formationId, xi, bench7, manager } = sheet;
 
   // ── One screen ──
-  //
-  // Measured rather than guessed. The nav is sticky and its height changes
-  // between desktop and a phone (which gets a second row of game links), so a
-  // hardcoded calc() would be wrong on one of them. This asks where the box
-  // actually starts and takes the rest.
   const shellRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
   useLayoutEffect(() => {
@@ -96,19 +93,28 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     const saved = loadLineup(club);
     const known = new Set(squad.map(p => p.id));
     if (saved && saved.xi.some(id => id && known.has(id))) {
+      const loadedXi = saved.xi.map(id => (id && known.has(id) ? id : null));
+      const xiSet = new Set(loadedXi.filter(Boolean) as string[]);
       setSheet({
         club,
         formationId: saved.formation,
-        // A saved id no longer in the squad is dropped rather than shown as a
-        // hole with a stranger's name in it.
-        xi: saved.xi.map(id => (id && known.has(id) ? id : null)),
+        xi: loadedXi,
+        bench7: (saved.bench ?? []).filter(id => known.has(id) && !xiSet.has(id)).slice(0, 7),
         manager: saved.manager ?? "",
       });
     } else {
+      const newXi = autoPick(squad, formationOf(DEFAULT_FORMATION));
+      const xiSet = new Set(newXi.filter(Boolean) as string[]);
+      const autoBench = squad
+        .filter(p => !xiSet.has(p.id))
+        .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
+        .slice(0, 7)
+        .map(p => p.id);
       setSheet({
         club,
         formationId: DEFAULT_FORMATION,
-        xi: autoPick(squad, formationOf(DEFAULT_FORMATION)),
+        xi: newXi,
+        bench7: autoBench,
         manager: saved?.manager ?? "",
       });
     }
@@ -116,20 +122,12 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [club, squad.length]);
 
-  // ── Save whenever it settles, and SAY so ──
-  //
-  // There is no save button because there is nothing to press it for: every
-  // change is written the moment you make it. But a screen that saves silently
-  // is indistinguishable from one that does not save at all — "there's no save
-  // button so I assume once it's done it saves every change" — so it says.
+  // Save whenever it settles.
   const [saved, setSaved] = useState(false);
   useEffect(() => {
     if (!sheet.club || sheet.xi.length === 0) return;
-    // Written under the club the sheet is FOR, never the one the dropdown has
-    // moved on to. Typing a manager's name would otherwise save on every
-    // keystroke, so it settles first.
     const t = window.setTimeout(() => {
-      saveLineup(sheet.club, { formation: sheet.formationId, xi: sheet.xi, manager: sheet.manager });
+      saveLineup(sheet.club, { formation: sheet.formationId, xi: sheet.xi, bench: sheet.bench7, manager: sheet.manager });
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1400);
     }, 250);
@@ -137,18 +135,24 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
   }, [sheet]);
 
   const byId = useMemo(() => new Map(squad.map(p => [p.id, p])), [squad]);
-  const bench = useMemo(() => {
-    const picked = new Set(xi.filter((x): x is string => !!x));
-    return squad.filter(p => !picked.has(p.id));
-  }, [squad, xi]);
+
+  const inXI = useMemo(() => new Set(xi.filter((x): x is string => !!x)), [xi]);
+  const inBench7 = useMemo(() => new Set(bench7), [bench7]);
+  const bench7Players = useMemo(
+    () => bench7.map(id => byId.get(id)).filter((p): p is Pickable => !!p),
+    [bench7, byId],
+  );
+  const reserves = useMemo(
+    () => squad.filter(p => !inXI.has(p.id) && !inBench7.has(p.id)),
+    [squad, inXI, inBench7],
+  );
 
   const changeFormation = (id: string) => {
-    // The men you chose stay chosen — they stand somewhere else. See refit.
     setSheet(s => ({ ...s, formationId: id, xi: refit(s.xi, squad, formationOf(id)) }));
     setHeld(null);
   };
 
-  /** Tap a slot: drop the held man in, or pick this one up. */
+  /** Tap a pitch slot: drop the held man in, or pick this one up. */
   const tapSlot = (index: number) => {
     const here = xi[index] ?? null;
     if (!held) { if (here) setHeld(here); return; }
@@ -157,28 +161,99 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
       const next = [...s.xi];
       const from = next.indexOf(held);
       next[index] = held;
-      // He was already on the pitch: the two swap rather than one of them
-      // vanishing, which is what a straight assignment would do.
-      if (from >= 0) next[from] = here;
-      return { ...s, xi: next };
+      if (from >= 0) {
+        // Swapping within the XI — player displaced goes back to his own slot.
+        next[from] = here;
+        return { ...s, xi: next };
+      }
+      // held came from the bench or reserves; remove him from bench7 if he was there.
+      let newBench = s.bench7.filter(b => b !== held);
+      // The pitch player displaced by this move goes to bench7 if there is room.
+      if (here && newBench.length < 7 && !newBench.includes(here)) {
+        newBench = [...newBench, here];
+      }
+      return { ...s, xi: next, bench7: newBench };
     });
     setHeld(null);
   };
 
-  const tapBench = (id: string) => {
+  /** Tap a designated bench player. */
+  const tapBench7Player = (id: string) => {
     if (held === id) { setHeld(null); return; }
     if (!held) { setHeld(id); return; }
-    const from = xi.indexOf(held);
-    if (from >= 0) {
-      setSheet((s) => { const n = [...s.xi]; n[from] = id; return { ...s, xi: n }; });
+
+    const fromPitch = xi.indexOf(held);
+    if (fromPitch >= 0) {
+      // Held is a pitch player — swap: pitch player joins bench, bench player goes to pitch.
+      setSheet(s => {
+        const n = [...s.xi];
+        n[fromPitch] = id;
+        return { ...s, xi: n, bench7: s.bench7.map(b => (b === id ? held : b)) };
+      });
       setHeld(null);
       return;
     }
+    if (inBench7.has(held)) {
+      // Reorder within bench7.
+      setSheet(s => ({
+        ...s,
+        bench7: s.bench7.map(b => (b === id ? held : b === held ? id : b)),
+      }));
+      setHeld(null);
+      return;
+    }
+    // Held is a reserve — swap: reserve onto bench, bench player drops to reserves.
+    setSheet(s => ({ ...s, bench7: s.bench7.map(b => (b === id ? held : b)) }));
+    setHeld(null);
+  };
+
+  /** Tap a reserve player. */
+  const tapReserve = (id: string) => {
+    if (held === id) { setHeld(null); return; }
+    if (!held) {
+      // No held player — tap adds directly to bench if there is a slot.
+      if (bench7.length < 7) {
+        setSheet(s => ({ ...s, bench7: [...s.bench7, id] }));
+      } else {
+        setHeld(id);
+      }
+      return;
+    }
+
+    const fromPitch = xi.indexOf(held);
+    if (fromPitch >= 0) {
+      // Held is on the pitch — move reserve to pitch, pitch player falls to bench/reserves.
+      setSheet(s => {
+        const n = [...s.xi];
+        n[fromPitch] = id;
+        let newBench = s.bench7.filter(b => b !== id);
+        const displaced = xi[fromPitch];
+        if (displaced && newBench.length < 7 && !newBench.includes(displaced)) {
+          newBench = [...newBench, displaced];
+        }
+        return { ...s, xi: n, bench7: newBench };
+      });
+      setHeld(null);
+      return;
+    }
+    if (inBench7.has(held)) {
+      // Held is a bench7 player — swap: bench player drops to reserves, reserve goes to bench.
+      setSheet(s => ({ ...s, bench7: s.bench7.map(b => (b === held ? id : b)) }));
+      setHeld(null);
+      return;
+    }
+    // Both are reserves — just switch who we are holding.
     setHeld(id);
   };
 
   const kit = kitsOf(club).home;
   const ink = labelInk(kit.shirt);
+
+  const hintText = held
+    ? "Tap where he goes"
+    : bench7.length < 7
+    ? "Tap a reserve to add to bench"
+    : "Tap a player then another to swap";
 
   return (
     <div
@@ -205,17 +280,24 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
           {FORMATIONS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
         </select>
         <button
-          onClick={() => { setSheet(s => ({ ...s, xi: autoPick(squad, formation) })); setHeld(null); }}
+          onClick={() => {
+            const newXi = autoPick(squad, formation);
+            const xiSet = new Set(newXi.filter(Boolean) as string[]);
+            const autoBench = squad
+              .filter(p => !xiSet.has(p.id))
+              .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
+              .slice(0, 7)
+              .map(p => p.id);
+            setSheet(s => ({ ...s, xi: newXi, bench7: autoBench }));
+            setHeld(null);
+          }}
           className="shrink-0 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-black uppercase text-white transition hover:bg-emerald-500"
         >
           Best XI
         </button>
       </div>
 
-      {/* ── The dugout ──
-          There are no managers in the database, so this is the one thing on the
-          page you tell IT rather than the other way round. Saved per club like
-          everything else. */}
+      {/* ── The dugout ── */}
       <input
         value={manager}
         onChange={e => setSheet(s => ({ ...s, manager: e.target.value }))}
@@ -231,12 +313,11 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
         </div>
       ) : (
         <>
-          {/* ── The pitch takes whatever room is left ── */}
+          {/* ── The pitch ── */}
           <div
             className="relative min-h-0 flex-1 overflow-hidden rounded-xl border-2 border-emerald-900/70"
             style={{ background: "linear-gradient(#1f9006,#187406)" }}
           >
-            {/* Markings, plain boxes so they cost nothing. */}
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute inset-x-0 top-1/2 h-px bg-white/40" />
               <div className="absolute left-1/2 top-1/2 h-[16%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/40" />
@@ -277,49 +358,83 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
             })}
           </div>
 
-          {/* ── The rest of the squad ──
-              A grid rather than a list, so three fit across where one used to.
-              A full Premier League register is 25-30 men, which is fifteen-odd
-              here — more than a phone screen holds beside a pitch, so this box
-              scrolls inside itself while the page still does not. */}
-          <div className="max-h-[27%] shrink-0 overflow-y-auto rounded-lg border border-gray-700 bg-gray-900 p-1">
-            <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
-              {bench.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => tapBench(p.id)}
-                  className={`flex items-center gap-1 rounded px-1 py-1 text-left transition ${
-                    held === p.id ? "bg-amber-500" : "bg-gray-800 hover:bg-gray-700"}`}
-                >
-                  <span
-                    className="w-7 shrink-0 rounded text-center text-[8px] font-black leading-4"
-                    style={{ background: kit.shirt, color: ink }}
+          {/* ── Bench + reserves ── */}
+          <div className="shrink-0 overflow-y-auto rounded-lg border border-gray-700 bg-gray-900 p-1" style={{ maxHeight: "30%" }}>
+            {/* Bench: up to 7 chosen subs */}
+            <div className="mb-1">
+              <div className="mb-0.5 px-0.5 text-[8px] font-black uppercase tracking-wider text-white/40">
+                Bench — {bench7Players.length}/7
+              </div>
+              <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
+                {bench7Players.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => tapBench7Player(p.id)}
+                    className={`flex items-center gap-1 rounded px-1 py-1 text-left transition ${
+                      held === p.id ? "bg-amber-500" : "bg-gray-700 hover:bg-gray-600"}`}
                   >
-                    {p.position}
-                  </span>
-                  <span className={`min-w-0 flex-1 truncate text-[10px] font-bold ${held === p.id ? "text-gray-950" : "text-white"}`}>
-                    {p.name}
-                  </span>
-                  {p.overall ? (
-                    <span className={`shrink-0 text-[9px] font-black tabular-nums ${held === p.id ? "text-gray-950" : "text-white/75"}`}>
-                      {p.overall}
+                    <span
+                      className="w-7 shrink-0 rounded text-center text-[8px] font-black leading-4"
+                      style={{ background: kit.shirt, color: ink }}
+                    >
+                      {p.position}
                     </span>
-                  ) : null}
-                </button>
-              ))}
-              {bench.length === 0 && (
-                <div className="col-span-full px-1 py-1 text-[10px] font-bold text-white/70">
-                  Everybody is on the pitch.
-                </div>
-              )}
+                    <span className={`min-w-0 flex-1 truncate text-[10px] font-bold ${held === p.id ? "text-gray-950" : "text-white"}`}>
+                      {p.name}
+                    </span>
+                    {p.overall ? (
+                      <span className={`shrink-0 text-[9px] font-black tabular-nums ${held === p.id ? "text-gray-950" : "text-white/75"}`}>
+                        {p.overall}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+                {bench7Players.length === 0 && (
+                  <div className="col-span-full px-1 py-1.5 text-[10px] font-bold text-white/50">
+                    Tap a reserve below to add to bench
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Reserves: everyone not in XI or on bench */}
+            {reserves.length > 0 && (
+              <div>
+                <div className="mb-0.5 px-0.5 text-[8px] font-black uppercase tracking-wider text-white/30">
+                  Reserves
+                </div>
+                <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
+                  {reserves.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => tapReserve(p.id)}
+                      className={`flex items-center gap-1 rounded px-1 py-1 text-left transition ${
+                        held === p.id ? "bg-amber-500" : "bg-gray-800 hover:bg-gray-700"}`}
+                    >
+                      <span
+                        className="w-7 shrink-0 rounded text-center text-[8px] font-black leading-4"
+                        style={{ background: kit.shirt, color: ink }}
+                      >
+                        {p.position}
+                      </span>
+                      <span className={`min-w-0 flex-1 truncate text-[10px] font-bold ${held === p.id ? "text-gray-950" : "text-white"}`}>
+                        {p.name}
+                      </span>
+                      {p.overall ? (
+                        <span className={`shrink-0 text-[9px] font-black tabular-nums ${held === p.id ? "text-gray-950" : "text-white/75"}`}>
+                          {p.overall}
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex shrink-0 items-center justify-between gap-2 text-[10px] font-bold">
-            <span className="text-white/55">{squad.length} in the squad · {bench.length} on the bench</span>
-            <span className="min-w-0 flex-1 truncate text-center text-white/60">
-              {held ? "Tap where he goes" : "Tap a player, then another, to swap"}
-            </span>
+            <span className="text-white/55">{squad.length} in squad · {bench7Players.length} on bench · {reserves.length} reserves</span>
+            <span className="min-w-0 flex-1 truncate text-center text-white/60">{hintText}</span>
             <span className={`transition-opacity ${saved ? "text-emerald-400 opacity-100" : "opacity-0"}`}>
               Saved ✓
             </span>

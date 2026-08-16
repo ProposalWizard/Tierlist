@@ -50,7 +50,7 @@ export function creditChance(
   // you his goal and swallowed the assist you had just played.
   if (ctx.youShot) return { ...NO_CREDIT, shots: 1, goals: isGoal ? 1 : 0 };
   // You found a man and he had the shot.
-  if (ctx.receiverShot) return { ...NO_CREDIT, chances: 1, assists: isGoal ? 1 : 0 };
+  if (ctx.receiverShot) return { ...NO_CREDIT, passes: 1, passesCompleted: 1, assists: isGoal ? 1 : 0 };
   // ── A ball that went in without either of those being true ──
   //
   // A cross that curls straight in, a pass deflected past the keeper: nobody
