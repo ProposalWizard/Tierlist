@@ -9,6 +9,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { fixtureDateLabel } from "@/lib/star/calendar";
 import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
+import { loadLineup } from "@/lib/star/lineupStore";
 import type { Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
@@ -910,9 +911,10 @@ export default function StarDevPage() {
     // Decided BEFORE the branch, never inside it: falling back by calling a
     // state setter mid-render is a React error, and "can we draw this?" is a
     // question about data that render is entitled to ask.
+    const savedBench = loadLineup(career.player.club)?.bench;
     const matchday = nextFixture.kind === "international"
       ? null
-      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined);
+      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, savedBench);
     const teamsReady = !!matchday && sheetReady(matchday);
 
     if (showTeams && matchday && teamsReady) {
