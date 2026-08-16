@@ -2568,10 +2568,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             {matchMode ? `Wk ${fixture!.week}` : "Match Lab"}
           </div>
           <div className="flex-1 grid grid-cols-4 divide-x divide-white/5">
-            {statCell("Shots", `${stats.shots}`, "text-white")}
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
+            {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Passes", `${stats.passesCompleted}/${stats.passes}`, "text-violet-300")}
-            {statCell("Assists", `${stats.assists}/${stats.chances}`, "text-emerald-300")}
+            {statCell("Avg Rat", liveRating(stats.goals, stats.assists, stats.passesCompleted, score.user, score.opp).toFixed(1), "text-sky-300")}
           </div>
           <button
             onClick={toggleMuted}
