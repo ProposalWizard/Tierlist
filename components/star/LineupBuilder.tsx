@@ -99,7 +99,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
         club,
         formationId: saved.formation,
         xi: loadedXi,
-        bench7: (saved.bench ?? []).filter(id => known.has(id) && !xiSet.has(id)).slice(0, 7),
+        bench7: (saved.bench ?? []).filter(id => known.has(id) && !xiSet.has(id)).slice(0, 9),
         manager: saved.manager ?? "",
       });
     } else {
@@ -108,7 +108,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
       const autoBench = squad
         .filter(p => !xiSet.has(p.id))
         .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
-        .slice(0, 7)
+        .slice(0, 9)
         .map(p => p.id);
       setSheet({
         club,
@@ -212,7 +212,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     if (held === id) { setHeld(null); return; }
     if (!held) {
       // No held player — tap adds directly to bench if there is a slot.
-      if (bench7.length < 7) {
+      if (bench7.length < 9) {
         setSheet(s => ({ ...s, bench7: [...s.bench7, id] }));
       } else {
         setHeld(id);
@@ -251,7 +251,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
 
   const hintText = held
     ? "Tap where he goes"
-    : bench7.length < 7
+    : bench7.length < 9
     ? "Tap a reserve to add to bench"
     : "Tap a player then another to swap";
 
@@ -363,7 +363,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
             {/* Bench: up to 7 chosen subs */}
             <div className="mb-1">
               <div className="mb-0.5 px-0.5 text-[8px] font-black uppercase tracking-wider text-white/40">
-                Bench — {bench7Players.length}/7
+                Bench — {bench7Players.length}/9
               </div>
               <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
                 {bench7Players.map(p => (

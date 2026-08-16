@@ -67,6 +67,7 @@ export type Competition =
   | "League Cup"
   | "Champions League"
   | "Europa League"
+  | "Conference League"
   /** One match, before the season: last season's champions v the FA Cup holders. */
   | "Community Shield"
   /** One match, before the season: the Champions League holders v the Europa League holders. */

@@ -27,7 +27,7 @@ import {
  * finish ninth in is a table somebody actually finished eighth in.
  */
 
-export type EuroId = "Champions League" | "Europa League";
+export type EuroId = "Champions League" | "Europa League" | "Conference League";
 
 export interface EuroClub {
   name: string;
@@ -186,8 +186,60 @@ const EUROPA_POOL: EuroClub[] = [
   { name: "Shamrock Rovers", strength: 60, pot: 4 },
 ];
 
+/**
+ * The Conference League field.
+ *
+ * Thirty-five clubs a step below the Europa League — lower-ranked national
+ * champions, beaten play-off sides and domestic cup winners. Winning it is a
+ * genuine European trophy, which is the only reason it counts: the game does
+ * not offer it as a consolation prize and then make it feel like one.
+ */
+const CONFERENCE_POOL: EuroClub[] = [
+  { name: "Fiorentina", strength: 74, pot: 1 },
+  { name: "Club Brugge", strength: 72, pot: 1 },
+  { name: "Hearts", strength: 66, pot: 1 },
+  { name: "Gent", strength: 68, pot: 1 },
+  { name: "Partizan", strength: 67, pot: 1 },
+  { name: "PAOK", strength: 69, pot: 1 },
+  { name: "Galatasaray B", strength: 67, pot: 1 },
+  { name: "Djurgården", strength: 64, pot: 1 },
+  { name: "Legia Warsaw", strength: 66, pot: 1 },
+
+  { name: "Molde", strength: 65, pot: 2 },
+  { name: "Heidenheim", strength: 66, pot: 2 },
+  { name: "HJK Helsinki", strength: 62, pot: 2 },
+  { name: "Sivasspor", strength: 63, pot: 2 },
+  { name: "Genk", strength: 67, pot: 2 },
+  { name: "Brøndby", strength: 64, pot: 2 },
+  { name: "Vitória Guimarães", strength: 65, pot: 2 },
+  { name: "Lech Poznań", strength: 63, pot: 2 },
+  { name: "Slavia Sofia", strength: 61, pot: 2 },
+
+  { name: "Hajduk Split", strength: 63, pot: 3 },
+  { name: "Rosenborg", strength: 62, pot: 3 },
+  { name: "IFK Göteborg", strength: 60, pot: 3 },
+  { name: "Botev Plovdiv", strength: 59, pot: 3 },
+  { name: "Universitatea Craiova", strength: 60, pot: 3 },
+  { name: "Zaglebie Lubin", strength: 60, pot: 3 },
+  { name: "Vikingur", strength: 58, pot: 3 },
+  { name: "Noah FC", strength: 58, pot: 3 },
+  { name: "FC Pyunik", strength: 57, pot: 3 },
+
+  { name: "NSÍ Runavík", strength: 55, pot: 4 },
+  { name: "Levadia Tallinn", strength: 56, pot: 4 },
+  { name: "FK Riteriai", strength: 55, pot: 4 },
+  { name: "Differdange 03", strength: 53, pot: 4 },
+  { name: "FC Santa Coloma", strength: 52, pot: 4 },
+  { name: "La Fiorita", strength: 52, pot: 4 },
+  { name: "Shkupi", strength: 57, pot: 4 },
+  { name: "Inter Club d'Escaldes", strength: 51, pot: 4 },
+  { name: "Lincoln Red Imps", strength: 56, pot: 4 },
+];
+
 export function poolFor(competition: EuroId): EuroClub[] {
-  return competition === "Champions League" ? CHAMPIONS_POOL : EUROPA_POOL;
+  if (competition === "Champions League") return CHAMPIONS_POOL;
+  if (competition === "Europa League") return EUROPA_POOL;
+  return CONFERENCE_POOL;
 }
 
 // ── Opening the campaign ────────────────────────────────────────────────────

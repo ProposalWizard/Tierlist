@@ -152,7 +152,7 @@ function build(club: string, pool: Candidate[], yours: boolean, savedBenchIds?: 
       .filter(id => !started.has(id))
       .map(id => byId.get(id))
       .filter((p): p is Candidate => !!p)
-      .slice(0, 7)
+      .slice(0, 9)
       .map(p => ({
         id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
         overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
@@ -161,7 +161,7 @@ function build(club: string, pool: Candidate[], yours: boolean, savedBenchIds?: 
     bench = pool
       .filter(p => !started.has(p.id))
       .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
-      .slice(0, 7)
+      .slice(0, 9)
       .map(p => ({
         id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
         overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
@@ -213,7 +213,7 @@ function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
   return {
     ...sheet,
     xi,
-    bench: [{ ...dropped, isYou: false }, ...sheet.bench.filter(p => p.id !== me.id)].slice(0, 7),
+    bench: [{ ...dropped, isYou: false }, ...sheet.bench.filter(p => p.id !== me.id)].slice(0, 9),
   };
 }
 

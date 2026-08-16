@@ -238,11 +238,21 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   check(after.seasonStats.appearances === withCap.seasonStats.appearances, "nor into club appearances");
 }
 
-// ── Europe is earned by where you finish, and played the year after ────────
+// ── Europe is earned by where you finish — and by what you won ────────────
 {
+  // In a 10-club league: CL = ceil(10/5) = top 2, EL = 3rd, Conference = 4th.
   check(qualificationFor(1, 10) === "Champions League", "finishing top gets you into Europe's top competition");
-  check(qualificationFor(4, 10) === "Europa League", "and mid-table Europe is a rung below");
+  check(qualificationFor(2, 10) === "Champions League", "the top two in a ten-club league both go to the CL");
+  check(qualificationFor(3, 10) === "Europa League", "third place earns Europa League");
+  check(qualificationFor(4, 10) === "Conference League", "fourth earns Conference League");
+  check(qualificationFor(5, 10) === null, "fifth gets nothing from the table alone");
   check(qualificationFor(9, 10) === null, "finishing ninth gets you nothing");
+  // Cup winners earn European spots regardless of table position.
+  check(qualificationFor(7, 10, true) === "Europa League", "FA Cup winner earns Europa League");
+  check(qualificationFor(8, 10, false, true) === "Conference League", "League Cup winner earns Conference League");
+  // A cup win never downgrades an already-qualified team.
+  check(qualificationFor(1, 10, false, true) === "Champions League", "League Cup win can't demote a CL side");
+  check(qualificationFor(3, 10, false, true) === "Europa League", "League Cup win can't demote an EL side");
 
   const done = (() => {
     let c = base();
