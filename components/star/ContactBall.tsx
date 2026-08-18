@@ -43,23 +43,14 @@ export default function ContactBall({ power, onContact }: Props) {
     <div
       className="absolute inset-0 z-30 flex flex-col overflow-hidden"
       style={{
-        // A dark stadium vignette rather than a bright sky — the strike screen
-        // is a close-up on the ball, and a bright sky behind it competed with
-        // the one thing you are actually meant to be looking at.
-        background: "radial-gradient(ellipse at 50% 30%, #16233f 0%, #0a1120 60%, #050810 100%)",
+        background: "linear-gradient(to bottom, #4a71b8 0%, #a8c4e8 100%)",
         touchAction: "none",
       }}
     >
       {/* Grass strip */}
       <div
         className="absolute bottom-0 left-0 right-0"
-        style={{ height: "24%", background: "linear-gradient(to bottom, #14532d, #0f3d21)" }}
-      />
-      {/* A seam of light where the pitch meets the dark above it, the way a
-          floodlit strip of turf actually reads against a night sky. */}
-      <div
-        className="absolute left-0 right-0 pointer-events-none"
-        style={{ bottom: "24%", height: "10%", background: "linear-gradient(to top, rgba(34,197,94,0.18), transparent)" }}
+        style={{ height: "24%", background: "linear-gradient(to bottom, #16a34a, #15803d)" }}
       />
 
       {/* No way back. You have chosen your angle and your power; all that is
