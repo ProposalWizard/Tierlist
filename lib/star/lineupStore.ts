@@ -43,6 +43,7 @@ export function loadLineup(club: string): SavedLineup | null {
   return {
     formation: saved.formation || DEFAULT_FORMATION,
     xi: saved.xi,
+    bench: Array.isArray(saved.bench) ? saved.bench : undefined,
     manager: typeof saved.manager === "string" ? saved.manager : "",
   };
 }

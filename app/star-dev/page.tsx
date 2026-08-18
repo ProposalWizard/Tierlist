@@ -1,7 +1,7 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture } from "@/lib/star/types";
-import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase } from "@/lib/star/storage";
+import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { selectionFor } from "@/lib/star/selection";
@@ -65,12 +65,20 @@ export default function StarDevPage() {
   // Nothing is written back until the load has run, so the initial
   // "profile-setup" render cannot wipe a pending phase before we have read it.
   const [hydrated, setHydrated] = useState(false);
+  // Stays true while we check for a cloud save, so we show a spinner rather
+  // than the new-career setup screen during the async fetch.
+  const [cloudLoading, setCloudLoading] = useState(true);
+  const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setHydrated(true);
-    const saved = loadCareer();
-    if (!saved) return;
-    setCareer(saved);
+    const init = async () => {
+      setHydrated(true);
+      // Try cloud save first; fall back to localStorage if not logged in or
+      // no cloud save exists.
+      const saved = (await loadCareerFromCloud()) ?? loadCareer();
+      setCloudLoading(false);
+      if (!saved) return;
+      setCareer(saved);
 
     // ── An existing career gets the real dressing room too ──
     //
@@ -146,10 +154,17 @@ export default function StarDevPage() {
       if (d) { setCurrentDilemma(d); setPhase("dilemma"); return; }
     }
     setPhase("dashboard");
+    };
+    init();
   }, []);
 
   useEffect(() => {
-    if (career) saveCareer(career);
+    if (!career) return;
+    saveCareer(career); // localStorage — immediate
+    // Debounced cloud save: waits 3 s after the last change so a burst of
+    // state updates (end of match, season rollover) produces one write, not many.
+    if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+    cloudSaveTimer.current = setTimeout(() => { saveCareerToCloud(career); }, 3000);
   }, [career]);
 
   // Only the phases a refresh must return you to are written; everything else
@@ -612,6 +627,7 @@ export default function StarDevPage() {
   const handleFullReset = () => {
     if (career?.retired || confirm("Delete this career and start over?")) {
       clearCareer();
+      clearCareerFromCloud();
       setCareer(null);
       setPhase("profile-setup");
     }
@@ -759,6 +775,14 @@ export default function StarDevPage() {
       pressQuestion, currentDilemma, transferOffers, relationshipGameKind]);
 
   // ---------- RENDER ----------
+  if (cloudLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white/60 text-sm font-bold animate-pulse">Loading career…</div>
+      </div>
+    );
+  }
+
   if (phase === "profile-setup" || !career) {
     return <ProfileSetup onComplete={handleProfileComplete} />;
   }

@@ -135,3 +135,51 @@ export function clearCareer() {
     localStorage.removeItem(PHASE_KEY);
   } catch {}
 }
+
+// ── Cloud save (Supabase) ────────────────────────────────────────────────────
+
+/**
+ * Persist the career to Supabase so it survives a device wipe or re-login.
+ *
+ * Fire-and-forget: errors are swallowed so a network hiccup or a logged-out
+ * session never breaks the game. localStorage is always written first, so
+ * data is never lost even if the cloud write fails.
+ */
+export async function saveCareerToCloud(state: CareerState): Promise<void> {
+  try {
+    await fetch("/api/star/career", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state),
+    });
+  } catch {}
+}
+
+/**
+ * Fetch the career from Supabase.
+ *
+ * Returns null when the user is not logged in, has no cloud save, or the
+ * request fails — in all three cases the caller should fall back to
+ * localStorage.
+ */
+export async function loadCareerFromCloud(): Promise<CareerState | null> {
+  try {
+    const res = await fetch("/api/star/career");
+    if (!res.ok) return null;
+    const data = await res.json() as CareerState | null;
+    if (!data || data.version !== 2) return null;
+    return backfill(data);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Delete the cloud save — called alongside clearCareer() when starting over,
+ * so the old career does not reappear on next login.
+ */
+export async function clearCareerFromCloud(): Promise<void> {
+  try {
+    await fetch("/api/star/career", { method: "DELETE" });
+  } catch {}
+}
