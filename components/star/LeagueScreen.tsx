@@ -24,6 +24,23 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
 
+  // ── European qualification colours ──
+  const cl = Math.round(sorted.length * 0.25);
+  const elBottom = cl + 2;
+  const n = sorted.length;
+  const thisSeason = (career.trophies ?? []).filter(t => t.season === career.season);
+  const playerWonCup = thisSeason.some(t => t.competition === "FA Cup" || t.competition === "League Cup");
+  const playerPos = sorted.findIndex(x => x.name === career.player.club) + 1;
+
+  const euroClass = (pos: number, isPlayer: boolean): string => {
+    if (isPlayer && playerWonCup && pos > elBottom) return "border-l-2 border-l-orange-500";
+    if (pos === 1) return "border-l-2 border-l-amber-400";
+    if (pos <= cl) return "border-l-2 border-l-blue-500";
+    if (pos <= elBottom) return "border-l-2 border-l-orange-500";
+    if (pos > n - 3) return "border-l-2 border-l-red-500";
+    return "";
+  };
+
   // ── The round, not just the table it produced ──
   //
   // Every league week is ten games and the game only ever showed you one of
@@ -132,11 +149,14 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
             <div className="text-center">Pts</div>
           </div>
           <div className="max-h-[420px] overflow-y-auto">
-            {sorted.map((t, i) => (
+            {sorted.map((t, i) => {
+              const pos = i + 1;
+              const isPlayer = t.name === career.player.club;
+              return (
               <div
                 key={t.name}
-                className={`grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${
-                  t.name === career.player.club ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                className={`grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${euroClass(pos, isPlayer)} ${
+                  isPlayer ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
                 }`}
               >
                 <div className="text-center font-black">{i + 1}</div>
@@ -147,7 +167,8 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                 <div className="text-center">{t.lost}</div>
                 <div className="text-center font-black">{t.points}</div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

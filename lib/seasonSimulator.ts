@@ -4284,10 +4284,11 @@ function simulateUCLPersonalPhase(
   previousLeagueTable: LeagueTeam[],
   opponents: { name: string; strength: number }[],
   rng: () => number,
+  qualifiesAsWinner = false,
 ): UCLPersonalPhaseResult {
   const myFinish = previousLeagueTable.findIndex(t => t.name === teamName) + 1;
 
-  if (myFinish < 1 || myFinish > 5) {
+  if (myFinish < 1 || (myFinish > 5 && !qualifiesAsWinner)) {
     return {
       qualified: false, teamName, leagueMatches: [],
       pots: [[], [], [], []], allTeams: [], strengthMap: new Map(), ownRecord: emptyOwnRecord(),
@@ -4532,6 +4533,7 @@ function simulateSharedUCL(
   humanEntrants: (SharedEuropeanHuman & {
     previousLeagueTable: LeagueTeam[];
     oppForCups: { name: string; strength: number }[];
+    qualifiesAsWinner?: boolean;
   })[],
   drawRng: () => number,
   // Seed (same for every human) for background match results — a fresh RNG
@@ -4551,7 +4553,7 @@ function simulateSharedUCL(
   // else's table-build pass without re-simulating it.
   const personalPhases = new Map<string, UCLPersonalPhaseResult>();
   for (const h of humanEntrants) {
-    personalPhases.set(h.userId, simulateUCLPersonalPhase(h.teamName, h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng));
+    personalPhases.set(h.userId, simulateUCLPersonalPhase(h.teamName, h.squad, h.ratings, h.previousLeagueTable, h.oppForCups, h.rng, h.qualifiesAsWinner));
   }
   const allRecordsByName = new Map<string, OwnRecord>();
   for (const h of humanEntrants) {
@@ -5212,7 +5214,7 @@ export function simulateSharedSeason(
       }));
 
     // Determine which humans qualify for UCL (top 5) vs UEL (6th-7th) from previous table
-    const uclEntrants: (SharedEuropeanHuman & { previousLeagueTable: LeagueTeam[]; oppForCups: { name: string; strength: number }[] })[] = [];
+    const uclEntrants: (SharedEuropeanHuman & { previousLeagueTable: LeagueTeam[]; oppForCups: { name: string; strength: number }[]; qualifiesAsWinner: boolean })[] = [];
     const uelEntrants: (SharedEuropeanHuman & { previousLeagueTable: LeagueTeam[]; oppForCups: { name: string; strength: number }[] })[] = [];
 
     for (const hd of humanData) {
@@ -5236,15 +5238,16 @@ export function simulateSharedSeason(
 
       const prevResults = previousResults?.[hd.userId];
       const wonUELLast = prevResults?.uelWinner === true;
+      const wonUCLLast = prevResults?.uclWinner === true;
       const wonFACupLast = prevResults?.faCupWinner === true;
       const wonLeagueCupLast = prevResults?.leagueCupWinner === true;
       const qualifiesThroughLeague = myFinish >= 1 && myFinish <= 5;
-      const uelWinnerQualifiesForUCL = wonUELLast && !qualifiesThroughLeague;
+      const euroWinnerQualifiesForUCL = (wonUELLast || wonUCLLast) && !qualifiesThroughLeague;
       const faCupWinnerQualifiesForEL = wonFACupLast && myFinish > 7;
       const leagueCupWinnerQualifiesForEL = wonLeagueCupLast && myFinish > 7;
 
-      if (qualifiesThroughLeague || uelWinnerQualifiesForUCL) {
-        uclEntrants.push(entrant);
+      if (qualifiesThroughLeague || euroWinnerQualifiesForUCL) {
+        uclEntrants.push({ ...entrant, qualifiesAsWinner: euroWinnerQualifiesForUCL });
       } else if (myFinish >= 6 && myFinish <= 7) {
         uelEntrants.push(entrant);
       } else if (faCupWinnerQualifiesForEL || leagueCupWinnerQualifiesForEL) {

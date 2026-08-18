@@ -240,19 +240,21 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
 
 // ── Europe is earned by where you finish — and by what you won ────────────
 {
-  // In a 10-club league: CL = ceil(10/5) = top 2, EL = 3rd, Conference = 4th.
+  // In a 10-club league: CL = round(10*0.25) = top 3, EL = 4th-5th.
+  // These mirror the draft game's rules exactly (top 5 in a 20-club PL).
   check(qualificationFor(1, 10) === "Champions League", "finishing top gets you into Europe's top competition");
   check(qualificationFor(2, 10) === "Champions League", "the top two in a ten-club league both go to the CL");
-  check(qualificationFor(3, 10) === "Europa League", "third place earns Europa League");
-  check(qualificationFor(4, 10) === "Conference League", "fourth earns Conference League");
-  check(qualificationFor(5, 10) === null, "fifth gets nothing from the table alone");
+  check(qualificationFor(3, 10) === "Champions League", "third place in a ten-club league also earns CL");
+  check(qualificationFor(4, 10) === "Europa League", "fourth earns Europa League");
+  check(qualificationFor(5, 10) === "Europa League", "fifth also earns Europa League");
+  check(qualificationFor(6, 10) === null, "sixth gets nothing from the table alone");
   check(qualificationFor(9, 10) === null, "finishing ninth gets you nothing");
-  // Cup winners earn European spots regardless of table position.
-  check(qualificationFor(7, 10, true) === "Europa League", "FA Cup winner earns Europa League");
-  check(qualificationFor(8, 10, false, true) === "Conference League", "League Cup winner earns Conference League");
+  // Cup winners at 8th+ earn Europa League (both cups treated equally).
+  check(qualificationFor(7, 10, true) === "Europa League", "FA Cup winner at 7th earns Europa League");
+  check(qualificationFor(8, 10, false, true) === "Europa League", "League Cup winner at 8th earns Europa League");
   // A cup win never downgrades an already-qualified team.
   check(qualificationFor(1, 10, false, true) === "Champions League", "League Cup win can't demote a CL side");
-  check(qualificationFor(3, 10, false, true) === "Europa League", "League Cup win can't demote an EL side");
+  check(qualificationFor(4, 10, false, true) === "Europa League", "League Cup win can't demote an EL side");
 
   const done = (() => {
     let c = base();

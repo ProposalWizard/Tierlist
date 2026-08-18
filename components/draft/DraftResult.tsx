@@ -1253,44 +1253,34 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     }
   }, [sharing, season.actualFinish, season.teamRecord.points, season.performance, players]);
 
-  // Compute actual qualification spots accounting for cup winners displacing PL spots
+  // Compute actual qualification spots: top 5 CL, 6th-7th EL, cup winners at 8th+ EL (additional, no displacement)
   const tableQualification = useMemo(() => {
     const table = season.leagueTable;
     const n = table.length;
-    // Base: positions 1-5 UCL, 6-7 UEL, bottom 3 relegated (20-team league)
+    // Positions 1-5 → CL
     const clNames = new Set<string>(table.slice(0, 5).map(t => t.name));
-    // pl6, pl7 are the two PL-based UEL slots (may be displaced by cup winners)
-    const plUelSlots = [table[5]?.name, table[6]?.name].filter(Boolean) as string[];
-    const uelNames = new Set<string>(plUelSlots);
+    // UCL and UEL tournament winners also qualify for CL if outside top 5
+    const uclTournamentWinner = season.ucl?.tournamentWinner;
+    const uelTournamentWinner = season.uel?.tournamentWinner;
+    if (uclTournamentWinner && !clNames.has(uclTournamentWinner)) clNames.add(uclTournamentWinner);
+    if (uelTournamentWinner && !clNames.has(uelTournamentWinner)) clNames.add(uelTournamentWinner);
+
+    // 6th and 7th always earn EL — cup winners are additional spots, never displace positional slots
+    const uelNames = new Set<string>(
+      [table[5]?.name, table[6]?.name].filter((name): name is string => !!name && !clNames.has(name))
+    );
     const relegNames = new Set<string>(table.slice(Math.max(n - 3, 0)).map(t => t.name));
 
-    // Track how many PL UEL slots get displaced (lowest first: index 2 = 7th, then 1 = 6th)
-    let displaced = 0;
+    // FA Cup and League Cup winners at 8th+ earn EL as additional spots
     const faCupWinner = season.faCup.faCupWinner;
     const lcWinner = season.leagueCup.faCupWinner;
-    const cupWinnersGrantingEL = new Set<string>();
-
     const faCupPos = table.findIndex(t => t.name === faCupWinner) + 1;
-    if (faCupWinner && faCupPos > 7) {
-      cupWinnersGrantingEL.add(faCupWinner);
-      displaced++;
-    }
+    if (faCupWinner && faCupPos > 7 && !clNames.has(faCupWinner)) uelNames.add(faCupWinner);
     const lcPos = table.findIndex(t => t.name === lcWinner) + 1;
-    if (lcWinner && lcWinner !== faCupWinner && lcPos > 7) {
-      cupWinnersGrantingEL.add(lcWinner);
-      displaced++;
-    }
-
-    // Remove displaced PL slots from the bottom up (7th first, then 6th)
-    for (let i = 0; i < displaced; i++) {
-      const removeIdx = plUelSlots.length - 1 - i;
-      if (removeIdx >= 0) uelNames.delete(plUelSlots[removeIdx]);
-    }
-    // Add cup winners
-    cupWinnersGrantingEL.forEach(name => uelNames.add(name));
+    if (lcWinner && lcWinner !== faCupWinner && lcPos > 7 && !clNames.has(lcWinner)) uelNames.add(lcWinner);
 
     return { clNames, uelNames, relegNames };
-  }, [season.leagueTable, season.faCup.faCupWinner, season.leagueCup.faCupWinner]);
+  }, [season.leagueTable, season.faCup.faCupWinner, season.leagueCup.faCupWinner, season.ucl, season.uel]);
 
   // Build a set of team names for other human players in the room (for amber highlighting in league table)
   const otherHumanTeamNames = useMemo(() => {
