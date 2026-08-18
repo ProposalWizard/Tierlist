@@ -90,6 +90,26 @@ function twoManScenario(seed: number): { sc: Scenario; rng: () => number } {
  * whether it arrives. So: strike it in his direction, then set the velocity
  * exactly. Everything downstream is untouched.
  */
+/**
+ * A ball that is live, in the frame, and nowhere near anybody.
+ *
+ * The run tests are about the RUN, so the ball must not decide them. Sending it
+ * off at speed made them depend on where it ended up: change anything upstream
+ * that consumes a different number of random values and the ball lands
+ * somewhere new, leaves the frame, and `stepReactions` stops moving anybody —
+ * so a test of the captain's orders failed because a builder rolled one extra
+ * number. It is parked in the middle at a gentle pace instead: fast enough not
+ * to count as dead (which would send everyone to fetch it), slow enough to stay
+ * where it was put.
+ */
+function parkedBall(sc: Scenario, rng: () => number): Ball {
+  const ball = passTo(sc, sc.runner!, rng);
+  ball.pos = { x: CX, y: 24 };
+  ball.vel = { x: 0, y: 5 };
+  ball.vz = 0; ball.z = 0.08; ball.resting = false;
+  return ball;
+}
+
 function passTo(sc: Scenario, to: Runner, rng: () => number): Ball {
   const dx = to.pos.x - sc.ball.x, dy = to.pos.y - sc.ball.y;
   const d = Math.hypot(dx, dy) || 1;
@@ -192,10 +212,7 @@ function passTo(sc: Scenario, to: Runner, rng: () => number): Ball {
   const r = sc.secondaryRunners[0];
   const startY = r.pos.y;
   r.commandedTo = { x: r.pos.x, y: startY - 12 };
-  // Sent somewhere harmless, so the run and not the reception is what is
-  // being measured.
-  const ball = passTo(sc, sc.runner!, rng);
-  ball.vel = { x: -22, y: -2 }; ball.z = 0.08;
+  const ball = parkedBall(sc, rng);
   for (let t = 0; t < 1.0 / DT; t++) stepReactions(sc, ball, DT, rng);
   check(r.pos.y < startY - 4, `he runs where he was sent once it is played (${(startY - r.pos.y).toFixed(1)} m)`);
   check(r.sprint === true, "…and he is running rather than strolling");
@@ -207,8 +224,7 @@ function passTo(sc: Scenario, to: Runner, rng: () => number): Ball {
   const r = sc.secondaryRunners[0];
   const target = { x: r.pos.x + 6, y: r.pos.y - 6 };
   r.commandedTo = { ...target };
-  const ball = passTo(sc, sc.runner!, rng);
-  ball.vel = { x: -25, y: -1 }; ball.z = 0.08;
+  const ball = parkedBall(sc, rng);
   for (let t = 0; t < 4 / DT; t++) stepReactions(sc, ball, DT, rng);
   check(r.commandedTo === undefined, "the order is spent once he arrives");
   check(Math.hypot(r.pos.x - target.x, r.pos.y - target.y) < 1.2,

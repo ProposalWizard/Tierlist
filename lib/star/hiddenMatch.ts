@@ -386,17 +386,34 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
     }
   }
 
-  // Dead balls come from the match too. They used to be a weight in a table, so
-  // a corner could arrive out of open play with nothing behind it; now the move
-  // has to reach a dangerous area first and then break down.
-  const dead = rng();
-  if (state.zone === "box" && dead < 0.05) {
+  // ── Dead balls ──
+  //
+  // They used to be a weight in a table, so a corner could arrive out of open
+  // play with nothing behind it; the move has to reach a dangerous area first
+  // and then break down. That part was right and is kept.
+  //
+  // What was wrong was how rarely it happened, and it took measuring to see.
+  // Over three hundred simulated matches the old numbers produced 0.14 penalties
+  // and 0.15 free kicks PER MATCH — one of each every seven games — and on top
+  // of that a player without the duty has his handed to somebody else, so a
+  // career could genuinely run for a season without the player ever taking one.
+  // Reported as exactly that: "penalties don't really seem to exist".
+  //
+  // Three independent rolls now rather than one shared one. The single `dead`
+  // roll meant the three were competing for the same slice of probability — a
+  // penalty could only ever come out of the bottom 5% that a corner was also
+  // trying to claim, so raising one silently lowered another.
+  //
+  // Corners are also no longer allowed to arrive from your own defensive third,
+  // which the old unzoned `dead < 0.18` permitted: the ball was in your own box
+  // and the game gave you a corner to attack.
+  if (state.zone === "box" && rng() < 0.085) {
     return { zone: state.zone, kinds: ["penalty"], reason: "You are brought down in the box — penalty" };
   }
-  if (state.zone === "attacking" && dead < 0.1) {
+  if (state.zone === "attacking" && rng() < 0.215) {
     return { zone: state.zone, kinds: ["free_kick"], reason: "Fouled on the edge of the area" };
   }
-  if (dead < 0.18) {
+  if ((state.zone === "attacking" || state.zone === "box") && rng() < 0.24) {
     return { zone: state.zone, kinds: ["corner"], reason: "The cross is turned behind — corner" };
   }
 

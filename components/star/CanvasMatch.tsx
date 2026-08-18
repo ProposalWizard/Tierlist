@@ -1127,7 +1127,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const footballer = (
       x: number, y: number, rBase: number,
       shirt: string, rim: string,
-      opts: { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string } = {},
+      opts: { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean } = {},
     ) => {
       const { px, py, scale } = toPx(x, y);
       // Further up the pitch is further from the camera, so figures there are
@@ -1233,6 +1233,37 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(opts.label, px, py - r * 1.02);
+      }
+
+      // ── The star above your head ──
+      //
+      // Which man is you, said the way a game says it rather than the way a
+      // diagram does. The word YOU was three letters of chrome sitting on the
+      // one figure you are actually watching, and at this size it was wider
+      // than the player wearing it. A star reads instantly, costs no width,
+      // and does not have to be read.
+      if (opts.star) {
+        const sr = r * 0.46;
+        const cx = px, cy = py - r * 1.30;
+        ctx.save();
+        // Drawn from the point down, so it sits upright over the head.
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const ang = -Math.PI / 2 + (i * Math.PI) / 5;
+          const rad = i % 2 === 0 ? sr : sr * 0.44;
+          const x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        // A dark rim under it, because a gold star on a bright shirt or against
+        // a floodlit sky needs an edge or it dissolves into whatever is behind.
+        ctx.lineJoin = "round";
+        ctx.lineWidth = Math.max(1.5, sr * 0.34);
+        ctx.strokeStyle = "rgba(0,0,0,0.55)";
+        ctx.stroke();
+        ctx.fillStyle = "#fbbf24";
+        ctx.fill();
+        ctx.restore();
       }
     };
 
@@ -1499,8 +1530,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // happening entirely between two frames.
       pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
       phase: runPhase(sc.player.x),
-      label: "YOU",
-      labelColor: labelInk(ourKit().shirt),
+      star: true,
     });
 
     // ── Keeper ──
