@@ -6,8 +6,9 @@ import {
   stepKeeper, stepDefenders, stepReactions, initDefenders,
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
+  orderableRunners, acceptsCaptainOrders,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
-  type Facing,
+  type Facing, type Runner,
 } from "@/lib/star/canvasEngine";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
@@ -98,6 +99,16 @@ const FALLBACK_CAREER = {
  * your finger moved, which is not a shot.
  */
 const MIN_PULL = 0.04;
+
+/**
+ * The shortest pull off a team-mate that counts as pointing him somewhere,
+ * in METRES on the pitch rather than as a fraction of the screen.
+ *
+ * Metres because this gesture means a distance on the grass — three metres is
+ * a step, and sending a man three metres is not a run. Below it the touch is
+ * read as a tap, which is the other order entirely.
+ */
+const CAPTAIN_DRAG_MIN = 3.0;
 
 // --- Knowitball match identity: "night match under floodlights" ---
 // Deep cool pitch greens + floodlight wash, near-black glass chrome, gold accent.
@@ -480,6 +491,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const draggingRef = useRef(false);
 
+  // ── THE ARMBAND ────────────────────────────────────────────────────────────
+  //
+  // Two things a captain can do that nobody else on the pitch can, both of them
+  // decided before the ball is struck and neither of them costing you the
+  // unlimited time to decide that every situation gives you.
+  //
+  //   TAP a team-mate   — the man you want it laid off to. Whoever receives your
+  //                       pass plays it to him instead of shooting, and HE
+  //                       shoots. Tap again to take the order back.
+  //   DRAG from one     — where you want him to run. He goes when you play it.
+  //
+  // Both live on the scenario itself (`relayTo`, `Runner.commandedTo`), because
+  // the engine is what has to read them. These refs are the gesture in progress
+  // and a version counter to get the overlay redrawn.
+  const isCaptain = !!career?.captain;
+  const isCaptainRef = useRef(isCaptain);
+  isCaptainRef.current = isCaptain;
+  const captainDragRef = useRef<{ runner: Runner; from: { x: number; y: number }; to: { x: number; y: number } } | null>(null);
+  /** Bumped whenever an order changes, purely so the React overlay re-renders. */
+  const [orderTick, setOrderTick] = useState(0);
+  const bumpOrders = () => setOrderTick(t => t + 1);
+
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
   const [feed, setFeed] = useState<string[]>([]);
@@ -785,6 +818,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     return clamp(screenPull(drag, ball) / dragForFullPower(tiredSkills().power), 0, 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * The team-mate under the thumb, if the man with the armband is asking.
+   *
+   * Generous on purpose — a footballer is a centimetre wide on a phone and the
+   * whole ability is worthless if picking him out is fiddly. Nearest man inside
+   * the radius wins, so two players standing close together still resolve to
+   * one of them rather than to neither.
+   */
+  const captainPickAt = (p: { x: number; y: number }): Runner | null => {
+    if (!isCaptainRef.current) return null;
+    const sc = scenarioRef.current;
+    if (!acceptsCaptainOrders(sc.kind)) return null;
+    const vp = viewportRef.current;
+    const grab = Math.max(2.2, (vp.y2 - vp.y1) * 0.09);
+    let best: Runner | null = null;
+    let bestD = grab;
+    for (const r of orderableRunners(sc)) {
+      const d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y);
+      if (d < bestD) { bestD = d; best = r; }
+    }
+    return best;
+  };
 
   // --- Render one frame ---
   const render = useCallback(() => {
@@ -1314,6 +1370,86 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       });
     }
 
+    /**
+     * The armband's two orders, drawn on the grass.
+     *
+     * Gold, because that is what the armband is, and because nothing else on
+     * this pitch is — a defender is never gold and neither is the ball, so an
+     * order can never be mistaken for a thing that is about to happen to you.
+     */
+    const drawCaptainOrders = (s: Scenario) => {
+      const GOLD = "#fbbf24";
+
+      const arrow = (from: { x: number; y: number }, to: { x: number; y: number }, alpha: number, dashed: boolean) => {
+        const a = toPx(from.x, from.y), b = toPx(to.x, to.y);
+        const dx = b.px - a.px, dy = b.py - a.py;
+        const len = Math.hypot(dx, dy);
+        if (len < 6) return;
+        const ux = dx / len, uy = dy / len;
+        // Starts clear of the man's feet so the shaft does not grow out of his
+        // shins, and stops short of the head so the head is the point of it.
+        const HEAD = Math.min(16, len * 0.34);
+        const sx = a.px + ux * 10, sy = a.py + uy * 10;
+        const ex = b.px - ux * HEAD * 0.6, ey = b.py - uy * HEAD * 0.6;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = GOLD;
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        if (dashed) ctx.setLineDash([7, 6]);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // The head, as a filled triangle rather than two more strokes — a
+        // stroked chevron reads as a bend in the line at this size.
+        ctx.fillStyle = GOLD;
+        ctx.beginPath();
+        ctx.moveTo(b.px, b.py);
+        ctx.lineTo(b.px - ux * HEAD - uy * HEAD * 0.42, b.py - uy * HEAD + ux * HEAD * 0.42);
+        ctx.lineTo(b.px - ux * HEAD + uy * HEAD * 0.42, b.py - uy * HEAD - ux * HEAD * 0.42);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      };
+
+      // Runs already given: where each man has been sent, and where he is going
+      // to be standing when the ball gets there.
+      for (const r of orderableRunners(s)) {
+        if (!r.commandedTo) continue;
+        arrow(r.pos, r.commandedTo, 0.75, true);
+      }
+
+      // The man it gets laid off to. A ring around him rather than a marker
+      // beside him: the order is about HIM, and a ring is the only shape that
+      // says "this one" without pointing anywhere.
+      if (s.relayTo) {
+        const { px, py } = toPx(s.relayTo.pos.x, s.relayTo.pos.y);
+        ctx.save();
+        ctx.strokeStyle = GOLD;
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = 0.95;
+        ctx.beginPath();
+        ctx.arc(px, py, 15, 0, Math.PI * 2);
+        ctx.stroke();
+        // …and a second, fainter ring, so it reads as deliberate rather than as
+        // a selection halo that might be the game highlighting something.
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(px, py, 20, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // The gesture in the thumb right now, drawn solid so it is plainly the
+      // live one and the committed orders behind it are plainly not.
+      const drag = captainDragRef.current;
+      if (drag && Math.hypot(drag.to.x - drag.from.x, drag.to.y - drag.from.y) >= CAPTAIN_DRAG_MIN) {
+        arrow(drag.runner.pos, drag.to, 1, false);
+      }
+    };
+
     // Decorative team-mates (the crosser on a volley/header)
     sc.teammates.forEach((t, i) => {
       footballer(t.x, t.y, R, ourKit().shirt, ourKit().trim, {
@@ -1334,6 +1470,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         phase: runPhase(r.pos.x),
       });
     });
+
+    // ── The captain's orders, drawn over his players ──
+    //
+    // Deliberately drawn AFTER the men and BEFORE the defenders and you, so an
+    // order is never hidden behind a shirt and never hides the thing you are
+    // aiming at. Only while you still have the ball: once it is struck the
+    // orders are being carried out, and a pitch covered in arrows during the
+    // flight is noise.
+    if (isCaptainRef.current && phaseRef.current === "aim" && acceptsCaptainOrders(sc.kind)) {
+      drawCaptainOrders(sc);
+    }
 
     // Defenders + you. A wall man in the air is drawn where he actually is —
     // the same height the block test uses, so what you see is what resolves.
@@ -1803,6 +1950,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           const label = receiver.who?.shortName ?? receiver.roleLabel;
           if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); showAction("PASS"); }
           else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); kickPoseRef.current = KICK_POSE_S; }
+          // He was told to leave it, and he has left it. Named, because the
+          // whole point of the order is that the move went through somebody
+          // rather than ending at the first man who could see the goal.
+          else if (ev === "relay") {
+            pushLine(`${label} leaves it — the captain wanted it moved on.`);
+            showAction("PASS");
+            playKick();
+            kickPoseRef.current = KICK_POSE_S;
+          }
         }
         if (ballRef.current) ballRef.current.event = null;
       }
@@ -2388,6 +2544,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
+    // Orders belong to the situation they were given in. A fresh scenario is a
+    // fresh set of team-mates in fresh positions, so anything the captain said
+    // about the last one is meaningless — and carrying a stale Runner reference
+    // across would point at a man who is no longer on the pitch.
+    captainDragRef.current = null;
+    bumpOrders();
     trailRef.current = [];
     particlesRef.current = [];
     shakeRef.current.t = 0;
@@ -2450,13 +2612,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Grab radius scales with the camera so the ball is equally easy to pick up
     // whether the chance is framed tight or wide.
     const vp = viewportRef.current;
-    if (Math.hypot(p.x - b.x, p.y - b.y) > (vp.y2 - vp.y1) * 0.28) return;
+    if (Math.hypot(p.x - b.x, p.y - b.y) > (vp.y2 - vp.y1) * 0.28) {
+      // Not the ball. A captain touching one of his own players is giving him an
+      // order; anybody else has simply missed, and nothing happens — which is
+      // exactly what happened before the armband existed.
+      const r = captainPickAt(p);
+      if (r) {
+        captainDragRef.current = { runner: r, from: p, to: p };
+        try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      }
+      return;
+    }
     draggingRef.current = true;
     dragRef.current = p;
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (phaseRef.current === "dribble") return;
+    if (captainDragRef.current) {
+      captainDragRef.current.to = pitchFromPointer(e.clientX, e.clientY);
+      return;
+    }
     if (!draggingRef.current) return;
     dragRef.current = pitchFromPointer(e.clientX, e.clientY);
   };
@@ -2473,6 +2649,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const dx = to.x - from.x, dy = to.y - from.y;
       if (Math.hypot(dx, dy) < 1.2) return;
       flick(d, dx, dy);
+      return;
+    }
+    // ── The captain's gesture, settled ──
+    //
+    // One touch, two orders, told apart by how far it travelled. A tap is a
+    // choice ("him") and a drag is a direction ("there") — the same distinction
+    // a manager's hand makes on a touchline, and it means neither ability needs
+    // a mode button taking up room on a phone screen.
+    if (captainDragRef.current) {
+      const { runner, from, to } = captainDragRef.current;
+      captainDragRef.current = null;
+      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      const sc = scenarioRef.current;
+      if (Math.hypot(to.x - from.x, to.y - from.y) < CAPTAIN_DRAG_MIN) {
+        // A tap: he is the man it gets laid off to, or he no longer is.
+        sc.relayTo = sc.relayTo === runner ? null : runner;
+      } else {
+        // A drag: he runs that way, as far as you pulled, starting the moment
+        // you play the ball. Dragging from a man you had picked out for the
+        // lay-off does not take that order away — the two compose, and a man
+        // running onto it is played in front of. See launchReceiverPass.
+        runner.commandedTo = { x: to.x, y: to.y };
+      }
+      bumpOrders();
       return;
     }
     if (!draggingRef.current) return;
@@ -2704,6 +2904,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         )}
         <span className="text-amber-300">💡</span> {scenarioLabel.hint}
       </div>
+
+      {/* ── The armband ──
+          Only for the captain, only while the ball is still at your feet, and
+          only in a situation orders mean anything in. It reports what has
+          actually been given rather than repeating the instructions forever —
+          a line you have already acted on is clutter. */}
+      {isCaptain && phase === "aim" && acceptsCaptainOrders(scenarioRef.current.kind) && (
+        <div className="mt-1.5 bg-amber-500/10 border border-amber-500/40 rounded-lg px-3 py-1.5 text-[10px] text-amber-200/90 text-center">
+          <span className="font-black text-amber-300">© CAPTAIN</span>
+          {(() => {
+            // Orders live on the scenario (a ref), so this line is re-read when
+            // orderTick moves and at no other time. See bumpOrders.
+            void orderTick;
+            const sc = scenarioRef.current;
+            const runs = orderableRunners(sc).filter(r => r.commandedTo).length;
+            const relay = !!sc.relayTo;
+            if (!runs && !relay) return <> · tap a team-mate to have it laid off to him, drag to send him on a run</>;
+            return (
+              <>
+                {relay && <> · lay-off to <span className="font-black">{sc.relayTo?.who?.shortName ?? "your man"}</span></>}
+                {!!runs && <> · {runs} run{runs > 1 ? "s" : ""} called</>}
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Session complete — reuse the real post-match screen for the summary */}
       {phase === "postmatch" && finalStats && (

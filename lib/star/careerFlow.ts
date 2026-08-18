@@ -496,8 +496,9 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
   const thisSeason = career.trophies.filter(t => t.season === career.season);
   const wonFaCup = thisSeason.some(t => t.competition === "FA Cup");
   const wonLeagueCup = thisSeason.some(t => t.competition === "League Cup");
+  const wonEuroComp = thisSeason.some(t => t.competition === "Champions League" || t.competition === "Europa League");
   const qualification = qualificationFor(
-    leaguePosition(career), career.league.length, wonFaCup, wonLeagueCup,
+    leaguePosition(career), career.league.length, wonFaCup, wonLeagueCup, wonEuroComp,
   );
 
   const next: CareerState = {

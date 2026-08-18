@@ -39,7 +39,7 @@ export interface Viewport { x1: number; x2: number; y1: number; y2: number; }
 export type Facing = "up" | "left" | "right";
 
 // A moment worth narrating, surfaced from the physics tick to the UI once and consumed.
-export type BallEvent = "received" | "receiverShot" | "post";
+export type BallEvent = "received" | "receiverShot" | "post" | "relay";
 
 export interface Ball {
   pos: Vec2;
@@ -235,6 +235,20 @@ export interface Runner {
    * Not an offence on its own — it becomes one the moment he plays the ball.
    */
   offside?: boolean;
+  /**
+   * THE CAPTAIN'S ORDERS: where he has been sent, and nothing else.
+   *
+   * Everything else on this pitch obeys the rule at the top of stepReactions —
+   * nobody moves until you kick the ball, and then only to a ball that has come
+   * near them. This is the one exception in the game, and it is the whole point
+   * of the armband: a captain points, and a team-mate goes.
+   *
+   * Still does not move him during the aim phase. `stepReactions` is only called
+   * once the ball is live, so the run begins when you play it and not before —
+   * you keep the unlimited time to decide that every other situation gives you.
+   * Cleared when he arrives, and he goes back to reacting like everybody else.
+   */
+  commandedTo?: Vec2;
 }
 
 // The kind of match situation the player has been put in. Shooting kinds
@@ -387,6 +401,23 @@ export interface Scenario {
    * this changes at all.
    */
   conditions?: { drag: number; friction: number; bounce: number; wind: number };
+  /**
+   * THE CAPTAIN'S ORDERS: the man you want it laid off to.
+   *
+   * Without one, a team-mate who receives your pass shoots — which is all he has
+   * ever done, and which is right, because nobody told him otherwise. With one,
+   * he plays it to this man first and THAT man shoots.
+   *
+   * Held as the Runner itself rather than an index, because the two lists a
+   * runner can live in (`runner` and `secondaryRunners`) are rebuilt whenever a
+   * move chains, and an index into them survives nothing.
+   */
+  relayTo?: Runner | null;
+  /** Who actually got on the end of the ball. Set at reception; a man cannot be
+   *  told to lay it off to himself. */
+  receivedBy?: Runner | null;
+  /** The lay-off has been played, so the next man to receive it shoots. */
+  relayed?: boolean;
 }
 
 export type Outcome =
@@ -959,6 +990,12 @@ function fitToView(sc: Scenario) {
   for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
     r.pos.x = fx(r.pos.x); r.pos.y = fy(r.pos.y);
     r.to.x = fx(r.to.x);   r.to.y = fy(r.to.y);
+    // A man cannot be sent somewhere the camera does not go — the run would
+    // finish off the edge of the picture and read as him leaving the pitch.
+    if (r.commandedTo) {
+      r.commandedTo.x = fx(r.commandedTo.x);
+      r.commandedTo.y = fy(r.commandedTo.y);
+    }
   }
   if (goalInView(sc.kind)) { sc.follower.x = fx(sc.follower.x); sc.follower.y = fy(sc.follower.y); }
   sc.ball = { x: fx(sc.ball.x), y: Math.min(fy(sc.ball.y), floor) };
@@ -2146,6 +2183,94 @@ export function chainReturnChance(sc: Scenario): number {
 
 const RECEIVER_CONTROL_T = 0.45; // seconds the teammate takes to control the ball before shooting
 
+// ── THE CAPTAIN'S LAY-OFF ────────────────────────────────────────────────────
+
+/** Shortest and longest ball a man will look up and play on your say-so. */
+const RELAY_MIN = 3;
+const RELAY_MAX = 40;
+
+/**
+ * The man you want it laid off to — or null, and he shoots as he always has.
+ *
+ * Refuses three things, all of which would read as the armband making a fool of
+ * you rather than as a captain organising a move: laying it off to himself, a
+ * ball that is not a pass by any measure, and a second lay-off in one move
+ * (which is a game of keep-ball in the six-yard box, not a chance).
+ */
+function relayTargetFor(scenario: Scenario): Runner | null {
+  const target = scenario.relayTo;
+  if (!target || scenario.relayed) return null;
+  const from = scenario.receivedBy;
+  if (from && from === target) return null;
+  const at = scenario.receivedAt;
+  if (!at) return null;
+  const d = Math.hypot(target.pos.x - at.x, target.pos.y - at.y);
+  if (d < RELAY_MIN || d > RELAY_MAX) return null;
+  return target;
+}
+
+/**
+ * He looks up, and plays it where he was told.
+ *
+ * Deliberately NOT a guaranteed ball. The armband buys you the DECISION — that
+ * the move goes through the man in space rather than into the first shot that
+ * presents itself — and it does not buy you his execution. A tired side that
+ * does not know each other sprays it; a good one finds him. That is the same
+ * trade every other pass in this engine makes, and making this one automatic
+ * would turn the ability into a cheat code rather than a captain's ball.
+ */
+function launchReceiverPass(ball: Ball, scenario: Scenario, target: Runner, rng: () => number) {
+  const from = { x: ball.pos.x, y: ball.pos.y };
+  // Where he will be, not where he is — a man running onto it is played in
+  // front of. Half the flight is a fair lead for a ball over this distance.
+  const dist = Math.hypot(target.pos.x - from.x, target.pos.y - from.y);
+  const speed = clamp(11 + dist * 0.42, 11, 24);
+  const lead = target.commandedTo && target.moving ? Math.min(dist / speed, 0.9) : 0;
+  const aim = lead > 0
+    ? aheadOf(target, lead)
+    : { x: target.pos.x, y: target.pos.y };
+
+  // His passing, and how well the two of them play together. The same two
+  // numbers his shot is built from, so a side that finishes well passes well.
+  const skill = clamp(scenario.receiver?.skill ?? 62, 0, 100) / 100;
+  const team = clamp(scenario.teamRelationship / 100, 0, 1);
+  const quality = clamp(skill * 0.62 + team * 0.38, 0, 1);
+  // Over twenty metres a degree is about 35 cm, and PASS_CONTROL_R is 2 m — so
+  // this is the number that decides whether the ball actually reaches him.
+  const sigmaDeg = (1 - quality * 0.8) * 6.5;
+  const dir = rotateDeg(normalize({ x: aim.x - from.x, y: aim.y - from.y }), gaussian(rng) * sigmaDeg);
+
+  ball.vel = { x: dir.x * speed, y: dir.y * speed };
+  ball.vz = 0;
+  ball.z = 0.08;
+  ball.spin = (rng() - 0.5) * 0.35;
+  ball.loose = false;
+  ball.contactCd = 0.15;
+  ball.lastTouch = "attack";
+  ball.event = "relay";
+  // It is a PASS. Setting `shot` here would make every other team-mate step out
+  // of its way — including the man it is being played to.
+  ball.shot = false;
+  markLanding(ball, scenario);
+
+  scenario.relayed = true;
+  scenario.receiverDone = false;
+  // His touch is a new deliberate play by your side, so the offside line is
+  // redrawn against where everybody is now. Same rule as his shot.
+  offsideSnapshot(scenario, from);
+}
+
+/** Where a man running to orders will be in `t` seconds. */
+function aheadOf(r: Runner, t: number): Vec2 {
+  const to = r.commandedTo;
+  if (!to) return { x: r.pos.x, y: r.pos.y };
+  const dx = to.x - r.pos.x, dy = to.y - r.pos.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 0.01) return { x: r.pos.x, y: r.pos.y };
+  const step = Math.min(d, r.speed * t);
+  return { x: r.pos.x + (dx / d) * step, y: r.pos.y + (dy / d) * step };
+}
+
 // A teammate who's just received a cutback/cross/through-ball takes their own shot.
 // Quality is a real simulation input (accuracy spread, power, curl), not a probability
 // roll — same physics as the player's own strike, driven by their role and how well
@@ -2353,6 +2478,30 @@ export function scanRange(vision: number): number {
  * his head, is simply not surfaced — he can still hit it, he just is not being
  * told it is on.
  */
+// ── WHAT THE ARMBAND CAN ORDER ───────────────────────────────────────────────
+
+/**
+ * Every team-mate on the pitch a captain can point at.
+ *
+ * The two lists a runner can live in, flattened — the same set the pass
+ * reception loop tests against, so anything the captain can select is something
+ * the ball can actually reach.
+ */
+export function orderableRunners(sc: Scenario): Runner[] {
+  return [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
+}
+
+/**
+ * Can the captain organise this situation at all?
+ *
+ * A dead ball is not a move to orchestrate — it is one strike with everybody
+ * standing still and waiting for it, which is why the wall jumps and nobody
+ * runs. Pointing a team-mate somewhere before a penalty is not football.
+ */
+export function acceptsCaptainOrders(kind: ScenarioKind): boolean {
+  return kind !== "penalty" && kind !== "free_kick" && kind !== "corner";
+}
+
 export function visibleOptions(scenario: Scenario, carrier: Vec2, vision: number): { runner: Runner; score: number }[] {
   const range = scanRange(vision);
   return [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]
@@ -3018,6 +3167,33 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
 
   for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
     const dist = Math.hypot(ball.pos.x - r.pos.x, ball.pos.y - r.pos.y);
+
+    // ── A man running to the captain's orders ──
+    //
+    // The one exception to the rule at the top of this function. He goes where
+    // he was pointed, at a run, and he keeps going until he gets there — a run
+    // that stopped the moment the ball came near would not be a run, it would
+    // be the ordinary reaction with an arrow drawn over it.
+    //
+    // A ball that has stopped still outranks it: a side that jogs past a loose
+    // ball to complete a run is a side that has lost it, and no captain wants
+    // that. Everything else waits until he arrives.
+    if (r.commandedTo && !dead) {
+      const dx = r.commandedTo.x - r.pos.x, dy = r.commandedTo.y - r.pos.y;
+      const togo = Math.hypot(dx, dy);
+      if (togo < 0.6) {
+        r.commandedTo = undefined;   // arrived; back to reacting like everybody else
+        r.moving = false;
+      } else {
+        const step = Math.min(togo, r.speed * dt);
+        r.pos.x += (dx / togo) * step;
+        r.pos.y += (dy / togo) * step;
+        r.moving = true;
+        r.sprint = true;
+      }
+      continue;
+    }
+
     if (dead) { move(r.pos, fetch(dist)); r.moving = true; continue; }
     if (dist > REACT_R) { r.moving = false; continue; }
     move(r.pos, REACT_SPEED);
@@ -3459,10 +3635,15 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   // ball he was flagged for). The move is dead.
   if (scenario.offsideAgainst) return "offside";
 
-  // A teammate is controlling a pass they've just received — hold the ball, then strike.
+  // A teammate is controlling a pass they've just received — hold the ball, then
+  // strike it. Unless he was told to do something else with it: see relayTargetFor.
   if (ball.receiverControlT > 0) {
     ball.receiverControlT = Math.max(0, ball.receiverControlT - dt);
-    if (ball.receiverControlT <= 0) launchReceiverShot(ball, scenario, rng);
+    if (ball.receiverControlT <= 0) {
+      const relay = relayTargetFor(scenario);
+      if (relay) launchReceiverPass(ball, scenario, relay, rng);
+      else launchReceiverShot(ball, scenario, rng);
+    }
     return null;
   }
 
@@ -3717,6 +3898,11 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // no telling which of the men in front of you it finds.
         if (scenario.receiver && r.who) scenario.receiver.who = r.who;
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
+        // Which of them it actually reached — a man cannot be told to lay it
+        // off to himself, and this is the only way to know that.
+        scenario.receivedBy = r;
+        // He has the ball; he is no longer running to orders.
+        r.commandedTo = undefined;
         // The ball is somewhere else now, and the keeper has the beat before it
         // is struck to do something about it. See Keeper.adjusting.
         if (goalInView(scenario.kind) && !scenario.keeper.done) {

@@ -167,8 +167,7 @@ export function seedEurope(career: CareerState): { state: EuroState | null; fixt
   const competition = career.europeanQualification;
   if (
     competition !== "Champions League" &&
-    competition !== "Europa League" &&
-    competition !== "Conference League"
+    competition !== "Europa League"
   ) {
     return { state: null, fixtures: [] };
   }
@@ -221,42 +220,37 @@ export function euroTieFixture(
 /**
  * What a player's club earns for next season.
  *
- * The old formula (top fifth → CL, next fifth → EL) gave Europa League places
- * to eighth and beyond in a standard twenty-club league — nine clubs in Europe
- * in a twenty-club division, which is not any system that exists. It also
- * ignored cups entirely, so an FA Cup winner finishing seventh got nothing.
+ * Mirrors the draft game's rules exactly:
  *
- * The real rules for the Premier League era, applied here:
+ *   Champions League — top 5 by league, OR won UCL/EL last season (if outside top 5).
+ *   Europa League    — 6th or 7th by league, OR FA Cup / League Cup winner
+ *                      at 8th or below (both cups treated identically, pot 2).
  *
- *   Champions League — top four by league position.
- *   Europa League    — fifth by league, OR FA Cup winner (if not already in CL).
- *   Conference League— sixth by league, OR League Cup winner (if not already
- *                      in CL or EL).
+ * Cascade: when a cup winner is already qualified through the league (positions
+ * 1-7), the cup slot drops to the next available unqualified team. From the
+ * player's perspective, a cup win never demotes them — winning the FA Cup at
+ * 5th still earns Champions League from the league position, not Europa League
+ * from the cup. The EL spot cascades to the 8th-place team (or whoever is next)
+ * but those teams are AI-controlled and we do not track their cup results.
  *
- * Cascade: when a cup winner is already in a higher competition their cup slot
- * passes to the next unqualified team, which for the player's own career means
- * a cup win never demotes them — it can only improve their competition. A sixth-
- * place finish with the FA Cup earns Europa League; fifth place plus the League
- * Cup earns Europa League from position and Conference League is irrelevant.
- *
- * The thresholds scale with club count so a shorter career test league (ten
- * clubs) still works: `ceil(n/5)` gives 4 for n=20, 2 for n=10.
+ * The top-5 threshold scales with club count: `Math.round(n * 0.25)` gives 5
+ * for a 20-club PL (the canonical case), and a sensible number for shorter
+ * test leagues. No Conference League.
  */
 export function qualificationFor(
   position: number,
   clubCount: number,
   wonFaCup = false,
   wonLeagueCup = false,
+  wonEuroComp = false,
 ): Competition | null {
-  const cl = Math.ceil(clubCount / 5);   // PL: top 4
-  const elPos = cl + 1;                  // PL: 5th
-  const confPos = cl + 2;                // PL: 6th
+  const cl = Math.round(clubCount * 0.25);  // PL: top 5
+  const elBottom = cl + 2;                   // PL: 7th
 
   if (position <= cl) return "Champions League";
-  if (position === elPos) return "Europa League";
-  if (wonFaCup) return "Europa League";          // cup win beats conference/nothing
-  if (position === confPos) return "Conference League";
-  if (wonLeagueCup) return "Conference League";  // cup win beats nothing
+  if (wonEuroComp) return "Champions League";         // UCL/EL winner outside top 5
+  if (position <= elBottom) return "Europa League";   // 6th or 7th
+  if (wonFaCup || wonLeagueCup) return "Europa League";  // cup winner at 8th+
   return null;
 }
 
