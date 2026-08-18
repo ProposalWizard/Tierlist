@@ -112,6 +112,41 @@ function played(kind: ScenarioKind, seed: number) {
       if (wild) seen.set(wild, (seen.get(wild) ?? 0) + 1);
     }
   }
+
+  // ── …and one struck deliberately under the ball ──
+  //
+  // `over` came out of the random sample above four times in 5,200 shots, so
+  // this block was passing on a coin that landed the right way. Any change that
+  // shifts the rng stream — a builder that rolls one extra number — moved those
+  // four somewhere else and the whole suite went red for a reason that had
+  // nothing to do with what changed.
+  //
+  // A ball ballooned over the bar is not a rare accident of the physics, it is
+  // what happens when somebody gets right underneath it. So get underneath it:
+  // full power, contact at the very bottom, from close range. If THAT cannot
+  // put a ball into the second tier then `over` really is unreachable, which is
+  // the thing this check is for.
+  for (let seed = 0; seed < 40; seed++) {
+    const rng = mulberry32(seed * 7717 + 91);
+    const sc = buildScenario("one_on_one", rng, 60, 60, 60);
+    initDefenders(sc, rng);
+    // cy is measured DOWN the ball, so +1 is the very bottom of it — under the
+    // ball, which is what skies one. (-1 is the top, and drives it into the
+    // ground: worth stating, because getting that sign backwards makes a
+    // "ballooned" shot come out as a daisy-cutter and sends you hunting for a
+    // bug in the goalkeeper.)
+    const ball = launch(sc, { x: 0, y: -1 }, 1, { cx: 0, cy: 1 },
+      { power: 95, technique: 60 }, rng);
+    let out: Outcome | null = null;
+    for (let i = 0; i < 2000 && !out; i++) {
+      stepDefenders(sc, DT, ball.pos, false, ball);
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+    }
+    if (out) seen.set(out, (seen.get(out) ?? 0) + 1);
+  }
+
   const declared = Object.keys(OUTCOME_TEXT) as Outcome[];
   const missing = declared.filter(o => !seen.has(o));
   check(missing.length === 0, `every declared outcome is reachable (never seen: ${missing.join(", ") || "none"})`);

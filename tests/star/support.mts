@@ -202,7 +202,16 @@ function bestOption(sc: Scenario): number {
     const all = [...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map(r => r.pos),
                  { x: sc.follower.x, y: sc.follower.y }];
     const nearest = Math.min(...all.map(p => Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y)));
-    if (nearest < 6) abandonedShort += 1;
+    // …and only when it is OURS to give up on. A defender standing nearer to it
+    // than anybody of ours has won a loose ball, which is football rather than a
+    // bug — the thing this is looking for is a ball abandoned with one of our
+    // players closest to it. Checking our distance alone flagged the wrong
+    // thing the moment defender counts started varying: a ball 2.2 m from our
+    // man and 1.5 m from theirs is not a ball we declined to chase.
+    const nearestDef = sc.defenders.length
+      ? Math.min(...sc.defenders.map(d => Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y)))
+      : Infinity;
+    if (nearest < 6 && nearest <= nearestDef) abandonedShort += 1;
   }
   check(abandonedShort === 0,
     `a loose ball with a man standing over it is never given up on (${abandonedShort}/${played})`);

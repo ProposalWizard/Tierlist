@@ -1395,17 +1395,90 @@ function rollReceiver(kind: ScenarioKind, rng: () => number): Receiver | null {
 // A clean run in behind. The keeper narrows the angle by shading across toward
 // the shooting line, not by charging out to meet you — he is on his line here
 // like he is everywhere else, and how far across he has shaded is what you read.
+/**
+ * FIVE WAYS TO BE THROUGH ON GOAL.
+ *
+ * This built one picture: you somewhere near the middle, one man recovering
+ * behind you, the keeper on his line shading your side. Small jitter on all
+ * three, and it is the commonest chance in the game — a fifth of everything the
+ * match hands you. Played twice it reads as variety; played fifty times it
+ * reads as the same chance over and over, which is exactly what was reported.
+ *
+ * These are five genuinely different problems that are all honestly a
+ * one-on-one. What separates them is not where the ball is by a metre or two,
+ * it is what the keeper has decided to do and who else is in the picture — the
+ * two things you actually look at before you decide how to finish.
+ */
 function buildOneOnOne(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = CX + (rng() - 0.5) * 12;
-  const by = 13 + rng() * 7;
-  const keeperY = 0.5 + rng() * 0.8;
-  const keeperX = clamp(CX + (bx - CX) * 0.45, POST_L - 1, POST_R + 1);
+  const shape = rng();
+  const side = rng() < 0.5 ? -1 : 1;
+
+  // ── Where you are coming from ──
+  let bx: number, by: number;
+  if (shape < 0.22) {
+    // Straight down the middle, and deep — the long run at goal.
+    bx = CX + (rng() - 0.5) * 5;
+    by = 17 + rng() * 6;
+  } else if (shape < 0.44) {
+    // In off the angle, still a shooting chance but the goal is turned away.
+    bx = CX + side * (7 + rng() * 6);
+    by = 11 + rng() * 6;
+  } else if (shape < 0.62) {
+    // Right on top of him. Almost no time, almost no thought.
+    bx = CX + (rng() - 0.5) * 8;
+    by = 7 + rng() * 4;
+  } else {
+    // The ordinary one, and still the commonest.
+    bx = CX + (rng() - 0.5) * 12;
+    by = 13 + rng() * 7;
+  }
+
+  // ── What the goalkeeper has decided ──
+  //
+  // The one decision that changes the finish completely, and it used to be the
+  // same decision every time: stay, and shade. A keeper who comes has given you
+  // the chip and taken away the placed side-foot; a keeper who stays has done
+  // the opposite. That is the whole chance.
+  const rush = rng();
+  const keeperY = rush < 0.24
+    ? 4.0 + rng() * 3.2          // off his line and closing
+    : rush < 0.40
+      ? 2.0 + rng() * 1.6        // a couple of steps out, committed to neither
+      : 0.5 + rng() * 0.9;       // set on his line
+  // How much he has read your angle. A keeper hurtling out has less time to get
+  // across than one who has stayed, which is why coming out is a gamble.
+  const shade = keeperY > 3.5 ? 0.28 : 0.45 + rng() * 0.2;
+  const keeperX = clamp(CX + (bx - CX) * shade, POST_L - 1, POST_R + 1);
+
+  // ── Who else is in it ──
+  //
+  // A recovering man behind you most of the time, nobody at all sometimes —
+  // and occasionally somebody running SHOULDER TO SHOULDER with you, which is a
+  // different chance again: he cannot tackle from there but he can put you off
+  // and he can block the near side.
+  const company = rng();
+  const defenders: { x: number; y: number }[] = [];
+  if (company < 0.18) {
+    // Nobody. Genuinely clean through — the chance the kind is named after and
+    // the one it almost never actually produced.
+  } else if (company < 0.42) {
+    // Alongside you, goal-side shoulder.
+    defenders.push({
+      x: clamp(bx + side * (1.4 + rng() * 1.4), 6, PITCH_W - 6),
+      y: clamp(by - 0.6 + rng() * 2.2, 3.5, by + 2),
+    });
+  } else {
+    // Chasing back, the way it always was.
+    defenders.push({
+      x: clamp(bx + (rng() - 0.5) * 6, 8, PITCH_W - 8),
+      y: by + 2.5 + rng() * 4.5,
+    });
+  }
+
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.2 },
-    defenders: [
-      { x: clamp(bx + (rng() - 0.5) * 6, 8, PITCH_W - 8), y: by + 3 + rng() * 4 }, // recovering behind you
-    ],
+    defenders,
     keeper: makeKeeper(keeperX, keeperY, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
@@ -1415,19 +1488,63 @@ function buildOneOnOne(rng: () => number, keeperStrength: number, teamRelationsh
 }
 
 // Wide and close to the byline — an acute angle, keeper shading his near post.
+/**
+ * FOUR WAYS TO HAVE NO ANGLE.
+ *
+ * Same problem as the one-on-one and the same fix. This built one picture: wide
+ * on one side, one man inside you, keeper flat on his near post. What varies
+ * here is how much of the goal there actually is to aim at, and whether the
+ * thing in your way is the goalkeeper or a body on the line.
+ */
 function buildTightAngle(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const side = rng() < 0.5 ? -1 : 1;
-  const bx = CX + side * (11 + rng() * 6);
-  const by = 3 + rng() * 6;
-  // Covers the near post — the far post is the opening.
-  const keeperX = clamp(CX + side * 2.6, POST_L + 0.4, POST_R - 0.4);
+  const shape = rng();
+
+  let bx: number, by: number, keeperX: number, keeperY: number;
+  const defenders: { x: number; y: number }[] = [];
+
+  if (shape < 0.26) {
+    // ── Almost on the byline ──
+    // Barely any goal at all. The near post is the only thing on, and it is on
+    // because the keeper cannot cover a ball struck from beside him.
+    bx = CX + side * (13 + rng() * 4);
+    by = 1.2 + rng() * 2.4;
+    keeperX = clamp(CX + side * 3.4, POST_L + 0.3, POST_R - 0.3);
+    keeperY = 0.5 + rng() * 0.6;
+    defenders.push({ x: clamp(bx - side * (1.6 + rng() * 1.4), 6, PITCH_W - 6), y: clamp(by + 1.0, 1.5, 8) });
+  } else if (shape < 0.50) {
+    // ── A man on the post ──
+    // The keeper has come to meet it and left somebody guarding the far post
+    // behind him, which is the opening the ordinary version hands you.
+    bx = CX + side * (10 + rng() * 5);
+    by = 4 + rng() * 4;
+    keeperX = clamp(CX + side * 3.0, POST_L + 0.4, POST_R - 0.4);
+    keeperY = 1.8 + rng() * 1.6;
+    defenders.push({ x: clamp(CX - side * 3.0, POST_L, POST_R), y: 0.9 + rng() * 0.8 });
+    defenders.push({ x: clamp(bx - side * 2.6, 6, PITCH_W - 6), y: clamp(by + 1.4, 2, 10) });
+  } else if (shape < 0.72) {
+    // ── Pulled back off the line ──
+    // Wide, but far enough out that the far corner is a real target rather than
+    // a hopeful one. The most forgiving of the four.
+    bx = CX + side * (9 + rng() * 5);
+    by = 8 + rng() * 5;
+    keeperX = clamp(CX + side * 2.0, POST_L + 0.4, POST_R - 0.4);
+    keeperY = 0.8 + rng() * 1.2;
+    defenders.push({ x: clamp(bx - side * (2.0 + rng() * 2), 6, PITCH_W - 6), y: clamp(by - 1 + rng() * 3, 2, 12) });
+  } else {
+    // ── The ordinary one ──
+    bx = CX + side * (11 + rng() * 6);
+    by = 3 + rng() * 6;
+    keeperX = clamp(CX + side * 2.6, POST_L + 0.4, POST_R - 0.4);
+    keeperY = 0.9 + rng() * 0.8;
+    defenders.push({ x: clamp(bx - side * 2.5, 6, PITCH_W - 6), y: clamp(by + 1.5, 2, 10) });
+  }
+
   return {
     ball: { x: bx, y: by },
     player: { x: bx + side * 0.9, y: by + 0.9 },
-    defenders: [
-      { x: clamp(bx - side * 2.5, 6, PITCH_W - 6), y: clamp(by + 1.5, 2, 10) },
-    ],
-    keeper: makeKeeper(keeperX, 0.9 + rng() * 0.8, rng),
+    defenders,
+    keeper: makeKeeper(keeperX, keeperY, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "tight_angle" as const, teammates: [], runner: null, passTarget: null,
@@ -1840,16 +1957,29 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
  * the goal end and crowded around the ball, and why the offside line was a
  * fiction.
  */
-const SUPPORT_COUNT: Record<ScenarioKind, number> = {
-  // A shooting chance comes with the man in the box and nobody else, unless you
-  // can see further than that. In the reference there are two blue shirts on the
-  // screen: you, and one other.
-  one_on_one: 0, tight_angle: 0, volley: 0, header: 0, long_range: 0,
+/**
+ * HOW MANY OF YOURS COME — also a range, and for the same reason.
+ *
+ * This was flat zero for every shooting chance: you, and nobody else. The
+ * reference has two blue shirts on the screen and that is where the number came
+ * from, but a fixed zero means a one-on-one NEVER has an option in it, which is
+ * both repetitive and one of the two reasons the pitch felt empty.
+ *
+ * A shooting chance can now come with somebody alongside — not usually, but
+ * often enough that looking up is worth doing. `addSupport` still adds whatever
+ * your vision earns you ON TOP of this, so the good passer still sees more than
+ * the number here, and a support player is still only ever placed in space he
+ * could actually receive in (bestSupportPoint).
+ */
+const SUPPORT_RANGE: Record<ScenarioKind, [number, number]> = {
+  one_on_one: [0, 1], tight_angle: [0, 1], volley: [0, 1], header: [0, 1],
+  long_range: [0, 2],
   // A ball that has to be played to somebody already HAS somebody to play it to
-  // — the target runner is not counted here — so these add nobody of their own.
-  cutback: 0, byline_cross: 0, through_ball: 0, corner: 0,
-  midfield_pass: 1, buildup: 0,
-  penalty: 0, free_kick: 0,
+  // — the target runner is not counted here — so these add little of their own.
+  cutback: [0, 1], byline_cross: [0, 1], through_ball: [0, 1], corner: [0, 1],
+  midfield_pass: [1, 2], buildup: [0, 2],
+  // Nobody makes a run while the referee is waiting for you to place the ball.
+  penalty: [0, 0], free_kick: [0, 0],
 };
 
 /**
@@ -1881,18 +2011,72 @@ export function supportSeen(vision: number): number {
  * reason the back line is — a defence that arranges itself around wherever the
  * ball happens to be is not a defence.
  */
-const COVER_COUNT: Record<ScenarioKind, number> = {
-  one_on_one: 2, tight_angle: 3, volley: 2, header: 3,
-  long_range: 3, cutback: 3, byline_cross: 3, through_ball: 2,
-  midfield_pass: 1, buildup: 1,
+/**
+ * HOW MANY THEY GET BACK — a range, not a number.
+ *
+ * This was one fixed count per kind, and it is the single biggest reason the
+ * game was reported as having "only four or five situations, identical every
+ * time". Every one-on-one had exactly three opponents in it. Every cutback had
+ * four. The builders jitter positions by a metre or two, but the PICTURE — how
+ * many bodies, how much of the goal you can see — was the same on every chance
+ * of that kind you were ever given.
+ *
+ * A range instead, rolled per chance. The placement underneath is untouched:
+ * they still come back goal-side, still spread across the width of the box,
+ * still never in their own six-yard box and never in front of the offside line
+ * on a through-ball. What changes is how many of them there are, which is the
+ * thing you actually read when you look at a chance and decide what it is.
+ *
+ * The low end of each range is a real chance and the high end is a bad one, so
+ * the same kind now spans "he is clean through" to "there is no way through
+ * here" — and both are one-on-ones.
+ */
+const COVER_RANGE: Record<ScenarioKind, [number, number]> = {
+  //
+  // Every range is centred on the count this kind used to have, so the AVERAGE
+  // chance is exactly as hard as it was and only the spread is new. That is
+  // deliberate and it was learned the hard way: widening these upward on the
+  // first attempt moved four of the measured distributions in tests/star out of
+  // their tuned bounds at once — blocks up to 34%, cutbacks converting at 48%.
+  // Variety is worth a lot and it is not worth silently re-balancing the game.
+  one_on_one: [1, 3],
+  tight_angle: [2, 4],
+  volley: [1, 3],
+  header: [2, 4],
+  long_range: [2, 4],
+  cutback: [2, 4],
+  byline_cross: [2, 4],
+  through_ball: [1, 3],
+  midfield_pass: [0, 2],
+  buildup: [0, 2],
   // A free kick already has a wall of three or four in front of it, and they
   // ARE the cover. Adding more put bodies across the flight of a ball lifted
   // over the wall, so the one free kick that is supposed to work could not.
-  penalty: 0, free_kick: 0, corner: 3,
+  penalty: [0, 0], free_kick: [0, 0], corner: [2, 4],
 };
 
+/**
+ * A count in [lo, hi], but USUALLY the middle of it.
+ *
+ * Two rolls averaged rather than one, which is a triangular distribution: the
+ * extremes still happen and the centre happens most. A flat roll over the same
+ * range looked right and was not, because how hard a chance is does not scale
+ * linearly with how many bodies are in it — the jump from three defenders to
+ * four costs you far more than the jump from two to three gains you. Measured
+ * over 500 volleys a flat roll pushed the blocked rate from 24% to 34% without
+ * changing the average defender count at all.
+ *
+ * So: the ordinary chance stays the ordinary chance, and the wide-open one and
+ * the hopeless one are things that happen sometimes.
+ */
+function bodyCount(lo: number, hi: number, rng: () => number): number {
+  if (hi <= lo) return lo;
+  return lo + Math.round(((rng() + rng()) / 2) * (hi - lo));
+}
+
 function addCover(sc: Scenario, rng: () => number) {
-  const want = COVER_COUNT[sc.kind] ?? 0;
+  const [lo, hi] = COVER_RANGE[sc.kind] ?? [0, 0];
+  const want = bodyCount(lo, hi, rng);
   // ── The one situation whose line is already drawn ──
   //
   // A through-ball is built around its offside line: the runner is placed
@@ -1955,7 +2139,8 @@ function addCover(sc: Scenario, rng: () => number) {
  * available to them, and keep looking for a better spot while you hold the ball.
  */
 function addSupport(sc: Scenario, rng: () => number, vision = 55) {
-  const base = SUPPORT_COUNT[sc.kind] ?? 0;
+  const [slo, shi] = SUPPORT_RANGE[sc.kind] ?? [0, 0];
+  const base = bodyCount(slo, shi, rng);
   // Dead balls are a still frame by design and gain nobody from vision.
   const dead = sc.kind === "penalty" || sc.kind === "free_kick";
   const want = dead ? base : base + supportSeen(vision);
@@ -3870,7 +4055,18 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     // grass there is nothing left to steal, and somebody has to be able to pick
     // it up or the move never ends.
     const ballIsDead = ball.resting || (speed < DEAD_BALL_SPEED && ball.z < 0.4);
-    const shotAtGoal = ball.shot === true && !ballIsDead;
+    // ── A shot that has died is not a shot anybody steps out of the way of ──
+    //
+    // The rule below lets a support player ignore a ball that is going in, so
+    // your own man cannot intercept your own shot. It used to hold for as long
+    // as the ball was off the ground AT ALL, so a shot that had looped up and
+    // slowed to walking pace was still "going in" — and a team-mate standing
+    // over it would let it roll past him. Reported by the loose-ball check in
+    // tests/star/support once shooting chances started having team-mates in
+    // them at all: one ball in 1,200 abandoned with a man six metres away.
+    //
+    // Height is not what makes it a shot; pace is.
+    const shotAtGoal = ball.shot === true && !ball.resting && speed >= DEAD_BALL_SPEED;
     for (const r of candidates) {
       const tgt = r.pos;
       let swept = Math.hypot(tgt.x - ball.pos.x, tgt.y - ball.pos.y);
@@ -4056,7 +4252,32 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   // sitting on the ball is dead air. While somebody can still collect it, the
   // ordinary timeout stands as a backstop for a ball nobody can reach.
   if (ball.resting) {
-    const settled = scenario.receiverDone || (scenario.receiverShots ?? 0) >= 2;
+    // ── …but a man standing over it IS somebody whose turn it is ──
+    //
+    // "Two shots have happened" was being read as "nobody is left", and those
+    // are not the same statement. A scramble that had produced two efforts got
+    // the short 1.2 s fuse, so a ball rolling to a stop with one of your own
+    // players two feet away was written off as scrambled clear while he was in
+    // the act of reaching it. Caught by the loose-ball check in
+    // tests/star/support the moment shooting chances began carrying team-mates:
+    // our nearest man 0.39 m away, the nearest defender 2.24 m, the ball ours,
+    // and the move declared over.
+    //
+    // So the short fuse now needs the ball to be genuinely unreachable as well.
+    // The ordinary timeout still backstops it, and the scramble cap still ends
+    // a goalmouth pinball for good — this only stops the move being cut off
+    // while somebody can plainly still play it.
+    const capped = (scenario.receiverShots ?? 0) >= SCRAMBLE_MAX;
+    let nearestOurs = Math.hypot(scenario.player.x - ball.pos.x, scenario.player.y - ball.pos.y);
+    for (const r of orderableRunners(scenario)) {
+      nearestOurs = Math.min(nearestOurs, Math.hypot(r.pos.x - ball.pos.x, r.pos.y - ball.pos.y));
+    }
+    if (goalInView(scenario.kind) && !scenario.follower.shot) {
+      nearestOurs = Math.min(nearestOurs,
+        Math.hypot(scenario.follower.x - ball.pos.x, scenario.follower.y - ball.pos.y));
+    }
+    const reachable = !capped && nearestOurs < PASS_CONTROL_R;
+    const settled = !reachable && (scenario.receiverDone || (scenario.receiverShots ?? 0) >= 2);
     const limit = settled ? DEAD_BALL_SETTLED : DEAD_BALL_TIMEOUT;
     if ((ball.restT ?? 0) > limit) return "short";
   }
