@@ -135,44 +135,16 @@ export default function ContactBall({ power, onContact }: Props) {
               background: "radial-gradient(ellipse, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 72%)",
             }}
           />
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_10px_14px_rgba(0,0,0,0.55)]">
-            <defs>
-              {/* Lit from the upper-left, the way the reference is, and dark
-                  enough at the rim to actually read as a sphere rather than a
-                  flat white disc with pentagons drawn on it. */}
-              <radialGradient id="ballShade" cx="36%" cy="30%" r="80%">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="55%" stopColor="#f4f6f9" />
-                <stop offset="82%" stopColor="#d7dee8" />
-                <stop offset="100%" stopColor="#9aa7ba" />
-              </radialGradient>
-              <radialGradient id="ballSpecular" cx="32%" cy="24%" r="20%">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <circle cx="50" cy="50" r="48" fill="url(#ballShade)" stroke="#7b8798" strokeWidth="0.6" />
-            {/* Centre pentagon */}
-            <polygon points="50,34 62,43 57,57 43,57 38,43" fill="#111827" />
-            {/* Surrounding partial pentagons */}
-            <polygon points="50,10 62,18 57,30 43,30 38,18" fill="#111827" opacity="0.92" />
-            <polygon points="14,40 26,32 34,42 28,54 16,52" fill="#111827" opacity="0.9" />
-            <polygon points="86,40 74,32 66,42 72,54 84,52" fill="#111827" opacity="0.9" />
-            <polygon points="30,86 24,72 36,66 46,74 42,88" fill="#111827" opacity="0.88" />
-            <polygon points="70,86 76,72 64,66 54,74 58,88" fill="#111827" opacity="0.88" />
-            {/* Seam stitching — faint curved lines between the panels, the
-                detail that separates a diagram of a ball from a photo of one. */}
-            <g stroke="#94a1b5" strokeWidth="0.35" fill="none" opacity="0.5">
-              <path d="M 50,10 L 50,34" />
-              <path d="M 14,40 L 38,43" />
-              <path d="M 86,40 L 62,43" />
-              <path d="M 30,86 L 43,57" />
-              <path d="M 70,86 L 57,57" />
-            </g>
-            {/* The specular highlight that sells it as glossy leather under
-                lights, not matte plastic. */}
-            <circle cx="34" cy="26" r="14" fill="url(#ballSpecular)" />
-          </svg>
+          {/* The real thing — a photograph, not a diagram. CSS/SVG cannot fake
+              leather grain or an actual reflection, so this is the club's own
+              ball, pre-cropped to a circle with a transparent surround (see
+              public/star/ball.png) and dropped straight in. */}
+          <img
+            src="/star/ball.png"
+            alt=""
+            draggable={false}
+            className="w-full h-full object-cover rounded-full select-none pointer-events-none drop-shadow-[0_10px_14px_rgba(0,0,0,0.55)]"
+          />
 
           {spark && (
             <div
