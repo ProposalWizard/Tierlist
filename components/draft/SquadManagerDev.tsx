@@ -4,6 +4,7 @@ import { FORMATIONS, getPositionColor } from "./formations";
 import { calculateSeasonOdds, positionFitness } from "@/lib/seasonSimulator";
 import { getFlagUrl } from "@/lib/nationalities";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import type { DraftPlayer } from "@/app/draft/page";
 
 interface Props {
@@ -393,9 +394,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                       />
                     ) : (
                       <div className={`w-full h-full flex items-center justify-center ${getPositionColor(naturalPositions(p)[0] || p.assignedPosition)}`}>
-                        <span className="text-xs sm:text-sm font-black text-white">
-                          {p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                        </span>
+                        <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
                       </div>
                     )}
                     {/* OOP badge */}
@@ -470,9 +469,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-purple-900/50">
-                      <span className="text-xs font-black text-white">
-                        {p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                      </span>
+                      <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
                     </div>
                   )}
                 </div>

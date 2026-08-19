@@ -5,6 +5,7 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftSettings, DraftPlayer } from "@/app/draft/page";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
 import { getFlagUrl } from "@/lib/nationalities";
+import { SILHOUETTE_SRC } from "@/lib/silhouette";
 
 interface RosterPlayer {
   sofifa_id: string;
@@ -769,9 +770,7 @@ export default function DraftPick({
                           />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center ${getPositionColor(displayPlayer.assignedPosition)}`}>
-                            <span className="text-xs sm:text-sm font-black text-white">
-                              {displayPlayer.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-                            </span>
+                            <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
                           </div>
                         )}
                       </div>
@@ -831,7 +830,7 @@ export default function DraftPick({
                           <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials} />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
-                            <span className="text-xs font-black text-white">{initials}</span>
+                            <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
                           </div>
                         )}
                       </div>
@@ -885,7 +884,7 @@ export default function DraftPick({
                               <ImageWithFallback src={sub.image_url} alt={sub.name} className="w-full h-full object-cover" fallbackText={initials(sub.name)} />
                             ) : (
                               <div className={`w-full h-full flex items-center justify-center ${getPositionColor(sub.assignedPosition)}`}>
-                                <span className="text-xs font-black text-white">{initials(sub.name)}</span>
+                                <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
                               </div>
                             )}
                           </div>
@@ -1318,7 +1317,9 @@ export default function DraftPick({
                           className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800 object-cover shrink-0"
                         />
                       ) : (
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800 shrink-0" />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800 shrink-0 overflow-hidden">
+                          <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
+                        </div>
                       )}
                       <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-extrabold text-xs sm:text-sm shrink-0 ${
                         settings.hiddenRatings
@@ -1415,7 +1416,9 @@ export default function DraftPick({
                       className="w-14 h-14 rounded-full bg-gray-800 object-cover"
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-full bg-gray-800" />
+                    <div className="w-14 h-14 rounded-full bg-gray-800 overflow-hidden">
+                      <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
+                    </div>
                   )}
                   <div className="text-left">
                     <div className="text-xl font-extrabold">{pendingPlayer.name}</div>
