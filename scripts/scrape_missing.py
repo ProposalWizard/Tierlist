@@ -701,24 +701,28 @@ async def download_face(page, url: str, year: int, sofifa_id: str) -> str:
     Returns "ok", "skip" (already have it), "no-url", or a short error
     string — never silently swallowed.
 
-    ── Why this is a THIRD approach, not a tweak of the second ──
+    ── The fourth approach, and why the third one failed differently ──
 
-    Attempt 1 (context.request.get) and attempt 2 (page.goto to the image
-    URL directly) both got HTTP 403 on every single player — clean, uniform,
-    deliberate refusals, not a captcha or a timeout. That uniformity is the
-    clue: sofifa.com (the pages) and cdn.sofifa.net (the images) are
-    different domains, and NEITHER previous attempt gave the CDN anything
-    that told it "this request belongs to a page you already served". No
-    cookie for that domain, and — critically — no Referer at all, because a
-    direct navigation is not "from" anywhere.
+    Attempt 1 (context.request.get) and attempt 2 (page.goto straight to the
+    image URL) both got HTTP 403 on every single player — no Referer, no
+    cookie for that domain, a clean refusal. Attempt 3 fixed that by running
+    fetch() FROM INSIDE the already-loaded list page, which does carry a
+    real Referer — and hit a completely different wall: "TypeError: Failed
+    to fetch" on every player, which is the browser's OWN doing, not
+    SoFIFA's. A script-initiated fetch() to another domain is only allowed
+    to read the response if that domain opts in with CORS headers, and
+    SoFIFA's CDN doesn't. The request may well have succeeded server-side;
+    the browser simply won't hand the bytes to page JavaScript.
 
-    A real browser never hits the CDN that way. It loads a sofifa.com page,
-    and THAT page's own image tags pull the photos — which automatically
-    carries a Referer of the sofifa.com page you're looking at. This does
-    the same thing on purpose: the fetch runs INSIDE the already-loaded
-    player-list page's own JavaScript, via page.evaluate, rather than as a
-    separate navigation. As far as the CDN can tell, it is being asked for
-    an image by the exact page that lists that player — because it is.
+    An <img> tag loading that exact same URL is NOT subject to that
+    restriction — that is genuinely how the photos show up on the list page
+    itself, and it carries the same real Referer fetch() had. The only
+    problem is that an <img> tag doesn't hand you its bytes either, for the
+    same reason. So: let a real <img> element do the loading (indistinguishable
+    from what the page already does), and capture the bytes with Playwright's
+    own network listener — which sits below the browser's CORS sandbox
+    entirely, because CORS restricts what PAGE SCRIPT can read, not what the
+    browser (and so Playwright, watching over its shoulder) can see.
     """
     if not url:
         return "no-url"
@@ -727,36 +731,47 @@ async def download_face(page, url: str, year: int, sofifa_id: str) -> str:
     dest = dest_dir / f"{sofifa_id}.png"
     if dest.exists():
         return "skip"
+
+    captured = {}
+
+    def on_response(response):
+        if response.url == url:
+            captured["response"] = response
+
+    page.on("response", on_response)
     try:
-        result = await page.evaluate(
-            """async (url) => {
-                try {
-                    const res = await fetch(url, { credentials: "include" });
-                    if (!res.ok) return { error: "HTTP " + res.status };
-                    const buf = await res.arrayBuffer();
-                    const bytes = new Uint8Array(buf);
-                    let binary = "";
-                    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-                    return { data: btoa(binary) };
-                } catch (e) {
-                    return { error: String(e) };
-                }
-            }""",
+        loaded = await page.evaluate(
+            """(url) => new Promise((resolve) => {
+                const img = document.createElement("img");
+                img.onload = () => { resolve(true); img.remove(); };
+                img.onerror = () => { resolve(false); img.remove(); };
+                img.src = url;
+                document.body.appendChild(img);
+            })""",
             url,
         )
-        if "error" in result:
-            return result["error"]
-        import base64
-        body = base64.b64decode(result["data"])
+        resp = captured.get("response")
+        if not resp:
+            return "img loaded but no matching response was captured"
+        if not resp.ok:
+            return f"HTTP {resp.status}"
+        body = await resp.body()
         # A blocked/redirected request often still returns 200 with a tiny
         # HTML error page instead of a PNG. A real face image is never this
         # small, so this catches "succeeded" that didn't actually succeed.
         if not body or len(body) < 200:
             return f"empty/tiny body ({len(body) if body else 0} bytes)"
+        if not loaded:
+            # The <img> reported an error, but a response DID come back —
+            # report what the network actually said rather than the generic
+            # DOM failure, which is far more useful for working out why.
+            return f"img.onerror despite a response ({len(body)} bytes, HTTP {resp.status})"
         dest.write_bytes(body)
         return "ok"
     except Exception as e:
         return f"error: {e}"
+    finally:
+        page.remove_listener("response", on_response)
 
 
 # ── Club -> league map ─────────────────────────────────────────────────────────
@@ -1443,7 +1458,7 @@ async def main():
     # If you do NOT see this exact line when you run the script, your local
     # copy is OLD — run `git pull` in the folder before scraping.
     print("=" * 64)
-    print("  scrape_missing.py  BUILD 2026-08-19-G  (face fetch runs in-page, carries a real Referer)")
+    print("  scrape_missing.py  BUILD 2026-08-19-H  (real <img> load + network capture, sidesteps CORS)")
     print("=" * 64)
 
     force = "--force" in sys.argv
