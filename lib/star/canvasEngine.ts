@@ -198,6 +198,14 @@ export interface Identity {
   name: string;
   shortName: string;
   position: string;
+  /**
+   * His real rating, when he has one — a generated squad's invented players
+   * do not. Lets a receiver's finishing quality (see launchReceiverShot) be
+   * who he actually is rather than a fresh dice roll every time the ball
+   * reaches him: your best striker finishing chances better than your
+   * reserve centre-back is the whole point of having a squad at all.
+   */
+  overall?: number;
 }
 
 export interface Follower {
@@ -2564,7 +2572,17 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // the ordering entirely, a corner landing further from centre on average
   // than a cutback. readsKeeper doesn't touch this number at all, only which
   // side it is measured from, so it does not carry that risk.
-  const placement = (0.22 + quality * 0.62) * (0.2 + control * 0.8);
+  // …and even then, he does not always go for it. Everything above is what he
+  // is TRYING to do; sigmaDeg below is how well his execution matches that
+  // intent. Neither one is "sometimes the intent itself is more or less
+  // ambitious than usual" — a real player some days goes straight for the
+  // far top corner and some days is just glad to hit the target clean, on an
+  // identical chance, because he is a man with a mind and not a formula
+  // executing the same optimum on repeat. Centred on 1 so the conversion
+  // rates tests/star/finishing.mts already validates do not move on average —
+  // this widens the spread of what gets tried, not the average of it.
+  const ambition = clamp(1 + gaussian(rng) * 0.22, 0.5, 1.3);
+  const placement = ambition * (0.22 + quality * 0.62) * (0.2 + control * 0.8);
   const aimX = clamp(
     goalCx + side * placement * (halfMouth - BALL_R * 2),
     POST_L + BALL_R * 2, POST_R - BALL_R * 2,
@@ -4129,7 +4147,20 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // Whoever it reached is who is about to shoot. Rolled at kick-off it
         // could only ever be a role, because until the ball is played there is
         // no telling which of the men in front of you it finds.
-        if (scenario.receiver && r.who) scenario.receiver.who = r.who;
+        if (scenario.receiver && r.who) {
+          scenario.receiver.who = r.who;
+          // …and now that it is a real man rather than a role, his finishing
+          // is who he is, not the fresh dice roll rollReceiver() gave him at
+          // kick-off — reported as "how are you calculating a player's
+          // finishing?" and the honest answer was: not off the player at
+          // all, off a role-shaped random number. A real squad's overall is
+          // the closest thing this game has to a finishing stat, so it wins
+          // when there is one. Still noisy — the same real player has good
+          // days and bad ones — but centred on who he actually is.
+          if (r.who.overall !== undefined) {
+            scenario.receiver.skill = clamp(r.who.overall + gaussian(rng) * 6, 0, 100);
+          }
+        }
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
         // Which of them it actually reached — a man cannot be told to lay it
         // off to himself, and this is the only way to know that.
