@@ -37,7 +37,7 @@ import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, creatorOf } from "@/lib/star/lineup";
 import { startingTeammateIds, onPitchToday } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
-import { kitsFor, labelInk, type MatchKits } from "@/lib/star/kits";
+import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
@@ -1361,8 +1361,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       footballer(dr.pos.x, dr.pos.y, R, ourKit().shirt, ourKit().trim, {
         pose: "run",
         phase: runPhase(dr.pos.x),
-        label: "YOU",
-        labelColor: labelInk(ourKit().shirt),
+        star: true,
       });
       const bp = toPx(bx, by);
       ctx.fillStyle = "#fff";

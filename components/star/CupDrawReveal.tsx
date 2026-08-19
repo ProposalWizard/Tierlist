@@ -138,7 +138,6 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
                 ) : (
                   <span className="text-right text-white/25 text-xs shrink-0">drawing…</span>
                 )}
-                {isYours && <span className="ml-2 text-[9px] font-black text-amber-300 uppercase tracking-wide shrink-0">You</span>}
               </div>
             );
           })}
