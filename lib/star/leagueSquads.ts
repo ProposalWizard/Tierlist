@@ -1,4 +1,4 @@
-import type { LeaguePlayer, LeagueSquad, SquadPlayer } from "./types";
+import type { LeaguePlayer, LeagueSquad, LeagueTeam, SquadPlayer } from "./types";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { shortNameOf } from "./realSquad";
 import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "./edition";
@@ -305,6 +305,46 @@ export function nameGoals(squad: LeagueSquad | undefined, count: number, rng: ()
 /** A new season: the table resets, and so does everybody's tally. */
 export function resetLeagueSquads(squads: LeagueSquad[]): LeagueSquad[] {
   return squads.map(s => ({ ...s, players: s.players.map(p => ({ ...p, goals: 0, assists: 0 })) }));
+}
+
+/**
+ * A CLUB'S STRENGTH, READ OFF THE MEN WHO'D ACTUALLY START.
+ *
+ * `LeagueTeam.strength` used to be a number rolled once when the division was
+ * built (buildLeague, 55 + up to 35) and never touched again for the rest of
+ * the club's existence — the same number whether its actual eleven were
+ * genuine internationals or academy fill-ins, and unmoved by a transfer
+ * window or two seasons of a striker developing.
+ *
+ * `buildLeagueSquad` already fills a club's twenty in a fixed priority order
+ * — the shape's first slots first — so the players who would start are
+ * already sitting at the front of the array; nothing has to be inferred
+ * about who plays where a second time. The 20 filler entries a thin/generated
+ * roster gets (see buildLeagueSquad/generatedSquad) carry a real `overall`
+ * too, so every club has an answer, not just the ones with a real roster
+ * behind them.
+ */
+export function averageStartingXIRating(squad: LeagueSquad | undefined): number | null {
+  if (!squad || squad.players.length === 0) return null;
+  const xi = squad.players.slice(0, 11);
+  return Math.round(xi.reduce((sum, p) => sum + p.overall, 0) / xi.length);
+}
+
+/**
+ * Refresh every club's strength from its current squad.
+ *
+ * Call this any time `leagueSquads` changes — a fresh fetch, a merge, a
+ * season rollover — so `LeagueTeam.strength` stays a live reading of the
+ * squad rather than a number that only agreed with it on the day it was
+ * cached. A club with no squad entry yet (fetch still in flight, or failed)
+ * keeps whatever strength it already had rather than losing it.
+ */
+export function syncLeagueStrengthFromSquads(league: LeagueTeam[], squads: LeagueSquad[]): LeagueTeam[] {
+  const byClub = new Map(squads.map(s => [s.club, s]));
+  return league.map((t) => {
+    const rating = averageStartingXIRating(byClub.get(t.name));
+    return rating === null ? t : { ...t, strength: rating };
+  });
 }
 
 

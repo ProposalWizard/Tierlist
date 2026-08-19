@@ -28,7 +28,7 @@ import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { resetLeagueSquads } from "./leagueSquads";
+import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
 } from "./potm";
@@ -589,6 +589,14 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
       sponsors: clamp01to100(next.relationships.sponsors - sponsorRoll.standingHit),
     };
   }
+
+  // buildLeague above stamped a fresh random baseline onto every club's
+  // strength, same as it always has — but the squads carried over into
+  // leagueSquads a few lines up are real data this career already has. Read
+  // the strengths back off them before anything downstream (the cup draw,
+  // Europe, the fixture list itself) uses a number that direct playtesting
+  // has already been compared against a real one.
+  next.league = syncLeagueStrengthFromSquads(next.league, next.leagueSquads ?? []);
 
   // A new manager has never picked you. Everything you built with the last one
   // goes with him, which is how a settled player becomes a squad player without
