@@ -695,22 +695,49 @@ async def click_next(page, ready_selector: str, expected_r: str | None = None) -
 # ── Face downloading (optional) ──────────────────────────────────────────────
 
 
-async def download_face(context, url: str, year: int, sofifa_id: str) -> bool:
+async def download_face(img_page, url: str, year: int, sofifa_id: str) -> str:
+    """Fetch one face image and save it.
+
+    Returns "ok", "skip" (already have it), "no-url", or a short error
+    string — NEVER silently swallowed. The old version returned bool and
+    the caller never even looked at that, so a wall that blocked every
+    single image request produced a script that finished, printed nothing
+    wrong, and left an empty folder. There was no way to tell "it worked"
+    from "it failed at every single player" from the terminal output alone.
+
+    Uses a real page NAVIGATION (page.goto) rather than the lower-level
+    context.request API. That distinction matters here specifically:
+    SoFIFA now requires a signed-in session to serve an image at all, and
+    a plain request-context call sends a different request shape than an
+    actual browser navigating there (no Sec-Fetch-Dest: document, among
+    other things) — which is enough for Cloudflare to tell the two apart
+    and block one while letting the other through. page.goto is the same
+    mechanism as pasting the URL into a tab, which is the one confirmed to
+    work once the browser is actually signed in.
+    """
     if not url:
-        return False
+        return "no-url"
     dest_dir = FACES_DIR / str(year)
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / f"{sofifa_id}.png"
     if dest.exists():
-        return True
+        return "skip"
     try:
-        resp = await context.request.get(url)
-        if resp.ok:
-            dest.write_bytes(await resp.body())
-            return True
-    except Exception:
-        pass
-    return False
+        resp = await img_page.goto(url, wait_until="commit", timeout=20000)
+        if not resp:
+            return "no response"
+        if not resp.ok:
+            return f"HTTP {resp.status}"
+        body = await resp.body()
+        # A blocked/redirected request often still returns 200 with a tiny
+        # HTML error page instead of a PNG. A real face image is never this
+        # small, so this catches "succeeded" that didn't actually succeed.
+        if not body or len(body) < 200:
+            return f"empty/tiny body ({len(body) if body else 0} bytes)"
+        dest.write_bytes(body)
+        return "ok"
+    except Exception as e:
+        return f"error: {e}"
 
 
 # ── Club -> league map ─────────────────────────────────────────────────────────
@@ -862,6 +889,14 @@ async def scrape_players(page, context, year: int, download_faces: bool, league_
     all_players: list[dict] = []
     seen_ids: set[str] = set()
     page_num = 1
+
+    # One dedicated tab for image navigation, reused across every page of
+    # this edition — separate from `page`, which is busy paging through the
+    # player list and must not be redirected away from it mid-scrape.
+    img_page = await context.new_page() if download_faces else None
+    face_ok = face_skip = 0
+    face_failed: list[str] = []
+
     while True:
         html = await page.content()
         players = parse_html(html, dump_first=(page_num == 1))
@@ -882,7 +917,13 @@ async def scrape_players(page, context, year: int, download_faces: bool, league_
 
         if download_faces:
             for p in players:
-                await download_face(context, p.get("image_url"), year, p.get("sofifa_id"))
+                result = await download_face(img_page, p.get("image_url"), year, p.get("sofifa_id"))
+                if result == "ok":
+                    face_ok += 1
+                elif result == "skip":
+                    face_skip += 1
+                elif result != "no-url":
+                    face_failed.append(f"{p.get('name', '?')} ({p.get('sofifa_id', '?')}): {result}")
 
         if page_num == 1:
             first = players[0]
@@ -901,6 +942,17 @@ async def scrape_players(page, context, year: int, download_faces: bool, league_
             print(f"  No more pages. Total: {len(all_players)} unique players.")
             break
         page_num += 1
+
+    if download_faces:
+        await img_page.close()
+        print(f"  Faces: {face_ok} downloaded, {face_skip} already had, {len(face_failed)} failed"
+              f" (of {face_ok + face_skip + len(face_failed)} attempted).")
+        if face_failed:
+            print("  First few failures — if EVERY one says the same thing, that's the real story:")
+            for f in face_failed[:6]:
+                print(f"    - {f}")
+            if len(face_failed) > 6:
+                print(f"    ...and {len(face_failed) - 6} more")
 
     print(f"  TOTAL: {len(all_players)} unique players for {label}")
     return all_players
