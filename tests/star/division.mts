@@ -288,6 +288,41 @@ function roster(club: string, n = 26): RosterRow[] {
     "one real nationality anywhere in the division is enough to trust the rest of the import");
 
   check(!shouldUpgradeLeagueSquads([]), "no division at all is not a stale one — there is nothing to upgrade yet");
+
+  // ── The later bug: a full division, nations present, images mostly gone ──
+  //
+  // A cloud save loaded before a squad's image merge finished — or simply
+  // written back over a fuller local copy by an older cloud snapshot — has
+  // real nations throughout (nation and image come off the same fetched row)
+  // but only a scattering of images. That is not "some players legitimately
+  // have no photo"; a real fetch never returns one field without the other, so
+  // plenty of nations paired with almost none of the matching images is the
+  // regression, not a sparse import. Reported as exactly that: "these players
+  // all had images before".
+  const regressed: LeagueSquad[] = CLUBS.map(c => ({
+    club: c,
+    players: Array.from({ length: 20 }, (_, i) => ({
+      id: `${c}-${i}`, name: `Player ${i}`, position: "CM" as const, overall: 70,
+      goals: 0, assists: 0, nation: "England",
+      // Just one photograph survives per club, out of twenty real entries.
+      ...(i === 0 ? { image: `https://cdn/${c}-0.png` } : {}),
+    })),
+  }));
+  check(shouldUpgradeLeagueSquads(regressed),
+    "a division with nations everywhere but images almost nowhere is stale, not sparse");
+
+  // …but a genuinely well-covered division, real players here and there simply
+  // without a photo, is not treated as broken for it.
+  const healthy: LeagueSquad[] = CLUBS.map(c => ({
+    club: c,
+    players: Array.from({ length: 20 }, (_, i) => ({
+      id: `${c}-${i}`, name: `Player ${i}`, position: "CM" as const, overall: 70,
+      goals: 0, assists: 0, nation: "England",
+      ...(i < 17 ? { image: `https://cdn/${c}-${i}.png` } : {}),
+    })),
+  }));
+  check(!shouldUpgradeLeagueSquads(healthy),
+    "…most of the division photographed is left alone (17/20 per club is not a regression)");
 }
 
 // ── Refreshing a squad keeps what happened in it ────────────────────────────

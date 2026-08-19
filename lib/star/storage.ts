@@ -7,6 +7,7 @@ import { catchUpAwards } from "./potm";
 const KEY = "star-career-v2";
 const OLD_KEY = "star-career-v1";
 const PHASE_KEY = "star-career-phase-v1";
+const SAVED_AT_KEY = "star-career-saved-at-v1";
 
 /**
  * The phases a refresh must land you back in.
@@ -64,7 +65,28 @@ export function loadStarPhase(): SavedPhase | null {
 export function saveCareer(state: CareerState) {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(SAVED_AT_KEY, String(Date.now()));
   } catch {}
+}
+
+/**
+ * When the local save last changed — the other half of the comparison that
+ * decides whether a cloud save is actually newer. See loadCareerFromCloud.
+ *
+ * A save with no recorded timestamp predates this existing at all, which
+ * means it is simply whatever the player was just looking at — the most
+ * current thing there is, as far as this device knows. Defaulting that to
+ * "now" rather than "the beginning of time" matters: the alternative is a
+ * save that has never been timestamped losing to ANY cloud row, however old,
+ * the very first time this runs — the exact bug this exists to fix.
+ */
+export function loadCareerSavedAt(): number {
+  try {
+    const raw = localStorage.getItem(SAVED_AT_KEY);
+    return raw ? Number(raw) : Date.now();
+  } catch {
+    return Date.now();
+  }
 }
 
 export function loadCareer(): CareerState | null {
@@ -156,19 +178,22 @@ export async function saveCareerToCloud(state: CareerState): Promise<void> {
 }
 
 /**
- * Fetch the career from Supabase.
+ * Fetch the career from Supabase, with when it was saved.
  *
  * Returns null when the user is not logged in, has no cloud save, or the
  * request fails — in all three cases the caller should fall back to
- * localStorage.
+ * localStorage. The timestamp is what lets the caller tell a cloud save that
+ * is genuinely ahead of this device apart from one that is behind it — see
+ * the note on loadCareerSavedAt for why blindly preferring cloud regressed
+ * players' squads.
  */
-export async function loadCareerFromCloud(): Promise<CareerState | null> {
+export async function loadCareerFromCloud(): Promise<{ career: CareerState; savedAt: number } | null> {
   try {
     const res = await fetch("/api/star/career");
     if (!res.ok) return null;
-    const data = await res.json() as CareerState | null;
-    if (!data || data.version !== 2) return null;
-    return backfill(data);
+    const data = await res.json() as { career: CareerState; updatedAt: string } | null;
+    if (!data?.career || data.career.version !== 2) return null;
+    return { career: backfill(data.career), savedAt: new Date(data.updatedAt).getTime() };
   } catch {
     return null;
   }

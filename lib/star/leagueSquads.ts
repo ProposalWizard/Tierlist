@@ -178,12 +178,32 @@ function generatedSquad(club: string): LeagueSquad {
  * path that always carried these fields — looks fine. That mismatch is the whole
  * bug: one side of the pitch has faces, the other does not.
  *
- * `nation` is the signal rather than `image`: a database can legitimately have
- * no photo for plenty of players, but a whole division with not one nationality
- * set is not a sparse import, it is a cache from before the column was read.
+ * `nation` is the primary signal rather than `image`: a database can legitimately
+ * have no photo for plenty of players, but a whole division with not one
+ * nationality set is not a sparse import, it is a cache from before the column
+ * was read.
+ *
+ * The second check exists for a narrower, later bug: a career loaded from a
+ * STALE save can have nations but very few images — a snapshot taken before an
+ * image merge finished, then written back over a more complete local copy by
+ * the cloud-save load path (see loadCareerFromCloud's caller). `nation` and
+ * `image` come off the same fetched row and a real fetch never returns one
+ * without the other, so plenty of nations paired with almost no images is not
+ * "some players legitimately have no photo" — it is exactly this. A generated
+ * filler player (topping up a thin roster) has neither field, so it never
+ * counts against the ratio; only rows that came from a real fetch do.
  */
 export function shouldUpgradeLeagueSquads(squads: LeagueSquad[]): boolean {
-  return squads.length > 0 && !squads.some(s => s.players.some(p => p.nation));
+  if (squads.length === 0) return false;
+  const withNation = squads.flatMap(s => s.players).filter(p => p.nation);
+  if (withNation.length === 0) return true;
+  // Below this it takes only ONE real nationality anywhere to trust the rest
+  // of the import — see that exact test. The ratio below needs an actual
+  // sample to mean anything, or a division holding one genuine sparse entry
+  // and nothing else would fail it on pure bad luck.
+  if (withNation.length < 20) return false;
+  const withImage = withNation.filter(p => p.image).length;
+  return withImage / withNation.length < 0.5;
 }
 
 /**

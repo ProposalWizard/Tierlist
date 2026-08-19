@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture } from "@/lib/star/types";
-import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud } from "@/lib/star/storage";
+import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { selectionFor } from "@/lib/star/selection";
@@ -73,9 +73,25 @@ export default function StarDevPage() {
   useEffect(() => {
     const init = async () => {
       setHydrated(true);
-      // Try cloud save first; fall back to localStorage if not logged in or
-      // no cloud save exists.
-      const saved = (await loadCareerFromCloud()) ?? loadCareer();
+      // Whichever actually changed more recently — NOT cloud unconditionally.
+      //
+      // The first version of this always preferred cloud, on the theory that
+      // it was the more durable copy. It regressed players' squads instead: a
+      // cloud row saved before a league-squads merge finished (or before a
+      // later session on this same device added more) is OLDER than what
+      // localStorage already has, and preferring it anyway — then immediately
+      // writing it back over localStorage in the save effect below — silently
+      // downgraded a fully-populated division back to one missing images that
+      // had already been filled in. Reported as exactly that: player photos
+      // that used to be there, gone, with nothing else about the save wrong.
+      //
+      // Comparing timestamps instead means cloud only wins when it is
+      // genuinely ahead — a different device, or recovering after local
+      // storage itself was wiped — which is the entire reason it exists.
+      const local = loadCareer();
+      const localAt = local ? loadCareerSavedAt() : -1;
+      const cloud = await loadCareerFromCloud();
+      const saved = cloud && cloud.savedAt > localAt ? cloud.career : local;
       setCloudLoading(false);
       if (!saved) return;
       setCareer(saved);
