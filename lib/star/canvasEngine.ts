@@ -2527,7 +2527,21 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // Where he is trying to put it, as a fraction of the half-mouth: barely off
   // centre for a defender heading a corner, close to the frame for a striker
   // with a cutback laid into his stride.
-  const placement = (0.22 + quality * 0.62) * control;
+  //
+  // Multiplying the whole range by `control` alone used to mean the ceiling,
+  // not just the average, scaled down with it — at quality 1.0 a corner
+  // (control 0.3) could place at most 0.92 m off centre, a header (0.45) at
+  // most 1.38 m, a volley/cross (0.5) at most 1.54 m. The keeper's save radius
+  // is 1.95-2.65 m. So on the header's absolute BEST possible contact, the aim
+  // point was still comfortably inside a stationary keeper's reach — every one
+  // of those shots was save-or-off-target by construction, never a placed
+  // goal, no matter how good the finisher or the delivery. That is why they
+  // read as "always straight at the keeper": they mathematically were. The
+  // floor below raises that ceiling for the hard chances — tests/star/finishing.mts
+  // measures the result directly (mean aim off centre, on-target%, conversion
+  // rate per situation) rather than trusting the ceiling arithmetic alone,
+  // since the noise term below also shapes where a shot actually crosses.
+  const placement = (0.22 + quality * 0.62) * (0.2 + control * 0.8);
   const aimX = clamp(
     goalCx + side * placement * (halfMouth - BALL_R * 2),
     POST_L + BALL_R * 2, POST_R - BALL_R * 2,
