@@ -26,3 +26,6 @@ tsconfig.tsbuildinfo
 __pycache__/
 *.pyc
 .audit/
+
+# claude code agent scratch worktrees
+.claude/worktrees/
