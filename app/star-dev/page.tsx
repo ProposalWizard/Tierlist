@@ -7,6 +7,7 @@ import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagu
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
+import { currentRound, type CupId, type CupRound } from "@/lib/star/cups";
 import { fixtureDateLabel } from "@/lib/star/calendar";
 import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
@@ -38,6 +39,7 @@ import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScre
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
+import CupDrawReveal from "@/components/star/CupDrawReveal";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -194,6 +196,10 @@ export default function StarDevPage() {
   // name the NEXT opponent — and would be null after the final fixture, which
   // used to strand the career with no way to reach the Ballon d'Or / next season.
   const [playedFixture, setPlayedFixture] = useState<Fixture | null>(null);
+  // The freshly-drawn round waiting to be shown on the Cup Draw screen. Set by
+  // continueAfterMatch when the match just played drew a new round in a
+  // domestic cup; cleared once the player has clicked through it.
+  const [cupDraw, setCupDraw] = useState<{ competition: CupId; round: CupRound } | null>(null);
 
   // Ordered by week, not by array position — a knockout round earned mid-season
   // is appended to the fixture list and would otherwise sort to the very end.
@@ -448,7 +454,7 @@ export default function StarDevPage() {
    * hit the end of a season, or a contract offer, and the relationships you had
    * just moved were silently rolled back.
    */
-  const continueAfterMatch = useCallback((from: CareerState, askPress: boolean) => {
+  const continueAfterMatch = useCallback((from: CareerState, askPress: boolean, skipCupDraw = false) => {
     // The press get you on the way out of the ground, before the week rolls on.
     // Only when the match gave them something to ask about.
     if (askPress && playedFixture && lastMatchStats) {
@@ -457,6 +463,28 @@ export default function StarDevPage() {
         mulberry32(from.season * 613 + from.week * 29),
       );
       if (q) { setPressQuestion(q); setPhase("press"); return; }
+    }
+
+    // The match just played was a domestic cup tie, and winning it drew the
+    // next round — cupState already carries it (settleCupTie draws the next
+    // round synchronously). Show that draw before moving on, the same way the
+    // real competitions redraw the round the instant your tie is settled;
+    // this is a replay of it, not a second draw. Not the final: with one tie
+    // left there is nothing to draw, the pairing is just whoever won the
+    // semis. `skipCupDraw` is set on the way back IN from that screen so this
+    // does not loop.
+    if (!skipCupDraw && playedFixture) {
+      const domestic = playedFixture.competition === "FA Cup" || playedFixture.competition === "League Cup";
+      if (domestic) {
+        const state = from.cupState?.find((s) => s.competition === playedFixture.competition);
+        const round = state ? currentRound(state) : null;
+        const freshlyDrawn = round && round.ties.length >= 2 && round.ties.every((t) => t.hs === undefined);
+        if (freshlyDrawn && round) {
+          setCupDraw({ competition: playedFixture.competition as CupId, round });
+          setPhase("cup-draw");
+          return;
+        }
+      }
     }
 
     const remaining = from.fixtures.filter((f) => !f.played).length;
@@ -778,6 +806,7 @@ export default function StarDevPage() {
       || (phase === "match" && !nextFixture)
       || (phase === "pre-match" && !nextFixture)
       || (phase === "post-match" && !(lastMatchStats && playedFixture))
+      || (phase === "cup-draw" && !cupDraw)
       || (phase === "press" && !pressQuestion)
       || (phase === "dilemma" && !currentDilemma)
       || (phase === "season-transfer" && transferOffers.length === 0)
@@ -788,7 +817,7 @@ export default function StarDevPage() {
       setPhase("dashboard");
     }
   }, [career, phase, trainingSkill, nextFixture, lastMatchStats, playedFixture,
-      pressQuestion, currentDilemma, transferOffers, relationshipGameKind]);
+      pressQuestion, currentDilemma, transferOffers, relationshipGameKind, cupDraw]);
 
   // ---------- RENDER ----------
   if (cloudLoading) {
@@ -858,6 +887,20 @@ export default function StarDevPage() {
         competition={playedFixture.kind && playedFixture.kind !== "league" ? fixtureLabel(playedFixture) : undefined}
         knockout={career.knockoutMessage}
         onContinue={handlePostMatchContinue}
+      />
+    );
+  }
+
+  if (phase === "cup-draw" && cupDraw) {
+    return (
+      <CupDrawReveal
+        competition={cupDraw.competition}
+        round={cupDraw.round}
+        yourClub={career.player.club}
+        onContinue={() => {
+          setCupDraw(null);
+          continueAfterMatch(career, false, true);
+        }}
       />
     );
   }

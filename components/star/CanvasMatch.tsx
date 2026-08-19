@@ -1243,8 +1243,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // than the player wearing it. A star reads instantly, costs no width,
       // and does not have to be read.
       if (opts.star) {
-        const sr = r * 0.46;
-        const cx = px, cy = py - r * 1.30;
+        // Half the old radius, and centred clear of the crown rather than on
+        // the chin: the head (drawn above) spans roughly py-1.82r to py-1.30r
+        // in these same absolute coords, and the star used to be centred at
+        // py-1.30r — the bottom of the head — so its own radius carried it
+        // back down over most of the face. This sits it above the head with a
+        // small gap, the way a marker over a unit reads, not a hat on it.
+        const sr = r * 0.23;
+        const cx = px, cy = py - r * 2.15;
         ctx.save();
         // Drawn from the point down, so it sits upright over the head.
         ctx.beginPath();

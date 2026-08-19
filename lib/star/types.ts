@@ -465,4 +465,5 @@ export type StarPhase =
   | "season-transfer"
   | "retirement"
   | "legacy"
-  | "press";
+  | "press"
+  | "cup-draw";
