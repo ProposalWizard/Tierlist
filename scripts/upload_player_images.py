@@ -19,8 +19,9 @@ WHAT THIS DOES
 
 Deliberately scoped to just the current season's ~506 rows. The Draft
 mode's whole historical archive (FIFA 07 through FC 26, tens of thousands
-of rows) is untouched — that is a different, much bigger dataset with a
-different fragility story, and self-hosting all of it is not what this
+of rows) is untouched — see upload_pl_draft_images.py for that, one
+Premier League edition at a time. That is a different, much bigger
+dataset with a different fragility story, and self-hosting all of it is not what this
 bug needs. Re-run this once a season, whenever the roster is refreshed —
 it is not something that needs to run on every deploy.
 
