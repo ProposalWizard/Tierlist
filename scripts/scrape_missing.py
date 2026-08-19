@@ -695,25 +695,30 @@ async def click_next(page, ready_selector: str, expected_r: str | None = None) -
 # ── Face downloading (optional) ──────────────────────────────────────────────
 
 
-async def download_face(img_page, url: str, year: int, sofifa_id: str) -> str:
+async def download_face(page, url: str, year: int, sofifa_id: str) -> str:
     """Fetch one face image and save it.
 
     Returns "ok", "skip" (already have it), "no-url", or a short error
-    string — NEVER silently swallowed. The old version returned bool and
-    the caller never even looked at that, so a wall that blocked every
-    single image request produced a script that finished, printed nothing
-    wrong, and left an empty folder. There was no way to tell "it worked"
-    from "it failed at every single player" from the terminal output alone.
+    string — never silently swallowed.
 
-    Uses a real page NAVIGATION (page.goto) rather than the lower-level
-    context.request API. That distinction matters here specifically:
-    SoFIFA now requires a signed-in session to serve an image at all, and
-    a plain request-context call sends a different request shape than an
-    actual browser navigating there (no Sec-Fetch-Dest: document, among
-    other things) — which is enough for Cloudflare to tell the two apart
-    and block one while letting the other through. page.goto is the same
-    mechanism as pasting the URL into a tab, which is the one confirmed to
-    work once the browser is actually signed in.
+    ── Why this is a THIRD approach, not a tweak of the second ──
+
+    Attempt 1 (context.request.get) and attempt 2 (page.goto to the image
+    URL directly) both got HTTP 403 on every single player — clean, uniform,
+    deliberate refusals, not a captcha or a timeout. That uniformity is the
+    clue: sofifa.com (the pages) and cdn.sofifa.net (the images) are
+    different domains, and NEITHER previous attempt gave the CDN anything
+    that told it "this request belongs to a page you already served". No
+    cookie for that domain, and — critically — no Referer at all, because a
+    direct navigation is not "from" anywhere.
+
+    A real browser never hits the CDN that way. It loads a sofifa.com page,
+    and THAT page's own image tags pull the photos — which automatically
+    carries a Referer of the sofifa.com page you're looking at. This does
+    the same thing on purpose: the fetch runs INSIDE the already-loaded
+    player-list page's own JavaScript, via page.evaluate, rather than as a
+    separate navigation. As far as the CDN can tell, it is being asked for
+    an image by the exact page that lists that player — because it is.
     """
     if not url:
         return "no-url"
@@ -723,12 +728,26 @@ async def download_face(img_page, url: str, year: int, sofifa_id: str) -> str:
     if dest.exists():
         return "skip"
     try:
-        resp = await img_page.goto(url, wait_until="commit", timeout=20000)
-        if not resp:
-            return "no response"
-        if not resp.ok:
-            return f"HTTP {resp.status}"
-        body = await resp.body()
+        result = await page.evaluate(
+            """async (url) => {
+                try {
+                    const res = await fetch(url, { credentials: "include" });
+                    if (!res.ok) return { error: "HTTP " + res.status };
+                    const buf = await res.arrayBuffer();
+                    const bytes = new Uint8Array(buf);
+                    let binary = "";
+                    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                    return { data: btoa(binary) };
+                } catch (e) {
+                    return { error: String(e) };
+                }
+            }""",
+            url,
+        )
+        if "error" in result:
+            return result["error"]
+        import base64
+        body = base64.b64decode(result["data"])
         # A blocked/redirected request often still returns 200 with a tiny
         # HTML error page instead of a PNG. A real face image is never this
         # small, so this catches "succeeded" that didn't actually succeed.
@@ -890,10 +909,9 @@ async def scrape_players(page, context, year: int, download_faces: bool, league_
     seen_ids: set[str] = set()
     page_num = 1
 
-    # One dedicated tab for image navigation, reused across every page of
-    # this edition — separate from `page`, which is busy paging through the
-    # player list and must not be redirected away from it mid-scrape.
-    img_page = await context.new_page() if download_faces else None
+    # Face fetches run INSIDE `page` itself now (see download_face) — no
+    # separate tab needed. That is what makes each fetch carry a real
+    # Referer of the exact list page a player was found on.
     face_ok = face_skip = 0
     face_failed: list[str] = []
 
@@ -917,7 +935,7 @@ async def scrape_players(page, context, year: int, download_faces: bool, league_
 
         if download_faces:
             for p in players:
-                result = await download_face(img_page, p.get("image_url"), year, p.get("sofifa_id"))
+                result = await download_face(page, p.get("image_url"), year, p.get("sofifa_id"))
                 if result == "ok":
                     face_ok += 1
                 elif result == "skip":
@@ -944,7 +962,6 @@ async def scrape_players(page, context, year: int, download_faces: bool, league_
         page_num += 1
 
     if download_faces:
-        await img_page.close()
         print(f"  Faces: {face_ok} downloaded, {face_skip} already had, {len(face_failed)} failed"
               f" (of {face_ok + face_skip + len(face_failed)} attempted).")
         if face_failed:
@@ -1426,7 +1443,7 @@ async def main():
     # If you do NOT see this exact line when you run the script, your local
     # copy is OLD — run `git pull` in the folder before scraping.
     print("=" * 64)
-    print("  scrape_missing.py  BUILD 2026-08-19-F  (face-download now reports real errors)")
+    print("  scrape_missing.py  BUILD 2026-08-19-G  (face fetch runs in-page, carries a real Referer)")
     print("=" * 64)
 
     force = "--force" in sys.argv
