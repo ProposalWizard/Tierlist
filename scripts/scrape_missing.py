@@ -1426,7 +1426,7 @@ async def main():
     # If you do NOT see this exact line when you run the script, your local
     # copy is OLD — run `git pull` in the folder before scraping.
     print("=" * 64)
-    print("  scrape_missing.py  BUILD 2026-07-09-E  (Prem-safe, last-page fix)")
+    print("  scrape_missing.py  BUILD 2026-08-19-F  (face-download now reports real errors)")
     print("=" * 64)
 
     force = "--force" in sys.argv
