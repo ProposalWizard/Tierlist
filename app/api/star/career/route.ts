@@ -8,11 +8,17 @@ export async function GET() {
 
   const { data } = await supabase
     .from("star_careers")
-    .select("career")
+    .select("career, updated_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  return NextResponse.json(data?.career ?? null);
+  if (!data) return NextResponse.json(null);
+  // The timestamp travels WITH the career now — see loadCareerFromCloud.
+  // Without it the client has no way to tell a cloud save that is ahead of
+  // localStorage apart from one that is stale and behind it, and blindly
+  // preferring cloud regressed players to an older, less-complete squad
+  // (missing images that a later merge had already filled in locally).
+  return NextResponse.json({ career: data.career, updatedAt: data.updated_at });
 }
 
 export async function POST(req: Request) {
