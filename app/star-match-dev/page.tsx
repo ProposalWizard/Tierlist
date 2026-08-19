@@ -1,15 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import CanvasMatch from "@/components/star/CanvasMatch";
+import CanvasMatchTest from "@/components/star/CanvasMatchTest";
+import { shotTuning } from "@/lib/star/canvasEngineTest";
 import { loadCareer } from "@/lib/star/storage";
 import type { CareerState } from "@/lib/star/types";
 
 const POSITIONS = ["ST", "CAM", "LW", "RW", "CM", "CDM", "LM", "RM", "LB", "RB", "CB", "GK"];
 
 // Standalone sandbox for the Canvas match engine. Admin-only; not linked in nav.
-// Kept separate from /star-dev so the working career mode is untouched while the
-// engine is developed.
+//
+// Renders CanvasMatchTest, a full fork of the real CanvasMatch component that
+// runs on canvasEngineTest.ts / hiddenMatchTest.ts instead of the production
+// engine — not just an admin-gated view of the same code. A physics change
+// made here (loft, power, curl, keeper reflexes, anything) cannot reach a
+// real career at /star-dev by accident; it has to be deliberately ported to
+// the production files once it's been tried out and settled on.
 export default function StarMatchDevPage() {
   const [state, setState] = useState<"loading" | "ok" | "denied">("loading");
   const [power, setPower] = useState(55);
@@ -20,6 +26,11 @@ export default function StarMatchDevPage() {
   const [teamRelationship, setTeamRelationship] = useState(60);
   const [careerTeam, setCareerTeam] = useState<number | null>(null);
   const [career, setCareer] = useState<CareerState | null>(null);
+  // Mirrors shotTuning (a mutable module singleton canvasEngineTest.ts reads
+  // on every kick) purely for the slider's own display — the write on drag
+  // goes straight into shotTuning itself, not through props or a re-render.
+  const [vzPowerFloor, setVzPowerFloor] = useState(shotTuning.vzPowerFloor);
+  const [vzPowerWeight, setVzPowerWeight] = useState(shotTuning.vzPowerWeight);
 
   useEffect(() => {
     const supabase = createClient();
@@ -70,7 +81,7 @@ export default function StarMatchDevPage() {
           <h1 className="mt-2 text-xl font-black tracking-tight">Shooting Test</h1>
         </div>
 
-        <CanvasMatch
+        <CanvasMatchTest
           skills={{ power, technique }}
           keeperStrength={keeperStrength}
           position={position}
@@ -125,6 +136,55 @@ export default function StarMatchDevPage() {
               className="w-full"
             />
           </label>
+        </div>
+
+        {/* Physics tuning — writes straight into canvasEngineTest.ts's shotTuning
+            singleton, so it takes effect on the very next kick, not next reload. */}
+        <div className="mt-4 bg-gray-900/60 border border-gray-700 rounded-lg p-3 space-y-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">
+            Physics Tuning — height vs. power
+          </div>
+          <label className="block">
+            <div className="flex justify-between text-xs font-bold text-white mb-1">
+              <span>Height at 0% power</span>
+              <span className="text-cyan-400">{Math.round(vzPowerFloor * 100)}%</span>
+            </div>
+            <input
+              type="range" min={0} max={100} value={Math.round(vzPowerFloor * 100)}
+              onChange={(e) => {
+                const v = Number(e.target.value) / 100;
+                setVzPowerFloor(v);
+                shotTuning.vzPowerFloor = v;
+              }}
+              className="w-full"
+            />
+            <div className="text-[10px] text-gray-500 mt-0.5">
+              How much of full height a bottom-of-the-ball strike still gets with barely any power behind it.
+            </div>
+          </label>
+          <label className="block">
+            <div className="flex justify-between text-xs font-bold text-white mb-1">
+              <span>Extra height from full power</span>
+              <span className="text-cyan-400">+{Math.round(vzPowerWeight * 100)}%</span>
+            </div>
+            <input
+              type="range" min={0} max={100} value={Math.round(vzPowerWeight * 100)}
+              onChange={(e) => {
+                const v = Number(e.target.value) / 100;
+                setVzPowerWeight(v);
+                shotTuning.vzPowerWeight = v;
+              }}
+              className="w-full"
+            />
+            <div className="text-[10px] text-gray-500 mt-0.5">
+              How much taller full power hits on top of that floor. Forward pace is untouched by either slider — that already scales with power.
+            </div>
+          </label>
+          {Math.abs(vzPowerFloor + vzPowerWeight - 1) > 0.001 && (
+            <div className="text-[10px] text-amber-400">
+              Floor + extra = {Math.round((vzPowerFloor + vzPowerWeight) * 100)}% at full power — not 100%. That's fine to experiment with, just know full power won't be the tallest point unless these add to 100.
+            </div>
+          )}
         </div>
 
         <div className="mt-3 text-center text-[10px] text-gray-500">

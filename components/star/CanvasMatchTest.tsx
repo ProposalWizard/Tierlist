@@ -1,4 +1,8 @@
 "use client";
+// ══════════════════════════════════════════════════════════════════════════
+// TEST-ONLY FORK of CanvasMatch.tsx, for /star-match-dev — see the banner
+// atop canvasEngineTest.ts. Changes here do not reach live play at /star-dev.
+// ══════════════════════════════════════════════════════════════════════════
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
@@ -9,11 +13,11 @@ import {
   orderableRunners, acceptsCaptainOrders,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner,
-} from "@/lib/star/canvasEngine";
+} from "@/lib/star/canvasEngineTest";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
-} from "@/lib/star/hiddenMatch";
+} from "@/lib/star/hiddenMatchTest";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
 import {
@@ -200,7 +204,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions }: Props) {
+export default function CanvasMatchTest({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions }: Props) {
 
   // ── Who else is actually out there ──
   //
@@ -1243,14 +1247,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // than the player wearing it. A star reads instantly, costs no width,
       // and does not have to be read.
       if (opts.star) {
-        // Half the old radius, and centred clear of the crown rather than on
-        // the chin: the head (drawn above) spans roughly py-1.82r to py-1.30r
-        // in these same absolute coords, and the star used to be centred at
-        // py-1.30r — the bottom of the head — so its own radius carried it
-        // back down over most of the face. This sits it above the head with a
-        // small gap, the way a marker over a unit reads, not a hat on it.
-        const sr = r * 0.23;
-        const cx = px, cy = py - r * 2.15;
+        const sr = r * 0.46;
+        const cx = px, cy = py - r * 1.30;
         ctx.save();
         // Drawn from the point down, so it sits upright over the head.
         ctx.beginPath();

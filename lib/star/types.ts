@@ -405,6 +405,25 @@ export interface CareerState {
    */
   lastSeasonPosition?: number;
   /**
+   * Who actually won each competition last season — league, both domestic
+   * cups, and both European ones — whether or not it was this club.
+   *
+   * Needed for the same reason as `lastSeasonPosition`: by the time the
+   * Community Shield / Super Cup fixtures are seeded, `league`/`cupState`/
+   * `euroState` have already been reset for the new season, so this is the
+   * only place last season's real winners survive to be read back. Absent on
+   * a career saved before this existed, or before season 1 has finished.
+   */
+  lastSeasonWinners?: {
+    league?: string;
+    /** Only needed for the Community Shield's Double case — see seedPreSeason. */
+    leagueRunnerUp?: string;
+    faCup?: string;
+    leagueCup?: string;
+    championsLeague?: string;
+    europaLeague?: string;
+  };
+  /**
    * Every Player of the Month awarded, this season and the ones before it.
    *
    * Kept whole rather than as a line of text, because the awards screen shows
@@ -465,4 +484,5 @@ export type StarPhase =
   | "season-transfer"
   | "retirement"
   | "legacy"
-  | "press";
+  | "press"
+  | "draw";

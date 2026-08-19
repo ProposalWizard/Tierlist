@@ -1,3 +1,15 @@
+// ══════════════════════════════════════════════════════════════════════════
+// TEST-ONLY FORK of canvasEngine.ts, for /star-match-dev.
+//
+// A full copy, not a shared module — changes here NEVER reach the live
+// career game at /star-dev until someone deliberately ports them over to
+// canvasEngine.ts. That is the point: this is where gameplay physics gets
+// tuned and felt out before it is trusted with real careers. If you are
+// fixing a bug that also affects live play (not just something being tuned
+// here), fix it in canvasEngine.ts too — this file will NOT pick it up on
+// its own.
+// ══════════════════════════════════════════════════════════════════════════
+
 // Canvas match engine — pure physics, no React, no rendering.
 //
 // Coordinate system and every dimension come from ./pitch (real IFAB metres):
@@ -2812,6 +2824,33 @@ export function dragForFullPower(power: number): number {
   return 0.18 - clamp(power, 0, 100) / 100 * 0.06;
 }
 
+/**
+ * TEST-ONLY TUNING — /star-match-dev's sliders write into this directly, and
+ * launch() reads it on every kick. A plain mutable module singleton rather
+ * than a prop threaded through the 3,000-line match component, because this
+ * exists to be changed mid-session while shots are actually being taken, not
+ * configured once at start-up.
+ *
+ * Reported: "the power is good, but only when you have full power — you
+ * should be able to do 20% power and kick the ball high up, and it will
+ * still go very high, because that's where you kicked the ball... but it
+ * doesn't seem to do that." Real: vz used to be `loft * power * ...` — height
+ * scaled linearly with how hard you pulled back, same as forward pace, so a
+ * ball struck dead at the bottom with a soft touch barely rose at all. Real
+ * football doesn't work that way: where you strike the ball sets its
+ * trajectory shape close to independent of how hard you hit it — a gentle
+ * scoop under the ball still pops it up steeply, it just doesn't travel far;
+ * a firm strike under the ball goes up AND forward, ending up only a little
+ * higher for a lot more pace. `vzPowerFloor` is how much of full height a
+ * feather-light touch still gets; `vzPowerWeight` is how much more full power
+ * can add on top of that. Forward pace (`Sh`, below) is untouched — that part
+ * was already reported as correct.
+ */
+export const shotTuning = {
+  vzPowerFloor: 0.88,
+  vzPowerWeight: 0.12,
+};
+
 // Launch the ball from a slingshot aim + a contact point.
 export function launch(
   scenario: Scenario,
@@ -2838,8 +2877,11 @@ export function launch(
   // leaves the boot around 28 m/s; a 100-power player nudges 36. Lofting bleeds
   // a little ground speed into the air.
   const Sh = power * (18 + skills.power * 0.18) * (1 - loft * 0.25);
-  // Vertical launch speed from how low on the ball it was struck.
-  const vz = loft * power * (7.5 + skills.power * 0.035);
+  // Vertical launch speed from how low on the ball it was struck. Deliberately
+  // NOT `loft * power * ...` — see shotTuning above. How hard you struck it
+  // only nudges the height; where you struck it decides the height.
+  const vz = loft * (7.5 + skills.power * 0.035)
+    * (shotTuning.vzPowerFloor + power * shotTuning.vzPowerWeight);
   // Curl from striking the side of the ball. Technique decides how much of that
   // side is available to you at all, which is what makes a curled finish
   // something you unlock rather than something you are simply better at.

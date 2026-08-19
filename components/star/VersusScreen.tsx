@@ -5,6 +5,7 @@ import type { LeagueResult } from "@/lib/star/types";
 import { kitsFor, labelInk, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
+import { SILHOUETTE_SRC } from "@/lib/silhouette";
 
 /**
  * THE TEAM SHEETS.
@@ -351,12 +352,16 @@ function Man({ p, kit, keeper, bottom }: {
               className="h-full w-full object-cover object-top"
             />
           ) : (
-            <div
-              className="grid h-full w-full place-items-center text-[11px] font-black"
-              style={{ color: labelInk(worn.shirt) }}
-            >
-              {p.short.slice(0, 2).toUpperCase()}
-            </div>
+            // The same stand-in the Draft uses for a player with no photo —
+            // one "nobody's face" across the whole game, not a different
+            // placeholder per screen.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={SILHOUETTE_SRC}
+              alt=""
+              aria-hidden
+              className="h-full w-full object-cover object-top opacity-80"
+            />
           )}
         </div>
       </div>

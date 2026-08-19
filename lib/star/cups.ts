@@ -226,6 +226,39 @@ export function playCupRound(
   return { ...state, rounds: [...rounds, drawRound(nextName, winners, rng)] };
 }
 
+/**
+ * Play the rest of the country's cup out once you are not part of it any more.
+ *
+ * playCupRound() already plays every OTHER tie in your round the moment yours
+ * is settled — that part was never missing. What stopped was the next call:
+ * nothing ever asked who won the round after you went out, so a cup you lost
+ * in the third round simply had no winner for the rest of that season. No FA
+ * Cup holder to defend it the following year, no Community Shield or Super
+ * Cup fixture for whoever actually won it, because nothing recorded that they
+ * had.
+ *
+ * `yourClub` here is deliberately whoever is already out — passing your own
+ * name is safe and normal, it just will not match any tie left in the draw,
+ * so every remaining round plays out exactly as it would with nobody special
+ * in it. Bounded at six rounds: the competition is five rounds long end to
+ * end, so a hat with only one round left to draw can never take more passes
+ * than that to reach a winner.
+ */
+export function finishCupToWinner(
+  state: CupState,
+  league: LeagueTeam[],
+  yourClub: string,
+  rng: () => number,
+): CupState {
+  let s = state;
+  for (let guard = 0; guard < 6 && !s.winner; guard++) {
+    const next = playCupRound(s, league, yourClub, null, rng);
+    if (next === s) break; // nothing left to play — already resolved
+    s = next;
+  }
+  return s;
+}
+
 // ── Reading it ──────────────────────────────────────────────────────────────
 
 /** The round being played, or the one just finished. */
