@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { Matchday, SheetPlayer, TeamSheet } from "@/lib/star/teamsheet";
+import type { LeagueResult } from "@/lib/star/types";
 import { kitsFor, labelInk, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
@@ -42,6 +43,8 @@ interface Props {
   date?: string;
   /** "Premier League · Matchday 3", or a cup round. */
   competition: string;
+  /** The whole division's results so far, to read recent form off. See recentForm. */
+  results?: LeagueResult[];
   onKickOff: () => void;
   onBack: () => void;
 }
@@ -55,6 +58,11 @@ interface Props {
  * chip actually measures: a face plus its name, held apart from the man facing
  * it by its own radius, and inset from the goal line by the same amount so a
  * goalkeeper's name is never cut off by the edge of the pitch.
+ *
+ * The `place`d value never crosses 0.5 for the top side or drops below it for
+ * the bottom side — each side is clamped to its own half, which is the whole
+ * point: a formation squeezed to fit its half must not spill into the other
+ * one, however forward its most advanced man is meant to look.
  */
 const NEAR = 0.17, FAR = 0.94;
 const HALFWAY_INSET = 0.075;
@@ -82,10 +90,46 @@ const TEXT_OUTLINE = {
     "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000, 0 0 3px rgba(0,0,0,0.9)",
 };
 
-export default function VersusScreen({ matchday, date, competition, onKickOff, onBack }: Props) {
+type Result = "W" | "D" | "L";
+
+/**
+ * A club's last five, read straight off the division's own results log.
+ *
+ * `career.results` is the whole division's history, week by week, so this
+ * works identically for your own club and for whoever you are about to play —
+ * there is no separate "opponent form" to fake, because the opponent has been
+ * playing real, recorded matches all season too.
+ *
+ * Shortest first, most recent last — the same order the chips read left to
+ * right. Fewer than five early in a season is not an error; it is simply how
+ * many there have been.
+ */
+function recentForm(club: string, results: LeagueResult[]): Result[] {
+  return results
+    .filter(r => r.home === club || r.away === club)
+    .sort((a, b) => a.week - b.week)
+    .slice(-5)
+    .map((r): Result => {
+      const home = r.home === club;
+      const gf = home ? r.hs : r.as;
+      const ga = home ? r.as : r.hs;
+      return gf > ga ? "W" : gf === ga ? "D" : "L";
+    });
+}
+
+const FORM_BG: Record<Result, string> = { W: "#16a34a", D: "#b98a1f", L: "#b91c1c" };
+
+export default function VersusScreen({ matchday, date, competition, results, onKickOff, onBack }: Props) {
   const { home, away } = matchday;
   const kits = kitsFor(home.club, away.club);
   const [showSubs, setShowSubs] = useState(false);
+  const yours = home.yours ? home : away;
+
+  // "Premier League · Matchday 3" reads as two different pieces of information
+  // — the competition, and where in it this fixture falls — so the second half
+  // gets its own colour rather than running on in one flat line.
+  const [compHead, ...compTailParts] = competition.split(" · ");
+  const compTail = compTailParts.join(" · ");
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 px-3 py-3 text-white">
@@ -97,23 +141,28 @@ export default function VersusScreen({ matchday, date, competition, onKickOff, o
           ← Back
         </button>
 
-        {/* ── The header ── */}
-        <div className="rounded-t-xl border border-white/15 bg-gray-900/80 px-3 py-1.5">
-          <div className="text-center text-[9px] font-black uppercase tracking-[0.22em] text-emerald-300">
-            {competition}
+        {/* ── The header ──
+            One dark, floodlit panel rather than a plain bar — the competition
+            line, both teams, and each team's own formation directly under its
+            own crest, all in the same column so the two can never drift out of
+            line with each other. */}
+        <div
+          className="rounded-t-xl border border-white/15 px-3 py-3"
+          style={{ background: "linear-gradient(115deg, #051025 0%, #0b1530 32%, #1a0a12 68%, #2a0a10 100%)" }}
+        >
+          <div className="text-center text-[10px] font-black uppercase tracking-[0.18em] text-white/75">
+            {compHead}
+            {compTail && <> <span className="text-white/30">·</span> <span className="text-amber-300">{compTail}</span></>}
           </div>
-          <div className="mt-1 flex items-center justify-center gap-3">
-            <Crest club={home.club} kit={kits.home} />
-            <div className="text-center">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">vs</div>
-              {date && <div className="mt-0.5 text-[9px] font-bold text-white/70">{date}</div>}
+          <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+            <TeamHeader club={home.club} kit={kits.home} formation={home.formation.name}
+              form={recentForm(home.club, results ?? [])} />
+            <div className="flex flex-col items-center gap-1 pt-1.5">
+              <div className="text-xl font-black italic text-white/90">VS</div>
+              {date && <div className="whitespace-nowrap text-[10px] font-bold text-white/75">{date}</div>}
             </div>
-            <Crest club={away.club} kit={kits.away} />
-          </div>
-          <div className="mt-1 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-wider text-white/70">
-            <span>{home.formation.name}</span>
-            <span className="text-white/30">·</span>
-            <span>{away.formation.name}</span>
+            <TeamHeader club={away.club} kit={kits.away} formation={away.formation.name}
+              form={recentForm(away.club, results ?? [])} />
           </div>
         </div>
 
@@ -141,13 +190,15 @@ export default function VersusScreen({ matchday, date, competition, onKickOff, o
           ))}
         </div>
 
-        {/* ── Benches ── */}
-        <div className="rounded-b-xl border border-white/15 bg-gray-900/80">
+        {/* ── Substitutes ── */}
+        <div className="rounded-b-xl border border-white/15 bg-white/[0.04]">
           <button
             onClick={() => setShowSubs(s => !s)}
-            className="w-full px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/70"
+            className="flex w-full items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white/80"
           >
-            {showSubs ? "Hide" : "Show"} substitutes
+            <span className={`text-white/40 transition-transform ${showSubs ? "rotate-90" : ""}`}>›</span>
+            Substitutes
+            <span className="text-amber-300">+{yours.bench.length}</span>
           </button>
           {showSubs && (
             <div className="grid grid-cols-2 gap-px border-t border-white/10 bg-white/10">
@@ -159,11 +210,50 @@ export default function VersusScreen({ matchday, date, competition, onKickOff, o
 
         <button
           onClick={onKickOff}
-          className="mt-2 w-full rounded-xl bg-emerald-500 py-3 text-base font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-emerald-400 active:scale-[0.99]"
+          className="mt-2 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-3 text-base font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
         >
           Kick Off
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * One team's whole header column: crest, name, last five, formation — stacked
+ * in a single flex column, so the formation label is centred under exactly the
+ * same width the crest and name are centred under. Two independently-centred
+ * rows above and below each other can drift apart the instant either row's
+ * neighbouring content changes width; one column can't.
+ */
+function TeamHeader({ club, kit, formation, form }: {
+  club: string; kit: Kit; formation: string; form: Result[];
+}) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-1.5">
+      <Crest club={club} kit={kit} />
+      <FormRow form={form} />
+      <div className="truncate text-[9px] font-black uppercase tracking-wider" style={{ color: kit.shirt }}>
+        {formation}
+      </div>
+    </div>
+  );
+}
+
+/** Last five results, oldest to most recent, left to right. */
+function FormRow({ form }: { form: Result[] }) {
+  if (form.length === 0) return <div className="h-[15px]" />; // holds the header's height steady in week one
+  return (
+    <div className="flex items-center gap-[3px]">
+      {form.map((r, i) => (
+        <span
+          key={i}
+          className="grid h-[15px] w-[15px] place-items-center rounded text-[8px] font-black text-white"
+          style={{ background: FORM_BG[r] }}
+        >
+          {r}
+        </span>
+      ))}
     </div>
   );
 }
@@ -177,7 +267,7 @@ export default function VersusScreen({ matchday, date, competition, onKickOff, o
  */
 function Crest({ club, kit }: { club: string; kit: Kit }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+    <div className="flex min-w-0 flex-col items-center gap-1">
       <div
         className="grid h-10 w-10 place-items-center rounded-full border-2 text-[12px] font-black"
         style={{ backgroundColor: kit.shirt, borderColor: kit.trim, color: labelInk(kit.shirt) }}
@@ -198,6 +288,32 @@ function initials(club: string): string {
   return club.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase();
 }
 
+/**
+ * The gold star over your own head.
+ *
+ * Not a highlighted circle and not a "YOU" pill — both said the same thing
+ * twice, over a man who is already the one figure on this screen you actually
+ * came to find. A star above him is the same device the match itself uses
+ * (see CanvasMatch's footballer renderer): one mark, unambiguous, and it does
+ * not change what he's wearing or how his name reads next to the other ten.
+ */
+function YouStar({ below }: { below?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`pointer-events-none absolute left-1/2 h-3 w-3 -translate-x-1/2 ${below ? "-bottom-[13px]" : "-top-[13px]"}`}
+    >
+      <polygon
+        points="10,1 12.5,7 19,7.5 14,11.8 15.5,18 10,14.5 4.5,18 6,11.8 1,7.5 7.5,7"
+        fill="#fbbf24"
+        stroke="rgba(0,0,0,0.55)"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function Man({ p, kit, keeper, bottom }: {
   p: SheetPlayer; kit: Kit; keeper: Kit; bottom: boolean;
 }) {
@@ -209,28 +325,40 @@ function Man({ p, kit, keeper, bottom }: {
       style={{ left: `${p.x * 100}%`, top: `${place(p.y, bottom) * 100}%`, width: "22%" }}
       title={`${p.name} — ${p.slot}`}
     >
-      <div
-        className={`relative order-2 h-[34px] w-[34px] overflow-hidden rounded-full border-2 ${
-          p.isYou ? "border-amber-300 shadow-[0_0_10px_-1px_rgba(252,211,77,0.9)]" : "border-white/60"}`}
-        style={{ backgroundColor: worn.shirt }}
-      >
-        {p.face ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={p.face}
-            alt=""
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover object-top"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 grid place-items-center text-[11px] font-black"
-            style={{ color: labelInk(worn.shirt) }}
-          >
-            {p.short.slice(0, 2).toUpperCase()}
-          </div>
-        )}
+      {/* The star has to live OUTSIDE the circle's own overflow-hidden — that
+          clip exists to keep a face photo inside a round frame, and it was
+          clipping the star along with everything else that strayed past its
+          edge. This wrapper gives the star a positioning parent that doesn't
+          also clip it. */}
+      <div className="relative order-2 h-[34px] w-[34px]">
+        {/* Whichever side the name ISN'T on. Names on the two sides sit on
+            opposite edges of the circle on purpose (see below) so the two
+            closest-packed rows — both sides' most advanced men, right at the
+            halfway line — never collide; the star has to follow the same
+            rule or it lands on top of the name instead of the man. */}
+        {p.isYou && <YouStar below={!bottom} />}
+        <div
+          className="h-full w-full overflow-hidden rounded-full border-2 border-white/60"
+          style={{ backgroundColor: worn.shirt }}
+        >
+          {p.face ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={p.face}
+              alt=""
+              referrerPolicy="no-referrer"
+              loading="lazy"
+              className="h-full w-full object-cover object-top"
+            />
+          ) : (
+            <div
+              className="grid h-full w-full place-items-center text-[11px] font-black"
+              style={{ color: labelInk(worn.shirt) }}
+            >
+              {p.short.slice(0, 2).toUpperCase()}
+            </div>
+          )}
+        </div>
       </div>
       {/* No background pill — the outline is what keeps this legible over
           grass of any shade, in either theme this game has (there is only
@@ -239,10 +367,7 @@ function Man({ p, kit, keeper, bottom }: {
       <div className={`flex w-full items-center justify-center gap-0.5 px-0.5 ${
         bottom ? "order-3 mt-0.5" : "order-1 mb-0.5"}`}
       >
-        <span
-          className={`truncate text-[9px] font-black leading-tight ${p.isYou ? "text-amber-300" : "text-white"}`}
-          style={TEXT_OUTLINE}
-        >
+        <span className="truncate text-[9px] font-black leading-tight text-white" style={TEXT_OUTLINE}>
           {p.short}
         </span>
         {flag && (
@@ -273,7 +398,15 @@ function Bench({ sheet, kit }: { sheet: TeamSheet; kit: Kit }) {
         const flag = getFlagUrl(p.nation);
         return (
           <div key={p.id} className="flex items-center gap-1 py-px">
-            <span className={`truncate text-[9px] font-bold ${p.isYou ? "text-amber-300" : "text-white/85"}`}>
+            {p.isYou && (
+              <svg viewBox="0 0 20 20" className="h-2.5 w-2.5 shrink-0">
+                <polygon
+                  points="10,1 12.5,7 19,7.5 14,11.8 15.5,18 10,14.5 4.5,18 6,11.8 1,7.5 7.5,7"
+                  fill="#fbbf24" stroke="rgba(0,0,0,0.5)" strokeWidth="1.2" strokeLinejoin="round"
+                />
+              </svg>
+            )}
+            <span className="truncate text-[9px] font-bold text-white/85">
               {p.short}
             </span>
             {flag && (
