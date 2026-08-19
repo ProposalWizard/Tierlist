@@ -7,6 +7,7 @@ import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competition
 import { exitRound } from "@/lib/star/cups";
 import { STAR_EDITION_LABEL } from "@/lib/star/edition";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
+import { SILHOUETTE_SRC } from "@/lib/silhouette";
 
 interface Props {
   career: CareerState;
@@ -449,9 +450,10 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                     i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
                   }`}
                 >
-                  {/* A real team-mate has a face. A generated one gets his
-                      initials — the standing rule is a silhouette only when
-                      there is no image, never a stock photo of somebody else. */}
+                  {/* A real team-mate has a face. Nobody gets a stock photo of
+                      somebody else — the one without an image gets the same
+                      silhouette the Draft uses, not different placeholders
+                      per screen. */}
                   {p.imageUrl ? (
                     <img
                       src={p.imageUrl}
@@ -461,9 +463,13 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                       className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover"
                     />
                   ) : (
-                    <div className="grid h-[22px] w-[22px] place-items-center rounded-full bg-white/10 text-[8px] font-black text-white/80">
-                      {p.shortName.slice(0, 2).toUpperCase()}
-                    </div>
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={SILHOUETTE_SRC}
+                      alt=""
+                      aria-hidden
+                      className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover opacity-80"
+                    />
                   )}
                   <div className="truncate">{p.name}</div>
                   <div className="text-center font-black text-white/85">{p.overall ?? "—"}</div>

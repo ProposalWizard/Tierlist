@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { getFlagUrl } from "@/lib/nationalities";
 import type { AmPlayer } from "@/lib/americanDraft";
+import { SILHOUETTE_SRC } from "@/lib/silhouette";
 
 /**
  * The draft card, shared by every board that offers players to pick.
@@ -9,8 +10,6 @@ import type { AmPlayer } from "@/lib/americanDraft";
  * Extracted from AmericanDraftRoom so the Challenge draft could reuse the exact
  * same card rather than growing a near-copy that would drift.
  */
-
-export const SILHOUETTE_SRC = "/84eaf89921b5683f425ebabcb7983508-Photoroom.png";
 
 // Position accent colors — used for the diagonal streak overlay and the
 // small position label at top-right of each card. Deliberately kept as
