@@ -946,6 +946,7 @@ export default function StarDevPage() {
         <VersusScreen
           matchday={matchday}
           date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)}
+          results={career.results}
           competition={
             !nextFixture.kind || nextFixture.kind === "league"
               ? `Premier League · Matchday ${nextFixture.week}`
