@@ -1,10 +1,25 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import type { CupId, CupRound } from "@/lib/star/cups";
+
+/**
+ * Deliberately just strings, not CupRound/CupTie from lib/star/cups.ts —
+ * this reveal now also plays a Champions/Europa League tie draw, which comes
+ * from a different state shape (EuroTie, one tie rather than a round of
+ * many). Both call sites hand it the same two fields either way.
+ */
+export interface DrawTie {
+  home: string;
+  away: string;
+}
+export interface DrawRound {
+  name: string;
+  ties: DrawTie[];
+}
 
 interface Props {
-  competition: CupId;
-  round: CupRound;
+  /** Shown in the header, e.g. "FA Cup" or "Champions League". */
+  competition: string;
+  round: DrawRound;
   /** Whichever tie has this club in it gets picked out — it is the one you care about. */
   yourClub: string;
   onContinue: () => void;
@@ -88,7 +103,7 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
             <div className="flex flex-col items-center justify-center py-14 gap-3">
               <div className="text-4xl">🎟️</div>
               <div className="text-sm text-white/70 text-center px-4">
-                {total} ties to be drawn for the {round.name}.
+                {total === 1 ? "Your tie" : `${total} ties`} to be drawn for the {round.name}.
               </div>
               <button
                 onClick={run}

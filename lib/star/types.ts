@@ -466,4 +466,4 @@ export type StarPhase =
   | "retirement"
   | "legacy"
   | "press"
-  | "cup-draw";
+  | "draw";

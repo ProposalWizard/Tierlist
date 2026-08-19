@@ -7,7 +7,8 @@ import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagu
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
-import { currentRound, type CupId, type CupRound } from "@/lib/star/cups";
+import { currentRound } from "@/lib/star/cups";
+import { currentTie } from "@/lib/star/euro";
 import { fixtureDateLabel } from "@/lib/star/calendar";
 import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
@@ -39,7 +40,7 @@ import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScre
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
-import CupDrawReveal from "@/components/star/CupDrawReveal";
+import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -196,10 +197,11 @@ export default function StarDevPage() {
   // name the NEXT opponent — and would be null after the final fixture, which
   // used to strand the career with no way to reach the Ballon d'Or / next season.
   const [playedFixture, setPlayedFixture] = useState<Fixture | null>(null);
-  // The freshly-drawn round waiting to be shown on the Cup Draw screen. Set by
+  // The freshly-drawn round waiting to be shown on the Draw screen. Set by
   // continueAfterMatch when the match just played drew a new round in a
-  // domestic cup; cleared once the player has clicked through it.
-  const [cupDraw, setCupDraw] = useState<{ competition: CupId; round: CupRound } | null>(null);
+  // domestic cup, or a new tie in the Champions/Europa League; cleared once
+  // the player has clicked through it.
+  const [pendingDraw, setPendingDraw] = useState<{ competition: string; round: DrawRound } | null>(null);
 
   // Ordered by week, not by array position — a knockout round earned mid-season
   // is appended to the fixture list and would otherwise sort to the very end.
@@ -454,7 +456,7 @@ export default function StarDevPage() {
    * hit the end of a season, or a contract offer, and the relationships you had
    * just moved were silently rolled back.
    */
-  const continueAfterMatch = useCallback((from: CareerState, askPress: boolean, skipCupDraw = false) => {
+  const continueAfterMatch = useCallback((from: CareerState, askPress: boolean, skipDraw = false) => {
     // The press get you on the way out of the ground, before the week rolls on.
     // Only when the match gave them something to ask about.
     if (askPress && playedFixture && lastMatchStats) {
@@ -465,23 +467,47 @@ export default function StarDevPage() {
       if (q) { setPressQuestion(q); setPhase("press"); return; }
     }
 
-    // The match just played was a domestic cup tie, and winning it drew the
-    // next round — cupState already carries it (settleCupTie draws the next
-    // round synchronously). Show that draw before moving on, the same way the
-    // real competitions redraw the round the instant your tie is settled;
-    // this is a replay of it, not a second draw. Not the final: with one tie
-    // left there is nothing to draw, the pairing is just whoever won the
-    // semis. `skipCupDraw` is set on the way back IN from that screen so this
-    // does not loop.
-    if (!skipCupDraw && playedFixture) {
-      const domestic = playedFixture.competition === "FA Cup" || playedFixture.competition === "League Cup";
-      if (domestic) {
-        const state = from.cupState?.find((s) => s.competition === playedFixture.competition);
+    // The match just played was a knockout tie — domestic cup or European —
+    // and advancing drew what comes next: cupState/euroState already carry it
+    // (settleCupTie / settleEuro draw synchronously). Show that draw before
+    // moving on, the same way the real competitions redraw the instant your
+    // tie is settled; this is a replay of it, not a second draw. Not the
+    // domestic final: with one tie left there is nothing to draw, the pairing
+    // is just whoever won the semis. `skipDraw` is set on the way back IN
+    // from that screen so this does not loop.
+    if (!skipDraw && playedFixture) {
+      const cupCompetition = playedFixture.competition === "FA Cup" || playedFixture.competition === "League Cup"
+        ? playedFixture.competition : null;
+      if (cupCompetition) {
+        const state = from.cupState?.find((s) => s.competition === cupCompetition);
         const round = state ? currentRound(state) : null;
         const freshlyDrawn = round && round.ties.length >= 2 && round.ties.every((t) => t.hs === undefined);
         if (freshlyDrawn && round) {
-          setCupDraw({ competition: playedFixture.competition as CupId, round });
-          setPhase("cup-draw");
+          setPendingDraw({ competition: cupCompetition, round });
+          setPhase("draw");
+          return;
+        }
+      }
+
+      // Champions/Europa League: the knockout draws one opponent at a time
+      // (drawTie in euro.ts), not a whole round of ties like the domestic
+      // cups — so this reveal is always a single "you v opponent" tie. Same
+      // freshly-drawn test: a tie whose legs are all still unplayed is one
+      // that was JUST drawn by this match's result (the league-phase finish
+      // drawing the first knockout tie, or a won tie drawing the next round);
+      // an in-progress or just-finished tie is excluded automatically because
+      // its first leg (or the tie itself) already has a score.
+      const isEuroKnockout = playedFixture.kind === "europe"
+        && (playedFixture.competition === "Champions League" || playedFixture.competition === "Europa League");
+      if (isEuroKnockout && from.euroState) {
+        const tie = currentTie(from.euroState);
+        const freshlyDrawn = tie && tie.legs.every((l) => l.us === undefined);
+        if (freshlyDrawn && tie) {
+          setPendingDraw({
+            competition: from.euroState.competition,
+            round: { name: tie.round, ties: [{ home: from.player.club, away: tie.opponent }] },
+          });
+          setPhase("draw");
           return;
         }
       }
@@ -806,7 +832,7 @@ export default function StarDevPage() {
       || (phase === "match" && !nextFixture)
       || (phase === "pre-match" && !nextFixture)
       || (phase === "post-match" && !(lastMatchStats && playedFixture))
-      || (phase === "cup-draw" && !cupDraw)
+      || (phase === "draw" && !pendingDraw)
       || (phase === "press" && !pressQuestion)
       || (phase === "dilemma" && !currentDilemma)
       || (phase === "season-transfer" && transferOffers.length === 0)
@@ -817,7 +843,7 @@ export default function StarDevPage() {
       setPhase("dashboard");
     }
   }, [career, phase, trainingSkill, nextFixture, lastMatchStats, playedFixture,
-      pressQuestion, currentDilemma, transferOffers, relationshipGameKind, cupDraw]);
+      pressQuestion, currentDilemma, transferOffers, relationshipGameKind, pendingDraw]);
 
   // ---------- RENDER ----------
   if (cloudLoading) {
@@ -891,14 +917,14 @@ export default function StarDevPage() {
     );
   }
 
-  if (phase === "cup-draw" && cupDraw) {
+  if (phase === "draw" && pendingDraw) {
     return (
       <CupDrawReveal
-        competition={cupDraw.competition}
-        round={cupDraw.round}
+        competition={pendingDraw.competition}
+        round={pendingDraw.round}
         yourClub={career.player.club}
         onContinue={() => {
-          setCupDraw(null);
+          setPendingDraw(null);
           continueAfterMatch(career, false, true);
         }}
       />
