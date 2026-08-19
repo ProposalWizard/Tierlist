@@ -132,11 +132,15 @@ def fetch_pl_roster(year: int) -> list[dict]:
     return roster
 
 
-def upload_image(sofifa_id: str, data: bytes) -> str:
+def upload_image(sofifa_id: str, year: int, data: bytes) -> str:
     """PUT the file to Storage and return its public URL. x-upsert makes
-    this safe to re-run, and safe to share a path with other editions of the
-    same real player — a second pass overwrites rather than conflicts."""
-    path = f"{STORAGE_PREFIX}/{sofifa_id}.png"
+    this safe to re-run — a second pass for the SAME edition overwrites
+    rather than conflicts. The filename carries the edition on purpose: the
+    same real player can have a genuinely different photo in 2007 than in
+    2020, so every (sofifa_id, fifa_year) version gets its own file rather
+    than sharing one that whichever edition uploads last would silently
+    overwrite for every other edition."""
+    path = f"{STORAGE_PREFIX}/{sofifa_id}-{year}.png"
     resp = requests.put(
         f"{SUPABASE_URL}/storage/v1/object/{BUCKET}/{path}",
         data=data,
@@ -208,7 +212,7 @@ def main() -> None:
         else:
             try:
                 data = local_file.read_bytes()
-                new_url = upload_image(sid, data)
+                new_url = upload_image(sid, year, data)
                 patch_image_url(sid, year, new_url)
                 uploaded += 1
             except Exception as e:
