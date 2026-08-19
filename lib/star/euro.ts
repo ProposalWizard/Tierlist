@@ -522,6 +522,48 @@ export function crownEurope(state: EuroState, seed: number): string {
   return contenders[0].name;
 }
 
+/**
+ * Who won it, in a season the player was never entered at all.
+ *
+ * crownEurope() already answers "who won it when you were in it and went
+ * out" — it reads state.table, which only exists once openEuro() has built
+ * your 36-club field. Most seasons you are not qualified for a given
+ * competition, or you are qualified for the OTHER one, and there was
+ * previously no answer for "who won the Champions League" at all in that
+ * case — the competition simply did not happen if you were not watching it.
+ *
+ * `entrants` is whichever other Premier League clubs qualified this season
+ * (see seasonQualifiers in competitions.ts) — real clubs, real strengths, so
+ * "Arsenal win the Champions League" is a genuine possible headline in a
+ * season you were in the Europa League instead, not just always one of the
+ * thirty-five fixed European names.
+ */
+export function crownWithoutYou(
+  competition: EuroId,
+  entrants: { name: string; strength: number }[],
+  seed: number,
+): string {
+  const rng = mulberry32(seed);
+  const pool = [...poolFor(competition)].sort((a, b) => b.strength - a.strength).slice(0, 16);
+  const contenders: { name: string; strength: number }[] = [
+    ...pool.map(c => ({ name: c.name, strength: c.strength })),
+    ...entrants,
+  ];
+  if (!contenders.length) return pool[0]?.name ?? "Real Madrid";
+  let total = 0;
+  const weights = contenders.map((c) => {
+    const w = Math.pow(Math.max(1, c.strength - 60), 2.2);
+    total += w;
+    return w;
+  });
+  let x = rng() * total;
+  for (let i = 0; i < contenders.length; i++) {
+    x -= weights[i];
+    if (x <= 0) return contenders[i].name;
+  }
+  return contenders[0].name;
+}
+
 /** Where the league-phase finish leaves you, in words. */
 export function phaseVerdict(position: number): string {
   if (position <= 8) return "Seeded straight through to the Round of 16.";

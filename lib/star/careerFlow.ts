@@ -21,8 +21,10 @@ import { attachObjective, progressObjectives, rollSponsorSeason } from "./sponso
 import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
-  qualificationFor, leaguePosition,
+  qualificationFor, leaguePosition, seasonQualifiers,
 } from "./competitions";
+import { finishCupToWinner } from "./cups";
+import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
@@ -501,6 +503,50 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     leaguePosition(career), career.league.length, wonFaCup, wonLeagueCup, wonEuroComp,
   );
 
+  // ── Who actually won everything, whether or not it was you ──
+  //
+  // Community Shield and Super Cup need real opponents even in a season you
+  // won nothing — and finding out who requires the country's cups to have an
+  // answer at all, which they now do (see finishCupToWinner). Safety net here
+  // for a competition that somehow reached rollover unresolved (the semi-
+  // final calendar slot moved, a save loaded mid-cup) rather than trusting
+  // every earlier code path got it right.
+  const rngWinners = mulberry32(career.season * 7247 + career.league.length * 11);
+  const finishedCups = (career.cupState ?? []).map(st =>
+    st.winner ? st : finishCupToWinner(st, career.league, career.player.club, rngWinners));
+  const faCupWinner = finishedCups.find(st => st.competition === "FA Cup")?.winner ?? null;
+  const leagueCupWinner = finishedCups.find(st => st.competition === "League Cup")?.winner ?? null;
+  const finalTable = sortLeague(career.league);
+  const leagueWinner = finalTable[0]?.name;
+  const leagueRunnerUp = finalTable[1]?.name;
+
+  const qualifiers = seasonQualifiers(career.league, faCupWinner, leagueCupWinner);
+  const strengthOf = (name: string) => career.league.find(t => t.name === name)?.strength ?? 75;
+  const inYourCompetition = (id: "Champions League" | "Europa League") =>
+    career.euroState?.competition === id ? career.euroState : null;
+
+  const yourChampions = inYourCompetition("Champions League");
+  const championsLeagueWinner = yourChampions?.winner ?? crownWithoutYou(
+    "Champions League",
+    qualifiers.champions.map(name => ({ name, strength: strengthOf(name) })),
+    career.season * 5209 + 3,
+  );
+  const yourEuropa = inYourCompetition("Europa League");
+  const europaLeagueWinner = yourEuropa?.winner ?? crownWithoutYou(
+    "Europa League",
+    qualifiers.europa.map(name => ({ name, strength: strengthOf(name) })),
+    career.season * 5209 + 7,
+  );
+
+  const lastSeasonWinners = {
+    league: leagueWinner,
+    leagueRunnerUp,
+    faCup: faCupWinner ?? undefined,
+    leagueCup: leagueCupWinner ?? undefined,
+    championsLeague: championsLeagueWinner,
+    europaLeague: europaLeagueWinner,
+  };
+
   const next: CareerState = {
     ...career,
     player: { ...career.player, age: newAge },
@@ -524,6 +570,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     // Kept because the European draw seeds you into a pot off it, and by the
     // time that draw happens the table below has already been wiped.
     lastSeasonPosition: leaguePosition(career),
+    lastSeasonWinners,
     knockoutMessage: null,
     weekActions: WEEK_ACTIONS,
     relationships: {

@@ -1,6 +1,6 @@
-import type { CareerState, Fixture, CupRun, Competition } from "./types";
+import type { CareerState, Fixture, CupRun, Competition, LeagueTeam } from "./types";
 import {
-  openCup, playCupRound, yourTie, currentRound, cupStrength, tieWinner,
+  openCup, playCupRound, finishCupToWinner, yourTie, currentRound, cupStrength, tieWinner,
   CUP_ROUND_NAMES, type CupState, type CupId,
 } from "./cups";
 import { mulberry32, sortLeague } from "./season";
@@ -106,48 +106,67 @@ function roundWeeks(kind: CupRun["kind"], rounds: number, clubCount: number): nu
 export function seedPreSeason(career: CareerState): Fixture[] {
   const last = career.season - 1;
   if (last < 1) return [];
-  const won = (competition: string) =>
-    (career.trophies ?? []).some(t => t.season === last && t.competition === competition);
+  const w = career.lastSeasonWinners;
+  if (!w) return [];
 
   const rng = mulberry32(career.season * 3301 + career.league.length);
   const fixtures: Fixture[] = [];
-  const table = sortLeague(career.league);
+  const club = career.player.club;
+  // Community Shield opponents are always domestic. A Super Cup opponent can
+  // be too now — a Premier League club can win the OTHER European
+  // competition from you — so this checks the league before either European
+  // pool, rather than assuming it must be one of the thirty-five fixed names.
+  const strengthOf = (name: string) => {
+    const inLeague = career.league.find(t => t.name === name);
+    if (inLeague) return inLeague.strength;
+    const inEurope = [...poolFor("Champions League"), ...poolFor("Europa League")]
+      .find(c => c.name === name);
+    return inEurope?.strength ?? cupStrength(name, career.league);
+  };
 
   // ── Community Shield: champions v FA Cup holders ──
   //
-  // You are in it if you were either. Who you meet is the other one, and when
-  // you were both — a Double — the opponent is the side that finished second,
-  // which is what the real competition does.
-  const wonLeague = won("Premier League");
-  const wonFaCup = won("FA Cup");
-  if (wonLeague || wonFaCup) {
-    const other = table.find(t => t.name !== career.player.club) ?? table[0];
-    fixtures.push({
-      week: PRE_SEASON_WEEK,
-      opponent: other?.name ?? "Manchester City",
-      home: rng() < 0.5,
-      played: false,
-      competition: "Community Shield",
-      kind: "cup",
-      round: "Final",
-      opponentStrength: other?.strength ?? 82,
-    });
+  // Both are always known now (see advanceSeason / lastSeasonWinners), so
+  // this always resolves to the real pair, whether or not either of them is
+  // you. You only get a fixture for it when you were one of the two — the
+  // other eighteen clubs' pre-season is not your calendar to fill in. When
+  // the same club did both — a Double — the champions' slot goes to the
+  // league runner-up, which is what the real competition does.
+  if (w.league && w.faCup) {
+    const champion = w.league === w.faCup ? (w.leagueRunnerUp ?? w.league) : w.league;
+    const cupHolder = w.faCup;
+    if (champion === club || cupHolder === club) {
+      const opponent = champion === club ? cupHolder : champion;
+      fixtures.push({
+        week: PRE_SEASON_WEEK,
+        opponent,
+        home: rng() < 0.5,
+        played: false,
+        competition: "Community Shield",
+        kind: "cup",
+        round: "Final",
+        opponentStrength: strengthOf(opponent),
+      });
+    }
   }
 
   // ── Super Cup: the two European holders ──
-  if (won("Champions League") || won("Europa League")) {
-    const pool = poolFor(won("Champions League") ? "Europa League" : "Champions League");
-    const opp = pool[Math.floor(rng() * Math.min(9, pool.length))];
-    fixtures.push({
-      week: PRE_SEASON_WEEK,
-      opponent: opp?.name ?? "Sevilla",
-      home: false,
-      played: false,
-      competition: "Super Cup",
-      kind: "europe",
-      round: "Final",
-      opponentStrength: opp?.strength ?? 82,
-    });
+  if (w.championsLeague && w.europaLeague) {
+    const clWinner = w.championsLeague;
+    const elWinner = w.europaLeague;
+    if (clWinner === club || elWinner === club) {
+      const opponent = clWinner === club ? elWinner : clWinner;
+      fixtures.push({
+        week: PRE_SEASON_WEEK,
+        opponent,
+        home: false,
+        played: false,
+        competition: "Super Cup",
+        kind: "europe",
+        round: "Final",
+        opponentStrength: strengthOf(opponent),
+      });
+    }
   }
 
   return fixtures;
@@ -252,6 +271,41 @@ export function qualificationFor(
   if (position <= elBottom) return "Europa League";   // 6th or 7th
   if (wonFaCup || wonLeagueCup) return "Europa League";  // cup winner at 8th+
   return null;
+}
+
+/**
+ * The same rule as qualificationFor, applied to the whole division at once —
+ * every club's European spot for next season, not just yours.
+ *
+ * qualificationFor's own doc comment already spells out the cascade: a cup
+ * winner who qualified through the league anyway does not create a second
+ * Europa League place, that place goes to the next-best-placed club instead.
+ * That only ever mattered in words before now, because no other club's cup
+ * result was tracked — this is what makes it real: the winners handed in are
+ * whichever clubs actually won the FA Cup and League Cup this season (see
+ * finishCupToWinner), which can be any of the twenty, not only the player's.
+ */
+export function seasonQualifiers(
+  league: LeagueTeam[],
+  faCupWinner: string | null,
+  leagueCupWinner: string | null,
+): { champions: string[]; europa: string[] } {
+  const table = sortLeague(league).map(t => t.name);
+  const cl = Math.round(league.length * 0.25);
+  const elBottom = cl + 2;
+  const champions = new Set(table.slice(0, cl));
+  const europa = new Set(table.slice(cl, elBottom));
+  let cascade = elBottom; // next candidate by table position for a vacated cup berth
+  for (const winner of [faCupWinner, leagueCupWinner]) {
+    if (!winner) continue;
+    if (champions.has(winner) || europa.has(winner)) {
+      while (cascade < table.length && (champions.has(table[cascade]) || europa.has(table[cascade]))) cascade++;
+      if (cascade < table.length) europa.add(table[cascade++]);
+    } else {
+      europa.add(winner);
+    }
+  }
+  return { champions: Array.from(champions), europa: Array.from(europa) };
 }
 
 /** Where the player's club finished, 1-based. */
@@ -600,8 +654,13 @@ export function settleCupTie(
   const opponent = tie ? (tie.home === club ? tie.away : tie.home) : fixture.opponent;
 
   if (!won) {
+    // You are out, but the country's cup is not finished with you gone — the
+    // rest of the draw plays out to an actual winner, the same afternoon,
+    // rather than freezing the competition at the round you left it. See
+    // finishCupToWinner.
+    const finished = finishCupToWinner(after, career.league, club, rng);
     return {
-      states: next,
+      states: states.map((st, i) => (i === idx ? finished : st)),
       nextFixture: null,
       trophy: null,
       message: onPens
