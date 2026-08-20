@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { portraitsFromOtherEditions, isSelfHosted } from "@/lib/star/portraitFallback";
 
 function parseAttr(val: unknown): number {
   if (typeof val === "number") return val;
@@ -142,6 +143,27 @@ export async function GET(request: NextRequest) {
           if (fallback) player.nationality = fallback;
         }
       }
+    }
+  }
+
+  // ── Portrait fallback: the same idea, for faces ──
+  //
+  // Self-hosted portraits are uploaded one Premier League edition at a time
+  // (that is who the scrape can reach), so a player who is in this edition but
+  // was NOT in the Premier League for it has no photo on his row — while an
+  // edition in which he did play here is holding a good one. Reported with
+  // Marcus Rashford: years at Manchester United, last season at Barcelona.
+  //
+  // Only ever finds images we host ourselves; an older row's raw SoFIFA link
+  // is exactly what stopped working, so falling back to one would swap a
+  // silhouette for a broken image. See lib/star/portraitFallback.
+  const facelessIds = roster.filter(p => !isSelfHosted(p.image_url)).map(p => p.sofifa_id).filter(Boolean);
+  if (facelessIds.length > 0) {
+    const rescued = await portraitsFromOtherEditions(supabase, facelessIds, year);
+    for (const player of roster) {
+      if (isSelfHosted(player.image_url)) continue;
+      const found = rescued.get(player.sofifa_id);
+      if (found) player.image_url = found;
     }
   }
 

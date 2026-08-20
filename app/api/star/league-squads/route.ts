@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
+import { portraitsFromOtherEditions } from "@/lib/star/portraitFallback";
 
 export const maxDuration = 30;
 // Reads the live DB, so it must never be frozen into a build-time snapshot.
@@ -96,6 +97,22 @@ export async function GET(request: NextRequest) {
       ...(image ? { image } : {}),
       ...(nation ? { nation } : {}),
     });
+  }
+
+  // ── A face from whichever edition has one ──
+  //
+  // Portraits are self-hosted one Premier League edition at a time, so a
+  // player who is here now but was elsewhere for THIS edition has no photo on
+  // his row while an older edition of him has a perfectly good one. One extra
+  // query, only for the players who actually came back without a picture, and
+  // only ever finding images we serve ourselves. See lib/star/portraitFallback.
+  const faceless = Object.values(squads).flat().filter(p => !p.image);
+  if (faceless.length > 0) {
+    const rescued = await portraitsFromOtherEditions(supabase, faceless.map(p => p.id), year);
+    for (const p of faceless) {
+      const found = rescued.get(p.id);
+      if (found) p.image = found;
+    }
   }
 
   // Ordered by rating, best first — which is the order every consumer wants and

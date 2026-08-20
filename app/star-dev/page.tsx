@@ -920,6 +920,7 @@ export default function StarDevPage() {
         stats={lastMatchStats}
         homeTeam={playedFixture.home ? myTeam(playedFixture) : playedFixture.opponent}
         awayTeam={playedFixture.home ? playedFixture.opponent : myTeam(playedFixture)}
+        youAreHome={playedFixture.home !== false}
         competition={playedFixture.kind && playedFixture.kind !== "league" ? fixtureLabel(playedFixture) : undefined}
         knockout={career.knockoutMessage}
         onContinue={handlePostMatchContinue}

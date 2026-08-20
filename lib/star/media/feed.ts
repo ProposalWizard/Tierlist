@@ -205,6 +205,8 @@ function render(
         verified: account.verified,
         initials: account.avatar.initials,
         tint: account.avatar.tint,
+        tint2: account.avatar.tint2,
+        glyph: account.avatar.glyph,
       },
       text,
       graphic,

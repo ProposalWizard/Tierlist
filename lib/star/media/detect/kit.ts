@@ -43,6 +43,19 @@ export function base(r: MatchRecord): Facts {
     result: r.result,
     home: r.home,
     venue: r.home ? "at home" : "away",
+    // ── The same match, written the way a scoreline is written ──
+    //
+    // `us`/`them` are yours-first, which is right for a sentence about you
+    // ("we won 3-0") and wrong for a result line, where football always puts
+    // the home side first. A template using {club} {us}-{them} {opponent}
+    // reported an away win as "AFC Bournemouth 3-0 West Ham United" while the
+    // scoreline graphic directly beneath it — which does read the venue —
+    // correctly said "West Ham United 0-3 AFC Bournemouth". Reported as
+    // exactly that disagreement.
+    homeClub: r.home ? r.club : r.opponent,
+    awayClub: r.home ? r.opponent : r.club,
+    hs: r.home ? r.score.us : r.score.them,
+    as: r.home ? r.score.them : r.score.us,
     rating: r.you.rating.toFixed(1),
     number: r.you.squadNumber,
     // `role` and not `position`: the table detectors use `position` for where

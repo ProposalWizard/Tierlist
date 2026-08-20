@@ -5,6 +5,15 @@ interface Props {
   stats: MatchStats;
   homeTeam: string;
   awayTeam: string;
+  /**
+   * Were YOU the home side? Needed because `MatchStats.homeScore` does not
+   * mean what it says: `finaliseMatch` fills it with the USER's score and
+   * `awayScore` with the opponent's, whatever the venue (every other reader —
+   * careerFlow, the media record, the league table — treats them that way).
+   * This screen was the one place pairing them with venue-ordered team names,
+   * so an away win read back as a home defeat by the same scoreline.
+   */
+  youAreHome?: boolean;
   onContinue: () => void;
   /** The competition, when it was not a league game. */
   competition?: string;
@@ -12,7 +21,9 @@ interface Props {
   knockout?: string | null;
 }
 
-export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout }: Props) {
+export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true }: Props) {
+  const hs = youAreHome ? stats.homeScore : stats.awayScore;
+  const as = youAreHome ? stats.awayScore : stats.homeScore;
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex items-center justify-center px-3 py-4">
       <div className="w-full max-w-sm">
@@ -20,7 +31,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
           <div className="text-[10px] uppercase tracking-widest font-black text-white/75">
             {competition ? competition : "Full Time"}
           </div>
-          <div className="text-lg font-black text-white mt-0.5 truncate">{homeTeam} {stats.homeScore} — {stats.awayScore} {awayTeam}</div>
+          <div className="text-lg font-black text-white mt-0.5 truncate">{homeTeam} {hs} — {as} {awayTeam}</div>
         </div>
         {knockout && (
           <div className={`border-x border-gray-600 py-2.5 px-3 text-center text-sm font-black ${
