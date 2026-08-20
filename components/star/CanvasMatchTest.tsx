@@ -41,7 +41,7 @@ import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, creatorOf } from "@/lib/star/lineup";
 import { startingTeammateIds, onPitchToday } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
-import { kitsFor, labelInk, type MatchKits } from "@/lib/star/kits";
+import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
@@ -101,8 +101,14 @@ const FALLBACK_CAREER = {
  * The shortest drag that counts as aiming at all, as a fraction of the canvas
  * height. About a thumb's width of slop — below it, you pressed the ball and
  * your finger moved, which is not a shot.
+ *
+ * TEST-ONLY: production's 0.04 is the REAL reason a light touch needed ~20%
+ * power to register at all — powerFromDrag divides this by dragForFullPower
+ * (0.12-0.18), so 0.04 alone already forces a floor of roughly 22-33% power
+ * before the 0.12 power check even runs. Reported directly. Dropped to a
+ * genuine mis-tap-sized floor instead.
  */
-const MIN_PULL = 0.04;
+const MIN_PULL = 0.008;
 
 /**
  * The shortest pull off a team-mate that counts as pointing him somewhere,
@@ -1247,8 +1253,9 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       // than the player wearing it. A star reads instantly, costs no width,
       // and does not have to be read.
       if (opts.star) {
-        const sr = r * 0.46;
-        const cx = px, cy = py - r * 1.30;
+        // Synced from CanvasMatch.tsx: half radius, centred above the crown.
+        const sr = r * 0.23;
+        const cx = px, cy = py - r * 2.15;
         ctx.save();
         // Drawn from the point down, so it sits upright over the head.
         ctx.beginPath();
@@ -1359,8 +1366,7 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       footballer(dr.pos.x, dr.pos.y, R, ourKit().shirt, ourKit().trim, {
         pose: "run",
         phase: runPhase(dr.pos.x),
-        label: "YOU",
-        labelColor: labelInk(ourKit().shirt),
+        star: true,  // synced from CanvasMatch.tsx
       });
       const bp = toPx(bx, by);
       ctx.fillStyle = "#fff";
@@ -1788,9 +1794,13 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       const ux = Math.cos(ang), uy = Math.sin(ang);
       const nx = -uy, ny = ux; // perpendicular
       const arrowLen = Math.hypot(b.px - a.px, b.py - a.py) || 1;
-      const headLen = clamp(W * 0.075, W * 0.03, arrowLen * 0.55);
-      const headHalf = W * 0.05;
-      const shaftW = W * 0.03;
+      // TEST-ONLY: slimmer, more tapered arrow — the production shaft/head
+      // were roughly a third of the arrow's own length wide, which reads as
+      // a fat wedge rather than a thrown dart. Reported directly against a
+      // reference screenshot of a slim, needle-like drag arrow.
+      const headLen = clamp(W * 0.045, W * 0.02, arrowLen * 0.45);
+      const headHalf = W * 0.022;
+      const shaftW = W * 0.014;
       const bx = b.px - ux * headLen, by = b.py - uy * headLen; // head base
 
       // shaft
@@ -2437,14 +2447,11 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
         events.push({ minute: st.minute, text: decision.message });
         // The rest of the match is played without you, exactly as the hour
         // before kick-off is when you come off the bench.
+        // Synced from CanvasMatch.tsx: goals here now go through
+        // nameTeamGoals, same as everywhere else, instead of being mapped by
+        // hand with no call to goalEventsRef.current.push.
         const after = advanceTo(st, hiddenInputs(), rng, MATCH_DURATION);
-        for (const e of after) {
-          events.push({
-            minute: e.minute,
-            text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
-            isGoal: e.isGoal,
-          });
-        }
+        events.push(...nameTeamGoals(after, onPitch(careerRef.current?.squad ?? []), rng, false));
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
         setScore({ user: st.userScore, opp: st.oppScore });
@@ -2725,7 +2732,10 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
     // a thumb pressing the ball and slipping. The absolute floor keeps the
     // dead zone the size it has always been on the glass.
     if (screenPull(d, b) < MIN_PULL) return;
-    if (power < 0.12) return; // too weak — stay in aim
+    // TEST-ONLY: production's 0.12 floor is what made a real drag feel like
+    // it needed ~20% power just to register as a kick at all — reported
+    // directly. Any pull past the absolute pixel floor above now counts.
+    if (power < 0.02) return;
     const dir = { x: b.x - d.x, y: b.y - d.y };
     setAim({ dir, power });
     setPhase("contact");
