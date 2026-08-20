@@ -29,6 +29,8 @@ import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/l
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
 import ProfileSetup from "@/components/star/ProfileSetup";
+import TrialPenalty from "@/components/star/TrialPenalty";
+import TrialReward from "@/components/star/TrialReward";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
@@ -247,7 +249,15 @@ export default function StarDevPage() {
   const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[]) => {
     const created = makeInitialCareer(player, clubs);
     setCareer(created);
-    setPhase("dashboard");
+    // ── Into the trial, not the dashboard ──
+    //
+    // A career now opens on one penalty you cannot fail, only not have passed
+    // yet, and the contract it earns. The career itself is fully built before
+    // any of that — the trial is a scene played over a career that already
+    // exists, so nothing about it can leave a half-made save behind if the tab
+    // closes halfway through. Both squad fetches below still run during it,
+    // which is time the trial is spending anyway.
+    setPhase("trial");
     fetchRealSquad(player.club).then((squad) => {
       setCareer(c => (c && c.player.club === player.club ? { ...c, squad } : c));
     });
@@ -861,6 +871,20 @@ export default function StarDevPage() {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white/60 text-sm font-bold animate-pulse">Loading career…</div>
       </div>
+    );
+  }
+
+  if (phase === "trial" && career) {
+    return <TrialPenalty onScored={() => setPhase("trial-reward")} />;
+  }
+
+  if (phase === "trial-reward" && career) {
+    return (
+      <TrialReward
+        playerName={`${career.player.firstName} ${career.player.lastName}`}
+        club={career.player.club}
+        onDone={() => { setActiveNav(null); setPhase("dashboard"); }}
+      />
     );
   }
 
