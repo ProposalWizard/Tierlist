@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getPositionColor, FORMATIONS, formatSeasonYear } from "@/components/draft/formations";
 import { getFlagUrl } from "@/lib/nationalities";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
@@ -282,7 +283,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
                   <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
-                    <span className="text-xs font-black text-white">{initials(p.name)}</span>
+                    <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
                   </div>
                 )}
               </div>
@@ -318,7 +319,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
                       <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
                     ) : (
                       <div className={`w-full h-full flex items-center justify-center ${posColor}`}>
-                        <span className="text-xs font-black text-white">{initials(p.name)}</span>
+                        <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
                       </div>
                     )}
                   </div>

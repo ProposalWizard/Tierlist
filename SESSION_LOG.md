@@ -5,6 +5,27 @@
 > `CLAUDE.md` keeps only the current architecture/state; this file is the archive.
 > New session summaries should be appended here, not to `CLAUDE.md`.
 
+## Session: 4 August 2026 — American draft performance + six-agent site-wide audit
+
+American draft: the era pool is now also persisted to Supabase Storage (`draft-cache/` in the existing bucket) so a cold serverless instance recovers it with one read instead of ~28 queries; each round's pool is pre-built ("staged") during the previous round and consumed on advance; the pick response carries the authoritative state so the board updates with no Realtime round-trip; clients prefetch the next round's images. Also fixed: position eligibility now defers to `positionFitness` (≥0.98) rather than a position-string list, weak-card threshold +3 per season and draw weight 0.10 → 0.03, replacement signings join the bench, and `AM_POSITION_SEQUENCE` now matches the 4-3-3 in `formations.ts` (it drafted three CMs where the formation wants a CDM, so every squad had a midfielder stuck out of position).
+
+Six parallel auditors then reviewed the whole site. Fixed since (all verified, `tsc` + build clean):
+
+- **Any relegation broke every subsequent season.** `getSeasonTeams` returned `20 − previous` humans' worth of AI clubs when the league needed `20 − current`; the existing top-up filtered a list against itself and could never add anyone. A short league made the round-robin emit a self-fixture and the simulation threw — the room could never play again. Reproduced and fixed.
+- **Four multiplayer deadlocks**: American rooms never advanced `season_number` (the replacement-draft seed flipped the room out of `complete`, so `/next-season` silently skipped); relegated managers were resurrected two seasons later and blocked `allReady` forever; simultaneous vacancy submissions silently dropped one; refreshing during an American pre-season dumped you into a draft screen that only polls.
+- **Host leaving between seasons deleted the room** and everyone's career — `status === "lobby"` is also the between-seasons status.
+- **Cup rewards were dead in multiplayer**: `/next-season` nulled `season_result` before the next `simulate` read it, so Super Cup, Community Shield and cup-based European qualification were unreachable. Flags now carried on `settings.previousCupResults`.
+- **Tic-tac-toe**: `max_score` was clamped to 100 (real puzzles exceed 145), so most results stored as 100/100 and every archive percentage was wrong; Second Chance deleted a better score. Max is now computed server-side from the stored grid, per scoring unit (easy mode counts answers, standard counts points).
+- **Tierlists**: per-image admin deletes removed Storage files shared with other tierlists (now `lib/storageCleanup.ts`); deleting the cover left a 404; failed staged uploads were silently discarded under a "saved" message; `/play` truncated vote tallies at 1000; `/find` swallowed query errors.
+- **Admin player search** (which froze a live draft ~15s): dropped `select("*")` over heavy JSONB on the ids-only path, capped the follow-up query, NULLs sort last.
+- Two-player rooms deadlocked after one player left; pinch-zoom re-enabled site-wide.
+
+**Known, not yet fixed** (detail in the audit): squads without `attributes` simulate ~15 strength points weaker than identical squads with them, in the same league; profile team names can collide with AI clubs and merge rows in the league table; no draft turn timer or host override; a host who closes the tab mid-career deadlocks the room; `/star-dev` end-of-season soft-lock on refresh; `/manager` has no persistence and nothing links to it; no favicon; shared links to non-tierlist games preview as tierlist copy.
+
+## Session: 25 July 2026 — Star career squad feature
+
+Squad feature added to star career game: named 20-player squads generated per club (`lib/star/squadData.ts`), goal events tracked per match with named scorer/assister, squad stats (season + career G/A) persisted on `CareerState.squad`, League screen has a third "Squad" tab. `SquadPlayer` and `GoalEvent` interfaces added to `types.ts`. TypeScript clean.
+
 ## Session: 30 June 2026 (cont. 4) — Team names, objective filters/fixes, lobby settings redesign, objective-crediting bug fix
 
 Continuation of the same-day PL Draft / objectives session, working through the remaining items from a long voice-dictated backlog.

@@ -20,7 +20,7 @@ import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/st
 import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
-import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads } from "@/lib/star/leagueSquads";
+import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads } from "@/lib/star/leagueSquads";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -121,14 +121,19 @@ export default function StarDevPage() {
     // must not be wiped back to nought by a page refresh.
     if (!(saved.leagueSquads ?? []).length) {
       fetchLeagueSquads(saved.league.map(t => t.name)).then((leagueSquads) => {
-        setCareer(c => (c && !(c.leagueSquads ?? []).length ? { ...c, leagueSquads } : c));
+        setCareer(c => (c && !(c.leagueSquads ?? []).length
+          ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
       });
     } else if (shouldUpgradeLeagueSquads(saved.leagueSquads!)) {
       // A division fetched before faces and flags existed. Re-fetched once, in
       // the background, and merged rather than replaced — this season's goals
       // and assists were real and stay real; only the missing fields fill in.
       fetchLeagueSquads(saved.league.map(t => t.name)).then((fresh) => {
-        setCareer(c => (c ? { ...c, leagueSquads: mergeLeagueSquadStats(fresh, c.leagueSquads ?? []) } : c));
+        setCareer(c => {
+          if (!c) return c;
+          const leagueSquads = mergeLeagueSquadStats(fresh, c.leagueSquads ?? []);
+          return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+        });
       });
     }
 
@@ -253,7 +258,7 @@ export default function StarDevPage() {
     // blob per player, which is right for the Draft and far too heavy to ask
     // twenty times for six fields.
     fetchLeagueSquads(clubs).then((leagueSquads) => {
-      setCareer(c => (c ? { ...c, leagueSquads } : c));
+      setCareer(c => (c ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
     });
   }, []);
 
@@ -291,11 +296,16 @@ export default function StarDevPage() {
         fetchRealSquad(career.player.club),
         fetchLeagueSquads(career.league.map(t => t.name)),
       ]);
-      setCareer(c => (c ? {
-        ...c,
-        squad: mergeSquadStats(mine, c.squad ?? []),
-        leagueSquads: mergeLeagueSquadStats(division, c.leagueSquads ?? []),
-      } : c));
+      setCareer(c => {
+        if (!c) return c;
+        const leagueSquads = mergeLeagueSquadStats(division, c.leagueSquads ?? []);
+        return {
+          ...c,
+          squad: mergeSquadStats(mine, c.squad ?? []),
+          leagueSquads,
+          league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
+        };
+      });
     } finally {
       setRefreshing(false);
     }

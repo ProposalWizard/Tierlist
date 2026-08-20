@@ -4,6 +4,7 @@ import type { SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
 import { getPositionColor, FORMATIONS } from "@/components/draft/formations";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { SILHOUETTE_SRC } from "@/lib/silhouette";
 
 // Broad role groups for the final position-matching fallback (when neither an
 // exact position nor a formation's compatiblePositions list has a taker).
@@ -859,8 +860,10 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                                 className="w-full h-full object-cover"
                                 fallbackText={initials}
                               />
+                            ) : p ? (
+                              <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
                             ) : (
-                              <span className="text-[10px] sm:text-sm font-black text-white">{p ? initials : s.slot}</span>
+                              <span className="text-[10px] sm:text-sm font-black text-white">{s.slot}</span>
                             )}
                           </div>
                           <div className="flex flex-col items-center mt-0.5 max-w-[64px] sm:max-w-[84px]">

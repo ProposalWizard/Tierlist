@@ -36,7 +36,7 @@ import { goalInView } from "./canvasEngine";
 type Pos = SquadPlayer["position"];
 
 const idOf = (p: SquadPlayer): Identity => ({
-  id: p.id, name: p.name, shortName: p.shortName, position: p.position,
+  id: p.id, name: p.name, shortName: p.shortName, position: p.position, overall: p.overall,
 });
 
 /**
