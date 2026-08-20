@@ -2984,6 +2984,23 @@ export function dragForFullPower(power: number): number {
 export const shotTuning = {
   vzPowerFloor: 0.88,
   vzPowerWeight: 0.12,
+  /**
+   * A flat multiplier on ALL lift, on top of everything else.
+   *
+   * The height curve and the power coupling both decide the SHAPE of the
+   * relationship; this decides how much of it there is. It exists because
+   * making the apex linear across the ball (see `lift` in launch) has a real
+   * cost at close range: measured from a one-on-one at 70% power, striking
+   * mid-ball went from clearing the bar 0% of the time to 19%. Striking the
+   * very bottom already cleared it 74% of the time before that change and
+   * still does — that is the earlier power-decoupling, not the curve.
+   *
+   * Whether that is "I scooped it and it went over, fair enough" or "this is
+   * too floaty" is a judgement about how the game should feel, so it is a
+   * slider rather than a number picked here. 1 leaves the lift exactly as it
+   * is today.
+   */
+  vzScale: 1,
 };
 
 // Launch the ball from a slingshot aim + a contact point.
@@ -3002,6 +3019,47 @@ export function launch(
   const usableCy = contact.cy * loftRange(tech);
   const loft = clamp((usableCy + 1) / 2, 0, 1); // 0 = struck top (driven), 1 = struck bottom (lofted)
 
+  /**
+   * HOW HIGH IT GOES, AS A LINEAR FUNCTION OF WHERE YOU HIT IT.
+   *
+   * Reported: the lift is right at the very bottom of the ball, but a contact
+   * only slightly above that loses a lot of height — "there seems to be a huge
+   * jump from the absolute lowest point and then still a very low point", and
+   * "the top of the ball means zero height and the bottom means a hundred",
+   * which is the model it should follow.
+   *
+   * The suspicion was right and the cause is one step further back than it
+   * looks. `loft` above IS already linear in where you hit — it is the
+   * VELOCITY that is linear. Height is not velocity: a projectile's apex is
+   * vz²/2g, so it goes as the SQUARE of it, and squaring a linear ramp is what
+   * produces the cliff. Measured on the old curve, as a share of the maximum
+   * height available:
+   *
+   *     very bottom  100%      dead centre   31%
+   *     near bottom   83%      very top       1%
+   *
+   * Dead centre returning 31% is the giveaway — on the stated model it should
+   * be half. So: take the square root, which cancels the squaring exactly and
+   * makes the APEX linear in the contact point rather than the launch speed.
+   * Multiplying by `tMax` inside the root normalises it, so the very bottom of
+   * the ball produces precisely the height it does today — the part that was
+   * reported as already good — and everything above it is lifted onto the
+   * straight line up to it:
+   *
+   *     very bottom  100%      dead centre   56%
+   *     near bottom   91%      very top      11%
+   *
+   * The top is 11% rather than a true zero because `loftRange` deliberately
+   * shrinks how much of the ball a low-technique player can use, in both
+   * directions — see loftRange. A driven ball still leaving the ground a
+   * little is also what a driven ball does.
+   *
+   * Only vz reads this. `loft` still drives the horizontal-pace trade below,
+   * so how far the ball travels forward is untouched.
+   */
+  const tMax = clamp((loftRange(tech) + 1) / 2, 0, 1);
+  const lift = Math.sqrt(loft * tMax);
+
   // Accuracy: a little, so a beginner does miskick — but technique is no longer
   // primarily an accuracy stat. See curlRange/loftRange above and §13.7.
   const sigmaDeg = (1 - tech / 100) * 2.2 + power * (1 - tech / 100) * 1.6;
@@ -3015,8 +3073,9 @@ export function launch(
   // Vertical launch speed from how low on the ball it was struck. Deliberately
   // NOT `loft * power * ...` — see shotTuning above. How hard you struck it
   // only nudges the height; where you struck it decides the height.
-  const vz = loft * (7.5 + skills.power * 0.035)
-    * (shotTuning.vzPowerFloor + power * shotTuning.vzPowerWeight);
+  const vz = lift * (7.5 + skills.power * 0.035)
+    * (shotTuning.vzPowerFloor + power * shotTuning.vzPowerWeight)
+    * shotTuning.vzScale;
   // Curl from striking the side of the ball. Technique decides how much of that
   // side is available to you at all, which is what makes a curled finish
   // something you unlock rather than something you are simply better at.
