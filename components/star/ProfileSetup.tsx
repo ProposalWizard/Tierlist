@@ -8,24 +8,38 @@ interface Props {
   onComplete: (player: StarPlayer, clubs: string[]) => void;
 }
 
-const POSITIONS = ["ST", "CAM", "LW", "RW", "CM", "CDM", "LM", "RM", "LB", "RB", "CB", "GK"];
 const NATIONALITIES = ["England", "France", "Spain", "Germany", "Brazil", "Argentina", "Portugal", "Netherlands", "Italy", "Belgium"];
 
+/**
+ * There is nothing to choose here.
+ *
+ * The league step offered exactly one league — England, the Premier League,
+ * this edition — as a full screen with a single un-clickable answer on it, and
+ * the position step asked a sixteen-year-old to name the position he plays
+ * before he has kicked a ball. Both are gone; setup is now name/age/nation,
+ * then club.
+ *
+ * A position is still a thing a career HAS — `career.player.position` is read
+ * everywhere from the team sheet to the scenario weighting — so it keeps a
+ * default rather than becoming optional. Striker, which is what the picker
+ * defaulted to anyway.
+ */
+const DEFAULT_POSITION = "ST";
+
 export default function ProfileSetup({ onComplete }: Props) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [skin, setSkin] = useState<"light" | "dark">("light");
   const [age, setAge] = useState(16);
   const [nationality, setNationality] = useState("England");
-  const [position, setPosition] = useState("ST");
   const [clubs, setClubs] = useState<string[]>([]);
   const [selectedClub, setSelectedClub] = useState("");
   const [loading, setLoading] = useState(false);
   const [portrait, setPortrait] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    if (step !== 3 || clubs.length > 0) return;
+    if (step !== 2 || clubs.length > 0) return;
     setLoading(true);
     fetch("/api/draft/clubs")
       .then((r) => r.json())
@@ -49,7 +63,7 @@ export default function ProfileSetup({ onComplete }: Props) {
         skinTone: skin,
         club: selectedClub,
         clubBadge: null,
-        position,
+        position: DEFAULT_POSITION,
         nationality,
         startYear: STAR_FIFA_YEAR,
         ...(portrait ? { portrait } : {}),
@@ -66,7 +80,7 @@ export default function ProfileSetup({ onComplete }: Props) {
             Star Career
           </div>
           <h1 className="mt-2 text-2xl font-black text-white">Set up your player profile</h1>
-          <div className="mt-1 text-xs text-emerald-300 font-bold">Step {step} of 3</div>
+          <div className="mt-1 text-xs text-emerald-300 font-bold">Step {step} of 2</div>
         </div>
 
         {step === 1 && (
@@ -140,29 +154,6 @@ export default function ProfileSetup({ onComplete }: Props) {
 
         {step === 2 && (
           <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-600 rounded-2xl p-5 shadow-xl">
-            <div className="bg-gray-700 text-white text-center font-black py-2 rounded-lg mb-3">Choose League</div>
-            <div className="bg-white text-emerald-600 text-center font-black text-2xl py-3 rounded-lg tracking-widest mb-4">
-              ENGLAND
-            </div>
-            <div className="text-center text-emerald-300 text-xs mb-4">Premier League {STAR_SEASON_LABEL}</div>
-
-            <div className="bg-gray-700 text-white text-center font-black py-2 rounded-lg mb-2">Position</div>
-            <div className="grid grid-cols-4 gap-1.5">
-              {POSITIONS.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPosition(p)}
-                  className={`py-2 rounded-lg font-black text-sm transition ${position === p ? "bg-emerald-500 text-white ring-2 ring-emerald-300" : "bg-gray-800 text-white/85"}`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-600 rounded-2xl p-5 shadow-xl">
             <div className="bg-gray-700 text-white text-center font-black py-2 rounded-lg mb-3">Choose Your Club</div>
             {loading && <div className="text-center py-6 text-emerald-300 text-sm">Loading clubs…</div>}
             {!loading && clubs.length === 0 && (
@@ -198,7 +189,7 @@ export default function ProfileSetup({ onComplete }: Props) {
         <div className="flex gap-3 mt-5">
           {step > 1 && (
             <button
-              onClick={() => setStep((s) => (s === 3 ? 2 : 1))}
+              onClick={() => setStep(1)}
               className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-black transition"
             >
               ← Back
@@ -214,14 +205,6 @@ export default function ProfileSetup({ onComplete }: Props) {
             </button>
           )}
           {step === 2 && (
-            <button
-              onClick={() => setStep(3)}
-              className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black transition"
-            >
-              Continue →
-            </button>
-          )}
-          {step === 3 && (
             <button
               onClick={submit}
               disabled={!canFinish}

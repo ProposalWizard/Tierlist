@@ -280,7 +280,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
             >
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/60 shadow-lg group-hover:border-red-400 group-hover:ring-2 group-hover:ring-red-400/60 transition-all">
                 {p.image_url ? (
-                  <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
+                  <ImageWithFallback src={p.image_url} fallbackSrc={SILHOUETTE_SRC} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
                     <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
@@ -316,7 +316,7 @@ function SellPhase({ players, onSell, onSkip, seasonNumber, formationName }: {
                 <button key={i} onClick={() => handleClick(p)} className="flex flex-col items-center rounded-xl px-2 py-2 border bg-purple-900/30 border-purple-600/40 hover:border-red-400 hover:ring-2 hover:ring-red-400/50 transition-all">
                   <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/60">
                     {p.image_url ? (
-                      <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
+                      <ImageWithFallback src={p.image_url} fallbackSrc={SILHOUETTE_SRC} alt={p.name} className="w-full h-full object-cover" fallbackText={initials(p.name)} />
                     ) : (
                       <div className={`w-full h-full flex items-center justify-center ${posColor}`}>
                         <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />

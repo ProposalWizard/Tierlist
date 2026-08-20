@@ -24,6 +24,15 @@ Flags:
   --force            Re-scrape all editions, even complete ones
   --year=YYYY        Scrape only that edition
   --download-faces   Also download face images to sofifa_data/faces/
+  --faces-for-ids=F  Download faces for JUST the player ids listed in file F
+                     (one per line), by visiting each player's own page. Use
+                     with --year=YYYY. This is for players a league sweep can
+                     never reach: someone who started the edition in the
+                     Premier League and transferred abroad mid-season is in
+                     our database as a PL player but is listed elsewhere by
+                     SoFIFA now, so --league=13 misses him. upload_player_images.py
+                     and upload_pl_draft_images.py both write exactly this
+                     file when they find players with no local face.
   --patch-positions  Fast mode: only scrape positions + nationality flags, patch
                      into existing JSON. Skips league map + face downloads.
                      ~300 pages per edition (10 pages with --league=ID).
@@ -774,6 +783,90 @@ async def download_face(page, url: str, year: int, sofifa_id: str) -> str:
         page.remove_listener("response", on_response)
 
 
+async def faces_for_ids(page, year: int, ids: list[str]) -> None:
+    """Download faces for specific players, by visiting each player's own page.
+
+    ── Why this exists, separately from --download-faces ──
+
+    --download-faces walks a LIST page (with --league=13, the Premier League)
+    and grabs the face off each row. That finds a player only if he is in that
+    league in SoFIFA's live data right now. A player who started the season in
+    the Premier League and moved abroad in January is in our database as a
+    Premier League player — that is what he was when the edition shipped — but
+    SoFIFA now lists him under his new club's league, so the PL sweep never
+    reaches him and he is left with no photo while every team-mate has one.
+
+    Reported as exactly that: Simon Adingra, at Sunderland until January and
+    then Monaco, the only man in the squad without a face, and SoFIFA plainly
+    has one for him.
+
+    So this goes at each player directly instead of hoping to meet him in a
+    list. The face URL is read off his own page; if the markup does not give
+    one up it is derived from the id, which is how SoFIFA's CDN paths are
+    built anyway (players/<first 3>/<next 3>/<edition>_120.png).
+    """
+    vc = code_for_year(year)
+    dest_dir = FACES_DIR / str(year)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    todo = [pid for pid in ids if not (dest_dir / f"{pid}.png").exists()]
+    have = len(ids) - len(todo)
+    print(f"  {len(ids)} requested; {have} already on disk; fetching {len(todo)}.\n")
+
+    ok = skipped = 0
+    failures: list[str] = []
+
+    for i, pid in enumerate(todo, 1):
+        url = f"https://sofifa.com/player/{pid}/?r={vc}&set=true"
+        try:
+            await page.goto(url, wait_until="commit")
+            await asyncio.sleep(0.6 + random.random() * 0.5)
+            html = await page.content()
+            face = _face_url_from_player_page(html, pid, year)
+            if not face:
+                failures.append(f"{pid}: no face URL on the page")
+                continue
+            result = await download_face(page, face, year, pid)
+            if result == "ok":
+                ok += 1
+            elif result == "skip":
+                skipped += 1
+            else:
+                failures.append(f"{pid}: {result}")
+        except Exception as e:
+            failures.append(f"{pid}: {e}")
+
+        if i % 10 == 0:
+            print(f"  ...{i}/{len(todo)}  (ok {ok}, failed {len(failures)})")
+
+    print(f"\n  Downloaded: {ok}   Already had: {skipped + have}   Failed: {len(failures)}")
+    if failures:
+        print("  Failures:")
+        for f in failures[:25]:
+            print(f"    - {f}")
+        if len(failures) > 25:
+            print(f"    ...and {len(failures) - 25} more")
+
+
+def _face_url_from_player_page(html: str, sofifa_id: str, year: int) -> str | None:
+    """The face image on a player's own page, or a URL derived from his id."""
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+    # The face is the one CDN image under /players/ — club crests live under
+    # /teams/ and flags under /flags/, so the path is what tells them apart.
+    for img in soup.select("img"):
+        src = img.get("data-src") or img.get("src") or ""
+        if "/players/" in src:
+            return upscale_face_url(_abs_cdn(src))
+
+    # Nothing in the markup: build it. SoFIFA splits the id into two 3-digit
+    # directories, zero-padded, and names the file after the edition.
+    padded = sofifa_id.zfill(6)
+    edition = str(year)[-2:]
+    return f"https://cdn.sofifa.net/players/{padded[:3]}/{padded[3:6]}/{edition}_120.png"
+
+
 # ── Club -> league map ─────────────────────────────────────────────────────────
 
 
@@ -1458,11 +1551,12 @@ async def main():
     # If you do NOT see this exact line when you run the script, your local
     # copy is OLD — run `git pull` in the folder before scraping.
     print("=" * 64)
-    print("  scrape_missing.py  BUILD 2026-08-19-H  (real <img> load + network capture, sidesteps CORS)")
+    print("  scrape_missing.py  BUILD 2026-08-20-I  (adds --faces-for-ids for mid-season transfers out)")
     print("=" * 64)
 
     force = "--force" in sys.argv
     download_faces = "--download-faces" in sys.argv
+    faces_file = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--faces-for-ids=")), None)
 
     # Allow multiple --year= args; explicitly requesting a year always
     # re-scrapes it (so the 4 mislabelled editions can be redone without
@@ -1482,6 +1576,44 @@ async def main():
     league_arg = league_ids[0] if len(league_ids) == 1 else (_league_raw if league_ids else None)
 
     list_leagues = "--list-leagues" in sys.argv
+
+    if faces_file:
+        path = Path(faces_file)
+        if not path.exists():
+            print(f"\n✗ No such file: {path}")
+            print("  upload_player_images.py writes this list when it finds players")
+            print("  with no local face image — run it first, then pass the path it prints.")
+            return
+        ids = [ln.strip() for ln in path.read_text().splitlines() if ln.strip() and not ln.startswith("#")]
+        if not ids:
+            print(f"\n✓ {path} is empty — nothing to fetch.")
+            return
+        year = years[0] if years else 2026
+        print(f"Mode: FACES FOR SPECIFIC PLAYERS ({len(ids)} ids, edition {year})")
+        print(f"Output directory: {FACES_DIR / str(year)}\n")
+
+        async with async_playwright() as pw:
+            context = await pw.chromium.launch_persistent_context(
+                str(PROFILE_DIR),
+                headless=False,
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                viewport={"width": 1440, "height": 900},
+                locale="en-GB",
+                timezone_id="Europe/London",
+                args=["--disable-blink-features=AutomationControlled"],
+            )
+            page = context.pages[0] if context.pages else await context.new_page()
+            if stealth_async:
+                await stealth_async(page)
+            # Land on the site once first: it settles any Cloudflare check and
+            # lets discover_versions read the real roster code for this edition,
+            # which the per-player URLs need.
+            await page.goto(build_url(year), wait_until="commit")
+            await wait_for(page, 'a[href*="/player/"]', "players list", timeout=90)
+            await discover_versions(page)
+            await faces_for_ids(page, year, ids)
+            await context.close()
+        return
 
     if list_leagues:
         print("Mode: LIST ALL LEAGUES (use the ID with --league=ID)\n")

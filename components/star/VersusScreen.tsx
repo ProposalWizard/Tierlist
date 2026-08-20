@@ -6,6 +6,7 @@ import { kitsFor, labelInk, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 /**
  * THE TEAM SHEETS.
@@ -75,6 +76,26 @@ function place(y: number, bottom: boolean): number {
   const far = 1 - GOAL_INSET;                   // the goalkeeper
   const at = near + t * (far - near);
   return bottom ? at : 1 - at;
+}
+
+/**
+ * …and the same for the OTHER axis, which is the half of it that was missing.
+ *
+ * The top side is drawn attacking downward — `place` flips its y so its keeper
+ * sits against the top goal line. Flipping only y is a REFLECTION, not the
+ * half-turn a side actually makes when it changes ends, so every slot with a
+ * left and a right came out swapped: a left back stood at right back, the two
+ * centre backs swapped, the wingers swapped. Nothing about the picture looked
+ * obviously wrong — the shape is symmetric — which is exactly why it survived,
+ * and reported as precisely that: "Reinildo is a left back but the way it's
+ * showing it is actually showing him as a right back."
+ *
+ * Turning a formation around is a rotation about the centre spot: BOTH axes
+ * flip. The bottom side, drawn the way the coordinates are already written,
+ * needs neither.
+ */
+function across(x: number, bottom: boolean): number {
+  return bottom ? x : 1 - x;
 }
 
 /**
@@ -323,7 +344,7 @@ function Man({ p, kit, keeper, bottom }: {
   return (
     <div
       className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-      style={{ left: `${p.x * 100}%`, top: `${place(p.y, bottom) * 100}%`, width: "22%" }}
+      style={{ left: `${across(p.x, bottom) * 100}%`, top: `${place(p.y, bottom) * 100}%`, width: "22%" }}
       title={`${p.name} — ${p.slot}`}
     >
       {/* The star has to live OUTSIDE the circle's own overflow-hidden — that
@@ -342,27 +363,17 @@ function Man({ p, kit, keeper, bottom }: {
           className="h-full w-full overflow-hidden rounded-full border-2 border-white/60"
           style={{ backgroundColor: worn.shirt }}
         >
-          {p.face ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={p.face}
-              alt=""
-              referrerPolicy="no-referrer"
-              loading="lazy"
-              className="h-full w-full object-cover object-top"
-            />
-          ) : (
-            // The same stand-in the Draft uses for a player with no photo —
-            // one "nobody's face" across the whole game, not a different
-            // placeholder per screen.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={SILHOUETTE_SRC}
-              alt=""
-              aria-hidden
-              className="h-full w-full object-cover object-top opacity-80"
-            />
-          )}
+          {/* The same stand-in the Draft uses for a player with no photo — one
+              "nobody's face" across the whole game, not a different
+              placeholder per screen. `fallbackSrc` covers the other half of
+              it: a face whose URL has gone dead looks the same as one that
+              was never there, rather than an empty box. */}
+          <ImageWithFallback
+            src={p.face || SILHOUETTE_SRC}
+            fallbackSrc={SILHOUETTE_SRC}
+            alt=""
+            className="h-full w-full object-cover object-top"
+          />
         </div>
       </div>
       {/* No background pill — the outline is what keeps this legible over

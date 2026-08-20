@@ -147,6 +147,7 @@ def main() -> None:
 
     uploaded = 0
     missing_locally: list[str] = []
+    missing_ids: list[str] = []
     failed: list[str] = []
 
     for i, player in enumerate(roster, 1):
@@ -157,6 +158,7 @@ def main() -> None:
 
         if not local_file.exists():
             missing_locally.append(f"{name} ({club}) — {sid}")
+            missing_ids.append(sid)
             continue
 
         if dry_run:
@@ -181,11 +183,26 @@ def main() -> None:
             print(f"    - {m}")
         if len(missing_locally) > 20:
             print(f"    ...and {len(missing_locally) - 20} more")
-        print(
-            f"  If this list looks too long, double check that\n"
-            f"    {FACES_DIR}\n"
-            f"  actually holds these players' images — re-run the scrape command above if not."
-        )
+        # ── Why these are missing, and how to actually get them ──
+        #
+        # Mostly NOT a failed scrape. The scrape sweeps league=13, which is
+        # whoever SoFIFA lists in the Premier League *right now* — so a player
+        # who started the season here and moved abroad in January is in our
+        # database as a Premier League player (which he was) but is no longer
+        # in that sweep, and never gets a face. Reported as exactly that:
+        # Adingra, Sunderland until January and then Monaco, the only man in
+        # the squad without a photo.
+        #
+        # These ids go to a file so the scraper can fetch them one player page
+        # at a time instead of hoping to meet them in a list.
+        id_file = FACES_DIR.parent / f"missing_ids_{SOURCE_SCRAPE_YEAR}.txt"
+        try:
+            id_file.write_text("\n".join(missing_ids))
+            print(f"\n  Wrote the {len(missing_ids)} missing id(s) to:\n    {id_file}")
+            print(f"  Fetch just those faces, then re-run this script:")
+            print(f"    python scrape_missing.py --year={SOURCE_SCRAPE_YEAR} --faces-for-ids=\"{id_file}\"")
+        except Exception as e:
+            print(f"  (Could not write the missing-id list: {e})")
 
     if failed:
         print(f"\n✗ {len(failed)} upload(s) failed:")

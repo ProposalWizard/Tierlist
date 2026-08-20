@@ -12,7 +12,7 @@ import { currentTie } from "@/lib/star/euro";
 import { fixtureDateLabel } from "@/lib/star/calendar";
 import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
-import type { Role } from "@/lib/star/formations";
+import { formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
@@ -1030,10 +1030,15 @@ export default function StarDevPage() {
     // Decided BEFORE the branch, never inside it: falling back by calling a
     // state setter mid-render is a React error, and "can we draw this?" is a
     // question about data that render is entitled to ask.
-    const savedBench = loadLineup(career.player.club)?.bench;
+    // The side you actually picked, shape and all — not just its bench, which
+    // is all this used to read. See teamsheet.ts's SavedXI.
+    const saved = loadLineup(career.player.club);
+    const savedXI = saved && saved.xi.some(Boolean)
+      ? { formation: formationOf(saved.formation), xi: saved.xi }
+      : undefined;
     const matchday = nextFixture.kind === "international"
       ? null
-      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, savedBench);
+      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI);
     const teamsReady = !!matchday && sheetReady(matchday);
 
     if (showTeams && matchday && teamsReady) {

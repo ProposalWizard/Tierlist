@@ -2,6 +2,7 @@ import type { CareerState, Fixture, LeagueSquad, SquadPlayer } from "./types";
 import { mulberry32 } from "./season";
 import { FORMATIONS, formationOf, autoPick, type Formation, type Pickable, type Role } from "./formations";
 import { shortNameOf } from "./realSquad";
+import { loadLineup } from "./lineupStore";
 
 /**
  * THE TEAM SHEET.
@@ -120,10 +121,53 @@ function fromLeagueSquad(squad: LeagueSquad | undefined): Candidate[] {
   }));
 }
 
-function build(club: string, pool: Candidate[], yours: boolean, savedBenchIds?: string[]): TeamSheet {
-  const formation = formationForClub(club);
-  const picked = autoPick(pool, formation);
+/**
+ * A side you picked yourself, if you picked one.
+ *
+ * Everything below used to run `autoPick` unconditionally, so the lineup
+ * builder's saved eleven was read for its BENCH and nothing else — you could
+ * rearrange your side all afternoon and the team sheet would still show the
+ * highest-rated eleven in the shape the club's name hashes to. Reported as
+ * exactly that: "I have changed the Bournemouth team multiple times and it's
+ * not registering, it seems to just be choosing the same best 11 each time
+ * with the 4-3-2-1 formation."
+ *
+ * A saved slot naming somebody who is no longer in the squad (sold, or a
+ * re-fetch changed his id) is left empty rather than dropping the whole
+ * lineup — `fillGaps` then auto-picks only the slots that are actually
+ * vacant, so one departed player costs you one place and not your shape.
+ */
+export interface SavedXI {
+  formation: Formation;
+  /** One entry per slot, in the formation's own order. */
+  xi: (string | null)[];
+}
+
+/** Auto-pick only the slots the saved eleven left empty. */
+function fillGaps(pool: Candidate[], formation: Formation, chosen: (string | null)[]): (string | null)[] {
+  const taken = new Set(chosen.filter((id): id is string => !!id));
+  const spare = pool.filter(p => !taken.has(p.id));
+  const auto = autoPick(spare, formation);
+  return formation.slots.map((_, i) => chosen[i] ?? auto[i] ?? null);
+}
+
+function build(
+  club: string,
+  pool: Candidate[],
+  yours: boolean,
+  savedBenchIds?: string[],
+  saved?: SavedXI,
+): TeamSheet {
   const byId = new Map(pool.map(p => [p.id, p]));
+  const formation = saved?.formation ?? formationForClub(club);
+  // A saved id that is no longer in the squad is dropped to null here, not
+  // carried through as a name the sheet cannot resolve.
+  const picked = saved
+    ? fillGaps(pool, formation, formation.slots.map((_, i) => {
+      const id = saved.xi[i];
+      return id && byId.has(id) ? id : null;
+    }))
+    : autoPick(pool, formation);
 
   const xi: SheetPlayer[] = [];
   formation.slots.forEach((slot, i) => {
@@ -240,6 +284,8 @@ export function matchdayFor(
   playAs?: Role,
   /** Saved bench from the lineup builder — overrides the auto-rated sort. */
   savedBench?: string[],
+  /** Saved starting XI + shape from the lineup builder — overrides autoPick. */
+  savedXI?: SavedXI,
 ): Matchday {
   const mine = career.player.club;
   const theirs = fixture.opponent;
@@ -260,7 +306,7 @@ export function matchdayFor(
   // Your own squad, minus any duplicate of you: a career whose squad was
   // fetched from the database can contain the real player whose shirt you took.
   const ownPool = fromSquad(career.squad ?? []).filter(p => p.short !== you.short);
-  let ours = build(mine, starting ? [...ownPool, you] : ownPool, true, savedBench);
+  let ours = build(mine, starting ? [...ownPool, you] : ownPool, true, savedBench, savedXI);
   if (starting) ours = forceIntoXI(ours, you);
 
   const oppSquad = (career.leagueSquads ?? []).find(s => s.club === theirs);
@@ -358,7 +404,16 @@ export const POSITION_NAMES: Record<Role, string> = {
 export function startingTeammateIds(career: CareerState, fixture: Fixture): Set<string> | null {
   if (fixture.kind === "international") return null;
   try {
-    const md = matchdayFor(career, fixture, true);
+    // Read the same saved eleven the pre-match sheet does, or the two disagree
+    // about who is playing: a man you dropped to the bench could still be
+    // credited with the winner. `loadLineup` is localStorage-backed and
+    // returns null anywhere there is no localStorage (the tests, SSR), which
+    // is the same "nothing saved" answer as a career that never picked a side.
+    const saved = loadLineup(career.player.club);
+    const savedXI = saved && saved.xi.some(Boolean)
+      ? { formation: formationOf(saved.formation), xi: saved.xi }
+      : undefined;
+    const md = matchdayFor(career, fixture, true, undefined, saved?.bench, savedXI);
     const mine = md.home.yours ? md.home : md.away;
     if (!sheetReady(md) && mine.xi.length < 9) return null;
     return new Set(mine.xi.filter(p => !p.isYou).map(p => p.id));

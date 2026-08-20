@@ -763,7 +763,7 @@ export default function DraftPick({
                       }`}>
                         {displayPlayer.image_url ? (
                           <ImageWithFallback
-                            src={displayPlayer.image_url}
+                            src={displayPlayer.image_url} fallbackSrc={SILHOUETTE_SRC}
                             alt={displayPlayer.name}
                             className="w-full h-full object-cover"
                             fallbackText={displayPlayer.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
@@ -827,7 +827,7 @@ export default function DraftPick({
                     <div key={i} className={`flex flex-col items-center rounded-xl px-2 py-2 border w-[76px] ${isNew ? "bg-amber-900/20 border-amber-500/40" : "bg-purple-900/30 border-purple-600/40"}`}>
                       <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/60">
                         {p.image_url ? (
-                          <ImageWithFallback src={p.image_url} alt={p.name} className="w-full h-full object-cover" fallbackText={initials} />
+                          <ImageWithFallback src={p.image_url} fallbackSrc={SILHOUETTE_SRC} alt={p.name} className="w-full h-full object-cover" fallbackText={initials} />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center ${getPositionColor(p.assignedPosition)}`}>
                             <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
@@ -881,7 +881,7 @@ export default function DraftPick({
                         <>
                           <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white/60">
                             {sub.image_url ? (
-                              <ImageWithFallback src={sub.image_url} alt={sub.name} className="w-full h-full object-cover" fallbackText={initials(sub.name)} />
+                              <ImageWithFallback src={sub.image_url} fallbackSrc={SILHOUETTE_SRC} alt={sub.name} className="w-full h-full object-cover" fallbackText={initials(sub.name)} />
                             ) : (
                               <div className={`w-full h-full flex items-center justify-center ${getPositionColor(sub.assignedPosition)}`}>
                                 <img src={SILHOUETTE_SRC} alt="" aria-hidden className="h-full w-full object-cover opacity-70" />
@@ -1311,7 +1311,7 @@ export default function DraftPick({
                     >
                       {player.image_url ? (
                         <ImageWithFallback
-                          src={player.image_url}
+                          src={player.image_url} fallbackSrc={SILHOUETTE_SRC}
                           alt={player.name}
                           fallbackText=""
                           className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-800 object-cover shrink-0"
@@ -1410,7 +1410,7 @@ export default function DraftPick({
                 <div className="flex items-center justify-center gap-3 mb-3">
                   {pendingPlayer.image_url ? (
                     <ImageWithFallback
-                      src={pendingPlayer.image_url}
+                      src={pendingPlayer.image_url} fallbackSrc={SILHOUETTE_SRC}
                       alt={pendingPlayer.name}
                       fallbackText=""
                       className="w-14 h-14 rounded-full bg-gray-800 object-cover"

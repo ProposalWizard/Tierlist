@@ -855,7 +855,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                           <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white/60 overflow-hidden flex items-center justify-center ${p ? getPositionColor(s.slot) : "bg-gray-800"}`}>
                             {p && p.image_url ? (
                               <ImageWithFallback
-                                src={p.image_url}
+                                src={p.image_url} fallbackSrc={SILHOUETTE_SRC}
                                 alt={p.name}
                                 className="w-full h-full object-cover"
                                 fallbackText={initials}
