@@ -1567,30 +1567,160 @@ function buildTightAngle(rng: () => number, keeperStrength: number, teamRelation
 }
 
 // Well outside the box — needs pace, and a screen to bend or lift the ball over.
+/**
+ * FIVE WAYS TO BE A LONG WAY OUT.
+ *
+ * Reported after playing it: "this long range shooting attacking scenario is
+ * very common, it's basically this exact scenario every time." It was. Unlike
+ * the one-on-one and the tight angle — which each pick one of several
+ * pictures — this builder had a single layout: you dead central twenty-five
+ * metres out, two defenders on a line in front of you, an empty penalty area
+ * behind them, and `teammates: []` / `runner: null` / `receiver: null`, so
+ * there was never anybody to play it to. Shoot or nothing, every time.
+ *
+ * The `addCover`/`addSupport` passes that run afterwards vary the NUMBER of
+ * bodies, and that was doing real work — but the shape underneath never
+ * changed, and shape is what you actually read when you look at a chance.
+ *
+ * The five below are different questions rather than the same question with
+ * the furniture nudged: how much of the goal can I see, is the lane open, is
+ * somebody about to close me down, and — the one that was missing entirely —
+ * is there a better ball than the shot. `passTarget`/`runner` are set on the
+ * shapes that have a man worth finding, so laying it off is a real option and
+ * not a thing the situation refuses to model. The player's own bar for this:
+ * "as long as you can score or you can pass, then that's good."
+ *
+ * The back line is still laid out relative to the GOAL, never relative to you
+ * — see the note the original carried, which is preserved in every branch.
+ */
 function buildLongRange(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = CX + (rng() - 0.5) * 20;
-  const by = 24 + rng() * 10;
-  // ── A block, in front of their own goal ──
+  const shape = rng();
+  const side = rng() < 0.5 ? -1 : 1;
+
+  // ── The ordinary one: central, a screen of two, and a sight of goal ──
+  if (shape < 0.34) {
+    // Production's exact spread — this branch IS the old scenario, kept as
+    // the most common one so the chance you get most often is the chance you
+    // always got.
+    const bx = CX + (rng() - 0.5) * 20;
+    const by = 24 + rng() * 10;
+    const line = clamp(by * 0.42, 8, 17);
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      defenders: [
+        { x: clamp(CX - 3.5 - rng() * 7, 9, PITCH_W - 9), y: line + rng() * 1.8 },
+        { x: clamp(CX + 3.5 + rng() * 7, 9, PITCH_W - 9), y: line + 1.2 + rng() * 2.4 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── A crowded box, and a man in it ──
   //
-  // They used to be placed relative to YOU — three and six metres up the pitch
-  // from wherever you were standing — which put a defence thirty metres from
-  // its own goal for no reason a defender would recognise. Worse, the offside
-  // line went with them: your team-mates are not allowed past the second-last
-  // opponent, so they settled level with a line drawn round your feet, and the
-  // whole situation collapsed into a knot of six players with twenty-five metres
-  // of open grass between it and the goal.
+  // The one the report asked for by name: "it's this situation again, but also
+  // in and around the box, there are defenders and also some of my teammates."
+  // Bodies scattered through the penalty area rather than lined up in front of
+  // you, and a team-mate among them who is genuinely findable. The shot is
+  // still on — through traffic, which is what makes it a decision.
+  if (shape < 0.56) {
+    const bx = CX + (rng() - 0.5) * 16;
+    const by = 23 + rng() * 7;
+    const mate = { x: CX + side * (3 + rng() * 6), y: 7 + rng() * 6 };
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      // Three, not four. `addCover` puts another two to four on top of
+      // whatever a builder places, and the first version of this shape carried
+      // four of its own — which took the average long-range chance from 8.3%
+      // to 5.7% converted over 1,500 measured shots. That is a difficulty
+      // change wearing a variety change's clothes, which is exactly what
+      // COVER_RANGE's own note warns about. The picture is still a crowded
+      // one; there is just no longer a whole extra defender in it.
+      defenders: [
+        { x: clamp(CX - side * (4 + rng() * 5), 9, PITCH_W - 9), y: 14 + rng() * 3 },
+        // Marking your man, loosely — goal-side and a stride off, not on him.
+        { x: clamp(mate.x - side * (2.4 + rng() * 1.6), 8, PITCH_W - 8), y: clamp(mate.y + 1.2, 4, 12) },
+        { x: clamp(CX + (rng() - 0.5) * 9, 8, PITCH_W - 8), y: 6 + rng() * 4 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 1.2 + rng() * 1.2, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [],
+      runner: makeRunner(mate, { x: mate.x + side * 1.5, y: mate.y + 2.5 }),
+      passTarget: mate,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Wide and deep: the angle is the problem, not the distance ──
+  if (shape < 0.74) {
+    const bx = CX + side * (10 + rng() * 6);
+    const by = 21 + rng() * 8;
+    const line = clamp(by * 0.44, 9, 17);
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx - side * 0.8, y: by + 1.2 },
+      defenders: [
+        // One shows you inside, one holds the middle.
+        { x: clamp(bx - side * (3 + rng() * 2.5), 8, PITCH_W - 8), y: clamp(by - 3 - rng() * 3, 6, 24) },
+        { x: clamp(CX + (rng() - 0.5) * 6, 9, PITCH_W - 9), y: line + rng() * 2 },
+      ],
+      // He shades toward the near post from a ball this wide.
+      keeper: makeKeeper(CX + side * (1.5 + rng() * 1.6), 1.4 + rng() * 1.2, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Closing you down: hit it now or lose the chance ──
   //
-  // The line belongs to the goal it is defending. It drops as you come deeper,
-  // the way a real one does, but it never comes out to meet you.
-  const line = clamp(by * 0.42, 8, 17);
+  // Nobody is attached to you — the nearest man is three or four metres off
+  // and arriving, which is a clock rather than a cage. "As long as someone is
+  // not basically attached to your hip, then it's all fun."
+  if (shape < 0.88) {
+    const bx = CX + (rng() - 0.5) * 18;
+    const by = 25 + rng() * 8;
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      defenders: [
+        // Coming at you from an angle, not standing in the shooting lane. The
+        // first version put him within a metre and a half of dead in front,
+        // which measured 2.8% converted — that is not "hit it early", that is
+        // a blocked shot with extra steps.
+        { x: clamp(bx + side * (2.2 + rng() * 2.4), 8, PITCH_W - 8), y: by - 4.2 - rng() * 1.6 },
+        { x: clamp(CX - 5 - rng() * 5, 9, PITCH_W - 9), y: 13 + rng() * 3 },
+        { x: clamp(CX + 5 + rng() * 5, 9, PITCH_W - 9), y: 13 + rng() * 3 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.5 + rng() * 1.3, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Miles out, and the lane is open ──
+  //
+  // The one worth taking on: thirty-plus metres, nobody within a few strides,
+  // a deep line that has dropped off. Rare, and it should be.
+  const bx = CX + (rng() - 0.5) * 12;
+  const by = 30 + rng() * 5;
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.3 },
     defenders: [
-      { x: clamp(CX - 3.5 - rng() * 7, 9, PITCH_W - 9), y: line + rng() * 1.8 },
-      { x: clamp(CX + 3.5 + rng() * 7, 9, PITCH_W - 9), y: line + 1.2 + rng() * 2.4 },
+      { x: clamp(CX - 6 - rng() * 6, 9, PITCH_W - 9), y: 10 + rng() * 3 },
+      { x: clamp(CX + 6 + rng() * 6, 9, PITCH_W - 9), y: 10 + rng() * 3 },
     ],
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4, rng),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 2.2 + rng() * 1.8, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
