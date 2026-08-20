@@ -485,4 +485,8 @@ export type StarPhase =
   | "retirement"
   | "legacy"
   | "press"
-  | "draw";
+  | "draw"
+  /** The opening: one penalty, taken until it goes in. See TrialPenalty. */
+  | "trial"
+  /** …and what it earns you — the card, then the contract. See TrialReward. */
+  | "trial-reward";

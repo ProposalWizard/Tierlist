@@ -297,6 +297,18 @@ export type Archetype =
   | "club" | "league" | "competition" | "broadsheet" | "tabloid" | "insider"
   | "stats" | "aggregator" | "pundit" | "fan" | "rivalFan" | "teammate" | "meme";
 
+/**
+ * What an account's avatar actually draws.
+ *
+ * One per kind of voice, so a feed reads as a crowd of different outlets at a
+ * glance rather than a column of monograms. `crest` keeps the initials but
+ * puts them on a shield in the club's own kit colours — a club badge is
+ * lettering, so that one is right to keep letters.
+ */
+export type AvatarGlyph =
+  | "crest" | "trophy" | "ball" | "newspaper" | "megaphone"
+  | "chart" | "scoop" | "play" | "mic" | "scarf" | "shirt" | "grin";
+
 export type Platform = "x" | "instagram" | "youtube" | "tiktok" | "news";
 
 export interface VoiceProfile {
@@ -328,8 +340,21 @@ export interface MediaAccount {
   platform: Platform;
   verified: boolean;
   followers: number;
-  /** Procedural avatar: two letters on a tint. No assets, no network. */
-  avatar: { initials: string; tint: string };
+  /**
+   * Procedural avatar. No assets, no network — everything here is drawn.
+   *
+   * It used to be two letters on a flat tint for all forty accounts, which
+   * made a feed of forty different voices look like one spreadsheet.
+   * Reported as exactly that: "every account's profile picture is just the
+   * initials of their name which is very boring."
+   *
+   * `glyph` names a shape the renderer draws instead of the letters — a
+   * trophy for a competition, a microphone for a pundit, a scarf for a
+   * supporter. `tint2` makes the disc a gradient rather than a block, and for
+   * a club account both tints are that club's ACTUAL kit colours, so its
+   * badge is recognisably theirs.
+   */
+  avatar: { initials: string; tint: string; tint2?: string; glyph?: AvatarGlyph };
   voice: VoiceProfile;
   interests: Partial<Record<Tag, number>>;
   /** polarity −1 means they enjoy your failures. */
@@ -491,6 +516,13 @@ export interface StoredPost {
     verified: boolean;
     initials: string;
     tint: string;
+    /**
+     * Both optional, because a post saved before avatars had either still has
+     * to render: the card falls back to initials on a flat tint, exactly as it
+     * used to. See components/star/media/Avatar.
+     */
+    tint2?: string;
+    glyph?: AvatarGlyph;
   };
   text: string;
   graphic?: GraphicSpec;

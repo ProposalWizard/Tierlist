@@ -150,14 +150,10 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
     });
   }
 
-  // A thin roster leaves holes. Rather than a short squad, top it up from the
-  // generated one — the club still has a bench, it is just not a real one.
-  if (out.length < SLOTS.length) {
-    const filler = generateSquad(clubNameSeed(club));
-    for (let i = out.length; i < SLOTS.length; i++) {
-      out.push({ ...filler[i], id: `gen_${i}`, position: SLOTS[i] });
-    }
-  }
+  // A thin roster leaves a short squad, and a short squad is the truth. See
+  // buildLeagueSquad for the same removal and why: the top-up put invented
+  // names ("Andres Modric") in among a club's real players, and nothing
+  // downstream ever needed the count to reach twenty.
   return out;
 }
 

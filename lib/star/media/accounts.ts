@@ -1,7 +1,8 @@
 import type { CareerState } from "../types";
 import { rivalOf } from "../rivals";
 import { sortLeague } from "../season";
-import type { Archetype, MediaAccount, Platform, Tag, VoiceProfile } from "./types";
+import type { Archetype, AvatarGlyph, MediaAccount, Platform, Tag, VoiceProfile } from "./types";
+import { kitsOf } from "../kits";
 import { hashSeed, initialsOf, pick, rngFor, surname } from "./grammar";
 
 /**
@@ -69,6 +70,8 @@ interface Seed {
   platform?: Platform;
   verified?: boolean;
   followers: number;
+  /** Set on a club's own account, so its badge is drawn in that club's kit. */
+  club?: string;
 }
 
 /** The national press. Fixed, because national newspapers are. */
@@ -96,6 +99,56 @@ const FAN_NAMES = [
   "Tom", "Nia", "Ninety Minutes", "Mo", "Standside", "Al", "Pat", "Halfway", "Bea", "Ed",
 ];
 
+/**
+ * What each kind of account draws instead of its initials.
+ *
+ * A trophy for the people who hand them out, a microphone for the man paid to
+ * have opinions, a scarf for somebody in the stand. Nothing here is a picture
+ * file — see AvatarGlyph and components/star/media/PostCard.
+ *
+ * `club` is deliberately `crest`, which KEEPS the lettering: a club badge is
+ * lettering, and the thing that makes it theirs is the colours, which come
+ * from the real kit below.
+ */
+const GLYPHS: Record<Archetype, AvatarGlyph> = {
+  club: "crest",
+  league: "trophy",
+  competition: "trophy",
+  broadsheet: "newspaper",
+  tabloid: "megaphone",
+  insider: "scoop",
+  stats: "chart",
+  aggregator: "play",
+  pundit: "mic",
+  fan: "scarf",
+  rivalFan: "scarf",
+  teammate: "shirt",
+  meme: "grin",
+};
+
+/** A second tint for the disc's gradient — a shade along from the first. */
+function shade(hex: string, by: number): string {
+  const n = parseInt(hex.replace("#", ""), 16);
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  const r = clamp(((n >> 16) & 255) * by);
+  const g = clamp(((n >> 8) & 255) * by);
+  const b = clamp((n & 255) * by);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+}
+
+function avatarFor(s: Seed, rng: () => number): MediaAccount["avatar"] {
+  const glyph = GLYPHS[s.archetype];
+  // A club wears its own colours. Everyone else gets one of the palette.
+  const kit = s.club ? kitsOf(s.club).home : null;
+  const tint = kit ? kit.shirt : pick(TINTS, rng);
+  return {
+    initials: initialsOf(s.name),
+    tint,
+    tint2: kit ? kit.trim : shade(tint, 0.62),
+    glyph,
+  };
+}
+
 function account(s: Seed, rngSeed: string): MediaAccount {
   const rng = rngFor("acct", rngSeed, s.handle);
   return {
@@ -106,7 +159,7 @@ function account(s: Seed, rngSeed: string): MediaAccount {
     platform: s.platform ?? "x",
     verified: s.verified ?? false,
     followers: s.followers,
-    avatar: { initials: initialsOf(s.name), tint: pick(TINTS, rng) },
+    avatar: avatarFor(s, rng),
     voice: VOICES[s.archetype],
     interests: INTERESTS[s.archetype],
   };
@@ -142,6 +195,7 @@ export function buildRoster(career: CareerState): MediaAccount[] {
         archetype: "club",
         verified: true,
         followers: Math.round(200_000 + (strength / 100) * 8_000_000),
+        club: c.name,
       }, seedKey),
       allegiance: { club: c.name, polarity: 1 },
     });
@@ -220,7 +274,12 @@ export function selfAccount(career: CareerState): MediaAccount {
     platform: "instagram",
     verified: career.fame > 40,
     followers: Math.round(5_000 + career.fame * 24_000 + career.starRating * 180_000),
-    avatar: { initials: initialsOf(name), tint: pick(TINTS, rng) },
+    avatar: {
+      initials: initialsOf(name),
+      tint: kitsOf(career.player.club).home.shirt,
+      tint2: kitsOf(career.player.club).home.trim,
+      glyph: "shirt",
+    },
     voice: { ...VOICES.teammate, firstPerson: true },
     interests: { goal: 1, assist: 0.9, trophy: 1, milestone: 1, award: 1, debut: 1, table: 0.5, transfer: 1 },
     allegiance: { club: career.player.club, polarity: 1 },

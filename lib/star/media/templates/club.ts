@@ -13,7 +13,7 @@ export const CLUB_TEMPLATES: Template[] = [
   // ── Full time ─────────────────────────────────────────────────────────────
   {
     id: "club-ft-win", archetype: "club", events: ["win", "rout"], frames: ["celebrate", "report"],
-    body: "FULL TIME | {club} {us}-{them} {opponent}. Three points {venue}.",
+    body: "FULL TIME | {homeClub} {hs}-{as} {awayClub}. Three points {venue}.",
     graphic: "scoreline", hashtag: true, weight: 3,
   },
   {
@@ -23,12 +23,12 @@ export const CLUB_TEMPLATES: Template[] = [
   },
   {
     id: "club-ft-draw", archetype: "club", events: ["draw", "goalless"], frames: ["report"],
-    body: "FULL TIME | {club} {us}-{them} {opponent}. A point {venue}.",
+    body: "FULL TIME | {homeClub} {hs}-{as} {awayClub}. A point {venue}.",
     graphic: "scoreline", hashtag: true,
   },
   {
     id: "club-ft-loss", archetype: "club", events: ["loss", "hammered"], frames: ["report"],
-    body: "FULL TIME | {club} {us}-{them} {opponent}. We go again on Saturday.",
+    body: "FULL TIME | {homeClub} {hs}-{as} {awayClub}. We go again on Saturday.",
     graphic: "scoreline", hashtag: true,
   },
 
@@ -152,7 +152,7 @@ export const CLUB_TEMPLATES: Template[] = [
   },
   {
     id: "club-europe", archetype: "club", tags: ["europe"],
-    body: "European nights are what this club is for. {club} {us}-{them} {opponent}.",
+    body: "European nights are what this club is for. {homeClub} {hs}-{as} {awayClub}.",
     hashtag: true,
   },
   {
@@ -169,14 +169,14 @@ export const CLUB_TEMPLATES: Template[] = [
   // ── The fallback that makes the chain terminate ────────────────────────────
   {
     id: "club-generic", archetype: "club",
-    body: "{club} {us}-{them} {opponent}. Thank you for the support today.",
+    body: "{homeClub} {hs}-{as} {awayClub}. Thank you for the support today.",
     hashtag: true, weight: 0.5,
   },
 
   // ── The league ────────────────────────────────────────────────────────────
   {
     id: "league-result", archetype: "league", events: ["win", "draw", "loss", "rout", "hammered"],
-    body: "RESULT | {club} {us}-{them} {opponent}",
+    body: "RESULT | {homeClub} {hs}-{as} {awayClub}",
     graphic: "scoreline", weight: 2,
   },
   {
@@ -206,7 +206,7 @@ export const CLUB_TEMPLATES: Template[] = [
   },
   {
     id: "league-generic", archetype: "league",
-    body: "{club} {us}-{them} {opponent} | Matchweek {week}",
+    body: "{homeClub} {hs}-{as} {awayClub} | Matchweek {week}",
     graphic: "scoreline", weight: 0.5,
   },
 
@@ -232,7 +232,7 @@ export const CLUB_TEMPLATES: Template[] = [
   },
   {
     id: "comp-generic", archetype: "competition",
-    body: "{competition} | {club} {us}-{them} {opponent}",
+    body: "{competition} | {homeClub} {hs}-{as} {awayClub}",
     graphic: "scoreline", weight: 0.5,
   },
 ];

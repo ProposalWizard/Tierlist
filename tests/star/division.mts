@@ -70,9 +70,19 @@ function roster(club: string, n = 26): RosterRow[] {
   check(empty.players.length === 20, "a club with no rows still has a squad");
   check(empty.players.every(p => p.name.length > 0), "…and every one of them has a name");
 
-  // A thin club is topped up rather than fielding fifteen men.
+  // ── A thin club fields a short squad of REAL players ──
+  //
+  // This used to assert the opposite — that nine men were topped up to twenty
+  // from `generatedSquad`, whose names are a random first name and a random
+  // surname off two lists of real footballers. That produced "Andres Modric"
+  // and "Vinicius Muller" sitting in West Ham's actual squad, reported as
+  // exactly that. Nine substitutes is a maximum a team sheet is ALLOWED, never
+  // a quota it has to meet, so a club with nine players now has nine players.
   const thin = buildLeagueSquad("Thin FC", roster("Thin FC", 9));
-  check(thin.players.length === 20, `a nine-man roster is topped up to twenty (${thin.players.length})`);
+  check(thin.players.length === 9,
+    `a nine-man roster stays nine men, not padded with invented ones (${thin.players.length})`);
+  check(thin.players.every(p => !p.id.startsWith("gen:")),
+    "and every one of them is a real row from the database");
 
   // ── …and the squad builder wants the whole register ──
   //

@@ -2438,14 +2438,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         events.push({ minute: st.minute, text: decision.message });
         // The rest of the match is played without you, exactly as the hour
         // before kick-off is when you come off the bench.
+        //
+        // Through `nameTeamGoals`, and that is the whole point. This branch
+        // used to map the events by hand, which put the right TEXT on screen
+        // and never once called `goalEventsRef.current.push` — so every goal
+        // your side scored after you were taken off counted on the scoreboard
+        // and existed nowhere else. Reported as a 3-0 win whose scoreline
+        // graphic named two scorers. It is the same bug the comment above
+        // `nameTeamGoals` describes for the hour BEFORE you come on, left
+        // un-fixed in the mirror-image branch: the substitution that ends your
+        // afternoon, rather than the one that starts it.
         const after = advanceTo(st, hiddenInputs(), rng, MATCH_DURATION);
-        for (const e of after) {
-          events.push({
-            minute: e.minute,
-            text: e.isGoal && !e.teammateGoal ? `⚽ ${fixtureOpponentRef.current} score!` : e.text,
-            isGoal: e.isGoal,
-          });
-        }
+        events.push(...nameTeamGoals(after, onPitch(careerRef.current?.squad ?? []), rng, false));
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
         setScore({ user: st.userScore, opp: st.oppScore });

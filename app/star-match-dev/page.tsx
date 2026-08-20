@@ -31,6 +31,7 @@ export default function StarMatchDevPage() {
   // goes straight into shotTuning itself, not through props or a re-render.
   const [vzPowerFloor, setVzPowerFloor] = useState(shotTuning.vzPowerFloor);
   const [vzPowerWeight, setVzPowerWeight] = useState(shotTuning.vzPowerWeight);
+  const [vzScale, setVzScale] = useState(shotTuning.vzScale);
 
   useEffect(() => {
     const supabase = createClient();
@@ -178,6 +179,29 @@ export default function StarMatchDevPage() {
             />
             <div className="text-[10px] text-gray-500 mt-0.5">
               How much taller full power hits on top of that floor. Forward pace is untouched by either slider — that already scales with power.
+            </div>
+          </label>
+          <label className="block">
+            <div className="flex justify-between text-xs font-bold text-white mb-1">
+              <span>Overall lift</span>
+              <span className="text-cyan-400">{Math.round(vzScale * 100)}%</span>
+            </div>
+            <input
+              type="range" min={40} max={140} value={Math.round(vzScale * 100)}
+              onChange={(e) => {
+                const v = Number(e.target.value) / 100;
+                setVzScale(v);
+                shotTuning.vzScale = v;
+              }}
+              className="w-full"
+            />
+            <div className="text-[10px] text-gray-500 mt-0.5">
+              Scales every height above. Height is now linear across the ball — top of the
+              ball is the flattest drive, the very bottom is the highest, and halfway up
+              is genuinely halfway. The cost measured at 100%: from a one-on-one at 70%
+              power, a mid-ball strike clears the bar 19% of the time (was 0%), and a
+              very-bottom strike 74% (unchanged — that is the power-decoupling, not the
+              curve). Pull this down if it floats too much.
             </div>
           </label>
           {Math.abs(vzPowerFloor + vzPowerWeight - 1) > 0.001 && (

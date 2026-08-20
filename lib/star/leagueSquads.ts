@@ -19,19 +19,21 @@ import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "./edition";
  * come after — transfers, matchups, a squad you can actually look at.
  */
 
+type Pos = SquadPlayer["position"];
+
 /**
- * How many of a club's players the CAREER keeps. A matchday squad, not a wage
- * bill: it exists to answer "who scored?" in matches you are not in, and a
- * club's twenty-fifth choice never will.
+ * How many of a club's players the CAREER keeps, and in what order.
+ *
+ * A matchday squad, not a wage bill: it exists to answer "who scored?" in
+ * matches you are not in, and a club's twenty-fifth choice never will. Twenty
+ * is therefore a CEILING and never a quota — a club with sixteen players fit
+ * to fill these slots keeps sixteen. (It used to be topped up to twenty with
+ * invented names; see buildLeagueSquad for why that is gone.)
  *
  * The squad builder asks for `keepAll` and gets the lot, because there the
  * question is different — you are picking a side, and a side is picked from
- * everybody. See buildLeagueSquad.
+ * everybody.
  */
-const SQUAD_SIZE = 20;
-
-type Pos = SquadPlayer["position"];
-
 const POSITION_ORDER: Pos[] = [
   "GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM", "RW", "LW", "CAM", "ST",
   "GK", "CB", "CDM", "CM", "RW", "LW", "CAM", "ST",
@@ -106,13 +108,19 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
     });
   }
 
-  // A thin club gets topped up rather than fielding fifteen men.
-  if (players.length < SQUAD_SIZE) {
-    const filler = generatedSquad(club).players;
-    for (let i = players.length; i < SQUAD_SIZE; i++) {
-      players.push({ ...filler[i], id: `gen:${club}:${i}` });
-    }
-  }
+  // ── A thin club fields a short bench, not an invented one ──
+  //
+  // This used to top a club up to twenty from `generatedSquad`, whose names
+  // are a random first name and a random surname drawn from two lists of real
+  // footballers — so West Ham lined up with "Andres Modric" and "Vinicius
+  // Muller" sitting among their actual squad. Reported as exactly that.
+  //
+  // Nothing needs twenty. Nine substitutes is a maximum a real team sheet is
+  // allowed, never a quota it has to meet, and every consumer here reads the
+  // array as "whoever this club has": `autoPick` fills the eleven it can,
+  // `averageStartingXIRating` averages the first eleven, the bench is
+  // `slice(0, 9)` of whatever is left. A club with sixteen real players now
+  // shows sixteen real players.
 
   // ── …and everybody else, when the whole squad is wanted ──
   //

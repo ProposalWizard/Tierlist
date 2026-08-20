@@ -144,8 +144,17 @@ export const DATA_TEMPLATES: Template[] = [
     // fortnight. Reported as the card not being relevant to the line above it.
     //
     // `excludes` exists for exactly this and was not being used by anything.
-    id: "st-generic", archetype: "stats", excludes: ["matches"],
-    body: "{club} {us}-{them} {opponent}. {player}: {rating}.",
+    //
+    // `month` is the second half of the same hole, found the same way. The
+    // Player-of-the-Month race detector carries `goals`/`assists` for the
+    // MONTH and no `matches` fact at all, so it sailed past the `matches`
+    // guard: "AFC Bournemouth 2-0 Tottenham Hotspur. Vassiliou Mikey: 7.4."
+    // over a card reading "Goals 3 / Assists 0", in a match the player had
+    // scored none and assisted one. Reported as exactly that — three
+    // impossibilities at once, all of them the month's numbers wearing the
+    // afternoon's sentence.
+    id: "st-generic", archetype: "stats", excludes: ["matches", "month"],
+    body: "{homeClub} {hs}-{as} {awayClub}. {player}: {rating}.",
     graphic: "statLine", weight: 0.5,
   },
   {
@@ -278,7 +287,7 @@ export const DATA_TEMPLATES: Template[] = [
   },
   {
     id: "ag-generic", archetype: "aggregator",
-    body: "🎥 HIGHLIGHTS: {club} {us}-{them} {opponent}",
+    body: "🎥 HIGHLIGHTS: {homeClub} {hs}-{as} {awayClub}",
     graphic: "thumbnail", weight: 0.5,
   },
 ];

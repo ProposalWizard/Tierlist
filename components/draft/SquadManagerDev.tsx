@@ -387,7 +387,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                   }`}>
                     {p.image_url ? (
                       <ImageWithFallback
-                        src={p.image_url}
+                        src={p.image_url} fallbackSrc={SILHOUETTE_SRC}
                         alt={p.name}
                         className="w-full h-full object-cover"
                         fallbackText={p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
@@ -462,7 +462,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                 }`}>
                   {p.image_url ? (
                     <ImageWithFallback
-                      src={p.image_url}
+                      src={p.image_url} fallbackSrc={SILHOUETTE_SRC}
                       alt={p.name}
                       className="w-full h-full object-cover"
                       fallbackText={p.name.split(" ").map(w => w[0]).join("").slice(0, 2)}

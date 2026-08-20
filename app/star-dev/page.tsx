@@ -12,7 +12,7 @@ import { currentTie } from "@/lib/star/euro";
 import { fixtureDateLabel } from "@/lib/star/calendar";
 import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
-import type { Role } from "@/lib/star/formations";
+import { formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
@@ -29,6 +29,8 @@ import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/l
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
 import ProfileSetup from "@/components/star/ProfileSetup";
+import TrialPenalty from "@/components/star/TrialPenalty";
+import TrialReward from "@/components/star/TrialReward";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
@@ -247,7 +249,15 @@ export default function StarDevPage() {
   const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[]) => {
     const created = makeInitialCareer(player, clubs);
     setCareer(created);
-    setPhase("dashboard");
+    // ── Into the trial, not the dashboard ──
+    //
+    // A career now opens on one penalty you cannot fail, only not have passed
+    // yet, and the contract it earns. The career itself is fully built before
+    // any of that — the trial is a scene played over a career that already
+    // exists, so nothing about it can leave a half-made save behind if the tab
+    // closes halfway through. Both squad fetches below still run during it,
+    // which is time the trial is spending anyway.
+    setPhase("trial");
     fetchRealSquad(player.club).then((squad) => {
       setCareer(c => (c && c.player.club === player.club ? { ...c, squad } : c));
     });
@@ -864,6 +874,20 @@ export default function StarDevPage() {
     );
   }
 
+  if (phase === "trial" && career) {
+    return <TrialPenalty onScored={() => setPhase("trial-reward")} />;
+  }
+
+  if (phase === "trial-reward" && career) {
+    return (
+      <TrialReward
+        playerName={`${career.player.firstName} ${career.player.lastName}`}
+        club={career.player.club}
+        onDone={() => { setActiveNav(null); setPhase("dashboard"); }}
+      />
+    );
+  }
+
   if (phase === "profile-setup" || !career) {
     return <ProfileSetup onComplete={handleProfileComplete} />;
   }
@@ -920,6 +944,7 @@ export default function StarDevPage() {
         stats={lastMatchStats}
         homeTeam={playedFixture.home ? myTeam(playedFixture) : playedFixture.opponent}
         awayTeam={playedFixture.home ? playedFixture.opponent : myTeam(playedFixture)}
+        youAreHome={playedFixture.home !== false}
         competition={playedFixture.kind && playedFixture.kind !== "league" ? fixtureLabel(playedFixture) : undefined}
         knockout={career.knockoutMessage}
         onContinue={handlePostMatchContinue}
@@ -1030,10 +1055,15 @@ export default function StarDevPage() {
     // Decided BEFORE the branch, never inside it: falling back by calling a
     // state setter mid-render is a React error, and "can we draw this?" is a
     // question about data that render is entitled to ask.
-    const savedBench = loadLineup(career.player.club)?.bench;
+    // The side you actually picked, shape and all — not just its bench, which
+    // is all this used to read. See teamsheet.ts's SavedXI.
+    const saved = loadLineup(career.player.club);
+    const savedXI = saved && saved.xi.some(Boolean)
+      ? { formation: formationOf(saved.formation), xi: saved.xi }
+      : undefined;
     const matchday = nextFixture.kind === "international"
       ? null
-      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, savedBench);
+      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI);
     const teamsReady = !!matchday && sheetReady(matchday);
 
     if (showTeams && matchday && teamsReady) {

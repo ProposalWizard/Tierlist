@@ -8,6 +8,7 @@ import { exitRound } from "@/lib/star/cups";
 import { STAR_EDITION_LABEL } from "@/lib/star/edition";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 interface Props {
   career: CareerState;
@@ -454,23 +455,12 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                       somebody else — the one without an image gets the same
                       silhouette the Draft uses, not different placeholders
                       per screen. */}
-                  {p.imageUrl ? (
-                    <img
-                      src={p.imageUrl}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                      className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover"
-                    />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={SILHOUETTE_SRC}
-                      alt=""
-                      aria-hidden
-                      className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover opacity-80"
-                    />
-                  )}
+                  <ImageWithFallback
+                    src={p.imageUrl || SILHOUETTE_SRC}
+                    fallbackSrc={SILHOUETTE_SRC}
+                    alt=""
+                    className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover"
+                  />
                   <div className="truncate">{p.name}</div>
                   <div className="text-center font-black text-white/85">{p.overall ?? "—"}</div>
                   <div className="text-center text-white/75">{p.position}</div>

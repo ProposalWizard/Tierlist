@@ -2,6 +2,7 @@
 import type { StoredPost } from "@/lib/star/media/types";
 import { relativeTime } from "@/lib/star/media/schedule";
 import Graphic from "./Graphics";
+import Avatar from "./Avatar";
 
 /**
  * One post.
@@ -38,12 +39,12 @@ export default function PostCard({ post, now }: { post: StoredPost; now: number 
   return (
     <article className={`rounded-xl border border-white/12 border-l-[3px] ${chrome.accent} bg-gray-800/80 p-3`}>
       <header className="flex items-start gap-2.5">
-        <div
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[11px] font-black text-white"
-          style={{ background: post.author.tint }}
-        >
-          {post.author.initials}
-        </div>
+        <Avatar
+          initials={post.author.initials}
+          tint={post.author.tint}
+          tint2={post.author.tint2}
+          glyph={post.author.glyph}
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <span className="truncate text-[13px] font-black text-white">{post.author.name}</span>

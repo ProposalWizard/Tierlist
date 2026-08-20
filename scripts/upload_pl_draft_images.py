@@ -195,6 +195,7 @@ def main() -> None:
 
     uploaded = 0
     missing_locally: list[str] = []
+    missing_ids: list[str] = []
     failed: list[str] = []
 
     for i, player in enumerate(roster, 1):
@@ -205,6 +206,7 @@ def main() -> None:
 
         if not local_file.exists():
             missing_locally.append(f"{name} ({club}) — {sid}")
+            missing_ids.append(sid)
             continue
 
         if dry_run:
@@ -229,11 +231,18 @@ def main() -> None:
             print(f"    - {m}")
         if len(missing_locally) > 20:
             print(f"    ...and {len(missing_locally) - 20} more")
-        print(
-            f"  If this list looks too long, double check that\n"
-            f"    {dir_}\n"
-            f"  actually holds these players' images — re-run the scrape command above if not."
-        )
+        # Same cause as in upload_player_images.py: the scrape sweeps whoever
+        # SoFIFA lists in the Premier League NOW, so anyone who left the
+        # league mid-edition is in our data but not in that sweep. Fetch those
+        # by id instead.
+        id_file = dir_.parent / f"missing_ids_{year}.txt"
+        try:
+            id_file.write_text("\n".join(missing_ids))
+            print(f"\n  Wrote the {len(missing_ids)} missing id(s) to:\n    {id_file}")
+            print(f"  Fetch just those faces, then re-run this script:")
+            print(f"    python scrape_missing.py --year={year} --faces-for-ids=\"{id_file}\"")
+        except Exception as e:
+            print(f"  (Could not write the missing-id list: {e})")
 
     if failed:
         print(f"\n✗ {len(failed)} upload(s) failed:")

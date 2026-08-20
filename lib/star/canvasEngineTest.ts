@@ -210,6 +210,8 @@ export interface Identity {
   name: string;
   shortName: string;
   position: string;
+  /** His real rating, when he has one — see canvasEngine.ts's Identity. */
+  overall?: number;
 }
 
 export interface Follower {
@@ -1565,30 +1567,160 @@ function buildTightAngle(rng: () => number, keeperStrength: number, teamRelation
 }
 
 // Well outside the box — needs pace, and a screen to bend or lift the ball over.
+/**
+ * FIVE WAYS TO BE A LONG WAY OUT.
+ *
+ * Reported after playing it: "this long range shooting attacking scenario is
+ * very common, it's basically this exact scenario every time." It was. Unlike
+ * the one-on-one and the tight angle — which each pick one of several
+ * pictures — this builder had a single layout: you dead central twenty-five
+ * metres out, two defenders on a line in front of you, an empty penalty area
+ * behind them, and `teammates: []` / `runner: null` / `receiver: null`, so
+ * there was never anybody to play it to. Shoot or nothing, every time.
+ *
+ * The `addCover`/`addSupport` passes that run afterwards vary the NUMBER of
+ * bodies, and that was doing real work — but the shape underneath never
+ * changed, and shape is what you actually read when you look at a chance.
+ *
+ * The five below are different questions rather than the same question with
+ * the furniture nudged: how much of the goal can I see, is the lane open, is
+ * somebody about to close me down, and — the one that was missing entirely —
+ * is there a better ball than the shot. `passTarget`/`runner` are set on the
+ * shapes that have a man worth finding, so laying it off is a real option and
+ * not a thing the situation refuses to model. The player's own bar for this:
+ * "as long as you can score or you can pass, then that's good."
+ *
+ * The back line is still laid out relative to the GOAL, never relative to you
+ * — see the note the original carried, which is preserved in every branch.
+ */
 function buildLongRange(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = CX + (rng() - 0.5) * 20;
-  const by = 24 + rng() * 10;
-  // ── A block, in front of their own goal ──
+  const shape = rng();
+  const side = rng() < 0.5 ? -1 : 1;
+
+  // ── The ordinary one: central, a screen of two, and a sight of goal ──
+  if (shape < 0.34) {
+    // Production's exact spread — this branch IS the old scenario, kept as
+    // the most common one so the chance you get most often is the chance you
+    // always got.
+    const bx = CX + (rng() - 0.5) * 20;
+    const by = 24 + rng() * 10;
+    const line = clamp(by * 0.42, 8, 17);
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      defenders: [
+        { x: clamp(CX - 3.5 - rng() * 7, 9, PITCH_W - 9), y: line + rng() * 1.8 },
+        { x: clamp(CX + 3.5 + rng() * 7, 9, PITCH_W - 9), y: line + 1.2 + rng() * 2.4 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── A crowded box, and a man in it ──
   //
-  // They used to be placed relative to YOU — three and six metres up the pitch
-  // from wherever you were standing — which put a defence thirty metres from
-  // its own goal for no reason a defender would recognise. Worse, the offside
-  // line went with them: your team-mates are not allowed past the second-last
-  // opponent, so they settled level with a line drawn round your feet, and the
-  // whole situation collapsed into a knot of six players with twenty-five metres
-  // of open grass between it and the goal.
+  // The one the report asked for by name: "it's this situation again, but also
+  // in and around the box, there are defenders and also some of my teammates."
+  // Bodies scattered through the penalty area rather than lined up in front of
+  // you, and a team-mate among them who is genuinely findable. The shot is
+  // still on — through traffic, which is what makes it a decision.
+  if (shape < 0.56) {
+    const bx = CX + (rng() - 0.5) * 16;
+    const by = 23 + rng() * 7;
+    const mate = { x: CX + side * (3 + rng() * 6), y: 7 + rng() * 6 };
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      // Three, not four. `addCover` puts another two to four on top of
+      // whatever a builder places, and the first version of this shape carried
+      // four of its own — which took the average long-range chance from 8.3%
+      // to 5.7% converted over 1,500 measured shots. That is a difficulty
+      // change wearing a variety change's clothes, which is exactly what
+      // COVER_RANGE's own note warns about. The picture is still a crowded
+      // one; there is just no longer a whole extra defender in it.
+      defenders: [
+        { x: clamp(CX - side * (4 + rng() * 5), 9, PITCH_W - 9), y: 14 + rng() * 3 },
+        // Marking your man, loosely — goal-side and a stride off, not on him.
+        { x: clamp(mate.x - side * (2.4 + rng() * 1.6), 8, PITCH_W - 8), y: clamp(mate.y + 1.2, 4, 12) },
+        { x: clamp(CX + (rng() - 0.5) * 9, 8, PITCH_W - 8), y: 6 + rng() * 4 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 1.2 + rng() * 1.2, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [],
+      runner: makeRunner(mate, { x: mate.x + side * 1.5, y: mate.y + 2.5 }),
+      passTarget: mate,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Wide and deep: the angle is the problem, not the distance ──
+  if (shape < 0.74) {
+    const bx = CX + side * (10 + rng() * 6);
+    const by = 21 + rng() * 8;
+    const line = clamp(by * 0.44, 9, 17);
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx - side * 0.8, y: by + 1.2 },
+      defenders: [
+        // One shows you inside, one holds the middle.
+        { x: clamp(bx - side * (3 + rng() * 2.5), 8, PITCH_W - 8), y: clamp(by - 3 - rng() * 3, 6, 24) },
+        { x: clamp(CX + (rng() - 0.5) * 6, 9, PITCH_W - 9), y: line + rng() * 2 },
+      ],
+      // He shades toward the near post from a ball this wide.
+      keeper: makeKeeper(CX + side * (1.5 + rng() * 1.6), 1.4 + rng() * 1.2, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Closing you down: hit it now or lose the chance ──
   //
-  // The line belongs to the goal it is defending. It drops as you come deeper,
-  // the way a real one does, but it never comes out to meet you.
-  const line = clamp(by * 0.42, 8, 17);
+  // Nobody is attached to you — the nearest man is three or four metres off
+  // and arriving, which is a clock rather than a cage. "As long as someone is
+  // not basically attached to your hip, then it's all fun."
+  if (shape < 0.88) {
+    const bx = CX + (rng() - 0.5) * 18;
+    const by = 25 + rng() * 8;
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      defenders: [
+        // Coming at you from an angle, not standing in the shooting lane. The
+        // first version put him within a metre and a half of dead in front,
+        // which measured 2.8% converted — that is not "hit it early", that is
+        // a blocked shot with extra steps.
+        { x: clamp(bx + side * (2.2 + rng() * 2.4), 8, PITCH_W - 8), y: by - 4.2 - rng() * 1.6 },
+        { x: clamp(CX - 5 - rng() * 5, 9, PITCH_W - 9), y: 13 + rng() * 3 },
+        { x: clamp(CX + 5 + rng() * 5, 9, PITCH_W - 9), y: 13 + rng() * 3 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.5 + rng() * 1.3, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Miles out, and the lane is open ──
+  //
+  // The one worth taking on: thirty-plus metres, nobody within a few strides,
+  // a deep line that has dropped off. Rare, and it should be.
+  const bx = CX + (rng() - 0.5) * 12;
+  const by = 30 + rng() * 5;
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.3 },
     defenders: [
-      { x: clamp(CX - 3.5 - rng() * 7, 9, PITCH_W - 9), y: line + rng() * 1.8 },
-      { x: clamp(CX + 3.5 + rng() * 7, 9, PITCH_W - 9), y: line + 1.2 + rng() * 2.4 },
+      { x: clamp(CX - 6 - rng() * 6, 9, PITCH_W - 9), y: 10 + rng() * 3 },
+      { x: clamp(CX + 6 + rng() * 6, 9, PITCH_W - 9), y: 10 + rng() * 3 },
     ],
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4, rng),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 2.2 + rng() * 1.8, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
@@ -2534,7 +2666,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // a defender heading a corner is aiming at the goal and hoping. Letting the
   // header read the keeper as well as the cutback did was worth twenty-eight
   // points of conversion on its own.
-  const readsKeeper = 0.5 + control * 0.36;
+  const readsKeeper = 0.5 + control * 0.22;  // synced from canvasEngine.ts
   const side = rng() < readsKeeper ? -keeperSide : keeperSide;
   // Where he is trying to put it, as a fraction of the half-mouth: barely off
   // centre for a defender heading a corner, close to the frame for a striker
@@ -2553,7 +2685,10 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // measures the result directly (mean aim off centre, on-target%, conversion
   // rate per situation) rather than trusting the ceiling arithmetic alone,
   // since the noise term below also shapes where a shot actually crosses.
-  const placement = (0.22 + quality * 0.62) * (0.2 + control * 0.8);
+  // Synced from canvasEngine.ts: real shot-to-shot variance in the TARGET,
+  // not just execution noise around an always-optimal one.
+  const ambition = clamp(1 + gaussian(rng) * 0.22, 0.5, 1.3);
+  const placement = ambition * (0.22 + quality * 0.62) * (0.2 + control * 0.8);
   const aimX = clamp(
     goalCx + side * placement * (halfMouth - BALL_R * 2),
     POST_L + BALL_R * 2, POST_R - BALL_R * 2,
@@ -2849,6 +2984,23 @@ export function dragForFullPower(power: number): number {
 export const shotTuning = {
   vzPowerFloor: 0.88,
   vzPowerWeight: 0.12,
+  /**
+   * A flat multiplier on ALL lift, on top of everything else.
+   *
+   * The height curve and the power coupling both decide the SHAPE of the
+   * relationship; this decides how much of it there is. It exists because
+   * making the apex linear across the ball (see `lift` in launch) has a real
+   * cost at close range: measured from a one-on-one at 70% power, striking
+   * mid-ball went from clearing the bar 0% of the time to 19%. Striking the
+   * very bottom already cleared it 74% of the time before that change and
+   * still does — that is the earlier power-decoupling, not the curve.
+   *
+   * Whether that is "I scooped it and it went over, fair enough" or "this is
+   * too floaty" is a judgement about how the game should feel, so it is a
+   * slider rather than a number picked here. 1 leaves the lift exactly as it
+   * is today.
+   */
+  vzScale: 1,
 };
 
 // Launch the ball from a slingshot aim + a contact point.
@@ -2867,6 +3019,47 @@ export function launch(
   const usableCy = contact.cy * loftRange(tech);
   const loft = clamp((usableCy + 1) / 2, 0, 1); // 0 = struck top (driven), 1 = struck bottom (lofted)
 
+  /**
+   * HOW HIGH IT GOES, AS A LINEAR FUNCTION OF WHERE YOU HIT IT.
+   *
+   * Reported: the lift is right at the very bottom of the ball, but a contact
+   * only slightly above that loses a lot of height — "there seems to be a huge
+   * jump from the absolute lowest point and then still a very low point", and
+   * "the top of the ball means zero height and the bottom means a hundred",
+   * which is the model it should follow.
+   *
+   * The suspicion was right and the cause is one step further back than it
+   * looks. `loft` above IS already linear in where you hit — it is the
+   * VELOCITY that is linear. Height is not velocity: a projectile's apex is
+   * vz²/2g, so it goes as the SQUARE of it, and squaring a linear ramp is what
+   * produces the cliff. Measured on the old curve, as a share of the maximum
+   * height available:
+   *
+   *     very bottom  100%      dead centre   31%
+   *     near bottom   83%      very top       1%
+   *
+   * Dead centre returning 31% is the giveaway — on the stated model it should
+   * be half. So: take the square root, which cancels the squaring exactly and
+   * makes the APEX linear in the contact point rather than the launch speed.
+   * Multiplying by `tMax` inside the root normalises it, so the very bottom of
+   * the ball produces precisely the height it does today — the part that was
+   * reported as already good — and everything above it is lifted onto the
+   * straight line up to it:
+   *
+   *     very bottom  100%      dead centre   56%
+   *     near bottom   91%      very top      11%
+   *
+   * The top is 11% rather than a true zero because `loftRange` deliberately
+   * shrinks how much of the ball a low-technique player can use, in both
+   * directions — see loftRange. A driven ball still leaving the ground a
+   * little is also what a driven ball does.
+   *
+   * Only vz reads this. `loft` still drives the horizontal-pace trade below,
+   * so how far the ball travels forward is untouched.
+   */
+  const tMax = clamp((loftRange(tech) + 1) / 2, 0, 1);
+  const lift = Math.sqrt(loft * tMax);
+
   // Accuracy: a little, so a beginner does miskick — but technique is no longer
   // primarily an accuracy stat. See curlRange/loftRange above and §13.7.
   const sigmaDeg = (1 - tech / 100) * 2.2 + power * (1 - tech / 100) * 1.6;
@@ -2880,8 +3073,9 @@ export function launch(
   // Vertical launch speed from how low on the ball it was struck. Deliberately
   // NOT `loft * power * ...` — see shotTuning above. How hard you struck it
   // only nudges the height; where you struck it decides the height.
-  const vz = loft * (7.5 + skills.power * 0.035)
-    * (shotTuning.vzPowerFloor + power * shotTuning.vzPowerWeight);
+  const vz = lift * (7.5 + skills.power * 0.035)
+    * (shotTuning.vzPowerFloor + power * shotTuning.vzPowerWeight)
+    * shotTuning.vzScale;
   // Curl from striking the side of the ball. Technique decides how much of that
   // side is available to you at all, which is what makes a curled finish
   // something you unlock rather than something you are simply better at.
@@ -4148,7 +4342,13 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // Whoever it reached is who is about to shoot. Rolled at kick-off it
         // could only ever be a role, because until the ball is played there is
         // no telling which of the men in front of you it finds.
-        if (scenario.receiver && r.who) scenario.receiver.who = r.who;
+        if (scenario.receiver && r.who) {
+          scenario.receiver.who = r.who;
+          // Synced from canvasEngine.ts: real finishing quality, not a fresh roll.
+          if (r.who.overall !== undefined) {
+            scenario.receiver.skill = clamp(r.who.overall + gaussian(rng) * 6, 0, 100);
+          }
+        }
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
         // Which of them it actually reached — a man cannot be told to lay it
         // off to himself, and this is the only way to know that.
