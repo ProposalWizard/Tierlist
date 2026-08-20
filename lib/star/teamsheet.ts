@@ -151,6 +151,28 @@ function fillGaps(pool: Candidate[], formation: Formation, chosen: (string | nul
   return formation.slots.map((_, i) => chosen[i] ?? auto[i] ?? null);
 }
 
+/**
+ * A saved id, translated into whatever namespace this pool actually uses.
+ *
+ * The lineup builder (`/lineups`) reads a club's squad through `LeagueSquad`
+ * — the thin, whole-division shape, keyed on the bare `sofifa_id` — because
+ * that page opens for any of the twenty clubs, not just yours. But the pool a
+ * saved lineup is applied AGAINST here, for your own club, is `career.squad`:
+ * a full `SquadPlayer[]` keyed `sf_<sofifa_id>` (see realSquad.ts). Every
+ * saved slot was therefore in a namespace `byId` never contained, so
+ * `byId.has(id)` failed for every single one and the sheet silently fell
+ * back to a full auto-pick regardless of what was saved — reported as
+ * exactly that: a lineup edited "multiple times" that never once changed
+ * the team sheet shown before a match. Try the id as saved, then with the
+ * real-squad prefix, before giving up on the slot.
+ */
+function resolveSavedId(byId: Map<string, Candidate>, id: string | null): string | null {
+  if (!id) return null;
+  if (byId.has(id)) return id;
+  const prefixed = `sf_${id}`;
+  return byId.has(prefixed) ? prefixed : null;
+}
+
 function build(
   club: string,
   pool: Candidate[],
@@ -163,10 +185,7 @@ function build(
   // A saved id that is no longer in the squad is dropped to null here, not
   // carried through as a name the sheet cannot resolve.
   const picked = saved
-    ? fillGaps(pool, formation, formation.slots.map((_, i) => {
-      const id = saved.xi[i];
-      return id && byId.has(id) ? id : null;
-    }))
+    ? fillGaps(pool, formation, formation.slots.map((_, i) => resolveSavedId(byId, saved.xi[i])))
     : autoPick(pool, formation);
 
   const xi: SheetPlayer[] = [];
@@ -193,7 +212,8 @@ function build(
   let bench: SheetPlayer[];
   if (savedBenchIds && savedBenchIds.length > 0) {
     bench = savedBenchIds
-      .filter(id => !started.has(id))
+      .map(id => resolveSavedId(byId, id))
+      .filter((id): id is string => !!id && !started.has(id))
       .map(id => byId.get(id))
       .filter((p): p is Candidate => !!p)
       .slice(0, 9)
