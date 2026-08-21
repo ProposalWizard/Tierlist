@@ -35,17 +35,61 @@ export const CHAMPIONSHIP_CLUBS: readonly string[] = [
  * Not yet in the Championship. Five clubs, three of whom get drawn up at
  * each promotion cycle — the same shape as the three clubs relegated FROM
  * the Championship join next time round. See lib/star/promotion.ts.
+ *
+ * Also carries thirteen standalone clubs by explicit request — not part of
+ * any promotion/relegation cycle, just clubs with their own real squad,
+ * shown in the Lineups picker's "Other" tab alongside the pool.
  */
 export const PROMOTION_POOL_CLUBS: readonly string[] = [
   "Luton Town", "Huddersfield Town", "Leicester City", "Reading", "Wigan Athletic",
+  // "Villarreal" was given here too ("Villareal"), but it's already the
+  // Champions League club above — treated as one mention, not two, until
+  // told otherwise.
+  "Sevilla", "Eintracht Frankfurt", "Schalke", "Monaco",
+  "Strasbourg", "Atalanta", "Lazio", "Ajax", "Al Hilal", "Al Nassr",
+  "Al Ahli", "Al Ittihad",
 ];
 
-export type Division = "premier" | "championship" | "pool";
+/**
+ * This season's European cast — real clubs with real squads, the same as
+ * every other list here, but not part of the Premier League/Championship
+ * promotion ladder at all; they never get relegated or promoted by this
+ * game, only whichever real competition sends them here again or doesn't.
+ *
+ * Name matching against the database is exact-string (see
+ * app/api/star/league-squads), so every name below needs to be confirmed
+ * against supabase/migrations/fc27_clone_european_clubs.sql's own
+ * diagnostic query once it's been run — these are the best full names I
+ * could resolve from shorthand ("Man City", "Inter", "Atleti"), not yet
+ * verified against what SoFIFA itself calls each club.
+ */
+export const CHAMPIONS_LEAGUE_CLUBS: readonly string[] = [
+  "Arsenal", "Aston Villa", "Atlético Madrid", "Borussia Dortmund", "Barcelona",
+  "Bayern München", "Club Brugge", "Como", "Feyenoord", "Galatasaray", "Inter",
+  "RB Leipzig", "Lens", "Lille", "Liverpool", "Manchester City", "Manchester United",
+  "Napoli", "Paris Saint-Germain", "Porto", "PSV Eindhoven", "Real Betis",
+  "Real Madrid", "Roma", "Shakhtar Donetsk", "Slavia Praha", "Sporting CP",
+  "VfB Stuttgart", "Villarreal", "Bodø/Glimt", "Celtic", "AEK Athens", "Lyon",
+  "Fenerbahçe", "Dinamo Zagreb", "Slovan Bratislava",
+];
+
+export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
+  "AZ Alkmaar", "Bournemouth", "Celta Vigo", "Crystal Palace", "Hoffenheim",
+  "Juventus", "Bayer Leverkusen", "Marseille", "AC Milan", "Olympiacos",
+  "Real Sociedad", "Rennes", "Sparta Praha", "Sturm Graz", "Sunderland",
+  "Torreense", "Union SG", "Ferencváros", "Anderlecht", "Lech Poznań",
+  "Trabzonspor", "Benfica", "Crvena Zvezda", "Omonia Nicosia", "Beşiktaş",
+  "Salzburg", "Rangers", "Hearts", "Shamrock Rovers",
+];
+
+export type Division = "premier" | "championship" | "pool" | "champions" | "europa";
 
 const DIVISION_BY_CLUB = new Map<string, Division>([
   ...PREMIER_LEAGUE_CLUBS.map(c => [c, "premier"] as const),
   ...CHAMPIONSHIP_CLUBS.map(c => [c, "championship"] as const),
   ...PROMOTION_POOL_CLUBS.map(c => [c, "pool"] as const),
+  ...CHAMPIONS_LEAGUE_CLUBS.map(c => [c, "champions"] as const),
+  ...EUROPA_LEAGUE_CLUBS.map(c => [c, "europa"] as const),
 ]);
 
 export function divisionOf(club: string): Division | null {

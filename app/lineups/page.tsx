@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import LineupBuilder from "@/components/star/LineupBuilder";
 import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
-import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, type Division } from "@/lib/star/clubs";
+import {
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
+  CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, type Division,
+} from "@/lib/star/clubs";
 import type { LeagueSquad } from "@/lib/star/types";
 
 /**
@@ -26,6 +29,8 @@ import type { LeagueSquad } from "@/lib/star/types";
 const TABS: { key: Division; label: string; clubs: readonly string[] }[] = [
   { key: "premier", label: "Premier League", clubs: PREMIER_LEAGUE_CLUBS },
   { key: "championship", label: "Championship", clubs: CHAMPIONSHIP_CLUBS },
+  { key: "champions", label: "Champions League", clubs: CHAMPIONS_LEAGUE_CLUBS },
+  { key: "europa", label: "Europa League", clubs: EUROPA_LEAGUE_CLUBS },
   { key: "pool", label: "Other", clubs: PROMOTION_POOL_CLUBS },
 ];
 
@@ -59,12 +64,16 @@ export default function LineupsPage() {
 
   return (
     <main className="w-full py-2">
-      <div className="mx-auto mb-2 flex max-w-5xl gap-1.5 px-2">
+      {/* Five tabs now, not three — a phone-width row of equal flex-1 tiles
+          crushed "Champions League"/"Europa League" onto multiple lines.
+          A scrollable row keeps every label on one line at a readable size
+          instead. */}
+      <div className="mx-auto mb-2 flex max-w-5xl gap-1.5 overflow-x-auto px-2 pb-0.5">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setDivision(t.key)}
-            className={`flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-black uppercase tracking-wide transition ${
+            className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-[12px] font-black uppercase tracking-wide transition ${
               division === t.key
                 ? "border-emerald-500 bg-emerald-600 text-white"
                 : "border-gray-700 bg-gray-900 text-white/70 hover:bg-gray-800"}`}
