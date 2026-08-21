@@ -129,6 +129,8 @@ export interface LeaguePlayer {
    * the moment the pre-match screen names an opposition eleven.
    */
   nation?: string;
+  /** See SquadPlayer.positions — the same idea, for the other nineteen clubs. */
+  positions?: SquadPlayer["position"][];
 }
 
 export interface LeagueSquad {
@@ -203,6 +205,16 @@ export interface SquadPlayer {
   imageUrl?: string;
   nationality?: string;
   age?: number;
+  /**
+   * Every position he is actually listed for, `position` included — a real
+   * player's data holds several (SoFIFA's "CAM, CM, LW"), but building the
+   * squad still has to settle him into exactly one SLOT of the twenty. This
+   * is the difference between "the slot he fills in the squad" and "what he
+   * can actually play", and only the second one is what a team sheet should
+   * judge him against. Absent on an old save or a generated squad, both of
+   * which read as just `[position]`. See formations.ts's fitness/autoPick.
+   */
+  positions?: SquadPlayer["position"][];
 }
 
 export interface GoalEvent {

@@ -230,6 +230,12 @@ export interface Pickable {
   name: string;
   position: Role;
   overall?: number;
+  /**
+   * Everywhere he's actually listed, `position` included. Optional because
+   * an old save or a generated squad only ever has the one. See
+   * SquadPlayer.positions — this is the same list, read at team-sheet time.
+   */
+  positions?: Role[];
 }
 
 const NEIGHBOURS: Record<Role, Role[]> = {
@@ -255,6 +261,34 @@ export function fitness(slot: Role, player: Role): number {
 }
 
 /**
+ * The best of everywhere he's actually listed, not just the one slot he
+ * happens to be filed under.
+ *
+ * A real player's data holds several positions — Bruno Fernandes lists CAM
+ * and CM — but squad-building still settles him into exactly one SLOT of
+ * the twenty, and `position` only ever remembered that slot. So a club
+ * playing a shape with no CAM in it (Manchester United's 4-3-3, three
+ * central midfielders) scored him only as a NEIGHBOUR of CM — fitness 66,
+ * `NEIGHBOURS.CM`'s second entry — against a genuine 63-rated CM's exact
+ * 100, and fitness so dominates the pick (`score = fitness*100+overall`)
+ * that a 25-point rating gap could never close it. Reported directly: "Bruno
+ * Fernandes only has the CAM position so he's left on the bench while a 63
+ * rated player starts ahead of him." Checking every position he's listed
+ * for finds CM among them and scores him the full 100 there, the same as
+ * the specialist — at which point the rating gap is exactly what decides it,
+ * which is the correct outcome and needed no change to the formula at all.
+ */
+export function bestFitness(slot: Role, player: Pickable): number {
+  const positions = player.positions?.length ? player.positions : [player.position];
+  let best = 0;
+  for (const p of positions) {
+    const f = fitness(slot, p);
+    if (f > best) best = f;
+  }
+  return best;
+}
+
+/**
  * The side a manager would pick.
  *
  * Greedy by SLOT rather than by player, which is the whole trick and the same
@@ -269,7 +303,7 @@ export function autoPick(squad: Pickable[], formation: Formation): (string | nul
     let bestScore = -1;
     for (const p of squad) {
       if (taken.has(p.id)) continue;
-      const f2 = fitness(slot.role, p.position);
+      const f2 = bestFitness(slot.role, p);
       if (f2 <= 0) continue;
       const score = f2 * 100 + (p.overall ?? 60);
       if (score > bestScore) { bestScore = score; best = p; }
@@ -302,7 +336,7 @@ export function refit(current: (string | null)[], squad: Pickable[], formation: 
     let best: Pickable | null = null, bestScore = -1;
     for (const p of rest) {
       if (used.has(p.id)) continue;
-      const f2 = fitness(slot.role, p.position);
+      const f2 = bestFitness(slot.role, p);
       if (f2 <= 0) continue;
       const score = f2 * 100 + (p.overall ?? 60);
       if (score > bestScore) { bestScore = score; best = p; }

@@ -57,6 +57,19 @@ const NEIGHBOURS: Record<Pos, string[]> = {
   ST: ["CF", "LW", "RW", "CAM"],
 };
 
+/** Every position he's listed for that this game actually models. See
+ *  realSquad.ts's identical helper — kept local rather than shared because
+ *  the two files already duplicate positionsOf/fit/NEIGHBOURS this way. */
+const VALID_ROLES = new Set<Pos>(["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"]);
+function rolesOf(raw: string): Pos[] {
+  const out: Pos[] = [];
+  for (const tok of positionsOf(raw)) {
+    const role = tok as Pos;
+    if (VALID_ROLES.has(role) && !out.includes(role)) out.push(role);
+  }
+  return out;
+}
+
 function fit(slot: Pos, positions: string): number {
   const ps = positionsOf(positions);
   if (ps.length === 0) return 0;
@@ -105,6 +118,7 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
       overall: best.overall || 65, goals: 0, assists: 0,
       ...(best.image ? { image: best.image } : {}),
       ...(best.nation ? { nation: best.nation } : {}),
+      positions: rolesOf(best.positions),
     });
   }
 
@@ -138,6 +152,7 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
         overall: p.overall || 60, goals: 0, assists: 0,
         ...(p.image ? { image: p.image } : {}),
         ...(p.nation ? { nation: p.nation } : {}),
+        positions: rolesOf(p.positions),
       });
     }
   }
