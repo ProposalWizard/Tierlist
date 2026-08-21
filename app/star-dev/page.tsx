@@ -10,7 +10,7 @@ import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/st
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
 import { fixtureDateLabel } from "@/lib/star/calendar";
-import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
+import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct } from "@/lib/star/week";
@@ -1065,7 +1065,13 @@ export default function StarDevPage() {
     const matchday = nextFixture.kind === "international"
       ? null
       : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI);
-    const teamsReady = !!matchday && sheetReady(matchday);
+    // Whether YOUR side is drawable — the bar the button decides on now. An
+    // under-scouted OPPONENT no longer holds the screen back at all: it gets
+    // its own "Unable to scout" half instead (see VersusScreen). Only an
+    // international fixture (no matchday at all) or your own squad falling
+    // short — practically never, but the same honest fallback either way —
+    // sends the button straight past the team sheets.
+    const teamsReady = !!matchday && (matchday.home.yours ? matchday.home : matchday.away).xi.length >= 9;
 
     if (showTeams && matchday && teamsReady) {
       return (
@@ -1192,9 +1198,11 @@ export default function StarDevPage() {
                 onClick={() => (teamsReady ? setShowTeams(true) : handlePlayMatch())}
                 className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black"
               >
-                {/* No sheets for an international, and none for a club whose
-                    squad has not been fetched — both go straight to the match
-                    rather than to a pitch with holes in it. */}
+                {/* Gated on YOUR side only now — an under-scouted opponent
+                    still gets a team-sheet screen, just with "Unable to
+                    scout opponent's team" on their half (see VersusScreen).
+                    Only an international fixture, or your own squad falling
+                    short, skips the screen entirely. */}
                 {teamsReady
                   ? "Team sheets →"
                   : selection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
