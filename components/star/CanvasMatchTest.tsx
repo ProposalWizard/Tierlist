@@ -1806,7 +1806,13 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       const power = powerFromDrag(d, sc.ball);
       const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
       const len = Math.hypot(dx, dy) || 1;
-      const lineLen = power * (vp.y2 - vp.y1) * 0.22;
+      // TEST-ONLY: half the previous length at full power. Purely the drawn
+      // length — `power` itself (and how far you actually have to drag to
+      // reach it) is untouched, since this is computed FROM `power`, not the
+      // other way round. Reported directly: "make it so that a hundred
+      // percent power is about half the length... you don't have to change
+      // the power."
+      const lineLen = power * (vp.y2 - vp.y1) * 0.11;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
