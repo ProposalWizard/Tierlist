@@ -60,6 +60,13 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
    * resets. Cleared by `reset`, so the next penalty can resolve normally.
    */
   const resolvedRef = useRef(false);
+  /** The real ball photo (public/star/ball.png) — see CanvasMatch.tsx. */
+  const ballImgRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/star/ball.png";
+    ballImgRef.current = img;
+  }, []);
 
   const [phase, setPhaseState] = useState<Phase>("aim");
   const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
@@ -73,9 +80,8 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     const rng = rngRef.current;
     // Keeper strength kept modest: this is a trial, and it has to end.
     const sc = buildScenario("penalty", rng, 52, 60, 55);
-    // A penalty has no defenders, but the engine still expects a scenario to
-    // have been initialised before it is stepped — cheaper to call it than to
-    // depend on that staying true.
+    // The engine expects a scenario to have been initialised before it is
+    // stepped — cheaper to call it than to depend on that staying true.
     initDefenders(sc, rng);
     scRef.current = sc;
     ballRef.current = null;
@@ -176,12 +182,25 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
           if (settle > 1.1 && !resolvedRef.current && !doneRef.current) {
             resolvedRef.current = true;
             const res = outcomeRef.current;
-            if (res === "goal" || res === "rebound") {
+            // Reported directly: "it can't rebound off of the keeper or the
+            // post, and then one of your teammates score — you have to be
+            // the one to score." A save or a post that comes back out is
+            // exactly what the two D-side team-mates are there for in a real
+            // match (see buildPenalty) — but here that would let the trial
+            // end on a goal you didn't score. `receiverShot` is only ever
+            // set when the ball reaches a team-mate and HE strikes it
+            // (launchReceiverShot), never for your own original hit, so it
+            // is the one reliable signal for "somebody else put this away" —
+            // a clean team-mate finish reports as "goal" the same as yours
+            // would, so the outcome tag alone can't tell them apart.
+            const yours = !sc.receiverShot;
+            if ((res === "goal" || res === "rebound") && yours) {
               doneRef.current = true;
               onScored();
             } else {
               setAttempts(a => a + 1);
-              setMissText(MISS_LINE[res] ?? "Again.");
+              const teammateScored = (res === "goal" || res === "rebound") && !yours;
+              setMissText(teammateScored ? "A team-mate gets there first — it has to be you." : (MISS_LINE[res] ?? "Again."));
               setPhase("missed");
               window.setTimeout(() => { setMissText(""); reset(); }, 1100);
             }
@@ -303,11 +322,16 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     ctx.ellipse(bx, by, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);
     ctx.fill();
     const drawnY = by - lift * sy * 0.55;
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.arc(bx, drawnY, br, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.45)";
-    ctx.lineWidth = Math.max(1, br * 0.16);
-    ctx.stroke();
+    const ballImg = ballImgRef.current;
+    if (ballImg && ballImg.complete && ballImg.naturalWidth > 0) {
+      ctx.drawImage(ballImg, bx - br, drawnY - br, br * 2, br * 2);
+    } else {
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(bx, drawnY, br, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.lineWidth = Math.max(1, br * 0.16);
+      ctx.stroke();
+    }
 
     // ── The aim arrow ──
     if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {

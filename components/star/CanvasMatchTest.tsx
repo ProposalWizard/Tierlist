@@ -655,6 +655,13 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
   const shakeRef = useRef({ t: 0, dur: 1, mag: 0 });   // camera nudge
   const flashRef = useRef({ t: 0, dur: 1 });            // goal flash
   const seamRef = useRef(0);                            // ball roll angle
+  // Synced from CanvasMatch.tsx: the real ball photo instead of a drawn disc.
+  const ballImgRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/star/ball.png";
+    ballImgRef.current = img;
+  }, []);
 
   // Respect prefers-reduced-motion: no shake, no confetti, only a faint brief flash.
   useEffect(() => {
@@ -1743,29 +1750,23 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       // The ball, lifted off the shadow and grown a little with height.
       const by = py - h * heightScale * scale;
       const br = bScale * (1 + Math.min(h, 8) * 0.055);
-      ctx.beginPath();
-      ctx.arc(px, by, br, 0, Math.PI * 2);
-      ctx.fillStyle = "#fefefe";
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, 2 * scale);
-      ctx.strokeStyle = "#0f172a";
-      ctx.stroke();
-      // rolling seam patches
+      const img = ballImgRef.current;
       const a = seamRef.current;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(px, by, br * 0.92, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.beginPath();
-      ctx.arc(px + Math.cos(a) * br * 0.45, by + Math.sin(a) * br * 0.45, br * 0.3, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(15,23,42,0.16)";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(px - Math.cos(a) * br * 0.5, by - Math.sin(a) * br * 0.5, br * 0.22, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(15,23,42,0.12)";
-      ctx.fill();
-      ctx.restore();
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(px, by);
+        ctx.rotate(a);
+        ctx.drawImage(img, -br, -br, br * 2, br * 2);
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(px, by, br, 0, Math.PI * 2);
+        ctx.fillStyle = "#fefefe";
+        ctx.fill();
+        ctx.lineWidth = Math.max(1, 2 * scale);
+        ctx.strokeStyle = "#0f172a";
+        ctx.stroke();
+      }
     };
 
     // ── Where it will land ──
@@ -1805,7 +1806,13 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       const power = powerFromDrag(d, sc.ball);
       const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
       const len = Math.hypot(dx, dy) || 1;
-      const lineLen = power * (vp.y2 - vp.y1) * 0.22;
+      // TEST-ONLY: half the previous length at full power. Purely the drawn
+      // length — `power` itself (and how far you actually have to drag to
+      // reach it) is untouched, since this is computed FROM `power`, not the
+      // other way round. Reported directly: "make it so that a hundred
+      // percent power is about half the length... you don't have to change
+      // the power."
+      const lineLen = power * (vp.y2 - vp.y1) * 0.11;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);

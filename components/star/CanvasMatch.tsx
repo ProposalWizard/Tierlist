@@ -623,6 +623,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const shakeRef = useRef({ t: 0, dur: 1, mag: 0 });   // camera nudge
   const flashRef = useRef({ t: 0, dur: 1 });            // goal flash
   const seamRef = useRef(0);                            // ball roll angle
+  /**
+   * The same real ball ContactBall already puts on the strike screen —
+   * public/star/ball.png — instead of a canvas-drawn white disc. Reported
+   * directly: "the football that you kick in the game... is something that
+   * you have created, which looks just like a white circle" next to a real
+   * photo everywhere else the ball appears. Loaded once per match rather
+   * than at module scope so it never touches `Image` during SSR.
+   */
+  const ballImgRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/star/ball.png";
+    ballImgRef.current = img;
+  }, []);
 
   // Respect prefers-reduced-motion: no shake, no confetti, only a faint brief flash.
   useEffect(() => {
@@ -1716,29 +1730,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // The ball, lifted off the shadow and grown a little with height.
       const by = py - h * heightScale * scale;
       const br = bScale * (1 + Math.min(h, 8) * 0.055);
-      ctx.beginPath();
-      ctx.arc(px, by, br, 0, Math.PI * 2);
-      ctx.fillStyle = "#fefefe";
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, 2 * scale);
-      ctx.strokeStyle = "#0f172a";
-      ctx.stroke();
-      // rolling seam patches
+      const img = ballImgRef.current;
       const a = seamRef.current;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(px, by, br * 0.92, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.beginPath();
-      ctx.arc(px + Math.cos(a) * br * 0.45, by + Math.sin(a) * br * 0.45, br * 0.3, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(15,23,42,0.16)";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(px - Math.cos(a) * br * 0.5, by - Math.sin(a) * br * 0.5, br * 0.22, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(15,23,42,0.12)";
-      ctx.fill();
-      ctx.restore();
+      if (img && img.complete && img.naturalWidth > 0) {
+        // The real photo, spun by the same roll angle the seam patches used
+        // to fake — rotating the actual ball reads as roll far better two
+        // drawn smudges ever did.
+        ctx.save();
+        ctx.translate(px, by);
+        ctx.rotate(a);
+        ctx.drawImage(img, -br, -br, br * 2, br * 2);
+        ctx.restore();
+      } else {
+        // Before the image has loaded — effectively never, but a blank spot
+        // where the ball should be is worse than a plain fallback for the
+        // one frame it might take.
+        ctx.beginPath();
+        ctx.arc(px, by, br, 0, Math.PI * 2);
+        ctx.fillStyle = "#fefefe";
+        ctx.fill();
+        ctx.lineWidth = Math.max(1, 2 * scale);
+        ctx.strokeStyle = "#0f172a";
+        ctx.stroke();
+      }
     };
 
     // ── Where it will land ──
