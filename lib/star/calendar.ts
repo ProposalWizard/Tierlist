@@ -235,3 +235,29 @@ export function fixtureDateLabel(
 export function calendarMonthOf(startYear: number, season: number, week: number): number {
   return fixtureDate(startYear, season, week, "saturday").getUTCMonth();
 }
+
+// ── Transfer windows ────────────────────────────────────────────────────────
+
+/**
+ * Real dates, not a fraction of the season — the same reasoning as the rest
+ * of this file. Summer: open from kick-off through the 30th of September,
+ * shut the moment October 1st arrives. January: open the whole month, shut
+ * the moment February 1st arrives. Both are UTC calendar months read straight
+ * off `fixtureDate`, so "shuts on October 1st" falls out of the boundary
+ * between month 8 (September) and month 9 (October) rather than a day
+ * counted by hand — precise at exactly the boundary that matters, and every
+ * week within a month is either fully open or fully closed, which is the
+ * only precision a week-at-a-time career actually needs.
+ */
+export type TransferWindow = "summer" | "january" | null;
+
+export function transferWindowFor(startYear: number, season: number, week: number): TransferWindow {
+  const month = fixtureDate(startYear, season, week, "saturday").getUTCMonth(); // 0 = January
+  if (month === 0) return "january";
+  if (month === 7 || month === 8) return "summer";       // August, September
+  return null;
+}
+
+export function transferWindowOpen(startYear: number, season: number, week: number): boolean {
+  return transferWindowFor(startYear, season, week) !== null;
+}
