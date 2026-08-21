@@ -2,11 +2,18 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import CanvasMatchTest from "@/components/star/CanvasMatchTest";
-import { shotTuning } from "@/lib/star/canvasEngineTest";
+import { shotTuning, SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngineTest";
 import { loadCareer } from "@/lib/star/storage";
 import type { CareerState } from "@/lib/star/types";
 
 const POSITIONS = ["ST", "CAM", "LW", "RW", "CM", "CDM", "LM", "RM", "LB", "RB", "CB", "GK"];
+
+const SCENARIO_LABELS: Record<ScenarioKind, string> = {
+  one_on_one: "One-on-One", tight_angle: "Tight Angle", long_range: "Long Range",
+  volley: "Volley", header: "Header", cutback: "Cutback", byline_cross: "Byline Cross",
+  through_ball: "Through Ball", midfield_pass: "Midfield Pass", penalty: "Penalty",
+  free_kick: "Free Kick", corner: "Corner", buildup: "Buildup",
+};
 
 // Standalone sandbox for the Canvas match engine. Admin-only; not linked in nav.
 //
@@ -32,6 +39,16 @@ export default function StarMatchDevPage() {
   const [vzPowerFloor, setVzPowerFloor] = useState(shotTuning.vzPowerFloor);
   const [vzPowerWeight, setVzPowerWeight] = useState(shotTuning.vzPowerWeight);
   const [vzScale, setVzScale] = useState(shotTuning.vzScale);
+  /**
+   * Pin every chance to one kind instead of letting the match pick.
+   *
+   * Reported directly: "I have never taken a penalty in this game" — real,
+   * because penalty duty has to be earned (setPieces.ts), not a bug, but
+   * there was no way to just look at one without playing dozens of matches
+   * hoping duty and the dice lined up on the same chance. Null is "random",
+   * the sandbox's original behaviour.
+   */
+  const [forcedKind, setForcedKind] = useState<ScenarioKind | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -83,13 +100,51 @@ export default function StarMatchDevPage() {
         </div>
 
         <CanvasMatchTest
+          // Remounts on a kind change so the very first chance shown is
+          // already the picked one, not just every chance after it.
+          key={forcedKind ?? "random"}
           skills={{ power, technique }}
           keeperStrength={keeperStrength}
           position={position}
           teamRelationship={teamRelationship}
           career={career}
           seed={2024}
+          forcedKind={forcedKind}
         />
+
+        {/* Scenario picker — every chance becomes exactly this kind, bypassing
+            duty and the hidden match's own zone requests. */}
+        <div className="mt-4 bg-gray-900/60 border border-gray-700 rounded-lg p-3 space-y-2">
+          <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">Scenario</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              onClick={() => setForcedKind(null)}
+              className={`rounded-lg px-2 py-1.5 text-[11px] font-black uppercase transition ${
+                forcedKind === null
+                  ? "bg-emerald-500 text-emerald-950"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
+            >
+              Random
+            </button>
+            {SCENARIO_KINDS.map((kind) => (
+              <button
+                key={kind}
+                onClick={() => setForcedKind(kind)}
+                className={`rounded-lg px-2 py-1.5 text-[11px] font-black uppercase transition ${
+                  forcedKind === kind
+                    ? "bg-emerald-500 text-emerald-950"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
+              >
+                {SCENARIO_LABELS[kind]}
+              </button>
+            ))}
+          </div>
+          {forcedKind && (
+            <div className="text-[10px] text-gray-500 text-center">
+              Every chance is a {SCENARIO_LABELS[forcedKind].toLowerCase()} — duty and the match's own requests are bypassed.
+            </div>
+          )}
+        </div>
 
         {/* Skill sliders so I can feel how attributes change the shot */}
         <div className="mt-4 bg-gray-900/60 border border-gray-700 rounded-lg p-3 space-y-3">
