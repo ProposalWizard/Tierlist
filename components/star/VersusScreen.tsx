@@ -318,12 +318,15 @@ function initials(club: string): string {
  * came to find. A star above him is the same device the match itself uses
  * (see CanvasMatch's footballer renderer): one mark, unambiguous, and it does
  * not change what he's wearing or how his name reads next to the other ten.
+ *
+ * Always above the face now that the name is always below it (see Man) — it
+ * has exactly one place left that isn't the name.
  */
-function YouStar({ below }: { below?: boolean }) {
+function YouStar() {
   return (
     <svg
       viewBox="0 0 20 20"
-      className={`pointer-events-none absolute left-1/2 h-3 w-3 -translate-x-1/2 ${below ? "-bottom-[13px]" : "-top-[13px]"}`}
+      className="pointer-events-none absolute left-1/2 -top-[13px] h-3 w-3 -translate-x-1/2"
     >
       <polygon
         points="10,1 12.5,7 19,7.5 14,11.8 15.5,18 10,14.5 4.5,18 6,11.8 1,7.5 7.5,7"
@@ -353,12 +356,7 @@ function Man({ p, kit, keeper, bottom }: {
           edge. This wrapper gives the star a positioning parent that doesn't
           also clip it. */}
       <div className="relative order-2 h-[34px] w-[34px]">
-        {/* Whichever side the name ISN'T on. Names on the two sides sit on
-            opposite edges of the circle on purpose (see below) so the two
-            closest-packed rows — both sides' most advanced men, right at the
-            halfway line — never collide; the star has to follow the same
-            rule or it lands on top of the name instead of the man. */}
-        {p.isYou && <YouStar below={!bottom} />}
+        {p.isYou && <YouStar />}
         <div
           className="h-full w-full overflow-hidden rounded-full border-2 border-white/60"
           style={{ backgroundColor: worn.shirt }}
@@ -379,10 +377,17 @@ function Man({ p, kit, keeper, bottom }: {
       {/* No background pill — the outline is what keeps this legible over
           grass of any shade, in either theme this game has (there is only
           the one, but the point stands): a box was a second colour to clash
-          with the kit, an outline is just ink. */}
-      <div className={`flex w-full items-center justify-center gap-0.5 px-0.5 ${
-        bottom ? "order-3 mt-0.5" : "order-1 mb-0.5"}`}
-      >
+          with the kit, an outline is just ink.
+
+          Always below the face, on both sides. The home side used to have it
+          ABOVE — orienting each side's name away from the halfway line, so
+          the two forward lines' names could never meet in the middle. Reported
+          as inconsistent rather than as a collision risk ("names... above
+          their player face instead of below"), and there is room for it:
+          even with both forward lines now facing the same way, the nearest
+          face and the name below it clear the opposing face by ~35px at a
+          typical phone width, nowhere near enough to touch. */}
+      <div className="order-3 mt-0.5 flex w-full items-center justify-center gap-0.5 px-0.5">
         <span className="truncate text-[9px] font-black leading-tight text-white" style={TEXT_OUTLINE}>
           {p.short}
         </span>
