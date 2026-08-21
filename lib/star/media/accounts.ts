@@ -3,7 +3,7 @@ import { rivalOf } from "../rivals";
 import { sortLeague } from "../season";
 import type { Archetype, AvatarGlyph, MediaAccount, Platform, Tag, VoiceProfile } from "./types";
 import { kitsOf } from "../kits";
-import { hashSeed, initialsOf, pick, rngFor, surname } from "./grammar";
+import { hashSeed, initialsOf, rngFor, surname } from "./grammar";
 
 /**
  * THE ROSTER
@@ -58,9 +58,19 @@ const INTERESTS: Record<Archetype, Partial<Record<Tag, number>>> = {
   meme:        { drama: 0.9, shame: 1, derby: 0.8, goal: 0.6, opinion: 0.6, manager: 0.7 },
 };
 
+/**
+ * Eighteen hues rather than ten, because ten meant two same-archetype
+ * accounts drawing the same colour was common rather than rare — reported as
+ * two accounts sharing "the exact same... image, but all that's changed is
+ * the background colour very slightly". A bigger palette is half the fix; the
+ * other half is `used`, below, which refuses to hand out a combination twice
+ * in the same roster regardless of how big the palette is.
+ */
 const TINTS = [
-  "#dc2626", "#2563eb", "#059669", "#d97706", "#7c3aed",
-  "#0891b2", "#be123c", "#4d7c0f", "#c2410c", "#4f46e5",
+  "#dc2626", "#ea580c", "#d97706", "#ca8a04", "#65a30d",
+  "#16a34a", "#059669", "#0d9488", "#0891b2", "#0284c7",
+  "#2563eb", "#4f46e5", "#7c3aed", "#9333ea", "#c026d3",
+  "#db2777", "#e11d48", "#78350f",
 ];
 
 interface Seed {
@@ -106,50 +116,150 @@ const FAN_NAMES = [
  * have opinions, a scarf for somebody in the stand. Nothing here is a picture
  * file — see AvatarGlyph and components/star/media/PostCard.
  *
- * `club` is deliberately `crest`, which KEEPS the lettering: a club badge is
- * lettering, and the thing that makes it theirs is the colours, which come
- * from the real kit below.
+ * A POOL rather than one glyph per archetype, because an archetype is rarely
+ * one account: three competition accounts, five of your own supporters, four
+ * team-mates. One glyph each meant every fan in the feed carried the same
+ * scarf and every stats page the same chart — the only thing telling them
+ * apart was a colour drawn from a ten-value palette, which collided often
+ * enough to be exactly what got reported. `avatarFor` below draws from
+ * whichever pool the account's archetype has.
+ *
+ * `club` is deliberately `["crest"]`, which KEEPS the lettering: a club badge
+ * is lettering, and the thing that makes it theirs is the colours, which come
+ * from the real kit below — no pool needed, because twenty clubs already have
+ * twenty different kits.
  */
-const GLYPHS: Record<Archetype, AvatarGlyph> = {
-  club: "crest",
-  league: "trophy",
-  competition: "trophy",
-  broadsheet: "newspaper",
-  tabloid: "megaphone",
-  insider: "scoop",
-  stats: "chart",
-  aggregator: "play",
-  pundit: "mic",
-  fan: "scarf",
-  rivalFan: "scarf",
-  teammate: "shirt",
-  meme: "grin",
+const GLYPHS: Record<Archetype, AvatarGlyph[]> = {
+  club: ["crest"],
+  league: ["trophy"],
+  competition: ["cup", "trophy", "ball"],
+  broadsheet: ["newspaper", "quote"],
+  tabloid: ["megaphone", "flag"],
+  insider: ["scoop", "quote"],
+  stats: ["chart", "grid"],
+  aggregator: ["play"],
+  pundit: ["mic", "quote"],
+  fan: ["scarf", "flag", "drum", "ball"],
+  rivalFan: ["scarf", "flag", "drum"],
+  teammate: ["shirt", "boot"],
+  meme: ["grin"],
 };
 
-/** A second tint for the disc's gradient — a shade along from the first. */
-function shade(hex: string, by: number): string {
+// ── Colour ───────────────────────────────────────────────────────────────
+//
+// A disc needs two stops, and "the same hue, one shade darker" is only one
+// of the ways a gradient can look good — it is also the ONLY way this used
+// to look, on every single account, which is why two of them a shade apart
+// read as "the exact same thing". `hueRotate`/`towardWhite`/`shade` give
+// `gradientPartner` three genuinely different pairings to draw from: a
+// punchier two-tone next to the wheel, a pale fade toward white (the "white
+// to pink" look asked for), and the original darker-same-hue for when that
+// is the right call.
+
+function hexToRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.replace("#", ""), 16);
-  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
-  const r = clamp(((n >> 16) & 255) * by);
-  const g = clamp(((n >> 8) & 255) * by);
-  const b = clamp((n & 255) * by);
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  const c = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  return `#${((c(r) << 16) | (c(g) << 8) | c(b)).toString(16).padStart(6, "0")}`;
+}
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h: number;
+  if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return [h * 60, s, l];
+}
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  h = (((h % 360) + 360) % 360) / 360;
+  if (s === 0) return [l * 255, l * 255, l * 255];
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const hue2rgb = (t: number) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  return [hue2rgb(h + 1 / 3) * 255, hue2rgb(h) * 255, hue2rgb(h - 1 / 3) * 255];
 }
 
-function avatarFor(s: Seed, rng: () => number): MediaAccount["avatar"] {
-  const glyph = GLYPHS[s.archetype];
-  // A club wears its own colours. Everyone else gets one of the palette.
+/** A second tint for the disc's gradient — a shade darker along the same hue. */
+function shade(hex: string, by: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return rgbToHex(r * by, g * by, b * by);
+}
+/** …or a pale fade toward white, along the same hue. */
+function towardWhite(hex: string, by: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return rgbToHex(r + (255 - r) * by, g + (255 - g) * by, b + (255 - b) * by);
+}
+/** …or a genuinely different hue, next to this one on the wheel. */
+function hueRotate(hex: string, degrees: number): string {
+  const [h, s, l] = rgbToHsl(...hexToRgb(hex));
+  return rgbToHex(...hslToRgb(h + degrees, s, l));
+}
+
+function gradientPartner(tint: string, rng: () => number): string {
+  const roll = rng();
+  if (roll < 0.4) return shade(tint, 0.5 + rng() * 0.2);
+  if (roll < 0.75) return towardWhite(tint, 0.45 + rng() * 0.3);
+  return hueRotate(tint, (rng() < 0.5 ? -1 : 1) * (24 + rng() * 40));
+}
+
+/**
+ * One (glyph, tint) pairing this roster hasn't handed out yet.
+ *
+ * A handful of draws almost always land somewhere free — ~40 accounts against
+ * pools this size leave hundreds of combinations — so the loop is a safety
+ * margin, not the mechanism; `used` is. Exhausting it genuinely can't happen
+ * at this roster size, but the loop still terminates on its own rather than
+ * trusting that, and hands back whatever it last drew if it somehow did.
+ */
+function pickUnused(pool: AvatarGlyph[], rng: () => number, used: Set<string>): { glyph: AvatarGlyph; tintIndex: number } {
+  let glyph: AvatarGlyph = pool[0], tintIndex = 0;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    glyph = pool[Math.floor(rng() * pool.length)];
+    tintIndex = Math.floor(rng() * TINTS.length);
+    const key = `${glyph}|${tintIndex}`;
+    if (!used.has(key)) { used.add(key); return { glyph, tintIndex }; }
+  }
+  return { glyph, tintIndex };
+}
+
+function avatarFor(s: Seed, rng: () => number, used: Set<string>): MediaAccount["avatar"] {
+  const pool = GLYPHS[s.archetype];
+  // A club wears its own kit, always — twenty real strips are already twenty
+  // different avatars, so it never needs to compete for a free slot.
   const kit = s.club ? kitsOf(s.club).home : null;
-  const tint = kit ? kit.shirt : pick(TINTS, rng);
+  if (kit) {
+    return {
+      initials: initialsOf(s.name),
+      tint: kit.shirt,
+      tint2: kit.trim,
+      glyph: pool[Math.floor(rng() * pool.length)],
+    };
+  }
+  const { glyph, tintIndex } = pickUnused(pool, rng, used);
+  const tint = TINTS[tintIndex];
   return {
     initials: initialsOf(s.name),
     tint,
-    tint2: kit ? kit.trim : shade(tint, 0.62),
+    tint2: gradientPartner(tint, rng),
     glyph,
   };
 }
 
-function account(s: Seed, rngSeed: string): MediaAccount {
+function account(s: Seed, rngSeed: string, used: Set<string>): MediaAccount {
   const rng = rngFor("acct", rngSeed, s.handle);
   return {
     id: s.handle,
@@ -159,7 +269,7 @@ function account(s: Seed, rngSeed: string): MediaAccount {
     platform: s.platform ?? "x",
     verified: s.verified ?? false,
     followers: s.followers,
-    avatar: avatarFor(s, rng),
+    avatar: avatarFor(s, rng, used),
     voice: VOICES[s.archetype],
     interests: INTERESTS[s.archetype],
   };
@@ -183,6 +293,10 @@ export function buildRoster(career: CareerState): MediaAccount[] {
   const leader = sortLeague(career.league)[0]?.name;
   const seedKey = `${me}|${clubs.length}|${career.season}`;
   const out: MediaAccount[] = [];
+  // One dedup set for the whole roster: a club's real kit never touches it
+  // (see avatarFor), so it only ever has to keep the ~20 non-club accounts
+  // below apart from each other.
+  const used = new Set<string>();
 
   // Every club in the division gets an account. Theirs post about their own
   // results; yours posts about you.
@@ -196,7 +310,7 @@ export function buildRoster(career: CareerState): MediaAccount[] {
         verified: true,
         followers: Math.round(200_000 + (strength / 100) * 8_000_000),
         club: c.name,
-      }, seedKey),
+      }, seedKey, used),
       allegiance: { club: c.name, polarity: 1 },
     });
   }
@@ -204,16 +318,16 @@ export function buildRoster(career: CareerState): MediaAccount[] {
   out.push(account({
     handle: "@PremierLeague", name: "The League", archetype: "league",
     verified: true, followers: 12_000_000,
-  }, seedKey));
+  }, seedKey, used));
 
   for (const comp of ["FA Cup", "Champions League", "Europa League"]) {
     out.push(account({
       handle: "@" + comp.replace(/\s+/g, ""), name: comp, archetype: "competition",
       verified: true, followers: comp === "Champions League" ? 9_000_000 : 1_400_000,
-    }, seedKey));
+    }, seedKey, used));
   }
 
-  for (const s of NATIONAL) out.push(account(s, seedKey));
+  for (const s of NATIONAL) out.push(account(s, seedKey, used));
 
   // Your supporters.
   const rng = rngFor("fans", seedKey);
@@ -223,7 +337,7 @@ export function buildRoster(career: CareerState): MediaAccount[] {
       ...account({
         handle: `@${h}`, name: FAN_NAMES[(hashSeed(me) + i * 7) % FAN_NAMES.length],
         archetype: "fan", followers: 200 + Math.floor(rng() * 9_000),
-      }, seedKey + i),
+      }, seedKey + i, used),
       allegiance: { club: me, polarity: 1 },
     });
   }
@@ -238,7 +352,7 @@ export function buildRoster(career: CareerState): MediaAccount[] {
         name: `${c} 'til I die`,
         archetype: "rivalFan",
         followers: 1_500 + Math.floor(rng() * 20_000),
-      }, seedKey + c),
+      }, seedKey + c, used),
       allegiance: { club: c, polarity: -1 },
     });
   }
@@ -254,7 +368,7 @@ export function buildRoster(career: CareerState): MediaAccount[] {
         platform: "instagram",
         verified: true,
         followers: 50_000 + Math.floor(rng() * 900_000),
-      }, seedKey + p.id),
+      }, seedKey + p.id, used),
       allegiance: { club: me, polarity: 1 },
     });
   }

@@ -307,7 +307,8 @@ export type Archetype =
  */
 export type AvatarGlyph =
   | "crest" | "trophy" | "ball" | "newspaper" | "megaphone"
-  | "chart" | "scoop" | "play" | "mic" | "scarf" | "shirt" | "grin";
+  | "chart" | "scoop" | "play" | "mic" | "scarf" | "shirt" | "grin"
+  | "cup" | "flag" | "quote" | "grid" | "drum" | "boot";
 
 export type Platform = "x" | "instagram" | "youtube" | "tiktok" | "news";
 

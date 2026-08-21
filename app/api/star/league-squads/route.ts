@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
-import { portraitsFromOtherEditions } from "@/lib/star/portraitFallback";
+import { portraitsFromOtherEditions, isSelfHosted } from "@/lib/star/portraitFallback";
 
 export const maxDuration = 30;
 // Reads the live DB, so it must never be frozen into a build-time snapshot.
@@ -106,7 +106,18 @@ export async function GET(request: NextRequest) {
   // his row while an older edition of him has a perfectly good one. One extra
   // query, only for the players who actually came back without a picture, and
   // only ever finding images we serve ourselves. See lib/star/portraitFallback.
-  const faceless = Object.values(squads).flat().filter(p => !p.image);
+  //
+  // `!p.image` alone is not "no picture" — it is "no picture AT ALL", and
+  // most of these rows have one: a raw `cdn.sofifa.net` link, scraped back
+  // when that CDN still served anonymously. That link is exactly the kind
+  // that stopped working, so a row that has one was never asked for the
+  // fallback and the browser was left to fail loading it — reported as
+  // Arsenal's Tzolis (a real FIFA 22 Norwich face on record) and Rashford
+  // both sitting on silhouettes despite a real photo existing somewhere in
+  // the archive. `isSelfHosted` is the actual question: does THIS row's link
+  // still work, not merely does a link exist. See app/api/draft/roster,
+  // which already asked the right question here.
+  const faceless = Object.values(squads).flat().filter(p => !isSelfHosted(p.image));
   if (faceless.length > 0) {
     const rescued = await portraitsFromOtherEditions(supabase, faceless.map(p => p.id), year);
     for (const p of faceless) {
