@@ -28,6 +28,8 @@ import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
+import { transferWindowFor } from "./calendar";
+import { runTransferWindow } from "./leagueTransfers";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
@@ -432,6 +434,31 @@ export function creditMatchResult(
   // The manager's view going into next week, so the dashboard's status is live
   // rather than the "1st Team" it was stamped with when the career was created.
   next.status = selectionFor(next).status;
+
+  // ── The rest of the division does its business ──
+  //
+  // Fires on the WEEK A WINDOW OPENS, not every week within one — a window
+  // decides its business once, the moment it opens, rather than trickling
+  // signings out day by day. `lastTransferWindowKey` (not just comparing
+  // `career.week` to `next.week`) is what actually makes this safe against a
+  // replay: the exact match re-credited hands `creditMatchResult` the same
+  // `career.week` both times, so a week-to-week comparison alone would open
+  // the window twice. The key instead asks "have I already run THIS window",
+  // which stays answered correctly no matter how many times this one match
+  // gets replayed.
+  if (next.leagueSquads?.length) {
+    const openedWindow = transferWindowFor(next.player.startYear, next.season, next.week);
+    if (openedWindow) {
+      const key = `${next.season}-${openedWindow}`;
+      if (career.lastTransferWindowKey !== key) {
+        const rng = mulberry32(next.season * 100003 + next.week * 37);
+        const { career: afterWindow, moves } = runTransferWindow(next, openedWindow, rng);
+        Object.assign(next, afterWindow);
+        next.leagueTransferNews = moves;
+        next.lastTransferWindowKey = key;
+      }
+    }
+  }
 
   return { ...applyAchievements(next), potmAwarded: potmJustAwarded ?? undefined };
 }

@@ -457,6 +457,26 @@ export interface CareerState {
   managerNews?: string | null;
   /** Sponsor objectives settled at the last rollover, for the dashboard. */
   sponsorNews?: string[];
+  /**
+   * What the rest of the division did with itself, the moment a transfer
+   * window last opened. Replaced whole by the next window, never appended —
+   * this is "what just happened", not a transfer history. See
+   * lib/star/leagueTransfers; import("./leagueTransfers").TransferMove kept
+   * as a structural type here rather than imported, so this file does not
+   * have to depend on the module that reads it.
+   */
+  leagueTransferNews?: {
+    player: string; from: string; to: string; overall: number; fee: number; unhappy: boolean;
+  }[];
+  /**
+   * `"<season>-<summer|january>"` of the last window actually run, so a
+   * replayed week — the exact match re-credited, `career.week` unchanged
+   * either time — can tell "I already ran this one" from "the calendar
+   * really has moved on since I last checked", which a week-to-week
+   * comparison alone cannot: a replay compares the same two weeks the
+   * original credit did and would open the window twice.
+   */
+  lastTransferWindowKey?: string;
   /** A farewell match, earned by a long spell at one club. */
   testimonial?: { club: string; season: number; payout: number } | null;
   /**
