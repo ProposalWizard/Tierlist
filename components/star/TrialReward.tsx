@@ -1,16 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import NewspaperHeadline from "./NewspaperHeadline";
 
 /**
  * WHAT THE TRIAL GETS YOU.
  *
  * Two beats after the penalty finally goes in, before the game proper starts.
  *
- *  1. A plain black card with a Continue. This is a PLACEHOLDER: an image goes
- *     here, supplied later. It is deliberately empty rather than filled with
- *     stand-in copy, so there is nothing to mistake for the finished thing and
- *     nothing to have to remember to delete. Drop the file in and point
- *     `imageSrc` at it.
+ *  1. The back page. A supplied newspaper splash (see NewspaperHeadline) with
+ *     the player's own surname, club and "wins the FA Youth Cup!" set into its
+ *     headline band — nothing to interact with, just a Continue. There is
+ *     nothing to persist here: it is read once and gone, the same as the real
+ *     thing.
  *  2. The offer, and the signing. The button does not say Continue — it says
  *     Sign it, because that is the action. Pressing it writes a signature
  *     across the page and only then moves on.
@@ -18,26 +19,23 @@ import { useEffect, useRef, useState } from "react";
 
 export default function TrialReward({
   playerName,
+  surname,
   club,
-  imageSrc,
   onDone,
 }: {
   playerName: string;
+  /** Just the surname — the newspaper headline reads "SURNAME WINS...", not the full name. */
+  surname: string;
   club: string;
-  /** The card art for beat 1, once it exists. Black until then. */
-  imageSrc?: string;
   onDone: () => void;
 }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [signing, setSigning] = useState(false);
 
   return step === 1 ? (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       <div className="flex-1 grid place-items-center p-4">
-        {imageSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageSrc} alt="" className="max-h-full max-w-full object-contain" />
-        ) : null}
+        <NewspaperHeadline surname={surname} club={club} />
       </div>
       <div className="p-4">
         <button

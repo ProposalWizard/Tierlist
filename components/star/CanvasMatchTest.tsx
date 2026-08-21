@@ -87,6 +87,18 @@ interface Props {
   fixture?: Fixture;
   oppStrength?: number;
   onComplete?: (stats: MatchStats) => void;
+  /**
+   * TEST-ONLY: pin every chance to one scenario kind instead of letting the
+   * match pick. Reported directly — "I have never taken a penalty in this
+   * game" turned out to be a real mechanic (penalty duty has to be earned;
+   * see setPieces.ts) rather than a bug, but there was no way to just LOOK at
+   * a penalty without playing dozens of matches hoping for the duty and the
+   * roll to line up. This bypasses duty, the hidden match's zone requests,
+   * and the dribble/chain follow-up logic entirely when set — every single
+   * kick is the chosen kind, which is the point: a scenario picker, not a
+   * scenario nudge.
+   */
+  forcedKind?: ScenarioKind | null;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -210,7 +222,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatchTest({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions }: Props) {
+export default function CanvasMatchTest({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, forcedKind = null }: Props) {
 
   // ── Who else is actually out there ──
   //
@@ -356,6 +368,8 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
   const hookedAtRef = useRef<number | null>(null);
   const dutiesRef = useRef(duties);
   dutiesRef.current = duties;
+  const forcedKindRef = useRef(forcedKind);
+  forcedKindRef.current = forcedKind;
   // Fixed for the whole match: every scenario is played in the same conditions,
   // because the weather does not change between one chance and the next.
   const conditionsRef = useRef<Conditions>(conditions ?? conditionsFor(0, 0));
@@ -369,6 +383,10 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
 
   /** Is this dead ball yours? With no duties supplied (the sandbox), everything is. */
   const mayTake = (kind: ScenarioKind) => {
+    // The picker overrides duty too — pinning to "penalty" and then having it
+    // handed to a teammate off-screen because you have not earned the duty
+    // is exactly the situation the picker exists to let you skip past.
+    if (forcedKindRef.current) return true;
     const d = dutiesRef.current;
     if (!d) return true;
     if (kind === "free_kick") return d.freeKicks;
@@ -488,7 +506,11 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
   const ourKit = () => (fixtureHomeRef.current ? kitsRef.current.home : kitsRef.current.away);
   const theirKit = () => (fixtureHomeRef.current ? kitsRef.current.away : kitsRef.current.home);
 
-  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship, career?.skills.vision ?? 55));
+  const scenarioRef = useRef<Scenario>(
+    forcedKind
+      ? buildScenario(forcedKind, mulberry32(seed), keeperStrength, teamRelationship, career?.skills.vision ?? 55)
+      : buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship, career?.skills.vision ?? 55),
+  );
   const ballRef = useRef<Ball | null>(null);
   const rngRef = useRef<() => number>(mulberry32(seed));
   const seedRef = useRef(seed);
@@ -2519,8 +2541,10 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
     const chain = chainRef.current;
     chainRef.current = null;
 
-    // A run at the defence rather than a ball to strike.
-    if (!attacking && request?.dribble) {
+    // A run at the defence rather than a ball to strike. Skipped entirely
+    // when a kind is forced — a picker that sometimes hands you a dribble
+    // instead is not a picker.
+    if (!attacking && !forcedKindRef.current && request?.dribble) {
       dribbleRef.current = newDribble({
         pace: careerRef.current?.skills.pace ?? 50,
         oppStrength: oppStrengthRef.current,
@@ -2544,7 +2568,12 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       return;
     }
 
-    if (chain) {
+    if (forcedKindRef.current) {
+      // The picker overrides everything below it — duty, the hidden match's
+      // own zone requests, chained follow-ups, all of it. Every single kick
+      // is the chosen kind, on purpose.
+      scenarioRef.current = buildScenario(forcedKindRef.current, rng, strengthRef.current, teamRef.current, visionRef.current);
+    } else if (chain) {
       // Built from where the pass actually arrived, so playing it into the
       // corner gives you a cutback and finding someone central gives you a shot.
       const kind = chainKindFor(chain.pos, rng, chain.ambition);

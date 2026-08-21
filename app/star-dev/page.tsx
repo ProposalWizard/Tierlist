@@ -882,6 +882,7 @@ export default function StarDevPage() {
     return (
       <TrialReward
         playerName={`${career.player.firstName} ${career.player.lastName}`}
+        surname={career.player.lastName}
         club={career.player.club}
         onDone={() => { setActiveNav(null); setPhase("dashboard"); }}
       />
