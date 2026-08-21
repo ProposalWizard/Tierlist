@@ -628,10 +628,13 @@ const KEEPER_LINE_MAX = 0.55;
 const KEEPER_OFF_LINE_MAX = 5.5;   // …to the front edge of his six-yard box
 const KEEPER_OFF_LINE_ODDS = 0.2;
 
-function makeKeeper(x: number, y = 0.8, rng?: () => number): Keeper {
+// Synced from canvasEngine.ts: allowAdvance lets a dead ball (penalty, free
+// kick) opt out of the "advanced keeper" roll, which a real keeper never
+// does before either of those is struck.
+function makeKeeper(x: number, y = 0.8, rng?: () => number, allowAdvance = true): Keeper {
   const kx = clamp(x, POST_L - 2.5, POST_R + 2.5);
   const r = rng ? rng() : 0.5;
-  const advanced = rng ? rng() < KEEPER_OFF_LINE_ODDS : false;
+  const advanced = allowAdvance && rng ? rng() < KEEPER_OFF_LINE_ODDS : false;
   const ky = advanced
     ? 1.6 + (rng ? rng() : 0.5) * (KEEPER_OFF_LINE_MAX - 1.6)
     : clamp(y, 0.3, KEEPER_LINE_MAX);
@@ -1902,16 +1905,31 @@ function buildMidfieldPass(rng: () => number, keeperStrength: number, teamRelati
   } as unknown as Scenario;
 }
 
-// Penalty — the spot is 11 m out, the keeper must stay on his line.
+// Penalty — the spot is 11 m out, the keeper must stay on his line. Synced
+// from canvasEngine.ts: nobody stands behind the kicker — one team-mate and
+// one defender on each side of the D instead, ready for a rebound (never the
+// kicker himself — this engine has exactly one interactive rebound-chaser,
+// `follower`, and it is one of the two team-mates here).
 function buildPenalty(rng: () => number, keeperStrength: number, teamRelationship: number) {
+  const followerSide = rng() < 0.5 ? -1 : 1;
+  const dx = 7.2 + rng() * 1.3;
+  const rowY = BOX_DEPTH + 0.7 + rng() * 1.1;
+  const mateY = rowY + 1.5 + rng() * 1.1;
+  const leftDefender = { x: CX - dx, y: rowY };
+  const rightDefender = { x: CX + dx, y: rowY };
+  const leftMate = { x: CX - dx - 0.9, y: mateY };
+  const rightMate = { x: CX + dx + 0.9, y: mateY };
+  const follower = followerSide > 0 ? rightMate : leftMate;
+  const otherMate = followerSide > 0 ? leftMate : rightMate;
   return {
     ball: { x: CX, y: PEN_SPOT_Y },
     player: { x: CX, y: PEN_SPOT_Y + 1.6 },
-    defenders: [],
-    keeper: makeKeeper(CX + (rng() - 0.5) * 1.2, 0.4, rng),
-    keeperStrength, follower: { x: CX + 3, y: PEN_SPOT_Y + 2, active: false, shot: false } as Follower,
+    defenders: [leftDefender, rightDefender],
+    keeper: makeKeeper(CX + (rng() - 0.5) * 1.2, 0.4, rng, false),
+    keeperStrength,
+    follower: { x: follower.x, y: follower.y, active: false, shot: false } as Follower,
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "penalty" as const, teammates: [], runner: null, passTarget: null,
+    kind: "penalty" as const, teammates: [otherMate], runner: null, passTarget: null,
     receiver: null, receiverDone: false, teamRelationship,
   } as unknown as Scenario;
 }
@@ -1940,7 +1958,8 @@ function buildFreeKick(rng: () => number, keeperStrength: number, teamRelationsh
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 2 },
     defenders,
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 1 + rng() * 0.8, rng),
+    // Synced from canvasEngine.ts: on his line — see makeKeeper's allowAdvance.
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 1 + rng() * 0.8, rng, false),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "free_kick" as const, teammates: [], runner: null, passTarget: null,
@@ -1949,26 +1968,54 @@ function buildFreeKick(rng: () => number, keeperStrength: number, teamRelationsh
 }
 
 // Corner — taken from the corner arc, delivered into the box for a header.
+// Synced from canvasEngine.ts: a genuine touchline position (6-7.5m in —
+// any closer and the power-drag gesture loses its room at this engine's one
+// fixed zoom, tests/star/aiming.mts), and a hand-built crowd — 3-6
+// team-mates, defenders never more than one ahead of that, the first
+// defender always marking the actual header target.
 function buildCorner(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const side = rng() < 0.5 ? -1 : 1;
-  // On the byline at the edge of the frame rather than out at the flag. The
-  // situation is the rectangle; a taker forty metres outside it is not part of
-  // it, and framing him meant framing half the pitch.
-  const bx = WIDE_DELIVERY_X(side);
-  const by = 0.4;
+  const bx = side > 0 ? PITCH_W - (6 + rng() * 1.5) : 6 + rng() * 1.5;
+  const by = 0.6 + rng() * 0.5;
   const to = { x: CX + (rng() - 0.5) * 10, y: 4 + rng() * 5 };
   const from = { x: to.x - side * 2.2, y: to.y + 2.5 + rng() * 1.5 };
+
+  const teamCount = 3 + Math.floor(rng() * 4);         // 3–6, the target runner included
+  const defCount = teamCount + (rng() < 0.5 ? 0 : 1);  // equal, or one spare — never more
+
+  const ZONES = [
+    { x: CX - side * 9, y: 4.5 },
+    { x: CX,            y: 6.5 },
+    { x: CX + side * 9, y: 5 },
+    { x: CX + side * 3, y: 12 },
+  ];
+  const teammates: { x: number; y: number }[] = [];
+  for (let i = 1; i < teamCount; i++) {                 // i=0 is the runner itself
+    const z = ZONES[i % ZONES.length];
+    teammates.push({
+      x: clamp(z.x + (rng() - 0.5) * 3.5, 9, PITCH_W - 9),
+      y: clamp(z.y + (rng() - 0.5) * 2.5, 2, 15),
+    });
+  }
+  const defenders: { x: number; y: number }[] = [
+    { x: clamp(to.x + (rng() - 0.5) * 4, 8, PITCH_W - 8), y: clamp(to.y + 0.8, 3, 11) },
+  ];
+  for (let i = 1; i < defCount; i++) {
+    const mark = teammates[(i - 1) % Math.max(1, teammates.length)] ?? to;
+    defenders.push({
+      x: clamp(mark.x + (rng() - 0.5) * 2, 8, PITCH_W - 8),
+      y: clamp(mark.y - 1.2 - rng() * 1.5, 2, 15),
+    });
+  }
+
   return {
     ball: { x: bx, y: by },
     player: { x: bx + side * 1.2, y: by + 1.2 },
-    defenders: [
-      { x: clamp(to.x + (rng() - 0.5) * 4, 8, PITCH_W - 8), y: clamp(to.y + 0.8, 3, 11) },
-      { x: clamp(CX - side * 3, 8, PITCH_W - 8), y: clamp(to.y + 2.5, 5, 13) },
-    ],
+    defenders,
     keeper: makeKeeper(CX + side * 1.5, 1.2 + rng() * 1, rng),
     keeperStrength, follower: makeFollower(rng, 9),
     goal: GOAL, crossbar: CROSSBAR,
-    kind: "corner" as const, teammates: [],
+    kind: "corner" as const, teammates,
     runner: makeRunner(to, from), passTarget: to,
     receiver: rollReceiver("corner", rng), receiverDone: false, teamRelationship,
   } as unknown as Scenario;
@@ -2120,7 +2167,9 @@ const SUPPORT_RANGE: Record<ScenarioKind, [number, number]> = {
   long_range: [0, 2],
   // A ball that has to be played to somebody already HAS somebody to play it to
   // — the target runner is not counted here — so these add little of their own.
-  cutback: [0, 1], byline_cross: [0, 1], through_ball: [0, 1], corner: [0, 1],
+  cutback: [0, 1], byline_cross: [0, 1], through_ball: [0, 1],
+  // Synced from canvasEngine.ts: corner builds its whole crowd by hand now.
+  corner: [0, 0],
   midfield_pass: [1, 2], buildup: [0, 2],
   // Nobody makes a run while the referee is waiting for you to place the ball.
   penalty: [0, 0], free_kick: [0, 0],
@@ -2196,7 +2245,8 @@ const COVER_RANGE: Record<ScenarioKind, [number, number]> = {
   // A free kick already has a wall of three or four in front of it, and they
   // ARE the cover. Adding more put bodies across the flight of a ball lifted
   // over the wall, so the one free kick that is supposed to work could not.
-  penalty: [0, 0], free_kick: [0, 0], corner: [2, 4],
+  // Synced from canvasEngine.ts: corner builds its own defenders now too.
+  penalty: [0, 0], free_kick: [0, 0], corner: [0, 0],
 };
 
 /**
