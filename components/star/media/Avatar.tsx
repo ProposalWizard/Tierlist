@@ -111,6 +111,50 @@ function Glyph({ kind }: { kind: AvatarGlyph }) {
           <path d="M9 9.5h.01M15 9.5h.01" strokeWidth="2.4" />
         </g>
       );
+    case "cup":
+      return (
+        <g {...stroke}>
+          <path d="M8.5 4h7v6.5a3.5 3.5 0 0 1-7 0V4z" />
+          <path d="M9 20h6M12 17.5v2.5" />
+          <path d="M8.5 5H6a3 3 0 0 0 3 4M15.5 5H18a3 3 0 0 1-3 4" />
+        </g>
+      );
+    case "flag":
+      return (
+        <g {...stroke}>
+          <path d="M6 3.5v17" />
+          <path d="M6 5l6 2.2L6 9.4V5z" fill="currentColor" />
+          <path d="M6 5h9l-2 3.5 2 3.5H6" />
+        </g>
+      );
+    case "quote":
+      return (
+        <g {...stroke}>
+          <path d="M5.5 8.5c0-2.2 1.6-3.8 4-4M5.5 8.5v4.3h4V9.2H6.2M14 8.5c0-2.2 1.6-3.8 4-4M14 8.5v4.3h4V9.2h-3.3" />
+        </g>
+      );
+    case "grid":
+      return (
+        <g {...stroke}>
+          <rect x="4.5" y="4.5" width="15" height="15" rx="1.5" />
+          <path d="M4.5 10h15M4.5 15h15M10 4.5v15M15 4.5v15" />
+        </g>
+      );
+    case "drum":
+      return (
+        <g {...stroke}>
+          <ellipse cx="12" cy="8" rx="7.5" ry="3.2" />
+          <path d="M4.5 8v6.5c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2V8" />
+          <path d="M6 5.5L3 3M18 5.5l3-2.5" />
+        </g>
+      );
+    case "boot":
+      return (
+        <g {...stroke}>
+          <path d="M8 4.5v6.2l-4.3 3.3c-.8.6-1.2 1.5-1.2 2.5v1.5h15.5c1.1 0 2-.9 2-2 0-2.4-1.7-4.4-4-4.9l-4-.9V4.5H8z" />
+          <path d="M8 8h4M2.5 17h17" />
+        </g>
+      );
     default:
       return null;
   }
