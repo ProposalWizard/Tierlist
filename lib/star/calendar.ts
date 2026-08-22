@@ -130,6 +130,24 @@ export interface CupSlot {
  */
 export type CareerDivision = "premier" | "championship";
 
+/**
+ * Which division a career is in, for anything that has to ask.
+ *
+ * The ONE place `CareerState.division` is read, so "a save from before the
+ * Championship existed is a Premier League save" is stated once instead of
+ * being re-derived — and correctly — at every call site. Takes the field
+ * structurally rather than the whole CareerState so this file goes on
+ * importing nothing.
+ */
+export function divisionOf(career: { division?: CareerDivision }): CareerDivision {
+  return career.division ?? "premier";
+}
+
+/** What the division is called, on a screen or on a trophy. */
+export function leagueNameFor(division: CareerDivision): string {
+  return division === "championship" ? "Championship" : "Premier League";
+}
+
 /** A Championship season is forty-six games, because it is twenty-four clubs. */
 export const CHAMPIONSHIP_MATCHWEEKS = 46;
 

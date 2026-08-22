@@ -322,6 +322,16 @@ export interface CareerState {
   relationships: Relationships;
   contract: Contract;
   season: number;
+  /**
+   * Which division this season is being played in.
+   *
+   * Optional, and absent means the Premier League — every career saved
+   * before the Championship existed was one, and `divisionOf` below is the
+   * only thing that should ever read this field directly so that stays true
+   * in one place rather than twenty. Changes at a season rollover when your
+   * club is promoted or relegated; never mid-season.
+   */
+  division?: import("./calendar").CareerDivision;
   week: number;
   energy: number;
   matchFitness: number;

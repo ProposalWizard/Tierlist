@@ -28,7 +28,7 @@ import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { transferWindowFor } from "./calendar";
+import { transferWindowFor, divisionOf, leagueNameFor } from "./calendar";
 import { runTransferWindow } from "./leagueTransfers";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
 import {
@@ -447,7 +447,7 @@ export function creditMatchResult(
   // which stays answered correctly no matter how many times this one match
   // gets replayed.
   if (next.leagueSquads?.length) {
-    const openedWindow = transferWindowFor(next.player.startYear, next.season, next.week);
+    const openedWindow = transferWindowFor(next.player.startYear, next.season, next.week, divisionOf(next));
     if (openedWindow) {
       const key = `${next.season}-${openedWindow}`;
       if (career.lastTransferWindowKey !== key) {
@@ -471,9 +471,13 @@ export function awardLeagueTrophyIfWon(career: CareerState): { career: CareerSta
   // Idempotent: the end of a season can now be reached twice — once through the
   // post-match screen and once through the dashboard's end-of-season prompt after
   // a refresh — and a title must not be awarded twice for it.
-  const already = career.trophies.some(t => t.season === career.season && t.competition === "Premier League");
+  // Whichever division you actually won — winning the Championship is a real
+  // trophy and is not the Premier League, which the achievements that check
+  // for a league title by name depend on staying true.
+  const competition = leagueNameFor(divisionOf(career));
+  const already = career.trophies.some(t => t.season === career.season && t.competition === competition);
   if (already) return { career, wonLeague: true };
-  const trophy = { season: career.season, competition: "Premier League", club: career.player.club };
+  const trophy = { season: career.season, competition, club: career.player.club };
   return { career: { ...career, trophies: [...career.trophies, trophy] }, wonLeague: true };
 }
 

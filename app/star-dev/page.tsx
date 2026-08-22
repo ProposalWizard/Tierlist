@@ -9,7 +9,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
-import { fixtureDateLabel } from "@/lib/star/calendar";
+import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { formationOf, type Role } from "@/lib/star/formations";
@@ -228,7 +228,7 @@ export default function StarDevPage() {
   // When it is played, in real dates. The fixture list has had these since the
   // calendar landed; this is the screen everybody actually looks at.
   const nextMatchDate = nextFixture && career
-    ? fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)
+    ? fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))
     : null;
 
   /**
@@ -1077,11 +1077,11 @@ export default function StarDevPage() {
       return (
         <VersusScreen
           matchday={matchday}
-          date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)}
+          date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
           results={career.results}
           competition={
             !nextFixture.kind || nextFixture.kind === "league"
-              ? `Premier League · Matchday ${nextFixture.week}`
+              ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`
               : `${nextFixture.competition}${nextFixture.round ? ` · ${nextFixture.round}` : ""}`
           }
           onKickOff={() => { setShowTeams(false); setPlayAs(null); handlePlayMatch(); }}

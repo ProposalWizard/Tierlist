@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { fixtureDateLabel, isPostSeason } from "@/lib/star/calendar";
+import { fixtureDateLabel, isPostSeason, divisionOf } from "@/lib/star/calendar";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
@@ -87,7 +87,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
               </div>
               {round.length > 0 && (
                 <div className="text-[9px] font-bold text-white/70">
-                  {fixtureDateLabel(career.player.startYear, career.season, shownWeek, "league")}
+                  {fixtureDateLabel(career.player.startYear, career.season, shownWeek, "league", divisionOf(career))}
                 </div>
               )}
             </div>
@@ -190,10 +190,10 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                   message the game writes, still counts in them. */}
               <div className="text-center text-[9px] font-black leading-none">
                 <div className="whitespace-nowrap">
-                  {fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind)}
+                  {fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}
                 </div>
                 <div className="mt-0.5 text-[8px] font-bold text-white/60">
-                  {isPostSeason(f.week) ? "FINAL" : f.week === 0 ? "PRE" : `W${f.week}`}
+                  {isPostSeason(f.week, divisionOf(career)) ? "FINAL" : f.week === 0 ? "PRE" : `W${f.week}`}
                 </div>
                 {f.kind && f.kind !== "league" && (
                   <div className={`text-[8px] font-black uppercase leading-none mt-0.5 ${
