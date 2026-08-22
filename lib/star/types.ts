@@ -73,7 +73,9 @@ export type Competition =
   /** One match, before the season: the Champions League holders v the Europa League holders. */
   | "Super Cup"
   | "World Cup"
-  | "European Championship";
+  | "European Championship"
+  /** Third to sixth in the Championship, for the last promotion place. */
+  | "Play-Offs";
 
 export interface Fixture {
   week: number;
@@ -88,7 +90,7 @@ export interface Fixture {
   // ── Knockout football. Absent on a league fixture, which is what every
   //    fixture was until cups existed — so absent means league. ──
   competition?: Competition;
-  kind?: "league" | "cup" | "europe" | "international";
+  kind?: "league" | "cup" | "europe" | "international" | "playoff";
   /** The one against the club down the road. Same football, louder consequences. */
   derby?: boolean;
   round?: string;
@@ -341,6 +343,14 @@ export interface CareerState {
    * one whose divisions still ARE those lists. See lib/star/promotion.
    */
   divisions?: { premier: string[]; championship: string[]; pool: string[] };
+  /**
+   * The Championship play-offs, once your club has reached them.
+   *
+   * Only ever set in a Championship season, and only when you finished third
+   * to sixth — everybody else's play-offs are simulated at the rollover and
+   * never need state. See lib/star/playoffs.
+   */
+  playOffState?: import("./playoffs").PlayOffState;
   /** What went up and down at the last rollover, for the screen that says so. */
   ladderNews?: {
     yourMove: "promoted" | "relegated" | null;
@@ -518,6 +528,8 @@ export interface CareerState {
 
 export type StarPhase =
   | "profile-setup"
+  /** What went up and down, shown once at a rollover. See LadderScreen. */
+  | "ladder"
   | "dashboard"
   | "league"
   | "life"

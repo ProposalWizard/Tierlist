@@ -31,6 +31,7 @@ import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { runTransferWindow } from "./leagueTransfers";
 import { resolveLadder, membershipOf } from "./promotion";
+import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
@@ -438,6 +439,27 @@ export function creditMatchResult(
   // The manager's view going into next week, so the dashboard's status is live
   // rather than the "1st Team" it was stamped with when the career was created.
   next.status = selectionFor(next).status;
+
+  // ── The play-offs ──
+  //
+  // Seeded the instant the last league round is credited, so the fixtures
+  // exist before the next screen renders; settled here too when the match
+  // just played was one of them. Both are no-ops outside a Championship
+  // season in which you finished third to sixth. See lib/star/playoffs.
+  if (fixture.kind === "playoff") {
+    const settled = settlePlayOffFixture(career, fixture, stats.homeScore, stats.awayScore);
+    if (settled) {
+      next.playOffState = settled.state;
+      if (settled.fixtures.length) next.fixtures = [...next.fixtures, ...settled.fixtures];
+      next.knockoutMessage = settled.message;
+    }
+  } else if (kind === "league" && leagueSeasonComplete(next, fixture.week)) {
+    const seeded = seedPlayOffs(next);
+    if (seeded) {
+      next.playOffState = seeded.state;
+      next.fixtures = [...next.fixtures, ...seeded.fixtures];
+    }
+  }
 
   // ── The rest of the division does its business ──
   //

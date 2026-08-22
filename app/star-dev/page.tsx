@@ -34,6 +34,7 @@ import TrialReward from "@/components/star/TrialReward";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
+import LadderScreen from "@/components/star/LadderScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
@@ -670,6 +671,17 @@ export default function StarDevPage() {
           headline: next.lastSeasonJudgement.headline, detail: next.lastSeasonJudgement.detail }, "review");
     }
     setCareer(next);
+    // ── What went up and down, before anything else ──
+    //
+    // Shown whether or not it involved you: a division changing shape around
+    // you is news even from mid-table. A forced contract renewal still wins,
+    // because that one is a decision rather than a report — the ladder is
+    // waiting on the other side of it via the dashboard.
+    if (next.ladderNews && next.contract.seasonsRemaining > 0) {
+      setActiveNav(null);
+      setPhase("ladder");
+      return;
+    }
     // A new club came with a new contract, so a renewal is only forced when you
     // stayed and let the old one run out.
     if (next.contract.seasonsRemaining <= 0) {
@@ -920,6 +932,15 @@ export default function StarDevPage() {
 
   if (phase === "profile-setup" || !career) {
     return <ProfileSetup onComplete={handleProfileComplete} />;
+  }
+
+  if (phase === "ladder" && career?.ladderNews) {
+    return (
+      <LadderScreen
+        career={career}
+        onContinue={() => { setActiveNav(null); setPhase("dashboard"); }}
+      />
+    );
   }
 
   if (phase === "training" && trainingSkill) {

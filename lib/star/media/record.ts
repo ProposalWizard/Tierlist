@@ -65,7 +65,10 @@ export function buildMatchRecord(
   fixture: Fixture,
   stats: MatchStats,
 ): MatchRecord {
-  const kind = fixture.kind ?? "league";
+  // A play-off tie is knockout football — two legs and a final — so the media
+  // engine covers it as a cup run rather than needing a fifth kind of its own
+  // that every detector and template would then have to know about.
+  const kind = fixture.kind === "playoff" ? "cup" : (fixture.kind ?? "league");
   const competition = fixture.competition ?? "Premier League";
   const clubs = before.league.map(t => t.name);
   const derby = fixture.derby ?? isDerby(before.player.club, fixture.opponent, clubs);

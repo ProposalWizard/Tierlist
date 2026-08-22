@@ -238,9 +238,14 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   } else {
     // You played the Championship: first and second go up automatically, and
     // the play-offs decide the third.
-    playOffs = resolvePlayOffs(career.league, strength, rng);
+    // A play-off your own club reached was PLAYED, not simulated — see
+    // lib/star/playoffs — so its result is the truth and must not be
+    // re-rolled here. Everybody else's is simulated as normal.
+    const played = career.playOffState?.promoted;
+    playOffs = played ? null : resolvePlayOffs(career.league, strength, rng);
     const auto = names.slice(0, 2);
-    promotedToPremier = playOffs ? [...auto, playOffs.promoted] : auto;
+    const third = played ?? playOffs?.promoted;
+    promotedToPremier = third ? [...auto, third] : auto;
     // ── There is nothing below the Championship to play in ──
     //
     // The pool is a hat, not a division: it has no fixtures, no table and no
