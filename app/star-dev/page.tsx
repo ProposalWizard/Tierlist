@@ -611,6 +611,35 @@ export default function StarDevPage() {
     setPhase("dashboard");
   }, [career, currentDilemma]);
 
+  // ── A division you have not played before needs its dressing rooms ──
+  //
+  // Promotion and relegation replace most of the clubs around you (see
+  // lib/star/promotion), and advanceSeason deliberately drops the squads of
+  // the ones you have left behind rather than carrying dead weight. This
+  // notices whichever clubs are in your league table with no squad against
+  // them — after a rollover, after a transfer, after a save that predates
+  // any of it — and fetches exactly those, merging rather than replacing so
+  // the clubs you kept keep this season's goals.
+  useEffect(() => {
+    if (!career?.league?.length) return;
+    const have = new Set((career.leagueSquads ?? []).map(s => s.club));
+    const missing = career.league.map(t => t.name).filter(n => !have.has(n));
+    if (missing.length === 0) return;
+    let alive = true;
+    fetchLeagueSquads(missing).then((fresh) => {
+      if (!alive) return;
+      setCareer(c => {
+        if (!c) return c;
+        const already = new Set((c.leagueSquads ?? []).map(s => s.club));
+        const leagueSquads = [...(c.leagueSquads ?? []), ...fresh.filter(s => !already.has(s.club))];
+        return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+      });
+    });
+    return () => { alive = false; };
+    // Keyed on the club list itself, so it re-runs exactly when the division
+    // changes rather than on every state change.
+  }, [career?.league?.map(t => t.name).join("|"), career?.leagueSquads?.length]);
+
   // Rolling into the next season, once anything that happens BETWEEN seasons is
   // out of the way. Split out because three different screens end here.
   const rollOverSeason = useCallback((from: CareerState, userWon: boolean) => {

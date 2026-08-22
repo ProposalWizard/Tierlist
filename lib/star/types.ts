@@ -332,6 +332,24 @@ export interface CareerState {
    * club is promoted or relegated; never mid-season.
    */
   division?: import("./calendar").CareerDivision;
+  /**
+   * Who is in each division, and in the pool below them, right now.
+   *
+   * Kept on the career because it changes: the lists in lib/star/clubs.ts
+   * are this season's, and a save three seasons deep has moved on from
+   * them. Absent means a career that predates promotion and relegation —
+   * one whose divisions still ARE those lists. See lib/star/promotion.
+   */
+  divisions?: { premier: string[]; championship: string[]; pool: string[] };
+  /** What went up and down at the last rollover, for the screen that says so. */
+  ladderNews?: {
+    yourMove: "promoted" | "relegated" | null;
+    promotedToPremier: string[];
+    relegatedFromPremier: string[];
+    promotedToChampionship: string[];
+    relegatedFromChampionship: string[];
+    playOffFinal?: { home: string; away: string; hs: number; as: number; winner: string };
+  };
   week: number;
   energy: number;
   matchFitness: number;

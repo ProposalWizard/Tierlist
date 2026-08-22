@@ -30,6 +30,7 @@ import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { runTransferWindow } from "./leagueTransfers";
+import { resolveLadder, membershipOf } from "./promotion";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
@@ -489,7 +490,16 @@ export function awardLeagueTrophyIfWon(career: CareerState): { career: CareerSta
 // Ballon d'Or if won. Whether the contract now needs renewing is the caller's call
 // via next.contract.seasonsRemaining.
 export function advanceSeason(career: CareerState, userWonBallonDor: boolean): { career: CareerState; newlyUnlocked: string[] } {
-  const clubs = career.league.map((t) => t.name);
+  // ── Up and down, before anything is rebuilt ──
+  //
+  // Next season's division and club list, which used to be simply "the same
+  // twenty as last season, forever". Your own division's three are decided by
+  // its real table (and, in the Championship, by real play-offs); the other
+  // division's are drawn weighted by strength, because nobody played it. See
+  // lib/star/promotion.
+  const ladder = resolveLadder(career, mulberry32(career.season * 90247 + career.league.length * 13));
+  const clubs = ladder.clubs;
+  const nextDivision = ladder.division;
   const newAge = career.player.age + 1;
   const ageEffect = (v: number): number => {
     if (newAge >= 34) return Math.max(20, v - 3);
@@ -533,7 +543,11 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
   const wonFaCup = thisSeason.some(t => t.competition === "FA Cup");
   const wonLeagueCup = thisSeason.some(t => t.competition === "League Cup");
   const wonEuroComp = thisSeason.some(t => t.competition === "Champions League" || t.competition === "Europa League");
-  const qualification = qualificationFor(
+  // Europe is a Premier League reward. Finishing fourth in the Championship
+  // qualifies you for promotion, not for the Champions League — and
+  // `qualificationFor` only knows about positions and club counts, so it
+  // would happily hand out a European place for one if it were asked.
+  const qualification = divisionOf(career) === "championship" ? null : qualificationFor(
     leaguePosition(career), career.league.length, wonFaCup, wonLeagueCup, wonEuroComp,
   );
 
@@ -586,13 +600,30 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     player: { ...career.player, age: newAge },
     skills: agedSkills,
     season: career.season + 1,
+    division: nextDivision,
+    divisions: ladder.divisions,
+    ladderNews: {
+      yourMove: ladder.yourMove,
+      promotedToPremier: ladder.promotedToPremier,
+      relegatedFromPremier: ladder.relegatedFromPremier,
+      promotedToChampionship: ladder.promotedToChampionship,
+      relegatedFromChampionship: ladder.relegatedFromChampionship,
+      ...(ladder.playOffs ? { playOffFinal: ladder.playOffs.final } : {}),
+    },
     week: 1,
     fixtures: buildFixtures(clubs, career.player.club),
     league: buildLeague(clubs, career.player.club),
     // Last season's results belong to last season.
     results: [],
     leagueSeasonStats: { goals: 0, assists: 0 },
-    leagueSquads: resetLeagueSquads(career.leagueSquads ?? []),
+    // Only the clubs you are actually playing next season. Going up or down
+    // replaces most of the division, and a squad for a club that is no longer
+    // in it is dead weight the team sheet would never read; the ones now
+    // missing are refetched by the page (see the division-change effect in
+    // app/star-dev/page.tsx).
+    leagueSquads: resetLeagueSquads(
+      (career.leagueSquads ?? []).filter(s => clubs.includes(s.club)),
+    ),
     seasonStats: { ...EMPTY_SEASON_STATS },
     energy: 100,
     matchFitness: 85,

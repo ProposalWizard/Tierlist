@@ -42,11 +42,27 @@ export const CHAMPIONSHIP_CLUBS: readonly string[] = [
  */
 export const PROMOTION_POOL_CLUBS: readonly string[] = [
   "Luton Town", "Huddersfield Town", "Leicester City", "Reading", "Wigan Athletic",
-  // "Villarreal" was given here too ("Villareal"), but it's already the
-  // Champions League club above — treated as one mention, not two.
-  // "Ajax" moved to the Europa League list below — the first Europa League
-  // list was short seven clubs of the real thirty-six, and Ajax was one of
-  // the seven named to fill it in.
+];
+
+/**
+ * Clubs with a squad in the game and no place on the English ladder.
+ *
+ * Kept deliberately apart from PROMOTION_POOL_CLUBS, which these used to
+ * share a list with. That was a real bug and not only an untidy one: the
+ * promotion pool is drawn from to fill Championship places, so Sevilla,
+ * Monaco and Al Hilal were being promoted into the English second tier —
+ * caught by printing eight seasons of a ladder rather than by any assertion,
+ * because the invariant everything was checked against (the pool stays the
+ * same size) held perfectly while its contents made no sense.
+ *
+ * The Lineups picker shows both lists under "Other"; nothing else should
+ * ever put these two together.
+ *
+ * "Villarreal" was given here too ("Villareal") but is already the Champions
+ * League club above — one mention, not two. "Ajax" moved to the Europa
+ * League list, which was seven short of the real thirty-six.
+ */
+export const OTHER_CLUBS: readonly string[] = [
   "Sevilla", "Eintracht Frankfurt", "Schalke", "Monaco",
   "Strasbourg", "Atalanta", "Lazio", "Al Hilal", "Al Nassr",
   "Al Ahli", "Al Ittihad",
@@ -92,6 +108,7 @@ const DIVISION_BY_CLUB = new Map<string, Division>([
   ...PREMIER_LEAGUE_CLUBS.map(c => [c, "premier"] as const),
   ...CHAMPIONSHIP_CLUBS.map(c => [c, "championship"] as const),
   ...PROMOTION_POOL_CLUBS.map(c => [c, "pool"] as const),
+  ...OTHER_CLUBS.map(c => [c, "pool"] as const),
   ...CHAMPIONS_LEAGUE_CLUBS.map(c => [c, "champions"] as const),
   ...EUROPA_LEAGUE_CLUBS.map(c => [c, "europa"] as const),
 ]);

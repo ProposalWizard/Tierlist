@@ -4,7 +4,7 @@ import LineupBuilder from "@/components/star/LineupBuilder";
 import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import {
-  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, OTHER_CLUBS,
   CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, type Division,
 } from "@/lib/star/clubs";
 import type { LeagueSquad } from "@/lib/star/types";
@@ -31,7 +31,10 @@ const TABS: { key: Division; label: string; clubs: readonly string[] }[] = [
   { key: "championship", label: "Championship", clubs: CHAMPIONSHIP_CLUBS },
   { key: "champions", label: "Champions League", clubs: CHAMPIONS_LEAGUE_CLUBS },
   { key: "europa", label: "Europa League", clubs: EUROPA_LEAGUE_CLUBS },
-  { key: "pool", label: "Other", clubs: PROMOTION_POOL_CLUBS },
+  // The promotion pool and the standalone clubs are different things
+  // (see clubs.ts) but share one tab, because both answer "a club that is
+  // not in either division right now".
+  { key: "pool", label: "Other", clubs: [...PROMOTION_POOL_CLUBS, ...OTHER_CLUBS] },
 ];
 
 export default function LineupsPage() {
