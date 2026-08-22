@@ -1,5 +1,5 @@
 import type { CareerState } from "../types";
-import { rivalOf } from "../rivals";
+import { primaryRivalOf } from "../rivalries";
 import { sortLeague } from "../season";
 import type { Archetype, AvatarGlyph, MediaAccount, Platform, Tag, VoiceProfile } from "./types";
 import { kitsOf } from "../kits";
@@ -289,7 +289,7 @@ function clubHandle(club: string): string {
 export function buildRoster(career: CareerState): MediaAccount[] {
   const clubs = career.league.map(t => t.name);
   const me = career.player.club;
-  const rival = rivalOf(me, clubs);
+  const rival = primaryRivalOf(me);
   const leader = sortLeague(career.league)[0]?.name;
   const seedKey = `${me}|${clubs.length}|${career.season}`;
   const out: MediaAccount[] = [];

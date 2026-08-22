@@ -1,5 +1,5 @@
 import { makeManager, sackCheck, bossOnArrival, STYLE_SELECTION, styleBlurb } from "../../lib/star/manager";
-import { rivalMap, rivalOf, isDerby, DERBY_MULTIPLIER } from "../../lib/star/rivals";
+import { primaryRivalOf, isDerby, strongestTier, rivalryMultiplier } from "../../lib/star/rivalries";
 import { pressQuestionFor } from "../../lib/star/media";
 import { selectionFor } from "../../lib/star/selection";
 import { makeInitialCareer, creditMatchResult, advanceSeason } from "../../lib/star/careerFlow";
@@ -33,7 +33,13 @@ const PLAYER: StarPlayer = {
   firstName: "Test", lastName: "Player", age: 24, position: "ST",
   club: "Arsenal", nationality: "England", startYear: 2026,
 } as StarPlayer;
-const CLUBS = ["Arsenal", "Chelsea", "Liverpool", "Man City", "Man Utd", "Spurs", "Newcastle", "Aston Villa", "Brighton", "West Ham"];
+// Real spellings, not shorthand — lib/star/rivalries.ts is keyed off the
+// exact names lib/star/clubs.ts uses, and the whole point of this block is
+// to exercise the real rivalry data rather than an invented pairing.
+const CLUBS = [
+  "Arsenal", "Tottenham Hotspur", "Chelsea", "Liverpool", "Everton",
+  "Manchester City", "Manchester United", "Newcastle United", "Aston Villa", "Brighton & Hove Albion",
+];
 const base = () => makeInitialCareer(PLAYER, CLUBS);
 
 const result = (mine: number, theirs: number, over: Partial<MatchStats> = {}): MatchStats => ({
@@ -115,42 +121,32 @@ function finishNth(c: CareerState, place: number): CareerState {
   check(!good.managerNews, "and there is no news to report");
 }
 
-// ── Derbies ─────────────────────────────────────────────────────────────────
+// ── Rivalries, for real ──────────────────────────────────────────────────────
 {
-  const map = rivalMap(CLUBS);
-  check(map.size === CLUBS.length, "everybody in an even division has a rival");
-  for (const [a, b] of map) {
-    if (map.get(b) !== a) { check(false, `rivalry is symmetric (${a}/${b})`); break; }
-    if (a === b) { check(false, "nobody is their own rival"); break; }
-  }
-  check(true, "the rivalry map is well formed");
-
-  // Stable across seasons and independent of order.
-  check(rivalOf("Arsenal", CLUBS) === rivalOf("Arsenal", [...CLUBS].reverse()),
-    "the pairing does not depend on how the division was listed");
-
-  // An odd division leaves one club without one rather than inventing a
-  // one-sided rivalry.
-  const odd = rivalMap(CLUBS.slice(0, 9));
-  check(odd.size === 8, "an odd division leaves one club out rather than faking it");
+  // Arsenal's own list rates Spurs the North London Derby, R1 — checked
+  // against real data now, not an invented alphabetical pairing.
+  const rival = primaryRivalOf("Arsenal");
+  check(rival === "Tottenham Hotspur", `Arsenal's own primary rival is Spurs (${rival})`);
+  check(isDerby("Arsenal", "Tottenham Hotspur"), "a real derby");
+  check(!isDerby("Arsenal", "Newcastle United"), "and only against the right club");
+  check(strongestTier("Arsenal", "Tottenham Hotspur") === "R1", "rated Arsenal's primary rivalry");
 
   const c = base();
-  const rival = rivalOf("Arsenal", CLUBS)!;
-  check(c.fixtures.some(f => f.derby), "the calendar knows which ones are derbies");
-  check(c.fixtures.filter(f => f.derby).every(f => f.opponent === rival), "and they are against the right club");
-  check(isDerby("Arsenal", rival, CLUBS) && !isDerby("Arsenal", "Chelsea" === rival ? "Liverpool" : "Chelsea", CLUBS),
-    "and only against the right club");
+  check(c.fixtures.some(f => f.derby), "the calendar knows which one is the derby");
+  check(c.fixtures.filter(f => f.derby).every(f => f.opponent === rival), "and it is against the right club");
 
   // Same football, louder consequences.
-  const derbyFixture: Fixture = { week: 1, opponent: rival, home: true, played: false, derby: true };
-  const normal: Fixture = { week: 1, opponent: "Man City", home: true, played: false };
+  const derbyFixture: Fixture = { week: 1, opponent: "Tottenham Hotspur", home: true, played: false, derby: true };
+  const normal: Fixture = { week: 1, opponent: "Newcastle United", home: true, played: false };
   const win = result(2, 0);
   const afterDerby = creditMatchResult(c, derbyFixture, win).career;
   const afterNormal = creditMatchResult(c, normal, win).career;
   check(afterDerby.relationships.fans > afterNormal.relationships.fans,
     `beating your rivals is worth more to the supporters (${afterNormal.relationships.fans} vs ${afterDerby.relationships.fans})`);
   check(afterDerby.relationships.team > afterNormal.relationships.team, "and to the dressing room");
-  check(DERBY_MULTIPLIER.fans > DERBY_MULTIPLIER.boss,
+
+  const mult = rivalryMultiplier("Arsenal", "Tottenham Hotspur");
+  check(mult.fans > mult.boss,
     "the manager is the least moved of the three — three points are three points to him");
 
   // Losing one costs the same way.
@@ -158,6 +154,14 @@ function finishNth(c: CareerState, place: number): CareerState {
   const lostDerby = creditMatchResult(c, derbyFixture, loss).career;
   const lostNormal = creditMatchResult(c, normal, loss).career;
   check(lostDerby.relationships.fans < lostNormal.relationships.fans, "and losing one costs more");
+
+  // A primary rivalry moves the needle further than a lesser one — Man City
+  // is Arsenal's own R3, no derby.
+  const lesser = rivalryMultiplier("Arsenal", "Manchester City");
+  check(mult.fans > lesser.fans,
+    `the primary rivalry moves fans further than a lesser one (${mult.fans} vs ${lesser.fans})`);
+  check(rivalryMultiplier("Arsenal", "Everton").fans === 1,
+    "and a club with no rivalry at all moves nobody");
 }
 
 // ── The press ───────────────────────────────────────────────────────────────

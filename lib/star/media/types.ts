@@ -54,6 +54,14 @@ export interface MatchRecord {
   kind: "league" | "cup" | "europe" | "international";
   round?: string;
   derby: boolean;
+  /**
+   * How much this fixture is rated as a rivalry, independent of derby-ness —
+   * a plain derby with no rated history (Chelsea-Fulham) carries `derby:
+   * true` and no tier; Liverpool-Manchester United carries a tier and is not
+   * geographically a derby at all. Absent when there is no rivalry either
+   * way. See lib/star/rivalries.ts.
+   */
+  rivalryTier?: "R1" | "R2" | "R3";
   home: boolean;
   /** A final is played at neither ground. */
   neutral: boolean;

@@ -1,6 +1,6 @@
 import type { CareerState, Fixture, MatchStats } from "../types";
 import { sortLeague } from "../season";
-import { isDerby } from "../rivals";
+import { isDerby, strongestTier } from "../rivalries";
 import { monthOfCareer, monthRace, endsMonthOn, MONTH_NAMES } from "../potm";
 import type { MatchRecord, GoalRecord, TableSnapshot } from "./types";
 
@@ -70,8 +70,8 @@ export function buildMatchRecord(
   // that every detector and template would then have to know about.
   const kind = fixture.kind === "playoff" ? "cup" : (fixture.kind ?? "league");
   const competition = fixture.competition ?? "Premier League";
-  const clubs = before.league.map(t => t.name);
-  const derby = fixture.derby ?? isDerby(before.player.club, fixture.opponent, clubs);
+  const derby = fixture.derby ?? isDerby(before.player.club, fixture.opponent);
+  const rivalryTier = strongestTier(before.player.club, fixture.opponent) ?? undefined;
   const strength = (name: string) => before.league.find(t => t.name === name)?.strength ?? fixture.opponentStrength ?? 65;
 
   const us = stats.homeScore;
@@ -162,6 +162,7 @@ export function buildMatchRecord(
     kind,
     round: fixture.round,
     derby,
+    rivalryTier,
     potmRace,
     potmAward,
     home: fixture.home,

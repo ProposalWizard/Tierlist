@@ -5,6 +5,7 @@ import type { LeagueResult } from "@/lib/star/types";
 import { kitsFor, labelInk, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
+import { isDerby, strongestTier, rivalryOf } from "@/lib/star/rivalries";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
 
@@ -162,6 +163,22 @@ export default function VersusScreen({ matchday, date, competition, results, onK
   const [compHead, ...compTailParts] = competition.split(" · ");
   const compTail = compTailParts.join(" · ");
 
+  // ── Derby day ──
+  //
+  // R3 alone stays quiet on purpose — "there is a genuine history, but it is
+  // not particularly important today" is exactly the kind of fixture that
+  // should NOT get a banner, or every third match would have one and none of
+  // them would mean anything. A derby or a rated R1/R2 rivalry does, from
+  // either side (Hull City's biggest rivalry is Leeds United; Leeds do not
+  // reciprocate in their own list, but the fixture still deserves the banner
+  // when Hull are the ones playing it).
+  const derby = isDerby(home.club, away.club);
+  const tier = strongestTier(home.club, away.club);
+  const rivalryHeadline = derby || tier === "R1" || tier === "R2"
+    ? (rivalryOf(home.club, away.club)?.derbyName ?? rivalryOf(away.club, home.club)?.derbyName ?? null)
+    : null;
+  const showRivalryBanner = derby || tier === "R1" || tier === "R2";
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 px-3 py-3 text-white">
       <div className="mx-auto w-full max-w-md">
@@ -171,6 +188,20 @@ export default function VersusScreen({ matchday, date, competition, results, onK
         >
           ← Back
         </button>
+
+        {/* ── Derby day ──
+            A slim ribbon above the header rather than crowding the
+            competition line — this is a second, separate fact about the
+            fixture ("Premier League · Matchday 3" AND "Derby Day"), not a
+            replacement for it. */}
+        {showRivalryBanner && (
+          <div className="mb-2 rounded-lg border border-red-500/40 bg-gradient-to-r from-red-600/25 via-red-500/15 to-red-600/25 px-3 py-1.5 text-center">
+            <span className="text-[11px] font-black uppercase tracking-[0.16em] text-red-200">
+              {derby ? "🔵 Derby Day" : tier === "R1" ? "🔴 A Huge Rivalry" : "🟠 A Big Rivalry"}
+              {rivalryHeadline ? ` — ${rivalryHeadline}` : ""}
+            </span>
+          </div>
+        )}
 
         {/* ── The header ──
             One dark, floodlit panel rather than a plain bar — the competition

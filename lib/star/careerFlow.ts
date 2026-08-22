@@ -16,7 +16,7 @@ import {
   monthlyAward, seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
 } from "./recognition";
 import { makeManager, sackCheck, bossOnArrival } from "./manager";
-import { isDerby, DERBY_MULTIPLIER } from "./rivals";
+import { rivalryMultiplier } from "./rivalries";
 import { attachObjective, progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
@@ -238,11 +238,13 @@ export function creditMatchResult(
   );
 
   const minuteShare = Math.max(0.25, Math.min(1, (stats.minutes ?? 90) / 90));
-  // A derby changes nothing about how it was played and everything about what it
-  // was worth. Applied to the relationships only — never to the football.
-  const derby = fixture.derby
-    ?? isDerby(career.player.club, fixture.opponent, career.league.map(t => t.name));
-  const derbyScale = derby ? DERBY_MULTIPLIER : { boss: 1, team: 1, fans: 1 };
+  // A rivalry changes nothing about how it was played and everything about
+  // what it was worth. Applied to the relationships only — never to the
+  // football. Scaled by how much the fixture actually means (see
+  // rivalries.ts) rather than a flat derby/not-derby switch — a primary
+  // rivalry moves the needle further than a lesser one, and a plain
+  // geographical derby with no rated history still moves it some.
+  const derbyScale = rivalryMultiplier(career.player.club, fixture.opponent);
   const currentBoot = { ...career.currentBoot, matches: Math.max(0, career.currentBoot.matches - 1) };
 
   // A rested week for the stable: the horse regains some energy between matches.
