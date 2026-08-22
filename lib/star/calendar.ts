@@ -120,9 +120,26 @@ export interface CupSlot {
   leg?: 1 | 2;
 }
 
+/**
+ * Which division a career is playing in.
+ *
+ * Only the two the game actually runs a season for. The Lineups picker's own
+ * `Division` (lib/star/clubs.ts) is a different and wider thing — it also
+ * names the promotion pool and the two European competitions, none of which
+ * a career ever plays a league season IN.
+ */
+export type CareerDivision = "premier" | "championship";
+
+/** A Championship season is forty-six games, because it is twenty-four clubs. */
+export const CHAMPIONSHIP_MATCHWEEKS = 46;
+
+export function matchweeksFor(division: CareerDivision): number {
+  return division === "championship" ? CHAMPIONSHIP_MATCHWEEKS : MATCHWEEKS;
+}
+
 /** Is this a week after the league has finished? */
-export function isPostSeason(week: number): boolean {
-  return week > MATCHWEEKS;
+export function isPostSeason(week: number, division: CareerDivision = "premier"): boolean {
+  return week > matchweeksFor(division);
 }
 
 // ── Dates ───────────────────────────────────────────────────────────────────
@@ -157,6 +174,68 @@ export function seasonStartYear(startYear: number, season: number): number {
 /** Which day of the week a fixture is played on. */
 export type MatchDay = "saturday" | "tuesday" | "wednesday";
 
+// ── The Championship's own shape ────────────────────────────────────────────
+
+/**
+ * FORTY-SIX ROUNDS INTO THIRTY-EIGHT WEEKENDS.
+ *
+ * A Championship season is eight games longer than a Premier League one and
+ * runs across the same August-to-May stretch, so eight of its rounds have to
+ * be played in midweek. That is exactly what the real division does.
+ *
+ * The eight are on TUESDAY, always, and that is a guarantee rather than a
+ * preference: both domestic cups are drawn on Wednesday (see `dayFor`), and
+ * a Championship club plays no European football at all — which is what
+ * frees Tuesday up in the first place. So a midweek league round can never
+ * collide with a cup tie, by construction, without anybody having to check
+ * the two lists against each other.
+ *
+ * The weeks below were chosen to spread the extra games across the season
+ * and to sit clear of the cup weekends either side of them.
+ */
+const CHAMPIONSHIP_MIDWEEK_WEEKS = [2, 7, 10, 14, 19, 24, 27, 33];
+
+interface RoundSlot {
+  /** 1-38, the weekend this round belongs to. */
+  calendarWeek: number;
+  day: MatchDay;
+}
+
+/**
+ * Round number (1-46) to the day it is actually played on.
+ *
+ * Saturday first in each calendar week, then that week's midweek round if it
+ * has one — which is also the order they fall in on the clock, since
+ * `fixtureDate` offsets Tuesday three days past its Saturday.
+ */
+const CHAMPIONSHIP_ROUNDS: RoundSlot[] = (() => {
+  const midweek = new Set(CHAMPIONSHIP_MIDWEEK_WEEKS);
+  const out: RoundSlot[] = [];
+  for (let w = 1; w <= MATCHWEEKS; w++) {
+    out.push({ calendarWeek: w, day: "saturday" });
+    if (midweek.has(w)) out.push({ calendarWeek: w, day: "tuesday" });
+  }
+  return out;
+})();
+
+/** Which weekend a Championship week falls on. Post-season weeks carry on
+ *  past the end of the league, one weekend each, the same as the Premier
+ *  League's do. */
+function championshipCalendarWeek(week: number): number {
+  const slot = CHAMPIONSHIP_ROUNDS[week - 1];
+  if (slot) return slot.calendarWeek;
+  return MATCHWEEKS + (week - CHAMPIONSHIP_MATCHWEEKS);
+}
+
+/** A week number past the end of the Championship season. */
+export function CHAMPIONSHIP_POST_SEASON(n: number): number {
+  return CHAMPIONSHIP_MATCHWEEKS + n;
+}
+
+export function postSeasonFor(division: CareerDivision, n: number): number {
+  return division === "championship" ? CHAMPIONSHIP_POST_SEASON(n) : POST_SEASON(n);
+}
+
 /**
  * When a fixture is actually played.
  *
@@ -170,9 +249,16 @@ export type MatchDay = "saturday" | "tuesday" | "wednesday";
  * leg. Put them on the same day and the fixture list has you playing twice in an
  * evening.
  */
-export function fixtureDate(startYear: number, season: number, week: number, day: MatchDay): Date {
+export function fixtureDate(
+  startYear: number, season: number, week: number, day: MatchDay,
+  division: CareerDivision = "premier",
+): Date {
   const opening = openingSaturday(seasonStartYear(startYear, season));
-  const saturday = opening.getTime() + (week - 1) * 7 * DAY_MS;
+  // A Premier League week IS its weekend. A Championship week is a round,
+  // and eight of the forty-six share a weekend with the round before them —
+  // see CHAMPIONSHIP_ROUNDS.
+  const calendarWeek = division === "championship" ? championshipCalendarWeek(week) : week;
+  const saturday = opening.getTime() + (calendarWeek - 1) * 7 * DAY_MS;
   // Pre-season sits in the week BEFORE the opening Saturday, which is what
   // week 0 means: the Community Shield is played the weekend before it starts.
   const offset = day === "saturday" ? 0 : day === "tuesday" ? 3 : 4;
@@ -186,9 +272,17 @@ export function fixtureDate(startYear: number, season: number, week: number, day
  * the cup finals and the summer tournament are occasions, and there is no
  * league fixture left for them to be squeezed around.
  */
-export function dayFor(kind: string | undefined, week: number): MatchDay {
-  if (!kind || kind === "league") return "saturday";
-  if (isPostSeason(week)) return "saturday";
+export function dayFor(
+  kind: string | undefined, week: number, division: CareerDivision = "premier",
+): MatchDay {
+  const league = !kind || kind === "league";
+  // Eight Championship rounds are played on a Tuesday — see
+  // CHAMPIONSHIP_ROUNDS. Everything else about the week is unchanged.
+  if (league && division === "championship" && week >= 1 && week <= CHAMPIONSHIP_MATCHWEEKS) {
+    return CHAMPIONSHIP_ROUNDS[week - 1].day;
+  }
+  if (league) return "saturday";
+  if (isPostSeason(week, division)) return "saturday";
   if (kind === "europe") return "tuesday";
   return "wednesday";
 }
@@ -216,8 +310,61 @@ export function fixtureDateLabel(
   season: number,
   week: number,
   kind?: string,
+  division: CareerDivision = "premier",
 ): string {
-  return formatDate(fixtureDate(startYear, season, week, dayFor(kind, week)));
+  return formatDate(fixtureDate(startYear, season, week, dayFor(kind, week, division), division));
+}
+
+// ── The Championship's cups, and the play-offs ──────────────────────────────
+
+/**
+ * The same two cups on the same real weekends as the Premier League's, in
+ * Championship round numbers rather than Premier League ones.
+ *
+ * They have to be restated rather than shared: week 8 is the eighth weekend
+ * of a Premier League season and the eighth ROUND of a Championship one, and
+ * by the eighth round the Championship is only into its sixth weekend. Each
+ * number below is the round whose weekend matches the Premier League slot it
+ * mirrors — round 4 sits on weekend 3, round 10 on weekend 8, and so on.
+ */
+export const CHAMPIONSHIP_LEAGUE_CUP_SLOTS: CupSlot[] = [
+  { round: "Round of 32", week: 4 },        // weekend 3
+  { round: "Round of 16", week: 10 },       // weekend 8
+  { round: "Quarter-Final", week: 20 },     // weekend 16
+  { round: "Semi-Final", week: 31, leg: 1 },// weekend 25
+  { round: "Semi-Final", week: 35, leg: 2 },// weekend 28
+  { round: "Final", week: CHAMPIONSHIP_POST_SEASON(1) },
+];
+
+export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = [
+  { round: "Round of 32", week: 6 },        // weekend 5
+  { round: "Round of 16", week: 15 },       // weekend 12
+  { round: "Quarter-Final", week: 27 },     // weekend 22
+  { round: "Semi-Final", week: 37 },        // weekend 30
+  { round: "Final", week: CHAMPIONSHIP_POST_SEASON(2) },
+];
+
+/**
+ * THE PLAY-OFFS.
+ *
+ * Third through sixth, for the one promotion place the automatic two leave
+ * behind: 3rd v 6th and 4th v 5th over two legs, then a single final. Played
+ * after the league AND after both cup finals, which is the order the real
+ * season runs in — the play-off final is the last match of the English
+ * season, every year.
+ */
+export const PLAY_OFF_SLOTS: CupSlot[] = [
+  { round: "Play-Off Semi-Final", week: CHAMPIONSHIP_POST_SEASON(3), leg: 1 },
+  { round: "Play-Off Semi-Final", week: CHAMPIONSHIP_POST_SEASON(4), leg: 2 },
+  { round: "Play-Off Final", week: CHAMPIONSHIP_POST_SEASON(5) },
+];
+
+export function leagueCupSlotsFor(division: CareerDivision): CupSlot[] {
+  return division === "championship" ? CHAMPIONSHIP_LEAGUE_CUP_SLOTS : LEAGUE_CUP_SLOTS;
+}
+
+export function faCupSlotsFor(division: CareerDivision): CupSlot[] {
+  return division === "championship" ? CHAMPIONSHIP_FA_CUP_SLOTS : FA_CUP_SLOTS;
 }
 
 // ── Months, for the award ───────────────────────────────────────────────────
@@ -232,8 +379,11 @@ export function fixtureDateLabel(
  *
  * Returns a 0-based calendar month (0 = January), read off the real date.
  */
-export function calendarMonthOf(startYear: number, season: number, week: number): number {
-  return fixtureDate(startYear, season, week, "saturday").getUTCMonth();
+export function calendarMonthOf(
+  startYear: number, season: number, week: number,
+  division: CareerDivision = "premier",
+): number {
+  return fixtureDate(startYear, season, week, "saturday", division).getUTCMonth();
 }
 
 // ── Transfer windows ────────────────────────────────────────────────────────
@@ -251,13 +401,19 @@ export function calendarMonthOf(startYear: number, season: number, week: number)
  */
 export type TransferWindow = "summer" | "january" | null;
 
-export function transferWindowFor(startYear: number, season: number, week: number): TransferWindow {
-  const month = fixtureDate(startYear, season, week, "saturday").getUTCMonth(); // 0 = January
+export function transferWindowFor(
+  startYear: number, season: number, week: number,
+  division: CareerDivision = "premier",
+): TransferWindow {
+  const month = fixtureDate(startYear, season, week, "saturday", division).getUTCMonth(); // 0 = January
   if (month === 0) return "january";
   if (month === 7 || month === 8) return "summer";       // August, September
   return null;
 }
 
-export function transferWindowOpen(startYear: number, season: number, week: number): boolean {
-  return transferWindowFor(startYear, season, week) !== null;
+export function transferWindowOpen(
+  startYear: number, season: number, week: number,
+  division: CareerDivision = "premier",
+): boolean {
+  return transferWindowFor(startYear, season, week, division) !== null;
 }
