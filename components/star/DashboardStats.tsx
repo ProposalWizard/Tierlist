@@ -6,6 +6,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { expectationStatus, personalDuty } from "@/lib/star/expectations";
 import { leadingScorer } from "@/lib/star/recognition";
 import { clauseSummary } from "@/lib/star/contracts";
+import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
 
 interface Props {
   career: CareerState;
@@ -71,7 +72,7 @@ export default function DashboardStats({ career }: Props) {
         <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
           {[
             ["Club", career.contract.club],
-            ["League", "Premier League"],
+            ["League", leagueNameFor(divisionOf(career))],
             ["Position", career.player.position],
             ["Wage", `★ ${career.contract.wage} / match`],
             ["Goal Bonus", `★ ${career.contract.goalBonus}`],

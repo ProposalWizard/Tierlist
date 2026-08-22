@@ -28,6 +28,10 @@ import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
+import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
+import { runTransferWindow } from "./leagueTransfers";
+import { resolveLadder, membershipOf } from "./promotion";
+import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
@@ -44,7 +48,9 @@ const EMPTY_SEASON_STATS = {
   appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0,
 };
 
-export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerState {
+export function makeInitialCareer(
+  player: StarPlayer, clubs: string[], division: CareerDivision = "premier",
+): CareerState {
   const league = buildLeague(clubs, player.club);
   const fixtures = buildFixtures(clubs, player.club);
   const starterBoot: Boot = { ...BOOTS_CATALOGUE[0] };
@@ -55,6 +61,7 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     relationships: { boss: 60, team: 60, fans: 40, girlfriend: null, sponsors: 0 },
     contract: { club: player.club, wage: 1, goalBonus: 1, assistBonus: 1, seasonsRemaining: 3 },
     season: 1,
+    division,
     week: 1,
     energy: 100,
     matchFitness: 80,
@@ -433,6 +440,52 @@ export function creditMatchResult(
   // rather than the "1st Team" it was stamped with when the career was created.
   next.status = selectionFor(next).status;
 
+  // ── The play-offs ──
+  //
+  // Seeded the instant the last league round is credited, so the fixtures
+  // exist before the next screen renders; settled here too when the match
+  // just played was one of them. Both are no-ops outside a Championship
+  // season in which you finished third to sixth. See lib/star/playoffs.
+  if (fixture.kind === "playoff") {
+    const settled = settlePlayOffFixture(career, fixture, stats.homeScore, stats.awayScore);
+    if (settled) {
+      next.playOffState = settled.state;
+      if (settled.fixtures.length) next.fixtures = [...next.fixtures, ...settled.fixtures];
+      next.knockoutMessage = settled.message;
+    }
+  } else if (kind === "league" && leagueSeasonComplete(next, fixture.week)) {
+    const seeded = seedPlayOffs(next);
+    if (seeded) {
+      next.playOffState = seeded.state;
+      next.fixtures = [...next.fixtures, ...seeded.fixtures];
+    }
+  }
+
+  // ── The rest of the division does its business ──
+  //
+  // Fires on the WEEK A WINDOW OPENS, not every week within one — a window
+  // decides its business once, the moment it opens, rather than trickling
+  // signings out day by day. `lastTransferWindowKey` (not just comparing
+  // `career.week` to `next.week`) is what actually makes this safe against a
+  // replay: the exact match re-credited hands `creditMatchResult` the same
+  // `career.week` both times, so a week-to-week comparison alone would open
+  // the window twice. The key instead asks "have I already run THIS window",
+  // which stays answered correctly no matter how many times this one match
+  // gets replayed.
+  if (next.leagueSquads?.length) {
+    const openedWindow = transferWindowFor(next.player.startYear, next.season, next.week, divisionOf(next));
+    if (openedWindow) {
+      const key = `${next.season}-${openedWindow}`;
+      if (career.lastTransferWindowKey !== key) {
+        const rng = mulberry32(next.season * 100003 + next.week * 37);
+        const { career: afterWindow, moves } = runTransferWindow(next, openedWindow, rng);
+        Object.assign(next, afterWindow);
+        next.leagueTransferNews = moves;
+        next.lastTransferWindowKey = key;
+      }
+    }
+  }
+
   return { ...applyAchievements(next), potmAwarded: potmJustAwarded ?? undefined };
 }
 
@@ -444,9 +497,13 @@ export function awardLeagueTrophyIfWon(career: CareerState): { career: CareerSta
   // Idempotent: the end of a season can now be reached twice — once through the
   // post-match screen and once through the dashboard's end-of-season prompt after
   // a refresh — and a title must not be awarded twice for it.
-  const already = career.trophies.some(t => t.season === career.season && t.competition === "Premier League");
+  // Whichever division you actually won — winning the Championship is a real
+  // trophy and is not the Premier League, which the achievements that check
+  // for a league title by name depend on staying true.
+  const competition = leagueNameFor(divisionOf(career));
+  const already = career.trophies.some(t => t.season === career.season && t.competition === competition);
   if (already) return { career, wonLeague: true };
-  const trophy = { season: career.season, competition: "Premier League", club: career.player.club };
+  const trophy = { season: career.season, competition, club: career.player.club };
   return { career: { ...career, trophies: [...career.trophies, trophy] }, wonLeague: true };
 }
 
@@ -455,7 +512,16 @@ export function awardLeagueTrophyIfWon(career: CareerState): { career: CareerSta
 // Ballon d'Or if won. Whether the contract now needs renewing is the caller's call
 // via next.contract.seasonsRemaining.
 export function advanceSeason(career: CareerState, userWonBallonDor: boolean): { career: CareerState; newlyUnlocked: string[] } {
-  const clubs = career.league.map((t) => t.name);
+  // ── Up and down, before anything is rebuilt ──
+  //
+  // Next season's division and club list, which used to be simply "the same
+  // twenty as last season, forever". Your own division's three are decided by
+  // its real table (and, in the Championship, by real play-offs); the other
+  // division's are drawn weighted by strength, because nobody played it. See
+  // lib/star/promotion.
+  const ladder = resolveLadder(career, mulberry32(career.season * 90247 + career.league.length * 13));
+  const clubs = ladder.clubs;
+  const nextDivision = ladder.division;
   const newAge = career.player.age + 1;
   const ageEffect = (v: number): number => {
     if (newAge >= 34) return Math.max(20, v - 3);
@@ -499,7 +565,11 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
   const wonFaCup = thisSeason.some(t => t.competition === "FA Cup");
   const wonLeagueCup = thisSeason.some(t => t.competition === "League Cup");
   const wonEuroComp = thisSeason.some(t => t.competition === "Champions League" || t.competition === "Europa League");
-  const qualification = qualificationFor(
+  // Europe is a Premier League reward. Finishing fourth in the Championship
+  // qualifies you for promotion, not for the Champions League — and
+  // `qualificationFor` only knows about positions and club counts, so it
+  // would happily hand out a European place for one if it were asked.
+  const qualification = divisionOf(career) === "championship" ? null : qualificationFor(
     leaguePosition(career), career.league.length, wonFaCup, wonLeagueCup, wonEuroComp,
   );
 
@@ -552,13 +622,30 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     player: { ...career.player, age: newAge },
     skills: agedSkills,
     season: career.season + 1,
+    division: nextDivision,
+    divisions: ladder.divisions,
+    ladderNews: {
+      yourMove: ladder.yourMove,
+      promotedToPremier: ladder.promotedToPremier,
+      relegatedFromPremier: ladder.relegatedFromPremier,
+      promotedToChampionship: ladder.promotedToChampionship,
+      relegatedFromChampionship: ladder.relegatedFromChampionship,
+      ...(ladder.playOffs ? { playOffFinal: ladder.playOffs.final } : {}),
+    },
     week: 1,
     fixtures: buildFixtures(clubs, career.player.club),
     league: buildLeague(clubs, career.player.club),
     // Last season's results belong to last season.
     results: [],
     leagueSeasonStats: { goals: 0, assists: 0 },
-    leagueSquads: resetLeagueSquads(career.leagueSquads ?? []),
+    // Only the clubs you are actually playing next season. Going up or down
+    // replaces most of the division, and a squad for a club that is no longer
+    // in it is dead weight the team sheet would never read; the ones now
+    // missing are refetched by the page (see the division-change effect in
+    // app/star-dev/page.tsx).
+    leagueSquads: resetLeagueSquads(
+      (career.leagueSquads ?? []).filter(s => clubs.includes(s.club)),
+    ),
     seasonStats: { ...EMPTY_SEASON_STATS },
     energy: 100,
     matchFitness: 85,

@@ -141,11 +141,20 @@ function recentForm(club: string, results: LeagueResult[]): Result[] {
 
 const FORM_BG: Record<Result, string> = { W: "#16a34a", D: "#b98a1f", L: "#b91c1c" };
 
+/** Enough of an XI to actually draw — see teamsheet.ts's sheetReady, the
+ *  same bar this screen used to require of BOTH sides before showing itself
+ *  at all. Checked per side now instead. */
+function scouted(s: TeamSheet): boolean {
+  return s.xi.length >= 9;
+}
+
 export default function VersusScreen({ matchday, date, competition, results, onKickOff, onBack }: Props) {
   const { home, away } = matchday;
   const kits = kitsFor(home.club, away.club);
   const [showSubs, setShowSubs] = useState(false);
   const yours = home.yours ? home : away;
+  const homeScouted = scouted(home);
+  const awayScouted = scouted(away);
 
   // "Premier League · Matchday 3" reads as two different pieces of information
   // — the competition, and where in it this fixture falls — so the second half
@@ -178,18 +187,26 @@ export default function VersusScreen({ matchday, date, competition, results, onK
           </div>
           <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
             <TeamHeader club={home.club} kit={kits.home} formation={home.formation.name}
-              form={recentForm(home.club, results ?? [])} />
+              form={recentForm(home.club, results ?? [])} scouted={homeScouted} />
             <div className="flex flex-col items-center gap-1 pt-1.5">
               <div className="text-xl font-black italic text-white/90">VS</div>
               {date && <div className="whitespace-nowrap text-[10px] font-bold text-white/75">{date}</div>}
             </div>
             <TeamHeader club={away.club} kit={kits.away} formation={away.formation.name}
-              form={recentForm(away.club, results ?? [])} />
+              form={recentForm(away.club, results ?? [])} scouted={awayScouted} />
           </div>
         </div>
 
         {/* ── The pitch ──
-            Home at the top, away at the bottom — see the file note on why. */}
+            Home at the top, away at the bottom — see the file note on why.
+            A side with no real squad behind it yet — a club this career has
+            no full roster for — draws nothing here rather than a scattering
+            of holes; UnscoutedHalf covers its half instead. Reported
+            directly: "if you play against someone who doesn't have a team
+            sheet... it should show something that says Unable to scout
+            opponent's team" — this used to mean skipping the team-sheet
+            screen entirely, for BOTH sides, the moment either one fell
+            short. */}
         <div className="relative aspect-[3/4.15] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
           {/* Markings, drawn once and read by nothing. */}
           <div className="pointer-events-none absolute inset-0">
@@ -204,12 +221,12 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             ))}
           </div>
 
-          {home.xi.map(p => (
-            <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} />
-          ))}
-          {away.xi.map(p => (
-            <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom />
-          ))}
+          {homeScouted
+            ? home.xi.map(p => <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} />)
+            : <UnscoutedHalf bottom={false} />}
+          {awayScouted
+            ? away.xi.map(p => <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom />)
+            : <UnscoutedHalf bottom />}
         </div>
 
         {/* ── Substitutes ── */}
@@ -224,8 +241,8 @@ export default function VersusScreen({ matchday, date, competition, results, onK
           </button>
           {showSubs && (
             <div className="grid grid-cols-2 gap-px border-t border-white/10 bg-white/10">
-              <Bench sheet={home} kit={kits.home} />
-              <Bench sheet={away} kit={kits.away} />
+              {homeScouted ? <Bench sheet={home} kit={kits.home} /> : <UnscoutedBench club={home.club} />}
+              {awayScouted ? <Bench sheet={away} kit={kits.away} /> : <UnscoutedBench club={away.club} />}
             </div>
           )}
         </div>
@@ -248,15 +265,18 @@ export default function VersusScreen({ matchday, date, competition, results, onK
  * rows above and below each other can drift apart the instant either row's
  * neighbouring content changes width; one column can't.
  */
-function TeamHeader({ club, kit, formation, form }: {
-  club: string; kit: Kit; formation: string; form: Result[];
+function TeamHeader({ club, kit, formation, form, scouted }: {
+  club: string; kit: Kit; formation: string; form: Result[]; scouted: boolean;
 }) {
   return (
     <div className="flex min-w-0 flex-col items-center gap-1.5">
       <Crest club={club} kit={kit} />
       <FormRow form={form} />
-      <div className="truncate text-[9px] font-black uppercase tracking-wider" style={{ color: kit.shirt }}>
-        {formation}
+      <div
+        className="truncate text-[9px] font-black uppercase tracking-wider"
+        style={{ color: scouted ? kit.shirt : "rgba(255,255,255,0.4)" }}
+      >
+        {scouted ? formation : "Unscouted"}
       </div>
     </div>
   );
@@ -396,6 +416,40 @@ function Man({ p, kit, keeper, bottom }: {
           <img src={flag} alt="" className="h-[7px] w-[10px] shrink-0 rounded-[1px] object-cover shadow-[0_0_0_1px_rgba(0,0,0,0.6)]" />
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Half a pitch with nobody drawn on it, and the reason why.
+ *
+ * Not a wall of silhouettes standing in formation slots — that would be
+ * inventing a team sheet this career genuinely does not have, which is the
+ * opposite of what "unable to scout" is supposed to mean. One honest line,
+ * centred in the half it belongs to.
+ */
+function UnscoutedHalf({ bottom }: { bottom: boolean }) {
+  return (
+    <div
+      className={`absolute inset-x-0 flex items-center justify-center px-6 text-center ${
+        bottom ? "bottom-0 top-1/2" : "top-0 bottom-1/2"}`}
+    >
+      <div className="rounded-lg bg-black/35 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white/70">
+        Unable to scout opponent&rsquo;s team
+      </div>
+    </div>
+  );
+}
+
+function UnscoutedBench({ club }: { club: string }) {
+  return (
+    <div className="bg-gray-900/90 px-2 py-1.5">
+      <div className="mb-1 flex items-center gap-1">
+        <span className="truncate text-[9px] font-black uppercase tracking-wider text-white/50">
+          {shortClub(club)}
+        </span>
+      </div>
+      <div className="py-1 text-[9px] font-bold text-white/50">Unable to scout opponent&rsquo;s team</div>
     </div>
   );
 }

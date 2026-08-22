@@ -9,8 +9,8 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
-import { fixtureDateLabel } from "@/lib/star/calendar";
-import { matchdayFor, sheetReady } from "@/lib/star/teamsheet";
+import { fixtureDateLabel, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct } from "@/lib/star/week";
@@ -34,6 +34,7 @@ import TrialReward from "@/components/star/TrialReward";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
+import LadderScreen from "@/components/star/LadderScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
@@ -228,7 +229,7 @@ export default function StarDevPage() {
   // When it is played, in real dates. The fixture list has had these since the
   // calendar landed; this is the screen everybody actually looks at.
   const nextMatchDate = nextFixture && career
-    ? fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)
+    ? fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))
     : null;
 
   /**
@@ -246,8 +247,8 @@ export default function StarDevPage() {
    * request never lands, the generated squad it was born with is a working
    * squad.
    */
-  const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[]) => {
-    const created = makeInitialCareer(player, clubs);
+  const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[], division: CareerDivision) => {
+    const created = makeInitialCareer(player, clubs, division);
     setCareer(created);
     // ── Into the trial, not the dashboard ──
     //
@@ -611,6 +612,35 @@ export default function StarDevPage() {
     setPhase("dashboard");
   }, [career, currentDilemma]);
 
+  // ── A division you have not played before needs its dressing rooms ──
+  //
+  // Promotion and relegation replace most of the clubs around you (see
+  // lib/star/promotion), and advanceSeason deliberately drops the squads of
+  // the ones you have left behind rather than carrying dead weight. This
+  // notices whichever clubs are in your league table with no squad against
+  // them — after a rollover, after a transfer, after a save that predates
+  // any of it — and fetches exactly those, merging rather than replacing so
+  // the clubs you kept keep this season's goals.
+  useEffect(() => {
+    if (!career?.league?.length) return;
+    const have = new Set((career.leagueSquads ?? []).map(s => s.club));
+    const missing = career.league.map(t => t.name).filter(n => !have.has(n));
+    if (missing.length === 0) return;
+    let alive = true;
+    fetchLeagueSquads(missing).then((fresh) => {
+      if (!alive) return;
+      setCareer(c => {
+        if (!c) return c;
+        const already = new Set((c.leagueSquads ?? []).map(s => s.club));
+        const leagueSquads = [...(c.leagueSquads ?? []), ...fresh.filter(s => !already.has(s.club))];
+        return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+      });
+    });
+    return () => { alive = false; };
+    // Keyed on the club list itself, so it re-runs exactly when the division
+    // changes rather than on every state change.
+  }, [career?.league?.map(t => t.name).join("|"), career?.leagueSquads?.length]);
+
   // Rolling into the next season, once anything that happens BETWEEN seasons is
   // out of the way. Split out because three different screens end here.
   const rollOverSeason = useCallback((from: CareerState, userWon: boolean) => {
@@ -641,6 +671,17 @@ export default function StarDevPage() {
           headline: next.lastSeasonJudgement.headline, detail: next.lastSeasonJudgement.detail }, "review");
     }
     setCareer(next);
+    // ── What went up and down, before anything else ──
+    //
+    // Shown whether or not it involved you: a division changing shape around
+    // you is news even from mid-table. A forced contract renewal still wins,
+    // because that one is a decision rather than a report — the ladder is
+    // waiting on the other side of it via the dashboard.
+    if (next.ladderNews && next.contract.seasonsRemaining > 0) {
+      setActiveNav(null);
+      setPhase("ladder");
+      return;
+    }
     // A new club came with a new contract, so a renewal is only forced when you
     // stayed and let the old one run out.
     if (next.contract.seasonsRemaining <= 0) {
@@ -893,6 +934,15 @@ export default function StarDevPage() {
     return <ProfileSetup onComplete={handleProfileComplete} />;
   }
 
+  if (phase === "ladder" && career?.ladderNews) {
+    return (
+      <LadderScreen
+        career={career}
+        onContinue={() => { setActiveNav(null); setPhase("dashboard"); }}
+      />
+    );
+  }
+
   if (phase === "training" && trainingSkill) {
     return <TrainingMinigame skill={trainingSkill} onComplete={handleTrainingComplete} />;
   }
@@ -1065,17 +1115,23 @@ export default function StarDevPage() {
     const matchday = nextFixture.kind === "international"
       ? null
       : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI);
-    const teamsReady = !!matchday && sheetReady(matchday);
+    // Whether YOUR side is drawable — the bar the button decides on now. An
+    // under-scouted OPPONENT no longer holds the screen back at all: it gets
+    // its own "Unable to scout" half instead (see VersusScreen). Only an
+    // international fixture (no matchday at all) or your own squad falling
+    // short — practically never, but the same honest fallback either way —
+    // sends the button straight past the team sheets.
+    const teamsReady = !!matchday && (matchday.home.yours ? matchday.home : matchday.away).xi.length >= 9;
 
     if (showTeams && matchday && teamsReady) {
       return (
         <VersusScreen
           matchday={matchday}
-          date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind)}
+          date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
           results={career.results}
           competition={
             !nextFixture.kind || nextFixture.kind === "league"
-              ? `Premier League · Matchday ${nextFixture.week}`
+              ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`
               : `${nextFixture.competition}${nextFixture.round ? ` · ${nextFixture.round}` : ""}`
           }
           onKickOff={() => { setShowTeams(false); setPlayAs(null); handlePlayMatch(); }}
@@ -1192,9 +1248,11 @@ export default function StarDevPage() {
                 onClick={() => (teamsReady ? setShowTeams(true) : handlePlayMatch())}
                 className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black"
               >
-                {/* No sheets for an international, and none for a club whose
-                    squad has not been fetched — both go straight to the match
-                    rather than to a pitch with holes in it. */}
+                {/* Gated on YOUR side only now — an under-scouted opponent
+                    still gets a team-sheet screen, just with "Unable to
+                    scout opponent's team" on their half (see VersusScreen).
+                    Only an international fixture, or your own squad falling
+                    short, skips the screen entirely. */}
                 {teamsReady
                   ? "Team sheets →"
                   : selection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}

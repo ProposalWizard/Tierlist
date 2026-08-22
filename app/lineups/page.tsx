@@ -2,127 +2,100 @@
 import { useEffect, useState } from "react";
 import LineupBuilder from "@/components/star/LineupBuilder";
 import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
-import { STAR_FIFA_YEAR, STAR_SEASON_LABEL, STAR_EDITION_LABEL } from "@/lib/star/edition";
+import { STAR_FIFA_YEAR } from "@/lib/star/edition";
+import {
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, OTHER_CLUBS,
+  CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, type Division,
+} from "@/lib/star/clubs";
 import type { LeagueSquad } from "@/lib/star/types";
 
 /**
  * SQUAD BUILDER.
  *
  * Its own page rather than a tab inside the career, because it is not about a
- * career: it is every Premier League squad and a shape to put them in, and you
- * should be able to open it without having a save.
+ * career: it is every club's squad and a shape to put them in, and you should
+ * be able to open it without having a save.
  *
- * It fetches the division the same way a career does — one request for all
- * twenty clubs (see app/api/star/league-squads) rather than twenty requests for
- * one club each.
+ * Three tabs now instead of one flat Premier League list — the Championship
+ * and this season's five-club promotion pool are real parts of the game too
+ * (see lib/star/clubs.ts, the shared source for which club is in which). The
+ * club lists here are read straight off that file rather than fetched from
+ * /api/draft/clubs — that endpoint is Draft mode's own, filtered to whatever
+ * IT considers "the Premier League" across its whole multi-year archive, and
+ * this page needs THIS season's three divisions exactly, not a historical
+ * sweep.
  */
 
+const TABS: { key: Division; label: string; clubs: readonly string[] }[] = [
+  { key: "premier", label: "Premier League", clubs: PREMIER_LEAGUE_CLUBS },
+  { key: "championship", label: "Championship", clubs: CHAMPIONSHIP_CLUBS },
+  { key: "champions", label: "Champions League", clubs: CHAMPIONS_LEAGUE_CLUBS },
+  { key: "europa", label: "Europa League", clubs: EUROPA_LEAGUE_CLUBS },
+  // The promotion pool and the standalone clubs are different things
+  // (see clubs.ts) but share one tab, because both answer "a club that is
+  // not in either division right now".
+  { key: "pool", label: "Other", clubs: [...PROMOTION_POOL_CLUBS, ...OTHER_CLUBS] },
+];
+
 export default function LineupsPage() {
-  const [clubs, setClubs] = useState<string[]>([]);
+  const [division, setDivision] = useState<Division>("premier");
   const [squads, setSquads] = useState<LeagueSquad[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  /**
-   * Which edition is on screen.
-   *
-   * Normally STAR_FIFA_YEAR and nothing else. But FC 27 is built by hand over
-   * the course of a transfer window, so there is a stretch of days where the
-   * edition the game wants does not exist yet — and a page that dead-ends for a
-   * month is not much of a page. When that happens it offers the newest edition
-   * that DOES have clubs, and says loudly which one you are looking at.
-   */
-  const [year, setYear] = useState(STAR_FIFA_YEAR);
-  const [available, setAvailable] = useState<number[]>([]);
-  /** What the clubs endpoint says about itself — see its `meta`. Shown only when
-   *  there is nothing to draw, because that is the only time it helps. */
-  const [meta, setMeta] = useState<string | null>(null);
+
+  const tab = TABS.find(t => t.key === division)!;
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
+    setError(null);
     (async () => {
       try {
-        const res = await fetch("/api/draft/clubs", { cache: "no-store" });
-        const data = await res.json() as {
-          clubs?: { name: string; seasons: number[] }[];
-          meta?: { rpc: boolean; playersFoundByName: number };
-        };
-        const all = data.clubs ?? [];
-        const years = Array.from(new Set(all.flatMap(c => c.seasons)))
-          .filter(y => y > 2000)
-          .sort((a, b) => b - a);
-        const names = all
-          .filter(c => c.seasons.includes(year))
-          .map(c => c.name)
-          .sort((a, b) => a.localeCompare(b));
+        // The WHOLE squad, not the twenty a career keeps: here you are
+        // picking a side, and a side is picked from everybody on the books.
+        const sq = await fetchLeagueSquads([...tab.clubs], STAR_FIFA_YEAR, true);
         if (!alive) return;
-        setAvailable(years);
-        setMeta(
-          data.meta
-            ? `${all.length} clubs, ${data.meta.playersFoundByName} ${STAR_EDITION_LABEL} players matched by name, SQL function ${data.meta.rpc ? "installed" : "missing"}`
-            : null,
-        );
-
-        if (names.length === 0) {
-          setClubs([]);
-          setError(
-            years.length === 0
-              ? "No Premier League clubs in the database at all — check the Supabase connection."
-              : `No ${year - 1}/${String(year % 100).padStart(2, "0")} clubs yet.`,
-          );
-          return;
-        }
-        setError(null);
-        setClubs(names);
-        // The WHOLE squad, not the twenty a career keeps: here you are picking
-        // a side, and a side is picked from everybody on the books.
-        const sq = await fetchLeagueSquads(names, year, true);
-        if (alive) setSquads(sq);
+        setSquads(sq);
       } catch {
         if (alive) setError("Could not load the clubs. Check your connection and try again.");
+      } finally {
+        if (alive) setLoading(false);
       }
     })();
     return () => { alive = false; };
-  }, [year]);
-
-  const newest = available.find(y => y !== year);
+  }, [division]);
 
   return (
     <main className="w-full py-2">
-      {year !== STAR_FIFA_YEAR && (
-        <div className="mx-auto mb-2 max-w-5xl rounded-lg border border-amber-700 bg-amber-950/40 px-3 py-2 text-[11px] font-bold text-amber-200">
-          Showing <b>FC {String(year % 100).padStart(2, "0")}</b> — the game itself plays{" "}
-          {STAR_EDITION_LABEL}, which has no clubs yet.{" "}
-          <button onClick={() => setYear(STAR_FIFA_YEAR)} className="underline">
-            Try {STAR_EDITION_LABEL} again
+      {/* Five tabs now, not three — a phone-width row of equal flex-1 tiles
+          crushed "Champions League"/"Europa League" onto multiple lines.
+          A scrollable row keeps every label on one line at a readable size
+          instead. */}
+      <div className="mx-auto mb-2 flex max-w-5xl gap-1.5 overflow-x-auto px-2 pb-0.5">
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setDivision(t.key)}
+            className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-[12px] font-black uppercase tracking-wide transition ${
+              division === t.key
+                ? "border-emerald-500 bg-emerald-600 text-white"
+                : "border-gray-700 bg-gray-900 text-white/70 hover:bg-gray-800"}`}
+          >
+            {t.label}
           </button>
-        </div>
-      )}
+        ))}
+      </div>
 
       {error ? (
         <div className="mx-auto max-w-md rounded-lg border border-red-800 bg-red-950/50 p-4 text-sm font-bold text-red-200">
-          <p>{error}</p>
-          {available.length > 0 && (
-            <p className="mt-2 text-[12px] font-normal text-red-200/80">
-              The database has: {available.slice(0, 8).join(", ")}{available.length > 8 ? "…" : ""}.
-            </p>
-          )}
-          {meta && (
-            <p className="mt-2 text-[11px] font-normal text-red-200/70">{meta}</p>
-          )}
-          {newest && (
-            <button
-              onClick={() => setYear(newest)}
-              className="mt-3 w-full rounded bg-red-800 py-2 text-[12px] font-black uppercase text-white transition hover:bg-red-700"
-            >
-              Use FC {String(newest % 100).padStart(2, "0")} for now
-            </button>
-          )}
+          {error}
         </div>
-      ) : clubs.length === 0 ? (
+      ) : loading ? (
         <div className="mx-auto max-w-md p-8 text-center text-sm font-bold text-emerald-300">
           Loading the division…
         </div>
       ) : (
-        <LineupBuilder clubs={clubs} squads={squads} />
+        <LineupBuilder clubs={[...tab.clubs]} squads={squads} />
       )}
     </main>
   );

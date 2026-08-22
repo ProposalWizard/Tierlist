@@ -75,6 +75,23 @@ const NEIGHBOURS: Record<Slot, string[]> = {
   ST: ["CF", "LW", "RW", "CAM"],
 };
 
+/**
+ * Every position he's listed for that this game actually models, primary
+ * first. SoFIFA lists things we have no slot for at all — LM, RWB, CF — and
+ * those are dropped rather than guessed at; `NEIGHBOURS` above already
+ * covers "a CM can reasonably deputise for a CDM" for team-sheet purposes,
+ * so a fabricated one-to-one mapping would only duplicate that.
+ */
+const VALID_ROLES = new Set<Slot>(["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"]);
+function rolesOf(raw: string): Slot[] {
+  const out: Slot[] = [];
+  for (const tok of positionsOf(raw)) {
+    const role = tok as Slot;
+    if (VALID_ROLES.has(role) && !out.includes(role)) out.push(role);
+  }
+  return out;
+}
+
 function fit(slot: Slot, player: RosterPlayer): number {
   const ps = positionsOf(player.positions);
   if (ps.length === 0) return 0;
@@ -147,6 +164,7 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
       imageUrl: best.image_url || undefined,
       nationality: best.nationality || undefined,
       age: best.age || undefined,
+      positions: rolesOf(best.positions),
     });
   }
 

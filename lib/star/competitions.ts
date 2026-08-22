@@ -7,6 +7,7 @@ import { mulberry32, sortLeague } from "./season";
 import {
   PRE_SEASON_WEEK, TOURNAMENT_WEEKS, EURO_LEAGUE_PHASE_WEEKS,
   LEAGUE_CUP_SLOTS, FA_CUP_SLOTS,
+  leagueCupSlotsFor, faCupSlotsFor, divisionOf, type CareerDivision,
 } from "./calendar";
 import {
   openEuro, poolFor, knockoutSlots, buildEuroTable, leaguePhaseComplete, drawTie,
@@ -564,8 +565,12 @@ export function seedCups(career: CareerState): { states: CupState[]; fixtures: F
  * 18, and you cannot play two cup ties in the same week. These interleave, and
  * anything that still collides after rounding is pushed a week later.
  */
-export function cupRoundWeek(competition: CupId, roundIndex: number, _clubCount?: number): number {
-  const slots = competition === "League Cup" ? LEAGUE_CUP_SLOTS : FA_CUP_SLOTS;
+export function cupRoundWeek(
+  competition: CupId, roundIndex: number, _clubCount?: number,
+  division: CareerDivision = "premier",
+): number {
+  const slots = competition === "League Cup"
+    ? leagueCupSlotsFor(division) : faCupSlotsFor(division);
   // One entry per ROUND, not per match: the League Cup's two-legged semi-final
   // occupies two slots and is still the fourth round of the competition.
   const byRound: string[] = [];
@@ -581,8 +586,11 @@ export function cupRoundWeek(competition: CupId, roundIndex: number, _clubCount?
  * Only the League Cup semi-final does, which is exactly how it works in England
  * and the reason that competition needs six dates for five rounds.
  */
-export function cupSecondLegWeek(competition: CupId, roundIndex: number): number | null {
-  const slots = competition === "League Cup" ? LEAGUE_CUP_SLOTS : FA_CUP_SLOTS;
+export function cupSecondLegWeek(
+  competition: CupId, roundIndex: number, division: CareerDivision = "premier",
+): number | null {
+  const slots = competition === "League Cup"
+    ? leagueCupSlotsFor(division) : faCupSlotsFor(division);
   const byRound: string[] = [];
   for (const s of slots) if (!byRound.includes(s.round)) byRound.push(s.round);
   const round = byRound[Math.min(roundIndex, byRound.length - 1)];
@@ -596,7 +604,7 @@ export function cupFixtureFor(state: CupState, career: CareerState, roundIndex: 
   const home = tie.home === career.player.club;
   const opponent = home ? tie.away : tie.home;
   return {
-    week: cupRoundWeek(state.competition, roundIndex, career.league.length),
+    week: cupRoundWeek(state.competition, roundIndex, career.league.length, divisionOf(career)),
     opponent,
     home,
     played: false,

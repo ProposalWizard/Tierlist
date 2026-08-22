@@ -73,7 +73,9 @@ export type Competition =
   /** One match, before the season: the Champions League holders v the Europa League holders. */
   | "Super Cup"
   | "World Cup"
-  | "European Championship";
+  | "European Championship"
+  /** Third to sixth in the Championship, for the last promotion place. */
+  | "Play-Offs";
 
 export interface Fixture {
   week: number;
@@ -88,7 +90,7 @@ export interface Fixture {
   // ── Knockout football. Absent on a league fixture, which is what every
   //    fixture was until cups existed — so absent means league. ──
   competition?: Competition;
-  kind?: "league" | "cup" | "europe" | "international";
+  kind?: "league" | "cup" | "europe" | "international" | "playoff";
   /** The one against the club down the road. Same football, louder consequences. */
   derby?: boolean;
   round?: string;
@@ -129,6 +131,8 @@ export interface LeaguePlayer {
    * the moment the pre-match screen names an opposition eleven.
    */
   nation?: string;
+  /** See SquadPlayer.positions — the same idea, for the other nineteen clubs. */
+  positions?: SquadPlayer["position"][];
 }
 
 export interface LeagueSquad {
@@ -203,6 +207,16 @@ export interface SquadPlayer {
   imageUrl?: string;
   nationality?: string;
   age?: number;
+  /**
+   * Every position he is actually listed for, `position` included — a real
+   * player's data holds several (SoFIFA's "CAM, CM, LW"), but building the
+   * squad still has to settle him into exactly one SLOT of the twenty. This
+   * is the difference between "the slot he fills in the squad" and "what he
+   * can actually play", and only the second one is what a team sheet should
+   * judge him against. Absent on an old save or a generated squad, both of
+   * which read as just `[position]`. See formations.ts's fitness/autoPick.
+   */
+  positions?: SquadPlayer["position"][];
 }
 
 export interface GoalEvent {
@@ -310,6 +324,42 @@ export interface CareerState {
   relationships: Relationships;
   contract: Contract;
   season: number;
+  /**
+   * Which division this season is being played in.
+   *
+   * Optional, and absent means the Premier League — every career saved
+   * before the Championship existed was one, and `divisionOf` below is the
+   * only thing that should ever read this field directly so that stays true
+   * in one place rather than twenty. Changes at a season rollover when your
+   * club is promoted or relegated; never mid-season.
+   */
+  division?: import("./calendar").CareerDivision;
+  /**
+   * Who is in each division, and in the pool below them, right now.
+   *
+   * Kept on the career because it changes: the lists in lib/star/clubs.ts
+   * are this season's, and a save three seasons deep has moved on from
+   * them. Absent means a career that predates promotion and relegation —
+   * one whose divisions still ARE those lists. See lib/star/promotion.
+   */
+  divisions?: { premier: string[]; championship: string[]; pool: string[] };
+  /**
+   * The Championship play-offs, once your club has reached them.
+   *
+   * Only ever set in a Championship season, and only when you finished third
+   * to sixth — everybody else's play-offs are simulated at the rollover and
+   * never need state. See lib/star/playoffs.
+   */
+  playOffState?: import("./playoffs").PlayOffState;
+  /** What went up and down at the last rollover, for the screen that says so. */
+  ladderNews?: {
+    yourMove: "promoted" | "relegated" | null;
+    promotedToPremier: string[];
+    relegatedFromPremier: string[];
+    promotedToChampionship: string[];
+    relegatedFromChampionship: string[];
+    playOffFinal?: { home: string; away: string; hs: number; as: number; winner: string };
+  };
   week: number;
   energy: number;
   matchFitness: number;
@@ -445,6 +495,26 @@ export interface CareerState {
   managerNews?: string | null;
   /** Sponsor objectives settled at the last rollover, for the dashboard. */
   sponsorNews?: string[];
+  /**
+   * What the rest of the division did with itself, the moment a transfer
+   * window last opened. Replaced whole by the next window, never appended —
+   * this is "what just happened", not a transfer history. See
+   * lib/star/leagueTransfers; import("./leagueTransfers").TransferMove kept
+   * as a structural type here rather than imported, so this file does not
+   * have to depend on the module that reads it.
+   */
+  leagueTransferNews?: {
+    player: string; from: string; to: string; overall: number; fee: number; unhappy: boolean;
+  }[];
+  /**
+   * `"<season>-<summer|january>"` of the last window actually run, so a
+   * replayed week — the exact match re-credited, `career.week` unchanged
+   * either time — can tell "I already ran this one" from "the calendar
+   * really has moved on since I last checked", which a week-to-week
+   * comparison alone cannot: a replay compares the same two weeks the
+   * original credit did and would open the window twice.
+   */
+  lastTransferWindowKey?: string;
   /** A farewell match, earned by a long spell at one club. */
   testimonial?: { club: string; season: number; payout: number } | null;
   /**
@@ -458,6 +528,8 @@ export interface CareerState {
 
 export type StarPhase =
   | "profile-setup"
+  /** What went up and down, shown once at a rollover. See LadderScreen. */
+  | "ladder"
   | "dashboard"
   | "league"
   | "life"

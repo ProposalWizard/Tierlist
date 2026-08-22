@@ -1,12 +1,31 @@
 "use client";
 import { useEffect, useState } from "react";
-import { STAR_FIFA_YEAR, STAR_SEASON_LABEL, STAR_EDITION_LABEL } from "@/lib/star/edition";
+import { STAR_FIFA_YEAR, STAR_EDITION_LABEL } from "@/lib/star/edition";
 import type { StarPlayer } from "@/lib/star/types";
+import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "@/lib/star/clubs";
+import { leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import PortraitPicker from "./PortraitPicker";
 
 interface Props {
-  onComplete: (player: StarPlayer, clubs: string[]) => void;
+  onComplete: (player: StarPlayer, clubs: string[], division: CareerDivision) => void;
 }
+
+/**
+ * Both divisions a career can actually start in.
+ *
+ * Not the promotion pool — those five clubs play no season of their own, so
+ * there is nothing to start a career IN. They only ever arrive in the
+ * Championship by being promoted into it mid-career.
+ *
+ * Read from lib/star/clubs.ts rather than /api/draft/clubs, which is Draft
+ * mode's own endpoint and answers a different question: every club that has
+ * ever been in ITS archive's idea of the Premier League, across all editions.
+ * This needs exactly this season's two divisions.
+ */
+const DIVISIONS: { key: CareerDivision; clubs: readonly string[] }[] = [
+  { key: "premier", clubs: PREMIER_LEAGUE_CLUBS },
+  { key: "championship", clubs: CHAMPIONSHIP_CLUBS },
+];
 
 const NATIONALITIES = ["England", "France", "Spain", "Germany", "Brazil", "Argentina", "Portugal", "Netherlands", "Italy", "Belgium"];
 
@@ -33,23 +52,42 @@ export default function ProfileSetup({ onComplete }: Props) {
   const [skin, setSkin] = useState<"light" | "dark">("light");
   const [age, setAge] = useState(16);
   const [nationality, setNationality] = useState("England");
-  const [clubs, setClubs] = useState<string[]>([]);
+  const [division, setDivision] = useState<CareerDivision>("premier");
   const [selectedClub, setSelectedClub] = useState("");
-  const [loading, setLoading] = useState(false);
   const [portrait, setPortrait] = useState<string | undefined>(undefined);
+  /**
+   * Which clubs the database actually has a squad for this edition.
+   *
+   * Only ever an annotation — a club is still selectable without one, and
+   * degrades to a generated squad exactly as it always has. It is here
+   * because the Championship's own squads arrive by running a migration,
+   * so "this club has no players yet" is a real and temporary state worth
+   * saying out loud rather than letting somebody discover mid-career.
+   */
+  const [withData, setWithData] = useState<Set<string> | null>(null);
+
+  const clubs = DIVISIONS.find(d => d.key === division)!.clubs;
 
   useEffect(() => {
-    if (step !== 2 || clubs.length > 0) return;
-    setLoading(true);
+    if (step !== 2 || withData) return;
+    let alive = true;
     fetch("/api/draft/clubs")
       .then((r) => r.json())
-      .then((d: { clubs: { name: string; seasons: number[] }[] }) => {
-        const inPl = (d.clubs ?? []).filter((c) => c.seasons.includes(STAR_FIFA_YEAR)).map((c) => c.name).sort();
-        setClubs(inPl);
-        if (inPl.length > 0) setSelectedClub(inPl[0]);
+      .then((d: { clubs?: { name: string; seasons: number[] }[] }) => {
+        if (!alive) return;
+        setWithData(new Set(
+          (d.clubs ?? []).filter(c => c.seasons.includes(STAR_FIFA_YEAR)).map(c => c.name),
+        ));
       })
-      .finally(() => setLoading(false));
-  }, [step, clubs.length]);
+      .catch(() => { if (alive) setWithData(new Set()); });
+    return () => { alive = false; };
+  }, [step, withData]);
+
+  // Whichever division is showing, start on its first club rather than on
+  // whatever was picked in the other one.
+  useEffect(() => {
+    setSelectedClub(prev => (clubs.includes(prev) ? prev : clubs[0] ?? ""));
+  }, [clubs]);
 
   const canProceed1 = firstName.trim().length > 0 && lastName.trim().length > 0;
   const canFinish = selectedClub.length > 0;
@@ -68,7 +106,8 @@ export default function ProfileSetup({ onComplete }: Props) {
         startYear: STAR_FIFA_YEAR,
         ...(portrait ? { portrait } : {}),
       },
-      clubs,
+      [...clubs],
+      division,
     );
   };
 
@@ -155,25 +194,45 @@ export default function ProfileSetup({ onComplete }: Props) {
         {step === 2 && (
           <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-600 rounded-2xl p-5 shadow-xl">
             <div className="bg-gray-700 text-white text-center font-black py-2 rounded-lg mb-3">Choose Your Club</div>
-            {loading && <div className="text-center py-6 text-emerald-300 text-sm">Loading clubs…</div>}
-            {!loading && clubs.length === 0 && (
-              <div className="text-center py-6 text-red-300 text-sm">
-                No {STAR_SEASON_LABEL} PL clubs found. Check that {STAR_EDITION_LABEL} data is imported.
-              </div>
-            )}
-            {!loading && clubs.length > 0 && (
-              <div className="max-h-72 overflow-y-auto space-y-1">
-                {clubs.map((c) => (
+
+            {/* Start in either division. A Championship career is the same
+                career with a longer season and no European football — see
+                lib/star/calendar. */}
+            <div className="mb-3 flex gap-1.5">
+              {DIVISIONS.map(d => (
+                <button
+                  key={d.key}
+                  onClick={() => setDivision(d.key)}
+                  className={`flex-1 rounded-lg py-2 text-[11px] font-black uppercase tracking-wide transition ${
+                    division === d.key ? "bg-emerald-500 text-white" : "bg-gray-800 text-white/70 hover:bg-gray-700"}`}
+                >
+                  {leagueNameFor(d.key)}
+                </button>
+              ))}
+            </div>
+
+            <div className="max-h-72 overflow-y-auto space-y-1">
+              {clubs.map((c) => {
+                const missing = withData !== null && !withData.has(c);
+                return (
                   <button
                     key={c}
                     onClick={() => setSelectedClub(c)}
-                    className={`w-full py-2 px-3 text-left font-bold text-sm rounded-lg transition ${selectedClub === c ? "bg-emerald-500 text-white" : "bg-gray-800 text-white/85 hover:bg-gray-700"}`}
+                    className={`flex w-full items-center justify-between gap-2 rounded-lg py-2 px-3 text-left text-sm font-bold transition ${selectedClub === c ? "bg-emerald-500 text-white" : "bg-gray-800 text-white/85 hover:bg-gray-700"}`}
                   >
-                    {c}
+                    <span className="min-w-0 truncate">{c}</span>
+                    {missing && (
+                      <span
+                        className="shrink-0 text-[9px] font-black uppercase tracking-wide text-amber-300"
+                        title={`No ${STAR_EDITION_LABEL} squad in the database for this club yet — you can still start here, but its players will be made up until the data is imported.`}
+                      >
+                        No squad yet
+                      </span>
+                    )}
                   </button>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
 
             {/* Last, and after the club, because the preview is drawn in that
                 club's colours — offering it before you have picked one would

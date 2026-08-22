@@ -1,7 +1,7 @@
 import type { CareerState, LeagueResult } from "./types";
 import { mulberry32 } from "./season";
 import { shortNameOf } from "./realSquad";
-import { calendarMonthOf } from "./calendar";
+import { calendarMonthOf, divisionOf, type CareerDivision } from "./calendar";
 
 /**
  * PLAYER OF THE MONTH.
@@ -58,16 +58,26 @@ function seasonMonthIndex(calendarMonth: number): number {
  * working: without them it falls back to the old four-week blocks, which is
  * exactly what a career saved before the calendar existed was scored on.
  */
-export function monthOf(week: number, startYear?: number, season?: number): number {
+export function monthOf(
+  week: number, startYear?: number, season?: number,
+  division: CareerDivision = "premier",
+): number {
   if (startYear !== undefined && season !== undefined) {
-    return seasonMonthIndex(calendarMonthOf(startYear, season, week));
+    return seasonMonthIndex(calendarMonthOf(startYear, season, week, division));
   }
   return Math.min(MONTH_NAMES.length - 1, Math.floor(Math.max(0, week - 1) / WEEKS_PER_MONTH));
 }
 
-/** The same question, asked of a career, which knows both. */
+/**
+ * The same question, asked of a career, which knows all three.
+ *
+ * The division matters here and is easy to miss: a Championship week is a
+ * ROUND, not a weekend, so week 30 is late January there and late March in
+ * the Premier League. Player of the Month is decided on these boundaries,
+ * so getting it wrong would award the wrong month's football.
+ */
 export function monthOfCareer(career: CareerState, week: number): number {
-  return monthOf(week, career.player.startYear, career.season);
+  return monthOf(week, career.player.startYear, career.season, divisionOf(career));
 }
 
 /**

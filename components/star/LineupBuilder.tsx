@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { LeagueSquad } from "@/lib/star/types";
 import {
-  FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, refit, fitness,
+  FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, refit, bestFitness,
   type Pickable,
 } from "@/lib/star/formations";
 import { loadLineup, saveLineup } from "@/lib/star/lineupStore";
@@ -83,7 +83,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
   const squad: Pickable[] = useMemo(() => {
     const found = squads.find(s => s.club === club);
     return (found?.players ?? []).map(p => ({
-      id: p.id, name: p.name, position: p.position, overall: p.overall,
+      id: p.id, name: p.name, position: p.position, positions: p.positions, overall: p.overall,
     }));
   }, [club, squads]);
 
@@ -329,7 +329,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
               const id = xi[i] ?? null;
               const p = id ? byId.get(id) : undefined;
               const isHeld = !!id && held === id;
-              const bad = p ? fitness(slot.role, p.position) < 60 : false;
+              const bad = p ? bestFitness(slot.role, p) < 60 : false;
               return (
                 <button
                   key={`${slot.role}-${i}`}
