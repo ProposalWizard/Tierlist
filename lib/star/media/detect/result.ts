@@ -100,10 +100,17 @@ const UPSET: Detector = (r) => {
   return null;
 };
 
+/** How much more a derby's OWN base importance climbs for a rated rivalry on
+ *  top of it — Liverpool-Everton is a derby full stop; a Merseyside-strength
+ *  primary rivalry between two clubs who ALSO share a rated history climbs
+ *  further still. See lib/star/rivalries.ts. */
+const RIVALRY_BOOST: Record<"R1" | "R2" | "R3", number> = { R1: 18, R2: 10, R3: 4 };
+
 const DERBY: Detector = (r) => {
   if (!r.derby) return null;
   const id = r.result === "win" ? "derby-win" : r.result === "loss" ? "derby-loss" : "derby-draw";
-  return ev(id, club(r), r.result === "draw" ? 52 : 78, ["derby", "drama"], {
+  const boost = r.rivalryTier ? RIVALRY_BOOST[r.rivalryTier] : 0;
+  return ev(id, club(r), Math.min(96, (r.result === "draw" ? 52 : 78) + boost), ["derby", "drama"], {
     ...base(r),
   }, "instant", "derby");
 };

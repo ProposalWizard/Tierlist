@@ -4,6 +4,7 @@ import { autoPick, bestFitness, type Pickable } from "./formations";
 import { formationForClub } from "./teamsheet";
 import { shortNameOf } from "./realSquad";
 import type { TransferWindow } from "./calendar";
+import { isDerby, strongestTier } from "./rivalries";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS, RESHAPING THEMSELVES.
@@ -37,9 +38,14 @@ import type { TransferWindow } from "./calendar";
  *     among the division's best) is a real, if still unlikely, sale. See
  *     `sellability`.
  *
- * Deliberately NOT here yet, all by request: loan deals, a fixed rivalry
- * no-sell list, and anything outside the twenty Premier League clubs this
- * career actually has data for.
+ * Deliberately NOT here yet, all by request: loan deals, and anything
+ * outside the twenty Premier League clubs this career actually has data for.
+ * A rivalry no-sell rule IS here — see `rivalrySellChance` — reading real
+ * per-club data (lib/star/rivalries.ts) rather than a fixed list: a primary
+ * rivalry blocks a sale almost outright, a lesser one only dampens it, and a
+ * player forcing his own exit (`unhappy`) is a real, if still uncommon,
+ * exception to all of it — a transfer request does not stop at a shirt
+ * colour in real football either.
  */
 
 // ── The common shape every club's roster is read as ────────────────────────
@@ -214,6 +220,31 @@ function sellability(
   return rng() < odds ? { candidate: c, unhappy: false } : null;
 }
 
+// ── Rivals do not sell to rivals ────────────────────────────────────────────
+
+/**
+ * How likely a club is to even entertain selling to THIS particular buyer,
+ * given what the two clubs are to each other. 1 for no rivalry at all — the
+ * ordinary case, unaffected.
+ *
+ * A primary rivalry (R1) is close to a hard no: a club selling its player
+ * straight to its biggest rival happens in real football about as often as
+ * this number suggests, essentially never outside a player forcing it
+ * himself. A lesser rivalry or a plain geographical derby with no rated
+ * history dampens the odds without pretending it never happens — smaller
+ * clubs sell to a local derby rival more often than the big primary
+ * rivalries ever do.
+ */
+export function rivalrySellChance(sellerClub: string, buyerClub: string, unhappy: boolean): number {
+  const tier = strongestTier(sellerClub, buyerClub);
+  const derby = isDerby(sellerClub, buyerClub);
+  if (!tier && !derby) return 1;
+  const base = tier === "R1" ? 0.03 : tier === "R2" ? 0.15 : tier === "R3" ? 0.4 : 0.5; // derby-only, no tier
+  // An unhappy player forcing his own move is a real exception, not a full
+  // waiver — he still has to actually get the rival to want him.
+  return unhappy ? Math.min(1, base * 3.2) : base;
+}
+
 // ── The window itself ───────────────────────────────────────────────────────
 
 export interface TransferMove {
@@ -280,6 +311,7 @@ export function runTransferWindow(
     let bestClub: string | null = null, bestScore = -Infinity;
     for (const club of clubs) {
       if (club === seller.club) continue;
+      if (rng() > rivalrySellChance(seller.club, club, unhappy)) continue;
       const buyerStrength = strengths.get(club)!;
       const gap = buyerStrength - seller.overall;
       if (gap < -reachDown(buyerStrength) || gap > REACH_UP) continue;

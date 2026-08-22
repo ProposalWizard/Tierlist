@@ -5,6 +5,7 @@ import { generateSquad, clubNameSeed } from "./squadData";
 import { assignSquadNumber } from "./recognition";
 import { makeManager, bossOnArrival } from "./manager";
 import { offerClauses, canTriggerClause } from "./contracts";
+import { isDerby, strongestTier } from "./rivalries";
 
 /**
  * TRANSFERS
@@ -82,6 +83,20 @@ export function reputation(career: CareerState): number {
   ));
 }
 
+/**
+ * How likely your own club's rival even looks your way, whatever your
+ * reputation says — 1 for no rivalry at all. The same shape as
+ * leagueTransfers.ts's `rivalrySellChance`, read from the other side: a big
+ * club selling to its rival and a big club COURTING its rival's player are
+ * the same reluctance from two different desks.
+ */
+export function rivalInterestOdds(playerClub: string, suitorClub: string): number {
+  const tier = strongestTier(playerClub, suitorClub);
+  const derby = isDerby(playerClub, suitorClub);
+  if (!tier && !derby) return 1;
+  return tier === "R1" ? 0.05 : tier === "R2" ? 0.2 : tier === "R3" ? 0.5 : 0.55; // derby-only, no tier
+}
+
 /** What a club of this strength demands before it comes calling. */
 function interestThreshold(strength: number, mine: number): number {
   // Judged against your own club, so the same player is a target for a smaller
@@ -108,8 +123,14 @@ export function generateOffers(career: CareerState, rng: () => number): Transfer
     .filter(({ team }) => {
       const need = interestThreshold(team.strength, mine) - (expiring ? 12 : 0);
       // A release clause is a price at which the club cannot say no, so a side
-      // that can meet it comes for you whatever your reputation says.
+      // that can meet it comes for you whatever your reputation says — even a
+      // rival, the one thing a release clause is actually FOR.
       if (canTriggerClause(career.contract, team.strength, career.contract.wage)) return true;
+      // Your own club's biggest rival essentially never comes calling — the
+      // same reluctance the other nineteen clubs' own transfer business
+      // already has (see leagueTransfers.ts's rivalrySellChance), applied to
+      // interest shown in YOU rather than a sale of somebody else.
+      if (rng() > rivalInterestOdds(career.player.club, team.name)) return false;
       // A club that is interested does not always act on it.
       return rep >= need && rng() < 0.55 + (rep - need) / 240;
     })

@@ -334,3 +334,72 @@ export function strongestTier(clubA: string, clubB: string): RivalryTier | null 
   if (tiers.includes("R3")) return "R3";
   return null;
 }
+
+// ── One club's THE rival, for systems that only have room for one ──────────
+
+/**
+ * How much a fixture with `club` matters to `club`'s own dressing room and
+ * stands — the single number everything below sorts and scales by.
+ *
+ * Derby-ness and tier are two different axes (Chelsea-Fulham is a derby with
+ * no rated tier; Liverpool-Manchester United is a rated primary rivalry
+ * between two clubs whose grounds are nowhere near each other) so this folds
+ * them into one score rather than picking one axis and ignoring the other:
+ * a tier carries most of the weight, a derby adds on top of it.
+ */
+function heat(r: Rivalry | null): number {
+  if (!r) return 0;
+  const tierScore = r.tier === "R1" ? 30 : r.tier === "R2" ? 20 : r.tier === "R3" ? 10 : 0;
+  return tierScore + (r.derby ? 8 : 0);
+}
+
+/**
+ * The single club that matters most to `club`, for a system that only has
+ * room to name one — an account roster with one `rivalFan` slot, a fixture
+ * flag that is a plain boolean. Reads `club`'s OWN list only (not the
+ * opponent's), so this is deliberately "who WE care about most", not
+ * "who cares about us most" — the two can differ (see strongestTier's Hull/
+ * Leeds note) and a single-rival system has to pick a side to read from.
+ *
+ * Absent for a club with no rivalry given at all (Lincoln City, Reading FC —
+ * both "no major rivalry" in the source list) rather than inventing one:
+ * callers already have to handle no-rival clubs, since the derby pairing
+ * this replaced could leave one team unpaired too.
+ */
+export function primaryRivalOf(club: string): string | null {
+  const list = CLUB_RIVALRIES[club];
+  if (!list?.length) return null;
+  let best: Rivalry | null = null, bestHeat = -1;
+  for (const r of list) {
+    const h = heat(r);
+    if (h > bestHeat) { bestHeat = h; best = r; }
+  }
+  return best?.club ?? null;
+}
+
+// ── How much more a rivalry fixture is worth ────────────────────────────────
+
+export interface RivalryMultiplier {
+  fans: number;
+  team: number;
+  boss: number;
+}
+
+/**
+ * Scales lib/star/rivals.ts's old flat DERBY_MULTIPLIER by how much the
+ * fixture actually means, on the same three relationship swings (fans move
+ * most, the dressing room next, the manager least — three points are three
+ * points to him whoever they came against). A plain geographical derby with
+ * no rated tier still gets a real bump; nothing at all if there is no
+ * rivalry on either side.
+ */
+export function rivalryMultiplier(clubA: string, clubB: string): RivalryMultiplier {
+  const tier = strongestTier(clubA, clubB);
+  const derby = isDerby(clubA, clubB);
+  if (!tier && !derby) return { fans: 1, team: 1, boss: 1 };
+  if (tier === "R1") return { fans: 2.4, team: 1.7, boss: 1.2 };
+  if (tier === "R2") return { fans: 1.8, team: 1.4, boss: 1.12 };
+  if (tier === "R3") return { fans: 1.3, team: 1.15, boss: 1.05 };
+  // Derby-only, no tier — Chelsea-Fulham's shape.
+  return { fans: 1.6, team: 1.3, boss: 1.1 };
+}
