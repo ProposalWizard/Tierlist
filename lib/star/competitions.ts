@@ -544,7 +544,11 @@ export function fixtureLabel(f: Fixture): string {
  */
 export function seedCups(career: CareerState): { states: CupState[]; fixtures: Fixture[] } {
   const rng = mulberry32(career.season * 6151 + career.league.length * 13);
-  const states = [openCup("League Cup", career.league, rng), openCup("FA Cup", career.league, rng)];
+  const division = divisionOf(career);
+  const states = [
+    openCup("League Cup", career.league, division, rng),
+    openCup("FA Cup", career.league, division, rng),
+  ];
   const fixtures: Fixture[] = [];
   for (const st of states) {
     const f = cupFixtureFor(st, career, 0);
