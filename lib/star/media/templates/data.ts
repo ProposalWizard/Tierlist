@@ -276,8 +276,13 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "thumbnail", weight: 3,
   },
   {
-    id: "ag-derby", archetype: "aggregator", tags: ["derby"],
+    id: "ag-derby", archetype: "aggregator", tags: ["derby"], excludes: ["derbyName"],
     body: "🎥 The derby had EVERYTHING. Full highlights up now.",
+    graphic: "thumbnail", weight: 2,
+  },
+  {
+    id: "ag-derby-named", archetype: "aggregator", tags: ["derby"], requires: ["derbyName"],
+    body: "🎥 The {derbyName} had EVERYTHING. Full highlights up now.",
     graphic: "thumbnail", weight: 2,
   },
   {

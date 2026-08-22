@@ -118,12 +118,25 @@ export const PRESS_TEMPLATES: Template[] = [
   },
   {
     id: "tb-derby", archetype: "tabloid", events: ["derby-win"], requires: ["short"],
+    excludes: ["derbyName"],
     body: "THE CITY IS THEIRS! {club|caps} DO THE DERBY",
     graphic: "breaking", weight: 3,
   },
   {
+    id: "tb-derby-named", archetype: "tabloid", events: ["derby-win"], requires: ["short", "derbyName"],
+    body: "{club|caps} OWN THE {derbyName|caps}!",
+    graphic: "breaking", weight: 3,
+  },
+  {
     id: "tb-derby-loss", archetype: "tabloid", events: ["derby-loss"], frames: ["mock"],
+    excludes: ["derbyName"],
     body: "DERBY DAY MISERY FOR {club|caps}",
+    weight: 2,
+  },
+  {
+    id: "tb-derby-loss-named", archetype: "tabloid", events: ["derby-loss"], frames: ["mock"],
+    requires: ["derbyName"],
+    body: "{derbyName|caps} HUMILIATION FOR {club|caps}",
     weight: 2,
   },
   {

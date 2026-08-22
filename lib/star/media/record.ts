@@ -1,6 +1,6 @@
 import type { CareerState, Fixture, MatchStats } from "../types";
 import { sortLeague } from "../season";
-import { isDerby, strongestTier } from "../rivalries";
+import { isDerby, strongestTier, derbyName } from "../rivalries";
 import { monthOfCareer, monthRace, endsMonthOn, MONTH_NAMES } from "../potm";
 import type { MatchRecord, GoalRecord, TableSnapshot } from "./types";
 
@@ -72,6 +72,7 @@ export function buildMatchRecord(
   const competition = fixture.competition ?? "Premier League";
   const derby = fixture.derby ?? isDerby(before.player.club, fixture.opponent);
   const rivalryTier = strongestTier(before.player.club, fixture.opponent) ?? undefined;
+  const derbyNameValue = derbyName(before.player.club, fixture.opponent) ?? undefined;
   const strength = (name: string) => before.league.find(t => t.name === name)?.strength ?? fixture.opponentStrength ?? 65;
 
   const us = stats.homeScore;
@@ -163,6 +164,7 @@ export function buildMatchRecord(
     round: fixture.round,
     derby,
     rivalryTier,
+    derbyName: derbyNameValue,
     potmRace,
     potmAward,
     home: fixture.home,
