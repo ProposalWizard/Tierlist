@@ -29,7 +29,7 @@ import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
-import { runTransferWindow } from "./leagueTransfers";
+import { runTransferWindow, returnLoansHome } from "./leagueTransfers";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
@@ -480,9 +480,10 @@ export function creditMatchResult(
       const key = `${next.season}-${openedWindow}`;
       if (career.lastTransferWindowKey !== key) {
         const rng = mulberry32(next.season * 100003 + next.week * 37);
-        const { career: afterWindow, moves } = runTransferWindow(next, openedWindow, rng);
+        const { career: afterWindow, moves, loans } = runTransferWindow(next, openedWindow, rng);
         Object.assign(next, afterWindow);
         next.leagueTransferNews = moves;
+        next.leagueLoanNews = loans;
         next.lastTransferWindowKey = key;
       }
     }
@@ -514,6 +515,12 @@ export function awardLeagueTrophyIfWon(career: CareerState): { career: CareerSta
 // Ballon d'Or if won. Whether the contract now needs renewing is the caller's call
 // via next.contract.seasonsRemaining.
 export function advanceSeason(career: CareerState, userWonBallonDor: boolean): { career: CareerState; newlyUnlocked: string[] } {
+  // A loan spell is exactly the season it was made in — home before
+  // anything else this rollover touches a squad, so every squad-carrying
+  // computation below (promotion/relegation's strength reads, the fresh
+  // league/fixtures build) already sees him back where he actually belongs.
+  career = returnLoansHome(career);
+
   // ── Up and down, before anything is rebuilt ──
   //
   // Next season's division and club list, which used to be simply "the same

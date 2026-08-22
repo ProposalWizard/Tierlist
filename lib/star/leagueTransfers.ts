@@ -38,14 +38,33 @@ import { isDerby, strongestTier } from "./rivalries";
  *     among the division's best) is a real, if still unlikely, sale. See
  *     `sellability`.
  *
- * Deliberately NOT here yet, all by request: loan deals, and anything
- * outside the twenty Premier League clubs this career actually has data for.
- * A rivalry no-sell rule IS here — see `rivalrySellChance` — reading real
- * per-club data (lib/star/rivalries.ts) rather than a fixed list: a primary
- * rivalry blocks a sale almost outright, a lesser one only dampens it, and a
- * player forcing his own exit (`unhappy`) is a real, if still uncommon,
- * exception to all of it — a transfer request does not stop at a shirt
- * colour in real football either.
+ * Deliberately NOT here yet: anything outside the clubs this career actually
+ * has data for. A rivalry no-sell rule IS here — see `rivalrySellChance` —
+ * reading real per-club data (lib/star/rivalries.ts) rather than a fixed
+ * list: a primary rivalry blocks a deal almost outright, a lesser one only
+ * dampens it, and a player forcing his own exit (`unhappy`) is a real, if
+ * still uncommon, exception to all of it — a transfer request does not stop
+ * at a shirt colour in real football either. It applies equally to loans.
+ *
+ * ── Loans ──
+ *
+ * The same closed system, the same candidate pools, the same rivalry gate —
+ * a loan is not a separate market, it is the other thing that can happen to
+ * a player a club is willing to let go of for a window. Three differences
+ * from a permanent sale, and nothing else: `loanOrSale` decides which one a
+ * listing becomes (never a loan for an unhappy elite starter leaving for
+ * good — see there for why), a loan reaches further down the strength scale
+ * than a permanent sale would (a big club loans a squad player out further
+ * than it would ever sell him that cheap), and there is no fee. What makes
+ * a loan a LOAN rather than a sale with a return date typed in by hand: it
+ * is tracked on `CareerState.activeLoans` and comes home automatically at
+ * the season's end (`returnLoansHome`, called once from careerFlow.ts's
+ * `advanceSeason`, before that season's squads are otherwise touched) —
+ * never mid-season, no recall clause, no loan-to-buy conversion, and never
+ * exactly the season it was signed for, deliberately not any shorter or
+ * longer. A player currently out on loan is excluded from BOTH kinds of
+ * listing at his temporary club for as long as he is there — the club
+ * fielding him does not own him and cannot sell or loan him on.
  */
 
 // ── The common shape every club's roster is read as ────────────────────────
@@ -70,6 +89,22 @@ interface Candidate {
 }
 
 const ROLES: Role[] = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
+
+/**
+ * The one identifier for a player that survives crossing between the two
+ * representations this file juggles — a real player's `Candidate.id` is
+ * `sf_<sofifaId>` on the SquadPlayer side (fromSquadPlayer) but the bare
+ * `<sofifaId>` on the LeaguePlayer side (fromLeaguePlayer): the SAME man,
+ * two different id strings, depending only on which club currently has him.
+ * `sofifaId` itself is set consistently on both sides, so anything that has
+ * to still recognise a player after he has moved between sides — loans,
+ * specifically, since a LoanMove is read back a whole season later against
+ * freshly rebuilt pools — must key off THIS, never off `Candidate.id`
+ * directly.
+ */
+function stableKey(c: Candidate): string {
+  return c.sofifaId ?? c.id;
+}
 
 function fromSquadPlayer(p: SquadPlayer, club: string): Candidate {
   return {
@@ -193,7 +228,7 @@ function positionNeed(role: Role, club: string, pool: Candidate[], formation: Fo
 
 // ── Who is actually for sale ────────────────────────────────────────────────
 
-interface Listed { candidate: Candidate; unhappy: boolean }
+interface Listed { candidate: Candidate; unhappy: boolean; loan: boolean }
 
 /**
  * Whether he is even in the conversation this window — not whether he moves,
@@ -209,7 +244,7 @@ interface Listed { candidate: Candidate; unhappy: boolean }
 function sellability(
   c: Candidate, isStarter: boolean, ownStrength: number, leagueTopStrength: number,
   window: TransferWindow, rng: () => number,
-): Listed | null {
+): Omit<Listed, "loan"> | null {
   const isEliteClub = ownStrength >= leagueTopStrength - 4;
   if (isStarter && isEliteClub) {
     const unhappyOdds = window === "summer" ? 0.05 : 0.015;
@@ -218,6 +253,28 @@ function sellability(
   const baseOdds = isStarter ? 0.10 : 0.16;
   const odds = window === "summer" ? baseOdds : baseOdds * 0.35;
   return rng() < odds ? { candidate: c, unhappy: false } : null;
+}
+
+/**
+ * Loan, not sale — the ordinary way a squad player gets minutes somewhere
+ * else without his club giving him up for good.
+ *
+ * Never for an unhappy departure: a player unsettled enough to leave a good
+ * club leaves for good, not for a season. Everywhere else — the ordinary
+ * bench-and-reserve listing most windows produce — a loan is genuinely the
+ * MORE likely outcome in real football, not the exception: permanently
+ * selling a squad player is the bigger, rarer decision. Age moves it
+ * further where it is known — a teenager is what loans are FOR, an ageing
+ * squad player being let go is usually let go for good — but `LeaguePlayer`
+ * (everyone except your own squad) carries no age at all, so the baseline
+ * for "unknown" sits between the two known cases rather than guessing
+ * either way.
+ */
+function loanOrSale(c: Candidate, unhappy: boolean, rng: () => number): boolean {
+  if (unhappy) return false;
+  const age = c.age;
+  const chance = age === undefined ? 0.45 : age < 23 ? 0.68 : age < 29 ? 0.3 : 0.12;
+  return rng() < chance;
 }
 
 // ── Rivals do not sell to rivals ────────────────────────────────────────────
@@ -257,6 +314,21 @@ export interface TransferMove {
   unhappy: boolean;
 }
 
+export interface LoanMove {
+  player: string;
+  /** The same id every Candidate carries within this file — stable enough
+   *  within one save to find him again at `returnLoansHome` time. */
+  playerId: string;
+  /** Who actually owns him, and where he comes back to. */
+  parentClub: string;
+  /** Where he is actually playing this season. */
+  loanClub: string;
+  overall: number;
+  /** The season this loan is due home — always the season it was made in;
+   *  see the file header for what that deliberately does not cover. */
+  returnSeason: number;
+}
+
 /** A price with no budget behind it — cosmetic, off the rating alone, the
  *  same shape real fees roughly follow without pretending to model a market. */
 function feeFor(overall: number): number {
@@ -279,18 +351,27 @@ function windowBudget(window: TransferWindow, clubCount: number): number {
 
 export function runTransferWindow(
   career: CareerState, window: TransferWindow, rng: () => number,
-): { career: CareerState; moves: TransferMove[] } {
-  if (!window || !career.leagueSquads?.length) return { career, moves: [] };
+): { career: CareerState; moves: TransferMove[]; loans: LoanMove[] } {
+  if (!window || !career.leagueSquads?.length) return { career, moves: [], loans: [] };
 
   const you = career.player.club;
   const pools = new Map<string, Candidate[]>();
   pools.set(you, career.squad.map(p => fromSquadPlayer(p, you)));
   for (const sq of career.leagueSquads) {
+    // leagueSquads is fetched for the whole division, your own club
+    // included — career.squad is the up-to-date, richer source for that one
+    // (age, sofifaId, real current overall), so it must not be clobbered by
+    // the thinner LeaguePlayer snapshot sitting alongside it.
+    if (sq.club === you) continue;
     pools.set(sq.club, sq.players.map(p => fromLeaguePlayer(p, sq.club)));
   }
   const clubs = Array.from(pools.keys());
   const strengths = new Map(clubs.map(c => [c, clubStrength(c, pools.get(c)!)]));
   const topStrength = Math.max(...Array.from(strengths.values()));
+
+  // A club fielding somebody else's loanee does not own him and cannot deal
+  // him on, to anybody, for any reason, until his loan is up.
+  const onLoanElsewhere = new Set((career.activeLoans ?? []).map(l => l.playerId));
 
   // ── Who is listed ──
   const listed: Listed[] = [];
@@ -299,22 +380,32 @@ export function runTransferWindow(
     const formation = formationForClub(club);
     const xi = new Set(autoPick(pool as Pickable[], formation).filter((id): id is string => !!id));
     for (const c of pool) {
+      if (onLoanElsewhere.has(stableKey(c))) continue;
       const l = sellability(c, xi.has(c.id), strengths.get(club)!, topStrength, window, rng);
-      if (l) listed.push(l);
+      if (l) listed.push({ ...l, loan: loanOrSale(l.candidate, l.unhappy, rng) });
     }
   }
 
   // ── Match each listing to the best-fitting buyer ──
-  interface Candidate_ { move: TransferMove; score: number; from: string; to: string; playerId: string }
-  const proposals: Candidate_[] = [];
-  for (const { candidate: seller, unhappy } of listed) {
+  interface Proposal {
+    loan: boolean;
+    saleMove?: TransferMove;
+    loanMove?: LoanMove;
+    score: number; from: string; to: string; playerId: string;
+  }
+  const proposals: Proposal[] = [];
+  for (const { candidate: seller, unhappy, loan } of listed) {
     let bestClub: string | null = null, bestScore = -Infinity;
     for (const club of clubs) {
       if (club === seller.club) continue;
       if (rng() > rivalrySellChance(seller.club, club, unhappy)) continue;
       const buyerStrength = strengths.get(club)!;
       const gap = buyerStrength - seller.overall;
-      if (gap < -reachDown(buyerStrength) || gap > REACH_UP) continue;
+      // A loan reaches further down than a permanent sale would — a big
+      // club sends a squad player out on loan somewhere it would never
+      // actually SELL him that cheap.
+      const reach = loan ? reachDown(buyerStrength) * 1.4 : reachDown(buyerStrength);
+      if (gap < -reach || gap > REACH_UP) continue;
       const pool = pools.get(club)!;
       const formation = formationForClub(club);
       const need = Math.max(
@@ -325,22 +416,43 @@ export function runTransferWindow(
       if (score > bestScore) { bestScore = score; bestClub = club; }
     }
     if (!bestClub) continue;
-    proposals.push({
-      move: {
-        player: seller.name, from: seller.club, to: bestClub,
-        overall: seller.overall, fee: feeFor(seller.overall), unhappy,
-      },
-      score: bestScore, from: seller.club, to: bestClub, playerId: seller.id,
-    });
+    if (loan) {
+      proposals.push({
+        loan: true,
+        loanMove: {
+          // The stable cross-representation key — see stableKey — since this
+          // is read back next season against pools rebuilt from scratch,
+          // possibly on the other side of the SquadPlayer/LeaguePlayer
+          // divide from where he was sitting when this was written.
+          player: seller.name, playerId: stableKey(seller), parentClub: seller.club, loanClub: bestClub,
+          overall: seller.overall, returnSeason: career.season,
+        },
+        score: bestScore, from: seller.club, to: bestClub, playerId: seller.id,
+      });
+    } else {
+      proposals.push({
+        loan: false,
+        saleMove: {
+          player: seller.name, from: seller.club, to: bestClub,
+          overall: seller.overall, fee: feeFor(seller.overall), unhappy,
+        },
+        score: bestScore, from: seller.club, to: bestClub, playerId: seller.id,
+      });
+    }
   }
 
   // ── Apply the best proposals up to the window's own volume ──
+  //
+  // Loans and sales share one budget and one dedup set — a player does
+  // exactly one thing this window, whichever proposal for him scored
+  // higher, not one of each.
   proposals.sort((a, b) => b.score - a.score);
   const budget = windowBudget(window, clubs.length);
   const moves: TransferMove[] = [];
+  const loans: LoanMove[] = [];
   const moved = new Set<string>();
   for (const p of proposals) {
-    if (moves.length >= budget) break;
+    if (moves.length + loans.length >= budget) break;
     if (moved.has(p.playerId)) continue;
     const fromPool = pools.get(p.from)!;
     const idx = fromPool.findIndex(c => c.id === p.playerId);
@@ -353,10 +465,10 @@ export function runTransferWindow(
     strengths.set(p.from, clubStrength(p.from, fromPool));
     strengths.set(p.to, clubStrength(p.to, pools.get(p.to)!));
     moved.add(p.playerId);
-    moves.push(p.move);
+    if (p.loan) loans.push(p.loanMove!); else moves.push(p.saleMove!);
   }
 
-  if (!moves.length) return { career, moves: [] };
+  if (!moves.length && !loans.length) return { career, moves: [], loans: [] };
 
   const nextSquad = pools.get(you)!.map(toSquadPlayer);
   const nextLeagueSquads: LeagueSquad[] = career.leagueSquads.map(sq => ({
@@ -368,7 +480,57 @@ export function runTransferWindow(
   });
 
   return {
-    career: { ...career, squad: nextSquad, leagueSquads: nextLeagueSquads, league: nextLeague },
-    moves,
+    career: {
+      ...career, squad: nextSquad, leagueSquads: nextLeagueSquads, league: nextLeague,
+      activeLoans: loans.length ? [...(career.activeLoans ?? []), ...loans] : career.activeLoans,
+    },
+    moves, loans,
   };
+}
+
+/**
+ * Bring everybody due home.
+ *
+ * Called once at season rollover (careerFlow.ts's `advanceSeason`, before
+ * that season's squads are otherwise touched), so the man who spent this
+ * season out on loan is back on the club that actually owns him by the time
+ * next season's squads are built. "Due" simply means the season the loan
+ * covered has ended — see the file header for what deliberately is not
+ * modelled here (an early recall, a loan-to-buy conversion, a loan that runs
+ * shorter or longer than exactly one season).
+ */
+export function returnLoansHome(career: CareerState): CareerState {
+  const active = career.activeLoans ?? [];
+  const due = active.filter(l => l.returnSeason <= career.season);
+  if (!due.length) return career;
+  const remaining = active.filter(l => l.returnSeason > career.season);
+
+  const you = career.player.club;
+  const pools = new Map<string, Candidate[]>();
+  pools.set(you, career.squad.map(p => fromSquadPlayer(p, you)));
+  for (const sq of career.leagueSquads ?? []) {
+    if (sq.club === you) continue;
+    pools.set(sq.club, sq.players.map(p => fromLeaguePlayer(p, sq.club)));
+  }
+
+  for (const loan of due) {
+    const fromPool = pools.get(loan.loanClub);
+    const toPool = pools.get(loan.parentClub);
+    // His parent club may no longer be one this career tracks at all (a
+    // pool club since drawn out of the Championship picture, say) — nothing
+    // to bring him home TO, so he simply stays wherever he already is.
+    if (!fromPool || !toPool) continue;
+    const idx = fromPool.findIndex(c => stableKey(c) === loan.playerId);
+    if (idx < 0) continue; // he has left that club some other way since — nothing to recall
+    const [player] = fromPool.splice(idx, 1);
+    player.club = loan.parentClub;
+    toPool.push(player);
+  }
+
+  const nextSquad = pools.get(you)?.map(toSquadPlayer) ?? career.squad;
+  const nextLeagueSquads: LeagueSquad[] = (career.leagueSquads ?? []).map(sq => ({
+    club: sq.club, players: (pools.get(sq.club) ?? sq.players.map(p => fromLeaguePlayer(p, sq.club))).map(toLeaguePlayer),
+  }));
+
+  return { ...career, squad: nextSquad, leagueSquads: nextLeagueSquads, activeLoans: remaining };
 }

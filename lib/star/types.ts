@@ -506,6 +506,22 @@ export interface CareerState {
   leagueTransferNews?: {
     player: string; from: string; to: string; overall: number; fee: number; unhappy: boolean;
   }[];
+  /** Same "what just happened, replaced whole" shape as leagueTransferNews,
+   *  for loan moves specifically. See lib/star/leagueTransfers. */
+  leagueLoanNews?: {
+    player: string; playerId: string; parentClub: string; loanClub: string;
+    overall: number; returnSeason: number;
+  }[];
+  /**
+   * Everybody currently out on loan, whoever's business it was — yours
+   * included. Not "news", unlike the two above: this is live state a loan's
+   * return (`returnLoansHome`, called at every season rollover) has to read
+   * back, so it is kept and updated rather than replaced each window.
+   */
+  activeLoans?: {
+    player: string; playerId: string; parentClub: string; loanClub: string;
+    overall: number; returnSeason: number;
+  }[];
   /**
    * `"<season>-<summer|january>"` of the last window actually run, so a
    * replayed week — the exact match re-credited, `career.week` unchanged
