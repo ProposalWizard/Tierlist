@@ -81,30 +81,46 @@ export const OTHER_CLUBS: readonly string[] = [
  * could resolve from shorthand ("Man City", "Inter", "Atleti"), not yet
  * verified against what SoFIFA itself calls each club.
  */
+/**
+ * Every name below matches the real SoFIFA spelling confirmed earlier this
+ * season — not the shorthand originally given ("Man City", "Inter",
+ * "Atleti") that these lists started from. That distinction mattered twice
+ * over: the FC26->FC27 clone (fc27_clone_european_clubs.sql) was fixed to
+ * MATCH a club under its real spelling months ago, but these two lists kept
+ * asking the Lineups picker for the shorthand instead — so the clone had
+ * long since copied real Bayern München/Fenerbahçe/Porto/etc. squads into
+ * the database correctly, while the game itself was still asking for a name
+ * that squad was never stored under. Caught only by a full sweep of every
+ * club's exact player count, the same way the English clubs' equivalent bug
+ * was — a club sitting at zero players doesn't distinguish "never cloned"
+ * from "cloned under a name three characters different from what's asked
+ * for", and 36 of these 84 were the second kind.
+ */
 export const CHAMPIONS_LEAGUE_CLUBS: readonly string[] = [
-  "Arsenal", "Aston Villa", "Atlético Madrid", "Borussia Dortmund", "Barcelona",
-  "Bayern München", "Club Brugge", "Como", "Feyenoord", "Galatasaray", "Inter",
-  "RB Leipzig", "Lens", "Lille", "Liverpool", "Manchester City", "Manchester United",
-  "Napoli", "Paris Saint-Germain", "Porto", "PSV Eindhoven", "Real Betis",
-  "Real Madrid", "Roma", "Shakhtar Donetsk", "Slavia Praha", "Sporting CP",
-  "VfB Stuttgart", "Villarreal", "Bodø/Glimt", "Celtic", "AEK Athens", "Lyon",
-  "Fenerbahçe", "Dinamo Zagreb",
+  "Arsenal", "Aston Villa", "Atlético Madrid", "Borussia Dortmund", "FC Barcelona",
+  "FC Bayern München", "Club Brugge KV", "Como", "Feyenoord", "Galatasaray SK", "Inter",
+  "RB Leipzig", "RC Lens", "Lille OSC", "Liverpool", "Manchester City", "Manchester United",
+  "Napoli", "Paris Saint-Germain", "FC Porto", "PSV", "Real Betis Balompié",
+  "Real Madrid", "Roma", "Shakhtar Donetsk", "SK Slavia Praha", "Sporting CP",
+  "VfB Stuttgart", "Villarreal CF", "FK Bodø/Glimt", "Celtic", "AEK Athens", "Olympique Lyonnais",
+  "Fenerbahce", "Dinamo Zagreb",
   // Slovan Bratislava was given directly but confirmed absent from the FC26
   // table under any close spelling (see fc27_clone_european_clubs.sql) —
   // swapped for a club with genuine recent Champions League pedigree from a
-  // league already confirmed present via Midtjylland's match.
-  "FC Copenhagen",
+  // league already confirmed present via Midtjylland's match. Danish
+  // spelling, not the English one — its own real row is "FC København".
+  "FC København",
 ];
 
 export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
-  "AZ Alkmaar", "AFC Bournemouth", "Celta Vigo", "Crystal Palace", "Hoffenheim",
-  "Juventus", "Bayer Leverkusen", "Marseille", "AC Milan", "Olympiacos",
-  "Real Sociedad", "Rennes", "Sparta Praha", "Sturm Graz", "Sunderland",
-  "Union SG", "Ferencváros", "Anderlecht", "Lech Poznań",
-  "Trabzonspor", "Benfica", "Beşiktaş",
-  "Salzburg", "Rangers", "Hearts", "Shamrock Rovers",
+  "AZ Alkmaar", "AFC Bournemouth", "RC Celta", "Crystal Palace", "TSG 1899 Hoffenheim",
+  "Juventus", "Bayer 04 Leverkusen", "Olympique de Marseille", "AC Milan", "Olympiacos FC",
+  "Real Sociedad", "Stade Rennais FC", "Sparta Praha", "SK Sturm Graz", "Sunderland",
+  "Union Saint-Gilloise", "Ferencvárosi Torna Club", "RSC Anderlecht", "Lech Poznań",
+  "Trabzonspor", "SL Benfica", "Beşiktaş JK",
+  "FC Red Bull Salzburg", "Rangers FC", "Hearts", "Shamrock Rovers",
   // The first list was seven short of the real thirty-six.
-  "Ajax", "Midtjylland", "Genk", "Young Boys", "Basel", "Malmö",
+  "Ajax", "FC Midtjylland", "KRC Genk", "BSC Young Boys", "FC Basel 1893", "Malmö FF",
   // Torreense, Crvena Zvezda, Omonia Nicosia, Pafos and Slovan Bratislava were
   // given directly but confirmed absent from the FC26 table under any close
   // spelling (see fc27_clone_european_clubs.sql) — not just unlicensed, in
@@ -112,7 +128,7 @@ export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
   // happens to share its nickname's English translation. Swapped for five
   // other clubs with a genuine European pedigree, each from a league already
   // confirmed present in the table by a club above that matched clean.
-  "Sporting Braga", "PAOK", "Viktoria Plzeň", "Vitória Guimarães", "Legia Warszawa",
+  "Sporting Clube de Braga", "PAOK", "Viktoria Plzeň", "Vitória SC", "Legia Warszawa",
 ];
 
 export type Division = "premier" | "championship" | "pool" | "champions" | "europa";
