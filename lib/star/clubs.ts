@@ -16,7 +16,7 @@
  */
 
 export const PREMIER_LEAGUE_CLUBS: readonly string[] = [
-  "Arsenal", "Bournemouth", "Liverpool", "Leeds", "Crystal Palace", "Brentford",
+  "Arsenal", "Bournemouth", "Liverpool", "Leeds United", "Crystal Palace", "Brentford",
   "Hull City", "Brighton", "Everton", "Newcastle United", "Nottingham Forest",
   "Ipswich Town", "Manchester City", "Tottenham Hotspur", "Aston Villa",
   "Chelsea", "Fulham", "Sunderland", "Manchester United", "Coventry City",

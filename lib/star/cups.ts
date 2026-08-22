@@ -1,4 +1,6 @@
 import type { LeagueTeam } from "./types";
+import type { CareerDivision } from "./calendar";
+import { CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "./clubs";
 
 /**
  * THE CUPS.
@@ -49,35 +51,106 @@ export interface CupState {
   winner?: string;
 }
 
-/**
- * The twelve who make the field up to thirty-two.
- *
- * The Premier League is twenty, and a cup wants a power of two — so twelve come
- * up from below, which is what makes it a cup rather than a league played
- * knockout. They are the clubs the draft game already uses as promotion
- * candidates, minus the three it lists that are IN the Premier League here
- * (Wolves, Burnley, West Ham), plus three more from its own promoted list.
- *
- * Strengths are lower than every top-flight side on purpose. A cup upset should
- * be an upset.
- */
-export const CUP_ENTRANTS_BELOW: { name: string; strength: number }[] = [
-  { name: "Millwall", strength: 58 },
-  { name: "Southampton", strength: 62 },
-  { name: "Middlesbrough", strength: 59 },
-  { name: "Wrexham", strength: 55 },
-  { name: "Stoke City", strength: 57 },
-  { name: "Norwich City", strength: 58 },
-  { name: "Swansea City", strength: 56 },
-  { name: "Sheffield United", strength: 57 },
-  { name: "Watford", strength: 58 },
-  { name: "Coventry City", strength: 59 },
-  { name: "Ipswich Town", strength: 60 },
-  { name: "Hull City", strength: 56 },
-];
-
 /** How many clubs a cup holds. Five rounds of halving. */
 export const CUP_FIELD = 32;
+
+// ── Who comes up from below ──────────────────────────────────────────────────
+
+/**
+ * This used to be a flat, hardcoded list of twelve clubs — written before the
+ * Championship was a real, live 24-club division with its own promotion and
+ * relegation (see lib/star/clubs.ts, lib/star/promotion.ts). It had gone
+ * quietly wrong: three of its twelve names (Coventry City, Ipswich Town, Hull
+ * City) are now in the PREMIER LEAGUE, so a Championship career's cup draw
+ * could field actual top-flight clubs as fake "lower-tier" opposition, and
+ * the other nine were simply appended on top of `league` with no draw at
+ * all — every Championship season saw the exact same twelve names, in the
+ * exact same cup, forever.
+ *
+ * Below draws for real now, from the two real pools this game actually
+ * tracks: the Championship's other twenty-four clubs (real strength when the
+ * career itself is playing the Championship and this file has synced
+ * numbers for them; a stable estimate otherwise) and the five-club
+ * promotion pool. The pool is weighted far lower — a National League side
+ * reaching the FA Cup proper happens in real life, but it is the exception,
+ * not twelve automatic slots.
+ *
+ * This reads the STATIC club lists in lib/star/clubs.ts, not
+ * `membershipOf(career)` — a save several seasons into promotion/relegation
+ * drift draws its cup opposition from the divisions the game shipped with,
+ * not this season's actual Championship. Fully tracking that would mean
+ * threading the whole CareerState through every function below instead of
+ * just a league table and a division, for a candidate pool that only ever
+ * decides who a cup upset comes from — more plumbing than this file's job
+ * is worth.
+ */
+function belowStrength(club: string, tier: "championship" | "pool"): number {
+  // Deliberately well under a real division's own numbers — the same
+  // baseline+noise idea lib/star/promotion.ts uses for an estimate, pitched
+  // lower on purpose: a cup upset should be an upset, not a coin flip.
+  const baseline = tier === "championship" ? 58 : 50;
+  let h = 2166136261;
+  for (let i = 0; i < club.length; i++) { h ^= club.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return baseline + ((h >>> 0) % 700) / 100; // baseline .. baseline + 6.99
+}
+
+/** One weighted draw, without replacement, stopping at `count` or when the
+ *  pool runs dry. */
+function weightedDrawN(
+  candidates: { name: string; weight: number }[], count: number, rng: () => number,
+): string[] {
+  const remaining = [...candidates];
+  const picked: string[] = [];
+  while (picked.length < count && remaining.length > 0) {
+    const total = remaining.reduce((sum, c) => sum + c.weight, 0);
+    let roll = rng() * total;
+    let at = remaining.length - 1;
+    for (let i = 0; i < remaining.length; i++) {
+      roll -= remaining[i].weight;
+      if (roll <= 0) { at = i; break; }
+    }
+    picked.push(remaining[at].name);
+    remaining.splice(at, 1);
+  }
+  return picked;
+}
+
+/**
+ * Fill `needed` places from below `names` (the division actually being
+ * played — twenty clubs guaranteed for a Premier League season, twenty-four
+ * for a Championship one, never in question and never part of this draw).
+ *
+ * A Premier League season draws from BOTH pools: the real Championship,
+ * weighted by an estimated strength so a stronger side is likelier, and the
+ * five-club promotion pool, weighted the same way but multiplied hard down —
+ * these five should be an occasional story, not a regular fixture. A
+ * Championship season draws from the pool alone, since this game does not
+ * model a real division below it.
+ */
+function belowField(
+  names: string[], division: CareerDivision, needed: number, rng: () => number,
+): string[] {
+  const isPremier = division === "premier";
+  const championshipCandidates = isPremier
+    ? CHAMPIONSHIP_CLUBS.filter(c => !names.includes(c))
+        .map(name => ({ name, weight: belowStrength(name, "championship") }))
+    : [];
+  const poolCandidates = PROMOTION_POOL_CLUBS.filter(c => !names.includes(c))
+    .map(name => ({
+      name,
+      weight: belowStrength(name, "pool") * (isPremier ? 0.25 : 1),
+    }));
+  const drawn = weightedDrawN([...championshipCandidates, ...poolCandidates], needed, rng);
+  // A division this small (chiefly a test fixture) can run both pools dry
+  // before reaching `needed` — pad the same way a short division always
+  // has, rather than ship a cup with fewer than thirty-two clubs in it.
+  let i = 0;
+  while (drawn.length < needed) {
+    drawn.push(`${PROMOTION_POOL_CLUBS[i % PROMOTION_POOL_CLUBS.length]} B`);
+    i++;
+  }
+  return drawn;
+}
 
 // ── The draw ────────────────────────────────────────────────────────────────
 
@@ -111,33 +184,36 @@ export function drawRound(name: string, survivors: string[], rng: () => number):
 /**
  * Open a cup: everybody in, first round drawn.
  *
- * The field is the division plus the twelve from below, trimmed or padded to
- * thirty-two so a season played with a smaller division still produces a cup
- * that halves cleanly.
+ * The field is the division actually being played — guaranteed, whichever
+ * one it is — plus a weighted draw filling out the rest to thirty-two. See
+ * belowField for what that draw actually is.
  */
-export function openCup(competition: CupId, league: LeagueTeam[], rng: () => number): CupState {
-  const field = cupField(league);
+export function openCup(
+  competition: CupId, league: LeagueTeam[], division: CareerDivision, rng: () => number,
+): CupState {
+  const field = cupField(league, division, rng);
   return { competition, rounds: [drawRound(CUP_ROUND_NAMES[0], field, rng)] };
 }
 
 /** Who is in it. Exported so the strength lookup can agree with the draw. */
-export function cupField(league: LeagueTeam[]): string[] {
+export function cupField(league: LeagueTeam[], division: CareerDivision, rng: () => number): string[] {
   const names = league.map(t => t.name);
-  const below = CUP_ENTRANTS_BELOW.map(t => t.name).filter(n => !names.includes(n));
-  const all = [...names, ...below];
-  if (all.length >= CUP_FIELD) return all.slice(0, CUP_FIELD);
-  // A short division: pad from below rather than draw an odd round.
-  let i = 0;
-  while (all.length < CUP_FIELD) all.push(`${CUP_ENTRANTS_BELOW[i % CUP_ENTRANTS_BELOW.length].name} B`), i++;
-  return all;
+  const needed = Math.max(0, CUP_FIELD - names.length);
+  const below = belowField(names, division, needed, rng);
+  return [...names, ...below].slice(0, CUP_FIELD);
 }
 
-/** How good a club in the hat is, whichever division it came from. */
+/** How good a club in the hat is, whichever division or pool it came from. */
 export function cupStrength(club: string, league: LeagueTeam[]): number {
   const inLeague = league.find(t => t.name === club);
   if (inLeague) return inLeague.strength;
-  const below = CUP_ENTRANTS_BELOW.find(t => club === t.name || club.startsWith(`${t.name} `));
-  return below?.strength ?? 55;
+  if (CHAMPIONSHIP_CLUBS.includes(club)) return belowStrength(club, "championship");
+  if (PROMOTION_POOL_CLUBS.includes(club)) return belowStrength(club, "pool");
+  // A padded filler name ("X B") from a division too small to fill the
+  // field on real clubs alone.
+  const base = club.replace(/ B$/, "");
+  if (PROMOTION_POOL_CLUBS.includes(base)) return belowStrength(base, "pool") - 3;
+  return 55;
 }
 
 // ── Playing a round ─────────────────────────────────────────────────────────

@@ -1,8 +1,9 @@
 import {
   openCup, drawRound, playCupRound, shuffle, tieWinner, cupField, cupStrength,
   currentRound, yourTie, stillIn, exitRound,
-  CUP_ROUND_NAMES, CUP_FIELD, CUP_ENTRANTS_BELOW, type CupState,
+  CUP_ROUND_NAMES, CUP_FIELD, type CupState,
 } from "../../lib/star/cups";
+import { CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "../../lib/star/clubs";
 import { buildLeague } from "../../lib/star/season";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { nextFixtureFor } from "../../lib/star/competitions";
@@ -39,26 +40,79 @@ const CLUBS = [
 const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
 
 // ── Thirty-two in the hat ───────────────────────────────────────────────────
+//
+// A Premier League season's own twenty clubs are never in question — the same
+// guarantee a Championship season needs for its own twenty-four, checked in
+// its own block below. What used to be a fixed twelve-club list is now a
+// weighted draw from the real Championship and the five-club promotion pool;
+// this checks the shape of that draw rather than which exact names show up,
+// since which names show up is now genuinely random.
 {
-  const field = cupField(LEAGUE);
+  const rng = mulberry(41);
+  const field = cupField(LEAGUE, "premier", rng);
   check(field.length === CUP_FIELD, `${CUP_FIELD} clubs enter (${field.length})`);
   check(new Set(field).size === CUP_FIELD, "and nobody is in it twice");
-  check(CLUBS.every(c => field.includes(c)), "every top-flight club is in it");
+  check(CLUBS.every(c => field.includes(c)), "every top-flight club is guaranteed a place");
   const below = field.filter(f => !CLUBS.includes(f));
   check(below.length === 12, `twelve come up from below (${below.length})`);
-  check(below.includes("Wrexham") && below.includes("Millwall") && below.includes("Watford"),
-    "including the ones the draft game uses");
-  // Nobody from below is secretly a Premier League club under another name.
+  check(below.every(c => CHAMPIONSHIP_CLUBS.includes(c) || PROMOTION_POOL_CLUBS.includes(c)),
+    `every one of them is a real Championship or promotion-pool club (${below.join(", ")})`);
   check(!below.some(b => CLUBS.includes(b)), "and none of them is already in the division");
 
   // A club from below is weaker than everybody in the division. An upset should
   // be an upset.
   const worstTop = Math.min(...LEAGUE.map(t => t.strength));
-  const bestBelow = Math.max(...CUP_ENTRANTS_BELOW.map(t => t.strength));
-  check(bestBelow < worstTop || bestBelow <= 62,
-    `the clubs from below are underdogs (best ${bestBelow} vs worst top-flight ${worstTop})`);
-  check(cupStrength("Wrexham", LEAGUE) === 55, "and each carries its own strength");
-  check(cupStrength("Liverpool", LEAGUE) === LEAGUE[0].strength, "…as does everybody in the division");
+  const belowStrengths = below.map(c => cupStrength(c, LEAGUE));
+  check(Math.max(...belowStrengths) < worstTop || Math.max(...belowStrengths) <= 65,
+    `the clubs from below are underdogs (best ${Math.max(...belowStrengths)} vs worst top-flight ${worstTop})`);
+  check(cupStrength("Liverpool", LEAGUE) === LEAGUE[0].strength, "a top-flight club carries its real strength");
+
+  // Across enough draws, both pools should actually turn up — a fixed
+  // twelve-club list would fail this the same way the bug it replaced did.
+  const everSeen = new Set<string>();
+  for (let seed = 0; seed < 300; seed++) {
+    const f = cupField(LEAGUE, "premier", mulberry(seed * 41 + 7));
+    for (const c of f) if (!CLUBS.includes(c)) everSeen.add(c);
+  }
+  check(CHAMPIONSHIP_CLUBS.some(c => everSeen.has(c)), "real Championship clubs come up from below");
+  check(PROMOTION_POOL_CLUBS.some(c => everSeen.has(c)),
+    "and, less often, so does the promotion pool — see the next block for how much less often");
+}
+
+// ── The pool is a much longer shot than the Championship ────────────────────
+{
+  let championshipPicks = 0, poolPicks = 0;
+  for (let seed = 0; seed < 400; seed++) {
+    const rng = mulberry(seed * 53 + 11);
+    const field = cupField(LEAGUE, "premier", rng);
+    for (const c of field) {
+      if (CHAMPIONSHIP_CLUBS.includes(c)) championshipPicks++;
+      if (PROMOTION_POOL_CLUBS.includes(c)) poolPicks++;
+    }
+  }
+  // 24 Championship candidates against 5 pool candidates already means the
+  // pool is picked less just by having fewer names in the hat — the extra
+  // 0.25x weight on top of that should still be visible as a much steeper
+  // drop than headcount alone explains.
+  const perCandidate = (picks: number, poolSize: number) => picks / poolSize;
+  const championshipRate = perCandidate(championshipPicks, CHAMPIONSHIP_CLUBS.length);
+  const poolRate = perCandidate(poolPicks, PROMOTION_POOL_CLUBS.length);
+  check(poolRate < championshipRate * 0.6,
+    `a pool club's odds of a place are well below a Championship club's, per-candidate (${poolRate.toFixed(2)} vs ${championshipRate.toFixed(2)})`);
+}
+
+// ── A Championship season's own twenty-four are just as guaranteed ──────────
+{
+  const champLeague = buildLeague([...CHAMPIONSHIP_CLUBS], CHAMPIONSHIP_CLUBS[0]);
+  for (let seed = 0; seed < 30; seed++) {
+    const field = cupField(champLeague, "championship", mulberry(seed * 19 + 2));
+    check(field.length === CUP_FIELD, `seed ${seed}: still thirty-two clubs (${field.length})`);
+    check(CHAMPIONSHIP_CLUBS.every(c => field.includes(c)),
+      `seed ${seed}: every Championship club — including your own — is guaranteed a place`);
+    const below = field.filter(c => !CHAMPIONSHIP_CLUBS.includes(c));
+    check(below.every(c => PROMOTION_POOL_CLUBS.includes(c) || c.endsWith(" B")),
+      `seed ${seed}: the rest comes from the promotion pool, padded if that runs out (${below.join(", ")})`);
+  }
 }
 
 // ── The shuffle is a shuffle ────────────────────────────────────────────────
@@ -85,7 +139,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
 {
   for (let seed = 0; seed < 60; seed++) {
     const rng = mulberry(seed * 31 + 5);
-    let cup = openCup("FA Cup", LEAGUE, rng);
+    let cup = openCup("FA Cup", LEAGUE, "premier", rng);
     check(cup.rounds[0].ties.length === 16, `seed ${seed}: sixteen first-round ties`);
     check(cup.rounds[0].name === CUP_ROUND_NAMES[0], `seed ${seed}: it is the round of 32`);
 
@@ -121,7 +175,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   const seen = new Set<string>();
   for (let seed = 0; seed < 200; seed++) {
     const rng = mulberry(seed * 17 + 3);
-    const cup = playCupRound(openCup("FA Cup", LEAGUE, rng), LEAGUE, "nobody", null, rng);
+    const cup = playCupRound(openCup("FA Cup", LEAGUE, "premier", rng), LEAGUE, "nobody", null, rng);
     const r2 = cup.rounds[1];
     const tie = r2?.ties.find(t => t.home === "Liverpool" || t.away === "Liverpool");
     if (tie) seen.add(tie.home === "Liverpool" ? tie.away : tie.home);
@@ -132,7 +186,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
 // ── Your tie is yours; the rest of the country is not ───────────────────────
 {
   const rng = mulberry(99);
-  const cup = openCup("FA Cup", LEAGUE, rng);
+  const cup = openCup("FA Cup", LEAGUE, "premier", rng);
   const mine = yourTie(cup, "Liverpool")!;
   check(!!mine, "you are in the first round");
   check(stillIn(cup, "Liverpool"), "…and still in it");

@@ -42,7 +42,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
 // ── A cup you are knocked out of still finishes ─────────────────────────────
 {
   const rng = mulberry(1);
-  let state: CupState = openCup("FA Cup", LEAGUE, rng);
+  let state: CupState = openCup("FA Cup", LEAGUE, "premier", rng);
   // Play "your" round as a loss, the way settleCupTie does before handing off
   // to finishCupToWinner — Liverpool goes out in round one.
   const tie = state.rounds[0].ties.find(t => t.home === "Liverpool" || t.away === "Liverpool")!;
