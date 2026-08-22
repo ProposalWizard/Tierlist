@@ -75,13 +75,8 @@ export const OTHER_CLUBS: readonly string[] = [
  * game, only whichever real competition sends them here again or doesn't.
  *
  * Name matching against the database is exact-string (see
- * app/api/star/league-squads), so every name below needs to be confirmed
- * against supabase/migrations/fc27_clone_european_clubs.sql's own
- * diagnostic query once it's been run — these are the best full names I
- * could resolve from shorthand ("Man City", "Inter", "Atleti"), not yet
- * verified against what SoFIFA itself calls each club.
- */
-/**
+ * app/api/star/league-squads).
+ *
  * Every name below matches the real SoFIFA spelling confirmed earlier this
  * season — not the shorthand originally given ("Man City", "Inter",
  * "Atleti") that these lists started from. That distinction mattered twice
@@ -103,7 +98,7 @@ export const CHAMPIONS_LEAGUE_CLUBS: readonly string[] = [
   "Napoli", "Paris Saint-Germain", "FC Porto", "PSV", "Real Betis Balompié",
   "Real Madrid", "Roma", "Shakhtar Donetsk", "SK Slavia Praha", "Sporting CP",
   "VfB Stuttgart", "Villarreal CF", "FK Bodø/Glimt", "Celtic", "AEK Athens", "Olympique Lyonnais",
-  "Fenerbahce", "Dinamo Zagreb",
+  "Fenerbahçe SK", "Dinamo Zagreb",
   // Slovan Bratislava was given directly but confirmed absent from the FC26
   // table under any close spelling (see fc27_clone_european_clubs.sql) —
   // swapped for a club with genuine recent Champions League pedigree from a
