@@ -16,14 +16,14 @@
  */
 
 export const PREMIER_LEAGUE_CLUBS: readonly string[] = [
-  "Arsenal", "Bournemouth", "Liverpool", "Leeds United", "Crystal Palace", "Brentford",
-  "Hull City", "Brighton", "Everton", "Newcastle United", "Nottingham Forest",
+  "Arsenal", "AFC Bournemouth", "Liverpool", "Leeds United", "Crystal Palace", "Brentford",
+  "Hull City", "Brighton & Hove Albion", "Everton", "Newcastle United", "Nottingham Forest",
   "Ipswich Town", "Manchester City", "Tottenham Hotspur", "Aston Villa",
-  "Chelsea", "Fulham", "Sunderland", "Manchester United", "Coventry City",
+  "Chelsea", "Fulham FC", "Sunderland", "Manchester United", "Coventry City",
 ];
 
 export const CHAMPIONSHIP_CLUBS: readonly string[] = [
-  "Queens Park Rangers", "Millwall", "Bolton Wanderers", "Watford",
+  "Queens Park Rangers", "Millwall FC", "Bolton Wanderers", "Watford",
   "Middlesbrough", "Charlton Athletic", "Swansea City", "West Bromwich Albion",
   "Blackburn Rovers", "Burnley", "West Ham United", "Wolverhampton Wanderers",
   "Cardiff City", "Wrexham", "Birmingham City", "Sheffield United",
@@ -41,7 +41,7 @@ export const CHAMPIONSHIP_CLUBS: readonly string[] = [
  * shown in the Lineups picker's "Other" tab alongside the pool.
  */
 export const PROMOTION_POOL_CLUBS: readonly string[] = [
-  "Luton Town", "Huddersfield Town", "Leicester City", "Reading", "Wigan Athletic",
+  "Luton Town", "Huddersfield Town", "Leicester City", "Reading FC", "Wigan Athletic",
 ];
 
 /**
@@ -63,9 +63,9 @@ export const PROMOTION_POOL_CLUBS: readonly string[] = [
  * League list, which was seven short of the real thirty-six.
  */
 export const OTHER_CLUBS: readonly string[] = [
-  "Sevilla", "Eintracht Frankfurt", "Schalke", "Monaco",
-  "Strasbourg", "Atalanta", "Lazio", "Al Hilal", "Al Nassr",
-  "Al Ahli", "Al Ittihad",
+  "Sevilla FC", "Eintracht Frankfurt", "FC Schalke 04", "AS Monaco",
+  "RC Strasbourg Alsace", "Atalanta", "Lazio", "Al Hilal", "Al Nassr",
+  "Al Ahli SFC", "Al Ittihad",
 ];
 
 /**
@@ -97,7 +97,7 @@ export const CHAMPIONS_LEAGUE_CLUBS: readonly string[] = [
 ];
 
 export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
-  "AZ Alkmaar", "Bournemouth", "Celta Vigo", "Crystal Palace", "Hoffenheim",
+  "AZ Alkmaar", "AFC Bournemouth", "Celta Vigo", "Crystal Palace", "Hoffenheim",
   "Juventus", "Bayer Leverkusen", "Marseille", "AC Milan", "Olympiacos",
   "Real Sociedad", "Rennes", "Sparta Praha", "Sturm Graz", "Sunderland",
   "Union SG", "Ferencváros", "Anderlecht", "Lech Poznań",
