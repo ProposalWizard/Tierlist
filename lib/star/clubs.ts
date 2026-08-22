@@ -88,18 +88,31 @@ export const CHAMPIONS_LEAGUE_CLUBS: readonly string[] = [
   "Napoli", "Paris Saint-Germain", "Porto", "PSV Eindhoven", "Real Betis",
   "Real Madrid", "Roma", "Shakhtar Donetsk", "Slavia Praha", "Sporting CP",
   "VfB Stuttgart", "Villarreal", "Bodø/Glimt", "Celtic", "AEK Athens", "Lyon",
-  "Fenerbahçe", "Dinamo Zagreb", "Slovan Bratislava",
+  "Fenerbahçe", "Dinamo Zagreb",
+  // Slovan Bratislava was given directly but confirmed absent from the FC26
+  // table under any close spelling (see fc27_clone_european_clubs.sql) —
+  // swapped for a club with genuine recent Champions League pedigree from a
+  // league already confirmed present via Midtjylland's match.
+  "FC Copenhagen",
 ];
 
 export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
   "AZ Alkmaar", "Bournemouth", "Celta Vigo", "Crystal Palace", "Hoffenheim",
   "Juventus", "Bayer Leverkusen", "Marseille", "AC Milan", "Olympiacos",
   "Real Sociedad", "Rennes", "Sparta Praha", "Sturm Graz", "Sunderland",
-  "Torreense", "Union SG", "Ferencváros", "Anderlecht", "Lech Poznań",
-  "Trabzonspor", "Benfica", "Crvena Zvezda", "Omonia Nicosia", "Beşiktaş",
+  "Union SG", "Ferencváros", "Anderlecht", "Lech Poznań",
+  "Trabzonspor", "Benfica", "Beşiktaş",
   "Salzburg", "Rangers", "Hearts", "Shamrock Rovers",
   // The first list was seven short of the real thirty-six.
-  "Pafos", "Ajax", "Midtjylland", "Genk", "Young Boys", "Basel", "Malmö",
+  "Ajax", "Midtjylland", "Genk", "Young Boys", "Basel", "Malmö",
+  // Torreense, Crvena Zvezda, Omonia Nicosia, Pafos and Slovan Bratislava were
+  // given directly but confirmed absent from the FC26 table under any close
+  // spelling (see fc27_clone_european_clubs.sql) — not just unlicensed, in
+  // Crvena Zvezda's case the only near-hit was an unrelated French club that
+  // happens to share its nickname's English translation. Swapped for five
+  // other clubs with a genuine European pedigree, each from a league already
+  // confirmed present in the table by a club above that matched clean.
+  "Sporting Braga", "PAOK", "Viktoria Plzeň", "Vitória Guimarães", "Legia Warszawa",
 ];
 
 export type Division = "premier" | "championship" | "pool" | "champions" | "europa";

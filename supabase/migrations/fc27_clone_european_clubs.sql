@@ -36,6 +36,68 @@
 -- diagnostic query below will say for certain either way — that is exactly
 -- what it is for.
 --
+-- ── Six spellings corrected after running that diagnostic for real ──
+--
+-- fc27_diagnose_missing_european_clubs.sql found the actual row for six of
+-- the eleven clubs the first diagnostic reported false on. All six were a
+-- wrong guess, not a missing club — worth recording exactly what was wrong,
+-- because two of them are a real gap in how this file normalises names:
+--
+--   Al Ahli            "Al Ahli SFC"              (Saudi Pro League, confirmed
+--                                                    by the actual player list —
+--                                                    NOT the Egyptian Al Ahli)
+--   Bodø/Glimt          "FK Bodø/Glimt"            ø was guessed as transliterating
+--                                                    to "o" ("bodo"); the strip
+--                                                    below just DROPS it, same as
+--                                                    any other accent — "bod"
+--   Ferencváros         "Ferencvárosi Torna Club"  guessed the short form; SoFIFA
+--                                                    has the club's full formal name
+--   Lille               "Lille OSC"                guessed "LOSC Lille"; SoFIFA has
+--                                                    the abbreviation on the other side
+--   Real Betis          "Real Betis Balompié"      the "é" strip bit twice over —
+--                                                    it drops to nothing, so
+--                                                    "Balompié" strips to "balompi",
+--                                                    NOT "balompie" with the accent
+--                                                    simply removed and the plain
+--                                                    letter left behind
+--   Schalke             "FC Schalke 04"            the strip below is `[^a-z]`,
+--                                                    which removes DIGITS too, not
+--                                                    only accents/punctuation — so
+--                                                    "04" vanishes entirely and
+--                                                    "schalke04" as a variant could
+--                                                    never have matched anything
+--
+-- The other five genuinely returned nothing, on a normal-word search
+-- (root/city/surname, not the exact guessed spelling) across both FIFA years
+-- already in the table — not just this file's narrow guess list:
+--
+--   Omonia Nicosia, Pafos, Slovan Bratislava, Torreense — no row at all under
+--   any spelling close to the name. Either not licensed this edition, or
+--   simply never scraped into this table in the first place (see
+--   scripts/scrape_missing.py) — the two look identical from inside this
+--   table and only rescraping that league would tell them apart.
+--
+--   Crvena Zvezda — the ONLY thing "red star" turned up was Red Star FC, a
+--   small French Ligue 2 club from Saint-Ouen that happens to share the
+--   English translation of the Serbian giant's nickname. Not the same club.
+--   The real Crvena Zvezda (Red Star Belgrade) did not appear under its own
+--   name either, so the Serbian SuperLiga most likely was never scraped into
+--   this table at all.
+--
+-- Chose to replace rather than wait on a rescrape: all five are now swapped
+-- for a club of genuine European pedigree, each from a league already
+-- confirmed present via some other club above that matched clean —
+-- FC Copenhagen (Danish Superliga, alongside Midtjylland) for Slovan
+-- Bratislava in the Champions League list, and Sporting Braga, PAOK,
+-- Viktoria Plzeň, Vitória Guimarães and Legia Warszawa (Portuguese
+-- Primeira Liga, Greek Super League, Czech league, Portuguese Primeira
+-- Liga again, and Polish Ekstraklasa — each confirmed via Porto/Benfica,
+-- AEK Athens, Sparta/Slavia Praha, Porto/Benfica again, and Lech Poznań)
+-- for the four Europa League clubs. Their variant spellings below are
+-- still guesses, same as everything else in this file — if any comes back
+-- false on the diagnostic, that is the next thing to chase, not evidence
+-- the whole approach is wrong.
+--
 -- One likely mistake worth flagging rather than silently resolving:
 -- "Villarreal" appears in the Champions League list AND, spelled "Villareal"
 -- (one r), in the Other list. Treated here as the same club, listed once,
@@ -91,7 +153,7 @@ WITH src AS (
       'fcinternazionalemilano', 'intermilan', 'inter', 'internazionale',
       'rbleipzig', 'leipzig',
       'rclens', 'lens',
-      'losclille', 'lille', 'losc',
+      'losclille', 'lille', 'losc', 'lilleosc',
       'liverpool',
       'manchestercity', 'mancity',
       'manchesterunited', 'manutd', 'manunited',
@@ -99,7 +161,7 @@ WITH src AS (
       'parissaintgermain', 'psg', 'paris', 'parissg',
       'fcporto', 'porto',
       'psveindhoven', 'psv',
-      'realbetisbalompie', 'realbetis', 'betis',
+      'realbetisbalompie', 'realbetis', 'betis', 'realbetisbalompi',
       'realmadridcf', 'realmadrid',
       'asroma', 'roma',
       'shakhtardonetsk', 'shakhtar',
@@ -107,13 +169,16 @@ WITH src AS (
       'sportingclubedeportugal', 'sportingcp', 'sportinglisbon', 'sporting',
       'vfbstuttgart', 'stuttgart',
       'villarrealcf', 'villarreal',
-      'fkbodoglimt', 'bodoglimt', 'bodglimt',
+      'fkbodoglimt', 'bodoglimt', 'bodglimt', 'fkbodglimt',
       'celticfc', 'celtic',
       'aekathensfc', 'aekathens', 'aek',
       'olympiquelyonnais', 'lyon', 'olympiquelyon',
       'fenerbahcesk', 'fenerbahce', 'fenerbahe',
       'gnkdinamozagreb', 'dinamozagreb', 'dinamo',
-      'skslovanbratislava', 'slovanbratislava', 'slovan',
+      -- Slovan Bratislava confirmed absent from FC 26 under any close
+      -- spelling — replaced with a club of genuine recent Champions League
+      -- pedigree from a league already confirmed present (Midtjylland).
+      'fckobenhavn', 'fccopenhagen', 'copenhagen',
 
       -- ── Europa League ──
       'az', 'azalkmaar',
@@ -131,40 +196,45 @@ WITH src AS (
       'acspartapraha', 'spartapraha', 'spartaprague',
       'sksturmgraz', 'sturmgraz',
       'sunderland',
-      'cdtorreense', 'torreense',
       'royaleunionsaintgilloise', 'unionsaintgilloise', 'unionsg',
-      'ferencvarositc', 'ferencvaros', 'ferencvros',
+      'ferencvarositc', 'ferencvaros', 'ferencvros', 'ferencvarositornaclub',
       'rscanderlecht', 'anderlecht',
       'kkslechpoznan', 'lechpoznan', 'lechpozna',
       'trabzonspor',
       'slbenfica', 'benfica',
-      'fkcrvenazvezda', 'crvenazvezda', 'redstarbelgrade', 'redstar',
-      'acomonia', 'omonianicosia', 'omonia',
       'besiktasjk', 'besiktas', 'beikta',
       'fcredbullsalzburg', 'redbullsalzburg', 'salzburg', 'rbsalzburg',
       'rangersfc', 'rangers',
       'heartofmidlothianfc', 'heartofmidlothian', 'hearts',
       'shamrockroversfc', 'shamrockrovers',
       -- The first Europa League list was seven short of the real 36.
-      'pafosfc', 'pafos',
       'afcajax', 'ajax',
       'fcmidtjylland', 'midtjylland',
       'krcgenk', 'genk', 'racinggenk',
       'bscyoungboys', 'youngboys',
       'fcbasel1893', 'fcbasel', 'basel',
       'malmoff', 'malmff', 'malmo',
+      -- Torreense, Crvena Zvezda, Omonia Nicosia and Pafos confirmed absent
+      -- from FC 26 under any close spelling (see the header note above) —
+      -- replaced with five clubs of genuine European pedigree, each from a
+      -- league already confirmed present via a club above that matched.
+      'sportingclubedebraga', 'scbraga', 'braga',
+      'paokfc', 'paokthessaloniki', 'paok',
+      'fcviktoriaplzen', 'viktoriaplzen', 'viktoriaplze', 'plzen',
+      'vitoriasportclube', 'vitoriasc', 'vitoriaguimaraes', 'vitriaguimares', 'guimaraes',
+      'legiawarszawa', 'legiawarsaw', 'legia',
 
       -- ── Other ──
       'sevillafc', 'sevilla',
       'eintrachtfrankfurt', 'eintracht',
-      'fcschalke04', 'schalke04', 'schalke',
+      'fcschalke04', 'schalke04', 'schalke', 'fcschalke',
       'asmonaco', 'monaco',
       'rcstrasbourgalsace', 'strasbourg',
       'atalantabc', 'atalanta',
       'sslazio', 'lazio',
       'alhilalsfc', 'alhilal',
       'alnassrfc', 'alnassr',
-      'alahlisaudifc', 'alahli', 'alahlisaudi',
+      'alahlisaudifc', 'alahli', 'alahlisaudi', 'alahlisfc',
       'alittihadclub', 'alittihad', 'alittihadjeddah'
     )
 ),
@@ -196,24 +266,26 @@ SELECT
 -- DELETE FROM sofifa_players
 -- WHERE fifa_year = 2027
 --   AND regexp_replace(LOWER(COALESCE(club, '')), '[^a-z]', '', 'g') IN (
---     'arsenal','astonvilla','atleticomadrid','atletico','atleticodemadrid',
---     'borussiadortmund','dortmund','fcbarcelona','barcelona',
---     'fcbayernmunchen','bayernmunich','bayernmunchen','fcbayernmunich',
---     'clubbruggekv','clubbrugge','como1907','como','feyenoordrotterdam',
---     'feyenoord','galatasaraysk','galatasaray','fcinternazionalemilano',
---     'intermilan','inter','internazionale','rbleipzig','leipzig','rclens',
---     'lens','losclille','lille','losc','liverpool','manchestercity',
---     'mancity','manchesterunited','manutd','manunited','sscnapoli','napoli',
+--     'arsenal','astonvilla','atleticomadrid','atletico',
+--     'atleticodemadrid','borussiadortmund','dortmund','fcbarcelona',
+--     'barcelona','fcbayernmunchen','bayernmunich','bayernmunchen',
+--     'fcbayernmunich','clubbruggekv','clubbrugge','como1907','como',
+--     'feyenoordrotterdam','feyenoord','galatasaraysk','galatasaray',
+--     'fcinternazionalemilano','intermilan','inter','internazionale',
+--     'rbleipzig','leipzig','rclens','lens','losclille','lille','losc',
+--     'lilleosc','liverpool','manchestercity','mancity',
+--     'manchesterunited','manutd','manunited','sscnapoli','napoli',
 --     'parissaintgermain','psg','paris','parissg','fcporto','porto',
 --     'psveindhoven','psv','realbetisbalompie','realbetis','betis',
---     'realmadridcf','realmadrid','asroma','roma','shakhtardonetsk',
---     'shakhtar','skslaviapraha','slaviapraha','slaviaprague',
---     'sportingclubedeportugal','sportingcp','sportinglisbon','sporting',
---     'vfbstuttgart','stuttgart','villarrealcf','villarreal','fkbodoglimt',
---     'bodoglimt','bodglimt','celticfc','celtic','aekathensfc','aekathens',
---     'aek','olympiquelyonnais','lyon','olympiquelyon','fenerbahcesk',
+--     'realbetisbalompi','realmadridcf','realmadrid','asroma','roma',
+--     'shakhtardonetsk','shakhtar','skslaviapraha','slaviapraha',
+--     'slaviaprague','sportingclubedeportugal','sportingcp',
+--     'sportinglisbon','sporting','vfbstuttgart','stuttgart',
+--     'villarrealcf','villarreal','fkbodoglimt','bodoglimt','bodglimt',
+--     'fkbodglimt','celticfc','celtic','aekathensfc','aekathens','aek',
+--     'olympiquelyonnais','lyon','olympiquelyon','fenerbahcesk',
 --     'fenerbahce','fenerbahe','gnkdinamozagreb','dinamozagreb','dinamo',
---     'skslovanbratislava','slovanbratislava','slovan','az','azalkmaar',
+--     'fckobenhavn','fccopenhagen','copenhagen','az','azalkmaar',
 --     'afcbournemouth','bournemouth','rcceltadevigo','celtavigo','celta',
 --     'crystalpalace','tsg1899hoffenheim','hoffenheim','tsghoffenheim',
 --     'juventus','bayer04leverkusen','bayerleverkusen','leverkusen',
@@ -221,23 +293,27 @@ SELECT
 --     'acmilan','milan','olympiacosfc','olympiacos','olympiakos',
 --     'realsociedaddefutbol','realsociedad','staderennaisfc','rennes',
 --     'staderennais','acspartapraha','spartapraha','spartaprague',
---     'sksturmgraz','sturmgraz','sunderland','cdtorreense','torreense',
---     'royaleunionsaintgilloise','unionsaintgilloise','unionsg',
---     'ferencvarositc','ferencvaros','ferencvros','rscanderlecht',
---     'anderlecht','kkslechpoznan','lechpoznan','lechpozna','trabzonspor',
---     'slbenfica','benfica','fkcrvenazvezda','crvenazvezda',
---     'redstarbelgrade','redstar','acomonia','omonianicosia','omonia',
---     'besiktasjk','besiktas','beikta','fcredbullsalzburg','redbullsalzburg',
---     'salzburg','rbsalzburg','rangersfc','rangers','heartofmidlothianfc',
---     'heartofmidlothian','hearts','shamrockroversfc','shamrockrovers',
---     'pafosfc','pafos','afcajax','ajax','fcmidtjylland','midtjylland',
---     'krcgenk','genk','racinggenk','bscyoungboys','youngboys','fcbasel1893',
---     'fcbasel','basel','malmoff','malmff','malmo',
---     'sevillafc','sevilla','eintrachtfrankfurt','eintracht','fcschalke04',
---     'schalke04','schalke','asmonaco','monaco','rcstrasbourgalsace',
---     'strasbourg','atalantabc','atalanta','sslazio','lazio',
---     'alhilalsfc','alhilal','alnassrfc','alnassr','alahlisaudifc',
---     'alahli','alahlisaudi','alittihadclub','alittihad','alittihadjeddah'
+--     'sksturmgraz','sturmgraz','sunderland','royaleunionsaintgilloise',
+--     'unionsaintgilloise','unionsg','ferencvarositc','ferencvaros',
+--     'ferencvros','ferencvarositornaclub','rscanderlecht','anderlecht',
+--     'kkslechpoznan','lechpoznan','lechpozna','trabzonspor','slbenfica',
+--     'benfica','besiktasjk','besiktas','beikta','fcredbullsalzburg',
+--     'redbullsalzburg','salzburg','rbsalzburg','rangersfc','rangers',
+--     'heartofmidlothianfc','heartofmidlothian','hearts',
+--     'shamrockroversfc','shamrockrovers','afcajax','ajax',
+--     'fcmidtjylland','midtjylland','krcgenk','genk','racinggenk',
+--     'bscyoungboys','youngboys','fcbasel1893','fcbasel','basel',
+--     'malmoff','malmff','malmo','sportingclubedebraga','scbraga','braga',
+--     'paokfc','paokthessaloniki','paok','fcviktoriaplzen',
+--     'viktoriaplzen','viktoriaplze','plzen','vitoriasportclube',
+--     'vitoriasc','vitoriaguimaraes','vitriaguimares','guimaraes',
+--     'legiawarszawa','legiawarsaw','legia','sevillafc','sevilla',
+--     'eintrachtfrankfurt','eintracht','fcschalke04','schalke04',
+--     'schalke','fcschalke','asmonaco','monaco','rcstrasbourgalsace',
+--     'strasbourg','atalantabc','atalanta','sslazio','lazio','alhilalsfc',
+--     'alhilal','alnassrfc','alnassr','alahlisaudifc','alahli',
+--     'alahlisaudi','alahlisfc','alittihadclub','alittihad',
+--     'alittihadjeddah'
 --   );
 
 
@@ -271,7 +347,7 @@ WITH wanted(club, competition, variants) AS (VALUES
   ('Inter', 'Champions League', ARRAY['fcinternazionalemilano','intermilan','inter','internazionale']),
   ('RB Leipzig', 'Champions League', ARRAY['rbleipzig','leipzig']),
   ('Lens', 'Champions League', ARRAY['rclens','lens']),
-  ('Lille', 'Champions League', ARRAY['losclille','lille','losc']),
+  ('Lille', 'Champions League', ARRAY['losclille','lille','losc','lilleosc']),
   ('Liverpool', 'Champions League', ARRAY['liverpool']),
   ('Manchester City', 'Champions League', ARRAY['manchestercity','mancity']),
   ('Manchester United', 'Champions League', ARRAY['manchesterunited','manutd','manunited']),
@@ -279,7 +355,7 @@ WITH wanted(club, competition, variants) AS (VALUES
   ('Paris Saint-Germain', 'Champions League', ARRAY['parissaintgermain','psg','paris','parissg']),
   ('Porto', 'Champions League', ARRAY['fcporto','porto']),
   ('PSV Eindhoven', 'Champions League', ARRAY['psveindhoven','psv']),
-  ('Real Betis', 'Champions League', ARRAY['realbetisbalompie','realbetis','betis']),
+  ('Real Betis', 'Champions League', ARRAY['realbetisbalompie','realbetis','betis','realbetisbalompi']),
   ('Real Madrid', 'Champions League', ARRAY['realmadridcf','realmadrid']),
   ('Roma', 'Champions League', ARRAY['asroma','roma']),
   ('Shakhtar Donetsk', 'Champions League', ARRAY['shakhtardonetsk','shakhtar']),
@@ -287,13 +363,13 @@ WITH wanted(club, competition, variants) AS (VALUES
   ('Sporting CP', 'Champions League', ARRAY['sportingclubedeportugal','sportingcp','sportinglisbon','sporting']),
   ('VfB Stuttgart', 'Champions League', ARRAY['vfbstuttgart','stuttgart']),
   ('Villarreal', 'Champions League', ARRAY['villarrealcf','villarreal']),
-  ('Bodø/Glimt', 'Champions League', ARRAY['fkbodoglimt','bodoglimt','bodglimt']),
+  ('Bodø/Glimt', 'Champions League', ARRAY['fkbodoglimt','bodoglimt','bodglimt','fkbodglimt']),
   ('Celtic', 'Champions League', ARRAY['celticfc','celtic']),
   ('AEK Athens', 'Champions League', ARRAY['aekathensfc','aekathens','aek']),
   ('Lyon', 'Champions League', ARRAY['olympiquelyonnais','lyon','olympiquelyon']),
   ('Fenerbahçe', 'Champions League', ARRAY['fenerbahcesk','fenerbahce','fenerbahe']),
   ('Dinamo Zagreb', 'Champions League', ARRAY['gnkdinamozagreb','dinamozagreb','dinamo']),
-  ('Slovan Bratislava', 'Champions League', ARRAY['skslovanbratislava','slovanbratislava','slovan']),
+  ('FC Copenhagen', 'Champions League', ARRAY['fckobenhavn','fccopenhagen','copenhagen']),
   ('AZ Alkmaar', 'Europa League', ARRAY['az','azalkmaar']),
   ('Bournemouth', 'Europa League', ARRAY['afcbournemouth','bournemouth']),
   ('Celta Vigo', 'Europa League', ARRAY['rcceltadevigo','celtavigo','celta']),
@@ -309,37 +385,38 @@ WITH wanted(club, competition, variants) AS (VALUES
   ('Sparta Praha', 'Europa League', ARRAY['acspartapraha','spartapraha','spartaprague']),
   ('Sturm Graz', 'Europa League', ARRAY['sksturmgraz','sturmgraz']),
   ('Sunderland', 'Europa League', ARRAY['sunderland']),
-  ('Torreense', 'Europa League', ARRAY['cdtorreense','torreense']),
   ('Union SG', 'Europa League', ARRAY['royaleunionsaintgilloise','unionsaintgilloise','unionsg']),
-  ('Ferencváros', 'Europa League', ARRAY['ferencvarositc','ferencvaros','ferencvros']),
+  ('Ferencváros', 'Europa League', ARRAY['ferencvarositc','ferencvaros','ferencvros','ferencvarositornaclub']),
   ('Anderlecht', 'Europa League', ARRAY['rscanderlecht','anderlecht']),
   ('Lech Poznań', 'Europa League', ARRAY['kkslechpoznan','lechpoznan','lechpozna']),
   ('Trabzonspor', 'Europa League', ARRAY['trabzonspor']),
   ('Benfica', 'Europa League', ARRAY['slbenfica','benfica']),
-  ('Crvena Zvezda', 'Europa League', ARRAY['fkcrvenazvezda','crvenazvezda','redstarbelgrade','redstar']),
-  ('Omonia Nicosia', 'Europa League', ARRAY['acomonia','omonianicosia','omonia']),
   ('Beşiktaş', 'Europa League', ARRAY['besiktasjk','besiktas','beikta']),
   ('Salzburg', 'Europa League', ARRAY['fcredbullsalzburg','redbullsalzburg','salzburg','rbsalzburg']),
   ('Rangers', 'Europa League', ARRAY['rangersfc','rangers']),
   ('Hearts', 'Europa League', ARRAY['heartofmidlothianfc','heartofmidlothian','hearts']),
   ('Shamrock Rovers', 'Europa League', ARRAY['shamrockroversfc','shamrockrovers']),
-  ('Pafos', 'Europa League', ARRAY['pafosfc','pafos']),
   ('Ajax', 'Europa League', ARRAY['afcajax','ajax']),
   ('Midtjylland', 'Europa League', ARRAY['fcmidtjylland','midtjylland']),
   ('Genk', 'Europa League', ARRAY['krcgenk','genk','racinggenk']),
   ('Young Boys', 'Europa League', ARRAY['bscyoungboys','youngboys']),
   ('Basel', 'Europa League', ARRAY['fcbasel1893','fcbasel','basel']),
   ('Malmö', 'Europa League', ARRAY['malmoff','malmff','malmo']),
+  ('Sporting Braga', 'Europa League', ARRAY['sportingclubedebraga','scbraga','braga']),
+  ('PAOK', 'Europa League', ARRAY['paokfc','paokthessaloniki','paok']),
+  ('Viktoria Plzeň', 'Europa League', ARRAY['fcviktoriaplzen','viktoriaplzen','viktoriaplze','plzen']),
+  ('Vitória Guimarães', 'Europa League', ARRAY['vitoriasportclube','vitoriasc','vitoriaguimaraes','vitriaguimares','guimaraes']),
+  ('Legia Warszawa', 'Europa League', ARRAY['legiawarszawa','legiawarsaw','legia']),
   ('Sevilla', 'Other', ARRAY['sevillafc','sevilla']),
   ('Eintracht Frankfurt', 'Other', ARRAY['eintrachtfrankfurt','eintracht']),
-  ('Schalke', 'Other', ARRAY['fcschalke04','schalke04','schalke']),
+  ('Schalke', 'Other', ARRAY['fcschalke04','schalke04','schalke','fcschalke']),
   ('Monaco', 'Other', ARRAY['asmonaco','monaco']),
   ('Strasbourg', 'Other', ARRAY['rcstrasbourgalsace','strasbourg']),
   ('Atalanta', 'Other', ARRAY['atalantabc','atalanta']),
   ('Lazio', 'Other', ARRAY['sslazio','lazio']),
   ('Al Hilal', 'Other', ARRAY['alhilalsfc','alhilal']),
   ('Al Nassr', 'Other', ARRAY['alnassrfc','alnassr']),
-  ('Al Ahli', 'Other', ARRAY['alahlisaudifc','alahli','alahlisaudi']),
+  ('Al Ahli', 'Other', ARRAY['alahlisaudifc','alahli','alahlisaudi','alahlisfc']),
   ('Al Ittihad', 'Other', ARRAY['alittihadclub','alittihad','alittihadjeddah'])
 )
 SELECT
