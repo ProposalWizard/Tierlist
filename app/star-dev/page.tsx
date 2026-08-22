@@ -9,7 +9,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
-import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar";
+import { fixtureDateLabel, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { formationOf, type Role } from "@/lib/star/formations";
@@ -246,8 +246,8 @@ export default function StarDevPage() {
    * request never lands, the generated squad it was born with is a working
    * squad.
    */
-  const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[]) => {
-    const created = makeInitialCareer(player, clubs);
+  const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[], division: CareerDivision) => {
+    const created = makeInitialCareer(player, clubs, division);
     setCareer(created);
     // ── Into the trial, not the dashboard ──
     //

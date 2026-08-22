@@ -28,7 +28,7 @@ import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { transferWindowFor, divisionOf, leagueNameFor } from "./calendar";
+import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { runTransferWindow } from "./leagueTransfers";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
 import {
@@ -46,7 +46,9 @@ const EMPTY_SEASON_STATS = {
   appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0,
 };
 
-export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerState {
+export function makeInitialCareer(
+  player: StarPlayer, clubs: string[], division: CareerDivision = "premier",
+): CareerState {
   const league = buildLeague(clubs, player.club);
   const fixtures = buildFixtures(clubs, player.club);
   const starterBoot: Boot = { ...BOOTS_CATALOGUE[0] };
@@ -57,6 +59,7 @@ export function makeInitialCareer(player: StarPlayer, clubs: string[]): CareerSt
     relationships: { boss: 60, team: 60, fans: 40, girlfriend: null, sponsors: 0 },
     contract: { club: player.club, wage: 1, goalBonus: 1, assistBonus: 1, seasonsRemaining: 3 },
     season: 1,
+    division,
     week: 1,
     energy: 100,
     matchFitness: 80,
