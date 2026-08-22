@@ -158,7 +158,7 @@ WITH src AS (
       -- ── Champions League ──
       'arsenal',
       'astonvilla',
-      'atleticomadrid', 'atletico', 'atleticodemadrid',
+      'atleticomadrid', 'atletico', 'atleticodemadrid', 'atlticomadrid',
       'borussiadortmund', 'dortmund',
       'fcbarcelona', 'barcelona',
       'fcbayernmunchen', 'bayernmunich', 'bayernmunchen', 'fcbayernmunich',
@@ -283,13 +283,13 @@ SELECT
 -- WHERE fifa_year = 2027
 --   AND regexp_replace(LOWER(COALESCE(club, '')), '[^a-z]', '', 'g') IN (
 --     'arsenal','astonvilla','atleticomadrid','atletico',
---     'atleticodemadrid','borussiadortmund','dortmund','fcbarcelona',
---     'barcelona','fcbayernmunchen','bayernmunich','bayernmunchen',
---     'fcbayernmunich','clubbruggekv','clubbrugge','como1907','como',
---     'feyenoordrotterdam','feyenoord','galatasaraysk','galatasaray',
---     'fcinternazionalemilano','intermilan','inter','internazionale',
---     'rbleipzig','leipzig','rclens','lens','losclille','lille','losc',
---     'lilleosc','liverpool','manchestercity','mancity',
+--     'atleticodemadrid','atlticomadrid','borussiadortmund','dortmund',
+--     'fcbarcelona','barcelona','fcbayernmunchen','bayernmunich',
+--     'bayernmunchen','fcbayernmunich','clubbruggekv','clubbrugge',
+--     'como1907','como','feyenoordrotterdam','feyenoord','galatasaraysk',
+--     'galatasaray','fcinternazionalemilano','intermilan','inter',
+--     'internazionale','rbleipzig','leipzig','rclens','lens','losclille',
+--     'lille','losc','lilleosc','liverpool','manchestercity','mancity',
 --     'manchesterunited','manutd','manunited','sscnapoli','napoli',
 --     'parissaintgermain','psg','paris','parissg','fcporto','porto',
 --     'psveindhoven','psv','realbetisbalompie','realbetis','betis',
@@ -352,7 +352,7 @@ SELECT
 WITH wanted(club, competition, variants) AS (VALUES
   ('Arsenal', 'Champions League', ARRAY['arsenal']),
   ('Aston Villa', 'Champions League', ARRAY['astonvilla']),
-  ('Atlético Madrid', 'Champions League', ARRAY['atleticomadrid','atletico','atleticodemadrid']),
+  ('Atlético Madrid', 'Champions League', ARRAY['atleticomadrid','atletico','atleticodemadrid','atlticomadrid']),
   ('Borussia Dortmund', 'Champions League', ARRAY['borussiadortmund','dortmund']),
   ('Barcelona', 'Champions League', ARRAY['fcbarcelona','barcelona']),
   ('Bayern München', 'Champions League', ARRAY['fcbayernmunchen','bayernmunich','bayernmunchen','fcbayernmunich']),
