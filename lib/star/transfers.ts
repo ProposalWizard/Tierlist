@@ -43,6 +43,17 @@ export interface TransferOffer {
   position: number;
   /** Why they want you. */
   pitch: string;
+  /**
+   * Which division this offer is actually from.
+   *
+   * Absent from the ordinary summer window, where every offer is by
+   * definition from your own division. Set by generateRelegationOffers,
+   * where it is not — an offer can come from a Premier League club while
+   * you are in the Championship, and the UI needs to say so correctly
+   * rather than guess it from a strength gap that a strong Championship
+   * survivor could cross just as easily as a real top-flight side.
+   */
+  division?: "championship" | "premier";
 }
 
 /** A move that happened, for the legacy screen. */

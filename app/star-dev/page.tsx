@@ -10,6 +10,8 @@ import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/st
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
 import { fixtureDateLabel, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { sortLeague } from "@/lib/star/season";
+import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { formationOf, type Role } from "@/lib/star/formations";
@@ -24,6 +26,7 @@ import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, sy
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
+import RelegationMove from "@/components/star/RelegationMove";
 import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
@@ -643,9 +646,22 @@ export default function StarDevPage() {
 
   // Rolling into the next season, once anything that happens BETWEEN seasons is
   // out of the way. Split out because three different screens end here.
-  const rollOverSeason = useCallback((from: CareerState, userWon: boolean) => {
+  const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false) => {
     const { career: next, newlyUnlocked } = advanceSeason(from, userWon);
     toastAchievements(newlyUnlocked);
+    // ── A club you just SIGNED for is not "promoted" ──
+    //
+    // Getting here via a forced relegation move means `from.player.club` is
+    // already the new club chosen on the RelegationMove screen — that screen,
+    // plus the transfer media post, already told this story. If that new
+    // club happens to be a Premier League side, resolveLadder still reads it
+    // as your division changing (it has no way to know a signing decision
+    // isn't a ladder outcome), which would otherwise put "Chelsea are
+    // promoted" on the banner below for a club that was never anywhere near
+    // the play-offs. yourMove is the only thing that banner reads.
+    if (forcedRelegationMove && next.ladderNews) {
+      next.ladderNews = { ...next.ladderNews, yourMove: null };
+    }
     // ── The close season has a media cycle too ──
     //
     // Career moments go through exactly the same pipeline as a match: same
@@ -693,6 +709,25 @@ export default function StarDevPage() {
   }, []);
 
   const openTransferWindowOrRoll = useCallback((from: CareerState, userWon: boolean) => {
+    // ── Relegated out of the Championship ──
+    //
+    // The pool the old club drops into has no fixtures, no table, no season —
+    // so this cannot be the ordinary optional window (TransferWindow, with its
+    // "stay put" button). A new club has to be chosen before the season can
+    // roll over at all, because advanceSeason needs to know which real
+    // division to build next season's fixtures in.
+    if (divisionOf(from) === "championship"
+      && sortLeague(from.league).slice(-3).map(t => t.name).includes(from.player.club)) {
+      const offers = generateRelegationOffers(from, mulberry32(from.season * 8831 + from.fame));
+      // Guaranteed non-empty in the normal game — a division this small only
+      // happens in a test fixture, and rolling over rather than showing an
+      // empty offer screen is the safer failure.
+      if (offers.length > 0) {
+        setTransferOffers(offers);
+        setPhase("relegation-move");
+        return;
+      }
+    }
     const offers = generateOffers(from, mulberry32(from.season * 7717 + from.fame));
     if (offers.length > 0) {
       setTransferOffers(offers);
@@ -732,6 +767,7 @@ export default function StarDevPage() {
 
   const handleAcceptTransfer = useCallback((offer: TransferOffer) => {
     if (!career) return;
+    const forcedRelegationMove = phase === "relegation-move";
     const moved = acceptOffer(career, offer);
     // New club, new team-mates. Same best-effort rule as career creation: the
     // move completes immediately with the generated squad acceptOffer gives it,
@@ -746,8 +782,8 @@ export default function StarDevPage() {
       { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.signingFee }, "transfer");
     setCareer(moved);
     setTransferOffers([]);
-    rollOverSeason(moved, wonBallonDor);
-  }, [career, wonBallonDor, rollOverSeason]);
+    rollOverSeason(moved, wonBallonDor, forcedRelegationMove);
+  }, [career, phase, wonBallonDor, rollOverSeason]);
 
   const handleStayPut = useCallback(() => {
     if (!career) return;
@@ -1040,6 +1076,16 @@ export default function StarDevPage() {
         offers={transferOffers}
         onAccept={handleAcceptTransfer}
         onStay={handleStayPut}
+      />
+    );
+  }
+
+  if (phase === "relegation-move" && transferOffers.length > 0) {
+    return (
+      <RelegationMove
+        career={career}
+        offers={transferOffers}
+        onAccept={handleAcceptTransfer}
       />
     );
   }

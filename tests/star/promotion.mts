@@ -1,5 +1,7 @@
 import { resolveLadder, resolvePlayOffs, membershipOf } from "../../lib/star/promotion";
 import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
+import { generateRelegationOffers } from "../../lib/star/relegationOffers";
+import { acceptOffer } from "../../lib/star/transfers";
 import { mulberry32, sortLeague } from "../../lib/star/season";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "../../lib/star/clubs";
 import { divisionOf, matchweeksFor } from "../../lib/star/calendar";
@@ -101,19 +103,47 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   check(out.playOffs !== null, "a Championship season plays its play-offs");
 }
 
-// ── Finishing bottom of the Championship cannot strand you ──────────────────
+// ── Finishing bottom of the Championship really does relegate you now ───────
+//
+// This used to be a reprieve: your own club could never go down, because the
+// pool has no season for it to play. That produced a career that could sit
+// in the Championship's bottom three forever without consequence, which is
+// not what relegation means. The real fix is upstream of resolveLadder — the
+// page notices before rollover and makes you sign for a new club, covered by
+// the next block — but resolveLadder itself must no longer special-case you.
 {
   const clubs = [...CHAMPIONSHIP_CLUBS];
   const you = clubs[clubs.length - 1];       // dead last
   const career = withStandings(makeInitialCareer(playerAt(you), clubs, "championship"), clubs);
   const out = resolveLadder(career, mulberry32(17));
 
-  check(!out.relegatedFromChampionship.includes(you),
-    "your club is not relegated out of the game's last division");
-  check(out.division === "championship" && out.yourMove === null,
-    `you stay in the Championship (${out.division})`);
-  check(out.relegatedFromChampionship.length === 3, "three still go down");
-  check(out.divisions.championship.includes(you), "and you are still in it");
+  check(out.relegatedFromChampionship.includes(you),
+    "finishing bottom relegates your own club exactly like anybody else's");
+  check(out.divisions.pool.includes(you), "and it lands in the pool with the rest of the bottom three");
+  check(out.relegatedFromChampionship.length === 3, "still exactly three go down");
+}
+
+// ── The screen that replaces it: a real signing, and the ladder honours it ──
+{
+  const clubs = [...CHAMPIONSHIP_CLUBS];
+  const you = clubs[clubs.length - 1];
+  const career = withStandings(makeInitialCareer(playerAt(you), clubs, "championship"), clubs);
+  const bottom = sortLeague(career.league).map(t => t.name).slice(-3);
+
+  const offers = generateRelegationOffers(career, mulberry32(19));
+  check(offers.length >= 1, `always at least one offer (${offers.length})`);
+  check(offers.every(o => o.club !== you), "never an offer to re-sign for the club that just went down");
+  check(offers.every(o => !bottom.includes(o.club)), "never an offer from one of the other relegated clubs");
+
+  // Sign for whoever came in, exactly as the RelegationMove screen does —
+  // and only THEN does the season roll over, with the ladder seeing a player
+  // who already belongs to a real division.
+  const moved = acceptOffer(career, offers[0]);
+  const out = resolveLadder(moved, mulberry32(23));
+  check(out.division === "premier" || out.division === "championship",
+    `the ladder places the new club in a real division (${out.division})`);
+  check((out.division === "premier" ? out.divisions.premier : out.divisions.championship).includes(offers[0].club),
+    "and it is the club that was actually signed for");
 }
 
 // ── Only English clubs are ever on the English ladder ───────────────────────
@@ -135,6 +165,13 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     const rng = mulberry32(season * 97 + 3);
     const order = [...career.league.map(t => t.name)].sort(() => rng() - 0.5);
     career = withStandings(career, order);
+
+    if (divisionOf(career) === "championship"
+      && sortLeague(career.league).slice(-3).map(t => t.name).includes(career.player.club)) {
+      const offers = generateRelegationOffers(career, mulberry32(season * 61 + 4));
+      if (offers.length > 0) career = acceptOffer(career, offers[0]);
+    }
+
     career = advanceSeason(career, false).career;
     const m = membershipOf(career);
     for (const c of [...m.premier, ...m.championship]) if (foreign.includes(c)) strayed.add(c);
@@ -157,6 +194,18 @@ function withStandings(career: CareerState, order: string[]): CareerState {
 
     const before = membershipOf(career);
     const beforeAll = [...before.premier, ...before.championship, ...before.pool];
+
+    // Mirrors app/star-dev/page.tsx's openTransferWindowOrRoll: relegation
+    // out of the Championship is not optional, so a real club has to be
+    // signed for before advanceSeason runs at all — otherwise there would be
+    // nothing stopping your identity from being carried into a division list
+    // that no longer contains it.
+    if (divisionOf(career) === "championship"
+      && sortLeague(career.league).slice(-3).map(t => t.name).includes(career.player.club)) {
+      const offers = generateRelegationOffers(career, mulberry32(season * 53 + 9));
+      if (offers.length > 0) career = acceptOffer(career, offers[0]);
+    }
+
     career = advanceSeason(career, false).career;
     const m = membershipOf(career);
     const all = [...m.premier, ...m.championship, ...m.pool];

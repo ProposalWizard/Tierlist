@@ -530,6 +530,8 @@ export type StarPhase =
   | "profile-setup"
   /** What went up and down, shown once at a rollover. See LadderScreen. */
   | "ladder"
+  /** The old club just relegated out of the Championship; pick a new one. */
+  | "relegation-move"
   | "dashboard"
   | "league"
   | "life"

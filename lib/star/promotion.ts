@@ -84,6 +84,23 @@ function strengthTable(career: CareerState, members: DivisionMembership): Map<st
   return out;
 }
 
+/**
+ * The same estimate `strengthTable` builds for the whole ladder at once, for
+ * a single club — used by lib/star/relegationOffers.ts to price an offer
+ * from a club this career has never actually simulated (a Premier League
+ * side, while you have spent the season in the Championship).
+ */
+export function estimateClubStrength(career: CareerState, club: string): number {
+  const real = career.league.find(t => t.name === club)?.strength;
+  if (real !== undefined) return real;
+  const members = membershipOf(career);
+  const tier: keyof DivisionMembership =
+    members.premier.includes(club) ? "premier"
+    : members.championship.includes(club) ? "championship"
+    : "pool";
+  return baselineFor(tier) + nameNoise(club);
+}
+
 // ── Drawing lots ────────────────────────────────────────────────────────────
 
 /**
@@ -246,21 +263,19 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     const auto = names.slice(0, 2);
     const third = played ?? playOffs?.promoted;
     promotedToPremier = third ? [...auto, third] : auto;
-    // ── There is nothing below the Championship to play in ──
+    // ── Your own club really can go down ──
     //
-    // The pool is a hat, not a division: it has no fixtures, no table and no
-    // season, so a career relegated into it would have nowhere to play. Your
-    // club therefore survives the drop and the next one up goes instead —
-    // the one concession this whole file makes to the game not modelling a
-    // third tier. Everybody else's bottom three is exactly the table's.
-    const bottom = names.slice(-3);
-    if (bottom.includes(you)) {
-      const reprieved = bottom.filter(c => c !== you);
-      const nextUp = names[names.length - 4];
-      relegatedFromChampionship = nextUp ? [...reprieved, nextUp] : reprieved;
-    } else {
-      relegatedFromChampionship = bottom;
-    }
+    // The pool is a hat, not a division — no fixtures, no table, no season —
+    // so relegation out of the Championship cannot just drop you into it and
+    // carry on: there is nowhere for the career to play next. That is handled
+    // upstream of here, not by reprieving you. Before this ever runs, the page
+    // notices your club is in the bottom three and makes you sign for a new
+    // one — a genuine Championship survivor always, occasionally a Premier
+    // League side if the season was good enough (lib/star/relegationOffers.ts,
+    // RelegationMove.tsx) — so by the time resolveLadder runs, `you` already
+    // names a club with a real division to be placed in. Bottom three is
+    // simply the table's, exactly like every other club's.
+    relegatedFromChampionship = names.slice(-3);
     // Nobody played the Premier League, so who came down is a draw — weighted
     // the other way, since it is the weak who go.
     relegatedFromPremier = weightedDraw(members.premier, strength, 3, rng, true);
@@ -285,9 +300,11 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     ...relegatedFromChampionship,
   ];
 
-  // Your club is always in one of the two by now — the reprieve above is what
-  // guarantees it — but falling back to the division you are already in is
-  // cheaper than trusting that from a distance.
+  // Your club is one of the two by now — either it was never in the relegated
+  // three, or the page already moved you to a new one before this ran (see
+  // the note on relegatedFromChampionship above). Falling back to the
+  // division you were already in only matters for a save from before any of
+  // this existed, where nothing upstream has done that swap.
   const nextDivision: CareerDivision = premier.includes(you) ? "premier"
     : championship.includes(you) ? "championship"
     : division;
