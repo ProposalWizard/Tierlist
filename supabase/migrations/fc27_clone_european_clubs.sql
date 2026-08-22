@@ -29,10 +29,12 @@
 -- Genuinely uncertain whether FC 26 has them at all, rather than just which
 -- spelling: Shakhtar Donetsk (flagged directly — Ukrainian clubs are
 -- sometimes missing from EA's data), Torreense (a small Portuguese club),
--- Shamrock Rovers (League of Ireland), and the four Saudi Pro League clubs
--- (Al Hilal, Al Nassr, Al Ahli, Al Ittihad — EA has only licensed the Saudi
--- league in some recent editions, not all). The diagnostic query below will
--- say for certain either way — that is exactly what it is for.
+-- Shamrock Rovers (League of Ireland), Pafos (a Cypriot club only recently
+-- prominent enough to be worth licensing at all), and the four Saudi Pro
+-- League clubs (Al Hilal, Al Nassr, Al Ahli, Al Ittihad — EA has only
+-- licensed the Saudi league in some recent editions, not all). The
+-- diagnostic query below will say for certain either way — that is exactly
+-- what it is for.
 --
 -- One likely mistake worth flagging rather than silently resolving:
 -- "Villarreal" appears in the Champions League list AND, spelled "Villareal"
@@ -143,6 +145,14 @@ WITH src AS (
       'rangersfc', 'rangers',
       'heartofmidlothianfc', 'heartofmidlothian', 'hearts',
       'shamrockroversfc', 'shamrockrovers',
+      -- The first Europa League list was seven short of the real 36.
+      'pafosfc', 'pafos',
+      'afcajax', 'ajax',
+      'fcmidtjylland', 'midtjylland',
+      'krcgenk', 'genk', 'racinggenk',
+      'bscyoungboys', 'youngboys',
+      'fcbasel1893', 'fcbasel', 'basel',
+      'malmoff', 'malmff', 'malmo',
 
       -- ── Other ──
       'sevillafc', 'sevilla',
@@ -152,7 +162,6 @@ WITH src AS (
       'rcstrasbourgalsace', 'strasbourg',
       'atalantabc', 'atalanta',
       'sslazio', 'lazio',
-      'afcajax', 'ajax',
       'alhilalsfc', 'alhilal',
       'alnassrfc', 'alnassr',
       'alahlisaudifc', 'alahli', 'alahlisaudi',
@@ -221,10 +230,13 @@ SELECT
 --     'besiktasjk','besiktas','beikta','fcredbullsalzburg','redbullsalzburg',
 --     'salzburg','rbsalzburg','rangersfc','rangers','heartofmidlothianfc',
 --     'heartofmidlothian','hearts','shamrockroversfc','shamrockrovers',
+--     'pafosfc','pafos','afcajax','ajax','fcmidtjylland','midtjylland',
+--     'krcgenk','genk','racinggenk','bscyoungboys','youngboys','fcbasel1893',
+--     'fcbasel','basel','malmoff','malmff','malmo',
 --     'sevillafc','sevilla','eintrachtfrankfurt','eintracht','fcschalke04',
 --     'schalke04','schalke','asmonaco','monaco','rcstrasbourgalsace',
---     'strasbourg','atalantabc','atalanta','sslazio','lazio','afcajax',
---     'ajax','alhilalsfc','alhilal','alnassrfc','alnassr','alahlisaudifc',
+--     'strasbourg','atalantabc','atalanta','sslazio','lazio',
+--     'alhilalsfc','alhilal','alnassrfc','alnassr','alahlisaudifc',
 --     'alahli','alahlisaudi','alittihadclub','alittihad','alittihadjeddah'
 --   );
 
@@ -311,6 +323,13 @@ WITH wanted(club, competition, variants) AS (VALUES
   ('Rangers', 'Europa League', ARRAY['rangersfc','rangers']),
   ('Hearts', 'Europa League', ARRAY['heartofmidlothianfc','heartofmidlothian','hearts']),
   ('Shamrock Rovers', 'Europa League', ARRAY['shamrockroversfc','shamrockrovers']),
+  ('Pafos', 'Europa League', ARRAY['pafosfc','pafos']),
+  ('Ajax', 'Europa League', ARRAY['afcajax','ajax']),
+  ('Midtjylland', 'Europa League', ARRAY['fcmidtjylland','midtjylland']),
+  ('Genk', 'Europa League', ARRAY['krcgenk','genk','racinggenk']),
+  ('Young Boys', 'Europa League', ARRAY['bscyoungboys','youngboys']),
+  ('Basel', 'Europa League', ARRAY['fcbasel1893','fcbasel','basel']),
+  ('Malmö', 'Europa League', ARRAY['malmoff','malmff','malmo']),
   ('Sevilla', 'Other', ARRAY['sevillafc','sevilla']),
   ('Eintracht Frankfurt', 'Other', ARRAY['eintrachtfrankfurt','eintracht']),
   ('Schalke', 'Other', ARRAY['fcschalke04','schalke04','schalke']),
@@ -318,7 +337,6 @@ WITH wanted(club, competition, variants) AS (VALUES
   ('Strasbourg', 'Other', ARRAY['rcstrasbourgalsace','strasbourg']),
   ('Atalanta', 'Other', ARRAY['atalantabc','atalanta']),
   ('Lazio', 'Other', ARRAY['sslazio','lazio']),
-  ('Ajax', 'Other', ARRAY['afcajax','ajax']),
   ('Al Hilal', 'Other', ARRAY['alhilalsfc','alhilal']),
   ('Al Nassr', 'Other', ARRAY['alnassrfc','alnassr']),
   ('Al Ahli', 'Other', ARRAY['alahlisaudifc','alahli','alahlisaudi']),

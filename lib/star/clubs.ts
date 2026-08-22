@@ -43,10 +43,12 @@ export const CHAMPIONSHIP_CLUBS: readonly string[] = [
 export const PROMOTION_POOL_CLUBS: readonly string[] = [
   "Luton Town", "Huddersfield Town", "Leicester City", "Reading", "Wigan Athletic",
   // "Villarreal" was given here too ("Villareal"), but it's already the
-  // Champions League club above — treated as one mention, not two, until
-  // told otherwise.
+  // Champions League club above — treated as one mention, not two.
+  // "Ajax" moved to the Europa League list below — the first Europa League
+  // list was short seven clubs of the real thirty-six, and Ajax was one of
+  // the seven named to fill it in.
   "Sevilla", "Eintracht Frankfurt", "Schalke", "Monaco",
-  "Strasbourg", "Atalanta", "Lazio", "Ajax", "Al Hilal", "Al Nassr",
+  "Strasbourg", "Atalanta", "Lazio", "Al Hilal", "Al Nassr",
   "Al Ahli", "Al Ittihad",
 ];
 
@@ -80,6 +82,8 @@ export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
   "Torreense", "Union SG", "Ferencváros", "Anderlecht", "Lech Poznań",
   "Trabzonspor", "Benfica", "Crvena Zvezda", "Omonia Nicosia", "Beşiktaş",
   "Salzburg", "Rangers", "Hearts", "Shamrock Rovers",
+  // The first list was seven short of the real thirty-six.
+  "Pafos", "Ajax", "Midtjylland", "Genk", "Young Boys", "Basel", "Malmö",
 ];
 
 export type Division = "premier" | "championship" | "pool" | "champions" | "europa";
