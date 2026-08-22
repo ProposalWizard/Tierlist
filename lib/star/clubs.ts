@@ -23,7 +23,7 @@ export const PREMIER_LEAGUE_CLUBS: readonly string[] = [
 ];
 
 export const CHAMPIONSHIP_CLUBS: readonly string[] = [
-  "Queens Park Rangers", "Millwall", "Bolton Wanderers", "Watford",
+  "Queens Park Rangers", "Millwall FC", "Bolton Wanderers", "Watford",
   "Middlesbrough", "Charlton Athletic", "Swansea City", "West Bromwich Albion",
   "Blackburn Rovers", "Burnley", "West Ham United", "Wolverhampton Wanderers",
   "Cardiff City", "Wrexham", "Birmingham City", "Sheffield United",
@@ -41,7 +41,7 @@ export const CHAMPIONSHIP_CLUBS: readonly string[] = [
  * shown in the Lineups picker's "Other" tab alongside the pool.
  */
 export const PROMOTION_POOL_CLUBS: readonly string[] = [
-  "Luton Town", "Huddersfield Town", "Leicester City", "Reading", "Wigan Athletic",
+  "Luton Town", "Huddersfield Town", "Leicester City", "Reading FC", "Wigan Athletic",
 ];
 
 /**
