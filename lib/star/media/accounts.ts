@@ -357,21 +357,19 @@ export function buildRoster(career: CareerState): MediaAccount[] {
     });
   }
 
-  // Your own team-mates, from the actual squad.
-  const mates = (career.squad ?? []).filter(p => ["ST", "CAM", "LW", "RW", "CM", "GK"].includes(p.position)).slice(0, 4);
-  for (const p of mates) {
-    out.push({
-      ...account({
-        handle: `@${p.shortName.replace(/[^A-Za-z]/g, "").toLowerCase()}_official`,
-        name: p.name,
-        archetype: "teammate",
-        platform: "instagram",
-        verified: true,
-        followers: 50_000 + Math.floor(rng() * 900_000),
-      }, seedKey + p.id, used),
-      allegiance: { club: me, polarity: 1 },
-    });
-  }
+  // ── No real footballer gets an account ──
+  //
+  // This used to generate 3-4 "teammate" accounts straight off the actual
+  // squad — real names, real players, posting first-person congratulations
+  // ("big three points 💪") as if they had actually written them. Reported
+  // directly: a real, currently-playing professional does not consent to a
+  // fictional social media persona putting words in his mouth, however
+  // supportive, and this game has no license to do that. `selfAccount`
+  // below — your own, fictional, created player — is the only individual
+  // who ever gets to post as themselves; a real player can still be talked
+  // ABOUT, by the club/fan/stats/press accounts that already do that for
+  // every other event, which is the legally uncomplicated part (commentary
+  // and opinion, not impersonation).
 
   return out;
 }

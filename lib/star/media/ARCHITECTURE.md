@@ -350,7 +350,17 @@ interface VoiceProfile {
 - one `league` + one `competition` account per active cup
 - a fixed national cast: 2 broadsheets, 2 tabloids, 2 insiders, 2 stat pages,
   1 aggregator, 2 pundits, 1 meme page
-- 3-4 `teammate` accounts drawn from your actual `squad`
+
+**No real footballer gets an account.** `buildRoster` used to also generate
+3-4 `teammate` accounts straight off the actual squad — real names, real
+players, posting first-person as if they had written it themselves. Removed:
+a real, currently-playing professional has not consented to a fictional
+persona putting words in his mouth, however supportive, and this game has no
+license to do that. `selfAccount` (below) — your own, fictional, created
+player — is the only individual who ever posts as himself; a real player can
+still be talked ABOUT, by the club/fan/stats/press accounts that already
+cover every other event, which is commentary and opinion rather than
+impersonation. See `tests/star/noRealPlayerAccounts.mts`.
 
 ~40 accounts, generated deterministically from the club list and season. It
 re-generates on a transfer, which is exactly right: your new club's fans have
@@ -459,7 +469,7 @@ cycle has shape.
   T+0m    ⚽ FULL TIME              club account, league account, scoreline graphic
   T+2m    🚨 the moment            breaking news IF importance ≥ 70
   T+4m    😤 fans                  3-6 fan reactions, immediately, unfiltered
-  T+8m    📸 player post           your own account, and a team-mate's
+  T+8m    📸 player post           your own account
   T+15m   🔢 the numbers           stat accounts, player card graphic
   T+40m   🎙 the reaction           manager quotes, pundit takes
   T+2h    📰 the write-up          broadsheet match report, tabloid headline
