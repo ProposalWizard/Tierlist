@@ -133,6 +133,14 @@ export interface LeaguePlayer {
   nation?: string;
   /** See SquadPlayer.positions — the same idea, for the other nineteen clubs. */
   positions?: SquadPlayer["position"][];
+  /**
+   * Real age, when the database has one — same reasoning as `image`/`nation`:
+   * not needed to answer "who scored?", but needed by the transfer engine
+   * (lib/star/leagueTransfers.ts), which weights a loan far more heavily for
+   * a young player than an old one. Absent for a generated squad, same as
+   * `image`/`nation`.
+   */
+  age?: number;
 }
 
 export interface LeagueSquad {

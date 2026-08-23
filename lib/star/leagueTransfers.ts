@@ -122,7 +122,7 @@ function fromLeaguePlayer(p: LeaguePlayer, club: string): Candidate {
     id: p.id, name: p.name, shortName: shortNameOf(p.name),
     position: p.position, positions: p.positions?.length ? p.positions : [p.position],
     overall: p.overall, club, isYou: false,
-    sofifaId: p.id, imageUrl: p.image, nationality: p.nation,
+    sofifaId: p.id, imageUrl: p.image, nationality: p.nation, age: p.age,
     seasonGoals: p.goals, seasonAssists: p.assists, careerGoals: 0, careerAssists: 0,
   };
 }
@@ -144,6 +144,7 @@ function toLeaguePlayer(c: Candidate): LeaguePlayer {
     overall: c.overall, goals: c.seasonGoals, assists: c.seasonAssists,
     ...(c.imageUrl ? { image: c.imageUrl } : {}),
     ...(c.nationality ? { nation: c.nationality } : {}),
+    ...(c.age ? { age: c.age } : {}),
   };
 }
 
@@ -265,10 +266,12 @@ function sellability(
  * MORE likely outcome in real football, not the exception: permanently
  * selling a squad player is the bigger, rarer decision. Age moves it
  * further where it is known — a teenager is what loans are FOR, an ageing
- * squad player being let go is usually let go for good — but `LeaguePlayer`
- * (everyone except your own squad) carries no age at all, so the baseline
- * for "unknown" sits between the two known cases rather than guessing
- * either way.
+ * squad player being let go is usually let go for good. `Candidate.age`
+ * reaches here from `sofifa_players.age` for every real player now, own
+ * squad or not (see fromLeaguePlayer / app/api/star/league-squads) — the
+ * "unknown" baseline below still matters for a generated/fallback squad,
+ * which has no real DB row to read an age from at all, so it sits between
+ * the two known cases rather than guessing either way.
  */
 function loanOrSale(c: Candidate, unhappy: boolean, rng: () => number): boolean {
   if (unhappy) return false;
