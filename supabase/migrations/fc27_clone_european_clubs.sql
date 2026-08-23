@@ -210,7 +210,14 @@ WITH src AS (
       'celticfc', 'celtic',
       'aekathensfc', 'aekathens', 'aek',
       'olympiquelyonnais', 'lyon', 'olympiquelyon',
-      'fenerbahcesk', 'fenerbahce', 'fenerbahe',
+      -- 'fenerbahcesk' was a wrong guess — the regexp below DROPS a non-ASCII
+      -- letter rather than transliterating it, so "Fenerbahçe SK" actually
+      -- normalises to 'fenerbahesk' (no "c" where the "ç" was). Confirmed
+      -- against the real row: see fc27_fix_fenerbahce_spelling.sql, written
+      -- after this wrong entry let a whole clone run silently match nothing
+      -- for a fully-corrected FC26 source row. Kept the wrong-guess variants
+      -- too, in case an even older/differently-spelled row is still around.
+      'fenerbahesk', 'fenerbahcesk', 'fenerbahce', 'fenerbahe',
       'gnkdinamozagreb', 'dinamozagreb', 'dinamo',
       -- Slovan Bratislava confirmed absent from FC 26 under any close
       -- spelling — replaced with a club of genuine recent Champions League
@@ -405,7 +412,7 @@ WITH wanted(club, competition, variants) AS (VALUES
   ('Celtic', 'Champions League', ARRAY['celticfc','celtic']),
   ('AEK Athens', 'Champions League', ARRAY['aekathensfc','aekathens','aek']),
   ('Lyon', 'Champions League', ARRAY['olympiquelyonnais','lyon','olympiquelyon']),
-  ('Fenerbahçe', 'Champions League', ARRAY['fenerbahcesk','fenerbahce','fenerbahe']),
+  ('Fenerbahçe', 'Champions League', ARRAY['fenerbahesk','fenerbahcesk','fenerbahce','fenerbahe']),
   ('Dinamo Zagreb', 'Champions League', ARRAY['gnkdinamozagreb','dinamozagreb','dinamo']),
   ('FC Copenhagen', 'Champions League', ARRAY['fccopenhagen','copenhagen','fckbenhavn','kbenhavn']),
   ('AZ Alkmaar', 'Europa League', ARRAY['az','azalkmaar']),
