@@ -110,6 +110,17 @@
 -- "vitriaguimares"/"vitriasc"/"vitriasportclube" (not "vitoria..."). FC
 -- Copenhagen also picked up its Danish-spelling form, "fckbenhavn" (from
 -- "FC København" — the ø strips the same way, to nothing, not to "o").
+--
+-- ── A third time, and this one had already shipped silently broken ──
+--
+-- Fenerbahçe SK: "fenerbahcesk" made the exact same "ç" -> "c" assumption,
+-- unnoticed until reported directly (FC27 showing only the one player
+-- manually transferred there by hand, not the real squad) rather than
+-- caught by a diagnostic run — this file's matching array had never
+-- actually included the correctly-normalised form, so every run of this
+-- migration silently matched zero rows for this club. Corrected to
+-- "fenerbahesk". A spot-check of every other entry's real name against its
+-- own variant list found no further instance of this mistake in the file.
 -- FC Copenhagen and Vitória Guimarães are both now confirmed present too
 -- (as "FC København" and "Vitória SC" — see fc27_diagnose_missing_european_
 -- clubs.sql's second version, which found both).
