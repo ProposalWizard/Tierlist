@@ -32,6 +32,35 @@ export const CLUB_TEMPLATES: Template[] = [
     graphic: "scoreline", hashtag: true,
   },
 
+  // ── Derby day ── the official account never had a line of its own for one
+  //   before this — always fell back to the plain full-time post, derby or
+  //   not, which is not how a real club account covers the one fixture on
+  //   the calendar it circles first.
+  {
+    id: "club-derby-win", archetype: "club", events: ["derby-win"], frames: ["celebrate"],
+    excludes: ["derbyName"],
+    body: "FULL TIME | {homeClub} {hs}-{as} {awayClub}. Derby day belongs to us. 🔴",
+    graphic: "scoreline", hashtag: true, weight: 3,
+  },
+  {
+    id: "club-derby-win-named", archetype: "club", events: ["derby-win"], frames: ["celebrate"],
+    requires: ["derbyName"],
+    body: "FULL TIME | {homeClub} {hs}-{as} {awayClub}. The {derbyName} is ours. 🔴",
+    graphic: "scoreline", hashtag: true, weight: 3,
+  },
+  {
+    id: "club-derby-loss", archetype: "club", events: ["derby-loss"], frames: ["report"],
+    excludes: ["derbyName"],
+    body: "FULL TIME | {homeClub} {hs}-{as} {awayClub}. That one hurts. We go again.",
+    graphic: "scoreline", hashtag: true, weight: 2,
+  },
+  {
+    id: "club-derby-loss-named", archetype: "club", events: ["derby-loss"], frames: ["report"],
+    requires: ["derbyName"],
+    body: "FULL TIME | {homeClub} {hs}-{as} {awayClub}. The {derbyName} was not ours today. We go again.",
+    graphic: "scoreline", hashtag: true, weight: 2,
+  },
+
   // ── Goals ─────────────────────────────────────────────────────────────────
   {
     id: "club-hattrick", archetype: "club", events: ["hat-trick", "four-goals", "five-goals"],

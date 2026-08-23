@@ -37,6 +37,18 @@ export function base(r: MatchRecord): Facts {
     club: r.club,
     opponent: r.opponent,
     competition: r.competition,
+    // Genuinely ABSENT when there is none — not an empty string. `requires`
+    // (templates/index.ts's `has`) treats an empty string the same as a
+    // missing key, but `excludes` only checks `!== undefined`, so a key that
+    // exists but is empty reads as "present" there. Setting it to "" made
+    // BOTH the named templates (`requires: ["derbyName"]`) and their generic
+    // fallback (`excludes: ["derbyName"]`) refuse to fire whenever there was
+    // no real name, and a derby with no rated name — most of them — lost its
+    // coverage entirely rather than falling back to the plain "the derby"
+    // line. Caught by a 0-in-300 statistical check, not a crash: the event
+    // still detected, it simply had nowhere left to go.
+    ...(r.derbyName ? { derbyName: r.derbyName } : {}),
+    ...(r.rivalryTier ? { rivalryTier: r.rivalryTier } : {}),
     us: r.score.us,
     them: r.score.them,
     score: `${r.score.us}-${r.score.them}`,

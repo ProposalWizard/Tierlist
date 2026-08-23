@@ -62,6 +62,9 @@ export interface MatchRecord {
    * way. See lib/star/rivalries.ts.
    */
   rivalryTier?: "R1" | "R2" | "R3";
+  /** The name this fixture actually goes by, when it has one — "North London
+   *  Derby", "Roses rivalry". Absent for most rivalries; most do not have one. */
+  derbyName?: string;
   home: boolean;
   /** A final is played at neither ground. */
   neutral: boolean;

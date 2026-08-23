@@ -42,13 +42,25 @@ export const SOCIAL_TEMPLATES: Template[] = [
     weight: 3,
   },
   {
-    id: "fan-derby", archetype: "fan", events: ["derby-win"],
+    id: "fan-derby", archetype: "fan", events: ["derby-win"], excludes: ["derbyName"],
     body: "there is no better feeling than beating that lot. none",
     weight: 4,
   },
   {
+    id: "fan-derby-named", archetype: "fan", events: ["derby-win"], requires: ["derbyName"],
+    body: "WE'VE WON THE {derbyName|caps}. i am never getting over this",
+    weight: 4,
+  },
+  {
     id: "fan-derby-loss", archetype: "fan", events: ["derby-loss"], frames: ["lament"],
+    excludes: ["derbyName"],
     body: "not talking to anyone until next season",
+    weight: 3,
+  },
+  {
+    id: "fan-derby-loss-named", archetype: "fan", events: ["derby-loss"], frames: ["lament"],
+    requires: ["derbyName"],
+    body: "losing the {derbyName|lower} to THEM. i can't be seen in public",
     weight: 3,
   },
   {
@@ -116,12 +128,25 @@ export const SOCIAL_TEMPLATES: Template[] = [
   },
   {
     id: "rival-derby", archetype: "rivalFan", events: ["derby-loss"], frames: ["mock", "joke"],
+    excludes: ["derbyName"],
     body: "sing about the derby again lads. go on",
     weight: 4,
   },
   {
+    id: "rival-derby-named", archetype: "rivalFan", events: ["derby-loss"], frames: ["mock", "joke"],
+    requires: ["derbyName"],
+    body: "another {derbyName|lower} to add to the pile. keep counting",
+    weight: 4,
+  },
+  {
     id: "rival-derby-win", archetype: "rivalFan", events: ["derby-win"], frames: ["mock"],
+    excludes: ["derbyName"],
     body: "one win in how many. behave",
+  },
+  {
+    id: "rival-derby-win-named", archetype: "rivalFan", events: ["derby-win"], frames: ["mock"],
+    requires: ["derbyName"],
+    body: "one {derbyName|lower} in how many years. behave",
   },
   {
     id: "rival-drop", archetype: "rivalFan", events: ["into-the-drop", "relegated", "losing-run"], frames: ["mock"],
