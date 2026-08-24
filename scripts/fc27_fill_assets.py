@@ -116,6 +116,7 @@ from scrape_missing import (
     _abs_cdn,
     wait_for,
     _is_cf_challenge,
+    _beep,
 )
 from playwright.async_api import async_playwright
 
@@ -140,10 +141,69 @@ STATE_FILE = OUTPUT_DIR / "fc27_assets_state.json"
 MIN_DELAY = 0.7
 MAX_DELAY = 1.4
 
+# How many players in a row can come back with neither a position nor a
+# nationality before this is treated as something systemically wrong rather
+# than an unlucky run of genuinely sparse data. See the circuit breaker below.
+EMPTY_STREAK_LIMIT = 8
+
 
 def die(msg: str) -> None:
     print(f"\n✗ {msg}")
     sys.exit(1)
+
+
+async def _is_signin_page(page) -> bool:
+    """SoFIFA has bounced this request to its own sign-in page.
+
+    A DIFFERENT thing from `_is_cf_challenge` — that is Cloudflare's "checking
+    your browser" interstitial, which clears itself or is solved with a
+    puzzle. This is SoFIFA's own login wall, and it is what actually happens
+    partway through a long run of single-player-page visits: hitting one
+    page after another in quick succession, thousands of times, reads
+    differently to SoFIFA than normal browsing, and it can quietly sign the
+    session back out — with no Cloudflare challenge involved at all, so the
+    existing check never saw it. Every player visited after that point looks
+    like "nothing found" instead of "not signed in", which is exactly the
+    failure this is here to catch instead.
+    """
+    try:
+        if "/signin" in (page.url or ""):
+            return True
+        if await page.query_selector('input[type="password"]'):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+async def _wait_for_signin(page, url: str) -> bool:
+    """Pause and alert, the same shape as the Cloudflare wait below, until a
+    human has actually logged back in. Returns False if ten minutes pass with
+    nobody there — the caller stops the whole run rather than grinding
+    through the remaining roster recording nothing but failures.
+
+    Deliberately does NOT reload the page while waiting — only checks its
+    current state. Re-navigating every few seconds would wipe out an email
+    and password mid-type, turning "please log in" into something nobody
+    could actually act on.
+    """
+    print("\n" + "=" * 60)
+    print("  *** SIGNED OUT OF SOFIFA — PLEASE LOG BACK IN ***")
+    print("  A browser window is open. Sign in there, then this")
+    print("  will notice and carry on by itself.")
+    print("=" * 60 + "\n")
+    _beep()
+    for _ in range(120):  # 120 x 5s = 10 minutes
+        await asyncio.sleep(5)
+        if not await _is_signin_page(page):
+            print("  ...signed in, carrying on.\n")
+            # SoFIFA redirects on login to wherever it likes, not back to the
+            # player we actually wanted — one real navigation, now that it is
+            # safe to do without disturbing anything.
+            await page.goto(url, wait_until="commit")
+            await asyncio.sleep(1.0)
+            return True
+    return False
 
 
 def _headers() -> dict:
@@ -513,6 +573,7 @@ async def run() -> None:
     no_photo: list[str] = []   # SoFIFA genuinely has no face for these
     undone: list[str] = []     # placeholder uploads taken back out again
     guard = FaceGuard()
+    consecutive_empty = 0
 
     async with async_playwright() as pw:
         context = await pw.chromium.launch_persistent_context(
@@ -557,8 +618,41 @@ async def run() -> None:
                     await page.goto(url, wait_until="commit")
                     await asyncio.sleep(1.0)
 
+                # A separate check from the one above — see _is_signin_page.
+                # This is the one that actually bit on the first real run:
+                # thousands of single-player visits in a row read differently
+                # to SoFIFA than normal browsing and it quietly logs the
+                # session out, with no Cloudflare challenge involved at all.
+                if await _is_signin_page(page):
+                    if not await _wait_for_signin(page, url):
+                        print("\n✗ Still signed out after ten minutes with nobody there. Stopping here")
+                        print("  rather than recording thousands of bogus failures. Progress is saved —")
+                        print("  log in and run the exact same command again to pick up where this left off.")
+                        return
+
                 html = await page.content()
                 parsed = parse_player_page(html, sid)
+
+                # ── Circuit breaker ──
+                #
+                # A handful of genuinely photo-less or data-less players in a
+                # row is normal. Many in a row, back to back, is not a
+                # coincidence — it is this same "quietly logged out" failure
+                # slipping past both checks above in some new way, and
+                # grinding through the rest of a 3,000-player list recording
+                # nothing is worse than stopping and saying so plainly.
+                if not parsed.get("positions") and not parsed.get("nationality"):
+                    consecutive_empty += 1
+                else:
+                    consecutive_empty = 0
+                if consecutive_empty >= EMPTY_STREAK_LIMIT:
+                    print(f"\n✗ {consecutive_empty} players in a row came back with nothing at all — that")
+                    print("  is not normal, even for smaller leagues. Something is systematically wrong")
+                    print("  (signed out in a way this didn't catch, blocked, or SoFIFA's page layout")
+                    print("  has changed) rather than SoFIFA genuinely lacking this much data in a row.")
+                    print("  Stopping here instead of burning through the rest of the list. Progress is")
+                    print("  saved — check the browser window, then run the exact same command again.")
+                    return
 
                 patch: dict = {}
                 # Whether everything this player was VISITED for actually got
