@@ -37,13 +37,25 @@ function realCareer(club = "Arsenal", season = 1): CareerState {
   return {
     ...career,
     season,
-    leagueSquads: CLUBS.map((c): LeagueSquad => ({
-      club: c,
-      players: generateSquad(clubNameSeed(c) + season).map((p): LeaguePlayer => ({
+    leagueSquads: CLUBS.map((c): LeagueSquad => {
+      const base = generateSquad(clubNameSeed(c) + season).map((p): LeaguePlayer => ({
         id: p.id, name: p.name, position: p.position, positions: p.positions ?? [p.position],
         overall: 60 + (clubNameSeed(p.name) % 25), goals: 0, assists: 0,
-      })),
-    })),
+      }));
+      // Real squads do not sit frozen at exactly twenty — some clubs carry
+      // genuine depth beyond a matchday squad plus bench, which is exactly
+      // what sellability's squad-size gate (a club at twenty or fewer barely
+      // sells at all) now cares about. A handful of extra bench players,
+      // seeded per club and season, so a freshly generated division has the
+      // spread a real one would rather than sitting uniformly on the
+      // "won't sell" threshold every single trial.
+      const extra = clubNameSeed(c + season) % 7; // 0-6 extra players
+      const bench: LeaguePlayer[] = Array.from({ length: extra }, (_, i) => {
+        const src = base[i % base.length];
+        return { ...src, id: `${src.id}_extra${i}`, name: `${src.name} Jr`, overall: Math.max(55, src.overall - 5) };
+      });
+      return { club: c, players: [...base, ...bench] };
+    }),
   };
 }
 
@@ -72,7 +84,14 @@ function realCareer(club = "Arsenal", season = 1): CareerState {
 // 34, all otherwise identical.
 {
   function squadOfAge(age: number): SquadPlayer[] {
-    const roles: SquadPlayer["position"][] = ["GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM", "RW", "LW", "ST"];
+    // Twenty-four, not eleven — sellability's squad-size gate (added
+    // alongside this same session's "a club at twenty or fewer barely
+    // sells" change) means an eleven-man squad would almost never list
+    // anyone at all, age be damned, and this block would measure nothing.
+    const roles: SquadPlayer["position"][] = [
+      "GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM", "RW", "LW", "ST",
+      "GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM", "RW", "LW", "ST", "CAM", "CAM",
+    ];
     return roles.map((position, i) => ({
       id: `p${age}-${i}`, name: `Player ${age}-${i}`, shortName: `P${age}${i}`, position,
       seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,

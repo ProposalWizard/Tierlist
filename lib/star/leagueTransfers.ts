@@ -200,6 +200,11 @@ const REACH_UP = 5;
  *  header's "Free agents" section. */
 const FREE_AGENT_REACH_MULT = 2;
 
+/** Eleven starters, nine substitutes — the squad size both `sellability` and
+ *  `positionNeed` treat as "full", the same target the Lineups picker and
+ *  buildLeagueSquad's own POSITION_ORDER already assume. */
+const SQUAD_TARGET = 20;
+
 function clampUnit(x: number): number {
   return Math.max(0, Math.min(1, x));
 }
@@ -225,9 +230,13 @@ function slotsFor(role: Role, formation: Formation): number {
  * two 85s at it wants nothing, however many slots it has) and how many slots
  * the role actually holds (a thin CM room matters more than a thin RB room,
  * because a CM slot is three chances to use a signing and an RB slot is one).
- * Squad size gates the whole thing — a club already carrying more players
- * than a matchday squad plus real depth needs the signing to be a clear
- * upgrade on its weakest slot-holder before it counts as needed at all.
+ * Squad size gates the whole thing on both sides — a club already carrying
+ * more players than a matchday squad plus real depth needs the signing to be
+ * a clear upgrade on its weakest slot-holder before it counts as needed at
+ * all, and a club that CANNOT field a matchday squad plus a full bench off
+ * its own current numbers (eleven starters, nine substitutes — twenty,
+ * `SQUAD_TARGET`) wants almost anything plausible, considerably more than
+ * its actual per-position gaps alone would suggest.
  */
 function positionNeed(role: Role, club: string, pool: Candidate[], formation: Formation, squadSize: number): number {
   const slots = slotsFor(role, formation);
@@ -246,9 +255,16 @@ function positionNeed(role: Role, club: string, pool: Candidate[], formation: Fo
   const gap = clampUnit((strength - avgDepth) / 12);
   const multiplicity = 0.55 + Math.min(slots, 3) * 0.22; // one slot: 0.77, three: 1.21
   // A squad well past a sensible size only wants a slot it is genuinely short
-  // in — everything else is a bench place it does not need to fill.
-  const sizeBrake = squadSize > 26 ? clampUnit((32 - squadSize) / 6) : 1;
-  return gap * multiplicity * sizeBrake;
+  // in; a squad that cannot even field itself wants bodies well beyond what
+  // its per-position gaps say — nineteen is "usually go and get someone",
+  // fifteen is considerably more than that. Not a guarantee either way: this
+  // still has to clear the `need <= 0.12` gate and win the buyer comparison
+  // like any other signing, the same as a real thin club doing real business
+  // rather than panic-buying the moment it dips below twenty.
+  const squadSizeFactor = squadSize < SQUAD_TARGET ? 1 + (SQUAD_TARGET - squadSize) * 0.15
+    : squadSize > 26 ? clampUnit((32 - squadSize) / 6)
+    : 1;
+  return gap * multiplicity * squadSizeFactor;
 }
 
 // ── Who is actually for sale ────────────────────────────────────────────────
@@ -265,13 +281,23 @@ interface Listed { candidate: Candidate; unhappy: boolean; loan: boolean }
  * this size mostly means the first half of that sentence — he rolls
  * unhappy. Unhappiness itself is rarer in January, matching how little
  * business actually happens then outside exactly that situation.
+ *
+ * The same "essentially only an unhappy departure" gate also covers a club
+ * carrying twenty players or fewer — not because they are good, but because
+ * eleven starters and nine substitutes is the whole squad already. Selling
+ * ANYONE from it, starter or bench, means turning out short-handed until a
+ * replacement is found, which a real club does not do over an ordinary
+ * squad-depth transfer; it does it because a player forced the issue. See
+ * `positionNeed`'s own squad-size handling for the other half of this — the
+ * club that DOES end up short a player next reads as needing one considerably
+ * more than its bare per-position gap would say.
  */
 function sellability(
   c: Candidate, isStarter: boolean, ownStrength: number, leagueTopStrength: number,
-  window: TransferWindow, rng: () => number,
+  window: TransferWindow, rng: () => number, squadSize: number,
 ): Omit<Listed, "loan"> | null {
   const isEliteClub = ownStrength >= leagueTopStrength - 4;
-  if (isStarter && isEliteClub) {
+  if (squadSize <= SQUAD_TARGET || (isStarter && isEliteClub)) {
     const unhappyOdds = window === "summer" ? 0.05 : 0.015;
     return rng() < unhappyOdds ? { candidate: c, unhappy: true } : null;
   }
@@ -414,7 +440,7 @@ export function runTransferWindow(
     const xi = new Set(autoPick(pool as Pickable[], formation).filter((id): id is string => !!id));
     for (const c of pool) {
       if (onLoanElsewhere.has(stableKey(c))) continue;
-      const l = sellability(c, xi.has(c.id), strengths.get(club)!, topStrength, window, rng);
+      const l = sellability(c, xi.has(c.id), strengths.get(club)!, topStrength, window, rng, pool.length);
       if (l) listed.push({ ...l, loan: loanOrSale(l.candidate, l.unhappy, rng) });
     }
   }
