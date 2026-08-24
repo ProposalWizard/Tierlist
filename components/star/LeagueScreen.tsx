@@ -444,7 +444,9 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="text-xs font-black truncate">{m.player}</span>
-                      <span className="text-[10px] font-black tabular-nums text-amber-200">£{m.fee}m</span>
+                      <span className="text-[10px] font-black tabular-nums text-amber-200">
+                        {m.fee > 0 ? `£${m.fee}m` : "Free Transfer"}
+                      </span>
                     </div>
                     <div className="text-[10px] font-bold text-white/80">
                       {m.from} → {m.to}

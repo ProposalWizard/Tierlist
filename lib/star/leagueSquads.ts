@@ -148,17 +148,24 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
     for (const p of roster) {
       if (taken.has(p.id)) continue;
       taken.add(p.id);
-      players.push({
-        id: p.id, name: p.name, position: naturalPosition(p.positions),
-        overall: p.overall || 60, goals: 0, assists: 0,
-        ...(p.image ? { image: p.image } : {}),
-        ...(p.nation ? { nation: p.nation } : {}),
-        ...(p.age ? { age: p.age } : {}),
-        positions: rolesOf(p.positions),
-      });
+      players.push(rowToLeaguePlayer(p));
     }
   }
   return { club, players };
+}
+
+/** A row as a `LeaguePlayer`, in his own natural position — no formation slot
+ *  assumed. Shared by `buildLeagueSquad`'s `keepAll` branch and
+ *  `fetchFreeAgents`, neither of which is filling XI/bench order. */
+function rowToLeaguePlayer(p: RosterRow): LeaguePlayer {
+  return {
+    id: p.id, name: p.name, position: naturalPosition(p.positions),
+    overall: p.overall || 60, goals: 0, assists: 0,
+    ...(p.image ? { image: p.image } : {}),
+    ...(p.nation ? { nation: p.nation } : {}),
+    ...(p.age ? { age: p.age } : {}),
+    positions: rolesOf(p.positions),
+  };
 }
 
 /** What he actually is, for a man the formation had no slot for. */
@@ -250,6 +257,39 @@ export async function fetchLeagueSquads(
     return clubs.map(c => buildLeagueSquad(c, data.squads?.[c] ?? [], keepAll));
   } catch {
     return clubs.map(generatedSquad);
+  }
+}
+
+/**
+ * A reserved club name, never a real one, that tells `/api/star/league-squads`
+ * to answer with whoever is currently out of contract instead of an actual
+ * club's roster — see that route for the `club = 'free' OR 'Free'` it reads.
+ */
+export const FREE_AGENTS_CLUB = "Free Agents";
+
+/**
+ * Whoever the database currently has out of contract.
+ *
+ * Admin marks a player this way by typing "free" or "Free" (either casing) as
+ * his club — a free-text field, not a picker, so both slip through — and he
+ * stays a real, signable footballer rather than falling out of the world:
+ * `runTransferWindow` treats this exactly like one more dressing room, except
+ * nobody has to sell FROM it and its players will drop further below their
+ * own level than a contracted man ever would, to actually get taken on. See
+ * the file header there for why.
+ *
+ * No `keepAll`/formation logic here — a free agent is not being fitted into
+ * anyone's matchday squad, just listed, so every row comes back exactly as
+ * `rowToLeaguePlayer` reads it.
+ */
+export async function fetchFreeAgents(year = STAR_FIFA_YEAR): Promise<LeaguePlayer[]> {
+  try {
+    const res = await fetch(`/api/star/league-squads?clubs=${encodeURIComponent(FREE_AGENTS_CLUB)}&year=${year}`, SQUAD_FETCH_INIT);
+    if (!res.ok) return [];
+    const data = await res.json() as { squads?: Record<string, RosterRow[]> };
+    return (data.squads?.[FREE_AGENTS_CLUB] ?? []).map(rowToLeaguePlayer);
+  } catch {
+    return [];
   }
 }
 
