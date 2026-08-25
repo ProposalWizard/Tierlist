@@ -31,27 +31,33 @@ ALTER TABLE draft_personal_records DROP CONSTRAINT IF EXISTS draft_personal_reco
 ALTER TABLE draft_personal_records ADD CONSTRAINT draft_personal_records_competition_check
   CHECK (competition IN ('pl', 'all', 'career'));
 
--- record_type: full list the app currently writes
+-- record_type: full list the app currently writes, 'squad_ovr' included from
+-- the start.
+--
+-- This used to be two separate DROP+ADD passes — an incomplete list first,
+-- 'squad_ovr' added in a second pass right after, with a comment claiming
+-- that made the migration "fully self-contained". It did the opposite: the
+-- FIRST ADD CONSTRAINT is checked against every existing row immediately,
+-- and this table already has real squad_ovr rows (draft_records_squad_ovr.sql
+-- added support for them earlier) — so the incomplete constraint failed
+-- outright, before execution ever reached the corrected version a few lines
+-- later. Reported directly: "check constraint ... is violated by some row"
+-- on a table that was never actually broken, on data that was never
+-- actually invalid. One correct pass, not two, fixes it.
 ALTER TABLE draft_records DROP CONSTRAINT IF EXISTS draft_records_record_type_check;
 ALTER TABLE draft_records ADD CONSTRAINT draft_records_record_type_check
   CHECK (record_type IN (
     'wins', 'goals', 'assists', 'clean_sheets', 'unbeaten', 'goals_conceded',
-    'biggest_win', 'avg_rating', 'most_points',
+    'biggest_win', 'avg_rating', 'most_points', 'squad_ovr',
     'career_goals', 'career_assists', 'career_trophies', 'career_avg_rating'
   ));
 
+-- Same fix applies here — this table also already has real squad_ovr rows
+-- (draft_records_squad_ovr.sql touched both tables), so leaving it out of
+-- THIS constraint would have failed the exact same way the moment the
+-- draft_records one above was fixed.
 ALTER TABLE draft_personal_records DROP CONSTRAINT IF EXISTS draft_personal_records_record_type_check;
 ALTER TABLE draft_personal_records ADD CONSTRAINT draft_personal_records_record_type_check
-  CHECK (record_type IN (
-    'wins', 'goals', 'assists', 'clean_sheets', 'unbeaten', 'goals_conceded',
-    'biggest_win', 'avg_rating', 'most_points',
-    'career_goals', 'career_assists', 'career_trophies', 'career_avg_rating'
-  ));
-
--- Add squad_ovr to global records (was added later in draft_records_squad_ovr.sql
--- but not included here — adding it so this migration is fully self-contained)
-ALTER TABLE draft_records DROP CONSTRAINT IF EXISTS draft_records_record_type_check;
-ALTER TABLE draft_records ADD CONSTRAINT draft_records_record_type_check
   CHECK (record_type IN (
     'wins', 'goals', 'assists', 'clean_sheets', 'unbeaten', 'goals_conceded',
     'biggest_win', 'avg_rating', 'most_points', 'squad_ovr',
