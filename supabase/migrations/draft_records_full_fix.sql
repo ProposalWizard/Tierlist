@@ -68,8 +68,18 @@ ALTER TABLE draft_personal_records ADD CONSTRAINT draft_personal_records_record_
 -- and prime records can coexist per user. The old constraint (user_id,
 -- competition, record_type) caused prime-mode inserts to conflict with an
 -- existing normal-mode row (or vice versa), silently dropping the record.
+--
+-- This block was not actually idempotent despite the file's own header
+-- claiming every statement in it is: it dropped the two OLD constraint
+-- names before adding the new one, but never dropped the NEW name first.
+-- The first time this ever ran far enough to reach this block, it created
+-- draft_personal_records_user_competition_type_mode_unique successfully —
+-- and every run since then has failed here with "relation ... already
+-- exists" the moment it got this far, including the run that fixed the
+-- record_type bug above and reached this line for the first time since.
 ALTER TABLE draft_personal_records DROP CONSTRAINT IF EXISTS draft_personal_records_user_id_competition_record_type_key;
 ALTER TABLE draft_personal_records DROP CONSTRAINT IF EXISTS draft_personal_records_user_competition_type_unique;
+ALTER TABLE draft_personal_records DROP CONSTRAINT IF EXISTS draft_personal_records_user_competition_type_mode_unique;
 ALTER TABLE draft_personal_records
   ADD CONSTRAINT draft_personal_records_user_competition_type_mode_unique
   UNIQUE (user_id, competition, record_type, mode);
