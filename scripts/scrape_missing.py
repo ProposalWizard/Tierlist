@@ -384,6 +384,8 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
             _div_text = repr(name_div_d.get_text(strip=True)) if name_div_d else "(no div)"
             print(f"  div child text:     {_div_text}")
             print(f"  full inner HTML:    {str(name_link)[:400]}")
+            if len(tds) > 1:
+                print(f"  TD[1] FULL RAW HTML: {str(tds[1])[:2000]}")
             print("  ─── END DIAGNOSTIC ───\n")
 
         href = name_link.get("href", "")
