@@ -120,16 +120,25 @@ export function playLeagueWeek(
   const squadOf = new Map((squads ?? []).map(s => [s.club, s]));
   const updated = league.map(t => ({ ...t }));
 
+  // The goals scored against you belong to somebody too. We hold a squad for
+  // every club in the division, including the one you just played, so the
+  // opponent's goal is named off their own roster the exact same way a goal
+  // in a match nobody played is — weighted by position and rating, tallied
+  // onto that player's season the same as it would be if you weren't there.
+  // Reported directly: a live match tracked your own goals and every other
+  // fixture's, but a goal scored against your own team vanished into a bare
+  // scoreline with nobody credited.
+  const theirGoals = nameGoals(squadOf.get(user.opponent), user.conceded, rng);
+
   const results: LeagueResult[] = [{
     week,
     home: user.home ? user.club : user.opponent,
     away: user.home ? user.opponent : user.club,
     hs: user.home ? user.scored : user.conceded,
     as: user.home ? user.conceded : user.scored,
-    // Your own scorers are the real ones off the match. Theirs are simulated and
-    // anonymous — we hold no squad for the club you played, and inventing one
-    // would put made-up names beside your team-mates'.
+    // Your own scorers are the real ones off the match; theirs are named above.
     ...(user.goals?.length ? (user.home ? { hg: user.goals } : { ag: user.goals }) : {}),
+    ...(theirGoals.length ? (user.home ? { ag: theirGoals } : { hg: theirGoals }) : {}),
   }];
 
   const used = new Set([user.club, user.opponent]);
