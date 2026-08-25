@@ -31,17 +31,28 @@
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
-async function fetchHtml(url) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": UA,
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.5",
-    },
-  });
-  console.log(`GET ${url} -> ${res.status}`);
-  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-  return res.text();
+/** Same retry behaviour as the production scraper (lib/sofifaScraper.ts) —
+ *  Cloudflare often blocks the first hit and lets a later one through. */
+async function fetchHtml(url, retries = 5) {
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": UA,
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+      },
+    });
+    console.log(`GET ${url} -> ${res.status}${res.status !== 200 ? ` (attempt ${i + 1}/${retries})` : ""}`);
+    if (res.ok) return res.text();
+    if (res.status === 429 || res.status === 403) {
+      const wait = Math.pow(2, i + 1) * 1000;
+      console.log(`  waiting ${wait}ms before retrying...`);
+      await new Promise((r) => setTimeout(r, wait));
+      continue;
+    }
+    throw new Error(`Fetch failed: ${res.status}`);
+  }
+  throw new Error(`Fetch failed after ${retries} attempts, all 403/429`);
 }
 
 function section(title) {
