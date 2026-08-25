@@ -761,6 +761,23 @@ async def download_face(page, url: str, year: int, sofifa_id: str) -> str:
     if dest.exists():
         return "skip"
 
+    # One retry, with a fresh cache-busting value each time: a genuinely
+    # transient miss (a slow response, a listener/promise race) looks
+    # identical to the cache problem above from here, and is common enough
+    # on a run of several thousand that catching it here — instead of
+    # needing a whole second run later for a handful of stragglers — is
+    # worth the one extra attempt.
+    last = "no-url"
+    for attempt in range(2):
+        last = await _try_download_face_once(page, url, dest)
+        if last == "ok":
+            return "ok"
+        if attempt == 0:
+            await asyncio.sleep(0.8)
+    return last
+
+
+async def _try_download_face_once(page, url: str, dest: Path) -> str:
     fetch_url = f"{url}{'&' if '?' in url else '?'}_cb={random.randint(0, 999_999_999)}"
     captured = {}
 
