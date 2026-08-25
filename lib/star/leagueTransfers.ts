@@ -84,6 +84,49 @@ import { FREE_AGENTS_CLUB } from "./leagueSquads";
  * for that cheap — see `FREE_AGENT_REACH_MULT`. Never a loan: a free agent
  * signs, permanently, for nothing (`fee: 0` — that IS what "free agent"
  * means), or he does not move at all this window.
+ *
+ * ── On realism, for whoever tunes this next ──
+ *
+ * Checked directly against a long real-world description of how transfer
+ * windows actually work, supplied specifically so future tuning has it
+ * without needing the whole thing re-explained. Condensed to what is
+ * actually actionable here — the full description covered a lot this game
+ * has no model for at all (see "deliberately not modelled" below).
+ *
+ * What it confirmed this file already does right: transfers here are
+ * already meant to be NEED-driven, not opportunity-driven — a club only
+ * buys where `positionNeed` finds a real gap, a full squad barely sells at
+ * all (`sellability`'s squad-size gate), and a free agent is evaluated
+ * against that same need rather than signed just because he is cheap and
+ * available. `windowBudget`'s own docs already target "half real life's
+ * rate" — the total volume was never the problem.
+ *
+ * What it caught that WAS wrong, and is now fixed: nothing capped how many
+ * signings a single club could win in one window's matching pass, because
+ * every listed player independently asks "who is my best-fitting buyer"
+ * against the same starting snapshot — so a club that drew a few weak
+ * positions could win that question for many unrelated sellers in a row.
+ * See `maxSigningsFor`. Real football does not let one club absorb a large
+ * share of a whole division's window regardless of how thin its squad is.
+ *
+ * Deliberately NOT modelled, because the game has nothing to model it
+ * WITH — not oversights, just the honest edge of what exists right now:
+ *   - injuries (no injury system exists anywhere in this game yet)
+ *   - real club finances (`feeFor` is cosmetic, off overall alone — no
+ *     club has a "budget" a fee is ever checked against)
+ *   - potential distinct from overall (no squad player, generated or real,
+ *     carries a potential rating apart from his current one)
+ *   - contract length/expiry (tracked for the human player only, via
+ *     `CareerState.contract` — nobody else in the division has one)
+ *   - a persistent "transfer-listed, waiting for the right offer" state —
+ *     `sellability` decides listed-and-matched in one pass; a listing that
+ *     finds no buyer this window simply did not happen, it is not carried
+ *     forward as still-available next window
+ *   - fees shaped by demand/desirability/contract urgency rather than a
+ *     flat curve off overall alone
+ * If any of these get built for their own reason later, this file would be
+ * the natural place to plug them into `sellability`/`positionNeed`/`feeFor`
+ * — not a reason to add them here first.
  */
 
 // ── The common shape every club's roster is read as ────────────────────────
@@ -425,6 +468,40 @@ function windowBudget(window: TransferWindow, clubCount: number): number {
   return Math.round(clubCount * (window === "summer" ? 1.5 : 0.35));
 }
 
+/**
+ * How many incoming players ONE club may take in this window — sales, loans
+ * and free agents combined, whichever the source.
+ *
+ * Reported directly, with real numbers: on a brand-new career's very first
+ * window, one club took 17 of that window's 32 total moves — more than half
+ * the ENTIRE division's business. Every club starts a save at an identical
+ * twenty players, so this had nothing to do with squad size; it was the
+ * matching loop itself. Each listed player independently asks "who is my
+ * single best-fitting buyer", reading the SAME unchanged pool/strength
+ * snapshot every other listed player that window also reads — so a club
+ * that happens to have drawn several weak positions (`generateSquad` is
+ * random per club) looks like the best answer to that question over and
+ * over, for completely different sellers, and nothing before this ever
+ * stopped it winning all of them. A real club cannot physically scout,
+ * negotiate and integrate that many signings in one window regardless of
+ * how thin its squad is — see the real-world description this was checked
+ * against, in the file header's "On realism" section.
+ *
+ * A genuinely short-handed club (see `positionNeed`'s own squad-size
+ * handling) is still allowed more business than a full one — that part of
+ * the report was real too, just not the cause of THIS number — but even
+ * the most depleted squad has a ceiling. Computed once, from the club's
+ * size at the START of the window: squad size changes AS this window's
+ * moves apply, and a cap that moved with it would let a club that started
+ * full but sold heavily earlier in the same pass buy its way back past its
+ * own limit before the window is even over.
+ */
+function maxSigningsFor(startingSquadSize: number, window: TransferWindow): number {
+  const short = Math.max(0, SQUAD_TARGET - startingSquadSize);
+  if (window === "summer") return Math.min(3 + Math.ceil(short / 2.5), 6);
+  return Math.min(1 + Math.ceil(short / 4), 3);
+}
+
 export function runTransferWindow(
   career: CareerState, window: TransferWindow, rng: () => number,
 ): { career: CareerState; moves: TransferMove[]; loans: LoanMove[] } {
@@ -571,12 +648,21 @@ export function runTransferWindow(
   // many free agents worth signing at all.
   const freeAgentBudget = Math.min(freeAgentPool.length, window === "summer" ? 5 : 2);
   const budget = windowBudget(window, clubs.length) + freeAgentBudget;
+  // Each club's own ceiling, fixed at the size it actually started this
+  // window — see maxSigningsFor.
+  const signingCap = new Map(clubs.map(c => [c, maxSigningsFor(pools.get(c)!.length, window)]));
+  const signingsSoFar = new Map<string, number>();
   const moves: TransferMove[] = [];
   const loans: LoanMove[] = [];
   const moved = new Set<string>();
   for (const p of proposals) {
     if (moves.length + loans.length >= budget) break;
     if (moved.has(p.playerId)) continue;
+    // A proposal blocked here is a transfer that simply does not happen
+    // this window, same as real business falling through — not
+    // reattempted at the next-best club, which this pass never computed.
+    const cap = signingCap.get(p.to);
+    if (cap !== undefined && (signingsSoFar.get(p.to) ?? 0) >= cap) continue;
     const fromPool = p.from === FREE_AGENTS_CLUB ? freeAgentPool : pools.get(p.from)!;
     const idx = fromPool.findIndex(c => c.id === p.playerId);
     if (idx < 0) continue;
@@ -589,6 +675,7 @@ export function runTransferWindow(
     if (p.from !== FREE_AGENTS_CLUB) strengths.set(p.from, clubStrength(p.from, fromPool));
     strengths.set(p.to, clubStrength(p.to, pools.get(p.to)!));
     moved.add(p.playerId);
+    signingsSoFar.set(p.to, (signingsSoFar.get(p.to) ?? 0) + 1);
     if (p.loan) loans.push(p.loanMove!); else moves.push(p.saleMove!);
   }
 
