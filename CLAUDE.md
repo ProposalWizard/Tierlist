@@ -10,6 +10,12 @@ Football games platform at **knowitball.co.uk**. Features: drag-and-drop tierlis
 
 ---
 
+## The User's Local Machine — Never Tell Them To `git pull`/`git checkout`
+
+Confirmed by the user directly, after hundreds of attempts: local `git pull`/`git checkout` does not work for them — do not suggest it, and do not build a workflow around them running it (e.g. "pull my branch, then run this script"). When something needs to reach their machine — a script to run locally, a file to test — **paste the full file contents directly in chat, or give them a link to the file on GitHub**, and have them create the file / copy-paste it into place by hand. This applies to every session, not just one-offs.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
