@@ -37,13 +37,25 @@ function realCareer(club = "Arsenal", season = 1): CareerState {
   return {
     ...career,
     season,
-    leagueSquads: CLUBS.map((c): LeagueSquad => ({
-      club: c,
-      players: generateSquad(clubNameSeed(c) + season).map((p): LeaguePlayer => ({
+    leagueSquads: CLUBS.map((c): LeagueSquad => {
+      const base = generateSquad(clubNameSeed(c) + season).map((p): LeaguePlayer => ({
         id: p.id, name: p.name, position: p.position, positions: p.positions ?? [p.position],
         overall: 60 + (clubNameSeed(p.name) % 25), goals: 0, assists: 0,
-      })),
-    })),
+      }));
+      // Real squads do not sit frozen at exactly twenty — some clubs carry
+      // genuine depth beyond a matchday squad plus bench, which is exactly
+      // what sellability's squad-size gate (a club at twenty or fewer barely
+      // sells at all) now cares about. A handful of extra bench players,
+      // seeded per club and season, so a freshly generated division has the
+      // spread a real one would rather than sitting uniformly on the
+      // "won't sell" threshold every single trial.
+      const extra = clubNameSeed(c + season) % 7; // 0-6 extra players
+      const bench: LeaguePlayer[] = Array.from({ length: extra }, (_, i) => {
+        const src = base[i % base.length];
+        return { ...src, id: `${src.id}_extra${i}`, name: `${src.name} Jr`, overall: Math.max(55, src.overall - 5) };
+      });
+      return { club: c, players: [...base, ...bench] };
+    }),
   };
 }
 
@@ -64,13 +76,22 @@ function realCareer(club = "Arsenal", season = 1): CareerState {
 
 // ── Youth moves the odds, where age is known ─────────────────────────────────
 //
-// Only ever knowable for your own squad — LeaguePlayer (everyone else)
-// carries no age at all, which is exactly why this is tested on a
-// hand-built squad rather than the generated one: full control over who is
-// 19 and who is 34, all otherwise identical.
+// realCareer's generated leagueSquads never carry an age (generateSquad
+// invents fictional players and has no age to invent one from) — real ones,
+// fetched from the database, do (see fromLeaguePlayer / RosterRow.age /
+// app/api/star/league-squads). Tested on a hand-built squad rather than the
+// generated one so this block gets full control over who is 19 and who is
+// 34, all otherwise identical.
 {
   function squadOfAge(age: number): SquadPlayer[] {
-    const roles: SquadPlayer["position"][] = ["GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM", "RW", "LW", "ST"];
+    // Twenty-four, not eleven — sellability's squad-size gate (added
+    // alongside this same session's "a club at twenty or fewer barely
+    // sells" change) means an eleven-man squad would almost never list
+    // anyone at all, age be damned, and this block would measure nothing.
+    const roles: SquadPlayer["position"][] = [
+      "GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM", "RW", "LW", "ST",
+      "GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM", "RW", "LW", "ST", "CAM", "CAM",
+    ];
     return roles.map((position, i) => ({
       id: `p${age}-${i}`, name: `Player ${age}-${i}`, shortName: `P${age}${i}`, position,
       seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
@@ -96,6 +117,55 @@ function realCareer(club = "Arsenal", season = 1): CareerState {
   const oldRate = loanRateFor(34);
   check(youngRate > oldRate,
     `a nineteen-year-old loans out more often than a thirty-four-year-old, of those who move at all (${youngRate.toFixed(2)} vs ${oldRate.toFixed(2)})`);
+}
+
+// ── The same is true for a REAL player at someone else's club, not just
+//    your own squad ──────────────────────────────────────────────────────────
+//
+// The exact "Hendrik at Real Madrid" case, reported directly: a nineteen-
+// year-old, plainly good enough to be a top club's SQUAD player but nowhere
+// near its actual starting striker, should overwhelmingly go out on loan
+// rather than be sold — but every one of the other nineteen/twenty-three
+// clubs' players is a LeaguePlayer, and until fromLeaguePlayer started
+// reading a real `age` off it (see app/api/star/league-squads,
+// RosterRow.age), age-aware loan odds could only ever apply to the human's
+// own squad — which is the one place this exact scenario never happens,
+// since it is never buried on ITS OWN bench behind a 90-rated teammate.
+{
+  function starClub(club: string, starOverall: number, youngsterAge: number | undefined): CareerState {
+    const base = realCareer("Liverpool", 1);
+    const squad = base.leagueSquads!.find(sq => sq.club === club)!.players.slice();
+    const starIdx = squad.findIndex(p => p.position === "ST");
+    squad[starIdx] = { ...squad[starIdx], name: "World Class Striker", overall: starOverall };
+    squad.push({
+      id: "hendrik", name: "Hendrik", position: "ST", positions: ["ST"], overall: 78, goals: 0, assists: 0,
+      ...(youngsterAge !== undefined ? { age: youngsterAge } : {}),
+    });
+    return {
+      ...base,
+      leagueSquads: base.leagueSquads!.map(sq => sq.club === club ? { club, players: squad } : sq),
+    };
+  }
+
+  function ratesFor(youngsterAge: number | undefined): { loaned: number; sold: number; windows: number } {
+    let loaned = 0, sold = 0, windows = 0;
+    for (let season = 1; season <= 150; season++) {
+      const career = { ...starClub("Chelsea", 91, youngsterAge), season };
+      const rng = mulberry32(season * 8221 + 3);
+      const { moves, loans } = runTransferWindow(career, "summer", rng);
+      windows++;
+      if (loans.some(l => l.player === "Hendrik")) loaned++;
+      if (moves.some(m => m.player === "Hendrik")) sold++;
+    }
+    return { loaned, sold, windows };
+  }
+
+  const young = ratesFor(19);
+  const unaged = ratesFor(undefined);
+  check(young.loaned > young.sold,
+    `a real nineteen-year-old buried behind a 91-rated starter at his own position loans out MORE than he is sold outright (${young.loaned} loans vs ${young.sold} sales of ${young.windows} windows)`);
+  check(young.loaned > unaged.loaned,
+    `…and does so more often than the same player would if his age had never reached the engine at all (${young.loaned} vs ${unaged.loaned} loans of ${young.windows} windows each)`);
 }
 
 // ── Rivals do not loan to rivals either ──────────────────────────────────────

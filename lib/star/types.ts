@@ -133,6 +133,14 @@ export interface LeaguePlayer {
   nation?: string;
   /** See SquadPlayer.positions — the same idea, for the other nineteen clubs. */
   positions?: SquadPlayer["position"][];
+  /**
+   * Real age, when the database has one — same reasoning as `image`/`nation`:
+   * not needed to answer "who scored?", but needed by the transfer engine
+   * (lib/star/leagueTransfers.ts), which weights a loan far more heavily for
+   * a young player than an old one. Absent for a generated squad, same as
+   * `image`/`nation`.
+   */
+  age?: number;
 }
 
 export interface LeagueSquad {
@@ -438,6 +446,14 @@ export interface CareerState {
    * falls back to the old invented race until the next rollover fills it in.
    */
   leagueSquads?: LeagueSquad[];
+  /**
+   * Whoever is currently out of contract — real players, signable by any
+   * club including your own, not tied to any of the `leagueSquads` entries.
+   * See lib/star/leagueSquads.ts's `fetchFreeAgents` and the "Free Agents"
+   * handling in `runTransferWindow`. Depletes as they get signed over the
+   * career; refreshed the same way `leagueSquads` is.
+   */
+  freeAgents?: LeaguePlayer[];
   /** Things you can still do before the next match. Refills every week. */
   weekActions?: number;
   /** Every move you made, for the legacy screen. */

@@ -22,7 +22,7 @@ import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/st
 import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
-import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads } from "@/lib/star/leagueSquads";
+import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -274,6 +274,12 @@ export default function StarDevPage() {
     fetchLeagueSquads(clubs).then((leagueSquads) => {
       setCareer(c => (c ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
     });
+    // Whoever the database currently has out of contract — signable by any
+    // club, yours included, the moment a transfer window opens. See
+    // lib/star/leagueSquads.ts's fetchFreeAgents.
+    fetchFreeAgents().then((freeAgents) => {
+      setCareer(c => (c ? { ...c, freeAgents } : c));
+    });
   }, []);
 
   /**
@@ -306,9 +312,10 @@ export default function StarDevPage() {
     if (!career || refreshing) return;
     setRefreshing(true);
     try {
-      const [mine, division] = await Promise.all([
+      const [mine, division, freeAgents] = await Promise.all([
         fetchRealSquad(career.player.club),
         fetchLeagueSquads(career.league.map(t => t.name)),
+        fetchFreeAgents(),
       ]);
       setCareer(c => {
         if (!c) return c;
@@ -318,6 +325,10 @@ export default function StarDevPage() {
           squad: mergeSquadStats(mine, c.squad ?? []),
           leagueSquads,
           league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
+          // No stats to merge/preserve here, unlike squad/leagueSquads — a
+          // free agent is not playing matches for anyone, so a fresh fetch
+          // simply replaces the list wholesale.
+          freeAgents,
         };
       });
     } finally {
@@ -643,6 +654,26 @@ export default function StarDevPage() {
     // Keyed on the club list itself, so it re-runs exactly when the division
     // changes rather than on every state change.
   }, [career?.league?.map(t => t.name).join("|"), career?.leagueSquads?.length]);
+
+  // ── Free agents, for a save that predates them ──
+  //
+  // handleProfileComplete already fetches these for a brand new career; this
+  // is the same fetch for one loaded from before freeAgents existed on
+  // CareerState at all. `undefined` (never fetched) and `[]` (fetched, and
+  // genuinely nobody is out of contract right now) are different states on
+  // purpose — only the first should ever trigger this.
+  useEffect(() => {
+    if (!career || career.freeAgents !== undefined) return;
+    let alive = true;
+    fetchFreeAgents().then((freeAgents) => {
+      if (!alive) return;
+      setCareer(c => (c && c.freeAgents === undefined ? { ...c, freeAgents } : c));
+    });
+    return () => { alive = false; };
+    // Two booleans, not the career object or the array itself — both flip
+    // exactly once, at "a career now exists" and "it has been fetched",
+    // which is the only two transitions this needs to notice.
+  }, [!!career, career?.freeAgents === undefined]);
 
   // Rolling into the next season, once anything that happens BETWEEN seasons is
   // out of the way. Split out because three different screens end here.

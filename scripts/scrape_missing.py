@@ -732,6 +732,26 @@ async def download_face(page, url: str, year: int, sofifa_id: str) -> str:
     own network listener — which sits below the browser's CORS sandbox
     entirely, because CORS restricts what PAGE SCRIPT can read, not what the
     browser (and so Playwright, watching over its shoulder) can see.
+
+    ── A fifth problem, found later: the cache ──
+
+    This runs in a PERSISTENT browser profile, reused across every scraping
+    session this project has ever run — including the full historical sweep
+    for the Draft archive, which visits every player in every edition back
+    to 2007. A face URL requested once, ever, in this profile's lifetime is
+    sitting in Chrome's disk cache from then on. Loading it again still
+    fires the <img> element's onload — the browser genuinely has the bytes —
+    but serves them straight from disk with no new network request at all,
+    so the `page.on("response")` listener above never sees anything to
+    capture, and this reported "img loaded but no matching response was
+    captured" for a real, perfectly good image. Reported directly: 3,363 of
+    3,369 players failed this exact way on a run that visited mostly older,
+    previously-scraped players — not because SoFIFA had nothing for them,
+    but because this profile already asked for their photo months ago.
+    A one-time random query parameter makes every request a URL the browser
+    has never seen before, which guarantees an actual network round trip —
+    it changes nothing about where the file is saved, since `dest` is built
+    from `sofifa_id`, never from the URL itself.
     """
     if not url:
         return "no-url"
@@ -741,10 +761,11 @@ async def download_face(page, url: str, year: int, sofifa_id: str) -> str:
     if dest.exists():
         return "skip"
 
+    fetch_url = f"{url}{'&' if '?' in url else '?'}_cb={random.randint(0, 999_999_999)}"
     captured = {}
 
     def on_response(response):
-        if response.url == url:
+        if response.url == fetch_url:
             captured["response"] = response
 
     page.on("response", on_response)
@@ -757,7 +778,7 @@ async def download_face(page, url: str, year: int, sofifa_id: str) -> str:
                 img.src = url;
                 document.body.appendChild(img);
             })""",
-            url,
+            fetch_url,
         )
         resp = captured.get("response")
         if not resp:
@@ -1551,7 +1572,7 @@ async def main():
     # If you do NOT see this exact line when you run the script, your local
     # copy is OLD — run `git pull` in the folder before scraping.
     print("=" * 64)
-    print("  scrape_missing.py  BUILD 2026-08-20-I  (adds --faces-for-ids for mid-season transfers out)")
+    print("  scrape_missing.py  BUILD 2026-08-24-J  (download_face: cache-busted, fixes false face failures)")
     print("=" * 64)
 
     force = "--force" in sys.argv

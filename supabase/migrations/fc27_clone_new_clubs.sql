@@ -86,7 +86,12 @@ WITH src AS (
       'hullcity', 'hull',
       -- The Championship, minus the three relegated PL clubs already cloned
       'queensparkrangers', 'qpr',
-      'millwall',
+      -- 'millwall' alone was the original guess — every sibling club with the
+      -- same "FC" ambiguity (Wrexham, Reading, Portsmouth, Southampton below)
+      -- got both forms; this one did not, and lib/star/clubs.ts asks for the
+      -- full "Millwall FC" — reported directly as the one Championship club
+      -- still showing fake players after every other one came through.
+      'millwall', 'millwallfc',
       'boltonwanderers', 'bolton',
       'watford',
       'middlesbrough',
@@ -154,7 +159,7 @@ SELECT
 --
 -- WITH wanted(club) AS (VALUES
 --   ('Coventry City'), ('Ipswich Town'), ('Hull City'),
---   ('Queens Park Rangers'), ('Millwall'), ('Bolton Wanderers'), ('Watford'),
+--   ('Queens Park Rangers'), ('Millwall FC'), ('Bolton Wanderers'), ('Watford'),
 --   ('Middlesbrough'), ('Charlton Athletic'), ('Swansea City'),
 --   ('West Bromwich Albion'), ('Blackburn Rovers'), ('Cardiff City'),
 --   ('Wrexham'), ('Birmingham City'), ('Sheffield United'), ('Lincoln City'),
@@ -183,7 +188,7 @@ SELECT
 -- WHERE fifa_year = 2027
 --   AND regexp_replace(LOWER(COALESCE(club, '')), '[^a-z]', '', 'g') IN (
 --     'coventrycity', 'coventry', 'ipswichtown', 'ipswich', 'hullcity', 'hull',
---     'queensparkrangers', 'qpr', 'millwall', 'boltonwanderers', 'bolton',
+--     'queensparkrangers', 'qpr', 'millwall', 'millwallfc', 'boltonwanderers', 'bolton',
 --     'watford', 'middlesbrough', 'charltonathletic', 'charlton',
 --     'swanseacity', 'swansea', 'westbromwichalbion', 'westbromwich',
 --     'westbrom', 'wba', 'blackburnrovers', 'blackburn', 'cardiffcity',

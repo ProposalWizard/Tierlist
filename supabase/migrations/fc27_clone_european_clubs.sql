@@ -110,6 +110,17 @@
 -- "vitriaguimares"/"vitriasc"/"vitriasportclube" (not "vitoria..."). FC
 -- Copenhagen also picked up its Danish-spelling form, "fckbenhavn" (from
 -- "FC København" — the ø strips the same way, to nothing, not to "o").
+--
+-- ── A third time, and this one had already shipped silently broken ──
+--
+-- Fenerbahçe SK: "fenerbahcesk" made the exact same "ç" -> "c" assumption,
+-- unnoticed until reported directly (FC27 showing only the one player
+-- manually transferred there by hand, not the real squad) rather than
+-- caught by a diagnostic run — this file's matching array had never
+-- actually included the correctly-normalised form, so every run of this
+-- migration silently matched zero rows for this club. Corrected to
+-- "fenerbahesk". A spot-check of every other entry's real name against its
+-- own variant list found no further instance of this mistake in the file.
 -- FC Copenhagen and Vitória Guimarães are both now confirmed present too
 -- (as "FC København" and "Vitória SC" — see fc27_diagnose_missing_european_
 -- clubs.sql's second version, which found both).
@@ -210,7 +221,14 @@ WITH src AS (
       'celticfc', 'celtic',
       'aekathensfc', 'aekathens', 'aek',
       'olympiquelyonnais', 'lyon', 'olympiquelyon',
-      'fenerbahcesk', 'fenerbahce', 'fenerbahe',
+      -- 'fenerbahcesk' was a wrong guess — the regexp below DROPS a non-ASCII
+      -- letter rather than transliterating it, so "Fenerbahçe SK" actually
+      -- normalises to 'fenerbahesk' (no "c" where the "ç" was). Confirmed
+      -- against the real row: see fc27_fix_fenerbahce_spelling.sql, written
+      -- after this wrong entry let a whole clone run silently match nothing
+      -- for a fully-corrected FC26 source row. Kept the wrong-guess variants
+      -- too, in case an even older/differently-spelled row is still around.
+      'fenerbahesk', 'fenerbahcesk', 'fenerbahce', 'fenerbahe',
       'gnkdinamozagreb', 'dinamozagreb', 'dinamo',
       -- Slovan Bratislava confirmed absent from FC 26 under any close
       -- spelling — replaced with a club of genuine recent Champions League
@@ -405,7 +423,7 @@ WITH wanted(club, competition, variants) AS (VALUES
   ('Celtic', 'Champions League', ARRAY['celticfc','celtic']),
   ('AEK Athens', 'Champions League', ARRAY['aekathensfc','aekathens','aek']),
   ('Lyon', 'Champions League', ARRAY['olympiquelyonnais','lyon','olympiquelyon']),
-  ('Fenerbahçe', 'Champions League', ARRAY['fenerbahcesk','fenerbahce','fenerbahe']),
+  ('Fenerbahçe', 'Champions League', ARRAY['fenerbahesk','fenerbahcesk','fenerbahce','fenerbahe']),
   ('Dinamo Zagreb', 'Champions League', ARRAY['gnkdinamozagreb','dinamozagreb','dinamo']),
   ('FC Copenhagen', 'Champions League', ARRAY['fccopenhagen','copenhagen','fckbenhavn','kbenhavn']),
   ('AZ Alkmaar', 'Europa League', ARRAY['az','azalkmaar']),

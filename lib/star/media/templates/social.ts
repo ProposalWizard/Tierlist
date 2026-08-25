@@ -185,7 +185,16 @@ export const SOCIAL_TEMPLATES: Template[] = [
     weight: 0.5,
   },
 
-  // ── Team-mates, and you ───────────────────────────────────────────────────
+  // ── You ──────────────────────────────────────────────────────────────────
+  //
+  // Archetype "teammate" is now only ever your own account — buildRoster no
+  // longer creates one for a real squad player (see accounts.ts and
+  // tests/star/noRealPlayerAccounts.mts). Every template below is still
+  // written as one team-mate reacting to something ELSE that happened
+  // (a goal, a debut, a trophy) rather than to its own author's event, which
+  // is exactly right for your own account congratulating a real team-mate —
+  // narrate.ts has no reason to ever pick one of these for an event whose
+  // subject IS the author.
   {
     id: "mate-goal", archetype: "teammate", tags: ["goal"], requires: ["short"],
     body: "big three points. {short} 🔥🔥",

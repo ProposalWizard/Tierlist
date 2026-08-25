@@ -5,6 +5,7 @@ import { formationForClub } from "./teamsheet";
 import { shortNameOf } from "./realSquad";
 import type { TransferWindow } from "./calendar";
 import { isDerby, strongestTier } from "./rivalries";
+import { FREE_AGENTS_CLUB } from "./leagueSquads";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS, RESHAPING THEMSELVES.
@@ -65,6 +66,24 @@ import { isDerby, strongestTier } from "./rivalries";
  * longer. A player currently out on loan is excluded from BOTH kinds of
  * listing at his temporary club for as long as he is there — the club
  * fielding him does not own him and cannot sell or loan him on.
+ *
+ * ── Free agents ──
+ *
+ * `CareerState.freeAgents` (fetched via lib/star/leagueSquads.ts's
+ * fetchFreeAgents) are real players with no club at all — admin marks one
+ * this way by typing "free" or "Free" as his club, a free-text field, not a
+ * picker. Reported directly: these are not background noise, they are
+ * signable, and they are desperate — a released player takes whatever club
+ * will actually play him, not only one at his own level. Modelled as one
+ * more pool a club can sign FROM, alongside the twenty/twenty-four real
+ * ones, with three deliberate differences from a normal sale: nobody has to
+ * roll to list him (he is always available, every window, until somebody
+ * takes him), there is no rivalry check (no selling club has any say in
+ * where he goes), and he accepts a buying club considerably further below
+ * his own level than a contracted man's own club would ever let him leave
+ * for that cheap — see `FREE_AGENT_REACH_MULT`. Never a loan: a free agent
+ * signs, permanently, for nothing (`fee: 0` — that IS what "free agent"
+ * means), or he does not move at all this window.
  */
 
 // ── The common shape every club's roster is read as ────────────────────────
@@ -122,7 +141,7 @@ function fromLeaguePlayer(p: LeaguePlayer, club: string): Candidate {
     id: p.id, name: p.name, shortName: shortNameOf(p.name),
     position: p.position, positions: p.positions?.length ? p.positions : [p.position],
     overall: p.overall, club, isYou: false,
-    sofifaId: p.id, imageUrl: p.image, nationality: p.nation,
+    sofifaId: p.id, imageUrl: p.image, nationality: p.nation, age: p.age,
     seasonGoals: p.goals, seasonAssists: p.assists, careerGoals: 0, careerAssists: 0,
   };
 }
@@ -144,6 +163,7 @@ function toLeaguePlayer(c: Candidate): LeaguePlayer {
     overall: c.overall, goals: c.seasonGoals, assists: c.seasonAssists,
     ...(c.imageUrl ? { image: c.imageUrl } : {}),
     ...(c.nationality ? { nation: c.nationality } : {}),
+    ...(c.age ? { age: c.age } : {}),
   };
 }
 
@@ -175,6 +195,16 @@ function reachDown(buyerStrength: number): number {
  *  a striker. */
 const REACH_UP = 5;
 
+/** A released player drops further below his own level than a loan does —
+ *  he has no club at all to hold out for a better offer from. See the file
+ *  header's "Free agents" section. */
+const FREE_AGENT_REACH_MULT = 2;
+
+/** Eleven starters, nine substitutes — the squad size both `sellability` and
+ *  `positionNeed` treat as "full", the same target the Lineups picker and
+ *  buildLeagueSquad's own POSITION_ORDER already assume. */
+const SQUAD_TARGET = 20;
+
 function clampUnit(x: number): number {
   return Math.max(0, Math.min(1, x));
 }
@@ -200,9 +230,13 @@ function slotsFor(role: Role, formation: Formation): number {
  * two 85s at it wants nothing, however many slots it has) and how many slots
  * the role actually holds (a thin CM room matters more than a thin RB room,
  * because a CM slot is three chances to use a signing and an RB slot is one).
- * Squad size gates the whole thing — a club already carrying more players
- * than a matchday squad plus real depth needs the signing to be a clear
- * upgrade on its weakest slot-holder before it counts as needed at all.
+ * Squad size gates the whole thing on both sides — a club already carrying
+ * more players than a matchday squad plus real depth needs the signing to be
+ * a clear upgrade on its weakest slot-holder before it counts as needed at
+ * all, and a club that CANNOT field a matchday squad plus a full bench off
+ * its own current numbers (eleven starters, nine substitutes — twenty,
+ * `SQUAD_TARGET`) wants almost anything plausible, considerably more than
+ * its actual per-position gaps alone would suggest.
  */
 function positionNeed(role: Role, club: string, pool: Candidate[], formation: Formation, squadSize: number): number {
   const slots = slotsFor(role, formation);
@@ -221,9 +255,16 @@ function positionNeed(role: Role, club: string, pool: Candidate[], formation: Fo
   const gap = clampUnit((strength - avgDepth) / 12);
   const multiplicity = 0.55 + Math.min(slots, 3) * 0.22; // one slot: 0.77, three: 1.21
   // A squad well past a sensible size only wants a slot it is genuinely short
-  // in — everything else is a bench place it does not need to fill.
-  const sizeBrake = squadSize > 26 ? clampUnit((32 - squadSize) / 6) : 1;
-  return gap * multiplicity * sizeBrake;
+  // in; a squad that cannot even field itself wants bodies well beyond what
+  // its per-position gaps say — nineteen is "usually go and get someone",
+  // fifteen is considerably more than that. Not a guarantee either way: this
+  // still has to clear the `need <= 0.12` gate and win the buyer comparison
+  // like any other signing, the same as a real thin club doing real business
+  // rather than panic-buying the moment it dips below twenty.
+  const squadSizeFactor = squadSize < SQUAD_TARGET ? 1 + (SQUAD_TARGET - squadSize) * 0.15
+    : squadSize > 26 ? clampUnit((32 - squadSize) / 6)
+    : 1;
+  return gap * multiplicity * squadSizeFactor;
 }
 
 // ── Who is actually for sale ────────────────────────────────────────────────
@@ -240,13 +281,23 @@ interface Listed { candidate: Candidate; unhappy: boolean; loan: boolean }
  * this size mostly means the first half of that sentence — he rolls
  * unhappy. Unhappiness itself is rarer in January, matching how little
  * business actually happens then outside exactly that situation.
+ *
+ * The same "essentially only an unhappy departure" gate also covers a club
+ * carrying twenty players or fewer — not because they are good, but because
+ * eleven starters and nine substitutes is the whole squad already. Selling
+ * ANYONE from it, starter or bench, means turning out short-handed until a
+ * replacement is found, which a real club does not do over an ordinary
+ * squad-depth transfer; it does it because a player forced the issue. See
+ * `positionNeed`'s own squad-size handling for the other half of this — the
+ * club that DOES end up short a player next reads as needing one considerably
+ * more than its bare per-position gap would say.
  */
 function sellability(
   c: Candidate, isStarter: boolean, ownStrength: number, leagueTopStrength: number,
-  window: TransferWindow, rng: () => number,
+  window: TransferWindow, rng: () => number, squadSize: number,
 ): Omit<Listed, "loan"> | null {
   const isEliteClub = ownStrength >= leagueTopStrength - 4;
-  if (isStarter && isEliteClub) {
+  if (squadSize <= SQUAD_TARGET || (isStarter && isEliteClub)) {
     const unhappyOdds = window === "summer" ? 0.05 : 0.015;
     return rng() < unhappyOdds ? { candidate: c, unhappy: true } : null;
   }
@@ -265,10 +316,12 @@ function sellability(
  * MORE likely outcome in real football, not the exception: permanently
  * selling a squad player is the bigger, rarer decision. Age moves it
  * further where it is known — a teenager is what loans are FOR, an ageing
- * squad player being let go is usually let go for good — but `LeaguePlayer`
- * (everyone except your own squad) carries no age at all, so the baseline
- * for "unknown" sits between the two known cases rather than guessing
- * either way.
+ * squad player being let go is usually let go for good. `Candidate.age`
+ * reaches here from `sofifa_players.age` for every real player now, own
+ * squad or not (see fromLeaguePlayer / app/api/star/league-squads) — the
+ * "unknown" baseline below still matters for a generated/fallback squad,
+ * which has no real DB row to read an age from at all, so it sits between
+ * the two known cases rather than guessing either way.
  */
 function loanOrSale(c: Candidate, unhappy: boolean, rng: () => number): boolean {
   if (unhappy) return false;
@@ -373,6 +426,12 @@ export function runTransferWindow(
   // him on, to anybody, for any reason, until his loan is up.
   const onLoanElsewhere = new Set((career.activeLoans ?? []).map(l => l.playerId));
 
+  // Real players, no club — see the file header's "Free agents" section.
+  // Deliberately NOT one of `pools`/`clubs`: it is not a football club, has
+  // no formation and nobody may buy FROM it, only sign out of it.
+  const freeAgentPool: Candidate[] = (career.freeAgents ?? [])
+    .map(p => fromLeaguePlayer(p, FREE_AGENTS_CLUB));
+
   // ── Who is listed ──
   const listed: Listed[] = [];
   for (const club of clubs) {
@@ -381,7 +440,7 @@ export function runTransferWindow(
     const xi = new Set(autoPick(pool as Pickable[], formation).filter((id): id is string => !!id));
     for (const c of pool) {
       if (onLoanElsewhere.has(stableKey(c))) continue;
-      const l = sellability(c, xi.has(c.id), strengths.get(club)!, topStrength, window, rng);
+      const l = sellability(c, xi.has(c.id), strengths.get(club)!, topStrength, window, rng, pool.length);
       if (l) listed.push({ ...l, loan: loanOrSale(l.candidate, l.unhappy, rng) });
     }
   }
@@ -441,28 +500,70 @@ export function runTransferWindow(
     }
   }
 
+  // ── Free agents match the same way, minus the parts that need a seller ──
+  //
+  // Always "listed" (nobody rolls to decide he is available — he already
+  // is), no rivalry check (no club is refusing to strengthen a rival, since
+  // no club owns him), and a wider reach downward: see
+  // FREE_AGENT_REACH_MULT and the file header.
+  for (const fa of freeAgentPool) {
+    let bestClub: string | null = null, bestScore = -Infinity;
+    for (const club of clubs) {
+      const buyerStrength = strengths.get(club)!;
+      const gap = buyerStrength - fa.overall;
+      const reach = reachDown(buyerStrength) * FREE_AGENT_REACH_MULT;
+      if (gap < -reach || gap > REACH_UP) continue;
+      const pool = pools.get(club)!;
+      const formation = formationForClub(club);
+      const need = Math.max(
+        ...fa.positions.map(r => positionNeed(r, club, pool, formation, pool.length)),
+      );
+      if (need <= 0.12) continue;
+      const score = need * 10 - Math.abs(gap) * 0.15 + rng() * 0.6;
+      if (score > bestScore) { bestScore = score; bestClub = club; }
+    }
+    if (!bestClub) continue;
+    proposals.push({
+      loan: false,
+      saleMove: {
+        // A signing, not a purchase — free is what "free agent" means.
+        player: fa.name, from: FREE_AGENTS_CLUB, to: bestClub, overall: fa.overall, fee: 0, unhappy: false,
+      },
+      score: bestScore, from: FREE_AGENTS_CLUB, to: bestClub, playerId: fa.id,
+    });
+  }
+
   // ── Apply the best proposals up to the window's own volume ──
   //
   // Loans and sales share one budget and one dedup set — a player does
   // exactly one thing this window, whichever proposal for him scored
   // higher, not one of each.
   proposals.sort((a, b) => b.score - a.score);
-  const budget = windowBudget(window, clubs.length);
+  // Free-agent signings get their own small allowance on TOP of the
+  // division's usual business, not carved out of it — they are arrivals
+  // from outside the closed system, with no corresponding departure, so
+  // counting them against the same budget would mean a quiet window for
+  // signings is also a quiet window for the free agents actually reported
+  // as wanting one. Capped, and small, because most windows do not have
+  // many free agents worth signing at all.
+  const freeAgentBudget = Math.min(freeAgentPool.length, window === "summer" ? 5 : 2);
+  const budget = windowBudget(window, clubs.length) + freeAgentBudget;
   const moves: TransferMove[] = [];
   const loans: LoanMove[] = [];
   const moved = new Set<string>();
   for (const p of proposals) {
     if (moves.length + loans.length >= budget) break;
     if (moved.has(p.playerId)) continue;
-    const fromPool = pools.get(p.from)!;
+    const fromPool = p.from === FREE_AGENTS_CLUB ? freeAgentPool : pools.get(p.from)!;
     const idx = fromPool.findIndex(c => c.id === p.playerId);
     if (idx < 0) continue;
     const [player] = fromPool.splice(idx, 1);
     player.club = p.to;
     pools.get(p.to)!.push(player);
     // A move changes both ends' standing, so later proposals in the same
-    // pass read the club they just strengthened or thinned correctly.
-    strengths.set(p.from, clubStrength(p.from, fromPool));
+    // pass read the club they just strengthened or thinned correctly. Free
+    // Agents itself has no "strength" to update — it is not a club.
+    if (p.from !== FREE_AGENTS_CLUB) strengths.set(p.from, clubStrength(p.from, fromPool));
     strengths.set(p.to, clubStrength(p.to, pools.get(p.to)!));
     moved.add(p.playerId);
     if (p.loan) loans.push(p.loanMove!); else moves.push(p.saleMove!);
@@ -478,11 +579,13 @@ export function runTransferWindow(
     const s = strengths.get(t.name);
     return s === undefined ? t : { ...t, strength: s };
   });
+  const nextFreeAgents = freeAgentPool.map(toLeaguePlayer);
 
   return {
     career: {
       ...career, squad: nextSquad, leagueSquads: nextLeagueSquads, league: nextLeague,
       activeLoans: loans.length ? [...(career.activeLoans ?? []), ...loans] : career.activeLoans,
+      freeAgents: nextFreeAgents,
     },
     moves, loans,
   };

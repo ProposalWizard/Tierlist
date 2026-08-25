@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import { portraitsFromOtherEditions, isSelfHosted } from "@/lib/star/portraitFallback";
+import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
+
+/**
+ * The two spellings admin actually types for an out-of-contract player — a
+ * free-text `club` field, not a picker, so both the all-lowercase and the
+ * capital-F version slip through in practice. Exact match, not ILIKE: a real
+ * club whose name happens to contain "free" is not one of these two strings.
+ */
+const FREE_AGENT_VALUES = ["free", "Free"];
 
 export const maxDuration = 30;
 // Reads the live DB, so it must never be frozen into a build-time snapshot.
@@ -34,6 +43,12 @@ interface LeanPlayer {
   image?: string;
   /** For the flag on a team sheet. */
   nation?: string;
+  /** Real age. The transfer engine (leagueTransfers.ts) weights a loan far
+   *  more heavily for a young player than an old one — before this field
+   *  existed here, that weighting could only ever apply to your own squad,
+   *  never to the other nineteen clubs' players it actually matters most
+   *  for. One more short scalar column, not the JSONB blob. */
+  age?: number;
 }
 
 export async function GET(request: NextRequest) {
@@ -60,6 +75,19 @@ export async function GET(request: NextRequest) {
 
   const supabase = createServiceClient();
 
+  // ── Free Agents is not a club ──
+  //
+  // A reserved name a caller can ask for alongside (or instead of) real
+  // clubs — see lib/star/leagueSquads.ts's fetchFreeAgents — that this route
+  // translates into the two literal `club` values admin actually types for
+  // an out-of-contract player. Still one query: the DB list swaps the
+  // sentinel out for both real spellings before asking.
+  const wantsFreeAgents = clubs.includes(FREE_AGENTS_CLUB);
+  const dbClubs = [
+    ...clubs.filter(c => c !== FREE_AGENTS_CLUB),
+    ...(wantsFreeAgents ? FREE_AGENT_VALUES : []),
+  ];
+
   // ── The one query ──
   //
   // No `attributes`, no `*`, no follow-up. `manual_*` columns are the admin
@@ -69,9 +97,9 @@ export async function GET(request: NextRequest) {
     // `image_url` is a short text column, not the JSONB blob this route exists
     // to avoid — the shortlist graphic needs faces and twenty extra queries to
     // get them would undo the whole point of the endpoint.
-    .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality")
+    .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality, age")
     .eq("fifa_year", year)
-    .in("club", clubs)
+    .in("club", dbClubs)
     .order("overall", { ascending: false, nullsFirst: false });
 
   if (error) {
@@ -82,7 +110,12 @@ export async function GET(request: NextRequest) {
   for (const club of clubs) squads[club] = [];
 
   for (const row of data ?? []) {
-    const club = row.club as string;
+    const rowClub = row.club as string;
+    // Either of the two real values that landed him here maps back onto the
+    // one sentinel bucket the caller actually asked for — not his literal
+    // `club` cell, which is why FREE_AGENT_VALUES has two entries and
+    // `squads` only ever gets the one key.
+    const club = FREE_AGENT_VALUES.includes(rowClub) ? FREE_AGENTS_CLUB : rowClub;
     const list = squads[club];
     if (!list) continue;
     const overall = (row.manual_overall as number) || (row.overall as number) || 0;
@@ -92,10 +125,12 @@ export async function GET(request: NextRequest) {
     if (!name) continue;
     const image = ((row.image_url as string) || "").trim();
     const nation = (((row.manual_nationality as string) || (row.nationality as string)) || "").trim();
+    const age = row.age as number | null;
     list.push({
       id: String(row.sofifa_id), name, positions, overall,
       ...(image ? { image } : {}),
       ...(nation ? { nation } : {}),
+      ...(age ? { age } : {}),
     });
   }
 
