@@ -646,12 +646,25 @@ async def wait_for(page, selector: str, what: str, timeout: int = 180, min_count
     # burning the whole 180s timeout and failing a page that used to succeed.
     pos_attempts = 0
     MAX_POS_ATTEMPTS = 3
+
+    async def _positions_settled() -> bool:
+        # Confirmed from real markup: flags carry data-was-processed="true"
+        # once their lazy-load has actually finished. A row whose flag is
+        # still mid-load is a real (if rarer) risk that the row's content is
+        # not blank but STALE — the previous occupant of a recycled DOM slot
+        # — which a plain span.pos COUNT can't catch, since stale spans are
+        # still present, just wrong. Zero un-processed flags is the direct
+        # check for "nothing on this page is still mid-swap".
+        if (await _count(page, "span.pos")) < min_count:
+            return False
+        return (await _count(page, 'img.flag:not([data-was-processed="true"])')) == 0
+
     while time.time() < deadline:
         c = await _count(page, selector)
         if c >= min_count:
             settle = 6 if needs_positions else 3
             await asyncio.sleep(settle)
-            pos_ready = (await _count(page, "span.pos")) >= min_count if needs_positions else True
+            pos_ready = await _positions_settled() if needs_positions else True
             if await _count(page, selector) >= min_count and pos_ready:
                 print(f"  {what} ready.")
                 alerted = False
@@ -662,7 +675,7 @@ async def wait_for(page, selector: str, what: str, timeout: int = 180, min_count
                     print(f"  {what} ready (positions never settled after {pos_attempts} tries — proceeding anyway).")
                     return True
                 await asyncio.sleep(4)
-                if (await _count(page, "span.pos")) >= min_count:
+                if await _positions_settled():
                     print(f"  {what} ready (positions settled on retry {pos_attempts}).")
                     return True
             last = -1
