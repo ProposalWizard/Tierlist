@@ -7,8 +7,18 @@ const LIVE_GAMES = [
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
   { name: "Rankings", href: "/tierlists" },
-  { name: "Squad Builder", href: "/lineups" },
+  { name: "Road to the Ballon d'Or", href: "/star-dev", beta: true },
 ];
+
+/** Same amber pill used everywhere else a live-but-unfinished game is marked
+ *  — see GameSidebar.tsx and app/admin/page.tsx. */
+function BetaBadge() {
+  return (
+    <span className="rounded-full bg-amber-500/20 px-1 py-0.5 text-[8px] font-black uppercase tracking-wider text-amber-400">
+      Beta
+    </span>
+  );
+}
 
 export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
@@ -25,13 +35,14 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
             <Link
               key={g.href}
               href={g.href}
-              className={`flex-shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
+              className={`flex flex-shrink-0 items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
                 isActive
                   ? "bg-purple-700/40 text-purple-300"
                   : "text-white hover:bg-gray-800/70"
               }`}
             >
               {g.name}
+              {g.beta && <BetaBadge />}
             </Link>
           );
         })}
@@ -47,13 +58,14 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
           <Link
             key={g.href}
             href={g.href}
-            className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap ${
+            className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap ${
               isActive
                 ? "bg-purple-700/40 text-purple-300"
                 : "text-white hover:bg-gray-800/70"
             }`}
           >
             {g.name}
+            {g.beta && <BetaBadge />}
           </Link>
         );
       })}

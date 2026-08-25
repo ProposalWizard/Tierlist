@@ -10,21 +10,22 @@ interface GameLink {
   description: string;
   href: string;
   comingSoon?: boolean;
+  /** Live and playable, but still being built — see the amber badge below. */
+  beta?: boolean;
 }
 
 const GAMES: GameLink[] = [
   { name: "Home",                description: "Browse all games & news",                 href: "/"           },
+  { name: "Road to the Ballon d'Or", description: "Live a career and win the world's greatest award", href: "/star-dev", beta: true },
   { name: "Tierlists",           description: "Create & play drag-and-drop tierlists",    href: "/tierlists"  },
   { name: "PL Draft",            description: "Build a dream XI from random FIFA rosters", href: "/draft"     },
   { name: "Ten-A-Ball",          description: "Football trivia — ten questions, ten lives", href: "/tenable"  },
   { name: "Football Tic Tac Toe",description: "Pick players to fill the grid",            href: "/tic-tac-toe"},
   { name: "Blind Rankings",      description: "Rank players without knowing who's next",   href: "/blind-rankings" },
-  { name: "Squad Builder",       description: "Pick an XI for any Premier League club",    href: "/lineups"    },
 ];
 
 const COMING_SOON: GameLink[] = [
-  { name: "Ballon d'Or",    description: "Live a career and win the world's greatest award", href: "#", comingSoon: true },
-  { name: "Player Ratings", description: "Rate and compare players",                         href: "#", comingSoon: true },
+  { name: "Player Ratings", description: "Rate and compare players", href: "#", comingSoon: true },
 ];
 
 export default function GameSidebar() {
@@ -111,7 +112,14 @@ export default function GameSidebar() {
                         : "text-white hover:bg-gray-900 hover:text-white"
                     }`}
                   >
-                    <span className="text-sm font-bold">{game.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold">{game.name}</span>
+                      {game.beta && (
+                        <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-400">
+                          Beta
+                        </span>
+                      )}
+                    </div>
                     <p className={`mt-0.5 text-xs ${isActive ? "text-purple-300" : "text-gray-400 group-hover:text-gray-300"}`}>
                       {game.description}
                     </p>
