@@ -161,10 +161,24 @@ function roster(club: string, n = 26): RosterRow[] {
     }, rng, squads);
     league = r.league;
     for (const res of r.results) {
-      // Your own game is the one the squads do not cover — your scorers come off
-      // the real match, and your opponent's are deliberately anonymous.
       const yours = res.home === USER || res.away === USER;
-      if (yours) continue;
+      if (yours) {
+        // Your own goals are real, off the match you played — this synthetic
+        // scenario has no real match behind it (no `goals` was passed to
+        // playLeagueWeek), so they stay unnamed here, same as they would if
+        // a real match came back with no goal events. What the OPPONENT
+        // scored against you is named off their own squad exactly like
+        // every other goal in the division — that used to be silently
+        // anonymous too; this is the fix.
+        const oppIsHome = res.home === f.opponent;
+        const oppGoals = oppIsHome ? res.hg : res.ag;
+        const oppScored = oppIsHome ? res.hs : res.as;
+        check((oppGoals?.length ?? 0) === oppScored,
+          `wk${res.week}: what ${f.opponent} scored against you is named (${oppScored} scored, ${oppGoals?.length ?? 0} named)`);
+        namedGoals += oppGoals?.length ?? 0;
+        tableGoals += oppScored;
+        continue;
+      }
       check((res.hg?.length ?? 0) === res.hs, `wk${res.week} ${res.home}: ${res.hs} goals, ${res.hg?.length ?? 0} named`);
       check((res.ag?.length ?? 0) === res.as, `wk${res.week} ${res.away}: ${res.as} goals, ${res.ag?.length ?? 0} named`);
       namedGoals += (res.hg?.length ?? 0) + (res.ag?.length ?? 0);
