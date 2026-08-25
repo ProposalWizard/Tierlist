@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepBallInNet,
-  clamp, type Ball, type Outcome, type Scenario,
+  clamp, type Ball, type Outcome, type Scenario, type Viewport,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import {
@@ -75,8 +75,21 @@ function makeGrassTile(): HTMLCanvasElement | null {
 
 type Phase = "aim" | "contact" | "flight" | "missed";
 
-/** The slice of pitch this scene shows: the box, and a little air around it. */
-const VIEW = { x1: BOX_L - 2, x2: BOX_R + 2, y1: -NET_DEPTH - 1.5, y2: PEN_SPOT_Y + 5 };
+/**
+ * The camera framing.
+ *
+ * There is no separate view for the trial — `buildScenario` already computes
+ * the exact same framing a real match uses for this scenario kind and hangs
+ * it on `sc.viewport` (see `scenarioViewport`/`fitToView` in canvasEngine.ts),
+ * so a penalty here is framed identically to a penalty in a match. A
+ * hand-picked rectangle used to live here instead — wide enough to show the
+ * whole penalty box and a fixed "3/4" container CSS that didn't match it —
+ * which is what produced the "completely stretched, from so far out" bug:
+ * two independently-wrong rectangles, neither matching the other or the real
+ * game's 5:8 camera. `FALLBACK_VIEW` only covers the single frame before the
+ * first scenario exists.
+ */
+const FALLBACK_VIEW: Viewport = { x1: BOX_L - 2, x2: BOX_R + 2, y1: -NET_DEPTH - 1.5, y2: PEN_SPOT_Y + 5 };
 /** Same dead-zone rule the real game uses — a press that slips is not a shot. */
 const MIN_PULL = 0.04;
 /** How far you must pull for full power, as a fraction of the canvas height. */
@@ -142,25 +155,26 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
   // ── Pointer → pitch ────────────────────────────────────────────────────────
   const pitchFromPointer = (e: React.PointerEvent) => {
     const c = canvasRef.current;
+    const vp = scRef.current?.viewport ?? FALLBACK_VIEW;
     if (!c) return { x: CX, y: PEN_SPOT_Y };
     const r = c.getBoundingClientRect();
     const fx = (e.clientX - r.left) / r.width;
     const fy = (e.clientY - r.top) / r.height;
     return {
-      x: VIEW.x1 + fx * (VIEW.x2 - VIEW.x1),
-      y: VIEW.y1 + fy * (VIEW.y2 - VIEW.y1),
+      x: vp.x1 + fx * (vp.x2 - vp.x1),
+      y: vp.y1 + fy * (vp.y2 - vp.y1),
     };
   };
 
   /** Pull length as a fraction of the canvas height, so power reads the same
    *  however the scene is scaled. */
-  const screenPull = (drag: { x: number; y: number }, ball: { x: number; y: number }) => {
-    const H = VIEW.y2 - VIEW.y1, W = VIEW.x2 - VIEW.x1;
+  const screenPull = (drag: { x: number; y: number }, ball: { x: number; y: number }, vp: Viewport) => {
+    const H = vp.y2 - vp.y1, W = vp.x2 - vp.x1;
     const aspect = W / H;
     return Math.hypot(((drag.x - ball.x) / W) * aspect, (drag.y - ball.y) / H);
   };
-  const powerFrom = (drag: { x: number; y: number }, ball: { x: number; y: number }) =>
-    clamp(screenPull(drag, ball) / FULL_POWER_PULL, 0, 1);
+  const powerFrom = (drag: { x: number; y: number }, ball: { x: number; y: number }, vp: Viewport) =>
+    clamp(screenPull(drag, ball, vp) / FULL_POWER_PULL, 0, 1);
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (phaseRef.current !== "aim") return;
@@ -180,8 +194,8 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     const sc = scRef.current;
     dragRef.current = null;
     if (!d || !sc) return;
-    if (screenPull(d, sc.ball) < MIN_PULL) return;
-    const power = powerFrom(d, sc.ball);
+    if (screenPull(d, sc.ball, sc.viewport) < MIN_PULL) return;
+    const power = powerFrom(d, sc.ball, sc.viewport);
     if (power < 0.05) return;
     setAim({ dir: { x: sc.ball.x - d.x, y: sc.ball.y - d.y }, power });
     setPhase("contact");
@@ -275,9 +289,10 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const W = cssW, H = cssH;
 
-    const sx = W / (VIEW.x2 - VIEW.x1), sy = H / (VIEW.y2 - VIEW.y1);
-    const px = (x: number) => (x - VIEW.x1) * sx;
-    const py = (y: number) => (y - VIEW.y1) * sy;
+    const vp = sc.viewport;
+    const sx = W / (vp.x2 - vp.x1), sy = H / (vp.y2 - vp.y1);
+    const px = (x: number) => (x - vp.x1) * sx;
+    const py = (y: number) => (y - vp.y1) * sy;
     const unit = Math.min(sx, sy);
 
     // ── Grass — real colour, real grain, no mowing stripes ──
@@ -327,7 +342,7 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     const line = (x1: number, y1: number, x2: number, y2: number) => {
       ctx.beginPath(); ctx.moveTo(px(x1), py(y1)); ctx.lineTo(px(x2), py(y2)); ctx.stroke();
     };
-    line(VIEW.x1, 0, VIEW.x2, 0);
+    line(vp.x1, 0, vp.x2, 0);
     ctx.strokeRect(px(SIX_L), py(0), (SIX_R - SIX_L) * sx, SIX_DEPTH * sy);
     ctx.strokeRect(px(BOX_L), py(0), (BOX_R - BOX_L) * sx, BOX_DEPTH * sy);
 
@@ -538,10 +553,10 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     // aim UI (CanvasMatch.tsx). ──
     if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {
       const d = dragRef.current;
-      const power = powerFrom(d, sc.ball);
+      const power = powerFrom(d, sc.ball, vp);
       const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
       const len = Math.hypot(dx, dy) || 1;
-      const shown = power * (VIEW.y2 - VIEW.y1) * 0.30;
+      const shown = power * (vp.y2 - vp.y1) * 0.30;
       const ax = px(sc.ball.x), ay = py(sc.ball.y);
       const bx2 = px(sc.ball.x + (dx / len) * shown);
       const by2 = py(sc.ball.y + (dy / len) * shown);
@@ -614,7 +629,7 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
         <div
           ref={wrapRef}
           className="relative w-full overflow-hidden rounded-xl border border-white/15"
-          style={{ aspectRatio: "3 / 4" }}
+          style={{ aspectRatio: "5 / 8" }}
         >
           <canvas
             ref={canvasRef}
