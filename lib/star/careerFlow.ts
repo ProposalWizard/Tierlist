@@ -170,7 +170,33 @@ export function creditMatchResult(
   fixture: Fixture,
   stats: MatchStats,
 ): { career: CareerState; newlyUnlocked: string[]; potmAwarded?: MonthAward } {
-  const accrue = (base: CareerState["seasonStats"]) => ({
+  // ── Has this one already been credited? ──
+  //
+  // Re-crediting the same match is a real, anticipated path — the transfer
+  // window's own `lastTransferWindowKey` guard exists for exactly it, and
+  // says so ("no matter how many times this one match gets replayed"), and
+  // `weekResults` further down de-duplicates by week for the same reason.
+  // Nothing else did, so a replay counted the whole round a second time:
+  // every club's played/points/goals doubled, every named scorer that week
+  // had his tally doubled, and the player's own appearance, goals and
+  // rating were counted twice over. Measured directly — a division of
+  // twenty went from 20 games played to 40, and a 2-goal match to 4, off a
+  // single re-credit.
+  //
+  // Matched on week/kind/opponent rather than object identity, because a
+  // caller working from a stale `career` hands over a stale fixture OBJECT
+  // too: the `f === fixture` comparison further down misses it, which is
+  // part of what let a replay through here at all.
+  const kind = fixture.kind ?? "league";
+  const sameFixture = (f: Fixture) =>
+    f.week === fixture.week && (f.kind ?? "league") === kind && f.opponent === fixture.opponent;
+  const alreadyPlayed = career.fixtures.some(f => sameFixture(f) && f.played);
+
+  // A replay adds nothing to a tally that already counted it. Applied here
+  // rather than at each call site so every accrual — the player's season
+  // and career totals, and the objective progress read off them — stays
+  // consistent with the others by construction.
+  const accrue = (base: CareerState["seasonStats"]) => (alreadyPlayed ? base : {
     appearances: base.appearances + 1,
     goals: base.goals + stats.goals,
     hatTricks: base.hatTricks + (stats.goals >= 3 ? 1 : 0),
@@ -185,13 +211,14 @@ export function creditMatchResult(
   // international are none of the division's business — running the round for
   // everybody else after one of those would hand the rest of the league a free
   // week of points.
-  const kind = fixture.kind ?? "league";
   let league = career.league;
   // This week's ten results, yours first. Kept on the career so the league
   // screen can show the round rather than only the table it produced.
   let weekResults = career.results ?? [];
   let leagueSquads = career.leagueSquads;
-  if (kind === "league") {
+  // …and the round itself is skipped outright on a replay — see
+  // `alreadyPlayed` at the top of this function.
+  if (kind === "league" && !alreadyPlayed) {
     league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, stats.homeScore, stats.awayScore);
     const rng = mulberry32(career.season * 1000 + career.week);
     // ── homeScore is YOURS, not the home team's ──
@@ -224,7 +251,11 @@ export function creditMatchResult(
   }
 
   const fixtures = career.fixtures.map((f) =>
-    f === fixture
+    // Identity OR the same match by week/kind/opponent — see `sameFixture`
+    // above. A caller working from a stale `career` hands over a stale
+    // fixture OBJECT, and identity alone then marked nothing as played,
+    // leaving the match eligible to be credited over and over.
+    (f === fixture || sameFixture(f))
       ? {
           ...f,
           played: true,
