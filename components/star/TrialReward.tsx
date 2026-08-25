@@ -33,14 +33,12 @@ export default function TrialReward({
   const [signing, setSigning] = useState(false);
 
   return step === 1 ? (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <div className="flex-1 grid place-items-center p-4">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
         <NewspaperHeadline surname={surname} club={club} />
-      </div>
-      <div className="p-4">
         <button
           onClick={() => setStep(2)}
-          className="w-full rounded-xl bg-white/10 py-3.5 text-sm font-black uppercase tracking-widest text-white transition hover:bg-white/20 active:scale-[0.99]"
+          className="mt-4 w-full rounded-xl bg-white/10 py-3 text-sm font-black uppercase tracking-widest text-white transition hover:bg-white/20 active:scale-[0.99]"
         >
           Continue
         </button>
@@ -75,6 +73,24 @@ export default function TrialReward({
 /**
  * The contract, and a hand writing across it.
  *
+ * A supplied document image (public/star/contract.png), the same pattern
+ * NewspaperHeadline.tsx already established for the front page: real art
+ * rather than anything drawn in CSS, with the one dynamic part — here, the
+ * signature — positioned over it as a percentage of the image's own
+ * dimensions. Falls back to a plain drawn placeholder (the box this
+ * replaced) if that file doesn't exist yet, via the <img>'s own onError, so
+ * the trial never breaks while the real asset is still being made — drop
+ * the file in later and it upgrades automatically, no code change needed.
+ *
+ * SIGNATURE_BOX below is a GUESS, not a measurement — unlike
+ * NewspaperHeadline's BOX, which was measured directly off the real
+ * template's pixels, there is no real contract image yet to measure. Once
+ * there is one, replace these four numbers with where the signature line
+ * actually sits, as a plain percentage of the image's width/height from
+ * each edge (top/left/right/bottom, no inversion needed — simpler than
+ * NewspaperHeadline's own convention on purpose, since this box only ever
+ * needs recalibrating once).
+ *
  * The signature is a real stroke drawn over time rather than a fade-in of
  * finished text: `stroke-dashoffset` walking to zero along a hand-shaped path,
  * which is the one way to make a line look WRITTEN without shipping an
@@ -82,6 +98,9 @@ export default function TrialReward({
  * and still calls back, so the flow can never strand somebody who has motion
  * turned off.
  */
+const CONTRACT_SRC = "/star/contract.png";
+const SIGNATURE_BOX = { top: 78, left: 8, right: 42, bottom: 6 }; // % of the image — placeholder, see above
+
 function SignaturePad({
   name, club, signing, onFinished,
 }: {
@@ -90,6 +109,7 @@ function SignaturePad({
   const pathRef = useRef<SVGPathElement>(null);
   const [len, setLen] = useState(0);
   const firedRef = useRef(false);
+  const [imgOk, setImgOk] = useState(true);
 
   useEffect(() => {
     if (pathRef.current) setLen(pathRef.current.getTotalLength());
@@ -105,6 +125,52 @@ function SignaturePad({
     return () => window.clearTimeout(t);
   }, [signing, onFinished]);
 
+  const strokeStyle: React.CSSProperties = {
+    strokeDasharray: len || 1,
+    strokeDashoffset: signing ? 0 : (len || 1),
+    // Hidden until the path has been MEASURED, not merely until you sign.
+    // Before `len` is known the dash pattern is 1 on / 1 off, which on a
+    // 700-unit path draws a near-solid line — so the signature appeared
+    // already written for the frame before the effect ran, which is the
+    // one thing this animation exists to avoid.
+    opacity: len === 0 ? 0 : 1,
+    transition: signing ? "stroke-dashoffset 1.6s cubic-bezier(.55,.1,.35,1)" : "none",
+    filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))",
+  };
+  const signaturePath = (
+    <path
+      ref={pathRef}
+      d="M12 44 C 26 12, 38 12, 44 30 C 50 48, 58 48, 66 26 C 72 10, 84 14, 86 34 C 88 50, 100 48, 108 32 C 116 16, 130 18, 132 36 C 134 52, 148 50, 158 30 C 168 10, 184 14, 190 32 C 196 50, 212 48, 224 30 C 234 16, 250 16, 262 34 C 268 43, 278 46, 288 40"
+      fill="none"
+      stroke="#0f172a"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={strokeStyle}
+    />
+  );
+
+  if (imgOk) {
+    return (
+      <div className="relative mx-auto mt-6 w-full max-w-sm">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={CONTRACT_SRC} alt="" className="block w-full" onError={() => setImgOk(false)} />
+        <div
+          className="absolute"
+          style={{
+            top: `${SIGNATURE_BOX.top}%`, bottom: `${SIGNATURE_BOX.bottom}%`,
+            left: `${SIGNATURE_BOX.left}%`, right: `${SIGNATURE_BOX.right}%`,
+          }}
+        >
+          <svg viewBox="0 0 300 60" className="h-full w-full" aria-hidden>
+            {signaturePath}
+          </svg>
+        </div>
+      </div>
+    );
+  }
+
+  // Placeholder, only ever seen until public/star/contract.png exists.
   return (
     <div className="mt-6 rounded-xl border border-white/15 bg-white/[0.06] p-4 text-left">
       <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/45">
@@ -122,26 +188,13 @@ function SignaturePad({
       <div className="relative mt-4 h-14">
         <svg viewBox="0 0 300 60" className="absolute inset-0 h-full w-full" aria-hidden>
           <path
-            ref={pathRef}
-            d="M12 44 C 26 12, 38 12, 44 30 C 50 48, 58 48, 66 26 C 72 10, 84 14, 86 34 C 88 50, 100 48, 108 32 C 116 16, 130 18, 132 36 C 134 52, 148 50, 158 30 C 168 10, 184 14, 190 32 C 196 50, 212 48, 224 30 C 234 16, 250 16, 262 34 C 268 43, 278 46, 288 40"
             fill="none"
             stroke="#fef3c7"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{
-              strokeDasharray: len || 1,
-              strokeDashoffset: signing ? 0 : (len || 1),
-              // Hidden until the path has been MEASURED, not merely until you
-              // sign. Before `len` is known the dash pattern is 1 on / 1 off,
-              // which on a 700-unit path draws a near-solid line — so the
-              // signature appeared already written for the frame before the
-              // effect ran, which is the one thing this animation exists to
-              // avoid.
-              opacity: len === 0 ? 0 : 1,
-              transition: signing ? "stroke-dashoffset 1.6s cubic-bezier(.55,.1,.35,1)" : "none",
-              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))",
-            }}
+            d="M12 44 C 26 12, 38 12, 44 30 C 50 48, 58 48, 66 26 C 72 10, 84 14, 86 34 C 88 50, 100 48, 108 32 C 116 16, 130 18, 132 36 C 134 52, 148 50, 158 30 C 168 10, 184 14, 190 32 C 196 50, 212 48, 224 30 C 234 16, 250 16, 262 34 C 268 43, 278 46, 288 40"
+            style={strokeStyle}
           />
         </svg>
         <div className="absolute inset-x-0 bottom-0 border-t border-white/25" />

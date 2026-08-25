@@ -105,6 +105,21 @@ interface Candidate {
   seasonAssists: number;
   careerGoals: number;
   careerAssists: number;
+  /**
+   * The league-only subset of this season, carried through untouched.
+   *
+   * `runTransferWindow` rebuilds the human's ENTIRE squad every time it runs —
+   * everyone goes out through `fromSquadPlayer` and back in through
+   * `toSquadPlayer`, whether he moved or not — so anything `SquadPlayer` holds
+   * that this shape does not is silently dropped in passing. These two were,
+   * and they are what the Golden Boot and Assist King charts actually read
+   * (recognition.ts); without them those fall back to `?? seasonGoals`, which
+   * includes cup goals, so a January window quietly inflated every one of your
+   * own team-mates' tallies mid-season. Absent on a LeaguePlayer, which has no
+   * league/cup split of its own — see `fromLeaguePlayer`.
+   */
+  leagueGoals?: number;
+  leagueAssists?: number;
 }
 
 const ROLES: Role[] = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
@@ -133,6 +148,7 @@ function fromSquadPlayer(p: SquadPlayer, club: string): Candidate {
     sofifaId: p.sofifaId, imageUrl: p.imageUrl, nationality: p.nationality, age: p.age,
     seasonGoals: p.seasonGoals, seasonAssists: p.seasonAssists,
     careerGoals: p.careerGoals, careerAssists: p.careerAssists,
+    leagueGoals: p.leagueGoals, leagueAssists: p.leagueAssists,
   };
 }
 
@@ -154,6 +170,13 @@ function toSquadPlayer(c: Candidate): SquadPlayer {
     careerGoals: c.careerGoals, careerAssists: c.careerAssists,
     sofifaId: c.sofifaId, overall: c.overall, imageUrl: c.imageUrl,
     nationality: c.nationality, age: c.age,
+    // Only written when the man actually has them: a signing arriving from
+    // another club is a LeaguePlayer, which keeps no league/cup split, and
+    // inventing a zero for him would put a brand-new arrival on the Golden
+    // Boot chart at nought league goals rather than leaving him off it until
+    // he scores one. `undefined` is the honest "not tracked for him yet".
+    ...(c.leagueGoals !== undefined ? { leagueGoals: c.leagueGoals } : {}),
+    ...(c.leagueAssists !== undefined ? { leagueAssists: c.leagueAssists } : {}),
   };
 }
 
