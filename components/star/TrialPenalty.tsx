@@ -7,9 +7,51 @@ import {
 import { mulberry32 } from "@/lib/star/season";
 import {
   CX, POST_L, POST_R, NET_DEPTH, PEN_SPOT_Y, SIX_L, SIX_R, SIX_DEPTH,
-  BOX_L, BOX_R, BOX_DEPTH, BALL_R,
+  BOX_L, BOX_R, BOX_DEPTH, BALL_R, GOAL_H,
 } from "@/lib/star/pitch";
 import ContactBall from "./ContactBall";
+
+/**
+ * The same pitch/goal/keeper rendering CanvasMatch.tsx uses for a real
+ * match, ported rather than shared — this codebase's own precedent
+ * (CanvasMatch → CanvasMatchTest, the star-match-dev sandbox) is a full
+ * duplicate fork for a second canvas that needs to look identical, not an
+ * extracted module, so this follows the same pattern rather than inventing
+ * a new one. Reported directly: the trial's own hand-rolled version (a
+ * flat green rectangle, a plain net grid, an amber blob for a keeper) read
+ * as "trash" next to the real thing, which is exactly what it was — a
+ * placeholder that was never actually swapped out.
+ */
+const SKIN = "#c68642";
+const TC = {
+  pitch: "#1f9006",
+  line: "rgba(255,255,250,0.85)",
+  lineFaint: "rgba(255,255,250,0.5)",
+  gk: "#fbbf24",
+  gkRim: "#92400e",
+  goldSoft: "#fde68a",
+};
+const GRASS_TILE = 96;
+function makeGrassTile(): HTMLCanvasElement | null {
+  if (typeof document === "undefined") return null;
+  const c = document.createElement("canvas");
+  c.width = GRASS_TILE; c.height = GRASS_TILE;
+  const g = c.getContext("2d");
+  if (!g) return null;
+  const img = g.createImageData(GRASS_TILE, GRASS_TILE);
+  let seed = 0x2f6f2b;
+  for (let i = 0; i < img.data.length; i += 4) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const n = ((seed >>> 16) & 0xff) / 255;
+    const light = n > 0.5;
+    img.data[i] = light ? 255 : 0;
+    img.data[i + 1] = light ? 255 : 0;
+    img.data[i + 2] = light ? 255 : 0;
+    img.data[i + 3] = Math.round(Math.abs(n - 0.5) * 2 * 16);
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
 
 /**
  * THE TRIAL.
@@ -62,6 +104,8 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
   const resolvedRef = useRef(false);
   /** The real ball photo (public/star/ball.png) — see CanvasMatch.tsx. */
   const ballImgRef = useRef<HTMLImageElement | null>(null);
+  /** The grass grain tile, built once — see makeGrassTile above. */
+  const grassRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const img = new Image();
     img.src = "/star/ball.png";
@@ -236,17 +280,48 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     const py = (y: number) => (y - VIEW.y1) * sy;
     const unit = Math.min(sx, sy);
 
-    // Grass, with mown bands so the depth reads.
-    ctx.fillStyle = "#1f7a3a";
+    // ── Grass — real colour, real grain, no mowing stripes ──
+    // Sampled off the reference, same as CanvasMatch.tsx's own pitch: a
+    // saturated yellow-green with almost no blue, and NO mowing bands —
+    // measured flat across six sample heights. What it does have is a very
+    // fine, near-invisible grain, tiled from a fixed procedural pattern so
+    // it never shimmers between frames.
+    ctx.fillStyle = TC.pitch;
     ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 10; i++) {
-      if (i % 2 === 0) continue;
-      ctx.fillStyle = "rgba(255,255,255,0.028)";
-      ctx.fillRect(0, (H / 10) * i, W, H / 10);
+    if (!grassRef.current) grassRef.current = makeGrassTile();
+    if (grassRef.current) {
+      const pat = ctx.createPattern(grassRef.current, "repeat");
+      if (pat) {
+        ctx.save();
+        ctx.translate(px(0) % GRASS_TILE, py(0) % GRASS_TILE);
+        ctx.fillStyle = pat;
+        ctx.fillRect(-GRASS_TILE, -GRASS_TILE, W + GRASS_TILE * 2, H + GRASS_TILE * 2);
+        ctx.restore();
+      }
+    }
+    // Worn grass at the goalmouth and the penalty spot — the same wear a
+    // season of real football leaves, and most of what stops a pitch
+    // looking printed.
+    {
+      const wear = (x: number, y: number, rx: number, ry: number, alpha: number) => {
+        const cx2 = px(x), cy2 = py(y);
+        const g = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, Math.max(rx, ry) * unit);
+        g.addColorStop(0, `rgba(120,132,26,${alpha})`);
+        g.addColorStop(1, "rgba(120,132,26,0)");
+        ctx.save();
+        ctx.translate(cx2, cy2);
+        ctx.scale(1, ry / rx);
+        ctx.translate(-cx2, -cy2);
+        ctx.fillStyle = g;
+        ctx.fillRect(cx2 - rx * unit * 1.2, cy2 - rx * unit * 1.2, rx * unit * 2.4, rx * unit * 2.4);
+        ctx.restore();
+      };
+      wear(CX, 1.9, 6.2, 2.4, 0.22);
+      wear(CX, PEN_SPOT_Y, 3.2, 2.2, 0.16);
     }
 
-    ctx.strokeStyle = "rgba(255,255,255,0.85)";
-    ctx.lineWidth = Math.max(1.5, unit * 0.09);
+    ctx.strokeStyle = TC.line;
+    ctx.lineWidth = Math.max(1.5, unit * 0.12);
 
     // Goal line, six-yard box, penalty area.
     const line = (x1: number, y1: number, x2: number, y2: number) => {
@@ -257,6 +332,7 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     ctx.strokeRect(px(BOX_L), py(0), (BOX_R - BOX_L) * sx, BOX_DEPTH * sy);
 
     // The D.
+    ctx.strokeStyle = TC.lineFaint;
     ctx.beginPath();
     ctx.arc(px(CX), py(PEN_SPOT_Y), 9.15 * unit, Math.PI * 0.18, Math.PI * 0.82);
     ctx.stroke();
@@ -264,51 +340,175 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     // Penalty spot.
     ctx.beginPath();
     ctx.arc(px(CX), py(PEN_SPOT_Y), Math.max(2, unit * 0.16), 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.fillStyle = TC.line;
     ctx.fill();
 
-    // ── The goal, drawn as a frame with a net behind it ──
-    const gL = px(POST_L), gR = px(POST_R), gY = py(0), gBack = py(-NET_DEPTH);
-    ctx.fillStyle = "rgba(255,255,255,0.10)";
-    ctx.fillRect(gL, gBack, gR - gL, gY - gBack);
-    ctx.strokeStyle = "rgba(255,255,255,0.35)";
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 12; i++) {
-      const x = gL + ((gR - gL) / 12) * i;
-      ctx.beginPath(); ctx.moveTo(x, gBack); ctx.lineTo(x, gY); ctx.stroke();
-    }
-    for (let i = 0; i <= 4; i++) {
-      const y = gBack + ((gY - gBack) / 4) * i;
-      ctx.beginPath(); ctx.moveTo(gL, y); ctx.lineTo(gR, y); ctx.stroke();
-    }
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = Math.max(2.5, unit * 0.16);
-    ctx.beginPath();
-    ctx.moveTo(gL, gY); ctx.lineTo(gL, gBack); ctx.lineTo(gR, gBack); ctx.lineTo(gR, gY);
-    ctx.stroke();
+    // ── The goal — five surfaces, drawn back to front, exactly as a real
+    // match renders it (CanvasMatch.tsx): a shadow on the grass, the floor
+    // inside, a dimmer back net (deepest, seen through the mouth), a
+    // brighter roof net catching the light, and the front frame — the two
+    // objects a shot can actually hit. Nothing is drawn across the mouth
+    // itself; it is a hole, and the back net behind it is what you see
+    // through it. That tonal separation between roof and back is what makes
+    // it read as a goal rather than a flat mesh panel. ──
+    {
+      const heightScale = sy;
+      const hpx = GOAL_H * heightScale;
+      const bl = { px: px(POST_L), py: py(0) }, br = { px: px(POST_R), py: py(0) };
+      const tl = { px: bl.px, py: bl.py - hpx }, tr = { px: br.px, py: br.py - hpx };
+      const rl = { px: px(POST_L), py: py(-NET_DEPTH) }, rr = { px: px(POST_R), py: py(-NET_DEPTH) };
+      const ul = { px: rl.px, py: rl.py - hpx }, ur = { px: rr.px, py: rr.py - hpx };
 
-    // ── The keeper ──
-    const k = sc.keeper;
-    const kx = px(k.x), ky = py(k.y);
-    const kr = unit * 0.62;
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.beginPath(); ctx.ellipse(kx, ky + kr * 0.2, kr * 1.1, kr * 0.4, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#fbbf24";
-    ctx.beginPath();
-    ctx.roundRect?.(kx - kr * 0.8, ky - kr * 1.5, kr * 1.6, kr * 1.4, kr * 0.3);
-    if (!ctx.roundRect) ctx.rect(kx - kr * 0.8, ky - kr * 1.5, kr * 1.6, kr * 1.4);
-    ctx.fill();
-    // Arms out, wider the further he has dived.
-    ctx.strokeStyle = "#fbbf24";
-    ctx.lineWidth = Math.max(2, kr * 0.34);
-    ctx.lineCap = "round";
-    const reach = kr * (1.1 + Math.abs(k.dive ?? 0) * 0.9);
-    ctx.beginPath();
-    ctx.moveTo(kx - kr * 0.7, ky - kr * 1.1); ctx.lineTo(kx - reach, ky - kr * 1.5);
-    ctx.moveTo(kx + kr * 0.7, ky - kr * 1.1); ctx.lineTo(kx + reach, ky - kr * 1.5);
-    ctx.stroke();
-    ctx.fillStyle = "#f2c9a0";
-    ctx.beginPath(); ctx.arc(kx, ky - kr * 1.75, kr * 0.32, 0, Math.PI * 2); ctx.fill();
+      type Pt = { px: number; py: number };
+      const path = (q: Pt[]) => {
+        ctx.beginPath();
+        ctx.moveTo(q[0].px, q[0].py);
+        for (let i = 1; i < q.length; i++) ctx.lineTo(q[i].px, q[i].py);
+        ctx.closePath();
+      };
+      const quad = (q: Pt[], fill: string) => { path(q); ctx.fillStyle = fill; ctx.fill(); };
+      const seg = (a2: Pt, b2: Pt) => { ctx.beginPath(); ctx.moveTo(a2.px, a2.py); ctx.lineTo(b2.px, b2.py); ctx.stroke(); };
+      const lerp = (a2: Pt, b2: Pt, f: number) => ({ px: a2.px + (b2.px - a2.px) * f, py: a2.py + (b2.py - a2.py) * f });
+      const netting = (q: Pt[], cols: number, rows: number, alpha: number) => {
+        ctx.save();
+        path(q); ctx.clip();
+        ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+        ctx.lineWidth = Math.max(0.7, unit * 0.028);
+        for (let i = 0; i <= cols; i++) { const f = i / cols; seg(lerp(q[0], q[1], f), lerp(q[3], q[2], f)); }
+        for (let j = 0; j <= rows; j++) { const f = j / rows; seg(lerp(q[0], q[3], f), lerp(q[1], q[2], f)); }
+        ctx.restore();
+      };
+
+      const sh = unit * 0.5;
+      quad([rl, rr, br, bl].map(q => ({ px: q.px + sh, py: q.py + sh * 0.3 })), "rgba(0,0,0,0.09)");
+      quad([bl, br, rr, rl], "rgba(20,50,32,0.05)");
+      quad([rl, rr, ur, ul], "rgba(22,52,34,0.16)");
+      netting([rl, rr, ur, ul], 34, 10, 0.42);
+      ctx.strokeStyle = "#0f1a14";
+      ctx.lineWidth = Math.max(1.8, unit * 0.15);
+      seg(rl, ul); seg(rr, ur); seg(ul, ur);
+      quad([tl, tr, ur, ul], "rgba(236,245,239,0.30)");
+      netting([tl, tr, ur, ul], 34, 5, 0.8);
+
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#f6faf7";
+      ctx.lineWidth = Math.max(1.8, unit * 0.12);
+      seg(bl, tl); seg(br, tr);
+      ctx.lineWidth = Math.max(2, unit * 0.16);
+      seg(tl, tr);
+      ctx.lineCap = "butt";
+
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = Math.max(1.5, unit * 0.11);
+      line(POST_L, 0, POST_R, 0);
+    }
+
+    // ── The keeper — the same pose-driven figure a real match uses
+    // (CanvasMatch.tsx), not a blob: legs, shorts, arms whose reach and
+    // direction come from the actual save being played, a shirt, gloves
+    // (the detail that actually makes him read as a keeper), and idle
+    // breathing so he is never frozen on his line while waiting. ──
+    {
+      const kk = sc.keeper;
+      const kpx = px(kk.x), kpy = py(kk.y);
+      const lunge = kk.saveLunge > 0 ? kk.saveLunge : 0;
+      const KIND = {
+        catch:     { lean: 0.15, armUp:  0.25, spread: 0.45, reachK: 0.55, crouch: 0.10 },
+        central:   { lean: 0.05, armUp: -0.10, spread: 1.05, reachK: 0.80, crouch: 0.22 },
+        low:       { lean: 1.15, armUp: -0.85, spread: 0.95, reachK: 1.35, crouch: 0.30 },
+        high:      { lean: 0.55, armUp:  1.00, spread: 0.80, reachK: 1.30, crouch: -0.35 },
+        fingertip: { lean: 1.30, armUp:  0.35, spread: 0.70, reachK: 1.70, crouch: 0.05 },
+      } as const;
+      const kind = kk.saveKind ?? null;
+      const K = kind ? KIND[kind] : null;
+
+      const breathe = Math.sin(kk.idleT * 2.1) * 0.02;
+      const weight = Math.sin(kk.idleT * 0.9) * 0.05;
+
+      const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
+      const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
+      const KR = unit * 1.15 * 0.82;
+      const lean = sign * diveN * (K ? K.lean : 0.9);
+      const cx2 = kpx + sign * KR * lunge * (K ? K.reachK : 1.0) * 0.3;
+      const cyOff = KR * ((K ? K.crouch : 0) * lunge + breathe);
+      const gloveR = KR * 0.24;
+
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+
+      ctx.beginPath();
+      ctx.ellipse(cx2, kpy, KR * (0.7 + diveN * 0.5), KR * 0.26, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.fill();
+
+      ctx.translate(cx2 + KR * weight * (1 - lunge), kpy - KR * 0.8 + cyOff);
+      ctx.rotate(lean);
+      ctx.lineCap = "round";
+
+      ctx.strokeStyle = SKIN;
+      ctx.lineWidth = Math.max(1.2, KR * 0.28);
+      ctx.beginPath();
+      ctx.moveTo(-KR * 0.22, KR * 0.16);
+      ctx.lineTo(-KR * 0.30 - diveN * KR * 0.3, KR * 0.76);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(KR * 0.22, KR * 0.16);
+      ctx.lineTo(KR * 0.30 + diveN * KR * 0.3, KR * 0.76);
+      ctx.stroke();
+
+      ctx.fillStyle = TC.gkRim;
+      ctx.beginPath();
+      ctx.roundRect?.(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34, KR * 0.12);
+      if (!ctx.roundRect) ctx.rect(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34);
+      ctx.fill();
+
+      const spread = K ? K.spread : 1;
+      const armUp = K ? K.armUp : 0;
+      const reach = KR * (0.62 + diveN * 0.85) * (0.55 + spread * 0.45);
+      const armY = -KR * 0.28 - armUp * diveN * KR * 0.85;
+      ctx.strokeStyle = SKIN;
+      ctx.lineWidth = Math.max(1.1, KR * 0.24);
+      const gloves: { x: number; y: number }[] = [];
+      for (const s2 of [-1, 1]) {
+        const leading = sign === 0 || Math.sign(s2) === sign;
+        const ex2 = s2 * reach * (leading ? 1 : 0.62);
+        const ey2 = armY - (leading ? diveN * KR * 0.2 : 0);
+        ctx.beginPath();
+        ctx.moveTo(s2 * KR * 0.32, -KR * 0.28);
+        ctx.lineTo(ex2, ey2);
+        ctx.stroke();
+        gloves.push({ x: ex2, y: ey2 });
+      }
+
+      ctx.fillStyle = TC.gk;
+      ctx.beginPath();
+      ctx.roundRect?.(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58, KR * 0.15);
+      if (!ctx.roundRect) ctx.rect(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58);
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, KR * 0.11);
+      ctx.strokeStyle = TC.gkRim;
+      ctx.stroke();
+
+      ctx.fillStyle = "#f8fafc";
+      ctx.strokeStyle = TC.gkRim;
+      ctx.lineWidth = Math.max(1, KR * 0.09);
+      for (const g of gloves) {
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, gloveR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.beginPath();
+      ctx.arc(0, -KR * 0.70, KR * 0.28, 0, Math.PI * 2);
+      ctx.fillStyle = SKIN;
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, KR * 0.09);
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.stroke();
+
+      ctx.restore();
+    }
 
     // ── The ball ──
     const b = ballRef.current;
@@ -333,42 +533,68 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
       ctx.stroke();
     }
 
-    // ── The aim arrow ──
+    // ── The aim arrow — solid tapered gold/orange shaft into a triangular
+    // head, plus a vertical power meter, the same as a real match's own
+    // aim UI (CanvasMatch.tsx). ──
     if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {
       const d = dragRef.current;
       const power = powerFrom(d, sc.ball);
       const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
       const len = Math.hypot(dx, dy) || 1;
       const shown = power * (VIEW.y2 - VIEW.y1) * 0.30;
-      const ex = px(sc.ball.x + (dx / len) * shown);
-      const ey = py(sc.ball.y + (dy / len) * shown);
-      const ang = Math.atan2(ey - py(sc.ball.y), ex - px(sc.ball.x));
+      const ax = px(sc.ball.x), ay = py(sc.ball.y);
+      const bx2 = px(sc.ball.x + (dx / len) * shown);
+      const by2 = py(sc.ball.y + (dy / len) * shown);
+
+      const ang = Math.atan2(by2 - ay, bx2 - ax);
       const ux = Math.cos(ang), uy = Math.sin(ang);
       const nx = -uy, ny = ux;
-      const total = Math.hypot(ex - px(sc.ball.x), ey - py(sc.ball.y)) || 1;
-      const headLen = clamp(W * 0.045, W * 0.02, total * 0.45);
-      const headHalf = W * 0.022;
-      const hbx = ex - ux * headLen, hby = ey - uy * headLen;
+      const arrowLen = Math.hypot(bx2 - ax, by2 - ay) || 1;
+      const headLen = clamp(W * 0.075, W * 0.03, arrowLen * 0.55);
+      const headHalf = W * 0.05;
+      const shaftW = W * 0.03;
+      const hbx = bx2 - ux * headLen, hby = by2 - uy * headLen;
 
-      ctx.strokeStyle = "#ea580c";
-      ctx.lineWidth = W * 0.014;
+      const shaftGrad = ctx.createLinearGradient(ax, ay, bx2, by2);
+      shaftGrad.addColorStop(0, "#fb923c");
+      shaftGrad.addColorStop(1, "#ea580c");
+      ctx.strokeStyle = shaftGrad;
+      ctx.lineWidth = shaftW;
       ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.moveTo(px(sc.ball.x), py(sc.ball.y)); ctx.lineTo(hbx, hby); ctx.stroke();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(hbx, hby);
+      ctx.stroke();
       ctx.lineCap = "butt";
+
       ctx.beginPath();
-      ctx.moveTo(ex, ey);
+      ctx.moveTo(bx2, by2);
       ctx.lineTo(hbx + nx * headHalf, hby + ny * headHalf);
       ctx.lineTo(hbx - nx * headHalf, hby - ny * headHalf);
       ctx.closePath();
       ctx.fillStyle = "#f97316";
       ctx.fill();
+      ctx.lineJoin = "round";
+      ctx.lineWidth = Math.max(1, unit * 0.22);
+      ctx.strokeStyle = "rgba(124,45,18,0.6)";
+      ctx.stroke();
 
-      // Power, as a number by the ball.
-      ctx.fillStyle = "#fde68a";
+      // Power meter, left edge.
+      const meterX = W * 0.045, meterTop = H * 0.15, meterH = H * 0.7, meterW = W * 0.055;
+      ctx.fillStyle = "rgba(2,6,23,0.55)";
+      ctx.fillRect(meterX, meterTop, meterW, meterH);
+      const fillH = meterH * power;
+      const grad = ctx.createLinearGradient(0, meterTop + meterH, 0, meterTop);
+      grad.addColorStop(0, "#22c55e"); grad.addColorStop(0.6, "#eab308"); grad.addColorStop(1, "#ef4444");
+      ctx.fillStyle = grad;
+      ctx.fillRect(meterX, meterTop + meterH - fillH, meterW, fillH);
+      ctx.strokeStyle = "rgba(251,191,36,0.5)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(meterX, meterTop, meterW, meterH);
+      ctx.fillStyle = TC.goldSoft;
       ctx.font = `bold ${Math.round(W * 0.05)}px sans-serif`;
       ctx.textAlign = "center";
-      ctx.fillText(`${Math.round(power * 100)}%`, px(sc.ball.x), py(sc.ball.y) + W * 0.10);
+      ctx.fillText(`${Math.round(power * 100)}%`, meterX + meterW / 2, meterTop - W * 0.022);
     }
   };
 
