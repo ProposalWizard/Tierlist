@@ -619,15 +619,23 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
     return () => clearTimeout(t);
   }, [queue, pause, speed]);
 
-  /** The queue has run dry: go wherever the passage was heading. */
+  /** The queue has run dry: go wherever the passage was heading.
+   *
+   * See CanvasMatch.tsx for the full story: `simContinueRef.current` must
+   * not be cleared until the timeout actually runs, or a speed change (or
+   * any other dep change) mid-beat cancels the pending timer and loses the
+   * continuation for good, freezing the match with no way to progress.
+   */
   useEffect(() => {
     if (pause || queue.length > 0 || phase !== "feed") return;
     const go = simContinueRef.current;
     if (!go) return;
-    simContinueRef.current = null;
     // A beat on the last line before the pitch takes the screen, so a chance
     // does not arrive on top of the sentence that set it up.
-    const t = setTimeout(go, Math.round(700 / Math.max(1, speed)));
+    const t = setTimeout(() => {
+      simContinueRef.current = null;
+      go();
+    }, Math.round(700 / Math.max(1, speed)));
     return () => clearTimeout(t);
   }, [queue, pause, phase, speed]);
 
@@ -2412,7 +2420,8 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       const label = kind === "penalty" ? "penalty" : "free kick";
       const scored = rng() < (kind === "penalty" ? 0.76 : 0.09);
       if (scored) {
-        st.userScore += 1;
+        // resolveScenario (below) owns the score increment for "goal" —
+        // see hiddenMatch.ts for the full story on why this must not also.
         handedOver.push({ minute: st.minute, text: `⚽ Your side score the ${label}!`, isGoal: true, teammateGoal: true });
       } else {
         handedOver.push({ minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
