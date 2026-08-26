@@ -144,6 +144,46 @@ const FIXTURE: Fixture = {
   check(new Set(md.xi.map(p => p.id)).size === 11, "without duplicating anybody");
 }
 
+// ── A new signing shows up on the bench, not just in the squad ─────────────
+//
+// Reported directly: a player signed after the bench was last saved simply
+// never appeared anywhere — not starting, and not on the bench either,
+// even rated well above half the squad. The saved bench used to be taken
+// exactly as-is with no top-up, so a squad member the saved list predates
+// had no way into the matchday sheet at all.
+{
+  const sq = squad();
+  const shape = formationOf("433");
+
+  // A fully-saved eleven, picked BEFORE the signing existed — every slot
+  // is a real, valid, still-in-the-squad player, so there are no gaps for
+  // fillGaps to hand the signing regardless of how highly he's rated. This
+  // is the actual reported shape: a saved lineup that simply predates him.
+  const savedXI = matchdayFor(careerWith(sq), FIXTURE, false, undefined, undefined, {
+    formation: shape, xi: shape.slots.map(() => null),
+  }).home.xi.map(p => p.id);
+  // A bench saved at the same time — the same three non-starters, nobody
+  // signed since.
+  const savedBench = sq.filter(p => !savedXI.includes(p.id)).slice(0, 3).map(p => p.id);
+
+  const newSigning: SquadPlayer = {
+    id: "new-signing", name: "New Signing", shortName: "Signing",
+    position: "ST", overall: 99, seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
+  };
+  const withSigning = [...sq, newSigning];
+
+  const md = matchdayFor(careerWith(withSigning), FIXTURE, false, undefined, savedBench, {
+    formation: shape, xi: savedXI,
+  }).home;
+
+  check(md.xi.every(p => p.id !== "new-signing"),
+    "the fully-saved eleven is untouched — he does not silently replace a starter");
+  check(md.bench.length === 9, `the bench is still topped up to nine (${md.bench.length})`);
+  check(md.bench.some(p => p.id === "new-signing"),
+    "and the new signing — rated well above everyone else left out — is on it");
+  check(new Set(md.bench.map(p => p.id)).size === md.bench.length, "without duplicating anybody");
+}
+
 // ── The opposition is untouched by YOUR saved lineup ───────────────────────
 {
   const sq = squad();

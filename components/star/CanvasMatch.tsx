@@ -587,15 +587,35 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     return () => clearTimeout(t);
   }, [queue, pause, speed]);
 
-  /** The queue has run dry: go wherever the passage was heading. */
+  /** The queue has run dry: go wherever the passage was heading.
+   *
+   * Reported directly: tapping the speed button mid-passage could freeze
+   * the match dead at whatever minute it happened to land on, with no
+   * error and no way to progress short of a refresh — worse right after
+   * a fast run of taps (1x→2x→4x), and it had happened to more than one
+   * person, so this was a real, recurring race rather than bad luck.
+   *
+   * The bug: `simContinueRef.current` used to be cleared the moment this
+   * effect SCHEDULED the timeout, not when it actually RAN — so if `speed`
+   * (or `pause`/`phase`) changed before that ~700ms/speed beat elapsed,
+   * React re-ran the effect, the cleanup below cancelled the pending
+   * timer, and the re-run read `simContinueRef.current` back out as
+   * already-null. The continuation — the only thing that ever moves the
+   * match past an empty queue — was gone for good, and nothing ever put
+   * it back. Consuming it inside the timeout callback itself, right
+   * before calling it, means a cancelled-and-rescheduled timer simply
+   * finds the same continuation still sitting there next time.
+   */
   useEffect(() => {
     if (pause || queue.length > 0 || phase !== "feed") return;
     const go = simContinueRef.current;
     if (!go) return;
-    simContinueRef.current = null;
     // A beat on the last line before the pitch takes the screen, so a chance
     // does not arrive on top of the sentence that set it up.
-    const t = setTimeout(go, Math.round(700 / Math.max(1, speed)));
+    const t = setTimeout(() => {
+      simContinueRef.current = null;
+      go();
+    }, Math.round(700 / Math.max(1, speed)));
     return () => clearTimeout(t);
   }, [queue, pause, phase, speed]);
 
@@ -2388,7 +2408,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const label = kind === "penalty" ? "penalty" : "free kick";
       const scored = rng() < (kind === "penalty" ? 0.76 : 0.09);
       if (scored) {
-        st.userScore += 1;
+        // resolveScenario (below) is the one place that increments the
+        // score for a "goal" result — this used to also do it here, which
+        // counted a handed-over set piece twice on the board while only
+        // ever pushing the one event, leaving the scoreline a goal ahead
+        // of the commentary and the results page for good.
         handedOver.push({ minute: st.minute, text: `⚽ Your side score the ${label}!`, isGoal: true, teammateGoal: true });
       } else {
         handedOver.push({ minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });

@@ -476,7 +476,11 @@ export function advanceTo(
       const inBox = step.request.zone === "box";
       const scored = rng() < (inBox ? CONVERT_BOX : CONVERT_DEEP);
       if (scored) {
-        state.userScore += 1;
+        // resolveScenario (below) is the one place that increments the
+        // score for a "goal" result — this used to also do it here, so a
+        // handed-over chance counted twice on the board but only ever
+        // pushed the one event, leaving the scoreline a goal ahead of the
+        // commentary and the results page for good.
         events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true });
       }
       resolveScenario(state, scored ? "goal" : "saved");

@@ -481,7 +481,8 @@ export function advanceTo(
       const inBox = step.request.zone === "box";
       const scored = rng() < (inBox ? CONVERT_BOX : CONVERT_DEEP);
       if (scored) {
-        state.userScore += 1;
+        // resolveScenario (below) owns the score increment for "goal" —
+        // see hiddenMatch.ts for the full story on why this must not also.
         events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true });
       }
       resolveScenario(state, scored ? "goal" : "saved");
