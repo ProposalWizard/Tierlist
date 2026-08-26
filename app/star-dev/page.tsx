@@ -21,8 +21,10 @@ import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
+import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
+import { CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, OTHER_CLUBS, PROMOTION_POOL_CLUBS } from "@/lib/star/clubs";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -47,6 +49,8 @@ import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
+import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
+import DevSkipPanel from "@/components/star/DevSkipPanel";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -54,6 +58,24 @@ import Casino from "@/components/star/Casino";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
+
+/**
+ * Every club this career could plausibly trade with beyond its own division —
+ * Champions League, Europa League, and the "Other"/promotion-pool clubs the
+ * Lineups screen already offers — minus whichever of them happen to also be
+ * in the player's own division (Arsenal is both a Premier League club and a
+ * Champions League one; fetching and tracking it twice would be pointless
+ * and would let it silently diverge between the two). See
+ * lib/star/leagueTransfers.ts's runInternationalWindow for what actually
+ * reads this list.
+ */
+function externalClubsFor(domesticClubs: string[]): string[] {
+  const domestic = new Set(domesticClubs);
+  const world = new Set([
+    ...CHAMPIONS_LEAGUE_CLUBS, ...EUROPA_LEAGUE_CLUBS, ...OTHER_CLUBS, ...PROMOTION_POOL_CLUBS,
+  ]);
+  return Array.from(world).filter(c => !domestic.has(c));
+}
 
 export default function StarDevPage() {
   const [career, setCareer] = useState<CareerState | null>(null);
@@ -140,6 +162,13 @@ export default function StarDevPage() {
           const leagueSquads = mergeLeagueSquadStats(fresh, c.leagueSquads ?? []);
           return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
         });
+      });
+    }
+
+    // ── …and the wider world, for an existing career that predates it ──
+    if (!(saved.externalSquads ?? []).length) {
+      fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((externalSquads) => {
+        setCareer(c => (c && !(c.externalSquads ?? []).length ? { ...c, externalSquads } : c));
       });
     }
 
@@ -279,6 +308,12 @@ export default function StarDevPage() {
     // lib/star/leagueSquads.ts's fetchFreeAgents.
     fetchFreeAgents().then((freeAgents) => {
       setCareer(c => (c ? { ...c, freeAgents } : c));
+    });
+    // ── …and the wider world, for the rare transfer that crosses out of the
+    // division entirely — see lib/star/leagueTransfers.ts's
+    // runInternationalWindow. ──
+    fetchLeagueSquads(externalClubsFor(clubs)).then((externalSquads) => {
+      setCareer(c => (c ? { ...c, externalSquads } : c));
     });
   }, []);
 
@@ -500,6 +535,22 @@ export default function StarDevPage() {
         mulberry32(from.season * 613 + from.week * 29),
       );
       if (q) { setPressQuestion(q); setPhase("press"); return; }
+    }
+
+    // A transfer window just closed — the whole division's business, all at
+    // once, exactly the "Deadline Day" moment the real calendar builds
+    // toward. `lastTransferWindowKey` moves the instant creditMatchResult
+    // runs a window (see careerFlow.ts); this only checks whether that key
+    // has actually been SHOWN yet, so it fires exactly once per window
+    // regardless of which match happened to be the one that closed it, and
+    // survives a refresh mid-flow instead of depending on this render still
+    // remembering "a window just closed". A window that never ran at all
+    // (season 1's summer, deliberately skipped so the hand-curated starting
+    // rosters aren't immediately overwritten) leaves both fields seeded to
+    // the same value in makeInitialCareer, so there is nothing here to show.
+    if (from.lastTransferWindowKey && from.lastTransferWindowKey !== from.deadlineDayShownFor) {
+      setPhase("deadline-day");
+      return;
     }
 
     // The match just played was a knockout tie — domestic cup or European —
@@ -822,6 +873,18 @@ export default function StarDevPage() {
     rollOverSeason(career, wonBallonDor);
   }, [career, wonBallonDor, rollOverSeason]);
 
+  // Testing tool only — see lib/star/devSkip.ts. Runs the fast-forward and
+  // drops the result straight on the dashboard; a season boundary crossed
+  // along the way is resolved silently by skipTo itself, so there is never a
+  // ballon-dor/ladder/contract screen to route through here.
+  const handleDevSkip = useCallback((target: SkipTarget) => {
+    if (!career) return;
+    const { career: after } = skipTo(career, target);
+    setCareer(after);
+    setActiveNav(null);
+    setPhase("dashboard");
+  }, [career]);
+
   const handleFullReset = () => {
     if (career?.retired || confirm("Delete this career and start over?")) {
       clearCareer();
@@ -1079,6 +1142,22 @@ export default function StarDevPage() {
         onContinue={() => {
           setPendingDraw(null);
           continueAfterMatch(career, false, true);
+        }}
+      />
+    );
+  }
+
+  if (phase === "deadline-day") {
+    return (
+      <DeadlineDayRoundup
+        career={career}
+        onContinue={() => {
+          // Marked seen on the object handed straight back into the chain —
+          // not two state writes — so a resumed continueAfterMatch reads the
+          // update immediately instead of racing the next render.
+          const next = { ...career, deadlineDayShownFor: career.lastTransferWindowKey };
+          setCareer(next);
+          continueAfterMatch(next, false, true);
         }}
       />
     );
@@ -1386,6 +1465,7 @@ export default function StarDevPage() {
           onChange={setPlayAs}
         />
       )}
+      {phase === "dashboard" && <DevSkipPanel career={career} onSkip={handleDevSkip} />}
       {phase === "dashboard" && (
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-center">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Start over</div>

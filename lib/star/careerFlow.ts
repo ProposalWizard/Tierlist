@@ -29,7 +29,7 @@ import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
-import { runTransferWindow, returnLoansHome } from "./leagueTransfers";
+import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
@@ -103,6 +103,21 @@ export function makeInitialCareer(
     caps: 0,
     internationalGoals: 0,
     knockoutMessage: null,
+    // Requested directly: the season's rosters are already hand-curated in
+    // the database, so the league AI transfer engine's own first pass —
+    // which runs automatically the moment the season's real-world calendar
+    // date first lands in a window, not on any deliberate "pre-season"
+    // trigger — would immediately rebuild every club's squad on top of that
+    // curation before the player has even finished their first match (the
+    // season always opens in mid-August, and week 2 already reads as the
+    // summer window). Seeding this as already-run for season 1's summer
+    // leaves every later window untouched: season 1's January mismatches
+    // this key and fires normally, and every season after this one builds
+    // its own fresh "<season>-summer"/"<season>-january" key from scratch.
+    lastTransferWindowKey: "1-summer",
+    // Matches the seed above — a window that never ran has nothing to show
+    // a round-up for.
+    deadlineDayShownFor: "1-summer",
   };
   state.squadNumber = assignSquadNumber(state, player.club);
   state.manager = makeManager(state, player.club, 1);
@@ -496,31 +511,50 @@ export function creditMatchResult(
 
   // ── The rest of the division does its business ──
   //
-  // Fires on the WEEK A WINDOW OPENS, not every week within one — a window
-  // decides its business once, the moment it opens, rather than trickling
-  // signings out day by day. `lastTransferWindowKey` (not just comparing
-  // `career.week` to `next.week`) is what actually makes this safe against a
-  // replay: the exact match re-credited hands `creditMatchResult` the same
-  // `career.week` both times, so a week-to-week comparison alone would open
-  // the window twice. The key instead asks "have I already run THIS window",
-  // which stays answered correctly no matter how many times this one match
-  // gets replayed.
-  if (next.leagueSquads?.length) {
-    const openedWindow = transferWindowFor(next.player.startYear, next.season, next.week, divisionOf(next));
-    if (openedWindow) {
-      const key = `${next.season}-${openedWindow}`;
-      if (career.lastTransferWindowKey !== key) {
-        const rng = mulberry32(next.season * 100003 + next.week * 37);
-        const { career: afterWindow, moves, loans } = runTransferWindow(next, openedWindow, rng);
-        Object.assign(next, afterWindow);
-        next.leagueTransferNews = moves;
-        next.leagueLoanNews = loans;
-        next.lastTransferWindowKey = key;
-      }
-    }
-  }
+  // Fires on the WEEK A WINDOW OPENS, not every week within one — see
+  // runDueTransferWindow for why the key rather than the week comparison is
+  // what makes this safe against a replay.
+  Object.assign(next, runDueTransferWindow(next));
 
   return { ...applyAchievements(next), potmAwarded: potmJustAwarded ?? undefined };
+}
+
+/**
+ * Run whichever transfer window is due, if it hasn't already run.
+ *
+ * Extracted out of creditMatchResult so the dev "skip ahead" tool
+ * (devSkip.ts) can advance a career through real weeks without ever showing
+ * a match, while still opening every window along the way exactly the way a
+ * played-through career would — same domestic engine, same international
+ * pass, same `lastTransferWindowKey` de-dupe. A no-op if nothing is due, or
+ * if this window already ran (comparing `next.lastTransferWindowKey`, which
+ * at the call site in creditMatchResult is still the pre-match career's key —
+ * nothing between there and here touches it).
+ */
+export function runDueTransferWindow(next: CareerState): CareerState {
+  if (!next.leagueSquads?.length) return next;
+  const openedWindow = transferWindowFor(next.player.startYear, next.season, next.week, divisionOf(next));
+  if (!openedWindow) return next;
+  const key = `${next.season}-${openedWindow}`;
+  if (next.lastTransferWindowKey === key) return next;
+
+  const rng = mulberry32(next.season * 100003 + next.week * 37);
+  const { career: afterWindow, moves, loans } = runTransferWindow(next, openedWindow, rng);
+  // A handful of clubs this career has real data for but does not play in
+  // its own division — Champions League, Europa League, the rest — get
+  // their own small, separate shot at the same window: see the file header
+  // in leagueTransfers.ts for why this runs apart from the closed-system
+  // engine above rather than folding into it. A different seed from the
+  // domestic window's own, so the two draws are not correlated with each
+  // other.
+  const worldRng = mulberry32(next.season * 100003 + next.week * 37 + 7);
+  const { career: afterWorld, moves: worldMoves } = runInternationalWindow(afterWindow, openedWindow, worldRng);
+  return {
+    ...afterWorld,
+    leagueTransferNews: worldMoves.length ? [...moves, ...worldMoves] : moves,
+    leagueLoanNews: loans,
+    lastTransferWindowKey: key,
+  };
 }
 
 // After the final fixture: award the league title if the user finished top.
@@ -868,6 +902,26 @@ export function simulateMissedFixture(
       : career.horse,
   };
   next.status = selectionFor(next).status;
+
+  // ── The play-offs ──
+  //
+  // The same seed/settle pair creditMatchResult runs — a Championship run
+  // does not pause just because you were left out of a leg or the deciding
+  // round of the league itself.
+  if (fixture.kind === "playoff") {
+    const settled = settlePlayOffFixture(career, fixture, userScore, oppScore);
+    if (settled) {
+      next.playOffState = settled.state;
+      if (settled.fixtures.length) next.fixtures = [...next.fixtures, ...settled.fixtures];
+      next.knockoutMessage = settled.message;
+    }
+  } else if (kind === "league" && leagueSeasonComplete(next, fixture.week)) {
+    const seeded = seedPlayOffs(next);
+    if (seeded) {
+      next.playOffState = seeded.state;
+      next.fixtures = [...next.fixtures, ...seeded.fixtures];
+    }
+  }
 
   const { career: withAchievements, newlyUnlocked } = applyAchievements(next);
   return { career: withAchievements, newlyUnlocked, homeScore: userScore, awayScore: oppScore };
