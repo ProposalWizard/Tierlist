@@ -23,6 +23,7 @@ import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
+import { CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, OTHER_CLUBS, PROMOTION_POOL_CLUBS } from "@/lib/star/clubs";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
@@ -55,6 +56,24 @@ import Casino from "@/components/star/Casino";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
+
+/**
+ * Every club this career could plausibly trade with beyond its own division —
+ * Champions League, Europa League, and the "Other"/promotion-pool clubs the
+ * Lineups screen already offers — minus whichever of them happen to also be
+ * in the player's own division (Arsenal is both a Premier League club and a
+ * Champions League one; fetching and tracking it twice would be pointless
+ * and would let it silently diverge between the two). See
+ * lib/star/leagueTransfers.ts's runInternationalWindow for what actually
+ * reads this list.
+ */
+function externalClubsFor(domesticClubs: string[]): string[] {
+  const domestic = new Set(domesticClubs);
+  const world = new Set([
+    ...CHAMPIONS_LEAGUE_CLUBS, ...EUROPA_LEAGUE_CLUBS, ...OTHER_CLUBS, ...PROMOTION_POOL_CLUBS,
+  ]);
+  return Array.from(world).filter(c => !domestic.has(c));
+}
 
 export default function StarDevPage() {
   const [career, setCareer] = useState<CareerState | null>(null);
@@ -141,6 +160,13 @@ export default function StarDevPage() {
           const leagueSquads = mergeLeagueSquadStats(fresh, c.leagueSquads ?? []);
           return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
         });
+      });
+    }
+
+    // ── …and the wider world, for an existing career that predates it ──
+    if (!(saved.externalSquads ?? []).length) {
+      fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((externalSquads) => {
+        setCareer(c => (c && !(c.externalSquads ?? []).length ? { ...c, externalSquads } : c));
       });
     }
 
@@ -280,6 +306,12 @@ export default function StarDevPage() {
     // lib/star/leagueSquads.ts's fetchFreeAgents.
     fetchFreeAgents().then((freeAgents) => {
       setCareer(c => (c ? { ...c, freeAgents } : c));
+    });
+    // ── …and the wider world, for the rare transfer that crosses out of the
+    // division entirely — see lib/star/leagueTransfers.ts's
+    // runInternationalWindow. ──
+    fetchLeagueSquads(externalClubsFor(clubs)).then((externalSquads) => {
+      setCareer(c => (c ? { ...c, externalSquads } : c));
     });
   }, []);
 

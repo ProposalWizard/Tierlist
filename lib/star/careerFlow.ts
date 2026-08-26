@@ -29,7 +29,7 @@ import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
-import { runTransferWindow, returnLoansHome } from "./leagueTransfers";
+import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
@@ -528,7 +528,17 @@ export function creditMatchResult(
         const rng = mulberry32(next.season * 100003 + next.week * 37);
         const { career: afterWindow, moves, loans } = runTransferWindow(next, openedWindow, rng);
         Object.assign(next, afterWindow);
-        next.leagueTransferNews = moves;
+        // A handful of clubs this career has real data for but does not play
+        // in its own division — Champions League, Europa League, the rest —
+        // get their own small, separate shot at the same window: see the file
+        // header in leagueTransfers.ts for why this runs apart from the
+        // closed-system engine above rather than folding into it. A
+        // different seed from the domestic window's own, so the two draws
+        // are not correlated with each other.
+        const worldRng = mulberry32(next.season * 100003 + next.week * 37 + 7);
+        const { career: afterWorld, moves: worldMoves } = runInternationalWindow(afterWindow, openedWindow, worldRng);
+        Object.assign(next, afterWorld);
+        next.leagueTransferNews = worldMoves.length ? [...moves, ...worldMoves] : moves;
         next.leagueLoanNews = loans;
         next.lastTransferWindowKey = key;
       }

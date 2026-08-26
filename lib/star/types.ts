@@ -454,6 +454,19 @@ export interface CareerState {
    * career; refreshed the same way `leagueSquads` is.
    */
   freeAgents?: LeaguePlayer[];
+  /**
+   * Every club this career has real squad data for but does NOT play in its
+   * own division — Champions League, Europa League, and the "Other"/
+   * promotion-pool tabs the Lineups screen already offers (see
+   * lib/star/clubs.ts). Requested directly: transfer activity only ever
+   * touched the player's own twenty clubs plus free agents, so a Real Madrid
+   * or a Barcelona could never sell to — or buy from — the division at all.
+   * `runInternationalWindow` (leagueTransfers.ts) is the only thing that
+   * reads or writes this; absent on a career created before it existed, or
+   * one whose fetch simply hasn't landed yet, in which case that pass is a
+   * no-op rather than an error.
+   */
+  externalSquads?: LeagueSquad[];
   /** Things you can still do before the next match. Refills every week. */
   weekActions?: number;
   /** Every move you made, for the legacy screen. */

@@ -701,6 +701,181 @@ export function runTransferWindow(
   };
 }
 
+// ── The wider world ──────────────────────────────────────────────────────────
+//
+// Requested directly: "I noticed there is only transfer activity within the
+// Premier League and free agents... can you open it up to all of the other
+// clubs we have available so that we might see a big Premier League [club]
+// sign a big player from Real Madrid or Barcelona." Confirmed true — the
+// closed-system engine above only ever knows about the twenty clubs of the
+// player's own division; every European giant this game has real data for
+// (career.externalSquads — Champions League/Europa League/Other, see
+// lib/star/clubs.ts) sat there unused by anything.
+//
+// Deliberately a SEPARATE pass from runTransferWindow above rather than
+// folding sixty extra clubs into its own matching loop: that engine is tuned
+// and tested for a twenty-club division where every signing is somebody
+// else's sale, and a marquee move crossing into it is meant to be the rare
+// exception a whole division's business is not built around — "you MIGHT
+// see" one, not routine cross-continental trading every window. So this
+// keeps its own small budget (at most one or two deals, and most windows
+// have none at all) and reuses the SAME tuned building blocks — clubStrength,
+// reachDown/REACH_UP, positionNeed, sellability, rivalrySellChance, feeFor —
+// rather than inventing separate rules a big club buying abroad would somehow
+// follow differently from one buying at home.
+//
+// Permanent sales only, deliberately — no loans across this boundary. A loan
+// comes home automatically at the season's end (returnLoansHome), which
+// depends on the parent club still being one this career tracks a pool for
+// every season; a foreign loanee's parent club sits in `externalSquads`,
+// which nothing currently guarantees stays fetched and correctly shaped
+// forever the way `leagueSquads` does. A permanent move has no such promise
+// to keep.
+
+const INTERNATIONAL_STAR_THRESHOLD = 78; // a marquee window, not a scouting trawl through reserves
+const INTERNATIONAL_WINDOW_CHANCE: Record<"summer" | "january", number> = { summer: 0.4, january: 0.15 };
+const INTERNATIONAL_SECOND_DEAL_CHANCE = 0.25; // summer only — most windows that happen at all still produce just one
+
+/** One club's pool, restated the same way runTransferWindow reads its own —
+ *  own strength, own formation-based need, own eligibility to sell. */
+interface WorldClub { club: string; pool: Candidate[]; strength: number }
+
+function worldClubsFrom(squads: LeagueSquad[]): WorldClub[] {
+  return squads.map(sq => {
+    const pool = sq.players.map(p => fromLeaguePlayer(p, sq.club));
+    return { club: sq.club, pool, strength: clubStrength(sq.club, pool) };
+  });
+}
+
+/** Every plausible seller across a set of clubs, using the exact same
+ *  sellability gate runTransferWindow applies to its own twenty. */
+function listedAcross(clubs: WorldClub[], topStrength: number, window: TransferWindow, rng: () => number): Listed[] {
+  const listed: Listed[] = [];
+  for (const { club, pool, strength } of clubs) {
+    const formation = formationForClub(club);
+    const xi = new Set(autoPick(pool as Pickable[], formation).filter((id): id is string => !!id));
+    for (const c of pool) {
+      if (c.overall < INTERNATIONAL_STAR_THRESHOLD) continue;
+      const l = sellability(c, xi.has(c.id), strength, topStrength, window, rng, pool.length);
+      if (l) listed.push({ ...l, loan: false });
+    }
+  }
+  return listed;
+}
+
+/** The best-fitting buyer for one listed man among a set of clubs — the same
+ *  scoring runTransferWindow's own matching loop uses. */
+function bestBuyerAmong(seller: Candidate, buyers: WorldClub[], rng: () => number): string | null {
+  let bestClub: string | null = null, bestScore = -Infinity;
+  for (const { club, pool, strength: buyerStrength } of buyers) {
+    if (club === seller.club) continue;
+    if (rng() > rivalrySellChance(seller.club, club, false)) continue;
+    const gap = buyerStrength - seller.overall;
+    if (gap < -reachDown(buyerStrength) || gap > REACH_UP) continue;
+    const formation = formationForClub(club);
+    const need = Math.max(...seller.positions.map(r => positionNeed(r, club, pool, formation, pool.length)));
+    if (need <= 0.12) continue;
+    const score = need * 10 - Math.abs(gap) * 0.15 + rng() * 0.6;
+    if (score > bestScore) { bestScore = score; bestClub = club; }
+  }
+  return bestClub;
+}
+
+/**
+ * One or two marquee deals a window, crossing between the player's own
+ * division and the wider world of clubs this career has real data for but
+ * has never traded with. Run alongside runTransferWindow (see the hook in
+ * careerFlow.ts), on the career IT already returned, so a marquee arrival
+ * competes for a genuinely up-to-date read of domestic need rather than a
+ * snapshot from before that window's own domestic business happened.
+ */
+export function runInternationalWindow(
+  career: CareerState, window: TransferWindow, rng: () => number,
+): { career: CareerState; moves: TransferMove[] } {
+  if (!window || !career.externalSquads?.length || !career.leagueSquads?.length) {
+    return { career, moves: [] };
+  }
+  if (rng() >= INTERNATIONAL_WINDOW_CHANCE[window]) return { career, moves: [] };
+  const deals = window === "summer" && rng() < INTERNATIONAL_SECOND_DEAL_CHANCE ? 2 : 1;
+
+  const you = career.player.club;
+  const domesticPool = career.squad.map(p => fromSquadPlayer(p, you));
+  const domestic: WorldClub[] = [
+    { club: you, pool: domesticPool, strength: clubStrength(you, domesticPool) },
+    ...worldClubsFrom(career.leagueSquads.filter(sq => sq.club !== you)),
+  ];
+  const external = worldClubsFrom(career.externalSquads);
+  const topStrength = Math.max(...domestic.map(c => c.strength), ...external.map(c => c.strength));
+
+  const moves: TransferMove[] = [];
+  for (let i = 0; i < deals; i++) {
+    // Weighted toward the headline direction, but a domestic star leaving for
+    // the wider world is exactly as real a piece of transfer news.
+    const incoming = rng() < 0.6;
+    const sellSide = incoming ? external : domestic;
+    const buySide = incoming ? domestic : external;
+
+    const candidates = listedAcross(sellSide, topStrength, window, rng);
+    if (!candidates.length) continue;
+
+    let chosen: { seller: Candidate; sellerClub: WorldClub; buyerClub: string } | null = null;
+    let chosenScore = -Infinity;
+    for (const { candidate: seller } of candidates) {
+      const sellerClub = sellSide.find(c => c.club === seller.club)!;
+      const buyerClub = bestBuyerAmong(seller, buySide, rng);
+      if (!buyerClub) continue;
+      // bestBuyerAmong already picked ITS best buyer for this seller; picking
+      // the best SELLER across all candidates too (rather than the first one
+      // that matches at all) is what makes this "the one star who actually
+      // moves this window" instead of whichever happened to be listed first.
+      const buyer = buySide.find(c => c.club === buyerClub)!;
+      const score = seller.overall + buyer.strength * 0.2 + rng() * 4;
+      if (score > chosenScore) { chosenScore = score; chosen = { seller, sellerClub, buyerClub }; }
+    }
+    if (!chosen) continue;
+
+    const { seller, sellerClub, buyerClub } = chosen;
+    const idx = sellerClub.pool.findIndex(p => p.id === seller.id);
+    if (idx < 0) continue; // already moved by an earlier deal this same pass
+    const [player] = sellerClub.pool.splice(idx, 1);
+    player.club = buyerClub;
+    const buyer = buySide.find(c => c.club === buyerClub)!;
+    buyer.pool.push(player);
+    sellerClub.strength = clubStrength(sellerClub.club, sellerClub.pool);
+    buyer.strength = clubStrength(buyer.club, buyer.pool);
+
+    moves.push({
+      player: player.name, from: sellerClub.club, to: buyerClub,
+      overall: player.overall, fee: feeFor(player.overall), unhappy: false,
+    });
+  }
+
+  if (!moves.length) return { career, moves: [] };
+
+  const nextSquad = domestic.find(c => c.club === you)!.pool.map(toSquadPlayer);
+  const nextLeagueSquads = career.leagueSquads.map(sq => {
+    const c = domestic.find(d => d.club === sq.club);
+    return c ? { club: sq.club, players: c.pool.map(toLeaguePlayer) } : sq;
+  });
+  const domesticStrengthByClub = new Map(domestic.map(c => [c.club, c.strength]));
+  const nextLeague = career.league.map(t => {
+    const s = domesticStrengthByClub.get(t.name);
+    return s === undefined ? t : { ...t, strength: s };
+  });
+  const nextExternalSquads = career.externalSquads.map(sq => {
+    const c = external.find(e => e.club === sq.club);
+    return c ? { club: sq.club, players: c.pool.map(toLeaguePlayer) } : sq;
+  });
+
+  return {
+    career: {
+      ...career, squad: nextSquad, leagueSquads: nextLeagueSquads, league: nextLeague,
+      externalSquads: nextExternalSquads,
+    },
+    moves,
+  };
+}
+
 /**
  * Bring everybody due home.
  *
