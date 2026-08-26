@@ -123,6 +123,87 @@ function fromLeagueSquad(squad: LeagueSquad | undefined): Candidate[] {
   }));
 }
 
+// ── Opponent squad rotation ─────────────────────────────────────────────────
+//
+// Reported directly: an opponent's eleven never varies — the same club always
+// hands you the exact same autoPick side, every single time you play them,
+// because autoPick is a pure function of an unchanging pool. Real squads
+// rotate a little, more so in the early rounds of a cup nobody is treating as
+// the priority. This is not meant to be noticeable most weeks — "rare... not
+// every game" was said explicitly — so the odds below stay low outside a cup,
+// and even inside one this changes at most a couple of shirts, never the
+// team.
+
+export interface RotationPlan {
+  rng: () => number;
+  /** 0-1 chance THIS match sees any rotation at all. */
+  chance: number;
+}
+
+/** How likely a given fixture is to see the opponent rotate at all. */
+function rotationChanceFor(fixture: Fixture): number {
+  const isDomesticCup = fixture.competition === "FA Cup" || fixture.competition === "League Cup";
+  const isEarlyRound = fixture.round === "Round of 32" || fixture.round === "Round of 16";
+  if (isDomesticCup && isEarlyRound) return 0.28;
+  if (isDomesticCup) return 0.14; // still a cup, but the rounds a club actually wants to win
+  if (!fixture.kind || fixture.kind === "league") return 0.06;
+  return 0.03; // Europe, the play-offs, internationals — full strength assumed
+}
+
+/** A seed stable for this exact fixture, so the same match always rotates
+ *  (or doesn't) the same way — asked twice, it should not answer twice. */
+function rotationSeedFor(club: string, fixture: Fixture, season: number): number {
+  const key = `${club}|${fixture.opponent}|${fixture.week}|${fixture.kind ?? "league"}|${fixture.round ?? ""}|${season}`;
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+/**
+ * Swap in, at most, a couple of shirts — never the team. Draws the chance to
+ * rotate at all first, so most matches leave `picked` untouched exactly as
+ * `autoPick` returned it; only on the rarer matches that do rotate does it
+ * pick 1 (usually) or 2 (occasionally) filled slots and hand each to a
+ * same-position squad player instead of the incumbent, for this match only —
+ * nothing here is written back to the squad or the pool.
+ */
+function applyRotation(
+  picked: (string | null)[],
+  pool: Candidate[],
+  formation: Formation,
+  plan: RotationPlan,
+): (string | null)[] {
+  if (plan.rng() >= plan.chance) return picked;
+
+  const swapCount = plan.rng() < 0.8 ? 1 : 2;
+  const result = [...picked];
+  const rotatedSlots = new Set<number>();
+
+  for (let s = 0; s < swapCount; s++) {
+    const slotOptions = formation.slots
+      .map((_, i) => i)
+      .filter(i => result[i] && !rotatedSlots.has(i));
+    if (slotOptions.length === 0) break;
+    const slotIdx = slotOptions[Math.floor(plan.rng() * slotOptions.length)];
+    const role = formation.slots[slotIdx].role;
+    const inXI = new Set(result.filter((id): id is string => !!id));
+
+    const alternates = pool
+      .filter(p => p.position === role && !inXI.has(p.id))
+      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+    if (alternates.length === 0) continue;
+
+    // The next best for the role, not always THE best — a rotation is a
+    // squad player getting a game, not a guaranteed upgrade.
+    const shortlist = alternates.slice(0, Math.min(3, alternates.length));
+    const chosen = shortlist[Math.floor(plan.rng() * shortlist.length)];
+    result[slotIdx] = chosen.id;
+    rotatedSlots.add(slotIdx);
+  }
+
+  return result;
+}
+
 /**
  * A side you picked yourself, if you picked one.
  *
@@ -181,6 +262,7 @@ function build(
   yours: boolean,
   savedBenchIds?: string[],
   saved?: SavedXI,
+  rotation?: RotationPlan,
 ): TeamSheet {
   const byId = new Map(pool.map(p => [p.id, p]));
   const formation = saved?.formation ?? formationForClub(club);
@@ -188,6 +270,8 @@ function build(
   // carried through as a name the sheet cannot resolve.
   const picked = saved
     ? fillGaps(pool, formation, formation.slots.map((_, i) => resolveSavedId(byId, saved.xi[i])))
+    : rotation
+    ? applyRotation(autoPick(pool, formation), pool, formation, rotation)
     : autoPick(pool, formation);
 
   const xi: SheetPlayer[] = [];
@@ -351,7 +435,13 @@ export function matchdayFor(
   if (starting) ours = forceIntoXI(ours, you);
 
   const oppSquad = (career.leagueSquads ?? []).find(s => s.club === theirs);
-  const them = build(theirs, fromLeagueSquad(oppSquad), false);
+  // Only the opponent rotates — your own side is either what you saved or
+  // your club's honest best XI, never something the game changes on you.
+  const rotation: RotationPlan = {
+    rng: mulberry32(rotationSeedFor(theirs, fixture, career.season)),
+    chance: rotationChanceFor(fixture),
+  };
+  const them = build(theirs, fromLeagueSquad(oppSquad), false, undefined, undefined, rotation);
 
   return fixture.home
     ? { home: ours, away: them, fixture }

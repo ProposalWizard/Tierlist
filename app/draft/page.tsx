@@ -859,6 +859,48 @@ export default function DraftPage() {
     })();
   }, []);
 
+  // The lobby itself detected that the server's own row for this player
+  // still says "drafting" even though squadSubmitted is true — a submission
+  // that never actually landed, or a season rollover that reset an already-
+  // "ready" row out from under a client that already told the player they
+  // were done. `players` still holds whatever was last arranged (that's what
+  // squadSubmitted being true actually means), so simply re-firing the same
+  // submission is the fix — no new data is needed, only another attempt.
+  const handleNeedsResubmit = useCallback(() => {
+    if (!roomCode || players.length === 0) return;
+    submitReadyWithRetry(roomCode, players);
+  }, [roomCode, players, submitReadyWithRetry]);
+
+  // Advancing the room was previously fire-and-forget: `await fetch(...)`
+  // with no response check at all. A failure here (a dropped connection, a
+  // 5xx, the host's session having expired) left the room sitting on
+  // "complete" forever while the host's own client behaved as though it had
+  // advanced — everyone else's ready submissions then 409-loop against a
+  // room that will never move, for up to thirty minutes, and give up
+  // silently. Retried a few times before giving up out loud instead, so the
+  // host at least knows to reload rather than the room quietly wedging.
+  const advanceSeasonWithRetry = useCallback(async (code: string, nextSeasonNumber: number) => {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const res = await fetch(`/api/draft/rooms/${code}/next-season`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nextSeasonNumber }),
+        });
+        // ok: advanced. 403/409: won't resolve by retrying — someone else
+        // already advanced it, or this client is not (or no longer) host.
+        // Either way, stop here and let the caller's own ready-submission
+        // retry loop (which already tolerates the room not being ready yet)
+        // sort out what actually happened.
+        if (res.ok || res.status === 403 || res.status === 409) return;
+      } catch {
+        // network blip — fall through to the backoff and try again
+      }
+      if (attempt < 3) await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+    }
+    alert("Couldn't start the next season — check your connection and reload the page to try again.");
+  }, []);
+
   const handleManageConfirm = useCallback(async (arranged: DraftPlayer[], speed?: 0.5 | 1 | 1.5) => {
     setPlayers(arranged);
     if (!roomCode && speed !== undefined) {
@@ -867,11 +909,7 @@ export default function DraftPage() {
     if (roomCode) {
       // Multiplayer: if this is a subsequent season, advance the room first (idempotent)
       if (currentSeason > 1 && isHost) {
-        await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nextSeasonNumber: currentSeason }),
-        });
+        await advanceSeasonWithRetry(roomCode, currentSeason);
       }
       // Mark submitted before changing phase so the remounted lobby's
       // gameStarted effect sees squadSubmitted=true and doesn't re-trigger
@@ -883,7 +921,7 @@ export default function DraftPage() {
       setPhase("result");
     }
     scrollTop();
-  }, [roomCode, currentSeason, isHost, scrollTop, submitReadyWithRetry]);
+  }, [roomCode, currentSeason, isHost, scrollTop, submitReadyWithRetry, advanceSeasonWithRetry]);
 
   const handleNewRun = useCallback(() => {
     readyRetryAbortRef.current?.abort();
@@ -1135,11 +1173,7 @@ export default function DraftPage() {
       if (currentSeason > 1 && isHost) {
         // The host advances the room to the new season (resets everyone to
         // "drafting"). Only after that can anyone's ready be accepted.
-        await fetch(`/api/draft/rooms/${roomCode}/next-season`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nextSeasonNumber: currentSeason }),
-        });
+        await advanceSeasonWithRetry(roomCode, currentSeason);
       }
       // Mark submitted before changing phase so the remounted lobby's
       // gameStarted effect sees squadSubmitted=true and doesn't re-trigger
@@ -1151,7 +1185,7 @@ export default function DraftPage() {
       setPhase("result");
     }
     scrollTop();
-  }, [roomCode, currentSeason, isHost, scrollTop, submitReadyWithRetry]);
+  }, [roomCode, currentSeason, isHost, scrollTop, submitReadyWithRetry, advanceSeasonWithRetry]);
 
   const handleSkipToTest = useCallback(async () => {
     const defaultSettings: DraftSettings = {
@@ -1371,6 +1405,7 @@ export default function DraftPage() {
           onSettingsSync={handleSettingsSync}
           onHostChange={setIsHost}
           defaultTeamName={teamName}
+          onNeedsResubmit={handleNeedsResubmit}
         />
       )}
       {phase === "american-draft" && roomCode && userId && (

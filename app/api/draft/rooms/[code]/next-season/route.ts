@@ -137,9 +137,26 @@ export async function POST(
   }
 
   // Identify relegated players (finished 18th or worse) before clearing the column.
-  const relegatedIds = (allPlayers ?? [])
+  //
+  // A prior call that reached the reset write (below) but failed before this
+  // list ever got acted on already nulled actual_finish for everyone,
+  // including the relegated — a bare retry recomputes this same list from
+  // that now-null column and finds nobody, so the player who should have
+  // been marked "out" instead sits at "drafting" forever: not relegated
+  // (that write never ran), but with no season left to play either, and no
+  // route back to a lobby that will ever consider them ready. That is
+  // "keeps saying the player is drafting, can't advance the season" exactly.
+  // Snapshotting the computed list into settings (write #1, right after
+  // this) means a retry that finds the column already wiped can recover the
+  // SAME ids instead of recomputing zero.
+  const freshlyRelegatedIds = (allPlayers ?? [])
     .filter(p => typeof p.actual_finish === "number" && p.actual_finish >= 18)
     .map(p => p.id as string);
+  const stashedRelegatedIds = (room.settings as Record<string, unknown> | null)?.pendingRelegatedIds;
+  const pendingRelegatedIds = Array.isArray(stashedRelegatedIds)
+    ? stashedRelegatedIds.filter((id): id is string => typeof id === "string")
+    : [];
+  const relegatedIds = freshlyRelegatedIds.length > 0 ? freshlyRelegatedIds : pendingRelegatedIds;
 
   // Snapshot current season results into room.settings.allPlayerSeasons BEFORE clearing.
   // This lets late-polling clients (who miss the season_result window due to the race
@@ -170,7 +187,7 @@ export async function POST(
   // room half-advanced.
   const { error: historyErr } = await service
     .from("draft_rooms")
-    .update({ settings: { ...existingSettings, allPlayerSeasons: newHistory, previousCupResults } })
+    .update({ settings: { ...existingSettings, allPlayerSeasons: newHistory, previousCupResults, pendingRelegatedIds: relegatedIds } })
     .eq("id", room.id);
   if (historyErr) {
     return new Response(`Could not save season history: ${historyErr.message}`, { status: 500 });
