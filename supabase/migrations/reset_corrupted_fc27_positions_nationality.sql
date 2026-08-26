@@ -34,9 +34,22 @@ ORDER BY club, name;
 -- Uncomment and run once the list above looks right (a lot of Championship/
 -- smaller-league rows, essentially none from the Premier League — matches
 -- what was already found).
+--
+-- Nulls each field ONLY if that specific field is the one actually bad —
+-- not "null both whenever either matches". The first run of this migration
+-- nulled both together, which was fine at the time because both fields were
+-- wrong on the same rows. Positions have since been fixed while nationality
+-- has not, so a blind "null both" here now would wipe out the now-correct
+-- positions on rows that only still have a bad nationality.
 
 -- UPDATE sofifa_players
--- SET nationality = NULL, positions = NULL
+-- SET
+--   nationality = CASE WHEN nationality = 'United States' THEN NULL ELSE nationality END,
+--   positions = CASE
+--     WHEN positions ~ '(LCM|RCM|LDM|RDM|LAM|RAM|LCB|RCB|LS|RS|LF|RF)(,|$)'
+--       OR array_length(string_to_array(positions, ','), 1) > 4
+--     THEN NULL ELSE positions
+--   END
 -- WHERE fifa_year = 2027
 --   AND (
 --     nationality = 'United States'
