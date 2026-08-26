@@ -7,7 +7,7 @@ import {
 import { mulberry32 } from "@/lib/star/season";
 import {
   CX, POST_L, POST_R, NET_DEPTH, PEN_SPOT_Y, SIX_L, SIX_R, SIX_DEPTH,
-  BOX_L, BOX_R, BOX_DEPTH, BALL_R, GOAL_H,
+  BOX_L, BOX_R, BOX_DEPTH, BALL_R, GOAL_H, ARC_R,
 } from "@/lib/star/pitch";
 import ContactBall from "./ContactBall";
 
@@ -346,10 +346,18 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     ctx.strokeRect(px(SIX_L), py(0), (SIX_R - SIX_L) * sx, SIX_DEPTH * sy);
     ctx.strokeRect(px(BOX_L), py(0), (BOX_R - BOX_L) * sx, BOX_DEPTH * sy);
 
-    // The D.
+    // The D — real IFAB geometry, the same formula CanvasMatch.tsx uses for
+    // a real match: an arc of radius ARC_R (9.15 m) around the spot, clipped
+    // to only the portion beyond the box's own edge (BOX_DEPTH). Ported here
+    // as a fixed pair of angles (0.18π/0.82π) that only APPROXIMATED that —
+    // close enough to look roughly right, wrong enough to read as "not put
+    // on properly" next to the real thing. No `arcAngle` rotation needed
+    // here the way CanvasMatch.tsx has one: this camera always faces the
+    // goal straight on and never turns.
     ctx.strokeStyle = TC.lineFaint;
     ctx.beginPath();
-    ctx.arc(px(CX), py(PEN_SPOT_Y), 9.15 * unit, Math.PI * 0.18, Math.PI * 0.82);
+    const halfD = Math.acos(clamp((BOX_DEPTH - PEN_SPOT_Y) / ARC_R, -1, 1));
+    ctx.arc(px(CX), py(PEN_SPOT_Y), ARC_R * unit, Math.PI / 2 - halfD, Math.PI / 2 + halfD);
     ctx.stroke();
 
     // Penalty spot.

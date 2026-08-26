@@ -222,3 +222,42 @@ export function keeperKit(homeShirt: string, awayShirt: string): Kit {
 export function labelInk(shirt: string): string {
   return hexToHsl(shirt).l > 0.62 ? "#111827" : "#FFFFFF";
 }
+
+function hslToHex({ h, s, l }: Hsl): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x]
+    : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
+ * A club's own colour, readable set directly as TEXT on the dark stadium
+ * panels (the versus screen's header, match graphics) rather than on a
+ * shirt-shaped swatch behind it.
+ *
+ * `labelInk` solves the opposite problem — ink ON a shirt-coloured
+ * background — and is no help here: Newcastle's shirt IS the near-black
+ * that already reads as white-on-black, so using the shirt colour as the
+ * text itself, directly on a near-black panel, made the label essentially
+ * invisible ("dark grey on a black background"). A shirt with real colour
+ * in it just gets lifted to a lightness that reads, hue kept, so it still
+ * feels like that club's own line (Chelsea's blue, Villa's claret) rather
+ * than a generic label. A dark, near-neutral shirt has no real hue worth
+ * lifting — Newcastle's black-with-a-rounding-error is not "this club's
+ * pink" — so it falls back to the trim instead, which is usually the
+ * club's actual second colour (Newcastle's white, exactly what their real
+ * change kit already is), and only to plain light grey if even that is too
+ * dark to read.
+ */
+export function kitLabelOnDark(shirt: string, trim: string): string {
+  const hsl = hexToHsl(shirt);
+  if (hsl.l >= 0.5) return shirt;
+  if (chroma(shirt) >= 0.12) {
+    return hslToHex({ h: hsl.h, s: Math.max(hsl.s, 0.45), l: 0.6 });
+  }
+  const trimHsl = hexToHsl(trim);
+  return trimHsl.l >= 0.5 ? trim : "#E5E7EB";
+}
