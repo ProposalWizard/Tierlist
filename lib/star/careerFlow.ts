@@ -115,6 +115,9 @@ export function makeInitialCareer(
     // this key and fires normally, and every season after this one builds
     // its own fresh "<season>-summer"/"<season>-january" key from scratch.
     lastTransferWindowKey: "1-summer",
+    // Matches the seed above — a window that never ran has nothing to show
+    // a round-up for.
+    deadlineDayShownFor: "1-summer",
   };
   state.squadNumber = assignSquadNumber(state, player.club);
   state.manager = makeManager(state, player.club, 1);

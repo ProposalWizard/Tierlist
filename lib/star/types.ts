@@ -547,6 +547,16 @@ export interface CareerState {
    * original credit did and would open the window twice.
    */
   lastTransferWindowKey?: string;
+  /**
+   * The window key the Deadline Day round-up has already been shown for —
+   * same idea as `lastTransferWindowKey`, kept as its own field rather than
+   * folded into it so "the window ran" and "the player has seen the
+   * round-up for it" can never be conflated. Seeded to match
+   * `lastTransferWindowKey`'s own season-1-summer seed in makeInitialCareer,
+   * so the round-up naturally never fires for a window that itself never
+   * ran — no separate "is this the very first window" check needed.
+   */
+  deadlineDayShownFor?: string;
   /** A farewell match, earned by a long spell at one club. */
   testimonial?: { club: string; season: number; payout: number } | null;
   /**
@@ -592,6 +602,9 @@ export type StarPhase =
   | "legacy"
   | "press"
   | "draw"
+  /** The whole division's business the moment a transfer window closed —
+   *  club by club, incomings and outgoings. See DeadlineDayRoundup. */
+  | "deadline-day"
   /** The opening: one penalty, taken until it goes in. See TrialPenalty. */
   | "trial"
   /** …and what it earns you — the card, then the contract. See TrialReward. */

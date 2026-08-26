@@ -47,6 +47,7 @@ import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
+import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -500,6 +501,22 @@ export default function StarDevPage() {
         mulberry32(from.season * 613 + from.week * 29),
       );
       if (q) { setPressQuestion(q); setPhase("press"); return; }
+    }
+
+    // A transfer window just closed — the whole division's business, all at
+    // once, exactly the "Deadline Day" moment the real calendar builds
+    // toward. `lastTransferWindowKey` moves the instant creditMatchResult
+    // runs a window (see careerFlow.ts); this only checks whether that key
+    // has actually been SHOWN yet, so it fires exactly once per window
+    // regardless of which match happened to be the one that closed it, and
+    // survives a refresh mid-flow instead of depending on this render still
+    // remembering "a window just closed". A window that never ran at all
+    // (season 1's summer, deliberately skipped so the hand-curated starting
+    // rosters aren't immediately overwritten) leaves both fields seeded to
+    // the same value in makeInitialCareer, so there is nothing here to show.
+    if (from.lastTransferWindowKey && from.lastTransferWindowKey !== from.deadlineDayShownFor) {
+      setPhase("deadline-day");
+      return;
     }
 
     // The match just played was a knockout tie — domestic cup or European —
@@ -1079,6 +1096,22 @@ export default function StarDevPage() {
         onContinue={() => {
           setPendingDraw(null);
           continueAfterMatch(career, false, true);
+        }}
+      />
+    );
+  }
+
+  if (phase === "deadline-day") {
+    return (
+      <DeadlineDayRoundup
+        career={career}
+        onContinue={() => {
+          // Marked seen on the object handed straight back into the chain —
+          // not two state writes — so a resumed continueAfterMatch reads the
+          // update immediately instead of racing the next render.
+          const next = { ...career, deadlineDayShownFor: career.lastTransferWindowKey };
+          setCareer(next);
+          continueAfterMatch(next, false, true);
         }}
       />
     );
