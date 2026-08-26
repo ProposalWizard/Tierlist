@@ -394,6 +394,77 @@ class FaceGuard:
 # ── Reading one player's page ───────────────────────────────────────────────
 
 
+def _ancestor_chain(el, levels: int = 3) -> str:
+    """A short breadcrumb of tag+class for an element's nearest ancestors —
+    enough to see what CONTAINER an element sits inside without printing the
+    whole page. e.g. 'div.card > div.info > ul.list'."""
+    chain = []
+    cur = el.parent
+    for _ in range(levels):
+        if cur is None or getattr(cur, "name", None) is None:
+            break
+        cls = ".".join(cur.get("class", [])) if hasattr(cur, "get") else ""
+        chain.append(f"{cur.name}" + (f".{cls}" if cls else ""))
+        cur = cur.parent
+    return " > ".join(reversed(chain)) if chain else "(no parent)"
+
+
+def dump_player_page_markup(html: str, sofifa_id: str, name: str, url: str) -> None:
+    """ONE-TIME diagnostic. Two things came back still wrong after the last
+    fix, both pointing the same way: capping positions at 4 only hid the
+    problem (a player with ONE real position, CB, still came back with four —
+    CB,LCB,CM,RB — meaning contamination is mixed in from the very first
+    match, not just tacked on after the real ones), and nationality still
+    wrote "United States" for nearly everyone despite checking the flag
+    image first. Both fixes were built from list-page markup, reasoning by
+    analogy to this different page rather than confirmed evidence from it.
+    This prints every candidate for both, with its container breadcrumb, so
+    the real scoping can be worked out from what is actually on the page.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+    print(f"\n{'=' * 10} PAGE DIAGNOSTIC — {name} ({sofifa_id}) {'=' * 10}")
+    print(f"URL: {url}")
+    print(f"<title>: {(soup.select_one('title').get_text(strip=True) if soup.select_one('title') else '(none)')}")
+
+    print("\n-- every span.pos / span[class*='pos'], with its container --")
+    seen = 0
+    for span in soup.select("span.pos, span[class*='pos']"):
+        seen += 1
+        print(f"  [{seen}] text={span.get_text(strip=True)!r}  class={span.get('class')}")
+        print(f"        in: {_ancestor_chain(span)}")
+    if seen == 0:
+        print("  (none found)")
+
+    print("\n-- every <img> whose class or src/data-src contains 'flag' --")
+    seen = 0
+    for img in soup.find_all("img"):
+        cls = " ".join(img.get("class", []))
+        src = img.get("src", "") or ""
+        dsrc = img.get("data-src", "") or ""
+        if "flag" in cls.lower() or "flag" in src.lower() or "flag" in dsrc.lower():
+            seen += 1
+            print(f"  [{seen}] {str(img)[:300]}")
+            print(f"        in: {_ancestor_chain(img)}")
+            parent = img.find_parent("a")
+            if parent:
+                print(f"        parent <a>: {str(parent)[:300]}")
+    if seen == 0:
+        print("  (none found)")
+
+    print("\n-- every <a> whose href contains 'na=' --")
+    seen = 0
+    for a in soup.find_all("a", href=True):
+        if "na=" in a["href"]:
+            seen += 1
+            print(f"  [{seen}] {str(a)[:300]}")
+            print(f"        in: {_ancestor_chain(a)}")
+    if seen == 0:
+        print("  (none found)")
+    print(f"{'=' * 10} END PAGE DIAGNOSTIC {'=' * 10}\n")
+
+
 def parse_player_page(html: str, sofifa_id: str) -> dict:
     """Face URL, positions and nationality off a single player's own page.
 
@@ -422,29 +493,37 @@ def parse_player_page(html: str, sofifa_id: str) -> dict:
             f"{str(SOURCE_SCRAPE_YEAR)[-2:]}_120.png"
         )
 
-    # ── Positions ──
-    codes: list[str] = []
-    for span in soup.select("span.pos, span[class*='pos']"):
-        txt = span.get_text(strip=True)
-        if txt in POSITION_CODES and txt not in codes:
-            codes.append(txt)
-    if not codes:
-        # Last resort: the header line usually reads "ST, LW" near the name.
-        header = soup.select_one("h1") or soup
-        for word in header.get_text(" ", strip=True).replace(",", " ").split():
-            if word in POSITION_CODES and word not in codes:
-                codes.append(word)
-    if codes:
-        out["positions"] = ",".join(codes)
-
-    # ── Nationality ──
-    # The country link is the reliable anchor — `/players?na=` on the player
-    # page, whatever the flag element around it is doing this edition.
+    # ── Nationality, found first, and used to scope the position search ──
+    #
+    # Real markup (a diagnostic dump) proved the flag-first order from the
+    # previous fix was backwards: the page's own LANGUAGE SWITCHER (a
+    # "details.dropdown" in the header, one flag per language — English
+    # rendered with a US flag, first in the list) matches img.flag before
+    # the player's real flag ever does, which is exactly why every player
+    # alike came back "United States". `a[href*="na="]`, checked first here
+    # again, has exactly ONE match on the whole page and it was correct
+    # (na=45, title="Spain" for a Spanish player) — that was never the
+    # broken part.
     nat_link = soup.select_one('a[href*="na="]')
+    nat_scope = None
     if nat_link:
         nat = (nat_link.get("title") or nat_link.get("aria-label") or nat_link.get_text(strip=True) or "").strip()
+        if not nat:
+            img = nat_link.select_one("img")
+            if img:
+                nat = (img.get("title") or img.get("alt") or "").strip()
         if nat:
             out["nationality"] = nat
+        # The player's name, nationality and primary positions live together
+        # in one small container — confirmed both here (nat_link's own
+        # parent) and on the list-page row (name/flag/position badges as
+        # siblings in one cell). Searching WITHIN that container instead of
+        # the whole page is what actually fixes positions: the same
+        # diagnostic showed the whole-page search pulling in a "similar
+        # players" sidebar (other players' names, flags AND positions —
+        # Modrić, Kroos, Fàbregas were all sitting right there) as well as
+        # the position-ratings grid reported earlier.
+        nat_scope = nat_link.find_parent(["p", "li", "div"])
     if "nationality" not in out:
         flag = soup.select_one("img.flag") or soup.select_one("img[src*='flag']") or soup.select_one("img[data-src*='flag']")
         if flag:
@@ -455,6 +534,40 @@ def parse_player_page(html: str, sofifa_id: str) -> dict:
                     nat = (parent.get("title") or parent.get("aria-label") or "").strip()
             if nat:
                 out["nationality"] = nat
+
+    # ── Positions ──
+    #
+    # No real player has more than a handful of primary positions, so the
+    # count is capped regardless of scope — a second, independent guard on
+    # top of the scoping above, not a replacement for it.
+    codes: list[str] = []
+    MAX_POSITIONS = 4
+    search_root = nat_scope or soup
+    for span in search_root.select("span.pos, span[class*='pos']"):
+        if len(codes) >= MAX_POSITIONS:
+            break
+        txt = span.get_text(strip=True)
+        if txt in POSITION_CODES and txt not in codes:
+            codes.append(txt)
+    if not codes and search_root is not soup:
+        # The scoped container came up empty — try the whole page rather
+        # than giving up, still capped.
+        for span in soup.select("span.pos, span[class*='pos']"):
+            if len(codes) >= MAX_POSITIONS:
+                break
+            txt = span.get_text(strip=True)
+            if txt in POSITION_CODES and txt not in codes:
+                codes.append(txt)
+    if not codes:
+        # Last resort: the header line usually reads "ST, LW" near the name.
+        header = soup.select_one("h1") or soup
+        for word in header.get_text(" ", strip=True).replace(",", " ").split():
+            if len(codes) >= MAX_POSITIONS:
+                break
+            if word in POSITION_CODES and word not in codes:
+                codes.append(word)
+    if codes:
+        out["positions"] = ",".join(codes)
 
     return out
 
@@ -631,6 +744,8 @@ async def run() -> None:
                         return
 
                 html = await page.content()
+                if i == 1:
+                    dump_player_page_markup(html, sid, w["name"], url)
                 parsed = parse_player_page(html, sid)
 
                 # ── Circuit breaker ──

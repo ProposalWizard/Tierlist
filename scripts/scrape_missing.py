@@ -281,22 +281,37 @@ POSITION_CODES = {"GK","CB","RB","LB","RWB","LWB","CDM","CM","CAM",
                   "RAR","LAR","RWF","LWF"}
 
 
+# Reported directly: a corrupted scrape returned nine "positions" for one
+# player, several of them (LCM, RDM, ...) tokens that only ever appear in the
+# position-RATINGS grid, never in the compact "plays as" badges under a
+# player's name — and every scraped player's nationality came back "United
+# States". No real player has nine primary positions; SoFIFA shows at most a
+# handful. The two broadest fallbacks below (a full descendant scan by exact
+# text, and a full-cell text regex) are exactly the kind of unbounded,
+# match-by-content search that would sweep in a hidden tooltip/grid's worth
+# of position cells if the page hadn't finished settling when read — capped
+# here so even a bad match can't produce more than a real player ever has.
+MAX_POSITIONS = 4
+
+
 def _extract_pi_cell(td, player: dict):
-    pos_spans = td.select("span.pos")
+    pos_spans = td.select("span.pos")[:MAX_POSITIONS]
     if not pos_spans:
-        pos_spans = td.select("span[class*='pos']")
+        pos_spans = td.select("span[class*='pos']")[:MAX_POSITIONS]
     if not pos_spans:
-        pos_spans = td.select("a[rel='nofollow'] span")
+        pos_spans = td.select("a[rel='nofollow'] span")[:MAX_POSITIONS]
     if not pos_spans:
         # Fallback: any short text element (span, a, div) that looks like a position code
         for el in td.select("span, a, div"):
+            if len(pos_spans) >= MAX_POSITIONS:
+                break
             txt = el.get_text(strip=True)
             if txt in POSITION_CODES:
                 pos_spans.append(el)
     if not pos_spans:
         # Last resort: regex scan the cell's full text for position codes
         full_text = td.get_text(" ", strip=True)
-        found = [w for w in re.split(r"[\s,]+", full_text) if w in POSITION_CODES]
+        found = [w for w in re.split(r"[\s,]+", full_text) if w in POSITION_CODES][:MAX_POSITIONS]
         if found:
             player["positions"] = ",".join(found)
             return
@@ -307,8 +322,13 @@ def _extract_pi_cell(td, player: dict):
     if not flag:
         # SoFIFA renamed/restructured the flag element in FC 25/26 — try broader selectors
         flag = td.select_one("img[src*='flag']") or td.select_one("img[data-src*='flag']")
-    if not flag:
-        flag = td.select_one("img[title]")
+    # The old third fallback here — ANY <img title="..."> in the cell, not
+    # scoped to a flag at all — is almost certainly what produced "United
+    # States" for every player alike once the two flag-specific selectors
+    # above missed: it grabs whatever titled image happens to sit in the cell
+    # first, which is not a flag. Leaving nationality blank in that case is
+    # far better than writing a confident wrong one — it shows up as missing
+    # instead of as a silently false flag.
     if flag:
         nat = flag.get("title", "") or flag.get("alt", "")
         if not nat:
@@ -384,6 +404,8 @@ def parse_html(html: str, dump_first: bool = False) -> list[dict]:
             _div_text = repr(name_div_d.get_text(strip=True)) if name_div_d else "(no div)"
             print(f"  div child text:     {_div_text}")
             print(f"  full inner HTML:    {str(name_link)[:400]}")
+            if len(tds) > 1:
+                print(f"  TD[1] FULL RAW HTML: {str(tds[1])[:2000]}")
             print("  ─── END DIAGNOSTIC ───\n")
 
         href = name_link.get("href", "")
@@ -607,14 +629,55 @@ async def wait_for(page, selector: str, what: str, timeout: int = 180, min_count
     deadline = time.time() + timeout
     last = -1
     alerted = False
+    # The player-row's position badges and nationality flag have been seen
+    # settling in AFTER the name links themselves — this readiness check used
+    # to look at nothing but link count, so `page.content()` sometimes got
+    # captured before that second wave finished. Reported directly, and the
+    # damage lines up: smaller leagues (Championship, Belgian Pro League —
+    # 60%+ of players affected) fared far worse than the Premier League
+    # (under 10%), which is what a rendering race that loses more often on
+    # less-prioritised content looks like, not a broken selector (a broken
+    # selector would miss everyone alike). Waiting on position badges too,
+    # not just names, is the direct fix for that specific race.
+    needs_positions = "/player/" in selector
+    # Capped at 3 extra rounds (~30s total) so a genuinely renamed selector —
+    # positions that were never going to appear, not just running late —
+    # degrades to exactly the old behaviour (proceed anyway) instead of
+    # burning the whole 180s timeout and failing a page that used to succeed.
+    pos_attempts = 0
+    MAX_POS_ATTEMPTS = 3
+
+    async def _positions_settled() -> bool:
+        # Confirmed from real markup: flags carry data-was-processed="true"
+        # once their lazy-load has actually finished. A row whose flag is
+        # still mid-load is a real (if rarer) risk that the row's content is
+        # not blank but STALE — the previous occupant of a recycled DOM slot
+        # — which a plain span.pos COUNT can't catch, since stale spans are
+        # still present, just wrong. Zero un-processed flags is the direct
+        # check for "nothing on this page is still mid-swap".
+        if (await _count(page, "span.pos")) < min_count:
+            return False
+        return (await _count(page, 'img.flag:not([data-was-processed="true"])')) == 0
+
     while time.time() < deadline:
         c = await _count(page, selector)
         if c >= min_count:
-            await asyncio.sleep(3)
-            if await _count(page, selector) >= min_count:
+            settle = 6 if needs_positions else 3
+            await asyncio.sleep(settle)
+            pos_ready = await _positions_settled() if needs_positions else True
+            if await _count(page, selector) >= min_count and pos_ready:
                 print(f"  {what} ready.")
                 alerted = False
                 return True
+            if needs_positions and not pos_ready:
+                pos_attempts += 1
+                if pos_attempts >= MAX_POS_ATTEMPTS:
+                    print(f"  {what} ready (positions never settled after {pos_attempts} tries — proceeding anyway).")
+                    return True
+                await asyncio.sleep(4)
+                if await _positions_settled():
+                    print(f"  {what} ready (positions settled on retry {pos_attempts}).")
+                    return True
             last = -1
             continue
         # A settled page with a few links but no challenge is a legit short
