@@ -45,6 +45,15 @@ interface Props {
   onSettingsSync?: (settings: Partial<DraftSettings>) => void;
   onHostChange?: (isNowHost: boolean) => void;
   defaultTeamName?: string;
+  /**
+   * The client believes its squad was submitted (`squadSubmitted`) but the
+   * server's own row for this player still says "drafting" while the room
+   * sits in "lobby" — i.e. the submission never actually landed, or the
+   * season rollover reset a "ready" row back to "drafting" out from under
+   * a client that already told the player they were done. Fired once per
+   * stuck episode so the caller can re-fire its own ready submission.
+   */
+  onNeedsResubmit?: () => void;
 }
 
 export default function MultiplayerLobby({
@@ -64,6 +73,7 @@ export default function MultiplayerLobby({
   onAmericanDraftActive,
   onSettingsSync,
   onHostChange,
+  onNeedsResubmit,
 }: Props) {
   const [room, setRoom] = useState<RoomData | null>(null);
   const [players, setPlayers] = useState<RoomPlayer[]>([]);
@@ -340,6 +350,34 @@ export default function MultiplayerLobby({
   const isHost = room?.host_id ? room.host_id === userId : isHostProp;
   const isSimulating = room?.status === "simulating";
   const gameStarted = room?.status === "started";
+
+  // ── Self-heal a submission that never actually landed ──
+  //
+  // Reported directly, in a cluster: players stuck on "the site keeps saying
+  // I'm still drafting" and the room unable to advance a season. Traced to a
+  // real gap — `squadSubmitted` (this player's own optimistic belief that
+  // their squad went in) has no server-side counterpart that gets checked
+  // again later. A failed/abandoned ready submission (a dropped connection,
+  // an expired session, the retry loop giving up after its cap), or a season
+  // rollover resetting an already-"ready" row back to "drafting" while this
+  // client still thinks it's done, both leave the SAME state: squadSubmitted
+  // is true, but the live row polled here says "drafting", and nothing was
+  // ever going to notice or retry — the "Arrange Squad" button is hidden
+  // exactly because squadSubmitted is true, so there was no way back in
+  // either. This is the one fix that recovers from all of those triggers at
+  // once, because none of them matter here — only "does the live row agree
+  // with what I already told the player", which this already polls for.
+  const resubmitFiredRef = useRef(false);
+  useEffect(() => {
+    if (myPlayer?.status === "ready" || myPlayer?.status === "out") {
+      resubmitFiredRef.current = false;
+      return;
+    }
+    if (squadSubmitted && room?.status === "lobby" && myPlayer?.status === "drafting" && !resubmitFiredRef.current) {
+      resubmitFiredRef.current = true;
+      onNeedsResubmit?.();
+    }
+  }, [squadSubmitted, room?.status, myPlayer?.status, onNeedsResubmit]);
 
   const prevIsHostRef = useRef(isHostProp);
   useEffect(() => {
