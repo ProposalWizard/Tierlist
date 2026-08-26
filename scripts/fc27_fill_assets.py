@@ -493,28 +493,71 @@ def parse_player_page(html: str, sofifa_id: str) -> dict:
             f"{str(SOURCE_SCRAPE_YEAR)[-2:]}_120.png"
         )
 
+    # ── Nationality, found first, and used to scope the position search ──
+    #
+    # Real markup (a diagnostic dump) proved the flag-first order from the
+    # previous fix was backwards: the page's own LANGUAGE SWITCHER (a
+    # "details.dropdown" in the header, one flag per language — English
+    # rendered with a US flag, first in the list) matches img.flag before
+    # the player's real flag ever does, which is exactly why every player
+    # alike came back "United States". `a[href*="na="]`, checked first here
+    # again, has exactly ONE match on the whole page and it was correct
+    # (na=45, title="Spain" for a Spanish player) — that was never the
+    # broken part.
+    nat_link = soup.select_one('a[href*="na="]')
+    nat_scope = None
+    if nat_link:
+        nat = (nat_link.get("title") or nat_link.get("aria-label") or nat_link.get_text(strip=True) or "").strip()
+        if not nat:
+            img = nat_link.select_one("img")
+            if img:
+                nat = (img.get("title") or img.get("alt") or "").strip()
+        if nat:
+            out["nationality"] = nat
+        # The player's name, nationality and primary positions live together
+        # in one small container — confirmed both here (nat_link's own
+        # parent) and on the list-page row (name/flag/position badges as
+        # siblings in one cell). Searching WITHIN that container instead of
+        # the whole page is what actually fixes positions: the same
+        # diagnostic showed the whole-page search pulling in a "similar
+        # players" sidebar (other players' names, flags AND positions —
+        # Modrić, Kroos, Fàbregas were all sitting right there) as well as
+        # the position-ratings grid reported earlier.
+        nat_scope = nat_link.find_parent(["p", "li", "div"])
+    if "nationality" not in out:
+        flag = soup.select_one("img.flag") or soup.select_one("img[src*='flag']") or soup.select_one("img[data-src*='flag']")
+        if flag:
+            nat = (flag.get("title") or flag.get("alt") or "").strip()
+            if not nat:
+                parent = flag.find_parent("a")
+                if parent:
+                    nat = (parent.get("title") or parent.get("aria-label") or "").strip()
+            if nat:
+                out["nationality"] = nat
+
     # ── Positions ──
     #
-    # Reported directly: one player came back with nine "positions", several
-    # of them (LCM, RDM, ...) tokens that only ever appear in the position-
-    # RATINGS grid further down a player's page (LS/ST/RS, LW/LF/CF/RF/RW,
-    # LAM/CAM/RAM, LM/LCM/CM/RCM/RM, ...), never in the compact "plays as"
-    # badges under the name. This search was never scoped to that badge area
-    # — `soup.select(...)` runs over the WHOLE page — so it collects the real
-    # badges first (DOM order puts them before the grid) and then keeps going
-    # into the grid. The reported nine were "CM,CAM,CDM,LCM,RDM,RM,ST,LM,RB":
-    # the first three are exactly right (Belgium's real answer is CAM/CM/
-    # CDM), everything after is the grid. No real player has more than a
-    # handful of primary positions, so capping the count is the direct fix —
-    # it stops collecting exactly where the real badges end.
+    # No real player has more than a handful of primary positions, so the
+    # count is capped regardless of scope — a second, independent guard on
+    # top of the scoping above, not a replacement for it.
     codes: list[str] = []
     MAX_POSITIONS = 4
-    for span in soup.select("span.pos, span[class*='pos']"):
+    search_root = nat_scope or soup
+    for span in search_root.select("span.pos, span[class*='pos']"):
         if len(codes) >= MAX_POSITIONS:
             break
         txt = span.get_text(strip=True)
         if txt in POSITION_CODES and txt not in codes:
             codes.append(txt)
+    if not codes and search_root is not soup:
+        # The scoped container came up empty — try the whole page rather
+        # than giving up, still capped.
+        for span in soup.select("span.pos, span[class*='pos']"):
+            if len(codes) >= MAX_POSITIONS:
+                break
+            txt = span.get_text(strip=True)
+            if txt in POSITION_CODES and txt not in codes:
+                codes.append(txt)
     if not codes:
         # Last resort: the header line usually reads "ST, LW" near the name.
         header = soup.select_one("h1") or soup
@@ -525,37 +568,6 @@ def parse_player_page(html: str, sofifa_id: str) -> dict:
                 codes.append(word)
     if codes:
         out["positions"] = ",".join(codes)
-
-    # ── Nationality ──
-    #
-    # Reported directly: every player came back "United States", regardless
-    # of his real nationality — one CONSTANT wrong answer across completely
-    # different players is what a page-template element looks like (some nav
-    # or filter link elsewhere on the page that happens to contain "na=" in
-    # its href), not a per-player data problem. `a[href*="na="]` matches ANY
-    # link anywhere on the page with that substring and `select_one` takes
-    # whichever comes first in DOM order — not necessarily the player's own.
-    # The flag <img> is checked first now instead: real markup captured
-    # elsewhere on this site confirms it reliably carries class="flag" and
-    # title="<Country>" (e.g. title="Spain"), and a flag image is a far less
-    # likely thing for a generic page-template element to render than a
-    # plain link. The na= link is now only the fallback for an edition that
-    # doesn't render a flag element at all.
-    flag = soup.select_one("img.flag") or soup.select_one("img[src*='flag']") or soup.select_one("img[data-src*='flag']")
-    if flag:
-        nat = (flag.get("title") or flag.get("alt") or "").strip()
-        if not nat:
-            parent = flag.find_parent("a")
-            if parent:
-                nat = (parent.get("title") or parent.get("aria-label") or "").strip()
-        if nat:
-            out["nationality"] = nat
-    if "nationality" not in out:
-        nat_link = soup.select_one('a[href*="na="]')
-        if nat_link:
-            nat = (nat_link.get("title") or nat_link.get("aria-label") or nat_link.get_text(strip=True) or "").strip()
-            if nat:
-                out["nationality"] = nat
 
     return out
 
