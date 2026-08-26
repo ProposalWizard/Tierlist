@@ -394,21 +394,48 @@ class FaceGuard:
 # ── Reading one player's page ───────────────────────────────────────────────
 
 
-def dump_nationality_markup(html: str, sofifa_id: str, name: str, url: str) -> None:
-    """ONE-TIME diagnostic: the flag-first fix still wrote 'United States' for
-    essentially every player, which the list-page markup we already confirmed
-    (class="flag" / title="<Country>", correctly scoped to that row) does not
-    explain — so whatever is matching on a player's own DETAIL page must be a
-    DIFFERENT element than the one that page type actually uses for the list.
-    Prints every candidate found so the real one can be identified instead of
-    guessed again.
+def _ancestor_chain(el, levels: int = 3) -> str:
+    """A short breadcrumb of tag+class for an element's nearest ancestors —
+    enough to see what CONTAINER an element sits inside without printing the
+    whole page. e.g. 'div.card > div.info > ul.list'."""
+    chain = []
+    cur = el.parent
+    for _ in range(levels):
+        if cur is None or getattr(cur, "name", None) is None:
+            break
+        cls = ".".join(cur.get("class", [])) if hasattr(cur, "get") else ""
+        chain.append(f"{cur.name}" + (f".{cls}" if cls else ""))
+        cur = cur.parent
+    return " > ".join(reversed(chain)) if chain else "(no parent)"
+
+
+def dump_player_page_markup(html: str, sofifa_id: str, name: str, url: str) -> None:
+    """ONE-TIME diagnostic. Two things came back still wrong after the last
+    fix, both pointing the same way: capping positions at 4 only hid the
+    problem (a player with ONE real position, CB, still came back with four —
+    CB,LCB,CM,RB — meaning contamination is mixed in from the very first
+    match, not just tacked on after the real ones), and nationality still
+    wrote "United States" for nearly everyone despite checking the flag
+    image first. Both fixes were built from list-page markup, reasoning by
+    analogy to this different page rather than confirmed evidence from it.
+    This prints every candidate for both, with its container breadcrumb, so
+    the real scoping can be worked out from what is actually on the page.
     """
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
-    print(f"\n{'=' * 10} NATIONALITY DIAGNOSTIC — {name} ({sofifa_id}) {'=' * 10}")
+    print(f"\n{'=' * 10} PAGE DIAGNOSTIC — {name} ({sofifa_id}) {'=' * 10}")
     print(f"URL: {url}")
     print(f"<title>: {(soup.select_one('title').get_text(strip=True) if soup.select_one('title') else '(none)')}")
+
+    print("\n-- every span.pos / span[class*='pos'], with its container --")
+    seen = 0
+    for span in soup.select("span.pos, span[class*='pos']"):
+        seen += 1
+        print(f"  [{seen}] text={span.get_text(strip=True)!r}  class={span.get('class')}")
+        print(f"        in: {_ancestor_chain(span)}")
+    if seen == 0:
+        print("  (none found)")
 
     print("\n-- every <img> whose class or src/data-src contains 'flag' --")
     seen = 0
@@ -419,6 +446,7 @@ def dump_nationality_markup(html: str, sofifa_id: str, name: str, url: str) -> N
         if "flag" in cls.lower() or "flag" in src.lower() or "flag" in dsrc.lower():
             seen += 1
             print(f"  [{seen}] {str(img)[:300]}")
+            print(f"        in: {_ancestor_chain(img)}")
             parent = img.find_parent("a")
             if parent:
                 print(f"        parent <a>: {str(parent)[:300]}")
@@ -431,9 +459,10 @@ def dump_nationality_markup(html: str, sofifa_id: str, name: str, url: str) -> N
         if "na=" in a["href"]:
             seen += 1
             print(f"  [{seen}] {str(a)[:300]}")
+            print(f"        in: {_ancestor_chain(a)}")
     if seen == 0:
         print("  (none found)")
-    print(f"{'=' * 10} END NATIONALITY DIAGNOSTIC {'=' * 10}\n")
+    print(f"{'=' * 10} END PAGE DIAGNOSTIC {'=' * 10}\n")
 
 
 def parse_player_page(html: str, sofifa_id: str) -> dict:
@@ -704,7 +733,7 @@ async def run() -> None:
 
                 html = await page.content()
                 if i == 1:
-                    dump_nationality_markup(html, sid, w["name"], url)
+                    dump_player_page_markup(html, sid, w["name"], url)
                 parsed = parse_player_page(html, sid)
 
                 # ── Circuit breaker ──
