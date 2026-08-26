@@ -21,6 +21,7 @@ import { retirementCheck, retire } from "@/lib/star/retirement";
 import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
+import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
 import { CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, OTHER_CLUBS, PROMOTION_POOL_CLUBS } from "@/lib/star/clubs";
@@ -49,6 +50,7 @@ import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
+import DevSkipPanel from "@/components/star/DevSkipPanel";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -871,6 +873,18 @@ export default function StarDevPage() {
     rollOverSeason(career, wonBallonDor);
   }, [career, wonBallonDor, rollOverSeason]);
 
+  // Testing tool only — see lib/star/devSkip.ts. Runs the fast-forward and
+  // drops the result straight on the dashboard; a season boundary crossed
+  // along the way is resolved silently by skipTo itself, so there is never a
+  // ballon-dor/ladder/contract screen to route through here.
+  const handleDevSkip = useCallback((target: SkipTarget) => {
+    if (!career) return;
+    const { career: after } = skipTo(career, target);
+    setCareer(after);
+    setActiveNav(null);
+    setPhase("dashboard");
+  }, [career]);
+
   const handleFullReset = () => {
     if (career?.retired || confirm("Delete this career and start over?")) {
       clearCareer();
@@ -1451,6 +1465,7 @@ export default function StarDevPage() {
           onChange={setPlayAs}
         />
       )}
+      {phase === "dashboard" && <DevSkipPanel career={career} onSkip={handleDevSkip} />}
       {phase === "dashboard" && (
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-center">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Start over</div>
