@@ -169,7 +169,19 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
       // held came from the bench or reserves; remove him from bench7 if he was there.
       let newBench = s.bench7.filter(b => b !== held);
       // The pitch player displaced by this move goes to bench7 if there is room.
-      if (here && newBench.length < 7 && !newBench.includes(here)) {
+      //
+      // Reported directly: swapping a bench player into the XI kept dropping
+      // the displaced starter straight to reserves instead, shrinking the
+      // bench from 9/9 to 8/9 every time. `bench7` is a leftover name from
+      // when the bench held seven — the real capacity, shown everywhere else
+      // in this file (the "Bench — N/9" label, the other room check just
+      // below), is nine. This one check never got updated off the old
+      // number, so it started rejecting the displaced player the moment the
+      // bench reached 7 — which is exactly what "swapping a bench player in"
+      // does: it removes one from the bench first, landing it at 7 or 8, at
+      // which point this comparison started refusing him room that was
+      // actually there.
+      if (here && newBench.length < 9 && !newBench.includes(here)) {
         newBench = [...newBench, here];
       }
       return { ...s, xi: next, bench7: newBench };
@@ -228,7 +240,8 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
         n[fromPitch] = id;
         let newBench = s.bench7.filter(b => b !== id);
         const displaced = xi[fromPitch];
-        if (displaced && newBench.length < 7 && !newBench.includes(displaced)) {
+        // Same stale 7-vs-9 bug as tapSlot above — see that comment.
+        if (displaced && newBench.length < 9 && !newBench.includes(displaced)) {
           newBench = [...newBench, displaced];
         }
         return { ...s, xi: n, bench7: newBench };
