@@ -394,6 +394,48 @@ class FaceGuard:
 # ── Reading one player's page ───────────────────────────────────────────────
 
 
+def dump_nationality_markup(html: str, sofifa_id: str, name: str, url: str) -> None:
+    """ONE-TIME diagnostic: the flag-first fix still wrote 'United States' for
+    essentially every player, which the list-page markup we already confirmed
+    (class="flag" / title="<Country>", correctly scoped to that row) does not
+    explain — so whatever is matching on a player's own DETAIL page must be a
+    DIFFERENT element than the one that page type actually uses for the list.
+    Prints every candidate found so the real one can be identified instead of
+    guessed again.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+    print(f"\n{'=' * 10} NATIONALITY DIAGNOSTIC — {name} ({sofifa_id}) {'=' * 10}")
+    print(f"URL: {url}")
+    print(f"<title>: {(soup.select_one('title').get_text(strip=True) if soup.select_one('title') else '(none)')}")
+
+    print("\n-- every <img> whose class or src/data-src contains 'flag' --")
+    seen = 0
+    for img in soup.find_all("img"):
+        cls = " ".join(img.get("class", []))
+        src = img.get("src", "") or ""
+        dsrc = img.get("data-src", "") or ""
+        if "flag" in cls.lower() or "flag" in src.lower() or "flag" in dsrc.lower():
+            seen += 1
+            print(f"  [{seen}] {str(img)[:300]}")
+            parent = img.find_parent("a")
+            if parent:
+                print(f"        parent <a>: {str(parent)[:300]}")
+    if seen == 0:
+        print("  (none found)")
+
+    print("\n-- every <a> whose href contains 'na=' --")
+    seen = 0
+    for a in soup.find_all("a", href=True):
+        if "na=" in a["href"]:
+            seen += 1
+            print(f"  [{seen}] {str(a)[:300]}")
+    if seen == 0:
+        print("  (none found)")
+    print(f"{'=' * 10} END NATIONALITY DIAGNOSTIC {'=' * 10}\n")
+
+
 def parse_player_page(html: str, sofifa_id: str) -> dict:
     """Face URL, positions and nationality off a single player's own page.
 
@@ -661,6 +703,8 @@ async def run() -> None:
                         return
 
                 html = await page.content()
+                if i == 1:
+                    dump_nationality_markup(html, sid, w["name"], url)
                 parsed = parse_player_page(html, sid)
 
                 # ── Circuit breaker ──
