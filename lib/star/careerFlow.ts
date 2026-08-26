@@ -103,6 +103,18 @@ export function makeInitialCareer(
     caps: 0,
     internationalGoals: 0,
     knockoutMessage: null,
+    // Requested directly: the season's rosters are already hand-curated in
+    // the database, so the league AI transfer engine's own first pass —
+    // which runs automatically the moment the season's real-world calendar
+    // date first lands in a window, not on any deliberate "pre-season"
+    // trigger — would immediately rebuild every club's squad on top of that
+    // curation before the player has even finished their first match (the
+    // season always opens in mid-August, and week 2 already reads as the
+    // summer window). Seeding this as already-run for season 1's summer
+    // leaves every later window untouched: season 1's January mismatches
+    // this key and fires normally, and every season after this one builds
+    // its own fresh "<season>-summer"/"<season>-january" key from scratch.
+    lastTransferWindowKey: "1-summer",
   };
   state.squadNumber = assignSquadNumber(state, player.club);
   state.manager = makeManager(state, player.club, 1);
