@@ -225,6 +225,19 @@ export async function fetchRealSquad(club: string, year = STAR_FIFA_YEAR): Promi
  * So the fresh rows carry the new name, club, rating and image, and the old
  * rows carry the tallies, matched on the player himself. Anybody who has left
  * takes his numbers with him, which is correct: he is not in your squad.
+ *
+ * NOTE: this necessarily also drops anyone the in-career transfer engine
+ * signed for a club, since the static database has no notion of an
+ * AI-simulated transfer — a real signing looks identical, from this
+ * function's own inputs, to a player a database edit correctly removed.
+ * Tried making this keep any `previous`-only player and it broke exactly
+ * that: a real database correction ("he's moved to his new club") would
+ * never take effect for a career already in progress, since the player it
+ * removed would just get carried forward here forever. Left as the
+ * original, tested design — pressing "update from database" is a real,
+ * separate way to lose an in-career transfer's own squad membership, not
+ * yet fixed, and worth flagging rather than silently accepting a different
+ * broken behaviour in its place.
  */
 export function mergeSquadStats(fresh: SquadPlayer[], previous: SquadPlayer[]): SquadPlayer[] {
   const before = new Map(previous.map(p => [p.sofifaId ?? p.id, p]));

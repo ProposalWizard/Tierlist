@@ -213,12 +213,31 @@ function build(
 
   let bench: SheetPlayer[];
   if (savedBenchIds && savedBenchIds.length > 0) {
-    bench = savedBenchIds
+    const savedPicks = savedBenchIds
       .map(id => resolveSavedId(byId, id))
       .filter((id): id is string => !!id && !started.has(id))
       .map(id => byId.get(id))
       .filter((p): p is Candidate => !!p)
-      .slice(0, 9)
+      .slice(0, 9);
+    // A saved bench used to be taken exactly as-is, with no top-up — so a
+    // squad member who joined AFTER the bench was last saved (a transfer-
+    // window signing, above all) could sit in `career.squad`, resolve fine,
+    // and still never appear anywhere in the matchday sheet: not starting
+    // (a full saved XI never re-competes for its own slots — see fillGaps),
+    // and not on the bench either, because the saved list simply predates
+    // him and nothing ever added him to it. Reported directly: a new
+    // signing "not even on the bench... even when they are players good
+    // enough to start." Topping up to 9 from whoever else is available,
+    // best-rated first, is what actually gets him into the matchday squad
+    // at all — the human still has to choose to start him.
+    const onBench = new Set(savedPicks.map(p => p.id));
+    const topUp = savedPicks.length < 9
+      ? pool
+          .filter(p => !started.has(p.id) && !onBench.has(p.id))
+          .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
+          .slice(0, 9 - savedPicks.length)
+      : [];
+    bench = [...savedPicks, ...topUp]
       .map(p => ({
         id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
         overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,

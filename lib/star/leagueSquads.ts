@@ -413,7 +413,13 @@ export function syncLeagueStrengthFromSquads(league: LeagueTeam[], squads: Leagu
 }
 
 
-/** The same, for the other nineteen clubs. See mergeSquadStats. */
+/**
+ * The same, for the other nineteen clubs. See mergeSquadStats — including
+ * the note there on why this deliberately does NOT keep a `previous`-only
+ * player: it can't tell "the in-career transfer engine moved him" apart
+ * from "a real database correction removed him", and the latter has to
+ * keep working for a career already in progress.
+ */
 export function mergeLeagueSquadStats(fresh: LeagueSquad[], previous: LeagueSquad[]): LeagueSquad[] {
   const before = new Map(previous.map(sq => [sq.club, new Map(sq.players.map(p => [p.id, p]))]));
   return fresh.map(sq => ({
