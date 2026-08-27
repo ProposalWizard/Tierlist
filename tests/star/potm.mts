@@ -678,7 +678,7 @@ const CLUBS = [
 {
   const expected: Record<string, string> = {
     "Wolverhampton Wanderers": "Wolves",
-    "Manchester United": "Man Utd",
+    "Manchester United": "Man United",
     "Manchester City": "Man City",
     "Brighton & Hove Albion": "Brighton",
     "AFC Bournemouth": "Bournemouth",
@@ -686,10 +686,10 @@ const CLUBS = [
     "Leeds United": "Leeds",
     "Newcastle United": "Newcastle",
     "West Ham United": "West Ham",
-    "Tottenham Hotspur": "Tottenham",
-    "Nottingham Forest": "Nottingham Forest",
-    "Crystal Palace": "Crystal Palace",
-    "Aston Villa": "Aston Villa",
+    "Tottenham Hotspur": "Spurs",
+    "Nottingham Forest": "Forest",
+    "Crystal Palace": "Palace",
+    "Aston Villa": "Villa",
     "Liverpool": "Liverpool",
   };
   for (const [full, want] of Object.entries(expected)) {
