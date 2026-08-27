@@ -4,6 +4,7 @@ import type { CareerState } from "@/lib/star/types";
 import { kitsOf } from "@/lib/star/kits";
 import { seasonStartYear } from "@/lib/star/calendar";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
+import { shortClub } from "@/lib/star/media/grammar";
 
 /**
  * DEADLINE DAY.
@@ -165,7 +166,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
         </div>
 
         {/* ── Header ── */}
-        <div className="relative z-10 flex flex-col items-start px-3 pb-2 pt-6 pl-9">
+        <div className="relative z-10 flex flex-col items-start px-3 pb-2 pt-9 pl-9">
           <span className="rounded-full border border-amber-400/50 bg-black/40 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
             Season {career.season} · {windowLabel} Closed
           </span>
@@ -192,8 +193,14 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
         </div>
 
         {/* ── Club selector — every club in the division, not just the ones
-            with a deal to show. See buildBusiness above. ── */}
-        <div className="relative z-10 mt-1 flex gap-1.5 overflow-x-auto px-3 pb-2 pl-9" style={{ scrollbarWidth: "none" }}>
+            with a deal to show. See buildBusiness above.
+            A single horizontal-scrolling row used to hold all of these —
+            reported directly: "I can only see three clubs to click on." A
+            wrapping grid shows most of a twenty-club division at once
+            instead of one at a time off-screen, with its own short vertical
+            scroll for the rest (a twenty-four-club Championship season, or
+            a phone too narrow to fit four per row). ── */}
+        <div className="relative z-10 mt-1 flex max-h-[176px] flex-wrap content-start gap-1.5 overflow-y-auto px-3 pb-2 pl-9">
           {business.map(b => {
             const mine = b.club === career.player.club;
             const isActive = b.club === selected;
@@ -203,7 +210,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
               <button
                 key={b.club}
                 onClick={() => setSelected(b.club)}
-                className={`flex flex-shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide transition ${
+                className={`flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide transition ${
                   isActive
                     ? "border-black bg-black text-amber-300"
                     : count > 0
@@ -212,7 +219,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                 }`}
               >
                 <span className="h-2 w-2 shrink-0 rounded-full border border-white/30" style={{ backgroundColor: kit.shirt }} />
-                <span className="max-w-[6.5rem] truncate">{b.club}{mine ? " (You)" : ""}</span>
+                <span className="max-w-[5.5rem] truncate">{shortClub(b.club)}{mine ? " (You)" : ""}</span>
                 <span className={`rounded-full px-1.5 text-[9px] ${isActive ? "bg-amber-400 text-black" : count > 0 ? "bg-white/10 text-white/60" : "bg-white/5 text-white/35"}`}>
                   {count}
                 </span>

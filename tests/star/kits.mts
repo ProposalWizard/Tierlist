@@ -1,6 +1,7 @@
-import { CLUB_KITS, kitsOf, kitsFor, clashes, hexToHsl, keeperKit, labelInk } from "../../lib/star/kits";
+import { CLUB_KITS, kitsOf, kitsFor, clashes, hexToHsl, keeperKit, labelInk, kitLabelOnDark } from "../../lib/star/kits";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { acceptOffer } from "../../lib/star/transfers";
+import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "../../lib/star/clubs";
 
 /**
  * Kits.
@@ -16,9 +17,20 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
 const CLUBS = Object.keys(CLUB_KITS);
 
-// ── Twenty clubs, four colours each ─────────────────────────────────────────
+// ── Every real club on the English ladder has real colours, not just the
+// current twenty Premier League ones ─────────────────────────────────────
+//
+// Reported directly, with a screenshot: on the season-rollover ladder
+// screen, "Sunderland" was the only promoted club with a real colour —
+// every other club in the list, all Championship-only, fell back to the
+// same flat neutral green because CLUB_KITS had never covered anyone
+// outside the current Premier League twenty. Checked against clubs.ts's
+// own lists rather than a hardcoded count, so a club added to either list
+// later fails this the moment it lands, not silently.
 {
-  check(CLUBS.length === 20, `twenty clubs have kits (${CLUBS.length})`);
+  for (const club of [...PREMIER_LEAGUE_CLUBS, ...CHAMPIONSHIP_CLUBS, ...PROMOTION_POOL_CLUBS]) {
+    check(club in CLUB_KITS, `${club} has a real kit entry, not the neutral fallback`);
+  }
   for (const [club, k] of Object.entries(CLUB_KITS)) {
     for (const [which, kit] of [["home", k.home], ["away", k.away]] as const) {
       check(/^#[0-9A-Fa-f]{6}$/.test(kit.shirt), `${club} ${which}: the shirt is a colour (${kit.shirt})`);
@@ -171,6 +183,40 @@ const CLUBS = Object.keys(CLUB_KITS);
   }
   check(labelInk("#FFFFFF") === "#111827", "dark ink on a white shirt");
   check(labelInk("#17181A") === "#FFFFFF", "white ink on a black one");
+}
+
+// ── A club's own colour, set as TEXT directly on a dark panel ──────────────
+//
+// Reported directly, with a screenshot: the versus screen's formation label
+// used a club's raw shirt colour as the label's text colour — invisible for
+// Newcastle's near-black shirt on a near-black panel. `labelInk` solves the
+// opposite problem (ink ON a shirt-coloured swatch) and is no help here.
+{
+  const newcastle = kitLabelOnDark(CLUB_KITS["Newcastle United"].home.shirt, CLUB_KITS["Newcastle United"].home.trim);
+  check(hexToHsl(newcastle).l >= 0.5, `Newcastle's near-black shirt is lifted to something readable (${newcastle})`);
+
+  // A shirt that already reads fine on a dark panel passes straight through
+  // — Manchester City's sky blue should still look like Manchester City's
+  // sky blue, not a generic substitute.
+  const city = CLUB_KITS["Manchester City"].home.shirt;
+  check(kitLabelOnDark(city, CLUB_KITS["Manchester City"].home.trim) === city,
+    `an already-readable shirt (${city}) is not needlessly changed`);
+
+  // A shirt with real colour in it, just dark — lifted, but keeping its hue
+  // rather than jumping to a different colour family entirely.
+  const chelsea = CLUB_KITS["Chelsea"].home.shirt;
+  const lifted = kitLabelOnDark(chelsea, CLUB_KITS["Chelsea"].home.trim);
+  check(hexToHsl(lifted).l >= 0.5, `Chelsea's dark navy is lifted to something readable (${lifted})`);
+  check(Math.abs(hexToHsl(lifted).h - hexToHsl(chelsea).h) < 15,
+    `…while staying recognisably the same blue (hue ${hexToHsl(lifted).h.toFixed(0)} vs ${hexToHsl(chelsea).h.toFixed(0)})`);
+
+  // Every real club's home and away label reads on a dark panel, full stop.
+  for (const [club, k] of Object.entries(CLUB_KITS)) {
+    for (const kit of [k.home, k.away]) {
+      const label = kitLabelOnDark(kit.shirt, kit.trim);
+      check(hexToHsl(label).l >= 0.45, `${club}: the formation label reads on a dark panel (${label})`);
+    }
+  }
 }
 
 if (problems.length) {

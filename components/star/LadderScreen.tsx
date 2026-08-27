@@ -51,7 +51,7 @@ function Movement({ title, up, down, upLabel, downLabel }: {
 }) {
   return (
     <div className="rounded-xl border border-white/15 bg-white/[0.04] p-3">
-      <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/60">{title}</div>
+      <div className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">{title}</div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <div className="mb-1 text-[9px] font-black uppercase tracking-wider text-emerald-400">{upLabel}</div>

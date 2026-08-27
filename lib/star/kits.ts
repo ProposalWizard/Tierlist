@@ -49,6 +49,13 @@ export const CLUB_KITS: Record<string, ClubKits> = {
   "Crystal Palace":           { home: { shirt: "#1B458F", trim: "#C4122E" }, away: { shirt: "#F2F4F7", trim: "#1B458F" } },
   "Everton":                  { home: { shirt: "#003399", trim: "#FFFFFF" }, away: { shirt: "#EAB308", trim: "#003399" } },
   "Fulham FC":                { home: { shirt: "#FFFFFF", trim: "#111111" }, away: { shirt: "#17181A", trim: "#CC0000" } },
+  // The three most recently promoted into the twenty — real colours, same
+  // as the other seventeen, not the placeholder every one of them fell back
+  // to before (see the Championship/pool block further down for the fuller
+  // version of this same gap).
+  "Hull City":                { home: { shirt: "#F18A00", trim: "#111111" }, away: { shirt: "#FFFFFF", trim: "#F18A00" } },
+  "Ipswich Town":             { home: { shirt: "#0044A9", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#0044A9" } },
+  "Coventry City":            { home: { shirt: "#6CACE4", trim: "#041E42" }, away: { shirt: "#FFFFFF", trim: "#6CACE4" } },
   "Leeds United":             { home: { shirt: "#FFFFFF", trim: "#1D428A" }, away: { shirt: "#1D428A", trim: "#FFCD00" } },
   "Liverpool":                { home: { shirt: "#C8102E", trim: "#FFFFFF" }, away: { shirt: "#F2F4F7", trim: "#C8102E" } },
   "Manchester City":          { home: { shirt: "#6CABDD", trim: "#1C2C5B" }, away: { shirt: "#F2F4F7", trim: "#1C2C5B" } },
@@ -59,6 +66,40 @@ export const CLUB_KITS: Record<string, ClubKits> = {
   "Tottenham Hotspur":        { home: { shirt: "#FFFFFF", trim: "#132257" }, away: { shirt: "#132257", trim: "#FFFFFF" } },
   "West Ham United":          { home: { shirt: "#7A263A", trim: "#1BB1E7" }, away: { shirt: "#F2F4F7", trim: "#7A263A" } },
   "Wolverhampton Wanderers":  { home: { shirt: "#FDB913", trim: "#231F20" }, away: { shirt: "#17181A", trim: "#FDB913" } },
+
+  // ── Everyone else this career can actually play against ──
+  //
+  // Reported directly: a club with no entry above falls back to the same
+  // flat NEUTRAL green for every one of them, so a Championship (or
+  // promotion-pool) season showed a wall of identical badges with one real
+  // club's colour standing out — not a bug in that one club, a gap in every
+  // OTHER one. Real shirt/trim, the same way the twenty above are.
+  "Queens Park Rangers":      { home: { shirt: "#1D5BA4", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#1D5BA4" } },
+  "Millwall FC":              { home: { shirt: "#001D5A", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#001D5A" } },
+  "Bolton Wanderers":         { home: { shirt: "#FFFFFF", trim: "#00285E" }, away: { shirt: "#00285E", trim: "#FFFFFF" } },
+  "Watford":                  { home: { shirt: "#FBEE23", trim: "#ED2127" }, away: { shirt: "#111111", trim: "#FBEE23" } },
+  "Middlesbrough":            { home: { shirt: "#DC1B26", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#DC1B26" } },
+  "Charlton Athletic":        { home: { shirt: "#D2122E", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#D2122E" } },
+  "Swansea City":             { home: { shirt: "#FFFFFF", trim: "#111111" }, away: { shirt: "#111111", trim: "#FFFFFF" } },
+  "West Bromwich Albion":     { home: { shirt: "#122F67", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#122F67" } },
+  "Blackburn Rovers":         { home: { shirt: "#009EE0", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#009EE0" } },
+  "Cardiff City":             { home: { shirt: "#0070B5", trim: "#FFCD00" }, away: { shirt: "#FFFFFF", trim: "#0070B5" } },
+  "Wrexham":                  { home: { shirt: "#C8102E", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#C8102E" } },
+  "Birmingham City":          { home: { shirt: "#1B458F", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#1B458F" } },
+  "Sheffield United":         { home: { shirt: "#EE2737", trim: "#111111" }, away: { shirt: "#111111", trim: "#EE2737" } },
+  "Lincoln City":             { home: { shirt: "#C8102E", trim: "#FFFFFF" }, away: { shirt: "#111111", trim: "#C8102E" } },
+  "Preston North End":        { home: { shirt: "#FFFFFF", trim: "#002B5C" }, away: { shirt: "#002B5C", trim: "#FFFFFF" } },
+  "Norwich City":             { home: { shirt: "#FFF200", trim: "#00A650" }, away: { shirt: "#00A650", trim: "#FFF200" } },
+  "Stoke City":               { home: { shirt: "#E03A3E", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#E03A3E" } },
+  "Derby County":             { home: { shirt: "#FFFFFF", trim: "#111111" }, away: { shirt: "#111111", trim: "#FFFFFF" } },
+  "Portsmouth":               { home: { shirt: "#1B458F", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#1B458F" } },
+  "Bristol City":             { home: { shirt: "#E21C21", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#E21C21" } },
+  "Southampton":              { home: { shirt: "#D71920", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#D71920" } },
+  "Luton Town":               { home: { shirt: "#F78F1E", trim: "#002D62" }, away: { shirt: "#002D62", trim: "#F78F1E" } },
+  "Huddersfield Town":        { home: { shirt: "#0044A3", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#0044A3" } },
+  "Leicester City":           { home: { shirt: "#003090", trim: "#FDBE11" }, away: { shirt: "#FFFFFF", trim: "#003090" } },
+  "Reading FC":               { home: { shirt: "#004494", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#004494" } },
+  "Wigan Athletic":           { home: { shirt: "#1B458F", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#1B458F" } },
 };
 
 /** A club nobody has colours for. Neutral, and it never clashes with much. */
