@@ -88,28 +88,56 @@ export async function GET(request: NextRequest) {
     ...(wantsFreeAgents ? FREE_AGENT_VALUES : []),
   ];
 
-  // ── The one query ──
+  // ── The query, paginated ──
   //
   // No `attributes`, no `*`, no follow-up. `manual_*` columns are the admin
   // overrides and are cheap scalars, so they come along and win where set.
-  const { data, error } = await supabase
-    .from("sofifa_players")
-    // `image_url` is a short text column, not the JSONB blob this route exists
-    // to avoid — the shortlist graphic needs faces and twenty extra queries to
-    // get them would undo the whole point of the endpoint.
-    .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality, age")
-    .eq("fifa_year", year)
-    .in("club", dbClubs)
-    .order("overall", { ascending: false, nullsFirst: false });
+  //
+  // Reported directly, tracked down to a real, missing, verified-in-the-
+  // database player ("Wisdom Mike", Club Brugge KV — confirmed present,
+  // correct year, correct club spelling, no duplicate id, and STILL absent
+  // from the squad the game actually showed): this had no `.range()` at
+  // all, trusting Supabase's own default row cap for a single unbounded
+  // request. That cap is easy to clear on a call like the Champions League
+  // tab of /lineups asking for thirty-six clubs at once — a few thousand
+  // rows against a default cap of one thousand — and `.order("overall",
+  // desc)` means whatever gets silently cut is always the WORST-rated
+  // players in the whole combined request, exactly the pattern reported: a
+  // real, present, correctly-spelled row for a club's single lowest-rated
+  // player, gone. Paginated in fixed pages until a page comes back short,
+  // which finds every row regardless of what the project's own cap happens
+  // to be set to. A second, fully unique sort key (`sofifa_id`) is required
+  // for this to be safe at all — `overall` alone ties constantly, and
+  // Postgres does not promise the same order for tied rows across two
+  // separate paged requests the way it would within one.
+  const PAGE_SIZE = 1000;
+  const rows: Record<string, unknown>[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("sofifa_players")
+      // `image_url` is a short text column, not the JSONB blob this route
+      // exists to avoid — the shortlist graphic needs faces and twenty
+      // extra queries to get them would undo the whole point of the
+      // endpoint.
+      .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality, age")
+      .eq("fifa_year", year)
+      .in("club", dbClubs)
+      .order("overall", { ascending: false, nullsFirst: false })
+      .order("sofifa_id", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < PAGE_SIZE) break;
   }
 
   const squads: Record<string, LeanPlayer[]> = {};
   for (const club of clubs) squads[club] = [];
 
-  for (const row of data ?? []) {
+  for (const row of rows) {
     const rowClub = row.club as string;
     // Either of the two real values that landed him here maps back onto the
     // one sentinel bucket the caller actually asked for — not his literal
