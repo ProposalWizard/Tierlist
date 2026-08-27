@@ -1569,30 +1569,160 @@ function buildTightAngle(rng: () => number, keeperStrength: number, teamRelation
 }
 
 // Well outside the box — needs pace, and a screen to bend or lift the ball over.
+/**
+ * FIVE WAYS TO BE A LONG WAY OUT.
+ *
+ * Reported after playing it: "this long range shooting attacking scenario is
+ * very common, it's basically this exact scenario every time." It was. Unlike
+ * the one-on-one and the tight angle — which each pick one of several
+ * pictures — this builder had a single layout: you dead central twenty-five
+ * metres out, two defenders on a line in front of you, an empty penalty area
+ * behind them, and `teammates: []` / `runner: null` / `receiver: null`, so
+ * there was never anybody to play it to. Shoot or nothing, every time.
+ *
+ * The `addCover`/`addSupport` passes that run afterwards vary the NUMBER of
+ * bodies, and that was doing real work — but the shape underneath never
+ * changed, and shape is what you actually read when you look at a chance.
+ *
+ * The five below are different questions rather than the same question with
+ * the furniture nudged: how much of the goal can I see, is the lane open, is
+ * somebody about to close me down, and — the one that was missing entirely —
+ * is there a better ball than the shot. `passTarget`/`runner` are set on the
+ * shapes that have a man worth finding, so laying it off is a real option and
+ * not a thing the situation refuses to model. The player's own bar for this:
+ * "as long as you can score or you can pass, then that's good."
+ *
+ * The back line is still laid out relative to the GOAL, never relative to you
+ * — see the note the original carried, which is preserved in every branch.
+ */
 function buildLongRange(rng: () => number, keeperStrength: number, teamRelationship: number) {
-  const bx = CX + (rng() - 0.5) * 20;
-  const by = 24 + rng() * 10;
-  // ── A block, in front of their own goal ──
+  const shape = rng();
+  const side = rng() < 0.5 ? -1 : 1;
+
+  // ── The ordinary one: central, a screen of two, and a sight of goal ──
+  if (shape < 0.34) {
+    // Production's exact spread — this branch IS the old scenario, kept as
+    // the most common one so the chance you get most often is the chance you
+    // always got.
+    const bx = CX + (rng() - 0.5) * 20;
+    const by = 24 + rng() * 10;
+    const line = clamp(by * 0.42, 8, 17);
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      defenders: [
+        { x: clamp(CX - 3.5 - rng() * 7, 9, PITCH_W - 9), y: line + rng() * 1.8 },
+        { x: clamp(CX + 3.5 + rng() * 7, 9, PITCH_W - 9), y: line + 1.2 + rng() * 2.4 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── A crowded box, and a man in it ──
   //
-  // They used to be placed relative to YOU — three and six metres up the pitch
-  // from wherever you were standing — which put a defence thirty metres from
-  // its own goal for no reason a defender would recognise. Worse, the offside
-  // line went with them: your team-mates are not allowed past the second-last
-  // opponent, so they settled level with a line drawn round your feet, and the
-  // whole situation collapsed into a knot of six players with twenty-five metres
-  // of open grass between it and the goal.
+  // The one the report asked for by name: "it's this situation again, but also
+  // in and around the box, there are defenders and also some of my teammates."
+  // Bodies scattered through the penalty area rather than lined up in front of
+  // you, and a team-mate among them who is genuinely findable. The shot is
+  // still on — through traffic, which is what makes it a decision.
+  if (shape < 0.56) {
+    const bx = CX + (rng() - 0.5) * 16;
+    const by = 23 + rng() * 7;
+    const mate = { x: CX + side * (3 + rng() * 6), y: 7 + rng() * 6 };
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      // Three, not four. `addCover` puts another two to four on top of
+      // whatever a builder places, and the first version of this shape carried
+      // four of its own — which took the average long-range chance from 8.3%
+      // to 5.7% converted over 1,500 measured shots. That is a difficulty
+      // change wearing a variety change's clothes, which is exactly what
+      // COVER_RANGE's own note warns about. The picture is still a crowded
+      // one; there is just no longer a whole extra defender in it.
+      defenders: [
+        { x: clamp(CX - side * (4 + rng() * 5), 9, PITCH_W - 9), y: 14 + rng() * 3 },
+        // Marking your man, loosely — goal-side and a stride off, not on him.
+        { x: clamp(mate.x - side * (2.4 + rng() * 1.6), 8, PITCH_W - 8), y: clamp(mate.y + 1.2, 4, 12) },
+        { x: clamp(CX + (rng() - 0.5) * 9, 8, PITCH_W - 8), y: 6 + rng() * 4 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2.5, 1.2 + rng() * 1.2, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [],
+      runner: makeRunner(mate, { x: mate.x + side * 1.5, y: mate.y + 2.5 }),
+      passTarget: mate,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Wide and deep: the angle is the problem, not the distance ──
+  if (shape < 0.74) {
+    const bx = CX + side * (10 + rng() * 6);
+    const by = 21 + rng() * 8;
+    const line = clamp(by * 0.44, 9, 17);
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx - side * 0.8, y: by + 1.2 },
+      defenders: [
+        // One shows you inside, one holds the middle.
+        { x: clamp(bx - side * (3 + rng() * 2.5), 8, PITCH_W - 8), y: clamp(by - 3 - rng() * 3, 6, 24) },
+        { x: clamp(CX + (rng() - 0.5) * 6, 9, PITCH_W - 9), y: line + rng() * 2 },
+      ],
+      // He shades toward the near post from a ball this wide.
+      keeper: makeKeeper(CX + side * (1.5 + rng() * 1.6), 1.4 + rng() * 1.2, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Closing you down: hit it now or lose the chance ──
   //
-  // The line belongs to the goal it is defending. It drops as you come deeper,
-  // the way a real one does, but it never comes out to meet you.
-  const line = clamp(by * 0.42, 8, 17);
+  // Nobody is attached to you — the nearest man is three or four metres off
+  // and arriving, which is a clock rather than a cage. "As long as someone is
+  // not basically attached to your hip, then it's all fun."
+  if (shape < 0.88) {
+    const bx = CX + (rng() - 0.5) * 18;
+    const by = 25 + rng() * 8;
+    return {
+      ball: { x: bx, y: by },
+      player: { x: bx, y: by + 1.3 },
+      defenders: [
+        // Coming at you from an angle, not standing in the shooting lane. The
+        // first version put him within a metre and a half of dead in front,
+        // which measured 2.8% converted — that is not "hit it early", that is
+        // a blocked shot with extra steps.
+        { x: clamp(bx + side * (2.2 + rng() * 2.4), 8, PITCH_W - 8), y: by - 4.2 - rng() * 1.6 },
+        { x: clamp(CX - 5 - rng() * 5, 9, PITCH_W - 9), y: 13 + rng() * 3 },
+        { x: clamp(CX + 5 + rng() * 5, 9, PITCH_W - 9), y: 13 + rng() * 3 },
+      ],
+      keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.5 + rng() * 1.3, rng),
+      keeperStrength, follower: makeFollower(rng, by),
+      goal: GOAL, crossbar: CROSSBAR,
+      kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
+      receiver: null, receiverDone: false, teamRelationship,
+    } as unknown as Scenario;
+  }
+
+  // ── Miles out, and the lane is open ──
+  //
+  // The one worth taking on: thirty-plus metres, nobody within a few strides,
+  // a deep line that has dropped off. Rare, and it should be.
+  const bx = CX + (rng() - 0.5) * 12;
+  const by = 30 + rng() * 5;
   return {
     ball: { x: bx, y: by },
     player: { x: bx, y: by + 1.3 },
     defenders: [
-      { x: clamp(CX - 3.5 - rng() * 7, 9, PITCH_W - 9), y: line + rng() * 1.8 },
-      { x: clamp(CX + 3.5 + rng() * 7, 9, PITCH_W - 9), y: line + 1.2 + rng() * 2.4 },
+      { x: clamp(CX - 6 - rng() * 6, 9, PITCH_W - 9), y: 10 + rng() * 3 },
+      { x: clamp(CX + 6 + rng() * 6, 9, PITCH_W - 9), y: 10 + rng() * 3 },
     ],
-    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 1.6 + rng() * 1.4, rng),
+    keeper: makeKeeper(CX + (rng() - 0.5) * 2, 2.2 + rng() * 1.8, rng),
     keeperStrength, follower: makeFollower(rng, by),
     goal: GOAL, crossbar: CROSSBAR,
     kind: "long_range" as const, teammates: [], runner: null, passTarget: null,
@@ -2954,6 +3084,27 @@ export function dragForFullPower(power: number): number {
   return 0.18 - clamp(power, 0, 100) / 100 * 0.06;
 }
 
+/**
+ * HOW MUCH A HARDER STRIKE ADDS TO HEIGHT.
+ *
+ * Reported: "the power is good, but only when you have full power — you
+ * should be able to do 20% power and kick the ball high up, and it will
+ * still go very high, because that's where you kicked the ball... but it
+ * doesn't seem to do that." Real: `vz` used to be `loft * power * ...` —
+ * height scaled linearly with how hard you pulled back, same as forward
+ * pace, so a ball struck dead at the bottom with a soft touch barely rose
+ * at all. Real football doesn't work that way: where you strike the ball
+ * sets its trajectory shape close to independent of how hard you hit it —
+ * a gentle scoop under the ball still pops it up steeply, it just doesn't
+ * travel far; a firm strike under the ball goes up AND forward, ending up
+ * only a little higher for a lot more pace. `VZ_POWER_FLOOR` is how much
+ * of full height a feather-light touch still gets; `VZ_POWER_WEIGHT` is
+ * how much more full power can add on top of that. Forward pace (`Sh`,
+ * below) is untouched — that part was already reported as correct.
+ */
+const VZ_POWER_FLOOR = 0.88;
+const VZ_POWER_WEIGHT = 0.12;
+
 // Launch the ball from a slingshot aim + a contact point.
 export function launch(
   scenario: Scenario,
@@ -2970,6 +3121,47 @@ export function launch(
   const usableCy = contact.cy * loftRange(tech);
   const loft = clamp((usableCy + 1) / 2, 0, 1); // 0 = struck top (driven), 1 = struck bottom (lofted)
 
+  /**
+   * HOW HIGH IT GOES, AS A LINEAR FUNCTION OF WHERE YOU HIT IT.
+   *
+   * Reported: the lift is right at the very bottom of the ball, but a contact
+   * only slightly above that loses a lot of height — "there seems to be a huge
+   * jump from the absolute lowest point and then still a very low point", and
+   * "the top of the ball means zero height and the bottom means a hundred",
+   * which is the model it should follow.
+   *
+   * The suspicion was right and the cause is one step further back than it
+   * looks. `loft` above IS already linear in where you hit — it is the
+   * VELOCITY that is linear. Height is not velocity: a projectile's apex is
+   * vz²/2g, so it goes as the SQUARE of it, and squaring a linear ramp is what
+   * produces the cliff. Measured on the old curve, as a share of the maximum
+   * height available:
+   *
+   *     very bottom  100%      dead centre   31%
+   *     near bottom   83%      very top       1%
+   *
+   * Dead centre returning 31% is the giveaway — on the stated model it should
+   * be half. So: take the square root, which cancels the squaring exactly and
+   * makes the APEX linear in the contact point rather than the launch speed.
+   * Multiplying by `tMax` inside the root normalises it, so the very bottom of
+   * the ball produces precisely the height it does today — the part that was
+   * reported as already good — and everything above it is lifted onto the
+   * straight line up to it:
+   *
+   *     very bottom  100%      dead centre   56%
+   *     near bottom   91%      very top      11%
+   *
+   * The top is 11% rather than a true zero because `loftRange` deliberately
+   * shrinks how much of the ball a low-technique player can use, in both
+   * directions — see loftRange. A driven ball still leaving the ground a
+   * little is also what a driven ball does.
+   *
+   * Only vz reads this. `loft` still drives the horizontal-pace trade below,
+   * so how far the ball travels forward is untouched.
+   */
+  const tMax = clamp((loftRange(tech) + 1) / 2, 0, 1);
+  const lift = Math.sqrt(loft * tMax);
+
   // Accuracy: a little, so a beginner does miskick — but technique is no longer
   // primarily an accuracy stat. See curlRange/loftRange above and §13.7.
   const sigmaDeg = (1 - tech / 100) * 2.2 + power * (1 - tech / 100) * 1.6;
@@ -2980,8 +3172,10 @@ export function launch(
   // leaves the boot around 28 m/s; a 100-power player nudges 36. Lofting bleeds
   // a little ground speed into the air.
   const Sh = power * (18 + skills.power * 0.18) * (1 - loft * 0.25);
-  // Vertical launch speed from how low on the ball it was struck.
-  const vz = loft * power * (7.5 + skills.power * 0.035);
+  // Vertical launch speed from how low on the ball it was struck. Deliberately
+  // NOT `loft * power * ...` — see VZ_POWER_FLOOR/VZ_POWER_WEIGHT above. How
+  // hard you struck it only nudges the height; where you struck it decides it.
+  const vz = lift * (7.5 + skills.power * 0.035) * (VZ_POWER_FLOOR + power * VZ_POWER_WEIGHT);
   // Curl from striking the side of the ball. Technique decides how much of that
   // side is available to you at all, which is what makes a curled finish
   // something you unlock rather than something you are simply better at.
@@ -3352,6 +3546,21 @@ const SHOT_MOUTH_PAD = 3;           // metres either side of the posts still cou
  *
  * The first bounce and no further: after that it is a rolling ball and you can
  * see perfectly well where that is going.
+ *
+ * …or the goal line, whichever comes first. This never used to matter — a
+ * shot at goal used to run out of height and touch down well short of the
+ * line under the OLD, power-linear vz, so a pure-gravity extrapolation and
+ * "where the shot actually resolves" were close enough not to notice. The
+ * height fix above (see VZ_POWER_FLOOR/VZ_POWER_WEIGHT) makes a firm,
+ * well-struck shot fly further while still airborne, on purpose — which
+ * means it can now cross the goal line while this loop is still happily
+ * extrapolating pure ballistic flight, with no idea a net is there to stop
+ * it: measured directly, a mark landing 13 metres BEHIND the goal line for
+ * a shot that was always going in or hitting the net. The mark is only ever
+ * shown while the ball is still in flight and not yet in the net (see
+ * CanvasMatch.tsx), so a crossing here is the last useful thing to report —
+ * nobody needs to know where a ball would have landed if the goal were not
+ * there.
  */
 export function firstBounceAt(ball: Ball, conditions?: Scenario["conditions"], horizon = 5): Vec2 | null {
   if (ball.z <= 0.25 && ball.vz <= 0) return null;
@@ -3376,11 +3585,25 @@ export function firstBounceAt(ball: Ball, conditions?: Scenario["conditions"], h
     }
     vz -= G * dt;
     const nz = z + vz * dt;
+    const py = y;
     x += vx * dt; y += vy * dt;
     if (nz <= 0) {
       // Land it on the exact crossing rather than a step past it.
       const f = z / (z - nz || 1);
       return { x: x - vx * dt * (1 - f), y: y - vy * dt * (1 - f) };
+    }
+    // The goal line — but only really "the end" when the ball is actually
+    // low enough and central enough to be caught by the net there. A shot
+    // that clears the bar, or misses the frame either side, crosses y = 0
+    // and just keeps flying, the same way stepBall lets it: no net there to
+    // stop it, so this loop should not invent one either.
+    if (py > 0 && y <= 0) {
+      const f = py / (py - y || 1);
+      const crossX = x - vx * dt * (1 - f);
+      const crossZ = z + (nz - z) * f;
+      if (insideGoalMouth(crossX) && crossZ <= GOAL_H) {
+        return { x: crossX, y: 0 };
+      }
     }
     z = nz;
   }

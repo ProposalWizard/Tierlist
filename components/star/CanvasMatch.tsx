@@ -97,8 +97,14 @@ const FALLBACK_CAREER = {
  * The shortest drag that counts as aiming at all, as a fraction of the canvas
  * height. About a thumb's width of slop — below it, you pressed the ball and
  * your finger moved, which is not a shot.
+ *
+ * Production's old 0.04 was the real reason a light touch needed ~20% power
+ * to register at all — powerFromDrag divides this by dragForFullPower
+ * (0.12-0.18), so 0.04 alone already forced a floor of roughly 22-33% power
+ * before the 0.12 power check further down even ran. Reported directly.
+ * Dropped to a genuine mis-tap-sized floor instead.
  */
-const MIN_PULL = 0.04;
+const MIN_PULL = 0.008;
 
 /**
  * The shortest pull off a team-mate that counts as pointing him somewhere,
@@ -1812,7 +1818,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const power = powerFromDrag(d, sc.ball);
       const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
       const len = Math.hypot(dx, dy) || 1;
-      const lineLen = power * (vp.y2 - vp.y1) * 0.22;
+      // Half the previous length at full power. Purely the drawn length —
+      // `power` itself (and how far you actually have to drag to reach it) is
+      // untouched, since this is computed FROM `power`, not the other way
+      // round. Reported directly: "make it so that a hundred percent power is
+      // about half the length... you don't have to change the power."
+      const lineLen = power * (vp.y2 - vp.y1) * 0.11;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
@@ -1823,9 +1834,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const ux = Math.cos(ang), uy = Math.sin(ang);
       const nx = -uy, ny = ux; // perpendicular
       const arrowLen = Math.hypot(b.px - a.px, b.py - a.py) || 1;
-      const headLen = clamp(W * 0.075, W * 0.03, arrowLen * 0.55);
-      const headHalf = W * 0.05;
-      const shaftW = W * 0.03;
+      // Slimmer, more tapered arrow — the old shaft/head were roughly a third
+      // of the arrow's own length wide, which read as a fat wedge rather than
+      // a thrown dart. Reported directly against a reference screenshot of a
+      // slim, needle-like drag arrow.
+      const headLen = clamp(W * 0.045, W * 0.02, arrowLen * 0.45);
+      const headHalf = W * 0.022;
+      const shaftW = W * 0.014;
       const bx = b.px - ux * headLen, by = b.py - uy * headLen; // head base
 
       // shaft
@@ -2768,7 +2783,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // a thumb pressing the ball and slipping. The absolute floor keeps the
     // dead zone the size it has always been on the glass.
     if (screenPull(d, b) < MIN_PULL) return;
-    if (power < 0.12) return; // too weak — stay in aim
+    // Production's old 0.12 floor is what made a real drag feel like it
+    // needed ~20% power just to register as a kick at all — reported
+    // directly. Any pull past the absolute pixel floor above now counts.
+    if (power < 0.02) return;
     const dir = { x: b.x - d.x, y: b.y - d.y };
     setAim({ dir, power });
     setPhase("contact");

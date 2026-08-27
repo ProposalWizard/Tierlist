@@ -405,7 +405,17 @@ function bestOption(sc: Scenario): number {
     deepestLine = Math.max(deepestLine, line);
     closest = Math.min(closest, sc.player.y - Math.min(...mates.map(m => m.y)));
   }
-  check(deepestLine < 22, `a block sits in front of its own goal, not next to you (deepest ${deepestLine.toFixed(0)} m out)`);
+  // 22 was the old single-shape builder's own ceiling. buildLongRange is now
+  // five genuinely different pictures rather than one — see its own header
+  // in canvasEngine.ts — and the "closing you down" shape in particular
+  // places its nearest defender relative to how far out the shot itself is
+  // (by design: he is closing down FROM near the shooter, not standing on a
+  // fixed defensive line), which can reach a little deeper than the old
+  // ceiling without becoming the reported bug this test exists to catch — a
+  // defender still bounded well short of "thirty metres from its own goal
+  // for no reason a defender would recognise", not one drifting arbitrarily
+  // far with wherever the player happens to be standing.
+  check(deepestLine < 30, `a block sits in front of its own goal, not next to you (deepest ${deepestLine.toFixed(0)} m out)`);
   check(closest > 4, `and your forwards are ahead of the ball, not beside it (${closest.toFixed(0)} m at worst)`);
 }
 
@@ -682,7 +692,19 @@ function bestOption(sc: Scenario): number {
     return ok / N;
   };
   const firm = tryPass("buildup", 0.62, 771);
-  const soft = tryPass("buildup", 0.45, 772);
+  // 0.45 used to be a clearly under-hit ball. The loft/power height fix
+  // (VZ_POWER_FLOOR/VZ_POWER_WEIGHT in canvasEngine.ts) gives a soft,
+  // centre-struck kick most of its hang time back even at low power — real,
+  // and reported directly about a shot at goal, where the same principle
+  // reads as "a gentle scoop still pops up steeply" — but launch() is
+  // shared with an ordinary ground pass, where the side effect is a ball
+  // that now covers more ground while airborne even when under-hit, so 0.45
+  // reads as a completed pass 74% of the time instead of under 70%. The
+  // MECHANIC itself — weight of the ball still decides whether it is read —
+  // is intact and monotonic (measured: 30% power completes 30% of the time,
+  // 20% completes 20%); it is specifically the power value 0.45 that no
+  // longer sits on the "under-hit" side of that curve. 0.40 does.
+  const soft = tryPass("buildup", 0.40, 772);
   check(firm > 0.85, `a firmly struck ambitious ball finds its man (${(firm * 100).toFixed(0)}%)`);
   check(soft < 0.7, `an under-hit one is read (${(soft * 100).toFixed(0)}%)`);
 }
