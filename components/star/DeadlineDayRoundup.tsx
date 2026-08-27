@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { kitsOf } from "@/lib/star/kits";
 import { seasonStartYear } from "@/lib/star/calendar";
+import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 
 /**
  * DEADLINE DAY.
@@ -44,6 +45,20 @@ function loanReturnLabel(career: CareerState, returnSeason: number): string {
   return `${y}/${String((y + 1) % 100).padStart(2, "0")}`;
 }
 
+/**
+ * Every club, not just the ones that happened to do business.
+ *
+ * Reported directly: the selector used to list only clubs that appeared in
+ * `leagueTransferNews`/`leagueLoanNews` — so a quiet window for, say,
+ * Everton meant Everton was simply not there to click on at all, with no
+ * way to confirm "nothing happened" versus "this list doesn't cover them."
+ * Seeded from `career.league` (the player's own division, all twenty or all
+ * twenty-four) so every real club has a tile, empty or not — a business a
+ * club with an actual deal still sorts to the top, ahead of the honestly
+ * quiet ones. `FREE_AGENTS_CLUB` is excluded on purpose: it is a pool, not
+ * a club, and never earns a tile of its own — a signing FROM it already
+ * shows up on the real signing club's own incomings card either way.
+ */
 function buildBusiness(career: CareerState): ClubBusiness[] {
   const byClub = new Map<string, ClubBusiness>();
   const get = (club: string): ClubBusiness => {
@@ -52,10 +67,12 @@ function buildBusiness(career: CareerState): ClubBusiness[] {
     return b;
   };
 
+  for (const t of career.league) get(t.name);
+
   for (const m of career.leagueTransferNews ?? []) {
     const detail = m.fee > 0 ? `£${m.fee}m` : "Free Transfer";
-    get(m.to).in.push({ player: m.player, counterpart: m.from, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
-    get(m.from).out.push({ player: m.player, counterpart: m.to, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
+    if (m.to !== FREE_AGENTS_CLUB) get(m.to).in.push({ player: m.player, counterpart: m.from, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
+    if (m.from !== FREE_AGENTS_CLUB) get(m.from).out.push({ player: m.player, counterpart: m.to, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
   }
   for (const l of career.leagueLoanNews ?? []) {
     const detail = `Loan · back ${loanReturnLabel(career, l.returnSeason)}`;
@@ -67,7 +84,8 @@ function buildBusiness(career: CareerState): ClubBusiness[] {
   list.sort((a, b) => {
     if (a.club === career.player.club) return -1;
     if (b.club === career.player.club) return 1;
-    return (b.in.length + b.out.length) - (a.in.length + a.out.length);
+    const byBusiness = (b.in.length + b.out.length) - (a.in.length + a.out.length);
+    return byBusiness !== 0 ? byBusiness : a.club.localeCompare(b.club);
   });
   return list;
 }
@@ -77,170 +95,194 @@ const WINDOW_LABEL: Record<string, string> = {
   january: "January Window",
 };
 
+/** A crisp black outline around the gold title, so it reads over black
+ *  ground and the gold panel alike — see the note above the title itself. */
+const TITLE_OUTLINE =
+  "-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 6px rgba(0,0,0,0.5)";
+
 export default function DeadlineDayRoundup({ career, onContinue }: { career: CareerState; onContinue: () => void }) {
   const business = useMemo(() => buildBusiness(career), [career]);
   const [selected, setSelected] = useState(() => business[0]?.club ?? career.player.club);
   const active = business.find(b => b.club === selected) ?? business[0];
 
   const totalDeals = (career.leagueTransferNews?.length ?? 0) + (career.leagueLoanNews?.length ?? 0);
-  const totalSpend = (career.leagueTransferNews ?? []).reduce((sum, m) => sum + m.fee, 0);
+  // Individual fees are already one-decimal (see feeFor in leagueTransfers.ts),
+  // but summing several of them hits ordinary float noise — a real window
+  // reproduced this as literally "£31.700000000000003m changed hands."
+  const totalSpend = Math.round((career.leagueTransferNews ?? []).reduce((sum, m) => sum + m.fee, 0) * 10) / 10;
   const windowKind = (career.lastTransferWindowKey ?? "").split("-")[1];
   const windowLabel = WINDOW_LABEL[windowKind] ?? "Transfer Window";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0a0a0d]">
-      {/* ── The diagonal gold panel and background chevrons — the reference's
-          whole visual signature: a dark ground, a slab of gold cut across it
-          at an angle, arrow shapes reinforcing the same diagonal. ── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute inset-y-0 right-0 w-[46%] min-w-[280px]"
-          style={{
-            background: "linear-gradient(115deg, #d99a00 0%, #f5c518 38%, #ffe066 62%, #f0b400 100%)",
-            clipPath: "polygon(18% 0, 100% 0, 100% 100%, 0% 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-y-0 right-0 w-[46%] min-w-[280px] opacity-40"
-          style={{
-            background: "linear-gradient(115deg, transparent 60%, rgba(0,0,0,0.35) 100%)",
-            clipPath: "polygon(18% 0, 100% 0, 100% 100%, 0% 100%)",
-          }}
-        />
-        {[0, 1, 2].map(i => (
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#0a0a0d]">
+      {/*
+        Everything below lives inside this one narrow column — the same
+        max-w-md rectangle every other screen in this game mode runs in
+        (DashboardShell, VersusScreen). Reported directly: built and
+        screenshotted at desktop width, where the diagonal gold panel below
+        (sized as a % of the *viewport*) sprawled into a slab wide enough to
+        sit behind the header no matter where it wrapped — so "DAY" being
+        dark text depended on the panel reaching it, which broke as soon as
+        this was actually seen at the width the game is played at. Confining
+        the whole scene to this column fixes both the sizing AND makes the
+        panel's own width % mean something real again; the title itself no
+        longer depends on the panel at all — see below.
+      */}
+      <div className="relative mx-auto flex h-full w-full max-w-md flex-col overflow-hidden">
+        {/* ── The diagonal gold panel and background chevrons — the
+            reference's whole visual signature: a dark ground, a slab of
+            gold cut across it at an angle, arrow shapes reinforcing the
+            same diagonal. ── */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            key={i}
-            className="absolute top-1/2 h-[70vh] w-[70vh] -translate-y-1/2 border-r-[3px] border-amber-400/25"
-            style={{ right: `${-10 + i * 9}%`, transform: `translateY(-50%) rotate(${18}deg)` }}
-          />
-        ))}
-      </div>
-
-      {/* Vertical edge tab, matching the reference's rotated sidebar label. */}
-      <div className="pointer-events-none absolute left-0 top-0 flex h-full w-8 flex-col items-center justify-start bg-black/70 pt-4">
-        <span className="rotate-180 text-[9px] font-black uppercase tracking-[0.3em] text-amber-300" style={{ writingMode: "vertical-rl" }}>
-          Transfers
-        </span>
-      </div>
-
-      {/* ── Header ── */}
-      <div className="relative z-10 flex flex-col items-start px-10 pb-2 pt-8 sm:pl-14">
-        <span className="rounded-full border border-amber-400/50 bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">
-          Season {career.season} · {windowLabel} Closed
-        </span>
-        <h1 className="mt-3 flex flex-wrap items-baseline gap-x-4 leading-[0.85]">
-          <span
-            className="text-5xl font-black italic tracking-tight sm:text-7xl"
+            className="absolute inset-y-0 right-0 w-[52%]"
             style={{
-              backgroundImage: "linear-gradient(180deg, #ffe066 0%, #f5c518 45%, #d99a00 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-              filter: "drop-shadow(0 2px 0 rgba(0,0,0,0.4))",
+              background: "linear-gradient(115deg, #d99a00 0%, #f5c518 38%, #ffe066 62%, #f0b400 100%)",
+              clipPath: "polygon(22% 0, 100% 0, 100% 100%, 0% 100%)",
             }}
-          >
-            DEADLINE
-          </span>
-          <span className="text-5xl font-black italic tracking-tight text-[#151008] sm:text-7xl">
-            DAY
-          </span>
-        </h1>
-        <p className="mt-2 max-w-md text-xs font-bold text-white/60 sm:text-sm">
-          {totalDeals} deal{totalDeals === 1 ? "" : "s"} done across the division
-          {totalSpend > 0 ? ` · £${totalSpend}m changed hands` : ""}.
-        </p>
-      </div>
-
-      {/* ── Club selector ── */}
-      <div className="relative z-10 mt-2 flex gap-1.5 overflow-x-auto px-10 pb-2 sm:pl-14" style={{ scrollbarWidth: "none" }}>
-        {business.map(b => {
-          const mine = b.club === career.player.club;
-          const isActive = b.club === selected;
-          const kit = kitsOf(b.club).home.shirt;
-          const count = b.in.length + b.out.length;
-          return (
-            <button
-              key={b.club}
-              onClick={() => setSelected(b.club)}
-              className={`flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-wide transition ${
-                isActive
-                  ? "border-black bg-black text-amber-300"
-                  : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10"
-              }`}
-            >
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: kit }} />
-              <span className="max-w-[9rem] truncate">{b.club}{mine ? " (You)" : ""}</span>
-              <span className={`rounded-full px-1.5 text-[9px] ${isActive ? "bg-amber-400 text-black" : "bg-white/10 text-white/60"}`}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
-        {business.length === 0 && (
-          <span className="text-xs font-bold text-white/50">No business this window — a quiet one for everybody.</span>
-        )}
-      </div>
-
-      {/* ── Selected club: incomings and outgoings ── */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-10 pb-28 pt-2 sm:pl-14">
-        {active && (
-          <div className="grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-400">
-                <span className="inline-block h-2 w-2 rounded-sm bg-emerald-400" /> In — {active.in.length}
-              </div>
-              <div className="space-y-1.5">
-                {active.in.length === 0 && <div className="text-xs font-bold text-white/40">No incomings.</div>}
-                {active.in.map((d, i) => (
-                  <div key={`in-${i}`} className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-sm font-black text-white">{d.player}</span>
-                      <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-emerald-300">{d.detail}</span>
-                    </div>
-                    <div className="text-[10px] font-bold text-white/60">
-                      from {d.counterpart} · {d.overall} OVR
-                      {d.unhappy && <span className="ml-1 text-amber-300">· forced the move</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-rose-400">
-                <span className="inline-block h-2 w-2 rounded-sm bg-rose-400" /> Out — {active.out.length}
-              </div>
-              <div className="space-y-1.5">
-                {active.out.length === 0 && <div className="text-xs font-bold text-white/40">No outgoings.</div>}
-                {active.out.map((d, i) => (
-                  <div key={`out-${i}`} className="rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-sm font-black text-white">{d.player}</span>
-                      <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-rose-300">{d.detail}</span>
-                    </div>
-                    <div className="text-[10px] font-bold text-white/60">
-                      to {d.counterpart} · {d.overall} OVR
-                      {d.unhappy && <span className="ml-1 text-amber-300">· forced the move</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Ticker + Continue ── */}
-      <div className="relative z-10 border-t border-white/10 bg-black/70 px-10 py-3 sm:pl-14">
-        <div className="mb-2 overflow-hidden whitespace-nowrap text-[10px] font-black uppercase tracking-widest text-amber-300/70">
-          Transfer Centre · {totalDeals} Deals This Window · {WINDOW_LABEL[windowKind] ?? "Transfer Window"} ·
-          Transfer Centre · {totalDeals} Deals This Window ·
+          />
+          <div
+            className="absolute inset-y-0 right-0 w-[52%] opacity-40"
+            style={{
+              background: "linear-gradient(115deg, transparent 60%, rgba(0,0,0,0.35) 100%)",
+              clipPath: "polygon(22% 0, 100% 0, 100% 100%, 0% 100%)",
+            }}
+          />
+          {[0, 1, 2].map(i => (
+            <div
+              key={i}
+              className="absolute top-1/2 h-[70vh] w-[70vh] -translate-y-1/2 border-r-[3px] border-amber-400/25"
+              style={{ right: `${-30 + i * 16}%`, transform: `translateY(-50%) rotate(${18}deg)` }}
+            />
+          ))}
         </div>
-        <button
-          onClick={onContinue}
-          className="rounded-lg bg-gradient-to-b from-[#ffe066] to-[#d99a00] px-6 py-2.5 text-sm font-black uppercase tracking-wide text-[#151008] shadow-lg transition hover:brightness-110"
-        >
-          Continue →
-        </button>
+
+        {/* Vertical edge tab, matching the reference's rotated sidebar label. */}
+        <div className="pointer-events-none absolute left-0 top-0 flex h-full w-7 flex-col items-center justify-start bg-black/70 pt-4">
+          <span className="rotate-180 text-[9px] font-black uppercase tracking-[0.3em] text-amber-300" style={{ writingMode: "vertical-rl" }}>
+            Transfers
+          </span>
+        </div>
+
+        {/* ── Header ── */}
+        <div className="relative z-10 flex flex-col items-start px-3 pb-2 pt-6 pl-9">
+          <span className="rounded-full border border-amber-400/50 bg-black/40 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
+            Season {career.season} · {windowLabel} Closed
+          </span>
+          {/*
+            Both words the same solid gold now — no more "DAY" set in a
+            colour meant to disappear into the panel behind it, which only
+            worked when the panel actually reached that far. A black outline
+            (the same layered-shadow trick VersusScreen's player names use,
+            not a background-clip gradient — that combined with a text-shadow
+            outline into something unreadable in testing) keeps it legible
+            over black ground OR gold panel, wherever the line wraps on a
+            given screen, rather than needing the two to line up by luck.
+          */}
+          <h1
+            className="mt-2 whitespace-nowrap text-[2.15rem] font-black italic leading-[0.85] tracking-tight text-[#ffd23f]"
+            style={{ textShadow: TITLE_OUTLINE }}
+          >
+            DEADLINE DAY
+          </h1>
+          <p className="mt-1.5 text-[11px] font-bold text-white/70">
+            {totalDeals} deal{totalDeals === 1 ? "" : "s"} done across the division
+            {totalSpend > 0 ? ` · £${totalSpend}m changed hands` : ""}.
+          </p>
+        </div>
+
+        {/* ── Club selector — every club in the division, not just the ones
+            with a deal to show. See buildBusiness above. ── */}
+        <div className="relative z-10 mt-1 flex gap-1.5 overflow-x-auto px-3 pb-2 pl-9" style={{ scrollbarWidth: "none" }}>
+          {business.map(b => {
+            const mine = b.club === career.player.club;
+            const isActive = b.club === selected;
+            const kit = kitsOf(b.club).home;
+            const count = b.in.length + b.out.length;
+            return (
+              <button
+                key={b.club}
+                onClick={() => setSelected(b.club)}
+                className={`flex flex-shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide transition ${
+                  isActive
+                    ? "border-black bg-black text-amber-300"
+                    : count > 0
+                      ? "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+                      : "border-white/10 bg-white/[0.02] text-white/45 hover:bg-white/10"
+                }`}
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full border border-white/30" style={{ backgroundColor: kit.shirt }} />
+                <span className="max-w-[6.5rem] truncate">{b.club}{mine ? " (You)" : ""}</span>
+                <span className={`rounded-full px-1.5 text-[9px] ${isActive ? "bg-amber-400 text-black" : count > 0 ? "bg-white/10 text-white/60" : "bg-white/5 text-white/35"}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Selected club: incomings and outgoings, stacked — a phone-
+            width column has no room for the two side by side. ── */}
+        <div className="relative z-10 flex-1 overflow-y-auto px-3 pb-28 pt-2 pl-9">
+          {active && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-400">
+                  <span className="inline-block h-2 w-2 rounded-sm bg-emerald-400" /> In — {active.in.length}
+                </div>
+                <div className="space-y-1.5">
+                  {active.in.length === 0 && <div className="text-xs font-bold text-white/40">No incomings.</div>}
+                  {active.in.map((d, i) => (
+                    <div key={`in-${i}`} className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-sm font-black text-white">{d.player}</span>
+                        <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-emerald-300">{d.detail}</span>
+                      </div>
+                      <div className="text-[10px] font-bold text-white/60">
+                        from {d.counterpart} · {d.overall} OVR
+                        {d.unhappy && <span className="ml-1 text-amber-300">· forced the move</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-rose-400">
+                  <span className="inline-block h-2 w-2 rounded-sm bg-rose-400" /> Out — {active.out.length}
+                </div>
+                <div className="space-y-1.5">
+                  {active.out.length === 0 && <div className="text-xs font-bold text-white/40">No outgoings.</div>}
+                  {active.out.map((d, i) => (
+                    <div key={`out-${i}`} className="rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-sm font-black text-white">{d.player}</span>
+                        <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-rose-300">{d.detail}</span>
+                      </div>
+                      <div className="text-[10px] font-bold text-white/60">
+                        to {d.counterpart} · {d.overall} OVR
+                        {d.unhappy && <span className="ml-1 text-amber-300">· forced the move</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Ticker + Continue ── */}
+        <div className="relative z-10 border-t border-white/10 bg-black/70 px-3 py-3 pl-9">
+          <div className="mb-2 overflow-hidden whitespace-nowrap text-[9px] font-black uppercase tracking-widest text-amber-300/70">
+            Transfer Centre · {totalDeals} Deals This Window · {WINDOW_LABEL[windowKind] ?? "Transfer Window"} ·
+            Transfer Centre · {totalDeals} Deals This Window ·
+          </div>
+          <button
+            onClick={onContinue}
+            className="rounded-lg bg-gradient-to-b from-[#ffe066] to-[#d99a00] px-6 py-2.5 text-sm font-black uppercase tracking-wide text-[#151008] shadow-lg transition hover:brightness-110"
+          >
+            Continue →
+          </button>
+        </div>
       </div>
     </div>
   );
