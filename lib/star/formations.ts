@@ -33,23 +33,37 @@ export interface Formation {
   slots: Slot[];
 }
 
-// Bands, so every formation sits on the same lines and they look like a family.
-const GK = 0.94, DEF = 0.77, WB = 0.74, HOLD = 0.61, MID = 0.49, ATT = 0.35, FWD = 0.17;
+// Bands, so every formation sits on the same lines and they look like a
+// family — spaced evenly across the striker-to-keeper range rather than
+// bunched, since every one of these rows has to clear a real player chip
+// (see pitchLayout.ts and formationSpacing.mts) in a fraction of the pitch
+// box's height. Two deliberate departures from dead-even spacing, both
+// reported directly against real formations:
+//  - DEF4, back four's own line, sits BELOW the even DEF a back three or
+//    back five would use — pushed a little closer to goal, widening the gap
+//    to CDM/CM in front of it (4-2-3-1's centre-backs and holding two were
+//    overlapping).
+//  - WB does the same job for a back five's whole line — wing-backs AND
+//    centre-backs both, a flat five rather than centre-backs a notch higher
+//    — pushed further from goal than DEF4, widening the gap to the
+//    goalkeeper instead (5-2-2-1's keeper and central centre-back were
+//    overlapping).
+const GK = 0.94, DEF4 = 0.80, DEF = 0.786, WB = 0.73, HOLD = 0.632, MID = 0.478, ATT = 0.324, FWD = 0.17;
 
 const gk = (): Slot => ({ role: "GK", x: 0.5, y: GK });
 /** A flat back four. */
 const back4 = (): Slot[] => [
-  { role: "LB", x: 0.12, y: DEF }, { role: "CB", x: 0.38, y: DEF },
-  { role: "CB", x: 0.62, y: DEF }, { role: "RB", x: 0.88, y: DEF },
+  { role: "LB", x: 0.12, y: DEF4 }, { role: "CB", x: 0.38, y: DEF4 },
+  { role: "CB", x: 0.62, y: DEF4 }, { role: "RB", x: 0.88, y: DEF4 },
 ];
 /** Three centre-halves. */
 const back3 = (): Slot[] => [
   { role: "CB", x: 0.30, y: DEF }, { role: "CB", x: 0.50, y: DEF }, { role: "CB", x: 0.70, y: DEF },
 ];
-/** Three centre-halves and two wing-backs, who push higher. */
+/** Three centre-halves and two wing-backs, all level — a flat five. */
 const back5 = (): Slot[] => [
-  { role: "LB", x: 0.07, y: WB, label: "LWB" }, { role: "CB", x: 0.30, y: DEF },
-  { role: "CB", x: 0.50, y: DEF }, { role: "CB", x: 0.70, y: DEF },
+  { role: "LB", x: 0.07, y: WB, label: "LWB" }, { role: "CB", x: 0.30, y: WB },
+  { role: "CB", x: 0.50, y: WB }, { role: "CB", x: 0.70, y: WB },
   { role: "RB", x: 0.93, y: WB, label: "RWB" },
 ];
 
@@ -127,7 +141,7 @@ export const FORMATIONS: Formation[] = [
 
   f("4231(2)", "4-2-3-1 (narrow)", back4(),
     [{ role: "CM", x: 0.35, y: HOLD - 0.02 }, { role: "CM", x: 0.65, y: HOLD - 0.02 }],
-    [{ role: "CAM", x: 0.28, y: ATT }, { role: "CAM", x: 0.50, y: ATT - 0.04 }, { role: "CAM", x: 0.72, y: ATT }],
+    [{ role: "CAM", x: 0.28, y: ATT }, { role: "CAM", x: 0.50, y: ATT - 0.015 }, { role: "CAM", x: 0.72, y: ATT }],
     [{ role: "ST", x: 0.50, y: FWD - 0.02 }]),
 
   f("424", "4-2-4", back4(),

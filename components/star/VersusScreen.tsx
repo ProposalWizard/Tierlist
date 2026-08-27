@@ -2,12 +2,13 @@
 import { useState } from "react";
 import type { Matchday, SheetPlayer, TeamSheet } from "@/lib/star/teamsheet";
 import type { LeagueResult } from "@/lib/star/types";
-import { kitsFor, labelInk, type Kit } from "@/lib/star/kits";
+import { kitsFor, labelInk, kitLabelOnDark, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
 import { isDerby, strongestTier, rivalryOf } from "@/lib/star/rivalries";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { place, across } from "@/lib/star/pitchLayout";
 
 /**
  * THE TEAM SHEETS.
@@ -53,51 +54,28 @@ interface Props {
 }
 
 /**
- * Where a man stands, once his half has been squeezed to half a pitch.
+ * Where a man stands, once his half has been squeezed to half a pitch, and
+ * the reflection that turns his side around to face the other way.
  *
- * The formation's own y runs from a striker at 0.17 to the goalkeeper at 0.94.
- * Mapping that straight onto [0.5, 1] puts both sides' forward lines exactly on
- * the halfway line, on top of each other. So the two ends are inset by what a
- * chip actually measures: a face plus its name, held apart from the man facing
- * it by its own radius, and inset from the goal line by the same amount so a
- * goalkeeper's name is never cut off by the edge of the pitch.
+ * `place`/`across` themselves — and the insets that decide how much of the
+ * pitch box's height a half actually gets — now live in lib/star/pitchLayout.ts,
+ * shared with tests/star/formationSpacing.mts. That split exists because
+ * eleven rows squeezed into a fraction of the box's height is a real, tight
+ * pixel budget: a chip is a face plus a name, both formations.ts's bands and
+ * the insets below are tuned against exactly how much room that leaves, and
+ * a test can check the two stay honest with each other in a way eyeballing
+ * a screenshot can't.
  *
- * The `place`d value never crosses 0.5 for the top side or drops below it for
+ * `place`'s result never crosses 0.5 for the top side or drops below it for
  * the bottom side — each side is clamped to its own half, which is the whole
  * point: a formation squeezed to fit its half must not spill into the other
- * one, however forward its most advanced man is meant to look.
+ * one, however forward its most advanced man is meant to look. `across`
+ * turns a formation around as the rotation about the centre spot it actually
+ * is — flipping only y (what a naive mirror does) swaps every slot's left
+ * and right instead, which shipped once and was reported as exactly that:
+ * "Reinildo is a left back but the way it's showing it is actually showing
+ * him as a right back."
  */
-const NEAR = 0.17, FAR = 0.94;
-const HALFWAY_INSET = 0.075;
-const GOAL_INSET = 0.105;
-
-function place(y: number, bottom: boolean): number {
-  const t = (y - NEAR) / (FAR - NEAR);          // 0 at the striker, 1 at the keeper
-  const near = 0.5 + HALFWAY_INSET;             // the forward line, in its own half
-  const far = 1 - GOAL_INSET;                   // the goalkeeper
-  const at = near + t * (far - near);
-  return bottom ? at : 1 - at;
-}
-
-/**
- * …and the same for the OTHER axis, which is the half of it that was missing.
- *
- * The top side is drawn attacking downward — `place` flips its y so its keeper
- * sits against the top goal line. Flipping only y is a REFLECTION, not the
- * half-turn a side actually makes when it changes ends, so every slot with a
- * left and a right came out swapped: a left back stood at right back, the two
- * centre backs swapped, the wingers swapped. Nothing about the picture looked
- * obviously wrong — the shape is symmetric — which is exactly why it survived,
- * and reported as precisely that: "Reinildo is a left back but the way it's
- * showing it is actually showing him as a right back."
- *
- * Turning a formation around is a rotation about the centre spot: BOTH axes
- * flip. The bottom side, drawn the way the coordinates are already written,
- * needs neither.
- */
-function across(x: number, bottom: boolean): number {
-  return bottom ? x : 1 - x;
-}
 
 /**
  * A crisp black line around white (or amber) text, without a background box.
@@ -238,7 +216,7 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             opponent's team" — this used to mean skipping the team-sheet
             screen entirely, for BOTH sides, the moment either one fell
             short. */}
-        <div className="relative aspect-[3/4.15] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
+        <div className="relative aspect-[3/5] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
           {/* Markings, drawn once and read by nothing. */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
@@ -305,7 +283,7 @@ function TeamHeader({ club, kit, formation, form, scouted }: {
       <FormRow form={form} />
       <div
         className="truncate text-[9px] font-black uppercase tracking-wider"
-        style={{ color: scouted ? kit.shirt : "rgba(255,255,255,0.4)" }}
+        style={{ color: scouted ? kitLabelOnDark(kit.shirt, kit.trim) : "rgba(255,255,255,0.4)" }}
       >
         {scouted ? formation : "Unscouted"}
       </div>
@@ -406,7 +384,7 @@ function Man({ p, kit, keeper, bottom }: {
           clipping the star along with everything else that strayed past its
           edge. This wrapper gives the star a positioning parent that doesn't
           also clip it. */}
-      <div className="relative order-2 h-[34px] w-[34px]">
+      <div className="relative order-2 h-[25px] w-[25px]">
         {p.isYou && <YouStar />}
         <div
           className="h-full w-full overflow-hidden rounded-full border-2 border-white/60"
@@ -438,7 +416,7 @@ function Man({ p, kit, keeper, bottom }: {
           even with both forward lines now facing the same way, the nearest
           face and the name below it clear the opposing face by ~35px at a
           typical phone width, nowhere near enough to touch. */}
-      <div className="order-3 mt-0.5 flex w-full items-center justify-center gap-0.5 px-0.5">
+      <div className="order-3 flex w-full items-center justify-center gap-0.5 px-0.5">
         <span className="truncate text-[9px] font-black leading-tight text-white" style={TEXT_OUTLINE}>
           {p.short}
         </span>
