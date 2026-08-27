@@ -47,19 +47,27 @@ const TROPHY_ICON: Record<string, string> = {
   "Community Shield": "🛡️", "Super Cup": "🛡️",
 };
 
-function TrophyCard({ competition, club, isYou }: { competition: string; club: string | null; isYou: boolean }) {
+function TrophyCard({ competition, club, isYou, isGuess }: {
+  competition: string; club: string | null; isYou: boolean; isGuess: boolean;
+}) {
   return (
     <div className={`rounded-xl border p-2.5 ${isYou ? "border-amber-400/50 bg-amber-500/10" : "border-white/12 bg-white/[0.04]"}`}>
       <div className="text-[9px] font-black uppercase tracking-widest text-white/50">
         {TROPHY_ICON[competition] ?? "🏆"} {competition}
       </div>
       {club ? (
-        <div className="mt-1.5 flex items-center gap-1.5">
-          <Crest club={club} size={20} />
-          <span className="min-w-0 flex-1 truncate text-[12px] font-black text-white">
-            {shortClub(club)}{isYou ? " (You)" : ""}
-          </span>
-        </div>
+        <>
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <Crest club={club} size={20} />
+            <span className="min-w-0 flex-1 truncate text-[12px] font-black text-white">
+              {shortClub(club)}{isYou ? " (You)" : ""}
+            </span>
+          </div>
+          {/* A Community Shield/Super Cup you were not in is a genuine
+              estimate, not a settled result — said outright rather than
+              presented with the same confidence as a real score. */}
+          {isGuess && <div className="mt-1 text-[8px] font-bold uppercase tracking-wide text-white/35">Estimated — not your match</div>}
+        </>
       ) : (
         <div className="mt-1.5 text-[11px] font-bold text-white/35">Not contested this season</div>
       )}
@@ -173,7 +181,7 @@ export default function SeasonAwardsScreen({ career, onContinue }: Props) {
           <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-white/60">Trophies</div>
           <div className="grid grid-cols-2 gap-2">
             {trophies.map(t => (
-              <TrophyCard key={t.competition} competition={t.competition} club={t.club} isYou={t.isYou} />
+              <TrophyCard key={t.competition} competition={t.competition} club={t.club} isYou={t.isYou} isGuess={t.isGuess} />
             ))}
           </div>
         </div>

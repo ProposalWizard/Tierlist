@@ -199,8 +199,61 @@ function baseCareer(): CareerState {
   const shield = trophyList.find(t => t.competition === "Community Shield");
   check(shield?.club === "Arsenal" && shield?.isYou === true, "a Community Shield you actually played and won is recorded");
 
+  // A Super Cup you were never in still has a real answer — pointed out
+  // directly: this game already knows both contestants (that season's
+  // Champions League and Europa League winners), so it can guess who won,
+  // the same weighted way crownWithoutYou already guesses a European
+  // trophy you were not there for. It is still labelled as a guess, not
+  // presented with the same confidence as a real result.
   const superCup = trophyList.find(t => t.competition === "Super Cup");
-  check(superCup?.club === null, "a Super Cup you were never in reports as genuinely unknown, not a guessed winner");
+  check(superCup?.club === "Real Madrid" || superCup?.club === "Roma",
+    `a Super Cup you were never in still gets a real guessed winner, from the two real contestants (got ${superCup?.club})`);
+  check(superCup?.isGuess === true, "…clearly marked as a guess, not a settled result");
+  check(superCup?.isYou === false, "…and never marked as yours, since you were not in it");
+}
+
+// ── The Double: the runner-up takes the champion's Community Shield slot ───
+//
+// Arsenal won both the league AND the FA Cup, so the Shield cannot be
+// "Arsenal v Arsenal" — the real competition plays the league runner-up in
+// the champion's place. Checked by actually seeing BOTH Arsenal (the FA Cup
+// holder) and Liverpool (the runner-up standing in) win across several
+// seeds: if the Double substitution were broken and Liverpool never
+// actually entered the guess as a contestant, only Arsenal could ever come
+// out, seed after seed.
+{
+  const seenWinners = new Set<string>();
+  for (let season = 1; season <= 30; season++) {
+    const career: CareerState = {
+      ...baseCareer(),
+      season,
+      trophies: [],
+      lastSeasonWinners: {
+        league: "Arsenal", leagueRunnerUp: "Liverpool", faCup: "Arsenal", // the Double
+        leagueCup: "Chelsea", championsLeague: "Real Madrid", europaLeague: "Roma",
+      },
+    };
+    const stats = computeSeasonAwardStats(career);
+    const shield = trophyWinners(career, stats).find(t => t.competition === "Community Shield");
+    if (shield?.club) seenWinners.add(shield.club);
+  }
+  check(seenWinners.has("Liverpool"),
+    `the runner-up genuinely stands in for the champion's own Double and can win (seen: ${[...seenWinners].join(", ")})`);
+  check(seenWinners.has("Arsenal"), "…and the actual FA Cup holder remains the other real contestant");
+}
+
+// ── …and genuinely unknown when there is nothing to guess FROM ─────────────
+{
+  // Season 1 has no predecessor at all — makeInitialCareer never sets
+  // lastSeasonWinners, matching seedPreSeason's own "season 1 cannot have
+  // either" rule.
+  const career = baseCareer();
+  const stats = computeSeasonAwardStats(career);
+  const trophyList = trophyWinners(career, stats);
+  const shield = trophyList.find(t => t.competition === "Community Shield");
+  const superCup = trophyList.find(t => t.competition === "Super Cup");
+  check(shield?.club === null && !shield?.isGuess, "no predecessor season means no Community Shield guess either");
+  check(superCup?.club === null && !superCup?.isGuess, "…and no Super Cup guess");
 }
 
 if (problems.length) {
