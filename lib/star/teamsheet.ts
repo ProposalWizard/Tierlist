@@ -435,13 +435,28 @@ export function matchdayFor(
   if (starting) ours = forceIntoXI(ours, you);
 
   const oppSquad = (career.leagueSquads ?? []).find(s => s.club === theirs);
-  // Only the opponent rotates — your own side is either what you saved or
-  // your club's honest best XI, never something the game changes on you.
+  // A lineup saved for the OPPONENT in the /lineups builder — the same
+  // per-club store your own side reads a few lines up. Reported directly,
+  // with a real example (a Chelsea eleven set by hand, a completely
+  // different one shown kicking off against it): the store and the builder
+  // both work for any club, not just your own, but nothing here ever
+  // actually read it back for anyone else — an opponent was always
+  // auto-picked and rotated regardless of what had been saved for them.
+  // Skips rotation entirely when a lineup was actually saved, the same way
+  // your own club's does — a side you set out by hand is not something the
+  // game should be quietly shuffling.
+  const oppSaved = loadLineup(theirs);
+  const oppSavedXI: SavedXI | undefined = oppSaved && oppSaved.xi.some(Boolean)
+    ? { formation: formationOf(oppSaved.formation), xi: oppSaved.xi }
+    : undefined;
+  // Only an opponent with nothing saved for them rotates — your own side is
+  // either what you saved or your club's honest best XI, never something
+  // the game changes on you.
   const rotation: RotationPlan = {
     rng: mulberry32(rotationSeedFor(theirs, fixture, career.season)),
     chance: rotationChanceFor(fixture),
   };
-  const them = build(theirs, fromLeagueSquad(oppSquad), false, undefined, undefined, rotation);
+  const them = build(theirs, fromLeagueSquad(oppSquad), false, oppSaved?.bench, oppSavedXI, rotation);
 
   return fixture.home
     ? { home: ours, away: them, fixture }
