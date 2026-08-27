@@ -5,7 +5,6 @@ import type { LeagueResult } from "@/lib/star/types";
 import { kitsFor, labelInk, kitLabelOnDark, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
-import { isDerby, strongestTier, rivalryOf } from "@/lib/star/rivalries";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { place, across } from "@/lib/star/pitchLayout";
@@ -141,45 +140,15 @@ export default function VersusScreen({ matchday, date, competition, results, onK
   const [compHead, ...compTailParts] = competition.split(" · ");
   const compTail = compTailParts.join(" · ");
 
-  // ── Derby day ──
-  //
-  // R3 alone stays quiet on purpose — "there is a genuine history, but it is
-  // not particularly important today" is exactly the kind of fixture that
-  // should NOT get a banner, or every third match would have one and none of
-  // them would mean anything. A derby or a rated R1/R2 rivalry does, from
-  // either side (Hull City's biggest rivalry is Leeds United; Leeds do not
-  // reciprocate in their own list, but the fixture still deserves the banner
-  // when Hull are the ones playing it).
-  const derby = isDerby(home.club, away.club);
-  const tier = strongestTier(home.club, away.club);
-  const rivalryHeadline = derby || tier === "R1" || tier === "R2"
-    ? (rivalryOf(home.club, away.club)?.derbyName ?? rivalryOf(away.club, home.club)?.derbyName ?? null)
-    : null;
-  const showRivalryBanner = derby || tier === "R1" || tier === "R2";
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 px-3 py-3 text-white">
       <div className="mx-auto w-full max-w-md">
         <button
           onClick={onBack}
-          className="mb-2 rounded-lg bg-white/10 px-3 py-1 text-[11px] font-black text-white/85 transition hover:bg-white/20"
+          className="mb-1.5 rounded-lg bg-white/10 px-3 py-1 text-[11px] font-black text-white/85 transition hover:bg-white/20"
         >
           ← Back
         </button>
-
-        {/* ── Derby day ──
-            A slim ribbon above the header rather than crowding the
-            competition line — this is a second, separate fact about the
-            fixture ("Premier League · Matchday 3" AND "Derby Day"), not a
-            replacement for it. */}
-        {showRivalryBanner && (
-          <div className="mb-2 rounded-lg border border-red-500/40 bg-gradient-to-r from-red-600/25 via-red-500/15 to-red-600/25 px-3 py-1.5 text-center">
-            <span className="text-[11px] font-black uppercase tracking-[0.16em] text-red-200">
-              {derby ? "🔵 Derby Day" : tier === "R1" ? "🔴 A Huge Rivalry" : "🟠 A Big Rivalry"}
-              {rivalryHeadline ? ` — ${rivalryHeadline}` : ""}
-            </span>
-          </div>
-        )}
 
         {/* ── The header ──
             One dark, floodlit panel rather than a plain bar — the competition
@@ -187,14 +156,14 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             own crest, all in the same column so the two can never drift out of
             line with each other. */}
         <div
-          className="rounded-t-xl border border-white/15 px-3 py-3"
+          className="rounded-t-xl border border-white/15 px-3 py-2.5"
           style={{ background: "linear-gradient(115deg, #051025 0%, #0b1530 32%, #1a0a12 68%, #2a0a10 100%)" }}
         >
           <div className="text-center text-[10px] font-black uppercase tracking-[0.18em] text-white/75">
             {compHead}
             {compTail && <> <span className="text-white/30">·</span> <span className="text-amber-300">{compTail}</span></>}
           </div>
-          <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+          <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
             <TeamHeader club={home.club} kit={kits.home} formation={home.formation.name}
               form={recentForm(home.club, results ?? [])} scouted={homeScouted} />
             <div className="flex flex-col items-center gap-1 pt-1.5">
@@ -215,8 +184,21 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             sheet... it should show something that says Unable to scout
             opponent's team" — this used to mean skipping the team-sheet
             screen entirely, for BOTH sides, the moment either one fell
-            short. */}
-        <div className="relative aspect-[3/5] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
+            short.
+
+            aspect-[3/4.7] and the chip's 26px face (below, in <Man>) are
+            back down from a taller box and a smaller 25px face — reported
+            directly, with a before/after screenshot, as an unwanted amount
+            of scrolling to reach the Kick Off button and faces that had
+            visibly shrunk. That regression was this same overlap fix
+            over-correcting: it bought its clearance by both growing the box
+            and shrinking the chip, when GOAL_INSET (pitchLayout.ts) alone
+            had enough slack in it to pay for most of that room back — see
+            its own note for the exact trade. The header panel, the
+            substitutes bar and Kick Off's own margins were all trimmed a
+            little too, in the same pass — none of it was one single
+            offender, so no one fix could undo the whole thing by itself. */}
+        <div className="relative aspect-[3/4.7] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
           {/* Markings, drawn once and read by nothing. */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
@@ -242,7 +224,7 @@ export default function VersusScreen({ matchday, date, competition, results, onK
         <div className="rounded-b-xl border border-white/15 bg-white/[0.04]">
           <button
             onClick={() => setShowSubs(s => !s)}
-            className="flex w-full items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white/80"
+            className="flex w-full items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white/80"
           >
             <span className={`text-white/40 transition-transform ${showSubs ? "rotate-90" : ""}`}>›</span>
             Substitutes
@@ -258,7 +240,7 @@ export default function VersusScreen({ matchday, date, competition, results, onK
 
         <button
           onClick={onKickOff}
-          className="mt-2 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-3 text-base font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
+          className="mt-1.5 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-2.5 text-base font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
         >
           Kick Off
         </button>
@@ -278,7 +260,7 @@ function TeamHeader({ club, kit, formation, form, scouted }: {
   club: string; kit: Kit; formation: string; form: Result[]; scouted: boolean;
 }) {
   return (
-    <div className="flex min-w-0 flex-col items-center gap-1.5">
+    <div className="flex min-w-0 flex-col items-center gap-1">
       <Crest club={club} kit={kit} />
       <FormRow form={form} />
       <div
@@ -293,13 +275,13 @@ function TeamHeader({ club, kit, formation, form, scouted }: {
 
 /** Last five results, oldest to most recent, left to right. */
 function FormRow({ form }: { form: Result[] }) {
-  if (form.length === 0) return <div className="h-[15px]" />; // holds the header's height steady in week one
+  if (form.length === 0) return <div className="h-[13px]" />; // holds the header's height steady in week one
   return (
     <div className="flex items-center gap-[3px]">
       {form.map((r, i) => (
         <span
           key={i}
-          className="grid h-[15px] w-[15px] place-items-center rounded text-[8px] font-black text-white"
+          className="grid h-[13px] w-[13px] place-items-center rounded text-[8px] font-black text-white"
           style={{ background: FORM_BG[r] }}
         >
           {r}
@@ -318,9 +300,9 @@ function FormRow({ form }: { form: Result[] }) {
  */
 function Crest({ club, kit }: { club: string; kit: Kit }) {
   return (
-    <div className="flex min-w-0 flex-col items-center gap-1">
+    <div className="flex min-w-0 flex-col items-center gap-0.5">
       <div
-        className="grid h-10 w-10 place-items-center rounded-full border-2 text-[12px] font-black"
+        className="grid h-9 w-9 place-items-center rounded-full border-2 text-[11px] font-black"
         style={{ backgroundColor: kit.shirt, borderColor: kit.trim, color: labelInk(kit.shirt) }}
       >
         {initials(club)}
@@ -384,7 +366,7 @@ function Man({ p, kit, keeper, bottom }: {
           clipping the star along with everything else that strayed past its
           edge. This wrapper gives the star a positioning parent that doesn't
           also clip it. */}
-      <div className="relative order-2 h-[25px] w-[25px]">
+      <div className="relative order-2 h-[26px] w-[26px]">
         {p.isYou && <YouStar />}
         <div
           className="h-full w-full overflow-hidden rounded-full border-2 border-white/60"

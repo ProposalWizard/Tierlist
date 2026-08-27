@@ -24,9 +24,9 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 // the viewport minus the page's own 12px padding on each side.
 const VIEWPORT_WIDTH = 320;
 const PITCH_W = Math.min(VIEWPORT_WIDTH - 24, 448);
-const PITCH_H = PITCH_W * (5 / 3); // VersusScreen.tsx's aspect-[3/5]
+const PITCH_H = PITCH_W * (4.7 / 3); // VersusScreen.tsx's aspect-[3/4.7]
 
-// <Man>: a 25px face circle directly above a name row, no margin between
+// <Man>: a 26px face circle directly above a name row, no margin between
 // them, both centred on the anchor point. Two chips read as overlapping when
 // they are this close on a straight line between their centres — a circular
 // exclusion zone rather than an axis-aligned box, because a real formation
@@ -34,10 +34,17 @@ const PITCH_H = PITCH_W * (5 / 3); // VersusScreen.tsx's aspect-[3/5]
 // other (a back three's two centre-backs, level but nowhere near touching;
 // a staggered striker and attacking mid, diagonal rather than either). An
 // axis-aligned box flags both of those as collisions they visually are not.
-// The 36px diameter is the face circle's own footprint plus the name row's
+// The 37px diameter is the face circle's own footprint plus the name row's
 // height — calibrated against a real back three's own centre-back spacing
 // (~59px apart, and never reported as a problem) staying comfortably clear.
-const CHIP_DIAMETER = 36;
+//
+// Both the box height and the chip size moved once already: the original
+// overlap fix (25px face, aspect-[3/5]) over-corrected — reported directly,
+// with a screenshot, as unwanted scrolling to reach Kick Off and visibly
+// smaller faces. This box and this chip are what replaced it, reclaiming
+// most of that room from GOAL_INSET instead (see pitchLayout.ts) rather
+// than from the box or the chip.
+const CHIP_DIAMETER = 37;
 
 for (const formation of FORMATIONS) {
   const men = formation.slots.map(s => ({
