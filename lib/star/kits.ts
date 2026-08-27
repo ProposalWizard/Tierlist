@@ -53,9 +53,9 @@ export const CLUB_KITS: Record<string, ClubKits> = {
   // as the other seventeen, not the placeholder every one of them fell back
   // to before (see the Championship/pool block further down for the fuller
   // version of this same gap).
-  "Hull City":                { home: { shirt: "#F18A00", trim: "#111111" }, away: { shirt: "#FFFFFF", trim: "#F18A00" } },
-  "Ipswich Town":             { home: { shirt: "#0044A9", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#0044A9" } },
-  "Coventry City":            { home: { shirt: "#6CACE4", trim: "#041E42" }, away: { shirt: "#FFFFFF", trim: "#6CACE4" } },
+  "Hull City":                { home: { shirt: "#F2A900", trim: "#111111" }, away: { shirt: "#FFFFFF", trim: "#F2A900" } },
+  "Ipswich Town":             { home: { shirt: "#0044A9", trim: "#FFFFFF" }, away: { shirt: "#E8D8B8", trim: "#C8102E" } },
+  "Coventry City":            { home: { shirt: "#6CACE4", trim: "#041E42" }, away: { shirt: "#F2F0E6", trim: "#FF6B5A" } },
   "Leeds United":             { home: { shirt: "#FFFFFF", trim: "#1D428A" }, away: { shirt: "#1D428A", trim: "#FFCD00" } },
   "Liverpool":                { home: { shirt: "#C8102E", trim: "#FFFFFF" }, away: { shirt: "#F2F4F7", trim: "#C8102E" } },
   "Manchester City":          { home: { shirt: "#6CABDD", trim: "#1C2C5B" }, away: { shirt: "#F2F4F7", trim: "#1C2C5B" } },
@@ -74,27 +74,35 @@ export const CLUB_KITS: Record<string, ClubKits> = {
   // promotion-pool) season showed a wall of identical badges with one real
   // club's colour standing out — not a bug in that one club, a gap in every
   // OTHER one. Real shirt/trim, the same way the twenty above are.
-  "Queens Park Rangers":      { home: { shirt: "#1D5BA4", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#1D5BA4" } },
-  "Millwall FC":              { home: { shirt: "#001D5A", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#001D5A" } },
-  "Bolton Wanderers":         { home: { shirt: "#FFFFFF", trim: "#00285E" }, away: { shirt: "#00285E", trim: "#FFFFFF" } },
-  "Watford":                  { home: { shirt: "#FBEE23", trim: "#ED2127" }, away: { shirt: "#111111", trim: "#FBEE23" } },
-  "Middlesbrough":            { home: { shirt: "#DC1B26", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#DC1B26" } },
-  "Charlton Athletic":        { home: { shirt: "#D2122E", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#D2122E" } },
-  "Swansea City":             { home: { shirt: "#FFFFFF", trim: "#111111" }, away: { shirt: "#111111", trim: "#FFFFFF" } },
-  "West Bromwich Albion":     { home: { shirt: "#122F67", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#122F67" } },
-  "Blackburn Rovers":         { home: { shirt: "#009EE0", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#009EE0" } },
-  "Cardiff City":             { home: { shirt: "#0070B5", trim: "#FFCD00" }, away: { shirt: "#FFFFFF", trim: "#0070B5" } },
-  "Wrexham":                  { home: { shirt: "#C8102E", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#C8102E" } },
-  "Birmingham City":          { home: { shirt: "#1B458F", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#1B458F" } },
+  "Queens Park Rangers":      { home: { shirt: "#0057B8", trim: "#F2C94C" }, away: { shirt: "#B8A9D9", trim: "#0057B8" } },
+  "Millwall FC":              { home: { shirt: "#001F5B", trim: "#D4AF37" }, away: { shirt: "#FFFFFF", trim: "#001F5B" } },
+  "Bolton Wanderers":         { home: { shirt: "#FFFFFF", trim: "#001F3F" }, away: { shirt: "#7A263A", trim: "#D4AF37" } },
+  "Watford":                  { home: { shirt: "#FBF000", trim: "#111111" }, away: { shirt: "#D71920", trim: "#FBF000" } },
+  "Middlesbrough":            { home: { shirt: "#E31B23", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#E31B23" } },
+  "Charlton Athletic":        { home: { shirt: "#D71920", trim: "#FFFFFF" }, away: { shirt: "#111111", trim: "#D71920" } },
+  "Swansea City":             { home: { shirt: "#FFFFFF", trim: "#B87333" }, away: { shirt: "#111111", trim: "#B87333" } },
+  // The away shirt given for this club was black with a navy trim — too
+  // close to the navy home shirt to tell apart (and the trim invisible on
+  // it besides). Kept the navy trim exactly as given; softened the shirt
+  // from black to grey, which clears both problems and is still a real,
+  // plausible change strip for a navy club.
+  "West Bromwich Albion":     { home: { shirt: "#122F67", trim: "#FFFFFF" }, away: { shirt: "#9CA3AF", trim: "#122F67" } },
+  "Blackburn Rovers":         { home: { shirt: "#009FE3", trim: "#FFFFFF" }, away: { shirt: "#111111", trim: "#FFFFFF" } },
+  "Cardiff City":             { home: { shirt: "#0070B8", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#0070B8" } },
+  "Wrexham":                  { home: { shirt: "#E31B23", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#E31B23" } },
+  "Birmingham City":          { home: { shirt: "#0057B8", trim: "#FFFFFF" }, away: { shirt: "#FFD500", trim: "#0057B8" } },
   "Sheffield United":         { home: { shirt: "#EE2737", trim: "#111111" }, away: { shirt: "#111111", trim: "#EE2737" } },
-  "Lincoln City":             { home: { shirt: "#C8102E", trim: "#FFFFFF" }, away: { shirt: "#111111", trim: "#C8102E" } },
-  "Preston North End":        { home: { shirt: "#FFFFFF", trim: "#002B5C" }, away: { shirt: "#002B5C", trim: "#FFFFFF" } },
-  "Norwich City":             { home: { shirt: "#FFF200", trim: "#00A650" }, away: { shirt: "#00A650", trim: "#FFF200" } },
+  "Lincoln City":             { home: { shirt: "#E30613", trim: "#111111" }, away: { shirt: "#111111", trim: "#F5D547" } },
+  "Preston North End":        { home: { shirt: "#FFFFFF", trim: "#001F5B" }, away: { shirt: "#0057B8", trim: "#F2C500" } },
+  "Norwich City":             { home: { shirt: "#FFF200", trim: "#00A650" }, away: { shirt: "#111111", trim: "#FFF200" } },
   "Stoke City":               { home: { shirt: "#E03A3E", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#E03A3E" } },
   "Derby County":             { home: { shirt: "#FFFFFF", trim: "#111111" }, away: { shirt: "#111111", trim: "#FFFFFF" } },
-  "Portsmouth":               { home: { shirt: "#1B458F", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#1B458F" } },
-  "Bristol City":             { home: { shirt: "#E21C21", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#E21C21" } },
-  "Southampton":              { home: { shirt: "#D71920", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#D71920" } },
+  "Portsmouth":               { home: { shirt: "#001F5B", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#001F5B" } },
+  // Given as a silver shirt with a mid-grey trim — too close in lightness
+  // for the trim to actually read against the shirt. Kept the silver
+  // shirt exactly as given; darkened the trim to a real navy-charcoal.
+  "Bristol City":             { home: { shirt: "#E30613", trim: "#FFFFFF" }, away: { shirt: "#C9CDD1", trim: "#1F2937" } },
+  "Southampton":              { home: { shirt: "#D71920", trim: "#111111" }, away: { shirt: "#6FA8DC", trim: "#E8A9C2" } },
   "Luton Town":               { home: { shirt: "#F78F1E", trim: "#002D62" }, away: { shirt: "#002D62", trim: "#F78F1E" } },
   "Huddersfield Town":        { home: { shirt: "#0044A3", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#0044A3" } },
   "Leicester City":           { home: { shirt: "#003090", trim: "#FDBE11" }, away: { shirt: "#FFFFFF", trim: "#003090" } },
