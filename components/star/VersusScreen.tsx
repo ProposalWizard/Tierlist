@@ -186,19 +186,32 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             screen entirely, for BOTH sides, the moment either one fell
             short.
 
-            aspect-[3/4.7] and the chip's 26px face (below, in <Man>) are
-            back down from a taller box and a smaller 25px face — reported
-            directly, with a before/after screenshot, as an unwanted amount
-            of scrolling to reach the Kick Off button and faces that had
-            visibly shrunk. That regression was this same overlap fix
-            over-correcting: it bought its clearance by both growing the box
-            and shrinking the chip, when GOAL_INSET (pitchLayout.ts) alone
-            had enough slack in it to pay for most of that room back — see
-            its own note for the exact trade. The header panel, the
-            substitutes bar and Kick Off's own margins were all trimmed a
-            little too, in the same pass — none of it was one single
-            offender, so no one fix could undo the whole thing by itself. */}
-        <div className="relative aspect-[3/4.7] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
+            aspect-[3/4.9] and the chip's 34px face (below, in <Man>) are
+            the same numbers this screen shipped with originally, restored —
+            reported directly, twice, with before/after screenshots: first
+            that an overlap fix had grown the box and shrunk the chip (25px
+            face, aspect-[3/5]), needing a scroll to reach Kick Off; then,
+            after a first attempt only split the difference (26px,
+            aspect-[3/4.7]), that it still wasn't the original size and
+            still didn't fit. The real fix was never the box or the chip —
+            it was formations.ts's own bands, several of which had a back
+            three's centre-back, a lone CDM, or a lone CAM sitting on the
+            EXACT SAME x as the goalkeeper or the row above/below, turning
+            a real diagonal gap into a pure vertical squeeze with nowhere
+            to give. Spreading those specific slots off that shared
+            centre-line (back3()'s own note, and the individual formations'
+            comments below it) bought most of the clearance at the ORIGINAL
+            chip size — the rest came from HALFWAY_INSET (pitchLayout.ts),
+            once restoring the full chip exposed a squeeze this screen
+            never had before: a lone, centred striker from each side,
+            mirrored across the halfway line, close enough to collide with
+            EACH OTHER once the chip grew back to size — invisible with the
+            25/26px chip, and only found by actually rendering the fix and
+            comparing it against a real opposing formation, not just
+            re-running the existing same-side test. The header panel, the
+            substitutes bar and Kick Off's own margins are still trimmed
+            from the earlier pass too. */}
+        <div className="relative aspect-[3/4.9] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
           {/* Markings, drawn once and read by nothing. */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
@@ -366,7 +379,7 @@ function Man({ p, kit, keeper, bottom }: {
           clipping the star along with everything else that strayed past its
           edge. This wrapper gives the star a positioning parent that doesn't
           also clip it. */}
-      <div className="relative order-2 h-[26px] w-[26px]">
+      <div className="relative order-2 h-[34px] w-[34px]">
         {p.isYou && <YouStar />}
         <div
           className="h-full w-full overflow-hidden rounded-full border-2 border-white/60"
