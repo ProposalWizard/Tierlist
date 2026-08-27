@@ -358,6 +358,27 @@ export function creditMatchResult(
       extraFixtures = settled.nextFixture ? [settled.nextFixture] : [];
       cupTrophy = settled.trophy;
       knockoutMessage = settled.message;
+    } else if (fixture.competition === "Community Shield" || fixture.competition === "Super Cup") {
+      // A single pre-season match, not a bracket — neither settleEuro
+      // (Super Cup is explicitly excluded from it) nor settleCupTie/the
+      // knockout `cups` list (both are keyed to a whole competition state
+      // that only FA Cup/League Cup/Europe ever seed) has anywhere to
+      // record this. Reported indirectly, as "I should be able to see the
+      // winners of all of those competitions": winning either of these
+      // earned no trophy at all before this, silently — the match played
+      // out, and then nothing. A draw is decided by a coin flip, the same
+      // shorthand for extra time and penalties every other one-off tie in
+      // this game already uses (see settlePlayOffFixture's final).
+      const club = career.player.club;
+      const scored = stats.homeScore, conceded = stats.awayScore; // yours, not the home team's — see above
+      const rng = mulberry32(career.season * 4441 + fixture.week * 17);
+      const won = scored !== conceded ? scored > conceded : rng() < 0.5;
+      if (won) {
+        cupTrophy = { season: career.season, competition: fixture.competition, club };
+        knockoutMessage = `${club} win the ${fixture.competition}.`;
+      } else {
+        knockoutMessage = `Beaten in the ${fixture.competition} by ${fixture.opponent}.`;
+      }
     } else {
       const idx = cups.findIndex(r => r.competition === fixture.competition && !r.eliminated);
       if (idx >= 0) {

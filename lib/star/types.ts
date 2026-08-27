@@ -476,6 +476,14 @@ export interface CareerState {
   /** How the board saw last season. Shown on the dashboard. */
   lastSeasonJudgement?: { score: number; bossChange: number; headline: string; detail: string };
   /**
+   * The Golden Boot, the Assist King, a Golden Glove, Player/Young Player
+   * of the Season and a Team of the Season — computed once, in `endSeason`
+   * (app/star-dev/page.tsx), from the season's stats BEFORE `advanceSeason`
+   * wipes them. See lib/star/seasonAwards.ts for why the trophy winners
+   * themselves are deliberately NOT part of this snapshot.
+   */
+  lastSeasonAwardStats?: import("./seasonAwards").SeasonAwardStats;
+  /**
    * Where the club finished last season, 1-based.
    *
    * Needed by the European draw, which seeds you into one of four pots off it —
@@ -618,6 +626,10 @@ export type StarPhase =
   /** The whole division's business the moment a transfer window closed —
    *  club by club, incomings and outgoings. See DeadlineDayRoundup. */
   | "deadline-day"
+  /** Golden Boot, Assist King, Golden Glove, Player/Young Player of the
+   *  Season, Team of the Season and every trophy this season handed out —
+   *  shown once, right after the season rolls over. See SeasonAwardsScreen. */
+  | "season-awards"
   /** The opening: one penalty, taken until it goes in. See TrialPenalty. */
   | "trial"
   /** …and what it earns you — the card, then the contract. See TrialReward. */

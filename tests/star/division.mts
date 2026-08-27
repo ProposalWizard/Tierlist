@@ -65,9 +65,15 @@ function roster(club: string, n = 26): RosterRow[] {
     check(sq.players.every(p => p.goals === 0 && p.assists === 0), `${club}: nobody starts with a goal`);
   }
 
-  // A club with nobody in the database still fields a team.
+  // A club with nobody in the database gets an honest empty squad, not an
+  // invented one — reported directly: a whole fake player ("Bernardo
+  // Clark", by name) ended up posing as a real signing once the
+  // international transfer window started actually trading players in and
+  // out of clubs this game has zero real rows for. Same reasoning as the
+  // "not padded to a fictional 28" case below, just at zero real players
+  // instead of a few.
   const empty = buildLeagueSquad("Nowhere FC", []);
-  check(empty.players.length === 20, "a club with no rows still has a squad");
+  check(empty.players.length === 0, `a club with no rows gets an honest empty squad, not an invented one (${empty.players.length})`);
   check(empty.players.every(p => p.name.length > 0), "…and every one of them has a name");
 
   // ── A thin club fields a short squad of REAL players ──
@@ -105,9 +111,11 @@ function roster(club: string, n = 26): RosterRow[] {
     check(full.players.every(p => VALID.includes(p.position)),
       `${club}: everybody has a position the pitch understands`);
   }
-  // A club with nothing in the database is not padded to a fictional 28.
-  check(buildLeagueSquad("Nowhere FC", [], true).players.length === 20,
-    "an empty club still falls back to a generated twenty");
+  // A club with nothing in the database is not padded to a fictional 28 —
+  // or, now, to a fictional anything: `keepAll` changes nothing about the
+  // zero-rows case, since there is nobody real to keep all of.
+  check(buildLeagueSquad("Nowhere FC", [], true).players.length === 0,
+    "an empty club stays an honest empty squad even when the whole roster was asked for");
 }
 
 // ── Goals go to the men who would score them ────────────────────────────────

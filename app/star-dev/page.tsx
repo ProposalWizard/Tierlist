@@ -22,6 +22,7 @@ import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/st
 import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
+import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
 import { CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, OTHER_CLUBS, PROMOTION_POOL_CLUBS } from "@/lib/star/clubs";
@@ -40,6 +41,7 @@ import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 import LeagueScreen from "@/components/star/LeagueScreen";
 import LadderScreen from "@/components/star/LadderScreen";
+import SeasonAwardsScreen from "@/components/star/SeasonAwardsScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
@@ -505,7 +507,12 @@ export default function StarDevPage() {
   // refresh dropped you on the dashboard — from the dashboard prompt too.
   // awardLeagueTrophyIfWon is idempotent, so arriving twice is safe.
   const endSeason = useCallback((from: CareerState) => {
-    const { career: next } = awardLeagueTrophyIfWon(from);
+    const { career: awarded } = awardLeagueTrophyIfWon(from);
+    // Read off BEFORE anything downstream (advanceSeason, a few screens from
+    // here) wipes every season-long tally back to zero — see the file header
+    // in lib/star/seasonAwards.ts for why this can't wait until the trophy
+    // winners themselves are ready to show.
+    const next = { ...awarded, lastSeasonAwardStats: computeSeasonAwardStats(awarded) };
     setCareer(next);
     setActiveNav(null);
     setPhase("ballon-dor");
@@ -726,6 +733,28 @@ export default function StarDevPage() {
     // which is the only two transitions this needs to notice.
   }, [!!career, career?.freeAgents === undefined]);
 
+  // ── What went up and down, before anything else ──
+  //
+  // Shown whether or not it involved you: a division changing shape around
+  // you is news even from mid-table. A forced contract renewal still wins,
+  // because that one is a decision rather than a report — the ladder is
+  // waiting on the other side of it via the dashboard. Split out of
+  // rollOverSeason so the season-awards screen can land here too, once the
+  // player is done looking at what the season handed out.
+  const continueAfterRollover = useCallback((next: CareerState) => {
+    if (next.ladderNews && next.contract.seasonsRemaining > 0) {
+      setActiveNav(null);
+      setPhase("ladder");
+      return;
+    }
+    if (next.contract.seasonsRemaining <= 0) {
+      setPhase("contract-renewal");
+    } else {
+      setActiveNav(null);
+      setPhase("dashboard");
+    }
+  }, []);
+
   // Rolling into the next season, once anything that happens BETWEEN seasons is
   // out of the way. Split out because three different screens end here.
   const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false) => {
@@ -769,26 +798,24 @@ export default function StarDevPage() {
           headline: next.lastSeasonJudgement.headline, detail: next.lastSeasonJudgement.detail }, "review");
     }
     setCareer(next);
-    // ── What went up and down, before anything else ──
-    //
-    // Shown whether or not it involved you: a division changing shape around
-    // you is news even from mid-table. A forced contract renewal still wins,
-    // because that one is a decision rather than a report — the ladder is
-    // waiting on the other side of it via the dashboard.
-    if (next.ladderNews && next.contract.seasonsRemaining > 0) {
+    // The Golden Boot, the trophy cabinet, a Team of the Season — shown
+    // once, right here, before whatever the rollover itself has to say
+    // (the ladder, a forced renewal). `lastSeasonAwardStats` was stashed on
+    // `next` back in endSeason, before any of this touched the numbers it
+    // is built from; see lib/star/seasonAwards.ts for why the trophy half
+    // of that screen is read fresh off `next` instead of also living in
+    // that snapshot.
+    if (next.lastSeasonAwardStats) {
       setActiveNav(null);
-      setPhase("ladder");
+      setPhase("season-awards");
       return;
     }
-    // A new club came with a new contract, so a renewal is only forced when you
-    // stayed and let the old one run out.
-    if (next.contract.seasonsRemaining <= 0) {
-      setPhase("contract-renewal");
-    } else {
-      setActiveNav(null);
-      setPhase("dashboard");
-    }
-  }, []);
+    continueAfterRollover(next);
+  }, [continueAfterRollover]);
+
+  const handleSeasonAwardsContinue = useCallback(() => {
+    if (career) continueAfterRollover(career);
+  }, [career, continueAfterRollover]);
 
   const openTransferWindowOrRoll = useCallback((from: CareerState, userWon: boolean) => {
     // ── Relegated out of the Championship ──
@@ -1062,6 +1089,10 @@ export default function StarDevPage() {
 
   if (phase === "profile-setup" || !career) {
     return <ProfileSetup onComplete={handleProfileComplete} />;
+  }
+
+  if (phase === "season-awards" && career?.lastSeasonAwardStats) {
+    return <SeasonAwardsScreen career={career} onContinue={handleSeasonAwardsContinue} />;
   }
 
   if (phase === "ladder" && career?.ladderNews) {

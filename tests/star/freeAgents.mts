@@ -146,9 +146,54 @@ const freeStriker: LeaguePlayer = {
     `a 74-rated free agent striker does sign for a hand-built 65-strength club with an empty ST slot, across 150 windows (${signedThere} times)`);
 }
 
+// ── Free agents stay the occasional pickup, not the majority of business ───
+//
+// Reported directly, with real numbers: "the majority of transfers are
+// free agents... too many signings, purely for the same teams." The named
+// budget (freeAgentBudget in runTransferWindow) never actually capped this
+// — it only widened the SHARED ceiling with real transfers by a couple of
+// slots, and nothing stopped the apply loop taking far more than that many
+// free-agent proposals off the sorted list: a free agent has neither a
+// rivalry check nor a normal transfer's narrower reach (FREE_AGENT_REACH_MULT),
+// so its proposals are both more numerous and score competitively against
+// real ones. Measured before this test existed, with a genuinely large free
+// agent pool: free agents were 35.7% of all division business across 100
+// simulated summer windows, filling 5.7 of a nominal cap of 5 essentially
+// every single time. Now enforced as a real per-window cap.
+{
+  function bigFreeAgentPool(n: number, seed: number): LeaguePlayer[] {
+    return Array.from({ length: n }, (_, i) => ({
+      id: `fa-${i}`, name: `Free Agent ${i}`, position: "CM", positions: ["CM"],
+      overall: 55 + ((seed + i * 13) % 25), goals: 0, assists: 0,
+    }));
+  }
+
+  let freeSummer = 0, realSummer = 0, freeJanuary = 0;
+  const TRIALS = 100;
+  for (let season = 1; season <= TRIALS; season++) {
+    const career: CareerState = { ...realCareer("Arsenal", season), freeAgents: bigFreeAgentPool(40, season) };
+    const summer = runTransferWindow(career, "summer", mulberry32(season * 7919 + 3));
+    const summerFree = summer.moves.filter(m => m.from === "Free Agents").length;
+    freeSummer += summerFree;
+    realSummer += summer.moves.length - summerFree;
+
+    const january = runTransferWindow(career, "january", mulberry32(season * 5051 + 1));
+    freeJanuary += january.moves.filter(m => m.from === "Free Agents").length;
+  }
+  check(freeSummer / TRIALS <= 2, `at most two free-agent signings a summer window, division-wide, on average (${(freeSummer / TRIALS).toFixed(2)})`);
+  check(freeJanuary / TRIALS <= 1, `at most one a January window, division-wide, on average (${(freeJanuary / TRIALS).toFixed(2)})`);
+  // A ten-club test fixture has a proportionally smaller real-transfer
+  // ceiling than the real twenty-club division (windowBudget scales with
+  // club count, the free-agent cap does not), so this stays a looser bound
+  // than the 14.9% actually measured on the full division — the point is
+  // "nowhere near a majority", not this fixture's exact number.
+  const share = freeSummer / (freeSummer + realSummer);
+  check(share < 0.4, `free agents stay a clear minority of a summer window's business, not "the majority" (${(share * 100).toFixed(1)}%)`);
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — free agents get signed, for nothing, by any club including your own, and further below their level than a normal transfer would accept");
+console.log("PASS — free agents get signed, for nothing, by any club including your own, further below their level than a normal transfer would accept, and stay a clear minority of a window's business");
