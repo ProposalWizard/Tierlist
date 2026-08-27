@@ -646,7 +646,22 @@ export function runTransferWindow(
   // signings is also a quiet window for the free agents actually reported
   // as wanting one. Capped, and small, because most windows do not have
   // many free agents worth signing at all.
-  const freeAgentBudget = Math.min(freeAgentPool.length, window === "summer" ? 5 : 2);
+  //
+  // Reported directly, with a real example ("Bernardo Clark" aside — see
+  // buildLeagueSquad's own fix — this was about the volume itself): free
+  // agents were a third of all division business, not the rare pickup a
+  // real window has. This number never actually capped that — it only
+  // widened the SHARED ceiling below by a few slots; nothing stopped the
+  // apply loop taking far more than this many free-agent proposals off the
+  // sorted list, and a real listing has to clear a rivalry check and a
+  // narrower reach to find a buyer at all while a free agent has neither
+  // gate (see FREE_AGENT_REACH_MULT) — so free-agent proposals are both
+  // more numerous AND score competitively, and kept winning slots the
+  // shared budget was never actually enforcing against them specifically.
+  // Measured directly: free agents were 35.7% of all business across 100
+  // simulated summer windows. Now enforced as a REAL per-window cap in the
+  // apply loop below, not just a bigger shared number — see freeAgentsSoFar.
+  const freeAgentBudget = Math.min(freeAgentPool.length, window === "summer" ? 2 : 1);
   const budget = windowBudget(window, clubs.length) + freeAgentBudget;
   // Each club's own ceiling, fixed at the size it actually started this
   // window — see maxSigningsFor.
@@ -655,9 +670,15 @@ export function runTransferWindow(
   const moves: TransferMove[] = [];
   const loans: LoanMove[] = [];
   const moved = new Set<string>();
+  let freeAgentsSoFar = 0;
   for (const p of proposals) {
     if (moves.length + loans.length >= budget) break;
     if (moved.has(p.playerId)) continue;
+    // The free-agent allowance, actually enforced — see freeAgentBudget's
+    // own comment above for why the shared ceiling alone was not doing
+    // this. A free-agent proposal beyond it is skipped, same as any other
+    // blocked proposal below: it simply does not happen this window.
+    if (p.from === FREE_AGENTS_CLUB && freeAgentsSoFar >= freeAgentBudget) continue;
     // A proposal blocked here is a transfer that simply does not happen
     // this window, same as real business falling through — not
     // reattempted at the next-best club, which this pass never computed.
@@ -676,6 +697,7 @@ export function runTransferWindow(
     strengths.set(p.to, clubStrength(p.to, pools.get(p.to)!));
     moved.add(p.playerId);
     signingsSoFar.set(p.to, (signingsSoFar.get(p.to) ?? 0) + 1);
+    if (p.from === FREE_AGENTS_CLUB) freeAgentsSoFar++;
     if (p.loan) loans.push(p.loanMove!); else moves.push(p.saleMove!);
   }
 

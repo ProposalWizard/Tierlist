@@ -1,6 +1,6 @@
 import type { LeagueTeam } from "./types";
 import type { CareerDivision } from "./calendar";
-import { CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "./clubs";
+import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "./clubs";
 
 /**
  * THE CUPS.
@@ -84,11 +84,14 @@ export const CUP_FIELD = 32;
  * decides who a cup upset comes from — more plumbing than this file's job
  * is worth.
  */
-function belowStrength(club: string, tier: "championship" | "pool"): number {
+function belowStrength(club: string, tier: "premier" | "championship" | "pool"): number {
   // Deliberately well under a real division's own numbers — the same
   // baseline+noise idea lib/star/promotion.ts uses for an estimate, pitched
-  // lower on purpose: a cup upset should be an upset, not a coin flip.
-  const baseline = tier === "championship" ? 58 : 50;
+  // lower on purpose: a cup upset should be an upset, not a coin flip. The
+  // Premier League baseline is the exception — reached only when the
+  // career's own division is the CHAMPIONSHIP, where those clubs are the
+  // favourites being upset rather than the upset themselves.
+  const baseline = tier === "premier" ? 74 : tier === "championship" ? 58 : 50;
   let h = 2166136261;
   for (let i = 0; i < club.length; i++) { h ^= club.charCodeAt(i); h = Math.imul(h, 16777619); }
   return baseline + ((h >>> 0) % 700) / 100; // baseline .. baseline + 6.99
@@ -116,31 +119,37 @@ function weightedDrawN(
 }
 
 /**
- * Fill `needed` places from below `names` (the division actually being
- * played — twenty clubs guaranteed for a Premier League season, twenty-four
- * for a Championship one, never in question and never part of this draw).
+ * Fill `needed` places from the rest of England, alongside `names` (the
+ * division actually being played — twenty clubs guaranteed for a Premier
+ * League season, twenty-four for a Championship one, never in question and
+ * never part of this draw).
  *
- * A Premier League season draws from BOTH pools: the real Championship,
- * weighted by an estimated strength so a stronger side is likelier, and the
- * five-club promotion pool, weighted the same way but multiplied hard down —
- * these five should be an occasional story, not a regular fixture. A
- * Championship season draws from the pool alone, since this game does not
- * model a real division below it.
+ * The FA Cup and the League Cup are not restricted to your own division —
+ * reported directly, after a relegation, with a bracket of nothing but
+ * Championship clubs padded out with invented "X B" filler teams to reach
+ * thirty-two. That was this function reaching only "below" the career's own
+ * division, which used to mean something (a Premier League season really
+ * does draw weaker opposition from the Championship and below) and stopped
+ * meaning anything the moment the career's own division WAS the
+ * Championship — there was nothing left to reach down into.
+ *
+ * So: always the real OTHER English tier first (Championship when the
+ * career is playing the Premier League, the Premier League itself when it
+ * is playing the Championship — both weighted by an estimated strength so a
+ * stronger side is likelier to be drawn), and the five-club promotion pool
+ * a distant second, weighted hard down in both directions — these five
+ * should be an occasional story, not a regular fixture, in either division.
  */
 function belowField(
   names: string[], division: CareerDivision, needed: number, rng: () => number,
 ): string[] {
-  const isPremier = division === "premier";
-  const championshipCandidates = isPremier
-    ? CHAMPIONSHIP_CLUBS.filter(c => !names.includes(c))
-        .map(name => ({ name, weight: belowStrength(name, "championship") }))
-    : [];
+  const otherTierClubs = division === "premier" ? CHAMPIONSHIP_CLUBS : PREMIER_LEAGUE_CLUBS;
+  const otherTierName: "premier" | "championship" = division === "premier" ? "championship" : "premier";
+  const otherTierCandidates = otherTierClubs.filter(c => !names.includes(c))
+    .map(name => ({ name, weight: belowStrength(name, otherTierName) }));
   const poolCandidates = PROMOTION_POOL_CLUBS.filter(c => !names.includes(c))
-    .map(name => ({
-      name,
-      weight: belowStrength(name, "pool") * (isPremier ? 0.25 : 1),
-    }));
-  const drawn = weightedDrawN([...championshipCandidates, ...poolCandidates], needed, rng);
+    .map(name => ({ name, weight: belowStrength(name, "pool") * 0.25 }));
+  const drawn = weightedDrawN([...otherTierCandidates, ...poolCandidates], needed, rng);
   // A division this small (chiefly a test fixture) can run both pools dry
   // before reaching `needed` — pad the same way a short division always
   // has, rather than ship a cup with fewer than thirty-two clubs in it.
@@ -207,6 +216,9 @@ export function cupField(league: LeagueTeam[], division: CareerDivision, rng: ()
 export function cupStrength(club: string, league: LeagueTeam[]): number {
   const inLeague = league.find(t => t.name === club);
   if (inLeague) return inLeague.strength;
+  // The real OTHER English tier — Premier League clubs drawn into a
+  // Championship season's cup field, or vice versa. See belowField.
+  if (PREMIER_LEAGUE_CLUBS.includes(club)) return belowStrength(club, "premier");
   if (CHAMPIONSHIP_CLUBS.includes(club)) return belowStrength(club, "championship");
   if (PROMOTION_POOL_CLUBS.includes(club)) return belowStrength(club, "pool");
   // A padded filler name ("X B") from a division too small to fill the

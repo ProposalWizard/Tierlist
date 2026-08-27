@@ -3,7 +3,7 @@ import {
   currentRound, yourTie, stillIn, exitRound,
   CUP_ROUND_NAMES, CUP_FIELD, type CupState,
 } from "../../lib/star/cups";
-import { CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "../../lib/star/clubs";
+import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "../../lib/star/clubs";
 import { buildLeague } from "../../lib/star/season";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { nextFixtureFor } from "../../lib/star/competitions";
@@ -101,18 +101,33 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
     `a pool club's odds of a place are well below a Championship club's, per-candidate (${poolRate.toFixed(2)} vs ${championshipRate.toFixed(2)})`);
 }
 
-// ── A Championship season's own twenty-four are just as guaranteed ──────────
+// ── A Championship season's own twenty-four are just as guaranteed, and
+// the rest of the field is the REAL Premier League, not an invented one ────
+//
+// Reported directly, after a relegation, with a screenshot: a Championship
+// season's cup field was nothing but the Championship's own twenty-four
+// padded out with fabricated "X B" filler clubs — the FA Cup and League Cup
+// are not restricted to your own division, and belowField() reaching only
+// "below" broke completely the moment the career's own division WAS the
+// bottom one this game models. Fixed to reach into the real Premier League
+// instead, the same way a Premier League season already reaches into the
+// real Championship — see belowField's own comment in cups.ts.
 {
   const champLeague = buildLeague([...CHAMPIONSHIP_CLUBS], CHAMPIONSHIP_CLUBS[0]);
+  let premierPicks = 0, fakeBTeams = 0;
   for (let seed = 0; seed < 30; seed++) {
     const field = cupField(champLeague, "championship", mulberry(seed * 19 + 2));
     check(field.length === CUP_FIELD, `seed ${seed}: still thirty-two clubs (${field.length})`);
     check(CHAMPIONSHIP_CLUBS.every(c => field.includes(c)),
       `seed ${seed}: every Championship club — including your own — is guaranteed a place`);
     const below = field.filter(c => !CHAMPIONSHIP_CLUBS.includes(c));
-    check(below.every(c => PROMOTION_POOL_CLUBS.includes(c) || c.endsWith(" B")),
-      `seed ${seed}: the rest comes from the promotion pool, padded if that runs out (${below.join(", ")})`);
+    check(below.every(c => PREMIER_LEAGUE_CLUBS.includes(c) || PROMOTION_POOL_CLUBS.includes(c) || c.endsWith(" B")),
+      `seed ${seed}: the rest is real Premier League or promotion-pool clubs, not something invented (${below.join(", ")})`);
+    premierPicks += below.filter(c => PREMIER_LEAGUE_CLUBS.includes(c)).length;
+    fakeBTeams += below.filter(c => c.endsWith(" B")).length;
   }
+  check(premierPicks > 0, "a Championship season's cup field genuinely does draw real Premier League clubs");
+  check(fakeBTeams === 0, `forty-nine real English clubs is plenty for a field of thirty-two — no invented "X B" filler needed (${fakeBTeams})`);
 }
 
 // ── The shuffle is a shuffle ────────────────────────────────────────────────

@@ -96,7 +96,21 @@ export interface RosterRow {
  * positions gives you four centre-backs and no left-back.
  */
 export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = false): LeagueSquad {
-  if (!roster.length) return generatedSquad(club);
+  // A club with zero rows is the same problem as a club with a few, just at
+  // the far end of it — see the "thin club fields a short bench" note just
+  // below, which already stopped a THIN real squad being padded out with
+  // invented names. This used to reach for `generatedSquad` at exactly
+  // zero, which is how a whole fake player — "Bernardo Clark", by name —
+  // ended up posing as a real signing once the international transfer
+  // window (leagueTransfers.ts's runInternationalWindow) started actually
+  // trading players in and out of `externalSquads`: one European club this
+  // career has no real rows for yet still got a full invented XI, silently
+  // indistinguishable from its real neighbours, and one of them then moved
+  // for real money to a club that does exist. An empty squad here is
+  // honest — this club has no real players on record — and every consumer
+  // already has to tolerate a club with FEW real players without crashing,
+  // so tolerating one with none is the same handling at its limit, not new.
+  if (!roster.length) return { club, players: [] };
 
   const taken = new Set<string>();
   const players: LeaguePlayer[] = [];
