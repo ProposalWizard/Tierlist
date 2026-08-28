@@ -211,44 +211,53 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             re-running the existing same-side test. The header panel, the
             substitutes bar and Kick Off's own margins are still trimmed
             from the earlier pass too. */}
-        <div className="relative aspect-[3/4.9] overflow-hidden border-x border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
-          {/* Markings, drawn once and read by nothing. */}
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
-            <div className="absolute left-1/2 top-1/2 h-[11%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30" />
-            <div className="absolute left-1/2 top-0 h-[11%] w-[46%] -translate-x-1/2 border-x border-b border-white/30" />
-            <div className="absolute bottom-0 left-1/2 h-[11%] w-[46%] -translate-x-1/2 border-x border-t border-white/30" />
-            {/* Mown stripes, so the two halves read as one pitch. */}
-            {Array.from({ length: 8 }, (_, i) => (
-              <div key={i} className="absolute inset-x-0 bg-white/[0.025]"
-                style={{ top: `${i * 12.5}%`, height: "6.25%" }} />
-            ))}
+        <div className="relative">
+          <div className="relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
+            {/* Markings, drawn once and read by nothing. */}
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
+              <div className="absolute left-1/2 top-1/2 h-[11%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30" />
+              <div className="absolute left-1/2 top-0 h-[11%] w-[46%] -translate-x-1/2 border-x border-b border-white/30" />
+              <div className="absolute bottom-0 left-1/2 h-[11%] w-[46%] -translate-x-1/2 border-x border-t border-white/30" />
+              {/* Mown stripes, so the two halves read as one pitch. */}
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} className="absolute inset-x-0 bg-white/[0.025]"
+                  style={{ top: `${i * 12.5}%`, height: "6.25%" }} />
+              ))}
+            </div>
+
+            {homeScouted
+              ? home.xi.map(p => <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} />)
+              : <UnscoutedHalf bottom={false} />}
+            {awayScouted
+              ? away.xi.map(p => <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom />)
+              : <UnscoutedHalf bottom />}
           </div>
 
-          {homeScouted
-            ? home.xi.map(p => <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} />)
-            : <UnscoutedHalf bottom={false} />}
-          {awayScouted
-            ? away.xi.map(p => <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom />)
-            : <UnscoutedHalf bottom />}
-        </div>
-
-        {/* ── Substitutes ── */}
-        <div className="rounded-b-xl border border-white/15 bg-white/[0.04]">
-          <button
-            onClick={() => setShowSubs(s => !s)}
-            className="flex w-full items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white/80"
-          >
-            <span className={`text-white/40 transition-transform ${showSubs ? "rotate-90" : ""}`}>›</span>
-            Substitutes
-            <span className="text-amber-300">+{yours.bench.length}</span>
-          </button>
-          {showSubs && (
-            <div className="grid grid-cols-2 gap-px border-t border-white/10 bg-white/10">
+          {/* ── Substitutes ──
+              A drawer docked to the pitch's own bottom edge rather than a
+              panel that pushes Kick Off further down the page: pressing the
+              button slides it up OVER the lower part of the pitch (bottom
+              anchored, height growing) instead of adding height below it,
+              and pressing it again collapses it straight back down to just
+              the tab. */}
+          <div className="absolute inset-x-0 bottom-0 z-10 overflow-hidden rounded-b-xl border border-white/15 bg-gray-950/95 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.5)] backdrop-blur-sm">
+            <button
+              onClick={() => setShowSubs(s => !s)}
+              className="flex w-full items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white/80"
+            >
+              <span className={`text-white/40 transition-transform ${showSubs ? "rotate-90" : ""}`}>›</span>
+              Substitutes
+              <span className="text-amber-300">+{yours.bench.length}</span>
+            </button>
+            <div
+              className="grid grid-cols-2 gap-px overflow-y-auto border-t border-white/10 bg-white/10 transition-[max-height] duration-300 ease-out"
+              style={{ maxHeight: showSubs ? "60vh" : "0px" }}
+            >
               {homeScouted ? <Bench sheet={home} kit={kits.home} /> : <UnscoutedBench club={home.club} />}
               {awayScouted ? <Bench sheet={away} kit={kits.away} /> : <UnscoutedBench club={away.club} />}
             </div>
-          )}
+          </div>
         </div>
 
         <button

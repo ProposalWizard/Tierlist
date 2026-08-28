@@ -48,7 +48,7 @@ export interface Formation {
 //    — pushed further from goal than DEF4, widening the gap to the
 //    goalkeeper instead (5-2-2-1's keeper and central centre-back were
 //    overlapping).
-const GK = 0.94, DEF4 = 0.80, DEF = 0.786, WB = 0.73, HOLD = 0.632, MID = 0.478, ATT = 0.324, FWD = 0.17;
+const GK = 0.94, DEF4 = 0.80, DEF = 0.75, WB = 0.73, HOLD = 0.632, MID = 0.478, ATT = 0.324, FWD = 0.17;
 
 const gk = (): Slot => ({ role: "GK", x: 0.5, y: GK });
 /** A flat back four. */
@@ -57,15 +57,21 @@ const back4 = (): Slot[] => [
   { role: "CB", x: 0.62, y: DEF4 }, { role: "RB", x: 0.88, y: DEF4 },
 ];
 /**
- * Three centre-halves. Off dead-centre on purpose — GK is always at x=0.5,
- * and (in 3-1-4-2) so is the lone CDM behind it: a middle CB stacked
- * exactly between them, at the same x as both, is a straight vertical
- * squeeze with no diagonal room to give. Pulling the whole three wider and
- * off-centre turns that squeeze into a genuine diagonal gap instead —
- * still reads as a back three, just not a perfectly symmetric one.
+ * Three centre-halves, level and centred — the middle one sits at true
+ * dead-centre (0.5) rather than off to one side, which is what a back three
+ * actually looks like. Used to be pulled off-centre to dodge a straight
+ * vertical stack with whatever sits directly behind it in x=0.5, but that
+ * traded a real, visible "why isn't the CB in the middle" bug for a squeeze
+ * only two of the five back3() formations actually have: 3-1-4-2 (a lone
+ * CDM right behind it) keeps its own back three with the middle CB nudged
+ * instead, since that CDM is the one real people expect dead centre as the
+ * defensive pivot; 3-5-2 (a CDM woven into its wide five) nudges that CDM a
+ * hair off 0.5 instead. The other three back3() formations have nothing
+ * else stacked on 0.5 this close behind it, so they get it properly
+ * symmetric with no compromise at all.
  */
 const back3 = (): Slot[] => [
-  { role: "CB", x: 0.22, y: DEF }, { role: "CB", x: 0.40, y: DEF }, { role: "CB", x: 0.78, y: DEF },
+  { role: "CB", x: 0.22, y: DEF }, { role: "CB", x: 0.50, y: DEF }, { role: "CB", x: 0.78, y: DEF },
 ];
 /** Three centre-halves and two wing-backs, all level — a flat five. */
 const back5 = (): Slot[] => [
@@ -79,7 +85,14 @@ const f = (id: string, name: string, ...rows: Slot[][]): Formation => ({
 });
 
 export const FORMATIONS: Formation[] = [
-  f("3142", "3-1-4-2", back3(),
+  // The one back3() formation with a lone CDM stacked directly behind it —
+  // the only pairing tight enough (HOLD sits right under DEF) that both
+  // could not be centred at once. The CDM is the one real people expect
+  // dead centre as the defensive pivot, so this formation keeps its own
+  // back three, nudged instead — everyone else gets the shared, properly
+  // centred back3().
+  f("3142", "3-1-4-2",
+    [{ role: "CB", x: 0.22, y: DEF }, { role: "CB", x: 0.38, y: DEF }, { role: "CB", x: 0.78, y: DEF }],
     [{ role: "CDM", x: 0.50, y: HOLD }],
     [{ role: "LW", x: 0.12, y: MID, label: "LM" }, { role: "CM", x: 0.38, y: MID },
      { role: "CM", x: 0.62, y: MID }, { role: "RW", x: 0.88, y: MID, label: "RM" }],
@@ -102,9 +115,12 @@ export const FORMATIONS: Formation[] = [
      { role: "CM", x: 0.60, y: MID + 0.04 }, { role: "RW", x: 0.88, y: MID + 0.04, label: "RM" }],
     [{ role: "LW", x: 0.22, y: FWD }, { role: "ST", x: 0.50, y: FWD }, { role: "RW", x: 0.78, y: FWD }]),
 
+  // The CDM sits close enough behind back3()'s now-centred middle CB that a
+  // dead-centre pivot here would stack under it — nudged a hair off 0.5
+  // instead, barely visible next to the CM pair either side of it.
   f("352", "3-5-2", back3(),
     [{ role: "LW", x: 0.09, y: MID + 0.03, label: "LM" }, { role: "CM", x: 0.32, y: MID + 0.03 },
-     { role: "CDM", x: 0.50, y: MID + 0.09 }, { role: "CM", x: 0.68, y: MID + 0.03 },
+     { role: "CDM", x: 0.47, y: MID + 0.09 }, { role: "CM", x: 0.68, y: MID + 0.03 },
      { role: "RW", x: 0.91, y: MID + 0.03, label: "RM" }],
     [{ role: "ST", x: 0.40, y: FWD }, { role: "ST", x: 0.60, y: FWD }]),
 
@@ -150,7 +166,7 @@ export const FORMATIONS: Formation[] = [
 
   f("4231", "4-2-3-1", back4(),
     [{ role: "CDM", x: 0.30, y: HOLD }, { role: "CDM", x: 0.70, y: HOLD }],
-    [{ role: "LW", x: 0.15, y: ATT }, { role: "CAM", x: 0.58, y: ATT }, { role: "RW", x: 0.85, y: ATT }],
+    [{ role: "LW", x: 0.15, y: ATT }, { role: "CAM", x: 0.50, y: ATT + 0.02 }, { role: "RW", x: 0.85, y: ATT }],
     [{ role: "ST", x: 0.50, y: FWD - 0.02 }]),
 
   f("4231(2)", "4-2-3-1 (narrow)", back4(),
