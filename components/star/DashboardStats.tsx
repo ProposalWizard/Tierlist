@@ -10,9 +10,10 @@ import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
 
 interface Props {
   career: CareerState;
+  onRenew: () => void;
 }
 
-export default function DashboardStats({ career }: Props) {
+export default function DashboardStats({ career, onRenew }: Props) {
   const [tab, setTab] = useState<"stats" | "contract" | "status">("stats");
   const selection = selectionFor(career);
   const duties = setPieceDuties(career, selection.status);
@@ -98,6 +99,15 @@ export default function DashboardStats({ career }: Props) {
             </div>
           )}
         </div>
+      )}
+
+      {tab === "contract" && (
+        <button
+          onClick={onRenew}
+          className="mt-2 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 py-2.5 font-black text-white transition active:scale-[0.99]"
+        >
+          Propose renewal
+        </button>
       )}
 
       {tab === "status" && (

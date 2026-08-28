@@ -1515,14 +1515,8 @@ export default function StarDevPage() {
           </button>
         </div>
       )}
-      {phase === "dashboard" && <DashboardStats career={career} />}
       {phase === "dashboard" && (
-        <button
-          onClick={() => setPhase("contract-renewal")}
-          className="mt-2 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 py-2.5 font-black text-white transition active:scale-[0.99]"
-        >
-          Renew →
-        </button>
+        <DashboardStats career={career} onRenew={() => setPhase("contract-renewal")} />
       )}
       {phase === "dashboard" && (
         <>
@@ -1577,7 +1571,6 @@ export default function StarDevPage() {
           ) : (
             <LifeScreen
               career={career}
-              onOpenContract={() => setPhase("contract-renewal")}
               onPlayRelationshipGame={handleOpenRelationshipGame}
               onRest={handleRest}
             />
