@@ -131,13 +131,14 @@ function CongratulationsBanner() {
  * made — drop the file in later and it upgrades automatically, no code
  * change needed.
  *
- * CLUB_NAME_BOX/SIGNATURE_BOX below are read directly off the given
- * reference image — a two-column layout, "CLUB NAME" on the left above its
- * own ruled line, "PLAYER SIGNATURE" on the right above its own — as a
- * plain percentage of the image's width/height from each edge (top/left/
- * right/bottom). Estimated from the reference rather than measured pixel by
- * pixel, so worth a real visual check once the actual file is in place;
- * nudge these four numbers per box if either sits off the ruled line by eye.
+ * CLUB_NAME_BOX/SIGNATURE_BOX below are measured directly off the real
+ * file (public/star/contract.png, 1024×1536) — a two-column layout, "CLUB
+ * NAME" on the left above its own ruled line, "PLAYER SIGNATURE" on the
+ * right above its own — as a plain percentage of the image's width/height
+ * from each edge (top/left/right/bottom). The writable band both boxes
+ * share is the gap between each pill's own bottom edge and the ruled line
+ * below it (y ≈ 1245–1300 of 1536); left/right differ per column (club
+ * name x ≈ 140–460, signature x ≈ 565–890, of 1024).
  *
  * The signature is a real stroke drawn over time rather than a fade-in of
  * finished text: `stroke-dashoffset` walking to zero along a hand-shaped path,
@@ -147,8 +148,8 @@ function CongratulationsBanner() {
  * turned off.
  */
 const CONTRACT_SRC = "/star/contract.png";
-const CLUB_NAME_BOX = { top: 71, left: 10, right: 55, bottom: 21 };
-const SIGNATURE_BOX = { top: 71, left: 55, right: 10, bottom: 21 };
+const CLUB_NAME_BOX = { top: 81, left: 13.7, right: 55, bottom: 15.4 };
+const SIGNATURE_BOX = { top: 81, left: 55.2, right: 13.1, bottom: 15.4 };
 
 function SignaturePad({
   name, club, signing, onFinished,
@@ -205,7 +206,7 @@ function SignaturePad({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={CONTRACT_SRC} alt="" className="block w-full" onError={() => setImgOk(false)} />
         <div
-          className="absolute flex items-end justify-center overflow-hidden px-1 pb-[6%]"
+          className="absolute flex items-center justify-center overflow-hidden px-1"
           style={{
             top: `${CLUB_NAME_BOX.top}%`, bottom: `${CLUB_NAME_BOX.bottom}%`,
             left: `${CLUB_NAME_BOX.left}%`, right: `${CLUB_NAME_BOX.right}%`,

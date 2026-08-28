@@ -44,10 +44,22 @@ export function buildLeague(clubNames: string[], userClub: string): LeagueTeam[]
  * another pair never; there was no answer to "who is my rival playing this
  * week", and no results to show but your own.
  *
- * Built by the circle method: fix the first club, rotate the rest. The venue
- * alternates on `(round + pairing)` so the fixed club is not at home nineteen
- * times, and the second half is the first half with every venue reversed —
- * which is what makes "once each way" true by construction rather than by luck.
+ * Built by the circle method: fix the first club, rotate the rest. The
+ * second half is the first half with every venue reversed — which is what
+ * makes "once each way" true by construction rather than by luck.
+ *
+ * Venue WITHIN the first half is decided by a running home-games count per
+ * club, not a fixed `(round + pairing) % 2` — that formula only alternates
+ * cleanly for the one club that never moves in the rotation (paired at
+ * `i === 0` every single round, so its own parity is just `round % 2`).
+ * Every other club drifts through the rotation's other slots at a rate that
+ * keeps `(round + i)` the same parity for many consecutive rounds, so it
+ * used to get a real season of "home for the first half, away for the
+ * second" instead of a realistic mix — reported directly, and confirmed by
+ * tracing a full 20-club season by hand. Whichever of the two clubs has had
+ * fewer home fixtures so far gets this one; a genuine tie (both still equal)
+ * falls back to the same parity rule so the choice stays deterministic
+ * rather than depending on iteration order.
  */
 export function buildSeasonFixtures(clubs: string[]): LeagueFixture[] {
   const teams = [...clubs];
@@ -55,14 +67,18 @@ export function buildSeasonFixtures(clubs: string[]): LeagueFixture[] {
   const rounds = teams.length - 1;
   const half = teams.length / 2;
 
+  const homeCount = new Map<string, number>(teams.map(t => [t, 0]));
   const first: LeagueFixture[] = [];
   for (let round = 0; round < rounds; round++) {
     for (let i = 0; i < half; i++) {
       const a = teams[i];
       const b = teams[teams.length - 1 - i];
       if (a === BYE || b === BYE) continue;
-      const aHome = (round + i) % 2 === 0;
-      first.push({ week: round + 1, home: aHome ? a : b, away: aHome ? b : a });
+      const ha = homeCount.get(a)!, hb = homeCount.get(b)!;
+      const aHome = ha < hb || (ha === hb && (round + i) % 2 === 0);
+      const home = aHome ? a : b, away = aHome ? b : a;
+      homeCount.set(home, homeCount.get(home)! + 1);
+      first.push({ week: round + 1, home, away });
     }
     const last = teams.pop()!;
     teams.splice(1, 0, last);
