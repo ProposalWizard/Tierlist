@@ -5,7 +5,7 @@ import {
   FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, refit, bestFitness,
   type Pickable,
 } from "@/lib/star/formations";
-import { loadLineup, saveLineup } from "@/lib/star/lineupStore";
+import { loadLineup, saveLineup, exportAll, importAll } from "@/lib/star/lineupStore";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 
 /**
@@ -57,6 +57,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
   const [club, setClub] = useState(initialClub ?? clubs[0] ?? "");
   const [sheet, setSheet] = useState<Sheet>({ club: "", formationId: DEFAULT_FORMATION, xi: [], bench7: [], manager: "" });
   const [held, setHeld] = useState<string | null>(null);
+  const [showBackup, setShowBackup] = useState(false);
   const { formationId, xi, bench7, manager } = sheet;
 
   // ── One screen ──
@@ -269,6 +270,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     : "Tap a player then another to swap";
 
   return (
+    <>
     <div
       ref={shellRef}
       className="mx-auto flex w-full max-w-5xl flex-col gap-1.5 overflow-hidden px-2"
@@ -307,6 +309,14 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
           className="shrink-0 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-black uppercase text-white transition hover:bg-emerald-500"
         >
           Best XI
+        </button>
+        <button
+          onClick={() => setShowBackup(true)}
+          aria-label="Backup lineups"
+          title="Backup / restore all saved lineups"
+          className="shrink-0 rounded-lg bg-gray-700 px-2.5 text-[11px] font-black uppercase text-white transition hover:bg-gray-600"
+        >
+          Backup
         </button>
       </div>
 
@@ -454,6 +464,100 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
           </div>
         </>
       )}
+    </div>
+    {showBackup && <BackupModal onClose={() => setShowBackup(false)} />}
+    </>
+  );
+}
+
+/**
+ * Every saved lineup, as one block of JSON — copy it somewhere safe, or
+ * paste it straight into this same box on another device (see
+ * exportAll/importAll in lineupStore.ts for why this exists at all: the
+ * data is localStorage-only, so a phone and a laptop are two completely
+ * separate stores with no cloud copy joining them).
+ */
+function BackupModal({ onClose }: { onClose: () => void }) {
+  const [dump] = useState(() => exportAll());
+  const [copied, setCopied] = useState(false);
+  const [pasted, setPasted] = useState("");
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(dump);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // Clipboard permission denied or unavailable — the textarea below is
+      // already selectable, so manual copy still works.
+    }
+  };
+
+  const doImport = () => {
+    const r = importAll(pasted);
+    setResult({
+      ok: r.ok,
+      text: r.ok ? `Restored ${r.count} club${r.count === 1 ? "" : "s"}. Refresh this page to see it.` : (r.error ?? "Import failed."),
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col gap-3 overflow-y-auto rounded-xl border border-gray-700 bg-gray-900 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black text-white">Backup lineups</h2>
+          <button onClick={onClose} className="rounded-lg bg-gray-700 px-2.5 py-1 text-[11px] font-black text-white hover:bg-gray-600">
+            Close
+          </button>
+        </div>
+
+        <div>
+          <div className="mb-1 text-[11px] font-bold text-white/70">
+            Every club&apos;s saved formation, eleven, bench and manager, as text. Copy it
+            somewhere safe — a notes app, an email to yourself — so a reset never means
+            rebuilding it all again.
+          </div>
+          <textarea
+            readOnly
+            value={dump}
+            onFocus={e => e.currentTarget.select()}
+            className="h-40 w-full resize-none rounded-lg border border-gray-700 bg-gray-950 p-2 font-mono text-[10px] text-white/85"
+          />
+          <button
+            onClick={copy}
+            className="mt-1.5 w-full rounded-lg bg-emerald-600 py-1.5 text-[11px] font-black uppercase text-white transition hover:bg-emerald-500"
+          >
+            {copied ? "Copied ✓" : "Copy to clipboard"}
+          </button>
+        </div>
+
+        <div className="border-t border-gray-700 pt-3">
+          <div className="mb-1 text-[11px] font-bold text-white/70">
+            Paste a backup back in — on this device after a reset, or on a different
+            device to bring its lineups across. Clubs not mentioned in the paste are left
+            untouched.
+          </div>
+          <textarea
+            value={pasted}
+            onChange={e => { setPasted(e.target.value); setResult(null); }}
+            placeholder="Paste the backup JSON here"
+            className="h-24 w-full resize-none rounded-lg border border-gray-700 bg-gray-950 p-2 font-mono text-[10px] text-white placeholder:text-white/40"
+          />
+          <button
+            onClick={doImport}
+            disabled={!pasted.trim()}
+            className="mt-1.5 w-full rounded-lg bg-gray-700 py-1.5 text-[11px] font-black uppercase text-white transition hover:bg-gray-600 disabled:opacity-40"
+          >
+            Restore
+          </button>
+          {result && (
+            <div className={`mt-1.5 text-[11px] font-bold ${result.ok ? "text-emerald-400" : "text-red-300"}`}>
+              {result.text}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

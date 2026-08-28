@@ -65,3 +65,64 @@ export function clearLineup(club: string): void {
     localStorage.setItem(KEY, JSON.stringify(all));
   } catch {}
 }
+
+/**
+ * A COPY YOU KEEP YOURSELF.
+ *
+ * Every saved lineup lives only in this one browser's localStorage — there is
+ * no cloud copy, and a club built on one device is invisible to the same
+ * career opened on another (a laptop and a phone are two different stores
+ * entirely). `exportAll` hands back the whole thing as one block of JSON, so
+ * it can be pasted somewhere safe — or straight into another device's Import
+ * box — instead of being rebuilt by hand a second time.
+ */
+export function exportAll(): string {
+  return JSON.stringify(read(), null, 2);
+}
+
+export interface ImportResult {
+  ok: boolean;
+  /** How many clubs were actually written. */
+  count?: number;
+  error?: string;
+}
+
+/**
+ * The other half of exportAll — reads back exactly what it wrote.
+ *
+ * Merges rather than replaces: a club not mentioned in the pasted JSON is
+ * left exactly as it was, so importing a backup that only covers two clubs
+ * can never wipe out everything else already saved on this device.
+ */
+export function importAll(json: string): ImportResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return { ok: false, error: "That doesn't look like valid JSON — check nothing got cut off when you pasted it." };
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { ok: false, error: "That JSON isn't a lineup backup — expected an object keyed by club name." };
+  }
+  const entries = Object.entries(parsed as Record<string, unknown>).filter(
+    ([, v]) => v && typeof v === "object" && Array.isArray((v as SavedLineup).xi),
+  ) as [string, SavedLineup][];
+  if (entries.length === 0) {
+    return { ok: false, error: "No valid lineups found in that JSON." };
+  }
+  try {
+    const all = read();
+    for (const [club, lineup] of entries) {
+      all[club] = {
+        formation: lineup.formation || DEFAULT_FORMATION,
+        xi: lineup.xi,
+        bench: Array.isArray(lineup.bench) ? lineup.bench : undefined,
+        manager: typeof lineup.manager === "string" ? lineup.manager : "",
+      };
+    }
+    localStorage.setItem(KEY, JSON.stringify(all));
+    return { ok: true, count: entries.length };
+  } catch {
+    return { ok: false, error: "Couldn't write to this browser's storage." };
+  }
+}

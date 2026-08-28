@@ -3,7 +3,7 @@ import type { SquadPlayer } from "./types";
 /**
  * FORMATIONS.
  *
- * Thirty shapes, each eleven slots, each slot a role and a spot on the pitch.
+ * Thirty-one shapes, each eleven slots, each slot a role and a spot on the pitch.
  *
  * Coordinates are fractions of the frame: x runs 0 (left touchline) to 1
  * (right), y runs 0 (the goal you are attacking) to 1 (your own). So a
@@ -13,7 +13,8 @@ import type { SquadPlayer } from "./types";
  * The names are the ones football uses — 4231, 4231(2), 433(4) — because those
  * are what people ask for. The bracketed variants are the same numbers arranged
  * differently: 433 is a flat midfield three, 433(2) puts a holder behind two,
- * 433(3) two holders in front of one, 433(4) one holder behind two attacking.
+ * 433(3) two holders in front of one, 433(4) one holder behind two attacking,
+ * 433(5) two holders behind one attacking — a double pivot and a lone number 10.
  */
 
 export type Role = SquadPlayer["position"];
@@ -206,6 +207,14 @@ export const FORMATIONS: Formation[] = [
   f("433(4)", "4-3-3 (attack)", back4(),
     [{ role: "CM", x: 0.50, y: HOLD - 0.02 }],
     [{ role: "CAM", x: 0.30, y: ATT + 0.02 }, { role: "CAM", x: 0.70, y: ATT + 0.02 }],
+    [{ role: "LW", x: 0.18, y: FWD }, { role: "ST", x: 0.50, y: FWD }, { role: "RW", x: 0.82, y: FWD }]),
+
+  // 433(4)'s own row pair, mirrored: two CMs sit deep instead of one, and
+  // the lone advanced man is a CAM instead of a pair — a 4-3-3 built around
+  // a double pivot behind one number 10, not a front-loaded midfield three.
+  f("433(5)", "4-3-3 (midfield)", back4(),
+    [{ role: "CM", x: 0.30, y: HOLD - 0.02 }, { role: "CM", x: 0.70, y: HOLD - 0.02 }],
+    [{ role: "CAM", x: 0.50, y: ATT + 0.035 }],
     [{ role: "LW", x: 0.18, y: FWD }, { role: "ST", x: 0.50, y: FWD }, { role: "RW", x: 0.82, y: FWD }]),
 
   f("4411(2)", "4-4-1-1", back4(),
