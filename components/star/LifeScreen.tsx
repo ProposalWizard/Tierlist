@@ -5,13 +5,7 @@ import { actionsLeft, WEEK_ACTIONS, REST_ENERGY } from "@/lib/star/week";
 
 interface Props {
   career: CareerState;
-  onOpenShop: (kind: "nrg" | "boots" | "lifestyle") => void;
-  onOpenCasino: () => void;
-  onOpenSponsors: () => void;
-  onOpenAchievements: () => void;
-  onOpenTrophies: () => void;
   onOpenContract: () => void;
-  onUseDrink: (id: "basic" | "premium" | "elite") => void;
   onPlayRelationshipGame: (kind: RelationshipKind) => void;
   onRest: () => void;
 }
@@ -19,7 +13,7 @@ interface Props {
 const TRAINING_ENERGY = 15;
 
 export default function LifeScreen({
-  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink, onPlayRelationshipGame, onRest,
+  career, onOpenContract, onPlayRelationshipGame, onRest,
 }: Props) {
   const left = actionsLeft(career);
   const canPlay = career.energy >= TRAINING_ENERGY && left > 0;
@@ -64,45 +58,6 @@ export default function LifeScreen({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
-        <QuickBtn label="NRG" icon="🥤" onClick={() => onOpenShop("nrg")} />
-        <QuickBtn label="Boots" icon="👟" onClick={() => onOpenShop("boots")} />
-        <QuickBtn label="Style" icon="💎" onClick={() => onOpenShop("lifestyle")} />
-        <QuickBtn label="Casino" icon="🎰" onClick={onOpenCasino} />
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <QuickBtn label="Sponsors" icon="🤝" onClick={onOpenSponsors} />
-        <QuickBtn label="Awards" icon="⭐" onClick={onOpenAchievements} />
-        <QuickBtn label="Trophies" icon="🏆" onClick={onOpenTrophies} />
-      </div>
-
-      {/* NRG drinks quick-use */}
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
-        <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">NRG Drinks</div>
-        <div className="grid grid-cols-3 gap-2">
-          {(["basic", "premium", "elite"] as const).map((k) => {
-            const count = career.nrgDrinks[k];
-            const label = k === "basic" ? "Basic" : k === "premium" ? "Premium" : "Elite";
-            const restore = k === "basic" ? 25 : k === "premium" ? 50 : 100;
-            const color = k === "basic" ? "bg-orange-500" : k === "premium" ? "bg-purple-500" : "bg-emerald-500";
-            return (
-              <button
-                key={k}
-                disabled={count === 0}
-                onClick={() => onUseDrink(k)}
-                className={`p-2 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
-              >
-                <div className={`w-8 h-10 mx-auto ${color} rounded border border-black/40 mb-1`} />
-                <div className="text-[10px] font-black text-white">{label}</div>
-                <div className="text-[9px] text-emerald-300 font-bold">+{restore}</div>
-                <div className="text-[9px] text-white/75">{count} owned</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Contract summary */}
       <button
         onClick={onOpenContract}
@@ -140,17 +95,5 @@ function RelationshipRow({ label, value, icon, onIconClick }: { label: string; v
         }`}
       >{icon}</IconEl>
     </div>
-  );
-}
-
-function QuickBtn({ label, icon, onClick }: { label: string; icon: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg py-2 flex flex-col items-center transition"
-    >
-      <div className="text-xl">{icon}</div>
-      <div className="text-[10px] font-black text-white mt-0.5">{label}</div>
-    </button>
   );
 }

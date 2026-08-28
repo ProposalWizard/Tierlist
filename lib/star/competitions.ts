@@ -532,6 +532,26 @@ export function fixtureLabel(f: Fixture): string {
   return f.round ? `${f.competition} · ${f.round}` : f.competition ?? "Cup";
 }
 
+const COMPETITION_ABBREV: Record<Competition, string> = {
+  "FA Cup": "FA Cup",
+  "League Cup": "L Cup",
+  "Champions League": "UCL",
+  "Europa League": "UEL",
+  "Conference League": "UECL",
+  "Community Shield": "Shield",
+  "Super Cup": "S Cup",
+  "World Cup": "WC",
+  "European Championship": "Euros",
+  "Play-Offs": "Play-Off",
+};
+
+/** Short enough for a scoreboard badge — "Prem" / "UCL" / "L Cup" — rather
+ *  than the full competition name fixtureLabel reads out on the team sheet. */
+export function competitionAbbrev(f: Fixture, division: CareerDivision): string {
+  if (!f.kind || f.kind === "league") return division === "premier" ? "Prem" : "Champ";
+  return (f.competition && COMPETITION_ABBREV[f.competition]) || "Cup";
+}
+
 
 // ── The two domestic cups ───────────────────────────────────────────────────
 
