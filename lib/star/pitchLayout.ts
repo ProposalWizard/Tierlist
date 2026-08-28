@@ -14,21 +14,27 @@
  * height. See formations.ts and formationSpacing.mts for what that squeeze
  * costs in real pixels, and why the bands there are shaped the way they are.
  *
- * GOAL_INSET came down from 0.07 in the same pass that put VersusScreen's
- * pitch box back to a shorter aspect ratio and its player chips back to a
- * bigger face (see that file's own note) — reported directly, with a
- * before/after screenshot, as "you have to scroll to reach kick off" and
- * "you've made the players smaller." Reclaiming this margin is what pays
- * for the bigger chip without growing the box back to the height that
- * caused the scroll in the first place; HALFWAY_INSET stays where it was —
- * shrinking it further starts pushing each side's most advanced line
- * uncomfortably close to the opposing side's mirror image of it.
+ * GOAL_INSET moved down from 0.07 and HALFWAY_INSET up from 0.045 in the
+ * pass that put VersusScreen's player chips back to their original 34px
+ * face — reported directly, twice, with before/after screenshots: first
+ * that an earlier overlap fix had grown the box and shrunk the chip to buy
+ * its clearance ("you have to scroll to reach kick off", "you've made the
+ * players smaller"), then, once formations.ts's own bands were widened
+ * instead (see its own note), that restoring the full original chip size
+ * exposed a SECOND squeeze this module never had to handle before: two
+ * lone, centred strikers — one from each side, both drawn at x=0.5 — sit
+ * mirrored across the halfway line with nothing but HALFWAY_INSET keeping
+ * them apart, and the bigger the chip, the closer that gets. GOAL_INSET
+ * still has real slack in it (a bigger keeper chip needs a little more
+ * room off the goal line, but nowhere near the original 0.07); the rest of
+ * the room the bigger halfway inset costs comes from formations.ts's own
+ * per-formation adjustments, not from growing the box.
  */
 
 export const NEAR = 0.17;
 export const FAR = 0.94;
-export const HALFWAY_INSET = 0.045;
-export const GOAL_INSET = 0.045;
+export const HALFWAY_INSET = 0.06;
+export const GOAL_INSET = 0.05;
 
 /** Where a man stands, once his half has been squeezed to half a pitch. */
 export function place(y: number, bottom: boolean): number {

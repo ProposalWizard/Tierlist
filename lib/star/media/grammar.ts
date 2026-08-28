@@ -1,4 +1,5 @@
 import { mulberry32 } from "../season";
+import { CLUB_SHORT_NAMES } from "../clubs";
 import type { Facts, FactValue, VoiceProfile } from "./types";
 
 /**
@@ -247,25 +248,22 @@ export function ordinal(n: number): string {
  * wide, and a truncated club name reads as a rendering bug rather than as a
  * club. It is what a broadcaster puts on the same caption.
  *
- * Rules first, exceptions second, and only three exceptions. Dropping the
- * trailing "United" or "Hotspur" leaves Leeds, Newcastle, West Ham and
- * Tottenham correct on its own; it leaves Wolverhampton, and nobody calls them
- * that. Manchester is the other one — two clubs share the distinctive half, so
- * neither can lose it.
+ * `CLUB_SHORT_NAMES` (clubs.ts) is the given, authoritative list for every
+ * club on the English ladder — checked first, since a suffix-stripping rule
+ * was never going to get Nottingham Forest to "Forest" on its own. The
+ * heuristic below only still runs for a club that list doesn't cover
+ * (Champions League/Europa League/Other) — dropping the trailing "United"
+ * or "Hotspur" leaves Leeds, Newcastle, West Ham and Tottenham correct on
+ * its own, though not Wolverhampton, which is why that one is IN the list.
  */
-const CLUB_SHORT_EXCEPTIONS: Record<string, string> = {
-  "wolverhampton wanderers": "Wolves",
-  "manchester united": "Man Utd",
-  "manchester city": "Man City",
-};
 
 /** Words that identify no club on their own — every one is shared by several. */
 const CLUB_SUFFIXES = new Set(["united", "city", "town", "rovers", "albion", "wanderers", "county", "hotspur"]);
 
 export function shortClub(club: string): string {
   const trimmed = club.trim();
-  const exception = CLUB_SHORT_EXCEPTIONS[trimmed.toLowerCase()];
-  if (exception) return exception;
+  const given = CLUB_SHORT_NAMES[trimmed];
+  if (given) return given;
 
   // "Brighton & Hove Albion" is Brighton to everyone, including Brighton.
   let name = trimmed.split(/\s*&\s*/)[0];

@@ -61,8 +61,16 @@ function loanReturnLabel(career: CareerState, returnSeason: number): string {
  * shows up on the real signing club's own incomings card either way.
  */
 function buildBusiness(career: CareerState): ClubBusiness[] {
+  const inDivision = new Set(career.league.map(t => t.name));
   const byClub = new Map<string, ClubBusiness>();
-  const get = (club: string): ClubBusiness => {
+  // Only ever creates a TILE for a club in the player's own division — a
+  // counterpart outside it (Real Sociedad, say, on the other end of an
+  // international-window deal) still shows up correctly by name on the
+  // in-division club's own card, it just never gets a selectable tile of
+  // its own. Reported directly: Real Sociedad, who play in neither the
+  // Premier League nor the Championship, had one anyway.
+  const get = (club: string): ClubBusiness | null => {
+    if (!inDivision.has(club)) return null;
     let b = byClub.get(club);
     if (!b) { b = { club, in: [], out: [] }; byClub.set(club, b); }
     return b;
@@ -72,13 +80,13 @@ function buildBusiness(career: CareerState): ClubBusiness[] {
 
   for (const m of career.leagueTransferNews ?? []) {
     const detail = m.fee > 0 ? `£${m.fee}m` : "Free Transfer";
-    if (m.to !== FREE_AGENTS_CLUB) get(m.to).in.push({ player: m.player, counterpart: m.from, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
-    if (m.from !== FREE_AGENTS_CLUB) get(m.from).out.push({ player: m.player, counterpart: m.to, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
+    if (m.to !== FREE_AGENTS_CLUB) get(m.to)?.in.push({ player: m.player, counterpart: m.from, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
+    if (m.from !== FREE_AGENTS_CLUB) get(m.from)?.out.push({ player: m.player, counterpart: m.to, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
   }
   for (const l of career.leagueLoanNews ?? []) {
     const detail = `Loan · back ${loanReturnLabel(career, l.returnSeason)}`;
-    get(l.loanClub).in.push({ player: l.player, counterpart: l.parentClub, overall: l.overall, detail, loan: true, unhappy: false });
-    get(l.parentClub).out.push({ player: l.player, counterpart: l.loanClub, overall: l.overall, detail, loan: true, unhappy: false });
+    get(l.loanClub)?.in.push({ player: l.player, counterpart: l.parentClub, overall: l.overall, detail, loan: true, unhappy: false });
+    get(l.parentClub)?.out.push({ player: l.player, counterpart: l.loanClub, overall: l.overall, detail, loan: true, unhappy: false });
   }
 
   const list = Array.from(byClub.values());
@@ -100,6 +108,16 @@ const WINDOW_LABEL: Record<string, string> = {
  *  ground and the gold panel alike — see the note above the title itself. */
 const TITLE_OUTLINE =
   "-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 6px rgba(0,0,0,0.5)";
+
+/**
+ * The same black outline, sized for the smaller text on an In/Out card —
+ * reported directly: the tinted green/red card backgrounds made a player's
+ * name and the club he moved from/to hard to read. A thinner outline than
+ * the title's (this text is much smaller) around solid white, rather than
+ * a translucent white, is what actually holds up over either tint.
+ */
+const NAME_OUTLINE =
+  "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 3px rgba(0,0,0,0.6)";
 
 export default function DeadlineDayRoundup({ career, onContinue }: { career: CareerState; onContinue: () => void }) {
   const business = useMemo(() => buildBusiness(career), [career]);
@@ -195,12 +213,13 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
         {/* ── Club selector — every club in the division, not just the ones
             with a deal to show. See buildBusiness above.
             A single horizontal-scrolling row used to hold all of these —
-            reported directly: "I can only see three clubs to click on." A
-            wrapping grid shows most of a twenty-club division at once
-            instead of one at a time off-screen, with its own short vertical
-            scroll for the rest (a twenty-four-club Championship season, or
-            a phone too narrow to fit four per row). ── */}
-        <div className="relative z-10 mt-1 flex max-h-[176px] flex-wrap content-start gap-1.5 overflow-y-auto px-3 pb-2 pl-9">
+            reported directly: "I can only see three clubs to click on." Then
+            a wrapping grid with its own capped-height scroll — reported
+            again: still a scrollbar, still not all of them visible at once.
+            No cap now: the grid just takes whatever height a full division
+            (twenty clubs, or twenty-four in the Championship) needs, and the
+            deals list below (its own flex-1 + scroll) gives up the room. ── */}
+        <div className="relative z-10 mt-1 flex flex-wrap content-start gap-1.5 px-3 pb-2 pl-9">
           {business.map(b => {
             const mine = b.club === career.player.club;
             const isActive = b.club === selected;
@@ -242,12 +261,12 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                   {active.in.map((d, i) => (
                     <div key={`in-${i}`} className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="truncate text-sm font-black text-white">{d.player}</span>
-                        <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-emerald-300">{d.detail}</span>
+                        <span className="truncate text-sm font-black text-white" style={{ textShadow: NAME_OUTLINE }}>{d.player}</span>
+                        <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-black">{d.detail}</span>
                       </div>
-                      <div className="text-[10px] font-bold text-white/60">
-                        from {d.counterpart} · {d.overall} OVR
-                        {d.unhappy && <span className="ml-1 text-amber-300">· forced the move</span>}
+                      <div className="text-[10px] font-bold text-white">
+                        from <span style={{ textShadow: NAME_OUTLINE }}>{d.counterpart}</span> · {d.overall} OVR
+                        {d.unhappy && <span className="ml-1 text-amber-300" style={{ textShadow: NAME_OUTLINE }}>· forced the move</span>}
                       </div>
                     </div>
                   ))}
@@ -262,12 +281,12 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                   {active.out.map((d, i) => (
                     <div key={`out-${i}`} className="rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="truncate text-sm font-black text-white">{d.player}</span>
-                        <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-rose-300">{d.detail}</span>
+                        <span className="truncate text-sm font-black text-white" style={{ textShadow: NAME_OUTLINE }}>{d.player}</span>
+                        <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-black">{d.detail}</span>
                       </div>
-                      <div className="text-[10px] font-bold text-white/60">
-                        to {d.counterpart} · {d.overall} OVR
-                        {d.unhappy && <span className="ml-1 text-amber-300">· forced the move</span>}
+                      <div className="text-[10px] font-bold text-white">
+                        to <span style={{ textShadow: NAME_OUTLINE }}>{d.counterpart}</span> · {d.overall} OVR
+                        {d.unhappy && <span className="ml-1 text-amber-300" style={{ textShadow: NAME_OUTLINE }}>· forced the move</span>}
                       </div>
                     </div>
                   ))}

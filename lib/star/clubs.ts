@@ -126,6 +126,67 @@ export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
   "Sporting Clube de Braga", "PAOK", "Viktoria Plzeň", "Vitória SC", "Legia Warszawa",
 ];
 
+/**
+ * The shortened name for every club on the English ladder, given directly —
+ * not the generic "drop United/City/Town" heuristic `shortClub` (grammar.ts)
+ * otherwise falls back to, which gets Nottingham Forest ("Forest" was never
+ * going to fall out of a suffix-stripping rule) and a few others wrong. This
+ * is now the authoritative source `shortClub` reads first; update THIS list
+ * alone if a shortened name ever needs to change; the heuristic still covers
+ * international clubs (Champions League/Europa League/Other) not listed here.
+ */
+export const CLUB_SHORT_NAMES: Record<string, string> = {
+  "Arsenal": "Arsenal",
+  "Aston Villa": "Villa",
+  "AFC Bournemouth": "Bournemouth",
+  "Brentford": "Brentford",
+  "Brighton & Hove Albion": "Brighton",
+  "Chelsea": "Chelsea",
+  "Coventry City": "Coventry",
+  "Crystal Palace": "Palace",
+  "Everton": "Everton",
+  "Fulham FC": "Fulham",
+  "Hull City": "Hull",
+  "Ipswich Town": "Ipswich",
+  "Leeds United": "Leeds",
+  "Liverpool": "Liverpool",
+  "Manchester City": "Man City",
+  "Manchester United": "Man United",
+  "Newcastle United": "Newcastle",
+  "Nottingham Forest": "Forest",
+  "Sunderland": "Sunderland",
+  "Tottenham Hotspur": "Spurs",
+  "Birmingham City": "Birmingham",
+  "Blackburn Rovers": "Blackburn",
+  "Bolton Wanderers": "Bolton",
+  "Bristol City": "Bristol",
+  "Burnley": "Burnley",
+  "Cardiff City": "Cardiff",
+  "Charlton Athletic": "Charlton",
+  "Derby County": "Derby",
+  "Lincoln City": "Lincoln",
+  "Middlesbrough": "Boro",
+  "Millwall FC": "Millwall",
+  "Norwich City": "Norwich",
+  "Portsmouth": "Portsmouth",
+  "Preston North End": "PNE",
+  "Queens Park Rangers": "QPR",
+  "Sheffield United": "Sheffield",
+  "Southampton": "Southampton",
+  "Stoke City": "Stoke",
+  "Swansea City": "Swansea",
+  "Watford": "Watford",
+  "West Bromwich Albion": "West Brom",
+  "West Ham United": "West Ham",
+  "Wolverhampton Wanderers": "Wolves",
+  "Wrexham": "Wrexham",
+  "Leicester City": "Leicester",
+  "Luton Town": "Luton",
+  "Huddersfield Town": "Huddersfield",
+  "Wigan Athletic": "Wigan",
+  "Reading FC": "Reading",
+};
+
 export type Division = "premier" | "championship" | "pool" | "champions" | "europa";
 
 const DIVISION_BY_CLUB = new Map<string, Division>([

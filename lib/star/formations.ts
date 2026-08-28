@@ -56,9 +56,16 @@ const back4 = (): Slot[] => [
   { role: "LB", x: 0.12, y: DEF4 }, { role: "CB", x: 0.38, y: DEF4 },
   { role: "CB", x: 0.62, y: DEF4 }, { role: "RB", x: 0.88, y: DEF4 },
 ];
-/** Three centre-halves. */
+/**
+ * Three centre-halves. Off dead-centre on purpose — GK is always at x=0.5,
+ * and (in 3-1-4-2) so is the lone CDM behind it: a middle CB stacked
+ * exactly between them, at the same x as both, is a straight vertical
+ * squeeze with no diagonal room to give. Pulling the whole three wider and
+ * off-centre turns that squeeze into a genuine diagonal gap instead —
+ * still reads as a back three, just not a perfectly symmetric one.
+ */
 const back3 = (): Slot[] => [
-  { role: "CB", x: 0.30, y: DEF }, { role: "CB", x: 0.50, y: DEF }, { role: "CB", x: 0.70, y: DEF },
+  { role: "CB", x: 0.22, y: DEF }, { role: "CB", x: 0.40, y: DEF }, { role: "CB", x: 0.78, y: DEF },
 ];
 /** Three centre-halves and two wing-backs, all level — a flat five. */
 const back5 = (): Slot[] => [
@@ -113,9 +120,13 @@ export const FORMATIONS: Formation[] = [
     [{ role: "CAM", x: 0.50, y: ATT }],
     [{ role: "ST", x: 0.40, y: FWD }, { role: "ST", x: 0.60, y: FWD }]),
 
+  // The lone CDM and the middle CM below share the same x=0.5 by default,
+  // stacking a third thing on top of GK's own centre line with nothing to
+  // separate them but a squeeze in y — moved both off it (opposite ways)
+  // for real diagonal clearance instead. See back3()'s own note.
   f("4132", "4-1-3-2", back4(),
-    [{ role: "CDM", x: 0.50, y: HOLD }],
-    [{ role: "CM", x: 0.24, y: MID }, { role: "CM", x: 0.50, y: MID }, { role: "CM", x: 0.76, y: MID }],
+    [{ role: "CDM", x: 0.54, y: HOLD }],
+    [{ role: "CM", x: 0.24, y: MID }, { role: "CM", x: 0.40, y: MID }, { role: "CM", x: 0.76, y: MID }],
     [{ role: "ST", x: 0.40, y: FWD }, { role: "ST", x: 0.60, y: FWD }]),
 
   f("4141", "4-1-4-1", back4(),
@@ -124,25 +135,28 @@ export const FORMATIONS: Formation[] = [
      { role: "CM", x: 0.62, y: MID - 0.04 }, { role: "RW", x: 0.88, y: MID - 0.04, label: "RM" }],
     [{ role: "ST", x: 0.50, y: FWD - 0.02 }]),
 
+  // The two CDMs sit close enough to DEF4's own centre-backs (0.38/0.62)
+  // that they need a real diagonal gap, not just the vertical one DEF4
+  // already bought them — widened outward, same idea as back3() above.
   f("4213", "4-2-1-3", back4(),
-    [{ role: "CDM", x: 0.35, y: HOLD }, { role: "CDM", x: 0.65, y: HOLD }],
+    [{ role: "CDM", x: 0.30, y: HOLD }, { role: "CDM", x: 0.70, y: HOLD }],
     [{ role: "CAM", x: 0.50, y: ATT + 0.04 }],
     [{ role: "LW", x: 0.20, y: FWD }, { role: "ST", x: 0.50, y: FWD }, { role: "RW", x: 0.80, y: FWD }]),
 
   f("4222", "4-2-2-2", back4(),
-    [{ role: "CDM", x: 0.35, y: HOLD }, { role: "CDM", x: 0.65, y: HOLD }],
+    [{ role: "CDM", x: 0.30, y: HOLD }, { role: "CDM", x: 0.70, y: HOLD }],
     [{ role: "CAM", x: 0.22, y: ATT }, { role: "CAM", x: 0.78, y: ATT }],
     [{ role: "ST", x: 0.40, y: FWD }, { role: "ST", x: 0.60, y: FWD }]),
 
   f("4231", "4-2-3-1", back4(),
-    [{ role: "CDM", x: 0.35, y: HOLD }, { role: "CDM", x: 0.65, y: HOLD }],
-    [{ role: "LW", x: 0.15, y: ATT }, { role: "CAM", x: 0.50, y: ATT }, { role: "RW", x: 0.85, y: ATT }],
+    [{ role: "CDM", x: 0.30, y: HOLD }, { role: "CDM", x: 0.70, y: HOLD }],
+    [{ role: "LW", x: 0.15, y: ATT }, { role: "CAM", x: 0.58, y: ATT }, { role: "RW", x: 0.85, y: ATT }],
     [{ role: "ST", x: 0.50, y: FWD - 0.02 }]),
 
   f("4231(2)", "4-2-3-1 (narrow)", back4(),
     [{ role: "CM", x: 0.35, y: HOLD - 0.02 }, { role: "CM", x: 0.65, y: HOLD - 0.02 }],
-    [{ role: "CAM", x: 0.28, y: ATT }, { role: "CAM", x: 0.50, y: ATT - 0.015 }, { role: "CAM", x: 0.72, y: ATT }],
-    [{ role: "ST", x: 0.50, y: FWD - 0.02 }]),
+    [{ role: "CAM", x: 0.28, y: ATT }, { role: "CAM", x: 0.58, y: ATT - 0.015 }, { role: "CAM", x: 0.76, y: ATT }],
+    [{ role: "ST", x: 0.46, y: FWD - 0.02 }]),
 
   f("424", "4-2-4", back4(),
     [{ role: "CM", x: 0.35, y: MID }, { role: "CM", x: 0.65, y: MID }],
@@ -169,7 +183,7 @@ export const FORMATIONS: Formation[] = [
     [{ role: "LW", x: 0.18, y: FWD }, { role: "ST", x: 0.50, y: FWD }, { role: "RW", x: 0.82, y: FWD }]),
 
   f("433(3)", "4-3-3 (defend)", back4(),
-    [{ role: "CDM", x: 0.32, y: HOLD }, { role: "CDM", x: 0.68, y: HOLD }],
+    [{ role: "CDM", x: 0.27, y: HOLD }, { role: "CDM", x: 0.73, y: HOLD }],
     [{ role: "CM", x: 0.50, y: MID - 0.04 }],
     [{ role: "LW", x: 0.18, y: FWD }, { role: "ST", x: 0.50, y: FWD }, { role: "RW", x: 0.82, y: FWD }]),
 
@@ -181,7 +195,7 @@ export const FORMATIONS: Formation[] = [
   f("4411(2)", "4-4-1-1", back4(),
     [{ role: "LW", x: 0.12, y: MID + 0.03, label: "LM" }, { role: "CM", x: 0.38, y: MID + 0.03 },
      { role: "CM", x: 0.62, y: MID + 0.03 }, { role: "RW", x: 0.88, y: MID + 0.03, label: "RM" }],
-    [{ role: "CAM", x: 0.50, y: ATT }],
+    [{ role: "CAM", x: 0.58, y: ATT }],
     [{ role: "ST", x: 0.50, y: FWD - 0.02 }]),
 
   f("442", "4-4-2", back4(),
