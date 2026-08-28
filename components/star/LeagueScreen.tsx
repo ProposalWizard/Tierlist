@@ -75,7 +75,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`py-1.5 rounded-t-lg font-black text-[9px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white/85"}`}
+            className={`py-1.5 rounded-t-lg font-black text-[9px] uppercase transition ${view === v ? "bg-yellow-500 text-white" : "bg-gray-700 text-white"}`}
           >
             {v}
           </button>
@@ -98,7 +98,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                 {round.length > 0 ? `Matchweek ${shownWeek}` : "No results yet"}
               </div>
               {round.length > 0 && (
-                <div className="text-[9px] font-bold text-white/70">
+                <div className="text-[9px] font-bold text-white">
                   {fixtureDateLabel(career.player.startYear, career.season, shownWeek, "league", divisionOf(career))}
                 </div>
               )}
@@ -114,7 +114,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
           </div>
 
           {round.length === 0 && (
-            <div className="p-3 text-xs font-bold text-gray-200">
+            <div className="p-3 text-xs font-bold text-white">
               Play a league match and this week&apos;s ten results will appear here.
             </div>
           )}
@@ -135,7 +135,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                 <span className={`truncate ${r.as > r.hs ? "font-black" : ""}`}>{r.away}</span>
                 {(r.hg?.length || r.ag?.length) ? (
                   <>
-                    <div className="col-span-3 mt-0.5 grid grid-cols-2 gap-2 text-[9px] font-bold leading-tight text-white/70">
+                    <div className="col-span-3 mt-0.5 grid grid-cols-2 gap-2 text-[9px] font-bold leading-tight text-white">
                       <div className="space-y-0.5 text-right">
                         {groupedGoalLines(r.hg ?? [], g => g.s, g => g.m).map(({ scorer, minutes }) => (
                           <div key={scorer}>{scorer} {minutes.map(m => `${m}'`).join(", ")}</div>
@@ -166,7 +166,16 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
             <div className="text-center">L</div>
             <div className="text-center">Pts</div>
           </div>
-          <div className="max-h-[420px] overflow-y-auto">
+          {/* No inner scroll here — DashboardShell's own content area is
+              already the one scrollable region on this whole page. A
+              second, nested scrollbar here doesn't just double up on
+              scrolling; on a platform whose scrollbar reserves real width
+              (most desktop browsers — not the overlay kind phones and Macs
+              use), it shrinks this list's own rows without touching the
+              header above them, which is what actually caused "the columns
+              don't line up" — confirmed directly: it lined up correctly on
+              a phone, which never had this scrollbar to begin with. */}
+          <div>
             {sorted.map((t, i) => {
               const pos = i + 1;
               const isPlayer = t.name === career.player.club;
@@ -192,7 +201,9 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
       )}
 
       {view === "fixtures" && (
-        <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md max-h-[460px] overflow-y-auto">
+        // Same reasoning as the Table tab above — no inner scroll cap; the
+        // page's own scroll region already handles a full season's list.
+        <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
           {/* A cup round is always APPENDED to career.fixtures the moment its
               draw lands (see careerFlow.ts) — never re-inserted among the
               league weeks it's actually sandwiched between — so the raw
@@ -262,6 +273,33 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
 
       {view === "awards" && (
         <div className="grid gap-2">
+          {/* Golden Boot and Assist King first, Player of the Month last —
+              requested directly. Both charts are a COUNT — every league
+              goal belongs to a named player. Cup goals stay out of them.
+              See recognition.goldenBootRace. Top five now, not six. */}
+          {([["Golden Boot", goldenBootRace(career)], ["Assist King", assistRace(career)]] as const).map(([title, race]) => (
+            <div key={title} className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
+              <div className="bg-gray-800 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300 border-b border-black/50">
+                {title}
+              </div>
+              {race.slice(0, 5).map((sc, i) => (
+                <div
+                  key={sc.name + sc.club}
+                  className={`flex items-center gap-2 px-2 py-1.5 text-xs font-bold ${
+                    sc.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
+                >
+                  <span className="w-4 text-center text-[10px] font-black">{i + 1}</span>
+                  <span className="flex-1 truncate">{sc.name}</span>
+                  <span className="truncate text-[10px] text-white max-w-[38%]">{sc.club}</span>
+                  <span className="w-6 text-right font-black tabular-nums">{sc.goals}</span>
+                </div>
+              ))}
+              {race.every(r => r.goals === 0) && (
+                <div className="px-2 py-2 text-[11px] font-bold text-white">Nobody has scored yet.</div>
+              )}
+            </div>
+          ))}
+
           {/* ── Player of the Month ──
               Newest first, because the one you want is the one just given. */}
           <div className="rounded-lg border border-gray-600 bg-gray-700 overflow-hidden">
@@ -269,7 +307,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
               Player of the Month
             </div>
             {(career.potm ?? []).filter(a => a.season === career.season).length === 0 && (
-              <div className="px-2 py-2 text-[11px] font-bold text-white/70">
+              <div className="px-2 py-2 text-[11px] font-bold text-white">
                 {/* This used to say "the first one is given at the end of
                     August" whatever month it actually was, which read as a bug
                     to anybody seeing it in February — and usually WAS one. */}
@@ -283,21 +321,21 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
               .map((a) => (
                 <div key={`${a.season}-${a.month}`} className="border-b border-black/25 px-2 py-1.5 last:border-b-0">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-white/70">{a.monthName}</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-white">{a.monthName}</span>
                     {a.isYou
                       ? <span className="text-[10px] font-black text-amber-300">YOU WON IT</span>
                       : a.yourPlace
-                        ? <span className="text-[10px] font-bold text-white/70">You were {a.yourPlace}{["st","nd","rd"][a.yourPlace-1] ?? "th"}</span>
-                        : <span className="text-[10px] font-bold text-white/50">Not shortlisted</span>}
+                        ? <span className="text-[10px] font-bold text-white">You were {a.yourPlace}{["st","nd","rd"][a.yourPlace-1] ?? "th"}</span>
+                        : <span className="text-[10px] font-bold text-white">Not shortlisted</span>}
                   </div>
                   <div className={`text-xs font-black ${a.isYou ? "text-amber-300" : "text-white"}`}>
-                    {a.winner} <span className="font-bold text-white/70">· {a.club}</span>
+                    {a.winner} <span className="font-bold text-white">· {a.club}</span>
                   </div>
                   {/* The shortlist is the interesting part of somebody ELSE
                       winning it — it is where you came and who else was close.
                       On a month you won, it is a list of people you beat, and
                       printing it under YOU WON IT reads as a consolation. */}
-                  <div className="text-[10px] font-bold text-white/60">
+                  <div className="text-[10px] font-bold text-white">
                     {a.goals}G {a.assists}A
                     {!a.isYou && a.nominees.length > 1 && (
                       <> · shortlist: {a.nominees.map(n => n.name).join(", ")}</>
@@ -306,31 +344,6 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                 </div>
               ))}
           </div>
-
-          {/* Both charts are a COUNT — every league goal belongs to a named
-              player. Cup goals stay out of them. See recognition.goldenBootRace. */}
-          {([["Golden Boot", goldenBootRace(career)], ["Assist King", assistRace(career)]] as const).map(([title, race]) => (
-            <div key={title} className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
-              <div className="bg-gray-800 px-2 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300 border-b border-black/50">
-                {title}
-              </div>
-              {race.slice(0, 6).map((sc, i) => (
-                <div
-                  key={sc.name + sc.club}
-                  className={`flex items-center gap-2 px-2 py-1.5 text-xs font-bold ${
-                    sc.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
-                >
-                  <span className="w-4 text-center text-[10px] font-black">{i + 1}</span>
-                  <span className="flex-1 truncate">{sc.name}</span>
-                  <span className="truncate text-[10px] text-gray-200 max-w-[38%]">{sc.club}</span>
-                  <span className="w-6 text-right font-black tabular-nums">{sc.goals}</span>
-                </div>
-              ))}
-              {race.every(r => r.goals === 0) && (
-                <div className="px-2 py-2 text-[11px] font-bold text-white/70">Nobody has scored yet.</div>
-              )}
-            </div>
-          ))}
         </div>
       )}
 
@@ -348,7 +361,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-xs font-black text-white">{cup.competition}</span>
-                  <span className="text-[10px] font-bold text-white/80">
+                  <span className="text-[10px] font-bold text-white">
                     {cup.winner === you ? "WON IT"
                       : cup.winner ? `${cup.winner} won it`
                       : out ? `Out — ${out}`
@@ -386,7 +399,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
           })}
 
           {(career.cups ?? []).length === 0 && (career.cupState ?? []).length === 0 && (
-            <div className="bg-gray-700 rounded-lg border border-gray-600 p-3 text-xs text-gray-200">
+            <div className="bg-gray-700 rounded-lg border border-gray-600 p-3 text-xs text-white">
               No knockout football this season. The domestic cup runs every year;
               Europe is earned by where you finish, and the national side by how
               well known you are.
@@ -418,7 +431,7 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                     />
                   ))}
                 </div>
-                <div className="mt-1 text-[10px] text-gray-200">{rounds.join(" · ")}</div>
+                <div className="mt-1 text-[10px] text-white">{rounds.join(" · ")}</div>
               </div>
             );
           })}
@@ -441,22 +454,6 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
 
       {/* "transfers" moved to the Media screen — see TransfersPanel.tsx. */}
 
-      {view === "squad" && onRefreshSquads && (
-        <div className="mb-2 rounded-lg border border-gray-600 bg-gray-800 p-2">
-          <button
-            onClick={onRefreshSquads}
-            disabled={refreshing}
-            className="w-full rounded bg-emerald-600 py-1.5 text-[11px] font-black uppercase tracking-wide text-white transition hover:bg-emerald-500 disabled:opacity-50"
-          >
-            {refreshing ? "Fetching…" : "Update squads from the database"}
-          </button>
-          <p className="mt-1 text-[10px] font-bold leading-tight text-white/60">
-            Your career holds the squads as they were when it started. Press this after editing
-            {" "}{STAR_EDITION_LABEL} to bring in new ratings and transfers. Goals and assists are kept.
-          </p>
-        </div>
-      )}
-
       {view === "squad" && (
         <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
           {/* Header */}
@@ -468,64 +465,76 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
             <div className="text-center text-yellow-300">G</div>
             <div className="text-center text-blue-300">A</div>
           </div>
-          <div className="max-h-[420px] overflow-y-auto">
-            {/* User row first — reads from seasonStats */}
-            <div className="grid grid-cols-[26px_1fr_30px_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 bg-emerald-700 text-white">
-              <div className="grid h-[22px] w-[22px] place-items-center rounded-full bg-white/20 text-[9px] font-black">
-                {career.squadNumber ?? "★"}
-              </div>
-              <div className="truncate font-black">{career.player.firstName} {career.player.lastName} ★</div>
-              <div className="text-center text-emerald-200">{Math.round(career.starRating * 18 + 10)}</div>
-              <div className="text-center text-emerald-200">{career.player.position}</div>
-              <div className="text-center font-black text-yellow-300">{career.seasonStats.goals}</div>
-              <div className="text-center font-black text-blue-300">{career.seasonStats.assists}</div>
-            </div>
-            {/* Squad sorted by goals+assists descending */}
-            {[...squad]
-              .sort((a, b) => (b.seasonGoals + b.seasonAssists) - (a.seasonGoals + a.seasonAssists))
-              .map((p, i) => (
-                <div
-                  key={p.id}
-                  className={`grid grid-cols-[26px_1fr_30px_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${
-                    i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
-                  }`}
-                >
-                  {/* A real team-mate has a face. Nobody gets a stock photo of
-                      somebody else — the one without an image gets the same
-                      silhouette the Draft uses, not different placeholders
-                      per screen. */}
+          {/* No inner scroll cap here on purpose — see the note on the Table
+              tab above. You are one row in this same ranking now too, not
+              pinned above it regardless of form: requested directly, sorted
+              by goals+assists like everyone else, ties broken by overall
+              rating the same way a real squad list would read. */}
+          {(() => {
+            const you = {
+              id: "__you__", isYou: true,
+              name: `${career.player.firstName} ${career.player.lastName}`,
+              position: career.player.position,
+              overall: Math.round(career.starRating * 18 + 10),
+              seasonGoals: career.seasonStats.goals,
+              seasonAssists: career.seasonStats.assists,
+              imageUrl: undefined as string | undefined,
+            };
+            const rows = [you, ...squad.map(p => ({ ...p, isYou: false }))]
+              .sort((a, b) => {
+                const byGA = (b.seasonGoals + b.seasonAssists) - (a.seasonGoals + a.seasonAssists);
+                if (byGA !== 0) return byGA;
+                return (b.overall ?? 0) - (a.overall ?? 0);
+              });
+            return rows.map((p, i) => (
+              <div
+                key={p.id}
+                className={`grid grid-cols-[26px_1fr_30px_36px_26px_26px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${
+                  p.isYou ? "bg-emerald-700 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                }`}
+              >
+                {p.isYou ? (
+                  <div className="grid h-[22px] w-[22px] place-items-center rounded-full bg-white/20 text-[9px] font-black">
+                    {career.squadNumber ?? "★"}
+                  </div>
+                ) : (
+                  // A real team-mate has a face. Nobody gets a stock photo of
+                  // somebody else — the one without an image gets the same
+                  // silhouette the Draft uses, not different placeholders
+                  // per screen.
                   <ImageWithFallback
                     src={p.imageUrl || SILHOUETTE_SRC}
                     fallbackSrc={SILHOUETTE_SRC}
                     alt=""
                     className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover"
                   />
-                  <div className="truncate">{p.name}</div>
-                  <div className="text-center font-black text-white/85">{p.overall ?? "—"}</div>
-                  <div className="text-center text-white/75">{p.position}</div>
-                  <div className="text-center">
-                    {p.seasonGoals > 0
-                      ? <span className="text-yellow-300 font-black">{p.seasonGoals}</span>
-                      : <span className="text-white/60">0</span>}
-                  </div>
-                  <div className="text-center">
-                    {p.seasonAssists > 0
-                      ? <span className="text-blue-300 font-black">{p.seasonAssists}</span>
-                      : <span className="text-white/60">0</span>}
-                  </div>
+                )}
+                <div className="truncate font-black">{p.name}{p.isYou ? " ★" : ""}</div>
+                <div className="text-center font-black text-white">{p.overall ?? "—"}</div>
+                <div className="text-center text-white">{p.position}</div>
+                <div className="text-center">
+                  {p.seasonGoals > 0
+                    ? <span className="text-yellow-300 font-black">{p.seasonGoals}</span>
+                    : <span className="text-white">0</span>}
                 </div>
-              ))}
-          </div>
+                <div className="text-center">
+                  {p.seasonAssists > 0
+                    ? <span className="text-blue-300 font-black">{p.seasonAssists}</span>
+                    : <span className="text-white">0</span>}
+                </div>
+              </div>
+            ));
+          })()}
           {/* Career totals footer for top scorers */}
           {squad.some(p => p.careerGoals > 0 || p.careerAssists > 0) && (
             <div className="bg-gray-800 border-t border-black/30 px-2 py-1.5">
-              <div className="text-[9px] font-black text-white/75 uppercase tracking-widest mb-1">Career Top Scorers</div>
+              <div className="text-[9px] font-black text-white uppercase tracking-widest mb-1">Career Top Scorers</div>
               {[...squad]
                 .sort((a, b) => (b.careerGoals + b.careerAssists) - (a.careerGoals + a.careerAssists))
                 .slice(0, 3)
                 .filter(p => p.careerGoals > 0 || p.careerAssists > 0)
                 .map(p => (
-                  <div key={p.id} className="flex items-center gap-1 text-[9px] text-white/85 mb-0.5">
+                  <div key={p.id} className="flex items-center gap-1 text-[9px] text-white mb-0.5">
                     <span className="font-black text-white truncate flex-1">{p.shortName}</span>
                     <span className="text-yellow-400 font-black">{p.careerGoals}G</span>
                     <span className="text-blue-400 font-black">{p.careerAssists}A</span>
@@ -533,6 +542,23 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                 ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Moved below the squad list itself, requested directly. */}
+      {view === "squad" && onRefreshSquads && (
+        <div className="mt-2 rounded-lg border border-gray-600 bg-gray-800 p-2">
+          <button
+            onClick={onRefreshSquads}
+            disabled={refreshing}
+            className="w-full rounded bg-emerald-600 py-1.5 text-[11px] font-black uppercase tracking-wide text-white transition hover:bg-emerald-500 disabled:opacity-50"
+          >
+            {refreshing ? "Fetching…" : "Update squads from the database"}
+          </button>
+          <p className="mt-1 text-[10px] font-bold leading-tight text-white">
+            Your career holds the squads as they were when it started. Press this after editing
+            {" "}{STAR_EDITION_LABEL} to bring in new ratings and transfers. Goals and assists are kept.
+          </p>
         </div>
       )}
     </div>
