@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { fixtureDateLabel, isPostSeason, divisionOf } from "@/lib/star/calendar";
+import { fixtureDateLabel, isPostSeason, divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp, KIND_ORDER } from "@/lib/star/competitions";
@@ -23,9 +23,11 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
 
-  // "transfers" moved to the Media screen — see TransfersPanel.tsx. Six
-  // tabs, not seven.
-  const [view, setView] = useState<"table" | "results" | "fixtures" | "cups" | "awards" | "squad">("table");
+  // "transfers" moved to the Media screen — see TransfersPanel.tsx, and
+  // "cups" folded into "table" — see the competition switcher below. Five
+  // tabs now, not seven.
+  const [view, setView] = useState<"table" | "results" | "fixtures" | "awards" | "squad">("table");
+  const [compIndex, setCompIndex] = useState(0);
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
 
@@ -70,8 +72,8 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
 
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-6 gap-1 mb-2">
-        {(["table", "results", "fixtures", "cups", "awards", "squad"] as const).map((v) => (
+      <div className="grid grid-cols-5 gap-1 mb-2">
+        {(["table", "results", "fixtures", "awards", "squad"] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
@@ -155,50 +157,199 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
         </div>
       )}
 
-      {view === "table" && (
-        <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
-          <div className="grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] border-l-2 border-l-transparent text-[10px] font-black text-white bg-gray-800 py-1.5 px-2 border-b border-black/50 gap-1">
-            <div className="text-center">#</div>
-            <div>Name</div>
-            <div className="text-center">P</div>
-            <div className="text-center">W</div>
-            <div className="text-center">D</div>
-            <div className="text-center">L</div>
-            <div className="text-center">Pts</div>
-          </div>
-          {/* No inner scroll here — DashboardShell's own content area is
-              already the one scrollable region on this whole page. A
-              second, nested scrollbar here doesn't just double up on
-              scrolling; on a platform whose scrollbar reserves real width
-              (most desktop browsers — not the overlay kind phones and Macs
-              use), it shrinks this list's own rows without touching the
-              header above them, which is what actually caused "the columns
-              don't line up" — confirmed directly: it lined up correctly on
-              a phone, which never had this scrollbar to begin with. */}
-          <div>
-            {sorted.map((t, i) => {
-              const pos = i + 1;
-              const isPlayer = t.name === career.player.club;
-              return (
-              <div
-                key={t.name}
-                className={`grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${euroClass(pos, isPlayer)} ${
-                  isPlayer ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
-                }`}
-              >
-                <div className="text-center font-black">{i + 1}</div>
-                <div className="truncate">{t.name}</div>
-                <div className="text-center">{t.played}</div>
-                <div className="text-center">{t.won}</div>
-                <div className="text-center">{t.drawn}</div>
-                <div className="text-center">{t.lost}</div>
-                <div className="text-center font-black">{t.points}</div>
+      {view === "table" && (() => {
+        /**
+         * ONE tab for whichever competition you're actually looking at,
+         * switched between rather than split across a separate "Cups" tab
+         * — requested directly. A league table and a cup bracket are
+         * genuinely different shapes (a knockout has no table at all), so
+         * this switches the whole CONTENT per competition rather than
+         * pretending they all fit one layout; what doesn't change is the
+         * data each one reads — this is the exact same league table, the
+         * exact same domestic-cup bracket (cupState) and the exact same
+         * European/international summaries the old separate tabs read,
+         * just reachable from one place now.
+         */
+        const you = career.player.club;
+        const competitions: { key: string; label: string; content: React.ReactNode }[] = [
+          {
+            key: "league",
+            label: leagueNameFor(divisionOf(career)),
+            content: (
+              <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
+                <div className="grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] border-l-2 border-l-transparent text-[10px] font-black text-white bg-gray-800 py-1.5 px-2 border-b border-black/50 gap-1">
+                  <div className="text-center">#</div>
+                  <div>Name</div>
+                  <div className="text-center">P</div>
+                  <div className="text-center">W</div>
+                  <div className="text-center">D</div>
+                  <div className="text-center">L</div>
+                  <div className="text-center">Pts</div>
+                </div>
+                {/* No inner scroll here — DashboardShell's own content area
+                    is already the one scrollable region on this whole
+                    page. A second, nested scrollbar here doesn't just
+                    double up on scrolling; on a platform whose scrollbar
+                    reserves real width (most desktop browsers — not the
+                    overlay kind phones and Macs use), it shrinks this
+                    list's own rows without touching the header above them,
+                    which is what actually caused "the columns don't line
+                    up" — confirmed directly: it lined up correctly on a
+                    phone, which never had this scrollbar to begin with. */}
+                <div>
+                  {sorted.map((t, i) => {
+                    const pos = i + 1;
+                    const isPlayer = t.name === you;
+                    return (
+                    <div
+                      key={t.name}
+                      className={`grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${euroClass(pos, isPlayer)} ${
+                        isPlayer ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                      }`}
+                    >
+                      <div className="text-center font-black">{i + 1}</div>
+                      <div className="truncate">{t.name}</div>
+                      <div className="text-center">{t.played}</div>
+                      <div className="text-center">{t.won}</div>
+                      <div className="text-center">{t.drawn}</div>
+                      <div className="text-center">{t.lost}</div>
+                      <div className="text-center font-black">{t.points}</div>
+                    </div>
+                    );
+                  })}
+                </div>
               </div>
-              );
-            })}
+            ),
+          },
+          // ── The two domestic cups: a hat, a draw, and every tie in the
+          // country, exactly as the old Cups tab showed them. ──
+          ...(career.cupState ?? []).map((cup) => {
+            const round = cup.rounds[cup.rounds.length - 1];
+            const out = exitRound(cup, you);
+            return {
+              key: `domestic-${cup.competition}`,
+              label: cup.competition,
+              content: (
+                <div className={`rounded-lg border p-2 ${
+                  cup.winner === you ? "border-amber-400 bg-amber-500/15"
+                    : out ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-black text-white">{cup.competition}</span>
+                    <span className="text-[10px] font-bold text-white">
+                      {cup.winner === you ? "WON IT"
+                        : cup.winner ? `${cup.winner} won it`
+                        : out ? `Out — ${out}`
+                        : round?.name}
+                    </span>
+                  </div>
+                  {round && (
+                    <div className="mt-1.5 space-y-0.5">
+                      {round.ties.map((t) => {
+                        const yours = t.home === you || t.away === you;
+                        const done = t.hs !== undefined;
+                        return (
+                          <div
+                            key={`${t.home}-${t.away}`}
+                            className={`grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                              yours ? "bg-emerald-600 text-white" : "text-white/85"}`}
+                          >
+                            <span className="truncate text-right">{t.home}</span>
+                            <span className="rounded bg-black/40 px-1 font-black tabular-nums">
+                              {done ? `${t.hs}-${t.as}` : "v"}
+                            </span>
+                            <span className="truncate">{t.away}</span>
+                            {t.pens && (
+                              <span className="col-span-3 text-center text-[9px] font-bold text-amber-300">
+                                {t.pens.home}-{t.pens.away} on penalties
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ),
+            };
+          }),
+          // ── Europe (and anything else career.cups tracks) — a progress
+          // bar rather than a full bracket, exactly as the old Cups tab
+          // showed it; there is no live tie-by-tie European view yet. ──
+          ...(career.cups ?? []).map((run) => {
+            const rounds = roundsFor(run.competition);
+            return {
+              key: `run-${run.competition}`,
+              label: run.competition,
+              content: (
+                <div className={`rounded-lg border p-3 ${
+                  run.won ? "border-amber-400 bg-amber-500/15"
+                    : run.eliminated ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-black text-white">{run.competition}</span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${
+                      run.won ? "text-amber-300" : run.eliminated ? "text-white/85" : "text-emerald-300"}`}
+                    >
+                      {run.won ? "Winners 🏆" : run.eliminated ? "Eliminated" : rounds[run.roundIndex]}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex gap-1">
+                    {rounds.map((r, i) => (
+                      <div
+                        key={r}
+                        title={r}
+                        className={`h-1.5 flex-1 rounded-full ${
+                          run.won || i < run.roundIndex ? "bg-emerald-400"
+                            : i === run.roundIndex && !run.eliminated ? "bg-white/70" : "bg-white/15"}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-1 text-[10px] text-white">{rounds.join(" · ")}</div>
+                </div>
+              ),
+            };
+          }),
+          {
+            key: "international",
+            label: nationOf(career),
+            content: (
+              <div className="bg-gray-700 rounded-lg border border-gray-600 p-3">
+                <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">{nationOf(career)}</div>
+                <div className="mt-1 text-xs text-white">
+                  {(career.caps ?? 0)} cap{(career.caps ?? 0) === 1 ? "" : "s"} · {(career.internationalGoals ?? 0)} goal{(career.internationalGoals ?? 0) === 1 ? "" : "s"}
+                </div>
+                {(career.caps ?? 0) === 0 && (
+                  <div className="mt-1 text-[10px] text-white/85">
+                    {internationalCallUp(career)
+                      ? "You are in the squad — a tournament comes round every other season."
+                      : "Not in the squad yet. Reputation is what gets you picked."}
+                  </div>
+                )}
+              </div>
+            ),
+          },
+        ];
+
+        const active = competitions[Math.min(compIndex, competitions.length - 1)];
+        return (
+          <div>
+            {/* The switcher — a small gap above the table itself, enough
+                room for one button naming whichever competition is
+                showing. Tapping it cycles to the next; requested directly,
+                in place of a separate Cups tab. */}
+            <div className="mb-1.5 flex justify-end">
+              <button
+                onClick={() => setCompIndex(i => (i + 1) % competitions.length)}
+                className="rounded-full border border-gray-600 bg-gray-800 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white transition hover:bg-gray-700"
+              >
+                {active.label} ›
+              </button>
+            </div>
+            {active.content}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {view === "fixtures" && (
         // Same reasoning as the Table tab above — no inner scroll cap; the
@@ -347,112 +498,8 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
         </div>
       )}
 
-      {view === "cups" && (
-        <div className="space-y-2">
-          {/* ── The two real ones: a hat, a draw, and every tie in the country ── */}
-          {(career.cupState ?? []).map((cup) => {
-            const round = cup.rounds[cup.rounds.length - 1];
-            const you = career.player.club;
-            const out = exitRound(cup, you);
-            return (
-              <div key={cup.competition} className={`rounded-lg border p-2 ${
-                cup.winner === you ? "border-amber-400 bg-amber-500/15"
-                  : out ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-xs font-black text-white">{cup.competition}</span>
-                  <span className="text-[10px] font-bold text-white">
-                    {cup.winner === you ? "WON IT"
-                      : cup.winner ? `${cup.winner} won it`
-                      : out ? `Out — ${out}`
-                      : round?.name}
-                  </span>
-                </div>
-                {round && (
-                  <div className="mt-1.5 space-y-0.5">
-                    {round.ties.map((t) => {
-                      const yours = t.home === you || t.away === you;
-                      const done = t.hs !== undefined;
-                      return (
-                        <div
-                          key={`${t.home}-${t.away}`}
-                          className={`grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                            yours ? "bg-emerald-600 text-white" : "text-white/85"}`}
-                        >
-                          <span className="truncate text-right">{t.home}</span>
-                          <span className="rounded bg-black/40 px-1 font-black tabular-nums">
-                            {done ? `${t.hs}-${t.as}` : "v"}
-                          </span>
-                          <span className="truncate">{t.away}</span>
-                          {t.pens && (
-                            <span className="col-span-3 text-center text-[9px] font-bold text-amber-300">
-                              {t.pens.home}-{t.pens.away} on penalties
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {(career.cups ?? []).length === 0 && (career.cupState ?? []).length === 0 && (
-            <div className="bg-gray-700 rounded-lg border border-gray-600 p-3 text-xs text-white">
-              No knockout football this season. The domestic cup runs every year;
-              Europe is earned by where you finish, and the national side by how
-              well known you are.
-            </div>
-          )}
-          {(career.cups ?? []).map((run) => {
-            const rounds = roundsFor(run.competition);
-            return (
-              <div key={run.competition} className={`rounded-lg border p-3 ${
-                run.won ? "border-amber-400 bg-amber-500/15"
-                  : run.eliminated ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-black text-white">{run.competition}</span>
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${
-                    run.won ? "text-amber-300" : run.eliminated ? "text-white/85" : "text-emerald-300"}`}
-                  >
-                    {run.won ? "Winners 🏆" : run.eliminated ? "Eliminated" : rounds[run.roundIndex]}
-                  </span>
-                </div>
-                <div className="mt-2 flex gap-1">
-                  {rounds.map((r, i) => (
-                    <div
-                      key={r}
-                      title={r}
-                      className={`h-1.5 flex-1 rounded-full ${
-                        run.won || i < run.roundIndex ? "bg-emerald-400"
-                          : i === run.roundIndex && !run.eliminated ? "bg-white/70" : "bg-white/15"}`}
-                    />
-                  ))}
-                </div>
-                <div className="mt-1 text-[10px] text-white">{rounds.join(" · ")}</div>
-              </div>
-            );
-          })}
-
-          <div className="bg-gray-700 rounded-lg border border-gray-600 p-3">
-            <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">{nationOf(career)}</div>
-            <div className="mt-1 text-xs text-white">
-              {(career.caps ?? 0)} cap{(career.caps ?? 0) === 1 ? "" : "s"} · {(career.internationalGoals ?? 0)} goal{(career.internationalGoals ?? 0) === 1 ? "" : "s"}
-            </div>
-            {(career.caps ?? 0) === 0 && (
-              <div className="mt-1 text-[10px] text-white/85">
-                {internationalCallUp(career)
-                  ? "You are in the squad — a tournament comes round every other season."
-                  : "Not in the squad yet. Reputation is what gets you picked."}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* "transfers" moved to the Media screen — see TransfersPanel.tsx. */}
+      {/* "transfers" moved to the Media screen — see TransfersPanel.tsx, and
+          "cups" folded into the Table tab's own competition switcher above. */}
 
       {view === "squad" && (
         <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
