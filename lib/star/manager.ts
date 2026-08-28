@@ -1,6 +1,7 @@
 import type { CareerState } from "./types";
 import { mulberry32 } from "./season";
 import { clubNameSeed } from "./squadData";
+import { loadLineup } from "./lineupStore";
 
 /**
  * THE MANAGER
@@ -56,11 +57,19 @@ export const STYLE_SELECTION: Record<ManagerStyle, { start: number; bench: numbe
 
 export function makeManager(career: CareerState, club: string, season: number): Manager {
   const rng = mulberry32(clubNameSeed(club) + season * 7717 + Math.round(career.starRating * 7));
-  const name = `${FIRST[Math.floor(rng() * FIRST.length)]} ${LAST[Math.floor(rng() * LAST.length)]}`;
+  // Rolled either way, so the style/tenure sequence below never shifts
+  // depending on whether a real name is on file for this club.
+  const generatedName = `${FIRST[Math.floor(rng() * FIRST.length)]} ${LAST[Math.floor(rng() * LAST.length)]}`;
   const roll = rng();
   const style: ManagerStyle = roll < 0.38 ? "trusting" : roll < 0.72 ? "demanding" : "rotational";
+  // Typed in for this club on the Squad Builder / Lineups screen (see
+  // lineupStore.ts) — use the real name on the touchline instead of a
+  // fictional one when there is one on file. Everything else about him
+  // (style, tenure, whether he gets sacked) is still simulated; only the
+  // database has no real managers, not the game.
+  const real = loadLineup(club)?.manager?.trim();
   return {
-    name,
+    name: real || generatedName,
     style,
     since: season,
     arrival: STYLE_BLURB[style],
